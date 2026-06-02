@@ -4,16 +4,16 @@
  * Powers AI autopilot learning from actual content features, not just engagement metrics
  */
 
-import { Router } from 'express';
-import { promises as dns } from 'dns';
-import { isIPv4 as netIsIPv4 } from 'net';
-import { contentAnalysisService } from '../services/contentAnalysisService';
-import { requireAuth } from '../middleware/auth';
-import { logger } from '../logger';
-import rateLimit from 'express-rate-limit';
-import { db } from '../db';
-import { users, posts, adCampaigns } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { Router } from "express";
+import { promises as dns } from "dns";
+import { isIPv4 as netIsIPv4 } from "net";
+import { contentAnalysisService } from "../services/contentAnalysisService";
+import { requireAuth } from "../middleware/auth";
+import { logger } from "../logger";
+import rateLimit from "express-rate-limit";
+import { db } from "../db";
+import { users, posts, adCampaigns } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 // ─── Shared IP-safety helpers (pre-flight, defense-in-depth) ─────────────────
 // The primary SSRF barrier is the connect-time lookup in contentAnalysisService;
@@ -32,12 +32,13 @@ const PRIVATE_IPV6_RE =
  */
 function isReservedIp(raw: string): boolean {
   let addr = raw.toLowerCase();
-  if (addr.startsWith('[') && addr.endsWith(']')) addr = addr.slice(1, -1);
-  if (addr === 'localhost' || addr === '0.0.0.0' || addr === '::1') return true;
+  if (addr.startsWith("[") && addr.endsWith("]")) addr = addr.slice(1, -1);
+  if (addr === "localhost" || addr === "0.0.0.0" || addr === "::1") return true;
   // IPv4-mapped IPv6 — extract the embedded IPv4 part.
-  if (addr.startsWith('::ffff:')) {
+  if (addr.startsWith("::ffff:")) {
     const embedded = addr.slice(7);
-    if (netIsIPv4(embedded)) return embedded === '0.0.0.0' || PRIVATE_IPV4_RE.test(embedded);
+    if (netIsIPv4(embedded))
+      return embedded === "0.0.0.0" || PRIVATE_IPV4_RE.test(embedded);
     return true; // hex-only form — conservatively block
   }
   return PRIVATE_IPV4_RE.test(addr) || PRIVATE_IPV6_RE.test(addr);
@@ -54,32 +55,32 @@ function isReservedIp(raw: string): boolean {
 async function validateExternalUrl(raw: string): Promise<string> {
   let normalised = raw.trim();
   if (normalised && !/^https?:\/\//i.test(normalised)) {
-    normalised = 'https://' + normalised;
+    normalised = "https://" + normalised;
   }
   let parsed: URL;
   try {
     parsed = new URL(normalised);
   } catch {
-    throw new Error('Invalid URL');
+    throw new Error("Invalid URL");
   }
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-    throw new Error('Invalid URL protocol');
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error("Invalid URL protocol");
   }
   // parsed.hostname strips brackets from IPv6 literals (e.g. [::1] → ::1).
   const hostname = parsed.hostname.toLowerCase();
   if (isReservedIp(hostname)) {
-    throw new Error('URL resolves to a private or reserved address');
+    throw new Error("URL resolves to a private or reserved address");
   }
   // Resolve DNS and validate every returned address.
   let addresses: dns.LookupAddress[];
   try {
     addresses = await dns.lookup(hostname, { all: true });
   } catch {
-    throw new Error('Unable to resolve URL hostname');
+    throw new Error("Unable to resolve URL hostname");
   }
   for (const { address } of addresses) {
     if (isReservedIp(address)) {
-      throw new Error('URL resolves to a private or reserved address');
+      throw new Error("URL resolves to a private or reserved address");
     }
   }
   return parsed.href;
@@ -93,7 +94,7 @@ const router = Router();
 const contentAnalysisLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 7_200_000_000,
-  message: 'Too many content analysis requests, please try again later',
+  message: "Too many content analysis requests, please try again later",
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
@@ -101,10 +102,14 @@ const contentAnalysisLimiter = rateLimit({
 
 // Middleware to check if user has a paid subscription (required for content analysis)
 // Note: There is no free tier - all content analysis requires a paid subscription
-const requirePremium = async (req: Record<string, unknown>, res: Record<string, unknown>, next: Record<string, unknown>) => {
+const requirePremium = async (
+  req: Record<string, unknown>,
+  res: Record<string, unknown>,
+  next: Record<string, unknown>,
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: "Authentication required" });
     }
 
     const user = await db.query.users.findFirst({
@@ -112,23 +117,28 @@ const requirePremium = async (req: Record<string, unknown>, res: Record<string, 
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
     // Only paid subscribers (monthly/yearly/lifetime) and admins can access
-    const paidTiers = ['monthly', 'yearly', 'lifetime'];
-    if (user.subscriptionTier && paidTiers.includes(user.subscriptionTier) || user.role === 'admin' || user.isAdmin) {
+    const paidTiers = ["monthly", "yearly", "lifetime"];
+    if (
+      (user.subscriptionTier && paidTiers.includes(user.subscriptionTier)) ||
+      user.role === "admin" ||
+      user.isAdmin
+    ) {
       return next();
     }
 
     return res.status(403).json({
-      error: 'Paid subscription required',
-      message: 'Content analysis features require a paid subscription. Upgrade to access multimodal AI analysis.',
-      upgradeUrl: '/pricing',
+      error: "Paid subscription required",
+      message:
+        "Content analysis features require a paid subscription. Upgrade to access multimodal AI analysis.",
+      upgradeUrl: "/pricing",
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Premium check error:');
-    res.status(500).json({ error: 'Failed to verify subscription' });
+    logger.warn({ err: error }, "Premium check error:");
+    res.status(500).json({ error: "Failed to verify subscription" });
   }
 };
 
@@ -142,19 +152,19 @@ router.use(requirePremium);
  * POST /api/content-analysis/image
  * Body: { imageUrl: string }
  */
-router.post('/image', async (req, res) => {
+router.post("/image", async (req, res) => {
   try {
     const { imageUrl } = req.body;
 
     if (!imageUrl) {
-      return res.status(400).json({ error: 'imageUrl is required' });
+      return res.status(400).json({ error: "imageUrl is required" });
     }
 
     let safeImageUrl: string;
     try {
       safeImageUrl = await validateExternalUrl(imageUrl);
     } catch {
-      return res.status(400).json({ error: 'Invalid or unsafe URL' });
+      return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
     const analysis = await contentAnalysisService.analyzeImage(safeImageUrl);
@@ -165,11 +175,11 @@ router.post('/image', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Image analysis error:');
+    logger.warn({ err: error }, "Image analysis error:");
     res.status(500).json({
       success: false,
-      error: 'Failed to analyze image',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to analyze image",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -179,24 +189,24 @@ router.post('/image', async (req, res) => {
  * POST /api/content-analysis/video
  * Body: { videoUrl: string, duration?: number }
  */
-router.post('/video', async (req, res) => {
+router.post("/video", async (req, res) => {
   try {
     const { videoUrl, duration } = req.body;
 
     if (!videoUrl) {
-      return res.status(400).json({ error: 'videoUrl is required' });
+      return res.status(400).json({ error: "videoUrl is required" });
     }
 
     let safeVideoUrl: string;
     try {
       safeVideoUrl = await validateExternalUrl(videoUrl);
     } catch {
-      return res.status(400).json({ error: 'Invalid or unsafe URL' });
+      return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
     const analysis = await contentAnalysisService.analyzeVideo(
       safeVideoUrl,
-      duration || 30
+      duration || 30,
     );
 
     res.json({
@@ -205,11 +215,11 @@ router.post('/video', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Video analysis error:');
+    logger.warn({ err: error }, "Video analysis error:");
     res.status(500).json({
       success: false,
-      error: 'Failed to analyze video',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to analyze video",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -219,24 +229,24 @@ router.post('/video', async (req, res) => {
  * POST /api/content-analysis/audio
  * Body: { audioUrl: string, metadata?: any }
  */
-router.post('/audio', async (req, res) => {
+router.post("/audio", async (req, res) => {
   try {
     const { audioUrl, metadata } = req.body;
 
     if (!audioUrl) {
-      return res.status(400).json({ error: 'audioUrl is required' });
+      return res.status(400).json({ error: "audioUrl is required" });
     }
 
     let safeAudioUrl: string;
     try {
       safeAudioUrl = await validateExternalUrl(audioUrl);
     } catch {
-      return res.status(400).json({ error: 'Invalid or unsafe URL' });
+      return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
     const analysis = await contentAnalysisService.analyzeAudio(
       safeAudioUrl,
-      metadata
+      metadata,
     );
 
     res.json({
@@ -245,11 +255,11 @@ router.post('/audio', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Audio analysis error:');
+    logger.warn({ err: error }, "Audio analysis error:");
     res.status(500).json({
       success: false,
-      error: 'Failed to analyze audio',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to analyze audio",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -259,12 +269,12 @@ router.post('/audio', async (req, res) => {
  * POST /api/content-analysis/text
  * Body: { text: string }
  */
-router.post('/text', async (req, res) => {
+router.post("/text", async (req, res) => {
   try {
     const { text } = req.body;
 
     if (!text) {
-      return res.status(400).json({ error: 'text is required' });
+      return res.status(400).json({ error: "text is required" });
     }
 
     const analysis = await contentAnalysisService.analyzeText(text);
@@ -275,11 +285,11 @@ router.post('/text', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Text analysis error:');
+    logger.warn({ err: error }, "Text analysis error:");
     res.status(500).json({
       success: false,
-      error: 'Failed to analyze text',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to analyze text",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -289,23 +299,36 @@ router.post('/text', async (req, res) => {
  * POST /api/content-analysis/website
  * Body: { url: string }
  */
-router.post('/website', async (req, res) => {
+router.post("/website", async (req, res) => {
   try {
     const { url } = req.body;
 
-    logger.info({ receivedUrl: url, bodyKeys: Object.keys(req.body || {}), contentType: req.headers['content-type'] }, '[ContentAnalysis] /website request received');
+    logger.info(
+      {
+        receivedUrl: url,
+        bodyKeys: Object.keys(req.body || {}),
+        contentType: req.headers["content-type"],
+      },
+      "[ContentAnalysis] /website request received",
+    );
 
     if (!url) {
-      logger.warn({ body: req.body }, '[ContentAnalysis] /website rejected — url missing');
-      return res.status(400).json({ error: 'url is required' });
+      logger.warn(
+        { body: req.body },
+        "[ContentAnalysis] /website rejected — url missing",
+      );
+      return res.status(400).json({ error: "url is required" });
     }
 
     let safeUrl: string;
     try {
       safeUrl = await validateExternalUrl(url);
     } catch (validationError) {
-      logger.warn({ url, err: validationError }, '[ContentAnalysis] /website rejected — URL validation failed');
-      return res.status(400).json({ error: 'Invalid or unsafe URL' });
+      logger.warn(
+        { url, err: validationError },
+        "[ContentAnalysis] /website rejected — URL validation failed",
+      );
+      return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
     const analysis = await contentAnalysisService.analyzeWebsite(safeUrl);
@@ -316,11 +339,11 @@ router.post('/website', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Website analysis error:');
+    logger.warn({ err: error }, "Website analysis error:");
     res.status(500).json({
       success: false,
-      error: 'Failed to analyze website',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to analyze website",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -336,32 +359,33 @@ router.post('/website', async (req, res) => {
  *   videoDuration?: number
  * }
  */
-router.post('/batch', async (req, res) => {
+router.post("/batch", async (req, res) => {
   try {
-    const { mediaType, mediaUrl, text, landingPageUrl, videoDuration } = req.body;
+    const { mediaType, mediaUrl, text, landingPageUrl, videoDuration } =
+      req.body;
 
     const results: Record<string, unknown> = {};
 
-    if (mediaType === 'image' && mediaUrl) {
+    if (mediaType === "image" && mediaUrl) {
       let safeMediaUrl: string;
       try {
         safeMediaUrl = await validateExternalUrl(mediaUrl);
       } catch {
-        return res.status(400).json({ error: 'Invalid or unsafe mediaUrl' });
+        return res.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
       results.image = await contentAnalysisService.analyzeImage(safeMediaUrl);
     }
 
-    if (mediaType === 'video' && mediaUrl) {
+    if (mediaType === "video" && mediaUrl) {
       let safeMediaUrl: string;
       try {
         safeMediaUrl = await validateExternalUrl(mediaUrl);
       } catch {
-        return res.status(400).json({ error: 'Invalid or unsafe mediaUrl' });
+        return res.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
       results.video = await contentAnalysisService.analyzeVideo(
         safeMediaUrl,
-        videoDuration || 30
+        videoDuration || 30,
       );
     }
 
@@ -374,9 +398,12 @@ router.post('/batch', async (req, res) => {
       try {
         safeLandingPageUrl = await validateExternalUrl(landingPageUrl);
       } catch {
-        return res.status(400).json({ error: 'Invalid or unsafe landingPageUrl' });
+        return res
+          .status(400)
+          .json({ error: "Invalid or unsafe landingPageUrl" });
       }
-      results.website = await contentAnalysisService.analyzeWebsite(safeLandingPageUrl);
+      results.website =
+        await contentAnalysisService.analyzeWebsite(safeLandingPageUrl);
     }
 
     res.json({
@@ -385,11 +412,11 @@ router.post('/batch', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Batch analysis error:');
+    logger.warn({ err: error }, "Batch analysis error:");
     res.status(500).json({
       success: false,
-      error: 'Failed to perform batch analysis',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to perform batch analysis",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -400,17 +427,17 @@ router.post('/batch', async (req, res) => {
  * type: 'post' | 'campaign'
  * id: post or campaign ID
  */
-router.get('/:type/:id', requireAuth, async (req, res) => {
+router.get("/:type/:id", requireAuth, async (req, res) => {
   try {
     const { type, id } = req.params;
 
-    if (type !== 'post' && type !== 'campaign') {
+    if (type !== "post" && type !== "campaign") {
       return res.status(400).json({
         error: 'Invalid type. Must be "post" or "campaign"',
       });
     }
 
-    if (type === 'post') {
+    if (type === "post") {
       const [post] = await db
         .select()
         .from(posts)
@@ -418,12 +445,14 @@ router.get('/:type/:id', requireAuth, async (req, res) => {
         .limit(1);
 
       if (!post) {
-        return res.status(404).json({ success: false, error: 'Post not found' });
+        return res
+          .status(404)
+          .json({ success: false, error: "Post not found" });
       }
 
       return res.json({
         success: true,
-        type: 'post',
+        type: "post",
         id: post.id,
         content: post.content,
         platform: post.platform,
@@ -436,7 +465,7 @@ router.get('/:type/:id', requireAuth, async (req, res) => {
       });
     }
 
-    if (type === 'campaign') {
+    if (type === "campaign") {
       const [campaign] = await db
         .select()
         .from(adCampaigns)
@@ -444,12 +473,14 @@ router.get('/:type/:id', requireAuth, async (req, res) => {
         .limit(1);
 
       if (!campaign) {
-        return res.status(404).json({ success: false, error: 'Campaign not found' });
+        return res
+          .status(404)
+          .json({ success: false, error: "Campaign not found" });
       }
 
       return res.json({
         success: true,
-        type: 'campaign',
+        type: "campaign",
         id: campaign.id,
         name: campaign.name,
         status: campaign.status,
@@ -462,11 +493,11 @@ router.get('/:type/:id', requireAuth, async (req, res) => {
       });
     }
   } catch (error) {
-    logger.warn({ err: error }, 'Content analysis retrieval error:');
+    logger.warn({ err: error }, "Content analysis retrieval error:");
     res.status(500).json({
       success: false,
-      error: 'Failed to retrieve content analysis',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to retrieve content analysis",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });

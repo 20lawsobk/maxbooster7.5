@@ -1,13 +1,13 @@
 import { db } from "../db";
 import { eq, and, desc, sql, gte, count } from "drizzle-orm";
-import { 
-  achievements, 
-  userAchievements, 
+import {
+  achievements,
+  userAchievements,
   userStreaks,
   users,
   type Achievement,
   type UserAchievement,
-  type UserStreak 
+  type UserStreak,
 } from "../../shared/schema";
 import { notificationService } from "./notificationService.js";
 
@@ -37,39 +37,44 @@ class AchievementService {
   async checkAndAwardAchievements(
     userId: string,
     eventType: string,
-    eventData: Record<string, any>
+    eventData: Record<string, any>,
   ): Promise<Achievement[]> {
     const allAchievements = await db
       .select()
       .from(achievements)
       .where(eq(achievements.isActive, true));
-    
+
     const userAchievementRecords = await db
       .select()
       .from(userAchievements)
       .where(eq(userAchievements.userId, userId));
-    
+
     const unlockedIds = new Set(
       userAchievementRecords
-        .filter(ua => ua.unlockedAt !== null)
-        .map(ua => ua.achievementId)
+        .filter((ua) => ua.unlockedAt !== null)
+        .map((ua) => ua.achievementId),
     );
-    
+
     const newlyUnlocked: Achievement[] = [];
-    
+
     for (const achievement of allAchievements) {
       if (unlockedIds.has(achievement.id)) continue;
-      
+
       const requirement = achievement.requirement as AchievementRequirement;
       if (!requirement) continue;
-      
-      if (requirement.eventType && requirement.eventType !== eventType) continue;
-      
-      const progress = this.calculateProgress(eventType, eventData, requirement);
-      const existingProgress = userAchievementRecords.find(
-        ua => ua.achievementId === achievement.id
+
+      if (requirement.eventType && requirement.eventType !== eventType)
+        continue;
+
+      const progress = this.calculateProgress(
+        eventType,
+        eventData,
+        requirement,
       );
-      
+      const existingProgress = userAchievementRecords.find(
+        (ua) => ua.achievementId === achievement.id,
+      );
+
       if (progress >= 1) {
         if (existingProgress) {
           await db
@@ -90,12 +95,15 @@ class AchievementService {
           });
         }
         newlyUnlocked.push(achievement);
-        notificationService.sendAchievementNotification(
-          userId,
-          achievement.name,
-          achievement.description || `You unlocked the ${achievement.name} achievement.`,
-          achievement.points || 0
-        ).catch(() => {});
+        notificationService
+          .sendAchievementNotification(
+            userId,
+            achievement.name,
+            achievement.description ||
+              `You unlocked the ${achievement.name} achievement.`,
+            achievement.points || 0,
+          )
+          .catch(() => {});
       } else if (progress > 0) {
         if (existingProgress) {
           await db
@@ -111,17 +119,17 @@ class AchievementService {
         }
       }
     }
-    
+
     return newlyUnlocked;
   }
-  
+
   private calculateProgress(
     eventType: string,
     eventData: Record<string, any>,
-    requirement: AchievementRequirement
+    requirement: AchievementRequirement,
   ): number {
     const threshold = requirement.threshold || 1;
-    
+
     switch (requirement.type) {
       case "streams":
         return Math.min(1, (eventData.totalStreams || 0) / threshold);
@@ -143,25 +151,27 @@ class AchievementService {
         return 0;
     }
   }
-  
-  async getUserAchievements(userId: string): Promise<AchievementWithProgress[]> {
+
+  async getUserAchievements(
+    userId: string,
+  ): Promise<AchievementWithProgress[]> {
     const allAchievements = await db
       .select()
       .from(achievements)
       .where(eq(achievements.isActive, true))
       .orderBy(achievements.sortOrder);
-    
+
     const userAchievementRecords = await db
       .select()
       .from(userAchievements)
       .where(eq(userAchievements.userId, userId));
-    
+
     const progressMap = new Map<string, UserAchievement>();
     for (const ua of userAchievementRecords) {
       progressMap.set(ua.achievementId, ua);
     }
-    
-    return allAchievements.map(achievement => {
+
+    return allAchievements.map((achievement) => {
       const userProgress = progressMap.get(achievement.id);
       return {
         ...achievement,
@@ -171,54 +181,57 @@ class AchievementService {
       };
     });
   }
-  
+
   async getUnnotifiedAchievements(userId: string): Promise<Achievement[]> {
     const unnotified = await db
       .select({
         achievement: achievements,
       })
       .from(userAchievements)
-      .innerJoin(achievements, eq(userAchievements.achievementId, achievements.id))
+      .innerJoin(
+        achievements,
+        eq(userAchievements.achievementId, achievements.id),
+      )
       .where(
         and(
           eq(userAchievements.userId, userId),
           eq(userAchievements.notified, false),
-          sql`${userAchievements.unlockedAt} IS NOT NULL`
-        )
+          sql`${userAchievements.unlockedAt} IS NOT NULL`,
+        ),
       );
-    
-    return unnotified.map(r => r.achievement);
+
+    return unnotified.map((r) => r.achievement);
   }
-  
-  async markAchievementNotified(userId: string, achievementId: string): Promise<void> {
+
+  async markAchievementNotified(
+    userId: string,
+    achievementId: string,
+  ): Promise<void> {
     await db
       .update(userAchievements)
       .set({ notified: true })
       .where(
         and(
           eq(userAchievements.userId, userId),
-          eq(userAchievements.achievementId, achievementId)
-        )
+          eq(userAchievements.achievementId, achievementId),
+        ),
       );
   }
-  
-  async updateStreak(
-    userId: string,
-    streakType: string
-  ): Promise<UserStreak> {
+
+  async updateStreak(userId: string, streakType: string): Promise<UserStreak> {
     const today = new Date().toISOString().split("T")[0];
-    
+
     const existingStreak = await db
       .select()
       .from(userStreaks)
       .where(
         and(
           eq(userStreaks.userId, userId),
-          eq(userStreaks.streakType, streakType)
-        )
+          eq(userStreaks.streakType, streakType),
+        ),
       )
       .limit(1);
-    
+
     if (existingStreak.length === 0) {
       const [newStreak] = await db
         .insert(userStreaks)
@@ -230,37 +243,37 @@ class AchievementService {
           lastActivityDate: today,
         })
         .returning();
-      
+
       await this.checkAndAwardAchievements(userId, "streak", {
         streakType,
         currentStreak: 1,
       });
-      
+
       return newStreak;
     }
-    
+
     const streak = existingStreak[0];
     const lastActivity = streak.lastActivityDate;
-    
+
     if (lastActivity === today) {
       return streak;
     }
-    
+
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split("T")[0];
-    
+
     let newCurrentStreak = 1;
-    
+
     if (lastActivity === yesterdayStr) {
       newCurrentStreak = (streak.currentStreak || 0) + 1;
     }
-    
+
     const newLongestStreak = Math.max(
       streak.longestStreak || 0,
-      newCurrentStreak
+      newCurrentStreak,
     );
-    
+
     const [updatedStreak] = await db
       .update(userStreaks)
       .set({
@@ -271,7 +284,7 @@ class AchievementService {
       })
       .where(eq(userStreaks.id, streak.id))
       .returning();
-    
+
     await this.checkAndAwardAchievements(userId, "streak", {
       streakType,
       currentStreak: newCurrentStreak,
@@ -279,26 +292,21 @@ class AchievementService {
 
     const streakMilestones = [7, 14, 30, 60, 100, 365];
     if (streakMilestones.includes(newCurrentStreak)) {
-      notificationService.sendStreakMilestoneNotification(
-        userId,
-        streakType,
-        newCurrentStreak
-      ).catch(() => {});
+      notificationService
+        .sendStreakMilestoneNotification(userId, streakType, newCurrentStreak)
+        .catch(() => {});
     }
-    
+
     return updatedStreak;
   }
-  
+
   async getUserStreaks(userId: string): Promise<UserStreak[]> {
-    return db
-      .select()
-      .from(userStreaks)
-      .where(eq(userStreaks.userId, userId));
+    return db.select().from(userStreaks).where(eq(userStreaks.userId, userId));
   }
-  
+
   async getLeaderboard(
     category?: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<LeaderboardEntry[]> {
     let query = db
       .select({
@@ -308,23 +316,23 @@ class AchievementService {
       })
       .from(achievements)
       .where(eq(achievements.isActive, true));
-    
+
     const achievementList = await query;
-    
+
     const filteredAchievements = category
-      ? achievementList.filter(a => a.category === category)
+      ? achievementList.filter((a) => a.category === category)
       : achievementList;
-    
-    const achievementIds = filteredAchievements.map(a => a.id);
+
+    const achievementIds = filteredAchievements.map((a) => a.id);
     const pointsMap = new Map<string, number>();
     for (const a of filteredAchievements) {
       pointsMap.set(a.id, a.points || 0);
     }
-    
+
     if (achievementIds.length === 0) {
       return [];
     }
-    
+
     const userStats = await db
       .select({
         userId: userAchievements.userId,
@@ -332,24 +340,27 @@ class AchievementService {
       })
       .from(userAchievements)
       .where(sql`${userAchievements.unlockedAt} IS NOT NULL`);
-    
+
     const userPointsMap = new Map<string, { points: number; count: number }>();
-    
+
     for (const stat of userStats) {
       if (!achievementIds.includes(stat.achievementId)) continue;
-      
-      const existing = userPointsMap.get(stat.userId) || { points: 0, count: 0 };
+
+      const existing = userPointsMap.get(stat.userId) || {
+        points: 0,
+        count: 0,
+      };
       existing.points += pointsMap.get(stat.achievementId) || 0;
       existing.count += 1;
       userPointsMap.set(stat.userId, existing);
     }
-    
+
     const userIds = Array.from(userPointsMap.keys());
-    
+
     if (userIds.length === 0) {
       return [];
     }
-    
+
     const userRecords = await db
       .select({
         id: users.id,
@@ -359,19 +370,24 @@ class AchievementService {
         avatarUrl: users.avatarUrl,
       })
       .from(users)
-      .where(sql`${users.id} IN (${sql.join(userIds.map(id => sql`${id}`), sql`, `)})`);
-    
-    const userMap = new Map<string, typeof userRecords[0]>();
+      .where(
+        sql`${users.id} IN (${sql.join(
+          userIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+      );
+
+    const userMap = new Map<string, (typeof userRecords)[0]>();
     for (const u of userRecords) {
       userMap.set(u.id, u);
     }
-    
+
     const leaderboard: LeaderboardEntry[] = [];
-    
+
     for (const [userId, stats] of userPointsMap.entries()) {
       const user = userMap.get(userId);
       if (!user) continue;
-      
+
       leaderboard.push({
         userId,
         username: user.username,
@@ -382,12 +398,12 @@ class AchievementService {
         achievementCount: stats.count,
       });
     }
-    
+
     leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
-    
+
     return leaderboard.slice(0, limit);
   }
-  
+
   async getAllAchievements(): Promise<Achievement[]> {
     return db
       .select()

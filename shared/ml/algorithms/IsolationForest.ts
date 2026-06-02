@@ -35,7 +35,7 @@ export class IsolationForest {
   constructor(
     nEstimators: number = 150,
     maxSamples: number = 256,
-    contamination: number = 0.01
+    contamination: number = 0.01,
   ) {
     this.nEstimators = nEstimators;
     this.maxSamples = maxSamples;
@@ -58,18 +58,31 @@ export class IsolationForest {
 
   // ── Tree construction ─────────────────────────────────────────────────────
 
-  private buildTree(data: number[][], depth: number, maxDepth: number): IsolationTree {
+  private buildTree(
+    data: number[][],
+    depth: number,
+    maxDepth: number,
+  ): IsolationTree {
     const nf = data[0]?.length ?? 0;
 
     if (depth >= maxDepth || data.length <= 1) {
-      return { splitFeature: null, splitValue: null, featureMin: null, featureMax: null,
-               left: null, right: null, size: data.length, height: depth };
+      return {
+        splitFeature: null,
+        splitValue: null,
+        featureMin: null,
+        featureMax: null,
+        left: null,
+        right: null,
+        size: data.length,
+        height: depth,
+      };
     }
 
     // Collect feature ranges; skip zero-variance features
     const ranges: Array<{ fi: number; min: number; max: number }> = [];
     for (let fi = 0; fi < nf; fi++) {
-      let min = Infinity, max = -Infinity;
+      let min = Infinity,
+        max = -Infinity;
       for (const pt of data) {
         if (pt[fi] < min) min = pt[fi];
         if (pt[fi] > max) max = pt[fi];
@@ -78,8 +91,16 @@ export class IsolationForest {
     }
 
     if (ranges.length === 0) {
-      return { splitFeature: null, splitValue: null, featureMin: null, featureMax: null,
-               left: null, right: null, size: data.length, height: depth };
+      return {
+        splitFeature: null,
+        splitValue: null,
+        featureMin: null,
+        featureMax: null,
+        left: null,
+        right: null,
+        size: data.length,
+        height: depth,
+      };
     }
 
     // Weight feature selection by range width (favour informative features)
@@ -88,14 +109,17 @@ export class IsolationForest {
     let chosen = ranges[0];
     for (const r of ranges) {
       pick -= r.max - r.min;
-      if (pick <= 0) { chosen = r; break; }
+      if (pick <= 0) {
+        chosen = r;
+        break;
+      }
     }
 
     const { fi: splitFeature, min, max } = chosen;
     const splitValue = min + Math.random() * (max - min);
 
-    const left = data.filter(pt => pt[splitFeature] < splitValue);
-    const right = data.filter(pt => pt[splitFeature] >= splitValue);
+    const left = data.filter((pt) => pt[splitFeature] < splitValue);
+    const right = data.filter((pt) => pt[splitFeature] >= splitValue);
 
     return {
       splitFeature,
@@ -111,8 +135,16 @@ export class IsolationForest {
 
   // ── Path length ───────────────────────────────────────────────────────────
 
-  private pathLength(point: number[], node: IsolationTree, depth: number): number {
-    if (node.splitFeature === null || node.left === null || node.right === null) {
+  private pathLength(
+    point: number[],
+    node: IsolationTree,
+    depth: number,
+  ): number {
+    if (
+      node.splitFeature === null ||
+      node.left === null ||
+      node.right === null
+    ) {
       return depth + this.expectedPathLength(node.size);
     }
     return point[node.splitFeature] < node.splitValue!
@@ -123,7 +155,7 @@ export class IsolationForest {
   /** Expected path length for BST with n nodes (Euler–Mascheroni correction). */
   private expectedPathLength(n: number): number {
     if (n <= 1) return 0;
-    const H = Math.log(n - 1) + 0.5772156649015329;   // harmonic number approx
+    const H = Math.log(n - 1) + 0.5772156649015329; // harmonic number approx
     return 2 * H - (2 * (n - 1)) / n;
   }
 
@@ -145,7 +177,7 @@ export class IsolationForest {
     }
 
     // Compute threshold at the (1 - contamination) quantile
-    const scores = data.map(pt => this.rawScore(pt));
+    const scores = data.map((pt) => this.rawScore(pt));
     scores.sort((a, b) => a - b);
     const qi = Math.floor(scores.length * (1 - this.contamination));
     this.threshold = scores[Math.min(qi, scores.length - 1)] ?? 0.6;
@@ -155,7 +187,9 @@ export class IsolationForest {
   public rawScore(point: number[]): number {
     if (this.trees.length === 0) return 0.5;
     const c = this.expectedPathLength(this.maxSamples);
-    const avg = this.trees.reduce((s, t) => s + this.pathLength(point, t, 0), 0) / this.trees.length;
+    const avg =
+      this.trees.reduce((s, t) => s + this.pathLength(point, t, 0), 0) /
+      this.trees.length;
     return Math.pow(2, -avg / c);
   }
 
@@ -172,16 +206,20 @@ export class IsolationForest {
     return this.rawScore(point) > this.threshold;
   }
 
-  public getThreshold(): number { return this.threshold; }
-  public getNumFeatures(): number { return this.numFeatures; }
+  public getThreshold(): number {
+    return this.threshold;
+  }
+  public getNumFeatures(): number {
+    return this.numFeatures;
+  }
 
   /** Batch prediction for efficiency. */
   public predictBatch(points: number[][]): boolean[] {
-    return points.map(pt => this.predict(pt));
+    return points.map((pt) => this.predict(pt));
   }
 
   /** Batch scoring for efficiency. */
   public scoreBatch(points: number[][]): number[] {
-    return points.map(pt => this.anomalyScore(pt));
+    return points.map((pt) => this.anomalyScore(pt));
   }
 }

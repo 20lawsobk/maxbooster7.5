@@ -1,8 +1,8 @@
-import { useState, useEffect, type ImgHTMLAttributes } from 'react';
-import { Music } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, type ImgHTMLAttributes } from "react";
+import { Music } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const FALLBACK_SRC = '/placeholder.svg';
+const FALLBACK_SRC = "/placeholder.svg";
 
 interface SafeImgProps extends ImgHTMLAttributes<HTMLImageElement> {
   /**
@@ -23,12 +23,12 @@ interface SafeImgProps extends ImgHTMLAttributes<HTMLImageElement> {
    * Controls native lazy-loading.  Defaults to "lazy" so off-screen images
    * don't block the initial render.  Use "eager" for above-the-fold hero images.
    */
-  loading?: 'lazy' | 'eager' | 'auto';
+  loading?: "lazy" | "eager" | "auto";
   /**
    * Controls decoding hint.  Defaults to "async" so the browser can decode
    * off the main thread without stalling layout.
    */
-  decoding?: 'async' | 'sync' | 'auto';
+  decoding?: "async" | "sync" | "auto";
 }
 
 /**
@@ -45,8 +45,8 @@ export function SafeImg({
   iconFallback = false,
   fallbackClassName,
   className,
-  loading = 'lazy',
-  decoding = 'async',
+  loading = "lazy",
+  decoding = "async",
   ...props
 }: SafeImgProps) {
   const [imgSrc, setImgSrc] = useState<string | undefined>(src);
@@ -63,9 +63,9 @@ export function SafeImg({
     return (
       <div
         className={cn(
-          'flex items-center justify-center bg-muted text-muted-foreground',
+          "flex items-center justify-center bg-muted text-muted-foreground",
           fallbackClassName,
-          className
+          className,
         )}
         aria-label={alt}
         role="img"

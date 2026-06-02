@@ -25,34 +25,34 @@
  *   MAX_PENDING       Pending cap   (default: 10000)
  *   METRICS_PORT      Metrics HTTP  (default: 9053)
  */
-'use strict';
+"use strict";
 
-const dgram   = require('dgram');
-const net     = require('net');
-const http    = require('http');
-const https   = require('https');
-const { URL } = require('url');
+const dgram = require("dgram");
+const net = require("net");
+const http = require("http");
+const https = require("https");
+const { URL } = require("url");
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const DOH_URL      = process.env.DOH_URL           || 'http://localhost:5000/api/dns/query';
-const LISTEN_IP    = process.env.LISTEN_IP          || '0.0.0.0';
-const LISTEN_PORT  = parseInt(process.env.LISTEN_PORT       || '53',    10);
-const TIMEOUT_MS   = parseInt(process.env.QUERY_TIMEOUT_MS  || '5000',  10);
-const MAX_RETRIES  = parseInt(process.env.MAX_RETRIES        || '2',     10);
-const MAX_PENDING  = parseInt(process.env.MAX_PENDING        || '10000', 10);
-const METRICS_PORT = parseInt(process.env.METRICS_PORT       || '9053',  10);
+const DOH_URL = process.env.DOH_URL || "http://localhost:5000/api/dns/query";
+const LISTEN_IP = process.env.LISTEN_IP || "0.0.0.0";
+const LISTEN_PORT = parseInt(process.env.LISTEN_PORT || "53", 10);
+const TIMEOUT_MS = parseInt(process.env.QUERY_TIMEOUT_MS || "5000", 10);
+const MAX_RETRIES = parseInt(process.env.MAX_RETRIES || "2", 10);
+const MAX_PENDING = parseInt(process.env.MAX_PENDING || "10000", 10);
+const METRICS_PORT = parseInt(process.env.METRICS_PORT || "9053", 10);
 
-const dohUrl  = new URL(DOH_URL);
-const useHttps = dohUrl.protocol === 'https:';
-const httpLib  = useHttps ? https : http;
+const dohUrl = new URL(DOH_URL);
+const useHttps = dohUrl.protocol === "https:";
+const httpLib = useHttps ? https : http;
 
 // ── Metrics ───────────────────────────────────────────────────────────────────
 const metrics = {
-  queries:   0,   // total received
-  forwarded: 0,   // successfully forwarded to DoH
-  errors:    0,   // DoH errors / bad responses
-  timeouts:  0,   // per-query timeouts
-  retries:   0,   // retry attempts
+  queries: 0, // total received
+  forwarded: 0, // successfully forwarded to DoH
+  errors: 0, // DoH errors / bad responses
+  timeouts: 0, // per-query timeouts
+  retries: 0, // retry attempts
   startTime: Date.now(),
 };
 
@@ -68,13 +68,13 @@ function pendingKey(proto, addr, port, id) {
 function forwardToDoH(msgBuf, onResponse, onError, attempt = 0) {
   const opts = {
     hostname: dohUrl.hostname,
-    port:     dohUrl.port || (useHttps ? 443 : 80),
-    path:     dohUrl.pathname + dohUrl.search,
-    method:   'POST',
+    port: dohUrl.port || (useHttps ? 443 : 80),
+    path: dohUrl.pathname + dohUrl.search,
+    method: "POST",
     headers: {
-      'Content-Type':   'application/dns-message',
-      'Accept':         'application/dns-message',
-      'Content-Length': msgBuf.length,
+      "Content-Type": "application/dns-message",
+      Accept: "application/dns-message",
+      "Content-Length": msgBuf.length,
     },
     timeout: TIMEOUT_MS,
   };
@@ -85,7 +85,10 @@ function forwardToDoH(msgBuf, onResponse, onError, attempt = 0) {
       if (attempt < MAX_RETRIES) {
         metrics.retries++;
         const delay = Math.min(100 * 2 ** attempt, 1000);
-        setTimeout(() => forwardToDoH(msgBuf, onResponse, onError, attempt + 1), delay);
+        setTimeout(
+          () => forwardToDoH(msgBuf, onResponse, onError, attempt + 1),
+          delay,
+        );
       } else {
         onError(new Error(`DoH ${res.statusCode}`));
       }
@@ -93,25 +96,28 @@ function forwardToDoH(msgBuf, onResponse, onError, attempt = 0) {
       return;
     }
     const chunks = [];
-    res.on('data', c => chunks.push(c));
-    res.on('end', () => {
+    res.on("data", (c) => chunks.push(c));
+    res.on("end", () => {
       metrics.forwarded++;
       onResponse(Buffer.concat(chunks));
     });
   });
 
-  req.on('error', (err) => {
+  req.on("error", (err) => {
     metrics.errors++;
     if (attempt < MAX_RETRIES) {
       metrics.retries++;
       const delay = Math.min(100 * 2 ** attempt, 1000);
-      setTimeout(() => forwardToDoH(msgBuf, onResponse, onError, attempt + 1), delay);
+      setTimeout(
+        () => forwardToDoH(msgBuf, onResponse, onError, attempt + 1),
+        delay,
+      );
     } else {
       onError(err);
     }
   });
 
-  req.on('timeout', () => req.destroy(new Error('DoH request timeout')));
+  req.on("timeout", () => req.destroy(new Error("DoH request timeout")));
   req.write(msgBuf);
   req.end();
 }
@@ -121,15 +127,15 @@ function makeServfail(queryBuf) {
   if (queryBuf.length < 2) return queryBuf;
   const resp = Buffer.from(queryBuf);
   // Set QR=1, RCODE=2 (SERVFAIL)
-  resp[2] = (resp[2] | 0x80) & 0xFF;
-  resp[3] = (resp[3] & 0xF0) | 0x02;
+  resp[2] = (resp[2] | 0x80) & 0xff;
+  resp[3] = (resp[3] & 0xf0) | 0x02;
   return resp;
 }
 
 // ── UDP server ────────────────────────────────────────────────────────────────
-const udpServer = dgram.createSocket({ type: 'udp4', reuseAddr: true });
+const udpServer = dgram.createSocket({ type: "udp4", reuseAddr: true });
 
-udpServer.on('message', (msg, rinfo) => {
+udpServer.on("message", (msg, rinfo) => {
   if (msg.length < 12) return;
   metrics.queries++;
 
@@ -139,8 +145,8 @@ udpServer.on('message', (msg, rinfo) => {
     return;
   }
 
-  const id   = msg.readUInt16BE(0);
-  const key  = pendingKey('udp', rinfo.address, rinfo.port, id);
+  const id = msg.readUInt16BE(0);
+  const key = pendingKey("udp", rinfo.address, rinfo.port, id);
 
   const timer = setTimeout(() => {
     if (pending.delete(key)) {
@@ -153,7 +159,8 @@ udpServer.on('message', (msg, rinfo) => {
 
   pending.set(key, { timer });
 
-  forwardToDoH(msg,
+  forwardToDoH(
+    msg,
     (respBuf) => {
       const entry = pending.get(key);
       if (!entry) return;
@@ -170,13 +177,13 @@ udpServer.on('message', (msg, rinfo) => {
       pending.delete(key);
       const sf = makeServfail(msg);
       udpServer.send(sf, rinfo.port, rinfo.address);
-    }
+    },
   );
 });
 
-udpServer.on('error', (err) => {
-  console.error('[bridge:udp] error:', err.message);
-  if (err.code !== 'EADDRINUSE') {
+udpServer.on("error", (err) => {
+  console.error("[bridge:udp] error:", err.message);
+  if (err.code !== "EADDRINUSE") {
     // Rebind after transient errors
     setTimeout(() => udpServer.bind(LISTEN_PORT, LISTEN_IP), 1000);
   }
@@ -194,7 +201,7 @@ const tcpServer = net.createServer((socket) => {
   let msgBuf = Buffer.alloc(0);
   let expectedLen = -1;
 
-  socket.on('data', (chunk) => {
+  socket.on("data", (chunk) => {
     if (expectedLen === -1) {
       lenBuf = Buffer.concat([lenBuf, chunk]);
       if (lenBuf.length < 2) return;
@@ -209,7 +216,8 @@ const tcpServer = net.createServer((socket) => {
     const query = msgBuf.slice(0, expectedLen);
     metrics.queries++;
 
-    forwardToDoH(query,
+    forwardToDoH(
+      query,
       (respBuf) => {
         if (socket.destroyed) return;
         const lenHeader = Buffer.alloc(2);
@@ -226,12 +234,16 @@ const tcpServer = net.createServer((socket) => {
         lh.writeUInt16BE(sf.length, 0);
         socket.write(Buffer.concat([lh, sf]));
         socket.end();
-      }
+      },
     );
   });
 
-  socket.on('timeout', () => { socket.destroy(); });
-  socket.on('error', () => { socket.destroy(); });
+  socket.on("timeout", () => {
+    socket.destroy();
+  });
+  socket.on("error", () => {
+    socket.destroy();
+  });
 });
 
 tcpServer.listen(LISTEN_PORT, LISTEN_IP, () => {
@@ -239,26 +251,32 @@ tcpServer.listen(LISTEN_PORT, LISTEN_IP, () => {
   console.log(`[bridge:tcp] Listening ${a.address}:${a.port} → ${DOH_URL}`);
 });
 
-tcpServer.on('error', (err) => {
-  console.error('[bridge:tcp] error:', err.message);
+tcpServer.on("error", (err) => {
+  console.error("[bridge:tcp] error:", err.message);
 });
 
 // ── Metrics / health HTTP endpoint ────────────────────────────────────────────
 const metricsServer = http.createServer((req, res) => {
-  if (req.url === '/metrics' || req.url === '/health' || req.url === '/') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      ok:           true,
-      uptime:       ((Date.now() - metrics.startTime) / 1000).toFixed(1),
-      queries:      metrics.queries,
-      forwarded:    metrics.forwarded,
-      errors:       metrics.errors,
-      timeouts:     metrics.timeouts,
-      retries:      metrics.retries,
-      pendingNow:   pending.size,
-      dohEndpoint:  DOH_URL,
-      listenPort:   LISTEN_PORT,
-    }, null, 2));
+  if (req.url === "/metrics" || req.url === "/health" || req.url === "/") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify(
+        {
+          ok: true,
+          uptime: ((Date.now() - metrics.startTime) / 1000).toFixed(1),
+          queries: metrics.queries,
+          forwarded: metrics.forwarded,
+          errors: metrics.errors,
+          timeouts: metrics.timeouts,
+          retries: metrics.retries,
+          pendingNow: pending.size,
+          dohEndpoint: DOH_URL,
+          listenPort: LISTEN_PORT,
+        },
+        null,
+        2,
+      ),
+    );
   } else {
     res.writeHead(404);
     res.end();
@@ -275,7 +293,7 @@ setInterval(() => {
   const uptime = ((now - metrics.startTime) / 1000 / 60).toFixed(1);
   console.log(
     `[bridge] uptime=${uptime}m queries=${metrics.queries} errors=${metrics.errors} ` +
-    `timeouts=${metrics.timeouts} pending=${pending.size}`
+      `timeouts=${metrics.timeouts} pending=${pending.size}`,
   );
 }, 60_000);
 
@@ -292,13 +310,13 @@ function shutdown(sig) {
   pending.clear();
   process.exit(0);
 }
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT',  () => shutdown('SIGINT'));
-process.on('uncaughtException', (err) => {
-  console.error('[bridge] uncaughtException:', err.message);
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("uncaughtException", (err) => {
+  console.error("[bridge] uncaughtException:", err.message);
   metrics.errors++;
 });
-process.on('unhandledRejection', (reason) => {
-  console.error('[bridge] unhandledRejection:', reason);
+process.on("unhandledRejection", (reason) => {
+  console.error("[bridge] unhandledRejection:", reason);
   metrics.errors++;
 });

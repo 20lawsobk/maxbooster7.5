@@ -1,17 +1,20 @@
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
 // Call the Python AI sidecar directly (loopback, no CSRF/auth layer needed).
 // Routing through the main Express server (/api/ai-service) would hit the CSRF
 // middleware and fail because server-to-server fetches carry no CSRF cookie.
-const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || '9878', 10);
-const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
+const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || "9878", 10);
+const AI_MODEL_URL =
+  process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
 const TIMEOUT_MS = 120_000; // raised: audio analysis, transcription, and heavy ML inference can exceed 30s
 
 // Kept for any callers that still pass through Express; unused when calling the
 // sidecar directly since the sidecar binds to 127.0.0.1 only.
-const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || '';
+const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || "";
 function internalAuthHeaders(): Record<string, string> {
-  return _INTERNAL_SECRET ? { Authorization: `Bearer ${_INTERNAL_SECRET}` } : {};
+  return _INTERNAL_SECRET
+    ? { Authorization: `Bearer ${_INTERNAL_SECRET}` }
+    : {};
 }
 
 interface AIModelResponse<T> {
@@ -20,40 +23,52 @@ interface AIModelResponse<T> {
   error?: string;
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = TIMEOUT_MS): Promise<Response> {
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = TIMEOUT_MS,
+): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
     return response;
   } finally {
     clearTimeout(timeout);
   }
 }
 
-async function callAIModel<T>(endpoint: string, body: Record<string, unknown>): Promise<AIModelResponse<T>> {
+async function callAIModel<T>(
+  endpoint: string,
+  body: Record<string, unknown>,
+): Promise<AIModelResponse<T>> {
   try {
     const response = await fetchWithTimeout(`${AI_MODEL_URL}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...internalAuthHeaders() },
       body: JSON.stringify(body),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.warn(`[PythonAI] ${endpoint} returned ${response.status}: ${errorText}`);
+      logger.warn(
+        `[PythonAI] ${endpoint} returned ${response.status}: ${errorText}`,
+      );
       return { success: false, error: `AI Model returned ${response.status}` };
     }
 
-    const data = await response.json() as T;
+    const data = (await response.json()) as T;
     return { success: true, data };
   } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
+    if (err instanceof Error && err.name === "AbortError") {
       logger.warn(`[PythonAI] ${endpoint} timed out after ${TIMEOUT_MS}ms`);
-      return { success: false, error: 'AI Model request timed out' };
+      return { success: false, error: "AI Model request timed out" };
     }
     logger.warn({ err: err }, `[PythonAI] ${endpoint} failed:`);
-    return { success: false, error: 'AI Model service unavailable' };
+    return { success: false, error: "AI Model service unavailable" };
   }
 }
 
@@ -164,16 +179,24 @@ export class PythonAIService {
   async isAvailable(): Promise<boolean> {
     const now = Date.now();
     if (this.available === true) return true;
-    if (this.available === false && now - this.lastCheckMs < this.RECHECK_INTERVAL_MS) return false;
+    if (
+      this.available === false &&
+      now - this.lastCheckMs < this.RECHECK_INTERVAL_MS
+    )
+      return false;
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/health`, {
-        method: 'GET',
-        headers: { ...internalAuthHeaders() },
-      }, 5000);
+      const response = await fetchWithTimeout(
+        `${AI_MODEL_URL}/health`,
+        {
+          method: "GET",
+          headers: { ...internalAuthHeaders() },
+        },
+        5000,
+      );
       this.available = response.ok;
       this.lastCheckMs = now;
       if (this.available) {
-        logger.info('[PythonAI] AI Content Model service is available');
+        logger.info("[PythonAI] AI Content Model service is available");
       }
       return this.available;
     } catch {
@@ -188,20 +211,40 @@ export class PythonAIService {
     this.lastCheckMs = 0;
   }
 
-  async generateScript(idea: string, platform: string, goal = 'growth', tone = 'energetic'): Promise<AIModelResponse<ScriptResult>> {
-    return callAIModel<ScriptResult>('/generate/script', { idea, platform, goal, tone });
+  async generateScript(
+    idea: string,
+    platform: string,
+    goal = "growth",
+    tone = "energetic",
+  ): Promise<AIModelResponse<ScriptResult>> {
+    return callAIModel<ScriptResult>("/generate/script", {
+      idea,
+      platform,
+      goal,
+      tone,
+    });
   }
 
-  async generateContent(platform: string, topic: string, tone = 'energetic', goal = 'growth', includeHashtags = true, genre?: string, artist?: string, track?: string, contentType?: string): Promise<AIModelResponse<ContentResult>> {
-    return callAIModel<ContentResult>('/generate/content', {
+  async generateContent(
+    platform: string,
+    topic: string,
+    tone = "energetic",
+    goal = "growth",
+    includeHashtags = true,
+    genre?: string,
+    artist?: string,
+    track?: string,
+    contentType?: string,
+  ): Promise<AIModelResponse<ContentResult>> {
+    return callAIModel<ContentResult>("/generate/content", {
       platform,
       topic,
       tone,
       goal,
-      genre:         genre       || undefined,
-      artist:        artist      || undefined,
-      track:         track       || undefined,
-      content_type:  contentType || undefined,
+      genre: genre || undefined,
+      artist: artist || undefined,
+      track: track || undefined,
+      content_type: contentType || undefined,
       include_hashtags: includeHashtags,
       include_distribution: true,
     });
@@ -220,23 +263,31 @@ export class PythonAIService {
     format?: string;
     url?: string;
   }): Promise<AIModelResponse<MultiPlatformResult>> {
-    return callAIModel<MultiPlatformResult>('/generate/multi-platform', {
-      platforms:       options.platforms,
-      topic:           options.topic,
-      tone:            options.tone      || 'energetic',
-      goal:            options.goal      || 'growth',
-      genre:           options.genre     || undefined,
-      artist:          options.artist    || undefined,
-      track:           options.track     || undefined,
-      content_type:    options.contentType || undefined,
+    return callAIModel<MultiPlatformResult>("/generate/multi-platform", {
+      platforms: options.platforms,
+      topic: options.topic,
+      tone: options.tone || "energetic",
+      goal: options.goal || "growth",
+      genre: options.genre || undefined,
+      artist: options.artist || undefined,
+      track: options.track || undefined,
+      content_type: options.contentType || undefined,
       target_audience: options.targetAudience,
-      format:          options.format    || 'text',
-      url:             options.url,
+      format: options.format || "text",
+      url: options.url,
     });
   }
 
-  async generateDistribution(script: string, platform: string, goal = 'growth'): Promise<AIModelResponse<DistributionResult>> {
-    return callAIModel<DistributionResult>('/generate/distribution', { script, platform, goal });
+  async generateDistribution(
+    script: string,
+    platform: string,
+    goal = "growth",
+  ): Promise<AIModelResponse<DistributionResult>> {
+    return callAIModel<DistributionResult>("/generate/distribution", {
+      script,
+      platform,
+      goal,
+    });
   }
 
   async createBoostSheet(options: {
@@ -247,34 +298,44 @@ export class PythonAIService {
     goal?: string;
     tone?: string;
   }): Promise<AIModelResponse<BoostSheetResult>> {
-    return callAIModel<BoostSheetResult>('/boostsheet/create', {
+    return callAIModel<BoostSheetResult>("/boostsheet/create", {
       platform: options.platform,
       content: options.content,
-      format: options.format || 'text',
+      format: options.format || "text",
       url: options.url,
-      goal: options.goal || 'growth',
-      tone: options.tone || 'default',
+      goal: options.goal || "growth",
+      tone: options.tone || "default",
     });
   }
 
-  async getBoostSheet(sheetId: string): Promise<AIModelResponse<BoostSheetResult>> {
+  async getBoostSheet(
+    sheetId: string,
+  ): Promise<AIModelResponse<BoostSheetResult>> {
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/boostsheet/${sheetId}`, {
-        method: 'GET',
-        headers: { ...internalAuthHeaders() },
-      });
+      const response = await fetchWithTimeout(
+        `${AI_MODEL_URL}/boostsheet/${sheetId}`,
+        {
+          method: "GET",
+          headers: { ...internalAuthHeaders() },
+        },
+      );
       if (!response.ok) {
         return { success: false, error: `Not found: ${response.status}` };
       }
-      const data = await response.json() as BoostSheetResult;
+      const data = (await response.json()) as BoostSheetResult;
       return { success: true, data };
     } catch (err) {
-      return { success: false, error: 'AI Model service unavailable' };
+      return { success: false, error: "AI Model service unavailable" };
     }
   }
 
-  async optimize(sheetId: string, performance: Record<string, number>, platform = 'tiktok', goal = 'growth'): Promise<AIModelResponse<unknown>> {
-    return callAIModel<unknown>('/optimize', {
+  async optimize(
+    sheetId: string,
+    performance: Record<string, number>,
+    platform = "tiktok",
+    goal = "growth",
+  ): Promise<AIModelResponse<unknown>> {
+    return callAIModel<unknown>("/optimize", {
       sheet_id: sheetId,
       performance,
       platform,
@@ -299,22 +360,22 @@ export class PythonAIService {
     tone?: string;
     quality?: string;
   }): Promise<AIModelResponse<VideoResult>> {
-    return callAIModel<VideoResult>('/generate/video', {
-      hook: options.hook || '',
-      body: options.body || '',
-      cta: options.cta || '',
-      platform: options.platform || 'tiktok',
+    return callAIModel<VideoResult>("/generate/video", {
+      hook: options.hook || "",
+      body: options.body || "",
+      cta: options.cta || "",
+      platform: options.platform || "tiktok",
       aspect_ratio: options.aspect_ratio,
-      template: options.template || 'cinematic_promo',
+      template: options.template || "cinematic_promo",
       duration: options.duration || 10.0,
       bg_color: options.bg_color,
       text_color: options.text_color,
       accent_color: options.accent_color,
       artist_name: options.artist_name,
       topic: options.topic,
-      goal: options.goal || 'growth',
-      tone: options.tone || 'energetic',
-      quality: options.quality || 'cinematic',
+      goal: options.goal || "growth",
+      tone: options.tone || "energetic",
+      quality: options.quality || "cinematic",
     });
   }
 
@@ -333,16 +394,16 @@ export class PythonAIService {
     keywords?: string[];
     description?: string;
   }): Promise<AIModelResponse<unknown>> {
-    return callAIModel('/generate/visual-spec', {
-      topic:         options.topic,
-      platform:      options.platform || 'instagram',
-      tone:          options.tone || 'energetic',
-      artist:        options.artist || options.artist_name || '',
-      track:         options.track || '',
-      genre:         options.genre || '',
-      thumbnail_url: options.thumbnail_url || '',
-      keywords:      options.keywords || [],
-      description:   options.description || '',
+    return callAIModel("/generate/visual-spec", {
+      topic: options.topic,
+      platform: options.platform || "instagram",
+      tone: options.tone || "energetic",
+      artist: options.artist || options.artist_name || "",
+      track: options.track || "",
+      genre: options.genre || "",
+      thumbnail_url: options.thumbnail_url || "",
+      keywords: options.keywords || [],
+      description: options.description || "",
     });
   }
 
@@ -353,49 +414,65 @@ export class PythonAIService {
     goal?: string;
     artist_name?: string;
     style?: string;
-  }): Promise<AIModelResponse<{
-    success: boolean;
-    url: string;
-    width: number;
-    height: number;
-    format: string;
-    platform: string;
-    prompt_used: string;
-    color_scheme: { primary: string; secondary: string; accent: string; background: string };
-    processing_time_ms: number;
-  }>> {
-    return callAIModel('/generate/image', {
+  }): Promise<
+    AIModelResponse<{
+      success: boolean;
+      url: string;
+      width: number;
+      height: number;
+      format: string;
+      platform: string;
+      prompt_used: string;
+      color_scheme: {
+        primary: string;
+        secondary: string;
+        accent: string;
+        background: string;
+      };
+      processing_time_ms: number;
+    }>
+  > {
+    return callAIModel("/generate/image", {
       topic: options.topic,
-      platform: options.platform || 'instagram',
-      tone: options.tone || 'energetic',
-      goal: options.goal || 'growth',
+      platform: options.platform || "instagram",
+      tone: options.tone || "energetic",
+      goal: options.goal || "growth",
       artist_name: options.artist_name,
-      style: options.style || 'modern',
+      style: options.style || "modern",
     });
   }
 
   async startVideoJob(options: {
-    hook?: string; body?: string; cta?: string; topic?: string;
-    platform?: string; aspect_ratio?: string; template?: string;
-    duration?: number; artist_name?: string; genre?: string;
-    tone?: string; goal?: string; quality?: string;
+    hook?: string;
+    body?: string;
+    cta?: string;
+    topic?: string;
+    platform?: string;
+    aspect_ratio?: string;
+    template?: string;
+    duration?: number;
+    artist_name?: string;
+    genre?: string;
+    tone?: string;
+    goal?: string;
+    quality?: string;
     user_audio_path?: string;
     voiceover?: boolean;
   }): Promise<AIModelResponse<{ job_id: string; status: string }>> {
-    return callAIModel<{ job_id: string; status: string }>('/generate-video', {
-      hook: options.hook || '',
-      body: options.body || '',
-      cta: options.cta || '',
+    return callAIModel<{ job_id: string; status: string }>("/generate-video", {
+      hook: options.hook || "",
+      body: options.body || "",
+      cta: options.cta || "",
       topic: options.topic,
-      platform: options.platform || 'tiktok',
+      platform: options.platform || "tiktok",
       aspect_ratio: options.aspect_ratio,
-      template: options.template || 'cinematic_promo',
+      template: options.template || "cinematic_promo",
       duration: options.duration || 10,
       artist_name: options.artist_name,
-      genre: options.genre || 'hip-hop',
-      tone: options.tone || 'energetic',
-      goal: options.goal || 'growth',
-      quality: options.quality || 'cinematic',
+      genre: options.genre || "hip-hop",
+      tone: options.tone || "energetic",
+      goal: options.goal || "growth",
+      quality: options.quality || "cinematic",
       user_audio_path: options.user_audio_path || undefined,
       voiceover: options.voiceover || false,
     });
@@ -403,59 +480,90 @@ export class PythonAIService {
 
   async getVideoJobStatus(jobId: string): Promise<AIModelResponse<unknown>> {
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/video-job/${jobId}`, {
-        method: 'GET',
-        headers: { ...internalAuthHeaders() },
-      }, 10000);
+      const response = await fetchWithTimeout(
+        `${AI_MODEL_URL}/video-job/${jobId}`,
+        {
+          method: "GET",
+          headers: { ...internalAuthHeaders() },
+        },
+        10000,
+      );
       if (!response.ok) {
-        return { success: false, error: `Job status check failed: ${response.status}` };
+        return {
+          success: false,
+          error: `Job status check failed: ${response.status}`,
+        };
       }
       const data = await response.json();
       return { success: true, data };
     } catch {
-      return { success: false, error: 'AI Model service unavailable' };
+      return { success: false, error: "AI Model service unavailable" };
     }
   }
 
   async getCinematicTemplates(): Promise<AIModelResponse<unknown>> {
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/cinematic-templates`, {
-        method: 'GET',
-        headers: { ...internalAuthHeaders() },
-      }, 10000);
+      const response = await fetchWithTimeout(
+        `${AI_MODEL_URL}/cinematic-templates`,
+        {
+          method: "GET",
+          headers: { ...internalAuthHeaders() },
+        },
+        10000,
+      );
       if (!response.ok) {
-        return { success: false, error: `Failed to fetch templates: ${response.status}` };
+        return {
+          success: false,
+          error: `Failed to fetch templates: ${response.status}`,
+        };
       }
       const data = await response.json();
       return { success: true, data };
     } catch {
-      return { success: false, error: 'AI Model service unavailable' };
+      return { success: false, error: "AI Model service unavailable" };
     }
   }
 
   async checkHealth(): Promise<AIModelResponse<HealthResult>> {
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/health`, {
-        method: 'GET',
-        headers: { ...internalAuthHeaders() },
-      }, 5000);
+      const response = await fetchWithTimeout(
+        `${AI_MODEL_URL}/health`,
+        {
+          method: "GET",
+          headers: { ...internalAuthHeaders() },
+        },
+        5000,
+      );
       if (!response.ok) {
-        return { success: false, error: `Health check failed: ${response.status}` };
+        return {
+          success: false,
+          error: `Health check failed: ${response.status}`,
+        };
       }
-      const data = await response.json() as HealthResult;
+      const data = (await response.json()) as HealthResult;
       return { success: true, data };
     } catch {
-      return { success: false, error: 'AI Model service unavailable' };
+      return { success: false, error: "AI Model service unavailable" };
     }
   }
 
-  async analyzeAudio(filePath: string, detailed = false): Promise<AIModelResponse<unknown>> {
+  async analyzeAudio(
+    filePath: string,
+    detailed = false,
+  ): Promise<AIModelResponse<unknown>> {
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/audio`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
-        body: JSON.stringify({ file_path: filePath, detailed }),
-      }, 60000);
+      const response = await fetchWithTimeout(
+        `${AI_MODEL_URL}/analyze/audio`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...internalAuthHeaders(),
+          },
+          body: JSON.stringify({ file_path: filePath, detailed }),
+        },
+        60000,
+      );
       if (!response.ok) {
         const err = await response.text();
         return { success: false, error: `Audio analysis failed: ${err}` };
@@ -469,27 +577,38 @@ export class PythonAIService {
 
   async getAudioFeatureInfo(): Promise<AIModelResponse<unknown>> {
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/audio-features`, {
-        method: 'GET',
-        headers: { ...internalAuthHeaders() },
-      }, 5000);
+      const response = await fetchWithTimeout(
+        `${AI_MODEL_URL}/analyze/audio-features`,
+        {
+          method: "GET",
+          headers: { ...internalAuthHeaders() },
+        },
+        5000,
+      );
       if (!response.ok) {
-        return { success: false, error: 'Failed to get audio feature info' };
+        return { success: false, error: "Failed to get audio feature info" };
       }
       const data = await response.json();
       return { success: true, data };
     } catch {
-      return { success: false, error: 'AI Model service unavailable' };
+      return { success: false, error: "AI Model service unavailable" };
     }
   }
 
   async transcribeToMidi(filePath: string): Promise<AIModelResponse<unknown>> {
     try {
-      const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/transcribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
-        body: JSON.stringify({ file_path: filePath }),
-      }, 120000);
+      const response = await fetchWithTimeout(
+        `${AI_MODEL_URL}/analyze/transcribe`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...internalAuthHeaders(),
+          },
+          body: JSON.stringify({ file_path: filePath }),
+        },
+        120000,
+      );
       if (!response.ok) {
         const err = await response.text();
         return { success: false, error: `MIDI transcription failed: ${err}` };
@@ -497,7 +616,10 @@ export class PythonAIService {
       const data = await response.json();
       return { success: true, data };
     } catch (e) {
-      return { success: false, error: `MIDI transcription error: ${e.message}` };
+      return {
+        success: false,
+        error: `MIDI transcription error: ${e.message}`,
+      };
     }
   }
 }

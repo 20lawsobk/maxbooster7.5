@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect, useCallback } from "react";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import {
   Smartphone,
   Monitor,
@@ -17,11 +17,11 @@ import {
   Clock,
   Settings,
   Trash2,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface DeviceInfo {
   deviceId: string;
-  platform: 'web' | 'android' | 'desktop';
+  platform: "web" | "android" | "desktop";
   appVersion: string;
   osInfo: string;
   deviceName: string;
@@ -59,15 +59,15 @@ const platformIcons: Record<string, React.ReactNode> = {
 };
 
 const platformLabels: Record<string, string> = {
-  web: 'Web',
-  android: 'Android',
-  desktop: 'Desktop',
+  web: "Web",
+  android: "Android",
+  desktop: "Desktop",
 };
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Just now';
+  if (minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
@@ -92,7 +92,7 @@ export default function CrossPlatformSync() {
 
   const fetchDevices = useCallback(async () => {
     try {
-      const res = await fetch('/api/platform-sync/devices');
+      const res = await fetch("/api/platform-sync/devices");
       if (res.ok) {
         const data = await res.json();
         setDevices(data.devices || []);
@@ -104,7 +104,7 @@ export default function CrossPlatformSync() {
 
   const fetchVersions = useCallback(async () => {
     try {
-      const res = await fetch('/api/platform-sync/version/latest');
+      const res = await fetch("/api/platform-sync/version/latest");
       if (res.ok) {
         const data = await res.json();
         setVersions(data.versions || {});
@@ -116,7 +116,7 @@ export default function CrossPlatformSync() {
 
   const fetchSyncStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/platform-sync/sync/status');
+      const res = await fetch("/api/platform-sync/sync/status");
       if (res.ok) {
         const data = await res.json();
         setSyncStatuses(data.statuses || []);
@@ -128,34 +128,36 @@ export default function CrossPlatformSync() {
 
   const autoRegisterWebDevice = useCallback(async () => {
     try {
-      let storedId = localStorage.getItem('maxbooster_device_id');
+      let storedId = localStorage.getItem("maxbooster_device_id");
       if (!storedId) {
         storedId = `web-${crypto.randomUUID?.() || Date.now().toString(36)}`;
-        localStorage.setItem('maxbooster_device_id', storedId);
+        localStorage.setItem("maxbooster_device_id", storedId);
       }
       const ua = navigator.userAgent;
-      let osInfo = 'Unknown OS';
-      if (ua.includes('Win')) osInfo = 'Windows';
-      else if (ua.includes('Mac')) osInfo = 'macOS';
-      else if (ua.includes('Linux')) osInfo = 'Linux';
-      else if (ua.includes('Android')) osInfo = 'Android';
-      else if (ua.includes('iPhone') || ua.includes('iPad')) osInfo = 'iOS';
+      let osInfo = "Unknown OS";
+      if (ua.includes("Win")) osInfo = "Windows";
+      else if (ua.includes("Mac")) osInfo = "macOS";
+      else if (ua.includes("Linux")) osInfo = "Linux";
+      else if (ua.includes("Android")) osInfo = "Android";
+      else if (ua.includes("iPhone") || ua.includes("iPad")) osInfo = "iOS";
 
       const csrfToken = getCsrfTokenFromCookie();
-      await fetch('/api/platform-sync/devices/register', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
+      await fetch("/api/platform-sync/devices/register", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
         body: JSON.stringify({
           deviceId: storedId,
-          platform: 'web',
-          appVersion: '3.0.0',
+          platform: "web",
+          appVersion: "3.0.0",
           osInfo,
           deviceName: `${osInfo} Browser`,
         }),
       });
-    } catch {
-    }
+    } catch {}
   }, []);
 
   const loadAll = useCallback(async () => {
@@ -173,57 +175,81 @@ export default function CrossPlatformSync() {
     try {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/platform-sync/devices/${deviceId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+        method: "DELETE",
+        credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       });
       if (res.ok) {
-        toast({ title: 'Device removed' });
+        toast({ title: "Device removed" });
         await fetchDevices();
       } else {
         const data = await res.json();
-        toast({ title: 'Error', description: data.error || 'Failed to remove device', variant: 'destructive' });
+        toast({
+          title: "Error",
+          description: data.error || "Failed to remove device",
+          variant: "destructive",
+        });
       }
     } catch {
-      toast({ title: 'Error', description: 'Failed to remove device', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to remove device",
+        variant: "destructive",
+      });
     }
   };
 
   const handleSyncNow = async () => {
     setSyncing(true);
     try {
-      const deviceId = localStorage.getItem('maxbooster_device_id') || `web-${Date.now()}`;
+      const deviceId =
+        localStorage.getItem("maxbooster_device_id") || `web-${Date.now()}`;
       const changes: Record<string, unknown> = {};
       if (syncSettings.preferences) changes.preferences = {};
       if (syncSettings.theme) changes.theme = undefined;
       if (syncSettings.language) changes.language = undefined;
-      if (syncSettings.sessionState) changes.sessionState = { currentPage: window.location.pathname };
+      if (syncSettings.sessionState)
+        changes.sessionState = { currentPage: window.location.pathname };
       if (syncSettings.notifications) changes.notificationReadIds = [];
 
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/platform-sync/sync/push', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
+      const res = await fetch("/api/platform-sync/sync/push", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
         body: JSON.stringify({ deviceId, changes }),
       });
 
       if (res.ok) {
-        toast({ title: 'Sync complete', description: 'All devices synced successfully' });
+        toast({
+          title: "Sync complete",
+          description: "All devices synced successfully",
+        });
         await fetchSyncStatus();
       } else {
         const data = await res.json();
-        toast({ title: 'Sync failed', description: data.error || 'Failed to sync', variant: 'destructive' });
+        toast({
+          title: "Sync failed",
+          description: data.error || "Failed to sync",
+          variant: "destructive",
+        });
       }
     } catch {
-      toast({ title: 'Sync failed', description: 'Network error', variant: 'destructive' });
+      toast({
+        title: "Sync failed",
+        description: "Network error",
+        variant: "destructive",
+      });
     } finally {
       setSyncing(false);
     }
   };
 
   const getSyncStatusForDevice = (deviceId: string): SyncStatus | undefined => {
-    return syncStatuses.find(s => s.deviceId === deviceId);
+    return syncStatuses.find((s) => s.deviceId === deviceId);
   };
 
   if (loading) {
@@ -242,12 +268,18 @@ export default function CrossPlatformSync() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight dark:text-white">Cross-Platform Sync</h2>
-          <p className="text-muted-foreground">Manage your devices and sync settings across all platforms</p>
+          <h2 className="text-2xl font-bold tracking-tight dark:text-white">
+            Cross-Platform Sync
+          </h2>
+          <p className="text-muted-foreground">
+            Manage your devices and sync settings across all platforms
+          </p>
         </div>
         <Button onClick={handleSyncNow} disabled={syncing}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Syncing...' : 'Sync Now'}
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`}
+          />
+          {syncing ? "Syncing..." : "Sync Now"}
         </Button>
       </div>
 
@@ -263,11 +295,13 @@ export default function CrossPlatformSync() {
             <div className="text-center py-8 text-muted-foreground">
               <Monitor className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p className="font-medium">No devices registered</p>
-              <p className="text-sm mt-1">Devices will appear here when they connect</p>
+              <p className="text-sm mt-1">
+                Devices will appear here when they connect
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {devices.map(device => {
+              {devices.map((device) => {
                 const status = getSyncStatusForDevice(device.deviceId);
                 return (
                   <div
@@ -280,7 +314,9 @@ export default function CrossPlatformSync() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium dark:text-white">{device.deviceName}</span>
+                          <span className="font-medium dark:text-white">
+                            {device.deviceName}
+                          </span>
                           <Badge variant="secondary" className="text-xs">
                             {platformLabels[device.platform] || device.platform}
                           </Badge>
@@ -289,7 +325,9 @@ export default function CrossPlatformSync() {
                               Online
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-xs">Offline</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              Offline
+                            </Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
@@ -335,13 +373,33 @@ export default function CrossPlatformSync() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {([
-              { key: 'preferences' as const, label: 'User Preferences', desc: 'Sync app preferences across devices' },
-              { key: 'theme' as const, label: 'Theme', desc: 'Keep theme consistent on all platforms' },
-              { key: 'language' as const, label: 'Language', desc: 'Sync language settings' },
-              { key: 'sessionState' as const, label: 'Session State', desc: 'Resume where you left off on any device' },
-              { key: 'notifications' as const, label: 'Notification Read Status', desc: 'Sync read/unread notifications' },
-            ]).map(item => (
+            {[
+              {
+                key: "preferences" as const,
+                label: "User Preferences",
+                desc: "Sync app preferences across devices",
+              },
+              {
+                key: "theme" as const,
+                label: "Theme",
+                desc: "Keep theme consistent on all platforms",
+              },
+              {
+                key: "language" as const,
+                label: "Language",
+                desc: "Sync language settings",
+              },
+              {
+                key: "sessionState" as const,
+                label: "Session State",
+                desc: "Resume where you left off on any device",
+              },
+              {
+                key: "notifications" as const,
+                label: "Notification Read Status",
+                desc: "Sync read/unread notifications",
+              },
+            ].map((item) => (
               <div
                 key={item.key}
                 className="flex items-center justify-between py-2"
@@ -353,7 +411,10 @@ export default function CrossPlatformSync() {
                 <Switch
                   checked={syncSettings[item.key]}
                   onCheckedChange={(checked) =>
-                    setSyncSettings(prev => ({ ...prev, [item.key]: checked }))
+                    setSyncSettings((prev) => ({
+                      ...prev,
+                      [item.key]: checked,
+                    }))
                   }
                 />
               </div>
@@ -371,7 +432,7 @@ export default function CrossPlatformSync() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {(['web', 'android', 'desktop'] as const).map(platform => {
+            {(["web", "android", "desktop"] as const).map((platform) => {
               const v = versions[platform];
               if (!v) return null;
               return (
@@ -384,7 +445,9 @@ export default function CrossPlatformSync() {
                       {platformIcons[platform]}
                     </div>
                     <div>
-                      <p className="font-medium dark:text-white">{platformLabels[platform]}</p>
+                      <p className="font-medium dark:text-white">
+                        {platformLabels[platform]}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         Current: v{v.version}
                       </p>

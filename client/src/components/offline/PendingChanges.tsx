@@ -1,16 +1,30 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect, useCallback } from 'react';
-import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, Trash2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { syncManager, offlineQueue, QueuedAction } from '@/lib/offline';
-import { useOfflineStatus } from '@/hooks/useOfflineStatus';
-import { formatDistanceToNow } from 'date-fns';
+import { logger } from "@/lib/logger";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Cloud,
+  CloudOff,
+  RefreshCw,
+  AlertCircle,
+  Check,
+  Trash2,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { syncManager, offlineQueue, QueuedAction } from "@/lib/offline";
+import { useOfflineStatus } from "@/hooks/useOfflineStatus";
+import { formatDistanceToNow } from "date-fns";
 
 interface PendingChangesProps {
   className?: string;
@@ -27,13 +41,24 @@ export function PendingChanges({
   onActionClick,
   onViewDetails,
 }: PendingChangesProps) {
-  const { isOnline, isOffline, pendingCount, failedCount, conflictCount, syncStatus, syncProgress, lastSyncAt } = useOfflineStatus();
+  const {
+    isOnline,
+    isOffline,
+    pendingCount,
+    failedCount,
+    conflictCount,
+    syncStatus,
+    syncProgress,
+    lastSyncAt,
+  } = useOfflineStatus();
   const [actions, setActions] = useState<QueuedAction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedActions, setSelectedActions] = useState<Set<string>>(new Set());
+  const [selectedActions, setSelectedActions] = useState<Set<string>>(
+    new Set(),
+  );
 
   const totalPending = pendingCount + failedCount + conflictCount;
-  const isSyncing = syncStatus === 'syncing';
+  const isSyncing = syncStatus === "syncing";
   const hasIssues = failedCount > 0 || conflictCount > 0;
 
   const loadActions = useCallback(async () => {
@@ -41,16 +66,16 @@ export function PendingChanges({
     try {
       const [pending, syncing, failed, conflict] = await Promise.all([
         offlineQueue.getAllPending(),
-        offlineQueue.getByStatus('syncing'),
-        offlineQueue.getByStatus('failed'),
-        offlineQueue.getByStatus('conflict'),
+        offlineQueue.getByStatus("syncing"),
+        offlineQueue.getByStatus("failed"),
+        offlineQueue.getByStatus("conflict"),
       ]);
       const allActions = [...pending, ...syncing, ...failed, ...conflict]
         .sort((a, b) => b.updatedAt - a.updatedAt)
         .slice(0, maxItems);
       setActions(allActions);
     } catch (error) {
-      logger.error('Failed to load actions:', error);
+      logger.error("Failed to load actions:", error);
     } finally {
       setIsLoading(false);
     }
@@ -59,10 +84,10 @@ export function PendingChanges({
   useEffect(() => {
     loadActions();
 
-    const unsubAdded = offlineQueue.on('action-added', loadActions);
-    const unsubUpdated = offlineQueue.on('action-updated', loadActions);
-    const unsubRemoved = offlineQueue.on('action-removed', loadActions);
-    const unsubComplete = syncManager.on('sync-complete', loadActions);
+    const unsubAdded = offlineQueue.on("action-added", loadActions);
+    const unsubUpdated = offlineQueue.on("action-updated", loadActions);
+    const unsubRemoved = offlineQueue.on("action-removed", loadActions);
+    const unsubComplete = syncManager.on("sync-complete", loadActions);
 
     return () => {
       unsubAdded();
@@ -82,7 +107,7 @@ export function PendingChanges({
 
   const handleRetryAction = async (actionId: string) => {
     await offlineQueue.updateAction(actionId, {
-      status: 'pending',
+      status: "pending",
       retryCount: 0,
       error: undefined,
     });
@@ -91,7 +116,7 @@ export function PendingChanges({
 
   const handleDeleteAction = async (actionId: string) => {
     await offlineQueue.dequeue(actionId);
-    setSelectedActions(prev => {
+    setSelectedActions((prev) => {
       const next = new Set(prev);
       next.delete(actionId);
       return next;
@@ -111,7 +136,7 @@ export function PendingChanges({
   };
 
   const toggleActionSelection = (actionId: string) => {
-    setSelectedActions(prev => {
+    setSelectedActions((prev) => {
       const next = new Set(prev);
       if (next.has(actionId)) {
         next.delete(actionId);
@@ -124,13 +149,13 @@ export function PendingChanges({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'syncing':
+      case "syncing":
         return <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />;
-      case 'failed':
+      case "failed":
         return <AlertCircle className="h-4 w-4 text-destructive" />;
-      case 'conflict':
+      case "conflict":
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      case 'completed':
+      case "completed":
         return <Check className="h-4 w-4 text-green-500" />;
       default:
         return <Cloud className="h-4 w-4 text-muted-foreground" />;
@@ -139,36 +164,36 @@ export function PendingChanges({
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'syncing':
-        return 'Syncing';
-      case 'failed':
-        return 'Failed';
-      case 'conflict':
-        return 'Conflict';
-      case 'completed':
-        return 'Synced';
+      case "syncing":
+        return "Syncing";
+      case "failed":
+        return "Failed";
+      case "conflict":
+        return "Conflict";
+      case "completed":
+        return "Synced";
       default:
-        return 'Pending';
+        return "Pending";
     }
   };
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'syncing':
-        return 'default';
-      case 'failed':
-        return 'destructive';
-      case 'conflict':
-        return 'outline';
-      case 'completed':
-        return 'secondary';
+      case "syncing":
+        return "default";
+      case "failed":
+        return "destructive";
+      case "conflict":
+        return "outline";
+      case "completed":
+        return "secondary";
       default:
-        return 'outline';
+        return "outline";
     }
   };
 
   return (
-    <Card className={cn('w-full', className)}>
+    <Card className={cn("w-full", className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -197,27 +222,32 @@ export function PendingChanges({
               onClick={handleSync}
               disabled={isSyncing}
             >
-              <RefreshCw className={cn('h-3 w-3 mr-1', isSyncing && 'animate-spin')} />
-              {isSyncing ? 'Syncing...' : 'Sync Now'}
+              <RefreshCw
+                className={cn("h-3 w-3 mr-1", isSyncing && "animate-spin")}
+              />
+              {isSyncing ? "Syncing..." : "Sync Now"}
             </Button>
           )}
         </div>
         <CardDescription>
           {isOffline
-            ? 'You are offline. Changes will sync when you reconnect.'
+            ? "You are offline. Changes will sync when you reconnect."
             : isSyncing
-            ? `Syncing ${syncProgress.completed} of ${syncProgress.total}...`
-            : totalPending > 0
-            ? `${totalPending} changes waiting to sync`
-            : lastSyncAt
-            ? `All synced ${formatDistanceToNow(lastSyncAt, { addSuffix: true })}`
-            : 'All changes synced'}
+              ? `Syncing ${syncProgress.completed} of ${syncProgress.total}...`
+              : totalPending > 0
+                ? `${totalPending} changes waiting to sync`
+                : lastSyncAt
+                  ? `All synced ${formatDistanceToNow(lastSyncAt, { addSuffix: true })}`
+                  : "All changes synced"}
         </CardDescription>
       </CardHeader>
 
       {isSyncing && syncProgress.total > 0 && (
         <div className="px-6 pb-2">
-          <Progress value={(syncProgress.completed / syncProgress.total) * 100} className="h-1" />
+          <Progress
+            value={(syncProgress.completed / syncProgress.total) * 100}
+            className="h-1"
+          />
         </div>
       )}
 
@@ -227,14 +257,36 @@ export function PendingChanges({
             <div className="font-semibold text-lg">{pendingCount}</div>
             <div className="text-muted-foreground text-xs">Pending</div>
           </div>
-          <div className={cn('p-2 rounded-lg', failedCount > 0 ? 'bg-destructive/10' : 'bg-muted/50')}>
-            <div className={cn('font-semibold text-lg', failedCount > 0 && 'text-destructive')}>
+          <div
+            className={cn(
+              "p-2 rounded-lg",
+              failedCount > 0 ? "bg-destructive/10" : "bg-muted/50",
+            )}
+          >
+            <div
+              className={cn(
+                "font-semibold text-lg",
+                failedCount > 0 && "text-destructive",
+              )}
+            >
               {failedCount}
             </div>
             <div className="text-muted-foreground text-xs">Failed</div>
           </div>
-          <div className={cn('p-2 rounded-lg', conflictCount > 0 ? 'bg-yellow-100 dark:bg-yellow-900/20' : 'bg-muted/50')}>
-            <div className={cn('font-semibold text-lg', conflictCount > 0 && 'text-yellow-600 dark:text-yellow-400')}>
+          <div
+            className={cn(
+              "p-2 rounded-lg",
+              conflictCount > 0
+                ? "bg-yellow-100 dark:bg-yellow-900/20"
+                : "bg-muted/50",
+            )}
+          >
+            <div
+              className={cn(
+                "font-semibold text-lg",
+                conflictCount > 0 && "text-yellow-600 dark:text-yellow-400",
+              )}
+            >
               {conflictCount}
             </div>
             <div className="text-muted-foreground text-xs">Conflicts</div>
@@ -277,10 +329,10 @@ export function PendingChanges({
                 <div key={action.id}>
                   <div
                     className={cn(
-                      'flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer',
+                      "flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer",
                       selectedActions.has(action.id)
-                        ? 'bg-primary/10 border border-primary/20'
-                        : 'hover:bg-muted/50'
+                        ? "bg-primary/10 border border-primary/20"
+                        : "hover:bg-muted/50",
                     )}
                     onClick={() => {
                       if (onActionClick) {
@@ -295,14 +347,22 @@ export function PendingChanges({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{action.type}</span>
-                        <Badge variant={getStatusBadgeVariant(action.status)} className="text-xs px-1.5 py-0">
+                        <span className="font-medium text-sm truncate">
+                          {action.type}
+                        </span>
+                        <Badge
+                          variant={getStatusBadgeVariant(action.status)}
+                          className="text-xs px-1.5 py-0"
+                        >
                           {getStatusLabel(action.status)}
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        {formatDistanceToNow(action.updatedAt, { addSuffix: true })}
-                        {action.retryCount > 0 && ` · ${action.retryCount} retries`}
+                        {formatDistanceToNow(action.updatedAt, {
+                          addSuffix: true,
+                        })}
+                        {action.retryCount > 0 &&
+                          ` · ${action.retryCount} retries`}
                       </div>
                       {action.error && (
                         <div className="text-xs text-destructive mt-1 truncate">
@@ -310,7 +370,7 @@ export function PendingChanges({
                         </div>
                       )}
                     </div>
-                    {showActions && action.status === 'failed' && (
+                    {showActions && action.status === "failed" && (
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"

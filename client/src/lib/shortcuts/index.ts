@@ -1,2 +1,2 @@
-export * from './types';
-export * from './ShortcutManager';
+export * from "./types";
+export * from "./ShortcutManager";

@@ -1,7 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
-import { wrapper } from 'axios-cookiejar-support';
-import { CookieJar } from 'tough-cookie';
-import { logger } from '../../server/logger.ts';
+import axios, { AxiosInstance } from "axios";
+import { wrapper } from "axios-cookiejar-support";
+import { CookieJar } from "tough-cookie";
+import { logger } from "../../server/logger.ts";
 
 interface ValidationResult {
   category: string;
@@ -13,10 +13,10 @@ interface ValidationResult {
 }
 
 export class FeatureValidators {
-  private baseUrl = 'http://localhost:5000';
+  private baseUrl = "http://localhost:5000";
   private axiosClient: AxiosInstance;
-  private testUserEmail = 'test.monthly@maxbooster.com';
-  private testUserPassword = process.env.TEST_USER_PASSWORD || 'TestUser123!@#';
+  private testUserEmail = "test.monthly@maxbooster.com";
+  private testUserPassword = process.env.TEST_USER_PASSWORD || "TestUser123!@#";
   private isAuthenticated = false;
   private cookieJar: CookieJar;
 
@@ -40,7 +40,7 @@ export class FeatureValidators {
     }
 
     try {
-      const response = await this.axiosClient.post('/api/auth/login', {
+      const response = await this.axiosClient.post("/api/auth/login", {
         username: this.testUserEmail,
         password: this.testUserPassword,
       });
@@ -51,7 +51,7 @@ export class FeatureValidators {
       }
       return false;
     } catch (error) {
-      logger.error('Authentication failed:', error);
+      logger.error("Authentication failed:", error);
       return false;
     }
   }
@@ -59,7 +59,7 @@ export class FeatureValidators {
   private async runTest(
     category: string,
     testName: string,
-    testFn: () => Promise<any>
+    testFn: () => Promise<any>,
   ): Promise<ValidationResult> {
     const startTime = Date.now();
     try {
@@ -86,34 +86,41 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Authentication', 'Session Validation', async () => {
-        const response = await this.axiosClient.get('/api/auth/me');
+      await this.runTest("Authentication", "Session Validation", async () => {
+        const response = await this.axiosClient.get("/api/auth/me");
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { user: response.data.email };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Authentication', 'Session Persistence', async () => {
-        const response1 = await this.axiosClient.get('/api/auth/me');
-        const response2 = await this.axiosClient.get('/api/auth/me');
+      await this.runTest("Authentication", "Session Persistence", async () => {
+        const response1 = await this.axiosClient.get("/api/auth/me");
+        const response2 = await this.axiosClient.get("/api/auth/me");
         if (response1.status !== 200 || response2.status !== 200) {
-          throw new Error('Session not persisting across requests');
+          throw new Error("Session not persisting across requests");
         }
         return { persistent: true };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Authentication', 'Password Reset Endpoint', async () => {
-        const response = await this.axiosClient.post('/api/auth/forgot-password', {
-          email: this.testUserEmail,
-        });
-        if (response.status >= 400 && response.status !== 404) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        return { status: response.status };
-      })
+      await this.runTest(
+        "Authentication",
+        "Password Reset Endpoint",
+        async () => {
+          const response = await this.axiosClient.post(
+            "/api/auth/forgot-password",
+            {
+              email: this.testUserEmail,
+            },
+          );
+          if (response.status >= 400 && response.status !== 404) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return { status: response.status };
+        },
+      ),
     );
 
     return results;
@@ -123,27 +130,36 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Payments', 'Marketplace Stripe Connect Status', async () => {
-        const response = await this.axiosClient.get('/api/marketplace/connect/status');
-        if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
-        return { connectStatus: response.data };
-      })
+      await this.runTest(
+        "Payments",
+        "Marketplace Stripe Connect Status",
+        async () => {
+          const response = await this.axiosClient.get(
+            "/api/marketplace/connect/status",
+          );
+          if (response.status !== 200)
+            throw new Error(`HTTP ${response.status}`);
+          return { connectStatus: response.data };
+        },
+      ),
     );
 
     results.push(
-      await this.runTest('Payments', 'Marketplace Earnings', async () => {
-        const response = await this.axiosClient.get('/api/marketplace/earnings');
+      await this.runTest("Payments", "Marketplace Earnings", async () => {
+        const response = await this.axiosClient.get(
+          "/api/marketplace/earnings",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { earnings: response.data };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Payments', 'Marketplace Payouts', async () => {
-        const response = await this.axiosClient.get('/api/marketplace/payouts');
+      await this.runTest("Payments", "Marketplace Payouts", async () => {
+        const response = await this.axiosClient.get("/api/marketplace/payouts");
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { payouts: response.data };
-      })
+      }),
     );
 
     return results;
@@ -153,37 +169,50 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Advertising', 'List Campaigns', async () => {
-        const response = await this.axiosClient.get('/api/advertising/campaigns');
+      await this.runTest("Advertising", "List Campaigns", async () => {
+        const response = await this.axiosClient.get(
+          "/api/advertising/campaigns",
+        );
         if (response.status !== 200 && response.status !== 403) {
           throw new Error(`HTTP ${response.status}`);
         }
-        return { accessible: response.status === 200 || response.status === 403 };
-      })
+        return {
+          accessible: response.status === 200 || response.status === 403,
+        };
+      }),
     );
 
     results.push(
-      await this.runTest('Advertising', 'AI Content Generation', async () => {
-        const response = await this.axiosClient.post('/api/advertising/generate-content', {
-          platform: 'twitter',
-          tone: 'engaging',
-          includeHashtags: true,
-        });
+      await this.runTest("Advertising", "AI Content Generation", async () => {
+        const response = await this.axiosClient.post(
+          "/api/advertising/generate-content",
+          {
+            platform: "twitter",
+            tone: "engaging",
+            includeHashtags: true,
+          },
+        );
         if (response.status !== 200 && response.status !== 403) {
           throw new Error(`HTTP ${response.status}`);
         }
-        return { accessible: response.status === 200 || response.status === 403 };
-      })
+        return {
+          accessible: response.status === 200 || response.status === 403,
+        };
+      }),
     );
 
     results.push(
-      await this.runTest('Advertising', 'AI Insights', async () => {
-        const response = await this.axiosClient.get('/api/advertising/ai-insights');
+      await this.runTest("Advertising", "AI Insights", async () => {
+        const response = await this.axiosClient.get(
+          "/api/advertising/ai-insights",
+        );
         if (response.status !== 200 && response.status !== 403) {
           throw new Error(`HTTP ${response.status}`);
         }
-        return { accessible: response.status === 200 || response.status === 403 };
-      })
+        return {
+          accessible: response.status === 200 || response.status === 403,
+        };
+      }),
     );
 
     return results;
@@ -193,35 +222,39 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Social Media', 'Platform Status', async () => {
-        const response = await this.axiosClient.get('/api/social/platform-status');
+      await this.runTest("Social Media", "Platform Status", async () => {
+        const response = await this.axiosClient.get(
+          "/api/social/platform-status",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { platforms: response.data };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Social Media', 'Posts List', async () => {
-        const response = await this.axiosClient.get('/api/social/posts');
+      await this.runTest("Social Media", "Posts List", async () => {
+        const response = await this.axiosClient.get("/api/social/posts");
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { posts: response.data.length || 0 };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Social Media', 'Scheduled Posts', async () => {
-        const response = await this.axiosClient.get('/api/social/scheduled-posts');
+      await this.runTest("Social Media", "Scheduled Posts", async () => {
+        const response = await this.axiosClient.get(
+          "/api/social/scheduled-posts",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { scheduled: response.data.length || 0 };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Social Media', 'Social Analytics', async () => {
-        const response = await this.axiosClient.get('/api/social/analytics');
+      await this.runTest("Social Media", "Social Analytics", async () => {
+        const response = await this.axiosClient.get("/api/social/analytics");
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { analytics: response.data };
-      })
+      }),
     );
 
     return results;
@@ -231,27 +264,33 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Distribution', 'Available Providers', async () => {
-        const response = await this.axiosClient.get('/api/distribution/providers');
+      await this.runTest("Distribution", "Available Providers", async () => {
+        const response = await this.axiosClient.get(
+          "/api/distribution/providers",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { providers: response.data };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Distribution', 'Releases List', async () => {
-        const response = await this.axiosClient.get('/api/distribution/releases');
+      await this.runTest("Distribution", "Releases List", async () => {
+        const response = await this.axiosClient.get(
+          "/api/distribution/releases",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { releases: response.data.length || 0 };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Distribution', 'Distribution Analytics', async () => {
-        const response = await this.axiosClient.get('/api/distribution/analytics');
+      await this.runTest("Distribution", "Distribution Analytics", async () => {
+        const response = await this.axiosClient.get(
+          "/api/distribution/analytics",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { analytics: response.data };
-      })
+      }),
     );
 
     return results;
@@ -261,27 +300,33 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Marketplace', 'Browse Listings', async () => {
-        const response = await this.axiosClient.get('/api/marketplace/listings');
+      await this.runTest("Marketplace", "Browse Listings", async () => {
+        const response = await this.axiosClient.get(
+          "/api/marketplace/listings",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { listings: response.data.length || 0 };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Marketplace', 'User Beats', async () => {
-        const response = await this.axiosClient.get('/api/marketplace/my-beats');
+      await this.runTest("Marketplace", "User Beats", async () => {
+        const response = await this.axiosClient.get(
+          "/api/marketplace/my-beats",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { myBeats: response.data.length || 0 };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Marketplace', 'Stripe Connect Status', async () => {
-        const response = await this.axiosClient.get('/api/marketplace/connect/status');
+      await this.runTest("Marketplace", "Stripe Connect Status", async () => {
+        const response = await this.axiosClient.get(
+          "/api/marketplace/connect/status",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { status: response.data };
-      })
+      }),
     );
 
     return results;
@@ -291,27 +336,27 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Studio', 'Projects List', async () => {
-        const response = await this.axiosClient.get('/api/studio/projects');
+      await this.runTest("Studio", "Projects List", async () => {
+        const response = await this.axiosClient.get("/api/studio/projects");
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { projects: response.data.length || 0 };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Studio', 'Recent Files', async () => {
-        const response = await this.axiosClient.get('/api/studio/recent-files');
+      await this.runTest("Studio", "Recent Files", async () => {
+        const response = await this.axiosClient.get("/api/studio/recent-files");
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { files: response.data.length || 0 };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Studio', 'Samples Library', async () => {
-        const response = await this.axiosClient.get('/api/studio/samples');
+      await this.runTest("Studio", "Samples Library", async () => {
+        const response = await this.axiosClient.get("/api/studio/samples");
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { samples: response.data.length || 0 };
-      })
+      }),
     );
 
     return results;
@@ -321,29 +366,33 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Analytics', 'Dashboard Data', async () => {
-        const response = await this.axiosClient.get('/api/analytics/dashboard');
+      await this.runTest("Analytics", "Dashboard Data", async () => {
+        const response = await this.axiosClient.get("/api/analytics/dashboard");
         if (response.status !== 200 && response.status !== 403) {
           throw new Error(`HTTP ${response.status}`);
         }
-        return { accessible: response.status === 200 || response.status === 403 };
-      })
+        return {
+          accessible: response.status === 200 || response.status === 403,
+        };
+      }),
     );
 
     results.push(
-      await this.runTest('Analytics', 'Streams Analytics', async () => {
-        const response = await this.axiosClient.get('/api/analytics/streams');
+      await this.runTest("Analytics", "Streams Analytics", async () => {
+        const response = await this.axiosClient.get("/api/analytics/streams");
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { analytics: response.data };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Analytics', 'AI Autopilot Health', async () => {
-        const response = await this.axiosClient.get('/api/monitoring/ai-models');
+      await this.runTest("Analytics", "AI Autopilot Health", async () => {
+        const response = await this.axiosClient.get(
+          "/api/monitoring/ai-models",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { aiHealth: response.data };
-      })
+      }),
     );
 
     return results;
@@ -353,27 +402,33 @@ export class FeatureValidators {
     const results: ValidationResult[] = [];
 
     results.push(
-      await this.runTest('Infrastructure', 'Database Health', async () => {
-        const response = await this.axiosClient.get('/api/monitoring/system-health');
+      await this.runTest("Infrastructure", "Database Health", async () => {
+        const response = await this.axiosClient.get(
+          "/api/monitoring/system-health",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { healthy: response.data.healthy };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Infrastructure', 'Redis Cache', async () => {
-        const response = await this.axiosClient.get('/api/monitoring/queue-metrics');
+      await this.runTest("Infrastructure", "Redis Cache", async () => {
+        const response = await this.axiosClient.get(
+          "/api/monitoring/queue-metrics",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { metrics: response.data };
-      })
+      }),
     );
 
     results.push(
-      await this.runTest('Infrastructure', 'Queue Health', async () => {
-        const response = await this.axiosClient.get('/api/monitoring/queue-health');
+      await this.runTest("Infrastructure", "Queue Health", async () => {
+        const response = await this.axiosClient.get(
+          "/api/monitoring/queue-health",
+        );
         if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
         return { healthy: response.data.healthy };
-      })
+      }),
     );
 
     return results;
@@ -386,11 +441,11 @@ export class FeatureValidators {
     successRate: number;
     results: ValidationResult[];
   }> {
-    logger.info('🔍 Starting comprehensive feature validation...');
+    logger.info("🔍 Starting comprehensive feature validation...");
 
     const authenticated = await this.authenticate();
     if (!authenticated) {
-      logger.error('❌ Failed to authenticate - aborting feature validation');
+      logger.error("❌ Failed to authenticate - aborting feature validation");
       return {
         totalTests: 1,
         passed: 0,
@@ -398,11 +453,11 @@ export class FeatureValidators {
         successRate: 0,
         results: [
           {
-            category: 'Authentication',
-            testName: 'Initial Login',
+            category: "Authentication",
+            testName: "Initial Login",
             passed: false,
             duration: 0,
-            error: 'Failed to authenticate with test user credentials',
+            error: "Failed to authenticate with test user credentials",
           },
         ],
       };
@@ -427,7 +482,9 @@ export class FeatureValidators {
     const totalTests = results.length;
     const successRate = totalTests > 0 ? (passed / totalTests) * 100 : 0;
 
-    logger.info(`✅ Feature validation complete: ${passed}/${totalTests} passed (${successRate.toFixed(1)}%)`);
+    logger.info(
+      `✅ Feature validation complete: ${passed}/${totalTests} passed (${successRate.toFixed(1)}%)`,
+    );
 
     return {
       totalTests,

@@ -1,16 +1,31 @@
-import { db } from '../db';
+import { db } from "../db";
 import {
   workspaceRoles,
   workspaceMembers,
   workspaces,
   type WorkspaceRole,
   type InsertWorkspaceRole,
-} from '@shared/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
-import { logger } from '../logger.js';
+} from "@shared/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
+import { logger } from "../logger.js";
 
-export type ResourceType = 'releases' | 'analytics' | 'royalties' | 'social' | 'settings' | 'team' | 'catalog' | 'billing';
-export type ActionType = 'create' | 'read' | 'update' | 'delete' | 'approve' | 'publish' | 'export';
+export type ResourceType =
+  | "releases"
+  | "analytics"
+  | "royalties"
+  | "social"
+  | "settings"
+  | "team"
+  | "catalog"
+  | "billing";
+export type ActionType =
+  | "create"
+  | "read"
+  | "update"
+  | "delete"
+  | "approve"
+  | "publish"
+  | "export";
 
 export interface Permission {
   resource: ResourceType;
@@ -26,77 +41,99 @@ export interface RoleTemplate {
 
 export const DEFAULT_ROLE_TEMPLATES: Record<string, RoleTemplate> = {
   owner: {
-    name: 'Owner',
-    description: 'Full access to all workspace features including billing and team management',
+    name: "Owner",
+    description:
+      "Full access to all workspace features including billing and team management",
     permissions: [
-      { resource: 'releases', actions: ['create', 'read', 'update', 'delete', 'approve', 'publish'] },
-      { resource: 'analytics', actions: ['read', 'export'] },
-      { resource: 'royalties', actions: ['create', 'read', 'update', 'delete', 'approve', 'export'] },
-      { resource: 'social', actions: ['create', 'read', 'update', 'delete', 'approve', 'publish'] },
-      { resource: 'settings', actions: ['read', 'update'] },
-      { resource: 'team', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'catalog', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'billing', actions: ['read', 'update'] },
+      {
+        resource: "releases",
+        actions: ["create", "read", "update", "delete", "approve", "publish"],
+      },
+      { resource: "analytics", actions: ["read", "export"] },
+      {
+        resource: "royalties",
+        actions: ["create", "read", "update", "delete", "approve", "export"],
+      },
+      {
+        resource: "social",
+        actions: ["create", "read", "update", "delete", "approve", "publish"],
+      },
+      { resource: "settings", actions: ["read", "update"] },
+      { resource: "team", actions: ["create", "read", "update", "delete"] },
+      { resource: "catalog", actions: ["create", "read", "update", "delete"] },
+      { resource: "billing", actions: ["read", "update"] },
     ],
     priority: 100,
   },
   admin: {
-    name: 'Admin',
-    description: 'Administrative access with team management capabilities',
+    name: "Admin",
+    description: "Administrative access with team management capabilities",
     permissions: [
-      { resource: 'releases', actions: ['create', 'read', 'update', 'delete', 'approve', 'publish'] },
-      { resource: 'analytics', actions: ['read', 'export'] },
-      { resource: 'royalties', actions: ['create', 'read', 'update', 'approve', 'export'] },
-      { resource: 'social', actions: ['create', 'read', 'update', 'delete', 'approve', 'publish'] },
-      { resource: 'settings', actions: ['read', 'update'] },
-      { resource: 'team', actions: ['create', 'read', 'update'] },
-      { resource: 'catalog', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'billing', actions: ['read'] },
+      {
+        resource: "releases",
+        actions: ["create", "read", "update", "delete", "approve", "publish"],
+      },
+      { resource: "analytics", actions: ["read", "export"] },
+      {
+        resource: "royalties",
+        actions: ["create", "read", "update", "approve", "export"],
+      },
+      {
+        resource: "social",
+        actions: ["create", "read", "update", "delete", "approve", "publish"],
+      },
+      { resource: "settings", actions: ["read", "update"] },
+      { resource: "team", actions: ["create", "read", "update"] },
+      { resource: "catalog", actions: ["create", "read", "update", "delete"] },
+      { resource: "billing", actions: ["read"] },
     ],
     priority: 80,
   },
   manager: {
-    name: 'Manager',
-    description: 'Manage releases, approve content, and view team activity',
+    name: "Manager",
+    description: "Manage releases, approve content, and view team activity",
     permissions: [
-      { resource: 'releases', actions: ['create', 'read', 'update', 'approve'] },
-      { resource: 'analytics', actions: ['read', 'export'] },
-      { resource: 'royalties', actions: ['read', 'export'] },
-      { resource: 'social', actions: ['create', 'read', 'update', 'approve'] },
-      { resource: 'settings', actions: ['read'] },
-      { resource: 'team', actions: ['read'] },
-      { resource: 'catalog', actions: ['read', 'update'] },
-      { resource: 'billing', actions: [] },
+      {
+        resource: "releases",
+        actions: ["create", "read", "update", "approve"],
+      },
+      { resource: "analytics", actions: ["read", "export"] },
+      { resource: "royalties", actions: ["read", "export"] },
+      { resource: "social", actions: ["create", "read", "update", "approve"] },
+      { resource: "settings", actions: ["read"] },
+      { resource: "team", actions: ["read"] },
+      { resource: "catalog", actions: ["read", "update"] },
+      { resource: "billing", actions: [] },
     ],
     priority: 60,
   },
   member: {
-    name: 'Member',
-    description: 'Standard team member with content creation access',
+    name: "Member",
+    description: "Standard team member with content creation access",
     permissions: [
-      { resource: 'releases', actions: ['create', 'read', 'update'] },
-      { resource: 'analytics', actions: ['read'] },
-      { resource: 'royalties', actions: ['read'] },
-      { resource: 'social', actions: ['create', 'read', 'update'] },
-      { resource: 'settings', actions: ['read'] },
-      { resource: 'team', actions: ['read'] },
-      { resource: 'catalog', actions: ['read'] },
-      { resource: 'billing', actions: [] },
+      { resource: "releases", actions: ["create", "read", "update"] },
+      { resource: "analytics", actions: ["read"] },
+      { resource: "royalties", actions: ["read"] },
+      { resource: "social", actions: ["create", "read", "update"] },
+      { resource: "settings", actions: ["read"] },
+      { resource: "team", actions: ["read"] },
+      { resource: "catalog", actions: ["read"] },
+      { resource: "billing", actions: [] },
     ],
     priority: 40,
   },
   viewer: {
-    name: 'Viewer',
-    description: 'Read-only access to workspace content',
+    name: "Viewer",
+    description: "Read-only access to workspace content",
     permissions: [
-      { resource: 'releases', actions: ['read'] },
-      { resource: 'analytics', actions: ['read'] },
-      { resource: 'royalties', actions: ['read'] },
-      { resource: 'social', actions: ['read'] },
-      { resource: 'settings', actions: ['read'] },
-      { resource: 'team', actions: ['read'] },
-      { resource: 'catalog', actions: ['read'] },
-      { resource: 'billing', actions: [] },
+      { resource: "releases", actions: ["read"] },
+      { resource: "analytics", actions: ["read"] },
+      { resource: "royalties", actions: ["read"] },
+      { resource: "social", actions: ["read"] },
+      { resource: "settings", actions: ["read"] },
+      { resource: "team", actions: ["read"] },
+      { resource: "catalog", actions: ["read"] },
+      { resource: "billing", actions: [] },
     ],
     priority: 20,
   },
@@ -111,12 +148,15 @@ export class RBACService {
       permissions: Permission[];
       parentRoleId?: string;
       priority?: number;
-    }
+    },
   ): Promise<{ success: boolean; role?: WorkspaceRole; error?: string }> {
     try {
       const existingRole = await this.getRoleByName(workspaceId, params.name);
       if (existingRole) {
-        return { success: false, error: 'A role with this name already exists' };
+        return {
+          success: false,
+          error: "A role with this name already exists",
+        };
       }
 
       let effectivePermissions = params.permissions;
@@ -125,7 +165,7 @@ export class RBACService {
         if (parentRole) {
           effectivePermissions = this.mergePermissions(
             parentRole.permissions as Permission[],
-            params.permissions
+            params.permissions,
           );
         }
       }
@@ -145,8 +185,8 @@ export class RBACService {
 
       return { success: true, role };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Create role error:');
-      return { success: false, error: 'Failed to create role' };
+      logger.warn({ err: error }, "Create role error:");
+      return { success: false, error: "Failed to create role" };
     }
   }
 
@@ -159,24 +199,29 @@ export class RBACService {
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get role error:');
+      logger.warn({ err: error }, "Get role error:");
       return null;
     }
   }
 
-  async getRoleByName(workspaceId: string, name: string): Promise<WorkspaceRole | null> {
+  async getRoleByName(
+    workspaceId: string,
+    name: string,
+  ): Promise<WorkspaceRole | null> {
     try {
       const [role] = await db
         .select()
         .from(workspaceRoles)
-        .where(and(
-          eq(workspaceRoles.workspaceId, workspaceId),
-          eq(workspaceRoles.name, name)
-        ))
+        .where(
+          and(
+            eq(workspaceRoles.workspaceId, workspaceId),
+            eq(workspaceRoles.name, name),
+          ),
+        )
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get role by name error:');
+      logger.warn({ err: error }, "Get role by name error:");
       return null;
     }
   }
@@ -191,7 +236,7 @@ export class RBACService {
 
       return roles;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get workspace roles error:');
+      logger.warn({ err: error }, "Get workspace roles error:");
       return [];
     }
   }
@@ -203,16 +248,16 @@ export class RBACService {
       description: string;
       permissions: Permission[];
       priority: number;
-    }>
+    }>,
   ): Promise<{ success: boolean; role?: WorkspaceRole; error?: string }> {
     try {
       const existingRole = await this.getRole(roleId);
       if (!existingRole) {
-        return { success: false, error: 'Role not found' };
+        return { success: false, error: "Role not found" };
       }
 
       if (existingRole.isSystem) {
-        return { success: false, error: 'System roles cannot be modified' };
+        return { success: false, error: "System roles cannot be modified" };
       }
 
       const [role] = await db
@@ -226,20 +271,22 @@ export class RBACService {
 
       return { success: true, role };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Update role error:');
-      return { success: false, error: 'Failed to update role' };
+      logger.warn({ err: error }, "Update role error:");
+      return { success: false, error: "Failed to update role" };
     }
   }
 
-  async deleteRole(roleId: string): Promise<{ success: boolean; error?: string }> {
+  async deleteRole(
+    roleId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const role = await this.getRole(roleId);
       if (!role) {
-        return { success: false, error: 'Role not found' };
+        return { success: false, error: "Role not found" };
       }
 
       if (role.isSystem) {
-        return { success: false, error: 'System roles cannot be deleted' };
+        return { success: false, error: "System roles cannot be deleted" };
       }
 
       const [memberCount] = await db
@@ -249,19 +296,25 @@ export class RBACService {
         .limit(1);
 
       if (memberCount && memberCount.count > 0) {
-        return { success: false, error: 'Cannot delete role with assigned members' };
+        return {
+          success: false,
+          error: "Cannot delete role with assigned members",
+        };
       }
 
       await db.delete(workspaceRoles).where(eq(workspaceRoles.id, roleId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Delete role error:');
-      return { success: false, error: 'Failed to delete role' };
+      logger.warn({ err: error }, "Delete role error:");
+      return { success: false, error: "Failed to delete role" };
     }
   }
 
-  async getUserPermissions(workspaceId: string, userId: string): Promise<Permission[]> {
+  async getUserPermissions(
+    workspaceId: string,
+    userId: string,
+  ): Promise<Permission[]> {
     try {
       const [member] = await db
         .select({
@@ -270,11 +323,13 @@ export class RBACService {
           customPermissions: workspaceMembers.permissions,
         })
         .from(workspaceMembers)
-        .where(and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, userId),
-          eq(workspaceMembers.status, 'active')
-        ))
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.userId, userId),
+            eq(workspaceMembers.status, "active"),
+          ),
+        )
         .limit(1);
 
       if (!member) {
@@ -296,12 +351,15 @@ export class RBACService {
       }
 
       if (member.customPermissions) {
-        permissions = this.mergePermissions(permissions, member.customPermissions as Permission[]);
+        permissions = this.mergePermissions(
+          permissions,
+          member.customPermissions as Permission[],
+        );
       }
 
       return permissions;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get user permissions error:');
+      logger.warn({ err: error }, "Get user permissions error:");
       return [];
     }
   }
@@ -310,20 +368,23 @@ export class RBACService {
     workspaceId: string,
     userId: string,
     resource: ResourceType,
-    action: ActionType
+    action: ActionType,
   ): Promise<boolean> {
     try {
       const permissions = await this.getUserPermissions(workspaceId, userId);
-      
+
       for (const permission of permissions) {
-        if (permission.resource === resource && permission.actions.includes(action)) {
+        if (
+          permission.resource === resource &&
+          permission.actions.includes(action)
+        ) {
           return true;
         }
       }
 
       return false;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Check permission error:');
+      logger.warn({ err: error }, "Check permission error:");
       return false;
     }
   }
@@ -331,7 +392,7 @@ export class RBACService {
   async checkMultiplePermissions(
     workspaceId: string,
     userId: string,
-    checks: Array<{ resource: ResourceType; action: ActionType }>
+    checks: Array<{ resource: ResourceType; action: ActionType }>,
   ): Promise<Record<string, boolean>> {
     try {
       const permissions = await this.getUserPermissions(workspaceId, userId);
@@ -340,26 +401,34 @@ export class RBACService {
       for (const check of checks) {
         const key = `${check.resource}:${check.action}`;
         results[key] = permissions.some(
-          p => p.resource === check.resource && p.actions.includes(check.action)
+          (p) =>
+            p.resource === check.resource && p.actions.includes(check.action),
         );
       }
 
       return results;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Check multiple permissions error:');
+      logger.warn({ err: error }, "Check multiple permissions error:");
       return {};
     }
   }
 
   async canManageTeam(workspaceId: string, userId: string): Promise<boolean> {
-    return this.checkPermission(workspaceId, userId, 'team', 'update');
+    return this.checkPermission(workspaceId, userId, "team", "update");
   }
 
-  async canApproveContent(workspaceId: string, userId: string, contentType: ResourceType): Promise<boolean> {
-    return this.checkPermission(workspaceId, userId, contentType, 'approve');
+  async canApproveContent(
+    workspaceId: string,
+    userId: string,
+    contentType: ResourceType,
+  ): Promise<boolean> {
+    return this.checkPermission(workspaceId, userId, contentType, "approve");
   }
 
-  async isWorkspaceOwner(workspaceId: string, userId: string): Promise<boolean> {
+  async isWorkspaceOwner(
+    workspaceId: string,
+    userId: string,
+  ): Promise<boolean> {
     try {
       const [workspace] = await db
         .select({ ownerId: workspaces.ownerId })
@@ -369,7 +438,7 @@ export class RBACService {
 
       return workspace?.ownerId === userId;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Check workspace owner error:');
+      logger.warn({ err: error }, "Check workspace owner error:");
       return false;
     }
   }
@@ -379,34 +448,43 @@ export class RBACService {
       const [member] = await db
         .select({ role: workspaceMembers.role })
         .from(workspaceMembers)
-        .where(and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, userId)
-        ))
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.userId, userId),
+          ),
+        )
         .limit(1);
 
-      return member?.role === 'owner' || member?.role === 'admin';
+      return member?.role === "owner" || member?.role === "admin";
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Check admin error:');
+      logger.warn({ err: error }, "Check admin error:");
       return false;
     }
   }
 
-  private mergePermissions(base: Permission[], override: Permission[]): Permission[] {
+  private mergePermissions(
+    base: Permission[],
+    override: Permission[],
+  ): Permission[] {
     const merged = new Map<ResourceType, Set<ActionType>>();
 
     for (const permission of base) {
       if (!merged.has(permission.resource)) {
         merged.set(permission.resource, new Set());
       }
-      permission.actions.forEach(action => merged.get(permission.resource)!.add(action));
+      permission.actions.forEach((action) =>
+        merged.get(permission.resource)!.add(action),
+      );
     }
 
     for (const permission of override) {
       if (!merged.has(permission.resource)) {
         merged.set(permission.resource, new Set());
       }
-      permission.actions.forEach(action => merged.get(permission.resource)!.add(action));
+      permission.actions.forEach((action) =>
+        merged.get(permission.resource)!.add(action),
+      );
     }
 
     return Array.from(merged.entries()).map(([resource, actions]) => ({
@@ -418,11 +496,11 @@ export class RBACService {
   async createRoleFromTemplate(
     workspaceId: string,
     templateKey: string,
-    customName?: string
+    customName?: string,
   ): Promise<{ success: boolean; role?: WorkspaceRole; error?: string }> {
     const template = DEFAULT_ROLE_TEMPLATES[templateKey];
     if (!template) {
-      return { success: false, error: 'Template not found' };
+      return { success: false, error: "Template not found" };
     }
 
     return this.createRole(workspaceId, {
@@ -436,25 +514,30 @@ export class RBACService {
   async grantPermission(
     roleId: string,
     resource: ResourceType,
-    actions: ActionType[]
+    actions: ActionType[],
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const role = await this.getRole(roleId);
       if (!role) {
-        return { success: false, error: 'Role not found' };
+        return { success: false, error: "Role not found" };
       }
 
       if (role.isSystem) {
-        return { success: false, error: 'System roles cannot be modified' };
+        return { success: false, error: "System roles cannot be modified" };
       }
 
       const currentPermissions = role.permissions as Permission[];
-      const existingPermIndex = currentPermissions.findIndex(p => p.resource === resource);
+      const existingPermIndex = currentPermissions.findIndex(
+        (p) => p.resource === resource,
+      );
 
       if (existingPermIndex >= 0) {
-        const existingActions = new Set(currentPermissions[existingPermIndex].actions);
-        actions.forEach(action => existingActions.add(action));
-        currentPermissions[existingPermIndex].actions = Array.from(existingActions);
+        const existingActions = new Set(
+          currentPermissions[existingPermIndex].actions,
+        );
+        actions.forEach((action) => existingActions.add(action));
+        currentPermissions[existingPermIndex].actions =
+          Array.from(existingActions);
       } else {
         currentPermissions.push({ resource, actions });
       }
@@ -466,39 +549,45 @@ export class RBACService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Grant permission error:');
-      return { success: false, error: 'Failed to grant permission' };
+      logger.warn({ err: error }, "Grant permission error:");
+      return { success: false, error: "Failed to grant permission" };
     }
   }
 
   async revokePermission(
     roleId: string,
     resource: ResourceType,
-    actions?: ActionType[]
+    actions?: ActionType[],
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const role = await this.getRole(roleId);
       if (!role) {
-        return { success: false, error: 'Role not found' };
+        return { success: false, error: "Role not found" };
       }
 
       if (role.isSystem) {
-        return { success: false, error: 'System roles cannot be modified' };
+        return { success: false, error: "System roles cannot be modified" };
       }
 
       let currentPermissions = role.permissions as Permission[];
-      const permIndex = currentPermissions.findIndex(p => p.resource === resource);
+      const permIndex = currentPermissions.findIndex(
+        (p) => p.resource === resource,
+      );
 
       if (permIndex >= 0) {
         if (actions) {
-          currentPermissions[permIndex].actions = currentPermissions[permIndex].actions.filter(
-            a => !actions.includes(a)
-          );
+          currentPermissions[permIndex].actions = currentPermissions[
+            permIndex
+          ].actions.filter((a) => !actions.includes(a));
           if (currentPermissions[permIndex].actions.length === 0) {
-            currentPermissions = currentPermissions.filter((_, i) => i !== permIndex);
+            currentPermissions = currentPermissions.filter(
+              (_, i) => i !== permIndex,
+            );
           }
         } else {
-          currentPermissions = currentPermissions.filter((_, i) => i !== permIndex);
+          currentPermissions = currentPermissions.filter(
+            (_, i) => i !== permIndex,
+          );
         }
       }
 
@@ -509,8 +598,8 @@ export class RBACService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Revoke permission error:');
-      return { success: false, error: 'Failed to revoke permission' };
+      logger.warn({ err: error }, "Revoke permission error:");
+      return { success: false, error: "Failed to revoke permission" };
     }
   }
 

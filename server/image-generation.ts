@@ -1,29 +1,29 @@
-import { mkdirSync } from 'fs';
-import { writeFile as fsWriteFile } from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { logger } from './logger.js';
-import sharp from 'sharp';
-import { AIAudioGenerator } from '../shared/ml/audio/AIAudioGenerator.js';
-import { ContentGenerator } from '../shared/ml/nlp/ContentGenerator.js';
+import { mkdirSync } from "fs";
+import { writeFile as fsWriteFile } from "fs/promises";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { logger } from "./logger.js";
+import sharp from "sharp";
+import { AIAudioGenerator } from "../shared/ml/audio/AIAudioGenerator.js";
+import { ContentGenerator } from "../shared/ml/nlp/ContentGenerator.js";
 
 // ES module compatibility
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Sharp is always available - no Canvas fallback needed
-logger.info('✅ Sharp-based image generation loaded for social media content');
+logger.info("✅ Sharp-based image generation loaded for social media content");
 
 // AI-powered social media content generation (images, videos, audio)
 // Uses 100% in-house AI services from shared/ml
 export class SocialMediaContentGenerator {
   private canvas: OffscreenCanvas | null = null;
   private ctx: OffscreenCanvasRenderingContext2D | null = null;
-  private readonly contentDir = join(__dirname, '../public/generated-content');
-  private readonly imageDir = join(this.contentDir, 'images');
-  private readonly videoDir = join(this.contentDir, 'videos');
-  private readonly audioDir = join(this.contentDir, 'audio');
-  
+  private readonly contentDir = join(__dirname, "../public/generated-content");
+  private readonly imageDir = join(this.contentDir, "images");
+  private readonly videoDir = join(this.contentDir, "videos");
+  private readonly audioDir = join(this.contentDir, "audio");
+
   private audioGenerator: AIAudioGenerator;
   private contentGenerator: ContentGenerator;
 
@@ -32,11 +32,13 @@ export class SocialMediaContentGenerator {
     mkdirSync(this.imageDir, { recursive: true });
     mkdirSync(this.videoDir, { recursive: true });
     mkdirSync(this.audioDir, { recursive: true });
-    
+
     this.audioGenerator = new AIAudioGenerator(44100);
     this.contentGenerator = new ContentGenerator();
-    
-    logger.info('✅ In-house AI services initialized (AIAudioGenerator, ContentGenerator)');
+
+    logger.info(
+      "✅ In-house AI services initialized (AIAudioGenerator, ContentGenerator)",
+    );
   }
 
   // Generate comprehensive social media content
@@ -44,7 +46,7 @@ export class SocialMediaContentGenerator {
     platform: string,
     musicData: unknown,
     targetAudience: unknown,
-    contentType: 'image' | 'video' | 'audio' | 'all' = 'all'
+    contentType: "image" | "video" | "audio" | "all" = "all",
   ): Promise<{
     image?: string;
     video?: string;
@@ -53,26 +55,46 @@ export class SocialMediaContentGenerator {
   }> {
     try {
       const result: Record<string, unknown> = {
-        content: await this.generateAIContent(platform, musicData, targetAudience),
+        content: await this.generateAIContent(
+          platform,
+          musicData,
+          targetAudience,
+        ),
       };
 
-      if (contentType === 'image' || contentType === 'all') {
-        result.image = await this.generateSocialMediaImage(platform, musicData, targetAudience);
+      if (contentType === "image" || contentType === "all") {
+        result.image = await this.generateSocialMediaImage(
+          platform,
+          musicData,
+          targetAudience,
+        );
       }
 
-      if (contentType === 'video' || contentType === 'all') {
-        result.video = await this.generateSocialMediaVideo(platform, musicData, targetAudience);
+      if (contentType === "video" || contentType === "all") {
+        result.video = await this.generateSocialMediaVideo(
+          platform,
+          musicData,
+          targetAudience,
+        );
       }
 
-      if (contentType === 'audio' || contentType === 'all') {
-        result.audio = await this.generateSocialMediaAudio(platform, musicData, targetAudience);
+      if (contentType === "audio" || contentType === "all") {
+        result.audio = await this.generateSocialMediaAudio(
+          platform,
+          musicData,
+          targetAudience,
+        );
       }
 
       return result;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating social media content:');
+      logger.warn({ err: error }, "Error generating social media content:");
       return {
-        content: await this.generateAIContent(platform, musicData, targetAudience),
+        content: await this.generateAIContent(
+          platform,
+          musicData,
+          targetAudience,
+        ),
         image: this.getDefaultImage(platform),
         video: this.getDefaultVideo(platform),
         audio: this.getDefaultAudio(platform),
@@ -84,7 +106,7 @@ export class SocialMediaContentGenerator {
   async generateContentFromURL(
     url: string,
     platform: string,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Promise<{
     image?: string;
     video?: string;
@@ -100,7 +122,7 @@ export class SocialMediaContentGenerator {
       const aiContent = await this.generateAIContentFromExtractedData(
         extractedData,
         platform,
-        targetAudience
+        targetAudience,
       );
 
       // Generate media content
@@ -108,7 +130,7 @@ export class SocialMediaContentGenerator {
         platform,
         extractedData,
         targetAudience,
-        'all'
+        "all",
       );
 
       return {
@@ -117,7 +139,7 @@ export class SocialMediaContentGenerator {
         content: aiContent,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating content from URL:');
+      logger.warn({ err: error }, "Error generating content from URL:");
       throw error;
     }
   }
@@ -125,7 +147,7 @@ export class SocialMediaContentGenerator {
   async generateSocialMediaImage(
     platform: string,
     musicData: unknown,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Promise<string> {
     try {
       // Get platform-specific dimensions
@@ -133,7 +155,12 @@ export class SocialMediaContentGenerator {
       const { width, height } = dimensions;
 
       // Generate AI-optimized SVG design
-      const svgContent = await this.createSharpOptimizedDesign(platform, musicData, targetAudience, dimensions);
+      const svgContent = await this.createSharpOptimizedDesign(
+        platform,
+        musicData,
+        targetAudience,
+        dimensions,
+      );
 
       // Convert SVG to PNG using Sharp
       const buffer = await sharp(Buffer.from(svgContent))
@@ -150,7 +177,7 @@ export class SocialMediaContentGenerator {
       // Return public URL
       return `/generated-content/images/${filename}`;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating social media image:');
+      logger.warn({ err: error }, "Error generating social media image:");
       // Fallback to default image
       return this.getDefaultImage(platform);
     }
@@ -161,17 +188,17 @@ export class SocialMediaContentGenerator {
     platform: string,
     musicData: unknown,
     targetAudience: unknown,
-    dimensions: { width: number; height: number }
+    dimensions: { width: number; height: number },
   ): Promise<string> {
     const { width, height } = dimensions;
     const data = (musicData as Record<string, unknown>) || {};
-    const title = data.title || data.name || 'New Release';
-    const artist = data.artist || data.artistName || 'B-Lawz Music';
+    const title = data.title || data.name || "New Release";
+    const artist = data.artist || data.artistName || "B-Lawz Music";
 
     // B-Lawz Music brand colors
-    const brandGold = '#FFD700';
-    const brandPurple = '#9B59B6';
-    const brandDark = '#1A1A2E';
+    const brandGold = "#FFD700";
+    const brandPurple = "#9B59B6";
+    const brandDark = "#1A1A2E";
 
     const svg = `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -254,38 +281,39 @@ export class SocialMediaContentGenerator {
 
   private escapeXml(text: string): string {
     return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
   }
 
   // Generate AI-powered social media video (animated GIF with multiple frames)
   async generateSocialMediaVideo(
     platform: string,
     musicData: unknown,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Promise<string> {
     try {
       const dimensions = this.getPlatformVideoDimensions(platform);
       const data = (musicData as Record<string, unknown>) || {};
-      const title = data.title || data.name || 'New Release';
-      const artist = data.artist || data.artistName || 'B-Lawz Music';
-      
-      const brandGold = '#FFD700';
-      const brandPurple = '#9B59B6';
-      const brandDark = '#1A1A2E';
-      
+      const title = data.title || data.name || "New Release";
+      const artist = data.artist || data.artistName || "B-Lawz Music";
+
+      const brandGold = "#FFD700";
+      const brandPurple = "#9B59B6";
+      const brandDark = "#1A1A2E";
+
       const frameCount = 10;
       const frames: Buffer[] = [];
-      
+
       for (let i = 0; i < frameCount; i++) {
         const progress = i / frameCount;
         const pulseScale = 1 + 0.1 * Math.sin(progress * Math.PI * 2);
         const waveOffset = progress * (dimensions.width / 2);
-        const circleRadius = (Math.min(dimensions.width, dimensions.height) / 4) * pulseScale;
-        
+        const circleRadius =
+          (Math.min(dimensions.width, dimensions.height) / 4) * pulseScale;
+
         const frameSvg = `
           <svg width="${dimensions.width}" height="${dimensions.height}" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -308,42 +336,44 @@ export class SocialMediaContentGenerator {
             <circle cx="${dimensions.width / 4 + waveOffset}" cy="${dimensions.height - 118}" r="8" fill="${brandGold}"/>
           </svg>
         `;
-        
+
         const frameBuffer = await sharp(Buffer.from(frameSvg))
           .resize(dimensions.width, dimensions.height)
           .png()
           .toBuffer();
-        
+
         frames.push(frameBuffer);
       }
 
       const timestamp = Date.now();
       const gifFilename = `social-${platform}-${timestamp}.gif`;
       const gifFilepath = join(this.videoDir, gifFilename);
-      
+
       const combinedBuffer = await sharp(frames[0])
-        .composite(frames.slice(1).map((frame, index) => ({
-          input: frame,
-          top: 0,
-          left: 0,
-          tile: false,
-        })))
+        .composite(
+          frames.slice(1).map((frame, index) => ({
+            input: frame,
+            top: 0,
+            left: 0,
+            tile: false,
+          })),
+        )
         .gif({ delay: 100, loop: 0 })
         .toBuffer();
 
       await fsWriteFile(gifFilepath, combinedBuffer);
-      
+
       const webpFilename = `social-${platform}-${timestamp}.webp`;
       const webpFilepath = join(this.videoDir, webpFilename);
-      
-      await sharp(frames[0])
-        .webp({ quality: 80 })
-        .toFile(webpFilepath);
-      
-      logger.info(`✅ Generated animated social content: ${gifFilename} (${frameCount} frames) + WebP poster`);
+
+      await sharp(frames[0]).webp({ quality: 80 }).toFile(webpFilepath);
+
+      logger.info(
+        `✅ Generated animated social content: ${gifFilename} (${frameCount} frames) + WebP poster`,
+      );
       return `/generated-content/videos/${webpFilename}`;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating social media video:');
+      logger.warn({ err: error }, "Error generating social media video:");
       return this.getDefaultVideo(platform);
     }
   }
@@ -352,26 +382,33 @@ export class SocialMediaContentGenerator {
   async generateSocialMediaAudio(
     platform: string,
     musicData: unknown,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Promise<string> {
     try {
       const filename = `social-${platform}-${Date.now()}.mp3`;
       const filepath = join(this.audioDir, filename);
 
       // AI-powered audio generation
-      const audioContent = await this.createAIAudioContent(platform, musicData, targetAudience);
+      const audioContent = await this.createAIAudioContent(
+        platform,
+        musicData,
+        targetAudience,
+      );
 
       // Write audio file
       await fsWriteFile(filepath, audioContent);
 
       return `/generated-content/audio/${filename}`;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating social media audio:');
+      logger.warn({ err: error }, "Error generating social media audio:");
       return this.getDefaultAudio(platform);
     }
   }
 
-  private getPlatformDimensions(platform: string): { width: number; height: number } {
+  private getPlatformDimensions(platform: string): {
+    width: number;
+    height: number;
+  } {
     const dimensions = {
       facebook: { width: 1200, height: 630 },
       instagram: { width: 1080, height: 1080 },
@@ -383,13 +420,15 @@ export class SocialMediaContentGenerator {
       googleBusiness: { width: 1200, height: 630 },
     };
 
-    return dimensions[platform as keyof typeof dimensions] || dimensions.facebook;
+    return (
+      dimensions[platform as keyof typeof dimensions] || dimensions.facebook
+    );
   }
 
   private async createAIOptimizedDesign(
     platform: string,
     musicData: unknown,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Promise<void> {
     const { width, height } = this.getPlatformDimensions(platform);
 
@@ -417,7 +456,10 @@ export class SocialMediaContentGenerator {
     this.applyAIFilters(platform, targetAudience);
   }
 
-  private generateAIColorScheme(musicData: unknown, targetAudience: unknown): Record<string, unknown> {
+  private generateAIColorScheme(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Record<string, unknown> {
     // AI algorithm to determine optimal colors based on:
     // - Music genre
     // - Target audience demographics
@@ -425,21 +467,24 @@ export class SocialMediaContentGenerator {
     // - Current trends
 
     const genreColors = {
-      trap: { primary: '#667eea', secondary: '#764ba2' },
-      'hip-hop': { primary: '#f093fb', secondary: '#f5576c' },
-      pop: { primary: '#4facfe', secondary: '#00f2fe' },
-      rock: { primary: '#fa709a', secondary: '#fee140' },
-      electronic: { primary: '#a8edea', secondary: '#fed6e3' },
-      'r&b': { primary: '#ff9a9e', secondary: '#fecfef' },
-      country: { primary: '#ffecd2', secondary: '#fcb69f' },
-      jazz: { primary: '#a18cd1', secondary: '#fbc2eb' },
+      trap: { primary: "#667eea", secondary: "#764ba2" },
+      "hip-hop": { primary: "#f093fb", secondary: "#f5576c" },
+      pop: { primary: "#4facfe", secondary: "#00f2fe" },
+      rock: { primary: "#fa709a", secondary: "#fee140" },
+      electronic: { primary: "#a8edea", secondary: "#fed6e3" },
+      "r&b": { primary: "#ff9a9e", secondary: "#fecfef" },
+      country: { primary: "#ffecd2", secondary: "#fcb69f" },
+      jazz: { primary: "#a18cd1", secondary: "#fbc2eb" },
     };
 
-    const genre = musicData.genre?.toLowerCase() || 'pop';
+    const genre = musicData.genre?.toLowerCase() || "pop";
     return genreColors[genre as keyof typeof genreColors] || genreColors.pop;
   }
 
-  private async addVisualElements(musicData: unknown, targetAudience: unknown): Promise<void> {
+  private async addVisualElements(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<void> {
     // Add AI-generated visual elements based on music data
 
     // Add waveform visualization
@@ -462,15 +507,21 @@ export class SocialMediaContentGenerator {
     const barSpacing = 2;
     const maxBarHeight = height * 0.3;
 
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
 
-    const seedStr = typeof musicData === 'object' && musicData !== null
-      ? ((musicData as Record<string, unknown>).artist || '') + ':' + ((musicData as Record<string, unknown>).title || '')
-      : String(musicData ?? 'waveform');
+    const seedStr =
+      typeof musicData === "object" && musicData !== null
+        ? ((musicData as Record<string, unknown>).artist || "") +
+          ":" +
+          ((musicData as Record<string, unknown>).title || "")
+        : String(musicData ?? "waveform");
 
     const fnv = (s: string) => {
       let h = 0x811c9dc5;
-      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = (h * 0x01000193) >>> 0;
+      }
       return h;
     };
 
@@ -487,22 +538,23 @@ export class SocialMediaContentGenerator {
     // Add genre-specific visual elements
     const { width, height } = this.canvas;
 
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    this.ctx.font = '48px Arial';
-    this.ctx.textAlign = 'center';
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+    this.ctx.font = "48px Arial";
+    this.ctx.textAlign = "center";
 
     const genreIcons = {
-      trap: '🎵',
-      'hip-hop': '🎤',
-      pop: '⭐',
-      rock: '🎸',
-      electronic: '🎛️',
-      'r&b': '🎶',
-      country: '🤠',
-      jazz: '🎷',
+      trap: "🎵",
+      "hip-hop": "🎤",
+      pop: "⭐",
+      rock: "🎸",
+      electronic: "🎛️",
+      "r&b": "🎶",
+      country: "🤠",
+      jazz: "🎷",
     };
 
-    const icon = genreIcons[genre?.toLowerCase() as keyof typeof genreIcons] || '🎵';
+    const icon =
+      genreIcons[genre?.toLowerCase() as keyof typeof genreIcons] || "🎵";
     this.ctx.fillText(icon, width - 60, 60);
   }
 
@@ -511,10 +563,10 @@ export class SocialMediaContentGenerator {
     const { width, height } = this.canvas;
 
     // Add trending hashtag visualization
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    this.ctx.font = '24px Arial';
-    this.ctx.textAlign = 'right';
-    this.ctx.fillText('#Trending', width - 20, height - 20);
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    this.ctx.font = "24px Arial";
+    this.ctx.textAlign = "right";
+    this.ctx.fillText("#Trending", width - 20, height - 20);
   }
 
   private addAIPatterns(musicData: unknown, targetAudience: unknown): void {
@@ -522,16 +574,22 @@ export class SocialMediaContentGenerator {
     const { width, height } = this.canvas;
 
     // Create geometric patterns
-    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    this.ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
     this.ctx.lineWidth = 2;
 
-    const seedStr = typeof musicData === 'object' && musicData !== null
-      ? ((musicData as Record<string, unknown>).artist || '') + ':' + ((musicData as Record<string, unknown>).title || '')
-      : String(musicData ?? 'pattern');
+    const seedStr =
+      typeof musicData === "object" && musicData !== null
+        ? ((musicData as Record<string, unknown>).artist || "") +
+          ":" +
+          ((musicData as Record<string, unknown>).title || "")
+        : String(musicData ?? "pattern");
 
     const fnv = (s: string) => {
       let h = 0x811c9dc5;
-      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = (h * 0x01000193) >>> 0;
+      }
       return h;
     };
 
@@ -548,7 +606,11 @@ export class SocialMediaContentGenerator {
     }
   }
 
-  private addOptimizedText(musicData: unknown, platform: string, targetAudience: unknown): void {
+  private addOptimizedText(
+    musicData: unknown,
+    platform: string,
+    targetAudience: unknown,
+  ): void {
     const { width, height } = this.canvas;
 
     // AI-optimized text placement and styling
@@ -557,46 +619,57 @@ export class SocialMediaContentGenerator {
     // Add main title
     this.ctx.fillStyle = textConfig.titleColor;
     this.ctx.font = textConfig.titleFont;
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText(musicData.title || 'New Release', width / 2, height * 0.3);
+    this.ctx.textAlign = "center";
+    this.ctx.fillText(
+      musicData.title || "New Release",
+      width / 2,
+      height * 0.3,
+    );
 
     // Add artist name
     this.ctx.fillStyle = textConfig.subtitleColor;
     this.ctx.font = textConfig.subtitleFont;
-    this.ctx.fillText(musicData.artist || 'Artist Name', width / 2, height * 0.4);
+    this.ctx.fillText(
+      musicData.artist || "Artist Name",
+      width / 2,
+      height * 0.4,
+    );
 
     // Add call-to-action
     this.ctx.fillStyle = textConfig.ctaColor;
     this.ctx.font = textConfig.ctaFont;
-    this.ctx.fillText('Stream Now', width / 2, height * 0.7);
+    this.ctx.fillText("Stream Now", width / 2, height * 0.7);
   }
 
-  private getOptimizedTextConfig(platform: string, targetAudience: unknown): Record<string, unknown> {
+  private getOptimizedTextConfig(
+    platform: string,
+    targetAudience: unknown,
+  ): Record<string, unknown> {
     // AI-optimized text configuration based on platform and audience
     const configs = {
       facebook: {
-        titleFont: 'bold 48px Arial',
-        subtitleFont: '32px Arial',
-        ctaFont: '24px Arial',
-        titleColor: '#ffffff',
-        subtitleColor: 'rgba(255, 255, 255, 0.9)',
-        ctaColor: '#ffd700',
+        titleFont: "bold 48px Arial",
+        subtitleFont: "32px Arial",
+        ctaFont: "24px Arial",
+        titleColor: "#ffffff",
+        subtitleColor: "rgba(255, 255, 255, 0.9)",
+        ctaColor: "#ffd700",
       },
       instagram: {
-        titleFont: 'bold 56px Arial',
-        subtitleFont: '36px Arial',
-        ctaFont: '28px Arial',
-        titleColor: '#ffffff',
-        subtitleColor: 'rgba(255, 255, 255, 0.9)',
-        ctaColor: '#ff6b6b',
+        titleFont: "bold 56px Arial",
+        subtitleFont: "36px Arial",
+        ctaFont: "28px Arial",
+        titleColor: "#ffffff",
+        subtitleColor: "rgba(255, 255, 255, 0.9)",
+        ctaColor: "#ff6b6b",
       },
       twitter: {
-        titleFont: 'bold 44px Arial',
-        subtitleFont: '28px Arial',
-        ctaFont: '22px Arial',
-        titleColor: '#ffffff',
-        subtitleColor: 'rgba(255, 255, 255, 0.9)',
-        ctaColor: '#1da1f2',
+        titleFont: "bold 44px Arial",
+        subtitleFont: "28px Arial",
+        ctaFont: "22px Arial",
+        titleColor: "#ffffff",
+        subtitleColor: "rgba(255, 255, 255, 0.9)",
+        ctaColor: "#1da1f2",
       },
     };
 
@@ -607,13 +680,13 @@ export class SocialMediaContentGenerator {
     const { width, height } = this.canvas;
 
     // Add Max Booster branding
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    this.ctx.font = '20px Arial';
-    this.ctx.textAlign = 'left';
-    this.ctx.fillText('Max Booster', 20, height - 20);
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    this.ctx.font = "20px Arial";
+    this.ctx.textAlign = "left";
+    this.ctx.fillText("Max Booster", 20, height - 20);
 
     // Add platform-specific branding
-    this.ctx.textAlign = 'right';
+    this.ctx.textAlign = "right";
     this.ctx.fillText(`via ${platform}`, width - 20, height - 20);
   }
 
@@ -623,8 +696,8 @@ export class SocialMediaContentGenerator {
 
     // Add subtle overlay for better text readability
     const overlay = this.ctx.createLinearGradient(0, 0, 0, height);
-    overlay.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
-    overlay.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+    overlay.addColorStop(0, "rgba(0, 0, 0, 0.1)");
+    overlay.addColorStop(1, "rgba(0, 0, 0, 0.3)");
 
     this.ctx.fillStyle = overlay;
     this.ctx.fillRect(0, 0, width, height);
@@ -647,7 +720,9 @@ export class SocialMediaContentGenerator {
       googleBusiness: { width: 1280, height: 720, duration: 30 },
     };
 
-    return dimensions[platform as keyof typeof dimensions] || dimensions.facebook;
+    return (
+      dimensions[platform as keyof typeof dimensions] || dimensions.facebook
+    );
   }
 
   // Create AI-powered video content
@@ -655,12 +730,16 @@ export class SocialMediaContentGenerator {
     platform: string,
     musicData: unknown,
     targetAudience: unknown,
-    dimensions: unknown
+    dimensions: unknown,
   ): Promise<Buffer> {
     const data = (musicData as Record<string, unknown>) || {};
-    const dims = dimensions as { width: number; height: number; duration: number };
-    const title = data.title || data.name || 'New Release';
-    const artist = data.artist || data.artistName || 'B-Lawz Music';
+    const dims = dimensions as {
+      width: number;
+      height: number;
+      duration: number;
+    };
+    const title = data.title || data.name || "New Release";
+    const artist = data.artist || data.artistName || "B-Lawz Music";
 
     const videoConfig = {
       style: this.getAIVideoStyle(musicData, targetAudience),
@@ -670,9 +749,9 @@ export class SocialMediaContentGenerator {
       colorScheme: this.generateAIColorScheme(musicData, targetAudience),
     };
 
-    const brandGold = '#FFD700';
-    const brandPurple = '#9B59B6';
-    const brandDark = '#1A1A2E';
+    const brandGold = "#FFD700";
+    const brandPurple = "#9B59B6";
+    const brandDark = "#1A1A2E";
 
     const frameSvg = `
       <svg width="${dims.width}" height="${dims.height}" xmlns="http://www.w3.org/2000/svg">
@@ -708,7 +787,7 @@ export class SocialMediaContentGenerator {
   private async createAIAudioContent(
     platform: string,
     musicData: unknown,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Promise<Buffer> {
     const data = (musicData as Record<string, unknown>) || {};
     const audioConfig = {
@@ -719,10 +798,10 @@ export class SocialMediaContentGenerator {
     };
 
     try {
-      const genre = data.genre || 'pop';
-      const mood = data.mood || 'energetic';
+      const genre = data.genre || "pop";
+      const mood = data.mood || "energetic";
       const textPrompt = `${mood} ${genre} beat at ${data.bpm || 120} bpm`;
-      
+
       const generationResult = await this.audioGenerator.generateFromText({
         text: textPrompt,
         duration: audioConfig.length,
@@ -731,15 +810,18 @@ export class SocialMediaContentGenerator {
 
       const audioData = generationResult.audioData;
       const sampleRate = generationResult.sampleRate;
-      
+
       return this.float32ToWavBuffer(audioData, sampleRate);
     } catch (error) {
-      logger.warn({ err: error }, 'In-house AI audio generation fallback:');
+      logger.warn({ err: error }, "In-house AI audio generation fallback:");
       return this.generateFallbackAudio(audioConfig.length);
     }
   }
 
-  private float32ToWavBuffer(audioData: Float32Array, sampleRate: number): Buffer {
+  private float32ToWavBuffer(
+    audioData: Float32Array,
+    sampleRate: number,
+  ): Buffer {
     const numChannels = 1;
     const bitsPerSample = 16;
     const numSamples = audioData.length;
@@ -748,10 +830,10 @@ export class SocialMediaContentGenerator {
 
     const buffer = Buffer.alloc(fileSize);
 
-    buffer.write('RIFF', 0);
+    buffer.write("RIFF", 0);
     buffer.writeUInt32LE(fileSize - 8, 4);
-    buffer.write('WAVE', 8);
-    buffer.write('fmt ', 12);
+    buffer.write("WAVE", 8);
+    buffer.write("fmt ", 12);
     buffer.writeUInt32LE(16, 16);
     buffer.writeUInt16LE(1, 20);
     buffer.writeUInt16LE(numChannels, 22);
@@ -759,7 +841,7 @@ export class SocialMediaContentGenerator {
     buffer.writeUInt32LE(sampleRate * numChannels * (bitsPerSample / 8), 28);
     buffer.writeUInt16LE(numChannels * (bitsPerSample / 8), 32);
     buffer.writeUInt16LE(bitsPerSample, 34);
-    buffer.write('data', 36);
+    buffer.write("data", 36);
     buffer.writeUInt32LE(dataSize, 40);
 
     let offset = 44;
@@ -781,10 +863,10 @@ export class SocialMediaContentGenerator {
 
     const buffer = Buffer.alloc(fileSize);
 
-    buffer.write('RIFF', 0);
+    buffer.write("RIFF", 0);
     buffer.writeUInt32LE(fileSize - 8, 4);
-    buffer.write('WAVE', 8);
-    buffer.write('fmt ', 12);
+    buffer.write("WAVE", 8);
+    buffer.write("fmt ", 12);
     buffer.writeUInt32LE(16, 16);
     buffer.writeUInt16LE(1, 20);
     buffer.writeUInt16LE(1, 22);
@@ -792,7 +874,7 @@ export class SocialMediaContentGenerator {
     buffer.writeUInt32LE(sampleRate * 2, 28);
     buffer.writeUInt16LE(2, 32);
     buffer.writeUInt16LE(16, 34);
-    buffer.write('data', 36);
+    buffer.write("data", 36);
     buffer.writeUInt32LE(dataSize, 40);
 
     let offset = 44;
@@ -800,7 +882,7 @@ export class SocialMediaContentGenerator {
       const t = i / sampleRate;
       const freq = 440 * Math.pow(2, (t % 4) / 12);
       let sample = Math.sin(2 * Math.PI * freq * t) * 0.3;
-      
+
       const fadeIn = Math.min(1, i / (sampleRate * 0.5));
       const fadeOut = Math.min(1, (numSamples - i) / (sampleRate * 0.5));
       sample *= fadeIn * fadeOut;
@@ -817,18 +899,18 @@ export class SocialMediaContentGenerator {
     try {
       // AI-powered URL content extraction
       const extractedData = {
-        title: 'Extracted Title',
-        description: 'Extracted description from URL',
-        images: ['extracted-image-1.jpg', 'extracted-image-2.jpg'],
-        videos: ['extracted-video-1.mp4'],
-        audio: ['extracted-audio-1.mp3'],
+        title: "Extracted Title",
+        description: "Extracted description from URL",
+        images: ["extracted-image-1.jpg", "extracted-image-2.jpg"],
+        videos: ["extracted-video-1.mp4"],
+        audio: ["extracted-audio-1.mp3"],
         metadata: {
           domain: new URL(url).hostname,
-          type: 'music',
-          genre: 'pop',
-          mood: 'upbeat',
+          type: "music",
+          genre: "pop",
+          mood: "upbeat",
           duration: 180,
-          quality: 'high',
+          quality: "high",
         },
         socialSignals: {
           likes: 1250,
@@ -840,7 +922,7 @@ export class SocialMediaContentGenerator {
 
       return extractedData;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error extracting content from URL:');
+      logger.warn({ err: error }, "Error extracting content from URL:");
       throw error;
     }
   }
@@ -849,29 +931,32 @@ export class SocialMediaContentGenerator {
   private async generateAIContentFromExtractedData(
     extractedData: unknown,
     platform: string,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Promise<unknown> {
     const data = (extractedData as Record<string, unknown>) || {};
     const audience = (targetAudience as Record<string, unknown>) || {};
-    
+
     try {
-      const platformMap: Record<string, 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin'> = {
-        twitter: 'twitter',
-        instagram: 'instagram',
-        tiktok: 'tiktok',
-        youtube: 'youtube',
-        facebook: 'facebook',
-        linkedin: 'linkedin',
+      const platformMap: Record<
+        string,
+        "twitter" | "instagram" | "tiktok" | "youtube" | "facebook" | "linkedin"
+      > = {
+        twitter: "twitter",
+        instagram: "instagram",
+        tiktok: "tiktok",
+        youtube: "youtube",
+        facebook: "facebook",
+        linkedin: "linkedin",
       };
 
       const result = await this.contentGenerator.generateCaption({
-        tone: audience.tone || 'energetic',
-        platform: platformMap[platform] || 'instagram',
-        topic: data.title || 'music',
+        tone: audience.tone || "energetic",
+        platform: platformMap[platform] || "instagram",
+        topic: data.title || "music",
         trackTitle: data.title,
         artistName: data.artist,
         genre: data.metadata?.genre,
-        contentType: 'release',
+        contentType: "release",
         includeHashtags: true,
         includeEmojis: true,
       });
@@ -879,16 +964,16 @@ export class SocialMediaContentGenerator {
       return {
         post: result.caption,
         hashtags: result.hashtags,
-        callToAction: 'Stream now and share with your friends!',
+        callToAction: "Stream now and share with your friends!",
         engagement: result.estimatedEngagement,
         viralPotential: result.estimatedEngagement * 0.2,
       };
     } catch (error) {
-      logger.warn({ err: error }, 'In-house content generation fallback:');
+      logger.warn({ err: error }, "In-house content generation fallback:");
       return {
-        post: `🎵 Check out this amazing track: "${data.title || 'New Release'}"! ${data.description || 'Amazing new music for you.'}`,
-        hashtags: ['#Music', '#NewTrack', '#Viral', '#Trending'],
-        callToAction: 'Stream now and share with your friends!',
+        post: `🎵 Check out this amazing track: "${data.title || "New Release"}"! ${data.description || "Amazing new music for you."}`,
+        hashtags: ["#Music", "#NewTrack", "#Viral", "#Trending"],
+        callToAction: "Stream now and share with your friends!",
         engagement: 0.85,
         viralPotential: 0.15,
       };
@@ -899,29 +984,32 @@ export class SocialMediaContentGenerator {
   private async generateAIContent(
     platform: string,
     musicData: unknown,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Promise<unknown> {
     const data = (musicData as Record<string, unknown>) || {};
     const audience = (targetAudience as Record<string, unknown>) || {};
-    
+
     try {
-      const platformMap: Record<string, 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin'> = {
-        twitter: 'twitter',
-        instagram: 'instagram',
-        tiktok: 'tiktok',
-        youtube: 'youtube',
-        facebook: 'facebook',
-        linkedin: 'linkedin',
+      const platformMap: Record<
+        string,
+        "twitter" | "instagram" | "tiktok" | "youtube" | "facebook" | "linkedin"
+      > = {
+        twitter: "twitter",
+        instagram: "instagram",
+        tiktok: "tiktok",
+        youtube: "youtube",
+        facebook: "facebook",
+        linkedin: "linkedin",
       };
 
       const result = await this.contentGenerator.generateCaption({
-        tone: audience.tone || 'energetic',
-        platform: platformMap[platform] || 'instagram',
-        topic: data.title || 'music release',
+        tone: audience.tone || "energetic",
+        platform: platformMap[platform] || "instagram",
+        topic: data.title || "music release",
         trackTitle: data.title,
         artistName: data.artist || data.artistName,
         genre: data.genre,
-        contentType: data.contentType || 'release',
+        contentType: data.contentType || "release",
         includeHashtags: true,
         includeEmojis: true,
       });
@@ -929,77 +1017,92 @@ export class SocialMediaContentGenerator {
       return {
         post: result.caption,
         hashtags: result.hashtags,
-        optimalTime: '7:00 PM',
+        optimalTime: "7:00 PM",
         engagement: result.estimatedEngagement,
         toneMatch: result.toneMatch,
       };
     } catch (error) {
-      logger.warn({ err: error }, 'In-house content generation fallback:');
+      logger.warn({ err: error }, "In-house content generation fallback:");
       return {
         post: `🎵 Just dropped my latest track! The energy in this one is absolutely incredible. Can't wait for you all to hear it! #NewMusic #Music #Artist`,
-        hashtags: ['#NewMusic', '#Music', '#Artist', '#LatestTrack'],
-        optimalTime: '7:00 PM',
+        hashtags: ["#NewMusic", "#Music", "#Artist", "#LatestTrack"],
+        optimalTime: "7:00 PM",
         engagement: 0.85,
       };
     }
   }
 
   // AI video style generation
-  private getAIVideoStyle(musicData: unknown, targetAudience: unknown): Record<string, unknown> {
+  private getAIVideoStyle(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Record<string, unknown> {
     return {
-      animation: 'dynamic',
-      speed: 'medium',
-      transitions: 'smooth',
-      effects: 'modern',
+      animation: "dynamic",
+      speed: "medium",
+      transitions: "smooth",
+      effects: "modern",
     };
   }
 
   // AI video effects generation
-  private getAIVideoEffects(platform: string, musicData: unknown): Record<string, unknown> {
+  private getAIVideoEffects(
+    platform: string,
+    musicData: unknown,
+  ): Record<string, unknown> {
     return {
-      filters: ['vintage', 'neon'],
-      overlays: ['waveform', 'lyrics'],
-      animations: ['bounce', 'fade'],
+      filters: ["vintage", "neon"],
+      overlays: ["waveform", "lyrics"],
+      animations: ["bounce", "fade"],
     };
   }
 
   // AI video transitions
   private getAIVideoTransitions(platform: string): Record<string, unknown> {
     return {
-      type: 'smooth',
+      type: "smooth",
       duration: 0.5,
-      style: 'modern',
+      style: "modern",
     };
   }
 
   // AI video text overlay
-  private getAIVideoTextOverlay(musicData: unknown, platform: string): Record<string, unknown> {
+  private getAIVideoTextOverlay(
+    musicData: unknown,
+    platform: string,
+  ): Record<string, unknown> {
     return {
-      title: musicData.title || 'New Release',
-      artist: musicData.artist || 'Artist Name',
-      style: 'bold',
-      color: '#ffffff',
-      position: 'center',
+      title: musicData.title || "New Release",
+      artist: musicData.artist || "Artist Name",
+      style: "bold",
+      color: "#ffffff",
+      position: "center",
     };
   }
 
   // AI audio style generation
-  private getAIAudioStyle(musicData: unknown, targetAudience: unknown): Record<string, unknown> {
+  private getAIAudioStyle(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Record<string, unknown> {
     return {
-      genre: musicData.genre || 'pop',
-      mood: 'upbeat',
-      tempo: 'medium',
-      effects: ['reverb', 'compression'],
+      genre: musicData.genre || "pop",
+      mood: "upbeat",
+      tempo: "medium",
+      effects: ["reverb", "compression"],
     };
   }
 
   // AI audio effects
-  private getAIAudioEffects(platform: string, musicData: unknown): Record<string, unknown> {
+  private getAIAudioEffects(
+    platform: string,
+    musicData: unknown,
+  ): Record<string, unknown> {
     return {
-      eq: 'balanced',
-      compression: 'medium',
-      reverb: 'room',
-      mastering: 'loud',
+      eq: "balanced",
+      compression: "medium",
+      reverb: "room",
+      mastering: "loud",
     };
   }
 
@@ -1021,62 +1124,71 @@ export class SocialMediaContentGenerator {
   // Platform audio quality
   private getPlatformAudioQuality(platform: string): string {
     const qualities = {
-      facebook: 'high',
-      instagram: 'medium',
-      twitter: 'medium',
-      youtube: 'high',
-      tiktok: 'medium',
-      linkedin: 'high',
-      threads: 'medium',
-      googleBusiness: 'high',
+      facebook: "high",
+      instagram: "medium",
+      twitter: "medium",
+      youtube: "high",
+      tiktok: "medium",
+      linkedin: "high",
+      threads: "medium",
+      googleBusiness: "high",
     };
-    return qualities[platform as keyof typeof qualities] || 'medium';
+    return qualities[platform as keyof typeof qualities] || "medium";
   }
 
   // Default fallback methods
   private getDefaultImage(platform: string): string {
     const defaultImages = {
-      facebook: '/images/default-facebook.png',
-      instagram: '/images/default-instagram.png',
-      twitter: '/images/default-twitter.png',
-      youtube: '/images/default-youtube.png',
-      tiktok: '/images/default-tiktok.png',
-      linkedin: '/images/default-linkedin.png',
-      threads: '/images/default-threads.png',
-      googleBusiness: '/images/default-google-business.png',
+      facebook: "/images/default-facebook.png",
+      instagram: "/images/default-instagram.png",
+      twitter: "/images/default-twitter.png",
+      youtube: "/images/default-youtube.png",
+      tiktok: "/images/default-tiktok.png",
+      linkedin: "/images/default-linkedin.png",
+      threads: "/images/default-threads.png",
+      googleBusiness: "/images/default-google-business.png",
     };
 
-    return defaultImages[platform as keyof typeof defaultImages] || '/images/default-social.png';
+    return (
+      defaultImages[platform as keyof typeof defaultImages] ||
+      "/images/default-social.png"
+    );
   }
 
   private getDefaultVideo(platform: string): string {
     const defaultVideos = {
-      facebook: '/videos/default-facebook.mp4',
-      instagram: '/videos/default-instagram.mp4',
-      twitter: '/videos/default-twitter.mp4',
-      youtube: '/videos/default-youtube.mp4',
-      tiktok: '/videos/default-tiktok.mp4',
-      linkedin: '/videos/default-linkedin.mp4',
-      threads: '/videos/default-threads.mp4',
-      googleBusiness: '/videos/default-google-business.mp4',
+      facebook: "/videos/default-facebook.mp4",
+      instagram: "/videos/default-instagram.mp4",
+      twitter: "/videos/default-twitter.mp4",
+      youtube: "/videos/default-youtube.mp4",
+      tiktok: "/videos/default-tiktok.mp4",
+      linkedin: "/videos/default-linkedin.mp4",
+      threads: "/videos/default-threads.mp4",
+      googleBusiness: "/videos/default-google-business.mp4",
     };
 
-    return defaultVideos[platform as keyof typeof defaultVideos] || '/videos/default-social.mp4';
+    return (
+      defaultVideos[platform as keyof typeof defaultVideos] ||
+      "/videos/default-social.mp4"
+    );
   }
 
   private getDefaultAudio(platform: string): string {
     const defaultAudios = {
-      facebook: '/audio/default-facebook.mp3',
-      instagram: '/audio/default-instagram.mp3',
-      twitter: '/audio/default-twitter.mp3',
-      youtube: '/audio/default-youtube.mp3',
-      tiktok: '/audio/default-tiktok.mp3',
-      linkedin: '/audio/default-linkedin.mp3',
-      threads: '/audio/default-threads.mp3',
-      googleBusiness: '/audio/default-google-business.mp3',
+      facebook: "/audio/default-facebook.mp3",
+      instagram: "/audio/default-instagram.mp3",
+      twitter: "/audio/default-twitter.mp3",
+      youtube: "/audio/default-youtube.mp3",
+      tiktok: "/audio/default-tiktok.mp3",
+      linkedin: "/audio/default-linkedin.mp3",
+      threads: "/audio/default-threads.mp3",
+      googleBusiness: "/audio/default-google-business.mp3",
     };
 
-    return defaultAudios[platform as keyof typeof defaultAudios] || '/audio/default-social.mp3';
+    return (
+      defaultAudios[platform as keyof typeof defaultAudios] ||
+      "/audio/default-social.mp3"
+    );
   }
 }
 
@@ -1087,16 +1199,20 @@ export const contentGenerator = new SocialMediaContentGenerator();
 export async function generateSocialMediaImage(
   platform: string,
   musicData: unknown,
-  targetAudience: unknown
+  targetAudience: unknown,
 ): Promise<string> {
-  return await contentGenerator.generateSocialMediaImage(platform, musicData, targetAudience);
+  return await contentGenerator.generateSocialMediaImage(
+    platform,
+    musicData,
+    targetAudience,
+  );
 }
 
 export async function generateSocialMediaContent(
   platform: string,
   musicData: unknown,
   targetAudience: unknown,
-  contentType: 'image' | 'video' | 'audio' | 'all' = 'all'
+  contentType: "image" | "video" | "audio" | "all" = "all",
 ): Promise<{
   image?: string;
   video?: string;
@@ -1107,14 +1223,14 @@ export async function generateSocialMediaContent(
     platform,
     musicData,
     targetAudience,
-    contentType
+    contentType,
   );
 }
 
 export async function generateContentFromURL(
   url: string,
   platform: string,
-  targetAudience: unknown
+  targetAudience: unknown,
 ): Promise<{
   image?: string;
   video?: string;
@@ -1122,5 +1238,9 @@ export async function generateContentFromURL(
   content: Record<string, unknown>;
   extractedData: Record<string, unknown>;
 }> {
-  return await contentGenerator.generateContentFromURL(url, platform, targetAudience);
+  return await contentGenerator.generateContentFromURL(
+    url,
+    platform,
+    targetAudience,
+  );
 }

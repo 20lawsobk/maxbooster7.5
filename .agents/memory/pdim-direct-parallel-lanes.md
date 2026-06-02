@@ -10,6 +10,7 @@ Direct PDIM calls were serialized through one chain per process. At RTT ≈ 80 m
 **Rule:** when chain depth pins at the fast-fail boundary and `_pdimGapMs` is at/near the worker-count-aware floor, the constraint is concurrency, not gap. Split the direct chain into N parallel lanes (round-robin assignment) so throughput becomes `N / (RTT + gap)` per worker. PDIM itself handles concurrent connections — the script chain already runs in parallel with the direct chain, which is the existence proof.
 
 **How to apply:**
+
 - AIMD state (`_pdimGapMs`, `_rateLimitedUntil`, success/429 adapters) MUST stay global. Each lane reads the same gap and honours the same rate-limit deadline — that is what keeps cluster-wide rate within PDIM's per-instance limit.
 - Update the fast-fail wait estimate to `(directDepth / lanes) × gap`, otherwise the threshold trips at 1/N of the actual draining capacity.
 - Lane count must be sized against the worker-count-aware gap floor (`_PDIM_GAP_FLOOR_BASE_MS × clusterWorkers`, currently 6ms × workers) so combined req/s stays under PDIM's per-instance limit. Dev (1 worker, floor 6 ms): 4 lanes ≈ ~47 req/s at RTT≈80ms. Prod (13 workers, floor 78 ms): 2 lanes/worker ≈ ~165 req/s combined at RTT≈80ms. Recheck the math whenever `_PDIM_GAP_FLOOR_BASE_MS` changes.

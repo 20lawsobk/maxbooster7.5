@@ -1,5 +1,5 @@
-import { createHash } from 'crypto';
-import type { DeltaOp } from './types.js';
+import { createHash } from "crypto";
+import type { DeltaOp } from "./types.js";
 
 const WINDOW = 32;
 const MAX_MATCH = 4096;
@@ -14,7 +14,11 @@ export class DeltaEngine {
 
     const flushInsert = () => {
       if (pendingInsert.length > 0) {
-        ops.push({ type: 'insert', length: pendingInsert.length, data: Buffer.from(pendingInsert) });
+        ops.push({
+          type: "insert",
+          length: pendingInsert.length,
+          data: Buffer.from(pendingInsert),
+        });
         pendingInsert = [];
       }
     };
@@ -42,7 +46,7 @@ export class DeltaEngine {
 
       if (bestLen >= WINDOW) {
         flushInsert();
-        ops.push({ type: 'copy', srcOffset: bestSrc, length: bestLen });
+        ops.push({ type: "copy", srcOffset: bestSrc, length: bestLen });
         tPos += bestLen;
       } else {
         pendingInsert.push(target[tPos++]);
@@ -60,10 +64,10 @@ export class DeltaEngine {
     let outPos = 0;
 
     for (const op of ops) {
-      if (op.type === 'copy' && op.srcOffset !== undefined) {
+      if (op.type === "copy" && op.srcOffset !== undefined) {
         base.copy(out, outPos, op.srcOffset, op.srcOffset + op.length);
         outPos += op.length;
-      } else if (op.type === 'insert' && op.data) {
+      } else if (op.type === "insert" && op.data) {
         op.data.copy(out, outPos);
         outPos += op.length;
       }
@@ -96,15 +100,30 @@ export class DeltaEngine {
     return h.toString(16);
   }
 
-  private matchLength(a: Buffer, aPos: number, b: Buffer, bPos: number, max: number): number {
+  private matchLength(
+    a: Buffer,
+    aPos: number,
+    b: Buffer,
+    bPos: number,
+    max: number,
+  ): number {
     let len = 0;
-    while (len < max && aPos + len < a.length && bPos + len < b.length && a[aPos + len] === b[bPos + len]) {
+    while (
+      len < max &&
+      aPos + len < a.length &&
+      bPos + len < b.length &&
+      a[aPos + len] === b[bPos + len]
+    ) {
       len++;
     }
     return len;
   }
 
-  private serializeOps(ops: DeltaOp[], baseLen: number, targetLen: number): Buffer {
+  private serializeOps(
+    ops: DeltaOp[],
+    baseLen: number,
+    targetLen: number,
+  ): Buffer {
     const parts: Buffer[] = [];
     const header = Buffer.allocUnsafe(8);
     header.writeUInt32LE(baseLen, 0);
@@ -112,7 +131,7 @@ export class DeltaEngine {
     parts.push(header);
 
     for (const op of ops) {
-      if (op.type === 'copy') {
+      if (op.type === "copy") {
         const b = Buffer.allocUnsafe(9);
         b[0] = 0x01;
         b.writeUInt32LE(op.srcOffset!, 1);
@@ -130,7 +149,11 @@ export class DeltaEngine {
     return Buffer.concat(parts);
   }
 
-  private deserializeOps(delta: Buffer): { baseLen: number; targetLen: number; ops: DeltaOp[] } {
+  private deserializeOps(delta: Buffer): {
+    baseLen: number;
+    targetLen: number;
+    ops: DeltaOp[];
+  } {
     const baseLen = delta.readUInt32LE(0);
     const targetLen = delta.readUInt32LE(4);
     const ops: DeltaOp[] = [];
@@ -139,13 +162,17 @@ export class DeltaEngine {
     while (pos < delta.length) {
       const type = delta[pos++];
       if (type === 0x01) {
-        const srcOffset = delta.readUInt32LE(pos); pos += 4;
-        const length = delta.readUInt32LE(pos); pos += 4;
-        ops.push({ type: 'copy', srcOffset, length });
+        const srcOffset = delta.readUInt32LE(pos);
+        pos += 4;
+        const length = delta.readUInt32LE(pos);
+        pos += 4;
+        ops.push({ type: "copy", srcOffset, length });
       } else if (type === 0x02) {
-        const length = delta.readUInt32LE(pos); pos += 4;
-        const data = delta.subarray(pos, pos + length); pos += length;
-        ops.push({ type: 'insert', length, data });
+        const length = delta.readUInt32LE(pos);
+        pos += 4;
+        const data = delta.subarray(pos, pos + length);
+        pos += length;
+        ops.push({ type: "insert", length, data });
       }
     }
 

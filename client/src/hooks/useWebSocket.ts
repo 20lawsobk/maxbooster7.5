@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { logger } from '@/lib/logger';
+import { useEffect, useRef, useState } from "react";
+import { logger } from "@/lib/logger";
 
 interface WebSocketMessage {
   type: string;
@@ -29,8 +29,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<
-    'connecting' | 'connected' | 'disconnected' | 'error'
-  >('disconnected');
+    "connecting" | "connected" | "disconnected" | "error"
+  >("disconnected");
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -41,8 +41,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     }
 
     try {
-      setConnectionStatus('connecting');
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      setConnectionStatus("connecting");
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${protocol}//${window.location.host}/ws`;
 
       const ws = new WebSocket(wsUrl);
@@ -50,7 +50,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       ws.onopen = () => {
         setIsConnected(true);
-        setConnectionStatus('connected');
+        setConnectionStatus("connected");
         reconnectAttemptsRef.current = 0;
         // Authentication is now handled server-side via session cookies
         // No need to send userId from client
@@ -62,13 +62,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           const message = JSON.parse(event.data);
           onMessage?.(message);
         } catch (error: unknown) {
-          logger.error('Failed to parse WebSocket message:', error);
+          logger.error("Failed to parse WebSocket message:", error);
         }
       };
 
       ws.onclose = () => {
         setIsConnected(false);
-        setConnectionStatus('disconnected');
+        setConnectionStatus("disconnected");
         onDisconnect?.();
 
         // Attempt to reconnect
@@ -81,11 +81,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       };
 
       ws.onerror = (error) => {
-        setConnectionStatus('error');
+        setConnectionStatus("error");
         onError?.(error);
       };
     } catch (error: unknown) {
-      setConnectionStatus('error');
+      setConnectionStatus("error");
     }
   };
 

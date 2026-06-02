@@ -1,4 +1,4 @@
-import { logger } from '../logger';
+import { logger } from "../logger";
 import {
   UndoableAction,
   ActionGroup,
@@ -6,12 +6,12 @@ import {
   SerializedAction,
   createActionId,
   createGroupId,
-} from './types';
+} from "./types";
 
 const DEFAULT_CONFIG: UndoManagerConfig = {
   maxHistorySize: 50,
   persistToStorage: true,
-  storageKey: 'maxbooster_undo_history',
+  storageKey: "maxbooster_undo_history",
 };
 
 export class UndoManager {
@@ -42,7 +42,7 @@ export class UndoManager {
         });
       }
     } catch (error) {
-      logger.warn('Failed to load undo history from storage:', error);
+      logger.warn("Failed to load undo history from storage:", error);
     }
   }
 
@@ -57,9 +57,12 @@ export class UndoManager {
         groupId: action.groupId,
         isUndone: action.isUndone,
       }));
-      sessionStorage.setItem(this.config.storageKey, JSON.stringify(serialized));
+      sessionStorage.setItem(
+        this.config.storageKey,
+        JSON.stringify(serialized),
+      );
     } catch (error) {
-      logger.warn('Failed to save undo history to storage:', error);
+      logger.warn("Failed to save undo history to storage:", error);
     }
   }
 
@@ -69,7 +72,7 @@ export class UndoManager {
   }
 
   async executeAction<T>(
-    action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'>
+    action: Omit<UndoableAction<T>, "id" | "isUndone" | "result">,
   ): Promise<T> {
     const fullAction: UndoableAction<T> = {
       ...action,
@@ -89,7 +92,7 @@ export class UndoManager {
 
       return result;
     } catch (error) {
-      logger.error('Failed to execute action:', error);
+      logger.error("Failed to execute action:", error);
       throw error;
     }
   }
@@ -124,14 +127,14 @@ export class UndoManager {
         await this.undoSingleAction(action);
       }
     } catch (error) {
-      logger.error('Failed to undo action:', error);
+      logger.error("Failed to undo action:", error);
       throw error;
     }
   }
 
   private async undoSingleAction(action: UndoableAction): Promise<void> {
     if (!action.canUndo()) {
-      logger.warn('Action cannot be undone:', action.id);
+      logger.warn("Action cannot be undone:", action.id);
       return;
     }
 
@@ -153,7 +156,7 @@ export class UndoManager {
       this.config.onRedo?.(action);
       this.notifyHistoryChange();
     } catch (error) {
-      logger.error('Failed to redo action:', error);
+      logger.error("Failed to redo action:", error);
       this.redoStack.push(action);
       throw error;
     }
@@ -167,7 +170,7 @@ export class UndoManager {
       actions: [],
       metadata: {
         timestamp: Date.now(),
-        module: 'system',
+        module: "system",
         description: name,
       },
       isUndone: false,
@@ -186,7 +189,7 @@ export class UndoManager {
   async undoGroup(groupId: string): Promise<void> {
     const group = this.groups.get(groupId);
     if (!group) {
-      logger.warn('Group not found:', groupId);
+      logger.warn("Group not found:", groupId);
       return;
     }
 
@@ -258,7 +261,9 @@ export class UndoManager {
 
 let globalUndoManager: UndoManager | null = null;
 
-export function getUndoManager(config?: Partial<UndoManagerConfig>): UndoManager {
+export function getUndoManager(
+  config?: Partial<UndoManagerConfig>,
+): UndoManager {
   if (!globalUndoManager) {
     globalUndoManager = new UndoManager(config);
   }

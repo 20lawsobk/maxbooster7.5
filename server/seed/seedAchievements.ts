@@ -28,7 +28,11 @@ const defaultAchievements = [
     category: "streaming",
     points: 50,
     tier: "bronze",
-    requirement: { type: "streams", threshold: 1000, eventType: "stream_milestone" },
+    requirement: {
+      type: "streams",
+      threshold: 1000,
+      eventType: "stream_milestone",
+    },
     sortOrder: 3,
   },
   {
@@ -37,7 +41,11 @@ const defaultAchievements = [
     category: "streaming",
     points: 100,
     tier: "silver",
-    requirement: { type: "streams", threshold: 10000, eventType: "stream_milestone" },
+    requirement: {
+      type: "streams",
+      threshold: 10000,
+      eventType: "stream_milestone",
+    },
     sortOrder: 4,
   },
   {
@@ -46,7 +54,11 @@ const defaultAchievements = [
     category: "streaming",
     points: 250,
     tier: "gold",
-    requirement: { type: "streams", threshold: 100000, eventType: "stream_milestone" },
+    requirement: {
+      type: "streams",
+      threshold: 100000,
+      eventType: "stream_milestone",
+    },
     sortOrder: 5,
   },
   {
@@ -55,7 +67,11 @@ const defaultAchievements = [
     category: "streaming",
     points: 1000,
     tier: "platinum",
-    requirement: { type: "streams", threshold: 1000000, eventType: "stream_milestone" },
+    requirement: {
+      type: "streams",
+      threshold: 1000000,
+      eventType: "stream_milestone",
+    },
     sortOrder: 6,
   },
   {
@@ -152,9 +168,9 @@ const defaultAchievements = [
 
 export async function seedAchievements() {
   logger.info("Seeding achievements...");
-  
+
   try {
-    const names = defaultAchievements.map(a => a.name);
+    const names = defaultAchievements.map((a) => a.name);
     const [{ total }] = await db
       .select({ total: count() })
       .from(achievements)
@@ -170,11 +186,11 @@ export async function seedAchievements() {
       .select({ name: achievements.name })
       .from(achievements)
       .where(inArray(achievements.name, names));
-    const existingNames = new Set(existing.map(r => r.name));
+    const existingNames = new Set(existing.map((r) => r.name));
 
     const toInsert = defaultAchievements
-      .filter(a => !existingNames.has(a.name))
-      .map(a => ({ ...a, isActive: true }));
+      .filter((a) => !existingNames.has(a.name))
+      .map((a) => ({ ...a, isActive: true }));
 
     if (toInsert.length > 0) {
       await db.insert(achievements).values(toInsert);
@@ -188,11 +204,12 @@ export async function seedAchievements() {
   }
 }
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
-const isMainModule = process.argv[1] && 
-  (process.argv[1].endsWith('seedAchievements.ts') || 
-   process.argv[1].includes('seedAchievements'));
+const isMainModule =
+  process.argv[1] &&
+  (process.argv[1].endsWith("seedAchievements.ts") ||
+    process.argv[1].includes("seedAchievements"));
 
 if (isMainModule) {
   seedAchievements()

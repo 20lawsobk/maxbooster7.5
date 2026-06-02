@@ -1,15 +1,21 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { Heart, MessageCircle, Share2, Eye, Clock } from 'lucide-react';
-import { InstagramIcon, TikTokIcon, YouTubeIcon, TwitterIcon, FacebookIcon } from '@/components/ui/brand-icons';
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { Heart, MessageCircle, Share2, Eye, Clock } from "lucide-react";
+import {
+  InstagramIcon,
+  TikTokIcon,
+  YouTubeIcon,
+  TwitterIcon,
+  FacebookIcon,
+} from "@/components/ui/brand-icons";
 
 interface ContentCardProps {
   image?: string;
   title?: string;
   description?: string;
-  platform: 'instagram' | 'tiktok' | 'youtube' | 'twitter' | 'facebook';
-  status?: 'scheduled' | 'published' | 'draft' | 'pending';
+  platform: "instagram" | "tiktok" | "youtube" | "twitter" | "facebook";
+  status?: "scheduled" | "published" | "draft" | "pending";
   scheduledTime?: string;
   stats?: {
     likes?: number;
@@ -30,18 +36,18 @@ const platformIcons = {
 };
 
 const platformColors = {
-  instagram: 'from-pink-500 to-purple-500',
-  tiktok: 'from-black to-slate-800',
-  youtube: 'from-red-500 to-red-600',
-  twitter: 'from-blue-400 to-blue-500',
-  facebook: 'from-blue-600 to-blue-700',
+  instagram: "from-pink-500 to-purple-500",
+  tiktok: "from-black to-slate-800",
+  youtube: "from-red-500 to-red-600",
+  twitter: "from-blue-400 to-blue-500",
+  facebook: "from-blue-600 to-blue-700",
 };
 
 const statusColors = {
-  scheduled: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  published: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  draft: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-  pending: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  scheduled: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+  published: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  draft: "bg-slate-500/20 text-slate-400 border-slate-500/30",
+  pending: "bg-amber-500/20 text-amber-400 border-amber-500/30",
 };
 
 export function ContentCard({
@@ -49,7 +55,7 @@ export function ContentCard({
   title,
   description,
   platform,
-  status = 'draft',
+  status = "draft",
   scheduledTime,
   stats,
   className,
@@ -60,8 +66,8 @@ export function ContentCard({
   return (
     <Card
       className={cn(
-        'group overflow-hidden bg-slate-800/50 border-slate-700/50 hover:border-slate-600 transition-all cursor-pointer hover:shadow-xl hover:shadow-cyan-500/5',
-        className
+        "group overflow-hidden bg-slate-800/50 border-slate-700/50 hover:border-slate-600 transition-all cursor-pointer hover:shadow-xl hover:shadow-cyan-500/5",
+        className,
       )}
       onClick={onClick}
     >
@@ -69,18 +75,21 @@ export function ContentCard({
         <div className="relative aspect-square overflow-hidden">
           <img
             src={image}
-            alt={title || 'Content'}
+            alt={title || "Content"}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
           <div className="absolute top-2 right-2">
-            <Badge variant="secondary" className={cn('border', statusColors[status])}>
+            <Badge
+              variant="secondary"
+              className={cn("border", statusColors[status])}
+            >
               {status}
             </Badge>
           </div>
           <div
             className={cn(
-              'absolute bottom-2 left-2 p-2 rounded-lg bg-gradient-to-r',
-              platformColors[platform]
+              "absolute bottom-2 left-2 p-2 rounded-lg bg-gradient-to-r",
+              platformColors[platform],
             )}
           >
             <PlatformIcon className="h-4 w-4 text-white" />
@@ -88,9 +97,7 @@ export function ContentCard({
         </div>
       )}
       <CardContent className="p-4 space-y-3">
-        {title && (
-          <h3 className="font-medium text-white truncate">{title}</h3>
-        )}
+        {title && <h3 className="font-medium text-white truncate">{title}</h3>}
         {description && (
           <p className="text-sm text-slate-400 line-clamp-2">{description}</p>
         )}
@@ -156,8 +163,8 @@ export function ContentGrid({ children, className }: ContentGridProps) {
   return (
     <div
       className={cn(
-        'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4',
-        className
+        "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4",
+        className,
       )}
     >
       {children}
@@ -181,17 +188,27 @@ export function EngagementPanel({
   className,
 }: EngagementPanelProps) {
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       <h3 className="text-lg font-semibold text-white">Engagement</h3>
       <div className="space-y-3">
-        <EngagementStat icon={Heart} label="Likes" value={likes} color="text-red-400" />
+        <EngagementStat
+          icon={Heart}
+          label="Likes"
+          value={likes}
+          color="text-red-400"
+        />
         <EngagementStat
           icon={MessageCircle}
           label="Comments"
           value={comments}
           color="text-blue-400"
         />
-        <EngagementStat icon={Eye} label="Reach" value={reach} color="text-emerald-400" />
+        <EngagementStat
+          icon={Eye}
+          label="Reach"
+          value={reach}
+          color="text-emerald-400"
+        />
         {impressions && (
           <EngagementStat
             icon={Eye}
@@ -212,11 +229,16 @@ interface EngagementStatProps {
   color: string;
 }
 
-function EngagementStat({ icon: Icon, label, value, color }: EngagementStatProps) {
+function EngagementStat({
+  icon: Icon,
+  label,
+  value,
+  color,
+}: EngagementStatProps) {
   return (
     <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
       <div className="flex items-center gap-3">
-        <Icon className={cn('h-5 w-5', color)} />
+        <Icon className={cn("h-5 w-5", color)} />
         <span className="text-sm text-slate-300">{label}</span>
       </div>
       <span className="font-semibold text-white">{formatNumber(value)}</span>

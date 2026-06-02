@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { logger } from '@/lib/logger';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { logger } from "@/lib/logger";
 
 let sharedAudioContext: AudioContext | null = null;
 let audioContextUsers = 0;
@@ -31,32 +31,40 @@ export function useSharedAudioContext() {
 
   useEffect(() => {
     audioContextUsers++;
-    
+
     if (!sharedAudioContext) {
       try {
-        sharedAudioContext = new (window.AudioContext || (window as Record<string, unknown>).webkitAudioContext)();
-        
-        if (sharedAudioContext.state === 'suspended') {
+        sharedAudioContext = new (window.AudioContext ||
+          (window as Record<string, unknown>).webkitAudioContext)();
+
+        if (sharedAudioContext.state === "suspended") {
           const resumeOnInteraction = () => {
-            sharedAudioContext?.resume().then(() => {
-              setIsReady(true);
-            }).catch(setError);
-            document.removeEventListener('click', resumeOnInteraction);
-            document.removeEventListener('keydown', resumeOnInteraction);
-            document.removeEventListener('touchstart', resumeOnInteraction);
+            sharedAudioContext
+              ?.resume()
+              .then(() => {
+                setIsReady(true);
+              })
+              .catch(setError);
+            document.removeEventListener("click", resumeOnInteraction);
+            document.removeEventListener("keydown", resumeOnInteraction);
+            document.removeEventListener("touchstart", resumeOnInteraction);
           };
-          
-          document.addEventListener('click', resumeOnInteraction);
-          document.addEventListener('keydown', resumeOnInteraction);
-          document.addEventListener('touchstart', resumeOnInteraction);
+
+          document.addEventListener("click", resumeOnInteraction);
+          document.addEventListener("keydown", resumeOnInteraction);
+          document.addEventListener("touchstart", resumeOnInteraction);
         } else {
           setIsReady(true);
         }
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to create AudioContext'));
+        setError(
+          err instanceof Error
+            ? err
+            : new Error("Failed to create AudioContext"),
+        );
       }
     } else {
-      if (sharedAudioContext.state === 'running') {
+      if (sharedAudioContext.state === "running") {
         setIsReady(true);
       }
     }
@@ -71,7 +79,7 @@ export function useSharedAudioContext() {
   }, []);
 
   const resume = useCallback(async () => {
-    if (sharedAudioContext && sharedAudioContext.state === 'suspended') {
+    if (sharedAudioContext && sharedAudioContext.state === "suspended") {
       await sharedAudioContext.resume();
       setIsReady(true);
     }
@@ -105,7 +113,7 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
     if (!sourceNode || !sharedAudioContext) return;
 
     const fftSize = 2048;
-    
+
     leftAnalyserRef.current = sharedAudioContext.createAnalyser();
     leftAnalyserRef.current.fftSize = fftSize;
     leftAnalyserRef.current.smoothingTimeConstant = 0.8;
@@ -139,40 +147,49 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
       for (let i = 0; i < fftSize; i++) {
         const leftAbs = Math.abs(leftBuffer[i]);
         const rightAbs = Math.abs(rightBuffer[i]);
-        
+
         leftMax = Math.max(leftMax, leftAbs);
         rightMax = Math.max(rightMax, rightAbs);
         leftSum += leftBuffer[i] * leftBuffer[i];
         rightSum += rightBuffer[i] * rightBuffer[i];
-        
+
         if (leftAbs >= 0.99) leftClip = true;
         if (rightAbs >= 0.99) rightClip = true;
       }
 
       const leftRMS = Math.sqrt(leftSum / fftSize);
       const rightRMS = Math.sqrt(rightSum / fftSize);
-      
+
       const leftDb = 20 * Math.log10(Math.max(leftMax, 1e-10));
       const rightDb = 20 * Math.log10(Math.max(rightMax, 1e-10));
-      
+
       const now = Date.now();
-      if (leftDb > peakHoldRef.current.left || now - peakHoldRef.current.time > 2000) {
+      if (
+        leftDb > peakHoldRef.current.left ||
+        now - peakHoldRef.current.time > 2000
+      ) {
         peakHoldRef.current.left = leftDb;
         peakHoldRef.current.time = now;
       }
-      if (rightDb > peakHoldRef.current.right || now - peakHoldRef.current.time > 2000) {
+      if (
+        rightDb > peakHoldRef.current.right ||
+        now - peakHoldRef.current.time > 2000
+      ) {
         peakHoldRef.current.right = rightDb;
         peakHoldRef.current.time = now;
       }
 
       const monoRMS = (leftRMS + rightRMS) / 2;
-      const lufsInstant = -0.691 + 10 * Math.log10(Math.max(monoRMS * monoRMS, 1e-10));
-      
+      const lufsInstant =
+        -0.691 + 10 * Math.log10(Math.max(monoRMS * monoRMS, 1e-10));
+
       lufsWindowRef.current.push(lufsInstant);
       if (lufsWindowRef.current.length > 30) {
         lufsWindowRef.current.shift();
       }
-      const lufsAvg = lufsWindowRef.current.reduce((a, b) => a + b, 0) / lufsWindowRef.current.length;
+      const lufsAvg =
+        lufsWindowRef.current.reduce((a, b) => a + b, 0) /
+        lufsWindowRef.current.length;
 
       setData({
         leftLevel: Math.max(-60, Math.min(3, leftDb)),
@@ -193,13 +210,19 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
       if (splitterRef.current) {
-        try { splitterRef.current.disconnect(); } catch {}
+        try {
+          splitterRef.current.disconnect();
+        } catch {}
       }
       if (leftAnalyserRef.current) {
-        try { leftAnalyserRef.current.disconnect(); } catch {}
+        try {
+          leftAnalyserRef.current.disconnect();
+        } catch {}
       }
       if (rightAnalyserRef.current) {
-        try { rightAnalyserRef.current.disconnect(); } catch {}
+        try {
+          rightAnalyserRef.current.disconnect();
+        } catch {}
       }
     };
   }, [sourceNode]);
@@ -211,7 +234,7 @@ const decodingJobs = new Map<string, Promise<AudioBuffer>>();
 
 export async function decodeAudioBuffer(
   url: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<AudioBuffer> {
   if (decodingJobs.has(url)) {
     return decodingJobs.get(url)!;
@@ -219,15 +242,16 @@ export async function decodeAudioBuffer(
 
   const job = (async () => {
     if (!sharedAudioContext) {
-      throw new Error('AudioContext not available');
+      throw new Error("AudioContext not available");
     }
 
     const response = await fetch(url, { signal });
-    if (!response.ok) throw new Error(`Failed to fetch audio: ${response.status}`);
-    
+    if (!response.ok)
+      throw new Error(`Failed to fetch audio: ${response.status}`);
+
     const arrayBuffer = await response.arrayBuffer();
-    if (signal?.aborted) throw new Error('Decoding cancelled');
-    
+    if (signal?.aborted) throw new Error("Decoding cancelled");
+
     const audioBuffer = await sharedAudioContext.decodeAudioData(arrayBuffer);
     return audioBuffer;
   })();
@@ -243,10 +267,13 @@ export async function decodeAudioBuffer(
 
 export function generateWaveformPeaks(
   audioBuffer: AudioBuffer,
-  targetWidth: number
+  targetWidth: number,
 ): number[] {
   const channelData = audioBuffer.getChannelData(0);
-  const samplesPerPixel = Math.max(1, Math.floor(channelData.length / targetWidth));
+  const samplesPerPixel = Math.max(
+    1,
+    Math.floor(channelData.length / targetWidth),
+  );
   const peaks: number[] = [];
 
   for (let i = 0; i < targetWidth; i++) {
@@ -273,10 +300,13 @@ export function generateWaveformPeaks(
  */
 export function generateWaveformPeaksPair(
   audioBuffer: AudioBuffer,
-  targetWidth: number
+  targetWidth: number,
 ): { maxPeaks: number[]; minPeaks: number[] } {
   const channelData = audioBuffer.getChannelData(0);
-  const samplesPerPixel = Math.max(1, Math.floor(channelData.length / targetWidth));
+  const samplesPerPixel = Math.max(
+    1,
+    Math.floor(channelData.length / targetWidth),
+  );
   const maxPeaks: number[] = [];
   const minPeaks: number[] = [];
 
@@ -312,7 +342,9 @@ export function useAudioContext() {
   const initializeAudioContext = async () => {
     try {
       // Check for Web Audio API support
-      const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Record<string, unknown>).webkitAudioContext;
 
       if (!AudioContextClass) {
         return;
@@ -336,12 +368,15 @@ export function useAudioContext() {
 
       return context;
     } catch (error: unknown) {
-      logger.error('Failed to initialize AudioContext:', error);
+      logger.error("Failed to initialize AudioContext:", error);
       setState((prev) => ({ ...prev, isSupported: false }));
     }
   };
 
-  const createOscillator = (frequency: number, type: OscillatorType = 'sine') => {
+  const createOscillator = (
+    frequency: number,
+    type: OscillatorType = "sine",
+  ) => {
     if (!state.context) return null;
 
     const oscillator = state.context.createOscillator();
@@ -360,7 +395,11 @@ export function useAudioContext() {
     return gainNode;
   };
 
-  const createFilter = (type: BiquadFilterType, frequency: number, Q: number = 1) => {
+  const createFilter = (
+    type: BiquadFilterType,
+    frequency: number,
+    Q: number = 1,
+  ) => {
     if (!state.context) return null;
 
     const filter = state.context.createBiquadFilter();
@@ -387,10 +426,11 @@ export function useAudioContext() {
 
     if (impulseResponse) {
       try {
-        const audioBuffer = await state.context.decodeAudioData(impulseResponse);
+        const audioBuffer =
+          await state.context.decodeAudioData(impulseResponse);
         convolver.buffer = audioBuffer;
       } catch (error: unknown) {
-        logger.error('Failed to decode impulse response:', error);
+        logger.error("Failed to decode impulse response:", error);
       }
     }
 
@@ -406,7 +446,7 @@ export function useAudioContext() {
         return { stream, source };
       }
     } catch (error: unknown) {
-      logger.error('Failed to get user media:', error);
+      logger.error("Failed to get user media:", error);
     }
 
     return null;
@@ -431,13 +471,13 @@ export function useAudioContext() {
   };
 
   const resume = async () => {
-    if (state.context && state.context.state === 'suspended') {
+    if (state.context && state.context.state === "suspended") {
       await state.context.resume();
     }
   };
 
   const suspend = async () => {
-    if (state.context && state.context.state === 'running') {
+    if (state.context && state.context.state === "running") {
       await state.context.suspend();
     }
   };

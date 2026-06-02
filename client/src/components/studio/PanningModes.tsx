@@ -1,17 +1,22 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Knob } from './Knob';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { motion } from "framer-motion";
+import { Knob } from "./Knob";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 
-export type PanningMode = 'balance' | 'dualPan' | 'binaural' | 'midSide' | 'width';
+export type PanningMode =
+  | "balance"
+  | "dualPan"
+  | "binaural"
+  | "midSide"
+  | "width";
 
 export interface PanningState {
   mode: PanningMode;
@@ -37,7 +42,7 @@ export interface PanningModesProps {
 }
 
 const defaultPanningState: PanningState = {
-  mode: 'balance',
+  mode: "balance",
   balance: 0,
   leftPan: -1,
   rightPan: 1,
@@ -69,7 +74,7 @@ export function PanningModes({
   audioContext,
   sourceNode,
   destinationNode,
-  color = '#00ccff',
+  color = "#00ccff",
   compact = false,
   showVisualizer = true,
 }: PanningModesProps) {
@@ -92,7 +97,7 @@ export function PanningModes({
     (updates: Partial<PanningState>) => {
       onChange({ ...value, ...updates });
     },
-    [value, onChange]
+    [value, onChange],
   );
 
   useEffect(() => {
@@ -102,28 +107,29 @@ export function PanningModes({
 
     try {
       sourceNode.disconnect();
-    } catch {
-    }
+    } catch {}
 
     Object.values(nodes).forEach((node) => {
       if (node) {
         try {
           node.disconnect();
-        } catch {
-        }
+        } catch {}
       }
     });
 
     switch (value.mode) {
-      case 'balance': {
+      case "balance": {
         nodes.stereoPanner = audioContext.createStereoPanner();
-        nodes.stereoPanner.pan.setValueAtTime(value.balance, audioContext.currentTime);
+        nodes.stereoPanner.pan.setValueAtTime(
+          value.balance,
+          audioContext.currentTime,
+        );
         sourceNode.connect(nodes.stereoPanner);
         nodes.stereoPanner.connect(destinationNode);
         break;
       }
 
-      case 'dualPan': {
+      case "dualPan": {
         nodes.splitter = audioContext.createChannelSplitter(2);
         nodes.merger = audioContext.createChannelMerger(2);
         nodes.leftGain = audioContext.createGain();
@@ -134,11 +140,11 @@ export function PanningModes({
 
         nodes.leftGain.gain.setValueAtTime(
           Math.cos((leftPanValue * Math.PI) / 2),
-          audioContext.currentTime
+          audioContext.currentTime,
         );
         nodes.rightGain.gain.setValueAtTime(
           Math.sin((rightPanValue * Math.PI) / 2),
-          audioContext.currentTime
+          audioContext.currentTime,
         );
 
         sourceNode.connect(nodes.splitter);
@@ -150,10 +156,10 @@ export function PanningModes({
         break;
       }
 
-      case 'binaural': {
+      case "binaural": {
         nodes.pannerNode = audioContext.createPanner();
-        nodes.pannerNode.panningModel = 'HRTF';
-        nodes.pannerNode.distanceModel = 'inverse';
+        nodes.pannerNode.panningModel = "HRTF";
+        nodes.pannerNode.distanceModel = "inverse";
         nodes.pannerNode.refDistance = 1;
         nodes.pannerNode.maxDistance = 10000;
         nodes.pannerNode.rolloffFactor = 1;
@@ -162,9 +168,11 @@ export function PanningModes({
 
         const azimuthRad = (value.azimuth * Math.PI) / 180;
         const elevationRad = (value.elevation * Math.PI) / 180;
-        const x = value.distance * Math.sin(azimuthRad) * Math.cos(elevationRad);
+        const x =
+          value.distance * Math.sin(azimuthRad) * Math.cos(elevationRad);
         const y = value.distance * Math.sin(elevationRad);
-        const z = -value.distance * Math.cos(azimuthRad) * Math.cos(elevationRad);
+        const z =
+          -value.distance * Math.cos(azimuthRad) * Math.cos(elevationRad);
 
         nodes.pannerNode.positionX.setValueAtTime(x, audioContext.currentTime);
         nodes.pannerNode.positionY.setValueAtTime(y, audioContext.currentTime);
@@ -175,7 +183,7 @@ export function PanningModes({
         break;
       }
 
-      case 'midSide': {
+      case "midSide": {
         nodes.splitter = audioContext.createChannelSplitter(2);
         nodes.merger = audioContext.createChannelMerger(2);
         nodes.midGain = audioContext.createGain();
@@ -241,7 +249,7 @@ export function PanningModes({
         break;
       }
 
-      case 'width': {
+      case "width": {
         nodes.splitter = audioContext.createChannelSplitter(2);
         nodes.merger = audioContext.createChannelMerger(2);
 
@@ -254,10 +262,22 @@ export function PanningModes({
         const coefficient = width <= 1 ? width : 1;
         const crossCoefficient = width <= 1 ? 1 - width : 0;
 
-        nodes.widthLeftGain.gain.setValueAtTime(coefficient, audioContext.currentTime);
-        nodes.widthRightGain.gain.setValueAtTime(coefficient, audioContext.currentTime);
-        nodes.widthCrossLeftGain.gain.setValueAtTime(crossCoefficient, audioContext.currentTime);
-        nodes.widthCrossRightGain.gain.setValueAtTime(crossCoefficient, audioContext.currentTime);
+        nodes.widthLeftGain.gain.setValueAtTime(
+          coefficient,
+          audioContext.currentTime,
+        );
+        nodes.widthRightGain.gain.setValueAtTime(
+          coefficient,
+          audioContext.currentTime,
+        );
+        nodes.widthCrossLeftGain.gain.setValueAtTime(
+          crossCoefficient,
+          audioContext.currentTime,
+        );
+        nodes.widthCrossRightGain.gain.setValueAtTime(
+          crossCoefficient,
+          audioContext.currentTime,
+        );
 
         sourceNode.connect(nodes.splitter);
 
@@ -281,8 +301,7 @@ export function PanningModes({
         if (node) {
           try {
             node.disconnect();
-          } catch {
-          }
+          } catch {}
         }
       });
     };
@@ -293,46 +312,104 @@ export function PanningModes({
 
     const size = compact ? 60 : 80;
     const center = size / 2;
-    const radius = (size / 2) - 8;
+    const radius = size / 2 - 8;
 
     switch (value.mode) {
-      case 'balance': {
+      case "balance": {
         const x = center + value.balance * radius;
         return (
           <svg width={size} height={size} className="mx-auto">
-            <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
-            <line x1={center} y1={center - radius} x2={center} y2={center + radius} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-            <text x={8} y={center + 4} fontSize="8" fill="rgba(255,255,255,0.5)">L</text>
-            <text x={size - 12} y={center + 4} fontSize="8" fill="rgba(255,255,255,0.5)">R</text>
+            <circle
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="2"
+            />
+            <line
+              x1={center}
+              y1={center - radius}
+              x2={center}
+              y2={center + radius}
+              stroke="rgba(255,255,255,0.2)"
+              strokeWidth="1"
+            />
+            <text
+              x={8}
+              y={center + 4}
+              fontSize="8"
+              fill="rgba(255,255,255,0.5)"
+            >
+              L
+            </text>
+            <text
+              x={size - 12}
+              y={center + 4}
+              fontSize="8"
+              fill="rgba(255,255,255,0.5)"
+            >
+              R
+            </text>
             <motion.circle
               cx={x}
               cy={center}
               r={6}
               fill={color}
               animate={{ cx: x }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
               style={{ filter: `drop-shadow(0 0 4px ${color})` }}
             />
           </svg>
         );
       }
 
-      case 'dualPan': {
+      case "dualPan": {
         const leftX = center + value.leftPan * (radius * 0.8);
         const rightX = center + value.rightPan * (radius * 0.8);
         return (
           <svg width={size} height={size} className="mx-auto">
-            <rect x={center - radius} y={center - 15} width={radius * 2} height={12} rx="2" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" />
-            <rect x={center - radius} y={center + 3} width={radius * 2} height={12} rx="2" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" />
-            <text x={8} y={center - 6} fontSize="7" fill="rgba(255,255,255,0.4)">L</text>
-            <text x={8} y={center + 12} fontSize="7" fill="rgba(255,255,255,0.4)">R</text>
+            <rect
+              x={center - radius}
+              y={center - 15}
+              width={radius * 2}
+              height={12}
+              rx="2"
+              fill="rgba(255,255,255,0.05)"
+              stroke="rgba(255,255,255,0.1)"
+            />
+            <rect
+              x={center - radius}
+              y={center + 3}
+              width={radius * 2}
+              height={12}
+              rx="2"
+              fill="rgba(255,255,255,0.05)"
+              stroke="rgba(255,255,255,0.1)"
+            />
+            <text
+              x={8}
+              y={center - 6}
+              fontSize="7"
+              fill="rgba(255,255,255,0.4)"
+            >
+              L
+            </text>
+            <text
+              x={8}
+              y={center + 12}
+              fontSize="7"
+              fill="rgba(255,255,255,0.4)"
+            >
+              R
+            </text>
             <motion.circle
               cx={leftX}
               cy={center - 9}
               r={4}
               fill="#3498db"
               animate={{ cx: leftX }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
             />
             <motion.circle
               cx={rightX}
@@ -340,41 +417,95 @@ export function PanningModes({
               r={4}
               fill="#e74c3c"
               animate={{ cx: rightX }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
             />
           </svg>
         );
       }
 
-      case 'binaural': {
+      case "binaural": {
         const azimuthRad = (value.azimuth * Math.PI) / 180;
         const x = center + Math.sin(azimuthRad) * radius * 0.8;
         const y = center - Math.cos(azimuthRad) * radius * 0.8;
         const elevationScale = 1 - (value.elevation / 90) * 0.5;
         return (
           <svg width={size} height={size} className="mx-auto">
-            <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-            <circle cx={center} cy={center} r={radius * 0.6} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-            <circle cx={center} cy={center} r={radius * 0.3} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-            <line x1={center} y1={center - radius} x2={center} y2={center + radius} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-            <line x1={center - radius} y1={center} x2={center + radius} y2={center} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-            <text x={center - 3} y={8} fontSize="6" fill="rgba(255,255,255,0.4)">F</text>
-            <text x={center - 3} y={size - 3} fontSize="6" fill="rgba(255,255,255,0.4)">B</text>
-            <circle cx={center} cy={center} r={4} fill="rgba(255,255,255,0.3)" />
+            <circle
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="1"
+            />
+            <circle
+              cx={center}
+              cy={center}
+              r={radius * 0.6}
+              fill="none"
+              stroke="rgba(255,255,255,0.05)"
+              strokeWidth="1"
+            />
+            <circle
+              cx={center}
+              cy={center}
+              r={radius * 0.3}
+              fill="none"
+              stroke="rgba(255,255,255,0.05)"
+              strokeWidth="1"
+            />
+            <line
+              x1={center}
+              y1={center - radius}
+              x2={center}
+              y2={center + radius}
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="1"
+            />
+            <line
+              x1={center - radius}
+              y1={center}
+              x2={center + radius}
+              y2={center}
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="1"
+            />
+            <text
+              x={center - 3}
+              y={8}
+              fontSize="6"
+              fill="rgba(255,255,255,0.4)"
+            >
+              F
+            </text>
+            <text
+              x={center - 3}
+              y={size - 3}
+              fontSize="6"
+              fill="rgba(255,255,255,0.4)"
+            >
+              B
+            </text>
+            <circle
+              cx={center}
+              cy={center}
+              r={4}
+              fill="rgba(255,255,255,0.3)"
+            />
             <motion.circle
               cx={x}
               cy={y}
               r={6 * elevationScale}
               fill={color}
               animate={{ cx: x, cy: y, r: 6 * elevationScale }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
               style={{ filter: `drop-shadow(0 0 4px ${color})` }}
             />
           </svg>
         );
       }
 
-      case 'midSide': {
+      case "midSide": {
         const midWidth = Math.max(0, 1 - value.midSideBalance) * radius * 0.8;
         const sideWidth = Math.max(0, 1 + value.midSideBalance) * radius * 0.8;
         return (
@@ -387,7 +518,7 @@ export function PanningModes({
               rx="2"
               fill="#2ecc71"
               animate={{ x: center - midWidth, width: midWidth * 2 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
               opacity={0.7}
             />
             <motion.rect
@@ -398,22 +529,43 @@ export function PanningModes({
               rx="2"
               fill="#9b59b6"
               animate={{ x: center - sideWidth, width: sideWidth * 2 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
               opacity={0.7}
             />
-            <text x={center - 6} y={center - 4} fontSize="7" fill="rgba(255,255,255,0.6)">M</text>
-            <text x={center - 4} y={center + 10} fontSize="7" fill="rgba(255,255,255,0.6)">S</text>
+            <text
+              x={center - 6}
+              y={center - 4}
+              fontSize="7"
+              fill="rgba(255,255,255,0.6)"
+            >
+              M
+            </text>
+            <text
+              x={center - 4}
+              y={center + 10}
+              fontSize="7"
+              fill="rgba(255,255,255,0.6)"
+            >
+              S
+            </text>
           </svg>
         );
       }
 
-      case 'width': {
+      case "width": {
         const widthScale = value.width;
         const leftX = center - radius * 0.8 * widthScale;
         const rightX = center + radius * 0.8 * widthScale;
         return (
           <svg width={size} height={size} className="mx-auto">
-            <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+            <circle
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="1"
+            />
             <motion.line
               x1={leftX}
               y1={center}
@@ -423,7 +575,7 @@ export function PanningModes({
               strokeWidth="3"
               strokeLinecap="round"
               animate={{ x1: leftX, x2: rightX }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
               style={{ filter: `drop-shadow(0 0 3px ${color})` }}
             />
             <motion.circle
@@ -432,7 +584,7 @@ export function PanningModes({
               r={4}
               fill={color}
               animate={{ cx: leftX }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
             />
             <motion.circle
               cx={rightX}
@@ -440,9 +592,14 @@ export function PanningModes({
               r={4}
               fill={color}
               animate={{ cx: rightX }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
             />
-            <text x={center - 12} y={size - 6} fontSize="8" fill="rgba(255,255,255,0.5)">
+            <text
+              x={center - 12}
+              y={size - 6}
+              fontSize="8"
+              fill="rgba(255,255,255,0.5)"
+            >
               {(value.width * 100).toFixed(0)}%
             </text>
           </svg>
@@ -453,7 +610,7 @@ export function PanningModes({
 
   const controlsContent = useMemo(() => {
     switch (value.mode) {
-      case 'balance':
+      case "balance":
         return (
           <div className="flex flex-col items-center gap-2">
             <Knob
@@ -470,7 +627,7 @@ export function PanningModes({
           </div>
         );
 
-      case 'dualPan':
+      case "dualPan":
         return (
           <div className="flex gap-4 justify-center">
             <div className="flex flex-col items-center">
@@ -502,7 +659,7 @@ export function PanningModes({
           </div>
         );
 
-      case 'binaural':
+      case "binaural":
         return (
           <div className="space-y-3">
             <div className="flex gap-3 justify-center">
@@ -532,7 +689,10 @@ export function PanningModes({
               />
             </div>
             <div className="px-2">
-              <Label className="text-[9px]" style={{ color: 'var(--studio-text-muted)' }}>
+              <Label
+                className="text-[9px]"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
                 Distance: {value.distance.toFixed(1)}m
               </Label>
               <Slider
@@ -547,7 +707,7 @@ export function PanningModes({
           </div>
         );
 
-      case 'midSide':
+      case "midSide":
         return (
           <div className="flex flex-col items-center gap-2">
             <Knob
@@ -561,14 +721,17 @@ export function PanningModes({
               size={compact ? 40 : 48}
               color={color}
             />
-            <div className="flex justify-between w-full px-2 text-[8px]" style={{ color: 'var(--studio-text-muted)' }}>
+            <div
+              className="flex justify-between w-full px-2 text-[8px]"
+              style={{ color: "var(--studio-text-muted)" }}
+            >
               <span>MID</span>
               <span>SIDE</span>
             </div>
           </div>
         );
 
-      case 'width':
+      case "width":
         return (
           <div className="flex flex-col items-center gap-2">
             <Knob
@@ -583,7 +746,10 @@ export function PanningModes({
               color={color}
               displayValue={`${(value.width * 100).toFixed(0)}%`}
             />
-            <div className="flex justify-between w-full px-2 text-[8px]" style={{ color: 'var(--studio-text-muted)' }}>
+            <div
+              className="flex justify-between w-full px-2 text-[8px]"
+              style={{ color: "var(--studio-text-muted)" }}
+            >
               <span>MONO</span>
               <span>WIDE</span>
             </div>
@@ -596,24 +762,27 @@ export function PanningModes({
     <div
       className="flex flex-col gap-3 p-3 rounded-lg"
       style={{
-        background: 'var(--studio-bg-medium)',
-        border: '1px solid var(--studio-border)',
+        background: "var(--studio-bg-medium)",
+        border: "1px solid var(--studio-border)",
       }}
     >
       <div className="flex items-center justify-between">
-        <Label className="text-[10px] font-semibold" style={{ color: 'var(--studio-text)' }}>
+        <Label
+          className="text-[10px] font-semibold"
+          style={{ color: "var(--studio-text)" }}
+        >
           PANNING
         </Label>
         <Select
           value={value.mode}
           onValueChange={(mode: PanningMode) => updateValue({ mode })}
         >
-          <SelectTrigger 
+          <SelectTrigger
             className="h-6 w-24 text-[10px]"
             style={{
-              background: 'var(--studio-bg-deep)',
-              borderColor: 'var(--studio-border)',
-              color: 'var(--studio-text)',
+              background: "var(--studio-bg-deep)",
+              borderColor: "var(--studio-border)",
+              color: "var(--studio-text)",
             }}
           >
             <SelectValue />
@@ -629,9 +798,7 @@ export function PanningModes({
       </div>
 
       {showVisualizer && (
-        <div className="flex justify-center py-1">
-          {visualizerContent}
-        </div>
+        <div className="flex justify-center py-1">{visualizerContent}</div>
       )}
 
       <div className="min-h-[60px] flex items-center justify-center">
@@ -644,10 +811,14 @@ export function PanningModes({
 export function createPanningNodes(
   audioContext: AudioContext,
   mode: PanningMode,
-  state: PanningState
-): { input: AudioNode; output: AudioNode; update: (state: PanningState) => void } {
+  state: PanningState,
+): {
+  input: AudioNode;
+  output: AudioNode;
+  update: (state: PanningState) => void;
+} {
   switch (mode) {
-    case 'balance': {
+    case "balance": {
       const panner = audioContext.createStereoPanner();
       panner.pan.value = state.balance;
       return {
@@ -659,7 +830,7 @@ export function createPanningNodes(
       };
     }
 
-    case 'dualPan': {
+    case "dualPan": {
       const splitter = audioContext.createChannelSplitter(2);
       const merger = audioContext.createChannelMerger(2);
       const leftGain = audioContext.createGain();
@@ -673,8 +844,14 @@ export function createPanningNodes(
       const updateGains = (s: PanningState) => {
         const leftPanValue = (s.leftPan + 1) / 2;
         const rightPanValue = (s.rightPan + 1) / 2;
-        leftGain.gain.setValueAtTime(Math.cos((leftPanValue * Math.PI) / 2), audioContext.currentTime);
-        rightGain.gain.setValueAtTime(Math.sin((rightPanValue * Math.PI) / 2), audioContext.currentTime);
+        leftGain.gain.setValueAtTime(
+          Math.cos((leftPanValue * Math.PI) / 2),
+          audioContext.currentTime,
+        );
+        rightGain.gain.setValueAtTime(
+          Math.sin((rightPanValue * Math.PI) / 2),
+          audioContext.currentTime,
+        );
       };
 
       updateGains(state);
@@ -686,10 +863,10 @@ export function createPanningNodes(
       };
     }
 
-    case 'binaural': {
+    case "binaural": {
       const panner = audioContext.createPanner();
-      panner.panningModel = 'HRTF';
-      panner.distanceModel = 'inverse';
+      panner.panningModel = "HRTF";
+      panner.distanceModel = "inverse";
       panner.refDistance = 1;
       panner.maxDistance = 10000;
       panner.rolloffFactor = 1;
@@ -714,7 +891,7 @@ export function createPanningNodes(
       };
     }
 
-    case 'midSide': {
+    case "midSide": {
       const splitter = audioContext.createChannelSplitter(2);
       const merger = audioContext.createChannelMerger(2);
       const midGain = audioContext.createGain();
@@ -776,7 +953,7 @@ export function createPanningNodes(
       };
     }
 
-    case 'width': {
+    case "width": {
       const splitter = audioContext.createChannelSplitter(2);
       const merger = audioContext.createChannelMerger(2);
       const leftGain = audioContext.createGain();
@@ -801,15 +978,33 @@ export function createPanningNodes(
 
         if (width > 1) {
           const extraWidth = (width - 1) * 0.5;
-          leftGain.gain.setValueAtTime(1 + extraWidth, audioContext.currentTime);
-          rightGain.gain.setValueAtTime(1 + extraWidth, audioContext.currentTime);
-          crossLeftGain.gain.setValueAtTime(-extraWidth, audioContext.currentTime);
-          crossRightGain.gain.setValueAtTime(-extraWidth, audioContext.currentTime);
+          leftGain.gain.setValueAtTime(
+            1 + extraWidth,
+            audioContext.currentTime,
+          );
+          rightGain.gain.setValueAtTime(
+            1 + extraWidth,
+            audioContext.currentTime,
+          );
+          crossLeftGain.gain.setValueAtTime(
+            -extraWidth,
+            audioContext.currentTime,
+          );
+          crossRightGain.gain.setValueAtTime(
+            -extraWidth,
+            audioContext.currentTime,
+          );
         } else {
           leftGain.gain.setValueAtTime(coefficient, audioContext.currentTime);
           rightGain.gain.setValueAtTime(coefficient, audioContext.currentTime);
-          crossLeftGain.gain.setValueAtTime(crossCoefficient, audioContext.currentTime);
-          crossRightGain.gain.setValueAtTime(crossCoefficient, audioContext.currentTime);
+          crossLeftGain.gain.setValueAtTime(
+            crossCoefficient,
+            audioContext.currentTime,
+          );
+          crossRightGain.gain.setValueAtTime(
+            crossCoefficient,
+            audioContext.currentTime,
+          );
         }
       };
 

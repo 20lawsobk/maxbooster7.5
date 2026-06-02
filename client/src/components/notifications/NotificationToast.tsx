@@ -1,9 +1,16 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useLocation } from 'wouter';
-import { X, ExternalLink, Bell, CheckCircle, AlertTriangle, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import type { Notification, NotificationPriority } from './types';
+import { useEffect, useState, useCallback } from "react";
+import { useLocation } from "wouter";
+import {
+  X,
+  ExternalLink,
+  Bell,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { Notification, NotificationPriority } from "./types";
 
 interface NotificationToastProps {
   notification: Notification;
@@ -11,7 +18,7 @@ interface NotificationToastProps {
   onMarkRead: (id: string) => void;
   onAction?: (notification: Notification) => void;
   autoHideDuration?: number;
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  position?: "top-right" | "top-left" | "bottom-right" | "bottom-left";
 }
 
 const priorityIcons: Record<NotificationPriority, React.ElementType> = {
@@ -22,10 +29,10 @@ const priorityIcons: Record<NotificationPriority, React.ElementType> = {
 };
 
 const priorityStyles: Record<NotificationPriority, string> = {
-  low: 'border-gray-200 dark:border-gray-700',
-  normal: 'border-primary/30',
-  high: 'border-orange-400',
-  urgent: 'border-red-500 animate-pulse',
+  low: "border-gray-200 dark:border-gray-700",
+  normal: "border-primary/30",
+  high: "border-orange-400",
+  urgent: "border-red-500 animate-pulse",
 };
 
 export function NotificationToast({
@@ -34,7 +41,7 @@ export function NotificationToast({
   onMarkRead,
   onAction,
   autoHideDuration = 5000,
-  position = 'top-right',
+  position = "top-right",
 }: NotificationToastProps) {
   const [, navigate] = useLocation();
   const [isExiting, setIsExiting] = useState(false);
@@ -52,8 +59,8 @@ export function NotificationToast({
     if (onAction) {
       onAction(notification);
     } else if (notification.actionUrl) {
-      if (notification.actionUrl.startsWith('http')) {
-        window.open(notification.actionUrl, '_blank');
+      if (notification.actionUrl.startsWith("http")) {
+        window.open(notification.actionUrl, "_blank");
       } else {
         navigate(notification.actionUrl);
       }
@@ -71,26 +78,26 @@ export function NotificationToast({
     return () => clearTimeout(timer);
   }, [autoHideDuration, isPaused, handleDismiss]);
 
-  const Icon = priorityIcons[notification.priority || 'normal'];
+  const Icon = priorityIcons[notification.priority || "normal"];
 
   const positionClasses = {
-    'top-right': 'top-4 right-4',
-    'top-left': 'top-4 left-4',
-    'bottom-right': 'bottom-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
+    "top-right": "top-4 right-4",
+    "top-left": "top-4 left-4",
+    "bottom-right": "bottom-4 right-4",
+    "bottom-left": "bottom-4 left-4",
   };
 
   return (
     <div
       role="alert"
-      aria-live={notification.priority === 'urgent' ? 'assertive' : 'polite'}
+      aria-live={notification.priority === "urgent" ? "assertive" : "polite"}
       className={cn(
-        'fixed z-[100] w-96 max-w-[calc(100vw-2rem)]',
-        'bg-background border-2 rounded-lg shadow-lg',
-        'transform transition-all duration-300 ease-in-out',
-        isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0',
-        priorityStyles[notification.priority || 'normal'],
-        positionClasses[position]
+        "fixed z-[100] w-96 max-w-[calc(100vw-2rem)]",
+        "bg-background border-2 rounded-lg shadow-lg",
+        "transform transition-all duration-300 ease-in-out",
+        isExiting ? "opacity-0 translate-x-full" : "opacity-100 translate-x-0",
+        priorityStyles[notification.priority || "normal"],
+        positionClasses[position],
       )}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -100,29 +107,31 @@ export function NotificationToast({
         <div className="flex items-start gap-3">
           <div
             className={cn(
-              'p-2 rounded-full shrink-0',
-              notification.priority === 'urgent'
-                ? 'bg-red-100 dark:bg-red-900/30'
-                : notification.priority === 'high'
-                ? 'bg-orange-100 dark:bg-orange-900/30'
-                : 'bg-primary/10'
+              "p-2 rounded-full shrink-0",
+              notification.priority === "urgent"
+                ? "bg-red-100 dark:bg-red-900/30"
+                : notification.priority === "high"
+                  ? "bg-orange-100 dark:bg-orange-900/30"
+                  : "bg-primary/10",
             )}
           >
             <Icon
               className={cn(
-                'h-4 w-4',
-                notification.priority === 'urgent'
-                  ? 'text-red-600'
-                  : notification.priority === 'high'
-                  ? 'text-orange-600'
-                  : 'text-primary'
+                "h-4 w-4",
+                notification.priority === "urgent"
+                  ? "text-red-600"
+                  : notification.priority === "high"
+                    ? "text-orange-600"
+                    : "text-primary",
               )}
             />
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <p className="font-semibold text-sm truncate">{notification.title}</p>
+              <p className="font-semibold text-sm truncate">
+                {notification.title}
+              </p>
               <Button
                 variant="ghost"
                 size="icon"
@@ -149,7 +158,7 @@ export function NotificationToast({
                 onClick={handleAction}
                 data-testid="toast-action"
               >
-                {notification.actionLabel || 'View details'}
+                {notification.actionLabel || "View details"}
                 <ExternalLink className="h-3 w-3 ml-1" />
               </Button>
             )}
@@ -162,7 +171,7 @@ export function NotificationToast({
           <div
             className="h-full bg-primary transition-all ease-linear"
             style={{
-              width: '100%',
+              width: "100%",
               animation: `shrink ${autoHideDuration}ms linear forwards`,
             }}
           />
@@ -184,7 +193,7 @@ interface NotificationToastContainerProps {
   onDismiss: (id: string) => void;
   onMarkRead: (id: string) => void;
   maxVisible?: number;
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  position?: "top-right" | "top-left" | "bottom-right" | "bottom-left";
 }
 
 export function NotificationToastContainer({
@@ -192,7 +201,7 @@ export function NotificationToastContainer({
   onDismiss,
   onMarkRead,
   maxVisible = 3,
-  position = 'top-right',
+  position = "top-right",
 }: NotificationToastContainerProps) {
   const visibleNotifications = notifications.slice(0, maxVisible);
 

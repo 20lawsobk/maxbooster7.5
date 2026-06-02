@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { logger } from '../logger.js';
-import { auditLogger } from './auditLogger.js';
-import { isRoutesReady } from '../lib/bootState.js';
+import { Request, Response, NextFunction } from "express";
+import { logger } from "../logger.js";
+import { auditLogger } from "./auditLogger.js";
+import { isRoutesReady } from "../lib/bootState.js";
 
 interface RequestLogData {
   timestamp: string;
@@ -20,7 +20,11 @@ interface RequestLogData {
 }
 
 // Request logging middleware
-export function requestLogger(req: Request, res: Response, next: NextFunction): void {
+export function requestLogger(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const startTime = Date.now();
 
   // Capture request details
@@ -29,17 +33,21 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
     requestId: req.requestId,
     method: req.method,
     url: req.originalUrl,
-    ip: req.ip || 'unknown',
-    userAgent: req.get('user-agent') || 'unknown',
+    ip: req.ip || "unknown",
+    userAgent: req.get("user-agent") || "unknown",
     userId: (req as Record<string, unknown>).user?.id,
     sessionId: req.sessionID,
     query: Object.keys(req.query).length > 0 ? req.query : undefined,
-    referrer: req.get('referrer'),
+    referrer: req.get("referrer"),
   };
 
   // Override res.end to capture response details
   const originalEnd = res.end.bind(res);
-  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): Record<string, unknown> {
+  res.end = function (
+    chunk?: unknown,
+    encoding?: unknown,
+    cb?: unknown,
+  ): Record<string, unknown> {
     const responseTime = Date.now() - startTime;
 
     // Update log data with response information
@@ -54,20 +62,24 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
     // Static/Vite asset paths — browser SW cache mismatches produce transient 404s on every
     // restart; these are not actionable and should never surface as WARN.
     const isStaticAssetRequest =
-      req.originalUrl.startsWith('/assets/') ||
-      req.originalUrl.startsWith('/src/') ||
-      req.originalUrl.startsWith('/@fs/') ||
-      req.originalUrl.startsWith('/@vite') ||
-      /\.(js|css|map|woff2?|ttf|eot|svg|png|ico|webp)(\?|$)/.test(req.originalUrl);
+      req.originalUrl.startsWith("/assets/") ||
+      req.originalUrl.startsWith("/src/") ||
+      req.originalUrl.startsWith("/@fs/") ||
+      req.originalUrl.startsWith("/@vite") ||
+      /\.(js|css|map|woff2?|ttf|eot|svg|png|ico|webp)(\?|$)/.test(
+        req.originalUrl,
+      );
 
     // Skip logging of static assets and health checks in production; also skip static
     // assets in dev to avoid noise from browser SW cache mismatches.
     const skipLogging =
-      (req.originalUrl.includes('/api/health') ||
-        req.originalUrl.includes('/api/version') ||
-        req.originalUrl.includes('/api/ready') ||
-        req.originalUrl.includes('/api/live')) ||
-      ((process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT) && isStaticAssetRequest);
+      req.originalUrl.includes("/api/health") ||
+      req.originalUrl.includes("/api/version") ||
+      req.originalUrl.includes("/api/ready") ||
+      req.originalUrl.includes("/api/live") ||
+      ((process.env.NODE_ENV === "production" ||
+        !!process.env.REPLIT_DEPLOYMENT) &&
+        isStaticAssetRequest);
 
     if (!skipLogging) {
       // Log request for audit trail
@@ -77,7 +89,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
         userEmail: (req as Record<string, unknown>).user?.email,
         ip: logData.ip,
         userAgent: logData.userAgent,
-        action: 'HTTP_REQUEST',
+        action: "HTTP_REQUEST",
         resource: `${req.method} ${req.route?.path || req.originalUrl}`,
         details: {
           request: {
@@ -93,13 +105,17 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
             bodySize: logData.bodySize,
           },
         },
-        result: isError ? 'failure' : 'success',
-        risk: isServerError ? 'high' : isError ? 'medium' : 'low',
+        result: isError ? "failure" : "success",
+        risk: isServerError ? "high" : isError ? "medium" : "low",
         sessionId: logData.sessionId,
       });
 
       // Console log for development and critical errors
-      if ((process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT) || isServerError) {
+      if (
+        (process.env.NODE_ENV !== "production" &&
+          !process.env.REPLIT_DEPLOYMENT) ||
+        isServerError
+      ) {
         // 401/403 are expected auth flows (e.g. unauthenticated polling) — log at INFO.
         // 404s on static/asset paths are browser SW cache artifacts — log at INFO.
         // 404s during the boot window (before registerRoutes() completes) are startup
@@ -107,12 +123,16 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
         const isAuthStatus = res.statusCode === 401 || res.statusCode === 403;
         const isAsset404 = res.statusCode === 404 && isStaticAssetRequest;
         const isBootWindow404 = res.statusCode === 404 && !isRoutesReady();
-        const logLevel = isServerError ? 'error' : (isError && !isAuthStatus && !isAsset404 && !isBootWindow404) ? 'warn' : 'info';
+        const logLevel = isServerError
+          ? "error"
+          : isError && !isAuthStatus && !isAsset404 && !isBootWindow404
+            ? "warn"
+            : "info";
         const message = `${logData.method} ${logData.url} - ${logData.statusCode} in ${responseTime}ms`;
 
-        if (logLevel === 'error') {
+        if (logLevel === "error") {
           logger.warn(`❌ ${message}`, { requestId: logData.requestId });
-        } else if (logLevel === 'warn') {
+        } else if (logLevel === "warn") {
           logger.warn(`⚠️  ${message}`, { requestId: logData.requestId });
         } else {
           logger.info(`✅ ${message}`);
@@ -128,7 +148,11 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 }
 
 // Error context middleware - adds context to errors for better debugging
-export function errorContext(req: Request, res: Response, next: NextFunction): void {
+export function errorContext(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   // Add request context to any errors that occur
   const originalNext = next;
   next = function (error?: unknown) {
@@ -139,7 +163,7 @@ export function errorContext(req: Request, res: Response, next: NextFunction): v
         method: req.method,
         url: req.originalUrl,
         ip: req.ip,
-        userAgent: req.get('user-agent'),
+        userAgent: req.get("user-agent"),
         userId: (req as Record<string, unknown>).user?.id,
         sessionId: req.sessionID,
         timestamp: new Date().toISOString(),

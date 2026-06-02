@@ -1,25 +1,31 @@
-import { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Sparkles,
   Play,
@@ -48,7 +54,7 @@ import {
   Rocket,
   Eye,
   MousePointerClick,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -56,14 +62,19 @@ import {
   TikTokIcon,
   LinkedInIcon,
   ThreadsIcon,
-} from '@/components/ui/brand-icons';
+} from "@/components/ui/brand-icons";
 
 interface AdvertisingAutopilotConfig {
   enabled: boolean;
   platforms: string[];
-  campaignObjective: 'awareness' | 'engagement' | 'conversions' | 'traffic' | 'viral';
-  campaignFrequency: 'hourly' | 'daily' | 'twice-daily' | 'weekly';
-  brandVoice: 'professional' | 'casual' | 'energetic' | 'informative';
+  campaignObjective:
+    | "awareness"
+    | "engagement"
+    | "conversions"
+    | "traffic"
+    | "viral";
+  campaignFrequency: "hourly" | "daily" | "twice-daily" | "weekly";
+  brandVoice: "professional" | "casual" | "energetic" | "informative";
   contentTypes: string[];
   mediaTypes: string[];
   targetAudience: string;
@@ -84,48 +95,133 @@ interface AdvertisingAutopilotConfig {
 }
 
 const PLATFORMS = [
-  { id: 'facebook', name: 'Facebook Profile', icon: FacebookIcon, color: '#1877F2' },
-  { id: 'instagram', name: 'Instagram Profile', icon: InstagramIcon, color: '#E4405F' },
-  { id: 'twitter', name: 'Twitter (X) Profile', icon: null, color: '#000000' },
-  { id: 'tiktok', name: 'TikTok Profile', icon: TikTokIcon, color: '#000000' },
-  { id: 'youtube', name: 'YouTube Channel', icon: YouTubeIcon, color: '#FF0000' },
-  { id: 'linkedin', name: 'LinkedIn Profile', icon: LinkedInIcon, color: '#0077B5' },
-  { id: 'threads', name: 'Threads Profile', icon: ThreadsIcon, color: '#000000' },
+  {
+    id: "facebook",
+    name: "Facebook Profile",
+    icon: FacebookIcon,
+    color: "#1877F2",
+  },
+  {
+    id: "instagram",
+    name: "Instagram Profile",
+    icon: InstagramIcon,
+    color: "#E4405F",
+  },
+  { id: "twitter", name: "Twitter (X) Profile", icon: null, color: "#000000" },
+  { id: "tiktok", name: "TikTok Profile", icon: TikTokIcon, color: "#000000" },
+  {
+    id: "youtube",
+    name: "YouTube Channel",
+    icon: YouTubeIcon,
+    color: "#FF0000",
+  },
+  {
+    id: "linkedin",
+    name: "LinkedIn Profile",
+    icon: LinkedInIcon,
+    color: "#0077B5",
+  },
+  {
+    id: "threads",
+    name: "Threads Profile",
+    icon: ThreadsIcon,
+    color: "#000000",
+  },
 ];
 
 const CONTENT_TYPES = [
-  { id: 'brand-awareness', label: 'Brand Awareness', description: 'Increase visibility and recognition' },
-  { id: 'product-promotion', label: 'Product Promotion', description: 'Promote your music and releases' },
-  { id: 'engagement-boost', label: 'Engagement Boost', description: 'Drive likes, comments, and shares' },
-  { id: 'traffic-drive', label: 'Traffic Driver', description: 'Drive traffic to your website or store' },
-  { id: 'viral-content', label: 'Viral Content', description: 'AI-optimized viral campaigns' },
-  { id: 'retargeting', label: 'Retargeting', description: 'Re-engage past visitors' },
+  {
+    id: "brand-awareness",
+    label: "Brand Awareness",
+    description: "Increase visibility and recognition",
+  },
+  {
+    id: "product-promotion",
+    label: "Product Promotion",
+    description: "Promote your music and releases",
+  },
+  {
+    id: "engagement-boost",
+    label: "Engagement Boost",
+    description: "Drive likes, comments, and shares",
+  },
+  {
+    id: "traffic-drive",
+    label: "Traffic Driver",
+    description: "Drive traffic to your website or store",
+  },
+  {
+    id: "viral-content",
+    label: "Viral Content",
+    description: "AI-optimized viral campaigns",
+  },
+  {
+    id: "retargeting",
+    label: "Retargeting",
+    description: "Re-engage past visitors",
+  },
 ];
 
 const MEDIA_TYPES = [
-  { id: 'text', label: 'Text Ads', icon: FileText, description: 'Text-only ad copy' },
-  { id: 'image', label: 'Image Ads', icon: Image, description: 'AI-generated graphics' },
-  { id: 'audio', label: 'Audio Ads', icon: Music, description: 'AI-generated audio clips' },
-  { id: 'video', label: 'Video Ads', icon: Video, description: 'AI-generated video content' },
+  {
+    id: "text",
+    label: "Text Ads",
+    icon: FileText,
+    description: "Text-only ad copy",
+  },
+  {
+    id: "image",
+    label: "Image Ads",
+    icon: Image,
+    description: "AI-generated graphics",
+  },
+  {
+    id: "audio",
+    label: "Audio Ads",
+    icon: Music,
+    description: "AI-generated audio clips",
+  },
+  {
+    id: "video",
+    label: "Video Ads",
+    icon: Video,
+    description: "AI-generated video content",
+  },
 ];
 
 const CAMPAIGN_OBJECTIVES = [
-  { id: 'awareness', label: 'Brand Awareness', description: 'Reach more people' },
-  { id: 'engagement', label: 'Engagement', description: 'Get more interactions' },
-  { id: 'conversions', label: 'Conversions', description: 'Drive actions and sales' },
-  { id: 'traffic', label: 'Traffic', description: 'Drive website visits' },
-  { id: 'viral', label: 'Viral Growth', description: 'Maximize organic sharing' },
+  {
+    id: "awareness",
+    label: "Brand Awareness",
+    description: "Reach more people",
+  },
+  {
+    id: "engagement",
+    label: "Engagement",
+    description: "Get more interactions",
+  },
+  {
+    id: "conversions",
+    label: "Conversions",
+    description: "Drive actions and sales",
+  },
+  { id: "traffic", label: "Traffic", description: "Drive website visits" },
+  {
+    id: "viral",
+    label: "Viral Growth",
+    description: "Maximize organic sharing",
+  },
 ];
 
 const DEFAULT_CONFIG: AdvertisingAutopilotConfig = {
   enabled: false,
   platforms: [],
-  campaignObjective: 'awareness',
-  campaignFrequency: 'daily',
-  brandVoice: 'professional',
-  contentTypes: ['brand-awareness', 'engagement-boost'],
-  mediaTypes: ['text', 'image'],
-  targetAudience: '',
+  campaignObjective: "awareness",
+  campaignFrequency: "daily",
+  brandVoice: "professional",
+  contentTypes: ["brand-awareness", "engagement-boost"],
+  mediaTypes: ["text", "image"],
+  targetAudience: "",
   ageMin: 18,
   ageMax: 65,
   interests: [],
@@ -138,19 +234,24 @@ const DEFAULT_CONFIG: AdvertisingAutopilotConfig = {
   optimalTimesOnly: true,
   crossPlatformCampaigns: false,
   engagementThreshold: 0.02,
-  minConfidenceThreshold: 0.70,
+  minConfidenceThreshold: 0.7,
   autoAnalyzeBeforePosting: true,
 };
 
 export function AutonomousDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeConfigTab, setActiveConfigTab] = useState('basic');
-  const [localConfig, setLocalConfig] = useState<AdvertisingAutopilotConfig>(DEFAULT_CONFIG);
+  const [activeConfigTab, setActiveConfigTab] = useState("basic");
+  const [localConfig, setLocalConfig] =
+    useState<AdvertisingAutopilotConfig>(DEFAULT_CONFIG);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const { data: autopilotData, isLoading: statusLoading, error: statusError } = useQuery({
-    queryKey: ['/api/advertising/status'],
+  const {
+    data: autopilotData,
+    isLoading: statusLoading,
+    error: statusError,
+  } = useQuery({
+    queryKey: ["/api/advertising/status"],
     refetchInterval: 30000,
     meta: { silentError: true },
   });
@@ -172,52 +273,60 @@ export function AutonomousDashboard() {
 
   const toggleAutopilotMutation = useMutation({
     mutationFn: async (shouldStart: boolean) => {
-      const endpoint = shouldStart ? '/api/advertising/start' : '/api/advertising/stop';
-      const response = await apiRequest('POST', endpoint, {});
+      const endpoint = shouldStart
+        ? "/api/advertising/start"
+        : "/api/advertising/stop";
+      const response = await apiRequest("POST", endpoint, {});
       return response.json();
     },
     onSuccess: (_, shouldStart) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/advertising/status'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/advertising/status"] });
       toast({
-        title: shouldStart ? 'Advertising Autopilot Started' : 'Advertising Autopilot Paused',
-        description: shouldStart 
-          ? 'AI is now generating and managing ad campaigns automatically' 
-          : 'Advertising autopilot has been paused',
+        title: shouldStart
+          ? "Advertising Autopilot Started"
+          : "Advertising Autopilot Paused",
+        description: shouldStart
+          ? "AI is now generating and managing ad campaigns automatically"
+          : "Advertising autopilot has been paused",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to update autopilot status. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update autopilot status. Please try again.",
+        variant: "destructive",
       });
     },
   });
 
   const saveConfigMutation = useMutation({
     mutationFn: async (config: AdvertisingAutopilotConfig) => {
-      const response = await apiRequest('POST', '/api/advertising/configure', config);
+      const response = await apiRequest(
+        "POST",
+        "/api/advertising/configure",
+        config,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/advertising/status'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/advertising/status"] });
       setHasUnsavedChanges(false);
       toast({
-        title: 'Configuration Saved',
-        description: 'Your advertising autopilot settings have been updated.',
+        title: "Configuration Saved",
+        description: "Your advertising autopilot settings have been updated.",
       });
     },
     onError: () => {
       toast({
-        title: 'Save Failed',
-        description: 'Failed to save configuration. Please try again.',
-        variant: 'destructive',
+        title: "Save Failed",
+        description: "Failed to save configuration. Please try again.",
+        variant: "destructive",
       });
     },
   });
 
   const updateConfig = (updates: Partial<AdvertisingAutopilotConfig>) => {
-    setLocalConfig(prev => ({ ...prev, ...updates }));
+    setLocalConfig((prev) => ({ ...prev, ...updates }));
     setHasUnsavedChanges(true);
   };
 
@@ -239,7 +348,7 @@ export function AutonomousDashboard() {
 
   const toggleArrayItem = (array: string[], item: string): string[] => {
     if (array.includes(item)) {
-      return array.filter(i => i !== item);
+      return array.filter((i) => i !== item);
     }
     return [...array, item];
   };
@@ -254,7 +363,10 @@ export function AutonomousDashboard() {
         <CardContent className="pt-6">
           <div className="text-center text-destructive">
             <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-            <p>Failed to load advertising autopilot status. Please refresh the page.</p>
+            <p>
+              Failed to load advertising autopilot status. Please refresh the
+              page.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -272,18 +384,24 @@ export function AutonomousDashboard() {
                 Advertising Autopilot
               </CardTitle>
               <CardDescription>
-                AI generates optimized content via MaxCore and distributes it through your connected social profiles — zero ad spend required
+                AI generates optimized content via MaxCore and distributes it
+                through your connected social profiles — zero ad spend required
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant={isRunning ? 'default' : 'secondary'} className={isRunning ? 'bg-green-600' : ''}>
-                {isRunning ? 'Active' : 'Paused'}
+              <Badge
+                variant={isRunning ? "default" : "secondary"}
+                className={isRunning ? "bg-green-600" : ""}
+              >
+                {isRunning ? "Active" : "Paused"}
               </Badge>
               <Button
                 onClick={() => toggleAutopilotMutation.mutate(!isRunning)}
-                variant={isRunning ? 'destructive' : 'default'}
+                variant={isRunning ? "destructive" : "default"}
                 disabled={toggleAutopilotMutation.isPending || statusLoading}
-                className={!isRunning ? 'bg-orange-600 hover:bg-orange-700' : ''}
+                className={
+                  !isRunning ? "bg-orange-600 hover:bg-orange-700" : ""
+                }
               >
                 {toggleAutopilotMutation.isPending ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -292,7 +410,7 @@ export function AutonomousDashboard() {
                 ) : (
                   <Play className="h-4 w-4 mr-2" />
                 )}
-                {isRunning ? 'Pause' : 'Start'}
+                {isRunning ? "Pause" : "Start"}
               </Button>
             </div>
           </div>
@@ -301,44 +419,64 @@ export function AutonomousDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Campaigns Created</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Campaigns Created
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{status.totalCampaigns || 0}</div>
-                <p className="text-xs text-muted-foreground">AI-generated campaigns</p>
+                <div className="text-2xl font-bold">
+                  {status.totalCampaigns || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  AI-generated campaigns
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Reach</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Reach
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">
-                  {status.totalReach ? (status.totalReach / 1000).toFixed(1) + 'K' : '0'}
+                  {status.totalReach
+                    ? (status.totalReach / 1000).toFixed(1) + "K"
+                    : "0"}
                 </div>
                 <p className="text-xs text-muted-foreground">People reached</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Engagement Rate
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  {status.avgEngagementRate ? (status.avgEngagementRate * 100).toFixed(1) + '%' : '0%'}
+                  {status.avgEngagementRate
+                    ? (status.avgEngagementRate * 100).toFixed(1) + "%"
+                    : "0%"}
                 </div>
-                <p className="text-xs text-muted-foreground">Avg. across campaigns</p>
+                <p className="text-xs text-muted-foreground">
+                  Avg. across campaigns
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Next Campaign</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Next Campaign
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-sm font-bold">
                   {status.nextScheduledCampaign
-                    ? new Date(status.nextScheduledCampaign).toLocaleTimeString()
-                    : 'No campaigns scheduled'}
+                    ? new Date(
+                        status.nextScheduledCampaign,
+                      ).toLocaleTimeString()
+                    : "No campaigns scheduled"}
                 </div>
                 <p className="text-xs text-muted-foreground">Upcoming task</p>
               </CardContent>
@@ -354,7 +492,10 @@ export function AutonomousDashboard() {
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   {hasUnsavedChanges && (
-                    <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                    <Badge
+                      variant="outline"
+                      className="text-yellow-600 border-yellow-600"
+                    >
                       Unsaved Changes
                     </Badge>
                   )}
@@ -370,7 +511,9 @@ export function AutonomousDashboard() {
                   <Button
                     size="sm"
                     onClick={handleSaveConfig}
-                    disabled={!hasUnsavedChanges || saveConfigMutation.isPending}
+                    disabled={
+                      !hasUnsavedChanges || saveConfigMutation.isPending
+                    }
                     className="bg-orange-600 hover:bg-orange-700"
                   >
                     {saveConfigMutation.isPending ? (
@@ -398,38 +541,62 @@ export function AutonomousDashboard() {
                       <Label>Campaign Frequency</Label>
                       <Select
                         value={localConfig.campaignFrequency}
-                        onValueChange={(value) => updateConfig({ campaignFrequency: value as AdvertisingAutopilotConfig['campaignFrequency'] })}
+                        onValueChange={(value) =>
+                          updateConfig({
+                            campaignFrequency:
+                              value as AdvertisingAutopilotConfig["campaignFrequency"],
+                          })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="hourly">Hourly</SelectItem>
-                          <SelectItem value="twice-daily">Twice Daily</SelectItem>
+                          <SelectItem value="twice-daily">
+                            Twice Daily
+                          </SelectItem>
                           <SelectItem value="daily">Daily</SelectItem>
                           <SelectItem value="weekly">Weekly</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground">How often to create and optimize campaigns</p>
+                      <p className="text-xs text-muted-foreground">
+                        How often to create and optimize campaigns
+                      </p>
                     </div>
 
                     <div className="space-y-2">
                       <Label>Brand Voice</Label>
                       <Select
                         value={localConfig.brandVoice}
-                        onValueChange={(value) => updateConfig({ brandVoice: value as AdvertisingAutopilotConfig['brandVoice'] })}
+                        onValueChange={(value) =>
+                          updateConfig({
+                            brandVoice:
+                              value as AdvertisingAutopilotConfig["brandVoice"],
+                          })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="professional">Professional</SelectItem>
-                          <SelectItem value="casual">Casual & Friendly</SelectItem>
-                          <SelectItem value="energetic">Energetic & Bold</SelectItem>
-                          <SelectItem value="informative">Informative & Educational</SelectItem>
+                          <SelectItem value="professional">
+                            Professional
+                          </SelectItem>
+                          <SelectItem value="casual">
+                            Casual & Friendly
+                          </SelectItem>
+                          <SelectItem value="energetic">
+                            Energetic & Bold
+                          </SelectItem>
+                          <SelectItem value="informative">
+                            Informative & Educational
+                          </SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground">Tone for AI-generated ad copy</p>
+                      <p className="text-xs text-muted-foreground">
+                        Tone for AI-generated ad copy
+                      </p>
                     </div>
                   </div>
 
@@ -437,23 +604,33 @@ export function AutonomousDashboard() {
                     <Label>Target Audience Description</Label>
                     <Textarea
                       value={localConfig.targetAudience}
-                      onChange={(e) => updateConfig({ targetAudience: e.target.value })}
+                      onChange={(e) =>
+                        updateConfig({ targetAudience: e.target.value })
+                      }
                       placeholder="Describe your ideal audience (e.g., Music lovers aged 18-35, interested in hip-hop and R&B, located in major US cities)"
                       className="min-h-[80px]"
                     />
-                    <p className="text-xs text-muted-foreground">AI will use this to target your ads effectively</p>
+                    <p className="text-xs text-muted-foreground">
+                      AI will use this to target your ads effectively
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Age Range: {localConfig.ageMin} - {localConfig.ageMax}</Label>
+                      <Label>
+                        Age Range: {localConfig.ageMin} - {localConfig.ageMax}
+                      </Label>
                       <div className="flex items-center gap-4">
                         <Input
                           type="number"
                           min={13}
                           max={65}
                           value={localConfig.ageMin}
-                          onChange={(e) => updateConfig({ ageMin: parseInt(e.target.value) || 18 })}
+                          onChange={(e) =>
+                            updateConfig({
+                              ageMin: parseInt(e.target.value) || 18,
+                            })
+                          }
                           className="w-20"
                         />
                         <span className="text-muted-foreground">to</span>
@@ -462,7 +639,11 @@ export function AutonomousDashboard() {
                           min={18}
                           max={100}
                           value={localConfig.ageMax}
-                          onChange={(e) => updateConfig({ ageMax: parseInt(e.target.value) || 65 })}
+                          onChange={(e) =>
+                            updateConfig({
+                              ageMax: parseInt(e.target.value) || 65,
+                            })
+                          }
                           className="w-20"
                         />
                       </div>
@@ -474,24 +655,36 @@ export function AutonomousDashboard() {
                         type="number"
                         min={0}
                         value={localConfig.dailyBudgetLimit}
-                        onChange={(e) => updateConfig({ dailyBudgetLimit: parseInt(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          updateConfig({
+                            dailyBudgetLimit: parseInt(e.target.value) || 0,
+                          })
+                        }
                         placeholder="0 = No limit"
                       />
-                      <p className="text-xs text-muted-foreground">Max AI-generated posts per day across all platforms (0 = unlimited)</p>
+                      <p className="text-xs text-muted-foreground">
+                        Max AI-generated posts per day across all platforms (0 =
+                        unlimited)
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                     <div>
-                      <Label htmlFor="auto-publish" className="font-medium">Auto-Publish Campaigns</Label>
+                      <Label htmlFor="auto-publish" className="font-medium">
+                        Auto-Publish Campaigns
+                      </Label>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Automatically publish AI-generated campaigns without review
+                        Automatically publish AI-generated campaigns without
+                        review
                       </p>
                     </div>
                     <Switch
                       id="auto-publish"
                       checked={localConfig.autoPublish}
-                      onCheckedChange={(checked) => updateConfig({ autoPublish: checked })}
+                      onCheckedChange={(checked) =>
+                        updateConfig({ autoPublish: checked })
+                      }
                     />
                   </div>
                 </TabsContent>
@@ -501,7 +694,12 @@ export function AutonomousDashboard() {
                     <Label>Primary Campaign Objective</Label>
                     <Select
                       value={localConfig.campaignObjective}
-                      onValueChange={(value) => updateConfig({ campaignObjective: value as AdvertisingAutopilotConfig['campaignObjective'] })}
+                      onValueChange={(value) =>
+                        updateConfig({
+                          campaignObjective:
+                            value as AdvertisingAutopilotConfig["campaignObjective"],
+                        })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -511,7 +709,9 @@ export function AutonomousDashboard() {
                           <SelectItem key={objective.id} value={objective.id}>
                             <div className="flex flex-col">
                               <span>{objective.label}</span>
-                              <span className="text-xs text-muted-foreground">{objective.description}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {objective.description}
+                              </span>
                             </div>
                           </SelectItem>
                         ))}
@@ -527,20 +727,29 @@ export function AutonomousDashboard() {
                           key={type.id}
                           className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                             localConfig.contentTypes.includes(type.id)
-                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                              : 'border-muted hover:border-muted-foreground/50'
+                              ? "border-orange-500 bg-orange-50 dark:bg-orange-950/20"
+                              : "border-muted hover:border-muted-foreground/50"
                           }`}
-                          onClick={() => updateConfig({ 
-                            contentTypes: toggleArrayItem(localConfig.contentTypes, type.id) 
-                          })}
+                          onClick={() =>
+                            updateConfig({
+                              contentTypes: toggleArrayItem(
+                                localConfig.contentTypes,
+                                type.id,
+                              ),
+                            })
+                          }
                         >
                           <Checkbox
                             checked={localConfig.contentTypes.includes(type.id)}
                             className="mt-0.5"
                           />
                           <div>
-                            <Label className="font-medium cursor-pointer">{type.label}</Label>
-                            <p className="text-xs text-muted-foreground">{type.description}</p>
+                            <Label className="font-medium cursor-pointer">
+                              {type.label}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {type.description}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -557,18 +766,31 @@ export function AutonomousDashboard() {
                             key={type.id}
                             className={`flex flex-col items-center p-4 rounded-lg border cursor-pointer transition-colors ${
                               localConfig.mediaTypes.includes(type.id)
-                                ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                                : 'border-muted hover:border-muted-foreground/50'
+                                ? "border-orange-500 bg-orange-50 dark:bg-orange-950/20"
+                                : "border-muted hover:border-muted-foreground/50"
                             }`}
-                            onClick={() => updateConfig({ 
-                              mediaTypes: toggleArrayItem(localConfig.mediaTypes, type.id) 
-                            })}
+                            onClick={() =>
+                              updateConfig({
+                                mediaTypes: toggleArrayItem(
+                                  localConfig.mediaTypes,
+                                  type.id,
+                                ),
+                              })
+                            }
                           >
-                            <Icon className={`h-8 w-8 mb-2 ${
-                              localConfig.mediaTypes.includes(type.id) ? 'text-orange-600' : 'text-muted-foreground'
-                            }`} />
-                            <Label className="font-medium text-center cursor-pointer">{type.label}</Label>
-                            <p className="text-xs text-muted-foreground text-center mt-1">{type.description}</p>
+                            <Icon
+                              className={`h-8 w-8 mb-2 ${
+                                localConfig.mediaTypes.includes(type.id)
+                                  ? "text-orange-600"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                            <Label className="font-medium text-center cursor-pointer">
+                              {type.label}
+                            </Label>
+                            <p className="text-xs text-muted-foreground text-center mt-1">
+                              {type.description}
+                            </p>
                           </div>
                         );
                       })}
@@ -583,7 +805,8 @@ export function AutonomousDashboard() {
                   <div className="space-y-3">
                     <Label>Ad Platforms</Label>
                     <p className="text-sm text-muted-foreground">
-                      Select platforms where AI will create and optimize ad campaigns
+                      Select platforms where AI will create and optimize ad
+                      campaigns
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {PLATFORMS.map((platform) => {
@@ -593,23 +816,42 @@ export function AutonomousDashboard() {
                             key={platform.id}
                             className={`flex flex-col items-center p-4 rounded-lg border cursor-pointer transition-all ${
                               localConfig.platforms.includes(platform.id)
-                                ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20 shadow-sm'
-                                : 'border-muted hover:border-muted-foreground/50'
+                                ? "border-orange-500 bg-orange-50 dark:bg-orange-950/20 shadow-sm"
+                                : "border-muted hover:border-muted-foreground/50"
                             }`}
-                            onClick={() => updateConfig({ 
-                              platforms: toggleArrayItem(localConfig.platforms, platform.id) 
-                            })}
+                            onClick={() =>
+                              updateConfig({
+                                platforms: toggleArrayItem(
+                                  localConfig.platforms,
+                                  platform.id,
+                                ),
+                              })
+                            }
                           >
-                            <div 
+                            <div
                               className="h-12 w-12 rounded-full flex items-center justify-center mb-2"
-                              style={{ 
-                                backgroundColor: localConfig.platforms.includes(platform.id) ? platform.color : '#e5e7eb',
-                                color: localConfig.platforms.includes(platform.id) ? 'white' : '#6b7280'
+                              style={{
+                                backgroundColor: localConfig.platforms.includes(
+                                  platform.id,
+                                )
+                                  ? platform.color
+                                  : "#e5e7eb",
+                                color: localConfig.platforms.includes(
+                                  platform.id,
+                                )
+                                  ? "white"
+                                  : "#6b7280",
                               }}
                             >
-                              {Icon ? <Icon className="h-5 w-5" /> : <Globe className="h-5 w-5" />}
+                              {Icon ? (
+                                <Icon className="h-5 w-5" />
+                              ) : (
+                                <Globe className="h-5 w-5" />
+                              )}
                             </div>
-                            <span className="font-medium text-sm text-center">{platform.name}</span>
+                            <span className="font-medium text-sm text-center">
+                              {platform.name}
+                            </span>
                           </div>
                         );
                       })}
@@ -618,29 +860,39 @@ export function AutonomousDashboard() {
 
                   <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                     <div>
-                      <Label htmlFor="cross-platform" className="font-medium">Cross-Platform Campaigns</Label>
+                      <Label htmlFor="cross-platform" className="font-medium">
+                        Cross-Platform Campaigns
+                      </Label>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Optimize and run the same campaign across multiple platforms
+                        Optimize and run the same campaign across multiple
+                        platforms
                       </p>
                     </div>
                     <Switch
                       id="cross-platform"
                       checked={localConfig.crossPlatformCampaigns}
-                      onCheckedChange={(checked) => updateConfig({ crossPlatformCampaigns: checked })}
+                      onCheckedChange={(checked) =>
+                        updateConfig({ crossPlatformCampaigns: checked })
+                      }
                     />
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                     <div>
-                      <Label htmlFor="optimal-times" className="font-medium">Optimal Times Only</Label>
+                      <Label htmlFor="optimal-times" className="font-medium">
+                        Optimal Times Only
+                      </Label>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Only launch campaigns during peak engagement hours for each platform
+                        Only launch campaigns during peak engagement hours for
+                        each platform
                       </p>
                     </div>
                     <Switch
                       id="optimal-times"
                       checked={localConfig.optimalTimesOnly}
-                      onCheckedChange={(checked) => updateConfig({ optimalTimesOnly: checked })}
+                      onCheckedChange={(checked) =>
+                        updateConfig({ optimalTimesOnly: checked })
+                      }
                     />
                   </div>
                 </TabsContent>
@@ -649,11 +901,14 @@ export function AutonomousDashboard() {
                   <div className="space-y-4">
                     <div>
                       <Label className="mb-2 block">
-                        Engagement Threshold: {(localConfig.engagementThreshold * 100).toFixed(0)}%
+                        Engagement Threshold:{" "}
+                        {(localConfig.engagementThreshold * 100).toFixed(0)}%
                       </Label>
                       <Slider
                         value={[localConfig.engagementThreshold * 100]}
-                        onValueChange={([value]) => updateConfig({ engagementThreshold: value / 100 })}
+                        onValueChange={([value]) =>
+                          updateConfig({ engagementThreshold: value / 100 })
+                        }
                         min={1}
                         max={10}
                         step={0.5}
@@ -666,74 +921,107 @@ export function AutonomousDashboard() {
 
                     <div>
                       <Label className="mb-2 block">
-                        AI Confidence Threshold: {(localConfig.minConfidenceThreshold * 100).toFixed(0)}%
+                        AI Confidence Threshold:{" "}
+                        {(localConfig.minConfidenceThreshold * 100).toFixed(0)}%
                       </Label>
                       <Slider
                         value={[localConfig.minConfidenceThreshold * 100]}
-                        onValueChange={([value]) => updateConfig({ minConfidenceThreshold: value / 100 })}
+                        onValueChange={([value]) =>
+                          updateConfig({ minConfidenceThreshold: value / 100 })
+                        }
                         min={50}
                         max={95}
                         step={5}
                         className="w-full"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Minimum AI confidence score required before auto-publishing
+                        Minimum AI confidence score required before
+                        auto-publishing
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                       <div>
-                        <Label htmlFor="auto-analyze" className="font-medium">Auto-Analyze Content</Label>
+                        <Label htmlFor="auto-analyze" className="font-medium">
+                          Auto-Analyze Content
+                        </Label>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Automatically analyze ad content quality before publishing
+                          Automatically analyze ad content quality before
+                          publishing
                         </p>
                       </div>
                       <Switch
                         id="auto-analyze"
                         checked={localConfig.autoAnalyzeBeforePosting}
-                        onCheckedChange={(checked) => updateConfig({ autoAnalyzeBeforePosting: checked })}
+                        onCheckedChange={(checked) =>
+                          updateConfig({ autoAnalyzeBeforePosting: checked })
+                        }
                       />
                     </div>
 
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                       <div>
-                        <Label htmlFor="budget-optimization" className="font-medium">AI Budget Optimization</Label>
+                        <Label
+                          htmlFor="budget-optimization"
+                          className="font-medium"
+                        >
+                          AI Budget Optimization
+                        </Label>
                         <p className="text-xs text-muted-foreground mt-1">
-                          AI automatically allocates budget to best-performing campaigns
+                          AI automatically allocates budget to best-performing
+                          campaigns
                         </p>
                       </div>
                       <Switch
                         id="budget-optimization"
                         checked={localConfig.budgetOptimization}
-                        onCheckedChange={(checked) => updateConfig({ budgetOptimization: checked })}
+                        onCheckedChange={(checked) =>
+                          updateConfig({ budgetOptimization: checked })
+                        }
                       />
                     </div>
 
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                       <div>
-                        <Label htmlFor="viral-optimization" className="font-medium">Viral Optimization</Label>
+                        <Label
+                          htmlFor="viral-optimization"
+                          className="font-medium"
+                        >
+                          Viral Optimization
+                        </Label>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Optimize campaigns for maximum organic sharing and viral potential
+                          Optimize campaigns for maximum organic sharing and
+                          viral potential
                         </p>
                       </div>
                       <Switch
                         id="viral-optimization"
                         checked={localConfig.viralOptimization}
-                        onCheckedChange={(checked) => updateConfig({ viralOptimization: checked })}
+                        onCheckedChange={(checked) =>
+                          updateConfig({ viralOptimization: checked })
+                        }
                       />
                     </div>
 
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                       <div>
-                        <Label htmlFor="algorithmic-targeting" className="font-medium">Algorithmic Targeting</Label>
+                        <Label
+                          htmlFor="algorithmic-targeting"
+                          className="font-medium"
+                        >
+                          Algorithmic Targeting
+                        </Label>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Use AI to exploit platform algorithms for organic reach boost
+                          Use AI to exploit platform algorithms for organic
+                          reach boost
                         </p>
                       </div>
                       <Switch
                         id="algorithmic-targeting"
                         checked={localConfig.algorithmicTargeting}
-                        onCheckedChange={(checked) => updateConfig({ algorithmicTargeting: checked })}
+                        onCheckedChange={(checked) =>
+                          updateConfig({ algorithmicTargeting: checked })
+                        }
                       />
                     </div>
 
@@ -742,11 +1030,14 @@ export function AutonomousDashboard() {
                         <div className="flex items-start gap-3">
                           <Brain className="h-5 w-5 text-orange-600 mt-0.5" />
                           <div>
-                            <h4 className="font-medium text-orange-900 dark:text-orange-100">AI Learning</h4>
+                            <h4 className="font-medium text-orange-900 dark:text-orange-100">
+                              AI Learning
+                            </h4>
                             <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                              The advertising autopilot continuously learns from your campaign performance to improve 
-                              future targeting and content. High-performing ad formats and audiences will be 
-                              prioritized automatically.
+                              The advertising autopilot continuously learns from
+                              your campaign performance to improve future
+                              targeting and content. High-performing ad formats
+                              and audiences will be prioritized automatically.
                             </p>
                           </div>
                         </div>
@@ -770,23 +1061,38 @@ export function AutonomousDashboard() {
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>Campaign Quality Score</span>
-                    <span className="font-medium">{modelStatus.trained ? '87%' : '0%'}</span>
+                    <span className="font-medium">
+                      {modelStatus.trained ? "87%" : "0%"}
+                    </span>
                   </div>
-                  <Progress value={modelStatus.trained ? 87 : 0} className="h-2" />
+                  <Progress
+                    value={modelStatus.trained ? 87 : 0}
+                    className="h-2"
+                  />
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>Audience Targeting Accuracy</span>
-                    <span className="font-medium">{modelStatus.trained ? '92%' : '0%'}</span>
+                    <span className="font-medium">
+                      {modelStatus.trained ? "92%" : "0%"}
+                    </span>
                   </div>
-                  <Progress value={modelStatus.trained ? 92 : 0} className="h-2" />
+                  <Progress
+                    value={modelStatus.trained ? 92 : 0}
+                    className="h-2"
+                  />
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>Viral Prediction Accuracy</span>
-                    <span className="font-medium">{modelStatus.trained ? '78%' : '0%'}</span>
+                    <span className="font-medium">
+                      {modelStatus.trained ? "78%" : "0%"}
+                    </span>
                   </div>
-                  <Progress value={modelStatus.trained ? 78 : 0} className="h-2" />
+                  <Progress
+                    value={modelStatus.trained ? 78 : 0}
+                    className="h-2"
+                  />
                 </div>
               </div>
             </CardContent>
@@ -800,33 +1106,46 @@ export function AutonomousDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {(status.recentActivity && status.recentActivity.length > 0) ? (
+              {status.recentActivity && status.recentActivity.length > 0 ? (
                 <div className="space-y-3">
-                  {status.recentActivity.map((activity: Record<string, unknown>, i: number) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      {activity.status === 'completed' ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : activity.status === 'failed' ? (
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                      ) : (
-                        <Clock className="h-4 w-4 text-yellow-600" />
-                      )}
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{activity.title || 'Campaign processed'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {activity.description || 'Platform optimization completed'}
-                        </p>
+                  {status.recentActivity.map(
+                    (activity: Record<string, unknown>, i: number) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 p-3 bg-muted rounded-lg"
+                      >
+                        {activity.status === "completed" ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : activity.status === "failed" ? (
+                          <AlertCircle className="h-4 w-4 text-red-600" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-yellow-600" />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            {activity.title || "Campaign processed"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {activity.description ||
+                              "Platform optimization completed"}
+                          </p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {activity.time
+                            ? new Date(activity.time).toLocaleTimeString()
+                            : ""}
+                        </span>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {activity.time ? new Date(activity.time).toLocaleTimeString() : ''}
-                      </span>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Sparkles className="h-8 w-8 mx-auto mb-2" />
-                  <p>No activity yet. Start the autopilot to begin generating campaigns.</p>
+                  <p>
+                    No activity yet. Start the autopilot to begin generating
+                    campaigns.
+                  </p>
                 </div>
               )}
             </CardContent>

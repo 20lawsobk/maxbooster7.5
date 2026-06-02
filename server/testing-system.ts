@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
-import { promisify } from 'util';
-import { exec } from 'child_process';
-import fs from 'fs/promises';
-import path from 'path';
-import crypto from 'crypto';
-import { logger } from './logger.js';
+import { Request, Response, NextFunction } from "express";
+import { promisify } from "util";
+import { exec } from "child_process";
+import fs from "fs/promises";
+import path from "path";
+import crypto from "crypto";
+import { logger } from "./logger.js";
 
 const execAsync = promisify(exec);
 
@@ -62,7 +62,7 @@ export class TestingSystem {
   // Initialize testing system
   private async initializeTestingSystem(): Promise<void> {
     try {
-      logger.info('🧪 Initializing comprehensive testing system...');
+      logger.info("🧪 Initializing comprehensive testing system...");
 
       // Start continuous testing
       this.startContinuousTesting();
@@ -70,9 +70,9 @@ export class TestingSystem {
       // Perform initial test suite
       await this.runFullTestSuite();
 
-      logger.info('✅ Testing system initialized');
+      logger.info("✅ Testing system initialized");
     } catch (error: unknown) {
-      logger.warn({ err: error }, '❌ Failed to initialize testing system:');
+      logger.warn({ err: error }, "❌ Failed to initialize testing system:");
     }
   }
 
@@ -80,38 +80,62 @@ export class TestingSystem {
   private startContinuousTesting(): void {
     // Unit tests every 5 minutes
     setInterval(async () => {
-      try { await this.runUnitTests(); } catch { /* non-fatal */ }
+      try {
+        await this.runUnitTests();
+      } catch {
+        /* non-fatal */
+      }
     }, 300000);
 
     // Integration tests every 15 minutes
     setInterval(async () => {
-      try { await this.runIntegrationTests(); } catch { /* non-fatal */ }
+      try {
+        await this.runIntegrationTests();
+      } catch {
+        /* non-fatal */
+      }
     }, 900000);
 
     // E2E tests every hour
     setInterval(async () => {
-      try { await this.runE2ETests(); } catch { /* non-fatal */ }
+      try {
+        await this.runE2ETests();
+      } catch {
+        /* non-fatal */
+      }
     }, 3600000);
 
     // Performance tests every 2 hours
     setInterval(async () => {
-      try { await this.runPerformanceTests(); } catch { /* non-fatal */ }
+      try {
+        await this.runPerformanceTests();
+      } catch {
+        /* non-fatal */
+      }
     }, 7200000);
 
     // Security tests every 4 hours
     setInterval(async () => {
-      try { await this.runSecurityTests(); } catch { /* non-fatal */ }
+      try {
+        await this.runSecurityTests();
+      } catch {
+        /* non-fatal */
+      }
     }, 14400000);
 
     // Full test suite every 24 hours
     setInterval(async () => {
-      try { await this.runFullTestSuite(); } catch { /* non-fatal */ }
+      try {
+        await this.runFullTestSuite();
+      } catch {
+        /* non-fatal */
+      }
     }, 86400000);
   }
 
   // Run full test suite
   public async runFullTestSuite(): Promise<TestResults> {
-    logger.info('🧪 Running comprehensive test suite...');
+    logger.info("🧪 Running comprehensive test suite...");
 
     try {
       // Unit tests
@@ -177,11 +201,13 @@ export class TestingSystem {
       // Update last test time
       this.testResults.lastTest = Date.now();
 
-      logger.info(`✅ Test suite completed. Overall score: ${this.testResults.overallScore}/100`);
+      logger.info(
+        `✅ Test suite completed. Overall score: ${this.testResults.overallScore}/100`,
+      );
 
       return this.testResults;
     } catch (error: unknown) {
-      logger.warn({ err: error }, '❌ Test suite failed:');
+      logger.warn({ err: error }, "❌ Test suite failed:");
       throw error;
     }
   }
@@ -196,7 +222,7 @@ export class TestingSystem {
         logger.info(`⚠️ Unit test score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Unit test error:');
+      logger.warn({ err: error }, "Unit test error:");
     }
   }
 
@@ -207,10 +233,12 @@ export class TestingSystem {
       this.testResults.integrationTestScore = results.score;
 
       if (results.score < 90) {
-        logger.info(`⚠️ Integration test score below threshold: ${results.score}/100`);
+        logger.info(
+          `⚠️ Integration test score below threshold: ${results.score}/100`,
+        );
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Integration test error:');
+      logger.warn({ err: error }, "Integration test error:");
     }
   }
 
@@ -224,7 +252,7 @@ export class TestingSystem {
         logger.info(`⚠️ E2E test score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'E2E test error:');
+      logger.warn({ err: error }, "E2E test error:");
     }
   }
 
@@ -235,10 +263,12 @@ export class TestingSystem {
       this.testResults.performanceTestScore = results.score;
 
       if (results.score < 80) {
-        logger.info(`⚠️ Performance test score below threshold: ${results.score}/100`);
+        logger.info(
+          `⚠️ Performance test score below threshold: ${results.score}/100`,
+        );
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Performance test error:');
+      logger.warn({ err: error }, "Performance test error:");
     }
   }
 
@@ -249,10 +279,12 @@ export class TestingSystem {
       this.testResults.securityTestScore = results.score;
 
       if (results.score < 95) {
-        logger.info(`⚠️ Security test score below threshold: ${results.score}/100`);
+        logger.info(
+          `⚠️ Security test score below threshold: ${results.score}/100`,
+        );
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Security test error:');
+      logger.warn({ err: error }, "Security test error:");
     }
   }
 
@@ -273,7 +305,7 @@ export class TestingSystem {
         this.testResults.e2eTestScore * weights.e2e +
         this.testResults.performanceTestScore * weights.performance +
         this.testResults.securityTestScore * weights.security +
-        this.testResults.accessibilityTestScore * weights.accessibility
+        this.testResults.accessibilityTestScore * weights.accessibility,
     );
   }
 
@@ -284,7 +316,7 @@ export class TestingSystem {
       const coverage = await this.runCoverageAnalysis();
       this.testResults.coverage = coverage;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Coverage calculation error:');
+      logger.warn({ err: error }, "Coverage calculation error:");
     }
   }
 
@@ -305,26 +337,32 @@ export class TestingSystem {
       for (const suite of this.testResults.testSuites) {
         // Each test covers approximately 50 statements, 20 branches, 10 functions, 40 lines
         const testCount = suite.tests.length;
-        const passedCount = suite.tests.filter(t => t.status === 'passed').length;
-        
+        const passedCount = suite.tests.filter(
+          (t) => t.status === "passed",
+        ).length;
+
         totalStatements += testCount * 50;
         coveredStatements += passedCount * 50;
-        
+
         totalBranches += testCount * 20;
         coveredBranches += passedCount * 18; // Slight variance for realism
-        
+
         totalFunctions += testCount * 10;
         coveredFunctions += passedCount * 10;
-        
+
         totalLines += testCount * 40;
         coveredLines += passedCount * 38;
       }
 
       // Calculate percentages, avoiding division by zero
-      const statementsPercent = totalStatements > 0 ? (coveredStatements / totalStatements) * 100 : 0;
-      const branchesPercent = totalBranches > 0 ? (coveredBranches / totalBranches) * 100 : 0;
-      const functionsPercent = totalFunctions > 0 ? (coveredFunctions / totalFunctions) * 100 : 0;
-      const linesPercent = totalLines > 0 ? (coveredLines / totalLines) * 100 : 0;
+      const statementsPercent =
+        totalStatements > 0 ? (coveredStatements / totalStatements) * 100 : 0;
+      const branchesPercent =
+        totalBranches > 0 ? (coveredBranches / totalBranches) * 100 : 0;
+      const functionsPercent =
+        totalFunctions > 0 ? (coveredFunctions / totalFunctions) * 100 : 0;
+      const linesPercent =
+        totalLines > 0 ? (coveredLines / totalLines) * 100 : 0;
 
       return {
         statements: Math.round(statementsPercent * 10) / 10,
@@ -333,7 +371,7 @@ export class TestingSystem {
         lines: Math.round(linesPercent * 10) / 10,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Coverage analysis error:');
+      logger.warn({ err: error }, "Coverage analysis error:");
       return {
         statements: 0,
         branches: 0,
@@ -355,7 +393,9 @@ export class TestingSystem {
 
   // Check if tests passed
   public areTestsPassed(): boolean {
-    return this.testResults.overallScore >= 95 && this.testResults.failedTests === 0;
+    return (
+      this.testResults.overallScore >= 95 && this.testResults.failedTests === 0
+    );
   }
 
   // Get failed tests
@@ -363,7 +403,7 @@ export class TestingSystem {
     const failedTests: TestCase[] = [];
     this.testResults.testSuites.forEach((suite) => {
       suite.tests.forEach((test) => {
-        if (test.status === 'failed') {
+        if (test.status === "failed") {
           failedTests.push(test);
         }
       });
@@ -391,35 +431,52 @@ class UnitTester {
       const authTests = await this.testAuthentication();
       testSuites.push(authTests);
       totalTests += authTests.tests.length;
-      passedTests += authTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += authTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += authTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += authTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += authTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += authTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
       // Test database functions
       const dbTests = await this.testDatabase();
       testSuites.push(dbTests);
       totalTests += dbTests.tests.length;
-      passedTests += dbTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += dbTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += dbTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += dbTests.tests.filter((t) => t.status === "passed").length;
+      failedTests += dbTests.tests.filter((t) => t.status === "failed").length;
+      skippedTests += dbTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
       // Test API functions
       const apiTests = await this.testAPI();
       testSuites.push(apiTests);
       totalTests += apiTests.tests.length;
-      passedTests += apiTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += apiTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += apiTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += apiTests.tests.filter((t) => t.status === "passed").length;
+      failedTests += apiTests.tests.filter((t) => t.status === "failed").length;
+      skippedTests += apiTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
       // Test utility functions
       const utilTests = await this.testUtilities();
       testSuites.push(utilTests);
       totalTests += utilTests.tests.length;
-      passedTests += utilTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += utilTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += utilTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += utilTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += utilTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += utilTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
-      const score = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+      const score =
+        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
       return {
         score,
@@ -430,7 +487,7 @@ class UnitTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Unit test error:');
+      logger.warn({ err: error }, "Unit test error:");
       return {
         score: 0,
         totalTests: 0,
@@ -445,51 +502,51 @@ class UnitTester {
   private async testAuthentication(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'User registration with valid data',
-        status: 'passed',
+        name: "User registration with valid data",
+        status: "passed",
         duration: 45,
         error: null,
       },
       {
-        name: 'User registration with invalid email',
-        status: 'passed',
+        name: "User registration with invalid email",
+        status: "passed",
         duration: 32,
         error: null,
       },
       {
-        name: 'User login with correct credentials',
-        status: 'passed',
+        name: "User login with correct credentials",
+        status: "passed",
         duration: 28,
         error: null,
       },
       {
-        name: 'User login with incorrect credentials',
-        status: 'passed',
+        name: "User login with incorrect credentials",
+        status: "passed",
         duration: 35,
         error: null,
       },
       {
-        name: 'Password hashing',
-        status: 'passed',
+        name: "Password hashing",
+        status: "passed",
         duration: 15,
         error: null,
       },
       {
-        name: 'JWT token generation',
-        status: 'passed',
+        name: "JWT token generation",
+        status: "passed",
         duration: 22,
         error: null,
       },
       {
-        name: 'JWT token validation',
-        status: 'passed',
+        name: "JWT token validation",
+        status: "passed",
         duration: 18,
         error: null,
       },
     ];
 
     return {
-      name: 'Authentication Tests',
+      name: "Authentication Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -498,51 +555,51 @@ class UnitTester {
   private async testDatabase(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'Database connection',
-        status: 'passed',
+        name: "Database connection",
+        status: "passed",
         duration: 120,
         error: null,
       },
       {
-        name: 'User creation',
-        status: 'passed',
+        name: "User creation",
+        status: "passed",
         duration: 85,
         error: null,
       },
       {
-        name: 'User retrieval',
-        status: 'passed',
+        name: "User retrieval",
+        status: "passed",
         duration: 65,
         error: null,
       },
       {
-        name: 'User update',
-        status: 'passed',
+        name: "User update",
+        status: "passed",
         duration: 78,
         error: null,
       },
       {
-        name: 'User deletion',
-        status: 'passed',
+        name: "User deletion",
+        status: "passed",
         duration: 92,
         error: null,
       },
       {
-        name: 'Project creation',
-        status: 'passed',
+        name: "Project creation",
+        status: "passed",
         duration: 95,
         error: null,
       },
       {
-        name: 'Analytics data insertion',
-        status: 'passed',
+        name: "Analytics data insertion",
+        status: "passed",
         duration: 110,
         error: null,
       },
     ];
 
     return {
-      name: 'Database Tests',
+      name: "Database Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -551,45 +608,45 @@ class UnitTester {
   private async testAPI(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'GET /api/auth/me',
-        status: 'passed',
+        name: "GET /api/auth/me",
+        status: "passed",
         duration: 45,
         error: null,
       },
       {
-        name: 'POST /api/auth/login',
-        status: 'passed',
+        name: "POST /api/auth/login",
+        status: "passed",
         duration: 52,
         error: null,
       },
       {
-        name: 'POST /api/auth/register',
-        status: 'passed',
+        name: "POST /api/auth/register",
+        status: "passed",
         duration: 68,
         error: null,
       },
       {
-        name: 'GET /api/projects',
-        status: 'passed',
+        name: "GET /api/projects",
+        status: "passed",
         duration: 38,
         error: null,
       },
       {
-        name: 'POST /api/projects',
-        status: 'passed',
+        name: "POST /api/projects",
+        status: "passed",
         duration: 75,
         error: null,
       },
       {
-        name: 'GET /api/analytics/dashboard',
-        status: 'passed',
+        name: "GET /api/analytics/dashboard",
+        status: "passed",
         duration: 42,
         error: null,
       },
     ];
 
     return {
-      name: 'API Tests',
+      name: "API Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -598,39 +655,39 @@ class UnitTester {
   private async testUtilities(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'Email validation',
-        status: 'passed',
+        name: "Email validation",
+        status: "passed",
         duration: 12,
         error: null,
       },
       {
-        name: 'Password strength validation',
-        status: 'passed',
+        name: "Password strength validation",
+        status: "passed",
         duration: 18,
         error: null,
       },
       {
-        name: 'Date formatting',
-        status: 'passed',
+        name: "Date formatting",
+        status: "passed",
         duration: 8,
         error: null,
       },
       {
-        name: 'File upload validation',
-        status: 'passed',
+        name: "File upload validation",
+        status: "passed",
         duration: 25,
         error: null,
       },
       {
-        name: 'Data sanitization',
-        status: 'passed',
+        name: "Data sanitization",
+        status: "passed",
         duration: 15,
         error: null,
       },
     ];
 
     return {
-      name: 'Utility Tests',
+      name: "Utility Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -651,27 +708,46 @@ class IntegrationTester {
       const authFlowTests = await this.testAuthenticationFlow();
       testSuites.push(authFlowTests);
       totalTests += authFlowTests.tests.length;
-      passedTests += authFlowTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += authFlowTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += authFlowTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += authFlowTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += authFlowTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += authFlowTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
       // Test project management flow
       const projectFlowTests = await this.testProjectFlow();
       testSuites.push(projectFlowTests);
       totalTests += projectFlowTests.tests.length;
-      passedTests += projectFlowTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += projectFlowTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += projectFlowTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += projectFlowTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += projectFlowTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += projectFlowTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
       // Test analytics flow
       const analyticsFlowTests = await this.testAnalyticsFlow();
       testSuites.push(analyticsFlowTests);
       totalTests += analyticsFlowTests.tests.length;
-      passedTests += analyticsFlowTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += analyticsFlowTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += analyticsFlowTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += analyticsFlowTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += analyticsFlowTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += analyticsFlowTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
-      const score = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+      const score =
+        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
       return {
         score,
@@ -682,7 +758,7 @@ class IntegrationTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Integration test error:');
+      logger.warn({ err: error }, "Integration test error:");
       return {
         score: 0,
         totalTests: 0,
@@ -697,33 +773,33 @@ class IntegrationTester {
   private async testAuthenticationFlow(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'Complete user registration flow',
-        status: 'passed',
+        name: "Complete user registration flow",
+        status: "passed",
         duration: 250,
         error: null,
       },
       {
-        name: 'User login and session creation',
-        status: 'passed',
+        name: "User login and session creation",
+        status: "passed",
         duration: 180,
         error: null,
       },
       {
-        name: 'Protected route access',
-        status: 'passed',
+        name: "Protected route access",
+        status: "passed",
         duration: 95,
         error: null,
       },
       {
-        name: 'User logout and session cleanup',
-        status: 'passed',
+        name: "User logout and session cleanup",
+        status: "passed",
         duration: 120,
         error: null,
       },
     ];
 
     return {
-      name: 'Authentication Flow Tests',
+      name: "Authentication Flow Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -732,33 +808,33 @@ class IntegrationTester {
   private async testProjectFlow(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'Project creation with file upload',
-        status: 'passed',
+        name: "Project creation with file upload",
+        status: "passed",
         duration: 350,
         error: null,
       },
       {
-        name: 'Project update and metadata sync',
-        status: 'passed',
+        name: "Project update and metadata sync",
+        status: "passed",
         duration: 280,
         error: null,
       },
       {
-        name: 'Project sharing and collaboration',
-        status: 'passed',
+        name: "Project sharing and collaboration",
+        status: "passed",
         duration: 420,
         error: null,
       },
       {
-        name: 'Project deletion and cleanup',
-        status: 'passed',
+        name: "Project deletion and cleanup",
+        status: "passed",
         duration: 200,
         error: null,
       },
     ];
 
     return {
-      name: 'Project Flow Tests',
+      name: "Project Flow Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -767,33 +843,33 @@ class IntegrationTester {
   private async testAnalyticsFlow(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'Analytics data collection',
-        status: 'passed',
+        name: "Analytics data collection",
+        status: "passed",
         duration: 180,
         error: null,
       },
       {
-        name: 'Analytics data processing',
-        status: 'passed',
+        name: "Analytics data processing",
+        status: "passed",
         duration: 220,
         error: null,
       },
       {
-        name: 'Analytics dashboard rendering',
-        status: 'passed',
+        name: "Analytics dashboard rendering",
+        status: "passed",
         duration: 150,
         error: null,
       },
       {
-        name: 'Analytics export functionality',
-        status: 'passed',
+        name: "Analytics export functionality",
+        status: "passed",
         duration: 190,
         error: null,
       },
     ];
 
     return {
-      name: 'Analytics Flow Tests',
+      name: "Analytics Flow Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -814,19 +890,32 @@ class E2ETester {
       const userJourneyTests = await this.testUserJourney();
       testSuites.push(userJourneyTests);
       totalTests += userJourneyTests.tests.length;
-      passedTests += userJourneyTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += userJourneyTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += userJourneyTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += userJourneyTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += userJourneyTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += userJourneyTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
       // Test admin journey
       const adminJourneyTests = await this.testAdminJourney();
       testSuites.push(adminJourneyTests);
       totalTests += adminJourneyTests.tests.length;
-      passedTests += adminJourneyTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += adminJourneyTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += adminJourneyTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += adminJourneyTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += adminJourneyTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += adminJourneyTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
-      const score = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+      const score =
+        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
       return {
         score,
@@ -837,7 +926,7 @@ class E2ETester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'E2E test error:');
+      logger.warn({ err: error }, "E2E test error:");
       return {
         score: 0,
         totalTests: 0,
@@ -852,33 +941,33 @@ class E2ETester {
   private async testUserJourney(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'User registration and onboarding',
-        status: 'passed',
+        name: "User registration and onboarding",
+        status: "passed",
         duration: 1200,
         error: null,
       },
       {
-        name: 'Project creation and management',
-        status: 'passed',
+        name: "Project creation and management",
+        status: "passed",
         duration: 1800,
         error: null,
       },
       {
-        name: 'Analytics viewing and export',
-        status: 'passed',
+        name: "Analytics viewing and export",
+        status: "passed",
         duration: 950,
         error: null,
       },
       {
-        name: 'Social media integration',
-        status: 'passed',
+        name: "Social media integration",
+        status: "passed",
         duration: 1400,
         error: null,
       },
     ];
 
     return {
-      name: 'User Journey Tests',
+      name: "User Journey Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -887,33 +976,33 @@ class E2ETester {
   private async testAdminJourney(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'Admin login and dashboard access',
-        status: 'passed',
+        name: "Admin login and dashboard access",
+        status: "passed",
         duration: 600,
         error: null,
       },
       {
-        name: 'User management and moderation',
-        status: 'passed',
+        name: "User management and moderation",
+        status: "passed",
         duration: 1100,
         error: null,
       },
       {
-        name: 'System analytics and monitoring',
-        status: 'passed',
+        name: "System analytics and monitoring",
+        status: "passed",
         duration: 800,
         error: null,
       },
       {
-        name: 'Platform configuration',
-        status: 'passed',
+        name: "Platform configuration",
+        status: "passed",
         duration: 1200,
         error: null,
       },
     ];
 
     return {
-      name: 'Admin Journey Tests',
+      name: "Admin Journey Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -934,19 +1023,32 @@ class PerformanceTester {
       const loadTests = await this.testLoadPerformance();
       testSuites.push(loadTests);
       totalTests += loadTests.tests.length;
-      passedTests += loadTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += loadTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += loadTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += loadTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += loadTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += loadTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
       // Test stress performance
       const stressTests = await this.testStressPerformance();
       testSuites.push(stressTests);
       totalTests += stressTests.tests.length;
-      passedTests += stressTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += stressTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += stressTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += stressTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += stressTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += stressTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
-      const score = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+      const score =
+        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
       return {
         score,
@@ -957,7 +1059,7 @@ class PerformanceTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Performance test error:');
+      logger.warn({ err: error }, "Performance test error:");
       return {
         score: 0,
         totalTests: 0,
@@ -972,33 +1074,33 @@ class PerformanceTester {
   private async testLoadPerformance(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: '100 concurrent users',
-        status: 'passed',
+        name: "100 concurrent users",
+        status: "passed",
         duration: 30000,
         error: null,
       },
       {
-        name: '500 concurrent users',
-        status: 'passed',
+        name: "500 concurrent users",
+        status: "passed",
         duration: 45000,
         error: null,
       },
       {
-        name: '1000 concurrent users',
-        status: 'passed',
+        name: "1000 concurrent users",
+        status: "passed",
         duration: 60000,
         error: null,
       },
       {
-        name: 'Response time under 200ms',
-        status: 'passed',
+        name: "Response time under 200ms",
+        status: "passed",
         duration: 15000,
         error: null,
       },
     ];
 
     return {
-      name: 'Load Performance Tests',
+      name: "Load Performance Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -1007,33 +1109,33 @@ class PerformanceTester {
   private async testStressPerformance(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: '5000 concurrent users',
-        status: 'passed',
+        name: "5000 concurrent users",
+        status: "passed",
         duration: 120000,
         error: null,
       },
       {
-        name: 'Memory usage under 2GB',
-        status: 'passed',
+        name: "Memory usage under 2GB",
+        status: "passed",
         duration: 90000,
         error: null,
       },
       {
-        name: 'CPU usage under 80%',
-        status: 'passed',
+        name: "CPU usage under 80%",
+        status: "passed",
         duration: 75000,
         error: null,
       },
       {
-        name: 'Database connection pool',
-        status: 'passed',
+        name: "Database connection pool",
+        status: "passed",
         duration: 60000,
         error: null,
       },
     ];
 
     return {
-      name: 'Stress Performance Tests',
+      name: "Stress Performance Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -1054,19 +1156,32 @@ class SecurityTester {
       const authSecurityTests = await this.testAuthenticationSecurity();
       testSuites.push(authSecurityTests);
       totalTests += authSecurityTests.tests.length;
-      passedTests += authSecurityTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += authSecurityTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += authSecurityTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += authSecurityTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += authSecurityTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += authSecurityTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
       // Test data security
       const dataSecurityTests = await this.testDataSecurity();
       testSuites.push(dataSecurityTests);
       totalTests += dataSecurityTests.tests.length;
-      passedTests += dataSecurityTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += dataSecurityTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += dataSecurityTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += dataSecurityTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += dataSecurityTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += dataSecurityTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
-      const score = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+      const score =
+        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
       return {
         score,
@@ -1077,7 +1192,7 @@ class SecurityTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Security test error:');
+      logger.warn({ err: error }, "Security test error:");
       return {
         score: 0,
         totalTests: 0,
@@ -1092,39 +1207,39 @@ class SecurityTester {
   private async testAuthenticationSecurity(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'SQL injection prevention',
-        status: 'passed',
+        name: "SQL injection prevention",
+        status: "passed",
         duration: 200,
         error: null,
       },
       {
-        name: 'XSS prevention',
-        status: 'passed',
+        name: "XSS prevention",
+        status: "passed",
         duration: 180,
         error: null,
       },
       {
-        name: 'CSRF protection',
-        status: 'passed',
+        name: "CSRF protection",
+        status: "passed",
         duration: 150,
         error: null,
       },
       {
-        name: 'Rate limiting',
-        status: 'passed',
+        name: "Rate limiting",
+        status: "passed",
         duration: 220,
         error: null,
       },
       {
-        name: 'Password strength validation',
-        status: 'passed',
+        name: "Password strength validation",
+        status: "passed",
         duration: 100,
         error: null,
       },
     ];
 
     return {
-      name: 'Authentication Security Tests',
+      name: "Authentication Security Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -1133,33 +1248,33 @@ class SecurityTester {
   private async testDataSecurity(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'Data encryption at rest',
-        status: 'passed',
+        name: "Data encryption at rest",
+        status: "passed",
         duration: 300,
         error: null,
       },
       {
-        name: 'Data encryption in transit',
-        status: 'passed',
+        name: "Data encryption in transit",
+        status: "passed",
         duration: 250,
         error: null,
       },
       {
-        name: 'Secure file upload',
-        status: 'passed',
+        name: "Secure file upload",
+        status: "passed",
         duration: 180,
         error: null,
       },
       {
-        name: 'Data sanitization',
-        status: 'passed',
+        name: "Data sanitization",
+        status: "passed",
         duration: 120,
         error: null,
       },
     ];
 
     return {
-      name: 'Data Security Tests',
+      name: "Data Security Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -1180,11 +1295,18 @@ class AccessibilityTester {
       const wcagTests = await this.testWCAGCompliance();
       testSuites.push(wcagTests);
       totalTests += wcagTests.tests.length;
-      passedTests += wcagTests.tests.filter((t) => t.status === 'passed').length;
-      failedTests += wcagTests.tests.filter((t) => t.status === 'failed').length;
-      skippedTests += wcagTests.tests.filter((t) => t.status === 'skipped').length;
+      passedTests += wcagTests.tests.filter(
+        (t) => t.status === "passed",
+      ).length;
+      failedTests += wcagTests.tests.filter(
+        (t) => t.status === "failed",
+      ).length;
+      skippedTests += wcagTests.tests.filter(
+        (t) => t.status === "skipped",
+      ).length;
 
-      const score = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+      const score =
+        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
       return {
         score,
@@ -1195,7 +1317,7 @@ class AccessibilityTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Accessibility test error:');
+      logger.warn({ err: error }, "Accessibility test error:");
       return {
         score: 0,
         totalTests: 0,
@@ -1210,39 +1332,39 @@ class AccessibilityTester {
   private async testWCAGCompliance(): Promise<TestSuite> {
     const tests: TestCase[] = [
       {
-        name: 'Keyboard navigation',
-        status: 'passed',
+        name: "Keyboard navigation",
+        status: "passed",
         duration: 400,
         error: null,
       },
       {
-        name: 'Screen reader compatibility',
-        status: 'passed',
+        name: "Screen reader compatibility",
+        status: "passed",
         duration: 350,
         error: null,
       },
       {
-        name: 'Color contrast ratio',
-        status: 'passed',
+        name: "Color contrast ratio",
+        status: "passed",
         duration: 200,
         error: null,
       },
       {
-        name: 'Alt text for images',
-        status: 'passed',
+        name: "Alt text for images",
+        status: "passed",
         duration: 150,
         error: null,
       },
       {
-        name: 'Focus indicators',
-        status: 'passed',
+        name: "Focus indicators",
+        status: "passed",
         duration: 180,
         error: null,
       },
     ];
 
     return {
-      name: 'WCAG Compliance Tests',
+      name: "WCAG Compliance Tests",
       tests,
       duration: tests.reduce((sum, test) => sum + test.duration, 0),
     };
@@ -1284,7 +1406,7 @@ interface TestSuite {
 
 interface TestCase {
   name: string;
-  status: 'passed' | 'failed' | 'skipped';
+  status: "passed" | "failed" | "skipped";
   duration: number;
   error: string | null;
 }

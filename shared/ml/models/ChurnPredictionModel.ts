@@ -4,9 +4,9 @@
  * Based on RFM (Recency, Frequency, Monetary) + behavioral features
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { BaseModel } from './BaseModel.js';
-import type { PredictionResult } from '../types.js';
+import * as tf from "@tensorflow/tfjs";
+import { BaseModel } from "./BaseModel.js";
+import type { PredictionResult } from "../types.js";
 
 export interface ChurnFeatures {
   daysSinceLastLogin: number;
@@ -23,31 +23,31 @@ export interface ChurnFeatures {
 export interface ChurnPredictionResult {
   willChurn: boolean;
   probability: number;
-  risk: 'low' | 'medium' | 'high';
+  risk: "low" | "medium" | "high";
   topFactors: Array<{ factor: string; impact: number }>;
   recommendations: string[];
 }
 
 export class ChurnPredictionModel extends BaseModel {
   private featureNames: string[] = [
-    'daysSinceLastLogin',
-    'loginFrequency30d',
-    'totalRevenue',
-    'featureUsageDiversity',
-    'sessionDurationTrend',
-    'supportTicketsCount',
-    'accountTenureDays',
-    'usageTrendSlope',
-    'engagementDeclining',
+    "daysSinceLastLogin",
+    "loginFrequency30d",
+    "totalRevenue",
+    "featureUsageDiversity",
+    "sessionDurationTrend",
+    "supportTicketsCount",
+    "accountTenureDays",
+    "usageTrendSlope",
+    "engagementDeclining",
   ];
 
   private scaler: { mean: number[]; std: number[] } | null = null;
 
   constructor() {
     super({
-      name: 'ChurnPredictionGradientBoosting',
-      type: 'classification',
-      version: '1.0.0',
+      name: "ChurnPredictionGradientBoosting",
+      type: "classification",
+      version: "1.0.0",
       inputShape: [9],
       outputShape: [1],
     });
@@ -58,7 +58,7 @@ export class ChurnPredictionModel extends BaseModel {
       layers: [
         tf.layers.dense({
           units: 64,
-          activation: 'relu',
+          activation: "relu",
           inputShape: [9],
           kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
         }),
@@ -67,7 +67,7 @@ export class ChurnPredictionModel extends BaseModel {
 
         tf.layers.dense({
           units: 32,
-          activation: 'relu',
+          activation: "relu",
           kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
         }),
         tf.layers.batchNormalization(),
@@ -75,21 +75,21 @@ export class ChurnPredictionModel extends BaseModel {
 
         tf.layers.dense({
           units: 16,
-          activation: 'relu',
+          activation: "relu",
         }),
         tf.layers.dropout({ rate: 0.2 }),
 
         tf.layers.dense({
           units: 1,
-          activation: 'sigmoid',
+          activation: "sigmoid",
         }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'binaryCrossentropy',
-      metrics: ['accuracy', 'precision', 'recall'],
+      loss: "binaryCrossentropy",
+      metrics: ["accuracy", "precision", "recall"],
     });
 
     return model;
@@ -98,16 +98,21 @@ export class ChurnPredictionModel extends BaseModel {
   public async trainWithSMOTE(
     features: ChurnFeatures[],
     labels: boolean[],
-    options: { epochs: number; batchSize: number }
+    options: { epochs: number; batchSize: number },
   ): Promise<void> {
-    const { balancedFeatures, balancedLabels } = this.applySMOTE(features, labels);
+    const { balancedFeatures, balancedLabels } = this.applySMOTE(
+      features,
+      labels,
+    );
 
-    const featureVectors = balancedFeatures.map(f => this.featuresToVector(f));
+    const featureVectors = balancedFeatures.map((f) =>
+      this.featuresToVector(f),
+    );
     this.scaler = this.calculateScaler(featureVectors);
-    const normalized = featureVectors.map(f => this.normalize(f));
+    const normalized = featureVectors.map((f) => this.normalize(f));
 
     const inputTensor = tf.tensor2d(normalized);
-    const labelTensor = tf.tensor2d(balancedLabels.map(l => [l ? 1 : 0]));
+    const labelTensor = tf.tensor2d(balancedLabels.map((l) => [l ? 1 : 0]));
 
     await this.train(inputTensor, labelTensor, {
       epochs: options.epochs || 100,
@@ -121,9 +126,11 @@ export class ChurnPredictionModel extends BaseModel {
     labelTensor.dispose();
   }
 
-  public async predictChurn(features: ChurnFeatures): Promise<ChurnPredictionResult> {
+  public async predictChurn(
+    features: ChurnFeatures,
+  ): Promise<ChurnPredictionResult> {
     if (!this.model || !this.isTrained || !this.scaler) {
-      throw new Error('Model must be trained before prediction');
+      throw new Error("Model must be trained before prediction");
     }
 
     const vector = this.featuresToVector(features);
@@ -135,10 +142,14 @@ export class ChurnPredictionModel extends BaseModel {
       const probability = (await prediction.data())[0];
 
       const willChurn = probability > 0.5;
-      const risk = probability > 0.7 ? 'high' : probability > 0.4 ? 'medium' : 'low';
+      const risk =
+        probability > 0.7 ? "high" : probability > 0.4 ? "medium" : "low";
 
       const topFactors = this.identifyTopFactors(features, vector);
-      const recommendations = this.generateRecommendations(features, probability);
+      const recommendations = this.generateRecommendations(
+        features,
+        probability,
+      );
 
       return {
         willChurn,
@@ -154,10 +165,14 @@ export class ChurnPredictionModel extends BaseModel {
 
   private applySMOTE(
     features: ChurnFeatures[],
-    labels: boolean[]
+    labels: boolean[],
   ): { balancedFeatures: ChurnFeatures[]; balancedLabels: boolean[] } {
-    const churnedIndices = labels.map((l, i) => (l ? i : -1)).filter(i => i !== -1);
-    const activeIndices = labels.map((l, i) => (!l ? i : -1)).filter(i => i !== -1);
+    const churnedIndices = labels
+      .map((l, i) => (l ? i : -1))
+      .filter((i) => i !== -1);
+    const activeIndices = labels
+      .map((l, i) => (!l ? i : -1))
+      .filter((i) => i !== -1);
 
     const churnCount = churnedIndices.length;
     const activeCount = activeIndices.length;
@@ -170,14 +185,17 @@ export class ChurnPredictionModel extends BaseModel {
     const balancedLabels = [...labels];
 
     const targetCount = Math.max(churnCount, activeCount);
-    const minorityIndices = churnCount < activeCount ? churnedIndices : activeIndices;
+    const minorityIndices =
+      churnCount < activeCount ? churnedIndices : activeIndices;
     const isChurnMinority = churnCount < activeCount;
 
     const syntheticCount = targetCount - minorityIndices.length;
 
     for (let i = 0; i < syntheticCount; i++) {
-      const idx1 = minorityIndices[Math.floor(Math.random() * minorityIndices.length)];
-      const idx2 = minorityIndices[Math.floor(Math.random() * minorityIndices.length)];
+      const idx1 =
+        minorityIndices[Math.floor(Math.random() * minorityIndices.length)];
+      const idx2 =
+        minorityIndices[Math.floor(Math.random() * minorityIndices.length)];
 
       const f1 = this.featuresToVector(features[idx1]);
       const f2 = this.featuresToVector(features[idx2]);
@@ -221,7 +239,10 @@ export class ChurnPredictionModel extends BaseModel {
     };
   }
 
-  private calculateScaler(vectors: number[][]): { mean: number[]; std: number[] } {
+  private calculateScaler(vectors: number[][]): {
+    mean: number[];
+    std: number[];
+  } {
     const numFeatures = vectors[0].length;
     const mean: number[] = new Array(numFeatures).fill(0);
     const std: number[] = new Array(numFeatures).fill(0);
@@ -251,15 +272,17 @@ export class ChurnPredictionModel extends BaseModel {
 
   private normalize(vector: number[]): number[] {
     if (!this.scaler) {
-      throw new Error('Scaler not initialized');
+      throw new Error("Scaler not initialized");
     }
 
-    return vector.map((v, i) => (v - this.scaler!.mean[i]) / this.scaler!.std[i]);
+    return vector.map(
+      (v, i) => (v - this.scaler!.mean[i]) / this.scaler!.std[i],
+    );
   }
 
   private identifyTopFactors(
     features: ChurnFeatures,
-    vector: number[]
+    vector: number[],
   ): Array<{ factor: string; impact: number }> {
     const impacts = this.featureNames.map((name, i) => ({
       factor: name,
@@ -269,36 +292,49 @@ export class ChurnPredictionModel extends BaseModel {
     return impacts.sort((a, b) => b.impact - a.impact).slice(0, 3);
   }
 
-  private generateRecommendations(features: ChurnFeatures, probability: number): string[] {
+  private generateRecommendations(
+    features: ChurnFeatures,
+    probability: number,
+  ): string[] {
     const recommendations: string[] = [];
 
     if (features.daysSinceLastLogin > 7) {
-      recommendations.push('Send re-engagement email - user hasn\'t logged in for a week');
+      recommendations.push(
+        "Send re-engagement email - user hasn't logged in for a week",
+      );
     }
 
     if (features.loginFrequency30d < 4) {
-      recommendations.push('Offer personalized content or feature highlights to increase engagement');
+      recommendations.push(
+        "Offer personalized content or feature highlights to increase engagement",
+      );
     }
 
     if (features.supportTicketsCount > 3) {
-      recommendations.push('Priority customer success outreach - multiple support issues detected');
+      recommendations.push(
+        "Priority customer success outreach - multiple support issues detected",
+      );
     }
 
     if (features.featureUsageDiversity < 2) {
-      recommendations.push('Provide onboarding for underutilized features');
+      recommendations.push("Provide onboarding for underutilized features");
     }
 
     if (features.usageTrendSlope < -0.1) {
-      recommendations.push('User activity declining - consider special offer or incentive');
+      recommendations.push(
+        "User activity declining - consider special offer or incentive",
+      );
     }
 
     if (probability > 0.7) {
-      recommendations.push('HIGH RISK - Immediate intervention recommended (personal call or premium support)');
+      recommendations.push(
+        "HIGH RISK - Immediate intervention recommended (personal call or premium support)",
+      );
     }
 
     return recommendations.length > 0
       ? recommendations
-      : ['User appears healthy - continue normal monitoring'];
+      : ["User appears healthy - continue normal monitoring"];
   }
 
   protected preprocessInput(input: ChurnFeatures): tf.Tensor {
@@ -313,7 +349,7 @@ export class ChurnPredictionModel extends BaseModel {
 
   public async evaluateModel(
     testFeatures: ChurnFeatures[],
-    testLabels: boolean[]
+    testLabels: boolean[],
   ): Promise<{
     accuracy: number;
     precision: number;

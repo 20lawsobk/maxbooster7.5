@@ -1,16 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Wifi, WifiOff, Signal, SignalLow, SignalMedium, RefreshCw, X } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { syncManager } from '@/lib/offline';
-import { useOfflineStatus } from '@/hooks/useOfflineStatus';
+import { useState, useEffect } from "react";
+import {
+  Wifi,
+  WifiOff,
+  Signal,
+  SignalLow,
+  SignalMedium,
+  RefreshCw,
+  X,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { syncManager } from "@/lib/offline";
+import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 
 interface NetworkStatusBannerProps {
   className?: string;
-  variant?: 'full' | 'compact' | 'minimal';
-  position?: 'top' | 'bottom' | 'inline';
+  variant?: "full" | "compact" | "minimal";
+  position?: "top" | "bottom" | "inline";
   showReconnectProgress?: boolean;
   autoDismiss?: boolean;
   autoDismissDelay?: number;
@@ -18,22 +26,29 @@ interface NetworkStatusBannerProps {
 }
 
 const RECONNECT_MESSAGES = [
-  'Checking connection...',
-  'Attempting to reconnect...',
-  'Establishing connection...',
-  'Almost there...',
+  "Checking connection...",
+  "Attempting to reconnect...",
+  "Establishing connection...",
+  "Almost there...",
 ];
 
 export function NetworkStatusBanner({
   className,
-  variant = 'full',
-  position = 'top',
+  variant = "full",
+  position = "top",
   showReconnectProgress = true,
   autoDismiss = true,
   autoDismissDelay = 5000,
   onDismiss,
 }: NetworkStatusBannerProps) {
-  const { isOnline, isOffline, isReconnecting, syncStatus, pendingCount, status } = useOfflineStatus();
+  const {
+    isOnline,
+    isOffline,
+    isReconnecting,
+    syncStatus,
+    pendingCount,
+    status,
+  } = useOfflineStatus();
   const [visible, setVisible] = useState(false);
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [reconnectProgress, setReconnectProgress] = useState(0);
@@ -44,7 +59,7 @@ export function NetworkStatusBanner({
       setVisible(true);
     } else if (isReconnecting) {
       setVisible(true);
-      setReconnectAttempt(prev => prev + 1);
+      setReconnectAttempt((prev) => prev + 1);
     } else if (isOnline && autoDismiss) {
       const timer = setTimeout(() => {
         setVisible(false);
@@ -52,12 +67,19 @@ export function NetworkStatusBanner({
       }, autoDismissDelay);
       return () => clearTimeout(timer);
     }
-  }, [isOnline, isOffline, isReconnecting, autoDismiss, autoDismissDelay, dismissed]);
+  }, [
+    isOnline,
+    isOffline,
+    isReconnecting,
+    autoDismiss,
+    autoDismissDelay,
+    dismissed,
+  ]);
 
   useEffect(() => {
     if (isReconnecting && showReconnectProgress) {
       const interval = setInterval(() => {
-        setReconnectProgress(prev => Math.min(prev + 10, 90));
+        setReconnectProgress((prev) => Math.min(prev + 10, 90));
       }, 500);
       return () => clearInterval(interval);
     } else if (isOnline) {
@@ -84,14 +106,14 @@ export function NetworkStatusBanner({
   const getConnectionIcon = () => {
     if (isOffline) return WifiOff;
     if (isReconnecting) return RefreshCw;
-    if (status === 'slow') return SignalLow;
+    if (status === "slow") return SignalLow;
     return Wifi;
   };
 
   const getConnectionQualityIcon = () => {
     if (isOffline) return null;
-    if (status === 'slow') return SignalLow;
-    if (status === 'online') return Signal;
+    if (status === "slow") return SignalLow;
+    if (status === "online") return Signal;
     return SignalMedium;
   };
 
@@ -100,46 +122,54 @@ export function NetworkStatusBanner({
 
   const getStatusText = () => {
     if (isOffline) return "You're offline";
-    if (isReconnecting) return RECONNECT_MESSAGES[reconnectAttempt % RECONNECT_MESSAGES.length];
-    if (status === 'slow') return 'Slow connection detected';
-    return 'Connected';
+    if (isReconnecting)
+      return RECONNECT_MESSAGES[reconnectAttempt % RECONNECT_MESSAGES.length];
+    if (status === "slow") return "Slow connection detected";
+    return "Connected";
   };
 
   const getStatusDescription = () => {
     if (isOffline) {
       return pendingCount > 0
         ? `${pendingCount} changes will sync when you're back online`
-        : 'Your changes will be saved locally';
+        : "Your changes will be saved locally";
     }
     if (isReconnecting) {
-      return 'Syncing your offline changes...';
+      return "Syncing your offline changes...";
     }
-    if (status === 'slow') {
-      return 'Some features may be slower than usual';
+    if (status === "slow") {
+      return "Some features may be slower than usual";
     }
-    return 'All systems operational';
+    return "All systems operational";
   };
 
   const positionClasses = {
-    top: 'fixed top-0 left-0 right-0 z-50',
-    bottom: 'fixed bottom-0 left-0 right-0 z-50',
-    inline: '',
+    top: "fixed top-0 left-0 right-0 z-50",
+    bottom: "fixed bottom-0 left-0 right-0 z-50",
+    inline: "",
   };
 
-  if (variant === 'minimal') {
+  if (variant === "minimal") {
     return (
       <div
         className={cn(
-          'flex items-center gap-2 px-3 py-1.5 text-sm rounded-full',
-          isOffline ? 'bg-destructive/10 text-destructive' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200',
+          "flex items-center gap-2 px-3 py-1.5 text-sm rounded-full",
+          isOffline
+            ? "bg-destructive/10 text-destructive"
+            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200",
           positionClasses[position],
-          className
+          className,
         )}
       >
-        <Icon className={cn('h-4 w-4', isReconnecting && 'animate-spin')} />
+        <Icon className={cn("h-4 w-4", isReconnecting && "animate-spin")} />
         <span>{getStatusText()}</span>
         {!isReconnecting && (
-          <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={handleDismiss}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-4 w-4 p-0"
+            onClick={handleDismiss}
+          >
             <X className="h-3 w-3" />
           </Button>
         )}
@@ -147,18 +177,20 @@ export function NetworkStatusBanner({
     );
   }
 
-  if (variant === 'compact') {
+  if (variant === "compact") {
     return (
       <div
         className={cn(
-          'flex items-center justify-between gap-4 px-4 py-2',
-          isOffline ? 'bg-destructive text-destructive-foreground' : 'bg-yellow-500 text-white',
+          "flex items-center justify-between gap-4 px-4 py-2",
+          isOffline
+            ? "bg-destructive text-destructive-foreground"
+            : "bg-yellow-500 text-white",
           positionClasses[position],
-          className
+          className,
         )}
       >
         <div className="flex items-center gap-2">
-          <Icon className={cn('h-4 w-4', isReconnecting && 'animate-spin')} />
+          <Icon className={cn("h-4 w-4", isReconnecting && "animate-spin")} />
           <span className="text-sm font-medium">{getStatusText()}</span>
           {pendingCount > 0 && (
             <span className="text-xs opacity-80">({pendingCount} pending)</span>
@@ -191,23 +223,27 @@ export function NetworkStatusBanner({
 
   return (
     <Alert
-      variant={isOffline ? 'destructive' : undefined}
+      variant={isOffline ? "destructive" : undefined}
       className={cn(
         isOffline
-          ? 'border-destructive bg-destructive/10'
+          ? "border-destructive bg-destructive/10"
           : isReconnecting
-          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
-          : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20',
+            ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
+            : "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
         positionClasses[position],
-        position !== 'inline' && 'rounded-none border-x-0',
-        className
+        position !== "inline" && "rounded-none border-x-0",
+        className,
       )}
     >
       <div className="flex items-start gap-3">
         <Icon
           className={cn(
-            'h-5 w-5 mt-0.5',
-            isOffline ? 'text-destructive' : isReconnecting ? 'text-blue-500 animate-spin' : 'text-yellow-500'
+            "h-5 w-5 mt-0.5",
+            isOffline
+              ? "text-destructive"
+              : isReconnecting
+                ? "text-blue-500 animate-spin"
+                : "text-yellow-500",
           )}
         />
         <div className="flex-1">
@@ -219,7 +255,12 @@ export function NetworkStatusBanner({
               )}
             </div>
             {onDismiss && (
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleDismiss}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleDismiss}
+              >
                 <X className="h-4 w-4" />
               </Button>
             )}
@@ -238,7 +279,11 @@ export function NetworkStatusBanner({
 
             {isOffline && (
               <div className="mt-3 flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleRetryConnection}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRetryConnection}
+                >
                   <RefreshCw className="h-3 w-3 mr-1" />
                   Check Connection
                 </Button>

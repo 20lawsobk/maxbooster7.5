@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { useAudioContext } from './useAudioContext';
-import { logger } from '@/lib/logger';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useAudioContext } from "./useAudioContext";
+import { logger } from "@/lib/logger";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 
 export interface RecordingState {
   isRecording: boolean;
@@ -36,139 +36,161 @@ export function useAudioRecorder() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
-  const startMonitoring = useCallback(async (deviceId?: string) => {
-    try {
-      if (!isSupported || !context) {
-        throw new Error('Audio recording not supported');
-      }
-
-      if (context.state === 'suspended') {
-        await context.resume();
-      }
-
-      const constraints: MediaStreamConstraints = {
-        audio: deviceId 
-          ? { deviceId: { exact: deviceId }, echoCancellation: true, noiseSuppression: true }
-          : { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      streamRef.current = stream;
-
-      const source = context.createMediaStreamSource(stream);
-      sourceNodeRef.current = source;
-      
-      const analyser = context.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.8;
-      source.connect(analyser);
-      analyserRef.current = analyser;
-
-      const dataArray = new Float32Array(analyser.fftSize);
-
-      const updateLevel = () => {
-        if (analyserRef.current && streamRef.current) {
-          analyserRef.current.getFloatTimeDomainData(dataArray);
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i] * dataArray[i];
-          }
-          const rms = Math.sqrt(sum / dataArray.length);
-          const db = 20 * Math.log10(Math.max(rms, 1e-10));
-          const normalizedLevel = Math.max(0, Math.min(1, (db + 60) / 60));
-          setState((prev) => ({ ...prev, inputLevel: normalizedLevel }));
-          animationFrameRef.current = requestAnimationFrame(updateLevel);
+  const startMonitoring = useCallback(
+    async (deviceId?: string) => {
+      try {
+        if (!isSupported || !context) {
+          throw new Error("Audio recording not supported");
         }
-      };
-      updateLevel();
 
-      return stream;
-    } catch (error) {
-      logger.error('Error starting monitoring:', error);
-      throw error;
-    }
-  }, [isSupported, context]);
+        if (context.state === "suspended") {
+          await context.resume();
+        }
+
+        const constraints: MediaStreamConstraints = {
+          audio: deviceId
+            ? {
+                deviceId: { exact: deviceId },
+                echoCancellation: true,
+                noiseSuppression: true,
+              }
+            : {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        streamRef.current = stream;
+
+        const source = context.createMediaStreamSource(stream);
+        sourceNodeRef.current = source;
+
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        const dataArray = new Float32Array(analyser.fftSize);
+
+        const updateLevel = () => {
+          if (analyserRef.current && streamRef.current) {
+            analyserRef.current.getFloatTimeDomainData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i] * dataArray[i];
+            }
+            const rms = Math.sqrt(sum / dataArray.length);
+            const db = 20 * Math.log10(Math.max(rms, 1e-10));
+            const normalizedLevel = Math.max(0, Math.min(1, (db + 60) / 60));
+            setState((prev) => ({ ...prev, inputLevel: normalizedLevel }));
+            animationFrameRef.current = requestAnimationFrame(updateLevel);
+          }
+        };
+        updateLevel();
+
+        return stream;
+      } catch (error) {
+        logger.error("Error starting monitoring:", error);
+        throw error;
+      }
+    },
+    [isSupported, context],
+  );
 
   const stopMonitoring = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
-    
+
     if (sourceNodeRef.current) {
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
     }
-    
+
     analyserRef.current = null;
-    
+
     if (streamRef.current && !state.isRecording) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-    
+
     setState((prev) => ({ ...prev, inputLevel: 0 }));
   }, [state.isRecording]);
 
-  const startRecording = useCallback(async (deviceId?: string) => {
-    try {
-      let stream = streamRef.current;
-      if (!stream || stream.getTracks().every(t => t.readyState === 'ended')) {
-        stream = await startMonitoring(deviceId);
-      }
-
-      if (!stream) {
-        throw new Error('No audio stream available');
-      }
-
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
-
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
-      const chunks: Blob[] = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
+  const startRecording = useCallback(
+    async (deviceId?: string) => {
+      try {
+        let stream = streamRef.current;
+        if (
+          !stream ||
+          stream.getTracks().every((t) => t.readyState === "ended")
+        ) {
+          stream = await startMonitoring(deviceId);
         }
-      };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: mimeType });
-        const audioUrl = URL.createObjectURL(blob);
+        if (!stream) {
+          throw new Error("No audio stream available");
+        }
+
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : "audio/webm";
+
+        const mediaRecorder = new MediaRecorder(stream, { mimeType });
+        const chunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: mimeType });
+          const audioUrl = URL.createObjectURL(blob);
+
+          setState((prev) => ({
+            ...prev,
+            recordedBlob: blob,
+            audioUrl,
+            isRecording: false,
+          }));
+
+          if (durationIntervalRef.current) {
+            clearInterval(durationIntervalRef.current);
+            durationIntervalRef.current = null;
+          }
+        };
+
+        mediaRecorderRef.current = mediaRecorder;
+        startTimeRef.current = Date.now();
+        mediaRecorder.start(100);
 
         setState((prev) => ({
           ...prev,
-          recordedBlob: blob,
-          audioUrl,
-          isRecording: false,
+          isRecording: true,
+          duration: 0,
+          recordedBlob: null,
+          audioUrl: null,
         }));
 
-        if (durationIntervalRef.current) {
-          clearInterval(durationIntervalRef.current);
-          durationIntervalRef.current = null;
-        }
-      };
-
-      mediaRecorderRef.current = mediaRecorder;
-      startTimeRef.current = Date.now();
-      mediaRecorder.start(100);
-
-      setState((prev) => ({ ...prev, isRecording: true, duration: 0, recordedBlob: null, audioUrl: null }));
-
-      durationIntervalRef.current = setInterval(() => {
-        if (mediaRecorderRef.current?.state === 'recording') {
-          const duration = (Date.now() - startTimeRef.current) / 1000;
-          setState((prev) => ({ ...prev, duration }));
-        }
-      }, 100);
-
-    } catch (error) {
-      logger.error('Error starting recording:', error);
-      throw error;
-    }
-  }, [startMonitoring]);
+        durationIntervalRef.current = setInterval(() => {
+          if (mediaRecorderRef.current?.state === "recording") {
+            const duration = (Date.now() - startTimeRef.current) / 1000;
+            setState((prev) => ({ ...prev, duration }));
+          }
+        }, 100);
+      } catch (error) {
+        logger.error("Error starting recording:", error);
+        throw error;
+      }
+    },
+    [startMonitoring],
+  );
 
   const stopRecording = useCallback(() => {
     if (durationIntervalRef.current) {
@@ -176,7 +198,10 @@ export function useAudioRecorder() {
       durationIntervalRef.current = null;
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
     }
 
@@ -254,44 +279,50 @@ export function useAudioRecorder() {
   }, [state.audioUrl]);
 
   const uploadRecording = useCallback(
-    async (projectId: string, trackId: string, startTime: number = 0): Promise<{ clipId: string } | null> => {
+    async (
+      projectId: string,
+      trackId: string,
+      startTime: number = 0,
+    ): Promise<{ clipId: string } | null> => {
       if (!state.recordedBlob) {
-        logger.warn('No recording to upload');
+        logger.warn("No recording to upload");
         return null;
       }
 
       try {
         const formData = new FormData();
         const filename = `recording_${Date.now()}.webm`;
-        formData.append('audio', state.recordedBlob, filename);
-        formData.append('name', `Recording ${new Date().toLocaleTimeString()}`);
-        formData.append('startTime', startTime.toString());
-        formData.append('duration', state.duration.toString());
+        formData.append("audio", state.recordedBlob, filename);
+        formData.append("name", `Recording ${new Date().toLocaleTimeString()}`);
+        formData.append("startTime", startTime.toString());
+        formData.append("duration", state.duration.toString());
 
-        formData.append('projectId', projectId);
-        formData.append('trackId', trackId);
+        formData.append("projectId", projectId);
+        formData.append("trackId", trackId);
         const csrfToken = getCsrfTokenFromCookie();
         const response = await fetch(`/api/studio/record/upload`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+          method: "POST",
+          credentials: "include",
+          headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
           body: formData,
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
-          throw new Error(errorData.error || 'Failed to upload recording');
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: "Upload failed" }));
+          throw new Error(errorData.error || "Failed to upload recording");
         }
 
         const result = await response.json();
         clearRecording();
         return result;
       } catch (error) {
-        logger.error('Error uploading recording:', error);
+        logger.error("Error uploading recording:", error);
         throw error;
       }
     },
-    [state.recordedBlob, state.duration, clearRecording]
+    [state.recordedBlob, state.duration, clearRecording],
   );
 
   useEffect(() => {

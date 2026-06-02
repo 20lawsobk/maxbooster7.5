@@ -1,11 +1,11 @@
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import type { Request, Response, NextFunction } from 'express';
-import { logger } from '../logger.js';
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import type { Request, Response, NextFunction } from "express";
+import { logger } from "../logger.js";
 
-import { isProductionEnv } from '../lib/envHelpers.js';
+import { isProductionEnv } from "../lib/envHelpers.js";
 
-const APP_DOMAIN = process.env.APP_URL || 'https://max-booster.com';
+const APP_DOMAIN = process.env.APP_URL || "https://max-booster.com";
 const isDev = !isProductionEnv();
 
 const helmetMiddleware = helmet({
@@ -17,53 +17,32 @@ const helmetMiddleware = helmet({
         // 'unsafe-inline' / 'unsafe-eval' only in development (Vite HMR needs them).
         // In production the compiled bundle has no inline scripts and no eval usage.
         ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
-        'https://js.stripe.com',
-        'https://www.googletagmanager.com',
-        'https://connect.facebook.net',
+        "https://js.stripe.com",
+        "https://www.googletagmanager.com",
+        "https://connect.facebook.net",
       ],
       styleSrc: [
         "'self'",
         "'unsafe-inline'", // CSS-in-JS libraries require this; scoped to styles only
-        'https://fonts.googleapis.com',
+        "https://fonts.googleapis.com",
       ],
-      fontSrc: [
-        "'self'",
-        'https://fonts.gstatic.com',
-        'data:',
-      ],
-      imgSrc: [
-        "'self'",
-        'data:',
-        'blob:',
-        'https:',
-      ],
-      mediaSrc: [
-        "'self'",
-        'blob:',
-        'data:',
-        'https:',
-      ],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      mediaSrc: ["'self'", "blob:", "data:", "https:"],
       connectSrc: [
         "'self'",
         APP_DOMAIN,
-        'wss:',
-        'ws:',
-        'https://api.stripe.com',
-        'https://api.labelgrid.com',
-        'https://secure-ai-forge.replit.app',
-        'https://pocketdimensionstorage.replit.app',
-        'https://o4510378512613376.ingest.us.sentry.io',
-        ...(isDev ? ['ws://localhost:*', 'http://localhost:*'] : []),
+        "wss:",
+        "ws:",
+        "https://api.stripe.com",
+        "https://api.labelgrid.com",
+        "https://secure-ai-forge.replit.app",
+        "https://pocketdimensionstorage.replit.app",
+        "https://o4510378512613376.ingest.us.sentry.io",
+        ...(isDev ? ["ws://localhost:*", "http://localhost:*"] : []),
       ],
-      frameSrc: [
-        "'self'",
-        'https://js.stripe.com',
-        'https://hooks.stripe.com',
-      ],
-      workerSrc: [
-        "'self'",
-        'blob:',
-      ],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+      workerSrc: ["'self'", "blob:"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
@@ -71,15 +50,15 @@ const helmetMiddleware = helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
-  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginResourcePolicy: { policy: "cross-origin" },
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true,
   },
   noSniff: true,
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   xssFilter: true,
 });
 
@@ -87,17 +66,17 @@ const helmetMiddleware = helmet({
 // Helmet v8 does not expose this as a constructor option; set it as a raw header.
 // Deny access to sensors/hardware that Max Booster never legitimately needs.
 const PERMISSIONS_POLICY =
-  'camera=(), ' +
-  'microphone=(), ' +       // audio is uploaded, not captured in-browser
-  'geolocation=(), ' +
+  "camera=(), " +
+  "microphone=(), " + // audio is uploaded, not captured in-browser
+  "geolocation=(), " +
   'payment=(self "https://js.stripe.com"), ' +
-  'usb=(), ' +
-  'accelerometer=(), ' +
-  'gyroscope=(), ' +
-  'magnetometer=(), ' +
-  'autoplay=(self), ' +      // needed for the media player
-  'fullscreen=(self), ' +    // needed for the media player
-  'picture-in-picture=(self)'; // needed for the media player
+  "usb=(), " +
+  "accelerometer=(), " +
+  "gyroscope=(), " +
+  "magnetometer=(), " +
+  "autoplay=(self), " + // needed for the media player
+  "fullscreen=(self), " + // needed for the media player
+  "picture-in-picture=(self)"; // needed for the media player
 
 const globalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -105,18 +84,20 @@ const globalRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    const ip = req.ip || '';
+    const ip = req.ip || "";
     return (
-      ip === '127.0.0.1' ||
-      ip === '::1' ||
-      ip.startsWith('10.') ||
-      ip.startsWith('172.16.') ||
-      ip.startsWith('192.168.')
+      ip === "127.0.0.1" ||
+      ip === "::1" ||
+      ip.startsWith("10.") ||
+      ip.startsWith("172.16.") ||
+      ip.startsWith("192.168.")
     );
   },
   handler: (_req: Request, res: Response) => {
-    logger.warn('[Security] Global rate limit exceeded');
-    res.status(429).json({ error: 'Too many requests. Please try again later.' });
+    logger.warn("[Security] Global rate limit exceeded");
+    res
+      .status(429)
+      .json({ error: "Too many requests. Please try again later." });
   },
 });
 
@@ -127,10 +108,10 @@ export function securityMiddleware(
 ): void {
   helmetMiddleware(req, res, (helmetErr?: Record<string, unknown>) => {
     if (helmetErr) {
-      logger.warn('[Security] Helmet error (non-fatal):', helmetErr?.message);
+      logger.warn("[Security] Helmet error (non-fatal):", helmetErr?.message);
     }
     // Set Permissions-Policy — not natively supported by this helmet version.
-    res.setHeader('Permissions-Policy', PERMISSIONS_POLICY);
+    res.setHeader("Permissions-Policy", PERMISSIONS_POLICY);
     globalRateLimit(req, res, next);
   });
 }

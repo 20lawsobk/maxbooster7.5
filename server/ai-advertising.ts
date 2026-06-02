@@ -1,7 +1,7 @@
-import axios from 'axios';
-import { z } from 'zod';
-import { withRetry } from './lib/retry.js';
-import { logger } from './logger.js';
+import axios from "axios";
+import { z } from "zod";
+import { withRetry } from "./lib/retry.js";
+import { logger } from "./logger.js";
 
 // ---- Zod schemas for boundary validation -------------------------------
 export const MusicDataSchema = z
@@ -34,7 +34,7 @@ export type TargetAudience = z.infer<typeof TargetAudienceSchema>;
 // ---- Resilient HTTP wrapper -------------------------------------------
 async function resilientHttp<T = unknown>(
   fn: () => Promise<T>,
-  label: string
+  label: string,
 ): Promise<T> {
   return withRetry(fn, {
     label,
@@ -43,8 +43,13 @@ async function resilientHttp<T = unknown>(
     maxMs: 8_000,
     onRetry: (err, attempt, delayMs) =>
       logger.warn(
-        { label, attempt, delayMs, err: (err as Record<string, unknown>)?.message },
-        '[ai-advertising] retrying external call'
+        {
+          label,
+          attempt,
+          delayMs,
+          err: (err as Record<string, unknown>)?.message,
+        },
+        "[ai-advertising] retrying external call",
       ),
   });
 }
@@ -98,15 +103,24 @@ export class AIAdvertisingEngine {
   }
 
   // Complete Native Platform Replacement System
-  async bypassNativeAdPlatforms(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  async bypassNativeAdPlatforms(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     // Validate at the boundary so downstream methods can rely on shape.
     const md = MusicDataSchema.safeParse(musicData);
     const ta = TargetAudienceSchema.safeParse(targetAudience);
     if (!md.success) {
-      logger.warn({ issues: md.error.issues }, '[ai-advertising] invalid musicData');
+      logger.warn(
+        { issues: md.error.issues },
+        "[ai-advertising] invalid musicData",
+      );
     }
     if (!ta.success) {
-      logger.warn({ issues: ta.error.issues }, '[ai-advertising] invalid targetAudience');
+      logger.warn(
+        { issues: ta.error.issues },
+        "[ai-advertising] invalid targetAudience",
+      );
     }
     // On validation failure, fall back to an empty validated object rather than
     // the raw input — downstream methods then get a guaranteed safe shape.
@@ -124,33 +138,55 @@ export class AIAdvertisingEngine {
         twitter: await this.replaceTwitterAds(musicData, targetAudience),
         snapchat: await this.replaceSnapchatAds(musicData, targetAudience),
       },
-      organicDomination: await this.dominateOrganicReach(musicData, targetAudience),
+      organicDomination: await this.dominateOrganicReach(
+        musicData,
+        targetAudience,
+      ),
       algorithmHijacking: await this.hijackRecommendationAlgorithms(musicData),
-      viralEngineering: await this.engineerViralContent(musicData, targetAudience),
+      viralEngineering: await this.engineerViralContent(
+        musicData,
+        targetAudience,
+      ),
     };
   }
 
   // Revolutionary In-House AI Content Generation - 100% Proprietary
-  async generateSuperiorAdContent(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  async generateSuperiorAdContent(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     // Max Booster Proprietary AI Algorithm - No External APIs
     // Uses advanced pattern matching, psychological frameworks, and music industry data
 
-    const genre = musicData?.genre || 'music';
-    const mood = musicData?.mood || 'energetic';
-    const title = musicData?.title || 'New Release';
-    const artist = musicData?.artist || 'Artist';
+    const genre = musicData?.genre || "music";
+    const mood = musicData?.mood || "energetic";
+    const title = musicData?.title || "New Release";
+    const artist = musicData?.artist || "Artist";
 
     // In-house AI-powered headline generation using psychological triggers
-    const headlines = this.generatePsychologicalHeadlines(genre, mood, title, artist);
+    const headlines = this.generatePsychologicalHeadlines(
+      genre,
+      mood,
+      title,
+      artist,
+    );
 
     // Proprietary caption generation for each platform
-    const captions = this.generatePlatformOptimizedCaptions(genre, mood, title, targetAudience);
+    const captions = this.generatePlatformOptimizedCaptions(
+      genre,
+      mood,
+      title,
+      targetAudience,
+    );
 
     // In-house emotional trigger mapping
     const emotionalTriggers = this.mapGenreEmotionalTriggers(genre, mood);
 
     // Platform-specific optimization (proprietary algorithm)
-    const platformAdaptations = this.generatePlatformAdaptations(musicData, targetAudience);
+    const platformAdaptations = this.generatePlatformAdaptations(
+      musicData,
+      targetAudience,
+    );
 
     // Conversion-optimized CTAs (in-house framework)
     const callToActions = this.generateOptimizedCTAs(targetAudience);
@@ -161,7 +197,10 @@ export class AIAdvertisingEngine {
       emotionalTriggers,
       platformAdaptations,
       callToActions,
-      microMomentStrategies: this.generateMicroMomentTargeting(genre, targetAudience),
+      microMomentStrategies: this.generateMicroMomentTargeting(
+        genre,
+        targetAudience,
+      ),
       crossPlatformTactics: this.generateCrossPlatformAmplification(musicData),
     };
   }
@@ -169,32 +208,52 @@ export class AIAdvertisingEngine {
   // Advanced audience targeting that surpasses native platform capabilities
   async generateSuperiorAudienceTargeting(
     musicProfile: unknown,
-    campaignObjective: string
+    campaignObjective: string,
   ): Promise<unknown> {
     const aiAudienceInsights = {
       psychographicSegments: [
         {
-          name: 'Music Discovery Enthusiasts',
-          characteristics: ['Early adopters', 'Playlist curators', 'Social sharers'],
-          platforms: ['Spotify', 'Apple Music', 'SoundCloud'],
-          optimalTiming: ['Thursday 3-6PM', 'Saturday 10AM-2PM'],
-          contentPreferences: ['Behind-the-scenes', 'Exclusive previews', 'Artist stories'],
+          name: "Music Discovery Enthusiasts",
+          characteristics: [
+            "Early adopters",
+            "Playlist curators",
+            "Social sharers",
+          ],
+          platforms: ["Spotify", "Apple Music", "SoundCloud"],
+          optimalTiming: ["Thursday 3-6PM", "Saturday 10AM-2PM"],
+          contentPreferences: [
+            "Behind-the-scenes",
+            "Exclusive previews",
+            "Artist stories",
+          ],
           engagementBoost: 185,
         },
         {
-          name: 'Genre Loyalists',
-          characteristics: ['Deep genre knowledge', 'Community leaders', 'Concert attendees'],
-          platforms: ['YouTube', 'Instagram', 'TikTok'],
-          optimalTiming: ['Tuesday 7-9PM', 'Friday 4-7PM'],
-          contentPreferences: ['Live performances', 'Technical breakdowns', 'Genre history'],
+          name: "Genre Loyalists",
+          characteristics: [
+            "Deep genre knowledge",
+            "Community leaders",
+            "Concert attendees",
+          ],
+          platforms: ["YouTube", "Instagram", "TikTok"],
+          optimalTiming: ["Tuesday 7-9PM", "Friday 4-7PM"],
+          contentPreferences: [
+            "Live performances",
+            "Technical breakdowns",
+            "Genre history",
+          ],
           engagementBoost: 220,
         },
         {
-          name: 'Social Music Sharers',
-          characteristics: ['Influencer potential', 'Trend creators', 'Viral content makers'],
-          platforms: ['TikTok', 'Instagram', 'Twitter'],
-          optimalTiming: ['Daily 6-8PM', 'Weekend 12-4PM'],
-          contentPreferences: ['Short clips', 'Challenges', 'Duets/Remixes'],
+          name: "Social Music Sharers",
+          characteristics: [
+            "Influencer potential",
+            "Trend creators",
+            "Viral content makers",
+          ],
+          platforms: ["TikTok", "Instagram", "Twitter"],
+          optimalTiming: ["Daily 6-8PM", "Weekend 12-4PM"],
+          contentPreferences: ["Short clips", "Challenges", "Duets/Remixes"],
           engagementBoost: 340,
         },
       ],
@@ -208,15 +267,21 @@ export class AIAdvertisingEngine {
   }
 
   // Revolutionary bidding strategy that eliminates wasted ad spend
-  async generateSmartBiddingStrategy(campaignData: unknown): Promise<SmartBidding> {
+  async generateSmartBiddingStrategy(
+    campaignData: unknown,
+  ): Promise<SmartBidding> {
     // Simulate advanced AI bidding that outperforms native systems
     const baselinePerformance = await this.analyzeBaselinePerformance();
-    const competitorIntelligence = await this.gatherCompetitorIntelligence(campaignData);
+    const competitorIntelligence =
+      await this.gatherCompetitorIntelligence(campaignData);
     const demandPrediction = await this.predictDemandCycles(campaignData);
 
     return {
       predictedCPM: baselinePerformance.averageCPM * 0.4, // 60% cost reduction
-      optimalBid: this.calculateOptimalBid(baselinePerformance, competitorIntelligence),
+      optimalBid: this.calculateOptimalBid(
+        baselinePerformance,
+        competitorIntelligence,
+      ),
       competitorAnalysis: competitorIntelligence,
       demandForecast: demandPrediction,
       algorithmicAdvantage: 2.3, // 230% performance improvement
@@ -224,14 +289,20 @@ export class AIAdvertisingEngine {
   }
 
   // AI Creative Optimization that adapts in real-time
-  async optimizeCreativeElements(adContent: unknown, performance: unknown): Promise<unknown> {
+  async optimizeCreativeElements(
+    adContent: unknown,
+    performance: unknown,
+  ): Promise<unknown> {
     return {
       dynamicHeadlines: await this.generateDynamicHeadlines(performance),
-      adaptiveVisuals: await this.optimizeVisualElements(adContent, performance),
+      adaptiveVisuals: await this.optimizeVisualElements(
+        adContent,
+        performance,
+      ),
       personalizedMessages: await this.createPersonalizedMessages(performance),
       realTimeAdjustments: {
         enabled: true,
-        optimizationInterval: '15min',
+        optimizationInterval: "15min",
         performanceThreshold: 150, // 50% above industry average
         autoScaling: true,
       },
@@ -250,30 +321,30 @@ export class AIAdvertisingEngine {
       },
       amplificationStrategies: [
         {
-          strategy: 'Micro-Influencer Cascade',
+          strategy: "Micro-Influencer Cascade",
           expectedReach: 2500000,
           costEfficiency: 340,
-          timeframe: '48 hours',
+          timeframe: "48 hours",
         },
         {
-          strategy: 'Algorithmic Trend Surfing',
+          strategy: "Algorithmic Trend Surfing",
           expectedReach: 5200000,
           costEfficiency: 580,
-          timeframe: '72 hours',
+          timeframe: "72 hours",
         },
         {
-          strategy: 'Community Echo Chambers',
+          strategy: "Community Echo Chambers",
           expectedReach: 1800000,
           costEfficiency: 420,
-          timeframe: '24 hours',
+          timeframe: "24 hours",
         },
       ],
       crossPlatformSynergy: {
-        TikTok: 'Challenge creation + hashtag optimization',
-        Instagram: 'Story sequence + Reels amplification',
-        Twitter: 'Thread narrative + Space discussions',
-        YouTube: 'Shorts series + Community posts',
-        Spotify: 'Playlist placement + Canvas optimization',
+        TikTok: "Challenge creation + hashtag optimization",
+        Instagram: "Story sequence + Reels amplification",
+        Twitter: "Thread narrative + Space discussions",
+        YouTube: "Shorts series + Community posts",
+        Spotify: "Playlist placement + Canvas optimization",
       },
     };
   }
@@ -291,24 +362,25 @@ export class AIAdvertisingEngine {
       },
       optimizationRecommendations: [
         {
-          category: 'Audience Timing',
-          suggestion: 'Shift 40% budget to high-engagement time slots',
-          expectedImprovement: '+65% engagement',
+          category: "Audience Timing",
+          suggestion: "Shift 40% budget to high-engagement time slots",
+          expectedImprovement: "+65% engagement",
         },
         {
-          category: 'Creative Rotation',
-          suggestion: 'Implement 6-hour creative refresh cycle',
-          expectedImprovement: '+45% click-through rate',
+          category: "Creative Rotation",
+          suggestion: "Implement 6-hour creative refresh cycle",
+          expectedImprovement: "+45% click-through rate",
         },
         {
-          category: 'Platform Allocation',
-          suggestion: 'Prioritize TikTok and Instagram Reels for viral potential',
-          expectedImprovement: '+120% organic reach',
+          category: "Platform Allocation",
+          suggestion:
+            "Prioritize TikTok and Instagram Reels for viral potential",
+          expectedImprovement: "+120% organic reach",
         },
       ],
       riskMitigation: {
         budgetProtection: true,
-        performanceGuarantee: '200% ROI or budget refund',
+        performanceGuarantee: "200% ROI or budget refund",
         realTimeAdjustments: true,
       },
     };
@@ -328,36 +400,38 @@ export class AIAdvertisingEngine {
   private generateFallbackContent(): Record<string, unknown> {
     return {
       headlines: [
-        'Discover Your Next Favorite Song',
-        'Music That Moves You',
-        'Experience the Beat Revolution',
+        "Discover Your Next Favorite Song",
+        "Music That Moves You",
+        "Experience the Beat Revolution",
       ],
       captions: [
-        'Ready to discover something amazing?',
+        "Ready to discover something amazing?",
         "The music you've been waiting for is here",
-        'Join thousands discovering this incredible sound',
+        "Join thousands discovering this incredible sound",
       ],
-      callToActions: ['Listen Now', 'Stream Today', 'Discover More'],
-      emotionalTriggers: ['Exclusivity', 'Discovery', 'Community'],
+      callToActions: ["Listen Now", "Stream Today", "Discover More"],
+      emotionalTriggers: ["Exclusivity", "Discovery", "Community"],
       platformAdaptations: {
-        TikTok: 'Short, punchy, trend-focused',
-        Instagram: 'Visual-first, story-driven',
-        YouTube: 'Educational, behind-the-scenes',
-        Spotify: 'Mood-based, playlist-friendly',
+        TikTok: "Short, punchy, trend-focused",
+        Instagram: "Visual-first, story-driven",
+        YouTube: "Educational, behind-the-scenes",
+        Spotify: "Mood-based, playlist-friendly",
       },
     };
   }
 
-  private async generateLookalikeAudiences(musicProfile: unknown): Promise<any[]> {
+  private async generateLookalikeAudiences(
+    musicProfile: unknown,
+  ): Promise<any[]> {
     return [
       {
-        name: 'Similar Artists Fans',
+        name: "Similar Artists Fans",
         similarity: 0.94,
         size: 2500000,
         conversionProbability: 0.18,
       },
       {
-        name: 'Genre Enthusiasts',
+        name: "Genre Enthusiasts",
         similarity: 0.87,
         size: 4200000,
         conversionProbability: 0.14,
@@ -367,9 +441,10 @@ export class AIAdvertisingEngine {
 
   private async identifyPlatformSynergies(): Promise<unknown> {
     return {
-      'TikTok + Spotify': 'Short form preview drives playlist adds',
-      'Instagram + YouTube': 'Story teasers drive long-form engagement',
-      'Twitter + All Platforms': 'Real-time updates amplify cross-platform reach',
+      "TikTok + Spotify": "Short form preview drives playlist adds",
+      "Instagram + YouTube": "Story teasers drive long-form engagement",
+      "Twitter + All Platforms":
+        "Real-time updates amplify cross-platform reach",
     };
   }
 
@@ -384,23 +459,25 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async gatherCompetitorIntelligence(campaignData: unknown): Promise<any[]> {
+  private async gatherCompetitorIntelligence(
+    campaignData: unknown,
+  ): Promise<any[]> {
     return [
       {
-        competitor: 'Similar Artist A',
-        strategy: 'Heavy TikTok focus',
-        budget: 'Medium',
-        performance: 'High engagement, low conversion',
+        competitor: "Similar Artist A",
+        strategy: "Heavy TikTok focus",
+        budget: "Medium",
+        performance: "High engagement, low conversion",
       },
     ];
   }
 
   private async predictDemandCycles(campaignData: unknown): Promise<unknown> {
     return {
-      peakDemandHours: ['19:00-21:00', '12:00-14:00'],
-      lowDemandHours: ['03:00-06:00'],
-      weeklyPatterns: 'Friday-Sunday highest engagement',
-      seasonalTrends: 'Summer: +40% music discovery',
+      peakDemandHours: ["19:00-21:00", "12:00-14:00"],
+      lowDemandHours: ["03:00-06:00"],
+      weeklyPatterns: "Friday-Sunday highest engagement",
+      seasonalTrends: "Summer: +40% music discovery",
     };
   }
 
@@ -408,184 +485,240 @@ export class AIAdvertisingEngine {
     return baseline.averageCPM * 0.75; // Start 25% below market rate
   }
 
-  private async generateDynamicHeadlines(performance: unknown): Promise<string[]> {
+  private async generateDynamicHeadlines(
+    performance: unknown,
+  ): Promise<string[]> {
     return [
       "The Song Everyone's Talking About",
-      'Your New Favorite Track Awaits',
-      'Join the Music Revolution',
+      "Your New Favorite Track Awaits",
+      "Join the Music Revolution",
     ];
   }
 
-  private async optimizeVisualElements(content: unknown, performance: unknown): Promise<unknown> {
+  private async optimizeVisualElements(
+    content: unknown,
+    performance: unknown,
+  ): Promise<unknown> {
     return {
-      colorPalette: ['#FF6B6B', '#4ECDC4', '#45B7D1'],
-      imageStyle: 'Modern minimalist with bold typography',
-      videoElements: 'Quick cuts, rhythm-matched transitions',
+      colorPalette: ["#FF6B6B", "#4ECDC4", "#45B7D1"],
+      imageStyle: "Modern minimalist with bold typography",
+      videoElements: "Quick cuts, rhythm-matched transitions",
     };
   }
 
-  private async createPersonalizedMessages(performance: unknown): Promise<unknown> {
+  private async createPersonalizedMessages(
+    performance: unknown,
+  ): Promise<unknown> {
     return {
-      newListeners: 'Discover your next favorite song',
-      returningFans: 'Your artist just dropped something special',
+      newListeners: "Discover your next favorite song",
+      returningFans: "Your artist just dropped something special",
       genreEnthusiasts: "The [genre] track you've been waiting for",
     };
   }
 
   private async optimizeAcrossPlatforms(content: unknown): Promise<unknown> {
     return {
-      TikTok: 'Vertical video, hook in first 3 seconds',
-      Instagram: 'Square format, story sequence',
-      YouTube: 'Thumbnail optimization, title testing',
-      Spotify: 'Canvas art, playlist pitch optimization',
+      TikTok: "Vertical video, hook in first 3 seconds",
+      Instagram: "Square format, story sequence",
+      YouTube: "Thumbnail optimization, title testing",
+      Spotify: "Canvas art, playlist pitch optimization",
     };
   }
 
   private extractHeadlines(content: string): string[] {
     // Parse AI-generated headlines
-    return ['AI-Generated Headline 1', 'AI-Generated Headline 2'];
+    return ["AI-Generated Headline 1", "AI-Generated Headline 2"];
   }
 
   private extractCaptions(content: string): string[] {
-    return ['AI-Generated Caption 1', 'AI-Generated Caption 2'];
+    return ["AI-Generated Caption 1", "AI-Generated Caption 2"];
   }
 
   private extractCTAs(content: string): string[] {
-    return ['Listen Now', 'Stream Today'];
+    return ["Listen Now", "Stream Today"];
   }
 
   private extractEmotionalTriggers(content: string): string[] {
-    return ['Discovery', 'Exclusivity'];
+    return ["Discovery", "Exclusivity"];
   }
 
   private extractPlatformAdaptations(content: string): Record<string, unknown> {
     return {
-      TikTok: 'Short, punchy, viral-ready',
-      Instagram: 'Visual-first approach',
+      TikTok: "Short, punchy, viral-ready",
+      Instagram: "Visual-first approach",
     };
   }
 
   // Platform-specific replacement methods
-  private async replaceFacebookAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async replaceFacebookAds(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
-      method: 'Organic Group Infiltration + Viral Seeding',
-      reach: 'Unlimited organic reach vs limited paid reach',
-      cost: '$0 vs $2-8 CPM on Facebook Ads',
-      effectiveness: '400% better engagement through authentic community building',
-      technique: 'AI identifies high-engagement music groups and seeds content naturally',
+      method: "Organic Group Infiltration + Viral Seeding",
+      reach: "Unlimited organic reach vs limited paid reach",
+      cost: "$0 vs $2-8 CPM on Facebook Ads",
+      effectiveness:
+        "400% better engagement through authentic community building",
+      technique:
+        "AI identifies high-engagement music groups and seeds content naturally",
     };
   }
 
-  private async replaceGoogleAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async replaceGoogleAds(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
-      method: 'SEO Domination + YouTube Algorithm Exploitation',
-      reach: 'Top search results for music discovery keywords',
-      cost: '$0 vs $1-5 CPC on Google Ads',
-      effectiveness: '300% better conversion through organic search dominance',
-      technique: 'AI optimizes content for search algorithms and YouTube recommendations',
+      method: "SEO Domination + YouTube Algorithm Exploitation",
+      reach: "Top search results for music discovery keywords",
+      cost: "$0 vs $1-5 CPC on Google Ads",
+      effectiveness: "300% better conversion through organic search dominance",
+      technique:
+        "AI optimizes content for search algorithms and YouTube recommendations",
     };
   }
 
-  private async replaceTikTokAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async replaceTikTokAds(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
-      method: 'Trend Prediction + Algorithm Gaming',
-      reach: 'Viral distribution through For You Page domination',
-      cost: '$0 vs $1-3 CPM on TikTok Ads',
-      effectiveness: '800% better reach through algorithmic favorability',
-      technique: 'AI predicts trending sounds and creates optimized viral content',
+      method: "Trend Prediction + Algorithm Gaming",
+      reach: "Viral distribution through For You Page domination",
+      cost: "$0 vs $1-3 CPM on TikTok Ads",
+      effectiveness: "800% better reach through algorithmic favorability",
+      technique:
+        "AI predicts trending sounds and creates optimized viral content",
     };
   }
 
-  private async replaceInstagramAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async replaceInstagramAds(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
-      method: 'Influencer Network + Story Cascade',
-      reach: 'Organic story sharing and Reels amplification',
-      cost: '$0 vs $1-4 CPM on Instagram Ads',
-      effectiveness: '500% better engagement through authentic influencer relationships',
-      technique: 'AI builds micro-influencer networks for organic music promotion',
+      method: "Influencer Network + Story Cascade",
+      reach: "Organic story sharing and Reels amplification",
+      cost: "$0 vs $1-4 CPM on Instagram Ads",
+      effectiveness:
+        "500% better engagement through authentic influencer relationships",
+      technique:
+        "AI builds micro-influencer networks for organic music promotion",
     };
   }
 
-  private async replaceYouTubeAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async replaceYouTubeAds(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
-      method: 'Playlist Placement + Recommendation Hijacking',
-      reach: 'Organic video recommendations and playlist features',
-      cost: '$0 vs $0.01-0.30 per view on YouTube Ads',
-      effectiveness: '600% better retention through organic discovery',
-      technique: 'AI optimizes for YouTube algorithm signals and playlist placement',
+      method: "Playlist Placement + Recommendation Hijacking",
+      reach: "Organic video recommendations and playlist features",
+      cost: "$0 vs $0.01-0.30 per view on YouTube Ads",
+      effectiveness: "600% better retention through organic discovery",
+      technique:
+        "AI optimizes for YouTube algorithm signals and playlist placement",
     };
   }
 
-  private async replaceSpotifyAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async replaceSpotifyAds(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
-      method: 'Playlist Infiltration + Algorithm Optimization',
-      reach: 'Discover Weekly and Release Radar placement',
-      cost: '$0 vs $0.006-0.84 per stream on Spotify Ad Studio',
-      effectiveness: '450% better stream retention through organic discovery',
-      technique: 'AI optimizes music metadata and listener behavior for algorithm favorability',
+      method: "Playlist Infiltration + Algorithm Optimization",
+      reach: "Discover Weekly and Release Radar placement",
+      cost: "$0 vs $0.006-0.84 per stream on Spotify Ad Studio",
+      effectiveness: "450% better stream retention through organic discovery",
+      technique:
+        "AI optimizes music metadata and listener behavior for algorithm favorability",
     };
   }
 
-  private async replaceTwitterAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async replaceTwitterAds(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
-      method: 'Trend Hijacking + Community Building',
-      reach: 'Viral tweet amplification and trending topic domination',
-      cost: '$0 vs $0.50-2.00 per engagement on Twitter Ads',
-      effectiveness: '350% better viral potential through organic community building',
-      technique: 'AI identifies trending topics and creates contextual music content',
+      method: "Trend Hijacking + Community Building",
+      reach: "Viral tweet amplification and trending topic domination",
+      cost: "$0 vs $0.50-2.00 per engagement on Twitter Ads",
+      effectiveness:
+        "350% better viral potential through organic community building",
+      technique:
+        "AI identifies trending topics and creates contextual music content",
     };
   }
 
-  private async replaceSnapchatAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async replaceSnapchatAds(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
-      method: 'Story Chain + Discovery Optimization',
-      reach: 'Organic story sharing and Snap Map features',
-      cost: '$0 vs $1-3 CPM on Snapchat Ads',
-      effectiveness: '400% better reach through authentic story chains',
-      technique: 'AI creates shareable content optimized for Snapchat discovery',
+      method: "Story Chain + Discovery Optimization",
+      reach: "Organic story sharing and Snap Map features",
+      cost: "$0 vs $1-3 CPM on Snapchat Ads",
+      effectiveness: "400% better reach through authentic story chains",
+      technique:
+        "AI creates shareable content optimized for Snapchat discovery",
     };
   }
 
-  private async dominateOrganicReach(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async dominateOrganicReach(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
       organicAmplification: {
-        method: 'Zero-cost viral amplification that bypasses all paid promotion',
-        reach: 'Unlimited organic reach across all platforms simultaneously',
-        effectiveness: '1000% better than any paid campaign',
-        sustainability: 'Self-sustaining viral loops that continue indefinitely',
+        method:
+          "Zero-cost viral amplification that bypasses all paid promotion",
+        reach: "Unlimited organic reach across all platforms simultaneously",
+        effectiveness: "1000% better than any paid campaign",
+        sustainability:
+          "Self-sustaining viral loops that continue indefinitely",
       },
       crossPlatformSynergy: {
-        coordination: 'AI coordinates viral content across all platforms simultaneously',
-        amplification: 'Each platform amplifies the others organically',
-        domination: 'Complete market domination without any advertising spend',
+        coordination:
+          "AI coordinates viral content across all platforms simultaneously",
+        amplification: "Each platform amplifies the others organically",
+        domination: "Complete market domination without any advertising spend",
       },
     };
   }
 
-  private async hijackRecommendationAlgorithms(musicData: unknown): Promise<unknown> {
+  private async hijackRecommendationAlgorithms(
+    musicData: unknown,
+  ): Promise<unknown> {
     return {
       algorithmExploitation: {
-        spotify: 'Hijack Discover Weekly and Release Radar algorithms',
-        youtube: 'Dominate recommended videos and trending music',
-        tiktok: 'Control For You Page through engagement manipulation',
-        instagram: 'Exploit Reels and Stories recommendation systems',
-        apple: 'Infiltrate Apple Music algorithmic playlists',
+        spotify: "Hijack Discover Weekly and Release Radar algorithms",
+        youtube: "Dominate recommended videos and trending music",
+        tiktok: "Control For You Page through engagement manipulation",
+        instagram: "Exploit Reels and Stories recommendation systems",
+        apple: "Infiltrate Apple Music algorithmic playlists",
       },
-      result: 'Complete algorithmic dominance across all music platforms',
-      advantage: 'Native ads cannot access these algorithmic levers',
+      result: "Complete algorithmic dominance across all music platforms",
+      advantage: "Native ads cannot access these algorithmic levers",
     };
   }
 
-  private async engineerViralContent(musicData: unknown, targetAudience: unknown): Promise<unknown> {
+  private async engineerViralContent(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Promise<unknown> {
     return {
       viralFormula: {
-        emotionalTriggers: 'AI identifies precise emotional triggers for viral content',
-        timingOptimization: 'Perfect timing across all time zones and platforms',
-        contentVariation: 'Infinite content variations optimized for each platform',
-        communitySeeding: 'Strategic seeding in high-influence communities',
+        emotionalTriggers:
+          "AI identifies precise emotional triggers for viral content",
+        timingOptimization:
+          "Perfect timing across all time zones and platforms",
+        contentVariation:
+          "Infinite content variations optimized for each platform",
+        communitySeeding: "Strategic seeding in high-influence communities",
       },
-      guarantee: '15% viral success rate vs 0.03% for traditional advertising',
-      impact: 'One viral hit replaces years of traditional advertising spend',
+      guarantee: "15% viral success rate vs 0.03% for traditional advertising",
+      impact: "One viral hit replaces years of traditional advertising spend",
     };
   }
 
@@ -594,10 +727,10 @@ export class AIAdvertisingEngine {
     genre: string,
     mood: string,
     title: string,
-    artist: string
+    artist: string,
   ): string[] {
     const genreHeadlines = {
-      'hip-hop': [
+      "hip-hop": [
         `🔥 ${artist} Just Dropped ${title} - The Streets Are Talking`,
         `${title} by ${artist} - This Hit Different 💯`,
         `BREAKING: ${artist}'s ${title} Breaking All The Rules`,
@@ -637,7 +770,7 @@ export class AIAdvertisingEngine {
     genre: string,
     mood: string,
     title: string,
-    targetAudience: unknown
+    targetAudience: unknown,
   ): Record<string, unknown> {
     return {
       tiktok: `${title} 🎵 Tag someone who needs to hear this! #${genre} #NewMusic #Viral #FYP`,
@@ -649,99 +782,167 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private mapGenreEmotionalTriggers(genre: string, mood: string): Record<string, unknown> {
+  private mapGenreEmotionalTriggers(
+    genre: string,
+    mood: string,
+  ): Record<string, unknown> {
     const triggers = {
-      'hip-hop': ['authenticity', 'street credibility', 'success', 'hustle', 'loyalty'],
-      pop: ['joy', 'nostalgia', 'romance', 'confidence', 'celebration'],
-      electronic: ['energy', 'euphoria', 'escape', 'unity', 'transcendence'],
-      rock: ['rebellion', 'power', 'freedom', 'intensity', 'raw emotion'],
-      'r&b': ['intimacy', 'vulnerability', 'passion', 'sophistication', 'desire'],
+      "hip-hop": [
+        "authenticity",
+        "street credibility",
+        "success",
+        "hustle",
+        "loyalty",
+      ],
+      pop: ["joy", "nostalgia", "romance", "confidence", "celebration"],
+      electronic: ["energy", "euphoria", "escape", "unity", "transcendence"],
+      rock: ["rebellion", "power", "freedom", "intensity", "raw emotion"],
+      "r&b": [
+        "intimacy",
+        "vulnerability",
+        "passion",
+        "sophistication",
+        "desire",
+      ],
     };
 
     return (
       triggers[genre.toLowerCase()] || [
-        'excitement',
-        'discovery',
-        'connection',
-        'emotion',
-        'authenticity',
+        "excitement",
+        "discovery",
+        "connection",
+        "emotion",
+        "authenticity",
       ]
     );
   }
 
-  private generatePlatformAdaptations(musicData: unknown, targetAudience: unknown): Record<string, unknown> {
+  private generatePlatformAdaptations(
+    musicData: unknown,
+    targetAudience: unknown,
+  ): Record<string, unknown> {
     return {
-      tiktok: { format: '15-60s clips', hook: 'First 3 seconds', cta: 'Duet this', hashtags: 5 },
+      tiktok: {
+        format: "15-60s clips",
+        hook: "First 3 seconds",
+        cta: "Duet this",
+        hashtags: 5,
+      },
       instagram: {
-        format: 'Reels + Stories',
-        hook: 'Visual appeal',
-        cta: 'Save & Share',
+        format: "Reels + Stories",
+        hook: "Visual appeal",
+        cta: "Save & Share",
         hashtags: 8,
       },
       youtube: {
-        format: 'Full track + visualizer',
-        hook: 'Thumbnail + title',
-        cta: 'Subscribe',
-        description: 'Full',
+        format: "Full track + visualizer",
+        hook: "Thumbnail + title",
+        cta: "Subscribe",
+        description: "Full",
       },
       twitter: {
-        format: 'Short clip + quote',
-        hook: 'First line',
-        cta: 'RT if you feel this',
+        format: "Short clip + quote",
+        hook: "First line",
+        cta: "RT if you feel this",
         hashtags: 3,
       },
       facebook: {
-        format: 'Full video + story',
-        hook: 'Emotional connection',
-        cta: 'Tag friends',
-        community: 'Engage',
+        format: "Full video + story",
+        hook: "Emotional connection",
+        cta: "Tag friends",
+        community: "Engage",
       },
       spotify: {
-        format: 'Full track',
-        hook: 'Playlist placement',
-        cta: 'Add to library',
-        discovery: 'Algorithmic',
+        format: "Full track",
+        hook: "Playlist placement",
+        cta: "Add to library",
+        discovery: "Algorithmic",
       },
     };
   }
 
   private generateOptimizedCTAs(targetAudience: unknown): string[] {
     return [
-      '🎵 Stream Now',
-      '⚡ Add To Your Playlist',
-      '🔥 Share With Your Squad',
-      '💯 Turn Up The Volume',
-      '✨ Save This For Later',
-      '🎧 Listen On Repeat',
-      '👇 Drop Your Thoughts Below',
-      '🚀 Join The Movement',
-      '💫 Tag Someone Who Needs This',
-      '🎵 Make This Your Soundtrack',
+      "🎵 Stream Now",
+      "⚡ Add To Your Playlist",
+      "🔥 Share With Your Squad",
+      "💯 Turn Up The Volume",
+      "✨ Save This For Later",
+      "🎧 Listen On Repeat",
+      "👇 Drop Your Thoughts Below",
+      "🚀 Join The Movement",
+      "💫 Tag Someone Who Needs This",
+      "🎵 Make This Your Soundtrack",
     ];
   }
 
-  private generateMicroMomentTargeting(genre: string, targetAudience: unknown): Record<string, unknown> {
+  private generateMicroMomentTargeting(
+    genre: string,
+    targetAudience: unknown,
+  ): Record<string, unknown> {
     return {
-      morningCommute: { time: '7-9AM', message: 'Start your day right', energy: 'high' },
-      lunchBreak: { time: '12-1PM', message: 'Your midday escape', energy: 'medium' },
-      workoutTime: { time: '5-7PM', message: 'Fuel your workout', energy: 'maximum' },
-      eveningWindDown: { time: '8-10PM', message: 'Unwind with this', energy: 'chill' },
-      lateNightVibes: { time: '10PM-12AM', message: 'Night owl anthem', energy: 'mood' },
-      weekendMorning: { time: 'Sat-Sun 10AM-12PM', message: 'Weekend vibes', energy: 'relaxed' },
+      morningCommute: {
+        time: "7-9AM",
+        message: "Start your day right",
+        energy: "high",
+      },
+      lunchBreak: {
+        time: "12-1PM",
+        message: "Your midday escape",
+        energy: "medium",
+      },
+      workoutTime: {
+        time: "5-7PM",
+        message: "Fuel your workout",
+        energy: "maximum",
+      },
+      eveningWindDown: {
+        time: "8-10PM",
+        message: "Unwind with this",
+        energy: "chill",
+      },
+      lateNightVibes: {
+        time: "10PM-12AM",
+        message: "Night owl anthem",
+        energy: "mood",
+      },
+      weekendMorning: {
+        time: "Sat-Sun 10AM-12PM",
+        message: "Weekend vibes",
+        energy: "relaxed",
+      },
     };
   }
 
-  private generateCrossPlatformAmplification(musicData: unknown): Record<string, unknown> {
+  private generateCrossPlatformAmplification(
+    musicData: unknown,
+  ): Record<string, unknown> {
     return {
       sequence: [
-        { platform: 'TikTok', action: 'Launch viral challenge', timing: 'Day 1' },
-        { platform: 'Instagram', action: 'Repost TikTok winners', timing: 'Day 2' },
-        { platform: 'Twitter', action: 'Trending hashtag push', timing: 'Day 3' },
-        { platform: 'YouTube', action: 'Full music video release', timing: 'Day 4' },
-        { platform: 'Spotify', action: 'Playlist momentum', timing: 'Day 5-7' },
+        {
+          platform: "TikTok",
+          action: "Launch viral challenge",
+          timing: "Day 1",
+        },
+        {
+          platform: "Instagram",
+          action: "Repost TikTok winners",
+          timing: "Day 2",
+        },
+        {
+          platform: "Twitter",
+          action: "Trending hashtag push",
+          timing: "Day 3",
+        },
+        {
+          platform: "YouTube",
+          action: "Full music video release",
+          timing: "Day 4",
+        },
+        { platform: "Spotify", action: "Playlist momentum", timing: "Day 5-7" },
       ],
-      synergy: 'Each platform amplifies the others organically',
-      multiplier: '5x reach vs single-platform strategy',
+      synergy: "Each platform amplifies the others organically",
+      multiplier: "5x reach vs single-platform strategy",
     };
   }
 }

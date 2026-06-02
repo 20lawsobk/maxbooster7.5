@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from "react";
 import {
   Trash2,
   RotateCcw,
@@ -16,11 +16,11 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
   SheetContent,
@@ -28,14 +28,14 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
+} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,15 +45,23 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
-import { useUndoHistory, useUndo } from '@/contexts/UndoContext';
-import { UndoableAction, getActionLabel } from '@/lib/undo/types';
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { useUndoHistory, useUndo } from "@/contexts/UndoContext";
+import { UndoableAction, getActionLabel } from "@/lib/undo/types";
 
 export interface DeletedItem {
   id: string;
-  type: 'file' | 'track' | 'post' | 'release' | 'settings' | 'collaborator' | 'event' | 'other';
+  type:
+    | "file"
+    | "track"
+    | "post"
+    | "release"
+    | "settings"
+    | "collaborator"
+    | "event"
+    | "other";
   name: string;
   description?: string;
   deletedAt: number;
@@ -62,21 +70,21 @@ export interface DeletedItem {
   action: UndoableAction;
 }
 
-function getItemIcon(type: DeletedItem['type']) {
+function getItemIcon(type: DeletedItem["type"]) {
   switch (type) {
-    case 'file':
+    case "file":
       return FileText;
-    case 'track':
+    case "track":
       return Music;
-    case 'post':
+    case "post":
       return Image;
-    case 'release':
+    case "release":
       return Folder;
-    case 'settings':
+    case "settings":
       return Settings;
-    case 'collaborator':
+    case "collaborator":
       return Users;
-    case 'event':
+    case "event":
       return Calendar;
     default:
       return FileText;
@@ -88,7 +96,7 @@ function formatTimeSince(timestamp: number): string {
   const diff = now - timestamp;
 
   if (diff < 60000) {
-    return 'Just now';
+    return "Just now";
   } else if (diff < 3600000) {
     const minutes = Math.floor(diff / 60000);
     return `${minutes}m ago`;
@@ -110,15 +118,20 @@ interface DeletedItemCardProps {
   onRecover: () => void;
 }
 
-function DeletedItemCard({ item, isSelected, onSelect, onRecover }: DeletedItemCardProps) {
+function DeletedItemCard({
+  item,
+  isSelected,
+  onSelect,
+  onRecover,
+}: DeletedItemCardProps) {
   const Icon = getItemIcon(item.type);
 
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-3 rounded-lg border transition-colors',
-        'hover:bg-muted/50',
-        isSelected && 'bg-primary/5 border-primary/30'
+        "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+        "hover:bg-muted/50",
+        isSelected && "bg-primary/5 border-primary/30",
       )}
     >
       <Checkbox
@@ -126,17 +139,19 @@ function DeletedItemCard({ item, isSelected, onSelect, onRecover }: DeletedItemC
         onCheckedChange={(checked) => onSelect(checked === true)}
         className="mt-1"
       />
-      <div className={cn(
-        'p-2 rounded-md',
-        item.type === 'file' && 'bg-blue-500/10 text-blue-500',
-        item.type === 'track' && 'bg-green-500/10 text-green-500',
-        item.type === 'post' && 'bg-purple-500/10 text-purple-500',
-        item.type === 'release' && 'bg-amber-500/10 text-amber-500',
-        item.type === 'settings' && 'bg-gray-500/10 text-gray-500',
-        item.type === 'collaborator' && 'bg-pink-500/10 text-pink-500',
-        item.type === 'event' && 'bg-cyan-500/10 text-cyan-500',
-        item.type === 'other' && 'bg-muted text-muted-foreground'
-      )}>
+      <div
+        className={cn(
+          "p-2 rounded-md",
+          item.type === "file" && "bg-blue-500/10 text-blue-500",
+          item.type === "track" && "bg-green-500/10 text-green-500",
+          item.type === "post" && "bg-purple-500/10 text-purple-500",
+          item.type === "release" && "bg-amber-500/10 text-amber-500",
+          item.type === "settings" && "bg-gray-500/10 text-gray-500",
+          item.type === "collaborator" && "bg-pink-500/10 text-pink-500",
+          item.type === "event" && "bg-cyan-500/10 text-cyan-500",
+          item.type === "other" && "bg-muted text-muted-foreground",
+        )}
+      >
         <Icon className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0">
@@ -176,12 +191,15 @@ export interface RecoveryPanelProps {
   maxItems?: number;
 }
 
-export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps) {
+export function RecoveryPanel({
+  className,
+  maxItems = 100,
+}: RecoveryPanelProps) {
   const { history } = useUndoHistory();
   const { undo } = useUndo();
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isRecovering, setIsRecovering] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -190,21 +208,26 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
 
   const deletedItems: DeletedItem[] = useMemo(() => {
     return history
-      .filter((action) => 
-        ['delete', 'file_delete', 'post_delete', 'collaboration_remove'].includes(action.type) &&
-        !action.isUndone
+      .filter(
+        (action) =>
+          [
+            "delete",
+            "file_delete",
+            "post_delete",
+            "collaboration_remove",
+          ].includes(action.type) && !action.isUndone,
       )
       .map((action) => {
-        let type: DeletedItem['type'] = 'other';
-        if (action.type === 'file_delete') type = 'file';
-        else if (action.type === 'post_delete') type = 'post';
-        else if (action.type === 'collaboration_remove') type = 'collaborator';
+        let type: DeletedItem["type"] = "other";
+        if (action.type === "file_delete") type = "file";
+        else if (action.type === "post_delete") type = "post";
+        else if (action.type === "collaboration_remove") type = "collaborator";
         else if (action.metadata.entityType) {
           const entityType = action.metadata.entityType.toLowerCase();
-          if (entityType.includes('track')) type = 'track';
-          else if (entityType.includes('release')) type = 'release';
-          else if (entityType.includes('setting')) type = 'settings';
-          else if (entityType.includes('event')) type = 'event';
+          if (entityType.includes("track")) type = "track";
+          else if (entityType.includes("release")) type = "release";
+          else if (entityType.includes("setting")) type = "settings";
+          else if (entityType.includes("event")) type = "event";
         }
 
         return {
@@ -214,7 +237,9 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
           description: action.metadata.entityType,
           deletedAt: action.metadata.timestamp,
           module: action.metadata.module,
-          metadata: action.metadata.customData as Record<string, unknown> | undefined,
+          metadata: action.metadata.customData as
+            | Record<string, unknown>
+            | undefined,
           action,
         };
       })
@@ -231,18 +256,20 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
         (item) =>
           item.name.toLowerCase().includes(term) ||
           item.description?.toLowerCase().includes(term) ||
-          item.module.toLowerCase().includes(term)
+          item.module.toLowerCase().includes(term),
       );
     }
 
-    if (typeFilter !== 'all') {
+    if (typeFilter !== "all") {
       filtered = filtered.filter((item) => item.type === typeFilter);
     }
 
     return filtered;
   }, [deletedItems, searchTerm, typeFilter]);
 
-  const displayedItems = showExpanded ? filteredItems : filteredItems.slice(0, 10);
+  const displayedItems = showExpanded
+    ? filteredItems
+    : filteredItems.slice(0, 10);
 
   const handleSelectItem = (id: string, selected: boolean) => {
     const newSelected = new Set(selectedItems);
@@ -281,7 +308,9 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
 
     setIsRecovering(true);
     try {
-      const itemsToRecover = filteredItems.filter((item) => selectedItems.has(item.id));
+      const itemsToRecover = filteredItems.filter((item) =>
+        selectedItems.has(item.id),
+      );
       for (const item of itemsToRecover) {
         const actionIndex = history.findIndex((a) => a.id === item.id);
         if (actionIndex !== -1) {
@@ -303,7 +332,11 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
     <>
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className={cn('gap-2', className)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn("gap-2", className)}
+          >
             <Trash2 className="w-4 h-4" />
             Recovery
             {deletedItems.length > 0 && (
@@ -320,7 +353,8 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
               Deleted Items Recovery
             </SheetTitle>
             <SheetDescription>
-              Recover deleted items. Items are kept for 30 days before permanent deletion.
+              Recover deleted items. Items are kept for 30 days before permanent
+              deletion.
             </SheetDescription>
           </SheetHeader>
 
@@ -354,7 +388,8 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
           {selectedItems.size > 0 && (
             <div className="flex items-center justify-between py-2 px-3 bg-muted rounded-lg mb-4">
               <span className="text-sm">
-                {selectedItems.size} item{selectedItems.size > 1 ? 's' : ''} selected
+                {selectedItems.size} item{selectedItems.size > 1 ? "s" : ""}{" "}
+                selected
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -383,7 +418,9 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <Trash2 className="w-12 h-12 mb-4 opacity-50" />
                 <p className="text-sm font-medium">No deleted items</p>
-                <p className="text-xs mt-1">Items you delete will appear here for recovery</p>
+                <p className="text-xs mt-1">
+                  Items you delete will appear here for recovery
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -394,10 +431,13 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
                     onClick={handleSelectAll}
                     className="text-xs"
                   >
-                    {selectedItems.size === filteredItems.length ? 'Deselect All' : 'Select All'}
+                    {selectedItems.size === filteredItems.length
+                      ? "Deselect All"
+                      : "Select All"}
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    {filteredItems.length} item{filteredItems.length > 1 ? 's' : ''}
+                    {filteredItems.length} item
+                    {filteredItems.length > 1 ? "s" : ""}
                   </span>
                 </div>
 
@@ -449,7 +489,9 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
                 <>
                   <p>Are you sure you want to recover this item?</p>
                   <div className="mt-3 p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">{itemToRecover.name}</div>
+                    <div className="font-medium text-foreground">
+                      {itemToRecover.name}
+                    </div>
                     <div className="text-xs mt-1 text-muted-foreground">
                       Deleted {formatTimeSince(itemToRecover.deletedAt)}
                     </div>
@@ -459,9 +501,13 @@ export function RecoveryPanel({ className, maxItems = 100 }: RecoveryPanelProps)
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isRecovering}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isRecovering}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => itemToRecover && handleRecoverSingle(itemToRecover)}
+              onClick={() =>
+                itemToRecover && handleRecoverSingle(itemToRecover)
+              }
               disabled={isRecovering}
               className="gap-1"
             >

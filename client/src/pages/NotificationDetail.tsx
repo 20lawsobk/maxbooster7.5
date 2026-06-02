@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useLocation, useRoute } from 'wouter';
+import { useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation, useRoute } from "wouter";
 import {
   ArrowLeft,
   Bell,
@@ -8,72 +8,88 @@ import {
   Trash2,
   ExternalLink,
   Check,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { AppLayout } from '@/components/layout/AppLayout';
-import type { Notification, NotificationCategory } from '@/components/notifications/types';
-import { categoryConfig, typeToCategory, priorityConfig } from '@/components/notifications/types';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { AppLayout } from "@/components/layout/AppLayout";
+import type {
+  Notification,
+  NotificationCategory,
+} from "@/components/notifications/types";
+import {
+  categoryConfig,
+  typeToCategory,
+  priorityConfig,
+} from "@/components/notifications/types";
 
 function resolveActionUrl(url: string): string {
-  if (url.startsWith('/marketplace/beat/')) return '/marketplace';
-  if (url.startsWith('/marketplace/sell')) return '/marketplace';
-  if (url === '/social') return '/social-media';
-  if (url.startsWith('/social/')) return '/social-media';
+  if (url.startsWith("/marketplace/beat/")) return "/marketplace";
+  if (url.startsWith("/marketplace/sell")) return "/marketplace";
+  if (url === "/social") return "/social-media";
+  if (url.startsWith("/social/")) return "/social-media";
   return url;
 }
 
 export default function NotificationDetail() {
-  const [, params] = useRoute('/notifications/:id');
+  const [, params] = useRoute("/notifications/:id");
   const id = params?.id;
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: notification, isLoading, isError } = useQuery<Notification>({
-    queryKey: ['/api/notifications', id],
+  const {
+    data: notification,
+    isLoading,
+    isError,
+  } = useQuery<Notification>({
+    queryKey: ["/api/notifications", id],
     enabled: !!user && !!id,
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: async () => apiRequest('PUT', `/api/notifications/${id}/read`),
+    mutationFn: async () => apiRequest("PUT", `/api/notifications/${id}/read`),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications', id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications", id] });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async () => apiRequest('DELETE', `/api/notifications/${id}`),
+    mutationFn: async () => apiRequest("DELETE", `/api/notifications/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      toast({ title: 'Notification deleted' });
-      navigate('/notifications');
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({ title: "Notification deleted" });
+      navigate("/notifications");
     },
-    onError: () => toast({ title: 'Error', description: 'Failed to delete notification', variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: "Error",
+        description: "Failed to delete notification",
+        variant: "destructive",
+      }),
   });
 
   useEffect(() => {
     if (notification && !notification.isRead) {
       markAsReadMutation.mutate();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [notification?.id]);
 
   const category: NotificationCategory =
     (notification?.category as NotificationCategory) ||
     (notification ? typeToCategory[notification.type] : undefined) ||
-    'system';
-  const priority = notification?.priority || 'normal';
+    "system";
+  const priority = notification?.priority || "normal";
 
   const handleOpenAction = () => {
     if (!notification?.actionUrl) return;
-    if (notification.actionUrl.startsWith('http')) {
-      window.open(notification.actionUrl, '_blank');
+    if (notification.actionUrl.startsWith("http")) {
+      window.open(notification.actionUrl, "_blank");
     } else {
       navigate(resolveActionUrl(notification.actionUrl));
     }
@@ -83,7 +99,11 @@ export default function NotificationDetail() {
     <AppLayout title="Notification">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/notifications')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/notifications")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-bold">Notification</h1>
@@ -99,11 +119,17 @@ export default function NotificationDetail() {
               <div className="rounded-full bg-muted p-6 mb-4">
                 <Bell className="h-10 w-10 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">Notification not found</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                Notification not found
+              </h3>
               <p className="text-sm text-muted-foreground max-w-[300px] mb-4">
-                This notification may have been deleted or is no longer available.
+                This notification may have been deleted or is no longer
+                available.
               </p>
-              <Button variant="outline" onClick={() => navigate('/notifications')}>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/notifications")}
+              >
                 Back to notifications
               </Button>
             </CardContent>
@@ -114,10 +140,19 @@ export default function NotificationDetail() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <Badge variant="secondary">{categoryConfig[category]?.label || category}</Badge>
-                    {priority === 'urgent' && <Badge variant="destructive">Urgent</Badge>}
-                    {priority === 'high' && (
-                      <Badge variant="outline" className="border-orange-500 text-orange-500">High</Badge>
+                    <Badge variant="secondary">
+                      {categoryConfig[category]?.label || category}
+                    </Badge>
+                    {priority === "urgent" && (
+                      <Badge variant="destructive">Urgent</Badge>
+                    )}
+                    {priority === "high" && (
+                      <Badge
+                        variant="outline"
+                        className="border-orange-500 text-orange-500"
+                      >
+                        High
+                      </Badge>
                     )}
                     {notification.isRead && (
                       <span className="inline-flex items-center text-xs text-muted-foreground">
@@ -125,7 +160,9 @@ export default function NotificationDetail() {
                       </span>
                     )}
                   </div>
-                  <h2 className="text-xl font-semibold">{notification.title}</h2>
+                  <h2 className="text-xl font-semibold">
+                    {notification.title}
+                  </h2>
                   <p className="text-xs text-muted-foreground mt-1">
                     {new Date(notification.createdAt).toLocaleString()}
                   </p>
@@ -134,14 +171,16 @@ export default function NotificationDetail() {
             </CardHeader>
             <CardContent className="space-y-6">
               {notification.message && (
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{notification.message}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {notification.message}
+                </p>
               )}
 
               <div className="flex flex-wrap items-center gap-2 pt-2">
                 {notification.actionUrl && (
                   <Button onClick={handleOpenAction}>
                     <ExternalLink className="h-4 w-4 mr-2" />
-                    {notification.actionLabel || 'View related page'}
+                    {notification.actionLabel || "View related page"}
                   </Button>
                 )}
                 <Button

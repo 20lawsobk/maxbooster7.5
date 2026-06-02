@@ -6,20 +6,20 @@ export {
   useA11yHighContrast,
   useA11yFontSize,
   useA11yColorBlindMode,
-} from '@/components/a11y/AccessibilityProvider';
+} from "@/components/a11y/AccessibilityProvider";
 
 export type {
   AccessibilityContextValue,
   AccessibilityProviderProps,
   FontSize,
   ColorBlindMode,
-} from '@/components/a11y/AccessibilityProvider';
+} from "@/components/a11y/AccessibilityProvider";
 
 import {
   AccessibilityProvider,
   useAccessibility,
   type AccessibilityContextValue,
-} from '@/components/a11y/AccessibilityProvider';
+} from "@/components/a11y/AccessibilityProvider";
 
 export interface AccessibilitySettings {
   reducedMotion: boolean;
@@ -31,7 +31,7 @@ export interface AccessibilitySettings {
 
 export function useAccessibilitySettings(): AccessibilitySettings {
   const context = useAccessibility();
-  
+
   return {
     reducedMotion: context.reducedMotion.prefersReducedMotion,
     highContrast: context.highContrast.isHighContrast,

@@ -1,9 +1,19 @@
 import {
-  AudioBuffer, DSPContext, createBuffer,
-  BiquadFilter, OnePoleFilter, DelayLine,
-  LFO, Oscillator, ADSR,
-  msToSamples, dbToLinear, clamp, softClip, hardClip
-} from '../core';
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  LFO,
+  Oscillator,
+  ADSR,
+  msToSamples,
+  dbToLinear,
+  clamp,
+  softClip,
+  hardClip,
+} from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -24,7 +34,12 @@ class FMOperator {
   private feedback: number = 0;
   private lastOutput: number = 0;
 
-  constructor(attack: number = 0.001, decay: number = 0.1, sustain: number = 0.7, release: number = 0.2) {
+  constructor(
+    attack: number = 0.001,
+    decay: number = 0.1,
+    sustain: number = 0.7,
+    release: number = 0.2,
+  ) {
     this.envelope = new ADSR(attack, decay, sustain, release, 44100);
   }
 
@@ -47,7 +62,12 @@ class FMOperator {
     this.feedback = feedback;
   }
 
-  setEnvelope(attack: number, decay: number, sustain: number, release: number): void {
+  setEnvelope(
+    attack: number,
+    decay: number,
+    sustain: number,
+    release: number,
+  ): void {
     this.envelope = new ADSR(attack, decay, sustain, release, this.sampleRate);
   }
 
@@ -62,11 +82,14 @@ class FMOperator {
   process(modulation: number = 0): number {
     const envValue = this.envelope.process();
     const totalMod = modulation + this.lastOutput * this.feedback;
-    const output = Math.sin(2 * Math.PI * (this.phase + totalMod)) * envValue * this.outputLevel;
-    
+    const output =
+      Math.sin(2 * Math.PI * (this.phase + totalMod)) *
+      envValue *
+      this.outputLevel;
+
     this.phase += this.phaseIncrement;
     if (this.phase >= 1) this.phase -= 1;
-    
+
     this.lastOutput = output;
     return output;
   }
@@ -106,27 +129,36 @@ export class DX7BellSynth implements SynthesizerEngine {
 
     const ratios = [1, 1.41, 2.83, 5.65, 7.07, 14.14];
     const levels = [0.8, 0.5, 0.35, 0.2, 0.1, 0.05];
-    
+
     for (let i = 0; i < 6; i++) {
       this.operators[i].setFrequency(frequency, context.sampleRate);
       this.operators[i].setRatio(ratios[i]);
       this.operators[i].setOutputLevel(levels[i] * this.velocity);
-      
+
       const decayScale = 1 + i * 0.3;
-      this.operators[i].setEnvelope(0.001, 1.5 / decayScale, 0.0, 0.4 / decayScale);
+      this.operators[i].setEnvelope(
+        0.001,
+        1.5 / decayScale,
+        0.0,
+        0.4 / decayScale,
+      );
       this.operators[i].trigger();
     }
 
     this.hpFilter.setHighpass(80, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(8000 + this.velocity * 6000, 0.7, context.sampleRate);
-    
+    this.lpFilter.setLowpass(
+      8000 + this.velocity * 6000,
+      0.7,
+      context.sampleRate,
+    );
+
     this.envelope = new ADSR(0.001, 1.8, 0.0, 0.45, context.sampleRate);
     this.envelope.trigger();
   }
 
   noteOff(context: DSPContext): void {
     this.envelope.release();
-    this.operators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -140,7 +172,7 @@ export class DX7BellSynth implements SynthesizerEngine {
       const mod4 = this.operators[3].process(mod5) * 1.5;
       const mod3 = this.operators[2].process(0) * 1.8;
       const mod2 = this.operators[1].process(mod4) * 1.2;
-      
+
       let sample = this.operators[0].process(mod2 + mod3);
 
       sample = this.hpFilter.process(sample);
@@ -159,7 +191,7 @@ export class DX7BellSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
   }
@@ -200,11 +232,15 @@ export class DX7BassSynth implements SynthesizerEngine {
       this.operators[i].setEnvelope(0.002, 0.15 + i * 0.05, 0.5 - i * 0.1, 0.1);
       this.operators[i].trigger();
     }
-    
+
     this.operators[0].setFeedback(0.3);
 
     this.hpFilter.setHighpass(30, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(1500 + this.velocity * 2000, 2.5, context.sampleRate);
+    this.lpFilter.setLowpass(
+      1500 + this.velocity * 2000,
+      2.5,
+      context.sampleRate,
+    );
     this.saturationFilter.setLowShelf(200, 6, context.sampleRate);
 
     this.envelope = new ADSR(0.001, 0.28, 0.58, 0.12, context.sampleRate);
@@ -213,7 +249,7 @@ export class DX7BassSynth implements SynthesizerEngine {
 
   noteOff(context: DSPContext): void {
     this.envelope.release();
-    this.operators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -245,7 +281,7 @@ export class DX7BassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
     this.saturationFilter.clear();
@@ -292,7 +328,7 @@ export class DX7EPianoSynth implements SynthesizerEngine {
       this.operators[i].setOutputLevel(levels[i] * this.velocity);
       this.operators[i].trigger();
     }
-    
+
     this.operators[0].setEnvelope(0.001, 1.2, 0.25, 0.35);
     this.operators[1].setEnvelope(0.001, 0.8, 0.2, 0.3);
     this.operators[2].setEnvelope(0.001, 0.15, 0.0, 0.05);
@@ -303,7 +339,7 @@ export class DX7EPianoSynth implements SynthesizerEngine {
     this.tineOperators[0].setOutputLevel(0.3 * this.velocity * this.velocity);
     this.tineOperators[0].setEnvelope(0.001, 0.08, 0.0, 0.02);
     this.tineOperators[0].trigger();
-    
+
     this.tineOperators[1].setFrequency(frequency, context.sampleRate);
     this.tineOperators[1].setRatio(7);
     this.tineOperators[1].setOutputLevel(0.2 * this.velocity * this.velocity);
@@ -312,7 +348,11 @@ export class DX7EPianoSynth implements SynthesizerEngine {
 
     this.tremoloLFO.setFrequency(5.5, context.sampleRate);
     this.hpFilter.setHighpass(60, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(4000 + this.velocity * 4000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      4000 + this.velocity * 4000,
+      0.8,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.001, 0.75, 0.28, 0.38, context.sampleRate);
     this.tineEnvelope = new ADSR(0.001, 0.08, 0.0, 0.03, context.sampleRate);
@@ -323,8 +363,8 @@ export class DX7EPianoSynth implements SynthesizerEngine {
   noteOff(context: DSPContext): void {
     this.envelope.release();
     this.tineEnvelope.release();
-    this.operators.forEach(op => op.release());
-    this.tineOperators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
+    this.tineOperators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -360,8 +400,8 @@ export class DX7EPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
-    this.tineOperators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
+    this.tineOperators.forEach((op) => op.reset());
     this.tremoloLFO.reset();
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -402,7 +442,12 @@ export class DX7BrassSynth implements SynthesizerEngine {
       this.operators[i].setFrequency(frequency, context.sampleRate);
       this.operators[i].setRatio(ratios[i]);
       this.operators[i].setOutputLevel(levels[i] * this.velocity);
-      this.operators[i].setEnvelope(0.04 + i * 0.01, 0.15, 0.75 - i * 0.1, 0.12);
+      this.operators[i].setEnvelope(
+        0.04 + i * 0.01,
+        0.15,
+        0.75 - i * 0.1,
+        0.12,
+      );
       this.operators[i].trigger();
     }
 
@@ -420,7 +465,7 @@ export class DX7BrassSynth implements SynthesizerEngine {
   noteOff(context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
-    this.operators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -438,7 +483,11 @@ export class DX7BrassSynth implements SynthesizerEngine {
       let sample = this.operators[0].process(mod2);
 
       const filterFreq = 800 + filterEnvValue * 4000 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 10000), 1.2, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 10000),
+        1.2,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -456,7 +505,7 @@ export class DX7BrassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.lfo.reset();
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -521,7 +570,7 @@ export class DX7PadSynth implements SynthesizerEngine {
   noteOff(context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
-    this.operators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -530,25 +579,29 @@ export class DX7PadSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      
+
       const modLFO = this.lfo1.sine();
       const panLFO = this.lfo2.sine();
       const vibrato = this.lfo3.sine() * 0.002;
 
       const modAmount = 0.8 + modLFO * 0.4;
-      
+
       const mod6 = this.operators[5].process(0) * modAmount;
       const mod5 = this.operators[4].process(0) * modAmount;
       const mod4 = this.operators[3].process(mod6) * modAmount;
       const mod3 = this.operators[2].process(mod5) * modAmount;
-      
+
       const carrier1 = this.operators[0].process(mod3 + mod4);
       const carrier2 = this.operators[1].process(mod3 + mod4);
-      
+
       let sample = (carrier1 + carrier2) * 0.5;
 
       const filterFreq = 1000 + filterEnvValue * 2500 + modLFO * 400;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 8000), 0.9, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 8000),
+        0.9,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -569,7 +622,7 @@ export class DX7PadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.lfo1.reset();
     this.lfo2.reset();
     this.lfo3.reset();
@@ -619,7 +672,11 @@ export class DX7LeadSynth implements SynthesizerEngine {
     this.operators[0].setFeedback(0.15);
     this.vibratoLFO.setFrequency(5.8, context.sampleRate);
     this.hpFilter.setHighpass(100, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(6000 + this.velocity * 4000, 1.2, context.sampleRate);
+    this.lpFilter.setLowpass(
+      6000 + this.velocity * 4000,
+      1.2,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.008, 0.13, 0.68, 0.18, context.sampleRate);
     this.filterEnvelope = new ADSR(0.008, 0.08, 0.48, 0.13, context.sampleRate);
@@ -630,7 +687,7 @@ export class DX7LeadSynth implements SynthesizerEngine {
   noteOff(context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
-    this.operators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -648,7 +705,11 @@ export class DX7LeadSynth implements SynthesizerEngine {
       let sample = this.operators[0].process(mod2);
 
       const filterFreq = 2000 + filterEnvValue * 5000 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 500, 12000), 1.3, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 500, 12000),
+        1.3,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -666,7 +727,7 @@ export class DX7LeadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.vibratoLFO.reset();
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -709,14 +770,23 @@ export class DX7KeysSynth implements SynthesizerEngine {
       this.operators[i].setOutputLevel(levels[i] * this.velocity);
       this.operators[i].setEnvelope(0.003, 0.08, 0.85, 0.12);
       this.operators[i].trigger();
-      
-      this.drawbarEnvelopes[i] = new ADSR(0.003, 0.06 + i * 0.02, 0.8 - i * 0.05, 0.1);
+
+      this.drawbarEnvelopes[i] = new ADSR(
+        0.003,
+        0.06 + i * 0.02,
+        0.8 - i * 0.05,
+        0.1,
+      );
       this.drawbarEnvelopes[i].trigger();
     }
 
     this.rotaryLFO.setFrequency(6.0, context.sampleRate);
     this.hpFilter.setHighpass(50, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(5000 + this.velocity * 3000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      5000 + this.velocity * 3000,
+      0.8,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.003, 0.18, 0.68, 0.18, context.sampleRate);
     this.envelope.trigger();
@@ -724,8 +794,8 @@ export class DX7KeysSynth implements SynthesizerEngine {
 
   noteOff(context: DSPContext): void {
     this.envelope.release();
-    this.drawbarEnvelopes.forEach(env => env.release());
-    this.operators.forEach(op => op.release());
+    this.drawbarEnvelopes.forEach((env) => env.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -761,7 +831,7 @@ export class DX7KeysSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.rotaryLFO.reset();
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -805,7 +875,11 @@ export class DX7PercSynth implements SynthesizerEngine {
     }
 
     this.hpFilter.setHighpass(100, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(4000 + this.velocity * 4000, 1.5, context.sampleRate);
+    this.lpFilter.setLowpass(
+      4000 + this.velocity * 4000,
+      1.5,
+      context.sampleRate,
+    );
     this.noiseFilter.setBandpass(frequency * 2, 3, context.sampleRate);
 
     this.envelope = new ADSR(0.001, 0.12, 0.0, 0.08, context.sampleRate);
@@ -814,7 +888,7 @@ export class DX7PercSynth implements SynthesizerEngine {
 
   noteOff(context: DSPContext): void {
     this.envelope.release();
-    this.operators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -849,7 +923,7 @@ export class DX7PercSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
     this.noiseFilter.clear();
@@ -882,7 +956,7 @@ export class FM8Synth implements SynthesizerEngine {
     this.modMatrix[3][2] = 1.3;
     this.modMatrix[2][1] = 1.1;
     this.modMatrix[1][0] = 0.9;
-    
+
     this.envelope = new ADSR(0.02, 0.3, 0.7, 0.3, 44100);
     this.filterEnvelope = new ADSR(0.03, 0.4, 0.5, 0.25, 44100);
     this.lpFilter = new BiquadFilter();
@@ -904,7 +978,12 @@ export class FM8Synth implements SynthesizerEngine {
       this.operators[i].setFrequency(frequency, context.sampleRate);
       this.operators[i].setRatio(ratios[i]);
       this.operators[i].setOutputLevel(levels[i] * this.velocity);
-      this.operators[i].setEnvelope(0.015 + i * 0.005, 0.25, 0.65 - i * 0.05, 0.25);
+      this.operators[i].setEnvelope(
+        0.015 + i * 0.005,
+        0.25,
+        0.65 - i * 0.05,
+        0.25,
+      );
       this.operators[i].trigger();
     }
 
@@ -927,7 +1006,7 @@ export class FM8Synth implements SynthesizerEngine {
   noteOff(context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
-    this.operators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -943,7 +1022,8 @@ export class FM8Synth implements SynthesizerEngine {
       for (let o = 7; o >= 0; o--) {
         let modulation = 0;
         for (let m = 0; m < 8; m++) {
-          modulation += opOutputs[m] * this.modMatrix[m][o] * (1 + modLFO * 0.3);
+          modulation +=
+            opOutputs[m] * this.modMatrix[m][o] * (1 + modLFO * 0.3);
         }
         opOutputs[o] = this.operators[o].process(modulation);
       }
@@ -951,8 +1031,16 @@ export class FM8Synth implements SynthesizerEngine {
       let sample = (opOutputs[0] + opOutputs[1]) * 0.5;
 
       const filterFreq = 1500 + filterEnvValue * 4000 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 300, 12000), 1.2, this.sampleRate);
-      this.bpFilter.setBandpass(clamp(filterFreq * 0.7, 200, 8000), 1.5, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 300, 12000),
+        1.2,
+        this.sampleRate,
+      );
+      this.bpFilter.setBandpass(
+        clamp(filterFreq * 0.7, 200, 8000),
+        1.5,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       const lpOut = this.lpFilter.process(sample);
@@ -972,7 +1060,7 @@ export class FM8Synth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.lfo1.reset();
     this.lfo2.reset();
     this.lpFilter.clear();
@@ -1000,7 +1088,7 @@ export class ModularFMSynth implements SynthesizerEngine {
       this.operators.push(new FMOperator());
     }
     this.customRatios = [1, 1.618, 2.236, 3.141, 2.718, 1.414];
-    
+
     this.envelope = new ADSR(0.1, 0.4, 0.75, 0.5, 44100);
     this.filterEnvelope = new ADSR(0.15, 0.5, 0.5, 0.4, 44100);
     this.lpFilter = new BiquadFilter();
@@ -1021,7 +1109,12 @@ export class ModularFMSynth implements SynthesizerEngine {
       this.operators[i].setFrequency(frequency, context.sampleRate);
       this.operators[i].setRatio(this.customRatios[i]);
       this.operators[i].setOutputLevel(levels[i] * this.velocity);
-      this.operators[i].setEnvelope(0.08 + i * 0.02, 0.35, 0.7 - i * 0.08, 0.45);
+      this.operators[i].setEnvelope(
+        0.08 + i * 0.02,
+        0.35,
+        0.7 - i * 0.08,
+        0.45,
+      );
       this.operators[i].trigger();
     }
 
@@ -1044,7 +1137,7 @@ export class ModularFMSynth implements SynthesizerEngine {
   noteOff(context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
-    this.operators.forEach(op => op.release());
+    this.operators.forEach((op) => op.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -1053,30 +1146,35 @@ export class ModularFMSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      
+
       const ratioMod = this.lfo1.sine() * 0.05;
       const modIndexMod = this.lfo2.sine() * 0.3;
       const panMod = this.lfo3.sine();
 
       for (let o = 0; o < 6; o++) {
-        const newRatio = this.customRatios[o] * (1 + ratioMod * (o % 2 === 0 ? 1 : -1));
+        const newRatio =
+          this.customRatios[o] * (1 + ratioMod * (o % 2 === 0 ? 1 : -1));
         this.operators[o].setRatio(newRatio);
       }
 
       const modAmount = 1.5 + modIndexMod;
-      
+
       const mod6 = this.operators[5].process(0) * modAmount;
       const mod5 = this.operators[4].process(mod6) * modAmount;
       const mod4 = this.operators[3].process(0) * modAmount * 0.8;
       const mod3 = this.operators[2].process(mod4 + mod5) * modAmount * 0.6;
-      
+
       const carrier1 = this.operators[0].process(mod3);
       const carrier2 = this.operators[1].process(mod3);
-      
+
       let sample = (carrier1 + carrier2) * 0.5;
 
       const filterFreq = 1200 + filterEnvValue * 3500 + this.velocity * 1500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 10000), 1.1, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 10000),
+        1.1,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -1097,7 +1195,7 @@ export class ModularFMSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.operators.forEach(op => op.reset());
+    this.operators.forEach((op) => op.reset());
     this.lfo1.reset();
     this.lfo2.reset();
     this.lfo3.reset();
@@ -1106,15 +1204,18 @@ export class ModularFMSynth implements SynthesizerEngine {
   }
 }
 
-export const FM_SYNTH_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
-  'dx7-bell': DX7BellSynth,
-  'dx7-bass': DX7BassSynth,
-  'dx7-epiano': DX7EPianoSynth,
-  'dx7-brass': DX7BrassSynth,
-  'dx7-pad': DX7PadSynth,
-  'dx7-lead': DX7LeadSynth,
-  'dx7-keys': DX7KeysSynth,
-  'dx7-perc': DX7PercSynth,
-  'fm8': FM8Synth,
-  'modular-fm': ModularFMSynth,
+export const FM_SYNTH_SYNTHESIZERS: Record<
+  string,
+  new () => SynthesizerEngine
+> = {
+  "dx7-bell": DX7BellSynth,
+  "dx7-bass": DX7BassSynth,
+  "dx7-epiano": DX7EPianoSynth,
+  "dx7-brass": DX7BrassSynth,
+  "dx7-pad": DX7PadSynth,
+  "dx7-lead": DX7LeadSynth,
+  "dx7-keys": DX7KeysSynth,
+  "dx7-perc": DX7PercSynth,
+  fm8: FM8Synth,
+  "modular-fm": ModularFMSynth,
 };

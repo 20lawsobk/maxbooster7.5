@@ -36,27 +36,62 @@ interface ReleaseChecklistProps {
 }
 
 const categoryLabels: Record<string, { label: string; color: string }> = {
-  "4_weeks": { label: "4 Weeks Out", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-  "3_weeks": { label: "3 Weeks Out", color: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" },
-  "2_weeks": { label: "2 Weeks Out", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
-  "1_week": { label: "1 Week Out", color: "bg-orange-500/10 text-orange-500 border-orange-500/20" },
-  release_day: { label: "Release Day", color: "bg-green-500/10 text-green-500 border-green-500/20" },
-  post_release: { label: "Post Release", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
+  "4_weeks": {
+    label: "4 Weeks Out",
+    color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  },
+  "3_weeks": {
+    label: "3 Weeks Out",
+    color: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+  },
+  "2_weeks": {
+    label: "2 Weeks Out",
+    color: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  },
+  "1_week": {
+    label: "1 Week Out",
+    color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  },
+  release_day: {
+    label: "Release Day",
+    color: "bg-green-500/10 text-green-500 border-green-500/20",
+  },
+  post_release: {
+    label: "Post Release",
+    color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  },
 };
 
-export function ReleaseChecklist({ countdownId, tasks, isLoading, onAddTask }: ReleaseChecklistProps) {
+export function ReleaseChecklist({
+  countdownId,
+  tasks,
+  isLoading,
+  onAddTask,
+}: ReleaseChecklistProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const toggleTaskMutation = useMutation({
-    mutationFn: async ({ taskId, completed }: { taskId: string; completed: boolean }) => {
-      const response = await apiRequest("PATCH", `/api/countdowns/${countdownId}/tasks/${taskId}`, {
-        completed,
-      });
+    mutationFn: async ({
+      taskId,
+      completed,
+    }: {
+      taskId: string;
+      completed: boolean;
+    }) => {
+      const response = await apiRequest(
+        "PATCH",
+        `/api/countdowns/${countdownId}/tasks/${taskId}`,
+        {
+          completed,
+        },
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/countdowns/${countdownId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/countdowns/${countdownId}`],
+      });
     },
     onError: () => {
       toast({
@@ -87,7 +122,8 @@ export function ReleaseChecklist({ countdownId, tasks, isLoading, onAddTask }: R
 
   const completedCount = tasks.filter((t) => t.completedAt).length;
   const totalCount = tasks.length;
-  const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const progress =
+    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const groupedTasks = tasks.reduce<Record<string, Task[]>>((acc, task) => {
     const category = task.category || "other";
@@ -129,14 +165,19 @@ export function ReleaseChecklist({ countdownId, tasks, isLoading, onAddTask }: R
             <span className="text-sm text-muted-foreground">
               {completedCount} of {totalCount} tasks completed
             </span>
-            <span className="text-sm font-medium text-primary">{progress}%</span>
+            <span className="text-sm font-medium text-primary">
+              {progress}%
+            </span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {Object.entries(groupedTasks).map(([category, categoryTasks]) => {
-          const categoryInfo = categoryLabels[category] || { label: category, color: "bg-gray-500/10 text-gray-500" };
+          const categoryInfo = categoryLabels[category] || {
+            label: category,
+            color: "bg-gray-500/10 text-gray-500",
+          };
           return (
             <div key={category} className="space-y-3">
               <Badge variant="outline" className={categoryInfo.color}>
@@ -145,7 +186,8 @@ export function ReleaseChecklist({ countdownId, tasks, isLoading, onAddTask }: R
               <div className="space-y-2 pl-2">
                 {categoryTasks.map((task) => {
                   const overdue = !task.completedAt && isOverdue(task.dueDate);
-                  const dueSoon = !task.completedAt && !overdue && isDueSoon(task.dueDate);
+                  const dueSoon =
+                    !task.completedAt && !overdue && isDueSoon(task.dueDate);
 
                   return (
                     <div
@@ -154,17 +196,20 @@ export function ReleaseChecklist({ countdownId, tasks, isLoading, onAddTask }: R
                         task.completedAt
                           ? "bg-green-500/5 border border-green-500/10"
                           : overdue
-                          ? "bg-red-500/5 border border-red-500/20"
-                          : dueSoon
-                          ? "bg-orange-500/5 border border-orange-500/20"
-                          : "bg-muted/30 border border-transparent hover:border-primary/10"
+                            ? "bg-red-500/5 border border-red-500/20"
+                            : dueSoon
+                              ? "bg-orange-500/5 border border-orange-500/20"
+                              : "bg-muted/30 border border-transparent hover:border-primary/10"
                       }`}
                     >
                       <Checkbox
                         id={task.id}
                         checked={!!task.completedAt}
                         onCheckedChange={(checked) =>
-                          toggleTaskMutation.mutate({ taskId: task.id, completed: checked as boolean })
+                          toggleTaskMutation.mutate({
+                            taskId: task.id,
+                            completed: checked as boolean,
+                          })
                         }
                         disabled={toggleTaskMutation.isPending}
                         className="mt-0.5"
@@ -187,20 +232,29 @@ export function ReleaseChecklist({ countdownId, tasks, isLoading, onAddTask }: R
                             )}
                             <span
                               className={`text-xs ${
-                                overdue ? "text-red-500" : dueSoon ? "text-orange-500" : "text-muted-foreground"
+                                overdue
+                                  ? "text-red-500"
+                                  : dueSoon
+                                    ? "text-orange-500"
+                                    : "text-muted-foreground"
                               }`}
                             >
-                              {new Date(task.dueDate).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
+                              {new Date(task.dueDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )}
                               {overdue && " (Overdue)"}
                               {dueSoon && " (Due Soon)"}
                             </span>
                           </div>
                         )}
                       </div>
-                      {task.completedAt && <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />}
+                      {task.completedAt && (
+                        <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      )}
                     </div>
                   );
                 })}

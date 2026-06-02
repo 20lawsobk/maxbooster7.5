@@ -3,9 +3,15 @@ export type VolumeId = string;
 export type ObjectId = string;
 export type ChunkId = string;
 export type NodeId = string;
-export type CostTier = 'premium' | 'standard' | 'archive';
-export type BackendType = 'local' | 'replit' | 's3' | 'gcs' | 'minio' | 'pocket-dimension';
-export type VolumeType = 'objects' | 'logs' | 'blobs';
+export type CostTier = "premium" | "standard" | "archive";
+export type BackendType =
+  | "local"
+  | "replit"
+  | "s3"
+  | "gcs"
+  | "minio"
+  | "pocket-dimension";
+export type VolumeType = "objects" | "logs" | "blobs";
 
 export interface PocketPolicy {
   redundancy: number;

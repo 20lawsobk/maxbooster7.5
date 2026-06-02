@@ -47,7 +47,7 @@ router.post("/connect", async (req: Request, res: Response) => {
     const connection = await collaborationService.sendConnectionRequest(
       req.user.id,
       userId,
-      message
+      message,
     );
     return res.json(connection);
   } catch (error) {
@@ -64,7 +64,7 @@ router.post("/accept/:id", async (req: Request, res: Response) => {
   try {
     const connection = await collaborationService.acceptConnection(
       req.params.id,
-      req.user.id
+      req.user.id,
     );
     return res.json(connection);
   } catch (error) {
@@ -81,7 +81,7 @@ router.post("/decline/:id", async (req: Request, res: Response) => {
   try {
     const connection = await collaborationService.declineConnection(
       req.params.id,
-      req.user.id
+      req.user.id,
     );
     return res.json(connection);
   } catch (error) {
@@ -113,7 +113,7 @@ router.get("/suggestions", async (req: Request, res: Response) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
     const suggestions = await collaborationService.getSuggestedCollaborators(
       req.user.id,
-      limit
+      limit,
     );
     return res.json(suggestions);
   } catch (error) {
@@ -147,7 +147,8 @@ router.post("/projects", async (req: Request, res: Response) => {
   }
 
   try {
-    const { title, description, genre, lookingFor, maxMembers, isPublic } = req.body;
+    const { title, description, genre, lookingFor, maxMembers, isPublic } =
+      req.body;
 
     if (!title) {
       return res.status(400).json({ error: "Project title is required" });
@@ -177,7 +178,7 @@ router.post("/projects/:id/join", async (req: Request, res: Response) => {
     const member = await collaborationService.joinProject(
       req.user.id,
       req.params.id,
-      "member"
+      "member",
     );
     return res.json(member);
   } catch (error) {
@@ -213,7 +214,7 @@ router.get("/search", async (req: Request, res: Response) => {
     const artists = await collaborationService.searchArtists(
       query,
       { genre, location, skills },
-      limit
+      limit,
     );
     return res.json(artists);
   } catch (error) {
@@ -222,21 +223,24 @@ router.get("/search", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/connection-status/:userId", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+router.get(
+  "/connection-status/:userId",
+  async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
 
-  try {
-    const status = await collaborationService.getConnectionStatus(
-      req.user.id,
-      req.params.userId
-    );
-    return res.json(status);
-  } catch (error) {
-    logger.warn("Error getting connection status:", error);
-    return res.status(500).json({ error: "Failed to get connection status" });
-  }
-});
+    try {
+      const status = await collaborationService.getConnectionStatus(
+        req.user.id,
+        req.params.userId,
+      );
+      return res.json(status);
+    } catch (error) {
+      logger.warn("Error getting connection status:", error);
+      return res.status(500).json({ error: "Failed to get connection status" });
+    }
+  },
+);
 
 export default router;

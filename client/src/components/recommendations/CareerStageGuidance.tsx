@@ -1,11 +1,14 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { useCareerStageGuidance, CareerGuidance } from '@/hooks/useRecommendations';
-import { useUserPreferences, CareerStage } from '@/hooks/useUserPreferences';
-import { useLocation } from 'wouter';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  useCareerStageGuidance,
+  CareerGuidance,
+} from "@/hooks/useRecommendations";
+import { useUserPreferences, CareerStage } from "@/hooks/useUserPreferences";
+import { useLocation } from "wouter";
 import {
   Compass,
   Target,
@@ -19,7 +22,7 @@ import {
   Award,
   TrendingUp,
   ArrowRight,
-} from 'lucide-react';
+} from "lucide-react";
 
 const stageIcons: Record<CareerStage, React.ElementType> = {
   emerging: Star,
@@ -29,17 +32,17 @@ const stageIcons: Record<CareerStage, React.ElementType> = {
 };
 
 const stageColors: Record<CareerStage, string> = {
-  emerging: 'from-green-500 to-emerald-600',
-  developing: 'from-blue-500 to-indigo-600',
-  established: 'from-purple-500 to-violet-600',
-  professional: 'from-amber-500 to-orange-600',
+  emerging: "from-green-500 to-emerald-600",
+  developing: "from-blue-500 to-indigo-600",
+  established: "from-purple-500 to-violet-600",
+  professional: "from-amber-500 to-orange-600",
 };
 
 const stageLabels: Record<CareerStage, string> = {
-  emerging: 'Emerging Artist',
-  developing: 'Developing Artist',
-  established: 'Established Artist',
-  professional: 'Professional Artist',
+  emerging: "Emerging Artist",
+  developing: "Developing Artist",
+  established: "Established Artist",
+  professional: "Professional Artist",
 };
 
 interface CareerStageGuidanceProps {
@@ -47,7 +50,10 @@ interface CareerStageGuidanceProps {
   expanded?: boolean;
 }
 
-export function CareerStageGuidance({ showHeader = true, expanded = false }: CareerStageGuidanceProps) {
+export function CareerStageGuidance({
+  showHeader = true,
+  expanded = false,
+}: CareerStageGuidanceProps) {
   const { guidance, isLoading } = useCareerStageGuidance();
   const { preferences } = useUserPreferences();
   const [, setLocation] = useLocation();
@@ -85,14 +91,16 @@ export function CareerStageGuidance({ showHeader = true, expanded = false }: Car
               <Compass className="h-5 w-5" />
               Career Guidance
             </CardTitle>
-            <Badge className={`bg-gradient-to-r ${stageColors[stage]} text-white border-0`}>
+            <Badge
+              className={`bg-gradient-to-r ${stageColors[stage]} text-white border-0`}
+            >
               <StageIcon className="h-3 w-3 mr-1" />
               {stageLabels[stage]}
             </Badge>
           </div>
         </CardHeader>
       )}
-      <CardContent className={showHeader ? '' : 'pt-6'}>
+      <CardContent className={showHeader ? "" : "pt-6"}>
         <div className="space-y-6">
           <div>
             <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
@@ -102,7 +110,9 @@ export function CareerStageGuidance({ showHeader = true, expanded = false }: Car
             <ul className="space-y-2">
               {guidance.currentFocus.map((focus, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
-                  <div className={`h-2 w-2 rounded-full mt-1.5 bg-gradient-to-r ${stageColors[stage]}`} />
+                  <div
+                    className={`h-2 w-2 rounded-full mt-1.5 bg-gradient-to-r ${stageColors[stage]}`}
+                  />
                   {focus}
                 </li>
               ))}
@@ -174,7 +184,11 @@ export function CareerStageGuidance({ showHeader = true, expanded = false }: Car
           )}
 
           {!expanded && (
-            <Button variant="outline" className="w-full" onClick={() => setLocation('/career-coach')}>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setLocation("/career-coach")}
+            >
               View Full Career Roadmap
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
@@ -192,7 +206,12 @@ export function CareerStageIndicator() {
 
   const stage = guidance.stage;
   const StageIcon = stageIcons[stage];
-  const stages: CareerStage[] = ['emerging', 'developing', 'established', 'professional'];
+  const stages: CareerStage[] = [
+    "emerging",
+    "developing",
+    "established",
+    "professional",
+  ];
   const currentIndex = stages.indexOf(stage);
   const progressPercent = ((currentIndex + 1) / stages.length) * 100;
 
@@ -200,7 +219,9 @@ export function CareerStageIndicator() {
     <div className="p-4 rounded-lg border bg-card">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className={`p-2 rounded-full bg-gradient-to-r ${stageColors[stage]}`}>
+          <div
+            className={`p-2 rounded-full bg-gradient-to-r ${stageColors[stage]}`}
+          >
             <StageIcon className="h-4 w-4 text-white" />
           </div>
           <div>
@@ -217,7 +238,7 @@ export function CareerStageIndicator() {
         {stages.map((s, i) => (
           <span
             key={s}
-            className={`text-xs ${i <= currentIndex ? 'text-foreground' : 'text-muted-foreground'}`}
+            className={`text-xs ${i <= currentIndex ? "text-foreground" : "text-muted-foreground"}`}
           >
             {s.charAt(0).toUpperCase()}
           </span>

@@ -1,6 +1,6 @@
-import type { AdCreative } from '@shared/schema';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
-import { logger } from '../logger.js';
+import type { AdCreative } from "@shared/schema";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
 /**
  * Advertisement Content Normalization Service
@@ -17,13 +17,15 @@ export class AdvertisingNormalizationService {
   }> {
     const redis = await getRedisClient();
     if (!redis) {
-      throw new Error('[AdvertisingNorm] PDIM/Redis client unavailable — cannot load trained ad patterns');
+      throw new Error(
+        "[AdvertisingNorm] PDIM/Redis client unavailable — cannot load trained ad patterns",
+      );
     }
 
     const [patternRaw, peaksRaw, globalRaw] = await Promise.all([
       redis.get(`mb:ads:${artistId}:patterns`),
       redis.lrange(`mb:ads:${artistId}:peaks`, 0, -1),
-      redis.lrange('mb:ads:global:peaks', 0, -1),
+      redis.lrange("mb:ads:global:peaks", 0, -1),
     ]);
 
     return {
@@ -77,30 +79,44 @@ export class AdvertisingNormalizationService {
    * Creates platform-specific variants optimized for organic virality.
    * Enriches CTAs, hooks, and timing with trained data from PDIM.
    */
-  async normalizeContent(creative: AdCreative, platforms: string[], artistId = 'artist-001'): Promise<Record<string, any>> {
+  async normalizeContent(
+    creative: AdCreative,
+    platforms: string[],
+    artistId = "artist-001",
+  ): Promise<Record<string, any>> {
     const variants: Record<string, any> = {};
     const pdim = await this.getPdimAdData(artistId);
 
     for (const platform of platforms) {
-      const limits = this.platformLimits[platform as keyof typeof this.platformLimits];
+      const limits =
+        this.platformLimits[platform as keyof typeof this.platformLimits];
       if (!limits) continue;
 
       variants[platform] = {
         text: this.optimizeText(
-          creative.normalizedContent || creative.rawContent || '',
+          creative.normalizedContent || creative.rawContent || "",
           platform,
-          limits
+          limits,
         ),
         hashtags: this.extractAndOptimizeHashtags(
-          creative.rawContent || '',
+          creative.rawContent || "",
           limits.hashtagMax,
-          platform
+          platform,
         ),
         mediaUrls: creative.assetUrls || [],
-        aspectRatio: limits.imageRatio || (limits as Record<string, unknown>).videoRatio,
+        aspectRatio:
+          limits.imageRatio || (limits as Record<string, unknown>).videoRatio,
         callToAction: this.generateCTA(platform, pdim.patterns),
-        optimalPostTime: this.calculateOptimalPostTime(platform, pdim.peaks, pdim.globalPeaks),
-        engagementHooks: this.generateEngagementHooks(creative.rawContent || '', platform, pdim.patterns),
+        optimalPostTime: this.calculateOptimalPostTime(
+          platform,
+          pdim.peaks,
+          pdim.globalPeaks,
+        ),
+        engagementHooks: this.generateEngagementHooks(
+          creative.rawContent || "",
+          platform,
+          pdim.patterns,
+        ),
       };
     }
 
@@ -112,7 +128,7 @@ export class AdvertisingNormalizationService {
    */
   async checkCompliance(
     content: string,
-    assets: string[]
+    assets: string[],
   ): Promise<{ status: string; issues: Record<string, unknown> }> {
     const issues = {
       offensive: this.detectOffensiveContent(content),
@@ -123,34 +139,38 @@ export class AdvertisingNormalizationService {
     };
 
     const hasIssues = Object.entries(issues).some(
-      ([key, value]) => key !== 'engagement' && value === true
+      ([key, value]) => key !== "engagement" && value === true,
     );
 
-    const status = hasIssues ? 'rejected' : 'approved';
+    const status = hasIssues ? "rejected" : "approved";
     return { status, issues };
   }
 
   /**
    * Optimize text for maximum organic engagement
    */
-  private optimizeText(text: string, platform: string, limits: unknown): string {
+  private optimizeText(
+    text: string,
+    platform: string,
+    limits: unknown,
+  ): string {
     // Truncate to optimal length for engagement
     let optimized =
       text.length > limits.optimalLength
-        ? text.substring(0, limits.optimalLength - 3) + '...'
+        ? text.substring(0, limits.optimalLength - 3) + "..."
         : text;
 
     // Add platform-specific formatting
     switch (platform) {
-      case 'twitter':
+      case "twitter":
         // Keep it punchy for Twitter
         optimized = this.addTwitterFormatting(optimized);
         break;
-      case 'linkedin':
+      case "linkedin":
         // Professional tone for LinkedIn
         optimized = this.addLinkedInFormatting(optimized);
         break;
-      case 'tiktok':
+      case "tiktok":
         // Casual, energetic for TikTok
         optimized = this.addTikTokFormatting(optimized);
         break;
@@ -162,7 +182,11 @@ export class AdvertisingNormalizationService {
   /**
    * Extract and optimize hashtags for platform-specific discovery
    */
-  private extractAndOptimizeHashtags(text: string, maxCount: number, platform: string): string[] {
+  private extractAndOptimizeHashtags(
+    text: string,
+    maxCount: number,
+    platform: string,
+  ): string[] {
     // Extract existing hashtags
     const existingHashtags = text.match(/#\w+/g) || [];
 
@@ -170,7 +194,9 @@ export class AdvertisingNormalizationService {
     const platformHashtags = this.getPlatformOptimizedHashtags(platform);
 
     // Combine and deduplicate
-    const allHashtags = [...new Set([...existingHashtags, ...platformHashtags])];
+    const allHashtags = [
+      ...new Set([...existingHashtags, ...platformHashtags]),
+    ];
 
     // Return top performing hashtags up to limit
     return allHashtags.slice(0, maxCount);
@@ -181,35 +207,60 @@ export class AdvertisingNormalizationService {
    */
   private getPlatformOptimizedHashtags(platform: string): string[] {
     const musicDiscoveryHashtags = {
-      instagram: ['#NewMusic', '#MusicPromotion', '#IndieArtist', '#MusicDiscovery', '#NewRelease'],
-      tiktok: ['#NewMusic', '#MusicTok', '#IndieArtist', '#SongPromotion', '#MusicDiscovery'],
-      twitter: ['#NowPlaying', '#NewMusicFriday', '#IndieMusic', '#MusicPromotion'],
-      facebook: ['#NewMusic', '#MusicRelease', '#IndieArtist'],
-      linkedin: ['#MusicIndustry', '#ArtistDevelopment', '#MusicBusiness'],
-      youtube: ['#NewMusic', '#MusicVideo', '#IndieArtist', '#MusicDiscovery'],
+      instagram: [
+        "#NewMusic",
+        "#MusicPromotion",
+        "#IndieArtist",
+        "#MusicDiscovery",
+        "#NewRelease",
+      ],
+      tiktok: [
+        "#NewMusic",
+        "#MusicTok",
+        "#IndieArtist",
+        "#SongPromotion",
+        "#MusicDiscovery",
+      ],
+      twitter: [
+        "#NowPlaying",
+        "#NewMusicFriday",
+        "#IndieMusic",
+        "#MusicPromotion",
+      ],
+      facebook: ["#NewMusic", "#MusicRelease", "#IndieArtist"],
+      linkedin: ["#MusicIndustry", "#ArtistDevelopment", "#MusicBusiness"],
+      youtube: ["#NewMusic", "#MusicVideo", "#IndieArtist", "#MusicDiscovery"],
     };
 
-    return musicDiscoveryHashtags[platform as keyof typeof musicDiscoveryHashtags] || [];
+    return (
+      musicDiscoveryHashtags[platform as keyof typeof musicDiscoveryHashtags] ||
+      []
+    );
   }
 
   /**
    * Generate platform-specific call-to-action.
    * Uses top_ctas learned from PDIM ad patterns when available.
    */
-  private generateCTA(platform: string, patterns: Record<string, any> = {}): string {
-    const platformKey = Object.keys(patterns).find(k => k.startsWith(platform));
+  private generateCTA(
+    platform: string,
+    patterns: Record<string, any> = {},
+  ): string {
+    const platformKey = Object.keys(patterns).find((k) =>
+      k.startsWith(platform),
+    );
     if (platformKey && patterns[platformKey]?.top_ctas?.length) {
       return patterns[platformKey].top_ctas[0];
     }
     const ctas: Record<string, string> = {
-      instagram: 'Link in bio to listen 🎵',
-      tiktok: 'Full track in bio! 🔥',
-      twitter: 'Stream now 🎶',
-      facebook: 'Listen on your favorite platform!',
-      linkedin: 'Available on all major streaming platforms',
-      youtube: 'Watch the full video!',
+      instagram: "Link in bio to listen 🎵",
+      tiktok: "Full track in bio! 🔥",
+      twitter: "Stream now 🎶",
+      facebook: "Listen on your favorite platform!",
+      linkedin: "Available on all major streaming platforms",
+      youtube: "Watch the full video!",
     };
-    return ctas[platform] || 'Check it out!';
+    return ctas[platform] || "Check it out!";
   }
 
   /**
@@ -217,45 +268,59 @@ export class AdvertisingNormalizationService {
    * Prefers artist-specific peak windows from PDIM, falls back to global peaks,
    * then to research-backed defaults.
    */
-  private calculateOptimalPostTime(platform: string, peaks: unknown[] = [], globalPeaks: unknown[] = []): string {
-    const artistPeak = peaks.find(p => p?.platform === platform || p?.platforms?.includes(platform));
+  private calculateOptimalPostTime(
+    platform: string,
+    peaks: unknown[] = [],
+    globalPeaks: unknown[] = [],
+  ): string {
+    const artistPeak = peaks.find(
+      (p) => p?.platform === platform || p?.platforms?.includes(platform),
+    );
     if (artistPeak?.window) return artistPeak.window;
 
-    const globalPeak = globalPeaks.find(p => p?.platform === platform || p?.platforms?.includes(platform));
+    const globalPeak = globalPeaks.find(
+      (p) => p?.platform === platform || p?.platforms?.includes(platform),
+    );
     if (globalPeak?.window) return globalPeak.window;
 
     const optimalTimes: Record<string, string> = {
-      instagram: '11:00 AM - 1:00 PM weekdays',
-      tiktok: '6:00 PM - 10:00 PM daily',
-      twitter: '12:00 PM - 3:00 PM weekdays',
-      facebook: '1:00 PM - 3:00 PM weekdays',
-      linkedin: '7:30 AM - 8:30 AM weekdays',
-      youtube: '2:00 PM - 4:00 PM weekends',
+      instagram: "11:00 AM - 1:00 PM weekdays",
+      tiktok: "6:00 PM - 10:00 PM daily",
+      twitter: "12:00 PM - 3:00 PM weekdays",
+      facebook: "1:00 PM - 3:00 PM weekdays",
+      linkedin: "7:30 AM - 8:30 AM weekdays",
+      youtube: "2:00 PM - 4:00 PM weekends",
     };
-    return optimalTimes[platform] || '12:00 PM weekdays';
+    return optimalTimes[platform] || "12:00 PM weekdays";
   }
 
   /**
    * Generate engagement hooks.
    * Prepends trained top_hooks from PDIM ad patterns before generic defaults.
    */
-  private generateEngagementHooks(content: string, platform: string, patterns: Record<string, any> = {}): string[] {
+  private generateEngagementHooks(
+    content: string,
+    platform: string,
+    patterns: Record<string, any> = {},
+  ): string[] {
     const hooks: string[] = [];
 
-    const platformKey = Object.keys(patterns).find(k => k.startsWith(platform));
+    const platformKey = Object.keys(patterns).find((k) =>
+      k.startsWith(platform),
+    );
     if (platformKey && patterns[platformKey]?.top_hooks?.length) {
       hooks.push(...patterns[platformKey].top_hooks.slice(0, 2));
     }
 
-    if (!content.includes('?')) {
-      hooks.push('What do you think of this track? 💭');
+    if (!content.includes("?")) {
+      hooks.push("What do you think of this track? 💭");
     }
-    if (!new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'u').test(content)) {
-      hooks.push('React with 🔥 if you love this!');
+    if (!new RegExp("[\\u{1F300}-\\u{1F9FF}]", "u").test(content)) {
+      hooks.push("React with 🔥 if you love this!");
     }
-    hooks.push('Tag someone who needs to hear this!');
-    if (platform === 'tiktok') hooks.push('Duet this! 🎤');
-    else if (platform === 'instagram') hooks.push('Save this for later! 📌');
+    hooks.push("Tag someone who needs to hear this!");
+    if (platform === "tiktok") hooks.push("Duet this! 🎤");
+    else if (platform === "instagram") hooks.push("Save this for later! 📌");
 
     return [...new Set(hooks)];
   }
@@ -268,7 +333,8 @@ export class AdvertisingNormalizationService {
 
   private detectSpamPatterns(text: string): boolean {
     // Check for excessive caps
-    const capsRatio = (text.match(/[A-Z]/g) || []).length / Math.max(text.length, 1);
+    const capsRatio =
+      (text.match(/[A-Z]/g) || []).length / Math.max(text.length, 1);
     if (capsRatio > 0.5) return true;
 
     // Check for excessive exclamation marks

@@ -12,26 +12,26 @@
  *  - TLS with optional client certificate (Verisign requires this in prod)
  */
 
-import * as tls    from 'tls';
-import { logger }  from '../../logger.js';
-import type { EppConfig } from './types.js';
+import * as tls from "tls";
+import { logger } from "../../logger.js";
+import type { EppConfig } from "./types.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 export class EppClient {
-  private socket:    tls.TLSSocket | null = null;
-  private rxBuf:     Buffer               = Buffer.alloc(0);
-  private queue:     Array<(xml: string) => void> = [];
-  private errQueue:  Array<(err: Error)   => void> = [];
+  private socket: tls.TLSSocket | null = null;
+  private rxBuf: Buffer = Buffer.alloc(0);
+  private queue: Array<(xml: string) => void> = [];
+  private errQueue: Array<(err: Error) => void> = [];
 
   /** Serialization lock — all commands chain off this promise */
-  private lastCmd:   Promise<unknown>     = Promise.resolve();
+  private lastCmd: Promise<unknown> = Promise.resolve();
 
   private readonly cfg: EppConfig;
   private readonly timeoutMs: number;
 
   constructor(cfg: EppConfig) {
-    this.cfg       = cfg;
+    this.cfg = cfg;
     this.timeoutMs = cfg.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   }
 
@@ -44,52 +44,56 @@ export class EppClient {
    * that returns the empty string immediately.
    */
   async connect(): Promise<string> {
-    if (this.socket?.writable) return '';
+    if (this.socket?.writable) return "";
 
     return new Promise<string>((resolve, reject) => {
       const opts: tls.ConnectionOptions = {
-        host:               this.cfg.host,
-        port:               this.cfg.port,
+        host: this.cfg.host,
+        port: this.cfg.port,
         rejectUnauthorized: this.cfg.rejectUnauthorized ?? false,
-        timeout:            this.timeoutMs,
+        timeout: this.timeoutMs,
       };
 
       if (this.cfg.tlsCert && this.cfg.tlsKey) {
         opts.cert = this.cfg.tlsCert;
-        opts.key  = this.cfg.tlsKey;
+        opts.key = this.cfg.tlsKey;
       }
 
       const sock = tls.connect(opts);
 
-      sock.once('error', (err) => {
+      sock.once("error", (err) => {
         this.teardown();
         reject(err);
       });
 
-      sock.once('timeout', () => {
+      sock.once("timeout", () => {
         this.teardown();
-        reject(new Error(`EPP connect timeout (${this.timeoutMs}ms) to ${this.cfg.host}:${this.cfg.port}`));
+        reject(
+          new Error(
+            `EPP connect timeout (${this.timeoutMs}ms) to ${this.cfg.host}:${this.cfg.port}`,
+          ),
+        );
       });
 
       // The very first queued callback is for the server greeting
       this.queue.push(resolve);
       this.errQueue.push(reject);
 
-      sock.on('data', (chunk: Buffer) => this.onData(chunk));
+      sock.on("data", (chunk: Buffer) => this.onData(chunk));
 
-      sock.on('close', () => {
-        logger.warn('[EPP] Socket closed');
+      sock.on("close", () => {
+        logger.warn("[EPP] Socket closed");
         this.teardown();
         // Drain pending waiters with a reconnect error
-        const err = new Error('EPP socket closed unexpectedly');
+        const err = new Error("EPP socket closed unexpectedly");
         while (this.errQueue.length) {
           this.errQueue.shift()!(err);
           this.queue.shift();
         }
       });
 
-      sock.on('error', (err) => {
-        logger.error({ err: err.message }, '[EPP] Socket error');
+      sock.on("error", (err) => {
+        logger.error({ err: err.message }, "[EPP] Socket error");
         this.teardown();
         while (this.errQueue.length) {
           this.errQueue.shift()!(err);
@@ -111,17 +115,17 @@ export class EppClient {
       const totalLen = this.rxBuf.readUInt32BE(0); // includes the 4-byte header
       if (this.rxBuf.length < totalLen) break;
 
-      const xmlBuf  = this.rxBuf.slice(4, totalLen);
-      this.rxBuf    = this.rxBuf.slice(totalLen);
-      const xml     = xmlBuf.toString('utf8');
+      const xmlBuf = this.rxBuf.slice(4, totalLen);
+      this.rxBuf = this.rxBuf.slice(totalLen);
+      const xml = xmlBuf.toString("utf8");
 
       const resolve = this.queue.shift();
-      this.errQueue.shift();     // discard corresponding error handler
+      this.errQueue.shift(); // discard corresponding error handler
 
       if (resolve) {
         resolve(xml);
       } else {
-        logger.warn('[EPP] Unsolicited frame received — discarding');
+        logger.warn("[EPP] Unsolicited frame received — discarding");
       }
     }
   }
@@ -134,18 +138,20 @@ export class EppClient {
    */
   send(xml: string): Promise<string> {
     const task = this.lastCmd.then(() => this._sendImmediate(xml));
-    this.lastCmd = task.catch(() => {/* allow next command to proceed */});
+    this.lastCmd = task.catch(() => {
+      /* allow next command to proceed */
+    });
     return task;
   }
 
   private _sendImmediate(xml: string): Promise<string> {
     if (!this.socket?.writable) {
-      return Promise.reject(new Error('EPP: socket not connected'));
+      return Promise.reject(new Error("EPP: socket not connected"));
     }
 
     return new Promise<string>((resolve, reject) => {
-      const xmlBuf = Buffer.from(xml, 'utf8');
-      const hdr    = Buffer.alloc(4);
+      const xmlBuf = Buffer.from(xml, "utf8");
+      const hdr = Buffer.alloc(4);
       hdr.writeUInt32BE(xmlBuf.length + 4, 0);
 
       // Timer for hung commands
@@ -160,8 +166,14 @@ export class EppClient {
         reject(new Error(`EPP command timed out after ${this.timeoutMs}ms`));
       }, this.timeoutMs);
 
-      this.queue.push((resp: string) => { clearTimeout(timer); resolve(resp); });
-      this.errQueue.push((err: Error) => { clearTimeout(timer); reject(err); });
+      this.queue.push((resp: string) => {
+        clearTimeout(timer);
+        resolve(resp);
+      });
+      this.errQueue.push((err: Error) => {
+        clearTimeout(timer);
+        reject(err);
+      });
 
       this.socket!.write(Buffer.concat([hdr, xmlBuf]));
     });
@@ -171,15 +183,19 @@ export class EppClient {
 
   private teardown(): void {
     if (this.socket) {
-      try { this.socket.destroy(); } catch { /* ignore */ }
+      try {
+        this.socket.destroy();
+      } catch {
+        /* ignore */
+      }
       this.socket = null;
     }
-    this.rxBuf    = Buffer.alloc(0);
+    this.rxBuf = Buffer.alloc(0);
   }
 
   disconnect(): void {
     this.teardown();
-    logger.info('[EPP] Disconnected');
+    logger.info("[EPP] Disconnected");
   }
 
   get isConnected(): boolean {

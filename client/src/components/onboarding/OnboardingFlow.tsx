@@ -1,21 +1,35 @@
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { Music, Users, Headphones, Building2, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import {
+  Music,
+  Users,
+  Headphones,
+  Building2,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
 
 interface OnboardingFlowProps {
   onComplete: () => void;
   onSkip: () => void;
 }
 
-type AccountType = 'solo_artist' | 'band' | 'producer' | 'label';
-type UserLevel = 'beginner' | 'intermediate' | 'advanced';
+type AccountType = "solo_artist" | "band" | "producer" | "label";
+type UserLevel = "beginner" | "intermediate" | "advanced";
 
 interface OnboardingData {
   accountType: AccountType | null;
@@ -29,59 +43,62 @@ interface OnboardingData {
 
 const accountTypes = [
   {
-    value: 'solo_artist' as AccountType,
-    label: 'Solo Artist',
+    value: "solo_artist" as AccountType,
+    label: "Solo Artist",
     icon: Music,
-    description: 'Perfect for independent musicians and singers',
+    description: "Perfect for independent musicians and singers",
   },
   {
-    value: 'band' as AccountType,
-    label: 'Band/Group',
+    value: "band" as AccountType,
+    label: "Band/Group",
     icon: Users,
-    description: 'Collaborate with your bandmates',
+    description: "Collaborate with your bandmates",
   },
   {
-    value: 'producer' as AccountType,
-    label: 'Producer',
+    value: "producer" as AccountType,
+    label: "Producer",
     icon: Headphones,
-    description: 'Create beats and produce tracks',
+    description: "Create beats and produce tracks",
   },
   {
-    value: 'label' as AccountType,
-    label: 'Label',
+    value: "label" as AccountType,
+    label: "Label",
     icon: Building2,
-    description: 'Manage multiple artists and releases',
+    description: "Manage multiple artists and releases",
   },
 ];
 
 const goals = [
-  { value: 'produce', label: 'Produce & record music' },
-  { value: 'distribute', label: 'Distribute to streaming platforms' },
-  { value: 'social', label: 'Grow social media presence' },
-  { value: 'advertising', label: 'Run ad campaigns' },
-  { value: 'marketplace', label: 'Sell beats/samples on marketplace' },
-  { value: 'analytics', label: 'Track analytics & royalties' },
+  { value: "produce", label: "Produce & record music" },
+  { value: "distribute", label: "Distribute to streaming platforms" },
+  { value: "social", label: "Grow social media presence" },
+  { value: "advertising", label: "Run ad campaigns" },
+  { value: "marketplace", label: "Sell beats/samples on marketplace" },
+  { value: "analytics", label: "Track analytics & royalties" },
 ];
 
 const experienceLevels = [
   {
-    value: 'beginner' as UserLevel,
-    label: 'Beginner',
-    description: 'New to music production/business',
+    value: "beginner" as UserLevel,
+    label: "Beginner",
+    description: "New to music production/business",
   },
   {
-    value: 'intermediate' as UserLevel,
-    label: 'Intermediate',
-    description: 'Some experience',
+    value: "intermediate" as UserLevel,
+    label: "Intermediate",
+    description: "Some experience",
   },
   {
-    value: 'advanced' as UserLevel,
-    label: 'Advanced',
-    description: 'Professional level',
+    value: "advanced" as UserLevel,
+    label: "Advanced",
+    description: "Professional level",
   },
 ];
 
-export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
+export default function OnboardingFlow({
+  onComplete,
+  onSkip,
+}: OnboardingFlowProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<OnboardingData>({
     accountType: null,
@@ -103,24 +120,30 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
           goals: data.goals,
           userLevel: data.userLevel,
           connectedAccounts: data.connectedAccounts,
-          preferSimplifiedView: data.userLevel === 'beginner',
+          preferSimplifiedView: data.userLevel === "beginner",
         },
       };
-      const response = await apiRequest('POST', '/api/auth/update-onboarding', payload);
+      const response = await apiRequest(
+        "POST",
+        "/api/auth/update-onboarding",
+        payload,
+      );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: '✨ Welcome to Max Booster!',
-        description: "Your account setup is complete. Let's boost your music career!",
+        title: "✨ Welcome to Max Booster!",
+        description:
+          "Your account setup is complete. Let's boost your music career!",
       });
       onComplete();
     },
     onError: (error: Error) => {
       toast({
-        title: 'Setup Failed',
-        description: error.message || 'Failed to save onboarding data. Please try again.',
-        variant: 'destructive',
+        title: "Setup Failed",
+        description:
+          error.message || "Failed to save onboarding data. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -199,27 +222,33 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
               </div>
 
               <div className="space-y-3">
-                <Label className="text-base font-medium">Select your account type</Label>
+                <Label className="text-base font-medium">
+                  Select your account type
+                </Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {accountTypes.map((type) => {
                     const Icon = type.icon;
                     return (
                       <button
                         key={type.value}
-                        onClick={() => setFormData({ ...formData, accountType: type.value })}
+                        onClick={() =>
+                          setFormData({ ...formData, accountType: type.value })
+                        }
                         className={`p-4 rounded-lg border-2 transition-all text-left hover:shadow-md ${
                           formData.accountType === type.value
-                            ? 'border-primary bg-primary/5 shadow-sm'
-                            : 'border-gray-200 hover:border-gray-300'
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
                         <div className="flex items-start space-x-3">
                           <Icon
-                            className={`w-6 h-6 mt-0.5 ${formData.accountType === type.value ? 'text-primary' : 'text-gray-400'}`}
+                            className={`w-6 h-6 mt-0.5 ${formData.accountType === type.value ? "text-primary" : "text-gray-400"}`}
                           />
                           <div className="flex-1 space-y-1">
                             <div className="font-semibold">{type.label}</div>
-                            <div className="text-sm text-muted-foreground">{type.description}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {type.description}
+                            </div>
                           </div>
                         </div>
                       </button>
@@ -235,7 +264,8 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
               <div className="text-center space-y-2">
                 <h2 className="text-2xl font-semibold">What are your goals?</h2>
                 <p className="text-muted-foreground">
-                  Select all that apply - we'll customize your dashboard accordingly
+                  Select all that apply - we'll customize your dashboard
+                  accordingly
                 </p>
               </div>
 
@@ -250,7 +280,10 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                       checked={formData.goals.includes(goal.value)}
                       onCheckedChange={() => toggleGoal(goal.value)}
                     />
-                    <Label htmlFor={goal.value} className="flex-1 cursor-pointer text-base">
+                    <Label
+                      htmlFor={goal.value}
+                      className="flex-1 cursor-pointer text-base"
+                    >
                       {goal.label}
                     </Label>
                   </div>
@@ -262,7 +295,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
           {currentStep === 3 && (
             <div className="space-y-6">
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-semibold">What's your experience level?</h2>
+                <h2 className="text-2xl font-semibold">
+                  What's your experience level?
+                </h2>
                 <p className="text-muted-foreground">
                   This helps us show you the right features and guidance
                 </p>
@@ -272,23 +307,29 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                 {experienceLevels.map((level) => (
                   <button
                     key={level.value}
-                    onClick={() => setFormData({ ...formData, userLevel: level.value })}
+                    onClick={() =>
+                      setFormData({ ...formData, userLevel: level.value })
+                    }
                     className={`w-full p-4 rounded-lg border-2 transition-all text-left hover:shadow-md ${
                       formData.userLevel === level.value
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <div className="font-semibold text-base">{level.label}</div>
-                        <div className="text-sm text-muted-foreground">{level.description}</div>
+                        <div className="font-semibold text-base">
+                          {level.label}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {level.description}
+                        </div>
                       </div>
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                           formData.userLevel === level.value
-                            ? 'border-primary bg-primary'
-                            : 'border-gray-300'
+                            ? "border-primary bg-primary"
+                            : "border-gray-300"
                         }`}
                       >
                         {formData.userLevel === level.value && (
@@ -305,7 +346,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
           {currentStep === 4 && (
             <div className="space-y-6">
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-semibold">Quick Setup (Optional)</h2>
+                <h2 className="text-2xl font-semibold">
+                  Quick Setup (Optional)
+                </h2>
                 <p className="text-muted-foreground">
                   Connect your accounts now or skip and do it later
                 </p>
@@ -327,8 +370,13 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                         })
                       }
                     />
-                    <Label htmlFor="streaming" className="flex-1 cursor-pointer">
-                      <div className="font-semibold">Connect Streaming Account</div>
+                    <Label
+                      htmlFor="streaming"
+                      className="flex-1 cursor-pointer"
+                    >
+                      <div className="font-semibold">
+                        Connect Streaming Account
+                      </div>
                       <div className="text-sm text-muted-foreground">
                         Spotify, Apple Music, etc.
                       </div>
@@ -344,7 +392,10 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                       onCheckedChange={(checked) =>
                         setFormData({
                           ...formData,
-                          connectedAccounts: { ...formData.connectedAccounts, social: !!checked },
+                          connectedAccounts: {
+                            ...formData.connectedAccounts,
+                            social: !!checked,
+                          },
                         })
                       }
                     />
@@ -358,7 +409,8 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                 </div>
 
                 <p className="text-sm text-center text-muted-foreground mt-4">
-                  Don't worry, you can connect these accounts later from your settings
+                  Don't worry, you can connect these accounts later from your
+                  settings
                 </p>
               </div>
             </div>
@@ -376,7 +428,11 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
             </Button>
 
             {currentStep < 4 ? (
-              <Button onClick={handleNext} disabled={!canProceed()} className="min-w-[100px]">
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className="min-w-[100px]"
+              >
                 Next
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -387,7 +443,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                 className="min-w-[140px] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 {updateOnboardingMutation.isPending ? (
-                  'Setting up...'
+                  "Setting up..."
                 ) : (
                   <>
                     Complete Setup

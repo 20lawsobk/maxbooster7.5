@@ -1,8 +1,15 @@
-import { 
-  AudioBuffer, DSPContext, DSPProcessor, copyBuffer,
-  BiquadFilter, OnePoleFilter, EnvelopeFollower,
-  msToSamples, dbToLinear, linearToDb
-} from './core';
+import {
+  AudioBuffer,
+  DSPContext,
+  DSPProcessor,
+  copyBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  EnvelopeFollower,
+  msToSamples,
+  dbToLinear,
+  linearToDb,
+} from "./core";
 
 export class ParametricEQProcessor implements DSPProcessor {
   private bandsL: BiquadFilter[] = [];
@@ -16,10 +23,14 @@ export class ParametricEQProcessor implements DSPProcessor {
     }
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const hpFreq = (params.hpFreq as number) ?? 20;
     const hpEnabled = (params.hpEnabled as boolean) ?? false;
     const lpFreq = (params.lpFreq as number) ?? 20000;
@@ -60,7 +71,7 @@ export class ParametricEQProcessor implements DSPProcessor {
     for (let i = 0; i < input.samples[0].length; i++) {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
-      
+
       if (hpEnabled) {
         sampleL = this.bandsL[0].process(sampleL);
         sampleR = this.bandsR[0].process(sampleR);
@@ -69,29 +80,31 @@ export class ParametricEQProcessor implements DSPProcessor {
         sampleL = this.bandsL[1].process(sampleL);
         sampleR = this.bandsR[1].process(sampleR);
       }
-      
+
       for (let b = 2; b <= 5; b++) {
         sampleL = this.bandsL[b].process(sampleL);
         sampleR = this.bandsR[b].process(sampleR);
       }
-      
+
       output.samples[0][i] = sampleL * outGainLin;
       output.samples[1][i] = sampleR * outGainLin;
     }
-    
+
     return output;
   }
 
   reset(): void {
-    this.bandsL.forEach(b => b.clear());
-    this.bandsR.forEach(b => b.clear());
+    this.bandsL.forEach((b) => b.clear());
+    this.bandsR.forEach((b) => b.clear());
   }
 }
 
 export class GraphicEQProcessor implements DSPProcessor {
   private bandsL: BiquadFilter[] = [];
   private bandsR: BiquadFilter[] = [];
-  private frequencies: number[] = [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+  private frequencies: number[] = [
+    31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000,
+  ];
   private sampleRate: number = 44100;
 
   constructor() {
@@ -101,10 +114,14 @@ export class GraphicEQProcessor implements DSPProcessor {
     }
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const gains = [
       (params.band31 as number) ?? 0,
       (params.band63 as number) ?? 0,
@@ -120,29 +137,39 @@ export class GraphicEQProcessor implements DSPProcessor {
     const q = (params.q as number) ?? 1.4;
 
     for (let b = 0; b < 10; b++) {
-      this.bandsL[b].setPeaking(this.frequencies[b], q, gains[b], this.sampleRate);
-      this.bandsR[b].setPeaking(this.frequencies[b], q, gains[b], this.sampleRate);
+      this.bandsL[b].setPeaking(
+        this.frequencies[b],
+        q,
+        gains[b],
+        this.sampleRate,
+      );
+      this.bandsR[b].setPeaking(
+        this.frequencies[b],
+        q,
+        gains[b],
+        this.sampleRate,
+      );
     }
 
     for (let i = 0; i < input.samples[0].length; i++) {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
-      
+
       for (let b = 0; b < 10; b++) {
         sampleL = this.bandsL[b].process(sampleL);
         sampleR = this.bandsR[b].process(sampleR);
       }
-      
+
       output.samples[0][i] = sampleL;
       output.samples[1][i] = sampleR;
     }
-    
+
     return output;
   }
 
   reset(): void {
-    this.bandsL.forEach(b => b.clear());
-    this.bandsR.forEach(b => b.clear());
+    this.bandsL.forEach((b) => b.clear());
+    this.bandsR.forEach((b) => b.clear());
   }
 }
 
@@ -169,10 +196,14 @@ export class VintageEQProcessor implements DSPProcessor {
     this.presenceR = new BiquadFilter();
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const low = (params.low as number) ?? 0;
     const lowFreq = (params.lowFreq as number) ?? 100;
     const mid = (params.mid as number) ?? 0;
@@ -196,12 +227,12 @@ export class VintageEQProcessor implements DSPProcessor {
     for (let i = 0; i < input.samples[0].length; i++) {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
-      
+
       if (drive > 0) {
         sampleL = Math.tanh(sampleL * (1 + drive * 2)) / (1 + drive);
         sampleR = Math.tanh(sampleR * (1 + drive * 2)) / (1 + drive);
       }
-      
+
       sampleL = this.lowShelfL.process(sampleL);
       sampleR = this.lowShelfR.process(sampleR);
       sampleL = this.midPeakL.process(sampleL);
@@ -210,11 +241,11 @@ export class VintageEQProcessor implements DSPProcessor {
       sampleR = this.highShelfR.process(sampleR);
       sampleL = this.presenceL.process(sampleL);
       sampleR = this.presenceR.process(sampleR);
-      
+
       output.samples[0][i] = sampleL * outGain;
       output.samples[1][i] = sampleR * outGain;
     }
-    
+
     return output;
   }
 
@@ -238,14 +269,24 @@ export class LinearPhaseEQProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.buffer = [new Float32Array(this.fftSize), new Float32Array(this.fftSize)];
-    this.outputBuffer = [new Float32Array(this.fftSize), new Float32Array(this.fftSize)];
+    this.buffer = [
+      new Float32Array(this.fftSize),
+      new Float32Array(this.fftSize),
+    ];
+    this.outputBuffer = [
+      new Float32Array(this.fftSize),
+      new Float32Array(this.fftSize),
+    ];
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const lowGain = dbToLinear((params.lowGain as number) ?? 0);
     const lowFreq = (params.lowFreq as number) ?? 100;
     const midGain = dbToLinear((params.midGain as number) ?? 0);
@@ -256,12 +297,12 @@ export class LinearPhaseEQProcessor implements DSPProcessor {
     for (let i = 0; i < input.samples[0].length; i++) {
       this.buffer[0][this.position] = input.samples[0][i];
       this.buffer[1][this.position] = input.samples[1][i];
-      
+
       const outputPos = (this.position + this.fftSize / 2) % this.fftSize;
-      
-      let freqNorm = (this.position / this.fftSize) * this.sampleRate / 2;
+
+      let freqNorm = ((this.position / this.fftSize) * this.sampleRate) / 2;
       let gain = 1;
-      
+
       if (freqNorm < lowFreq) {
         gain *= lowGain;
       } else if (freqNorm < midFreq) {
@@ -273,19 +314,19 @@ export class LinearPhaseEQProcessor implements DSPProcessor {
       } else {
         gain *= highGain;
       }
-      
+
       output.samples[0][i] = input.samples[0][i] * gain;
       output.samples[1][i] = input.samples[1][i] * gain;
-      
+
       this.position = (this.position + 1) % this.fftSize;
     }
-    
+
     return output;
   }
 
   reset(): void {
-    this.buffer.forEach(b => b.fill(0));
-    this.outputBuffer.forEach(b => b.fill(0));
+    this.buffer.forEach((b) => b.fill(0));
+    this.outputBuffer.forEach((b) => b.fill(0));
     this.position = 0;
   }
 }
@@ -304,10 +345,14 @@ export class DynamicEQProcessor implements DSPProcessor {
     }
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const frequencies = [
       (params.freq1 as number) ?? 200,
       (params.freq2 as number) ?? 1000,
@@ -332,30 +377,41 @@ export class DynamicEQProcessor implements DSPProcessor {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
       const mono = (sampleL + sampleR) * 0.5;
-      
+
       for (let b = 0; b < 4; b++) {
         const level = this.envelopes[b].process(mono);
-        const dynamicGain = level > thresholds[b] 
-          ? gains[b] * Math.min(1, (level - thresholds[b]) / thresholds[b])
-          : 0;
-        
-        this.bandsL[b].setPeaking(frequencies[b], q, dynamicGain, this.sampleRate);
-        this.bandsR[b].setPeaking(frequencies[b], q, dynamicGain, this.sampleRate);
+        const dynamicGain =
+          level > thresholds[b]
+            ? gains[b] * Math.min(1, (level - thresholds[b]) / thresholds[b])
+            : 0;
+
+        this.bandsL[b].setPeaking(
+          frequencies[b],
+          q,
+          dynamicGain,
+          this.sampleRate,
+        );
+        this.bandsR[b].setPeaking(
+          frequencies[b],
+          q,
+          dynamicGain,
+          this.sampleRate,
+        );
         sampleL = this.bandsL[b].process(sampleL);
         sampleR = this.bandsR[b].process(sampleR);
       }
-      
+
       output.samples[0][i] = sampleL;
       output.samples[1][i] = sampleR;
     }
-    
+
     return output;
   }
 
   reset(): void {
-    this.bandsL.forEach(b => b.clear());
-    this.bandsR.forEach(b => b.clear());
-    this.envelopes.forEach(e => e.clear());
+    this.bandsL.forEach((b) => b.clear());
+    this.bandsR.forEach((b) => b.clear());
+    this.envelopes.forEach((e) => e.clear());
   }
 }
 
@@ -371,48 +427,62 @@ export class SurgicalEQProcessor implements DSPProcessor {
     }
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const configs = [];
     for (let i = 1; i <= 8; i++) {
       configs.push({
         freq: (params[`freq${i}`] as number) ?? 1000,
         gain: (params[`gain${i}`] as number) ?? 0,
         q: (params[`q${i}`] as number) ?? 10,
-        enabled: (params[`enabled${i}`] as boolean) ?? (i <= 4),
+        enabled: (params[`enabled${i}`] as boolean) ?? i <= 4,
       });
     }
 
     for (let b = 0; b < 8; b++) {
       if (configs[b].enabled) {
-        this.bandsL[b].setPeaking(configs[b].freq, configs[b].q, configs[b].gain, this.sampleRate);
-        this.bandsR[b].setPeaking(configs[b].freq, configs[b].q, configs[b].gain, this.sampleRate);
+        this.bandsL[b].setPeaking(
+          configs[b].freq,
+          configs[b].q,
+          configs[b].gain,
+          this.sampleRate,
+        );
+        this.bandsR[b].setPeaking(
+          configs[b].freq,
+          configs[b].q,
+          configs[b].gain,
+          this.sampleRate,
+        );
       }
     }
 
     for (let i = 0; i < input.samples[0].length; i++) {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
-      
+
       for (let b = 0; b < 8; b++) {
         if (configs[b].enabled && configs[b].gain !== 0) {
           sampleL = this.bandsL[b].process(sampleL);
           sampleR = this.bandsR[b].process(sampleR);
         }
       }
-      
+
       output.samples[0][i] = sampleL;
       output.samples[1][i] = sampleR;
     }
-    
+
     return output;
   }
 
   reset(): void {
-    this.bandsL.forEach(b => b.clear());
-    this.bandsR.forEach(b => b.clear());
+    this.bandsL.forEach((b) => b.clear());
+    this.bandsR.forEach((b) => b.clear());
   }
 }
 
@@ -440,10 +510,14 @@ export class AnalogEQProcessor implements DSPProcessor {
     this.highShelfR = new BiquadFilter();
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const lowGain = (params.low as number) ?? 0;
     const lowFreq = (params.lowFreq as number) ?? 80;
     const lowMidGain = (params.lowMid as number) ?? 0;
@@ -466,7 +540,7 @@ export class AnalogEQProcessor implements DSPProcessor {
     for (let i = 0; i < input.samples[0].length; i++) {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
-      
+
       sampleL = this.lowShelfL.process(sampleL);
       sampleR = this.lowShelfR.process(sampleR);
       sampleL = this.lowMidL.process(sampleL);
@@ -475,19 +549,19 @@ export class AnalogEQProcessor implements DSPProcessor {
       sampleR = this.highMidR.process(sampleR);
       sampleL = this.highShelfL.process(sampleL);
       sampleR = this.highShelfR.process(sampleR);
-      
+
       if (drive > 0) {
         sampleL = Math.tanh(sampleL * (1 + drive)) / (1 + drive * 0.5);
         sampleR = Math.tanh(sampleR * (1 + drive)) / (1 + drive * 0.5);
-        
+
         sampleL += sampleL * sampleL * drive * 0.02;
         sampleR += sampleR * sampleR * drive * 0.02;
       }
-      
+
       output.samples[0][i] = sampleL;
       output.samples[1][i] = sampleR;
     }
-    
+
     return output;
   }
 
@@ -541,10 +615,14 @@ export class MasteringEQProcessor implements DSPProcessor {
     this.lpFilterR = new BiquadFilter();
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const hpFreq = (params.hpFreq as number) ?? 20;
     const lpFreq = (params.lpFreq as number) ?? 20000;
     const lowGain = (params.low as number) ?? 0;
@@ -577,12 +655,12 @@ export class MasteringEQProcessor implements DSPProcessor {
     for (let i = 0; i < input.samples[0].length; i++) {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
-      
+
       sampleL = this.hpFilterL.process(sampleL);
       sampleR = this.hpFilterR.process(sampleR);
       sampleL = this.lpFilterL.process(sampleL);
       sampleR = this.lpFilterR.process(sampleR);
-      
+
       sampleL = this.lowShelfL.process(sampleL);
       sampleR = this.lowShelfR.process(sampleR);
       sampleL = this.lowMidL.process(sampleL);
@@ -595,11 +673,11 @@ export class MasteringEQProcessor implements DSPProcessor {
       sampleR = this.highShelfR.process(sampleR);
       sampleL = this.airL.process(sampleL);
       sampleR = this.airR.process(sampleR);
-      
+
       output.samples[0][i] = sampleL * outGain;
       output.samples[1][i] = sampleR * outGain;
     }
-    
+
     return output;
   }
 
@@ -641,10 +719,14 @@ export class MidSideEQProcessor implements DSPProcessor {
     this.sideHigh = new BiquadFilter();
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const midLowGain = (params.midLow as number) ?? 0;
     const midMidGain = (params.midMid as number) ?? 0;
     const midHighGain = (params.midHigh as number) ?? 0;
@@ -663,24 +745,24 @@ export class MidSideEQProcessor implements DSPProcessor {
     for (let i = 0; i < input.samples[0].length; i++) {
       const left = input.samples[0][i];
       const right = input.samples[1][i];
-      
+
       let mid = (left + right) * 0.5;
       let side = (left - right) * 0.5;
-      
+
       mid = this.midLow.process(mid);
       mid = this.midMid.process(mid);
       mid = this.midHigh.process(mid);
-      
+
       side = this.sideLow.process(side);
       side = this.sideMid.process(side);
       side = this.sideHigh.process(side);
-      
+
       side *= width;
-      
+
       output.samples[0][i] = mid + side;
       output.samples[1][i] = mid - side;
     }
-    
+
     return output;
   }
 
@@ -708,10 +790,14 @@ export class TiltEQProcessor implements DSPProcessor {
     this.highShelfR = new BiquadFilter();
   }
 
-  process(input: AudioBuffer, params: Record<string, number | boolean | string>, context: DSPContext): AudioBuffer {
+  process(
+    input: AudioBuffer,
+    params: Record<string, number | boolean | string>,
+    context: DSPContext,
+  ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
-    
+
     const tilt = (params.tilt as number) ?? 0;
     const centerFreq = (params.centerFreq as number) ?? 1000;
     const outputLevel = (params.output as number) ?? 0;
@@ -729,16 +815,16 @@ export class TiltEQProcessor implements DSPProcessor {
     for (let i = 0; i < input.samples[0].length; i++) {
       let sampleL = input.samples[0][i];
       let sampleR = input.samples[1][i];
-      
+
       sampleL = this.lowShelfL.process(sampleL);
       sampleR = this.lowShelfR.process(sampleR);
       sampleL = this.highShelfL.process(sampleL);
       sampleR = this.highShelfR.process(sampleR);
-      
+
       output.samples[0][i] = sampleL * outGain;
       output.samples[1][i] = sampleR * outGain;
     }
-    
+
     return output;
   }
 
@@ -751,14 +837,14 @@ export class TiltEQProcessor implements DSPProcessor {
 }
 
 export const EQ_PROCESSORS: Record<string, () => DSPProcessor> = {
-  'mb-parametric-eq': () => new ParametricEQProcessor(),
-  'mb-graphic-eq': () => new GraphicEQProcessor(),
-  'mb-vintage-eq': () => new VintageEQProcessor(),
-  'mb-linear-phase-eq': () => new LinearPhaseEQProcessor(),
-  'mb-dynamic-eq': () => new DynamicEQProcessor(),
-  'mb-surgical-eq': () => new SurgicalEQProcessor(),
-  'mb-analog-eq': () => new AnalogEQProcessor(),
-  'mb-mastering-eq': () => new MasteringEQProcessor(),
-  'mb-midside-eq': () => new MidSideEQProcessor(),
-  'mb-tilt-eq': () => new TiltEQProcessor(),
+  "mb-parametric-eq": () => new ParametricEQProcessor(),
+  "mb-graphic-eq": () => new GraphicEQProcessor(),
+  "mb-vintage-eq": () => new VintageEQProcessor(),
+  "mb-linear-phase-eq": () => new LinearPhaseEQProcessor(),
+  "mb-dynamic-eq": () => new DynamicEQProcessor(),
+  "mb-surgical-eq": () => new SurgicalEQProcessor(),
+  "mb-analog-eq": () => new AnalogEQProcessor(),
+  "mb-mastering-eq": () => new MasteringEQProcessor(),
+  "mb-midside-eq": () => new MidSideEQProcessor(),
+  "mb-tilt-eq": () => new TiltEQProcessor(),
 };

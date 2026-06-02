@@ -1,11 +1,17 @@
-import { useState, memo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState, memo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   MessageSquare,
   Search,
@@ -27,10 +33,10 @@ import {
   ArrowUp,
   ArrowDown,
   X,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface QueryResult {
-  type: 'chart' | 'metric' | 'table' | 'text';
+  type: "chart" | "metric" | "table" | "text";
   title: string;
   data: Record<string, unknown>;
   summary: string;
@@ -52,30 +58,36 @@ const exampleQueries = [
   { text: "Which countries generate the most revenue?", icon: Globe },
   { text: "Compare my Spotify vs Apple Music performance", icon: BarChart3 },
   { text: "How many new listeners did I gain this week?", icon: Users },
-  { text: "What's my average revenue per stream by platform?", icon: DollarSign },
+  {
+    text: "What's my average revenue per stream by platform?",
+    icon: DollarSign,
+  },
   { text: "Show playlist additions in the last 30 days", icon: Calendar },
   { text: "Which demographics engage most with my music?", icon: PieChart },
 ];
 
-
 const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
-  if (data.chartType === 'line') {
+  if (data.chartType === "line") {
     const max = Math.max(...data.values);
     const min = Math.min(...data.values);
     const range = max - min || 1;
-    
+
     const points = data.values
       .map((value: number, i: number) => {
         const x = (i / (data.values.length - 1)) * 100;
         const y = 100 - ((value - min) / range) * 80 - 10;
         return `${x},${y}`;
       })
-      .join(' ');
+      .join(" ");
 
     return (
       <div className="space-y-4">
         <div className="h-48 relative">
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="w-full h-full"
+          >
             <defs>
               <linearGradient id="queryGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
@@ -89,7 +101,7 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
                   const y = 100 - ((v - min) / range) * 80 - 10;
                   return `L${x},${y}`;
                 })
-                .join(' ')} L100,100 Z`}
+                .join(" ")} L100,100 Z`}
               fill="url(#queryGradient)"
             />
             <polyline
@@ -110,14 +122,16 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
     );
   }
 
-  if (data.chartType === 'bar') {
+  if (data.chartType === "bar") {
     return (
       <div className="space-y-3">
         {data.items.map((item: Record<string, unknown>, idx: number) => (
           <div key={idx} className="space-y-1">
             <div className="flex justify-between text-sm">
               <span>{item.name}</span>
-              <span className="font-semibold">${item.value.toLocaleString()} ({item.percentage}%)</span>
+              <span className="font-semibold">
+                ${item.value.toLocaleString()} ({item.percentage}%)
+              </span>
             </div>
             <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <motion.div
@@ -133,46 +147,68 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
     );
   }
 
-  if (data.chartType === 'comparison') {
+  if (data.chartType === "comparison") {
     return (
       <div className="grid grid-cols-2 gap-6">
-        {data.platforms.map((platform: Record<string, unknown>, idx: number) => (
-          <div key={idx} className="text-center p-4 rounded-lg" style={{ backgroundColor: `${platform.color}15` }}>
-            <p className="font-bold text-lg" style={{ color: platform.color }}>{platform.name}</p>
-            <div className="mt-4 space-y-2">
-              <div>
-                <p className="text-2xl font-bold">{(platform.streams / 1000).toFixed(0)}K</p>
-                <p className="text-xs text-muted-foreground">Streams</p>
-              </div>
-              <div>
-                <p className="text-xl font-bold">${platform.revenue.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Revenue</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold">${platform.rps.toFixed(4)}</p>
-                <p className="text-xs text-muted-foreground">Per Stream</p>
+        {data.platforms.map(
+          (platform: Record<string, unknown>, idx: number) => (
+            <div
+              key={idx}
+              className="text-center p-4 rounded-lg"
+              style={{ backgroundColor: `${platform.color}15` }}
+            >
+              <p
+                className="font-bold text-lg"
+                style={{ color: platform.color }}
+              >
+                {platform.name}
+              </p>
+              <div className="mt-4 space-y-2">
+                <div>
+                  <p className="text-2xl font-bold">
+                    {(platform.streams / 1000).toFixed(0)}K
+                  </p>
+                  <p className="text-xs text-muted-foreground">Streams</p>
+                </div>
+                <div>
+                  <p className="text-xl font-bold">
+                    ${platform.revenue.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Revenue</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">
+                    ${platform.rps.toFixed(4)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Per Stream</p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
     );
   }
 
-  if (data.chartType === 'pie') {
-    const colors = ['#6366f1', '#ec4899', '#22c55e', '#f59e0b', '#06b6d4'];
+  if (data.chartType === "pie") {
+    const colors = ["#6366f1", "#ec4899", "#22c55e", "#f59e0b", "#06b6d4"];
     return (
       <div className="grid grid-cols-5 gap-2">
         {data.segments.map((segment: Record<string, unknown>, idx: number) => (
-          <div key={idx} className="text-center p-3 rounded-lg bg-slate-50 dark:bg-slate-900">
-            <div 
+          <div
+            key={idx}
+            className="text-center p-3 rounded-lg bg-slate-50 dark:bg-slate-900"
+          >
+            <div
               className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold"
               style={{ backgroundColor: colors[idx] }}
             >
               {segment.value}%
             </div>
             <p className="text-xs font-medium">{segment.name}</p>
-            <p className="text-xs text-muted-foreground">{segment.engagement}% eng.</p>
+            <p className="text-xs text-muted-foreground">
+              {segment.engagement}% eng.
+            </p>
           </div>
         ))}
       </div>
@@ -181,7 +217,7 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
 
   return null;
 });
-ResultChart.displayName = 'ResultChart';
+ResultChart.displayName = "ResultChart";
 
 const ResultMetric = memo(({ data }: { data: Record<string, unknown> }) => {
   return (
@@ -193,12 +229,22 @@ const ResultMetric = memo(({ data }: { data: Record<string, unknown> }) => {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          {typeof data.value === 'number' ? data.value.toLocaleString() : data.value}
+          {typeof data.value === "number"
+            ? data.value.toLocaleString()
+            : data.value}
         </motion.p>
         {data.change !== undefined && (
-          <div className={`flex items-center justify-center gap-1 mt-2 ${data.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {data.change >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-            <span className="font-medium">{Math.abs(data.change)}% vs last {data.period}</span>
+          <div
+            className={`flex items-center justify-center gap-1 mt-2 ${data.change >= 0 ? "text-green-600" : "text-red-600"}`}
+          >
+            {data.change >= 0 ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : (
+              <ArrowDown className="h-4 w-4" />
+            )}
+            <span className="font-medium">
+              {Math.abs(data.change)}% vs last {data.period}
+            </span>
           </div>
         )}
         {data.reach && (
@@ -210,7 +256,7 @@ const ResultMetric = memo(({ data }: { data: Record<string, unknown> }) => {
     </div>
   );
 });
-ResultMetric.displayName = 'ResultMetric';
+ResultMetric.displayName = "ResultMetric";
 
 const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
   const items = data.tracks || data.platforms || [];
@@ -221,10 +267,16 @@ const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b">
-            <th className="text-left p-3 font-semibold">{isTrackData ? 'Track' : 'Platform'}</th>
-            <th className="text-right p-3 font-semibold">{isTrackData ? 'Streams' : 'RPS'}</th>
+            <th className="text-left p-3 font-semibold">
+              {isTrackData ? "Track" : "Platform"}
+            </th>
+            <th className="text-right p-3 font-semibold">
+              {isTrackData ? "Streams" : "RPS"}
+            </th>
             <th className="text-right p-3 font-semibold">Revenue</th>
-            <th className="text-right p-3 font-semibold">{isTrackData ? 'Growth' : 'Streams'}</th>
+            <th className="text-right p-3 font-semibold">
+              {isTrackData ? "Growth" : "Streams"}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -234,17 +286,28 @@ const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className={idx % 2 === 0 ? 'bg-slate-50 dark:bg-slate-900/50' : ''}
+              className={
+                idx % 2 === 0 ? "bg-slate-50 dark:bg-slate-900/50" : ""
+              }
             >
               <td className="p-3 font-medium">{item.name}</td>
               <td className="p-3 text-right">
-                {isTrackData ? item.streams.toLocaleString() : `$${item.rps.toFixed(4)}`}
+                {isTrackData
+                  ? item.streams.toLocaleString()
+                  : `$${item.rps.toFixed(4)}`}
               </td>
-              <td className="p-3 text-right">${item.revenue.toLocaleString()}</td>
+              <td className="p-3 text-right">
+                ${item.revenue.toLocaleString()}
+              </td>
               <td className="p-3 text-right">
                 {isTrackData ? (
-                  <span className={item.growth >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {item.growth >= 0 ? '+' : ''}{item.growth}%
+                  <span
+                    className={
+                      item.growth >= 0 ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    {item.growth >= 0 ? "+" : ""}
+                    {item.growth}%
                   </span>
                 ) : (
                   item.streams.toLocaleString()
@@ -257,10 +320,12 @@ const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
     </div>
   );
 });
-ResultTable.displayName = 'ResultTable';
+ResultTable.displayName = "ResultTable";
 
-export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryProps) {
-  const [query, setQuery] = useState('');
+export default function NaturalLanguageQuery({
+  onQuery,
+}: NaturalLanguageQueryProps) {
+  const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<QueryResult | null>(null);
   const [history, setHistory] = useState<QueryHistory[]>([]);
@@ -272,10 +337,13 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
 
     try {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch('/api/analytics/natural-language-query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+      const response = await fetch("/api/analytics/natural-language-query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ query: queryText }),
       });
 
@@ -283,31 +351,39 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
         const data = await response.json();
         if (data.success && data.result) {
           setResult(data.result);
-          setHistory(prev => [
-            { query: queryText, timestamp: new Date(), resultType: data.result.type },
+          setHistory((prev) => [
+            {
+              query: queryText,
+              timestamp: new Date(),
+              resultType: data.result.type,
+            },
             ...prev.slice(0, 9),
           ]);
         } else {
           setResult({
-            type: 'text',
-            title: 'No Results',
-            summary: data.message || `No data found for: "${queryText}". Try connecting your streaming platforms in Settings to get real analytics.`,
+            type: "text",
+            title: "No Results",
+            summary:
+              data.message ||
+              `No data found for: "${queryText}". Try connecting your streaming platforms in Settings to get real analytics.`,
             data: null,
           });
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
         setResult({
-          type: 'text',
-          title: 'Query Failed',
-          summary: errorData.message || `Unable to process your query right now. Please try again later.`,
+          type: "text",
+          title: "Query Failed",
+          summary:
+            errorData.message ||
+            `Unable to process your query right now. Please try again later.`,
           data: null,
         });
       }
     } catch (error) {
       setResult({
-        type: 'text',
-        title: 'Connection Error',
+        type: "text",
+        title: "Connection Error",
         summary: `Could not reach the analytics service. Please check your connection and try again.`,
         data: null,
       });
@@ -404,7 +480,7 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
         {showHistory && history.length > 0 && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
           >
             <Card>
@@ -414,7 +490,11 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
                     <History className="h-5 w-5" />
                     Recent Queries
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowHistory(false)}
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 </CardTitle>
@@ -435,7 +515,9 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
                         <span className="text-sm">{item.query}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">{item.resultType}</Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {item.resultType}
+                        </Badge>
                         <span className="text-xs text-muted-foreground">
                           {item.timestamp.toLocaleTimeString()}
                         </span>
@@ -482,16 +564,22 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
                       <Sparkles className="h-5 w-5 text-indigo-500" />
                       {result.title}
                     </CardTitle>
-                    <CardDescription className="mt-2">{result.summary}</CardDescription>
+                    <CardDescription className="mt-2">
+                      {result.summary}
+                    </CardDescription>
                   </div>
-                  <Badge variant="outline" className="capitalize">{result.type}</Badge>
+                  <Badge variant="outline" className="capitalize">
+                    {result.type}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent>
-                {result.type === 'chart' && <ResultChart data={result.data} />}
-                {result.type === 'metric' && <ResultMetric data={result.data} />}
-                {result.type === 'table' && <ResultTable data={result.data} />}
-                {result.type === 'text' && (
+                {result.type === "chart" && <ResultChart data={result.data} />}
+                {result.type === "metric" && (
+                  <ResultMetric data={result.data} />
+                )}
+                {result.type === "table" && <ResultTable data={result.data} />}
+                {result.type === "text" && (
                   <p className="text-muted-foreground">{result.summary}</p>
                 )}
               </CardContent>

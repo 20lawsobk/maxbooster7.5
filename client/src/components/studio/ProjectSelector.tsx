@@ -1,16 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
-import { ChevronDown, FolderOpen, Plus, Music } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { ChevronDown, FolderOpen, Plus, Music } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Project {
   id: string;
@@ -30,17 +30,21 @@ interface ProjectSelectorProps {
   className?: string;
 }
 
-export function ProjectSelector({ currentProjectId, onProjectChange, className }: ProjectSelectorProps) {
+export function ProjectSelector({
+  currentProjectId,
+  onProjectChange,
+  className,
+}: ProjectSelectorProps) {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
 
   const { data: projectsData, isLoading } = useQuery<ProjectsApiResponse>({
-    queryKey: ['/api/projects'],
+    queryKey: ["/api/projects"],
     enabled: !!user,
   });
 
   const projects = projectsData?.data || [];
-  const currentProject = projects.find(p => p.id === currentProjectId);
+  const currentProject = projects.find((p) => p.id === currentProjectId);
 
   const handleProjectSelect = (projectId: string) => {
     if (projectId !== currentProjectId) {
@@ -50,32 +54,32 @@ export function ProjectSelector({ currentProjectId, onProjectChange, className }
   };
 
   const handleNewProject = () => {
-    setLocation('/studio');
+    setLocation("/studio");
   };
 
   const handleViewAllProjects = () => {
-    setLocation('/projects');
+    setLocation("/projects");
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className={cn(
             "h-8 px-3 gap-2 text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 border border-zinc-700",
-            className
+            className,
           )}
         >
           <Music className="w-4 h-4 text-emerald-400" />
           <span className="max-w-[200px] truncate">
-            {isLoading ? 'Loading…' : currentProject?.title || 'New Project'}
+            {isLoading ? "Loading…" : currentProject?.title || "New Project"}
           </span>
           <ChevronDown className="w-4 h-4 text-zinc-500" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="start" 
+      <DropdownMenuContent
+        align="start"
         className="w-72 bg-zinc-900 border-zinc-700"
       >
         <div className="px-2 py-1.5 text-xs font-medium text-zinc-500 uppercase tracking-wider">
@@ -92,15 +96,17 @@ export function ProjectSelector({ currentProjectId, onProjectChange, className }
             onClick={() => handleProjectSelect(project.id)}
             className={cn(
               "flex items-center gap-3 px-2 py-2 cursor-pointer",
-              project.id === currentProjectId && "bg-zinc-800"
+              project.id === currentProjectId && "bg-zinc-800",
             )}
           >
-            <div className={cn(
-              "w-8 h-8 rounded flex items-center justify-center text-xs font-bold",
-              project.id === currentProjectId 
-                ? "bg-emerald-500/20 text-emerald-400" 
-                : "bg-zinc-700 text-zinc-400"
-            )}>
+            <div
+              className={cn(
+                "w-8 h-8 rounded flex items-center justify-center text-xs font-bold",
+                project.id === currentProjectId
+                  ? "bg-emerald-500/20 text-emerald-400"
+                  : "bg-zinc-700 text-zinc-400",
+              )}
+            >
               {project.title.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
@@ -108,7 +114,7 @@ export function ProjectSelector({ currentProjectId, onProjectChange, className }
                 {project.title}
               </div>
               <div className="text-xs text-zinc-500 truncate">
-                {project.genre || 'No genre'} 
+                {project.genre || "No genre"}
                 {project.status && ` · ${project.status}`}
               </div>
             </div>

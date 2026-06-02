@@ -1,44 +1,80 @@
-import { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/useAuth';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { 
-  Brain, Target, TrendingUp, Calendar, CheckCircle, Clock, 
-  Lightbulb, Rocket, Star, ArrowRight, MessageSquare, Send,
-  Music, DollarSign, Users, BarChart3, Sparkles, Zap, Trash2, Plus
-} from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  Brain,
+  Target,
+  TrendingUp,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Lightbulb,
+  Rocket,
+  Star,
+  ArrowRight,
+  MessageSquare,
+  Send,
+  Music,
+  DollarSign,
+  Users,
+  BarChart3,
+  Sparkles,
+  Zap,
+  Trash2,
+  Plus,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CareerGoal {
   id: string;
   title: string;
-  category: 'growth' | 'revenue' | 'releases' | 'networking' | 'skills';
+  category: "growth" | "revenue" | "releases" | "networking" | "skills";
   targetDate: string;
   progress: number;
-  status: 'active' | 'completed' | 'paused';
+  status: "active" | "completed" | "paused";
   milestones: Array<{ id: string; title: string; completed: boolean }>;
 }
 
 interface Recommendation {
   id: string;
-  type: 'action' | 'insight' | 'opportunity';
+  type: "action" | "insight" | "opportunity";
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   category: string;
   estimatedImpact: string;
   actionUrl?: string;
@@ -51,7 +87,7 @@ interface QuickAction {
 
 interface CoachMessage {
   id: string;
-  role: 'user' | 'assistant' | 'coach';
+  role: "user" | "assistant" | "coach";
   content: string;
   timestamp: string;
   quickActions?: QuickAction[];
@@ -63,8 +99,8 @@ export default function CareerCoach() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const [chatInput, setChatInput] = useState('');
+
+  const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<CoachMessage[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -72,58 +108,81 @@ export default function CareerCoach() {
 
   const [showCreateGoalDialog, setShowCreateGoalDialog] = useState(false);
   const [newGoalForm, setNewGoalForm] = useState({
-    title: '',
-    goalType: 'growth',
+    title: "",
+    goalType: "growth",
     targetValue: 1000,
-    unit: '',
-    deadline: '',
-    description: '',
+    unit: "",
+    deadline: "",
+    description: "",
   });
 
-  const { data: goalsData, isLoading: isLoadingGoals } = useQuery<{ goals: CareerGoal[] }>({
-    queryKey: ['/api/career-coach/goals'],
+  const { data: goalsData, isLoading: isLoadingGoals } = useQuery<{
+    goals: CareerGoal[];
+  }>({
+    queryKey: ["/api/career-coach/goals"],
     enabled: !!user,
   });
 
-  const { data: recommendationsData, isLoading: isLoadingRecs } = useQuery<{ recommendations: Recommendation[] }>({
-    queryKey: ['/api/career-coach/recommendations'],
+  const { data: recommendationsData, isLoading: isLoadingRecs } = useQuery<{
+    recommendations: Recommendation[];
+  }>({
+    queryKey: ["/api/career-coach/recommendations"],
     enabled: !!user,
   });
 
-  const { data: insightsData, isLoading: isLoadingInsights } = useQuery<{ insights: Record<string, unknown> }>({
-    queryKey: ['/api/career-coach/insights'],
+  const { data: insightsData, isLoading: isLoadingInsights } = useQuery<{
+    insights: Record<string, unknown>;
+  }>({
+    queryKey: ["/api/career-coach/insights"],
     enabled: !!user,
   });
 
   const { data: historyData } = useQuery<{ messages: unknown[] }>({
-    queryKey: ['/api/assistant/history'],
+    queryKey: ["/api/assistant/history"],
     enabled: !!user,
   });
 
   useEffect(() => {
     if (historyData && !historyLoaded) {
-      const historical = (historyData.messages || []).map((m: Record<string, unknown>) => ({
-        id: m.id || String(m.createdAt),
-        role: m.role === 'assistant' ? 'coach' as const : 'user' as const,
-        content: m.content,
-        timestamp: m.createdAt,
-      }));
+      const historical = (historyData.messages || []).map(
+        (m: Record<string, unknown>) => ({
+          id: m.id || String(m.createdAt),
+          role: m.role === "assistant" ? ("coach" as const) : ("user" as const),
+          content: m.content,
+          timestamp: m.createdAt,
+        }),
+      );
 
       if (historical.length > 0) {
         setChatMessages(historical);
       } else {
-        setChatMessages([{
-          id: 'welcome',
-          role: 'coach',
-          content: "Hi! I'm Max, your AI Career Coach. I analyze your music career data to provide personalized recommendations. Ask me anything about growing your career, releasing music, building your fan base, or running your business as an artist.",
-          timestamp: new Date().toISOString(),
-          quickActions: [
-            { label: 'How do I grow my fan base?', prompt: 'How do I grow my fan base?' },
-            { label: 'Distribute my music', prompt: 'How do I distribute my music to all platforms?' },
-            { label: 'Boost my streams', prompt: 'What can I do to boost my streaming numbers?' },
-            { label: 'Start earning royalties', prompt: 'How do I start earning royalties from my music?' },
-          ],
-        }]);
+        setChatMessages([
+          {
+            id: "welcome",
+            role: "coach",
+            content:
+              "Hi! I'm Max, your AI Career Coach. I analyze your music career data to provide personalized recommendations. Ask me anything about growing your career, releasing music, building your fan base, or running your business as an artist.",
+            timestamp: new Date().toISOString(),
+            quickActions: [
+              {
+                label: "How do I grow my fan base?",
+                prompt: "How do I grow my fan base?",
+              },
+              {
+                label: "Distribute my music",
+                prompt: "How do I distribute my music to all platforms?",
+              },
+              {
+                label: "Boost my streams",
+                prompt: "What can I do to boost my streaming numbers?",
+              },
+              {
+                label: "Start earning royalties",
+                prompt: "How do I start earning royalties from my music?",
+              },
+            ],
+          },
+        ]);
       }
       setHistoryLoaded(true);
     }
@@ -137,7 +196,7 @@ export default function CareerCoach() {
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      const res = await apiRequest('POST', '/api/assistant/chat', { message });
+      const res = await apiRequest("POST", "/api/assistant/chat", { message });
       return res.json();
     },
     onSuccess: (data) => {
@@ -147,88 +206,139 @@ export default function CareerCoach() {
         ...prev,
         {
           id: data.assistantMessageId || Date.now().toString(),
-          role: 'coach',
-          content: data.content || data.response || "I'm here to help you grow your music career. What would you like to work on?",
+          role: "coach",
+          content:
+            data.content ||
+            data.response ||
+            "I'm here to help you grow your music career. What would you like to work on?",
           timestamp: new Date().toISOString(),
           quickActions: quickActions.length > 0 ? quickActions : undefined,
-          proactiveSuggestions: proactiveSuggestions.length > 0 ? proactiveSuggestions : undefined,
+          proactiveSuggestions:
+            proactiveSuggestions.length > 0 ? proactiveSuggestions : undefined,
         },
       ]);
       inputRef.current?.focus();
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to get AI response', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to get AI response",
+        variant: "destructive",
+      });
     },
   });
 
   const clearHistoryMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest('DELETE', '/api/assistant/history');
+      await apiRequest("DELETE", "/api/assistant/history");
     },
     onSuccess: () => {
-      setChatMessages([{
-        id: 'welcome-new',
-        role: 'coach',
-        content: "Conversation cleared! I'm ready to start fresh. What would you like to work on today?",
-        timestamp: new Date().toISOString(),
-        quickActions: [
-          { label: 'Grow my fan base', prompt: 'How do I grow my fan base?' },
-          { label: 'Distribute music', prompt: 'How do I distribute my music?' },
-          { label: 'Boost streams', prompt: 'How do I boost my streaming numbers?' },
-          { label: 'Earn royalties', prompt: 'How do I maximize my royalty earnings?' },
-        ],
-      }]);
+      setChatMessages([
+        {
+          id: "welcome-new",
+          role: "coach",
+          content:
+            "Conversation cleared! I'm ready to start fresh. What would you like to work on today?",
+          timestamp: new Date().toISOString(),
+          quickActions: [
+            { label: "Grow my fan base", prompt: "How do I grow my fan base?" },
+            {
+              label: "Distribute music",
+              prompt: "How do I distribute my music?",
+            },
+            {
+              label: "Boost streams",
+              prompt: "How do I boost my streaming numbers?",
+            },
+            {
+              label: "Earn royalties",
+              prompt: "How do I maximize my royalty earnings?",
+            },
+          ],
+        },
+      ]);
       setHistoryLoaded(true);
-      toast({ title: 'Cleared', description: 'Conversation history has been cleared.' });
+      toast({
+        title: "Cleared",
+        description: "Conversation history has been cleared.",
+      });
     },
   });
 
   const createGoalMutation = useMutation({
-    mutationFn: async (data: { title: string; goalType: string; targetValue: number; unit?: string; deadline?: string; description?: string }) => {
-      const res = await apiRequest('POST', '/api/career-coach/goals', data);
+    mutationFn: async (data: {
+      title: string;
+      goalType: string;
+      targetValue: number;
+      unit?: string;
+      deadline?: string;
+      description?: string;
+    }) => {
+      const res = await apiRequest("POST", "/api/career-coach/goals", data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/career-coach/goals'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/career-coach/goals"] });
       setShowCreateGoalDialog(false);
-      setNewGoalForm({ title: '', goalType: 'growth', targetValue: 1000, unit: '', deadline: '', description: '' });
-      toast({ title: 'Goal created!', description: 'Your career goal has been added.' });
+      setNewGoalForm({
+        title: "",
+        goalType: "growth",
+        targetValue: 1000,
+        unit: "",
+        deadline: "",
+        description: "",
+      });
+      toast({
+        title: "Goal created!",
+        description: "Your career goal has been added.",
+      });
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to create goal', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to create goal",
+        variant: "destructive",
+      });
     },
   });
 
   const deleteGoalMutation = useMutation({
     mutationFn: async (goalId: string) => {
-      const res = await apiRequest('DELETE', `/api/career-coach/goals/${goalId}`);
+      const res = await apiRequest(
+        "DELETE",
+        `/api/career-coach/goals/${goalId}`,
+      );
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/career-coach/goals'] });
-      toast({ title: 'Goal deleted' });
+      queryClient.invalidateQueries({ queryKey: ["/api/career-coach/goals"] });
+      toast({ title: "Goal deleted" });
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to delete goal', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to delete goal",
+        variant: "destructive",
+      });
     },
   });
 
   const handleSendMessage = (text?: string) => {
     const msg = (text || chatInput).trim();
     if (!msg) return;
-    
+
     setChatMessages((prev) => [
       ...prev,
       {
         id: Date.now().toString(),
-        role: 'user',
+        role: "user",
         content: msg,
         timestamp: new Date().toISOString(),
       },
     ]);
-    
+
     chatMutation.mutate(msg);
-    setChatInput('');
+    setChatInput("");
   };
 
   const goals = goalsData?.goals || [];
@@ -237,35 +347,45 @@ export default function CareerCoach() {
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'growth': return <TrendingUp className="h-4 w-4" />;
-      case 'revenue': return <DollarSign className="h-4 w-4" />;
-      case 'releases': return <Music className="h-4 w-4" />;
-      case 'networking': return <Users className="h-4 w-4" />;
-      case 'skills': return <Lightbulb className="h-4 w-4" />;
-      default: return <Target className="h-4 w-4" />;
+      case "growth":
+        return <TrendingUp className="h-4 w-4" />;
+      case "revenue":
+        return <DollarSign className="h-4 w-4" />;
+      case "releases":
+        return <Music className="h-4 w-4" />;
+      case "networking":
+        return <Users className="h-4 w-4" />;
+      case "skills":
+        return <Lightbulb className="h-4 w-4" />;
+      default:
+        return <Target className="h-4 w-4" />;
     }
   };
 
   const getPriorityBadge = (priority: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
-      high: 'default',
-      medium: 'secondary',
-      low: 'outline',
+    const variants: Record<string, "default" | "secondary" | "outline"> = {
+      high: "default",
+      medium: "secondary",
+      low: "outline",
     };
     return <Badge variant={variants[priority]}>{priority}</Badge>;
   };
 
   const getRecommendationIcon = (type: string) => {
     switch (type) {
-      case 'action': return <Rocket className="h-5 w-5 text-blue-500" />;
-      case 'insight': return <Lightbulb className="h-5 w-5 text-amber-500" />;
-      case 'opportunity': return <Star className="h-5 w-5 text-green-500" />;
-      default: return <Sparkles className="h-5 w-5" />;
+      case "action":
+        return <Rocket className="h-5 w-5 text-blue-500" />;
+      case "insight":
+        return <Lightbulb className="h-5 w-5 text-amber-500" />;
+      case "opportunity":
+        return <Star className="h-5 w-5 text-green-500" />;
+      default:
+        return <Sparkles className="h-5 w-5" />;
     }
   };
 
   if (!user) {
-    setLocation('/login');
+    setLocation("/login");
     return null;
   }
 
@@ -288,7 +408,9 @@ export default function CareerCoach() {
           <div className="lg:col-span-2 space-y-6">
             <Tabs defaultValue="recommendations" className="space-y-4">
               <TabsList>
-                <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+                <TabsTrigger value="recommendations">
+                  Recommendations
+                </TabsTrigger>
                 <TabsTrigger value="goals">Goals</TabsTrigger>
                 <TabsTrigger value="insights">Insights</TabsTrigger>
               </TabsList>
@@ -325,7 +447,8 @@ export default function CareerCoach() {
                     <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="font-medium">No recommendations yet</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      As you use the platform, I'll provide personalized recommendations
+                      As you use the platform, I'll provide personalized
+                      recommendations
                     </p>
                   </Card>
                 ) : (
@@ -337,7 +460,9 @@ export default function CareerCoach() {
                             <div className="flex items-start gap-3">
                               {getRecommendationIcon(rec.type)}
                               <div>
-                                <CardTitle className="text-base">{rec.title}</CardTitle>
+                                <CardTitle className="text-base">
+                                  {rec.title}
+                                </CardTitle>
                                 <CardDescription className="mt-1">
                                   {rec.description}
                                 </CardDescription>
@@ -356,7 +481,10 @@ export default function CareerCoach() {
                         </CardContent>
                         {rec.actionUrl && (
                           <CardFooter>
-                            <Button size="sm" onClick={() => setLocation(rec.actionUrl!)}>
+                            <Button
+                              size="sm"
+                              onClick={() => setLocation(rec.actionUrl!)}
+                            >
                               Take Action
                               <ArrowRight className="h-4 w-4 ml-1" />
                             </Button>
@@ -370,7 +498,10 @@ export default function CareerCoach() {
 
               <TabsContent value="goals" className="space-y-4">
                 <div className="flex justify-end">
-                  <Button size="sm" onClick={() => setShowCreateGoalDialog(true)}>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowCreateGoalDialog(true)}
+                  >
                     <Plus className="h-4 w-4 mr-1" />
                     New Goal
                   </Button>
@@ -417,9 +548,17 @@ export default function CareerCoach() {
                     <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="font-medium">Set your first career goal</h3>
                     <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                      Define what success looks like for you, and I'll help you create a roadmap to get there
+                      Define what success looks like for you, and I'll help you
+                      create a roadmap to get there
                     </p>
-                    <Button className="mt-4" onClick={() => handleSendMessage('Help me set a career goal for my music')}>
+                    <Button
+                      className="mt-4"
+                      onClick={() =>
+                        handleSendMessage(
+                          "Help me set a career goal for my music",
+                        )
+                      }
+                    >
                       <MessageSquare className="h-4 w-4 mr-2" />
                       Ask Coach to Help
                     </Button>
@@ -435,14 +574,22 @@ export default function CareerCoach() {
                               {goal.title}
                             </CardTitle>
                             <div className="flex items-center gap-2">
-                              <Badge variant={goal.status === 'completed' ? 'default' : 'outline'}>
+                              <Badge
+                                variant={
+                                  goal.status === "completed"
+                                    ? "default"
+                                    : "outline"
+                                }
+                              >
                                 {goal.status}
                               </Badge>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                onClick={() => deleteGoalMutation.mutate(goal.id)}
+                                onClick={() =>
+                                  deleteGoalMutation.mutate(goal.id)
+                                }
                                 disabled={deleteGoalMutation.isPending}
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -451,7 +598,8 @@ export default function CareerCoach() {
                           </div>
                           <CardDescription className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
-                            Target: {new Date(goal.targetDate).toLocaleDateString()}
+                            Target:{" "}
+                            {new Date(goal.targetDate).toLocaleDateString()}
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -462,16 +610,25 @@ export default function CareerCoach() {
                             </div>
                             <Progress value={goal.progress} className="h-2" />
                           </div>
-                          
+
                           <div className="space-y-2">
                             {goal.milestones.slice(0, 3).map((milestone) => (
-                              <div key={milestone.id} className="flex items-center gap-2 text-sm">
+                              <div
+                                key={milestone.id}
+                                className="flex items-center gap-2 text-sm"
+                              >
                                 {milestone.completed ? (
                                   <CheckCircle className="h-4 w-4 text-green-500" />
                                 ) : (
                                   <Clock className="h-4 w-4 text-muted-foreground" />
                                 )}
-                                <span className={milestone.completed ? 'line-through text-muted-foreground' : ''}>
+                                <span
+                                  className={
+                                    milestone.completed
+                                      ? "line-through text-muted-foreground"
+                                      : ""
+                                  }
+                                >
                                   {milestone.title}
                                 </span>
                               </div>
@@ -521,109 +678,138 @@ export default function CareerCoach() {
                     </Card>
                   </div>
                 ) : (
-                <><div className="grid md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-green-500" />
-                        Growth Rate
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">{insights?.growthRateDisplay ?? '—'}</p>
-                      <p className="text-sm text-muted-foreground">streams vs last month</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-blue-500" />
-                        Engagement Score
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">{insights != null ? `${insights.engagementScore}/100` : '—'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {insights?.engagementScore >= 70 ? 'Above average' : insights?.engagementScore >= 40 ? 'Average' : 'Below average'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Music className="h-5 w-5 text-purple-500" />
-                        Release Velocity
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">{insights?.releaseVelocity ?? '—'}</p>
-                      <p className="text-sm text-muted-foreground">tracks/month (90-day avg)</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <DollarSign className="h-5 w-5 text-amber-500" />
-                        Revenue Trend
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">{insights?.revenueTrendDisplay ?? '—'}</p>
-                      <p className="text-sm text-muted-foreground">vs last 30 days</p>
-                    </CardContent>
-                  </Card>
-                </div>
+                  <>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5 text-green-500" />
+                            Growth Rate
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-3xl font-bold">
+                            {insights?.growthRateDisplay ?? "—"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            streams vs last month
+                          </p>
+                        </CardContent>
+                      </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Career Health Score</CardTitle>
-                    <CardDescription>Based on your activity and performance metrics</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-24 w-24">
-                        <svg className="h-full w-full -rotate-90">
-                          <circle
-                            cx="48"
-                            cy="48"
-                            r="40"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            className="text-muted"
-                          />
-                          <circle
-                            cx="48"
-                            cy="48"
-                            r="40"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            strokeDasharray={`${(insights?.careerHealthScore ?? 0) * 2.51} ${100 * 2.51}`}
-                            className="text-primary"
-                          />
-                        </svg>
-                        <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-                          {insights?.careerHealthScore ?? '—'}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className={`font-medium ${(insights?.careerHealthScore ?? 0) >= 80 ? 'text-green-500' : (insights?.careerHealthScore ?? 0) >= 60 ? 'text-blue-500' : 'text-amber-500'}`}>
-                          {insights?.healthLabel ?? 'Analyzing your career…'}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {(insights?.careerHealthScore ?? 0) >= 60
-                            ? 'Your career is on a healthy trajectory. Focus on consistency and expanding your network.'
-                            : 'Post more content, release music regularly, and engage with your audience to boost your score.'}
-                        </p>
-                      </div>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-blue-500" />
+                            Engagement Score
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-3xl font-bold">
+                            {insights != null
+                              ? `${insights.engagementScore}/100`
+                              : "—"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {insights?.engagementScore >= 70
+                              ? "Above average"
+                              : insights?.engagementScore >= 40
+                                ? "Average"
+                                : "Below average"}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Music className="h-5 w-5 text-purple-500" />
+                            Release Velocity
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-3xl font-bold">
+                            {insights?.releaseVelocity ?? "—"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            tracks/month (90-day avg)
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <DollarSign className="h-5 w-5 text-amber-500" />
+                            Revenue Trend
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-3xl font-bold">
+                            {insights?.revenueTrendDisplay ?? "—"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            vs last 30 days
+                          </p>
+                        </CardContent>
+                      </Card>
                     </div>
-                  </CardContent>
-                </Card>
-                </>)}
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">
+                          Career Health Score
+                        </CardTitle>
+                        <CardDescription>
+                          Based on your activity and performance metrics
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-4">
+                          <div className="relative h-24 w-24">
+                            <svg className="h-full w-full -rotate-90">
+                              <circle
+                                cx="48"
+                                cy="48"
+                                r="40"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="8"
+                                className="text-muted"
+                              />
+                              <circle
+                                cx="48"
+                                cy="48"
+                                r="40"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="8"
+                                strokeDasharray={`${(insights?.careerHealthScore ?? 0) * 2.51} ${100 * 2.51}`}
+                                className="text-primary"
+                              />
+                            </svg>
+                            <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
+                              {insights?.careerHealthScore ?? "—"}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h4
+                              className={`font-medium ${(insights?.careerHealthScore ?? 0) >= 80 ? "text-green-500" : (insights?.careerHealthScore ?? 0) >= 60 ? "text-blue-500" : "text-amber-500"}`}
+                            >
+                              {insights?.healthLabel ??
+                                "Analyzing your career…"}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              {(insights?.careerHealthScore ?? 0) >= 60
+                                ? "Your career is on a healthy trajectory. Focus on consistency and expanding your network."
+                                : "Post more content, release music regularly, and engage with your audience to boost your score."}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
               </TabsContent>
             </Tabs>
           </div>
@@ -648,7 +834,10 @@ export default function CareerCoach() {
                   </Button>
                 </div>
               </CardHeader>
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4"
+              >
                 {chatMessages.length === 0 && (
                   <div className="flex justify-center items-center h-full text-muted-foreground">
                     <div className="text-center">
@@ -660,16 +849,18 @@ export default function CareerCoach() {
                 {chatMessages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                    className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
                       className={`max-w-[88%] rounded-lg px-3 py-2 ${
-                        msg.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {msg.content}
+                      </p>
                     </div>
 
                     {msg.quickActions && msg.quickActions.length > 0 && (
@@ -686,16 +877,20 @@ export default function CareerCoach() {
                       </div>
                     )}
 
-                    {msg.proactiveSuggestions && msg.proactiveSuggestions.length > 0 && (
-                      <div className="flex flex-col gap-1 mt-2 max-w-[88%]">
-                        {msg.proactiveSuggestions.map((tip, i) => (
-                          <div key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                            <Zap className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
-                            {tip}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {msg.proactiveSuggestions &&
+                      msg.proactiveSuggestions.length > 0 && (
+                        <div className="flex flex-col gap-1 mt-2 max-w-[88%]">
+                          {msg.proactiveSuggestions.map((tip, i) => (
+                            <div
+                              key={i}
+                              className="flex items-start gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1"
+                            >
+                              <Zap className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
+                              {tip}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 ))}
                 {chatMutation.isPending && (
@@ -717,10 +912,12 @@ export default function CareerCoach() {
                     placeholder="Ask me anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && !e.shiftKey && handleSendMessage()
+                    }
                   />
-                  <Button 
-                    size="icon" 
+                  <Button
+                    size="icon"
                     onClick={() => handleSendMessage()}
                     disabled={chatMutation.isPending || !chatInput.trim()}
                   >
@@ -736,11 +933,34 @@ export default function CareerCoach() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {[
-                  { icon: Target, label: 'Set a career goal', prompt: 'Help me set a music career goal for this quarter' },
-                  { icon: BarChart3, label: 'Analyze my performance', prompt: 'Give me an analysis of my music career performance and what I should focus on' },
-                  { icon: Calendar, label: 'Plan my next release', prompt: 'Help me plan my next music release strategy' },
-                  { icon: DollarSign, label: 'Grow my revenue', prompt: 'What are the best ways for me to grow my music revenue?' },
-                  { icon: Users, label: 'Build my fan base', prompt: 'How can I grow my fan base and build a stronger community?' },
+                  {
+                    icon: Target,
+                    label: "Set a career goal",
+                    prompt: "Help me set a music career goal for this quarter",
+                  },
+                  {
+                    icon: BarChart3,
+                    label: "Analyze my performance",
+                    prompt:
+                      "Give me an analysis of my music career performance and what I should focus on",
+                  },
+                  {
+                    icon: Calendar,
+                    label: "Plan my next release",
+                    prompt: "Help me plan my next music release strategy",
+                  },
+                  {
+                    icon: DollarSign,
+                    label: "Grow my revenue",
+                    prompt:
+                      "What are the best ways for me to grow my music revenue?",
+                  },
+                  {
+                    icon: Users,
+                    label: "Build my fan base",
+                    prompt:
+                      "How can I grow my fan base and build a stronger community?",
+                  },
                 ].map(({ icon: Icon, label, prompt }) => (
                   <Button
                     key={label}
@@ -760,7 +980,10 @@ export default function CareerCoach() {
         </div>
       </div>
 
-      <Dialog open={showCreateGoalDialog} onOpenChange={setShowCreateGoalDialog}>
+      <Dialog
+        open={showCreateGoalDialog}
+        onOpenChange={setShowCreateGoalDialog}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Create Career Goal</DialogTitle>
@@ -771,14 +994,18 @@ export default function CareerCoach() {
               <Input
                 placeholder="e.g. Reach 10,000 monthly listeners"
                 value={newGoalForm.title}
-                onChange={(e) => setNewGoalForm(f => ({ ...f, title: e.target.value }))}
+                onChange={(e) =>
+                  setNewGoalForm((f) => ({ ...f, title: e.target.value }))
+                }
               />
             </div>
             <div className="space-y-2">
               <Label>Goal Type</Label>
               <Select
                 value={newGoalForm.goalType}
-                onValueChange={(v) => setNewGoalForm(f => ({ ...f, goalType: v }))}
+                onValueChange={(v) =>
+                  setNewGoalForm((f) => ({ ...f, goalType: v }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -801,7 +1028,12 @@ export default function CareerCoach() {
                   min={1}
                   placeholder="e.g. 10000"
                   value={newGoalForm.targetValue}
-                  onChange={(e) => setNewGoalForm(f => ({ ...f, targetValue: Number(e.target.value) || 1 }))}
+                  onChange={(e) =>
+                    setNewGoalForm((f) => ({
+                      ...f,
+                      targetValue: Number(e.target.value) || 1,
+                    }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -809,7 +1041,9 @@ export default function CareerCoach() {
                 <Input
                   placeholder="e.g. listeners, streams"
                   value={newGoalForm.unit}
-                  onChange={(e) => setNewGoalForm(f => ({ ...f, unit: e.target.value }))}
+                  onChange={(e) =>
+                    setNewGoalForm((f) => ({ ...f, unit: e.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -818,7 +1052,9 @@ export default function CareerCoach() {
               <Input
                 type="date"
                 value={newGoalForm.deadline}
-                onChange={(e) => setNewGoalForm(f => ({ ...f, deadline: e.target.value }))}
+                onChange={(e) =>
+                  setNewGoalForm((f) => ({ ...f, deadline: e.target.value }))
+                }
               />
             </div>
             <div className="space-y-2">
@@ -826,21 +1062,31 @@ export default function CareerCoach() {
               <Textarea
                 placeholder="Describe your goal and why it matters..."
                 value={newGoalForm.description}
-                onChange={(e) => setNewGoalForm(f => ({ ...f, description: e.target.value }))}
+                onChange={(e) =>
+                  setNewGoalForm((f) => ({ ...f, description: e.target.value }))
+                }
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateGoalDialog(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateGoalDialog(false)}
+            >
+              Cancel
+            </Button>
             <Button
               onClick={() => {
                 if (!newGoalForm.title.trim()) {
-                  toast({ title: 'Title required', variant: 'destructive' });
+                  toast({ title: "Title required", variant: "destructive" });
                   return;
                 }
                 if (!newGoalForm.targetValue || newGoalForm.targetValue < 1) {
-                  toast({ title: 'Target value must be at least 1', variant: 'destructive' });
+                  toast({
+                    title: "Target value must be at least 1",
+                    variant: "destructive",
+                  });
                   return;
                 }
                 createGoalMutation.mutate({
@@ -848,13 +1094,15 @@ export default function CareerCoach() {
                   goalType: newGoalForm.goalType,
                   targetValue: newGoalForm.targetValue,
                   unit: newGoalForm.unit || undefined,
-                  deadline: newGoalForm.deadline ? new Date(newGoalForm.deadline).toISOString() : undefined,
+                  deadline: newGoalForm.deadline
+                    ? new Date(newGoalForm.deadline).toISOString()
+                    : undefined,
                   description: newGoalForm.description || undefined,
                 });
               }}
               disabled={createGoalMutation.isPending}
             >
-              {createGoalMutation.isPending ? 'Creating...' : 'Create Goal'}
+              {createGoalMutation.isPending ? "Creating..." : "Create Goal"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,8 +1,8 @@
-import { db } from '../db';
-import { chatSessions, chatMessages } from '../../shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import { randomUUID } from 'crypto';
+import { db } from "../db";
+import { chatSessions, chatMessages } from "../../shared/schema";
+import { eq, and, desc } from "drizzle-orm";
+import { logger } from "../logger.js";
+import { randomUUID } from "crypto";
 
 interface CreateSessionInput {
   userId: string;
@@ -25,8 +25,8 @@ export class ChatService {
         .where(
           and(
             eq(chatSessions.userId, userId),
-            eq(chatSessions.status, 'active')
-          )
+            eq(chatSessions.status, "active"),
+          ),
         )
         .orderBy(desc(chatSessions.createdAt))
         .limit(1);
@@ -41,15 +41,15 @@ export class ChatService {
         .values({
           userId,
           sessionToken,
-          status: 'active',
+          status: "active",
         })
         .returning();
 
       logger.info(`Created new chat session for user ${userId}`);
       return newSession[0].id;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error getting/creating chat session:');
-      throw new Error('Failed to create chat session');
+      logger.warn({ err: error }, "Error getting/creating chat session:");
+      throw new Error("Failed to create chat session");
     }
   }
 
@@ -63,8 +63,8 @@ export class ChatService {
         isStaff: input.isStaff || false,
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error saving chat message:');
-      throw new Error('Failed to save message');
+      logger.warn({ err: error }, "Error saving chat message:");
+      throw new Error("Failed to save message");
     }
   }
 
@@ -82,14 +82,14 @@ export class ChatService {
         .where(
           and(
             eq(chatMessages.sessionId, sessionId),
-            eq(chatMessages.userId, userId)
-          )
+            eq(chatMessages.userId, userId),
+          ),
         )
         .orderBy(chatMessages.createdAt);
 
       return messages;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error retrieving chat messages:');
+      logger.warn({ err: error }, "Error retrieving chat messages:");
       return [];
     }
   }
@@ -102,8 +102,8 @@ export class ChatService {
         .where(
           and(
             eq(chatSessions.userId, userId),
-            eq(chatSessions.status, 'active')
-          )
+            eq(chatSessions.status, "active"),
+          ),
         )
         .orderBy(desc(chatSessions.createdAt))
         .limit(1);
@@ -114,7 +114,7 @@ export class ChatService {
 
       return this.getSessionMessages(activeSessions[0].id, userId);
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error retrieving user chat history:');
+      logger.warn({ err: error }, "Error retrieving user chat history:");
       return [];
     }
   }
@@ -124,17 +124,14 @@ export class ChatService {
       await db
         .update(chatSessions)
         .set({
-          status: 'ended',
+          status: "ended",
           endedAt: new Date(),
         })
         .where(
-          and(
-            eq(chatSessions.id, sessionId),
-            eq(chatSessions.userId, userId)
-          )
+          and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)),
         );
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error ending chat session:');
+      logger.warn({ err: error }, "Error ending chat session:");
     }
   }
 }

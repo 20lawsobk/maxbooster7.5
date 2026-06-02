@@ -8,34 +8,38 @@
  * in-progress auctions and surface them in the DNS Hub UI.
  */
 
-import { db }       from '../../db.js';
-import { hnsAuctions } from '@shared/schema';
-import { eq, and }  from 'drizzle-orm';
-import { logger }   from '../../logger.js';
-import { HnsClient, HnsNameInfo, buildMaxBoosterNSRecords } from './HnsClient.js';
+import { db } from "../../db.js";
+import { hnsAuctions } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
+import { logger } from "../../logger.js";
+import {
+  HnsClient,
+  HnsNameInfo,
+  buildMaxBoosterNSRecords,
+} from "./HnsClient.js";
 
 export type AuctionState =
-  | 'pending_open'
-  | 'opening'
-  | 'bidding'
-  | 'revealing'
-  | 'won'
-  | 'lost'
-  | 'registered'
-  | 'failed';
+  | "pending_open"
+  | "opening"
+  | "bidding"
+  | "revealing"
+  | "won"
+  | "lost"
+  | "registered"
+  | "failed";
 
 export interface AuctionRecord {
-  id:         string;
-  userId:     string;
-  name:       string;
-  bidHNS:     number;
-  lockupHNS:  number;
-  state:      AuctionState;
-  txHash?:    string;
-  nameHash?:  string;
-  error?:     string;
-  createdAt:  Date;
-  updatedAt:  Date;
+  id: string;
+  userId: string;
+  name: string;
+  bidHNS: number;
+  lockupHNS: number;
+  state: AuctionState;
+  txHash?: string;
+  nameHash?: string;
+  error?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export class HnsAuctionManager {
@@ -48,48 +52,55 @@ export class HnsAuctionManager {
    * Sends the OPEN transaction and saves the auction record.
    */
   async openAuction(
-    userId:    string,
-    name:      string,
-    bidHNS:    number,
+    userId: string,
+    name: string,
+    bidHNS: number,
     lockupHNS: number,
   ): Promise<AuctionRecord> {
-    const cleanName = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9-]/g, "");
 
     // Check availability
-    const { available, reason, state } = await this.client.checkAvailability(cleanName);
-    if (!available && state !== 'OPENING') {
+    const { available, reason, state } =
+      await this.client.checkAvailability(cleanName);
+    if (!available && state !== "OPENING") {
       throw new Error(`Name "${cleanName}" not available: ${reason}`);
     }
 
     let txHash: string | undefined;
-    let auctionState: AuctionState = 'pending_open';
+    let auctionState: AuctionState = "pending_open";
     let error: string | undefined;
 
     if (available) {
       try {
-        const tx  = await this.client.openAuction(cleanName);
-        txHash    = tx.hash;
-        auctionState = 'opening';
-        logger.info({ name: cleanName, txHash }, '[HNS] Auction opened');
+        const tx = await this.client.openAuction(cleanName);
+        txHash = tx.hash;
+        auctionState = "opening";
+        logger.info({ name: cleanName, txHash }, "[HNS] Auction opened");
       } catch (err) {
-        error        = err.message;
-        auctionState = 'failed';
-        logger.warn({ name: cleanName, err: err.message }, '[HNS] Failed to open auction');
+        error = err.message;
+        auctionState = "failed";
+        logger.warn(
+          { name: cleanName, err: err.message },
+          "[HNS] Failed to open auction",
+        );
       }
     } else {
       // Already opening — move to bidding state
-      auctionState = 'bidding';
+      auctionState = "bidding";
     }
 
-    const [row] = await db.insert(hnsAuctions).values({
-      userId,
-      name:      cleanName,
-      bidHns:    bidHNS,
-      lockupHns: lockupHNS,
-      state:     auctionState,
-      txHash:    txHash ?? null,
-      error:     error ?? null,
-    }).returning();
+    const [row] = await db
+      .insert(hnsAuctions)
+      .values({
+        userId,
+        name: cleanName,
+        bidHns: bidHNS,
+        lockupHns: lockupHNS,
+        state: auctionState,
+        txHash: txHash ?? null,
+        error: error ?? null,
+      })
+      .returning();
 
     return this.rowToRecord(row);
   }
@@ -99,27 +110,33 @@ export class HnsAuctionManager {
    */
   async placeBid(auctionId: string, userId: string): Promise<AuctionRecord> {
     const row = await this.getRow(auctionId, userId);
-    if (!row) throw new Error('Auction not found');
-    if (row.state !== 'bidding' && row.state !== 'opening') {
+    if (!row) throw new Error("Auction not found");
+    if (row.state !== "bidding" && row.state !== "opening") {
       throw new Error(`Cannot bid in state: ${row.state}`);
     }
 
     const info = await this.client.getNameInfo(row.name);
-    if (info.state !== 'BIDDING') {
+    if (info.state !== "BIDDING") {
       throw new Error(`Name state is ${info.state}, not BIDDING yet`);
     }
 
     try {
-      const tx = await this.client.placeBid(row.name, row.bidHns, row.lockupHns);
-      const [updated] = await db.update(hnsAuctions)
-        .set({ state: 'bidding', txHash: tx.hash, updatedAt: new Date() })
+      const tx = await this.client.placeBid(
+        row.name,
+        row.bidHns,
+        row.lockupHns,
+      );
+      const [updated] = await db
+        .update(hnsAuctions)
+        .set({ state: "bidding", txHash: tx.hash, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId))
         .returning();
-      logger.info({ name: row.name, txHash: tx.hash }, '[HNS] Bid placed');
+      logger.info({ name: row.name, txHash: tx.hash }, "[HNS] Bid placed");
       return this.rowToRecord(updated);
     } catch (err) {
-      await db.update(hnsAuctions)
-        .set({ state: 'failed', error: err.message, updatedAt: new Date() })
+      await db
+        .update(hnsAuctions)
+        .set({ state: "failed", error: err.message, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId));
       throw err;
     }
@@ -130,24 +147,26 @@ export class HnsAuctionManager {
    */
   async revealBid(auctionId: string, userId: string): Promise<AuctionRecord> {
     const row = await this.getRow(auctionId, userId);
-    if (!row) throw new Error('Auction not found');
+    if (!row) throw new Error("Auction not found");
 
     const info = await this.client.getNameInfo(row.name);
-    if (info.state !== 'REVEAL') {
+    if (info.state !== "REVEAL") {
       throw new Error(`Name state is ${info.state}, not REVEAL`);
     }
 
     try {
       const tx = await this.client.revealBids(row.name);
-      const [updated] = await db.update(hnsAuctions)
-        .set({ state: 'revealing', txHash: tx.hash, updatedAt: new Date() })
+      const [updated] = await db
+        .update(hnsAuctions)
+        .set({ state: "revealing", txHash: tx.hash, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId))
         .returning();
-      logger.info({ name: row.name, txHash: tx.hash }, '[HNS] Bid revealed');
+      logger.info({ name: row.name, txHash: tx.hash }, "[HNS] Bid revealed");
       return this.rowToRecord(updated);
     } catch (err) {
-      await db.update(hnsAuctions)
-        .set({ state: 'failed', error: err.message, updatedAt: new Date() })
+      await db
+        .update(hnsAuctions)
+        .set({ state: "failed", error: err.message, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId));
       throw err;
     }
@@ -158,35 +177,40 @@ export class HnsAuctionManager {
    */
   async registerName(
     auctionId: string,
-    userId:    string,
-    ns1IP:     string,
-    ns2IP:     string,
+    userId: string,
+    ns1IP: string,
+    ns2IP: string,
   ): Promise<AuctionRecord> {
     const row = await this.getRow(auctionId, userId);
-    if (!row) throw new Error('Auction not found');
+    if (!row) throw new Error("Auction not found");
 
     const info = await this.client.getNameInfo(row.name);
-    if (info.state !== 'CLOSED' || !info.registered) {
+    if (info.state !== "CLOSED" || !info.registered) {
       // Check if we're the owner by looking at wallet names
       const walletNames = await this.client.getWalletNames();
-      const owned = walletNames.find(n => n.name === row.name);
+      const owned = walletNames.find((n) => n.name === row.name);
       if (!owned) throw new Error(`Did not win auction for "${row.name}"`);
     }
 
-    const dns = (process.env.BASE_DOMAIN || 'max-booster.com');
+    const dns = process.env.BASE_DOMAIN || "max-booster.com";
     const records = buildMaxBoosterNSRecords(row.name, ns1IP, ns2IP);
 
     try {
       const tx = await this.client.updateName(row.name, records);
-      const [updated] = await db.update(hnsAuctions)
-        .set({ state: 'registered', txHash: tx.hash, updatedAt: new Date() })
+      const [updated] = await db
+        .update(hnsAuctions)
+        .set({ state: "registered", txHash: tx.hash, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId))
         .returning();
-      logger.info({ name: row.name, txHash: tx.hash }, '[HNS] Name registered with NS records');
+      logger.info(
+        { name: row.name, txHash: tx.hash },
+        "[HNS] Name registered with NS records",
+      );
       return this.rowToRecord(updated);
     } catch (err) {
-      await db.update(hnsAuctions)
-        .set({ state: 'failed', error: err.message, updatedAt: new Date() })
+      await db
+        .update(hnsAuctions)
+        .set({ state: "failed", error: err.message, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId));
       throw err;
     }
@@ -197,30 +221,40 @@ export class HnsAuctionManager {
    */
   async syncState(auctionId: string, userId: string): Promise<AuctionRecord> {
     const row = await this.getRow(auctionId, userId);
-    if (!row) throw new Error('Auction not found');
+    if (!row) throw new Error("Auction not found");
 
     const info = await this.client.getNameInfo(row.name);
     let newState: AuctionState = row.state;
 
     switch (info.state) {
-      case 'OPENING':  newState = 'opening';    break;
-      case 'BIDDING':  newState = 'bidding';    break;
-      case 'REVEAL':   newState = 'revealing';  break;
-      case 'CLOSED': {
+      case "OPENING":
+        newState = "opening";
+        break;
+      case "BIDDING":
+        newState = "bidding";
+        break;
+      case "REVEAL":
+        newState = "revealing";
+        break;
+      case "CLOSED": {
         // Check if we own it
         const walletNames = await this.client.getWalletNames().catch(() => []);
-        const owned = walletNames.find(n => n.name === row.name);
-        newState = owned ? 'won' : 'lost';
+        const owned = walletNames.find((n) => n.name === row.name);
+        newState = owned ? "won" : "lost";
         break;
       }
     }
 
     if (newState !== row.state) {
-      const [updated] = await db.update(hnsAuctions)
+      const [updated] = await db
+        .update(hnsAuctions)
         .set({ state: newState, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId))
         .returning();
-      logger.info({ name: row.name, from: row.state, to: newState }, '[HNS] State synced');
+      logger.info(
+        { name: row.name, from: row.state, to: newState },
+        "[HNS] State synced",
+      );
       return this.rowToRecord(updated);
     }
 
@@ -230,9 +264,11 @@ export class HnsAuctionManager {
   // ── Query helpers ─────────────────────────────────────────────────────────
 
   async listAuctions(userId: string): Promise<AuctionRecord[]> {
-    const rows = await db.select().from(hnsAuctions)
+    const rows = await db
+      .select()
+      .from(hnsAuctions)
       .where(eq(hnsAuctions.userId, userId));
-    return rows.map(r => this.rowToRecord(r));
+    return rows.map((r) => this.rowToRecord(r));
   }
 
   async getAuction(id: string, userId: string): Promise<AuctionRecord | null> {
@@ -241,7 +277,9 @@ export class HnsAuctionManager {
   }
 
   private async getRow(id: string, userId: string) {
-    const [row] = await db.select().from(hnsAuctions)
+    const [row] = await db
+      .select()
+      .from(hnsAuctions)
       .where(and(eq(hnsAuctions.id, id), eq(hnsAuctions.userId, userId)))
       .limit(1);
     return row ?? null;
@@ -249,15 +287,15 @@ export class HnsAuctionManager {
 
   private rowToRecord(row: Record<string, unknown>): AuctionRecord {
     return {
-      id:        row.id,
-      userId:    row.userId,
-      name:      row.name,
-      bidHNS:    row.bidHns,
+      id: row.id,
+      userId: row.userId,
+      name: row.name,
+      bidHNS: row.bidHns,
       lockupHNS: row.lockupHns,
-      state:     row.state as AuctionState,
-      txHash:    row.txHash ?? undefined,
-      nameHash:  row.nameHash ?? undefined,
-      error:     row.error ?? undefined,
+      state: row.state as AuctionState,
+      txHash: row.txHash ?? undefined,
+      nameHash: row.nameHash ?? undefined,
+      error: row.error ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

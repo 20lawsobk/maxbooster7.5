@@ -12,20 +12,22 @@
  * every 4 minutes so renewals take effect without a restart.
  */
 
-import tls from 'node:tls';
-import crypto from 'node:crypto';
-import pg from 'pg';
+import tls from "node:tls";
+import crypto from "node:crypto";
+import pg from "pg";
 
 const { Pool } = pg;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('sslmode=disable') ? false : { rejectUnauthorized: false },
+  ssl: process.env.DATABASE_URL?.includes("sslmode=disable")
+    ? false
+    : { rejectUnauthorized: false },
   max: 5,
   idleTimeoutMillis: 30_000,
 });
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || 'max-booster.com';
+const BASE_DOMAIN = process.env.BASE_DOMAIN || "max-booster.com";
 export const WILDCARD_HOST = `*.${BASE_DOMAIN}`;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const REFRESH_INTERVAL_MS = 4 * 60 * 1000;
@@ -50,9 +52,11 @@ async function getEncryptionKey(): Promise<Buffer> {
   const envKey = process.env.ACME_KEY_ENCRYPTION_KEY;
   if (envKey) {
     if (!/^[0-9a-fA-F]{64}$/.test(envKey)) {
-      throw new Error('[certStore] ACME_KEY_ENCRYPTION_KEY must be 64 hex chars (32 bytes)');
+      throw new Error(
+        "[certStore] ACME_KEY_ENCRYPTION_KEY must be 64 hex chars (32 bytes)",
+      );
     }
-    _encKey = Buffer.from(envKey, 'hex');
+    _encKey = Buffer.from(envKey, "hex");
     return _encKey;
   }
 
@@ -62,21 +66,29 @@ async function getEncryptionKey(): Promise<Buffer> {
   );
   const hex = rows[0]?.value;
   if (!hex || !/^[0-9a-fA-F]{64}$/.test(hex)) {
-    throw new Error('[certStore] acme_key_encryption_key not found or malformed in platform_settings');
+    throw new Error(
+      "[certStore] acme_key_encryption_key not found or malformed in platform_settings",
+    );
   }
-  _encKey = Buffer.from(hex, 'hex');
+  _encKey = Buffer.from(hex, "hex");
   return _encKey;
 }
 
 async function decryptStoredKey(blob: string): Promise<string> {
-  const parts = blob.split(':');
-  if (parts.length !== 3) throw new Error('[certStore] malformed encrypted key payload');
+  const parts = blob.split(":");
+  if (parts.length !== 3)
+    throw new Error("[certStore] malformed encrypted key payload");
   const [ivHex, tagHex, encHex] = parts;
   const key = await getEncryptionKey();
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'), { authTagLength: 16 });
-  decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
-  let dec = decipher.update(encHex, 'hex', 'utf8');
-  dec += decipher.final('utf8');
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    key,
+    Buffer.from(ivHex, "hex"),
+    { authTagLength: 16 },
+  );
+  decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+  let dec = decipher.update(encHex, "hex", "utf8");
+  dec += decipher.final("utf8");
   return dec;
 }
 
@@ -112,7 +124,9 @@ async function loadCertFromDB(host: string): Promise<tls.SecureContext | null> {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export async function loadSecureContext(servername: string): Promise<tls.SecureContext> {
+export async function loadSecureContext(
+  servername: string,
+): Promise<tls.SecureContext> {
   const host = servername.toLowerCase();
 
   const cached = ctxCache.get(host);
@@ -126,15 +140,21 @@ export async function loadSecureContext(servername: string): Promise<tls.SecureC
 
   // Explicit wildcard fallback
   const wildcardCached = ctxCache.get(WILDCARD_HOST);
-  if (wildcardCached && Date.now() < wildcardCached.expiresAt) return wildcardCached.ctx;
+  if (wildcardCached && Date.now() < wildcardCached.expiresAt)
+    return wildcardCached.ctx;
 
   const wildcardCtx = await loadCertFromDB(WILDCARD_HOST);
   if (wildcardCtx) {
-    ctxCache.set(WILDCARD_HOST, { ctx: wildcardCtx, expiresAt: Date.now() + CACHE_TTL_MS });
+    ctxCache.set(WILDCARD_HOST, {
+      ctx: wildcardCtx,
+      expiresAt: Date.now() + CACHE_TTL_MS,
+    });
     return wildcardCtx;
   }
 
-  throw new Error(`[certStore] No issued TLS cert available for ${host} or ${WILDCARD_HOST}`);
+  throw new Error(
+    `[certStore] No issued TLS cert available for ${host} or ${WILDCARD_HOST}`,
+  );
 }
 
 export async function prefetchWildcardCert(): Promise<void> {
@@ -142,14 +162,24 @@ export async function prefetchWildcardCert(): Promise<void> {
   try {
     const ctx = await loadCertFromDB(WILDCARD_HOST);
     if (ctx) {
-      ctxCache.set(WILDCARD_HOST, { ctx, expiresAt: Date.now() + CACHE_TTL_MS });
+      ctxCache.set(WILDCARD_HOST, {
+        ctx,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      });
       console.log(`[certStore] Wildcard cert loaded`);
     } else {
-      console.warn(`[certStore] No wildcard cert found — ACME provisioning may not have run yet`);
-      console.warn(`[certStore] Run: curl -X POST https://max-booster.com/api/dns/provision-wildcard`);
+      console.warn(
+        `[certStore] No wildcard cert found — ACME provisioning may not have run yet`,
+      );
+      console.warn(
+        `[certStore] Run: curl -X POST https://max-booster.com/api/dns/provision-wildcard`,
+      );
     }
   } catch (err) {
-    console.warn(`[certStore] Failed to pre-load wildcard cert:`, (err as Error).message);
+    console.warn(
+      `[certStore] Failed to pre-load wildcard cert:`,
+      (err as Error).message,
+    );
   }
 }
 
@@ -158,7 +188,10 @@ export function startCertRefresh(): void {
     try {
       const ctx = await loadCertFromDB(WILDCARD_HOST);
       if (ctx) {
-        ctxCache.set(WILDCARD_HOST, { ctx, expiresAt: Date.now() + CACHE_TTL_MS });
+        ctxCache.set(WILDCARD_HOST, {
+          ctx,
+          expiresAt: Date.now() + CACHE_TTL_MS,
+        });
       }
       // Also invalidate recently-expired cache entries so custom domain certs refresh
       const now = Date.now();

@@ -23,21 +23,23 @@
  * all calls return { sent: 0, failed: 0 } silently.
  */
 
-import { db } from '../db';
-import { mobileDeviceTokens } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import type { RichPushPayload } from './pushNotificationTypes.js';
+import { db } from "../db";
+import { mobileDeviceTokens } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
+import { logger } from "../logger.js";
+import type { RichPushPayload } from "./pushNotificationTypes.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
-const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+const timedFetch = (
+  url: string | URL | Request,
+  init: RequestInit = {},
+): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
-
 
 interface FCMAndroidConfig {
   notification_key?: string;
-  priority?: 'normal' | 'high';
+  priority?: "normal" | "high";
   collapse_key?: string;
   notification_channel_id?: string;
   color?: string;
@@ -53,7 +55,7 @@ interface FCMApnsConfig {
   content_available?: boolean;
   mutable_content?: boolean;
   target_content_id?: string;
-  interruption_level?: 'passive' | 'active' | 'time-sensitive' | 'critical';
+  interruption_level?: "passive" | "active" | "time-sensitive" | "critical";
 }
 
 export interface MobilePushPayload {
@@ -66,7 +68,7 @@ export interface MobilePushPayload {
   apns?: FCMApnsConfig;
   silent?: boolean;
   collapseKey?: string;
-  priority?: 'normal' | 'high';
+  priority?: "normal" | "high";
 }
 
 interface DeviceTokenRecord {
@@ -82,10 +84,10 @@ interface DeviceTokenRecord {
   updatedAt: Date | null;
 }
 
-type PushMode = 'fcm_v1' | 'fcm_legacy' | 'unavailable';
+type PushMode = "fcm_v1" | "fcm_legacy" | "unavailable";
 
 class MobilePushService {
-  private mode: PushMode = 'unavailable';
+  private mode: PushMode = "unavailable";
   private projectId: string | null = null;
   private serverKey: string | null = null;
   private serviceAccountKey: Record<string, string> | null = null;
@@ -97,9 +99,13 @@ class MobilePushService {
   }
 
   private initialize() {
-    const projectId = process.env.FCM_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
-    const serviceAccountRaw = process.env.FCM_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    const serverKey = process.env.FCM_SERVER_KEY || process.env.FIREBASE_SERVER_KEY;
+    const projectId =
+      process.env.FCM_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+    const serviceAccountRaw =
+      process.env.FCM_SERVICE_ACCOUNT_KEY ||
+      process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const serverKey =
+      process.env.FCM_SERVER_KEY || process.env.FIREBASE_SERVER_KEY;
     const clientEmail = process.env.FCM_CLIENT_EMAIL;
 
     if (projectId && serviceAccountRaw) {
@@ -108,8 +114,8 @@ class MobilePushService {
         const parsed = JSON.parse(serviceAccountRaw);
         this.serviceAccountKey = parsed;
         this.projectId = projectId;
-        this.mode = 'fcm_v1';
-        logger.info('📱 Mobile Push Service: FCM v1 API ready (full JSON)');
+        this.mode = "fcm_v1";
+        logger.info("📱 Mobile Push Service: FCM v1 API ready (full JSON)");
         return;
       } catch {
         // Not JSON — try Option B: raw private key + FCM_CLIENT_EMAIL
@@ -120,48 +126,57 @@ class MobilePushService {
         try {
           let rawKey = serviceAccountRaw.trim();
 
-          if (rawKey.includes('-----BEGIN')) {
+          if (rawKey.includes("-----BEGIN")) {
             // Already has PEM headers — normalize escaped newlines then use as-is
-            rawKey = rawKey.split('\\n').join('\n');
+            rawKey = rawKey.split("\\n").join("\n");
           } else {
             // Strip any leading garbage before the base64 key body (e.g. leading 'n', '/n')
-            let keyBody = rawKey.replace(/^[^M]+/, '');
+            let keyBody = rawKey.replace(/^[^M]+/, "");
             // Strip all internal literal '\n' sequences and real newlines to get flat base64
-            keyBody = keyBody.split('\\n').join('').replace(/\s/g, '');
+            keyBody = keyBody.split("\\n").join("").replace(/\s/g, "");
             rawKey = `-----BEGIN PRIVATE KEY-----\n${keyBody}\n-----END PRIVATE KEY-----\n`;
           }
 
           this.serviceAccountKey = {
-            type: 'service_account',
+            type: "service_account",
             project_id: projectId,
             private_key: rawKey,
             client_email: clientEmail,
-            token_uri: 'https://oauth2.googleapis.com/token',
+            token_uri: "https://oauth2.googleapis.com/token",
           } as Record<string, string>;
           this.projectId = projectId;
-          this.mode = 'fcm_v1';
-          logger.info('📱 Mobile Push Service: FCM v1 API ready (raw key + email)');
+          this.mode = "fcm_v1";
+          logger.info(
+            "📱 Mobile Push Service: FCM v1 API ready (raw key + email)",
+          );
           return;
         } catch (err) {
-          logger.warn({ err: err }, '📱 Mobile Push Service: Failed to reconstruct service account from raw key');
+          logger.warn(
+            { err: err },
+            "📱 Mobile Push Service: Failed to reconstruct service account from raw key",
+          );
         }
       } else {
-        logger.warn('📱 Mobile Push Service: FCM_SERVICE_ACCOUNT_KEY is not valid JSON — set FCM_CLIENT_EMAIL to activate raw-key mode');
+        logger.warn(
+          "📱 Mobile Push Service: FCM_SERVICE_ACCOUNT_KEY is not valid JSON — set FCM_CLIENT_EMAIL to activate raw-key mode",
+        );
       }
     }
 
     if (serverKey) {
       this.serverKey = serverKey;
-      this.mode = 'fcm_legacy';
-      logger.info('📱 Mobile Push Service: FCM Legacy API ready');
+      this.mode = "fcm_legacy";
+      logger.info("📱 Mobile Push Service: FCM Legacy API ready");
       return;
     }
 
-    logger.info('📱 Mobile Push Service: No credentials configured — mobile push unavailable. Set FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_KEY (+ FCM_CLIENT_EMAIL for raw key) to activate.');
+    logger.info(
+      "📱 Mobile Push Service: No credentials configured — mobile push unavailable. Set FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_KEY (+ FCM_CLIENT_EMAIL for raw key) to activate.",
+    );
   }
 
   isReady(): boolean {
-    return this.mode !== 'unavailable';
+    return this.mode !== "unavailable";
   }
 
   getMode(): PushMode {
@@ -173,9 +188,9 @@ class MobilePushService {
   async registerToken(
     userId: string,
     token: string,
-    platform: 'android' | 'ios',
+    platform: "android" | "ios",
     deviceName?: string,
-    appVersion?: string
+    appVersion?: string,
   ): Promise<void> {
     try {
       const existing = await db
@@ -207,10 +222,12 @@ class MobilePushService {
           appVersion: appVersion || null,
           isActive: true,
         });
-        logger.info(`📱 Mobile token registered for user ${userId} (${platform})`);
+        logger.info(
+          `📱 Mobile token registered for user ${userId} (${platform})`,
+        );
       }
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to register mobile device token:');
+      logger.warn({ err: error }, "Failed to register mobile device token:");
       throw error;
     }
   }
@@ -222,7 +239,7 @@ class MobilePushService {
         .set({ isActive: false, updatedAt: new Date() })
         .where(eq(mobileDeviceTokens.token, token));
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to deactivate mobile device token:');
+      logger.warn({ err: error }, "Failed to deactivate mobile device token:");
     }
   }
 
@@ -233,23 +250,23 @@ class MobilePushService {
         .where(eq(mobileDeviceTokens.userId, userId));
       logger.info(`📱 All mobile tokens removed for user ${userId}`);
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to remove user mobile tokens:');
+      logger.warn({ err: error }, "Failed to remove user mobile tokens:");
     }
   }
 
   async getUserTokens(userId: string): Promise<DeviceTokenRecord[]> {
     try {
-      return await db
+      return (await db
         .select()
         .from(mobileDeviceTokens)
         .where(
           and(
             eq(mobileDeviceTokens.userId, userId),
-            eq(mobileDeviceTokens.isActive, true)
-          )
-        ) as DeviceTokenRecord[];
+            eq(mobileDeviceTokens.isActive, true),
+          ),
+        )) as DeviceTokenRecord[];
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to get user mobile tokens:');
+      logger.warn({ err: error }, "Failed to get user mobile tokens:");
       return [];
     }
   }
@@ -259,7 +276,7 @@ class MobilePushService {
     return {
       hasTokens: tokens.length > 0,
       count: tokens.length,
-      devices: tokens.map(t => ({
+      devices: tokens.map((t) => ({
         id: t.id,
         platform: t.platform,
         deviceName: t.deviceName,
@@ -273,100 +290,128 @@ class MobilePushService {
 
   private async getAccessToken(): Promise<string | null> {
     if (!this.serviceAccountKey) return null;
-    if (this.accessToken && Date.now() < this.accessTokenExpiry) return this.accessToken;
+    if (this.accessToken && Date.now() < this.accessTokenExpiry)
+      return this.accessToken;
 
     try {
-      const { createSign } = await import('crypto');
+      const { createSign } = await import("crypto");
       const now = Math.floor(Date.now() / 1000);
-      const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
-      const payload = Buffer.from(JSON.stringify({
-        iss: this.serviceAccountKey.client_email,
-        scope: 'https://www.googleapis.com/auth/firebase.messaging',
-        aud: 'https://oauth2.googleapis.com/token',
-        iat: now,
-        exp: now + 3600,
-      })).toString('base64url');
+      const header = Buffer.from(
+        JSON.stringify({ alg: "RS256", typ: "JWT" }),
+      ).toString("base64url");
+      const payload = Buffer.from(
+        JSON.stringify({
+          iss: this.serviceAccountKey.client_email,
+          scope: "https://www.googleapis.com/auth/firebase.messaging",
+          aud: "https://oauth2.googleapis.com/token",
+          iat: now,
+          exp: now + 3600,
+        }),
+      ).toString("base64url");
 
       const unsignedToken = `${header}.${payload}`;
-      const sign = createSign('RSA-SHA256');
+      const sign = createSign("RSA-SHA256");
       sign.update(unsignedToken);
-      const signature = sign.sign(this.serviceAccountKey.private_key, 'base64url');
+      const signature = sign.sign(
+        this.serviceAccountKey.private_key,
+        "base64url",
+      );
       const jwt = `${unsignedToken}.${signature}`;
 
-      const response = await timedFetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      const response = await timedFetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
           assertion: jwt,
         }),
       });
 
       if (!response.ok) {
-        logger.warn('Failed to get FCM access token:', await response.text());
+        logger.warn("Failed to get FCM access token:", await response.text());
         return null;
       }
 
-      const data = await response.json() as { access_token: string; expires_in: number };
+      const data = (await response.json()) as {
+        access_token: string;
+        expires_in: number;
+      };
       this.accessToken = data.access_token;
       this.accessTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
       return this.accessToken;
     } catch (error) {
-      logger.warn({ err: error }, 'FCM access token error:');
+      logger.warn({ err: error }, "FCM access token error:");
       return null;
     }
   }
 
   // ── Send via FCM v1 API ─────────────────────────────────────────────────────
 
-  private async sendViav1(token: string, payload: MobilePushPayload, platform: string): Promise<boolean> {
+  private async sendViav1(
+    token: string,
+    payload: MobilePushPayload,
+    platform: string,
+  ): Promise<boolean> {
     const accessToken = await this.getAccessToken();
     if (!accessToken) return false;
 
     const androidConfig = {
-      priority: payload.priority === 'high' ? 'HIGH' : 'NORMAL',
+      priority: payload.priority === "high" ? "HIGH" : "NORMAL",
       collapse_key: payload.collapseKey,
-      notification: payload.silent ? undefined : {
-        title: payload.title,
-        body: payload.body,
-        image: payload.imageUrl,
-        color: payload.android?.color || '#4A9EFF',
-        sound: payload.android?.sound || 'default',
-        icon: payload.android?.icon || 'ic_notification',
-        channel_id: payload.android?.notification_channel_id || 'max_booster_default',
-        tag: payload.android?.tag,
-        click_action: payload.android?.click_action || 'FLUTTER_NOTIFICATION_CLICK',
-      },
+      notification: payload.silent
+        ? undefined
+        : {
+            title: payload.title,
+            body: payload.body,
+            image: payload.imageUrl,
+            color: payload.android?.color || "#4A9EFF",
+            sound: payload.android?.sound || "default",
+            icon: payload.android?.icon || "ic_notification",
+            channel_id:
+              payload.android?.notification_channel_id || "max_booster_default",
+            tag: payload.android?.tag,
+            click_action:
+              payload.android?.click_action || "FLUTTER_NOTIFICATION_CLICK",
+          },
       data: {
-        url: payload.url || '/',
+        url: payload.url || "/",
         title: payload.title,
         body: payload.body,
         ...(payload.data || {}),
       },
     };
 
-    const apnsConfig = platform === 'ios' ? {
-      payload: {
-        aps: {
-          badge: payload.apns?.badge ?? 1,
-          sound: payload.apns?.sound || 'default',
-          'content-available': payload.silent ? 1 : undefined,
-          'mutable-content': payload.apns?.mutable_content ? 1 : undefined,
-          'interruption-level': payload.apns?.interruption_level || (payload.priority === 'high' ? 'time-sensitive' : 'active'),
-          alert: payload.silent ? undefined : { title: payload.title, body: payload.body },
-        },
-        url: payload.url || '/',
-        ...(payload.data || {}),
-      },
-    } : undefined;
+    const apnsConfig =
+      platform === "ios"
+        ? {
+            payload: {
+              aps: {
+                badge: payload.apns?.badge ?? 1,
+                sound: payload.apns?.sound || "default",
+                "content-available": payload.silent ? 1 : undefined,
+                "mutable-content": payload.apns?.mutable_content
+                  ? 1
+                  : undefined,
+                "interruption-level":
+                  payload.apns?.interruption_level ||
+                  (payload.priority === "high" ? "time-sensitive" : "active"),
+                alert: payload.silent
+                  ? undefined
+                  : { title: payload.title, body: payload.body },
+              },
+              url: payload.url || "/",
+              ...(payload.data || {}),
+            },
+          }
+        : undefined;
 
     const body = {
       message: {
         token,
-        android: platform === 'android' ? androidConfig : undefined,
+        android: platform === "android" ? androidConfig : undefined,
         apns: apnsConfig,
         data: {
-          url: payload.url || '/',
+          url: payload.url || "/",
           ...(payload.data || {}),
         },
       },
@@ -376,51 +421,59 @@ class MobilePushService {
       const response = await timedFetch(
         `https://fcm.googleapis.com/v1/projects/${this.projectId}/messages:send`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(body),
-        }
+        },
       );
 
       if (!response.ok) {
         const errText = await response.text();
-        if (response.status === 404 || errText.includes('UNREGISTERED')) {
+        if (response.status === 404 || errText.includes("UNREGISTERED")) {
           await this.deactivateToken(token);
         }
-        logger.warn(`FCM v1 send failed (${response.status}):`, errText.substring(0, 200));
+        logger.warn(
+          `FCM v1 send failed (${response.status}):`,
+          errText.substring(0, 200),
+        );
         return false;
       }
       return true;
     } catch (error) {
-      logger.warn({ err: error }, 'FCM v1 network error:');
+      logger.warn({ err: error }, "FCM v1 network error:");
       return false;
     }
   }
 
   // ── Send via FCM Legacy API ─────────────────────────────────────────────────
 
-  private async sendViaLegacy(token: string, payload: MobilePushPayload): Promise<boolean> {
+  private async sendViaLegacy(
+    token: string,
+    payload: MobilePushPayload,
+  ): Promise<boolean> {
     if (!this.serverKey) return false;
 
     const body = {
       to: token,
       collapse_key: payload.collapseKey,
-      priority: payload.priority === 'high' ? 'high' : 'normal',
-      notification: payload.silent ? undefined : {
-        title: payload.title,
-        body: payload.body,
-        sound: 'default',
-        icon: 'ic_notification',
-        color: '#4A9EFF',
-        image: payload.imageUrl,
-        android_channel_id: 'max_booster_default',
-        tag: payload.collapseKey,
-      },
+      priority: payload.priority === "high" ? "high" : "normal",
+      notification: payload.silent
+        ? undefined
+        : {
+            title: payload.title,
+            body: payload.body,
+            sound: "default",
+            icon: "ic_notification",
+            color: "#4A9EFF",
+            image: payload.imageUrl,
+            android_channel_id: "max_booster_default",
+            tag: payload.collapseKey,
+          },
       data: {
-        url: payload.url || '/',
+        url: payload.url || "/",
         title: payload.title,
         body: payload.body,
         ...(payload.data || {}),
@@ -429,11 +482,11 @@ class MobilePushService {
     };
 
     try {
-      const response = await timedFetch('https://fcm.googleapis.com/fcm/send', {
-        method: 'POST',
+      const response = await timedFetch("https://fcm.googleapis.com/fcm/send", {
+        method: "POST",
         headers: {
           Authorization: `key=${this.serverKey}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
       });
@@ -443,24 +496,31 @@ class MobilePushService {
         return false;
       }
 
-      const result = await response.json() as { success?: number; failure?: number; results?: Array<{ error?: string }> };
+      const result = (await response.json()) as {
+        success?: number;
+        failure?: number;
+        results?: Array<{ error?: string }>;
+      };
       if (result.failure && result.failure > 0 && result.results?.[0]?.error) {
         const err = result.results[0].error;
-        if (err === 'NotRegistered' || err === 'InvalidRegistration') {
+        if (err === "NotRegistered" || err === "InvalidRegistration") {
           await this.deactivateToken(token);
         }
         return false;
       }
       return (result.success ?? 0) > 0;
     } catch (error) {
-      logger.warn({ err: error }, 'FCM legacy network error:');
+      logger.warn({ err: error }, "FCM legacy network error:");
       return false;
     }
   }
 
   // ── Public: Send to User ───────────────────────────────────────────────────
 
-  async sendToUser(userId: string, payload: MobilePushPayload): Promise<{ sent: number; failed: number }> {
+  async sendToUser(
+    userId: string,
+    payload: MobilePushPayload,
+  ): Promise<{ sent: number; failed: number }> {
     if (!this.isReady()) {
       return { sent: 0, failed: 0 };
     }
@@ -472,24 +532,32 @@ class MobilePushService {
     let failed = 0;
 
     for (const record of tokens) {
-      const ok = this.mode === 'fcm_v1'
-        ? await this.sendViav1(record.token, payload, record.platform)
-        : await this.sendViaLegacy(record.token, payload);
+      const ok =
+        this.mode === "fcm_v1"
+          ? await this.sendViav1(record.token, payload, record.platform)
+          : await this.sendViaLegacy(record.token, payload);
 
       if (ok) sent++;
       else failed++;
     }
 
     if (sent > 0) {
-      logger.info(`📱 Mobile push sent to ${sent}/${tokens.length} device(s) for user ${userId}`);
+      logger.info(
+        `📱 Mobile push sent to ${sent}/${tokens.length} device(s) for user ${userId}`,
+      );
     }
 
     return { sent, failed };
   }
 
-  async sendRichToUser(userId: string, richPayload: RichPushPayload): Promise<{ sent: number; failed: number }> {
-    const mobilePriority = richPayload.requireInteraction ? 'high' : 'normal';
-    const apnsInterruption = richPayload.requireInteraction ? 'time-sensitive' : 'active';
+  async sendRichToUser(
+    userId: string,
+    richPayload: RichPushPayload,
+  ): Promise<{ sent: number; failed: number }> {
+    const mobilePriority = richPayload.requireInteraction ? "high" : "normal";
+    const apnsInterruption = richPayload.requireInteraction
+      ? "time-sensitive"
+      : "active";
 
     const payload: MobilePushPayload = {
       title: richPayload.title,
@@ -503,7 +571,7 @@ class MobilePushService {
         url: richPayload.url,
         tag: richPayload.tag,
         category: richPayload.category,
-        type: String(richPayload.data?.type || ''),
+        type: String(richPayload.data?.type || ""),
       },
       android: {
         notification_channel_id: `maxbooster_${richPayload.category}`,
@@ -513,7 +581,7 @@ class MobilePushService {
       apns: {
         interruption_level: apnsInterruption,
         mutable_content: !!richPayload.image,
-        sound: richPayload.silent ? undefined : 'default',
+        sound: richPayload.silent ? undefined : "default",
       },
     };
 
@@ -524,20 +592,20 @@ class MobilePushService {
 
   private getCategoryColor(category: string): string {
     const colors: Record<string, string> = {
-      account_security:  '#EF4444',
-      direct_interaction: '#8B5CF6',
-      engagement_summary: '#F59E0B',
-      content_based:     '#10B981',
-      platform_generated: '#3B82F6',
-      location_based:    '#14B8A6',
-      distribution:      '#6366F1',
-      royalties:         '#22C55E',
-      collaboration:     '#EC4899',
-      marketplace:       '#F97316',
-      achievements:      '#FBBF24',
-      system:            '#64748B',
+      account_security: "#EF4444",
+      direct_interaction: "#8B5CF6",
+      engagement_summary: "#F59E0B",
+      content_based: "#10B981",
+      platform_generated: "#3B82F6",
+      location_based: "#14B8A6",
+      distribution: "#6366F1",
+      royalties: "#22C55E",
+      collaboration: "#EC4899",
+      marketplace: "#F97316",
+      achievements: "#FBBF24",
+      system: "#64748B",
     };
-    return colors[category] || '#4A9EFF';
+    return colors[category] || "#4A9EFF";
   }
 }
 

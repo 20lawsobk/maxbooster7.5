@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, useSpring, useTransform, useMotionValue } from 'framer-motion';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { motion, useSpring, useTransform, useMotionValue } from "framer-motion";
 
 interface ProfessionalFaderProps {
   value: number; // 0 to 1
@@ -10,9 +10,9 @@ interface ProfessionalFaderProps {
   showMeter?: boolean;
   meterLevel?: number; // in dB
   peakLevel?: number; // in dB
-  orientation?: 'vertical' | 'horizontal';
+  orientation?: "vertical" | "horizontal";
   className?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 // Maximum dB for safety - prevents excessive gain that could damage hearing/speakers
@@ -21,13 +21,13 @@ const MIN_DB = -60;
 const DB_RANGE = MAX_DB - MIN_DB; // 90dB total range
 
 const DB_MARKS = [
-  { db: '+30', position: 1 },
-  { db: '+12', position: 0.8 },
-  { db: '0', position: 0.667 },
-  { db: '-10', position: 0.556 },
-  { db: '-20', position: 0.444 },
-  { db: '-40', position: 0.222 },
-  { db: '-∞', position: 0 },
+  { db: "+30", position: 1 },
+  { db: "+12", position: 0.8 },
+  { db: "0", position: 0.667 },
+  { db: "-10", position: 0.556 },
+  { db: "-20", position: 0.444 },
+  { db: "-40", position: 0.222 },
+  { db: "-∞", position: 0 },
 ];
 
 /**
@@ -63,9 +63,9 @@ export function ProfessionalFader({
   showMeter = true,
   meterLevel = -60,
   peakLevel = -60,
-  orientation = 'vertical',
-  className = '',
-  'data-testid': dataTestId,
+  orientation = "vertical",
+  className = "",
+  "data-testid": dataTestId,
 }: ProfessionalFaderProps) {
   const faderRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -82,7 +82,7 @@ export function ProfessionalFader({
   const faderY = useTransform(
     springPosition,
     [0, 1],
-    orientation === 'vertical' ? [height - 30, 0] : [0, height - 30]
+    orientation === "vertical" ? [height - 30, 0] : [0, height - 30],
   );
 
   // Update peak hold
@@ -107,7 +107,7 @@ export function ProfessionalFader({
         if (!faderRef.current) return;
 
         const deltaY =
-          orientation === 'vertical'
+          orientation === "vertical"
             ? (startY - e.clientY) / height
             : (e.clientX - startY) / height;
 
@@ -121,14 +121,14 @@ export function ProfessionalFader({
 
       const handleMouseUp = () => {
         setIsDragging(false);
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
 
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     },
-    [value, onChange, height, orientation, faderPosition]
+    [value, onChange, height, orientation, faderPosition],
   );
 
   const handleDoubleClick = useCallback(() => {
@@ -145,15 +145,21 @@ export function ProfessionalFader({
     // Use the full dB range (-60 to +30 = 90dB) to match the fader control range
     const clampedMeterLevel = Math.min(MAX_DB, Math.max(MIN_DB, meterLevel));
     const clampedPeakHold = Math.min(MAX_DB, Math.max(MIN_DB, peakHold));
-    const levelHeight = Math.max(0, ((clampedMeterLevel - MIN_DB) / DB_RANGE) * meterHeight);
-    const peakHeight = Math.max(0, ((clampedPeakHold - MIN_DB) / DB_RANGE) * meterHeight);
+    const levelHeight = Math.max(
+      0,
+      ((clampedMeterLevel - MIN_DB) / DB_RANGE) * meterHeight,
+    );
+    const peakHeight = Math.max(
+      0,
+      ((clampedPeakHold - MIN_DB) / DB_RANGE) * meterHeight,
+    );
 
     return (
       <div
         className="absolute left-0 w-2 rounded-sm overflow-hidden"
         style={{
           height: `${meterHeight}px`,
-          background: 'var(--meter-background)',
+          background: "var(--meter-background)",
         }}
       >
         {/* LED segments - using full 90dB range (-60 to +30) */}
@@ -164,13 +170,13 @@ export function ProfessionalFader({
           const segmentDb = ((i + 1) / 20) * DB_RANGE + MIN_DB;
           const isActive = levelHeight > i * segmentHeight;
 
-          let color = '#2a2a2a';
+          let color = "#2a2a2a";
           if (isActive) {
             // Adjusted thresholds for 90dB range:
             // Green: -60 to -12dB, Yellow: -12 to +6dB, Red: +6 to +30dB
-            if (segmentDb < -12) color = 'var(--meter-green)';
-            else if (segmentDb < 6) color = 'var(--meter-yellow)';
-            else color = 'var(--meter-red)';
+            if (segmentDb < -12) color = "var(--meter-green)";
+            else if (segmentDb < 6) color = "var(--meter-yellow)";
+            else color = "var(--meter-red)";
           }
 
           return (
@@ -182,7 +188,7 @@ export function ProfessionalFader({
                 height: `${segmentHeight - 1}px`,
                 background: color,
                 opacity: isActive ? 1 : 0.3,
-                transition: 'all 0.05s ease-out',
+                transition: "all 0.05s ease-out",
               }}
             />
           );
@@ -193,7 +199,7 @@ export function ProfessionalFader({
           className="absolute w-full h-0.5 bg-white"
           style={{
             bottom: `${Math.min(peakHeight, meterHeight - 2)}px`,
-            boxShadow: '0 0 4px rgba(255,255,255,0.8)',
+            boxShadow: "0 0 4px rgba(255,255,255,0.8)",
           }}
           animate={{ opacity: [1, 0.8, 1] }}
           transition={{ duration: 0.5, repeat: Infinity }}
@@ -217,41 +223,44 @@ export function ProfessionalFader({
       <div
         className="relative ml-3"
         style={{
-          width: orientation === 'vertical' ? '40px' : `${height}px`,
-          height: orientation === 'vertical' ? `${height}px` : '40px',
+          width: orientation === "vertical" ? "40px" : `${height}px`,
+          height: orientation === "vertical" ? `${height}px` : "40px",
         }}
       >
         {/* Track Background */}
         <div
           className="absolute rounded"
           style={{
-            left: orientation === 'vertical' ? '18px' : '0',
-            top: orientation === 'vertical' ? '0' : '18px',
-            width: orientation === 'vertical' ? '4px' : '100%',
-            height: orientation === 'vertical' ? '100%' : '4px',
-            background: 'var(--fader-track-bg)',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+            left: orientation === "vertical" ? "18px" : "0",
+            top: orientation === "vertical" ? "0" : "18px",
+            width: orientation === "vertical" ? "4px" : "100%",
+            height: orientation === "vertical" ? "100%" : "4px",
+            background: "var(--fader-track-bg)",
+            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.5)",
           }}
         />
 
         {/* dB Markings */}
-        {orientation === 'vertical' &&
+        {orientation === "vertical" &&
           DB_MARKS.map((mark) => (
             <div
               key={mark.db}
               className="absolute flex items-center"
               style={{
                 top: `${(1 - mark.position) * height}px`,
-                left: '26px',
-                transform: 'translateY(-50%)',
+                left: "26px",
+                transform: "translateY(-50%)",
               }}
             >
-              <div className="w-2 h-px bg-gray-500" style={{ marginRight: '4px' }} />
+              <div
+                className="w-2 h-px bg-gray-500"
+                style={{ marginRight: "4px" }}
+              />
               <span
                 className="text-[8px] font-mono"
                 style={{
-                  color: 'var(--studio-text-muted)',
-                  minWidth: '20px',
+                  color: "var(--studio-text-muted)",
+                  minWidth: "20px",
                 }}
               >
                 {mark.db}
@@ -263,19 +272,19 @@ export function ProfessionalFader({
         <motion.div
           className="absolute cursor-grab active:cursor-grabbing"
           style={{
-            left: orientation === 'vertical' ? '10px' : faderY,
-            top: orientation === 'vertical' ? faderY : '10px',
-            width: '20px',
-            height: '30px',
-            background: 'var(--fader-cap-bg)',
-            borderRadius: '2px',
-            border: '1px solid #5a5a5f',
+            left: orientation === "vertical" ? "10px" : faderY,
+            top: orientation === "vertical" ? faderY : "10px",
+            width: "20px",
+            height: "30px",
+            background: "var(--fader-cap-bg)",
+            borderRadius: "2px",
+            border: "1px solid #5a5a5f",
             boxShadow: isDragging
-              ? 'var(--knob-hover-glow), var(--knob-shadow)'
+              ? "var(--knob-hover-glow), var(--knob-shadow)"
               : isHovered
-                ? '0 0 8px rgba(0, 204, 255, 0.2), var(--knob-shadow)'
-                : 'var(--knob-shadow)',
-            transition: 'box-shadow 0.2s ease',
+                ? "0 0 8px rgba(0, 204, 255, 0.2), var(--knob-shadow)"
+                : "var(--knob-shadow)",
+            transition: "box-shadow 0.2s ease",
           }}
           onMouseDown={handleMouseDown}
           onDoubleClick={handleDoubleClick}
@@ -286,8 +295,8 @@ export function ProfessionalFader({
           <div
             className="absolute w-full h-px top-1/2 -translate-y-1/2"
             style={{
-              background: 'var(--knob-indicator)',
-              boxShadow: '0 0 3px var(--knob-indicator)',
+              background: "var(--knob-indicator)",
+              boxShadow: "0 0 3px var(--knob-indicator)",
             }}
           />
         </motion.div>
@@ -297,9 +306,9 @@ export function ProfessionalFader({
           <motion.div
             className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-xs font-mono"
             style={{
-              background: 'var(--studio-bg-deep)',
-              border: '1px solid var(--studio-border)',
-              color: 'var(--studio-text)',
+              background: "var(--studio-bg-deep)",
+              border: "1px solid var(--studio-border)",
+              color: "var(--studio-text)",
             }}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
@@ -315,9 +324,10 @@ export function ProfessionalFader({
         <div
           className="text-xs font-medium writing-mode-vertical"
           style={{
-            color: 'var(--studio-text-muted)',
-            writingMode: orientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb',
-            transform: orientation === 'vertical' ? 'rotate(180deg)' : 'none',
+            color: "var(--studio-text-muted)",
+            writingMode:
+              orientation === "vertical" ? "vertical-rl" : "horizontal-tb",
+            transform: orientation === "vertical" ? "rotate(180deg)" : "none",
           }}
         >
           {label}

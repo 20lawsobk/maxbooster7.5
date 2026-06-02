@@ -1,21 +1,21 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/lib/logger';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 export type AIWorkflowState =
-  | 'idle'
-  | 'requesting'
-  | 'processing'
-  | 'success'
-  | 'integrated'
-  | 'error';
+  | "idle"
+  | "requesting"
+  | "processing"
+  | "success"
+  | "integrated"
+  | "error";
 
 export type AIWorkflowType =
-  | 'text-to-music'
-  | 'audio-to-music'
-  | 'ai-mix'
-  | 'ai-master'
-  | 'audio-analysis';
+  | "text-to-music"
+  | "audio-to-music"
+  | "ai-mix"
+  | "ai-master"
+  | "audio-analysis";
 
 interface WorkflowData {
   currentState: AIWorkflowState;
@@ -29,14 +29,17 @@ interface WorkflowData {
 
 interface UseAIWorkflowOptions {
   maxRetries?: number;
-  onStateChange?: (workflowType: AIWorkflowType, state: AIWorkflowState) => void;
+  onStateChange?: (
+    workflowType: AIWorkflowType,
+    state: AIWorkflowState,
+  ) => void;
   onProgress?: (workflowType: AIWorkflowType, progress: number) => void;
   onError?: (workflowType: AIWorkflowType, error: string) => void;
   onSuccess?: (workflowType: AIWorkflowType, data: unknown) => void;
 }
 
 const initialWorkflowData: WorkflowData = {
-  currentState: 'idle',
+  currentState: "idle",
   progress: 0,
   errorMessage: null,
   retryCount: 0,
@@ -46,18 +49,30 @@ const initialWorkflowData: WorkflowData = {
 
 export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   const { toast } = useToast();
-  const { maxRetries = 3, onStateChange, onProgress, onError, onSuccess } = options;
+  const {
+    maxRetries = 3,
+    onStateChange,
+    onProgress,
+    onError,
+    onSuccess,
+  } = options;
 
-  const [workflows, setWorkflows] = useState<Record<AIWorkflowType, WorkflowData>>({
-    'text-to-music': { ...initialWorkflowData },
-    'audio-to-music': { ...initialWorkflowData },
-    'ai-mix': { ...initialWorkflowData },
-    'ai-master': { ...initialWorkflowData },
-    'audio-analysis': { ...initialWorkflowData },
+  const [workflows, setWorkflows] = useState<
+    Record<AIWorkflowType, WorkflowData>
+  >({
+    "text-to-music": { ...initialWorkflowData },
+    "audio-to-music": { ...initialWorkflowData },
+    "ai-mix": { ...initialWorkflowData },
+    "ai-master": { ...initialWorkflowData },
+    "audio-analysis": { ...initialWorkflowData },
   });
 
-  const abortControllersRef = useRef<Map<AIWorkflowType, AbortController>>(new Map());
-  const progressIntervalsRef = useRef<Map<AIWorkflowType, NodeJS.Timeout>>(new Map());
+  const abortControllersRef = useRef<Map<AIWorkflowType, AbortController>>(
+    new Map(),
+  );
+  const progressIntervalsRef = useRef<Map<AIWorkflowType, NodeJS.Timeout>>(
+    new Map(),
+  );
 
   // Clean up on unmount
   useEffect(() => {
@@ -96,19 +111,26 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
         if (updates.errorMessage && onError) {
           onError(workflowType, updates.errorMessage);
         }
-        if (updates.resultData && updates.currentState === 'success' && onSuccess) {
+        if (
+          updates.resultData &&
+          updates.currentState === "success" &&
+          onSuccess
+        ) {
           onSuccess(workflowType, updates.resultData);
         }
 
         return newState;
       });
     },
-    [onStateChange, onProgress, onError, onSuccess]
+    [onStateChange, onProgress, onError, onSuccess],
   );
 
   // Start a workflow
   const startWorkflow = useCallback(
-    (workflowType: AIWorkflowType, apiCall: (signal?: AbortSignal) => Promise<unknown>) => {
+    (
+      workflowType: AIWorkflowType,
+      apiCall: (signal?: AbortSignal) => Promise<unknown>,
+    ) => {
       // Cancel any existing operation
       const existingController = abortControllersRef.current.get(workflowType);
       if (existingController) {
@@ -128,7 +150,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
 
       // Update state to requesting
       updateWorkflow(workflowType, {
-        currentState: 'requesting',
+        currentState: "requesting",
         progress: 0,
         errorMessage: null,
         resultData: null,
@@ -155,21 +177,24 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
 
           // Update to processing state briefly
           updateWorkflow(workflowType, {
-            currentState: 'processing',
+            currentState: "processing",
             progress: 95,
           });
 
           // Then move to success
           setTimeout(() => {
             updateWorkflow(workflowType, {
-              currentState: 'success',
+              currentState: "success",
               progress: 100,
               resultData: data,
               errorMessage: null,
             });
 
             // Log success for debugging
-            logger.info(`[AI Workflow] ${workflowType} completed successfully:`, data);
+            logger.info(
+              `[AI Workflow] ${workflowType} completed successfully:`,
+              data,
+            );
           }, 500);
 
           // Clean up abort controller
@@ -180,30 +205,30 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
           clearInterval(progressInterval);
           progressIntervalsRef.current.delete(workflowType);
 
-          if (error.name === 'AbortError') {
+          if (error.name === "AbortError") {
             // Operation was cancelled
             updateWorkflow(workflowType, {
-              currentState: 'idle',
+              currentState: "idle",
               progress: 0,
               errorMessage: null,
             });
             logger.info(`[AI Workflow] ${workflowType} was cancelled`);
           } else {
             // Handle error
-            const errorMessage = error.message || 'An unknown error occurred';
+            const errorMessage = error.message || "An unknown error occurred";
             logger.error(`[AI Workflow] ${workflowType} error:`, error);
 
             updateWorkflow(workflowType, {
-              currentState: 'error',
+              currentState: "error",
               progress: 0,
               errorMessage,
               retryCount: workflows[workflowType].retryCount,
             });
 
             toast({
-              title: `${workflowType.replace('-', ' ')} failed`,
+              title: `${workflowType.replace("-", " ")} failed`,
               description: errorMessage,
-              variant: 'destructive',
+              variant: "destructive",
             });
           }
 
@@ -213,7 +238,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
 
       return abortController;
     },
-    [workflows, updateWorkflow, toast]
+    [workflows, updateWorkflow, toast],
   );
 
   // Cancel a workflow
@@ -232,27 +257,32 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
       }
 
       updateWorkflow(workflowType, {
-        currentState: 'idle',
+        currentState: "idle",
         progress: 0,
         errorMessage: null,
       });
 
       logger.info(`[AI Workflow] ${workflowType} cancelled`);
     },
-    [updateWorkflow]
+    [updateWorkflow],
   );
 
   // Retry a failed workflow
   const retry = useCallback(
-    (workflowType: AIWorkflowType, apiCall: (signal?: AbortSignal) => Promise<unknown>) => {
+    (
+      workflowType: AIWorkflowType,
+      apiCall: (signal?: AbortSignal) => Promise<unknown>,
+    ) => {
       const currentWorkflow = workflows[workflowType];
 
       if (currentWorkflow.retryCount >= maxRetries) {
-        logger.error(`[AI Workflow] ${workflowType} max retries (${maxRetries}) exceeded`);
+        logger.error(
+          `[AI Workflow] ${workflowType} max retries (${maxRetries}) exceeded`,
+        );
         toast({
-          title: 'Max retries exceeded',
-          description: `Cannot retry ${workflowType.replace('-', ' ')} anymore. Please try again later.`,
-          variant: 'destructive',
+          title: "Max retries exceeded",
+          description: `Cannot retry ${workflowType.replace("-", " ")} anymore. Please try again later.`,
+          variant: "destructive",
         });
         return;
       }
@@ -263,13 +293,13 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
       });
 
       logger.info(
-        `[AI Workflow] Retrying ${workflowType} (attempt ${currentWorkflow.retryCount + 1}/${maxRetries})`
+        `[AI Workflow] Retrying ${workflowType} (attempt ${currentWorkflow.retryCount + 1}/${maxRetries})`,
       );
 
       // Start the workflow again
       return startWorkflow(workflowType, apiCall);
     },
-    [workflows, maxRetries, updateWorkflow, startWorkflow, toast]
+    [workflows, maxRetries, updateWorkflow, startWorkflow, toast],
   );
 
   // Reset a workflow to idle state
@@ -285,7 +315,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
 
       logger.info(`[AI Workflow] ${workflowType} reset to idle`);
     },
-    [cancel, updateWorkflow]
+    [cancel, updateWorkflow],
   );
 
   // Mark results as integrated into project
@@ -293,26 +323,30 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
     (workflowType: AIWorkflowType) => {
       const currentWorkflow = workflows[workflowType];
 
-      if (currentWorkflow.currentState !== 'success') {
-        logger.warn(`[AI Workflow] Cannot integrate ${workflowType} - not in success state`);
+      if (currentWorkflow.currentState !== "success") {
+        logger.warn(
+          `[AI Workflow] Cannot integrate ${workflowType} - not in success state`,
+        );
         return false;
       }
 
       updateWorkflow(workflowType, {
-        currentState: 'integrated',
+        currentState: "integrated",
         isIntegrated: true,
       });
 
-      logger.info(`[AI Workflow] ${workflowType} results integrated into project`);
+      logger.info(
+        `[AI Workflow] ${workflowType} results integrated into project`,
+      );
 
       toast({
-        title: 'Integration successful',
-        description: `${workflowType.replace('-', ' ')} results have been added to your project.`,
+        title: "Integration successful",
+        description: `${workflowType.replace("-", " ")} results have been added to your project.`,
       });
 
       return true;
     },
-    [workflows, updateWorkflow, toast]
+    [workflows, updateWorkflow, toast],
   );
 
   // Get workflow data for a specific type
@@ -320,13 +354,13 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
     (workflowType: AIWorkflowType): WorkflowData => {
       return workflows[workflowType];
     },
-    [workflows]
+    [workflows],
   );
 
   // Check if any workflow is active
   const hasActiveWorkflow = useCallback((): boolean => {
     return Object.values(workflows).some(
-      (w) => w.currentState === 'requesting' || w.currentState === 'processing'
+      (w) => w.currentState === "requesting" || w.currentState === "processing",
     );
   }, [workflows]);
 
@@ -334,8 +368,8 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   const getActiveWorkflows = useCallback((): AIWorkflowType[] => {
     return (Object.keys(workflows) as AIWorkflowType[]).filter(
       (type) =>
-        workflows[type].currentState === 'requesting' ||
-        workflows[type].currentState === 'processing'
+        workflows[type].currentState === "requesting" ||
+        workflows[type].currentState === "processing",
     );
   }, [workflows]);
 
@@ -343,8 +377,8 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   const cancelAll = useCallback(() => {
     (Object.keys(workflows) as AIWorkflowType[]).forEach((type) => {
       if (
-        workflows[type].currentState === 'requesting' ||
-        workflows[type].currentState === 'processing'
+        workflows[type].currentState === "requesting" ||
+        workflows[type].currentState === "processing"
       ) {
         cancel(type);
       }
@@ -379,10 +413,10 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
     getActiveWorkflows,
 
     // Individual workflow shortcuts for convenience
-    textToMusic: workflows['text-to-music'],
-    audioToMusic: workflows['audio-to-music'],
-    aiMix: workflows['ai-mix'],
-    aiMaster: workflows['ai-master'],
-    audioAnalysis: workflows['audio-analysis'],
+    textToMusic: workflows["text-to-music"],
+    audioToMusic: workflows["audio-to-music"],
+    aiMix: workflows["ai-mix"],
+    aiMaster: workflows["ai-master"],
+    audioAnalysis: workflows["audio-analysis"],
   };
 }

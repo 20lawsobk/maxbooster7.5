@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
   Sparkles,
@@ -23,13 +23,19 @@ import {
   RefreshCw,
   Gauge,
   Radio,
-} from 'lucide-react';
-import type { FlowStateMode } from '@/hooks/useFlowStateAdapter';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import type { FlowStateMode } from "@/hooks/useFlowStateAdapter";
+import { cn } from "@/lib/utils";
 
 interface AISuggestion {
   id: string;
-  type: 'harmonic' | 'rhythmic' | 'arrangement' | 'mix' | 'effect' | 'automation';
+  type:
+    | "harmonic"
+    | "rhythmic"
+    | "arrangement"
+    | "mix"
+    | "effect"
+    | "automation";
   title: string;
   description: string;
   confidence: number;
@@ -44,33 +50,33 @@ interface FlowStateAISidebarProps {
 
 const MODE_TIPS: Record<FlowStateMode, string[]> = {
   create: [
-    'Try humming a melody and let AI transcribe it',
-    'Describe the emotion you want to convey',
-    'Use the chord wheel for harmonic exploration',
+    "Try humming a melody and let AI transcribe it",
+    "Describe the emotion you want to convey",
+    "Use the chord wheel for harmonic exploration",
   ],
   record: [
-    'Enable input monitoring to hear effects live',
-    'Set up a click track before recording',
-    'Use punch-in for precise section recording',
+    "Enable input monitoring to hear effects live",
+    "Set up a click track before recording",
+    "Use punch-in for precise section recording",
   ],
   mix: [
-    'Start with gain staging before adding EQ',
-    'Use reference tracks for A/B comparison',
-    'Check your mix in mono for phase issues',
+    "Start with gain staging before adding EQ",
+    "Use reference tracks for A/B comparison",
+    "Check your mix in mono for phase issues",
   ],
   master: [
-    'Target -14 LUFS for streaming platforms',
-    'Leave headroom for codec conversion',
-    'Check on multiple playback systems',
+    "Target -14 LUFS for streaming platforms",
+    "Leave headroom for codec conversion",
+    "Check on multiple playback systems",
   ],
   perform: [
-    'Map MIDI controllers to key parameters',
-    'Set up cue points for seamless transitions',
-    'Enable low-latency mode for real-time response',
+    "Map MIDI controllers to key parameters",
+    "Set up cue points for seamless transitions",
+    "Enable low-latency mode for real-time response",
   ],
 };
 
-const SUGGESTION_ICONS: Record<AISuggestion['type'], React.ElementType> = {
+const SUGGESTION_ICONS: Record<AISuggestion["type"], React.ElementType> = {
   harmonic: Music,
   rhythmic: Layers,
   arrangement: BarChart3,
@@ -79,13 +85,13 @@ const SUGGESTION_ICONS: Record<AISuggestion['type'], React.ElementType> = {
   automation: TrendingUp,
 };
 
-const SUGGESTION_COLORS: Record<AISuggestion['type'], string> = {
-  harmonic: 'from-purple-500 to-pink-500',
-  rhythmic: 'from-orange-500 to-red-500',
-  arrangement: 'from-blue-500 to-cyan-500',
-  mix: 'from-green-500 to-emerald-500',
-  effect: 'from-indigo-500 to-purple-500',
-  automation: 'from-amber-500 to-yellow-500',
+const SUGGESTION_COLORS: Record<AISuggestion["type"], string> = {
+  harmonic: "from-purple-500 to-pink-500",
+  rhythmic: "from-orange-500 to-red-500",
+  arrangement: "from-blue-500 to-cyan-500",
+  mix: "from-green-500 to-emerald-500",
+  effect: "from-indigo-500 to-purple-500",
+  automation: "from-amber-500 to-yellow-500",
 };
 
 const MODE_ICONS: Record<FlowStateMode, React.ElementType> = {
@@ -96,17 +102,26 @@ const MODE_ICONS: Record<FlowStateMode, React.ElementType> = {
   perform: Radio,
 };
 
-export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProps) {
-  const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null);
-  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+export function FlowStateAISidebar({
+  suggestions,
+  mode,
+}: FlowStateAISidebarProps) {
+  const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(
+    null,
+  );
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(
+    new Set(),
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const activeSuggestions = suggestions.filter(s => !dismissedSuggestions.has(s.id));
+  const activeSuggestions = suggestions.filter(
+    (s) => !dismissedSuggestions.has(s.id),
+  );
   const tips = MODE_TIPS[mode] || [];
   const ModeIcon = MODE_ICONS[mode];
 
   const handleDismiss = (id: string) => {
-    setDismissedSuggestions(prev => new Set([...prev, id]));
+    setDismissedSuggestions((prev) => new Set([...prev, id]));
   };
 
   const handleRefresh = () => {
@@ -132,7 +147,9 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+            <RefreshCw
+              className={cn("w-4 h-4", isRefreshing && "animate-spin")}
+            />
           </motion.button>
         </div>
       </div>
@@ -141,11 +158,16 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
         <div className="bg-gradient-to-r from-white/5 to-white/[0.02] rounded-xl p-3 border border-white/5">
           <div className="flex items-center gap-2 mb-2">
             <ModeIcon className="w-4 h-4 text-indigo-400" />
-            <span className="text-xs font-medium text-white/70 capitalize">{mode} Mode Tips</span>
+            <span className="text-xs font-medium text-white/70 capitalize">
+              {mode} Mode Tips
+            </span>
           </div>
           <ul className="space-y-1.5">
             {tips.map((tip, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs text-white/50">
+              <li
+                key={i}
+                className="flex items-start gap-2 text-xs text-white/50"
+              >
                 <Lightbulb className="w-3 h-3 mt-0.5 text-amber-400/60 flex-shrink-0" />
                 <span>{tip}</span>
               </li>
@@ -174,19 +196,23 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
                   "rounded-xl border overflow-hidden transition-all cursor-pointer",
                   isExpanded
                     ? "bg-white/[0.08] border-white/10"
-                    : "bg-white/[0.03] border-white/5 hover:bg-white/[0.06]"
+                    : "bg-white/[0.03] border-white/5 hover:bg-white/[0.06]",
                 )}
-                onClick={() => setExpandedSuggestion(isExpanded ? null : suggestion.id)}
+                onClick={() =>
+                  setExpandedSuggestion(isExpanded ? null : suggestion.id)
+                }
               >
                 <div className="p-3">
                   <div className="flex items-start gap-3">
-                    <div className={cn(
-                      "w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0",
-                      colorClass
-                    )}>
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0",
+                        colorClass,
+                      )}
+                    >
                       <Icon className="w-4 h-4 text-white" />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="text-sm font-medium text-white truncate">
@@ -204,7 +230,7 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
                           </motion.div>
                         </div>
                       </div>
-                      
+
                       <p className="text-xs text-white/50 mt-0.5 line-clamp-2">
                         {suggestion.description}
                       </p>
@@ -224,7 +250,7 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
                     {isExpanded && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
+                        animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         className="mt-3 pt-3 border-t border-white/5"
                       >
@@ -237,7 +263,7 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
                             className={cn(
                               "flex-1 py-2 rounded-lg text-xs font-medium text-white",
                               "bg-gradient-to-r flex items-center justify-center gap-1.5",
-                              colorClass
+                              colorClass,
                             )}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -245,7 +271,7 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
                             <Check className="w-3 h-3" />
                             Apply
                           </motion.button>
-                          
+
                           {suggestion.onPreview && (
                             <motion.button
                               onClick={(e) => {
@@ -259,7 +285,7 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
                               <Play className="w-3 h-3" />
                             </motion.button>
                           )}
-                          
+
                           <motion.button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -291,7 +317,9 @@ export function FlowStateAISidebar({ suggestions, mode }: FlowStateAISidebarProp
               <Sparkles className="w-5 h-5 text-white/30" />
             </div>
             <p className="text-sm text-white/50">No suggestions right now</p>
-            <p className="text-xs text-white/30 mt-1">Keep creating and I'll offer ideas</p>
+            <p className="text-xs text-white/30 mt-1">
+              Keep creating and I'll offer ideas
+            </p>
           </motion.div>
         )}
       </div>

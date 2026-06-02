@@ -1,6 +1,6 @@
-import { logger } from '../logger.js';
-import path from 'path';
-import fs from 'fs';
+import { logger } from "../logger.js";
+import path from "path";
+import fs from "fs";
 
 // Optional sharp support with graceful fallback
 let sharpModule: Record<string, unknown> | null = null;
@@ -9,12 +9,14 @@ let sharpAvailable = false;
 async function getSharp() {
   if (sharpModule !== null) return sharpModule;
   try {
-    sharpModule = (await import('sharp')).default;
+    sharpModule = (await import("sharp")).default;
     sharpAvailable = true;
-    logger.info('Sharp module loaded for DSP policy checking');
+    logger.info("Sharp module loaded for DSP policy checking");
     return sharpModule;
   } catch (error) {
-    logger.warn('Sharp not available - cover art validation will use basic checks');
+    logger.warn(
+      "Sharp not available - cover art validation will use basic checks",
+    );
     sharpModule = false;
     return null;
   }
@@ -86,7 +88,7 @@ export interface ComplianceResult {
 }
 
 export interface ComplianceError {
-  category: 'coverArt' | 'audio' | 'metadata' | 'timing';
+  category: "coverArt" | "audio" | "metadata" | "timing";
   field: string;
   message: string;
   requirement: string;
@@ -94,7 +96,7 @@ export interface ComplianceError {
 }
 
 export interface ComplianceWarning {
-  category: 'coverArt' | 'audio' | 'metadata' | 'timing';
+  category: "coverArt" | "audio" | "metadata" | "timing";
   field: string;
   message: string;
   suggestion: string;
@@ -134,29 +136,38 @@ export interface ReleaseToCheck {
 
 export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
   spotify: {
-    id: 'spotify',
-    name: 'Spotify',
+    id: "spotify",
+    name: "Spotify",
     coverArt: {
       minWidth: 3000,
       maxWidth: 3000,
       minHeight: 3000,
       maxHeight: 3000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB', 'sRGB'],
+      colorMode: ["RGB", "sRGB"],
       minDPI: 72,
-      bannedContent: ['text', 'logos', 'promotional', 'website urls', 'social handles', 'explicit imagery', 'low quality', 'blurry']
+      bannedContent: [
+        "text",
+        "logos",
+        "promotional",
+        "website urls",
+        "social handles",
+        "explicit imagery",
+        "low quality",
+        "blurry",
+      ],
     },
     audio: {
-      formats: ['wav', 'flac'],
+      formats: ["wav", "flac"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000, 88200, 96000],
       minDuration: 30,
       maxDuration: 3600,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 200,
@@ -165,48 +176,66 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 50000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'genre', 'releaseDate', 'coverArt', 'isrc'],
-      bannedTerms: ['karaoke', 'tribute', 'cover version', 'soundalike', 'in the style of']
+      allowedCharacters: "Unicode",
+      requiredFields: [
+        "title",
+        "artist",
+        "genre",
+        "releaseDate",
+        "coverArt",
+        "isrc",
+      ],
+      bannedTerms: [
+        "karaoke",
+        "tribute",
+        "cover version",
+        "soundalike",
+        "in the style of",
+      ],
     },
     releaseTiming: {
       minLeadTime: 7,
       maxFutureDate: 365,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'UTC'
+      timezone: "UTC",
     },
     additionalRequirements: [
-      'ISRC required for each track',
-      'UPC/EAN required for release',
-      'Explicit content must be flagged',
-      'Lyrics must match audio content'
-    ]
+      "ISRC required for each track",
+      "UPC/EAN required for release",
+      "Explicit content must be flagged",
+      "Lyrics must match audio content",
+    ],
   },
   appleMusic: {
-    id: 'appleMusic',
-    name: 'Apple Music',
+    id: "appleMusic",
+    name: "Apple Music",
     coverArt: {
       minWidth: 3000,
       maxWidth: 4096,
       minHeight: 3000,
       maxHeight: 4096,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg', 'png'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg", "png"],
       maxFileSize: 40 * 1024 * 1024,
-      colorMode: ['RGB', 'sRGB'],
+      colorMode: ["RGB", "sRGB"],
       minDPI: 72,
-      bannedContent: ['text', 'explicit imagery', 'copyrighted content', 'pixelated images']
+      bannedContent: [
+        "text",
+        "explicit imagery",
+        "copyrighted content",
+        "pixelated images",
+      ],
     },
     audio: {
-      formats: ['wav', 'flac', 'aiff'],
+      formats: ["wav", "flac", "aiff"],
       minBitDepth: 16,
       maxBitDepth: 32,
       sampleRates: [44100, 48000, 88200, 96000, 176400, 192000],
       minDuration: 1,
       maxDuration: 7200,
       loudnessTargetLUFS: -16,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 256,
@@ -215,48 +244,56 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 256,
       maxGenreLength: 50,
       maxLyricsLength: 100000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'genre', 'releaseDate', 'coverArt', 'isrc', 'copyright'],
-      bannedTerms: ['karaoke', 'tribute', 'cover', 'sound-alike']
+      allowedCharacters: "Unicode",
+      requiredFields: [
+        "title",
+        "artist",
+        "genre",
+        "releaseDate",
+        "coverArt",
+        "isrc",
+        "copyright",
+      ],
+      bannedTerms: ["karaoke", "tribute", "cover", "sound-alike"],
     },
     releaseTiming: {
       minLeadTime: 14,
       maxFutureDate: 365,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'America/Los_Angeles'
+      timezone: "America/Los_Angeles",
     },
     additionalRequirements: [
-      'Mastered for iTunes (MFiT) format preferred',
-      'Dolby Atmos supported',
-      'Spatial Audio metadata optional',
-      'Lyrics sync timing supported'
-    ]
+      "Mastered for iTunes (MFiT) format preferred",
+      "Dolby Atmos supported",
+      "Spatial Audio metadata optional",
+      "Lyrics sync timing supported",
+    ],
   },
   amazonMusic: {
-    id: 'amazonMusic',
-    name: 'Amazon Music',
+    id: "amazonMusic",
+    name: "Amazon Music",
     coverArt: {
       minWidth: 3000,
       maxWidth: 3000,
       minHeight: 3000,
       maxHeight: 3000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg', 'png'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg", "png"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB'],
+      colorMode: ["RGB"],
       minDPI: 72,
-      bannedContent: ['text', 'promotional content', 'explicit imagery']
+      bannedContent: ["text", "promotional content", "explicit imagery"],
     },
     audio: {
-      formats: ['wav', 'flac'],
+      formats: ["wav", "flac"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000],
       minDuration: 30,
       maxDuration: 3600,
       loudnessTargetLUFS: -14,
-      truePeakMax: -2
+      truePeakMax: -2,
     },
     metadata: {
       maxTitleLength: 250,
@@ -265,46 +302,46 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 50000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'genre', 'releaseDate', 'coverArt'],
-      bannedTerms: ['karaoke', 'tribute', 'cover version']
+      allowedCharacters: "Unicode",
+      requiredFields: ["title", "artist", "genre", "releaseDate", "coverArt"],
+      bannedTerms: ["karaoke", "tribute", "cover version"],
     },
     releaseTiming: {
       minLeadTime: 7,
       maxFutureDate: 180,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'America/Los_Angeles'
+      timezone: "America/Los_Angeles",
     },
     additionalRequirements: [
-      'UHD audio supported for HD tier',
-      'Alexa integration metadata optional'
-    ]
+      "UHD audio supported for HD tier",
+      "Alexa integration metadata optional",
+    ],
   },
   youtubeMusic: {
-    id: 'youtubeMusic',
-    name: 'YouTube Music',
+    id: "youtubeMusic",
+    name: "YouTube Music",
     coverArt: {
       minWidth: 2048,
       maxWidth: 4096,
       minHeight: 2048,
       maxHeight: 4096,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg', 'png'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg", "png"],
       maxFileSize: 20 * 1024 * 1024,
-      colorMode: ['RGB', 'sRGB'],
+      colorMode: ["RGB", "sRGB"],
       minDPI: 72,
-      bannedContent: ['violence', 'explicit imagery', 'hate symbols']
+      bannedContent: ["violence", "explicit imagery", "hate symbols"],
     },
     audio: {
-      formats: ['wav', 'flac', 'mp3'],
+      formats: ["wav", "flac", "mp3"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000],
       minDuration: 30,
       maxDuration: 7200,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 100,
@@ -313,47 +350,47 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 50000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'releaseDate', 'coverArt'],
-      bannedTerms: ['full album', 'playlist', 'compilation']
+      allowedCharacters: "Unicode",
+      requiredFields: ["title", "artist", "releaseDate", "coverArt"],
+      bannedTerms: ["full album", "playlist", "compilation"],
     },
     releaseTiming: {
       minLeadTime: 3,
       maxFutureDate: 365,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'America/Los_Angeles'
+      timezone: "America/Los_Angeles",
     },
     additionalRequirements: [
-      'Content ID registration automatic',
-      'Music video linking supported',
-      'Art Track generation automatic'
-    ]
+      "Content ID registration automatic",
+      "Music video linking supported",
+      "Art Track generation automatic",
+    ],
   },
   tidal: {
-    id: 'tidal',
-    name: 'Tidal',
+    id: "tidal",
+    name: "Tidal",
     coverArt: {
       minWidth: 3000,
       maxWidth: 4000,
       minHeight: 3000,
       maxHeight: 4000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB'],
+      colorMode: ["RGB"],
       minDPI: 300,
-      bannedContent: ['text', 'promotional', 'explicit imagery']
+      bannedContent: ["text", "promotional", "explicit imagery"],
     },
     audio: {
-      formats: ['wav', 'flac', 'mqa'],
+      formats: ["wav", "flac", "mqa"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000, 88200, 96000, 192000],
       minDuration: 30,
       maxDuration: 3600,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 200,
@@ -362,47 +399,54 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 50000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'genre', 'releaseDate', 'coverArt', 'isrc'],
-      bannedTerms: ['karaoke', 'tribute', 'cover version']
+      allowedCharacters: "Unicode",
+      requiredFields: [
+        "title",
+        "artist",
+        "genre",
+        "releaseDate",
+        "coverArt",
+        "isrc",
+      ],
+      bannedTerms: ["karaoke", "tribute", "cover version"],
     },
     releaseTiming: {
       minLeadTime: 14,
       maxFutureDate: 365,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'UTC'
+      timezone: "UTC",
     },
     additionalRequirements: [
-      'MQA encoding supported for Masters tier',
-      'Dolby Atmos supported',
-      'High-resolution audio strongly preferred'
-    ]
+      "MQA encoding supported for Masters tier",
+      "Dolby Atmos supported",
+      "High-resolution audio strongly preferred",
+    ],
   },
   deezer: {
-    id: 'deezer',
-    name: 'Deezer',
+    id: "deezer",
+    name: "Deezer",
     coverArt: {
       minWidth: 1400,
       maxWidth: 3000,
       minHeight: 1400,
       maxHeight: 3000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg', 'png'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg", "png"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB'],
+      colorMode: ["RGB"],
       minDPI: 72,
-      bannedContent: ['text', 'explicit imagery']
+      bannedContent: ["text", "explicit imagery"],
     },
     audio: {
-      formats: ['wav', 'flac'],
+      formats: ["wav", "flac"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000],
       minDuration: 30,
       maxDuration: 3600,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 200,
@@ -411,46 +455,52 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 50000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'genre', 'releaseDate', 'coverArt'],
-      bannedTerms: ['karaoke', 'tribute']
+      allowedCharacters: "Unicode",
+      requiredFields: ["title", "artist", "genre", "releaseDate", "coverArt"],
+      bannedTerms: ["karaoke", "tribute"],
     },
     releaseTiming: {
       minLeadTime: 7,
       maxFutureDate: 365,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'Europe/Paris'
+      timezone: "Europe/Paris",
     },
     additionalRequirements: [
-      'Lyrics integration with Musixmatch',
-      'Flow algorithm optimization'
-    ]
+      "Lyrics integration with Musixmatch",
+      "Flow algorithm optimization",
+    ],
   },
   tiktok: {
-    id: 'tiktok',
-    name: 'TikTok',
+    id: "tiktok",
+    name: "TikTok",
     coverArt: {
       minWidth: 1400,
       maxWidth: 3000,
       minHeight: 1400,
       maxHeight: 3000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg', 'png'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg", "png"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB', 'sRGB'],
+      colorMode: ["RGB", "sRGB"],
       minDPI: 72,
-      bannedContent: ['text', 'logos', 'promotional content', 'explicit imagery', 'violence']
+      bannedContent: [
+        "text",
+        "logos",
+        "promotional content",
+        "explicit imagery",
+        "violence",
+      ],
     },
     audio: {
-      formats: ['wav', 'flac', 'mp3'],
+      formats: ["wav", "flac", "mp3"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000],
       minDuration: 15,
       maxDuration: 600,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 100,
@@ -459,50 +509,63 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 10000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'coverArt', 'isrc'],
-      bannedTerms: ['karaoke', 'tribute', 'cover version', 'remix of', 'bootleg']
+      allowedCharacters: "Unicode",
+      requiredFields: ["title", "artist", "coverArt", "isrc"],
+      bannedTerms: [
+        "karaoke",
+        "tribute",
+        "cover version",
+        "remix of",
+        "bootleg",
+      ],
     },
     releaseTiming: {
       minLeadTime: 3,
       maxFutureDate: 180,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'UTC'
+      timezone: "UTC",
     },
     additionalRequirements: [
-      'Content must be suitable for all ages unless marked explicit',
-      'No copyrighted samples without clearance',
-      'Short clips (15-60s) optimized for viral potential',
-      'ISRC required for all tracks',
-      'Original content only - no AI-generated voices without disclosure',
-      'Clean versions recommended for wider reach'
-    ]
+      "Content must be suitable for all ages unless marked explicit",
+      "No copyrighted samples without clearance",
+      "Short clips (15-60s) optimized for viral potential",
+      "ISRC required for all tracks",
+      "Original content only - no AI-generated voices without disclosure",
+      "Clean versions recommended for wider reach",
+    ],
   },
   instagram: {
-    id: 'instagram',
-    name: 'Instagram/Facebook Music',
+    id: "instagram",
+    name: "Instagram/Facebook Music",
     coverArt: {
       minWidth: 1400,
       maxWidth: 3000,
       minHeight: 1400,
       maxHeight: 3000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg', 'png'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg", "png"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB', 'sRGB'],
+      colorMode: ["RGB", "sRGB"],
       minDPI: 72,
-      bannedContent: ['text', 'logos', 'promotional', 'explicit imagery', 'violence', 'nudity']
+      bannedContent: [
+        "text",
+        "logos",
+        "promotional",
+        "explicit imagery",
+        "violence",
+        "nudity",
+      ],
     },
     audio: {
-      formats: ['wav', 'flac', 'mp3'],
+      formats: ["wav", "flac", "mp3"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000],
       minDuration: 15,
       maxDuration: 600,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 100,
@@ -511,50 +574,57 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 10000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'coverArt', 'isrc'],
-      bannedTerms: ['karaoke', 'tribute', 'cover', 'soundalike', 'bootleg', 'unofficial']
+      allowedCharacters: "Unicode",
+      requiredFields: ["title", "artist", "coverArt", "isrc"],
+      bannedTerms: [
+        "karaoke",
+        "tribute",
+        "cover",
+        "soundalike",
+        "bootleg",
+        "unofficial",
+      ],
     },
     releaseTiming: {
       minLeadTime: 3,
       maxFutureDate: 180,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'America/Los_Angeles'
+      timezone: "America/Los_Angeles",
     },
     additionalRequirements: [
-      'Family-friendly content preferred for Reels/Stories',
-      'ISRC required for content ID matching',
-      'Lyrics must match audio for lip-sync features',
-      'Short clips (15-90s) optimized for Stories and Reels',
-      'Clean versions increase usage in user content',
-      'Meta Rights Manager integration for monetization'
-    ]
+      "Family-friendly content preferred for Reels/Stories",
+      "ISRC required for content ID matching",
+      "Lyrics must match audio for lip-sync features",
+      "Short clips (15-90s) optimized for Stories and Reels",
+      "Clean versions increase usage in user content",
+      "Meta Rights Manager integration for monetization",
+    ],
   },
   snapchat: {
-    id: 'snapchat',
-    name: 'Snapchat Sounds',
+    id: "snapchat",
+    name: "Snapchat Sounds",
     coverArt: {
       minWidth: 1400,
       maxWidth: 3000,
       minHeight: 1400,
       maxHeight: 3000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg', 'png'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg", "png"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB'],
+      colorMode: ["RGB"],
       minDPI: 72,
-      bannedContent: ['text', 'logos', 'explicit imagery']
+      bannedContent: ["text", "logos", "explicit imagery"],
     },
     audio: {
-      formats: ['wav', 'flac', 'mp3'],
+      formats: ["wav", "flac", "mp3"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000],
       minDuration: 15,
       maxDuration: 300,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 80,
@@ -563,48 +633,48 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 80,
       maxGenreLength: 50,
       maxLyricsLength: 5000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'coverArt', 'isrc'],
-      bannedTerms: ['karaoke', 'tribute', 'cover version']
+      allowedCharacters: "Unicode",
+      requiredFields: ["title", "artist", "coverArt", "isrc"],
+      bannedTerms: ["karaoke", "tribute", "cover version"],
     },
     releaseTiming: {
       minLeadTime: 3,
       maxFutureDate: 90,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'America/Los_Angeles'
+      timezone: "America/Los_Angeles",
     },
     additionalRequirements: [
-      'Short clips optimized (15-60s most used)',
-      'Clean content strongly preferred',
-      'ISRC required',
-      'High energy/hook-driven content performs best'
-    ]
+      "Short clips optimized (15-60s most used)",
+      "Clean content strongly preferred",
+      "ISRC required",
+      "High energy/hook-driven content performs best",
+    ],
   },
   pandora: {
-    id: 'pandora',
-    name: 'Pandora',
+    id: "pandora",
+    name: "Pandora",
     coverArt: {
       minWidth: 1400,
       maxWidth: 3000,
       minHeight: 1400,
       maxHeight: 3000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB', 'sRGB'],
+      colorMode: ["RGB", "sRGB"],
       minDPI: 72,
-      bannedContent: ['text', 'promotional', 'explicit imagery']
+      bannedContent: ["text", "promotional", "explicit imagery"],
     },
     audio: {
-      formats: ['wav', 'flac'],
+      formats: ["wav", "flac"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000],
       minDuration: 30,
       maxDuration: 3600,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 200,
@@ -613,47 +683,47 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 50000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'genre', 'releaseDate', 'coverArt'],
-      bannedTerms: ['karaoke', 'tribute', 'cover version']
+      allowedCharacters: "Unicode",
+      requiredFields: ["title", "artist", "genre", "releaseDate", "coverArt"],
+      bannedTerms: ["karaoke", "tribute", "cover version"],
     },
     releaseTiming: {
       minLeadTime: 7,
       maxFutureDate: 365,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'America/Los_Angeles'
+      timezone: "America/Los_Angeles",
     },
     additionalRequirements: [
-      'Music Genome Project tagging benefits from complete metadata',
-      'Genre and mood tags highly recommended',
-      'Artist bio and photos enhance discovery'
-    ]
+      "Music Genome Project tagging benefits from complete metadata",
+      "Genre and mood tags highly recommended",
+      "Artist bio and photos enhance discovery",
+    ],
   },
   audiomack: {
-    id: 'audiomack',
-    name: 'Audiomack',
+    id: "audiomack",
+    name: "Audiomack",
     coverArt: {
       minWidth: 1400,
       maxWidth: 3000,
       minHeight: 1400,
       maxHeight: 3000,
-      aspectRatio: '1:1',
-      formats: ['jpg', 'jpeg', 'png'],
+      aspectRatio: "1:1",
+      formats: ["jpg", "jpeg", "png"],
       maxFileSize: 10 * 1024 * 1024,
-      colorMode: ['RGB'],
+      colorMode: ["RGB"],
       minDPI: 72,
-      bannedContent: ['text', 'explicit imagery without flag']
+      bannedContent: ["text", "explicit imagery without flag"],
     },
     audio: {
-      formats: ['wav', 'flac', 'mp3'],
+      formats: ["wav", "flac", "mp3"],
       minBitDepth: 16,
       maxBitDepth: 24,
       sampleRates: [44100, 48000],
       minDuration: 30,
       maxDuration: 3600,
       loudnessTargetLUFS: -14,
-      truePeakMax: -1
+      truePeakMax: -1,
     },
     metadata: {
       maxTitleLength: 200,
@@ -662,23 +732,23 @@ export const DSP_POLICIES: { [key: string]: DSPPolicy } = {
       maxLabelLength: 100,
       maxGenreLength: 50,
       maxLyricsLength: 50000,
-      allowedCharacters: 'Unicode',
-      requiredFields: ['title', 'artist', 'coverArt'],
-      bannedTerms: ['karaoke', 'tribute']
+      allowedCharacters: "Unicode",
+      requiredFields: ["title", "artist", "coverArt"],
+      bannedTerms: ["karaoke", "tribute"],
     },
     releaseTiming: {
       minLeadTime: 2,
       maxFutureDate: 180,
       preferredReleaseDay: 5,
       blackoutDates: [],
-      timezone: 'UTC'
+      timezone: "UTC",
     },
     additionalRequirements: [
-      'Hip-Hop/R&B focused platform',
-      'Exclusive releases get promotional boost',
-      'Trending page placement for early momentum'
-    ]
-  }
+      "Hip-Hop/R&B focused platform",
+      "Exclusive releases get promotional boost",
+      "Trending page placement for early momentum",
+    ],
+  },
 };
 
 export class DSPPolicyChecker {
@@ -702,20 +772,25 @@ export class DSPPolicyChecker {
     return Array.from(this.policies.keys());
   }
 
-  async checkCompliance(release: ReleaseToCheck, dsp: string): Promise<ComplianceResult> {
+  async checkCompliance(
+    release: ReleaseToCheck,
+    dsp: string,
+  ): Promise<ComplianceResult> {
     const policy = this.getPolicy(dsp);
     if (!policy) {
       return {
         dsp,
         compliant: false,
-        errors: [{
-          category: 'metadata',
-          field: 'dsp',
-          message: `Unknown DSP: ${dsp}`,
-          requirement: 'Valid DSP identifier required'
-        }],
+        errors: [
+          {
+            category: "metadata",
+            field: "dsp",
+            message: `Unknown DSP: ${dsp}`,
+            requirement: "Valid DSP identifier required",
+          },
+        ],
         warnings: [],
-        checkedAt: new Date()
+        checkedAt: new Date(),
       };
     }
 
@@ -741,66 +816,69 @@ export class DSPPolicyChecker {
       compliant: errors.length === 0,
       errors,
       warnings,
-      checkedAt: new Date()
+      checkedAt: new Date(),
     };
   }
 
-  private checkMetadataCompliance(release: ReleaseToCheck, policy: DSPPolicy): ComplianceError[] {
+  private checkMetadataCompliance(
+    release: ReleaseToCheck,
+    policy: DSPPolicy,
+  ): ComplianceError[] {
     const errors: ComplianceError[] = [];
     const meta = policy.metadata;
 
     if (!release.title) {
       errors.push({
-        category: 'metadata',
-        field: 'title',
-        message: 'Title is required',
-        requirement: 'Release title must be provided'
+        category: "metadata",
+        field: "title",
+        message: "Title is required",
+        requirement: "Release title must be provided",
       });
     } else if (release.title.length > meta.maxTitleLength) {
       errors.push({
-        category: 'metadata',
-        field: 'title',
+        category: "metadata",
+        field: "title",
         message: `Title exceeds maximum length of ${meta.maxTitleLength} characters`,
         requirement: `Maximum ${meta.maxTitleLength} characters`,
-        currentValue: release.title.length
+        currentValue: release.title.length,
       });
     }
 
     if (!release.artist) {
       errors.push({
-        category: 'metadata',
-        field: 'artist',
-        message: 'Artist name is required',
-        requirement: 'Primary artist name must be provided'
+        category: "metadata",
+        field: "artist",
+        message: "Artist name is required",
+        requirement: "Primary artist name must be provided",
       });
     } else if (release.artist.length > meta.maxArtistLength) {
       errors.push({
-        category: 'metadata',
-        field: 'artist',
+        category: "metadata",
+        field: "artist",
         message: `Artist name exceeds maximum length of ${meta.maxArtistLength} characters`,
         requirement: `Maximum ${meta.maxArtistLength} characters`,
-        currentValue: release.artist.length
+        currentValue: release.artist.length,
       });
     }
 
     if (release.label && release.label.length > meta.maxLabelLength) {
       errors.push({
-        category: 'metadata',
-        field: 'label',
+        category: "metadata",
+        field: "label",
         message: `Label name exceeds maximum length of ${meta.maxLabelLength} characters`,
         requirement: `Maximum ${meta.maxLabelLength} characters`,
-        currentValue: release.label.length
+        currentValue: release.label.length,
       });
     }
 
-    const titleLower = (release.title || '').toLowerCase();
+    const titleLower = (release.title || "").toLowerCase();
     for (const term of meta.bannedTerms) {
       if (titleLower.includes(term.toLowerCase())) {
         errors.push({
-          category: 'metadata',
-          field: 'title',
+          category: "metadata",
+          field: "title",
           message: `Title contains banned term: "${term}"`,
-          requirement: `Titles cannot contain: ${meta.bannedTerms.join(', ')}`
+          requirement: `Titles cannot contain: ${meta.bannedTerms.join(", ")}`,
         });
       }
     }
@@ -810,21 +888,21 @@ export class DSPPolicyChecker {
         const track = release.tracks[i];
         if (track.title && track.title.length > meta.maxTitleLength) {
           errors.push({
-            category: 'metadata',
+            category: "metadata",
             field: `tracks[${i}].title`,
             message: `Track title exceeds maximum length`,
             requirement: `Maximum ${meta.maxTitleLength} characters`,
-            currentValue: track.title.length
+            currentValue: track.title.length,
           });
         }
 
         if (track.lyrics && track.lyrics.length > meta.maxLyricsLength) {
           errors.push({
-            category: 'metadata',
+            category: "metadata",
             field: `tracks[${i}].lyrics`,
             message: `Lyrics exceed maximum length`,
             requirement: `Maximum ${meta.maxLyricsLength} characters`,
-            currentValue: track.lyrics.length
+            currentValue: track.lyrics.length,
           });
         }
       }
@@ -834,19 +912,23 @@ export class DSPPolicyChecker {
   }
 
   private async checkCoverArtCompliance(
-    release: ReleaseToCheck, 
-    policy: DSPPolicy
+    release: ReleaseToCheck,
+    policy: DSPPolicy,
   ): Promise<{ errors: ComplianceError[]; warnings: ComplianceWarning[] }> {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
     const art = policy.coverArt;
 
-    if (!release.coverArtPath && !release.coverArtUrl && !release.coverArtMetadata) {
+    if (
+      !release.coverArtPath &&
+      !release.coverArtUrl &&
+      !release.coverArtMetadata
+    ) {
       errors.push({
-        category: 'coverArt',
-        field: 'coverArt',
-        message: 'Cover art is required',
-        requirement: 'All releases must include cover artwork'
+        category: "coverArt",
+        field: "coverArt",
+        message: "Cover art is required",
+        requirement: "All releases must include cover artwork",
       });
       return { errors, warnings };
     }
@@ -857,51 +939,59 @@ export class DSPPolicyChecker {
       try {
         const sharpInstance = await getSharp();
         if (!sharpInstance) {
-          logger.warn('Sharp not available - skipping cover art validation for file path');
+          logger.warn(
+            "Sharp not available - skipping cover art validation for file path",
+          );
         } else {
-          const imageInfo = await sharpInstance(release.coverArtPath).metadata();
+          const imageInfo = await sharpInstance(
+            release.coverArtPath,
+          ).metadata();
           const stats = fs.statSync(release.coverArtPath);
-          
+
           metadata = {
             width: imageInfo.width,
             height: imageInfo.height,
             format: imageInfo.format,
-            fileSize: stats.size
+            fileSize: stats.size,
           };
         }
       } catch (error) {
-        logger.warn({ err: error }, 'Error reading cover art metadata:');
+        logger.warn({ err: error }, "Error reading cover art metadata:");
       }
     }
 
     if (metadata) {
       if (metadata.width && metadata.width < art.minWidth) {
         errors.push({
-          category: 'coverArt',
-          field: 'coverArt.width',
+          category: "coverArt",
+          field: "coverArt.width",
           message: `Cover art width (${metadata.width}px) is below minimum (${art.minWidth}px)`,
           requirement: `Minimum width: ${art.minWidth}px`,
-          currentValue: metadata.width
+          currentValue: metadata.width,
         });
       }
 
       if (metadata.height && metadata.height < art.minHeight) {
         errors.push({
-          category: 'coverArt',
-          field: 'coverArt.height',
+          category: "coverArt",
+          field: "coverArt.height",
           message: `Cover art height (${metadata.height}px) is below minimum (${art.minHeight}px)`,
           requirement: `Minimum height: ${art.minHeight}px`,
-          currentValue: metadata.height
+          currentValue: metadata.height,
         });
       }
 
-      if (metadata.width && metadata.height && metadata.width !== metadata.height) {
+      if (
+        metadata.width &&
+        metadata.height &&
+        metadata.width !== metadata.height
+      ) {
         errors.push({
-          category: 'coverArt',
-          field: 'coverArt.aspectRatio',
+          category: "coverArt",
+          field: "coverArt.aspectRatio",
           message: `Cover art must be square (1:1 aspect ratio). Current: ${metadata.width}x${metadata.height}`,
-          requirement: 'Aspect ratio must be 1:1',
-          currentValue: `${metadata.width}x${metadata.height}`
+          requirement: "Aspect ratio must be 1:1",
+          currentValue: `${metadata.width}x${metadata.height}`,
         });
       }
 
@@ -909,31 +999,32 @@ export class DSPPolicyChecker {
         const format = metadata.format.toLowerCase();
         if (!art.formats.includes(format)) {
           errors.push({
-            category: 'coverArt',
-            field: 'coverArt.format',
+            category: "coverArt",
+            field: "coverArt.format",
             message: `Cover art format "${format}" is not accepted`,
-            requirement: `Accepted formats: ${art.formats.join(', ')}`,
-            currentValue: format
+            requirement: `Accepted formats: ${art.formats.join(", ")}`,
+            currentValue: format,
           });
         }
       }
 
       if (metadata.fileSize && metadata.fileSize > art.maxFileSize) {
         errors.push({
-          category: 'coverArt',
-          field: 'coverArt.fileSize',
+          category: "coverArt",
+          field: "coverArt.fileSize",
           message: `Cover art file size (${Math.round(metadata.fileSize / 1024 / 1024)}MB) exceeds maximum`,
           requirement: `Maximum file size: ${Math.round(art.maxFileSize / 1024 / 1024)}MB`,
-          currentValue: metadata.fileSize
+          currentValue: metadata.fileSize,
         });
       }
 
       if (metadata.width && metadata.width < 3000) {
         warnings.push({
-          category: 'coverArt',
-          field: 'coverArt.width',
-          message: 'Cover art resolution could be higher for best quality',
-          suggestion: 'Use 3000x3000 pixels for optimal quality across all platforms'
+          category: "coverArt",
+          field: "coverArt.width",
+          message: "Cover art resolution could be higher for best quality",
+          suggestion:
+            "Use 3000x3000 pixels for optimal quality across all platforms",
         });
       }
     }
@@ -941,7 +1032,10 @@ export class DSPPolicyChecker {
     return { errors, warnings };
   }
 
-  private checkAudioCompliance(release: ReleaseToCheck, policy: DSPPolicy): ComplianceError[] {
+  private checkAudioCompliance(
+    release: ReleaseToCheck,
+    policy: DSPPolicy,
+  ): ComplianceError[] {
     const errors: ComplianceError[] = [];
     const audio = policy.audio;
 
@@ -951,16 +1045,16 @@ export class DSPPolicyChecker {
 
     for (let i = 0; i < release.audioFiles.length; i++) {
       const file = release.audioFiles[i];
-      
+
       if (file.format) {
         const format = file.format.toLowerCase();
         if (!audio.formats.includes(format)) {
           errors.push({
-            category: 'audio',
+            category: "audio",
             field: `audioFiles[${i}].format`,
             message: `Audio format "${format}" is not accepted`,
-            requirement: `Accepted formats: ${audio.formats.join(', ')}`,
-            currentValue: format
+            requirement: `Accepted formats: ${audio.formats.join(", ")}`,
+            currentValue: format,
           });
         }
       }
@@ -968,62 +1062,62 @@ export class DSPPolicyChecker {
       if (file.bitDepth) {
         if (file.bitDepth < audio.minBitDepth) {
           errors.push({
-            category: 'audio',
+            category: "audio",
             field: `audioFiles[${i}].bitDepth`,
             message: `Bit depth (${file.bitDepth}) is below minimum (${audio.minBitDepth})`,
             requirement: `Minimum bit depth: ${audio.minBitDepth}`,
-            currentValue: file.bitDepth
+            currentValue: file.bitDepth,
           });
         }
         if (file.bitDepth > audio.maxBitDepth) {
           errors.push({
-            category: 'audio',
+            category: "audio",
             field: `audioFiles[${i}].bitDepth`,
             message: `Bit depth (${file.bitDepth}) exceeds maximum (${audio.maxBitDepth})`,
             requirement: `Maximum bit depth: ${audio.maxBitDepth}`,
-            currentValue: file.bitDepth
+            currentValue: file.bitDepth,
           });
         }
       }
 
       if (file.sampleRate && !audio.sampleRates.includes(file.sampleRate)) {
         errors.push({
-          category: 'audio',
+          category: "audio",
           field: `audioFiles[${i}].sampleRate`,
           message: `Sample rate ${file.sampleRate}Hz is not accepted`,
-          requirement: `Accepted sample rates: ${audio.sampleRates.join(', ')}Hz`,
-          currentValue: file.sampleRate
+          requirement: `Accepted sample rates: ${audio.sampleRates.join(", ")}Hz`,
+          currentValue: file.sampleRate,
         });
       }
 
       if (file.duration) {
         if (file.duration < audio.minDuration) {
           errors.push({
-            category: 'audio',
+            category: "audio",
             field: `audioFiles[${i}].duration`,
             message: `Track duration (${file.duration}s) is below minimum (${audio.minDuration}s)`,
             requirement: `Minimum duration: ${audio.minDuration} seconds`,
-            currentValue: file.duration
+            currentValue: file.duration,
           });
         }
         if (file.duration > audio.maxDuration) {
           errors.push({
-            category: 'audio',
+            category: "audio",
             field: `audioFiles[${i}].duration`,
             message: `Track duration (${file.duration}s) exceeds maximum (${audio.maxDuration}s)`,
             requirement: `Maximum duration: ${audio.maxDuration} seconds`,
-            currentValue: file.duration
+            currentValue: file.duration,
           });
         }
       }
 
       if (file.truePeak !== undefined && file.truePeak > audio.truePeakMax) {
         errors.push({
-          category: 'audio',
+          category: "audio",
           field: `audioFiles[${i}].truePeak`,
           message: `True peak (${file.truePeak}dB) exceeds maximum (${audio.truePeakMax}dB)`,
           requirement: `Maximum true peak: ${audio.truePeakMax}dB`,
-          currentValue: file.truePeak
+          currentValue: file.truePeak,
         });
       }
     }
@@ -1032,8 +1126,8 @@ export class DSPPolicyChecker {
   }
 
   private checkReleaseTiming(
-    release: ReleaseToCheck, 
-    policy: DSPPolicy
+    release: ReleaseToCheck,
+    policy: DSPPolicy,
   ): { errors: ComplianceError[]; warnings: ComplianceWarning[] } {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
@@ -1041,67 +1135,79 @@ export class DSPPolicyChecker {
 
     if (!release.releaseDate) {
       errors.push({
-        category: 'timing',
-        field: 'releaseDate',
-        message: 'Release date is required',
-        requirement: 'A release date must be specified'
+        category: "timing",
+        field: "releaseDate",
+        message: "Release date is required",
+        requirement: "A release date must be specified",
       });
       return { errors, warnings };
     }
 
     const releaseDate = new Date(release.releaseDate);
     const now = new Date();
-    const daysUntilRelease = Math.floor((releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilRelease = Math.floor(
+      (releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
     if (daysUntilRelease < 0) {
       errors.push({
-        category: 'timing',
-        field: 'releaseDate',
-        message: 'Release date is in the past',
-        requirement: 'Release date must be in the future',
-        currentValue: releaseDate.toISOString()
+        category: "timing",
+        field: "releaseDate",
+        message: "Release date is in the past",
+        requirement: "Release date must be in the future",
+        currentValue: releaseDate.toISOString(),
       });
     } else if (daysUntilRelease < timing.minLeadTime) {
       errors.push({
-        category: 'timing',
-        field: 'releaseDate',
+        category: "timing",
+        field: "releaseDate",
         message: `Release date is only ${daysUntilRelease} days away`,
         requirement: `Minimum lead time: ${timing.minLeadTime} days`,
-        currentValue: daysUntilRelease
+        currentValue: daysUntilRelease,
       });
     }
 
     if (daysUntilRelease > timing.maxFutureDate) {
       errors.push({
-        category: 'timing',
-        field: 'releaseDate',
+        category: "timing",
+        field: "releaseDate",
         message: `Release date is ${daysUntilRelease} days in the future`,
         requirement: `Maximum future date: ${timing.maxFutureDate} days`,
-        currentValue: daysUntilRelease
+        currentValue: daysUntilRelease,
       });
     }
 
     const dayOfWeek = releaseDate.getDay();
     if (dayOfWeek !== timing.preferredReleaseDay) {
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const days = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
       warnings.push({
-        category: 'timing',
-        field: 'releaseDate',
+        category: "timing",
+        field: "releaseDate",
         message: `Release date falls on ${days[dayOfWeek]}`,
-        suggestion: `${days[timing.preferredReleaseDay]} releases are preferred for better chart performance`
+        suggestion: `${days[timing.preferredReleaseDay]} releases are preferred for better chart performance`,
       });
     }
 
     return { errors, warnings };
   }
 
-  async checkAllDSPs(release: ReleaseToCheck): Promise<{ [dsp: string]: ComplianceResult }> {
+  async checkAllDSPs(
+    release: ReleaseToCheck,
+  ): Promise<{ [dsp: string]: ComplianceResult }> {
     const results: { [dsp: string]: ComplianceResult } = {};
-    
+
     for (const dsp of this.listDSPs()) {
       results[dsp] = await this.checkCompliance(release, dsp);
     }
-    
+
     return results;
   }
 
@@ -1119,31 +1225,31 @@ export class DSPPolicyChecker {
       coverArt: [
         `Dimensions: ${policy.coverArt.minWidth}x${policy.coverArt.minHeight} to ${policy.coverArt.maxWidth}x${policy.coverArt.maxHeight} pixels`,
         `Aspect ratio: ${policy.coverArt.aspectRatio}`,
-        `Formats: ${policy.coverArt.formats.join(', ')}`,
+        `Formats: ${policy.coverArt.formats.join(", ")}`,
         `Max file size: ${Math.round(policy.coverArt.maxFileSize / 1024 / 1024)}MB`,
-        `Color mode: ${policy.coverArt.colorMode.join(', ')}`
+        `Color mode: ${policy.coverArt.colorMode.join(", ")}`,
       ],
       audio: [
-        `Formats: ${policy.audio.formats.join(', ')}`,
+        `Formats: ${policy.audio.formats.join(", ")}`,
         `Bit depth: ${policy.audio.minBitDepth}-${policy.audio.maxBitDepth} bit`,
-        `Sample rates: ${policy.audio.sampleRates.join(', ')}Hz`,
+        `Sample rates: ${policy.audio.sampleRates.join(", ")}Hz`,
         `Duration: ${policy.audio.minDuration}s - ${policy.audio.maxDuration}s`,
         `Loudness target: ${policy.audio.loudnessTargetLUFS} LUFS`,
-        `True peak max: ${policy.audio.truePeakMax}dB`
+        `True peak max: ${policy.audio.truePeakMax}dB`,
       ],
       metadata: [
         `Title: max ${policy.metadata.maxTitleLength} characters`,
         `Artist: max ${policy.metadata.maxArtistLength} characters`,
         `Label: max ${policy.metadata.maxLabelLength} characters`,
-        `Required fields: ${policy.metadata.requiredFields.join(', ')}`,
-        `Banned terms: ${policy.metadata.bannedTerms.join(', ')}`
+        `Required fields: ${policy.metadata.requiredFields.join(", ")}`,
+        `Banned terms: ${policy.metadata.bannedTerms.join(", ")}`,
       ],
       timing: [
         `Minimum lead time: ${policy.releaseTiming.minLeadTime} days`,
         `Maximum future date: ${policy.releaseTiming.maxFutureDate} days`,
-        `Preferred release day: ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][policy.releaseTiming.preferredReleaseDay]}`
+        `Preferred release day: ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][policy.releaseTiming.preferredReleaseDay]}`,
       ],
-      additional: policy.additionalRequirements
+      additional: policy.additionalRequirements,
     };
   }
 }

@@ -1,6 +1,6 @@
-import { brotliCompress, constants as zlibConstants } from 'zlib';
-import { promisify } from 'util';
-import type { Request, Response, NextFunction } from 'express';
+import { brotliCompress, constants as zlibConstants } from "zlib";
+import { promisify } from "util";
+import type { Request, Response, NextFunction } from "express";
 
 const brotliCompressAsync = promisify(brotliCompress);
 
@@ -28,16 +28,16 @@ const MIN_SIZE = 256;
  */
 export function brotliMiddleware() {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (req.method === 'HEAD') {
+    if (req.method === "HEAD") {
       return next();
     }
 
-    const acceptEncoding = req.headers['accept-encoding'] || '';
-    if (!acceptEncoding.includes('br')) {
+    const acceptEncoding = req.headers["accept-encoding"] || "";
+    if (!acceptEncoding.includes("br")) {
       return next();
     }
 
-    res.setHeader('Vary', 'Accept-Encoding');
+    res.setHeader("Vary", "Accept-Encoding");
 
     const originalJson = res.json.bind(res);
 
@@ -46,12 +46,16 @@ export function brotliMiddleware() {
         return originalJson(body);
       }
 
-      const existingEncoding = res.getHeader('Content-Encoding') as string | undefined;
+      const existingEncoding = res.getHeader("Content-Encoding") as
+        | string
+        | undefined;
       if (existingEncoding) {
         return originalJson(body);
       }
 
-      const contentType = (res.getHeader('Content-Type') as string | undefined) ?? 'application/json';
+      const contentType =
+        (res.getHeader("Content-Type") as string | undefined) ??
+        "application/json";
       if (!COMPRESSIBLE_MIME_PATTERN.test(contentType)) {
         return originalJson(body);
       }
@@ -61,7 +65,7 @@ export function brotliMiddleware() {
         return originalJson(body);
       }
 
-      const inputBuf = Buffer.from(json, 'utf8');
+      const inputBuf = Buffer.from(json, "utf8");
 
       brotliCompressAsync(inputBuf, {
         params: {
@@ -71,9 +75,9 @@ export function brotliMiddleware() {
       })
         .then((compressed) => {
           if (res.headersSent) return;
-          res.setHeader('Content-Encoding', 'br');
-          res.setHeader('Content-Type', 'application/json; charset=utf-8');
-          res.setHeader('Content-Length', compressed.length);
+          res.setHeader("Content-Encoding", "br");
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.setHeader("Content-Length", compressed.length);
           res.status(res.statusCode).end(compressed);
         })
         .catch(() => {

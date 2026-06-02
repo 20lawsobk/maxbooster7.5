@@ -1,13 +1,19 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   CheckCircle2,
   XCircle,
@@ -19,9 +25,9 @@ import {
   Calendar,
   History,
   FileText,
-} from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -29,8 +35,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Post {
   id: string;
@@ -38,7 +44,13 @@ interface Post {
   platform: string;
   content: string;
   mediaUrls?: string[];
-  approvalStatus: 'draft' | 'pending_review' | 'approved' | 'scheduled' | 'rejected' | 'published';
+  approvalStatus:
+    | "draft"
+    | "pending_review"
+    | "approved"
+    | "scheduled"
+    | "rejected"
+    | "published";
   submittedBy?: string;
   reviewedBy?: string;
   reviewedAt?: Date;
@@ -62,16 +74,36 @@ interface ApprovalHistoryItem {
 }
 
 const statusConfig = {
-  draft: { color: 'bg-gray-500/20 text-gray-400', icon: FileText, label: 'Draft' },
-  pending_review: {
-    color: 'bg-yellow-500/20 text-yellow-400',
-    icon: Clock,
-    label: 'Pending Review',
+  draft: {
+    color: "bg-gray-500/20 text-gray-400",
+    icon: FileText,
+    label: "Draft",
   },
-  approved: { color: 'bg-green-500/20 text-green-400', icon: CheckCircle2, label: 'Approved' },
-  scheduled: { color: 'bg-purple-500/20 text-purple-400', icon: Calendar, label: 'Scheduled' },
-  rejected: { color: 'bg-red-500/20 text-red-400', icon: XCircle, label: 'Rejected' },
-  published: { color: 'bg-blue-500/20 text-blue-400', icon: Send, label: 'Published' },
+  pending_review: {
+    color: "bg-yellow-500/20 text-yellow-400",
+    icon: Clock,
+    label: "Pending Review",
+  },
+  approved: {
+    color: "bg-green-500/20 text-green-400",
+    icon: CheckCircle2,
+    label: "Approved",
+  },
+  scheduled: {
+    color: "bg-purple-500/20 text-purple-400",
+    icon: Calendar,
+    label: "Scheduled",
+  },
+  rejected: {
+    color: "bg-red-500/20 text-red-400",
+    icon: XCircle,
+    label: "Rejected",
+  },
+  published: {
+    color: "bg-blue-500/20 text-blue-400",
+    icon: Send,
+    label: "Published",
+  },
 };
 
 export function ApprovalDashboard() {
@@ -82,23 +114,23 @@ export function ApprovalDashboard() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-  const [approveComment, setApproveComment] = useState('');
+  const [rejectReason, setRejectReason] = useState("");
+  const [approveComment, setApproveComment] = useState("");
 
   const { data: stats } = useQuery({
-    queryKey: ['/api/social/approvals/stats'],
+    queryKey: ["/api/social/approvals/stats"],
   });
 
   const { data: pendingApprovals, isLoading: isLoadingPending } = useQuery({
-    queryKey: ['/api/social/approvals/pending'],
+    queryKey: ["/api/social/approvals/pending"],
   });
 
   const { data: myPosts, isLoading: isLoadingMyPosts } = useQuery({
-    queryKey: ['/api/social/approvals/my-posts'],
+    queryKey: ["/api/social/approvals/my-posts"],
   });
 
   const { data: approvalHistory } = useQuery({
-    queryKey: ['/api/social/approvals/history', selectedPost?.id],
+    queryKey: ["/api/social/approvals/history", selectedPost?.id],
     enabled: !!selectedPost && showHistoryDialog,
   });
 
@@ -106,36 +138,48 @@ export function ApprovalDashboard() {
     mutationFn: async (postId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/approvals/${postId}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
       });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Success',
-        description: 'Post submitted for review',
+        title: "Success",
+        description: "Post submitted for review",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/social/approvals'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/social/approvals"] });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
 
   const approvePostMutation = useMutation({
-    mutationFn: async ({ postId, comment }: { postId: string; comment?: string }) => {
+    mutationFn: async ({
+      postId,
+      comment,
+    }: {
+      postId: string;
+      comment?: string;
+    }) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/approvals/${postId}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ comment }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -143,19 +187,19 @@ export function ApprovalDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: 'Success',
-        description: 'Post approved successfully',
+        title: "Success",
+        description: "Post approved successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/social/approvals'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/social/approvals"] });
       setShowApproveDialog(false);
-      setApproveComment('');
+      setApproveComment("");
       setSelectedPost(null);
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -172,9 +216,12 @@ export function ApprovalDashboard() {
     }) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/approvals/${postId}/reject`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ reason, comment }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -182,19 +229,19 @@ export function ApprovalDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: 'Success',
-        description: 'Post rejected',
+        title: "Success",
+        description: "Post rejected",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/social/approvals'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/social/approvals"] });
       setShowRejectDialog(false);
-      setRejectReason('');
+      setRejectReason("");
       setSelectedPost(null);
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -236,11 +283,19 @@ export function ApprovalDashboard() {
     }
   };
 
-  const PostCard = ({ post, showActions = true }: { post: Post; showActions?: boolean }) => {
+  const PostCard = ({
+    post,
+    showActions = true,
+  }: {
+    post: Post;
+    showActions?: boolean;
+  }) => {
     const StatusIcon = statusConfig[post.approvalStatus].icon;
     const canReview =
-      stats?.stats?.userRole && ['reviewer', 'manager', 'admin'].includes(stats.stats.userRole);
-    const canSubmit = post.approvalStatus === 'draft' || post.approvalStatus === 'rejected';
+      stats?.stats?.userRole &&
+      ["reviewer", "manager", "admin"].includes(stats.stats.userRole);
+    const canSubmit =
+      post.approvalStatus === "draft" || post.approvalStatus === "rejected";
 
     return (
       <Card className="mb-4">
@@ -256,10 +311,10 @@ export function ApprovalDashboard() {
               </div>
               <CardDescription className="text-sm">
                 <User className="w-3 h-3 inline mr-1" />
-                {post.submitterName || post.submitterEmail || 'Unknown'}
+                {post.submitterName || post.submitterEmail || "Unknown"}
                 {post.scheduledAt && (
                   <>
-                    {' • '}
+                    {" • "}
                     <Calendar className="w-3 h-3 inline mr-1" />
                     {new Date(post.scheduledAt).toLocaleString()}
                   </>
@@ -282,7 +337,7 @@ export function ApprovalDashboard() {
 
           {showActions && (
             <div className="flex gap-2">
-              {canReview && post.approvalStatus === 'pending_review' && (
+              {canReview && post.approvalStatus === "pending_review" && (
                 <>
                   <Button
                     size="sm"
@@ -293,7 +348,11 @@ export function ApprovalDashboard() {
                     <CheckCircle2 className="w-4 h-4 mr-1" />
                     Approve
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleReject(post)}>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleReject(post)}
+                  >
                     <XCircle className="w-4 h-4 mr-1" />
                     Reject
                   </Button>
@@ -312,7 +371,11 @@ export function ApprovalDashboard() {
                 </Button>
               )}
 
-              <Button size="sm" variant="outline" onClick={() => handleViewHistory(post)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleViewHistory(post)}
+              >
                 <History className="w-4 h-4 mr-1" />
                 History
               </Button>
@@ -327,12 +390,16 @@ export function ApprovalDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold gradient-text">Approval Dashboard</h2>
-          <p className="text-muted-foreground mt-2">Manage and review social media posts</p>
+          <h2 className="text-3xl font-bold gradient-text">
+            Approval Dashboard
+          </h2>
+          <p className="text-muted-foreground mt-2">
+            Manage and review social media posts
+          </p>
         </div>
         {stats?.stats && (
           <Badge variant="outline" className="text-lg px-4 py-2">
-            Role: {stats.stats.userRole?.replace('_', ' ').toUpperCase()}
+            Role: {stats.stats.userRole?.replace("_", " ").toUpperCase()}
           </Badge>
         )}
       </div>
@@ -340,7 +407,9 @@ export function ApprovalDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-2xl font-bold text-gray-400">{stats?.stats?.draft || 0}</p>
+            <p className="text-2xl font-bold text-gray-400">
+              {stats?.stats?.draft || 0}
+            </p>
             <p className="text-sm text-muted-foreground">Draft</p>
           </CardContent>
         </Card>
@@ -354,19 +423,25 @@ export function ApprovalDashboard() {
         </Card>
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-2xl font-bold text-green-400">{stats?.stats?.approved || 0}</p>
+            <p className="text-2xl font-bold text-green-400">
+              {stats?.stats?.approved || 0}
+            </p>
             <p className="text-sm text-muted-foreground">Approved</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-2xl font-bold text-red-400">{stats?.stats?.rejected || 0}</p>
+            <p className="text-2xl font-bold text-red-400">
+              {stats?.stats?.rejected || 0}
+            </p>
             <p className="text-sm text-muted-foreground">Rejected</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-2xl font-bold text-blue-400">{stats?.stats?.published || 0}</p>
+            <p className="text-2xl font-bold text-blue-400">
+              {stats?.stats?.published || 0}
+            </p>
             <p className="text-sm text-muted-foreground">Published</p>
           </CardContent>
         </Card>
@@ -388,7 +463,7 @@ export function ApprovalDashboard() {
         <TabsContent value="pending" className="space-y-4">
           {isLoadingPending ? (
             <div className="space-y-3">
-              {[1,2,3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Card key={i}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center gap-3">
@@ -411,14 +486,16 @@ export function ApprovalDashboard() {
               </CardContent>
             </Card>
           ) : (
-            pendingApprovals?.posts?.map((post: Post) => <PostCard key={post.id} post={post} />)
+            pendingApprovals?.posts?.map((post: Post) => (
+              <PostCard key={post.id} post={post} />
+            ))
           )}
         </TabsContent>
 
         <TabsContent value="my-posts" className="space-y-4">
           {isLoadingMyPosts ? (
             <div className="space-y-3">
-              {[1,2,3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Card key={i}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center gap-3">
@@ -441,7 +518,9 @@ export function ApprovalDashboard() {
               </CardContent>
             </Card>
           ) : (
-            myPosts?.posts?.map((post: Post) => <PostCard key={post.id} post={post} />)
+            myPosts?.posts?.map((post: Post) => (
+              <PostCard key={post.id} post={post} />
+            ))
           )}
         </TabsContent>
       </Tabs>
@@ -450,7 +529,9 @@ export function ApprovalDashboard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Approve Post</DialogTitle>
-            <DialogDescription>Are you sure you want to approve this post?</DialogDescription>
+            <DialogDescription>
+              Are you sure you want to approve this post?
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -465,10 +546,16 @@ export function ApprovalDashboard() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowApproveDialog(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={confirmApprove} disabled={approvePostMutation.isPending}>
+            <Button
+              onClick={confirmApprove}
+              disabled={approvePostMutation.isPending}
+            >
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Approve
             </Button>
@@ -480,7 +567,9 @@ export function ApprovalDashboard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Post</DialogTitle>
-            <DialogDescription>Please provide a reason for rejecting this post.</DialogDescription>
+            <DialogDescription>
+              Please provide a reason for rejecting this post.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -496,7 +585,10 @@ export function ApprovalDashboard() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectDialog(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -515,47 +607,57 @@ export function ApprovalDashboard() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Approval History</DialogTitle>
-            <DialogDescription>Complete audit trail for this post</DialogDescription>
+            <DialogDescription>
+              Complete audit trail for this post
+            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-96">
             <div className="space-y-4">
-              {approvalHistory?.history?.map((item: ApprovalHistoryItem, index: number) => (
-                <div key={item.id}>
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 text-primary" />
+              {approvalHistory?.history?.map(
+                (item: ApprovalHistoryItem, index: number) => (
+                  <div key={item.id}>
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <MessageSquare className="w-4 h-4 text-primary" />
+                        </div>
+                        {index < approvalHistory.history.length - 1 && (
+                          <div className="w-0.5 h-full bg-border mt-2" />
+                        )}
                       </div>
-                      {index < approvalHistory.history.length - 1 && (
-                        <div className="w-0.5 h-full bg-border mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{item.userName || item.userEmail}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {item.action}
-                        </Badge>
-                      </div>
-                      {item.fromStatus && (
-                        <p className="text-sm text-muted-foreground">
-                          {statusConfig[item.fromStatus as keyof typeof statusConfig]?.label ||
-                            item.fromStatus}{' '}
-                          →{' '}
-                          {statusConfig[item.toStatus as keyof typeof statusConfig]?.label ||
-                            item.toStatus}
+                      <div className="flex-1 pb-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">
+                            {item.userName || item.userEmail}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {item.action}
+                          </Badge>
+                        </div>
+                        {item.fromStatus && (
+                          <p className="text-sm text-muted-foreground">
+                            {statusConfig[
+                              item.fromStatus as keyof typeof statusConfig
+                            ]?.label || item.fromStatus}{" "}
+                            →{" "}
+                            {statusConfig[
+                              item.toStatus as keyof typeof statusConfig
+                            ]?.label || item.toStatus}
+                          </p>
+                        )}
+                        {item.comment && (
+                          <p className="text-sm mt-2 bg-muted p-2 rounded">
+                            {item.comment}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(item.createdAt).toLocaleString()}
                         </p>
-                      )}
-                      {item.comment && (
-                        <p className="text-sm mt-2 bg-muted p-2 rounded">{item.comment}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(item.createdAt).toLocaleString()}
-                      </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </ScrollArea>
         </DialogContent>

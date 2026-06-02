@@ -1,8 +1,8 @@
-import path from 'path';
-import fs from 'fs/promises';
-import { existsSync } from 'fs';
-import type { IStorage } from '../storage';
-import { logger } from '../logger.js';
+import path from "path";
+import fs from "fs/promises";
+import { existsSync } from "fs";
+import type { IStorage } from "../storage";
+import { logger } from "../logger.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -10,20 +10,23 @@ let ffmpegAvailable = false;
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
-    const fluentFfmpeg = await import('fluent-ffmpeg');
+    const fluentFfmpeg = await import("fluent-ffmpeg");
     ffmpeg = fluentFfmpeg.default;
     try {
-      const ffmpegStatic = await import('ffmpeg-static');
+      const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic.default) {
         ffmpeg.setFfmpegPath(ffmpegStatic.default);
       }
     } catch {
-      logger.warn('ffmpeg-static not available, using system ffmpeg');
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn({ err: error }, 'FFmpeg not available - audio conversion features will be limited:');
+    logger.warn(
+      { err: error },
+      "FFmpeg not available - audio conversion features will be limited:",
+    );
     return false;
   }
 }
@@ -70,8 +73,8 @@ const MAX_CONCURRENT_CONVERSIONS = 2;
  */
 function sanitizePath(filePath: string): string {
   const normalized = path.normalize(filePath);
-  if (normalized.includes('..') || path.isAbsolute(normalized)) {
-    throw new Error('Invalid file path');
+  if (normalized.includes("..") || path.isAbsolute(normalized)) {
+    throw new Error("Invalid file path");
   }
   return normalized;
 }
@@ -81,7 +84,7 @@ function sanitizePath(filePath: string): string {
  */
 function getQualitySettings(
   format: string,
-  preset: string
+  preset: string,
 ): { bitrate?: number; sampleRate: number } {
   const presetConfig = qualityPresets[preset as keyof typeof qualityPresets];
   if (!presetConfig) {
@@ -91,13 +94,15 @@ function getQualitySettings(
   const formatLower = format.toLowerCase();
   let bitrate: number | undefined;
 
-  if (preset === 'lossless') {
-    if (formatLower !== 'flac' && formatLower !== 'wav') {
-      throw new Error('Lossless preset only supports FLAC and WAV formats');
+  if (preset === "lossless") {
+    if (formatLower !== "flac" && formatLower !== "wav") {
+      throw new Error("Lossless preset only supports FLAC and WAV formats");
     }
     bitrate = undefined; // Lossless = no bitrate limit
   } else {
-    bitrate = presetConfig[formatLower as keyof typeof presetConfig.low] as number;
+    bitrate = presetConfig[
+      formatLower as keyof typeof presetConfig.low
+    ] as number;
     if (!bitrate) {
       throw new Error(`Format ${format} not supported for preset ${preset}`);
     }
@@ -118,11 +123,13 @@ export async function convertAudioFile(
   targetFormat: string,
   qualityPreset: string,
   projectId: string,
-  storage: IStorage
+  storage: IStorage,
 ): Promise<string> {
   const hasFFmpeg = await initializeFfmpeg();
   if (!hasFFmpeg || !ffmpeg) {
-    throw new Error('FFmpeg is not available. Audio conversion features are disabled in this deployment.');
+    throw new Error(
+      "FFmpeg is not available. Audio conversion features are disabled in this deployment.",
+    );
   }
   try {
     // Sanitize and validate source path
@@ -135,14 +142,25 @@ export async function convertAudioFile(
     }
 
     // Get quality settings
-    const { bitrate, sampleRate } = getQualitySettings(targetFormat, qualityPreset);
+    const { bitrate, sampleRate } = getQualitySettings(
+      targetFormat,
+      qualityPreset,
+    );
 
     // Create output directory: uploads/conversions/<projectId>/
-    const outputDir = path.join(process.cwd(), 'uploads', 'conversions', projectId);
+    const outputDir = path.join(
+      process.cwd(),
+      "uploads",
+      "conversions",
+      projectId,
+    );
     await fs.mkdir(outputDir, { recursive: true });
 
     // Generate output filename
-    const sourceBasename = path.basename(sanitizedSource, path.extname(sanitizedSource));
+    const sourceBasename = path.basename(
+      sanitizedSource,
+      path.extname(sanitizedSource),
+    );
     const timestamp = Date.now();
     const outputFilename = `${sourceBasename}_${timestamp}.${targetFormat.toLowerCase()}`;
     const outputPath = path.join(outputDir, outputFilename);
@@ -161,25 +179,25 @@ export async function convertAudioFile(
 
     // Format-specific codec and quality settings
     switch (formatLower) {
-      case 'mp3':
-        command.audioCodec('libmp3lame');
-        if (qualityPreset === 'high') {
+      case "mp3":
+        command.audioCodec("libmp3lame");
+        if (qualityPreset === "high") {
           command.audioQuality(0); // VBR quality 0 (highest)
         }
         break;
-      case 'aac':
-      case 'm4a':
-        command.audioCodec('aac');
+      case "aac":
+      case "m4a":
+        command.audioCodec("aac");
         break;
-      case 'ogg':
-        command.audioCodec('libvorbis');
+      case "ogg":
+        command.audioCodec("libvorbis");
         break;
-      case 'flac':
-        command.audioCodec('flac');
+      case "flac":
+        command.audioCodec("flac");
         command.audioChannels(2); // Stereo
         break;
-      case 'wav':
-        command.audioCodec('pcm_s16le');
+      case "wav":
+        command.audioCodec("pcm_s16le");
         command.audioChannels(2);
         break;
       default:
@@ -191,39 +209,47 @@ export async function convertAudioFile(
       let duration: number = 0;
 
       command
-        .on('codecData', (data: unknown) => {
+        .on("codecData", (data: unknown) => {
           // Get total duration for progress calculation
           if (data.duration) {
-            const timeParts = data.duration.split(':');
+            const timeParts = data.duration.split(":");
             duration =
               parseInt(timeParts[0]) * 3600 +
               parseInt(timeParts[1]) * 60 +
               parseFloat(timeParts[2]);
           }
         })
-        .on('progress', async (progress: unknown) => {
+        .on("progress", async (progress: unknown) => {
           if (duration > 0 && progress.timemark) {
-            const timeParts = progress.timemark.split(':');
+            const timeParts = progress.timemark.split(":");
             const currentTime =
               parseInt(timeParts[0]) * 3600 +
               parseInt(timeParts[1]) * 60 +
               parseFloat(timeParts[2]);
-            const percentage = Math.min(Math.round((currentTime / duration) * 100), 99);
+            const percentage = Math.min(
+              Math.round((currentTime / duration) * 100),
+              99,
+            );
 
             // Update progress in database
             try {
-              await storage.updateConversion(conversionId, { progress: percentage });
+              await storage.updateConversion(conversionId, {
+                progress: percentage,
+              });
             } catch (err: unknown) {
-              logger.warn({ err: err }, 'Failed to update conversion progress:');
+              logger.warn(
+                { err: err },
+                "Failed to update conversion progress:",
+              );
             }
           }
         })
-        .on('end', async () => {
+        .on("end", async () => {
           // Update to 100% and mark as completed
           try {
             await storage.updateConversion(conversionId, {
               progress: 100,
-              status: 'completed',
+              status: "completed",
               outputFilePath: relativeOutputPath,
               completedAt: new Date(),
             });
@@ -233,16 +259,16 @@ export async function convertAudioFile(
             reject(err);
           }
         })
-        .on('error', async (err: Error) => {
+        .on("error", async (err: Error) => {
           // Update status to failed with error message
           try {
             await storage.updateConversion(conversionId, {
-              status: 'failed',
+              status: "failed",
               errorMessage: err.message,
               completedAt: new Date(),
             });
           } catch (updateErr: unknown) {
-            logger.warn('Failed to update conversion error:', updateErr);
+            logger.warn("Failed to update conversion error:", updateErr);
           }
           activeProcesses.delete(conversionId);
           reject(err);
@@ -255,8 +281,8 @@ export async function convertAudioFile(
   } catch (error: unknown) {
     // Update database with error
     await storage.updateConversion(conversionId, {
-      status: 'failed',
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      status: "failed",
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
       completedAt: new Date(),
     });
     throw error;
@@ -266,7 +292,10 @@ export async function convertAudioFile(
 /**
  * Process a conversion job
  */
-export async function processConversion(conversionId: string, storage: IStorage): Promise<void> {
+export async function processConversion(
+  conversionId: string,
+  storage: IStorage,
+): Promise<void> {
   try {
     // Get conversion details from database
     const conversion = await storage.getConversion(conversionId);
@@ -275,13 +304,15 @@ export async function processConversion(conversionId: string, storage: IStorage)
     }
 
     // Check if already processing or completed
-    if (conversion.status !== 'pending') {
-      logger.info(`Conversion ${conversionId} already ${conversion.status}, skipping`);
+    if (conversion.status !== "pending") {
+      logger.info(
+        `Conversion ${conversionId} already ${conversion.status}, skipping`,
+      );
       return;
     }
 
     // Update status to processing
-    await storage.updateConversion(conversionId, { status: 'processing' });
+    await storage.updateConversion(conversionId, { status: "processing" });
 
     // Execute conversion
     await convertAudioFile(
@@ -290,7 +321,7 @@ export async function processConversion(conversionId: string, storage: IStorage)
       conversion.targetFormat,
       conversion.qualityPreset,
       conversion.projectId,
-      storage
+      storage,
     );
 
     logger.info(`Conversion ${conversionId} completed successfully`);
@@ -306,10 +337,13 @@ export async function processConversion(conversionId: string, storage: IStorage)
 /**
  * Add conversion to queue and start processing if slot available
  */
-export async function enqueueConversion(conversionId: string, storage: IStorage): Promise<void> {
+export async function enqueueConversion(
+  conversionId: string,
+  storage: IStorage,
+): Promise<void> {
   // Check if already in queue
   if (conversionQueue.has(conversionId)) {
-    throw new Error('Conversion already queued');
+    throw new Error("Conversion already queued");
   }
 
   // Wait if queue is full
@@ -330,21 +364,27 @@ export async function enqueueConversion(conversionId: string, storage: IStorage)
 /**
  * Cancel an active conversion
  */
-export async function cancelConversion(conversionId: string, storage: IStorage): Promise<void> {
+export async function cancelConversion(
+  conversionId: string,
+  storage: IStorage,
+): Promise<void> {
   // Kill FFmpeg process if active
   const process = activeProcesses.get(conversionId);
   if (process) {
     try {
-      process.kill('SIGKILL');
+      process.kill("SIGKILL");
       activeProcesses.delete(conversionId);
     } catch (err: unknown) {
-      logger.warn({ err: err }, `Failed to kill conversion process ${conversionId}:`);
+      logger.warn(
+        { err: err },
+        `Failed to kill conversion process ${conversionId}:`,
+      );
     }
   }
 
   // Update database status
   await storage.updateConversion(conversionId, {
-    status: 'cancelled',
+    status: "cancelled",
     completedAt: new Date(),
   });
 
@@ -360,7 +400,10 @@ export async function cancelConversion(conversionId: string, storage: IStorage):
         await fs.unlink(fullPath);
       }
     } catch (err: unknown) {
-      logger.warn({ err: err }, `Failed to delete partial file for ${conversionId}:`);
+      logger.warn(
+        { err: err },
+        `Failed to delete partial file for ${conversionId}:`,
+      );
     }
   }
 }

@@ -1,26 +1,26 @@
-export * from './core';
+export * from "./core";
 
-import { DSPProcessor } from './core';
+import { DSPProcessor } from "./core";
 
-import { REVERB_PROCESSORS } from './reverbEngines';
-import { DELAY_PROCESSORS } from './delayEngines';
-import { COMPRESSOR_PROCESSORS } from './compressorEngines';
-import { EQ_PROCESSORS } from './eqEngines';
-import { DISTORTION_PROCESSORS } from './distortionEngines';
-import { MODULATION_PROCESSORS } from './modulationEngines';
-import { DYNAMICS_PROCESSORS } from './dynamicsEngines';
-import { VOCAL_PROCESSORS } from './vocalEngines';
-import { MICROPHONE_PROCESSORS } from './microphoneEngines';
+import { REVERB_PROCESSORS } from "./reverbEngines";
+import { DELAY_PROCESSORS } from "./delayEngines";
+import { COMPRESSOR_PROCESSORS } from "./compressorEngines";
+import { EQ_PROCESSORS } from "./eqEngines";
+import { DISTORTION_PROCESSORS } from "./distortionEngines";
+import { MODULATION_PROCESSORS } from "./modulationEngines";
+import { DYNAMICS_PROCESSORS } from "./dynamicsEngines";
+import { VOCAL_PROCESSORS } from "./vocalEngines";
+import { MICROPHONE_PROCESSORS } from "./microphoneEngines";
 
-import { PIANO_SYNTHESIZERS } from './instruments/pianoEngines';
-import { STRINGS_SYNTHESIZERS } from './instruments/stringsEngines';
-import { DRUMS_SYNTHESIZERS } from './instruments/drumsEngines';
-import { BASS_SYNTHESIZERS } from './instruments/bassEngines';
-import { PADS_SYNTHESIZERS } from './instruments/padsEngines';
-import { ANALOG_SYNTH_SYNTHESIZERS } from './instruments/analogSynthEngines';
-import { FM_SYNTH_SYNTHESIZERS } from './instruments/fmSynthEngines';
-import { WAVETABLE_SYNTH_SYNTHESIZERS } from './instruments/wavetableSynthEngines';
-import { SAMPLER_SYNTHESIZERS } from './instruments/samplerEngines';
+import { PIANO_SYNTHESIZERS } from "./instruments/pianoEngines";
+import { STRINGS_SYNTHESIZERS } from "./instruments/stringsEngines";
+import { DRUMS_SYNTHESIZERS } from "./instruments/drumsEngines";
+import { BASS_SYNTHESIZERS } from "./instruments/bassEngines";
+import { PADS_SYNTHESIZERS } from "./instruments/padsEngines";
+import { ANALOG_SYNTH_SYNTHESIZERS } from "./instruments/analogSynthEngines";
+import { FM_SYNTH_SYNTHESIZERS } from "./instruments/fmSynthEngines";
+import { WAVETABLE_SYNTH_SYNTHESIZERS } from "./instruments/wavetableSynthEngines";
+import { SAMPLER_SYNTHESIZERS } from "./instruments/samplerEngines";
 
 export const ALL_EFFECT_PROCESSORS: Record<string, () => DSPProcessor> = {
   ...REVERB_PROCESSORS,
@@ -35,14 +35,24 @@ export const ALL_EFFECT_PROCESSORS: Record<string, () => DSPProcessor> = {
 };
 
 export interface SynthesizerEngine {
-  noteOn(frequency: number, velocity: number, context: { sampleRate: number; tempo: number }): void;
+  noteOn(
+    frequency: number,
+    velocity: number,
+    context: { sampleRate: number; tempo: number },
+  ): void;
   noteOff(context: { sampleRate: number }): void;
-  render(numSamples: number, context: { sampleRate: number; tempo: number }): { samples: Float32Array[]; sampleRate: number; channels: number };
+  render(
+    numSamples: number,
+    context: { sampleRate: number; tempo: number },
+  ): { samples: Float32Array[]; sampleRate: number; channels: number };
   isActive(): boolean;
   reset(): void;
 }
 
-export const ALL_INSTRUMENT_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
+export const ALL_INSTRUMENT_SYNTHESIZERS: Record<
+  string,
+  new () => SynthesizerEngine
+> = {
   ...PIANO_SYNTHESIZERS,
   ...STRINGS_SYNTHESIZERS,
   ...DRUMS_SYNTHESIZERS,
@@ -59,7 +69,9 @@ export function getEffectProcessor(pluginId: string): DSPProcessor | null {
   return factory ? factory() : null;
 }
 
-export function getInstrumentSynthesizer(pluginId: string): SynthesizerEngine | null {
+export function getInstrumentSynthesizer(
+  pluginId: string,
+): SynthesizerEngine | null {
   const SynthClass = ALL_INSTRUMENT_SYNTHESIZERS[pluginId];
   return SynthClass ? new SynthClass() : null;
 }
@@ -98,7 +110,9 @@ export function getProcessorInfo() {
       sampler: Object.keys(SAMPLER_SYNTHESIZERS),
       total: Object.keys(ALL_INSTRUMENT_SYNTHESIZERS).length,
     },
-    grandTotal: Object.keys(ALL_EFFECT_PROCESSORS).length + Object.keys(ALL_INSTRUMENT_SYNTHESIZERS).length,
+    grandTotal:
+      Object.keys(ALL_EFFECT_PROCESSORS).length +
+      Object.keys(ALL_INSTRUMENT_SYNTHESIZERS).length,
   };
 }
 

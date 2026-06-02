@@ -1,15 +1,15 @@
-import { db } from '../db';
-import { 
-  catalogImportJobs, 
+import { db } from "../db";
+import {
+  catalogImportJobs,
   catalogImportRows,
   releases,
-  distroTracks
-} from '@shared/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import { identifierService } from './identifierService.js';
-import { labelCopyLinter, LabelCopyLinter } from './labelCopyLinter.js';
-import ExcelJS from 'exceljs';
+  distroTracks,
+} from "@shared/schema";
+import { eq, and, sql, desc } from "drizzle-orm";
+import { logger } from "../logger.js";
+import { identifierService } from "./identifierService.js";
+import { labelCopyLinter, LabelCopyLinter } from "./labelCopyLinter.js";
+import ExcelJS from "exceljs";
 
 export interface ImportRow {
   title: string;
@@ -39,7 +39,7 @@ export interface ImportResult {
   duplicateRows: number;
   errors: ImportError[];
   warnings: ImportWarning[];
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
 }
 
 export interface ImportError {
@@ -62,57 +62,57 @@ export interface ImportProgress {
   processedRows: number;
   percentComplete: number;
   estimatedTimeRemaining?: number;
-  currentPhase: 'parsing' | 'validating' | 'importing' | 'finalizing';
+  currentPhase: "parsing" | "validating" | "importing" | "finalizing";
 }
 
 const CSV_COLUMN_MAPPINGS: Record<string, string> = {
-  'release_title': 'title',
-  'album_title': 'title',
-  'album': 'title',
-  'release': 'title',
-  'artist_name': 'artist',
-  'primary_artist': 'artist',
-  'performer': 'artist',
-  'album_artist': 'albumArtist',
-  'genre_primary': 'genre',
-  'primary_genre': 'genre',
-  'release_date': 'releaseDate',
-  'street_date': 'releaseDate',
-  'upc_code': 'upc',
-  'ean': 'upc',
-  'isrc_code': 'isrc',
-  'label_name': 'label',
-  'record_label': 'label',
-  'copyright': 'copyrightHolder',
-  'p_line': 'copyrightHolder',
-  'c_line': 'copyrightHolder',
-  'track_title': 'trackTitle',
-  'song_title': 'trackTitle',
-  'track_number': 'trackNumber',
-  'track_no': 'trackNumber',
-  'duration_seconds': 'duration',
-  'length': 'duration',
-  'explicit': 'isExplicit',
-  'parental_advisory': 'isExplicit',
-  'language_code': 'language',
-  'primary_language': 'language'
+  release_title: "title",
+  album_title: "title",
+  album: "title",
+  release: "title",
+  artist_name: "artist",
+  primary_artist: "artist",
+  performer: "artist",
+  album_artist: "albumArtist",
+  genre_primary: "genre",
+  primary_genre: "genre",
+  release_date: "releaseDate",
+  street_date: "releaseDate",
+  upc_code: "upc",
+  ean: "upc",
+  isrc_code: "isrc",
+  label_name: "label",
+  record_label: "label",
+  copyright: "copyrightHolder",
+  p_line: "copyrightHolder",
+  c_line: "copyrightHolder",
+  track_title: "trackTitle",
+  song_title: "trackTitle",
+  track_number: "trackNumber",
+  track_no: "trackNumber",
+  duration_seconds: "duration",
+  length: "duration",
+  explicit: "isExplicit",
+  parental_advisory: "isExplicit",
+  language_code: "language",
+  primary_language: "language",
 };
 
 const DDEX_FIELD_MAPPINGS: Record<string, string> = {
-  'ReleaseTitle': 'title',
-  'DisplayArtistName': 'artist',
-  'GenreText': 'genre',
-  'ReleaseDate': 'releaseDate',
-  'ICPN': 'upc',
-  'ISRC': 'isrc',
-  'RecordLabelName': 'label',
-  'PLine': 'copyrightHolder',
-  'CLine': 'copyrightHolder',
-  'Title': 'trackTitle',
-  'SequenceNumber': 'trackNumber',
-  'Duration': 'duration',
-  'IsExplicit': 'isExplicit',
-  'LanguageOfPerformance': 'language'
+  ReleaseTitle: "title",
+  DisplayArtistName: "artist",
+  GenreText: "genre",
+  ReleaseDate: "releaseDate",
+  ICPN: "upc",
+  ISRC: "isrc",
+  RecordLabelName: "label",
+  PLine: "copyrightHolder",
+  CLine: "copyrightHolder",
+  Title: "trackTitle",
+  SequenceNumber: "trackNumber",
+  Duration: "duration",
+  IsExplicit: "isExplicit",
+  LanguageOfPerformance: "language",
 };
 
 class CatalogImporter {
@@ -125,30 +125,37 @@ class CatalogImporter {
   async createImportJob(
     userId: string,
     filename: string,
-    fileType: 'csv' | 'xlsx' | 'ddex',
-    fileSize: number
+    fileType: "csv" | "xlsx" | "ddex",
+    fileSize: number,
   ): Promise<string> {
-    const [job] = await db.insert(catalogImportJobs).values({
-      artistId: userId,
-      sourceType: fileType,
-      sourceUrl: filename,
-      status: 'pending',
-      totalTracks: 0,
-      importedTracks: 0,
-      progress: 0,
-    }).returning();
+    const [job] = await db
+      .insert(catalogImportJobs)
+      .values({
+        artistId: userId,
+        sourceType: fileType,
+        sourceUrl: filename,
+        status: "pending",
+        totalTracks: 0,
+        importedTracks: 0,
+        progress: 0,
+      })
+      .returning();
 
     logger.info(`Created import job ${job.id} for user ${userId}`);
     return job.id;
   }
 
   async parseCSV(content: string): Promise<ImportRow[]> {
-    const lines = content.trim().split('\n');
+    const lines = content.trim().split("\n");
     if (lines.length < 2) {
-      throw new Error('CSV file must have at least a header row and one data row');
+      throw new Error(
+        "CSV file must have at least a header row and one data row",
+      );
     }
 
-    const headers = this.parseCSVLine(lines[0]).map(h => this.normalizeHeader(h));
+    const headers = this.parseCSVLine(lines[0]).map((h) =>
+      this.normalizeHeader(h),
+    );
     const rows: ImportRow[] = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -158,9 +165,10 @@ class CatalogImporter {
       for (let j = 0; j < headers.length; j++) {
         const header = headers[j];
         const value = values[j]?.trim();
-        
+
         if (value) {
-          const mappedField = CSV_COLUMN_MAPPINGS[header.toLowerCase()] || header;
+          const mappedField =
+            CSV_COLUMN_MAPPINGS[header.toLowerCase()] || header;
           row[mappedField] = this.parseValue(mappedField, value);
         }
       }
@@ -175,12 +183,12 @@ class CatalogImporter {
 
   private parseCSVLine(line: string): string[] {
     const result: string[] = [];
-    let current = '';
+    let current = "";
     let inQuotes = false;
 
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
+
       if (char === '"') {
         if (inQuotes && line[i + 1] === '"') {
           current += '"';
@@ -188,14 +196,14 @@ class CatalogImporter {
         } else {
           inQuotes = !inQuotes;
         }
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === "," && !inQuotes) {
         result.push(current);
-        current = '';
+        current = "";
       } else {
         current += char;
       }
     }
-    
+
     result.push(current);
     return result;
   }
@@ -204,19 +212,21 @@ class CatalogImporter {
     return header
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s]/g, '')
-      .replace(/\s+/g, '_');
+      .replace(/[^\w\s]/g, "")
+      .replace(/\s+/g, "_");
   }
 
   private parseValue(field: string, value: string): Record<string, unknown> {
     switch (field) {
-      case 'trackNumber':
-      case 'duration':
-      case 'copyrightYear':
+      case "trackNumber":
+      case "duration":
+      case "copyrightYear":
         return parseInt(value, 10) || undefined;
-      case 'isExplicit':
-        return ['true', '1', 'yes', 'y', 'explicit'].includes(value.toLowerCase());
-      case 'releaseDate':
+      case "isExplicit":
+        return ["true", "1", "yes", "y", "explicit"].includes(
+          value.toLowerCase(),
+        );
+      case "releaseDate":
         return this.parseDate(value);
       default:
         return value;
@@ -227,7 +237,7 @@ class CatalogImporter {
     const formats = [
       /^(\d{4})-(\d{2})-(\d{2})$/,
       /^(\d{2})\/(\d{2})\/(\d{4})$/,
-      /^(\d{4})\/(\d{2})\/(\d{2})$/
+      /^(\d{4})\/(\d{2})\/(\d{2})$/,
     ];
 
     for (const format of formats) {
@@ -235,7 +245,7 @@ class CatalogImporter {
       if (match) {
         const date = new Date(value);
         if (!isNaN(date.getTime())) {
-          return date.toISOString().split('T')[0];
+          return date.toISOString().split("T")[0];
         }
       }
     }
@@ -244,18 +254,22 @@ class CatalogImporter {
   }
 
   async parseDDEX(xmlContent: string): Promise<ImportRow[]> {
-    logger.info('DDEX parsing initiated (simplified XML parsing)');
-    
+    logger.info("DDEX parsing initiated (simplified XML parsing)");
+
     const rows: ImportRow[] = [];
-    
-    const releaseMatch = xmlContent.match(/<ReleaseTitle[^>]*>(.*?)<\/ReleaseTitle>/s);
-    const artistMatch = xmlContent.match(/<DisplayArtistName[^>]*>(.*?)<\/DisplayArtistName>/s);
+
+    const releaseMatch = xmlContent.match(
+      /<ReleaseTitle[^>]*>(.*?)<\/ReleaseTitle>/s,
+    );
+    const artistMatch = xmlContent.match(
+      /<DisplayArtistName[^>]*>(.*?)<\/DisplayArtistName>/s,
+    );
     const upcMatch = xmlContent.match(/<ICPN[^>]*>(.*?)<\/ICPN>/s);
-    
+
     if (releaseMatch) {
       const row: ImportRow = {
         title: releaseMatch[1].trim(),
-        artist: artistMatch?.[1]?.trim() || 'Unknown Artist'
+        artist: artistMatch?.[1]?.trim() || "Unknown Artist",
       };
 
       if (upcMatch) {
@@ -264,13 +278,13 @@ class CatalogImporter {
 
       const isrcMatches = xmlContent.matchAll(/<ISRC[^>]*>(.*?)<\/ISRC>/gs);
       const trackMatches = xmlContent.matchAll(/<Title[^>]*>(.*?)<\/Title>/gs);
-      
+
       let trackNumber = 1;
       for (const trackMatch of trackMatches) {
         const trackRow: ImportRow = {
           ...row,
           trackTitle: trackMatch[1].trim(),
-          trackNumber: trackNumber++
+          trackNumber: trackNumber++,
         };
         rows.push(trackRow);
       }
@@ -289,7 +303,7 @@ class CatalogImporter {
     const sheet = workbook.worksheets[0];
 
     if (!sheet) {
-      throw new Error('XLSX file contains no sheets');
+      throw new Error("XLSX file contains no sheets");
     }
 
     const headers: string[] = [];
@@ -299,45 +313,55 @@ class CatalogImporter {
       if (rowNumber === 1) {
         row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
           const val = cell.value;
-          headers[colNumber - 1] = val !== null && val !== undefined ? String(val) : '';
+          headers[colNumber - 1] =
+            val !== null && val !== undefined ? String(val) : "";
         });
       } else {
         const obj: Record<string, any> = {};
         headers.forEach((header, idx) => {
           const cell = row.getCell(idx + 1);
-          obj[header] = cell.value !== null && cell.value !== undefined ? cell.value : '';
+          obj[header] =
+            cell.value !== null && cell.value !== undefined ? cell.value : "";
         });
         jsonData.push(obj);
       }
     });
 
     if (jsonData.length === 0) {
-      throw new Error('XLSX file contains no data rows');
+      throw new Error("XLSX file contains no data rows");
     }
-    
+
     const rows: ImportRow[] = [];
-    
+
     for (const rawRow of jsonData) {
       const row: ImportRow = {} as ImportRow;
-      
+
       for (const [key, value] of Object.entries(rawRow)) {
         const normalizedHeader = this.normalizeHeader(key);
-        const mappedField = CSV_COLUMN_MAPPINGS[normalizedHeader] || normalizedHeader;
-        
-        if (value !== undefined && value !== null && String(value).trim() !== '') {
+        const mappedField =
+          CSV_COLUMN_MAPPINGS[normalizedHeader] || normalizedHeader;
+
+        if (
+          value !== undefined &&
+          value !== null &&
+          String(value).trim() !== ""
+        ) {
           row[mappedField] = this.parseValue(mappedField, String(value).trim());
         }
       }
-      
+
       if (row.title || row.trackTitle) {
         rows.push(row);
       }
     }
-    
+
     return rows;
   }
 
-  async validateRows(rows: ImportRow[], jobId: string): Promise<{
+  async validateRows(
+    rows: ImportRow[],
+    jobId: string,
+  ): Promise<{
     validRows: ImportRow[];
     errors: ImportError[];
     warnings: ImportWarning[];
@@ -357,8 +381,8 @@ class CatalogImporter {
       if (!row.title && !row.trackTitle) {
         errors.push({
           rowNumber,
-          field: 'title',
-          message: 'Title is required'
+          field: "title",
+          message: "Title is required",
         });
         isValid = false;
       }
@@ -366,8 +390,8 @@ class CatalogImporter {
       if (!row.artist) {
         errors.push({
           rowNumber,
-          field: 'artist',
-          message: 'Artist is required'
+          field: "artist",
+          message: "Artist is required",
         });
         isValid = false;
       }
@@ -377,9 +401,9 @@ class CatalogImporter {
         if (!upcValidation.valid) {
           errors.push({
             rowNumber,
-            field: 'upc',
-            message: upcValidation.error || 'Invalid UPC',
-            value: row.upc
+            field: "upc",
+            message: upcValidation.error || "Invalid UPC",
+            value: row.upc,
           });
           isValid = false;
         }
@@ -390,52 +414,52 @@ class CatalogImporter {
         if (!isrcValidation.valid) {
           errors.push({
             rowNumber,
-            field: 'isrc',
-            message: isrcValidation.error || 'Invalid ISRC',
-            value: row.isrc
+            field: "isrc",
+            message: isrcValidation.error || "Invalid ISRC",
+            value: row.isrc,
           });
           isValid = false;
         }
       }
 
-      const identifier = `${row.title || row.trackTitle}|${row.artist}|${row.upc || ''}`;
+      const identifier = `${row.title || row.trackTitle}|${row.artist}|${row.upc || ""}`;
       if (seenIdentifiers.has(identifier)) {
         duplicates.push(rowNumber);
         warnings.push({
           rowNumber,
-          field: 'duplicate',
-          message: 'Duplicate entry detected',
-          suggestion: 'This row appears to be a duplicate of an earlier row'
+          field: "duplicate",
+          message: "Duplicate entry detected",
+          suggestion: "This row appears to be a duplicate of an earlier row",
         });
       } else {
         seenIdentifiers.add(identifier);
       }
 
-      const title = row.title || row.trackTitle || '';
+      const title = row.title || row.trackTitle || "";
       if (title === title.toUpperCase() && title.length > 3) {
         warnings.push({
           rowNumber,
-          field: 'title',
-          message: 'Title is in ALL CAPS',
-          suggestion: 'Use Title Case for better presentation'
+          field: "title",
+          message: "Title is in ALL CAPS",
+          suggestion: "Use Title Case for better presentation",
         });
       }
 
       if (!row.genre) {
         warnings.push({
           rowNumber,
-          field: 'genre',
-          message: 'Genre is missing',
-          suggestion: 'Add a genre for better discoverability'
+          field: "genre",
+          message: "Genre is missing",
+          suggestion: "Add a genre for better discoverability",
         });
       }
 
       if (!row.releaseDate) {
         warnings.push({
           rowNumber,
-          field: 'releaseDate',
-          message: 'Release date is missing',
-          suggestion: 'Add a release date for scheduling'
+          field: "releaseDate",
+          message: "Release date is missing",
+          suggestion: "Add a release date for scheduling",
         });
       }
 
@@ -451,11 +475,12 @@ class CatalogImporter {
     jobId: string,
     userId: string,
     rows: ImportRow[],
-    onProgress?: (progress: ImportProgress) => void
+    onProgress?: (progress: ImportProgress) => void,
   ): Promise<ImportResult> {
-    await db.update(catalogImportJobs)
+    await db
+      .update(catalogImportJobs)
       .set({
-        status: 'processing',
+        status: "processing",
         startedAt: new Date(),
         totalTracks: rows.length,
         progress: 0,
@@ -468,11 +493,12 @@ class CatalogImporter {
       totalRows: rows.length,
       processedRows: 0,
       successfulRows: 0,
-      failedRows: validation.errors.filter(e => e.field !== 'duplicate').length,
+      failedRows: validation.errors.filter((e) => e.field !== "duplicate")
+        .length,
       duplicateRows: validation.duplicates.length,
       errors: validation.errors,
       warnings: validation.warnings,
-      status: 'processing'
+      status: "processing",
     };
 
     const releaseGroups = this.groupRowsByRelease(validation.validRows);
@@ -480,20 +506,20 @@ class CatalogImporter {
     for (const [releaseKey, releaseRows] of Object.entries(releaseGroups)) {
       try {
         const firstRow = releaseRows[0];
-        
+
         const existingRelease = await this.findExistingRelease(
           firstRow.title,
           firstRow.artist,
-          firstRow.upc
+          firstRow.upc,
         );
 
         if (existingRelease) {
           result.duplicateRows++;
           validation.warnings.push({
             rowNumber: rows.indexOf(firstRow) + 1,
-            field: 'release',
-            message: 'Release already exists in catalog',
-            suggestion: 'Skip or update existing release'
+            field: "release",
+            message: "Release already exists in catalog",
+            suggestion: "Skip or update existing release",
           });
           continue;
         }
@@ -508,38 +534,44 @@ class CatalogImporter {
             rawData: row,
             parsedData: row,
             releaseId,
-            status: 'success'
+            status: "success",
           });
         }
       } catch (error) {
         result.failedRows += releaseRows.length;
-        logger.warn({ err: error }, `Error importing release group ${releaseKey}:`);
-        
+        logger.warn(
+          { err: error },
+          `Error importing release group ${releaseKey}:`,
+        );
+
         for (const row of releaseRows) {
           result.errors.push({
             rowNumber: rows.indexOf(row) + 1,
-            field: 'import',
-            message: error instanceof Error ? error.message : 'Import failed'
+            field: "import",
+            message: error instanceof Error ? error.message : "Import failed",
           });
         }
       }
 
       result.processedRows += releaseRows.length;
-      
+
       if (onProgress) {
         onProgress({
           jobId,
           totalRows: rows.length,
           processedRows: result.processedRows,
-          percentComplete: Math.round((result.processedRows / rows.length) * 100),
-          currentPhase: 'importing'
+          percentComplete: Math.round(
+            (result.processedRows / rows.length) * 100,
+          ),
+          currentPhase: "importing",
         });
       }
     }
 
-    result.status = result.failedRows === rows.length ? 'failed' : 'completed';
+    result.status = result.failedRows === rows.length ? "failed" : "completed";
 
-    await db.update(catalogImportJobs)
+    await db
+      .update(catalogImportJobs)
       .set({
         status: result.status,
         completedAt: new Date(),
@@ -549,7 +581,9 @@ class CatalogImporter {
       })
       .where(eq(catalogImportJobs.id, jobId));
 
-    logger.info(`Import job ${jobId} completed: ${result.successfulRows}/${result.totalRows} successful`);
+    logger.info(
+      `Import job ${jobId} completed: ${result.successfulRows}/${result.totalRows} successful`,
+    );
 
     return result;
   }
@@ -558,7 +592,7 @@ class CatalogImporter {
     const groups: Record<string, ImportRow[]> = {};
 
     for (const row of rows) {
-      const key = `${row.title || 'untitled'}|${row.artist}|${row.upc || 'no-upc'}`;
+      const key = `${row.title || "untitled"}|${row.artist}|${row.upc || "no-upc"}`;
       if (!groups[key]) {
         groups[key] = [];
       }
@@ -571,33 +605,33 @@ class CatalogImporter {
   private async findExistingRelease(
     title: string,
     artist: string,
-    upc?: string
+    upc?: string,
   ): Promise<any | null> {
     if (upc) {
-      const byUpc = await db.select()
+      const byUpc = await db
+        .select()
         .from(releases)
         .where(eq(releases.upc, upc))
         .limit(1);
-      
+
       if (byUpc.length > 0) {
         return byUpc[0];
       }
     }
 
-    const byTitleArtist = await db.select()
+    const byTitleArtist = await db
+      .select()
       .from(releases)
-      .where(
-        and(
-          eq(releases.title, title),
-          eq(releases.artist, artist)
-        )
-      )
+      .where(and(eq(releases.title, title), eq(releases.artist, artist)))
       .limit(1);
 
     return byTitleArtist.length > 0 ? byTitleArtist[0] : null;
   }
 
-  private async createReleaseFromRows(userId: string, rows: ImportRow[]): Promise<string> {
+  private async createReleaseFromRows(
+    userId: string,
+    rows: ImportRow[],
+  ): Promise<string> {
     const firstRow = rows[0];
 
     let upc = firstRow.upc;
@@ -605,38 +639,45 @@ class CatalogImporter {
       upc = await identifierService.generateUPC({ userId });
     }
 
-    const [release] = await db.insert(releases).values({
-      userId,
-      title: firstRow.title || 'Untitled Release',
-      artist: firstRow.artist,
-      upc,
-      status: 'draft',
-      releaseDate: firstRow.releaseDate ? new Date(firstRow.releaseDate) : null,
-      metadata: {
-        genre: firstRow.genre,
-        label: firstRow.label,
-        copyrightHolder: firstRow.copyrightHolder,
-        copyrightYear: firstRow.copyrightYear,
-        language: firstRow.language,
-        isExplicit: firstRow.isExplicit,
-        importedAt: new Date()
-      }
-    }).returning();
+    const [release] = await db
+      .insert(releases)
+      .values({
+        userId,
+        title: firstRow.title || "Untitled Release",
+        artist: firstRow.artist,
+        upc,
+        status: "draft",
+        releaseDate: firstRow.releaseDate
+          ? new Date(firstRow.releaseDate)
+          : null,
+        metadata: {
+          genre: firstRow.genre,
+          label: firstRow.label,
+          copyrightHolder: firstRow.copyrightHolder,
+          copyrightYear: firstRow.copyrightYear,
+          language: firstRow.language,
+          isExplicit: firstRow.isExplicit,
+          importedAt: new Date(),
+        },
+      })
+      .returning();
 
     for (const row of rows) {
       if (row.trackTitle || rows.length === 1) {
         let isrc = row.isrc;
         if (!isrc) {
-          isrc = await identifierService.generateISRC('US', 'MXB', undefined, { userId });
+          isrc = await identifierService.generateISRC("US", "MXB", undefined, {
+            userId,
+          });
         }
 
         await db.insert(distroTracks).values({
           releaseId: release.id,
-          title: row.trackTitle || row.title || 'Untitled Track',
+          title: row.trackTitle || row.title || "Untitled Track",
           trackNumber: row.trackNumber || 1,
           isrc,
           duration: row.duration,
-          explicit: row.isExplicit || false
+          explicit: row.isExplicit || false,
         });
       }
     }
@@ -645,7 +686,8 @@ class CatalogImporter {
   }
 
   async getImportJob(jobId: string): Promise<any | null> {
-    const jobs = await db.select()
+    const jobs = await db
+      .select()
       .from(catalogImportJobs)
       .where(eq(catalogImportJobs.id, jobId))
       .limit(1);
@@ -654,65 +696,75 @@ class CatalogImporter {
   }
 
   async getImportJobs(userId: string): Promise<any[]> {
-    return db.select()
+    return db
+      .select()
       .from(catalogImportJobs)
       .where(eq(catalogImportJobs.artistId, userId))
       .orderBy(desc(catalogImportJobs.createdAt));
   }
 
   async getImportRows(jobId: string): Promise<any[]> {
-    return db.select()
+    return db
+      .select()
       .from(catalogImportRows)
       .where(eq(catalogImportRows.jobId, jobId))
       .orderBy(catalogImportRows.rowNumber);
   }
 
-  getSupportedFormats(): { format: string; extension: string; description: string }[] {
+  getSupportedFormats(): {
+    format: string;
+    extension: string;
+    description: string;
+  }[] {
     return [
-      { format: 'csv', extension: '.csv', description: 'Comma-separated values' },
-      { format: 'xlsx', extension: '.xlsx', description: 'Microsoft Excel' },
-      { format: 'ddex', extension: '.xml', description: 'DDEX ERN format' }
+      {
+        format: "csv",
+        extension: ".csv",
+        description: "Comma-separated values",
+      },
+      { format: "xlsx", extension: ".xlsx", description: "Microsoft Excel" },
+      { format: "ddex", extension: ".xml", description: "DDEX ERN format" },
     ];
   }
 
   getTemplateCSV(): string {
     const headers = [
-      'title',
-      'artist',
-      'album_artist',
-      'genre',
-      'release_date',
-      'upc',
-      'label',
-      'copyright_holder',
-      'copyright_year',
-      'track_title',
-      'track_number',
-      'isrc',
-      'duration',
-      'explicit',
-      'language'
+      "title",
+      "artist",
+      "album_artist",
+      "genre",
+      "release_date",
+      "upc",
+      "label",
+      "copyright_holder",
+      "copyright_year",
+      "track_title",
+      "track_number",
+      "isrc",
+      "duration",
+      "explicit",
+      "language",
     ];
 
     const exampleRow = [
-      'My Album Title',
-      'Artist Name',
-      'Artist Name',
-      'Pop',
-      '2025-01-01',
-      '619123456789',
-      'My Record Label',
-      '2025 My Record Label',
-      '2025',
-      'First Song',
-      '1',
-      'USRC12500001',
-      '180',
-      'false',
-      'en'
+      "My Album Title",
+      "Artist Name",
+      "Artist Name",
+      "Pop",
+      "2025-01-01",
+      "619123456789",
+      "My Record Label",
+      "2025 My Record Label",
+      "2025",
+      "First Song",
+      "1",
+      "USRC12500001",
+      "180",
+      "false",
+      "en",
     ];
 
-    return `${headers.join(',')}\n${exampleRow.join(',')}`;
+    return `${headers.join(",")}\n${exampleRow.join(",")}`;
   }
 }
 

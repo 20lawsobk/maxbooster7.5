@@ -6,12 +6,7 @@
   "total_seconds": 85.76324319839478,
   "resolution": 96,
   "T": 4,
-  "channels": [
-    128,
-    256,
-    512,
-    1024
-  ],
+  "channels": [128, 256, 512, 1024],
   "levels": 5,
   "resblocks": 4,
   "bottleneck_depth": 6,

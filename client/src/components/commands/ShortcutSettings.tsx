@@ -1,4 +1,4 @@
-import { ShortcutCustomizer } from '@/components/shortcuts/ShortcutCustomizer';
+import { ShortcutCustomizer } from "@/components/shortcuts/ShortcutCustomizer";
 
 export { ShortcutCustomizer as ShortcutSettings, ShortcutCustomizer };
 

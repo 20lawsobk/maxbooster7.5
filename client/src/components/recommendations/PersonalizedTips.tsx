@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { usePersonalizedTips, PersonalizedTip } from '@/hooks/useRecommendations';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  usePersonalizedTips,
+  PersonalizedTip,
+} from "@/hooks/useRecommendations";
 import {
   Lightbulb,
   X,
@@ -13,7 +16,7 @@ import {
   Share2,
   Music,
   ArrowRight,
-} from 'lucide-react';
+} from "lucide-react";
 
 const categoryIcons: Record<string, React.ElementType> = {
   distribution: Share2,
@@ -25,10 +28,14 @@ const categoryIcons: Record<string, React.ElementType> = {
 interface PersonalizedTipsProps {
   showHeader?: boolean;
   maxTips?: number;
-  variant?: 'card' | 'inline' | 'carousel';
+  variant?: "card" | "inline" | "carousel";
 }
 
-export function PersonalizedTips({ showHeader = true, maxTips = 3, variant = 'card' }: PersonalizedTipsProps) {
+export function PersonalizedTips({
+  showHeader = true,
+  maxTips = 3,
+  variant = "card",
+}: PersonalizedTipsProps) {
   const { tips, isLoading } = usePersonalizedTips();
   const [dismissedTips, setDismissedTips] = useState<Set<string>>(new Set());
   const [expandedTip, setExpandedTip] = useState<string | null>(null);
@@ -67,7 +74,7 @@ export function PersonalizedTips({ showHeader = true, maxTips = 3, variant = 'ca
     return null;
   }
 
-  if (variant === 'inline') {
+  if (variant === "inline") {
     return (
       <div className="space-y-2">
         {visibleTips.map((tip) => (
@@ -77,7 +84,7 @@ export function PersonalizedTips({ showHeader = true, maxTips = 3, variant = 'ca
     );
   }
 
-  if (variant === 'carousel') {
+  if (variant === "carousel") {
     return <TipCarousel tips={visibleTips} onDismiss={handleDismiss} />;
   }
 
@@ -97,7 +104,7 @@ export function PersonalizedTips({ showHeader = true, maxTips = 3, variant = 'ca
           </div>
         </CardHeader>
       )}
-      <CardContent className={showHeader ? '' : 'pt-6'}>
+      <CardContent className={showHeader ? "" : "pt-6"}>
         <div className="space-y-3">
           {visibleTips.map((tip) => {
             const Icon = categoryIcons[tip.category] || Lightbulb;
@@ -125,7 +132,7 @@ export function PersonalizedTips({ showHeader = true, maxTips = 3, variant = 'ca
                     <h4 className="font-medium text-sm mb-1">{tip.title}</h4>
                     <p
                       className={`text-sm text-muted-foreground ${
-                        isExpanded ? '' : 'line-clamp-2'
+                        isExpanded ? "" : "line-clamp-2"
                       }`}
                     >
                       {tip.content}
@@ -135,10 +142,14 @@ export function PersonalizedTips({ showHeader = true, maxTips = 3, variant = 'ca
                         variant="link"
                         size="sm"
                         className="p-0 h-auto text-xs text-amber-600"
-                        onClick={() => setExpandedTip(isExpanded ? null : tip.id)}
+                        onClick={() =>
+                          setExpandedTip(isExpanded ? null : tip.id)
+                        }
                       >
-                        {isExpanded ? 'Show less' : 'Read more'}
-                        <ChevronRight className={`h-3 w-3 ml-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                        {isExpanded ? "Show less" : "Read more"}
+                        <ChevronRight
+                          className={`h-3 w-3 ml-1 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                        />
                       </Button>
                     )}
                   </div>
@@ -152,21 +163,38 @@ export function PersonalizedTips({ showHeader = true, maxTips = 3, variant = 'ca
   );
 }
 
-function InlineTip({ tip, onDismiss }: { tip: PersonalizedTip; onDismiss: (id: string) => void }) {
+function InlineTip({
+  tip,
+  onDismiss,
+}: {
+  tip: PersonalizedTip;
+  onDismiss: (id: string) => void;
+}) {
   const Icon = categoryIcons[tip.category] || Lightbulb;
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50">
       <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
       <p className="text-sm flex-1 line-clamp-1">{tip.title}</p>
-      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDismiss(tip.id)}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6"
+        onClick={() => onDismiss(tip.id)}
+      >
         <X className="h-3 w-3" />
       </Button>
     </div>
   );
 }
 
-function TipCarousel({ tips, onDismiss }: { tips: PersonalizedTip[]; onDismiss: (id: string) => void }) {
+function TipCarousel({
+  tips,
+  onDismiss,
+}: {
+  tips: PersonalizedTip[];
+  onDismiss: (id: string) => void;
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const nextTip = () => {
@@ -196,11 +224,18 @@ function TipCarousel({ tips, onDismiss }: { tips: PersonalizedTip[]; onDismiss: 
                 {currentIndex + 1} of {tips.length}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">{currentTip.content}</p>
+            <p className="text-sm text-muted-foreground">
+              {currentTip.content}
+            </p>
           </div>
         </div>
         <div className="flex justify-between items-center mt-4 pt-3 border-t border-amber-200 dark:border-amber-800/50">
-          <Button variant="ghost" size="sm" onClick={prevTip} disabled={tips.length <= 1}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={prevTip}
+            disabled={tips.length <= 1}
+          >
             Previous
           </Button>
           <div className="flex gap-1">
@@ -208,12 +243,19 @@ function TipCarousel({ tips, onDismiss }: { tips: PersonalizedTip[]; onDismiss: 
               <div
                 key={i}
                 className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                  i === currentIndex ? 'bg-amber-600' : 'bg-amber-300 dark:bg-amber-700'
+                  i === currentIndex
+                    ? "bg-amber-600"
+                    : "bg-amber-300 dark:bg-amber-700"
                 }`}
               />
             ))}
           </div>
-          <Button variant="ghost" size="sm" onClick={nextTip} disabled={tips.length <= 1}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={nextTip}
+            disabled={tips.length <= 1}
+          >
             Next
             <ArrowRight className="h-3 w-3 ml-1" />
           </Button>

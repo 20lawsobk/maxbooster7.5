@@ -1,15 +1,21 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { BeatCard } from '@/components/ui/beat-card';
-import { BeatPreviewControls } from './BeatPreviewControls';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BeatCard } from "@/components/ui/beat-card";
+import { BeatPreviewControls } from "./BeatPreviewControls";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import {
   Sparkles,
   TrendingUp,
@@ -21,8 +27,8 @@ import {
   Flame,
   Star,
   Zap,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Beat {
   id: string;
@@ -49,7 +55,7 @@ interface FeedSection {
   title: string;
   description: string;
   beats: Beat[];
-  type: 'personalized' | 'trending' | 'new' | 'genre_match' | 'mood_match';
+  type: "personalized" | "trending" | "new" | "genre_match" | "mood_match";
 }
 
 interface TasteProfile {
@@ -73,11 +79,11 @@ const sectionIcons: Record<string, any> = {
 };
 
 const sectionColors: Record<string, string> = {
-  personalized: 'from-purple-500 to-pink-500',
-  trending: 'from-orange-500 to-red-500',
-  new: 'from-cyan-500 to-blue-500',
-  genre_match: 'from-emerald-500 to-teal-500',
-  mood_match: 'from-rose-500 to-pink-500',
+  personalized: "from-purple-500 to-pink-500",
+  trending: "from-orange-500 to-red-500",
+  new: "from-cyan-500 to-blue-500",
+  genre_match: "from-emerald-500 to-teal-500",
+  mood_match: "from-rose-500 to-pink-500",
 };
 
 export function ForYouFeed() {
@@ -86,39 +92,43 @@ export function ForYouFeed() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error, refetch, isFetching } = useQuery<ForYouResponse>({
-    queryKey: ['for-you-feed'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/marketplace/for-you');
-      return response.json();
-    },
-  });
+  const { data, isLoading, error, refetch, isFetching } =
+    useQuery<ForYouResponse>({
+      queryKey: ["for-you-feed"],
+      queryFn: async () => {
+        const response = await apiRequest("GET", "/api/marketplace/for-you");
+        return response.json();
+      },
+    });
 
   const interactionMutation = useMutation({
     mutationFn: async ({ beatId, type }: { beatId: string; type: string }) => {
-      await apiRequest('POST', '/api/marketplace/interaction', {
+      await apiRequest("POST", "/api/marketplace/interaction", {
         beatId,
         interactionType: type,
-        source: 'for_you_feed',
+        source: "for_you_feed",
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['for-you-feed'] });
+      queryClient.invalidateQueries({ queryKey: ["for-you-feed"] });
     },
   });
 
   const handlePlay = (beat: Beat) => {
-    interactionMutation.mutate({ beatId: beat.id, type: 'play' });
+    interactionMutation.mutate({ beatId: beat.id, type: "play" });
     setSelectedBeat(beat);
   };
 
   const likeMutation = useMutation({
     mutationFn: async (beatId: string) => {
-      const response = await apiRequest('POST', `/api/marketplace/beats/${beatId}/like`);
+      const response = await apiRequest(
+        "POST",
+        `/api/marketplace/beats/${beatId}/like`,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['for-you-feed'] });
+      queryClient.invalidateQueries({ queryKey: ["for-you-feed"] });
     },
   });
 
@@ -131,13 +141,13 @@ export function ForYouFeed() {
     }
     setLikedBeats(newLiked);
     likeMutation.mutate(beat.id);
-    interactionMutation.mutate({ beatId: beat.id, type: 'like' });
+    interactionMutation.mutate({ beatId: beat.id, type: "like" });
   };
 
   const handleAddToCart = (beat: Beat) => {
-    interactionMutation.mutate({ beatId: beat.id, type: 'add_to_cart' });
+    interactionMutation.mutate({ beatId: beat.id, type: "add_to_cart" });
     toast({
-      title: 'Added to cart',
+      title: "Added to cart",
       description: `${beat.title} has been added to your cart`,
     });
   };
@@ -150,7 +160,9 @@ export function ForYouFeed() {
     return (
       <Card className="bg-slate-800/50 border-slate-700">
         <CardContent className="py-12 text-center">
-          <p className="text-slate-400 mb-4">Unable to load your personalized feed</p>
+          <p className="text-slate-400 mb-4">
+            Unable to load your personalized feed
+          </p>
           <Button onClick={() => refetch()} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
@@ -184,7 +196,9 @@ export function ForYouFeed() {
           disabled={isFetching}
           className="text-slate-400 hover:text-white"
         >
-          <RefreshCw className={cn('h-4 w-4 mr-2', isFetching && 'animate-spin')} />
+          <RefreshCw
+            className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")}
+          />
           Refresh
         </Button>
       </div>
@@ -200,13 +214,17 @@ export function ForYouFeed() {
               key={g.genre}
               variant="secondary"
               className={cn(
-                'bg-gradient-to-r text-white border-0',
-                i === 0 ? 'from-purple-500 to-pink-500' : 'from-slate-600 to-slate-700'
+                "bg-gradient-to-r text-white border-0",
+                i === 0
+                  ? "from-purple-500 to-pink-500"
+                  : "from-slate-600 to-slate-700",
               )}
             >
               <Music className="h-3 w-3 mr-1" />
               {g.genre}
-              <span className="ml-1 opacity-70">{Math.round(g.score * 100)}%</span>
+              <span className="ml-1 opacity-70">
+                {Math.round(g.score * 100)}%
+              </span>
             </Badge>
           ))}
           {tasteProfile.topMoods.map((m, i) => (
@@ -236,8 +254,9 @@ export function ForYouFeed() {
                   Your personalized feed is building
                 </h3>
                 <p className="text-slate-400 max-w-md mx-auto mb-6">
-                  Start browsing and interacting with beats to help us learn your taste. 
-                  The more you listen, like, and purchase, the better your recommendations become.
+                  Start browsing and interacting with beats to help us learn
+                  your taste. The more you listen, like, and purchase, the
+                  better your recommendations become.
                 </p>
                 <Button className="bg-gradient-to-r from-purple-500 to-pink-500">
                   <Zap className="h-4 w-4 mr-2" />
@@ -250,7 +269,8 @@ export function ForYouFeed() {
           <div className="space-y-8">
             {sections.map((section, sectionIndex) => {
               const Icon = sectionIcons[section.type] || Sparkles;
-              const colorClass = sectionColors[section.type] || 'from-slate-500 to-slate-600';
+              const colorClass =
+                sectionColors[section.type] || "from-slate-500 to-slate-600";
 
               return (
                 <motion.div
@@ -263,15 +283,28 @@ export function ForYouFeed() {
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className={cn('p-2 rounded-lg bg-gradient-to-br', colorClass)}>
+                          <div
+                            className={cn(
+                              "p-2 rounded-lg bg-gradient-to-br",
+                              colorClass,
+                            )}
+                          >
                             <Icon className="h-4 w-4 text-white" />
                           </div>
                           <div>
-                            <CardTitle className="text-lg text-white">{section.title}</CardTitle>
-                            <CardDescription>{section.description}</CardDescription>
+                            <CardTitle className="text-lg text-white">
+                              {section.title}
+                            </CardTitle>
+                            <CardDescription>
+                              {section.description}
+                            </CardDescription>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-slate-400 hover:text-white"
+                        >
                           See All
                           <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
@@ -343,8 +376,12 @@ export function ForYouFeed() {
                   <Music className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-white truncate">{selectedBeat.title}</h4>
-                  <p className="text-sm text-slate-400">{selectedBeat.producer}</p>
+                  <h4 className="font-semibold text-white truncate">
+                    {selectedBeat.title}
+                  </h4>
+                  <p className="text-sm text-slate-400">
+                    {selectedBeat.producer}
+                  </p>
                 </div>
                 <Button
                   variant="ghost"
@@ -357,7 +394,9 @@ export function ForYouFeed() {
               </div>
               <BeatPreviewControls
                 beatId={selectedBeat.id}
-                audioUrl={selectedBeat.previewUrl || selectedBeat.audioUrl || ''}
+                audioUrl={
+                  selectedBeat.previewUrl || selectedBeat.audioUrl || ""
+                }
                 onInteraction={(type) => {
                   interactionMutation.mutate({ beatId: selectedBeat.id, type });
                 }}
@@ -397,7 +436,10 @@ function ForYouFeedSkeleton() {
           <CardContent>
             <div className="flex gap-4 overflow-hidden">
               {[1, 2, 3, 4].map((j) => (
-                <Skeleton key={j} className="w-[220px] h-[280px] flex-shrink-0 rounded-lg" />
+                <Skeleton
+                  key={j}
+                  className="w-[220px] h-[280px] flex-shrink-0 rounded-lg"
+                />
               ))}
             </div>
           </CardContent>

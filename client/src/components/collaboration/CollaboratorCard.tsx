@@ -1,12 +1,12 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { UserPlus, Check, Clock, MapPin, Music } from 'lucide-react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { UserPlus, Check, Clock, MapPin, Music } from "lucide-react";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface CollaboratorCardProps {
   user: {
@@ -35,11 +35,14 @@ export function CollaboratorCard({
   const queryClient = useQueryClient();
 
   const { data: connectionStatus } = useQuery({
-    queryKey: ['/api/collaborations/connection-status', user.id],
+    queryKey: ["/api/collaborations/connection-status", user.id],
     queryFn: async () => {
-      const res = await fetch(`/api/collaborations/connection-status/${user.id}`, {
-        credentials: 'include',
-      });
+      const res = await fetch(
+        `/api/collaborations/connection-status/${user.id}`,
+        {
+          credentials: "include",
+        },
+      );
       if (!res.ok) return { status: null, connectionId: null };
       return res.json();
     },
@@ -48,45 +51,49 @@ export function CollaboratorCard({
 
   const connectMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/collaborations/connect', {
+      const res = await apiRequest("POST", "/api/collaborations/connect", {
         userId: user.id,
       });
       return res.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Connection Request Sent',
-        description: `Request sent to ${user.username || user.firstName || 'this artist'}`,
+        title: "Connection Request Sent",
+        description: `Request sent to ${user.username || user.firstName || "this artist"}`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connection-status', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/suggestions'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/connection-status", user.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/suggestions"],
+      });
       onConnect?.();
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to send connection request',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to send connection request",
+        variant: "destructive",
       });
     },
   });
 
   const displayName =
     user.username ||
-    [user.firstName, user.lastName].filter(Boolean).join(' ') ||
-    'Anonymous Artist';
+    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+    "Anonymous Artist";
 
   const initials = displayName
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
     .slice(0, 2);
 
   const getConnectionButton = () => {
     if (!showConnectButton) return null;
 
-    if (connectionStatus?.status === 'accepted') {
+    if (connectionStatus?.status === "accepted") {
       return (
         <Button size="sm" variant="outline" disabled>
           <Check className="h-4 w-4 mr-1" />
@@ -95,7 +102,7 @@ export function CollaboratorCard({
       );
     }
 
-    if (connectionStatus?.status === 'pending') {
+    if (connectionStatus?.status === "pending") {
       return (
         <Button size="sm" variant="outline" disabled>
           <Clock className="h-4 w-4 mr-1" />
@@ -111,7 +118,7 @@ export function CollaboratorCard({
         disabled={connectMutation.isPending}
       >
         <UserPlus className="h-4 w-4 mr-1" />
-        {connectMutation.isPending ? 'Sending...' : 'Connect'}
+        {connectMutation.isPending ? "Sending..." : "Connect"}
       </Button>
     );
   };

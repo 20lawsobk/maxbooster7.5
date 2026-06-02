@@ -1,16 +1,16 @@
-import { db } from '../db.js';
-import { 
-  royaltyDisputes, 
+import { db } from "../db.js";
+import {
+  royaltyDisputes,
   royaltyStatements,
   users,
   releases,
   type RoyaltyDispute,
   type InsertRoyaltyDispute,
-} from '@shared/schema';
-import { eq, and, desc, or, gte, lte, sql } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
-import { emailService } from './emailService.js';
+} from "@shared/schema";
+import { eq, and, desc, or, gte, lte, sql } from "drizzle-orm";
+import { logger } from "../logger.js";
+import crypto from "crypto";
+import { emailService } from "./emailService.js";
 
 export interface CreateDisputeInput {
   userId: string;
@@ -33,7 +33,7 @@ export interface CreateDisputeInput {
 }
 
 export interface UpdateDisputeInput {
-  status?: 'open' | 'under_review' | 'resolved' | 'rejected' | 'escalated';
+  status?: "open" | "under_review" | "resolved" | "rejected" | "escalated";
   priority?: string;
   assignedTo?: string;
   internalNote?: {
@@ -41,7 +41,7 @@ export interface UpdateDisputeInput {
     addedBy: string;
   };
   resolution?: {
-    outcome: 'approved' | 'rejected' | 'partial' | 'withdrawn';
+    outcome: "approved" | "rejected" | "partial" | "withdrawn";
     adjustedAmount?: number;
     explanation: string;
     resolvedBy: string;
@@ -52,7 +52,7 @@ export interface DisputeMessage {
   message: string;
   from: string;
   to: string;
-  type: 'email' | 'internal' | 'system';
+  type: "email" | "internal" | "system";
 }
 
 export interface DisputeStats {
@@ -76,7 +76,7 @@ export interface FundHold {
   reason: string;
   createdAt: Date;
   releasedAt?: Date;
-  status: 'held' | 'released' | 'forfeited';
+  status: "held" | "released" | "forfeited";
 }
 
 export interface DisputeFundHoldResult {
@@ -84,43 +84,47 @@ export interface DisputeFundHoldResult {
   disputeId: string;
   amountHeld: number;
   currency: string;
-  holdStatus: 'created' | 'already_exists' | 'failed';
+  holdStatus: "created" | "already_exists" | "failed";
   message: string;
 }
 
 const DISPUTE_TYPES = [
-  'missing_streams',
-  'incorrect_calculation',
-  'missing_territory',
-  'wrong_rate',
-  'duplicate_deduction',
-  'incorrect_split',
-  'recoupment_error',
-  'currency_issue',
-  'other',
+  "missing_streams",
+  "incorrect_calculation",
+  "missing_territory",
+  "wrong_rate",
+  "duplicate_deduction",
+  "incorrect_split",
+  "recoupment_error",
+  "currency_issue",
+  "other",
 ];
 
 const DISPUTE_CATEGORIES = [
-  'streaming',
-  'downloads',
-  'mechanical',
-  'performance',
-  'sync',
-  'splits',
-  'recoupment',
-  'tax',
-  'payout',
-  'other',
+  "streaming",
+  "downloads",
+  "mechanical",
+  "performance",
+  "sync",
+  "splits",
+  "recoupment",
+  "tax",
+  "payout",
+  "other",
 ];
 
 export class RoyaltyDisputeService {
   async createDispute(input: CreateDisputeInput): Promise<RoyaltyDispute> {
     if (!DISPUTE_TYPES.includes(input.disputeType)) {
-      throw new Error(`Invalid dispute type: ${input.disputeType}. Valid types: ${DISPUTE_TYPES.join(', ')}`);
+      throw new Error(
+        `Invalid dispute type: ${input.disputeType}. Valid types: ${DISPUTE_TYPES.join(", ")}`,
+      );
     }
 
     if (!DISPUTE_CATEGORIES.includes(input.category)) {
-      throw new Error(`Invalid category: ${input.category}. Valid categories: ${DISPUTE_CATEGORIES.join(', ')}`);
+      throw new Error(
+        `Invalid category: ${input.category}. Valid categories: ${DISPUTE_CATEGORIES.join(", ")}`,
+      );
     }
 
     const insertData: InsertRoyaltyDispute = {
@@ -129,23 +133,27 @@ export class RoyaltyDisputeService {
       releaseId: input.releaseId,
       disputeType: input.disputeType,
       category: input.category,
-      status: 'open',
-      priority: 'normal',
+      status: "open",
+      priority: "normal",
       subject: input.subject,
       description: input.description,
-      disputedAmount: input.disputedAmount ? String(input.disputedAmount) : undefined,
+      disputedAmount: input.disputedAmount
+        ? String(input.disputedAmount)
+        : undefined,
       disputedStreams: input.disputedStreams,
       affectedPeriod: input.affectedPeriod,
       evidenceUrls: input.evidenceUrls,
       supportingDocuments: input.supportingDocuments,
       internalNotes: [],
-      communicationLog: [{
-        message: 'Dispute submitted',
-        from: 'system',
-        to: input.userId,
-        sentAt: new Date().toISOString(),
-        type: 'system' as const,
-      }],
+      communicationLog: [
+        {
+          message: "Dispute submitted",
+          from: "system",
+          to: input.userId,
+          sentAt: new Date().toISOString(),
+          type: "system" as const,
+        },
+      ],
     };
 
     const [dispute] = await db
@@ -153,7 +161,9 @@ export class RoyaltyDisputeService {
       .values(insertData)
       .returning();
 
-    logger.info(`Created dispute ${dispute.id} for user ${input.userId}, type: ${input.disputeType}`);
+    logger.info(
+      `Created dispute ${dispute.id} for user ${input.userId}, type: ${input.disputeType}`,
+    );
 
     await this.notifyAdminOfNewDispute(dispute);
 
@@ -172,10 +182,13 @@ export class RoyaltyDisputeService {
 
   async getDisputesByUser(
     userId: string,
-    options?: { status?: string; limit?: number; offset?: number }
+    options?: { status?: string; limit?: number; offset?: number },
   ): Promise<RoyaltyDispute[]> {
     const conditions = [eq(royaltyDisputes.userId, userId)];
-    if (options?.status) conditions.push(eq(royaltyDisputes.status, options.status as Record<string, unknown>));
+    if (options?.status)
+      conditions.push(
+        eq(royaltyDisputes.status, options.status as Record<string, unknown>),
+      );
 
     return await db
       .select()
@@ -194,19 +207,22 @@ export class RoyaltyDisputeService {
       .orderBy(desc(royaltyDisputes.submittedAt));
   }
 
-  async getAllDisputes(
-    options?: {
-      status?: string;
-      priority?: string;
-      assignedTo?: string;
-      limit?: number;
-      offset?: number;
-    }
-  ): Promise<RoyaltyDispute[]> {
+  async getAllDisputes(options?: {
+    status?: string;
+    priority?: string;
+    assignedTo?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<RoyaltyDispute[]> {
     const conditions = [];
-    if (options?.status) conditions.push(eq(royaltyDisputes.status, options.status as Record<string, unknown>));
-    if (options?.priority) conditions.push(eq(royaltyDisputes.priority, options.priority));
-    if (options?.assignedTo) conditions.push(eq(royaltyDisputes.assignedTo, options.assignedTo));
+    if (options?.status)
+      conditions.push(
+        eq(royaltyDisputes.status, options.status as Record<string, unknown>),
+      );
+    if (options?.priority)
+      conditions.push(eq(royaltyDisputes.priority, options.priority));
+    if (options?.assignedTo)
+      conditions.push(eq(royaltyDisputes.assignedTo, options.assignedTo));
 
     return await db
       .select()
@@ -220,7 +236,7 @@ export class RoyaltyDisputeService {
   async updateDispute(
     disputeId: string,
     input: UpdateDisputeInput,
-    updatedBy: string
+    updatedBy: string,
   ): Promise<RoyaltyDispute> {
     const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
@@ -234,8 +250,8 @@ export class RoyaltyDisputeService {
 
     if (input.status) {
       updates.status = input.status;
-      
-      if (input.status === 'resolved' || input.status === 'rejected') {
+
+      if (input.status === "resolved" || input.status === "rejected") {
         updates.resolvedAt = new Date();
       }
     }
@@ -249,7 +265,12 @@ export class RoyaltyDisputeService {
     }
 
     if (input.internalNote) {
-      const existingNotes = (dispute.internalNotes as Array<{ note: string; addedBy: string; addedAt: string }>) || [];
+      const existingNotes =
+        (dispute.internalNotes as Array<{
+          note: string;
+          addedBy: string;
+          addedAt: string;
+        }>) || [];
       updates.internalNotes = [
         ...existingNotes,
         {
@@ -265,9 +286,11 @@ export class RoyaltyDisputeService {
         ...input.resolution,
         resolvedAt: new Date().toISOString(),
       };
-      updates.status = input.resolution.outcome === 'approved' || input.resolution.outcome === 'partial'
-        ? 'resolved'
-        : 'rejected';
+      updates.status =
+        input.resolution.outcome === "approved" ||
+        input.resolution.outcome === "partial"
+          ? "resolved"
+          : "rejected";
       updates.resolvedAt = new Date();
     }
 
@@ -277,7 +300,11 @@ export class RoyaltyDisputeService {
       .where(eq(royaltyDisputes.id, disputeId))
       .returning();
 
-    await this.addSystemMessage(disputeId, `Dispute updated by ${updatedBy}`, updatedBy);
+    await this.addSystemMessage(
+      disputeId,
+      `Dispute updated by ${updatedBy}`,
+      updatedBy,
+    );
 
     logger.info(`Updated dispute ${disputeId}, status: ${updated.status}`);
 
@@ -286,14 +313,17 @@ export class RoyaltyDisputeService {
 
   async addMessage(
     disputeId: string,
-    message: DisputeMessage
+    message: DisputeMessage,
   ): Promise<RoyaltyDispute> {
     const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
 
-    const existingLog = (dispute.communicationLog as Array<typeof message & { sentAt: string }>) || [];
+    const existingLog =
+      (dispute.communicationLog as Array<
+        typeof message & { sentAt: string }
+      >) || [];
     const updatedLog = [
       ...existingLog,
       {
@@ -319,19 +349,20 @@ export class RoyaltyDisputeService {
 
   async addEvidence(
     disputeId: string,
-    evidence: { name: string; url: string; type: string }
+    evidence: { name: string; url: string; type: string },
   ): Promise<RoyaltyDispute> {
     const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
 
-    const existingDocs = (dispute.supportingDocuments as Array<{
-      name: string;
-      url: string;
-      type: string;
-      uploadedAt: string;
-    }>) || [];
+    const existingDocs =
+      (dispute.supportingDocuments as Array<{
+        name: string;
+        url: string;
+        type: string;
+        uploadedAt: string;
+      }>) || [];
 
     const [updated] = await db
       .update(royaltyDisputes)
@@ -358,20 +389,25 @@ export class RoyaltyDisputeService {
     disputeId: string,
     escalatedTo: string,
     reason: string,
-    escalatedBy: string
+    escalatedBy: string,
   ): Promise<RoyaltyDispute> {
     const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
 
-    const existingNotes = (dispute.internalNotes as Array<{ note: string; addedBy: string; addedAt: string }>) || [];
+    const existingNotes =
+      (dispute.internalNotes as Array<{
+        note: string;
+        addedBy: string;
+        addedAt: string;
+      }>) || [];
 
     const [updated] = await db
       .update(royaltyDisputes)
       .set({
-        status: 'escalated',
-        priority: 'high',
+        status: "escalated",
+        priority: "high",
         escalatedTo,
         internalNotes: [
           ...existingNotes,
@@ -395,11 +431,11 @@ export class RoyaltyDisputeService {
   async resolveDispute(
     disputeId: string,
     resolution: {
-      outcome: 'approved' | 'rejected' | 'partial' | 'withdrawn';
+      outcome: "approved" | "rejected" | "partial" | "withdrawn";
       adjustedAmount?: number;
       explanation: string;
       resolvedBy: string;
-    }
+    },
   ): Promise<RoyaltyDispute> {
     const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
@@ -411,7 +447,7 @@ export class RoyaltyDisputeService {
       resolvedAt: new Date().toISOString(),
     };
 
-    const status = resolution.outcome === 'rejected' ? 'rejected' : 'resolved';
+    const status = resolution.outcome === "rejected" ? "rejected" : "resolved";
 
     const [updated] = await db
       .update(royaltyDisputes)
@@ -426,33 +462,41 @@ export class RoyaltyDisputeService {
       .returning();
 
     if (resolution.adjustedAmount && dispute.statementId) {
-      await this.applyStatementAdjustment(dispute.statementId, resolution.adjustedAmount);
+      await this.applyStatementAdjustment(
+        dispute.statementId,
+        resolution.adjustedAmount,
+      );
     }
 
     await this.notifyUserOfResolution(updated);
 
-    logger.info(`Resolved dispute ${disputeId} with outcome: ${resolution.outcome}`);
+    logger.info(
+      `Resolved dispute ${disputeId} with outcome: ${resolution.outcome}`,
+    );
 
     return updated;
   }
 
-  async withdrawDispute(disputeId: string, userId: string): Promise<RoyaltyDispute> {
+  async withdrawDispute(
+    disputeId: string,
+    userId: string,
+  ): Promise<RoyaltyDispute> {
     const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
 
     if (dispute.userId !== userId) {
-      throw new Error('Only the dispute creator can withdraw a dispute');
+      throw new Error("Only the dispute creator can withdraw a dispute");
     }
 
-    if (dispute.status === 'resolved' || dispute.status === 'rejected') {
-      throw new Error('Cannot withdraw a resolved or rejected dispute');
+    if (dispute.status === "resolved" || dispute.status === "rejected") {
+      throw new Error("Cannot withdraw a resolved or rejected dispute");
     }
 
     return await this.resolveDispute(disputeId, {
-      outcome: 'withdrawn',
-      explanation: 'Withdrawn by user',
+      outcome: "withdrawn",
+      explanation: "Withdrawn by user",
       resolvedBy: userId,
     });
   }
@@ -481,19 +525,19 @@ export class RoyaltyDisputeService {
 
     for (const dispute of disputes) {
       switch (dispute.status) {
-        case 'open':
+        case "open":
           statusCounts.open++;
           break;
-        case 'under_review':
+        case "under_review":
           statusCounts.underReview++;
           break;
-        case 'resolved':
+        case "resolved":
           statusCounts.resolved++;
           break;
-        case 'rejected':
+        case "rejected":
           statusCounts.rejected++;
           break;
-        case 'escalated':
+        case "escalated":
           statusCounts.escalated++;
           break;
       }
@@ -503,7 +547,9 @@ export class RoyaltyDisputeService {
       }
 
       if (dispute.resolvedAt && dispute.submittedAt) {
-        const days = (dispute.resolvedAt.getTime() - dispute.submittedAt.getTime()) / (1000 * 60 * 60 * 24);
+        const days =
+          (dispute.resolvedAt.getTime() - dispute.submittedAt.getTime()) /
+          (1000 * 60 * 60 * 24);
         totalResolutionDays += days;
         resolvedCount++;
       }
@@ -519,7 +565,8 @@ export class RoyaltyDisputeService {
     return {
       total: disputes.length,
       ...statusCounts,
-      averageResolutionDays: resolvedCount > 0 ? totalResolutionDays / resolvedCount : 0,
+      averageResolutionDays:
+        resolvedCount > 0 ? totalResolutionDays / resolvedCount : 0,
       totalDisputedAmount,
       totalAdjustedAmount,
     };
@@ -528,19 +575,19 @@ export class RoyaltyDisputeService {
   private async addSystemMessage(
     disputeId: string,
     message: string,
-    triggeredBy: string
+    triggeredBy: string,
   ): Promise<void> {
     await this.addMessage(disputeId, {
       message,
-      from: 'system',
-      to: 'all',
-      type: 'system',
+      from: "system",
+      to: "all",
+      type: "system",
     });
   }
 
   private async applyStatementAdjustment(
     statementId: string,
-    adjustmentAmount: number
+    adjustmentAmount: number,
   ): Promise<void> {
     const [statement] = await db
       .select()
@@ -553,12 +600,13 @@ export class RoyaltyDisputeService {
       return;
     }
 
-    const existingAuditTrail = (statement.auditTrail as Array<{
-      action: string;
-      timestamp: string;
-      userId: string;
-      details: string;
-    }>) || [];
+    const existingAuditTrail =
+      (statement.auditTrail as Array<{
+        action: string;
+        timestamp: string;
+        userId: string;
+        details: string;
+      }>) || [];
 
     await db
       .update(royaltyStatements)
@@ -568,9 +616,9 @@ export class RoyaltyDisputeService {
         auditTrail: [
           ...existingAuditTrail,
           {
-            action: 'dispute_adjustment',
+            action: "dispute_adjustment",
             timestamp: new Date().toISOString(),
-            userId: 'system',
+            userId: "system",
             details: `Applied dispute adjustment of $${adjustmentAmount.toFixed(2)}`,
           },
         ],
@@ -578,14 +626,23 @@ export class RoyaltyDisputeService {
       })
       .where(eq(royaltyStatements.id, statementId));
 
-    logger.info(`Applied adjustment of ${adjustmentAmount} to statement ${statementId}`);
+    logger.info(
+      `Applied adjustment of ${adjustmentAmount} to statement ${statementId}`,
+    );
   }
 
-  private async notifyAdminOfNewDispute(dispute: RoyaltyDispute): Promise<void> {
+  private async notifyAdminOfNewDispute(
+    dispute: RoyaltyDispute,
+  ): Promise<void> {
     try {
-      logger.info(`New dispute notification would be sent for dispute ${dispute.id}`);
+      logger.info(
+        `New dispute notification would be sent for dispute ${dispute.id}`,
+      );
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to send admin notification for new dispute:');
+      logger.warn(
+        { err: error },
+        "Failed to send admin notification for new dispute:",
+      );
     }
   }
 
@@ -598,16 +655,22 @@ export class RoyaltyDisputeService {
         .limit(1);
 
       if (user?.email) {
-        const resolution = dispute.resolution as { outcome: string; explanation: string } | null;
-        await emailService.sendTemplatedEmail(user.email, 'dispute_resolved', {
-          userName: user.firstName || user.username || 'User',
+        const resolution = dispute.resolution as {
+          outcome: string;
+          explanation: string;
+        } | null;
+        await emailService.sendTemplatedEmail(user.email, "dispute_resolved", {
+          userName: user.firstName || user.username || "User",
           disputeId: dispute.id,
-          outcome: resolution?.outcome || 'unknown',
-          explanation: resolution?.explanation || '',
+          outcome: resolution?.outcome || "unknown",
+          explanation: resolution?.explanation || "",
         });
       }
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to send user notification for resolved dispute:');
+      logger.warn(
+        { err: error },
+        "Failed to send user notification for resolved dispute:",
+      );
     }
   }
 
@@ -625,35 +688,42 @@ export class RoyaltyDisputeService {
   private static readonly SETTLED_HOLD_TTL_MS = 48 * 60 * 60 * 1000;
 
   private startFundHoldCleanup(): void {
-    setInterval(() => {
-      const cutoff = Date.now() - RoyaltyDisputeService.SETTLED_HOLD_TTL_MS;
-      for (const [id, hold] of this.fundHolds) {
-        if (hold.status !== 'held' && hold.releasedAt && hold.releasedAt.getTime() < cutoff) {
-          this.fundHolds.delete(id);
+    setInterval(
+      () => {
+        const cutoff = Date.now() - RoyaltyDisputeService.SETTLED_HOLD_TTL_MS;
+        for (const [id, hold] of this.fundHolds) {
+          if (
+            hold.status !== "held" &&
+            hold.releasedAt &&
+            hold.releasedAt.getTime() < cutoff
+          ) {
+            this.fundHolds.delete(id);
+          }
         }
-      }
-    }, 6 * 60 * 60 * 1000).unref();
+      },
+      6 * 60 * 60 * 1000,
+    ).unref();
   }
 
   async createFundHold(
     disputeId: string,
     amount: number,
-    currency: string = 'USD'
+    currency: string = "USD",
   ): Promise<DisputeFundHoldResult> {
     const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       return {
-        holdId: '',
+        holdId: "",
         disputeId,
         amountHeld: 0,
         currency,
-        holdStatus: 'failed',
+        holdStatus: "failed",
         message: `Dispute ${disputeId} not found`,
       };
     }
 
     const existingHold = Array.from(this.fundHolds.values()).find(
-      h => h.disputeId === disputeId && h.status === 'held'
+      (h) => h.disputeId === disputeId && h.status === "held",
     );
 
     if (existingHold) {
@@ -662,8 +732,8 @@ export class RoyaltyDisputeService {
         disputeId,
         amountHeld: existingHold.amount,
         currency: existingHold.currency,
-        holdStatus: 'already_exists',
-        message: 'Fund hold already exists for this dispute',
+        holdStatus: "already_exists",
+        message: "Fund hold already exists for this dispute",
       };
     }
 
@@ -676,7 +746,7 @@ export class RoyaltyDisputeService {
       currency,
       reason: `Automatic hold for dispute: ${dispute.subject}`,
       createdAt: new Date(),
-      status: 'held',
+      status: "held",
     };
 
     if (!this._holdCleanupStarted) {
@@ -684,79 +754,116 @@ export class RoyaltyDisputeService {
       this.startFundHoldCleanup();
     }
     if (this.fundHolds.size >= RoyaltyDisputeService.MAX_ACTIVE_FUND_HOLDS) {
-      logger.error(`[RoyaltyDispute] fundHolds at capacity (${this.fundHolds.size}) — cannot create new hold for dispute ${disputeId}`);
-      return { holdId: '', disputeId, amountHeld: 0, currency, holdStatus: 'failed', message: 'Fund hold capacity reached' };
+      logger.error(
+        `[RoyaltyDispute] fundHolds at capacity (${this.fundHolds.size}) — cannot create new hold for dispute ${disputeId}`,
+      );
+      return {
+        holdId: "",
+        disputeId,
+        amountHeld: 0,
+        currency,
+        holdStatus: "failed",
+        message: "Fund hold capacity reached",
+      };
     }
     this.fundHolds.set(holdId, hold);
 
-    await this.addSystemMessage(disputeId, `Funds held: $${amount.toFixed(2)} ${currency}`, 'system');
-    logger.info(`Created fund hold ${holdId} for dispute ${disputeId}, amount: ${amount}`);
+    await this.addSystemMessage(
+      disputeId,
+      `Funds held: $${amount.toFixed(2)} ${currency}`,
+      "system",
+    );
+    logger.info(
+      `Created fund hold ${holdId} for dispute ${disputeId}, amount: ${amount}`,
+    );
 
     return {
       holdId,
       disputeId,
       amountHeld: amount,
       currency,
-      holdStatus: 'created',
-      message: 'Fund hold created successfully',
+      holdStatus: "created",
+      message: "Fund hold created successfully",
     };
   }
 
-  async releaseFundHold(holdId: string, reason: string = 'Dispute resolved'): Promise<FundHold | null> {
+  async releaseFundHold(
+    holdId: string,
+    reason: string = "Dispute resolved",
+  ): Promise<FundHold | null> {
     const hold = this.fundHolds.get(holdId);
     if (!hold) {
       logger.warn(`Fund hold ${holdId} not found`);
       return null;
     }
 
-    hold.status = 'released';
+    hold.status = "released";
     hold.releasedAt = new Date();
     this.fundHolds.set(holdId, hold);
 
-    await this.addSystemMessage(hold.disputeId, `Funds released: $${hold.amount.toFixed(2)} ${hold.currency} - ${reason}`, 'system');
+    await this.addSystemMessage(
+      hold.disputeId,
+      `Funds released: $${hold.amount.toFixed(2)} ${hold.currency} - ${reason}`,
+      "system",
+    );
     logger.info(`Released fund hold ${holdId}, reason: ${reason}`);
 
     return hold;
   }
 
-  async forfeitFundHold(holdId: string, reason: string): Promise<FundHold | null> {
+  async forfeitFundHold(
+    holdId: string,
+    reason: string,
+  ): Promise<FundHold | null> {
     const hold = this.fundHolds.get(holdId);
     if (!hold) {
       logger.warn(`Fund hold ${holdId} not found`);
       return null;
     }
 
-    hold.status = 'forfeited';
+    hold.status = "forfeited";
     hold.releasedAt = new Date();
     this.fundHolds.set(holdId, hold);
 
-    await this.addSystemMessage(hold.disputeId, `Funds forfeited: $${hold.amount.toFixed(2)} ${hold.currency} - ${reason}`, 'system');
+    await this.addSystemMessage(
+      hold.disputeId,
+      `Funds forfeited: $${hold.amount.toFixed(2)} ${hold.currency} - ${reason}`,
+      "system",
+    );
     logger.info(`Forfeited fund hold ${holdId}, reason: ${reason}`);
 
     return hold;
   }
 
   async getFundHoldsForDispute(disputeId: string): Promise<FundHold[]> {
-    return Array.from(this.fundHolds.values()).filter(h => h.disputeId === disputeId);
+    return Array.from(this.fundHolds.values()).filter(
+      (h) => h.disputeId === disputeId,
+    );
   }
 
   async getFundHoldsForUser(userId: string): Promise<FundHold[]> {
-    return Array.from(this.fundHolds.values()).filter(h => h.userId === userId);
+    return Array.from(this.fundHolds.values()).filter(
+      (h) => h.userId === userId,
+    );
   }
 
-  async getTotalHeldAmount(userId: string): Promise<{ total: number; currency: string; holds: FundHold[] }> {
+  async getTotalHeldAmount(
+    userId: string,
+  ): Promise<{ total: number; currency: string; holds: FundHold[] }> {
     const holds = await this.getFundHoldsForUser(userId);
-    const activeHolds = holds.filter(h => h.status === 'held');
+    const activeHolds = holds.filter((h) => h.status === "held");
     const total = activeHolds.reduce((sum, h) => sum + h.amount, 0);
-    
+
     return {
       total,
-      currency: 'USD',
+      currency: "USD",
       holds: activeHolds,
     };
   }
 
-  async autoHoldDisputedFunds(disputeId: string): Promise<DisputeFundHoldResult | null> {
+  async autoHoldDisputedFunds(
+    disputeId: string,
+  ): Promise<DisputeFundHoldResult | null> {
     const dispute = await this.getDisputeById(disputeId);
     if (!dispute || !dispute.disputedAmount) {
       return null;
@@ -767,7 +874,7 @@ export class RoyaltyDisputeService {
       return null;
     }
 
-    return await this.createFundHold(disputeId, amount, 'USD');
+    return await this.createFundHold(disputeId, amount, "USD");
   }
 
   async releaseHoldsOnResolution(disputeId: string): Promise<FundHold[]> {
@@ -775,8 +882,11 @@ export class RoyaltyDisputeService {
     const releasedHolds: FundHold[] = [];
 
     for (const hold of holds) {
-      if (hold.status === 'held') {
-        const released = await this.releaseFundHold(hold.id, 'Dispute resolved');
+      if (hold.status === "held") {
+        const released = await this.releaseFundHold(
+          hold.id,
+          "Dispute resolved",
+        );
         if (released) {
           releasedHolds.push(released);
         }

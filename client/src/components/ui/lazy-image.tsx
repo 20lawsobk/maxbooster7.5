@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -13,7 +13,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 export function LazyImage({
   src,
   alt,
-  fallback = '/placeholder.svg',
+  fallback = "/placeholder.svg",
   className,
   wrapperClassName,
   showSkeleton = true,
@@ -34,7 +34,7 @@ export function LazyImage({
           observer.disconnect();
         }
       },
-      { rootMargin: '50px', threshold: 0.01 }
+      { rootMargin: "50px", threshold: 0.01 },
     );
 
     observer.observe(imgRef.current);
@@ -51,7 +51,7 @@ export function LazyImage({
   };
 
   return (
-    <div className={cn('relative overflow-hidden', wrapperClassName)}>
+    <div className={cn("relative overflow-hidden", wrapperClassName)}>
       {showSkeleton && !isLoaded && (
         <div className="absolute inset-0 skeleton" />
       )}
@@ -64,9 +64,9 @@ export function LazyImage({
         onLoad={handleLoad}
         onError={handleError}
         className={cn(
-          'transition-opacity duration-300',
-          isLoaded ? 'opacity-100' : 'opacity-0',
-          className
+          "transition-opacity duration-300",
+          isLoaded ? "opacity-100" : "opacity-0",
+          className,
         )}
         {...props}
       />

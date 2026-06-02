@@ -1,6 +1,6 @@
-import type { Metric } from 'web-vitals';
+import type { Metric } from "web-vitals";
 
-const VITALS_ENDPOINT = '/api/metrics/web-vitals';
+const VITALS_ENDPOINT = "/api/metrics/web-vitals";
 
 function send(metric: Metric): void {
   const body = JSON.stringify({
@@ -14,9 +14,9 @@ function send(metric: Metric): void {
     ts: Date.now(),
   });
 
-  if (typeof navigator.sendBeacon === 'function') {
+  if (typeof navigator.sendBeacon === "function") {
     try {
-      const blob = new Blob([body], { type: 'application/json' });
+      const blob = new Blob([body], { type: "application/json" });
       if (navigator.sendBeacon(VITALS_ENDPOINT, blob)) return;
     } catch {
       // fall through to fetch
@@ -24,18 +24,18 @@ function send(metric: Metric): void {
   }
 
   void fetch(VITALS_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body,
     keepalive: true,
-    credentials: 'same-origin',
+    credentials: "same-origin",
   }).catch(() => undefined);
 }
 
 export function reportWebVitals(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
-  void import('web-vitals')
+  void import("web-vitals")
     .then(({ onCLS, onINP, onLCP, onFCP, onTTFB }) => {
       onCLS(send);
       onINP(send);
@@ -45,7 +45,7 @@ export function reportWebVitals(): void {
     })
     .catch((err) => {
       if (import.meta.env.DEV) {
-        console.warn('[web-vitals] failed to load:', err);
+        console.warn("[web-vitals] failed to load:", err);
       }
     });
 }

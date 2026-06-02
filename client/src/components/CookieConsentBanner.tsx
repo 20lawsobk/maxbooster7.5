@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
-const COOKIE_CONSENT_KEY = 'max_booster_cookie_consent';
+const COOKIE_CONSENT_KEY = "max_booster_cookie_consent";
 
 export function CookieConsentBanner() {
   const [isVisible, setIsVisible] = useState(false);
@@ -15,12 +15,12 @@ export function CookieConsentBanner() {
   }, []);
 
   const handleAccept = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
+    localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
     setIsVisible(false);
   };
 
   const handleReject = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'rejected');
+    localStorage.setItem(COOKIE_CONSENT_KEY, "rejected");
     setIsVisible(false);
   };
 
@@ -29,7 +29,9 @@ export function CookieConsentBanner() {
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-[60] p-3 sm:p-4"
-      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+      style={{
+        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))",
+      }}
       role="dialog"
       aria-labelledby="cookie-banner-title"
       aria-describedby="cookie-banner-description"
@@ -47,7 +49,8 @@ export function CookieConsentBanner() {
               id="cookie-banner-description"
               className="text-sm text-zinc-300 leading-relaxed"
             >
-              We use essential cookies for authentication and session management.{' '}
+              We use essential cookies for authentication and session
+              management.{" "}
               <a
                 href="/privacy"
                 className="text-blue-400 hover:text-blue-300 underline"

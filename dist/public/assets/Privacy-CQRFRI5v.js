@@ -1,1 +1,2481 @@
-import{f as e,cV as a,cy as n,cv as l,bI as r,bK as s,df as i,bg as c}from"./vendor-react-31oK5L0i.js";import{j as t,C as m,h as o}from"./studio-DOUfHW5v.js";import"./vendor-utils-C_Rs6IXs.js";import"./vendor-ui-Ds7F22HT.js";import"./vendor-state-Bxk_Qy8r.js";import"./vendor-animation-CFQslDag.js";function x(){return e.jsxDEV("div",{className:"min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800",children:e.jsxDEV("div",{className:"container max-w-4xl mx-auto px-4 py-8",children:[e.jsxDEV(a,{href:"/",children:e.jsxDEV(t,{variant:"ghost",className:"mb-6","data-testid":"button-back",children:[e.jsxDEV(n,{className:"w-4 h-4 mr-2"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:12,columnNumber:13},this),"Back"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:11,columnNumber:11},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:10,columnNumber:9},this),e.jsxDEV(m,{className:"dark:bg-gray-900 dark:border-gray-700",children:e.jsxDEV(o,{className:"p-8 prose dark:prose-invert max-w-none",children:[e.jsxDEV("div",{className:"flex items-center space-x-3 mb-6",children:[e.jsxDEV(l,{className:"w-8 h-8 text-blue-600 dark:text-blue-400"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:20,columnNumber:15},this),e.jsxDEV("h1",{className:"text-4xl font-bold mb-0",children:"Privacy Policy"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:21,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:19,columnNumber:13},this),e.jsxDEV("p",{className:"text-gray-600 dark:text-gray-300 mb-8",children:["Last updated: ",new Date().toLocaleDateString()]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:23,columnNumber:13},this),e.jsxDEV("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-4 mb-8",children:[e.jsxDEV("div",{className:"flex items-start space-x-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg",children:[e.jsxDEV(r,{className:"w-5 h-5 text-green-600 dark:text-green-400 mt-1"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:29,columnNumber:17},this),e.jsxDEV("div",{children:[e.jsxDEV("h3",{className:"font-semibold text-sm mb-1",children:"Encrypted"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:31,columnNumber:19},this),e.jsxDEV("p",{className:"text-xs text-gray-600 dark:text-gray-300",children:"Your data is encrypted at rest and in transit"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:32,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:30,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:28,columnNumber:15},this),e.jsxDEV("div",{className:"flex items-start space-x-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg",children:[e.jsxDEV(s,{className:"w-5 h-5 text-blue-600 dark:text-blue-400 mt-1"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:38,columnNumber:17},this),e.jsxDEV("div",{children:[e.jsxDEV("h3",{className:"font-semibold text-sm mb-1",children:"Transparent"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:40,columnNumber:19},this),e.jsxDEV("p",{className:"text-xs text-gray-600 dark:text-gray-300",children:"Full transparency about what's collected and why"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:41,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:39,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:37,columnNumber:15},this),e.jsxDEV("div",{className:"flex items-start space-x-3 p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg",children:[e.jsxDEV(i,{className:"w-5 h-5 text-purple-600 dark:text-purple-400 mt-1"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:47,columnNumber:17},this),e.jsxDEV("div",{children:[e.jsxDEV("h3",{className:"font-semibold text-sm mb-1",children:"No Selling"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:49,columnNumber:19},this),e.jsxDEV("p",{className:"text-xs text-gray-600 dark:text-gray-300",children:"Your personal data is never sold"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:50,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:48,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:46,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:27,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"1. Introduction"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:58,columnNumber:15},this),e.jsxDEV("p",{children:"Max Booster (operated by a solo founder) is committed to protecting your privacy. This Privacy Policy explains how I collect, use, disclose, and safeguard your information when you use the AI-powered music platform and distribution services."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:59,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:57,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"2. Information Collected"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:67,columnNumber:15},this),e.jsxDEV("h3",{className:"text-xl font-semibold mb-3 mt-6",children:"Personal Information"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:69,columnNumber:15},this),e.jsxDEV("p",{className:"mb-4",children:"When you register and use Max Booster's services, the following is collected:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:70,columnNumber:15},this),e.jsxDEV("ul",{className:"list-disc list-inside space-y-2 ml-4",children:[e.jsxDEV("li",{children:"Name and email address"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:74,columnNumber:17},this),e.jsxDEV("li",{children:"Payment information (processed securely through Stripe)"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:75,columnNumber:17},this),e.jsxDEV("li",{children:"Profile information you choose to provide"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:76,columnNumber:17},this),e.jsxDEV("li",{children:"Social media account connections (when you authorize them)"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:77,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:73,columnNumber:15},this),e.jsxDEV("h3",{className:"text-xl font-semibold mb-3 mt-6",children:"Content and Usage Data"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:80,columnNumber:15},this),e.jsxDEV("ul",{className:"list-disc list-inside space-y-2 ml-4",children:[e.jsxDEV("li",{children:"Music files and metadata you upload"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:82,columnNumber:17},this),e.jsxDEV("li",{children:"Project data and analytics"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:83,columnNumber:17},this),e.jsxDEV("li",{children:"Distribution and release information"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:84,columnNumber:17},this),e.jsxDEV("li",{children:"Streaming and earnings data from platforms"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:85,columnNumber:17},this),e.jsxDEV("li",{children:"Usage patterns and feature interactions"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:86,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:81,columnNumber:15},this),e.jsxDEV("h3",{className:"text-xl font-semibold mb-3 mt-6",children:"Automatically Collected Information"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:89,columnNumber:15},this),e.jsxDEV("ul",{className:"list-disc list-inside space-y-2 ml-4",children:[e.jsxDEV("li",{children:"IP address and device information"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:93,columnNumber:17},this),e.jsxDEV("li",{children:"Browser type and version"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:94,columnNumber:17},this),e.jsxDEV("li",{children:"Session information and cookies"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:95,columnNumber:17},this),e.jsxDEV("li",{children:"Access times and referring URLs"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:96,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:92,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:66,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"3. How Your Information Is Used"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:101,columnNumber:15},this),e.jsxDEV("p",{className:"mb-4",children:"Your information is used to:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:102,columnNumber:15},this),e.jsxDEV("ul",{className:"list-disc list-inside space-y-2 ml-4",children:[e.jsxDEV("li",{children:"Provide, operate, and maintain the services"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:104,columnNumber:17},this),e.jsxDEV("li",{children:"Process your music distribution to streaming platforms"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:105,columnNumber:17},this),e.jsxDEV("li",{children:"Analyze and optimize your music with the proprietary AI"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:106,columnNumber:17},this),e.jsxDEV("li",{children:"Track and report your earnings and royalties"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:107,columnNumber:17},this),e.jsxDEV("li",{children:"Send you notifications and updates"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:108,columnNumber:17},this),e.jsxDEV("li",{children:"Improve the platform and develop new features"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:109,columnNumber:17},this),e.jsxDEV("li",{children:"Detect and prevent fraud and abuse"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:110,columnNumber:17},this),e.jsxDEV("li",{children:"Comply with legal obligations"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:111,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:103,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:100,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"4. Data Sharing and Disclosure"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:116,columnNumber:15},this),e.jsxDEV("p",{className:"mb-4",children:"Your information may be shared with:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:117,columnNumber:15},this),e.jsxDEV("h3",{className:"text-xl font-semibold mb-3 mt-6",children:"Service Providers"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:119,columnNumber:15},this),e.jsxDEV("ul",{className:"list-disc list-inside space-y-2 ml-4",children:[e.jsxDEV("li",{children:[e.jsxDEV("strong",{children:"Stripe:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:122,columnNumber:19},this)," Payment processing"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:121,columnNumber:17},this),e.jsxDEV("li",{children:[e.jsxDEV("strong",{children:"SendGrid:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:125,columnNumber:19},this)," Email delivery"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:124,columnNumber:17},this),e.jsxDEV("li",{children:[e.jsxDEV("strong",{children:"Neon:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:128,columnNumber:19},this)," Database hosting"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:127,columnNumber:17},this),e.jsxDEV("li",{children:[e.jsxDEV("strong",{children:"Streaming Platforms:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:131,columnNumber:19},this)," When you distribute your music"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:130,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:120,columnNumber:15},this),e.jsxDEV("h3",{className:"text-xl font-semibold mb-3 mt-6",children:"Legal Requirements"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:135,columnNumber:15},this),e.jsxDEV("p",{children:"Your information may be disclosed if required by law, court order, or governmental request, or to protect Max Booster's rights, property, or safety."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:136,columnNumber:15},this),e.jsxDEV("h3",{className:"text-xl font-semibold mb-3 mt-6",children:"Business Transfers"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:141,columnNumber:15},this),e.jsxDEV("p",{children:"In the event of a merger, acquisition, or sale of assets, your information may be transferred to the acquiring entity."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:142,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:115,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"5. Data Security"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:149,columnNumber:15},this),e.jsxDEV("p",{className:"mb-4",children:"Industry-standard security measures are implemented to protect your data:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:150,columnNumber:15},this),e.jsxDEV("ul",{className:"list-disc list-inside space-y-2 ml-4",children:[e.jsxDEV("li",{children:"Encryption in transit (HTTPS/TLS)"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:154,columnNumber:17},this),e.jsxDEV("li",{children:"Encryption at rest for sensitive data"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:155,columnNumber:17},this),e.jsxDEV("li",{children:"Secure session management"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:156,columnNumber:17},this),e.jsxDEV("li",{children:"Regular security audits and updates"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:157,columnNumber:17},this),e.jsxDEV("li",{children:"Access controls and authentication"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:158,columnNumber:17},this),e.jsxDEV("li",{children:"24/7 system monitoring"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:159,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:153,columnNumber:15},this),e.jsxDEV("p",{className:"mt-4",children:"While I strive to protect your information, no method of transmission over the internet is 100% secure. Absolute security cannot be guaranteed."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:161,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:148,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"6. Your Rights and Choices"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:168,columnNumber:15},this),e.jsxDEV("p",{className:"mb-4",children:"You have the following rights regarding your data:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:169,columnNumber:15},this),e.jsxDEV("div",{className:"space-y-4",children:[e.jsxDEV("div",{className:"flex items-start space-x-3",children:[e.jsxDEV(c,{className:"w-5 h-5 text-blue-600 dark:text-blue-400 mt-1"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:173,columnNumber:19},this),e.jsxDEV("div",{children:[e.jsxDEV("h3",{className:"font-semibold",children:"Access and Portability"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:175,columnNumber:21},this),e.jsxDEV("p",{className:"text-sm text-gray-600 dark:text-gray-300",children:"Request a copy of your personal data in a portable format"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:176,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:174,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:172,columnNumber:17},this),e.jsxDEV("div",{className:"flex items-start space-x-3",children:[e.jsxDEV(r,{className:"w-5 h-5 text-green-600 dark:text-green-400 mt-1"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:183,columnNumber:19},this),e.jsxDEV("div",{children:[e.jsxDEV("h3",{className:"font-semibold",children:"Correction"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:185,columnNumber:21},this),e.jsxDEV("p",{className:"text-sm text-gray-600 dark:text-gray-300",children:"Update or correct inaccurate information"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:186,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:184,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:182,columnNumber:17},this),e.jsxDEV("div",{className:"flex items-start space-x-3",children:[e.jsxDEV(i,{className:"w-5 h-5 text-red-600 dark:text-red-400 mt-1"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:193,columnNumber:19},this),e.jsxDEV("div",{children:[e.jsxDEV("h3",{className:"font-semibold",children:"Deletion"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:195,columnNumber:21},this),e.jsxDEV("p",{className:"text-sm text-gray-600 dark:text-gray-300",children:"Request deletion of your account and associated data"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:196,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:194,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:192,columnNumber:17},this),e.jsxDEV("div",{className:"flex items-start space-x-3",children:[e.jsxDEV(s,{className:"w-5 h-5 text-purple-600 dark:text-purple-400 mt-1"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:203,columnNumber:19},this),e.jsxDEV("div",{children:[e.jsxDEV("h3",{className:"font-semibold",children:"Marketing Opt-Out"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:205,columnNumber:21},this),e.jsxDEV("p",{className:"text-sm text-gray-600 dark:text-gray-300",children:"Unsubscribe from marketing communications"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:206,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:204,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:202,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:171,columnNumber:15},this),e.jsxDEV("p",{className:"mt-4",children:["To exercise these rights, contact us at ",e.jsxDEV("strong",{children:"privacy@maxbooster.ai"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:214,columnNumber:57},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:213,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:167,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"7. Cookies and Tracking"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:219,columnNumber:15},this),e.jsxDEV("p",{className:"mb-4",children:"Cookies and similar technologies are used to:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:220,columnNumber:15},this),e.jsxDEV("ul",{className:"list-disc list-inside space-y-2 ml-4",children:[e.jsxDEV("li",{children:"Keep you logged in"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:222,columnNumber:17},this),e.jsxDEV("li",{children:"Remember your preferences"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:223,columnNumber:17},this),e.jsxDEV("li",{children:"Analyze usage patterns"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:224,columnNumber:17},this),e.jsxDEV("li",{children:"Improve performance and user experience"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:225,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:221,columnNumber:15},this),e.jsxDEV("p",{className:"mt-4",children:"You can control cookies through your browser settings, but disabling them may limit functionality."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:227,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:218,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"8. Data Retention"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:234,columnNumber:15},this),e.jsxDEV("p",{children:"Your information is retained for as long as your account is active or as needed to provide services. After account deletion, certain data may be retained as required by law or for legitimate business purposes (e.g., fraud prevention, financial records)."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:235,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:233,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"9. Children's Privacy"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:244,columnNumber:15},this),e.jsxDEV("p",{children:"Max Booster services are not intended for users under 13 years of age. Personal information from children under 13 is not knowingly collected. If such information is discovered, it will be deleted immediately."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:245,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:243,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"10. International Data Transfers"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:253,columnNumber:15},this),e.jsxDEV("p",{children:"Your information may be transferred to and maintained on servers located outside your state, province, or country where data protection laws may differ. By using Max Booster services, you consent to this transfer."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:254,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:252,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"11. Changes to This Policy"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:262,columnNumber:15},this),e.jsxDEV("p",{children:'This Privacy Policy may be updated from time to time. You will be notified of any material changes by posting the new policy on this page and updating the "Last updated" date. Continued use of Max Booster services after changes constitutes acceptance of the updated policy.'},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:263,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:261,columnNumber:13},this),e.jsxDEV("section",{className:"mb-8",children:[e.jsxDEV("h2",{className:"text-2xl font-semibold mb-4",children:"12. Contact Information"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:272,columnNumber:15},this),e.jsxDEV("p",{className:"mb-4",children:"If you have questions or concerns about this Privacy Policy or our data practices, contact us:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:273,columnNumber:15},this),e.jsxDEV("ul",{className:"list-none space-y-2",children:[e.jsxDEV("li",{children:[e.jsxDEV("strong",{children:"Email:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:279,columnNumber:19},this)," privacy@maxbooster.ai"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:278,columnNumber:17},this),e.jsxDEV("li",{children:[e.jsxDEV("strong",{children:"Support:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:282,columnNumber:19},this)," support@maxbooster.ai"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:281,columnNumber:17},this),e.jsxDEV("li",{children:[e.jsxDEV("strong",{children:"Address:"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:285,columnNumber:19},this)," Max Booster Inc., United States"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:284,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:277,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:271,columnNumber:13},this),e.jsxDEV("div",{className:"mt-12 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border border-blue-200 dark:border-blue-800",children:[e.jsxDEV("h3",{className:"font-semibold text-lg mb-2",children:"Your Privacy Matters"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:291,columnNumber:15},this),e.jsxDEV("p",{className:"text-sm text-gray-600 dark:text-gray-300",children:"At Max Booster, we're committed to transparency and protecting your rights. We believe in giving you control over your data and being clear about how we use it to provide you with the best possible music platform experience."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:292,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:290,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:18,columnNumber:11},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:17,columnNumber:9},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:9,columnNumber:7},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Privacy.tsx",lineNumber:8,columnNumber:5},this)}export{x as default};
+import {
+  f as e,
+  cV as a,
+  cy as n,
+  cv as l,
+  bI as r,
+  bK as s,
+  df as i,
+  bg as c,
+} from "./vendor-react-31oK5L0i.js";
+import { j as t, C as m, h as o } from "./studio-DOUfHW5v.js";
+import "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+import "./vendor-animation-CFQslDag.js";
+function x() {
+  return e.jsxDEV(
+    "div",
+    {
+      className:
+        "min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800",
+      children: e.jsxDEV(
+        "div",
+        {
+          className: "container max-w-4xl mx-auto px-4 py-8",
+          children: [
+            e.jsxDEV(
+              a,
+              {
+                href: "/",
+                children: e.jsxDEV(
+                  t,
+                  {
+                    variant: "ghost",
+                    className: "mb-6",
+                    "data-testid": "button-back",
+                    children: [
+                      e.jsxDEV(
+                        n,
+                        { className: "w-4 h-4 mr-2" },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 12,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      "Back",
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                    lineNumber: 11,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                lineNumber: 10,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              m,
+              {
+                className: "dark:bg-gray-900 dark:border-gray-700",
+                children: e.jsxDEV(
+                  o,
+                  {
+                    className: "p-8 prose dark:prose-invert max-w-none",
+                    children: [
+                      e.jsxDEV(
+                        "div",
+                        {
+                          className: "flex items-center space-x-3 mb-6",
+                          children: [
+                            e.jsxDEV(
+                              l,
+                              {
+                                className:
+                                  "w-8 h-8 text-blue-600 dark:text-blue-400",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 20,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "h1",
+                              {
+                                className: "text-4xl font-bold mb-0",
+                                children: "Privacy Policy",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 21,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 19,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "p",
+                        {
+                          className: "text-gray-600 dark:text-gray-300 mb-8",
+                          children: [
+                            "Last updated: ",
+                            new Date().toLocaleDateString(),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 23,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "div",
+                        {
+                          className:
+                            "grid grid-cols-1 md:grid-cols-3 gap-4 mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className:
+                                  "flex items-start space-x-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg",
+                                children: [
+                                  e.jsxDEV(
+                                    r,
+                                    {
+                                      className:
+                                        "w-5 h-5 text-green-600 dark:text-green-400 mt-1",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 29,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "h3",
+                                          {
+                                            className:
+                                              "font-semibold text-sm mb-1",
+                                            children: "Encrypted",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 31,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "p",
+                                          {
+                                            className:
+                                              "text-xs text-gray-600 dark:text-gray-300",
+                                            children:
+                                              "Your data is encrypted at rest and in transit",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 32,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 30,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 28,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className:
+                                  "flex items-start space-x-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg",
+                                children: [
+                                  e.jsxDEV(
+                                    s,
+                                    {
+                                      className:
+                                        "w-5 h-5 text-blue-600 dark:text-blue-400 mt-1",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 38,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "h3",
+                                          {
+                                            className:
+                                              "font-semibold text-sm mb-1",
+                                            children: "Transparent",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 40,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "p",
+                                          {
+                                            className:
+                                              "text-xs text-gray-600 dark:text-gray-300",
+                                            children:
+                                              "Full transparency about what's collected and why",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 41,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 39,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 37,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className:
+                                  "flex items-start space-x-3 p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg",
+                                children: [
+                                  e.jsxDEV(
+                                    i,
+                                    {
+                                      className:
+                                        "w-5 h-5 text-purple-600 dark:text-purple-400 mt-1",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 47,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "h3",
+                                          {
+                                            className:
+                                              "font-semibold text-sm mb-1",
+                                            children: "No Selling",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 49,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "p",
+                                          {
+                                            className:
+                                              "text-xs text-gray-600 dark:text-gray-300",
+                                            children:
+                                              "Your personal data is never sold",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 50,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 48,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 46,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 27,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "1. Introduction",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 58,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                children:
+                                  "Max Booster (operated by a solo founder) is committed to protecting your privacy. This Privacy Policy explains how I collect, use, disclose, and safeguard your information when you use the AI-powered music platform and distribution services.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 59,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 57,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "2. Information Collected",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 67,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className: "text-xl font-semibold mb-3 mt-6",
+                                children: "Personal Information",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 69,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mb-4",
+                                children:
+                                  "When you register and use Max Booster's services, the following is collected:",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 70,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "ul",
+                              {
+                                className:
+                                  "list-disc list-inside space-y-2 ml-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "li",
+                                    { children: "Name and email address" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 74,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Payment information (processed securely through Stripe)",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 75,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Profile information you choose to provide",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 76,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Social media account connections (when you authorize them)",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 77,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 73,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className: "text-xl font-semibold mb-3 mt-6",
+                                children: "Content and Usage Data",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 80,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "ul",
+                              {
+                                className:
+                                  "list-disc list-inside space-y-2 ml-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Music files and metadata you upload",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 82,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    { children: "Project data and analytics" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 83,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Distribution and release information",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 84,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Streaming and earnings data from platforms",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 85,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Usage patterns and feature interactions",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 86,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 81,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className: "text-xl font-semibold mb-3 mt-6",
+                                children: "Automatically Collected Information",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 89,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "ul",
+                              {
+                                className:
+                                  "list-disc list-inside space-y-2 ml-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "IP address and device information",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 93,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    { children: "Browser type and version" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 94,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Session information and cookies",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 95,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Access times and referring URLs",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 96,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 92,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 66,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "3. How Your Information Is Used",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 101,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mb-4",
+                                children: "Your information is used to:",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 102,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "ul",
+                              {
+                                className:
+                                  "list-disc list-inside space-y-2 ml-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Provide, operate, and maintain the services",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 104,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Process your music distribution to streaming platforms",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 105,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Analyze and optimize your music with the proprietary AI",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 106,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Track and report your earnings and royalties",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 107,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Send you notifications and updates",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 108,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Improve the platform and develop new features",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 109,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Detect and prevent fraud and abuse",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 110,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children: "Comply with legal obligations",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 111,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 103,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 100,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "4. Data Sharing and Disclosure",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 116,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mb-4",
+                                children:
+                                  "Your information may be shared with:",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 117,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className: "text-xl font-semibold mb-3 mt-6",
+                                children: "Service Providers",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 119,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "ul",
+                              {
+                                className:
+                                  "list-disc list-inside space-y-2 ml-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "strong",
+                                          { children: "Stripe:" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 122,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        " Payment processing",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 121,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "strong",
+                                          { children: "SendGrid:" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 125,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        " Email delivery",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 124,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "strong",
+                                          { children: "Neon:" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 128,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        " Database hosting",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 127,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "strong",
+                                          { children: "Streaming Platforms:" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 131,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        " When you distribute your music",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 130,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 120,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className: "text-xl font-semibold mb-3 mt-6",
+                                children: "Legal Requirements",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 135,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                children:
+                                  "Your information may be disclosed if required by law, court order, or governmental request, or to protect Max Booster's rights, property, or safety.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 136,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className: "text-xl font-semibold mb-3 mt-6",
+                                children: "Business Transfers",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 141,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                children:
+                                  "In the event of a merger, acquisition, or sale of assets, your information may be transferred to the acquiring entity.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 142,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 115,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "5. Data Security",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 149,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mb-4",
+                                children:
+                                  "Industry-standard security measures are implemented to protect your data:",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 150,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "ul",
+                              {
+                                className:
+                                  "list-disc list-inside space-y-2 ml-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Encryption in transit (HTTPS/TLS)",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 154,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Encryption at rest for sensitive data",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 155,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    { children: "Secure session management" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 156,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Regular security audits and updates",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 157,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Access controls and authentication",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 158,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    { children: "24/7 system monitoring" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 159,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 153,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mt-4",
+                                children:
+                                  "While I strive to protect your information, no method of transmission over the internet is 100% secure. Absolute security cannot be guaranteed.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 161,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 148,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "6. Your Rights and Choices",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 168,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mb-4",
+                                children:
+                                  "You have the following rights regarding your data:",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 169,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className: "space-y-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "flex items-start space-x-3",
+                                      children: [
+                                        e.jsxDEV(
+                                          c,
+                                          {
+                                            className:
+                                              "w-5 h-5 text-blue-600 dark:text-blue-400 mt-1",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 173,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            children: [
+                                              e.jsxDEV(
+                                                "h3",
+                                                {
+                                                  className: "font-semibold",
+                                                  children:
+                                                    "Access and Portability",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                                  lineNumber: 175,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-sm text-gray-600 dark:text-gray-300",
+                                                  children:
+                                                    "Request a copy of your personal data in a portable format",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                                  lineNumber: 176,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 174,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 172,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "flex items-start space-x-3",
+                                      children: [
+                                        e.jsxDEV(
+                                          r,
+                                          {
+                                            className:
+                                              "w-5 h-5 text-green-600 dark:text-green-400 mt-1",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 183,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            children: [
+                                              e.jsxDEV(
+                                                "h3",
+                                                {
+                                                  className: "font-semibold",
+                                                  children: "Correction",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                                  lineNumber: 185,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-sm text-gray-600 dark:text-gray-300",
+                                                  children:
+                                                    "Update or correct inaccurate information",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                                  lineNumber: 186,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 184,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 182,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "flex items-start space-x-3",
+                                      children: [
+                                        e.jsxDEV(
+                                          i,
+                                          {
+                                            className:
+                                              "w-5 h-5 text-red-600 dark:text-red-400 mt-1",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 193,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            children: [
+                                              e.jsxDEV(
+                                                "h3",
+                                                {
+                                                  className: "font-semibold",
+                                                  children: "Deletion",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                                  lineNumber: 195,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-sm text-gray-600 dark:text-gray-300",
+                                                  children:
+                                                    "Request deletion of your account and associated data",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                                  lineNumber: 196,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 194,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 192,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "flex items-start space-x-3",
+                                      children: [
+                                        e.jsxDEV(
+                                          s,
+                                          {
+                                            className:
+                                              "w-5 h-5 text-purple-600 dark:text-purple-400 mt-1",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 203,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            children: [
+                                              e.jsxDEV(
+                                                "h3",
+                                                {
+                                                  className: "font-semibold",
+                                                  children: "Marketing Opt-Out",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                                  lineNumber: 205,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-sm text-gray-600 dark:text-gray-300",
+                                                  children:
+                                                    "Unsubscribe from marketing communications",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                                  lineNumber: 206,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 204,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 202,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 171,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mt-4",
+                                children: [
+                                  "To exercise these rights, contact us at ",
+                                  e.jsxDEV(
+                                    "strong",
+                                    { children: "privacy@maxbooster.ai" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 214,
+                                      columnNumber: 57,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 213,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 167,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "7. Cookies and Tracking",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 219,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mb-4",
+                                children:
+                                  "Cookies and similar technologies are used to:",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 220,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "ul",
+                              {
+                                className:
+                                  "list-disc list-inside space-y-2 ml-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "li",
+                                    { children: "Keep you logged in" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 222,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    { children: "Remember your preferences" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 223,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    { children: "Analyze usage patterns" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 224,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children:
+                                        "Improve performance and user experience",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 225,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 221,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mt-4",
+                                children:
+                                  "You can control cookies through your browser settings, but disabling them may limit functionality.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 227,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 218,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "8. Data Retention",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 234,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                children:
+                                  "Your information is retained for as long as your account is active or as needed to provide services. After account deletion, certain data may be retained as required by law or for legitimate business purposes (e.g., fraud prevention, financial records).",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 235,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 233,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "9. Children's Privacy",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 244,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                children:
+                                  "Max Booster services are not intended for users under 13 years of age. Personal information from children under 13 is not knowingly collected. If such information is discovered, it will be deleted immediately.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 245,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 243,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "10. International Data Transfers",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 253,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                children:
+                                  "Your information may be transferred to and maintained on servers located outside your state, province, or country where data protection laws may differ. By using Max Booster services, you consent to this transfer.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 254,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 252,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "11. Changes to This Policy",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 262,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                children:
+                                  'This Privacy Policy may be updated from time to time. You will be notified of any material changes by posting the new policy on this page and updating the "Last updated" date. Continued use of Max Booster services after changes constitutes acceptance of the updated policy.',
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 263,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 261,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "section",
+                        {
+                          className: "mb-8",
+                          children: [
+                            e.jsxDEV(
+                              "h2",
+                              {
+                                className: "text-2xl font-semibold mb-4",
+                                children: "12. Contact Information",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 272,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "mb-4",
+                                children:
+                                  "If you have questions or concerns about this Privacy Policy or our data practices, contact us:",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 273,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "ul",
+                              {
+                                className: "list-none space-y-2",
+                                children: [
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "strong",
+                                          { children: "Email:" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 279,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        " privacy@maxbooster.ai",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 278,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "strong",
+                                          { children: "Support:" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 282,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        " support@maxbooster.ai",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 281,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "li",
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          "strong",
+                                          { children: "Address:" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                            lineNumber: 285,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        " Max Booster Inc., United States",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                      lineNumber: 284,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 277,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 271,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "div",
+                        {
+                          className:
+                            "mt-12 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border border-blue-200 dark:border-blue-800",
+                          children: [
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className: "font-semibold text-lg mb-2",
+                                children: "Your Privacy Matters",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 291,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className:
+                                  "text-sm text-gray-600 dark:text-gray-300",
+                                children:
+                                  "At Max Booster, we're committed to transparency and protecting your rights. We believe in giving you control over your data and being clear about how we use it to provide you with the best possible music platform experience.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                                lineNumber: 292,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                          lineNumber: 290,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                    lineNumber: 18,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/Privacy.tsx",
+                lineNumber: 17,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          ],
+        },
+        void 0,
+        !0,
+        {
+          fileName: "/home/runner/workspace/client/src/pages/Privacy.tsx",
+          lineNumber: 9,
+          columnNumber: 7,
+        },
+        this,
+      ),
+    },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/pages/Privacy.tsx",
+      lineNumber: 8,
+      columnNumber: 5,
+    },
+    this,
+  );
+}
+export { x as default };

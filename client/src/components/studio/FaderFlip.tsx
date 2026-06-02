@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, Globe, ChevronDown, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { RotateCcw, Globe, ChevronDown, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,8 +10,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   FaderMode,
   FaderModeType,
@@ -20,7 +24,7 @@ import {
   FADER_MODE_COLORS,
   useFaderFlip,
   UseFaderFlipReturn,
-} from '@/hooks/useFaderFlip';
+} from "@/hooks/useFaderFlip";
 
 interface FaderFlipProps {
   channelId: string;
@@ -45,10 +49,10 @@ function ModeButton({ mode, isActive, onClick, compact }: ModeButtonProps) {
           onClick={onClick}
           className="relative px-2 py-1 rounded text-xs font-medium transition-all"
           style={{
-            background: isActive ? mode.color + '30' : 'transparent',
-            borderColor: isActive ? mode.color : 'var(--studio-border)',
-            border: `1px solid ${isActive ? mode.color : 'var(--studio-border)'}`,
-            color: isActive ? mode.color : 'var(--studio-text-muted)',
+            background: isActive ? mode.color + "30" : "transparent",
+            borderColor: isActive ? mode.color : "var(--studio-border)",
+            border: `1px solid ${isActive ? mode.color : "var(--studio-border)"}`,
+            color: isActive ? mode.color : "var(--studio-text-muted)",
           }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -80,12 +84,18 @@ interface ModeSectionProps {
   compact?: boolean;
 }
 
-function ModeSection({ title, modes, currentMode, onModeSelect, compact }: ModeSectionProps) {
+function ModeSection({
+  title,
+  modes,
+  currentMode,
+  onModeSelect,
+  compact,
+}: ModeSectionProps) {
   return (
     <div className="space-y-1.5">
       <div
         className="text-[10px] font-semibold uppercase tracking-wider"
-        style={{ color: 'var(--studio-text-muted)' }}
+        style={{ color: "var(--studio-text-muted)" }}
       >
         {title}
       </div>
@@ -112,35 +122,41 @@ export function FaderFlip({
   showGlobalControls = true,
 }: FaderFlipProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   const currentMode = faderFlip.getChannelMode(channelId);
   const currentValue = faderFlip.getChannelValue(channelId);
   const modeConfig = faderFlip.getModeConfig(currentMode);
   const isSelected = faderFlip.selectedChannels.includes(channelId);
 
-  const handleModeSelect = useCallback((mode: FaderMode) => {
-    faderFlip.setChannelMode(channelId, mode);
-  }, [channelId, faderFlip]);
+  const handleModeSelect = useCallback(
+    (mode: FaderMode) => {
+      faderFlip.setChannelMode(channelId, mode);
+    },
+    [channelId, faderFlip],
+  );
 
   const handleReturnToVolume = useCallback(() => {
     faderFlip.returnToVolume(channelId);
   }, [channelId, faderFlip]);
 
-  const handleChannelSelect = useCallback((e: React.MouseEvent) => {
-    faderFlip.selectChannel(channelId, e.shiftKey || e.ctrlKey || e.metaKey);
-  }, [channelId, faderFlip]);
+  const handleChannelSelect = useCallback(
+    (e: React.MouseEvent) => {
+      faderFlip.selectChannel(channelId, e.shiftKey || e.ctrlKey || e.metaKey);
+    },
+    [channelId, faderFlip],
+  );
 
-  const volumeModes = FADER_MODES.filter(m => m.type === 'volume');
-  const fxModes = FADER_MODES.filter(m => m.type === 'fx');
-  const cueModes = FADER_MODES.filter(m => m.type === 'cue');
-  const busModes = FADER_MODES.filter(m => m.type === 'bus');
+  const volumeModes = FADER_MODES.filter((m) => m.type === "volume");
+  const fxModes = FADER_MODES.filter((m) => m.type === "fx");
+  const cueModes = FADER_MODES.filter((m) => m.type === "cue");
+  const busModes = FADER_MODES.filter((m) => m.type === "bus");
 
   return (
     <div
       className="rounded-lg p-2 space-y-2"
       style={{
-        background: 'var(--studio-bg-medium)',
-        border: `1px solid ${isSelected ? modeConfig.color : 'var(--studio-border)'}`,
+        background: "var(--studio-bg-medium)",
+        border: `1px solid ${isSelected ? modeConfig.color : "var(--studio-border)"}`,
       }}
       onClick={handleChannelSelect}
     >
@@ -160,7 +176,7 @@ export function FaderFlip({
                 className="h-6 px-2 gap-1 text-xs font-medium"
                 style={{
                   color: modeConfig.color,
-                  background: modeConfig.color + '15',
+                  background: modeConfig.color + "15",
                 }}
               >
                 {compact ? modeConfig.shortLabel : modeConfig.label}
@@ -171,11 +187,11 @@ export function FaderFlip({
               align="start"
               className="w-48"
               style={{
-                background: 'var(--studio-bg-deep)',
-                border: '1px solid var(--studio-border)',
+                background: "var(--studio-bg-deep)",
+                border: "1px solid var(--studio-border)",
               }}
             >
-              <DropdownMenuLabel style={{ color: 'var(--studio-text-muted)' }}>
+              <DropdownMenuLabel style={{ color: "var(--studio-text-muted)" }}>
                 Fader Mode
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -184,7 +200,7 @@ export function FaderFlip({
                   key={mode.id}
                   onClick={() => handleModeSelect(mode.id)}
                   className="flex items-center justify-between"
-                  style={{ color: 'var(--studio-text)' }}
+                  style={{ color: "var(--studio-text)" }}
                 >
                   <div className="flex items-center gap-2">
                     <div
@@ -203,7 +219,7 @@ export function FaderFlip({
         </div>
 
         <div className="flex items-center gap-1">
-          {currentMode !== 'volume' && (
+          {currentMode !== "volume" && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -222,7 +238,7 @@ export function FaderFlip({
               <TooltipContent>Return to Volume</TooltipContent>
             </Tooltip>
           )}
-          
+
           <Button
             variant="ghost"
             size="sm"
@@ -231,9 +247,9 @@ export function FaderFlip({
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
-            style={{ color: 'var(--studio-text-muted)' }}
+            style={{ color: "var(--studio-text-muted)" }}
           >
-            {isExpanded ? 'Less' : 'More'}
+            {isExpanded ? "Less" : "More"}
           </Button>
         </div>
       </div>
@@ -241,7 +257,7 @@ export function FaderFlip({
       <div
         className="text-center py-1 px-2 rounded font-mono text-sm"
         style={{
-          background: modeConfig.color + '15',
+          background: modeConfig.color + "15",
           color: modeConfig.color,
           border: `1px solid ${modeConfig.color}40`,
         }}
@@ -253,7 +269,7 @@ export function FaderFlip({
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden space-y-3 pt-2"
@@ -293,10 +309,16 @@ export function FaderFlip({
       {showGlobalControls && faderFlip.isGlobalModeActive && isSelected && (
         <div
           className="flex items-center gap-1 pt-2 border-t"
-          style={{ borderColor: 'var(--studio-border)' }}
+          style={{ borderColor: "var(--studio-border)" }}
         >
-          <Globe className="h-3 w-3" style={{ color: 'var(--studio-text-muted)' }} />
-          <span className="text-[10px]" style={{ color: 'var(--studio-text-muted)' }}>
+          <Globe
+            className="h-3 w-3"
+            style={{ color: "var(--studio-text-muted)" }}
+          />
+          <span
+            className="text-[10px]"
+            style={{ color: "var(--studio-text-muted)" }}
+          >
             Global: {faderFlip.getModeConfig(faderFlip.globalMode!).label}
           </span>
         </div>
@@ -309,19 +331,24 @@ interface FaderFlipGlobalControlsProps {
   faderFlip: UseFaderFlipReturn;
 }
 
-export function FaderFlipGlobalControls({ faderFlip }: FaderFlipGlobalControlsProps) {
+export function FaderFlipGlobalControls({
+  faderFlip,
+}: FaderFlipGlobalControlsProps) {
   const hasSelection = faderFlip.selectedChannels.length > 0;
 
   return (
     <div
       className="flex items-center gap-2 p-2 rounded-lg"
       style={{
-        background: 'var(--studio-bg-medium)',
-        border: '1px solid var(--studio-border)',
+        background: "var(--studio-bg-medium)",
+        border: "1px solid var(--studio-border)",
       }}
     >
-      <Globe className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
-      
+      <Globe
+        className="h-4 w-4"
+        style={{ color: "var(--studio-text-muted)" }}
+      />
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -330,29 +357,29 @@ export function FaderFlipGlobalControls({ faderFlip }: FaderFlipGlobalControlsPr
             className="h-7 gap-1"
             disabled={!hasSelection}
             style={{
-              borderColor: faderFlip.globalMode 
-                ? faderFlip.getModeConfig(faderFlip.globalMode).color 
-                : 'var(--studio-border)',
+              borderColor: faderFlip.globalMode
+                ? faderFlip.getModeConfig(faderFlip.globalMode).color
+                : "var(--studio-border)",
               color: faderFlip.globalMode
                 ? faderFlip.getModeConfig(faderFlip.globalMode).color
-                : 'var(--studio-text)',
+                : "var(--studio-text)",
             }}
           >
-            {faderFlip.globalMode 
+            {faderFlip.globalMode
               ? faderFlip.getModeConfig(faderFlip.globalMode).shortLabel
-              : 'Global Mode'}
+              : "Global Mode"}
             <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           style={{
-            background: 'var(--studio-bg-deep)',
-            border: '1px solid var(--studio-border)',
+            background: "var(--studio-bg-deep)",
+            border: "1px solid var(--studio-border)",
           }}
         >
           <DropdownMenuItem
             onClick={() => faderFlip.setGlobalMode(null)}
-            style={{ color: 'var(--studio-text)' }}
+            style={{ color: "var(--studio-text)" }}
           >
             <span>None</span>
             {!faderFlip.globalMode && <Check className="h-3 w-3 ml-2" />}
@@ -363,7 +390,7 @@ export function FaderFlipGlobalControls({ faderFlip }: FaderFlipGlobalControlsPr
               key={mode.id}
               onClick={() => faderFlip.toggleGlobalMode(mode.id)}
               className="flex items-center gap-2"
-              style={{ color: 'var(--studio-text)' }}
+              style={{ color: "var(--studio-text)" }}
             >
               <div
                 className="w-2 h-2 rounded-full"
@@ -371,7 +398,10 @@ export function FaderFlipGlobalControls({ faderFlip }: FaderFlipGlobalControlsPr
               />
               <span>{mode.shortLabel}</span>
               {faderFlip.globalMode === mode.id && (
-                <Check className="h-3 w-3 ml-auto" style={{ color: mode.color }} />
+                <Check
+                  className="h-3 w-3 ml-auto"
+                  style={{ color: mode.color }}
+                />
               )}
             </DropdownMenuItem>
           ))}
@@ -384,7 +414,7 @@ export function FaderFlipGlobalControls({ faderFlip }: FaderFlipGlobalControlsPr
         className="h-7"
         onClick={() => faderFlip.applyGlobalModeToSelected()}
         disabled={!faderFlip.globalMode || !hasSelection}
-        style={{ color: 'var(--studio-text-muted)' }}
+        style={{ color: "var(--studio-text-muted)" }}
       >
         Apply to Selected
       </Button>
@@ -404,7 +434,7 @@ export function FaderFlipGlobalControls({ faderFlip }: FaderFlipGlobalControlsPr
         <Badge
           variant="outline"
           className="text-[10px]"
-          style={{ color: 'var(--studio-text-muted)' }}
+          style={{ color: "var(--studio-text-muted)" }}
         >
           {faderFlip.selectedChannels.length} selected
         </Badge>

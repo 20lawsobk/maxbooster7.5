@@ -29,12 +29,15 @@ For the purposes of this DPA:
 ## 2. Scope and Purpose of Processing
 
 ### 2.1 Subject Matter
+
 This DPA applies to the Processing of Personal Data by Processor on behalf of Controller in connection with the provision of Max Booster's music career management platform services.
 
 ### 2.2 Duration
+
 This DPA remains in effect for the duration of the Agreement and continues until all Personal Data is deleted or returned to Controller.
 
 ### 2.3 Nature and Purpose of Processing
+
 **Purpose:** Provision of cloud-based music production, distribution, analytics, and royalty management services.
 
 **Nature of Processing:** Collection, storage, organization, analysis, transmission, and deletion of Personal Data.
@@ -44,6 +47,7 @@ This DPA remains in effect for the duration of the Agreement and continues until
 The Processor may Process the following categories of Personal Data:
 
 **Identity Data:**
+
 - Full name
 - Email address
 - Username
@@ -51,17 +55,20 @@ The Processor may Process the following categories of Personal Data:
 - Date of birth
 
 **Contact Data:**
+
 - Email address
 - Phone number (optional)
 - Mailing address
 
 **Financial Data:**
+
 - Payment information (tokenized)
 - Bank account details (for royalty payments)
 - Tax identification numbers
 - Transaction history
 
 **Technical Data:**
+
 - IP address
 - Browser type and version
 - Device information
@@ -69,12 +76,14 @@ The Processor may Process the following categories of Personal Data:
 - Usage logs
 
 **Content Data:**
+
 - Music files and recordings
 - Lyrics and metadata
 - Project files
 - User-generated content
 
 **Analytics Data:**
+
 - Streaming statistics
 - User behavior patterns
 - Performance metrics
@@ -91,6 +100,7 @@ The Processor may Process the following categories of Personal Data:
 ### 3.1 Lawfulness of Processing
 
 Processor shall:
+
 - Process Personal Data only on documented instructions from Controller
 - Not Process Personal Data for any purpose other than providing the services
 - Immediately inform Controller if instructions violate Data Protection Laws
@@ -99,6 +109,7 @@ Processor shall:
 ### 3.2 Confidentiality
 
 Processor ensures that persons authorized to Process Personal Data:
+
 - Are bound by confidentiality obligations (contractual or statutory)
 - Receive appropriate training on data protection
 - Process Personal Data only as instructed by Controller
@@ -109,36 +120,42 @@ Processor ensures that persons authorized to Process Personal Data:
 Processor implements appropriate technical and organizational measures to ensure a level of security appropriate to the risk, including:
 
 **Encryption:**
+
 - TLS 1.3 for data in transit
 - AES-256 encryption for data at rest
 - Encrypted database backups
 - Key management and rotation
 
 **Access Controls:**
+
 - Role-based access control (RBAC)
 - Multi-factor authentication (MFA) for administrative access
 - Least privilege principle
 - Regular access reviews
 
 **Infrastructure Security:**
+
 - Firewalls and network segmentation
 - Intrusion detection and prevention systems (IDS/IPS)
 - DDoS protection
 - Regular vulnerability scanning and penetration testing
 
 **Operational Security:**
+
 - Secure development lifecycle (SDLC)
 - Change management procedures
 - Incident response plan
 - Business continuity and disaster recovery
 
 **Monitoring and Logging:**
+
 - 24/7 security monitoring
 - Audit logging of all access and changes
 - Automated threat detection
 - Regular security assessments
 
 **Certifications:**
+
 - SOC 2 Type II certification
 - ISO 27001 certification (in progress)
 - Annual third-party security audits
@@ -146,12 +163,14 @@ Processor implements appropriate technical and organizational measures to ensure
 ### 3.4 Data Breach Notification
 
 In the event of a Personal Data breach, Processor shall:
+
 - Notify Controller without undue delay (target: within 24 hours)
 - Provide sufficient information to enable Controller to meet GDPR Article 33 obligations
 - Cooperate with Controller in investigating and mitigating the breach
 - Document the breach and response actions
 
 **Breach Notification Contents:**
+
 - Nature of the breach
 - Categories and approximate number of affected Data Subjects
 - Categories and approximate number of affected Personal Data records
@@ -168,9 +187,10 @@ Processor shall assist Controller in fulfilling Data Subject rights requests:
 **Right to Erasure (Art. 17):** Delete data upon request  
 **Right to Restrict Processing (Art. 18):** Limit processing as requested  
 **Right to Data Portability (Art. 20):** Provide data in machine-readable format  
-**Right to Object (Art. 21):** Cease processing as requested  
+**Right to Object (Art. 21):** Cease processing as requested
 
 **Assistance Provided:**
+
 - Technical capabilities to fulfill requests within 30 days
 - Documentation of requests and actions taken
 - Verification procedures to confirm Data Subject identity
@@ -181,6 +201,7 @@ Processor shall assist Controller in fulfilling Data Subject rights requests:
 ### 3.6 Data Protection Impact Assessment (DPIA)
 
 Processor shall assist Controller in conducting Data Protection Impact Assessments (DPIA) as required by GDPR Article 35 by providing:
+
 - Description of Processing operations
 - Purpose of Processing
 - Security measures implemented
@@ -190,6 +211,7 @@ Processor shall assist Controller in conducting Data Protection Impact Assessmen
 ### 3.7 Audits and Inspections
 
 Controller has the right to:
+
 - Request audit reports (e.g., SOC 2, ISO 27001) annually
 - Conduct on-site audits with reasonable notice (30 days)
 - Engage third-party auditors (subject to confidentiality obligations)
@@ -207,18 +229,19 @@ Controller provides general authorization for Processor to engage Sub-processors
 
 ### 4.2 Current Sub-processors
 
-| Sub-processor | Purpose | Location | Safeguards |
-|---------------|---------|----------|------------|
-| Amazon Web Services (AWS) | Cloud infrastructure and storage | USA | Standard Contractual Clauses (SCCs) |
-| Stripe, Inc. | Payment processing | USA | PCI-DSS compliant, SCCs |
-| SendGrid (Twilio) | Email delivery services | USA | SCCs, GDPR compliant |
-| Google Analytics | Usage analytics (anonymized) | USA | Data Processing Amendment |
+| Sub-processor             | Purpose                          | Location | Safeguards                          |
+| ------------------------- | -------------------------------- | -------- | ----------------------------------- |
+| Amazon Web Services (AWS) | Cloud infrastructure and storage | USA      | Standard Contractual Clauses (SCCs) |
+| Stripe, Inc.              | Payment processing               | USA      | PCI-DSS compliant, SCCs             |
+| SendGrid (Twilio)         | Email delivery services          | USA      | SCCs, GDPR compliant                |
+| Google Analytics          | Usage analytics (anonymized)     | USA      | Data Processing Amendment           |
 
 Complete and current list available at: https://maxbooster.com/sub-processors
 
 ### 4.3 Sub-processor Requirements
 
 Processor ensures all Sub-processors:
+
 - Are bound by data protection obligations equivalent to this DPA
 - Implement appropriate security measures
 - Comply with Data Protection Laws
@@ -227,6 +250,7 @@ Processor ensures all Sub-processors:
 ### 4.4 Notification of Changes
 
 Processor shall:
+
 - Notify Controller of any intended changes (addition/replacement) to Sub-processors
 - Provide 30 days' notice before engaging new Sub-processors
 - Allow Controller to object to new Sub-processors on reasonable grounds
@@ -245,15 +269,18 @@ Processor remains fully liable to Controller for Sub-processor performance as if
 Personal Data may be transferred outside the European Economic Area (EEA) using:
 
 **Standard Contractual Clauses (SCCs):**
+
 - European Commission approved SCCs (Module 2: Controller-to-Processor)
 - Updated to reflect Schrems II requirements
 - Additional safeguards for US transfers
 
 **Adequacy Decisions:**
+
 - Transfers to countries with EU adequacy decisions (where applicable)
 - UK adequacy decision recognized
 
 **Supplementary Measures:**
+
 - Encryption in transit and at rest
 - Access controls and authentication
 - Data minimization practices
@@ -262,6 +289,7 @@ Personal Data may be transferred outside the European Economic Area (EEA) using:
 ### 5.2 Transfer Impact Assessment
 
 Processor has conducted Transfer Impact Assessments (TIA) for all international transfers and determined that:
+
 - Legal frameworks in destination countries provide adequate protection
 - Supplementary measures mitigate any identified risks
 - Data Subject rights can be effectively enforced
@@ -269,6 +297,7 @@ Processor has conducted Transfer Impact Assessments (TIA) for all international 
 ### 5.3 Government Access Requests
 
 In the event of government access requests for Personal Data:
+
 - Processor will notify Controller unless legally prohibited
 - Processor will challenge overly broad requests
 - Processor will limit disclosure to minimum necessary
@@ -279,6 +308,7 @@ In the event of government access requests for Personal Data:
 ### 6.1 Retention Period
 
 Processor retains Personal Data only as long as:
+
 - Required to provide services under the Agreement
 - Instructed by Controller
 - Required by applicable law
@@ -286,11 +316,13 @@ Processor retains Personal Data only as long as:
 ### 6.2 Deletion
 
 Upon termination of the Agreement or upon Controller's request, Processor shall:
+
 - Delete or return all Personal Data within 30 days
 - Delete all copies including backups (except where legally required to retain)
 - Certify deletion in writing
 
 **Deletion Methods:**
+
 - Secure overwrite (3-pass minimum)
 - Cryptographic erasure for encrypted data
 - Physical destruction of media where applicable
@@ -298,6 +330,7 @@ Upon termination of the Agreement or upon Controller's request, Processor shall:
 ### 6.3 Legal Retention
 
 Processor may retain Personal Data to the extent required by law (e.g., tax, audit, regulatory requirements) but shall:
+
 - Limit retention to minimum necessary
 - Continue to protect data with appropriate security
 - Delete when legal requirement expires
@@ -306,6 +339,7 @@ Processor may retain Personal Data to the extent required by law (e.g., tax, aud
 ## 7. Controller Obligations
 
 Controller represents and warrants that:
+
 - It has legal authority to provide Personal Data to Processor
 - It has obtained necessary consents and provided required notices to Data Subjects
 - It has established lawful basis for Processing under GDPR Article 6
@@ -317,6 +351,7 @@ Controller represents and warrants that:
 ### 8.1 Liability Cap
 
 Subject to the limitations and exclusions in the Agreement:
+
 - Each party's liability is limited as specified in the Agreement
 - No limitation applies to violations of data protection obligations under GDPR
 - Processor liable for Sub-processor acts and omissions
@@ -324,11 +359,13 @@ Subject to the limitations and exclusions in the Agreement:
 ### 8.2 Indemnification
 
 Processor shall indemnify Controller against:
+
 - Fines imposed by Supervisory Authority due to Processor's non-compliance
 - Compensation paid to Data Subjects due to Processor's breach
 - Reasonable legal costs defending claims resulting from Processor's breach
 
 Controller shall indemnify Processor against:
+
 - Claims arising from Controller's Processing instructions that violate Data Protection Laws
 - Claims from Data Subjects based on Controller's actions or omissions
 
@@ -337,12 +374,14 @@ Controller shall indemnify Processor against:
 ### 9.1 Term
 
 This DPA takes effect on the Agreement date and continues until:
+
 - Termination of the Agreement, or
 - All Personal Data has been deleted or returned
 
 ### 9.2 Termination for Cause
 
 Either party may terminate this DPA if:
+
 - The other party materially breaches data protection obligations
 - Breach is not cured within 30 days of written notice
 - Supervisory Authority orders cessation of Processing
@@ -350,6 +389,7 @@ Either party may terminate this DPA if:
 ### 9.3 Effect of Termination
 
 Upon termination:
+
 - Processor ceases all Processing of Personal Data
 - Processor deletes or returns all Personal Data
 - This DPA survives for obligations that continue (e.g., confidentiality, deletion certification)
@@ -363,6 +403,7 @@ In case of conflict between this DPA and the Agreement, this DPA prevails on dat
 ### 10.2 Amendments
 
 Amendments to this DPA must be:
+
 - In writing and signed by both parties
 - Necessary to comply with changes in Data Protection Laws
 - Communicated with 30 days' notice
@@ -378,6 +419,7 @@ This DPA is governed by the law specified in the Agreement.
 ### 10.5 Dispute Resolution
 
 Disputes arising from this DPA shall be resolved:
+
 - First through good-faith negotiation
 - Then through mediation if negotiation fails
 - Finally through courts as specified in the Agreement
@@ -410,15 +452,15 @@ By entering into the Agreement, both parties agree to the terms of this Data Pro
 
 **Controller:**
 
-Signature: ___________________________  
-Name: ___________________________  
-Title: ___________________________  
-Date: ___________________________
+Signature: ************\_\_\_************  
+Name: ************\_\_\_************  
+Title: ************\_\_\_************  
+Date: ************\_\_\_************
 
 **Processor (Max Booster, Inc.):**
 
-Signature: ___________________________  
-Name: ___________________________  
+Signature: ************\_\_\_************  
+Name: ************\_\_\_************  
 Title: Chief Information Security Officer  
 Date: November 11, 2025
 
@@ -427,6 +469,7 @@ Date: November 11, 2025
 ## Annex 1: Security Measures
 
 ### Technical Measures
+
 - Encryption: AES-256 (at rest), TLS 1.3 (in transit)
 - Authentication: Multi-factor authentication (MFA)
 - Access Control: Role-based access control (RBAC)
@@ -434,6 +477,7 @@ Date: November 11, 2025
 - Monitoring: 24/7 SOC, SIEM, automated threat detection
 
 ### Organizational Measures
+
 - Policies: Information Security Policy, Acceptable Use Policy
 - Training: Annual security awareness training for all employees
 - Background Checks: Conducted for all employees with data access

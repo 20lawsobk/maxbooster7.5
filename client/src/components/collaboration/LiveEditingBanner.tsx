@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
   Cloud,
@@ -18,22 +18,26 @@ import {
   Edit3,
   MessageSquare,
   Loader2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
-export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'error';
-export type SyncStatus = 'synced' | 'syncing' | 'pending' | 'error';
+export type ConnectionStatus =
+  | "connected"
+  | "connecting"
+  | "disconnected"
+  | "error";
+export type SyncStatus = "synced" | "syncing" | "pending" | "error";
 
 export interface CollaboratorBrief {
   userId: string;
@@ -58,7 +62,7 @@ interface LiveEditingBannerProps {
   status: LiveEditingStatus;
   collaborators: CollaboratorBrief[];
   currentUserId?: string;
-  accessLevel?: 'view' | 'edit' | 'comment';
+  accessLevel?: "view" | "edit" | "comment";
   onReconnect?: () => Promise<void>;
   onSaveNow?: () => Promise<void>;
   onResolveConflicts?: () => void;
@@ -72,7 +76,7 @@ export function LiveEditingBanner({
   status,
   collaborators,
   currentUserId,
-  accessLevel = 'edit',
+  accessLevel = "edit",
   onReconnect,
   onSaveNow,
   onResolveConflicts,
@@ -86,24 +90,34 @@ export function LiveEditingBanner({
   const [isSaving, setIsSaving] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
 
-  const otherCollaborators = collaborators.filter(c => c.userId !== currentUserId);
-  const typingUsers = otherCollaborators.filter(c => c.isTyping);
+  const otherCollaborators = collaborators.filter(
+    (c) => c.userId !== currentUserId,
+  );
+  const typingUsers = otherCollaborators.filter((c) => c.isTyping);
 
   useEffect(() => {
-    if (status.connectionStatus === 'disconnected' || status.connectionStatus === 'error') {
+    if (
+      status.connectionStatus === "disconnected" ||
+      status.connectionStatus === "error"
+    ) {
       toast({
-        title: 'Connection Lost',
+        title: "Connection Lost",
         description: (
           <div className="flex items-center gap-2">
             <WifiOff className="w-4 h-4 text-red-400" />
-            <span>You're working offline. Changes will sync when reconnected.</span>
+            <span>
+              You're working offline. Changes will sync when reconnected.
+            </span>
           </div>
         ),
-        variant: 'destructive',
+        variant: "destructive",
       });
-    } else if (status.connectionStatus === 'connected' && status.syncStatus === 'synced') {
+    } else if (
+      status.connectionStatus === "connected" &&
+      status.syncStatus === "synced"
+    ) {
       toast({
-        title: 'Connected',
+        title: "Connected",
         description: (
           <div className="flex items-center gap-2">
             <Wifi className="w-4 h-4 text-green-400" />
@@ -132,7 +146,7 @@ export function LiveEditingBanner({
     try {
       await onSaveNow();
       toast({
-        title: 'Saved',
+        title: "Saved",
         description: (
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-green-400" />
@@ -142,9 +156,9 @@ export function LiveEditingBanner({
       });
     } catch (error) {
       toast({
-        title: 'Save Failed',
-        description: 'Failed to save changes. Please try again.',
-        variant: 'destructive',
+        title: "Save Failed",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsSaving(false);
@@ -153,68 +167,68 @@ export function LiveEditingBanner({
 
   const getConnectionIcon = () => {
     switch (status.connectionStatus) {
-      case 'connected':
+      case "connected":
         return <Wifi className="w-4 h-4 text-green-400" />;
-      case 'connecting':
+      case "connecting":
         return <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />;
-      case 'disconnected':
+      case "disconnected":
         return <WifiOff className="w-4 h-4 text-amber-400" />;
-      case 'error':
+      case "error":
         return <WifiOff className="w-4 h-4 text-red-400" />;
     }
   };
 
   const getSyncIcon = () => {
     switch (status.syncStatus) {
-      case 'synced':
+      case "synced":
         return <Cloud className="w-4 h-4 text-green-400" />;
-      case 'syncing':
+      case "syncing":
         return <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />;
-      case 'pending':
+      case "pending":
         return <CloudOff className="w-4 h-4 text-amber-400" />;
-      case 'error':
+      case "error":
         return <AlertTriangle className="w-4 h-4 text-red-400" />;
     }
   };
 
   const getSyncText = () => {
     switch (status.syncStatus) {
-      case 'synced':
-        return 'All changes synced';
-      case 'syncing':
-        return status.syncProgress 
-          ? `Syncing... ${status.syncProgress}%` 
-          : 'Syncing...';
-      case 'pending':
-        return status.pendingChanges 
-          ? `${status.pendingChanges} pending changes` 
-          : 'Changes pending';
-      case 'error':
-        return 'Sync error';
+      case "synced":
+        return "All changes synced";
+      case "syncing":
+        return status.syncProgress
+          ? `Syncing... ${status.syncProgress}%`
+          : "Syncing...";
+      case "pending":
+        return status.pendingChanges
+          ? `${status.pendingChanges} pending changes`
+          : "Changes pending";
+      case "error":
+        return "Sync error";
     }
   };
 
   const getAccessIcon = () => {
     switch (accessLevel) {
-      case 'view':
+      case "view":
         return <Eye className="w-3 h-3" />;
-      case 'edit':
+      case "edit":
         return <Edit3 className="w-3 h-3" />;
-      case 'comment':
+      case "comment":
         return <MessageSquare className="w-3 h-3" />;
     }
   };
 
   const formatLastSynced = (date?: Date) => {
-    if (!date) return '';
+    if (!date) return "";
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const seconds = Math.floor(diff / 1000);
-    
-    if (seconds < 60) return 'Just now';
+
+    if (seconds < 60) return "Just now";
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   if (!showBanner) {
@@ -239,7 +253,7 @@ export function LiveEditingBanner({
           animate={{ opacity: 1, y: 0 }}
           className={cn(
             "flex items-center gap-2 px-3 py-1.5 bg-zinc-900 rounded-full border border-zinc-800",
-            className
+            className,
           )}
         >
           <Tooltip>
@@ -249,12 +263,17 @@ export function LiveEditingBanner({
                 {getSyncIcon()}
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-zinc-900 border-zinc-800">
+            <TooltipContent
+              side="bottom"
+              className="bg-zinc-900 border-zinc-800"
+            >
               <div className="text-xs">
                 <p>Connection: {status.connectionStatus}</p>
                 <p>Sync: {getSyncText()}</p>
                 {status.lastSyncedAt && (
-                  <p className="text-zinc-500">Last synced: {formatLastSynced(status.lastSyncedAt)}</p>
+                  <p className="text-zinc-500">
+                    Last synced: {formatLastSynced(status.lastSyncedAt)}
+                  </p>
                 )}
               </div>
             </TooltipContent>
@@ -276,9 +295,14 @@ export function LiveEditingBanner({
                     </AvatarFallback>
                   </Avatar>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-zinc-900 border-zinc-800">
+                <TooltipContent
+                  side="bottom"
+                  className="bg-zinc-900 border-zinc-800"
+                >
                   <span>{user.displayName}</span>
-                  {user.isTyping && <span className="text-blue-400 ml-1">typing...</span>}
+                  {user.isTyping && (
+                    <span className="text-blue-400 ml-1">typing...</span>
+                  )}
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -310,9 +334,10 @@ export function LiveEditingBanner({
       animate={{ opacity: 1, y: 0 }}
       className={cn(
         "flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800",
-        status.connectionStatus === 'error' && "bg-red-500/10 border-red-500/30",
+        status.connectionStatus === "error" &&
+          "bg-red-500/10 border-red-500/30",
         status.hasConflict && "bg-amber-500/10 border-amber-500/30",
-        className
+        className,
       )}
     >
       <div className="flex items-center gap-4">
@@ -327,15 +352,14 @@ export function LiveEditingBanner({
 
         <div className="flex items-center gap-2">
           {getSyncIcon()}
-          <span className="text-sm text-zinc-400">
-            {getSyncText()}
-          </span>
-          {status.syncStatus === 'syncing' && status.syncProgress !== undefined && (
-            <Progress value={status.syncProgress} className="w-16 h-1" />
-          )}
+          <span className="text-sm text-zinc-400">{getSyncText()}</span>
+          {status.syncStatus === "syncing" &&
+            status.syncProgress !== undefined && (
+              <Progress value={status.syncProgress} className="w-16 h-1" />
+            )}
         </div>
 
-        {status.lastSyncedAt && status.syncStatus !== 'syncing' && (
+        {status.lastSyncedAt && status.syncStatus !== "syncing" && (
           <span className="text-xs text-zinc-500">
             Last saved: {formatLastSynced(status.lastSyncedAt)}
           </span>
@@ -351,7 +375,8 @@ export function LiveEditingBanner({
             onClick={onResolveConflicts}
           >
             <GitBranch className="w-4 h-4 mr-1" />
-            {status.conflictCount || 1} Conflict{(status.conflictCount || 1) > 1 ? 's' : ''}
+            {status.conflictCount || 1} Conflict
+            {(status.conflictCount || 1) > 1 ? "s" : ""}
           </Button>
         )}
 
@@ -369,7 +394,10 @@ export function LiveEditingBanner({
                     <TooltipTrigger asChild>
                       <motion.div
                         animate={user.isTyping ? { scale: [1, 1.1, 1] } : {}}
-                        transition={{ duration: 0.5, repeat: user.isTyping ? Infinity : 0 }}
+                        transition={{
+                          duration: 0.5,
+                          repeat: user.isTyping ? Infinity : 0,
+                        }}
                       >
                         <Avatar className="w-7 h-7 border-2 border-zinc-900">
                           <AvatarImage src={user.avatar} />
@@ -382,14 +410,19 @@ export function LiveEditingBanner({
                         </Avatar>
                       </motion.div>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-zinc-900 border-zinc-800">
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-zinc-900 border-zinc-800"
+                    >
                       <div>
                         <span className="font-medium">{user.displayName}</span>
                         {user.isTyping && (
                           <span className="text-blue-400 ml-2">typing...</span>
                         )}
                         {user.currentAction && (
-                          <p className="text-xs text-zinc-500">{user.currentAction}</p>
+                          <p className="text-xs text-zinc-500">
+                            {user.currentAction}
+                          </p>
                         )}
                       </div>
                     </TooltipContent>
@@ -406,7 +439,7 @@ export function LiveEditingBanner({
                 {typingUsers.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: 'auto' }}
+                    animate={{ opacity: 1, width: "auto" }}
                     exit={{ opacity: 0, width: 0 }}
                     className="flex items-center gap-1 text-xs text-blue-400 ml-2"
                   >
@@ -416,8 +449,7 @@ export function LiveEditingBanner({
                     >
                       {typingUsers.length === 1
                         ? `${typingUsers[0].displayName} is typing...`
-                        : `${typingUsers.length} people typing...`
-                      }
+                        : `${typingUsers.length} people typing...`}
                     </motion.span>
                   </motion.div>
                 )}
@@ -427,7 +459,8 @@ export function LiveEditingBanner({
         </div>
 
         <div className="flex items-center gap-1">
-          {status.connectionStatus === 'disconnected' || status.connectionStatus === 'error' ? (
+          {status.connectionStatus === "disconnected" ||
+          status.connectionStatus === "error" ? (
             <Button
               variant="ghost"
               size="sm"

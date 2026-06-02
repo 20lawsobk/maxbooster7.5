@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,25 +6,25 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow, format } from 'date-fns';
-import { 
-  History, 
-  Plus, 
-  Clock, 
-  RefreshCw, 
-  Trash2, 
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow, format } from "date-fns";
+import {
+  History,
+  Plus,
+  Clock,
+  RefreshCw,
+  Trash2,
   Loader2,
   Save,
-  FileStack
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+  FileStack,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ProjectVersion {
   id: string;
@@ -43,7 +43,7 @@ interface VersionManagementDialogProps {
   versions: ProjectVersion[];
 }
 
-const VERSION_STORAGE_KEY = 'daw_versions';
+const VERSION_STORAGE_KEY = "daw_versions";
 
 export function VersionManagementDialog({
   open,
@@ -56,16 +56,18 @@ export function VersionManagementDialog({
 }: VersionManagementDialogProps) {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
-  const [newVersionName, setNewVersionName] = useState('');
-  const [newVersionDescription, setNewVersionDescription] = useState('');
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [newVersionName, setNewVersionName] = useState("");
+  const [newVersionDescription, setNewVersionDescription] = useState("");
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
       setIsCreating(false);
-      setNewVersionName('');
-      setNewVersionDescription('');
+      setNewVersionName("");
+      setNewVersionDescription("");
       setSelectedVersionId(null);
     }
   }, [open]);
@@ -73,54 +75,60 @@ export function VersionManagementDialog({
   const handleCreateVersion = useCallback(() => {
     if (!newVersionName.trim()) {
       toast({
-        title: 'Name Required',
-        description: 'Please enter a name for this version.',
-        variant: 'destructive',
+        title: "Name Required",
+        description: "Please enter a name for this version.",
+        variant: "destructive",
       });
       return;
     }
 
     onCreateVersion(newVersionName.trim(), newVersionDescription.trim());
     setIsCreating(false);
-    setNewVersionName('');
-    setNewVersionDescription('');
+    setNewVersionName("");
+    setNewVersionDescription("");
 
     toast({
-      title: 'Version Created',
+      title: "Version Created",
       description: `"${newVersionName}" has been saved.`,
     });
   }, [newVersionName, newVersionDescription, onCreateVersion, toast]);
 
-  const handleLoadVersion = useCallback((versionId: string) => {
-    setIsLoading(true);
-    try {
-      onLoadVersion(versionId);
-      toast({
-        title: 'Version Loaded',
-        description: 'Project has been restored to selected version.',
-      });
-      onOpenChange(false);
-    } catch (error) {
-      toast({
-        title: 'Load Failed',
-        description: 'Unable to load selected version.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onLoadVersion, onOpenChange, toast]);
+  const handleLoadVersion = useCallback(
+    (versionId: string) => {
+      setIsLoading(true);
+      try {
+        onLoadVersion(versionId);
+        toast({
+          title: "Version Loaded",
+          description: "Project has been restored to selected version.",
+        });
+        onOpenChange(false);
+      } catch (error) {
+        toast({
+          title: "Load Failed",
+          description: "Unable to load selected version.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [onLoadVersion, onOpenChange, toast],
+  );
 
-  const handleDeleteVersion = useCallback((versionId: string, versionName: string) => {
-    onDeleteVersion(versionId);
-    if (selectedVersionId === versionId) {
-      setSelectedVersionId(null);
-    }
-    toast({
-      title: 'Version Deleted',
-      description: `"${versionName}" has been removed.`,
-    });
-  }, [onDeleteVersion, selectedVersionId, toast]);
+  const handleDeleteVersion = useCallback(
+    (versionId: string, versionName: string) => {
+      onDeleteVersion(versionId);
+      if (selectedVersionId === versionId) {
+        setSelectedVersionId(null);
+      }
+      toast({
+        title: "Version Deleted",
+        description: `"${versionName}" has been removed.`,
+      });
+    },
+    [onDeleteVersion, selectedVersionId, toast],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -143,7 +151,9 @@ export function VersionManagementDialog({
                 Create New Version
               </h4>
               <div className="space-y-2">
-                <Label htmlFor="versionName" className="text-gray-300 text-sm">Version Name</Label>
+                <Label htmlFor="versionName" className="text-gray-300 text-sm">
+                  Version Name
+                </Label>
                 <Input
                   id="versionName"
                   value={newVersionName}
@@ -154,7 +164,9 @@ export function VersionManagementDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="versionDesc" className="text-gray-300 text-sm">Description (optional)</Label>
+                <Label htmlFor="versionDesc" className="text-gray-300 text-sm">
+                  Description (optional)
+                </Label>
                 <Textarea
                   id="versionDesc"
                   value={newVersionDescription}
@@ -203,7 +215,9 @@ export function VersionManagementDialog({
               <div className="text-center py-8 text-gray-500">
                 <Clock className="h-10 w-10 mx-auto mb-2 opacity-50" />
                 <p>No saved versions yet</p>
-                <p className="text-sm">Create your first version to save a snapshot</p>
+                <p className="text-sm">
+                  Create your first version to save a snapshot
+                </p>
               </div>
             ) : (
               <ScrollArea className="h-64">
@@ -215,21 +229,26 @@ export function VersionManagementDialog({
                         "bg-[#2a2a2e] rounded-lg p-3 border transition-colors cursor-pointer",
                         selectedVersionId === version.id
                           ? "border-purple-500 bg-purple-500/10"
-                          : "border-[#444] hover:border-[#666]"
+                          : "border-[#444] hover:border-[#666]",
                       )}
                       onClick={() => setSelectedVersionId(version.id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-white truncate">{version.name}</p>
+                          <p className="font-medium text-white truncate">
+                            {version.name}
+                          </p>
                           {version.description && (
                             <p className="text-sm text-gray-400 mt-0.5 line-clamp-2">
                               {version.description}
                             </p>
                           )}
                           <p className="text-xs text-gray-500 mt-1">
-                            {format(version.createdAt, 'MMM d, yyyy h:mm a')} 
-                            {' '}({formatDistanceToNow(version.createdAt, { addSuffix: true })})
+                            {format(version.createdAt, "MMM d, yyyy h:mm a")} (
+                            {formatDistanceToNow(version.createdAt, {
+                              addSuffix: true,
+                            })}
+                            )
                           </p>
                         </div>
                         <div className="flex items-center gap-1 ml-2">
@@ -244,7 +263,12 @@ export function VersionManagementDialog({
                             className="h-7 w-7 p-0 text-gray-400 hover:text-emerald-400"
                             title="Load this version"
                           >
-                            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+                            <RefreshCw
+                              className={cn(
+                                "h-4 w-4",
+                                isLoading && "animate-spin",
+                              )}
+                            />
                           </Button>
                           <Button
                             variant="ghost"

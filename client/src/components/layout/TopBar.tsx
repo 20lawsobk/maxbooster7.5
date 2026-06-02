@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
-import { PendingChangesIndicator } from '@/components/offline/PendingChangesIndicator';
-import { Button } from '@/components/ui/button';
-import { Menu, LogOut, Loader2, Settings } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { Link, useLocation } from 'wouter';
-import { logger } from '@/lib/logger';
+import { useState } from "react";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { PendingChangesIndicator } from "@/components/offline/PendingChangesIndicator";
+import { Button } from "@/components/ui/button";
+import { Menu, LogOut, Loader2, Settings } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Link, useLocation } from "wouter";
+import { logger } from "@/lib/logger";
 
 interface TopBarProps {
   title?: string;
@@ -24,10 +24,10 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
     try {
       await logout();
     } catch (error: unknown) {
-      logger.warn('Failed to sign out:', error);
+      logger.warn("Failed to sign out:", error);
     } finally {
       setSigningOut(false);
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -55,7 +55,9 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
               </h1>
             )}
             {subtitle && (
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">{subtitle}</p>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                {subtitle}
+              </p>
             )}
           </div>
         </div>
@@ -86,7 +88,9 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
             ) : (
               <LogOut className="w-4 h-4" />
             )}
-            <span className="hidden sm:inline">{signingOut ? 'Signing out...' : 'Sign Out'}</span>
+            <span className="hidden sm:inline">
+              {signingOut ? "Signing out..." : "Sign Out"}
+            </span>
           </Button>
         </div>
       </div>

@@ -1,11 +1,11 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import { storage } from '../storage';
-import type { InsertJWTToken, InsertRefreshToken } from '@shared/schema';
-import { logger } from '../logger.js';
-import { sessionTracking } from './sessionTrackingService.js';
-import { env } from '../config/env.js';
-import { isProductionEnv } from '../lib/envHelpers.js';
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { storage } from "../storage";
+import type { InsertJWTToken, InsertRefreshToken } from "@shared/schema";
+import { logger } from "../logger.js";
+import { sessionTracking } from "./sessionTrackingService.js";
+import { env } from "../config/env.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 // SESSION_SECRET is REQUIRED in every environment (prod, staging, dev, test).
 // We never fall back to a deterministic value — that would let any attacker
@@ -13,28 +13,28 @@ import { isProductionEnv } from '../lib/envHelpers.js';
 // For local boot convenience we accept REPLIT_DB_URL or generate an ephemeral
 // per-process secret, but only when NOT in production AND no other
 // instance can share that secret (i.e., truly single-process local dev).
-let JWT_SECRET = env.SESSION_SECRET || '';
+let JWT_SECRET = env.SESSION_SECRET || "";
 
 if (!JWT_SECRET) {
   if (isProductionEnv()) {
     throw new Error(
-      'SESSION_SECRET environment variable is required (must be set in production, staging, and CI)'
+      "SESSION_SECRET environment variable is required (must be set in production, staging, and CI)",
     );
   }
   // Local-dev only: generate a random per-process secret. Tokens issued by
   // one `npm run dev` instance will not validate after restart — by design.
-  JWT_SECRET = crypto.randomBytes(64).toString('hex');
+  JWT_SECRET = crypto.randomBytes(64).toString("hex");
   logger.warn(
-    '⚠️  SESSION_SECRET not set — generated ephemeral per-process secret for local dev only. ' +
-      'Tokens will not survive server restarts. Set SESSION_SECRET to persist sessions.'
+    "⚠️  SESSION_SECRET not set — generated ephemeral per-process secret for local dev only. " +
+      "Tokens will not survive server restarts. Set SESSION_SECRET to persist sessions.",
   );
 }
 
 if (JWT_SECRET.length < 32) {
-  throw new Error('SESSION_SECRET must be at least 32 characters');
+  throw new Error("SESSION_SECRET must be at least 32 characters");
 }
 
-const ACCESS_TOKEN_EXPIRY = '15m';
+const ACCESS_TOKEN_EXPIRY = "15m";
 const ACCESS_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 const REVOKED_TOKEN_RETENTION_MS = 24 * 60 * 60 * 1000;
@@ -68,19 +68,22 @@ export class JWTAuthService {
   async incrementUserTokenVersion(userId: string): Promise<number> {
     const currentVersion = await this.getUserTokenVersion(userId);
     const newVersion = currentVersion + 1;
-    await storage.updateUser(userId, { tokenVersion: newVersion } as Record<string, unknown>);
+    await storage.updateUser(userId, { tokenVersion: newVersion } as Record<
+      string,
+      unknown
+    >);
     return newVersion;
   }
 
-  async issueTokens(userId: string, role: string = 'user'): Promise<TokenPair> {
+  async issueTokens(userId: string, role: string = "user"): Promise<TokenPair> {
     const accessTokenId = crypto.randomUUID();
     const refreshTokenId = crypto.randomUUID();
-    const refreshTokenValue = crypto.randomBytes(32).toString('hex');
+    const refreshTokenValue = crypto.randomBytes(32).toString("hex");
     const tokenVersion = await this.getUserTokenVersion(userId);
 
     const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
     const refreshTokenExpiresAt = new Date(
-      Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000
+      Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
     );
 
     const accessToken = jwt.sign(
@@ -91,7 +94,7 @@ export class JWTAuthService {
         ver: tokenVersion,
       },
       JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
+      { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: "HS256" },
     );
 
     const jwtTokenData: InsertJWTToken = {
@@ -124,12 +127,19 @@ export class JWTAuthService {
   }
 
   async verifyAccessToken(
-    token: string
-  ): Promise<{ userId: string; role: string; jti: string; ver?: number } | null> {
+    token: string,
+  ): Promise<{
+    userId: string;
+    role: string;
+    jti: string;
+    ver?: number;
+  } | null> {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as { 
-        sub: string; 
-        jti: string; 
+      const decoded = jwt.verify(token, JWT_SECRET, {
+        algorithms: ["HS256"],
+      }) as {
+        sub: string;
+        jti: string;
         role: string;
         ver?: number;
       };
@@ -142,7 +152,9 @@ export class JWTAuthService {
       if (decoded.ver !== undefined) {
         const currentVersion = await this.getUserTokenVersion(decoded.sub);
         if (decoded.ver < currentVersion) {
-          logger.info(`Token rejected: version ${decoded.ver} < current ${currentVersion} for user ${decoded.sub}`);
+          logger.info(
+            `Token rejected: version ${decoded.ver} < current ${currentVersion} for user ${decoded.sub}`,
+          );
           return null;
         }
       }
@@ -159,7 +171,7 @@ export class JWTAuthService {
   }
 
   async refreshAccessToken(
-    refreshTokenValue: string
+    refreshTokenValue: string,
   ): Promise<RotatedTokenResult | null> {
     const refreshToken = await storage.getRefreshToken(refreshTokenValue);
 
@@ -177,26 +189,26 @@ export class JWTAuthService {
       return null;
     }
 
-    await storage.revokeRefreshToken(refreshToken.id, 'Token rotation');
+    await storage.revokeRefreshToken(refreshToken.id, "Token rotation");
 
     const tokenVersion = await this.getUserTokenVersion(user.id);
     const accessTokenId = crypto.randomUUID();
     const newRefreshTokenId = crypto.randomUUID();
-    const newRefreshTokenValue = crypto.randomBytes(32).toString('hex');
+    const newRefreshTokenValue = crypto.randomBytes(32).toString("hex");
     const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
     const refreshTokenExpiresAt = new Date(
-      Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000
+      Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
     );
 
     const accessToken = jwt.sign(
       {
         sub: user.id,
         jti: accessTokenId,
-        role: user.role || 'user',
+        role: user.role || "user",
         ver: tokenVersion,
       },
       JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
+      { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: "HS256" },
     );
 
     const jwtTokenData: InsertJWTToken = {
@@ -228,7 +240,10 @@ export class JWTAuthService {
     };
   }
 
-  async revokeAllUserTokens(userId: string, reason: string = 'User logout'): Promise<void> {
+  async revokeAllUserTokens(
+    userId: string,
+    reason: string = "User logout",
+  ): Promise<void> {
     await Promise.all([
       storage.revokeAllJWTTokensForUser(userId, reason),
       storage.revokeAllRefreshTokensForUser(userId, reason),
@@ -239,18 +254,24 @@ export class JWTAuthService {
     await storage.revokeJWTToken(tokenId, reason);
   }
 
-  async forceLogoutUser(userId: string, reason: string = 'Forced logout'): Promise<void> {
+  async forceLogoutUser(
+    userId: string,
+    reason: string = "Forced logout",
+  ): Promise<void> {
     await this.incrementUserTokenVersion(userId);
     await this.revokeAllUserTokens(userId, reason);
     logger.info(`Forced logout for user ${userId}: ${reason}`);
   }
 
-  async forceLogoutAllSessions(userId: string, reason: string = 'Security: all sessions revoked'): Promise<void> {
+  async forceLogoutAllSessions(
+    userId: string,
+    reason: string = "Security: all sessions revoked",
+  ): Promise<void> {
     await this.forceLogoutUser(userId, reason);
     try {
       await sessionTracking.revokeAllUserSessions(userId);
     } catch (error) {
-      logger.warn('Session tracking not available for full session revocation');
+      logger.warn("Session tracking not available for full session revocation");
     }
   }
 }

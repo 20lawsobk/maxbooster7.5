@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { ArtistType, CareerStage, UserPreferences } from './useUserPreferences';
+import { useQuery } from "@tanstack/react-query";
+import { ArtistType, CareerStage, UserPreferences } from "./useUserPreferences";
 
 export interface SmartDefault {
   category: string;
@@ -16,7 +16,7 @@ export interface GenreTemplate {
   suggestedPlatforms: string[];
   contentStyle: string[];
   colorPalette: string[];
-  postingFrequency: 'low' | 'medium' | 'high';
+  postingFrequency: "low" | "medium" | "high";
   audienceAge: [number, number];
 }
 
@@ -30,11 +30,11 @@ export interface SchedulingSuggestion {
 
 export interface PlatformRecommendation {
   platform: string;
-  priority: 'primary' | 'secondary' | 'emerging';
+  priority: "primary" | "secondary" | "emerging";
   reason: string;
   audienceMatch: number;
   growthPotential: number;
-  effort: 'low' | 'medium' | 'high';
+  effort: "low" | "medium" | "high";
 }
 
 export function useSmartDefaults() {
@@ -43,21 +43,28 @@ export function useSmartDefaults() {
     isLoading,
     error,
   } = useQuery<SmartDefault[]>({
-    queryKey: ['/api/preferences/smart-defaults'],
+    queryKey: ["/api/preferences/smart-defaults"],
     staleTime: 10 * 60 * 1000,
   });
 
-  const getDefault = (category: string, key: string): SmartDefault | undefined => {
-    return defaults?.find(d => d.category === category && d.key === key);
+  const getDefault = (
+    category: string,
+    key: string,
+  ): SmartDefault | undefined => {
+    return defaults?.find((d) => d.category === category && d.key === key);
   };
 
-  const getDefaultValue = <T>(category: string, key: string, fallback: T): T => {
+  const getDefaultValue = <T>(
+    category: string,
+    key: string,
+    fallback: T,
+  ): T => {
     const def = getDefault(category, key);
     return def ? def.value : fallback;
   };
 
   const getCategoryDefaults = (category: string): SmartDefault[] => {
-    return defaults?.filter(d => d.category === category) || [];
+    return defaults?.filter((d) => d.category === category) || [];
   };
 
   return {
@@ -76,16 +83,18 @@ export function useSchedulingSuggestions() {
     isLoading,
     error,
   } = useQuery<SchedulingSuggestion[]>({
-    queryKey: ['/api/preferences/scheduling-suggestions'],
+    queryKey: ["/api/preferences/scheduling-suggestions"],
     staleTime: 30 * 60 * 1000,
   });
 
-  const getSuggestionsByPlatform = (platform: string): SchedulingSuggestion[] => {
-    return suggestions?.filter(s => s.platform === platform) || [];
+  const getSuggestionsByPlatform = (
+    platform: string,
+  ): SchedulingSuggestion[] => {
+    return suggestions?.filter((s) => s.platform === platform) || [];
   };
 
   const getSuggestionsByDay = (day: string): SchedulingSuggestion[] => {
-    return suggestions?.filter(s => s.day === day) || [];
+    return suggestions?.filter((s) => s.day === day) || [];
   };
 
   const getTopSuggestions = (count: number = 5): SchedulingSuggestion[] => {
@@ -108,20 +117,20 @@ export function usePlatformRecommendations() {
     isLoading,
     error,
   } = useQuery<PlatformRecommendation[]>({
-    queryKey: ['/api/preferences/platform-recommendations'],
+    queryKey: ["/api/preferences/platform-recommendations"],
     staleTime: 30 * 60 * 1000,
   });
 
   const getPrimaryPlatforms = (): PlatformRecommendation[] => {
-    return recommendations?.filter(r => r.priority === 'primary') || [];
+    return recommendations?.filter((r) => r.priority === "primary") || [];
   };
 
   const getSecondaryPlatforms = (): PlatformRecommendation[] => {
-    return recommendations?.filter(r => r.priority === 'secondary') || [];
+    return recommendations?.filter((r) => r.priority === "secondary") || [];
   };
 
   const getEmergingPlatforms = (): PlatformRecommendation[] => {
-    return recommendations?.filter(r => r.priority === 'emerging') || [];
+    return recommendations?.filter((r) => r.priority === "emerging") || [];
   };
 
   return {
@@ -140,7 +149,7 @@ export function useGenreTemplates(genre?: string) {
     isLoading: loadingAll,
     error: allError,
   } = useQuery<GenreTemplate[]>({
-    queryKey: ['/api/preferences/genre-templates'],
+    queryKey: ["/api/preferences/genre-templates"],
     staleTime: 60 * 60 * 1000,
     enabled: !genre,
   });
@@ -150,7 +159,7 @@ export function useGenreTemplates(genre?: string) {
     isLoading: loadingSingle,
     error: singleError,
   } = useQuery<GenreTemplate>({
-    queryKey: ['/api/preferences/genre-templates', genre],
+    queryKey: ["/api/preferences/genre-templates", genre],
     staleTime: 60 * 60 * 1000,
     enabled: !!genre,
   });
@@ -163,14 +172,23 @@ export function useGenreTemplates(genre?: string) {
   };
 }
 
-export function useArtistTypeDefaults(artistType?: ArtistType, genres?: string[], careerStage?: CareerStage) {
-  const genreParam = genres?.join(',') || '';
+export function useArtistTypeDefaults(
+  artistType?: ArtistType,
+  genres?: string[],
+  careerStage?: CareerStage,
+) {
+  const genreParam = genres?.join(",") || "";
   const {
     data: defaults,
     isLoading,
     error,
   } = useQuery<Partial<UserPreferences>>({
-    queryKey: ['/api/preferences/defaults', artistType, genreParam, careerStage],
+    queryKey: [
+      "/api/preferences/defaults",
+      artistType,
+      genreParam,
+      careerStage,
+    ],
     staleTime: 60 * 60 * 1000,
     enabled: !!artistType,
   });

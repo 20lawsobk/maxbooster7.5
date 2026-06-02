@@ -12,9 +12,13 @@
  *   (ERROR is never used here — reserved for catastrophic data corruption only)
  */
 
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
-type HttpError = Error & { status?: number; statusCode?: number; code?: string };
+type HttpError = Error & {
+  status?: number;
+  statusCode?: number;
+  code?: string;
+};
 
 const _warnThrottleMap = new Map<string, number>();
 const THROTTLE_MS = 60_000;
@@ -27,31 +31,33 @@ function shouldThrottle(key: string): boolean {
   return false;
 }
 
-function classifyError(err: unknown): 'debug' | 'info' | 'warn' {
+function classifyError(err: unknown): "debug" | "info" | "warn" {
   const e = err as HttpError;
   const status = e?.status ?? e?.statusCode ?? 0;
-  const code = e?.code ?? '';
-  const msg = (e?.message ?? '').toLowerCase();
+  const code = e?.code ?? "";
+  const msg = (e?.message ?? "").toLowerCase();
 
-  if (status === 401 || status === 403) return 'info';
-  if (status === 404) return 'debug';
-  if (status === 400 || status === 422) return 'debug';
+  if (status === 401 || status === 403) return "info";
+  if (status === 404) return "debug";
+  if (status === 400 || status === 422) return "debug";
 
   if (
-    code === 'ECONNREFUSED' ||
-    code === 'ETIMEDOUT' ||
-    code === 'ECONNRESET' ||
-    msg.includes('timeout') ||
-    msg.includes('connection') ||
-    msg.includes('502') ||
-    msg.includes('503')
-  ) return 'warn';
+    code === "ECONNREFUSED" ||
+    code === "ETIMEDOUT" ||
+    code === "ECONNRESET" ||
+    msg.includes("timeout") ||
+    msg.includes("connection") ||
+    msg.includes("502") ||
+    msg.includes("503")
+  )
+    return "warn";
 
-  if (msg.includes('not found') || msg.includes('does not exist')) return 'debug';
-  if (msg.includes('unauthorized') || msg.includes('forbidden')) return 'info';
-  if (msg.includes('validation') || msg.includes('invalid')) return 'debug';
+  if (msg.includes("not found") || msg.includes("does not exist"))
+    return "debug";
+  if (msg.includes("unauthorized") || msg.includes("forbidden")) return "info";
+  if (msg.includes("validation") || msg.includes("invalid")) return "debug";
 
-  return 'warn';
+  return "warn";
 }
 
 /**
@@ -63,12 +69,12 @@ export function routeError(context: string, err: unknown): void {
   const e = err as HttpError;
   const detail = e?.message ?? String(err);
 
-  if (level === 'debug') {
+  if (level === "debug") {
     logger.debug({ context, detail }, `[Route] ${context}`);
     return;
   }
 
-  if (level === 'info') {
+  if (level === "info") {
     logger.info({ context, detail }, `[Route] ${context}`);
     return;
   }
@@ -85,7 +91,7 @@ export function routeError(context: string, err: unknown): void {
 export function safeRoute<T>(
   context: string,
   fn: () => Promise<T>,
-  fallback?: T
+  fallback?: T,
 ): Promise<T> {
   return fn().catch((err: unknown) => {
     routeError(context, err);

@@ -1,58 +1,58 @@
 /**
  * Audio Feature Extractor - In-House Audio Analysis for Reference-Based Generation
- * 
+ *
  * Extracts features from reference audio to enable style transfer:
  * - Spectral features (brightness, centroid, rolloff)
  * - Rhythm features (tempo, groove, swing)
  * - Timbral features (harmonic content, noise ratio)
  * - Dynamic features (envelope, transients)
- * 
+ *
  * 100% in-house, no external APIs
  */
 
-import FFT from 'fft.js';
+import FFT from "fft.js";
 
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
 
 export interface SpectralFeatures {
-  spectralCentroid: number;      // Hz - brightness indicator
-  spectralSpread: number;        // Hz - frequency distribution width
-  spectralRolloff: number;       // Hz - frequency below which 85% energy exists
-  spectralFlux: number;          // Rate of spectral change
-  spectralFlatness: number;      // 0-1 - noise vs tonal (1 = pure noise)
-  brightness: number;            // 0-1 - normalized high-frequency content
-  bassPresence: number;          // 0-1 - low frequency content
-  midPresence: number;           // 0-1 - mid frequency content
-  highPresence: number;          // 0-1 - high frequency content
+  spectralCentroid: number; // Hz - brightness indicator
+  spectralSpread: number; // Hz - frequency distribution width
+  spectralRolloff: number; // Hz - frequency below which 85% energy exists
+  spectralFlux: number; // Rate of spectral change
+  spectralFlatness: number; // 0-1 - noise vs tonal (1 = pure noise)
+  brightness: number; // 0-1 - normalized high-frequency content
+  bassPresence: number; // 0-1 - low frequency content
+  midPresence: number; // 0-1 - mid frequency content
+  highPresence: number; // 0-1 - high frequency content
 }
 
 export interface RhythmFeatures {
-  tempo: number;                 // BPM
-  tempoConfidence: number;       // 0-1
-  beatPositions: number[];       // Timestamps in seconds
-  onsetStrength: number[];       // Onset detection function
-  groove: number;                // 0-1 - swing/groove amount
-  rhythmComplexity: number;      // 0-1 - pattern complexity
+  tempo: number; // BPM
+  tempoConfidence: number; // 0-1
+  beatPositions: number[]; // Timestamps in seconds
+  onsetStrength: number[]; // Onset detection function
+  groove: number; // 0-1 - swing/groove amount
+  rhythmComplexity: number; // 0-1 - pattern complexity
 }
 
 export interface TimbreFeatures {
-  harmonicRatio: number;         // 0-1 - tonal vs noise
-  attackTime: number;            // seconds - average attack time
-  decayTime: number;             // seconds - average decay time
-  sustain: number;               // 0-1 - sustain level
-  noisiness: number;             // 0-1 - noise content
-  roughness: number;             // 0-1 - inharmonicity
+  harmonicRatio: number; // 0-1 - tonal vs noise
+  attackTime: number; // seconds - average attack time
+  decayTime: number; // seconds - average decay time
+  sustain: number; // 0-1 - sustain level
+  noisiness: number; // 0-1 - noise content
+  roughness: number; // 0-1 - inharmonicity
 }
 
 export interface DynamicFeatures {
-  rms: number;                   // Root mean square (loudness)
-  peak: number;                  // Peak amplitude
-  dynamicRange: number;          // dB - difference between loud and quiet
-  crestFactor: number;           // Peak to RMS ratio
-  envelope: Float32Array;        // Amplitude envelope over time
-  transients: number[];          // Transient positions in seconds
+  rms: number; // Root mean square (loudness)
+  peak: number; // Peak amplitude
+  dynamicRange: number; // dB - difference between loud and quiet
+  crestFactor: number; // Peak to RMS ratio
+  envelope: Float32Array; // Amplitude envelope over time
+  transients: number[]; // Transient positions in seconds
 }
 
 export interface AudioFeatures {
@@ -84,7 +84,7 @@ export interface StyleProfile {
 function hannWindow(length: number): Float32Array {
   const window = new Float32Array(length);
   for (let i = 0; i < length; i++) {
-    window[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (length - 1)));
+    window[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (length - 1)));
   }
   return window;
 }
@@ -97,7 +97,11 @@ function applyWindow(signal: Float32Array, window: Float32Array): Float32Array {
   return result;
 }
 
-function computeMagnitudeSpectrum(fft: any, realPart: number[], imagPart: number[]): Float32Array {
+function computeMagnitudeSpectrum(
+  fft: any,
+  realPart: number[],
+  imagPart: number[],
+): Float32Array {
   const length = realPart.length / 2;
   const magnitudes = new Float32Array(length);
   for (let i = 0; i < length; i++) {
@@ -114,17 +118,17 @@ export function extractSpectralFeatures(
   audioData: Float32Array,
   sampleRate: number,
   frameSize: number = 2048,
-  hopSize: number = 512
+  hopSize: number = 512,
 ): SpectralFeatures {
   const numFrames = Math.floor((audioData.length - frameSize) / hopSize) + 1;
   const window = hannWindow(frameSize);
   const fft = new FFT(frameSize);
-  
+
   const centroids: number[] = [];
   const spreads: number[] = [];
   const rolloffs: number[] = [];
   const flatnesses: number[] = [];
-  
+
   let bassTotal = 0;
   let midTotal = 0;
   let highTotal = 0;
@@ -132,16 +136,16 @@ export function extractSpectralFeatures(
   let fluxTotal = 0;
 
   // Frequency bin boundaries
-  const bassMax = Math.floor(250 * frameSize / sampleRate);
-  const midMin = Math.floor(250 * frameSize / sampleRate);
-  const midMax = Math.floor(4000 * frameSize / sampleRate);
-  const highMin = Math.floor(4000 * frameSize / sampleRate);
+  const bassMax = Math.floor((250 * frameSize) / sampleRate);
+  const midMin = Math.floor((250 * frameSize) / sampleRate);
+  const midMax = Math.floor((4000 * frameSize) / sampleRate);
+  const highMin = Math.floor((4000 * frameSize) / sampleRate);
 
   for (let frame = 0; frame < numFrames; frame++) {
     const start = frame * hopSize;
     const segment = audioData.slice(start, start + frameSize);
     const windowed = applyWindow(segment, window);
-    
+
     const complexOut = fft.createComplexArray();
     const complexIn = fft.createComplexArray();
     for (let i = 0; i < frameSize; i++) {
@@ -149,33 +153,35 @@ export function extractSpectralFeatures(
       complexIn[2 * i + 1] = 0;
     }
     fft.transform(complexOut, complexIn);
-    
+
     // Extract magnitudes
     const magnitudes = new Float32Array(frameSize / 2);
     for (let i = 0; i < frameSize / 2; i++) {
-      magnitudes[i] = Math.sqrt(complexOut[2 * i] ** 2 + complexOut[2 * i + 1] ** 2);
+      magnitudes[i] = Math.sqrt(
+        complexOut[2 * i] ** 2 + complexOut[2 * i + 1] ** 2,
+      );
     }
-    
+
     // Spectral centroid
     let weightedSum = 0;
     let magSum = 0;
     for (let i = 0; i < magnitudes.length; i++) {
-      const freq = i * sampleRate / frameSize;
+      const freq = (i * sampleRate) / frameSize;
       weightedSum += freq * magnitudes[i];
       magSum += magnitudes[i];
     }
     const centroid = magSum > 0 ? weightedSum / magSum : 0;
     centroids.push(centroid);
-    
+
     // Spectral spread
     let spreadSum = 0;
     for (let i = 0; i < magnitudes.length; i++) {
-      const freq = i * sampleRate / frameSize;
+      const freq = (i * sampleRate) / frameSize;
       spreadSum += magnitudes[i] * (freq - centroid) ** 2;
     }
     const spread = magSum > 0 ? Math.sqrt(spreadSum / magSum) : 0;
     spreads.push(spread);
-    
+
     // Spectral rolloff (85%)
     const rolloffThreshold = 0.85 * magSum;
     let cumSum = 0;
@@ -187,9 +193,9 @@ export function extractSpectralFeatures(
         break;
       }
     }
-    const rolloff = rolloffBin * sampleRate / frameSize;
+    const rolloff = (rolloffBin * sampleRate) / frameSize;
     rolloffs.push(rolloff);
-    
+
     // Spectral flatness (geometric mean / arithmetic mean)
     let logSum = 0;
     let linSum = 0;
@@ -205,7 +211,7 @@ export function extractSpectralFeatures(
     const arithmeticMean = validBins > 0 ? linSum / validBins : 0;
     const flatness = arithmeticMean > 0 ? geometricMean / arithmeticMean : 0;
     flatnesses.push(flatness);
-    
+
     // Band energies
     let bassEnergy = 0;
     let midEnergy = 0;
@@ -225,7 +231,7 @@ export function extractSpectralFeatures(
       midTotal += midEnergy / totalEnergy;
       highTotal += highEnergy / totalEnergy;
     }
-    
+
     // Spectral flux
     if (prevMagnitudes) {
       let flux = 0;
@@ -266,7 +272,7 @@ export function extractSpectralFeatures(
 
 export function extractRhythmFeatures(
   audioData: Float32Array,
-  sampleRate: number
+  sampleRate: number,
 ): RhythmFeatures {
   // Compute onset detection function using spectral flux
   const frameSize = 1024;
@@ -274,7 +280,7 @@ export function extractRhythmFeatures(
   const numFrames = Math.floor((audioData.length - frameSize) / hopSize);
   const window = hannWindow(frameSize);
   const fft = new FFT(frameSize);
-  
+
   const onsetStrength = new Float32Array(numFrames);
   let prevMagnitudes: Float32Array | null = null;
 
@@ -282,7 +288,7 @@ export function extractRhythmFeatures(
     const start = frame * hopSize;
     const segment = audioData.slice(start, start + frameSize);
     const windowed = applyWindow(segment, window);
-    
+
     const complexOut = fft.createComplexArray();
     const complexIn = fft.createComplexArray();
     for (let i = 0; i < frameSize; i++) {
@@ -290,12 +296,14 @@ export function extractRhythmFeatures(
       complexIn[2 * i + 1] = 0;
     }
     fft.transform(complexOut, complexIn);
-    
+
     const magnitudes = new Float32Array(frameSize / 2);
     for (let i = 0; i < frameSize / 2; i++) {
-      magnitudes[i] = Math.sqrt(complexOut[2 * i] ** 2 + complexOut[2 * i + 1] ** 2);
+      magnitudes[i] = Math.sqrt(
+        complexOut[2 * i] ** 2 + complexOut[2 * i + 1] ** 2,
+      );
     }
-    
+
     if (prevMagnitudes) {
       let flux = 0;
       for (let i = 0; i < magnitudes.length; i++) {
@@ -310,14 +318,16 @@ export function extractRhythmFeatures(
   // Peak picking for beat positions
   const beatPositions: number[] = [];
   const threshold = 0.3 * Math.max(...Array.from(onsetStrength));
-  
+
   for (let i = 2; i < onsetStrength.length - 2; i++) {
-    if (onsetStrength[i] > threshold &&
-        onsetStrength[i] > onsetStrength[i - 1] &&
-        onsetStrength[i] > onsetStrength[i + 1] &&
-        onsetStrength[i] > onsetStrength[i - 2] &&
-        onsetStrength[i] > onsetStrength[i + 2]) {
-      beatPositions.push(i * hopSize / sampleRate);
+    if (
+      onsetStrength[i] > threshold &&
+      onsetStrength[i] > onsetStrength[i - 1] &&
+      onsetStrength[i] > onsetStrength[i + 1] &&
+      onsetStrength[i] > onsetStrength[i - 2] &&
+      onsetStrength[i] > onsetStrength[i + 2]
+    ) {
+      beatPositions.push((i * hopSize) / sampleRate);
     }
   }
 
@@ -329,7 +339,7 @@ export function extractRhythmFeatures(
 
   let tempo = 120; // default
   let confidence = 0.5;
-  
+
   if (intervals.length > 2) {
     // Find most common interval
     const histogram: Record<number, number> = {};
@@ -338,7 +348,7 @@ export function extractRhythmFeatures(
       const quantized = Math.round(interval * 100) / 100;
       histogram[quantized] = (histogram[quantized] || 0) + 1;
     }
-    
+
     let maxCount = 0;
     let dominantInterval = 0.5;
     for (const [interval, count] of Object.entries(histogram)) {
@@ -347,15 +357,15 @@ export function extractRhythmFeatures(
         dominantInterval = parseFloat(interval);
       }
     }
-    
+
     // Convert interval to BPM
     if (dominantInterval > 0) {
       tempo = 60 / dominantInterval;
-      
+
       // Normalize to reasonable range (60-200 BPM)
       while (tempo < 60) tempo *= 2;
       while (tempo > 200) tempo /= 2;
-      
+
       confidence = Math.min(maxCount / intervals.length, 0.95);
     }
   }
@@ -364,9 +374,11 @@ export function extractRhythmFeatures(
   let groove = 0;
   if (beatPositions.length > 3) {
     // Compare even and odd intervals
-    let evenSum = 0, oddSum = 0;
-    let evenCount = 0, oddCount = 0;
-    
+    let evenSum = 0,
+      oddSum = 0;
+    let evenCount = 0,
+      oddCount = 0;
+
     for (let i = 1; i < intervals.length; i++) {
       if (i % 2 === 0) {
         evenSum += intervals[i];
@@ -376,7 +388,7 @@ export function extractRhythmFeatures(
         oddCount++;
       }
     }
-    
+
     if (evenCount > 0 && oddCount > 0) {
       const evenAvg = evenSum / evenCount;
       const oddAvg = oddSum / oddCount;
@@ -388,8 +400,12 @@ export function extractRhythmFeatures(
   // Rhythm complexity based on onset density variation
   let complexity = 0;
   if (onsetStrength.length > 10) {
-    const mean = Array.from(onsetStrength).reduce((a, b) => a + b, 0) / onsetStrength.length;
-    const variance = Array.from(onsetStrength).reduce((a, b) => a + (b - mean) ** 2, 0) / onsetStrength.length;
+    const mean =
+      Array.from(onsetStrength).reduce((a, b) => a + b, 0) /
+      onsetStrength.length;
+    const variance =
+      Array.from(onsetStrength).reduce((a, b) => a + (b - mean) ** 2, 0) /
+      onsetStrength.length;
     complexity = Math.min(Math.sqrt(variance) / mean, 1) || 0;
   }
 
@@ -409,12 +425,12 @@ export function extractRhythmFeatures(
 
 export function extractTimbreFeatures(
   audioData: Float32Array,
-  sampleRate: number
+  sampleRate: number,
 ): TimbreFeatures {
   // Estimate harmonic ratio using autocorrelation
   const frameSize = 2048;
   const autocorr = new Float32Array(frameSize);
-  
+
   for (let lag = 0; lag < frameSize; lag++) {
     let sum = 0;
     for (let i = 0; i < frameSize && i + lag < audioData.length; i++) {
@@ -422,12 +438,12 @@ export function extractTimbreFeatures(
     }
     autocorr[lag] = sum;
   }
-  
+
   // Find first peak after zero crossing (fundamental period)
   let harmonicRatio = 0.5;
   let foundPeak = false;
   let peakValue = 0;
-  
+
   for (let i = 20; i < autocorr.length - 1; i++) {
     if (autocorr[i] > autocorr[i - 1] && autocorr[i] > autocorr[i + 1]) {
       if (autocorr[i] > peakValue) {
@@ -441,7 +457,7 @@ export function extractTimbreFeatures(
 
   // Estimate attack and decay times
   const envelope = computeEnvelope(audioData, sampleRate, 0.01);
-  
+
   // Find peak
   let peakIdx = 0;
   let peakAmp = 0;
@@ -451,11 +467,11 @@ export function extractTimbreFeatures(
       peakIdx = i;
     }
   }
-  
+
   // Attack time (time to reach peak)
   const envelopeDuration = audioData.length / sampleRate;
   const attackTime = (peakIdx / envelope.length) * envelopeDuration;
-  
+
   // Decay time (time from peak to 10% of peak)
   let decayIdx = peakIdx;
   const decayThreshold = peakAmp * 0.1;
@@ -466,7 +482,7 @@ export function extractTimbreFeatures(
     }
   }
   const decayTime = ((decayIdx - peakIdx) / envelope.length) * envelopeDuration;
-  
+
   // Sustain level (average of middle portion)
   let sustainSum = 0;
   const sustainStart = Math.floor(envelope.length * 0.4);
@@ -474,7 +490,8 @@ export function extractTimbreFeatures(
   for (let i = sustainStart; i < sustainEnd; i++) {
     sustainSum += envelope[i];
   }
-  const sustain = peakAmp > 0 ? (sustainSum / (sustainEnd - sustainStart)) / peakAmp : 0;
+  const sustain =
+    peakAmp > 0 ? sustainSum / (sustainEnd - sustainStart) / peakAmp : 0;
 
   // Noisiness estimation (spectral flatness proxy)
   const spectral = extractSpectralFeatures(audioData, sampleRate);
@@ -500,7 +517,7 @@ export function extractTimbreFeatures(
 function computeEnvelope(
   audioData: Float32Array,
   sampleRate: number,
-  windowTime: number = 0.01
+  windowTime: number = 0.01,
 ): Float32Array {
   const windowSize = Math.floor(sampleRate * windowTime);
   const hopSize = Math.floor(windowSize / 2);
@@ -521,7 +538,7 @@ function computeEnvelope(
 
 export function extractDynamicFeatures(
   audioData: Float32Array,
-  sampleRate: number
+  sampleRate: number,
 ): DynamicFeatures {
   // RMS
   let sumSquares = 0;
@@ -537,7 +554,9 @@ export function extractDynamicFeatures(
   }
 
   // Dynamic range (using percentiles)
-  const sorted = Array.from(audioData).map(Math.abs).sort((a, b) => a - b);
+  const sorted = Array.from(audioData)
+    .map(Math.abs)
+    .sort((a, b) => a - b);
   const p10 = sorted[Math.floor(sorted.length * 0.1)];
   const p90 = sorted[Math.floor(sorted.length * 0.9)];
   const dynamicRange = p10 > 0 ? 20 * Math.log10(p90 / p10) : 60;
@@ -557,12 +576,14 @@ export function extractDynamicFeatures(
 
   const threshold = 0.2 * Math.max(...Array.from(diffEnvelope));
   const hopSize = Math.floor(sampleRate * 0.005);
-  
+
   for (let i = 2; i < diffEnvelope.length - 2; i++) {
-    if (diffEnvelope[i] > threshold &&
-        diffEnvelope[i] > diffEnvelope[i - 1] &&
-        diffEnvelope[i] > diffEnvelope[i + 1]) {
-      transients.push(i * hopSize / sampleRate);
+    if (
+      diffEnvelope[i] > threshold &&
+      diffEnvelope[i] > diffEnvelope[i - 1] &&
+      diffEnvelope[i] > diffEnvelope[i + 1]
+    ) {
+      transients.push((i * hopSize) / sampleRate);
     }
   }
 
@@ -582,7 +603,7 @@ export function extractDynamicFeatures(
 
 export function extractAllFeatures(
   audioData: Float32Array,
-  sampleRate: number
+  sampleRate: number,
 ): AudioFeatures {
   const spectral = extractSpectralFeatures(audioData, sampleRate);
   const rhythm = extractRhythmFeatures(audioData, sampleRate);
@@ -650,13 +671,15 @@ export class AudioFeatureExtractor {
     let totalDiff = 0;
     let totalWeight = 0;
 
-    totalDiff += Math.abs(profile1.brightness - profile2.brightness) * weights.brightness;
+    totalDiff +=
+      Math.abs(profile1.brightness - profile2.brightness) * weights.brightness;
     totalWeight += weights.brightness;
 
     totalDiff += Math.abs(profile1.energy - profile2.energy) * weights.energy;
     totalWeight += weights.energy;
 
-    totalDiff += Math.abs(profile1.complexity - profile2.complexity) * weights.complexity;
+    totalDiff +=
+      Math.abs(profile1.complexity - profile2.complexity) * weights.complexity;
     totalWeight += weights.complexity;
 
     totalDiff += Math.abs(profile1.attack - profile2.attack) * weights.attack;
@@ -670,7 +693,7 @@ export class AudioFeatureExtractor {
     totalDiff += Math.min(tempoDiff, 1) * weights.tempo;
     totalWeight += weights.tempo;
 
-    return 1 - (totalDiff / totalWeight);
+    return 1 - totalDiff / totalWeight;
   }
 }
 

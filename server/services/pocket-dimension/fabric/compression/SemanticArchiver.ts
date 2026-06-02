@@ -1,4 +1,4 @@
-import type { ContentClass } from './types.js';
+import type { ContentClass } from "./types.js";
 
 export interface ArchiveResult {
   data: Buffer;
@@ -9,61 +9,78 @@ export interface ArchiveResult {
 }
 
 export class SemanticArchiver {
-  async archive(data: Buffer, contentClass: ContentClass): Promise<ArchiveResult> {
+  async archive(
+    data: Buffer,
+    contentClass: ContentClass,
+  ): Promise<ArchiveResult> {
     switch (contentClass) {
-      case 'json': return this.archiveJson(data);
-      case 'log': return this.archiveLogs(data);
-      case 'metrics': return this.archiveMetrics(data);
-      case 'text': return this.archiveText(data);
-      default: return this.archiveGeneric(data);
+      case "json":
+        return this.archiveJson(data);
+      case "log":
+        return this.archiveLogs(data);
+      case "metrics":
+        return this.archiveMetrics(data);
+      case "text":
+        return this.archiveText(data);
+      default:
+        return this.archiveGeneric(data);
     }
   }
 
   private archiveJson(data: Buffer): ArchiveResult {
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(data.toString('utf8'));
+      parsed = JSON.parse(data.toString("utf8"));
     } catch {
       return this.archiveGeneric(data);
     }
 
     const summary = this.summarizeJsonValue(parsed, 0);
     const compact = JSON.stringify(summary);
-    const out = Buffer.from(compact, 'utf8');
+    const out = Buffer.from(compact, "utf8");
 
     return {
       data: out,
       originalBytes: data.length,
       archivedBytes: out.length,
       ratio: data.length / out.length,
-      summary: { type: 'json-summary', keys: Object.keys(parsed instanceof Object ? parsed : {}).length },
+      summary: {
+        type: "json-summary",
+        keys: Object.keys(parsed instanceof Object ? parsed : {}).length,
+      },
     };
   }
 
-  private summarizeJsonValue(val: Record<string, unknown>, depth: number): Record<string, unknown> {
-    if (depth > 4) return '[truncated]';
+  private summarizeJsonValue(
+    val: Record<string, unknown>,
+    depth: number,
+  ): Record<string, unknown> {
+    if (depth > 4) return "[truncated]";
     if (Array.isArray(val)) {
-      const sample = val.slice(0, 5).map(v => this.summarizeJsonValue(v, depth + 1));
-      return { _type: 'array', _count: val.length, _sample: sample };
+      const sample = val
+        .slice(0, 5)
+        .map((v) => this.summarizeJsonValue(v, depth + 1));
+      return { _type: "array", _count: val.length, _sample: sample };
     }
-    if (val !== null && typeof val === 'object') {
+    if (val !== null && typeof val === "object") {
       const keys = Object.keys(val);
       const out: Record<string, any> = {};
       for (const k of keys.slice(0, 32)) {
         out[k] = this.summarizeJsonValue(val[k], depth + 1);
       }
-      if (keys.length > 32) out['_truncated'] = `+${keys.length - 32} more keys`;
+      if (keys.length > 32)
+        out["_truncated"] = `+${keys.length - 32} more keys`;
       return out;
     }
-    if (typeof val === 'string' && val.length > 200) {
-      return val.substring(0, 200) + '...[truncated]';
+    if (typeof val === "string" && val.length > 200) {
+      return val.substring(0, 200) + "...[truncated]";
     }
     return val;
   }
 
   private archiveLogs(data: Buffer): ArchiveResult {
-    const text = data.toString('utf8');
-    const lines = text.split('\n').filter(l => l.trim());
+    const text = data.toString("utf8");
+    const lines = text.split("\n").filter((l) => l.trim());
 
     const counts: Record<string, number> = {};
     const errors: string[] = [];
@@ -81,19 +98,19 @@ export class SemanticArchiver {
         if (!first) first = tsMatch[0];
         last = tsMatch[0];
       }
-      const level = (line.match(levelRe)?.[1] ?? 'UNKNOWN').toUpperCase();
+      const level = (line.match(levelRe)?.[1] ?? "UNKNOWN").toUpperCase();
       counts[level] = (counts[level] ?? 0) + 1;
 
-      if (level === 'ERROR' || level === 'FATAL') {
+      if (level === "ERROR" || level === "FATAL") {
         if (errors.length < 20) errors.push(line.substring(0, 300));
       }
-      if (samples.length < 5 && (level === 'INFO' || level === 'WARN')) {
+      if (samples.length < 5 && (level === "INFO" || level === "WARN")) {
         samples.push(line.substring(0, 200));
       }
     }
 
     const summary = {
-      _type: 'log-archive',
+      _type: "log-archive",
       lineCount: lines.length,
       timeRange: { first, last },
       levelCounts: counts,
@@ -101,26 +118,28 @@ export class SemanticArchiver {
       sampleLines: samples,
     };
 
-    const out = Buffer.from(JSON.stringify(summary, null, 2), 'utf8');
+    const out = Buffer.from(JSON.stringify(summary, null, 2), "utf8");
     return {
       data: out,
       originalBytes: data.length,
       archivedBytes: out.length,
       ratio: data.length / out.length,
-      summary: { type: 'log-archive', lines: lines.length },
+      summary: { type: "log-archive", lines: lines.length },
     };
   }
 
   private archiveMetrics(data: Buffer): ArchiveResult {
-    const text = data.toString('utf8');
-    const lines = text.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+    const text = data.toString("utf8");
+    const lines = text
+      .split("\n")
+      .filter((l) => l.trim() && !l.startsWith("#"));
 
     const series: Record<string, number[]> = {};
 
     for (const line of lines) {
       const parts = line.split(/\s+/);
       if (parts.length < 2) continue;
-      const name = parts[0].replace(/\{[^}]*\}/, '');
+      const name = parts[0].replace(/\{[^}]*\}/, "");
       const value = parseFloat(parts[1]);
       if (!isNaN(value)) {
         if (!series[name]) series[name] = [];
@@ -144,24 +163,30 @@ export class SemanticArchiver {
       };
     }
 
-    const out = Buffer.from(JSON.stringify({ _type: 'metrics-archive', series: aggregated }, null, 2), 'utf8');
+    const out = Buffer.from(
+      JSON.stringify({ _type: "metrics-archive", series: aggregated }, null, 2),
+      "utf8",
+    );
     return {
       data: out,
       originalBytes: data.length,
       archivedBytes: out.length,
       ratio: data.length / out.length,
-      summary: { type: 'metrics-archive', seriesCount: Object.keys(aggregated).length },
+      summary: {
+        type: "metrics-archive",
+        seriesCount: Object.keys(aggregated).length,
+      },
     };
   }
 
   private archiveText(data: Buffer): ArchiveResult {
-    const text = data.toString('utf8');
+    const text = data.toString("utf8");
     const words = text.split(/\s+/).filter(Boolean);
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 20);
 
     const wordFreq: Record<string, number> = {};
     for (const w of words) {
-      const clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const clean = w.toLowerCase().replace(/[^a-z0-9]/g, "");
       if (clean.length > 3) wordFreq[clean] = (wordFreq[clean] ?? 0) + 1;
     }
 
@@ -170,10 +195,13 @@ export class SemanticArchiver {
       .slice(0, 50)
       .map(([w, c]) => ({ word: w, count: c }));
 
-    const excerpt = sentences.slice(0, 5).map(s => s.trim().substring(0, 200)).join(' ');
+    const excerpt = sentences
+      .slice(0, 5)
+      .map((s) => s.trim().substring(0, 200))
+      .join(" ");
 
     const summary = {
-      _type: 'text-archive',
+      _type: "text-archive",
       charCount: text.length,
       wordCount: words.length,
       sentenceCount: sentences.length,
@@ -181,13 +209,13 @@ export class SemanticArchiver {
       excerpt,
     };
 
-    const out = Buffer.from(JSON.stringify(summary, null, 2), 'utf8');
+    const out = Buffer.from(JSON.stringify(summary, null, 2), "utf8");
     return {
       data: out,
       originalBytes: data.length,
       archivedBytes: out.length,
       ratio: data.length / out.length,
-      summary: { type: 'text-archive', wordCount: words.length },
+      summary: { type: "text-archive", wordCount: words.length },
     };
   }
 
@@ -197,7 +225,7 @@ export class SemanticArchiver {
       originalBytes: data.length,
       archivedBytes: data.length,
       ratio: 1,
-      summary: { type: 'passthrough' },
+      summary: { type: "passthrough" },
     };
   }
 }

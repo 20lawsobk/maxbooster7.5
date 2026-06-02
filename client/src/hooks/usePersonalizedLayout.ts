@@ -1,19 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
-import { apiRequest } from '@/lib/queryClient';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 export interface WidgetConfig {
   id: string;
   position: number;
   visible: boolean;
-  size: 'small' | 'medium' | 'large';
+  size: "small" | "medium" | "large";
 }
 
 export interface DashboardLayout {
   widgets: WidgetConfig[];
   quickActions: string[];
   hiddenFeatures: string[];
-  theme: 'compact' | 'standard' | 'expanded';
+  theme: "compact" | "standard" | "expanded";
 }
 
 export interface PersonalizationPreferences {
@@ -28,99 +28,128 @@ export interface PersonalizationPreferences {
 export function usePersonalizedLayout() {
   const queryClient = useQueryClient();
 
-  const { data: layout, isLoading, error } = useQuery<DashboardLayout>({
-    queryKey: ['/api/personalization/dashboard-layout'],
+  const {
+    data: layout,
+    isLoading,
+    error,
+  } = useQuery<DashboardLayout>({
+    queryKey: ["/api/personalization/dashboard-layout"],
     staleTime: 10 * 60 * 1000,
   });
 
   const updateLayoutMutation = useMutation({
     mutationFn: async (newLayout: Partial<DashboardLayout>) => {
-      const response = await apiRequest('PUT', '/api/personalization/preferences', {
-        dashboardLayout: newLayout,
-      });
+      const response = await apiRequest(
+        "PUT",
+        "/api/personalization/preferences",
+        {
+          dashboardLayout: newLayout,
+        },
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/dashboard-layout'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/dashboard-layout"],
+      });
     },
   });
 
   const visibleWidgets = useMemo(() => {
-    return (layout?.widgets || []).filter(w => w.visible);
+    return (layout?.widgets || []).filter((w) => w.visible);
   }, [layout]);
 
   const hiddenWidgets = useMemo(() => {
-    return (layout?.widgets || []).filter(w => !w.visible);
+    return (layout?.widgets || []).filter((w) => !w.visible);
   }, [layout]);
 
-  const updateWidgetPosition = useCallback((widgetId: string, newPosition: number) => {
-    if (!layout) return;
+  const updateWidgetPosition = useCallback(
+    (widgetId: string, newPosition: number) => {
+      if (!layout) return;
 
-    const updatedWidgets = layout.widgets.map(w => {
-      if (w.id === widgetId) {
-        return { ...w, position: newPosition };
-      }
-      return w;
-    }).sort((a, b) => a.position - b.position);
+      const updatedWidgets = layout.widgets
+        .map((w) => {
+          if (w.id === widgetId) {
+            return { ...w, position: newPosition };
+          }
+          return w;
+        })
+        .sort((a, b) => a.position - b.position);
 
-    updateLayoutMutation.mutate({
-      ...layout,
-      widgets: updatedWidgets,
-    });
-  }, [layout, updateLayoutMutation]);
+      updateLayoutMutation.mutate({
+        ...layout,
+        widgets: updatedWidgets,
+      });
+    },
+    [layout, updateLayoutMutation],
+  );
 
-  const toggleWidgetVisibility = useCallback((widgetId: string) => {
-    if (!layout) return;
+  const toggleWidgetVisibility = useCallback(
+    (widgetId: string) => {
+      if (!layout) return;
 
-    const updatedWidgets = layout.widgets.map(w => {
-      if (w.id === widgetId) {
-        return { ...w, visible: !w.visible };
-      }
-      return w;
-    });
+      const updatedWidgets = layout.widgets.map((w) => {
+        if (w.id === widgetId) {
+          return { ...w, visible: !w.visible };
+        }
+        return w;
+      });
 
-    updateLayoutMutation.mutate({
-      ...layout,
-      widgets: updatedWidgets,
-    });
-  }, [layout, updateLayoutMutation]);
+      updateLayoutMutation.mutate({
+        ...layout,
+        widgets: updatedWidgets,
+      });
+    },
+    [layout, updateLayoutMutation],
+  );
 
-  const updateWidgetSize = useCallback((widgetId: string, size: 'small' | 'medium' | 'large') => {
-    if (!layout) return;
+  const updateWidgetSize = useCallback(
+    (widgetId: string, size: "small" | "medium" | "large") => {
+      if (!layout) return;
 
-    const updatedWidgets = layout.widgets.map(w => {
-      if (w.id === widgetId) {
-        return { ...w, size };
-      }
-      return w;
-    });
+      const updatedWidgets = layout.widgets.map((w) => {
+        if (w.id === widgetId) {
+          return { ...w, size };
+        }
+        return w;
+      });
 
-    updateLayoutMutation.mutate({
-      ...layout,
-      widgets: updatedWidgets,
-    });
-  }, [layout, updateLayoutMutation]);
+      updateLayoutMutation.mutate({
+        ...layout,
+        widgets: updatedWidgets,
+      });
+    },
+    [layout, updateLayoutMutation],
+  );
 
-  const setTheme = useCallback((theme: 'compact' | 'standard' | 'expanded') => {
-    if (!layout) return;
+  const setTheme = useCallback(
+    (theme: "compact" | "standard" | "expanded") => {
+      if (!layout) return;
 
-    updateLayoutMutation.mutate({
-      ...layout,
-      theme,
-    });
-  }, [layout, updateLayoutMutation]);
+      updateLayoutMutation.mutate({
+        ...layout,
+        theme,
+      });
+    },
+    [layout, updateLayoutMutation],
+  );
 
-  const updateQuickActions = useCallback((quickActions: string[]) => {
-    if (!layout) return;
+  const updateQuickActions = useCallback(
+    (quickActions: string[]) => {
+      if (!layout) return;
 
-    updateLayoutMutation.mutate({
-      ...layout,
-      quickActions,
-    });
-  }, [layout, updateLayoutMutation]);
+      updateLayoutMutation.mutate({
+        ...layout,
+        quickActions,
+      });
+    },
+    [layout, updateLayoutMutation],
+  );
 
   const resetLayout = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['/api/personalization/dashboard-layout'] });
+    queryClient.invalidateQueries({
+      queryKey: ["/api/personalization/dashboard-layout"],
+    });
   }, [queryClient]);
 
   return {
@@ -141,13 +170,13 @@ export function usePersonalizedLayout() {
 
 export function useRecommendedSettings(artistType?: string) {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['/api/personalization/recommended-settings', artistType],
+    queryKey: ["/api/personalization/recommended-settings", artistType],
     queryFn: async () => {
       const url = artistType
         ? `/api/personalization/recommended-settings?artistType=${artistType}`
-        : '/api/personalization/recommended-settings';
-      const response = await fetch(url, { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch recommended settings');
+        : "/api/personalization/recommended-settings";
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch recommended settings");
       return response.json();
     },
     staleTime: 15 * 60 * 1000,
@@ -163,7 +192,7 @@ export function useRecommendedSettings(artistType?: string) {
 
 export function useOptimalSchedule() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['/api/personalization/optimal-schedule'],
+    queryKey: ["/api/personalization/optimal-schedule"],
     staleTime: 30 * 60 * 1000,
   });
 
@@ -176,7 +205,7 @@ export function useOptimalSchedule() {
 
 export function useBehaviorAnalysis() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['/api/personalization/behavior-analysis'],
+    queryKey: ["/api/personalization/behavior-analysis"],
     staleTime: 15 * 60 * 1000,
   });
 

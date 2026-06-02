@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { logger } from '@/lib/logger';
+import { useState, useEffect, useCallback } from "react";
+import { logger } from "@/lib/logger";
 
 export interface MIDIDeviceInfo {
   id: string;
   name: string;
   manufacturer: string;
-  type: 'input' | 'output';
-  state: 'connected' | 'disconnected';
-  connection: 'open' | 'closed' | 'pending';
+  type: "input" | "output";
+  state: "connected" | "disconnected";
+  connection: "open" | "closed" | "pending";
 }
 
 export interface MIDIDeviceState {
@@ -46,7 +46,8 @@ export function useMIDIDevices() {
       setState((prev) => ({
         ...prev,
         isSupported: false,
-        error: 'Web MIDI API not supported in this browser. Try Chrome, Edge, or Opera.',
+        error:
+          "Web MIDI API not supported in this browser. Try Chrome, Edge, or Opera.",
       }));
       return;
     }
@@ -64,9 +65,9 @@ export function useMIDIDevices() {
       access.inputs.forEach((input) => {
         inputs.push({
           id: input.id,
-          name: input.name || 'Unknown MIDI Input',
-          manufacturer: input.manufacturer || 'Unknown',
-          type: 'input',
+          name: input.name || "Unknown MIDI Input",
+          manufacturer: input.manufacturer || "Unknown",
+          type: "input",
           state: input.state,
           connection: input.connection,
         });
@@ -76,9 +77,9 @@ export function useMIDIDevices() {
       access.outputs.forEach((output) => {
         outputs.push({
           id: output.id,
-          name: output.name || 'Unknown MIDI Output',
-          manufacturer: output.manufacturer || 'Unknown',
-          type: 'output',
+          name: output.name || "Unknown MIDI Output",
+          manufacturer: output.manufacturer || "Unknown",
+          type: "output",
           state: output.state,
           connection: output.connection,
         });
@@ -89,17 +90,22 @@ export function useMIDIDevices() {
         inputs,
         outputs,
         accessGranted: true,
-        selectedInput: prev.selectedInput || (inputs.length > 0 ? inputs[0].id : null),
-        selectedOutput: prev.selectedOutput || (outputs.length > 0 ? outputs[0].id : null),
+        selectedInput:
+          prev.selectedInput || (inputs.length > 0 ? inputs[0].id : null),
+        selectedOutput:
+          prev.selectedOutput || (outputs.length > 0 ? outputs[0].id : null),
       }));
 
       // Listen for device state changes (hot-plugging)
-      access.addEventListener('statechange', handleStateChange);
+      access.addEventListener("statechange", handleStateChange);
     } catch (error: unknown) {
       setState((prev) => ({
         ...prev,
         accessGranted: false,
-        error: error instanceof Error ? error.message : 'Failed to access MIDI devices',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to access MIDI devices",
       }));
     }
   }, []);
@@ -120,9 +126,9 @@ export function useMIDIDevices() {
         midiAccess.inputs.forEach((input) => {
           inputs.push({
             id: input.id,
-            name: input.name || 'Unknown MIDI Input',
-            manufacturer: input.manufacturer || 'Unknown',
-            type: 'input',
+            name: input.name || "Unknown MIDI Input",
+            manufacturer: input.manufacturer || "Unknown",
+            type: "input",
             state: input.state,
             connection: input.connection,
           });
@@ -131,9 +137,9 @@ export function useMIDIDevices() {
         midiAccess.outputs.forEach((output) => {
           outputs.push({
             id: output.id,
-            name: output.name || 'Unknown MIDI Output',
-            manufacturer: output.manufacturer || 'Unknown',
-            type: 'output',
+            name: output.name || "Unknown MIDI Output",
+            manufacturer: output.manufacturer || "Unknown",
+            type: "output",
             state: output.state,
             connection: output.connection,
           });
@@ -142,7 +148,7 @@ export function useMIDIDevices() {
         setState((prev) => ({ ...prev, inputs, outputs }));
       }
     },
-    [midiAccess]
+    [midiAccess],
   );
 
   /**
@@ -171,7 +177,7 @@ export function useMIDIDevices() {
 
       return midiAccess.inputs.get(targetId) || null;
     },
-    [midiAccess, state.selectedInput]
+    [midiAccess, state.selectedInput],
   );
 
   /**
@@ -186,14 +192,17 @@ export function useMIDIDevices() {
 
       return midiAccess.outputs.get(targetId) || null;
     },
-    [midiAccess, state.selectedOutput]
+    [midiAccess, state.selectedOutput],
   );
 
   /**
    * Subscribe to MIDI messages from an input device
    */
   const subscribeToInput = useCallback(
-    (callback: (message: MIDIMessageEvent) => void, deviceId?: string): (() => void) | null => {
+    (
+      callback: (message: MIDIMessageEvent) => void,
+      deviceId?: string,
+    ): (() => void) | null => {
       const port = getInputPort(deviceId);
       if (!port) return null;
 
@@ -201,19 +210,19 @@ export function useMIDIDevices() {
         callback(event as MIDIMessageEvent);
       };
 
-      port.addEventListener('midimessage', handler);
+      port.addEventListener("midimessage", handler);
 
       // Open the port if it's not already open
-      if (port.connection !== 'open') {
+      if (port.connection !== "open") {
         port.open();
       }
 
       // Return cleanup function
       return () => {
-        port.removeEventListener('midimessage', handler);
+        port.removeEventListener("midimessage", handler);
       };
     },
-    [getInputPort]
+    [getInputPort],
   );
 
   /**
@@ -228,17 +237,17 @@ export function useMIDIDevices() {
         port.send(message);
         return true;
       } catch (error: unknown) {
-        logger.error('Failed to send MIDI message:', error);
+        logger.error("Failed to send MIDI message:", error);
         return false;
       }
     },
-    [getOutputPort]
+    [getOutputPort],
   );
 
   useEffect(() => {
     return () => {
       if (midiAccess) {
-        midiAccess.removeEventListener('statechange', handleStateChange);
+        midiAccess.removeEventListener("statechange", handleStateChange);
       }
     };
   }, []);

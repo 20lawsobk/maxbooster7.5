@@ -1,6 +1,6 @@
-import { logger } from '../logger.js';
-import fs from 'fs/promises';
-import path from 'path';
+import { logger } from "../logger.js";
+import fs from "fs/promises";
+import path from "path";
 
 interface MetricsSnapshot {
   timestamp: Date;
@@ -25,12 +25,12 @@ interface MetricsSnapshot {
 export class MetricsCollector {
   private snapshots: MetricsSnapshot[] = [];
   private maxSnapshots = 2880;
-  private metricsDir = 'metrics-baseline';
+  private metricsDir = "metrics-baseline";
 
   async collectSnapshot(
     queueMetrics: Record<string, unknown>,
     aiMetrics: Record<string, unknown>,
-    systemMetrics: Record<string, unknown>
+    systemMetrics: Record<string, unknown>,
   ): Promise<MetricsSnapshot> {
     const snapshot: MetricsSnapshot = {
       timestamp: new Date(),
@@ -42,8 +42,12 @@ export class MetricsCollector {
         redisLatency: queueMetrics?.redisLatency || 0,
       },
       aiCache: {
-        socialUtilization: parseFloat(aiMetrics?.social?.utilizationPercent || '0'),
-        advertisingUtilization: parseFloat(aiMetrics?.advertising?.utilizationPercent || '0'),
+        socialUtilization: parseFloat(
+          aiMetrics?.social?.utilizationPercent || "0",
+        ),
+        advertisingUtilization: parseFloat(
+          aiMetrics?.advertising?.utilizationPercent || "0",
+        ),
       },
       system: {
         memoryMB: systemMetrics?.memoryMB || 0,
@@ -61,11 +65,11 @@ export class MetricsCollector {
     return snapshot;
   }
 
-  async saveBaseline(name: string = 'baseline'): Promise<string> {
+  async saveBaseline(name: string = "baseline"): Promise<string> {
     try {
       await fs.mkdir(this.metricsDir, { recursive: true });
 
-      const filename = `${name}-${new Date().toISOString().replace(/:/g, '-')}.json`;
+      const filename = `${name}-${new Date().toISOString().replace(/:/g, "-")}.json`;
       const filepath = path.join(this.metricsDir, filename);
 
       const baseline = {
@@ -81,13 +85,13 @@ export class MetricsCollector {
 
       return filepath;
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to save baseline metrics:');
+      logger.warn({ err: error }, "Failed to save baseline metrics:");
       throw error;
     }
   }
 
   private calculateDuration(): string {
-    if (this.snapshots.length < 2) return '0 minutes';
+    if (this.snapshots.length < 2) return "0 minutes";
 
     const first = this.snapshots[0].timestamp.getTime();
     const last = this.snapshots[this.snapshots.length - 1].timestamp.getTime();
@@ -111,12 +115,12 @@ export class MetricsCollector {
       };
     }
 
-    const queueWaiting = this.snapshots.map(s => s.queue.waiting);
-    const queueLatency = this.snapshots.map(s => s.queue.redisLatency);
-    const queueFailed = this.snapshots.map(s => s.queue.failed);
-    const socialUtil = this.snapshots.map(s => s.aiCache.socialUtilization);
-    const adUtil = this.snapshots.map(s => s.aiCache.advertisingUtilization);
-    const memory = this.snapshots.map(s => s.system.memoryMB);
+    const queueWaiting = this.snapshots.map((s) => s.queue.waiting);
+    const queueLatency = this.snapshots.map((s) => s.queue.redisLatency);
+    const queueFailed = this.snapshots.map((s) => s.queue.failed);
+    const socialUtil = this.snapshots.map((s) => s.aiCache.socialUtilization);
+    const adUtil = this.snapshots.map((s) => s.aiCache.advertisingUtilization);
+    const memory = this.snapshots.map((s) => s.system.memoryMB);
 
     return {
       queue: {
@@ -158,9 +162,9 @@ export class MetricsCollector {
   private calculateTrends(snapshots: MetricsSnapshot[]) {
     if (snapshots.length < 2) {
       return {
-        memory: 'stable',
-        queueBacklog: 'stable',
-        redisLatency: 'stable',
+        memory: "stable",
+        queueBacklog: "stable",
+        redisLatency: "stable",
       };
     }
 
@@ -168,18 +172,18 @@ export class MetricsCollector {
     const secondHalf = snapshots.slice(Math.floor(snapshots.length / 2));
 
     const memoryTrend = this.compareTrend(
-      this.avg(firstHalf.map(s => s.system.memoryMB)),
-      this.avg(secondHalf.map(s => s.system.memoryMB))
+      this.avg(firstHalf.map((s) => s.system.memoryMB)),
+      this.avg(secondHalf.map((s) => s.system.memoryMB)),
     );
 
     const queueTrend = this.compareTrend(
-      this.avg(firstHalf.map(s => s.queue.waiting)),
-      this.avg(secondHalf.map(s => s.queue.waiting))
+      this.avg(firstHalf.map((s) => s.queue.waiting)),
+      this.avg(secondHalf.map((s) => s.queue.waiting)),
     );
 
     const latencyTrend = this.compareTrend(
-      this.avg(firstHalf.map(s => s.queue.redisLatency)),
-      this.avg(secondHalf.map(s => s.queue.redisLatency))
+      this.avg(firstHalf.map((s) => s.queue.redisLatency)),
+      this.avg(secondHalf.map((s) => s.queue.redisLatency)),
     );
 
     return {
@@ -192,14 +196,14 @@ export class MetricsCollector {
   private compareTrend(first: number, second: number): string {
     const change = ((second - first) / first) * 100;
 
-    if (Math.abs(change) < 5) return 'stable';
-    if (change > 0) return 'increasing';
-    return 'decreasing';
+    if (Math.abs(change) < 5) return "stable";
+    if (change > 0) return "increasing";
+    return "decreasing";
   }
 
   clearSnapshots(): void {
     this.snapshots = [];
-    logger.info('Metrics snapshots cleared');
+    logger.info("Metrics snapshots cleared");
   }
 }
 

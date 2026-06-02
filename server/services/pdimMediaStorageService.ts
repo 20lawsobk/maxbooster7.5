@@ -23,36 +23,47 @@
  * the user's content library, quota usage, and PDIM namespace are correct.
  */
 
-import { existsSync } from 'fs';
-import { readFile as fsReadFile } from 'fs/promises';
-import { createHash }               from 'crypto';
-import { logger }                   from '../logger.js';
-import { hybridStorageService }     from './hybridStorageService.js';
-import { getPdimClient, isPdimConfigured } from '../lib/pdimClient.js';
-import type { BeatAnalysis }        from './beatSyncService.js';
+import { existsSync } from "fs";
+import { readFile as fsReadFile } from "fs/promises";
+import { createHash } from "crypto";
+import { logger } from "../logger.js";
+import { hybridStorageService } from "./hybridStorageService.js";
+import { getPdimClient, isPdimConfigured } from "../lib/pdimClient.js";
+import type { BeatAnalysis } from "./beatSyncService.js";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
-const PDIM_KEY_PREFIX = 'pdim_media';
-const BEAT_CACHE_TTL  = 60 * 60 * 24;       // 24 hours
-const VOICE_META_TTL  = 60 * 60 * 48;       // 48 hours
-const VIDEO_META_TTL  = 60 * 60 * 48;       // 48 hours
+const PDIM_KEY_PREFIX = "pdim_media";
+const BEAT_CACHE_TTL = 60 * 60 * 24; // 24 hours
+const VOICE_META_TTL = 60 * 60 * 48; // 48 hours
+const VIDEO_META_TTL = 60 * 60 * 48; // 48 hours
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 // async — readFileSync would block the event loop for multi-MB audio files
 async function fileHash(filePath: string): Promise<string> {
   try {
     const buf = await fsReadFile(filePath);
-    return createHash('sha256').update(buf).digest('hex').slice(0, 32);
+    return createHash("sha256").update(buf).digest("hex").slice(0, 32);
   } catch {
-    return createHash('sha256').update(filePath + Date.now()).digest('hex').slice(0, 32);
+    return createHash("sha256")
+      .update(filePath + Date.now())
+      .digest("hex")
+      .slice(0, 32);
   }
 }
 
-async function pdimSet(key: string, value: string, ttlSeconds: number): Promise<void> {
+async function pdimSet(
+  key: string,
+  value: string,
+  ttlSeconds: number,
+): Promise<void> {
   if (!isPdimConfigured()) return;
   try {
     const client = getPdimClient();
-    await (client as Record<string, unknown>).setex(`${PDIM_KEY_PREFIX}:${key}`, ttlSeconds, value);
+    await (client as Record<string, unknown>).setex(
+      `${PDIM_KEY_PREFIX}:${key}`,
+      ttlSeconds,
+      value,
+    );
   } catch (e) {
     logger.debug(`[PDIM Media] setex skipped: ${e?.message?.slice(0, 80)}`);
   }
@@ -62,7 +73,9 @@ async function pdimGet(key: string): Promise<string | null> {
   if (!isPdimConfigured()) return null;
   try {
     const client = getPdimClient();
-    return await (client as Record<string, unknown>).get(`${PDIM_KEY_PREFIX}:${key}`);
+    return await (client as Record<string, unknown>).get(
+      `${PDIM_KEY_PREFIX}:${key}`,
+    );
   } catch {
     return null;
   }
@@ -73,7 +86,10 @@ async function pdimGet(key: string): Promise<string | null> {
  * Cache beat analysis result by audio file content hash.
  * Avoids re-running expensive FFmpeg/librosa analysis on the same file.
  */
-export async function cacheBeatAnalysis(audioPath: string, analysis: BeatAnalysis): Promise<void> {
+export async function cacheBeatAnalysis(
+  audioPath: string,
+  analysis: BeatAnalysis,
+): Promise<void> {
   const hash = await fileHash(audioPath);
   await pdimSet(`beat:${hash}`, JSON.stringify(analysis), BEAT_CACHE_TTL);
   logger.debug(`[PDIM Media] Cached beat analysis for ${hash}`);
@@ -83,13 +99,17 @@ export async function cacheBeatAnalysis(audioPath: string, analysis: BeatAnalysi
  * Retrieve cached beat analysis for an audio file.
  * Returns null if cache miss or PDIM unavailable.
  */
-export async function getCachedBeatAnalysis(audioPath: string): Promise<BeatAnalysis | null> {
+export async function getCachedBeatAnalysis(
+  audioPath: string,
+): Promise<BeatAnalysis | null> {
   const hash = await fileHash(audioPath);
   const cached = await pdimGet(`beat:${hash}`);
   if (!cached) return null;
   try {
     const analysis = JSON.parse(cached) as BeatAnalysis;
-    logger.info(`[PDIM Media] Beat analysis cache HIT for ${hash} (BPM=${analysis.bpm.toFixed(1)})`);
+    logger.info(
+      `[PDIM Media] Beat analysis cache HIT for ${hash} (BPM=${analysis.bpm.toFixed(1)})`,
+    );
     return analysis;
   } catch {
     return null;
@@ -128,10 +148,10 @@ export async function storeVoiceFile(
   }
 
   try {
-    const buffer   = await fsReadFile(filePath);
-    const filename = filePath.split('/').pop() || `voice_${Date.now()}.wav`;
-    const ext      = filename.split('.').pop()?.toLowerCase() || 'wav';
-    const mimeType = ext === 'mp3' ? 'audio/mpeg' : 'audio/wav';
+    const buffer = await fsReadFile(filePath);
+    const filename = filePath.split("/").pop() || `voice_${Date.now()}.wav`;
+    const ext = filename.split(".").pop()?.toLowerCase() || "wav";
+    const mimeType = ext === "mp3" ? "audio/mpeg" : "audio/wav";
 
     const result = await hybridStorageService.upload(
       userId,
@@ -139,15 +159,15 @@ export async function storeVoiceFile(
       buffer,
       mimeType,
       {
-        folder: 'voices',
+        folder: "voices",
         isPublic: false,
         metadata: {
-          type:            'voice_synthesis',
-          profileUsed:     metadata.profileUsed,
-          voiceUsed:       metadata.voiceUsed,
+          type: "voice_synthesis",
+          profileUsed: metadata.profileUsed,
+          voiceUsed: metadata.voiceUsed,
           durationSeconds: metadata.durationSeconds,
-          textPreview:     metadata.text?.slice(0, 80),
-          generatedAt:     new Date().toISOString(),
+          textPreview: metadata.text?.slice(0, 80),
+          generatedAt: new Date().toISOString(),
         },
       },
     );
@@ -155,26 +175,30 @@ export async function storeVoiceFile(
     const publicUrl = `/uploads/voices/${filename}`;
 
     const voiceMeta: StoredVoiceFile = {
-      pdimKey:         result.key,
+      pdimKey: result.key,
       publicUrl,
-      sizeBytes:       result.sizeBytes,
-      compressedSize:  result.compressedSize,
-      profileUsed:     metadata.profileUsed,
+      sizeBytes: result.sizeBytes,
+      compressedSize: result.compressedSize,
+      profileUsed: metadata.profileUsed,
       durationSeconds: metadata.durationSeconds,
-      storedAt:        new Date().toISOString(),
+      storedAt: new Date().toISOString(),
     };
 
     // Write metadata to PDIM Redis cache
-    await pdimSet(`voice:${userId}:${result.key}`, JSON.stringify(voiceMeta), VOICE_META_TTL);
+    await pdimSet(
+      `voice:${userId}:${result.key}`,
+      JSON.stringify(voiceMeta),
+      VOICE_META_TTL,
+    );
 
     logger.info(
       `[PDIM Media] Voice file stored → PDIM key=${result.key} tier=${result.tier} ` +
-      `size=${(result.sizeBytes / 1024).toFixed(1)}KB → compressed=${(result.compressedSize / 1024).toFixed(1)}KB`
+        `size=${(result.sizeBytes / 1024).toFixed(1)}KB → compressed=${(result.compressedSize / 1024).toFixed(1)}KB`,
     );
 
     return voiceMeta;
   } catch (e) {
-    logger.warn('[PDIM Media] storeVoiceFile failed:', e?.message);
+    logger.warn("[PDIM Media] storeVoiceFile failed:", e?.message);
     return null;
   }
 }
@@ -211,27 +235,28 @@ export async function storeMusicVideo(
   }
 
   try {
-    const buffer   = await fsReadFile(filePath);
-    const filename = filePath.split('/').pop() || `musicvideo_${Date.now()}.mp4`;
+    const buffer = await fsReadFile(filePath);
+    const filename =
+      filePath.split("/").pop() || `musicvideo_${Date.now()}.mp4`;
 
     const result = await hybridStorageService.upload(
       userId,
       filename,
       buffer,
-      'video/mp4',
+      "video/mp4",
       {
-        folder: 'videos',
+        folder: "videos",
         isPublic: false,
         metadata: {
-          type:          'music_video',
-          template:      renderResult.template,
-          width:         renderResult.width,
-          height:        renderResult.height,
-          duration:      renderResult.duration,
-          beatSynced:    renderResult.source?.startsWith('beat_sync'),
-          imageCount:    renderResult.scenes_rendered,
-          capabilities:  renderResult.capabilities,
-          generatedAt:   new Date().toISOString(),
+          type: "music_video",
+          template: renderResult.template,
+          width: renderResult.width,
+          height: renderResult.height,
+          duration: renderResult.duration,
+          beatSynced: renderResult.source?.startsWith("beat_sync"),
+          imageCount: renderResult.scenes_rendered,
+          capabilities: renderResult.capabilities,
+          generatedAt: new Date().toISOString(),
         },
       },
     );
@@ -239,33 +264,41 @@ export async function storeMusicVideo(
     const publicUrl = `/uploads/videos/${filename}`;
 
     const videoMeta: StoredMusicVideo = {
-      pdimKey:        result.key,
+      pdimKey: result.key,
       publicUrl,
       filename,
-      sizeBytes:      result.sizeBytes,
+      sizeBytes: result.sizeBytes,
       compressedSize: result.compressedSize,
-      width:          renderResult.width,
-      height:         renderResult.height,
-      duration:       renderResult.duration,
-      template:       renderResult.template,
-      beatSynced:     !!renderResult.source?.startsWith('beat_sync'),
-      imageCount:     renderResult.scenes_rendered || 1,
-      storedAt:       new Date().toISOString(),
+      width: renderResult.width,
+      height: renderResult.height,
+      duration: renderResult.duration,
+      template: renderResult.template,
+      beatSynced: !!renderResult.source?.startsWith("beat_sync"),
+      imageCount: renderResult.scenes_rendered || 1,
+      storedAt: new Date().toISOString(),
     };
 
     // Write metadata to PDIM Redis cache indexed by userId + key
-    await pdimSet(`video:${userId}:${result.key}`, JSON.stringify(videoMeta), VIDEO_META_TTL);
+    await pdimSet(
+      `video:${userId}:${result.key}`,
+      JSON.stringify(videoMeta),
+      VIDEO_META_TTL,
+    );
     // Also index by filename for quick lookup by public URL
-    await pdimSet(`video_file:${filename}`, JSON.stringify({ userId, pdimKey: result.key }), VIDEO_META_TTL);
+    await pdimSet(
+      `video_file:${filename}`,
+      JSON.stringify({ userId, pdimKey: result.key }),
+      VIDEO_META_TTL,
+    );
 
     logger.info(
       `[PDIM Media] Music video stored → PDIM key=${result.key} tier=${result.tier} ` +
-      `size=${(result.sizeBytes / 1024 / 1024).toFixed(2)}MB → compressed=${(result.compressedSize / 1024 / 1024).toFixed(2)}MB`
+        `size=${(result.sizeBytes / 1024 / 1024).toFixed(2)}MB → compressed=${(result.compressedSize / 1024 / 1024).toFixed(2)}MB`,
     );
 
     return videoMeta;
   } catch (e) {
-    logger.warn('[PDIM Media] storeMusicVideo failed:', e?.message);
+    logger.warn("[PDIM Media] storeMusicVideo failed:", e?.message);
     return null;
   }
 }
@@ -292,11 +325,16 @@ export async function getUserMediaLibrary(userId: string): Promise<{
     return {
       voices,
       videos,
-      totalStorageBytes:    analytics.totalSizeBytes,
+      totalStorageBytes: analytics.totalSizeBytes,
       totalCompressedBytes: analytics.totalCompressedBytes,
     };
   } catch (e) {
-    logger.warn('[PDIM Media] getUserMediaLibrary failed:', e?.message);
-    return { voices: [], videos: [], totalStorageBytes: 0, totalCompressedBytes: 0 };
+    logger.warn("[PDIM Media] getUserMediaLibrary failed:", e?.message);
+    return {
+      voices: [],
+      videos: [],
+      totalStorageBytes: 0,
+      totalCompressedBytes: 0,
+    };
   }
 }

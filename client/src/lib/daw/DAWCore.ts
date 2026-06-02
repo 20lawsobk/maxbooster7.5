@@ -1,19 +1,61 @@
-import { logger } from '../logger';
-import { TransportEngine, transportEngine, TransportEvent } from './TransportEngine';
-import { TimelineEngine, timelineEngine, TimelineEvent, EditMode } from './TimelineEngine';
-import { AutomationEngine, automationEngine, AutomationMode, AutomationLane } from './AutomationEngine';
-import { RoutingEngine, routingEngine, RoutingNode, RoutingEdge } from './RoutingEngine';
-import { MIDIEngine, midiEngine, MIDIClip, MIDINote } from './MIDIEngine';
-import { NonDestructiveAudioEngine, nonDestructiveAudio, AudioEvent, AudioSource } from './NonDestructiveAudio';
-import { PluginStateManager, pluginStateManager, PluginState } from './PluginStateManager';
-import { MusicalIntelligenceEngine, musicalIntelligence, Chord, MixSuggestion } from './MusicalIntelligence';
-import { ProjectManager, projectManager, ProjectMetadata } from './ProjectManager';
-import { Command, CommandHistory, commandHistory, createCommand } from './CommandSystem';
+import { logger } from "../logger";
+import {
+  TransportEngine,
+  transportEngine,
+  TransportEvent,
+} from "./TransportEngine";
+import {
+  TimelineEngine,
+  timelineEngine,
+  TimelineEvent,
+  EditMode,
+} from "./TimelineEngine";
+import {
+  AutomationEngine,
+  automationEngine,
+  AutomationMode,
+  AutomationLane,
+} from "./AutomationEngine";
+import {
+  RoutingEngine,
+  routingEngine,
+  RoutingNode,
+  RoutingEdge,
+} from "./RoutingEngine";
+import { MIDIEngine, midiEngine, MIDIClip, MIDINote } from "./MIDIEngine";
+import {
+  NonDestructiveAudioEngine,
+  nonDestructiveAudio,
+  AudioEvent,
+  AudioSource,
+} from "./NonDestructiveAudio";
+import {
+  PluginStateManager,
+  pluginStateManager,
+  PluginState,
+} from "./PluginStateManager";
+import {
+  MusicalIntelligenceEngine,
+  musicalIntelligence,
+  Chord,
+  MixSuggestion,
+} from "./MusicalIntelligence";
+import {
+  ProjectManager,
+  projectManager,
+  ProjectMetadata,
+} from "./ProjectManager";
+import {
+  Command,
+  CommandHistory,
+  commandHistory,
+  createCommand,
+} from "./CommandSystem";
 
 export interface DAWTrack {
   id: string;
   name: string;
-  type: 'audio' | 'instrument' | 'midi' | 'bus' | 'aux' | 'master' | 'folder';
+  type: "audio" | "instrument" | "midi" | "bus" | "aux" | "master" | "folder";
   color: string;
   volume: number;
   pan: number;
@@ -33,7 +75,7 @@ export interface DAWTrack {
 
 export interface DAWCoreState {
   isInitialized: boolean;
-  audioContextState: 'suspended' | 'running' | 'closed';
+  audioContextState: "suspended" | "running" | "closed";
   sampleRate: number;
   bufferSize: number;
   cpuUsage: number;
@@ -50,12 +92,17 @@ export interface DAWCoreState {
   scrollY: number;
 }
 
-type DAWEventType = 
-  | 'track-added' | 'track-removed' | 'track-updated'
-  | 'selection-changed' | 'mode-changed'
-  | 'playback-started' | 'playback-stopped'
-  | 'project-loaded' | 'project-saved'
-  | 'error';
+type DAWEventType =
+  | "track-added"
+  | "track-removed"
+  | "track-updated"
+  | "selection-changed"
+  | "mode-changed"
+  | "playback-started"
+  | "playback-stopped"
+  | "project-loaded"
+  | "project-saved"
+  | "error";
 
 interface DAWEvent {
   type: DAWEventType;
@@ -67,7 +114,7 @@ type DAWListener = (event: DAWEvent) => void;
 export class DAWCore {
   private state: DAWCoreState;
   private audioContext: AudioContext | null = null;
-  private listeners: Map<DAWEventType | '*', Set<DAWListener>> = new Map();
+  private listeners: Map<DAWEventType | "*", Set<DAWListener>> = new Map();
   private stateListeners: Set<() => void> = new Set();
 
   readonly transport: TransportEngine;
@@ -95,7 +142,7 @@ export class DAWCore {
 
     this.state = {
       isInitialized: false,
-      audioContextState: 'suspended',
+      audioContextState: "suspended",
       sampleRate: 48000,
       bufferSize: 512,
       cpuUsage: 0,
@@ -103,8 +150,8 @@ export class DAWCore {
       tracks: [],
       selectedTrackIds: [],
       focusedTrackId: null,
-      editMode: 'slip',
-      automationMode: 'read',
+      editMode: "slip",
+      automationMode: "read",
       snapEnabled: true,
       gridDivision: 0.25,
       zoom: 1,
@@ -116,12 +163,12 @@ export class DAWCore {
   }
 
   private setupEngineBindings(): void {
-    this.transport.on('play', () => this.emit({ type: 'playback-started' }));
-    this.transport.on('stop', () => this.emit({ type: 'playback-stopped' }));
+    this.transport.on("play", () => this.emit({ type: "playback-started" }));
+    this.transport.on("stop", () => this.emit({ type: "playback-stopped" }));
 
     this.project.subscribe(() => {
       if (this.project.getState().currentProject) {
-        this.emit({ type: 'project-loaded' });
+        this.emit({ type: "project-loaded" });
       }
     });
   }
@@ -132,7 +179,7 @@ export class DAWCore {
     try {
       this.audioContext = new AudioContext({
         sampleRate: this.state.sampleRate,
-        latencyHint: 'interactive',
+        latencyHint: "interactive",
       });
 
       this.state.sampleRate = this.audioContext.sampleRate;
@@ -142,32 +189,38 @@ export class DAWCore {
       this.audio.setAudioContext(this.audioContext);
 
       const masterNodeId = this.routing.addNode({
-        type: 'master',
-        name: 'Master',
+        type: "master",
+        name: "Master",
         latency: 0,
         bypass: false,
       });
 
       this.state.isInitialized = true;
-      this.state.audioContextState = this.audioContext.state as 'suspended' | 'running' | 'closed';
+      this.state.audioContextState = this.audioContext.state as
+        | "suspended"
+        | "running"
+        | "closed";
 
       this.audioContext.onstatechange = () => {
-        this.state.audioContextState = this.audioContext!.state as 'suspended' | 'running' | 'closed';
+        this.state.audioContextState = this.audioContext!.state as
+          | "suspended"
+          | "running"
+          | "closed";
         this.notifyState();
       };
 
       this.notifyState();
     } catch (error) {
-      logger.error('Failed to initialize DAW:', error);
-      this.emit({ type: 'error', data: error });
+      logger.error("Failed to initialize DAW:", error);
+      this.emit({ type: "error", data: error });
       throw error;
     }
   }
 
   async resume(): Promise<void> {
-    if (this.audioContext?.state === 'suspended') {
+    if (this.audioContext?.state === "suspended") {
       await this.audioContext.resume();
-      this.state.audioContextState = 'running';
+      this.state.audioContextState = "running";
       this.notifyState();
     }
   }
@@ -177,16 +230,21 @@ export class DAWCore {
   }
 
   addTrack(
-    type: DAWTrack['type'],
+    type: DAWTrack["type"],
     name?: string,
-    options: Partial<DAWTrack> = {}
+    options: Partial<DAWTrack> = {},
   ): string {
     const id = `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const trackCount = this.state.tracks.filter(t => t.type === type).length;
-    const defaultName = name || `${type.charAt(0).toUpperCase() + type.slice(1)} ${trackCount + 1}`;
+    const trackCount = this.state.tracks.filter((t) => t.type === type).length;
+    const defaultName =
+      name ||
+      `${type.charAt(0).toUpperCase() + type.slice(1)} ${trackCount + 1}`;
 
     const routingNodeId = this.routing.addNode({
-      type: type === 'audio' || type === 'instrument' ? 'track' : type as Record<string, unknown>,
+      type:
+        type === "audio" || type === "instrument"
+          ? "track"
+          : (type as Record<string, unknown>),
       name: defaultName,
       trackId: id,
       latency: 0,
@@ -194,7 +252,7 @@ export class DAWCore {
     });
 
     const masterNode = this.routing.getState().masterNodeId;
-    if (masterNode && type !== 'master') {
+    if (masterNode && type !== "master") {
       this.routing.connect(routingNodeId, masterNode);
     }
 
@@ -223,19 +281,24 @@ export class DAWCore {
     const beforeState = [...this.state.tracks];
     this.state.tracks.push(track);
 
-    this.history.execute(createCommand(
-      'add-track',
-      { before: beforeState, after: [...this.state.tracks] },
-      (tracks) => { this.state.tracks = tracks; this.notifyState(); }
-    ));
+    this.history.execute(
+      createCommand(
+        "add-track",
+        { before: beforeState, after: [...this.state.tracks] },
+        (tracks) => {
+          this.state.tracks = tracks;
+          this.notifyState();
+        },
+      ),
+    );
 
-    this.emit({ type: 'track-added', data: track });
+    this.emit({ type: "track-added", data: track });
     return id;
   }
 
   removeTrack(trackId: string): void {
-    const track = this.state.tracks.find(t => t.id === trackId);
-    if (!track || track.type === 'master') return;
+    const track = this.state.tracks.find((t) => t.id === trackId);
+    if (!track || track.type === "master") return;
 
     const beforeState = [...this.state.tracks];
 
@@ -249,48 +312,59 @@ export class DAWCore {
       this.automation.removeLane(lane.id);
     }
 
-    this.state.tracks = this.state.tracks.filter(t => t.id !== trackId);
-    this.state.selectedTrackIds = this.state.selectedTrackIds.filter(id => id !== trackId);
+    this.state.tracks = this.state.tracks.filter((t) => t.id !== trackId);
+    this.state.selectedTrackIds = this.state.selectedTrackIds.filter(
+      (id) => id !== trackId,
+    );
     if (this.state.focusedTrackId === trackId) {
       this.state.focusedTrackId = null;
     }
 
-    this.history.execute(createCommand(
-      'remove-track',
-      { before: beforeState, after: [...this.state.tracks] },
-      (tracks) => { this.state.tracks = tracks; this.notifyState(); }
-    ));
+    this.history.execute(
+      createCommand(
+        "remove-track",
+        { before: beforeState, after: [...this.state.tracks] },
+        (tracks) => {
+          this.state.tracks = tracks;
+          this.notifyState();
+        },
+      ),
+    );
 
-    this.emit({ type: 'track-removed', data: { trackId } });
+    this.emit({ type: "track-removed", data: { trackId } });
   }
 
   updateTrack(trackId: string, updates: Partial<DAWTrack>): void {
-    const track = this.state.tracks.find(t => t.id === trackId);
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (!track) return;
 
     const beforeState = structuredClone(track);
     Object.assign(track, updates);
     const afterState = structuredClone(track);
-    
-    this.history.execute(createCommand(
-      'update-track',
-      { trackId, before: beforeState, after: afterState },
-      (data: { trackId: string; before: DAWTrack; after: DAWTrack }) => {
-        const t = this.state.tracks.find(t => t.id === data.trackId);
-        if (t) {
-          Object.keys(t).forEach(key => delete (t as Record<string, unknown>)[key]);
-          Object.assign(t, data.after);
-        }
-        this.notifyState();
-      }
-    ));
 
-    this.emit({ type: 'track-updated', data: { trackId, updates } });
+    this.history.execute(
+      createCommand(
+        "update-track",
+        { trackId, before: beforeState, after: afterState },
+        (data: { trackId: string; before: DAWTrack; after: DAWTrack }) => {
+          const t = this.state.tracks.find((t) => t.id === data.trackId);
+          if (t) {
+            Object.keys(t).forEach(
+              (key) => delete (t as Record<string, unknown>)[key],
+            );
+            Object.assign(t, data.after);
+          }
+          this.notifyState();
+        },
+      ),
+    );
+
+    this.emit({ type: "track-updated", data: { trackId, updates } });
     this.notifyState();
   }
 
   duplicateTrack(trackId: string): string | null {
-    const track = this.state.tracks.find(t => t.id === trackId);
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (!track) return null;
 
     return this.addTrack(track.type, `${track.name} (Copy)`, {
@@ -309,98 +383,120 @@ export class DAWCore {
     this.state.tracks = tracks;
     const afterTracks = structuredClone(this.state.tracks);
 
-    this.history.execute(createCommand(
-      'reorder-tracks',
-      { before: beforeTracks, after: afterTracks },
-      (data: { before: DAWTrack[]; after: DAWTrack[] }) => { 
-        this.state.tracks = structuredClone(data.after); 
-        this.notifyState(); 
-      }
-    ));
+    this.history.execute(
+      createCommand(
+        "reorder-tracks",
+        { before: beforeTracks, after: afterTracks },
+        (data: { before: DAWTrack[]; after: DAWTrack[] }) => {
+          this.state.tracks = structuredClone(data.after);
+          this.notifyState();
+        },
+      ),
+    );
 
     this.notifyState();
   }
 
   setTrackVolume(trackId: string, volume: number): void {
-    const track = this.state.tracks.find(t => t.id === trackId);
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (track) {
       const beforeVolume = track.volume;
       const newVolume = Math.max(-60, Math.min(12, volume));
       track.volume = newVolume;
-      
-      this.history.execute(createCommand(
-        'set-track-volume',
-        { trackId, before: beforeVolume, after: newVolume },
-        (data: { trackId: string; before: number; after: number }) => {
-          const t = this.state.tracks.find(t => t.id === data.trackId);
-          if (t) { t.volume = data.after; this.notifyState(); }
-        }
-      ));
-      
+
+      this.history.execute(
+        createCommand(
+          "set-track-volume",
+          { trackId, before: beforeVolume, after: newVolume },
+          (data: { trackId: string; before: number; after: number }) => {
+            const t = this.state.tracks.find((t) => t.id === data.trackId);
+            if (t) {
+              t.volume = data.after;
+              this.notifyState();
+            }
+          },
+        ),
+      );
+
       this.notifyState();
     }
   }
 
   setTrackPan(trackId: string, pan: number): void {
-    const track = this.state.tracks.find(t => t.id === trackId);
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (track) {
       const beforePan = track.pan;
       const newPan = Math.max(-1, Math.min(1, pan));
       track.pan = newPan;
-      
-      this.history.execute(createCommand(
-        'set-track-pan',
-        { trackId, before: beforePan, after: newPan },
-        (data: { trackId: string; before: number; after: number }) => {
-          const t = this.state.tracks.find(t => t.id === data.trackId);
-          if (t) { t.pan = data.after; this.notifyState(); }
-        }
-      ));
-      
+
+      this.history.execute(
+        createCommand(
+          "set-track-pan",
+          { trackId, before: beforePan, after: newPan },
+          (data: { trackId: string; before: number; after: number }) => {
+            const t = this.state.tracks.find((t) => t.id === data.trackId);
+            if (t) {
+              t.pan = data.after;
+              this.notifyState();
+            }
+          },
+        ),
+      );
+
       this.notifyState();
     }
   }
 
   toggleTrackMute(trackId: string): void {
-    const track = this.state.tracks.find(t => t.id === trackId);
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (track) {
       const beforeMuted = track.muted;
       track.muted = !track.muted;
-      
-      this.history.execute(createCommand(
-        'toggle-track-mute',
-        { trackId, before: beforeMuted, after: track.muted },
-        (data: { trackId: string; before: boolean; after: boolean }) => {
-          const t = this.state.tracks.find(t => t.id === data.trackId);
-          if (t) { t.muted = data.after; this.notifyState(); }
-        }
-      ));
-      
+
+      this.history.execute(
+        createCommand(
+          "toggle-track-mute",
+          { trackId, before: beforeMuted, after: track.muted },
+          (data: { trackId: string; before: boolean; after: boolean }) => {
+            const t = this.state.tracks.find((t) => t.id === data.trackId);
+            if (t) {
+              t.muted = data.after;
+              this.notifyState();
+            }
+          },
+        ),
+      );
+
       this.notifyState();
     }
   }
 
   toggleTrackSolo(trackId: string): void {
-    const track = this.state.tracks.find(t => t.id === trackId);
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (track) {
       const beforeSolo = track.solo;
       track.solo = !track.solo;
-      
-      this.history.execute(createCommand(
-        'toggle-track-solo',
-        { trackId, before: beforeSolo, after: track.solo },
-        (data: { trackId: string; before: boolean; after: boolean }) => {
-          const t = this.state.tracks.find(t => t.id === data.trackId);
-          if (t) { t.solo = data.after; this.notifyState(); }
-        }
-      ));
-      
+
+      this.history.execute(
+        createCommand(
+          "toggle-track-solo",
+          { trackId, before: beforeSolo, after: track.solo },
+          (data: { trackId: string; before: boolean; after: boolean }) => {
+            const t = this.state.tracks.find((t) => t.id === data.trackId);
+            if (t) {
+              t.solo = data.after;
+              this.notifyState();
+            }
+          },
+        ),
+      );
+
       this.notifyState();
     }
   }
 
   toggleTrackArm(trackId: string): void {
-    const track = this.state.tracks.find(t => t.id === trackId);
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (track) {
       track.armed = !track.armed;
       this.notifyState();
@@ -410,19 +506,25 @@ export class DAWCore {
   selectTracks(trackIds: string[]): void {
     this.state.selectedTrackIds = trackIds;
     this.state.focusedTrackId = trackIds[0] || null;
-    this.emit({ type: 'selection-changed', data: { trackIds } });
+    this.emit({ type: "selection-changed", data: { trackIds } });
     this.notifyState();
   }
 
-  addPlugin(trackId: string, pluginId: string, pluginName: string): string | null {
-    const track = this.state.tracks.find(t => t.id === trackId);
+  addPlugin(
+    trackId: string,
+    pluginId: string,
+    pluginName: string,
+  ): string | null {
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (!track) return null;
 
     const instanceId = `plugin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     this.plugins.registerPlugin(instanceId, pluginId, trackId, pluginName);
-    
-    const pluginState = this.plugins.getState().plugins.find(p => p.instanceId === instanceId);
+
+    const pluginState = this.plugins
+      .getState()
+      .plugins.find((p) => p.instanceId === instanceId);
     if (pluginState) {
       track.plugins.push(pluginState);
     }
@@ -432,44 +534,49 @@ export class DAWCore {
   }
 
   removePlugin(trackId: string, instanceId: string): void {
-    const track = this.state.tracks.find(t => t.id === trackId);
+    const track = this.state.tracks.find((t) => t.id === trackId);
     if (!track) return;
 
     this.plugins.unregisterPlugin(instanceId);
-    track.plugins = track.plugins.filter(p => p.instanceId !== instanceId);
+    track.plugins = track.plugins.filter((p) => p.instanceId !== instanceId);
     this.notifyState();
   }
 
-  createSend(sourceTrackId: string, targetTrackId: string, gain: number = 0, preFader: boolean = false): string | null {
-    const sourceTrack = this.state.tracks.find(t => t.id === sourceTrackId);
-    const targetTrack = this.state.tracks.find(t => t.id === targetTrackId);
-    
+  createSend(
+    sourceTrackId: string,
+    targetTrackId: string,
+    gain: number = 0,
+    preFader: boolean = false,
+  ): string | null {
+    const sourceTrack = this.state.tracks.find((t) => t.id === sourceTrackId);
+    const targetTrack = this.state.tracks.find((t) => t.id === targetTrackId);
+
     if (!sourceTrack || !targetTrack) return null;
 
     return this.routing.createSend(
-      sourceTrack.routingNodeId, 
-      targetTrack.routingNodeId, 
+      sourceTrack.routingNodeId,
+      targetTrack.routingNodeId,
       Math.pow(10, gain / 20),
-      preFader
+      preFader,
     );
   }
 
   createBus(name: string): string {
-    const busId = this.addTrack('bus', name);
+    const busId = this.addTrack("bus", name);
     return busId;
   }
 
   setEditMode(mode: EditMode): void {
     this.state.editMode = mode;
     this.timeline.setEditMode(mode);
-    this.emit({ type: 'mode-changed', data: { editMode: mode } });
+    this.emit({ type: "mode-changed", data: { editMode: mode } });
     this.notifyState();
   }
 
   setAutomationMode(mode: AutomationMode): void {
     this.state.automationMode = mode;
     this.automation.setGlobalMode(mode);
-    this.emit({ type: 'mode-changed', data: { automationMode: mode } });
+    this.emit({ type: "mode-changed", data: { automationMode: mode } });
     this.notifyState();
   }
 
@@ -530,8 +637,12 @@ export class DAWCore {
   }
 
   setLoop(enabled: boolean, startBeat?: number, endBeat?: number): void {
-    const startSamples = startBeat !== undefined ? this.timeline.beatsToSamples(startBeat) : undefined;
-    const endSamples = endBeat !== undefined ? this.timeline.beatsToSamples(endBeat) : undefined;
+    const startSamples =
+      startBeat !== undefined
+        ? this.timeline.beatsToSamples(startBeat)
+        : undefined;
+    const endSamples =
+      endBeat !== undefined ? this.timeline.beatsToSamples(endBeat) : undefined;
     this.transport.setLoop(enabled, startSamples, endSamples);
   }
 
@@ -545,11 +656,15 @@ export class DAWCore {
 
   suggestChords(): Chord[] {
     const state = this.intelligence.getState();
-    return this.intelligence.suggestChords(state.currentKey, state.currentMode, 4);
+    return this.intelligence.suggestChords(
+      state.currentKey,
+      state.currentMode,
+      4,
+    );
   }
 
   analyzeMix(): MixSuggestion[] {
-    const trackData = this.state.tracks.map(t => ({
+    const trackData = this.state.tracks.map((t) => ({
       id: t.id,
       volume: t.volume,
       pan: t.pan,
@@ -560,8 +675,9 @@ export class DAWCore {
 
   suggestArrangement(): void {
     const tempo = this.transport.getState().tempoMap[0]?.tempo || 120;
-    const durationSeconds = this.project.getState().currentProject?.duration || 180;
-    const totalBars = Math.floor((durationSeconds * tempo / 60) / 4);
+    const durationSeconds =
+      this.project.getState().currentProject?.duration || 180;
+    const totalBars = Math.floor((durationSeconds * tempo) / 60 / 4);
     this.intelligence.suggestArrangement(totalBars);
   }
 
@@ -571,35 +687,44 @@ export class DAWCore {
     this.state.selectedTrackIds = [];
     this.state.focusedTrackId = null;
     this.history.clear();
-    
+
     const masterNodeId = this.routing.addNode({
-      type: 'master',
-      name: 'Master',
+      type: "master",
+      name: "Master",
       latency: 0,
       bypass: false,
     });
 
-    this.addTrack('audio', 'Audio 1');
+    this.addTrack("audio", "Audio 1");
     this.notifyState();
   }
 
   saveProject(): void {
     this.project.save();
-    this.emit({ type: 'project-saved' });
+    this.emit({ type: "project-saved" });
   }
 
   loadProject(data: string): void {
     this.project.load(data);
-    this.emit({ type: 'project-loaded' });
+    this.emit({ type: "project-loaded" });
     this.notifyState();
   }
 
   private getNextTrackColor(): string {
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+    const colors = [
+      "#3b82f6",
+      "#10b981",
+      "#f59e0b",
+      "#ef4444",
+      "#8b5cf6",
+      "#ec4899",
+      "#06b6d4",
+      "#84cc16",
+    ];
     return colors[this.state.tracks.length % colors.length];
   }
 
-  on(type: DAWEventType | '*', listener: DAWListener): () => void {
+  on(type: DAWEventType | "*", listener: DAWListener): () => void {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, new Set());
     }
@@ -607,13 +732,13 @@ export class DAWCore {
     return () => this.off(type, listener);
   }
 
-  off(type: DAWEventType | '*', listener: DAWListener): void {
+  off(type: DAWEventType | "*", listener: DAWListener): void {
     this.listeners.get(type)?.delete(listener);
   }
 
   private emit(event: DAWEvent): void {
-    this.listeners.get(event.type)?.forEach(l => l(event));
-    this.listeners.get('*')?.forEach(l => l(event));
+    this.listeners.get(event.type)?.forEach((l) => l(event));
+    this.listeners.get("*")?.forEach((l) => l(event));
   }
 
   subscribe(listener: () => void): () => void {
@@ -622,7 +747,7 @@ export class DAWCore {
   }
 
   private notifyState(): void {
-    this.stateListeners.forEach(l => l());
+    this.stateListeners.forEach((l) => l());
   }
 
   dispose(): void {

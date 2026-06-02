@@ -1,33 +1,33 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Filter,
   X,
@@ -43,33 +43,91 @@ import {
   Sparkles,
   Check,
   Star,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const GENRES = [
-  'Hip-Hop', 'Trap', 'R&B', 'Pop', 'Rock', 'Electronic', 'Jazz', 'Blues',
-  'Country', 'Reggae', 'Lo-Fi', 'Drill', 'Ambient', 'Indie', 'Punk', 'Metal',
-  'Funk', 'Soul', 'Gospel', 'World', 'Latin', 'Afrobeats', 'House', 'Techno',
+  "Hip-Hop",
+  "Trap",
+  "R&B",
+  "Pop",
+  "Rock",
+  "Electronic",
+  "Jazz",
+  "Blues",
+  "Country",
+  "Reggae",
+  "Lo-Fi",
+  "Drill",
+  "Ambient",
+  "Indie",
+  "Punk",
+  "Metal",
+  "Funk",
+  "Soul",
+  "Gospel",
+  "World",
+  "Latin",
+  "Afrobeats",
+  "House",
+  "Techno",
 ];
 
 const MOODS = [
-  'Aggressive', 'Chill', 'Dark', 'Happy', 'Sad', 'Energetic', 'Relaxed',
-  'Romantic', 'Mysterious', 'Uplifting', 'Melancholic', 'Confident',
-  'Nostalgic', 'Futuristic', 'Vintage', 'Modern', 'Dreamy', 'Intense',
+  "Aggressive",
+  "Chill",
+  "Dark",
+  "Happy",
+  "Sad",
+  "Energetic",
+  "Relaxed",
+  "Romantic",
+  "Mysterious",
+  "Uplifting",
+  "Melancholic",
+  "Confident",
+  "Nostalgic",
+  "Futuristic",
+  "Vintage",
+  "Modern",
+  "Dreamy",
+  "Intense",
 ];
 
 const MUSICAL_KEYS = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-  'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm',
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+  "Cm",
+  "C#m",
+  "Dm",
+  "D#m",
+  "Em",
+  "Fm",
+  "F#m",
+  "Gm",
+  "G#m",
+  "Am",
+  "A#m",
+  "Bm",
 ];
 
 const SORT_OPTIONS = [
-  { value: 'relevance', label: 'Most Relevant' },
-  { value: 'newest', label: 'Newest First' },
-  { value: 'popular', label: 'Most Popular' },
-  { value: 'price_low', label: 'Price: Low to High' },
-  { value: 'price_high', label: 'Price: High to Low' },
+  { value: "relevance", label: "Most Relevant" },
+  { value: "newest", label: "Newest First" },
+  { value: "popular", label: "Most Popular" },
+  { value: "price_low", label: "Price: Low to High" },
+  { value: "price_high", label: "Price: High to Low" },
 ];
 
 interface SearchFilters {
@@ -113,14 +171,16 @@ export function SearchFilters({
 }: SearchFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(!compact);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [presetName, setPresetName] = useState('');
+  const [presetName, setPresetName] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: presetsData } = useQuery({
-    queryKey: ['/api/search/filter-presets'],
+    queryKey: ["/api/search/filter-presets"],
     queryFn: async () => {
-      const res = await fetch('/api/search/filter-presets', { credentials: 'include' });
+      const res = await fetch("/api/search/filter-presets", {
+        credentials: "include",
+      });
       if (!res.ok) return { presets: [] };
       return res.json();
     },
@@ -130,34 +190,42 @@ export function SearchFilters({
   const savePresetMutation = useMutation({
     mutationFn: async (preset: { name: string; filters: SearchFilters }) => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/search/filter-presets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+      const res = await fetch("/api/search/filter-presets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify(preset),
       });
-      if (!res.ok) throw new Error('Failed to save preset');
+      if (!res.ok) throw new Error("Failed to save preset");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/search/filter-presets'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/search/filter-presets"],
+      });
       setShowSaveDialog(false);
-      setPresetName('');
+      setPresetName("");
       toast({
-        title: 'Preset Saved',
-        description: 'Your filter preset has been saved successfully.',
+        title: "Preset Saved",
+        description: "Your filter preset has been saved successfully.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to save filter preset.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to save filter preset.",
+        variant: "destructive",
       });
     },
   });
 
-  const updateFilter = (key: keyof SearchFilters, value: Record<string, unknown>) => {
+  const updateFilter = (
+    key: keyof SearchFilters,
+    value: Record<string, unknown>,
+  ) => {
     const newFilters = { ...filters, [key]: value };
     onFilterChange(newFilters);
   };
@@ -166,47 +234,53 @@ export function SearchFilters({
     onFilterChange({});
     onReset?.();
     toast({
-      title: 'Filters Reset',
-      description: 'All filters have been cleared.',
+      title: "Filters Reset",
+      description: "All filters have been cleared.",
     });
   };
 
   const applyPreset = (preset: FilterPreset) => {
     onFilterChange(preset.filters);
     toast({
-      title: 'Preset Applied',
+      title: "Preset Applied",
       description: `"${preset.name}" filters applied.`,
     });
   };
 
   const activeFilterCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== '' && value !== false
+    ([key, value]) => value !== undefined && value !== "" && value !== false,
   ).length;
 
   const presets: FilterPreset[] = presetsData?.presets || [];
 
-  const hasConflict = (key: string, value: Record<string, unknown>): string | null => {
-    if (key === 'exclusive_only' && value && filters.hasStems) {
-      return 'Exclusive beats may not include stems';
+  const hasConflict = (
+    key: string,
+    value: Record<string, unknown>,
+  ): string | null => {
+    if (key === "exclusive_only" && value && filters.hasStems) {
+      return "Exclusive beats may not include stems";
     }
-    if (key === 'bpm_min' && filters.bpm_max && value > filters.bpm_max) {
-      return 'Min BPM cannot exceed max BPM';
+    if (key === "bpm_min" && filters.bpm_max && value > filters.bpm_max) {
+      return "Min BPM cannot exceed max BPM";
     }
-    if (key === 'price_min' && filters.price_max && value > filters.price_max) {
-      return 'Min price cannot exceed max price';
+    if (key === "price_min" && filters.price_max && value > filters.price_max) {
+      return "Min price cannot exceed max price";
     }
     return null;
   };
 
   return (
-    <Card className={cn('bg-slate-800/50 border-slate-700', className)}>
+    <Card className={cn("bg-slate-800/50 border-slate-700", className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Filter className="h-5 w-5 text-purple-400" />
             Filters
             {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 ml-2">
+              <Badge
+                variant="secondary"
+                className="bg-purple-500/20 text-purple-300 ml-2"
+              >
                 {activeFilterCount} active
               </Badge>
             )}
@@ -258,11 +332,13 @@ export function SearchFilters({
                       size="sm"
                       onClick={() => applyPreset(preset)}
                       className={cn(
-                        'border-slate-600 text-slate-300 hover:bg-slate-700',
-                        preset.isDefault && 'border-purple-500/50'
+                        "border-slate-600 text-slate-300 hover:bg-slate-700",
+                        preset.isDefault && "border-purple-500/50",
                       )}
                     >
-                      {preset.isDefault && <Star className="h-3 w-3 mr-1 text-yellow-400" />}
+                      {preset.isDefault && (
+                        <Star className="h-3 w-3 mr-1 text-yellow-400" />
+                      )}
                       {preset.name}
                     </Button>
                   ))}
@@ -276,8 +352,10 @@ export function SearchFilters({
                 Genre
               </Label>
               <Select
-                value={filters.genre || '_all'}
-                onValueChange={(v) => updateFilter('genre', v === '_all' ? undefined : v)}
+                value={filters.genre || "_all"}
+                onValueChange={(v) =>
+                  updateFilter("genre", v === "_all" ? undefined : v)
+                }
               >
                 <SelectTrigger className="bg-slate-700/50 border-slate-600">
                   <SelectValue placeholder="All Genres" />
@@ -285,7 +363,9 @@ export function SearchFilters({
                 <SelectContent>
                   <SelectItem value="_all">All Genres</SelectItem>
                   {GENRES.map((genre) => (
-                    <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                    <SelectItem key={genre} value={genre}>
+                      {genre}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -297,8 +377,10 @@ export function SearchFilters({
                 Mood
               </Label>
               <Select
-                value={filters.mood || '_all'}
-                onValueChange={(v) => updateFilter('mood', v === '_all' ? undefined : v)}
+                value={filters.mood || "_all"}
+                onValueChange={(v) =>
+                  updateFilter("mood", v === "_all" ? undefined : v)
+                }
               >
                 <SelectTrigger className="bg-slate-700/50 border-slate-600">
                   <SelectValue placeholder="All Moods" />
@@ -306,7 +388,9 @@ export function SearchFilters({
                 <SelectContent>
                   <SelectItem value="_all">All Moods</SelectItem>
                   {MOODS.map((mood) => (
-                    <SelectItem key={mood} value={mood}>{mood}</SelectItem>
+                    <SelectItem key={mood} value={mood}>
+                      {mood}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -318,8 +402,10 @@ export function SearchFilters({
                 Key
               </Label>
               <Select
-                value={filters.key || '_all'}
-                onValueChange={(v) => updateFilter('key', v === '_all' ? undefined : v)}
+                value={filters.key || "_all"}
+                onValueChange={(v) =>
+                  updateFilter("key", v === "_all" ? undefined : v)
+                }
               >
                 <SelectTrigger className="bg-slate-700/50 border-slate-600">
                   <SelectValue placeholder="All Keys" />
@@ -327,7 +413,9 @@ export function SearchFilters({
                 <SelectContent>
                   <SelectItem value="_all">All Keys</SelectItem>
                   {MUSICAL_KEYS.map((key) => (
-                    <SelectItem key={key} value={key}>{key}</SelectItem>
+                    <SelectItem key={key} value={key}>
+                      {key}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -344,8 +432,8 @@ export function SearchFilters({
                 max={200}
                 step={5}
                 onValueChange={([min, max]) => {
-                  updateFilter('bpm_min', min === 60 ? undefined : min);
-                  updateFilter('bpm_max', max === 200 ? undefined : max);
+                  updateFilter("bpm_min", min === 60 ? undefined : min);
+                  updateFilter("bpm_max", max === 200 ? undefined : max);
                 }}
                 className="w-full"
               />
@@ -358,7 +446,8 @@ export function SearchFilters({
             <div className="space-y-3">
               <Label className="text-sm text-slate-300 flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
-                Price Range: ${filters.price_min || 0} - ${filters.price_max || 1000}+
+                Price Range: ${filters.price_min || 0} - $
+                {filters.price_max || 1000}+
               </Label>
               <Slider
                 value={[filters.price_min || 0, filters.price_max || 1000]}
@@ -366,8 +455,8 @@ export function SearchFilters({
                 max={1000}
                 step={10}
                 onValueChange={([min, max]) => {
-                  updateFilter('price_min', min === 0 ? undefined : min);
-                  updateFilter('price_max', max === 1000 ? undefined : max);
+                  updateFilter("price_min", min === 0 ? undefined : min);
+                  updateFilter("price_max", max === 1000 ? undefined : max);
                 }}
                 className="w-full"
               />
@@ -382,14 +471,18 @@ export function SearchFilters({
                 <Label className="text-sm text-slate-300">Include Stems</Label>
                 <Switch
                   checked={filters.hasStems || false}
-                  onCheckedChange={(checked) => updateFilter('hasStems', checked || undefined)}
+                  onCheckedChange={(checked) =>
+                    updateFilter("hasStems", checked || undefined)
+                  }
                 />
               </div>
               <div className="flex items-center justify-between">
                 <Label className="text-sm text-slate-300">Exclusive Only</Label>
                 <Switch
                   checked={filters.exclusive_only || false}
-                  onCheckedChange={(checked) => updateFilter('exclusive_only', checked || undefined)}
+                  onCheckedChange={(checked) =>
+                    updateFilter("exclusive_only", checked || undefined)
+                  }
                 />
               </div>
             </div>
@@ -397,8 +490,8 @@ export function SearchFilters({
             <div className="space-y-2">
               <Label className="text-sm text-slate-300">Sort By</Label>
               <Select
-                value={filters.sort || 'relevance'}
-                onValueChange={(v) => updateFilter('sort', v)}
+                value={filters.sort || "relevance"}
+                onValueChange={(v) => updateFilter("sort", v)}
               >
                 <SelectTrigger className="bg-slate-700/50 border-slate-600">
                   <SelectValue />
@@ -415,16 +508,22 @@ export function SearchFilters({
 
             {activeFilterCount > 0 && (
               <div className="pt-2 border-t border-slate-700">
-                <Label className="text-sm text-slate-300 mb-2 block">Active Filters</Label>
+                <Label className="text-sm text-slate-300 mb-2 block">
+                  Active Filters
+                </Label>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(filters)
-                    .filter(([_, v]) => v !== undefined && v !== '' && v !== false)
+                    .filter(
+                      ([_, v]) => v !== undefined && v !== "" && v !== false,
+                    )
                     .map(([key, value]) => (
                       <Badge
                         key={key}
                         variant="secondary"
                         className="bg-purple-500/20 text-purple-300 cursor-pointer hover:bg-purple-500/30"
-                        onClick={() => updateFilter(key as keyof SearchFilters, undefined)}
+                        onClick={() =>
+                          updateFilter(key as keyof SearchFilters, undefined)
+                        }
                       >
                         {key}: {String(value)}
                         <X className="h-3 w-3 ml-1" />
@@ -436,7 +535,7 @@ export function SearchFilters({
 
             <div className="flex gap-2 pt-2">
               {onApply && (
-                <Button 
+                <Button
                   onClick={onApply}
                   className="flex-1 bg-purple-600 hover:bg-purple-700"
                 >
@@ -474,7 +573,8 @@ export function SearchFilters({
               />
             </div>
             <div className="text-sm text-slate-400">
-              This will save your current {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''}.
+              This will save your current {activeFilterCount} filter
+              {activeFilterCount !== 1 ? "s" : ""}.
             </div>
           </div>
           <DialogFooter>
@@ -482,7 +582,9 @@ export function SearchFilters({
               Cancel
             </Button>
             <Button
-              onClick={() => savePresetMutation.mutate({ name: presetName, filters })}
+              onClick={() =>
+                savePresetMutation.mutate({ name: presetName, filters })
+              }
               disabled={!presetName.trim() || savePresetMutation.isPending}
               className="bg-purple-600 hover:bg-purple-700"
             >
@@ -505,7 +607,7 @@ export function ActiveFiltersBar({
   onReset: () => void;
 }) {
   const activeFilters = Object.entries(filters).filter(
-    ([_, v]) => v !== undefined && v !== '' && v !== false
+    ([_, v]) => v !== undefined && v !== "" && v !== false,
   );
 
   if (activeFilters.length === 0) return null;
@@ -517,16 +619,16 @@ export function ActiveFiltersBar({
   };
 
   const formatValue = (key: string, value: Record<string, unknown>): string => {
-    if (key.includes('price')) return `$${value}`;
-    if (key.includes('bpm')) return `${value} BPM`;
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (key.includes("price")) return `$${value}`;
+    if (key.includes("bpm")) return `${value} BPM`;
+    if (typeof value === "boolean") return value ? "Yes" : "No";
     return String(value);
   };
 
   const formatLabel = (key: string): string => {
     return key
-      .replace(/_/g, ' ')
-      .replace(/([A-Z])/g, ' $1')
+      .replace(/_/g, " ")
+      .replace(/([A-Z])/g, " $1")
       .replace(/^\w/, (c) => c.toUpperCase())
       .trim();
   };

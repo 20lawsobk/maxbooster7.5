@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect } from "react";
 
 export interface UseFocusReturnOptions {
   autoSave?: boolean;
@@ -16,7 +16,9 @@ export interface UseFocusReturnResult {
   clearSavedFocus: () => void;
 }
 
-export function useFocusReturn(options: UseFocusReturnOptions = {}): UseFocusReturnResult {
+export function useFocusReturn(
+  options: UseFocusReturnOptions = {},
+): UseFocusReturnResult {
   const {
     autoSave = false,
     autoRestore = false,
@@ -44,12 +46,11 @@ export function useFocusReturn(options: UseFocusReturnOptions = {}): UseFocusRet
       if (autoRestore && previousFocusRef.current) {
         const element = previousFocusRef.current;
         requestAnimationFrame(() => {
-          if (element && typeof element.focus === 'function') {
+          if (element && typeof element.focus === "function") {
             try {
               element.focus({ preventScroll: true });
               onRestore?.(element);
-            } catch {
-            }
+            } catch {}
           }
         });
       }
@@ -65,27 +66,29 @@ export function useFocusReturn(options: UseFocusReturnOptions = {}): UseFocusRet
     (restoreOptions: { preventScroll?: boolean } = {}) => {
       const { preventScroll = true } = restoreOptions;
 
-      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+      if (
+        previousFocusRef.current &&
+        typeof previousFocusRef.current.focus === "function"
+      ) {
         try {
           const element = previousFocusRef.current;
-          
+
           if (document.body.contains(element)) {
             element.focus({ preventScroll });
             onRestore?.(element);
           } else {
             const fallback = document.querySelector<HTMLElement>(
-              '[data-focus-fallback="true"], main, [role="main"], body'
+              '[data-focus-fallback="true"], main, [role="main"], body',
             );
             if (fallback) {
-              fallback.setAttribute('tabindex', '-1');
+              fallback.setAttribute("tabindex", "-1");
               fallback.focus({ preventScroll });
             }
           }
-        } catch {
-        }
+        } catch {}
       }
     },
-    [onRestore]
+    [onRestore],
   );
 
   const hasSavedFocus = previousFocusRef.current !== null;

@@ -1,9 +1,9 @@
-import { motion } from 'framer-motion';
-import { 
-  BarChart3, 
-  Music, 
-  Users, 
-  DollarSign, 
+import { motion } from "framer-motion";
+import {
+  BarChart3,
+  Music,
+  Users,
+  DollarSign,
   ListMusic,
   Globe,
   TrendingUp,
@@ -13,10 +13,10 @@ import {
   Clock,
   Calendar,
   FileText,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
   title: string;
@@ -31,7 +31,7 @@ interface EmptyStateProps {
     onClick: () => void;
   };
   className?: string;
-  variant?: 'default' | 'compact' | 'card';
+  variant?: "default" | "compact" | "card";
 }
 
 export function EmptyState({
@@ -41,7 +41,7 @@ export function EmptyState({
   action,
   secondaryAction,
   className,
-  variant = 'default',
+  variant = "default",
 }: EmptyStateProps) {
   const content = (
     <motion.div
@@ -49,8 +49,8 @@ export function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       className={cn(
         "flex flex-col items-center justify-center text-center",
-        variant === 'compact' ? "py-6 px-4" : "py-12 px-6",
-        className
+        variant === "compact" ? "py-6 px-4" : "py-12 px-6",
+        className,
       )}
     >
       <motion.div
@@ -60,37 +60,42 @@ export function EmptyState({
         className={cn(
           "rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900",
           "flex items-center justify-center mb-4",
-          variant === 'compact' ? "w-12 h-12" : "w-16 h-16"
+          variant === "compact" ? "w-12 h-12" : "w-16 h-16",
         )}
       >
-        <div className="text-slate-400 dark:text-slate-500">
-          {icon}
-        </div>
+        <div className="text-slate-400 dark:text-slate-500">{icon}</div>
       </motion.div>
-      <h3 className={cn(
-        "font-semibold text-slate-900 dark:text-slate-100 mb-2",
-        variant === 'compact' ? "text-sm" : "text-lg"
-      )}>
+      <h3
+        className={cn(
+          "font-semibold text-slate-900 dark:text-slate-100 mb-2",
+          variant === "compact" ? "text-sm" : "text-lg",
+        )}
+      >
         {title}
       </h3>
-      <p className={cn(
-        "text-slate-500 dark:text-slate-400 max-w-sm mb-4",
-        variant === 'compact' ? "text-xs" : "text-sm"
-      )}>
+      <p
+        className={cn(
+          "text-slate-500 dark:text-slate-400 max-w-sm mb-4",
+          variant === "compact" ? "text-xs" : "text-sm",
+        )}
+      >
         {description}
       </p>
       {(action || secondaryAction) && (
         <div className="flex items-center gap-3">
           {action && (
-            <Button onClick={action.onClick} size={variant === 'compact' ? 'sm' : 'default'}>
+            <Button
+              onClick={action.onClick}
+              size={variant === "compact" ? "sm" : "default"}
+            >
               {action.label}
             </Button>
           )}
           {secondaryAction && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={secondaryAction.onClick}
-              size={variant === 'compact' ? 'sm' : 'default'}
+              size={variant === "compact" ? "sm" : "default"}
             >
               {secondaryAction.label}
             </Button>
@@ -100,12 +105,10 @@ export function EmptyState({
     </motion.div>
   );
 
-  if (variant === 'card') {
+  if (variant === "card") {
     return (
       <Card className={className}>
-        <CardContent className="p-0">
-          {content}
-        </CardContent>
+        <CardContent className="p-0">{content}</CardContent>
       </Card>
     );
   }
@@ -119,8 +122,18 @@ export function StreamingEmptyState({ onUpload }: { onUpload?: () => void }) {
       icon={<BarChart3 className="h-8 w-8" />}
       title="No streaming data yet"
       description="Once your music is distributed and starts getting plays, you'll see your streaming analytics here."
-      action={onUpload ? { label: 'Upload Music', onClick: onUpload } : undefined}
-      secondaryAction={{ label: 'Learn More', onClick: () => window.open('https://support.maxbooster.app/analytics', '_blank', 'noopener,noreferrer') }}
+      action={
+        onUpload ? { label: "Upload Music", onClick: onUpload } : undefined
+      }
+      secondaryAction={{
+        label: "Learn More",
+        onClick: () =>
+          window.open(
+            "https://support.maxbooster.app/analytics",
+            "_blank",
+            "noopener,noreferrer",
+          ),
+      }}
     />
   );
 }
@@ -131,7 +144,9 @@ export function RevenueEmptyState({ onSetup }: { onSetup?: () => void }) {
       icon={<DollarSign className="h-8 w-8" />}
       title="No revenue data available"
       description="Set up your payment information and distribute your music to start tracking earnings."
-      action={onSetup ? { label: 'Set Up Payments', onClick: onSetup } : undefined}
+      action={
+        onSetup ? { label: "Set Up Payments", onClick: onSetup } : undefined
+      }
     />
   );
 }
@@ -142,7 +157,9 @@ export function AudienceEmptyState({ onPromote }: { onPromote?: () => void }) {
       icon={<Users className="h-8 w-8" />}
       title="Building your audience"
       description="As more listeners discover your music, you'll see demographic insights and fan data here."
-      action={onPromote ? { label: 'Promote Music', onClick: onPromote } : undefined}
+      action={
+        onPromote ? { label: "Promote Music", onClick: onPromote } : undefined
+      }
     />
   );
 }
@@ -153,7 +170,11 @@ export function PlaylistEmptyState({ onSubmit }: { onSubmit?: () => void }) {
       icon={<ListMusic className="h-8 w-8" />}
       title="No playlist placements yet"
       description="Submit your tracks to playlists to increase your reach and track playlist performance."
-      action={onSubmit ? { label: 'Submit to Playlists', onClick: onSubmit } : undefined}
+      action={
+        onSubmit
+          ? { label: "Submit to Playlists", onClick: onSubmit }
+          : undefined
+      }
     />
   );
 }
@@ -169,13 +190,23 @@ export function GeoEmptyState() {
   );
 }
 
-export function DateRangeEmptyState({ range, onChangeRange }: { range: string; onChangeRange?: () => void }) {
+export function DateRangeEmptyState({
+  range,
+  onChangeRange,
+}: {
+  range: string;
+  onChangeRange?: () => void;
+}) {
   return (
     <EmptyState
       icon={<Calendar className="h-8 w-8" />}
       title="No data for this period"
       description={`There's no analytics data available for the selected date range (${range}). Try selecting a different time period.`}
-      action={onChangeRange ? { label: 'Change Date Range', onClick: onChangeRange } : undefined}
+      action={
+        onChangeRange
+          ? { label: "Change Date Range", onClick: onChangeRange }
+          : undefined
+      }
       variant="compact"
     />
   );
@@ -187,16 +218,18 @@ export function ExportEmptyState({ onExport }: { onExport?: () => void }) {
       icon={<FileText className="h-8 w-8" />}
       title="No reports generated"
       description="Export your analytics data to CSV or PDF format to share or analyze offline."
-      action={onExport ? { label: 'Generate Report', onClick: onExport } : undefined}
+      action={
+        onExport ? { label: "Generate Report", onClick: onExport } : undefined
+      }
       variant="compact"
     />
   );
 }
 
-export function NewArtistWelcome({ 
-  onGetStarted, 
-  onLearnMore 
-}: { 
+export function NewArtistWelcome({
+  onGetStarted,
+  onLearnMore,
+}: {
   onGetStarted?: () => void;
   onLearnMore?: () => void;
 }) {
@@ -211,19 +244,19 @@ export function NewArtistWelcome({
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring' }}
+            transition={{ delay: 0.2, type: "spring" }}
             className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center mb-6 shadow-lg"
           >
             <Sparkles className="h-10 w-10 text-white" />
           </motion.div>
-          
+
           <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Welcome to Analytics!
           </h2>
-          
+
           <p className="text-slate-600 dark:text-slate-400 max-w-md mb-6">
-            Your music journey starts here. Upload your first track, distribute it to streaming platforms, 
-            and watch your analytics come to life.
+            Your music journey starts here. Upload your first track, distribute
+            it to streaming platforms, and watch your analytics come to life.
           </p>
 
           <div className="grid grid-cols-3 gap-6 mb-8 w-full max-w-lg">
@@ -243,7 +276,10 @@ export function NewArtistWelcome({
 
           <div className="flex items-center gap-3">
             {onGetStarted && (
-              <Button onClick={onGetStarted} className="bg-gradient-to-r from-primary to-purple-600">
+              <Button
+                onClick={onGetStarted}
+                className="bg-gradient-to-r from-primary to-purple-600"
+              >
                 <Zap className="h-4 w-4 mr-2" />
                 Get Started
               </Button>
@@ -265,11 +301,11 @@ export function LoadingDataState({ message }: { message?: string }) {
     <div className="flex flex-col items-center justify-center py-8">
       <motion.div
         animate={{ rotate: 360 }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
         className="w-10 h-10 rounded-full border-3 border-primary border-t-transparent mb-4"
       />
       <p className="text-sm text-muted-foreground">
-        {message || 'Loading analytics data...'}
+        {message || "Loading analytics data..."}
       </p>
     </div>
   );
@@ -285,11 +321,13 @@ export function RefreshingState({ message }: { message?: string }) {
       <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-primary/10 text-primary">
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
           <Clock className="h-4 w-4" />
         </motion.div>
-        <span className="text-sm font-medium">{message || 'Refreshing...'}</span>
+        <span className="text-sm font-medium">
+          {message || "Refreshing..."}
+        </span>
       </div>
     </motion.div>
   );

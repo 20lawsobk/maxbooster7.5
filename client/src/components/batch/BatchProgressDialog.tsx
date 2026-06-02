@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -11,12 +11,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from "@/components/ui/collapsible";
 import {
   CheckCircle2,
   XCircle,
@@ -26,8 +26,12 @@ import {
   X,
   RefreshCw,
   FileText,
-} from 'lucide-react';
-import type { BulkActionStatus, BulkActionProgress, BulkActionResult } from '@/hooks/useBulkAction';
+} from "lucide-react";
+import type {
+  BulkActionStatus,
+  BulkActionProgress,
+  BulkActionResult,
+} from "@/hooks/useBulkAction";
 
 export interface BatchProgressDialogProps {
   open: boolean;
@@ -49,7 +53,7 @@ export function BatchProgressDialog({
   status,
   progress,
   result,
-  title = 'Processing...',
+  title = "Processing...",
   description,
   onCancel,
   onRetry,
@@ -60,7 +64,7 @@ export function BatchProgressDialog({
   const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
-    if (status !== 'processing') {
+    if (status !== "processing") {
       setElapsedTime(0);
       return;
     }
@@ -81,13 +85,13 @@ export function BatchProgressDialog({
 
   const getStatusIcon = () => {
     switch (status) {
-      case 'processing':
+      case "processing":
         return <Loader2 className="h-8 w-8 animate-spin text-primary" />;
-      case 'completed':
+      case "completed":
         return <CheckCircle2 className="h-8 w-8 text-green-500" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="h-8 w-8 text-destructive" />;
-      case 'partial':
+      case "partial":
         return <AlertTriangle className="h-8 w-8 text-amber-500" />;
       default:
         return null;
@@ -96,14 +100,14 @@ export function BatchProgressDialog({
 
   const getStatusTitle = () => {
     switch (status) {
-      case 'processing':
+      case "processing":
         return title;
-      case 'completed':
-        return 'Operation Complete';
-      case 'failed':
-        return 'Operation Failed';
-      case 'partial':
-        return 'Completed with Errors';
+      case "completed":
+        return "Operation Complete";
+      case "failed":
+        return "Operation Failed";
+      case "partial":
+        return "Completed with Errors";
       default:
         return title;
     }
@@ -111,24 +115,26 @@ export function BatchProgressDialog({
 
   const getStatusDescription = () => {
     if (description) return description;
-    
+
     switch (status) {
-      case 'processing':
-        return progress.currentItem 
+      case "processing":
+        return progress.currentItem
           ? `Processing: ${progress.currentItem}`
           : `Processing ${progress.current} of ${progress.total} items...`;
-      case 'completed':
-        return result 
-          ? `Successfully processed ${result.totalSucceeded} item${result.totalSucceeded !== 1 ? 's' : ''}`
-          : 'All items processed successfully';
-      case 'failed':
-        return result?.failed?.[0]?.error || 'An error occurred while processing';
-      case 'partial':
-        return result 
+      case "completed":
+        return result
+          ? `Successfully processed ${result.totalSucceeded} item${result.totalSucceeded !== 1 ? "s" : ""}`
+          : "All items processed successfully";
+      case "failed":
+        return (
+          result?.failed?.[0]?.error || "An error occurred while processing"
+        );
+      case "partial":
+        return result
           ? `${result.totalSucceeded} succeeded, ${result.totalFailed} failed`
-          : 'Some items failed to process';
+          : "Some items failed to process";
       default:
-        return '';
+        return "";
     }
   };
 
@@ -149,7 +155,7 @@ export function BatchProgressDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {status === 'processing' && (
+          {status === "processing" && (
             <>
               <Progress value={progress.percentage} className="h-2" />
               <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -166,7 +172,7 @@ export function BatchProgressDialog({
             </>
           )}
 
-          {(status === 'completed' || status === 'partial') && result && (
+          {(status === "completed" || status === "partial") && result && (
             <div className="flex items-center justify-center gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-500">
@@ -193,11 +199,12 @@ export function BatchProgressDialog({
               <CollapsibleTrigger asChild>
                 <Button variant="outline" size="sm" className="w-full gap-2">
                   <FileText className="h-4 w-4" />
-                  View {result.failed.length} error{result.failed.length !== 1 ? 's' : ''}
+                  View {result.failed.length} error
+                  {result.failed.length !== 1 ? "s" : ""}
                   <ChevronDown
                     className={cn(
-                      'h-4 w-4 transition-transform',
-                      showErrors && 'rotate-180'
+                      "h-4 w-4 transition-transform",
+                      showErrors && "rotate-180",
                     )}
                   />
                 </Button>
@@ -227,21 +234,21 @@ export function BatchProgressDialog({
         </div>
 
         <DialogFooter>
-          {status === 'processing' && onCancel && (
+          {status === "processing" && onCancel && (
             <Button variant="outline" onClick={onCancel}>
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
           )}
-          {(status === 'failed' || status === 'partial') && onRetry && (
+          {(status === "failed" || status === "partial") && onRetry && (
             <Button variant="outline" onClick={onRetry}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry Failed
             </Button>
           )}
-          {status !== 'processing' && (
+          {status !== "processing" && (
             <Button onClick={handleClose}>
-              {status === 'completed' ? 'Done' : 'Close'}
+              {status === "completed" ? "Done" : "Close"}
             </Button>
           )}
         </DialogFooter>
@@ -252,7 +259,7 @@ export function BatchProgressDialog({
 
 export function useBatchProgressDialog() {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<BulkActionStatus>('idle');
+  const [status, setStatus] = useState<BulkActionStatus>("idle");
   const [progress, setProgress] = useState<BulkActionProgress>({
     current: 0,
     total: 0,
@@ -261,7 +268,7 @@ export function useBatchProgressDialog() {
   const [result, setResult] = useState<BulkActionResult | null>(null);
 
   const start = (total: number) => {
-    setStatus('processing');
+    setStatus("processing");
     setProgress({ current: 0, total, percentage: 0 });
     setResult(null);
     setOpen(true);
@@ -280,10 +287,10 @@ export function useBatchProgressDialog() {
     setResult(operationResult);
     setStatus(
       operationResult.totalFailed === 0
-        ? 'completed'
+        ? "completed"
         : operationResult.totalSucceeded > 0
-        ? 'partial'
-        : 'failed'
+          ? "partial"
+          : "failed",
     );
     setProgress((prev) => ({
       ...prev,
@@ -293,10 +300,10 @@ export function useBatchProgressDialog() {
   };
 
   const fail = (error: string) => {
-    setStatus('failed');
+    setStatus("failed");
     setResult({
       success: [],
-      failed: [{ id: 'operation', error }],
+      failed: [{ id: "operation", error }],
       totalRequested: progress.total,
       totalSucceeded: 0,
       totalFailed: progress.total,
@@ -305,7 +312,7 @@ export function useBatchProgressDialog() {
 
   const reset = () => {
     setOpen(false);
-    setStatus('idle');
+    setStatus("idle");
     setProgress({ current: 0, total: 0, percentage: 0 });
     setResult(null);
   };

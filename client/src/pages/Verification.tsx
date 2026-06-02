@@ -1,23 +1,53 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/useAuth';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { Shield, Upload, CheckCircle, AlertCircle, Clock, FileText, User, Building2, CreditCard, Loader2, X, Eye, Phone, Mail, RefreshCw, HelpCircle, ArrowRight } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Shield,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  FileText,
+  User,
+  Building2,
+  CreditCard,
+  Loader2,
+  X,
+  Eye,
+  Phone,
+  Mail,
+  RefreshCw,
+  HelpCircle,
+  ArrowRight,
+} from "lucide-react";
 
 interface VerificationData {
   id: string;
-  verificationType: 'individual' | 'business';
+  verificationType: "individual" | "business";
   level: string;
   status: string;
   firstName?: string;
@@ -31,7 +61,7 @@ interface DocumentChecklist {
   name: string;
   description: string;
   required: boolean;
-  status: 'not_uploaded' | 'pending' | 'approved' | 'rejected';
+  status: "not_uploaded" | "pending" | "approved" | "rejected";
   fileName?: string;
   rejectionReason?: string;
   uploadedAt?: string;
@@ -45,10 +75,16 @@ interface SupportContact {
 }
 
 interface VerificationStatus {
-  status: 'not_started' | 'pending' | 'under_review' | 'verified' | 'rejected' | 'expired';
+  status:
+    | "not_started"
+    | "pending"
+    | "under_review"
+    | "verified"
+    | "rejected"
+    | "expired";
   verificationId?: string;
   level?: string;
-  verificationType?: 'individual' | 'business';
+  verificationType?: "individual" | "business";
   infoSubmitted?: boolean;
   documentsRequired?: string[];
   documentsSubmitted?: string[];
@@ -74,7 +110,7 @@ interface UploadedDocument {
   id: string;
   documentType: string;
   fileName: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   rejectionReason?: string;
 }
 
@@ -108,56 +144,60 @@ export default function Verification() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const [verificationType, setVerificationType] = useState<'individual' | 'business'>('individual');
+
+  const [verificationType, setVerificationType] = useState<
+    "individual" | "business"
+  >("individual");
   const [step, setStep] = useState(1);
   const [verificationId, setVerificationId] = useState<string | null>(null);
-  const [uploadedDocs, setUploadedDocs] = useState<Record<string, UploadedDocument>>({});
-  
+  const [uploadedDocs, setUploadedDocs] = useState<
+    Record<string, UploadedDocument>
+  >({});
+
   const [individualInfo, setIndividualInfo] = useState<IndividualInfo>({
-    firstName: '',
-    lastName: '',
-    dateOfBirth: '',
-    nationality: '',
-    address: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'US',
+    firstName: "",
+    lastName: "",
+    dateOfBirth: "",
+    nationality: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "US",
   });
-  
+
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
-    businessName: '',
-    businessType: '',
-    businessRegistrationNumber: '',
-    taxIdNumber: '',
-    address: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'US',
+    businessName: "",
+    businessType: "",
+    businessRegistrationNumber: "",
+    taxIdNumber: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "US",
   });
 
   const { data: status, isLoading } = useQuery<VerificationStatus>({
-    queryKey: ['/api/kyc/status'],
+    queryKey: ["/api/kyc/status"],
     enabled: !!user,
   });
 
   const { data: existingDocs } = useQuery<{ documents: UploadedDocument[] }>({
-    queryKey: ['/api/kyc/documents'],
+    queryKey: ["/api/kyc/documents"],
     enabled: !!user && !!status?.verificationId,
   });
 
   useEffect(() => {
     if (!status || isLoading) return;
-    
+
     if (status.verificationType) {
       setVerificationType(status.verificationType);
     }
-    
-    if (status.status === 'not_started' || !status.verificationId) {
+
+    if (status.status === "not_started" || !status.verificationId) {
       setStep(1);
-    } else if (status.status === 'pending') {
+    } else if (status.status === "pending") {
       if (!status.infoSubmitted) {
         setStep(2);
       } else if (!status.allDocumentsUploaded) {
@@ -165,116 +205,185 @@ export default function Verification() {
       } else {
         setStep(4);
       }
-    } else if (status.status === 'under_review' || status.status === 'verified') {
+    } else if (
+      status.status === "under_review" ||
+      status.status === "verified"
+    ) {
       setStep(4);
-    } else if (status.status === 'rejected') {
+    } else if (status.status === "rejected") {
       setStep(1);
     }
   }, [status, isLoading]);
 
   const startVerificationMutation = useMutation({
-    mutationFn: async (type: 'individual' | 'business') => {
+    mutationFn: async (type: "individual" | "business") => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/kyc/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
-        body: JSON.stringify({ type, level: 'enhanced' }),
+      const res = await fetch("/api/kyc/start", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({ type, level: "enhanced" }),
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to start verification');
+        throw new Error(data.error || "Failed to start verification");
       }
       return res.json();
     },
     onSuccess: (data) => {
       setVerificationId(data.verification.id);
-      queryClient.invalidateQueries({ queryKey: ['/api/kyc/status'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/kyc/status"] });
       setStep(2);
-      toast({ title: 'Verification started', description: 'Please provide your information.' });
+      toast({
+        title: "Verification started",
+        description: "Please provide your information.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const submitInfoMutation = useMutation({
     mutationFn: async () => {
       const vId = verificationId || status?.verificationId;
-      if (!vId) throw new Error('No verification in progress');
-      
-      const endpoint = verificationType === 'individual' ? '/api/kyc/individual' : '/api/kyc/business';
-      const data = verificationType === 'individual' 
-        ? { verificationId: vId, ...individualInfo }
-        : { verificationId: vId, ...businessInfo };
-      
+      if (!vId) throw new Error("No verification in progress");
+
+      const endpoint =
+        verificationType === "individual"
+          ? "/api/kyc/individual"
+          : "/api/kyc/business";
+      const data =
+        verificationType === "individual"
+          ? { verificationId: vId, ...individualInfo }
+          : { verificationId: vId, ...businessInfo };
+
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(endpoint, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify(data),
       });
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to submit information');
+        throw new Error(errorData.error || "Failed to submit information");
       }
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/kyc/status'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/kyc/status"] });
       setStep(3);
-      toast({ title: 'Information saved', description: 'Please upload your documents.' });
+      toast({
+        title: "Information saved",
+        description: "Please upload your documents.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const submitForReviewMutation = useMutation({
     mutationFn: async () => {
       const vId = verificationId || status?.verificationId;
-      if (!vId) throw new Error('No verification in progress');
-      
+      if (!vId) throw new Error("No verification in progress");
+
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/kyc/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+      const res = await fetch("/api/kyc/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ verificationId: vId }),
       });
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to submit for review');
+        throw new Error(errorData.error || "Failed to submit for review");
       }
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/kyc/status'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/kyc/status"] });
       setStep(4);
-      toast({ title: 'Submitted for review', description: 'Your verification is being reviewed. This typically takes 1-2 business days.' });
+      toast({
+        title: "Submitted for review",
+        description:
+          "Your verification is being reviewed. This typically takes 1-2 business days.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   if (!user) {
-    setLocation('/login');
+    setLocation("/login");
     return null;
   }
 
   const currentVerificationId = verificationId || status?.verificationId;
 
   const getStatusBadge = () => {
-    const s = status?.status || 'not_started';
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode; label: string }> = {
-      not_started: { variant: 'outline', icon: <Clock className="h-3 w-3" />, label: 'Not Started' },
-      pending: { variant: 'secondary', icon: <Clock className="h-3 w-3" />, label: 'Pending Documents' },
-      under_review: { variant: 'secondary', icon: <FileText className="h-3 w-3" />, label: 'Under Review' },
-      verified: { variant: 'default', icon: <CheckCircle className="h-3 w-3" />, label: 'Verified' },
-      rejected: { variant: 'destructive', icon: <AlertCircle className="h-3 w-3" />, label: 'Rejected' },
-      expired: { variant: 'destructive', icon: <AlertCircle className="h-3 w-3" />, label: 'Expired' },
+    const s = status?.status || "not_started";
+    const variants: Record<
+      string,
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        icon: React.ReactNode;
+        label: string;
+      }
+    > = {
+      not_started: {
+        variant: "outline",
+        icon: <Clock className="h-3 w-3" />,
+        label: "Not Started",
+      },
+      pending: {
+        variant: "secondary",
+        icon: <Clock className="h-3 w-3" />,
+        label: "Pending Documents",
+      },
+      under_review: {
+        variant: "secondary",
+        icon: <FileText className="h-3 w-3" />,
+        label: "Under Review",
+      },
+      verified: {
+        variant: "default",
+        icon: <CheckCircle className="h-3 w-3" />,
+        label: "Verified",
+      },
+      rejected: {
+        variant: "destructive",
+        icon: <AlertCircle className="h-3 w-3" />,
+        label: "Rejected",
+      },
+      expired: {
+        variant: "destructive",
+        icon: <AlertCircle className="h-3 w-3" />,
+        label: "Expired",
+      },
     };
     const { variant, icon, label } = variants[s] || variants.not_started;
     return (
@@ -286,16 +395,17 @@ export default function Verification() {
   };
 
   const calculateProgress = () => {
-    if (!status || status.status === 'not_started') return 0;
-    if (status.status === 'verified') return 100;
-    
+    if (!status || status.status === "not_started") return 0;
+    if (status.status === "verified") return 100;
+
     const docsRequired = status.documentsRequired?.length || 3;
     const docsSubmitted = status.documentsSubmitted?.length || 0;
     const infoComplete = step >= 3 ? 1 : 0;
-    
+
     const totalSteps = docsRequired + 2;
-    const completedSteps = infoComplete + docsSubmitted + (status.status === 'under_review' ? 1 : 0);
-    
+    const completedSteps =
+      infoComplete + docsSubmitted + (status.status === "under_review" ? 1 : 0);
+
     return Math.min(Math.round((completedSteps / totalSteps) * 100), 95);
   };
 
@@ -308,7 +418,7 @@ export default function Verification() {
       );
     }
 
-    if (status?.status === 'verified') {
+    if (status?.status === "verified") {
       return (
         <div className="max-w-2xl mx-auto">
           <Card className="border-green-500/50 bg-green-500/5">
@@ -316,18 +426,21 @@ export default function Verification() {
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <CardTitle className="text-2xl">Identity Verified</CardTitle>
               <CardDescription>
-                Your identity has been verified. You can now receive payouts and access all platform features.
+                Your identity has been verified. You can now receive payouts and
+                access all platform features.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
-              <Button onClick={() => setLocation('/dashboard')}>Return to Dashboard</Button>
+              <Button onClick={() => setLocation("/dashboard")}>
+                Return to Dashboard
+              </Button>
             </CardContent>
           </Card>
         </div>
       );
     }
 
-    if (status?.status === 'under_review') {
+    if (status?.status === "under_review") {
       return (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
@@ -345,49 +458,60 @@ export default function Verification() {
               <FileText className="h-16 w-16 text-blue-500 mx-auto mb-4" />
               <CardTitle className="text-2xl">Under Review</CardTitle>
               <CardDescription className="text-base">
-                {status.message || 'Your verification is being reviewed.'}
+                {status.message || "Your verification is being reviewed."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <Progress value={90} className="h-3" />
-              
+
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <Clock className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm font-medium">Estimated Review Time</p>
-                  <p className="text-lg font-bold text-primary">{status.estimatedReviewTime || '1-2 business days'}</p>
+                  <p className="text-lg font-bold text-primary">
+                    {status.estimatedReviewTime || "1-2 business days"}
+                  </p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <FileText className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm font-medium">Documents Submitted</p>
-                  <p className="text-lg font-bold text-primary">{status.documentsSubmitted?.length || 0} of {status.documentsRequired?.length || 0}</p>
+                  <p className="text-lg font-bold text-primary">
+                    {status.documentsSubmitted?.length || 0} of{" "}
+                    {status.documentsRequired?.length || 0}
+                  </p>
                 </div>
               </div>
 
               {status.submittedAt && (
                 <p className="text-sm text-center text-muted-foreground">
-                  Submitted on {new Date(status.submittedAt).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  Submitted on{" "}
+                  {new Date(status.submittedAt).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
                   })}
                 </p>
               )}
-              
+
               <p className="text-sm text-center text-muted-foreground">
                 We'll notify you by email once the review is complete.
               </p>
-              
+
               <div className="flex justify-center gap-3">
-                <Button variant="outline" onClick={() => setLocation('/dashboard')}>
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation("/dashboard")}
+                >
                   Return to Dashboard
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {status.supportContact && <SupportContactCard contact={status.supportContact} />}
+          {status.supportContact && (
+            <SupportContactCard contact={status.supportContact} />
+          )}
           <WhyVerifyCard />
         </div>
       );
@@ -408,7 +532,7 @@ export default function Verification() {
           {getStatusBadge()}
         </div>
 
-        {status?.status === 'rejected' && (
+        {status?.status === "rejected" && (
           <Card className="border-destructive bg-destructive/10">
             <CardHeader>
               <CardTitle className="text-destructive flex items-center gap-2">
@@ -419,22 +543,34 @@ export default function Verification() {
             <CardContent className="space-y-4">
               <div className="p-3 bg-destructive/10 rounded-lg">
                 <p className="font-medium">Reason:</p>
-                <p className="text-sm text-muted-foreground">{status.rejectionReason || status.message || 'No specific reason provided'}</p>
+                <p className="text-sm text-muted-foreground">
+                  {status.rejectionReason ||
+                    status.message ||
+                    "No specific reason provided"}
+                </p>
               </div>
-              
-              {status.documentsRejected && status.documentsRejected.length > 0 && (
-                <div className="space-y-2">
-                  <p className="font-medium text-sm">Documents requiring resubmission:</p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {status.documentChecklist?.filter(d => d.status === 'rejected').map(doc => (
-                      <li key={doc.type} className="flex items-start gap-2">
-                        <RefreshCw className="h-4 w-4 mt-0.5 text-destructive flex-shrink-0" />
-                        <span><strong>{doc.name}:</strong> {doc.rejectionReason || 'Needs resubmission'}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+
+              {status.documentsRejected &&
+                status.documentsRejected.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="font-medium text-sm">
+                      Documents requiring resubmission:
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {status.documentChecklist
+                        ?.filter((d) => d.status === "rejected")
+                        .map((doc) => (
+                          <li key={doc.type} className="flex items-start gap-2">
+                            <RefreshCw className="h-4 w-4 mt-0.5 text-destructive flex-shrink-0" />
+                            <span>
+                              <strong>{doc.name}:</strong>{" "}
+                              {doc.rejectionReason || "Needs resubmission"}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
 
               {status.nextSteps && status.nextSteps.length > 0 && (
                 <div className="space-y-2">
@@ -451,15 +587,22 @@ export default function Verification() {
               )}
 
               <div className="flex gap-3 mt-4">
-                <Button onClick={() => {
-                  setStep(1);
-                  startVerificationMutation.mutate(verificationType);
-                }}>
+                <Button
+                  onClick={() => {
+                    setStep(1);
+                    startVerificationMutation.mutate(verificationType);
+                  }}
+                >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Start New Verification
                 </Button>
                 {status.supportContact && (
-                  <Button variant="outline" onClick={() => window.open(`mailto:${status.supportContact?.email}`)}>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      window.open(`mailto:${status.supportContact?.email}`)
+                    }
+                  >
                     <Mail className="h-4 w-4 mr-2" />
                     Contact Support
                   </Button>
@@ -469,7 +612,7 @@ export default function Verification() {
           </Card>
         )}
 
-        {currentVerificationId && status?.status !== 'rejected' && (
+        {currentVerificationId && status?.status !== "rejected" && (
           <Card>
             <CardHeader>
               <CardTitle>Verification Progress</CardTitle>
@@ -481,105 +624,157 @@ export default function Verification() {
                 <span>Step {step} of 4</span>
                 <span>{calculateProgress()}% complete</span>
               </div>
-              {status?.nextSteps && status.nextSteps.length > 0 && status.status === 'pending' && (
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                  <p className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <ArrowRight className="h-4 w-4" />
-                    Next Steps:
-                  </p>
-                  <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
-                    {status.nextSteps.map((nextStep, i) => (
-                      <li key={i}>{nextStep}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {(status?.status === 'not_started' || !currentVerificationId) && step === 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Choose Verification Type</CardTitle>
-              <CardDescription>
-                Select whether you're verifying as an individual artist or a business entity
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Tabs value={verificationType} onValueChange={(v) => setVerificationType(v as 'individual' | 'business')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="individual" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Individual
-                  </TabsTrigger>
-                  <TabsTrigger value="business" className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Business
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="individual" className="mt-4">
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                    <h4 className="font-medium">Individual Verification</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Government-issued photo ID (passport, driver's license)</li>
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Proof of address (utility bill, bank statement)</li>
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Selfie for facial verification</li>
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Tax information (W-9 for US residents)</li>
+              {status?.nextSteps &&
+                status.nextSteps.length > 0 &&
+                status.status === "pending" && (
+                  <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium flex items-center gap-2 mb-2">
+                      <ArrowRight className="h-4 w-4" />
+                      Next Steps:
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
+                      {status.nextSteps.map((nextStep, i) => (
+                        <li key={i}>{nextStep}</li>
+                      ))}
                     </ul>
                   </div>
-                </TabsContent>
-                <TabsContent value="business" className="mt-4">
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                    <h4 className="font-medium">Business Verification</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Business registration documents</li>
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Articles of incorporation</li>
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Tax ID documentation (EIN)</li>
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Proof of business address</li>
-                      <li className="flex items-center gap-2"><FileText className="h-3 w-3" /> Authorized representative ID</li>
-                    </ul>
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              <Button 
-                className="w-full" 
-                onClick={() => startVerificationMutation.mutate(verificationType)}
-                disabled={startVerificationMutation.isPending}
-              >
-                {startVerificationMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  'Start Verification'
                 )}
-              </Button>
             </CardContent>
           </Card>
         )}
+
+        {(status?.status === "not_started" || !currentVerificationId) &&
+          step === 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Choose Verification Type</CardTitle>
+                <CardDescription>
+                  Select whether you're verifying as an individual artist or a
+                  business entity
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <Tabs
+                  value={verificationType}
+                  onValueChange={(v) =>
+                    setVerificationType(v as "individual" | "business")
+                  }
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger
+                      value="individual"
+                      className="flex items-center gap-2"
+                    >
+                      <User className="h-4 w-4" />
+                      Individual
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="business"
+                      className="flex items-center gap-2"
+                    >
+                      <Building2 className="h-4 w-4" />
+                      Business
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="individual" className="mt-4">
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                      <h4 className="font-medium">Individual Verification</h4>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Government-issued
+                          photo ID (passport, driver's license)
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Proof of address
+                          (utility bill, bank statement)
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Selfie for facial
+                          verification
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Tax information (W-9
+                          for US residents)
+                        </li>
+                      </ul>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="business" className="mt-4">
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                      <h4 className="font-medium">Business Verification</h4>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Business registration
+                          documents
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Articles of
+                          incorporation
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Tax ID documentation
+                          (EIN)
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Proof of business
+                          address
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" /> Authorized
+                          representative ID
+                        </li>
+                      </ul>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <Button
+                  className="w-full"
+                  onClick={() =>
+                    startVerificationMutation.mutate(verificationType)
+                  }
+                  disabled={startVerificationMutation.isPending}
+                >
+                  {startVerificationMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    "Start Verification"
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
         {step === 2 && currentVerificationId && (
           <Card>
             <CardHeader>
               <CardTitle>
-                {verificationType === 'individual' ? 'Personal Information' : 'Business Information'}
+                {verificationType === "individual"
+                  ? "Personal Information"
+                  : "Business Information"}
               </CardTitle>
               <CardDescription>
-                Please provide accurate information matching your official documents
+                Please provide accurate information matching your official
+                documents
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {verificationType === 'individual' ? (
+              {verificationType === "individual" ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name *</Label>
                     <Input
                       id="firstName"
                       value={individualInfo.firstName}
-                      onChange={(e) => setIndividualInfo({ ...individualInfo, firstName: e.target.value })}
+                      onChange={(e) =>
+                        setIndividualInfo({
+                          ...individualInfo,
+                          firstName: e.target.value,
+                        })
+                      }
                       placeholder="John"
                       required
                     />
@@ -589,7 +784,12 @@ export default function Verification() {
                     <Input
                       id="lastName"
                       value={individualInfo.lastName}
-                      onChange={(e) => setIndividualInfo({ ...individualInfo, lastName: e.target.value })}
+                      onChange={(e) =>
+                        setIndividualInfo({
+                          ...individualInfo,
+                          lastName: e.target.value,
+                        })
+                      }
                       placeholder="Doe"
                       required
                     />
@@ -600,7 +800,12 @@ export default function Verification() {
                       id="dob"
                       type="date"
                       value={individualInfo.dateOfBirth}
-                      onChange={(e) => setIndividualInfo({ ...individualInfo, dateOfBirth: e.target.value })}
+                      onChange={(e) =>
+                        setIndividualInfo({
+                          ...individualInfo,
+                          dateOfBirth: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
@@ -609,7 +814,12 @@ export default function Verification() {
                     <Input
                       id="nationality"
                       value={individualInfo.nationality}
-                      onChange={(e) => setIndividualInfo({ ...individualInfo, nationality: e.target.value })}
+                      onChange={(e) =>
+                        setIndividualInfo({
+                          ...individualInfo,
+                          nationality: e.target.value,
+                        })
+                      }
                       placeholder="United States"
                       required
                     />
@@ -619,7 +829,12 @@ export default function Verification() {
                     <Input
                       id="address"
                       value={individualInfo.address}
-                      onChange={(e) => setIndividualInfo({ ...individualInfo, address: e.target.value })}
+                      onChange={(e) =>
+                        setIndividualInfo({
+                          ...individualInfo,
+                          address: e.target.value,
+                        })
+                      }
                       placeholder="123 Main St"
                       required
                     />
@@ -629,7 +844,12 @@ export default function Verification() {
                     <Input
                       id="city"
                       value={individualInfo.city}
-                      onChange={(e) => setIndividualInfo({ ...individualInfo, city: e.target.value })}
+                      onChange={(e) =>
+                        setIndividualInfo({
+                          ...individualInfo,
+                          city: e.target.value,
+                        })
+                      }
                       placeholder="Los Angeles"
                       required
                     />
@@ -639,7 +859,12 @@ export default function Verification() {
                     <Input
                       id="state"
                       value={individualInfo.state}
-                      onChange={(e) => setIndividualInfo({ ...individualInfo, state: e.target.value })}
+                      onChange={(e) =>
+                        setIndividualInfo({
+                          ...individualInfo,
+                          state: e.target.value,
+                        })
+                      }
                       placeholder="California"
                       required
                     />
@@ -649,7 +874,12 @@ export default function Verification() {
                     <Input
                       id="postalCode"
                       value={individualInfo.postalCode}
-                      onChange={(e) => setIndividualInfo({ ...individualInfo, postalCode: e.target.value })}
+                      onChange={(e) =>
+                        setIndividualInfo({
+                          ...individualInfo,
+                          postalCode: e.target.value,
+                        })
+                      }
                       placeholder="90001"
                       required
                     />
@@ -658,7 +888,9 @@ export default function Verification() {
                     <Label htmlFor="country">Country *</Label>
                     <Select
                       value={individualInfo.country}
-                      onValueChange={(v) => setIndividualInfo({ ...individualInfo, country: v })}
+                      onValueChange={(v) =>
+                        setIndividualInfo({ ...individualInfo, country: v })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -684,7 +916,12 @@ export default function Verification() {
                     <Input
                       id="businessName"
                       value={businessInfo.businessName}
-                      onChange={(e) => setBusinessInfo({ ...businessInfo, businessName: e.target.value })}
+                      onChange={(e) =>
+                        setBusinessInfo({
+                          ...businessInfo,
+                          businessName: e.target.value,
+                        })
+                      }
                       placeholder="Acme Records LLC"
                       required
                     />
@@ -693,7 +930,9 @@ export default function Verification() {
                     <Label htmlFor="businessType">Business Type *</Label>
                     <Select
                       value={businessInfo.businessType}
-                      onValueChange={(v) => setBusinessInfo({ ...businessInfo, businessType: v })}
+                      onValueChange={(v) =>
+                        setBusinessInfo({ ...businessInfo, businessType: v })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
@@ -702,7 +941,9 @@ export default function Verification() {
                         <SelectItem value="llc">LLC</SelectItem>
                         <SelectItem value="corporation">Corporation</SelectItem>
                         <SelectItem value="partnership">Partnership</SelectItem>
-                        <SelectItem value="sole_proprietorship">Sole Proprietorship</SelectItem>
+                        <SelectItem value="sole_proprietorship">
+                          Sole Proprietorship
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -711,7 +952,12 @@ export default function Verification() {
                     <Input
                       id="regNumber"
                       value={businessInfo.businessRegistrationNumber}
-                      onChange={(e) => setBusinessInfo({ ...businessInfo, businessRegistrationNumber: e.target.value })}
+                      onChange={(e) =>
+                        setBusinessInfo({
+                          ...businessInfo,
+                          businessRegistrationNumber: e.target.value,
+                        })
+                      }
                       placeholder="12-3456789"
                       required
                     />
@@ -721,7 +967,12 @@ export default function Verification() {
                     <Input
                       id="taxId"
                       value={businessInfo.taxIdNumber}
-                      onChange={(e) => setBusinessInfo({ ...businessInfo, taxIdNumber: e.target.value })}
+                      onChange={(e) =>
+                        setBusinessInfo({
+                          ...businessInfo,
+                          taxIdNumber: e.target.value,
+                        })
+                      }
                       placeholder="XX-XXXXXXX"
                       required
                     />
@@ -731,7 +982,12 @@ export default function Verification() {
                     <Input
                       id="bizAddress"
                       value={businessInfo.address}
-                      onChange={(e) => setBusinessInfo({ ...businessInfo, address: e.target.value })}
+                      onChange={(e) =>
+                        setBusinessInfo({
+                          ...businessInfo,
+                          address: e.target.value,
+                        })
+                      }
                       placeholder="456 Business Ave"
                       required
                     />
@@ -741,7 +997,12 @@ export default function Verification() {
                     <Input
                       id="bizCity"
                       value={businessInfo.city}
-                      onChange={(e) => setBusinessInfo({ ...businessInfo, city: e.target.value })}
+                      onChange={(e) =>
+                        setBusinessInfo({
+                          ...businessInfo,
+                          city: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
@@ -750,7 +1011,12 @@ export default function Verification() {
                     <Input
                       id="bizState"
                       value={businessInfo.state}
-                      onChange={(e) => setBusinessInfo({ ...businessInfo, state: e.target.value })}
+                      onChange={(e) =>
+                        setBusinessInfo({
+                          ...businessInfo,
+                          state: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
@@ -759,7 +1025,12 @@ export default function Verification() {
                     <Input
                       id="bizPostal"
                       value={businessInfo.postalCode}
-                      onChange={(e) => setBusinessInfo({ ...businessInfo, postalCode: e.target.value })}
+                      onChange={(e) =>
+                        setBusinessInfo({
+                          ...businessInfo,
+                          postalCode: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
@@ -767,7 +1038,9 @@ export default function Verification() {
                     <Label htmlFor="bizCountry">Country *</Label>
                     <Select
                       value={businessInfo.country}
-                      onValueChange={(v) => setBusinessInfo({ ...businessInfo, country: v })}
+                      onValueChange={(v) =>
+                        setBusinessInfo({ ...businessInfo, country: v })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -783,8 +1056,10 @@ export default function Verification() {
               )}
 
               <div className="flex gap-3 mt-6">
-                <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                <Button 
+                <Button variant="outline" onClick={() => setStep(1)}>
+                  Back
+                </Button>
+                <Button
                   className="flex-1"
                   onClick={() => submitInfoMutation.mutate()}
                   disabled={submitInfoMutation.isPending}
@@ -795,7 +1070,7 @@ export default function Verification() {
                       Saving...
                     </>
                   ) : (
-                    'Save & Continue'
+                    "Save & Continue"
                   )}
                 </Button>
               </div>
@@ -811,74 +1086,119 @@ export default function Verification() {
                 Document Upload
               </CardTitle>
               <CardDescription>
-                Upload clear photos or scans of your documents. Accepted formats: JPG, PNG, PDF (max 10MB each)
+                Upload clear photos or scans of your documents. Accepted
+                formats: JPG, PNG, PDF (max 10MB each)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4">
-                {verificationType === 'individual' ? (
+                {verificationType === "individual" ? (
                   <>
-                    <DocumentUploadCard 
-                      title="Government ID" 
-                      description="Passport, driver's license, or national ID" 
+                    <DocumentUploadCard
+                      title="Government ID"
+                      description="Passport, driver's license, or national ID"
                       type="government_id"
                       verificationId={currentVerificationId}
-                      existingDoc={existingDocs?.documents?.find(d => d.documentType === 'government_id')}
-                      onUploadComplete={(doc) => setUploadedDocs(prev => ({ ...prev, government_id: doc }))}
+                      existingDoc={existingDocs?.documents?.find(
+                        (d) => d.documentType === "government_id",
+                      )}
+                      onUploadComplete={(doc) =>
+                        setUploadedDocs((prev) => ({
+                          ...prev,
+                          government_id: doc,
+                        }))
+                      }
                     />
-                    <DocumentUploadCard 
-                      title="Proof of Address" 
-                      description="Utility bill or bank statement (last 3 months)" 
+                    <DocumentUploadCard
+                      title="Proof of Address"
+                      description="Utility bill or bank statement (last 3 months)"
                       type="proof_of_address"
                       verificationId={currentVerificationId}
-                      existingDoc={existingDocs?.documents?.find(d => d.documentType === 'proof_of_address')}
-                      onUploadComplete={(doc) => setUploadedDocs(prev => ({ ...prev, proof_of_address: doc }))}
+                      existingDoc={existingDocs?.documents?.find(
+                        (d) => d.documentType === "proof_of_address",
+                      )}
+                      onUploadComplete={(doc) =>
+                        setUploadedDocs((prev) => ({
+                          ...prev,
+                          proof_of_address: doc,
+                        }))
+                      }
                     />
-                    <DocumentUploadCard 
-                      title="Selfie Verification" 
-                      description="Take a clear selfie holding your ID next to your face" 
+                    <DocumentUploadCard
+                      title="Selfie Verification"
+                      description="Take a clear selfie holding your ID next to your face"
                       type="selfie"
                       verificationId={currentVerificationId}
-                      existingDoc={existingDocs?.documents?.find(d => d.documentType === 'selfie')}
-                      onUploadComplete={(doc) => setUploadedDocs(prev => ({ ...prev, selfie: doc }))}
+                      existingDoc={existingDocs?.documents?.find(
+                        (d) => d.documentType === "selfie",
+                      )}
+                      onUploadComplete={(doc) =>
+                        setUploadedDocs((prev) => ({ ...prev, selfie: doc }))
+                      }
                     />
                   </>
                 ) : (
                   <>
-                    <DocumentUploadCard 
-                      title="Business Registration" 
-                      description="Certificate of incorporation or registration" 
+                    <DocumentUploadCard
+                      title="Business Registration"
+                      description="Certificate of incorporation or registration"
                       type="business_registration"
                       verificationId={currentVerificationId}
-                      existingDoc={existingDocs?.documents?.find(d => d.documentType === 'business_registration')}
-                      onUploadComplete={(doc) => setUploadedDocs(prev => ({ ...prev, business_registration: doc }))}
+                      existingDoc={existingDocs?.documents?.find(
+                        (d) => d.documentType === "business_registration",
+                      )}
+                      onUploadComplete={(doc) =>
+                        setUploadedDocs((prev) => ({
+                          ...prev,
+                          business_registration: doc,
+                        }))
+                      }
                     />
-                    <DocumentUploadCard 
-                      title="Tax ID Document" 
-                      description="EIN letter or equivalent" 
+                    <DocumentUploadCard
+                      title="Tax ID Document"
+                      description="EIN letter or equivalent"
                       type="tax_id_document"
                       verificationId={currentVerificationId}
-                      existingDoc={existingDocs?.documents?.find(d => d.documentType === 'tax_id_document')}
-                      onUploadComplete={(doc) => setUploadedDocs(prev => ({ ...prev, tax_id_document: doc }))}
+                      existingDoc={existingDocs?.documents?.find(
+                        (d) => d.documentType === "tax_id_document",
+                      )}
+                      onUploadComplete={(doc) =>
+                        setUploadedDocs((prev) => ({
+                          ...prev,
+                          tax_id_document: doc,
+                        }))
+                      }
                     />
-                    <DocumentUploadCard 
-                      title="Proof of Address" 
-                      description="Business utility bill or bank statement" 
+                    <DocumentUploadCard
+                      title="Proof of Address"
+                      description="Business utility bill or bank statement"
                       type="proof_of_address"
                       verificationId={currentVerificationId}
-                      existingDoc={existingDocs?.documents?.find(d => d.documentType === 'proof_of_address')}
-                      onUploadComplete={(doc) => setUploadedDocs(prev => ({ ...prev, proof_of_address: doc }))}
+                      existingDoc={existingDocs?.documents?.find(
+                        (d) => d.documentType === "proof_of_address",
+                      )}
+                      onUploadComplete={(doc) =>
+                        setUploadedDocs((prev) => ({
+                          ...prev,
+                          proof_of_address: doc,
+                        }))
+                      }
                     />
                   </>
                 )}
               </div>
 
               <div className="flex gap-3 mt-6">
-                <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-                <Button 
+                <Button variant="outline" onClick={() => setStep(2)}>
+                  Back
+                </Button>
+                <Button
                   className="flex-1"
                   onClick={() => submitForReviewMutation.mutate()}
-                  disabled={submitForReviewMutation.isPending || Object.keys(uploadedDocs).length === 0}
+                  disabled={
+                    submitForReviewMutation.isPending ||
+                    Object.keys(uploadedDocs).length === 0
+                  }
                 >
                   {submitForReviewMutation.isPending ? (
                     <>
@@ -886,7 +1206,7 @@ export default function Verification() {
                       Submitting...
                     </>
                   ) : (
-                    'Submit for Review'
+                    "Submit for Review"
                   )}
                 </Button>
               </div>
@@ -900,7 +1220,8 @@ export default function Verification() {
               <FileText className="h-16 w-16 text-blue-500 mx-auto mb-4" />
               <CardTitle className="text-2xl">Verification Submitted</CardTitle>
               <CardDescription className="text-base">
-                Your verification is being reviewed. This typically takes 1-2 business days.
+                Your verification is being reviewed. This typically takes 1-2
+                business days.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -909,7 +1230,7 @@ export default function Verification() {
                 We'll notify you by email once the review is complete.
               </p>
               <div className="flex justify-center">
-                <Button onClick={() => setLocation('/dashboard')}>
+                <Button onClick={() => setLocation("/dashboard")}>
                   Return to Dashboard
                 </Button>
               </div>
@@ -922,11 +1243,7 @@ export default function Verification() {
     );
   };
 
-  return (
-    <AppLayout>
-      {renderContent()}
-    </AppLayout>
-  );
+  return <AppLayout>{renderContent()}</AppLayout>;
 }
 
 function WhyVerifyCard() {
@@ -980,7 +1297,10 @@ function SupportContactCard({ contact }: { contact: SupportContact }) {
             <Mail className="h-5 w-5 text-primary" />
             <div>
               <p className="text-sm font-medium">Email Support</p>
-              <a href={`mailto:${contact.email}`} className="text-sm text-primary hover:underline">
+              <a
+                href={`mailto:${contact.email}`}
+                className="text-sm text-primary hover:underline"
+              >
                 {contact.email}
               </a>
             </div>
@@ -990,7 +1310,10 @@ function SupportContactCard({ contact }: { contact: SupportContact }) {
               <Phone className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm font-medium">Phone Support</p>
-                <a href={`tel:${contact.phone}`} className="text-sm text-primary hover:underline">
+                <a
+                  href={`tel:${contact.phone}`}
+                  className="text-sm text-primary hover:underline"
+                >
                   {contact.phone}
                 </a>
               </div>
@@ -1012,38 +1335,61 @@ function SupportContactCard({ contact }: { contact: SupportContact }) {
   );
 }
 
-function VerificationStepper({ currentStep, status }: { currentStep: number; status?: VerificationStatus }) {
+function VerificationStepper({
+  currentStep,
+  status,
+}: {
+  currentStep: number;
+  status?: VerificationStatus;
+}) {
   const steps = [
-    { id: 1, label: 'Choose Type', icon: User },
-    { id: 2, label: 'Information', icon: FileText },
-    { id: 3, label: 'Documents', icon: Upload },
-    { id: 4, label: 'Review', icon: Shield },
+    { id: 1, label: "Choose Type", icon: User },
+    { id: 2, label: "Information", icon: FileText },
+    { id: 3, label: "Documents", icon: Upload },
+    { id: 4, label: "Review", icon: Shield },
   ];
 
   return (
     <div className="flex items-center justify-between mb-6">
       {steps.map((step, index) => {
         const Icon = step.icon;
-        const isCompleted = currentStep > step.id || status?.status === 'verified';
+        const isCompleted =
+          currentStep > step.id || status?.status === "verified";
         const isCurrent = currentStep === step.id;
-        
+
         return (
           <div key={step.id} className="flex items-center">
-            <div className={`flex flex-col items-center ${index < steps.length - 1 ? 'flex-1' : ''}`}>
-              <div className={`
+            <div
+              className={`flex flex-col items-center ${index < steps.length - 1 ? "flex-1" : ""}`}
+            >
+              <div
+                className={`
                 w-10 h-10 rounded-full flex items-center justify-center transition-colors
-                ${isCompleted ? 'bg-green-500 text-white' : 
-                  isCurrent ? 'bg-primary text-primary-foreground' : 
-                  'bg-muted text-muted-foreground'}
-              `}>
-                {isCompleted ? <CheckCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                ${
+                  isCompleted
+                    ? "bg-green-500 text-white"
+                    : isCurrent
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                }
+              `}
+              >
+                {isCompleted ? (
+                  <CheckCircle className="h-5 w-5" />
+                ) : (
+                  <Icon className="h-5 w-5" />
+                )}
               </div>
-              <span className={`text-xs mt-1 ${isCurrent ? 'font-medium' : 'text-muted-foreground'}`}>
+              <span
+                className={`text-xs mt-1 ${isCurrent ? "font-medium" : "text-muted-foreground"}`}
+              >
                 {step.label}
               </span>
             </div>
             {index < steps.length - 1 && (
-              <div className={`h-0.5 flex-1 mx-2 ${currentStep > step.id ? 'bg-green-500' : 'bg-muted'}`} />
+              <div
+                className={`h-0.5 flex-1 mx-2 ${currentStep > step.id ? "bg-green-500" : "bg-muted"}`}
+              />
             )}
           </div>
         );
@@ -1052,30 +1398,34 @@ function VerificationStepper({ currentStep, status }: { currentStep: number; sta
   );
 }
 
-function DocumentChecklistCard({ checklist }: { checklist: DocumentChecklist[] }) {
-  const getStatusIcon = (status: DocumentChecklist['status']) => {
+function DocumentChecklistCard({
+  checklist,
+}: {
+  checklist: DocumentChecklist[];
+}) {
+  const getStatusIcon = (status: DocumentChecklist["status"]) => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'rejected':
+      case "rejected":
         return <AlertCircle className="h-4 w-4 text-destructive" />;
-      case 'pending':
+      case "pending":
         return <Clock className="h-4 w-4 text-yellow-500" />;
       default:
         return <Upload className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
-  const getStatusLabel = (status: DocumentChecklist['status']) => {
+  const getStatusLabel = (status: DocumentChecklist["status"]) => {
     switch (status) {
-      case 'approved':
-        return 'Approved';
-      case 'rejected':
-        return 'Rejected';
-      case 'pending':
-        return 'Pending';
+      case "approved":
+        return "Approved";
+      case "rejected":
+        return "Rejected";
+      case "pending":
+        return "Pending";
       default:
-        return 'Not Uploaded';
+        return "Not Uploaded";
     }
   };
 
@@ -1093,24 +1443,31 @@ function DocumentChecklistCard({ checklist }: { checklist: DocumentChecklist[] }
       <CardContent>
         <div className="space-y-3">
           {checklist.map((doc) => (
-            <div 
-              key={doc.type} 
+            <div
+              key={doc.type}
               className={`flex items-center justify-between p-3 rounded-lg border ${
-                doc.status === 'approved' ? 'border-green-500/50 bg-green-500/5' :
-                doc.status === 'rejected' ? 'border-destructive/50 bg-destructive/5' :
-                doc.status === 'pending' ? 'border-yellow-500/50 bg-yellow-500/5' :
-                'border-dashed'
+                doc.status === "approved"
+                  ? "border-green-500/50 bg-green-500/5"
+                  : doc.status === "rejected"
+                    ? "border-destructive/50 bg-destructive/5"
+                    : doc.status === "pending"
+                      ? "border-yellow-500/50 bg-yellow-500/5"
+                      : "border-dashed"
               }`}
             >
               <div className="flex items-center gap-3">
                 {getStatusIcon(doc.status)}
                 <div>
                   <p className="font-medium text-sm">{doc.name}</p>
-                  <p className="text-xs text-muted-foreground">{doc.description}</p>
-                  {doc.status === 'rejected' && doc.rejectionReason && (
-                    <p className="text-xs text-destructive mt-1">{doc.rejectionReason}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {doc.description}
+                  </p>
+                  {doc.status === "rejected" && doc.rejectionReason && (
+                    <p className="text-xs text-destructive mt-1">
+                      {doc.rejectionReason}
+                    </p>
                   )}
-                  {doc.fileName && doc.status !== 'not_uploaded' && (
+                  {doc.fileName && doc.status !== "not_uploaded" && (
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       <FileText className="h-3 w-3" />
                       {doc.fileName}
@@ -1118,12 +1475,15 @@ function DocumentChecklistCard({ checklist }: { checklist: DocumentChecklist[] }
                   )}
                 </div>
               </div>
-              <Badge 
+              <Badge
                 variant={
-                  doc.status === 'approved' ? 'default' :
-                  doc.status === 'rejected' ? 'destructive' :
-                  doc.status === 'pending' ? 'secondary' :
-                  'outline'
+                  doc.status === "approved"
+                    ? "default"
+                    : doc.status === "rejected"
+                      ? "destructive"
+                      : doc.status === "pending"
+                        ? "secondary"
+                        : "outline"
                 }
                 className="text-xs"
               >
@@ -1146,9 +1506,18 @@ interface DocumentUploadCardProps {
   onUploadComplete: (doc: UploadedDocument) => void;
 }
 
-function DocumentUploadCard({ title, description, type, verificationId, existingDoc, onUploadComplete }: DocumentUploadCardProps) {
+function DocumentUploadCard({
+  title,
+  description,
+  type,
+  verificationId,
+  existingDoc,
+  onUploadComplete,
+}: DocumentUploadCardProps) {
   const [uploading, setUploading] = useState(false);
-  const [uploaded, setUploaded] = useState<UploadedDocument | null>(existingDoc || null);
+  const [uploaded, setUploaded] = useState<UploadedDocument | null>(
+    existingDoc || null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [errorSuggestion, setErrorSuggestion] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -1157,94 +1526,113 @@ function DocumentUploadCard({ title, description, type, verificationId, existing
   const { toast } = useToast();
 
   const createPreview = useCallback((file: File) => {
-    if (file.type.startsWith('image/')) {
+    if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = (e) => setPreview(e.target?.result as string);
       reader.readAsDataURL(file);
-    } else if (file.type === 'application/pdf') {
-      setPreview('pdf');
+    } else if (file.type === "application/pdf") {
+      setPreview("pdf");
     }
   }, []);
 
-  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    setError(null);
-    setErrorSuggestion(null);
+      setError(null);
+      setErrorSuggestion(null);
 
-    if (file.size < 10 * 1024) {
-      setError('File is too small (minimum 10KB). The document may not be readable.');
-      setErrorSuggestion('Please upload a higher resolution document.');
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File is too large (maximum 10MB).');
-      setErrorSuggestion('Try compressing the image or using a lower resolution scanner.');
-      return;
-    }
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      setError(`Invalid file format (${file.type}).`);
-      setErrorSuggestion('Convert your document to JPG, PNG, or PDF format before uploading.');
-      return;
-    }
-
-    createPreview(file);
-    setUploading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('verificationId', verificationId);
-      formData.append('documentType', type);
-
-      const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/kyc/documents/upload', {
-        method: 'POST',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
-        body: formData,
-      });
-
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to upload document');
+      if (file.size < 10 * 1024) {
+        setError(
+          "File is too small (minimum 10KB). The document may not be readable.",
+        );
+        setErrorSuggestion("Please upload a higher resolution document.");
+        return;
       }
 
-      const doc: UploadedDocument = {
-        id: data.document.id,
-        documentType: type,
-        fileName: file.name,
-        status: 'pending',
-      };
-      
-      setUploaded(doc);
-      onUploadComplete(doc);
-      toast({ 
-        title: 'Document uploaded', 
-        description: data.message || `${title} uploaded successfully.` 
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to upload document';
-      setError(message);
-      setPreview(null);
-      toast({ title: 'Upload failed', description: message, variant: 'destructive' });
-    } finally {
-      setUploading(false);
-    }
-  }, [verificationId, type, title, onUploadComplete, toast, createPreview]);
+      if (file.size > 10 * 1024 * 1024) {
+        setError("File is too large (maximum 10MB).");
+        setErrorSuggestion(
+          "Try compressing the image or using a lower resolution scanner.",
+        );
+        return;
+      }
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "application/pdf",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        setError(`Invalid file format (${file.type}).`);
+        setErrorSuggestion(
+          "Convert your document to JPG, PNG, or PDF format before uploading.",
+        );
+        return;
+      }
+
+      createPreview(file);
+      setUploading(true);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("verificationId", verificationId);
+        formData.append("documentType", type);
+
+        const csrfToken = getCsrfTokenFromCookie();
+        const res = await fetch("/api/kyc/documents/upload", {
+          method: "POST",
+          credentials: "include",
+          headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to upload document");
+        }
+
+        const doc: UploadedDocument = {
+          id: data.document.id,
+          documentType: type,
+          fileName: file.name,
+          status: "pending",
+        };
+
+        setUploaded(doc);
+        onUploadComplete(doc);
+        toast({
+          title: "Document uploaded",
+          description: data.message || `${title} uploaded successfully.`,
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to upload document";
+        setError(message);
+        setPreview(null);
+        toast({
+          title: "Upload failed",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
+    [verificationId, type, title, onUploadComplete, toast, createPreview],
+  );
 
   const getStatusBadge = () => {
     if (!uploaded) return null;
-    
+
     switch (uploaded.status) {
-      case 'approved':
+      case "approved":
         return <Badge className="bg-green-500">Approved</Badge>;
-      case 'rejected':
+      case "rejected":
         return <Badge variant="destructive">Rejected</Badge>;
       default:
         return <Badge variant="secondary">Pending Review</Badge>;
@@ -1252,24 +1640,34 @@ function DocumentUploadCard({ title, description, type, verificationId, existing
   };
 
   return (
-    <div className={`border rounded-lg p-4 transition-colors ${
-      uploaded?.status === 'approved' ? 'border-green-500 bg-green-500/5' :
-      uploaded?.status === 'rejected' ? 'border-destructive bg-destructive/5' :
-      uploaded ? 'border-primary/50 bg-primary/5' : 'border-dashed hover:border-primary/50'
-    }`}>
+    <div
+      className={`border rounded-lg p-4 transition-colors ${
+        uploaded?.status === "approved"
+          ? "border-green-500 bg-green-500/5"
+          : uploaded?.status === "rejected"
+            ? "border-destructive bg-destructive/5"
+            : uploaded
+              ? "border-primary/50 bg-primary/5"
+              : "border-dashed hover:border-primary/50"
+      }`}
+    >
       <div className="flex items-start justify-between gap-4">
         {preview && uploaded && (
           <div className="flex-shrink-0">
-            {preview === 'pdf' ? (
+            {preview === "pdf" ? (
               <div className="w-16 h-16 bg-muted rounded flex items-center justify-center">
                 <FileText className="h-8 w-8 text-muted-foreground" />
               </div>
             ) : (
-              <div 
+              <div
                 className="relative w-16 h-16 rounded overflow-hidden cursor-pointer border hover:border-primary"
                 onClick={() => setShowPreview(true)}
               >
-                <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Eye className="h-4 w-4 text-white" />
                 </div>
@@ -1277,7 +1675,7 @@ function DocumentUploadCard({ title, description, type, verificationId, existing
             )}
           </div>
         )}
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h4 className="font-medium">{title}</h4>
@@ -1290,10 +1688,14 @@ function DocumentUploadCard({ title, description, type, verificationId, existing
               <span className="truncate">{uploaded.fileName}</span>
             </p>
           )}
-          {uploaded?.status === 'rejected' && uploaded.rejectionReason && (
+          {uploaded?.status === "rejected" && uploaded.rejectionReason && (
             <div className="mt-2 p-2 bg-destructive/10 rounded text-xs">
-              <p className="text-destructive font-medium">Rejected: {uploaded.rejectionReason}</p>
-              <p className="text-muted-foreground mt-1">Please upload a new document.</p>
+              <p className="text-destructive font-medium">
+                Rejected: {uploaded.rejectionReason}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                Please upload a new document.
+              </p>
             </div>
           )}
           {error && (
@@ -1305,24 +1707,26 @@ function DocumentUploadCard({ title, description, type, verificationId, existing
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2 flex-shrink-0">
-          {uploaded?.status === 'approved' ? (
+          {uploaded?.status === "approved" ? (
             <div className="flex items-center gap-2">
               <CheckCircle className="h-6 w-6 text-green-500" />
             </div>
           ) : uploading ? (
             <div className="flex flex-col items-center gap-1">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="text-xs text-muted-foreground">Uploading...</span>
+              <span className="text-xs text-muted-foreground">
+                Uploading...
+              </span>
             </div>
           ) : (
-            <Button 
-              variant={uploaded ? 'ghost' : 'outline'} 
-              size="sm" 
+            <Button
+              variant={uploaded ? "ghost" : "outline"}
+              size="sm"
               onClick={() => fileInputRef.current?.click()}
             >
-              {uploaded?.status === 'rejected' ? (
+              {uploaded?.status === "rejected" ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Re-upload
@@ -1330,7 +1734,7 @@ function DocumentUploadCard({ title, description, type, verificationId, existing
               ) : (
                 <>
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploaded ? 'Replace' : 'Upload'}
+                  {uploaded ? "Replace" : "Upload"}
                 </>
               )}
             </Button>
@@ -1338,16 +1742,20 @@ function DocumentUploadCard({ title, description, type, verificationId, existing
         </div>
       </div>
 
-      {showPreview && preview && preview !== 'pdf' && (
-        <div 
+      {showPreview && preview && preview !== "pdf" && (
+        <div
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
           onClick={() => setShowPreview(false)}
         >
           <div className="relative max-w-4xl max-h-[90vh]">
-            <img src={preview} alt="Document preview" className="max-w-full max-h-[90vh] rounded-lg" />
-            <Button 
-              variant="secondary" 
-              size="sm" 
+            <img
+              src={preview}
+              alt="Document preview"
+              className="max-w-full max-h-[90vh] rounded-lg"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
               className="absolute top-2 right-2"
               onClick={() => setShowPreview(false)}
             >

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ZoomIn, ZoomOut, Activity } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useRef, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ZoomIn, ZoomOut, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ProfessionalWaveformProps {
   audioData?: Float32Array | number[];
@@ -35,9 +35,9 @@ export function ProfessionalWaveform({
   showFrequencyColors = true,
   showTransients = true,
   showGrid = true,
-  primaryColor = '#00ff00',
-  backgroundColor = 'var(--studio-bg-deep)',
-  className = '',
+  primaryColor = "#00ff00",
+  backgroundColor = "var(--studio-bg-deep)",
+  className = "",
 }: ProfessionalWaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [internalZoom, setInternalZoom] = useState(zoom);
@@ -65,7 +65,7 @@ export function ProfessionalWaveform({
     const startIdx = Math.floor(offset * dataArray.length);
     const endIdx = Math.min(
       startIdx + Math.floor(dataArray.length / internalZoom),
-      dataArray.length
+      dataArray.length,
     );
 
     return dataArray.slice(startIdx, endIdx);
@@ -123,7 +123,7 @@ export function ProfessionalWaveform({
     const canvas = canvasRef.current;
     if (!canvas || !processedData) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // Set canvas resolution for high DPI displays
@@ -138,7 +138,7 @@ export function ProfessionalWaveform({
 
     // Draw grid
     if (showGrid) {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
       ctx.lineWidth = 0.5;
 
       // Vertical grid lines (time markers)
@@ -163,9 +163,9 @@ export function ProfessionalWaveform({
 
     // Create gradient for overall waveform
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, 'rgba(0, 255, 100, 0.9)');
-    gradient.addColorStop(0.5, 'rgba(0, 255, 0, 0.7)');
-    gradient.addColorStop(1, 'rgba(0, 255, 100, 0.9)');
+    gradient.addColorStop(0, "rgba(0, 255, 100, 0.9)");
+    gradient.addColorStop(0.5, "rgba(0, 255, 0, 0.7)");
+    gradient.addColorStop(1, "rgba(0, 255, 100, 0.9)");
 
     // Draw waveform bars
     processedData.forEach((value, i) => {
@@ -181,20 +181,30 @@ export function ProfessionalWaveform({
       }
 
       // Draw mirrored bars for stereo effect
-      ctx.fillRect(x, centerY - barHeight / 2, Math.max(barWidth - 0.5, 0.5), barHeight);
+      ctx.fillRect(
+        x,
+        centerY - barHeight / 2,
+        Math.max(barWidth - 0.5, 0.5),
+        barHeight,
+      );
 
       // Add subtle glow for peaks
       if (amplitude > 0.8) {
         ctx.shadowBlur = 10;
         ctx.shadowColor = ctx.fillStyle.toString();
-        ctx.fillRect(x, centerY - barHeight / 2, Math.max(barWidth - 0.5, 0.5), barHeight);
+        ctx.fillRect(
+          x,
+          centerY - barHeight / 2,
+          Math.max(barWidth - 0.5, 0.5),
+          barHeight,
+        );
         ctx.shadowBlur = 0;
       }
     });
 
     // Draw transient markers
     if (showTransients && transients.length > 0) {
-      ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+      ctx.strokeStyle = "rgba(255, 0, 0, 0.6)";
       ctx.lineWidth = 1;
 
       transients.forEach((marker) => {
@@ -217,7 +227,7 @@ export function ProfessionalWaveform({
       const playheadX = (currentTime / duration) * width;
 
       // Playhead line
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -226,8 +236,8 @@ export function ProfessionalWaveform({
 
       // Playhead glow
       ctx.shadowBlur = 10;
-      ctx.shadowColor = '#fff';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.shadowColor = "#fff";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
       ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -239,7 +249,7 @@ export function ProfessionalWaveform({
     // Draw hover indicator
     if (hoveredTime !== null) {
       const hoverX = hoveredTime * width;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
       ctx.moveTo(hoverX, 0);

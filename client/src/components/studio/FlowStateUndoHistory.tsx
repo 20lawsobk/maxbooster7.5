@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Undo2,
   Redo2,
@@ -12,23 +12,23 @@ import {
   RotateCcw,
   Bookmark,
   BookmarkCheck,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
+} from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export interface HistoryAction {
   id: string;
@@ -52,29 +52,29 @@ interface FlowStateUndoHistoryProps {
 }
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
-  'add-track': Circle,
-  'delete-track': Trash2,
-  'move-clip': ChevronRight,
-  'add-note': Circle,
-  'delete-note': Trash2,
-  'automation': ChevronRight,
-  'plugin': Circle,
-  'volume': Circle,
-  'pan': Circle,
-  'default': History,
+  "add-track": Circle,
+  "delete-track": Trash2,
+  "move-clip": ChevronRight,
+  "add-note": Circle,
+  "delete-note": Trash2,
+  automation: ChevronRight,
+  plugin: Circle,
+  volume: Circle,
+  pan: Circle,
+  default: History,
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  'add-track': '#22c55e',
-  'delete-track': '#ef4444',
-  'move-clip': '#3b82f6',
-  'add-note': '#8b5cf6',
-  'delete-note': '#ef4444',
-  'automation': '#f59e0b',
-  'plugin': '#06b6d4',
-  'volume': '#22c55e',
-  'pan': '#ec4899',
-  'default': '#6b7280',
+  "add-track": "#22c55e",
+  "delete-track": "#ef4444",
+  "move-clip": "#3b82f6",
+  "add-note": "#8b5cf6",
+  "delete-note": "#ef4444",
+  automation: "#f59e0b",
+  plugin: "#06b6d4",
+  volume: "#22c55e",
+  pan: "#ec4899",
+  default: "#6b7280",
 };
 
 export function FlowStateUndoHistory({
@@ -94,28 +94,35 @@ export function FlowStateUndoHistory({
   const canUndo = currentIndex > 0;
   const canRedo = currentIndex < actions.length - 1;
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-      e.preventDefault();
-      if (e.shiftKey) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (canRedo) onRedo();
+        } else {
+          if (canUndo) onUndo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "y") {
+        e.preventDefault();
         if (canRedo) onRedo();
-      } else {
-        if (canUndo) onUndo();
       }
-    } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-      e.preventDefault();
-      if (canRedo) onRedo();
-    }
-  }, [canUndo, canRedo, onUndo, onRedo]);
+    },
+    [canUndo, canRedo, onUndo, onRedo],
+  );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
   const formatTime = (timestamp: number): string => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
   };
 
   const formatTimeAgo = (timestamp: number): string => {
@@ -128,7 +135,10 @@ export function FlowStateUndoHistory({
   };
 
   const groupedActions = useMemo(() => {
-    const groups: { label: string; actions: (HistoryAction & { index: number })[] }[] = [];
+    const groups: {
+      label: string;
+      actions: (HistoryAction & { index: number })[];
+    }[] = [];
     let currentGroup: (HistoryAction & { index: number })[] = [];
     let lastTimestamp = 0;
 
@@ -154,15 +164,18 @@ export function FlowStateUndoHistory({
     return groups.reverse();
   }, [actions]);
 
-  const handleJumpTo = useCallback((index: number) => {
-    onJumpTo(index);
-    toast({ title: `Jumped to: ${actions[index]?.description || 'state'}` });
-  }, [onJumpTo, actions, toast]);
+  const handleJumpTo = useCallback(
+    (index: number) => {
+      onJumpTo(index);
+      toast({ title: `Jumped to: ${actions[index]?.description || "state"}` });
+    },
+    [onJumpTo, actions, toast],
+  );
 
   const handleClear = useCallback(() => {
     onClear();
     setIsOpen(false);
-    toast({ title: 'History cleared' });
+    toast({ title: "History cleared" });
   }, [onClear, toast]);
 
   return (
@@ -182,7 +195,11 @@ export function FlowStateUndoHistory({
           </TooltipTrigger>
           <TooltipContent>
             <p>Undo (Ctrl+Z)</p>
-            {canUndo && <p className="text-xs text-white/60">{actions[currentIndex - 1]?.description}</p>}
+            {canUndo && (
+              <p className="text-xs text-white/60">
+                {actions[currentIndex - 1]?.description}
+              </p>
+            )}
           </TooltipContent>
         </Tooltip>
 
@@ -200,7 +217,11 @@ export function FlowStateUndoHistory({
           </TooltipTrigger>
           <TooltipContent>
             <p>Redo (Ctrl+Y)</p>
-            {canRedo && <p className="text-xs text-white/60">{actions[currentIndex + 1]?.description}</p>}
+            {canRedo && (
+              <p className="text-xs text-white/60">
+                {actions[currentIndex + 1]?.description}
+              </p>
+            )}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -269,8 +290,10 @@ export function FlowStateUndoHistory({
                   </div>
                   <div className="space-y-1">
                     {group.actions.map((action) => {
-                      const Icon = ACTION_ICONS[action.type] || ACTION_ICONS.default;
-                      const color = ACTION_COLORS[action.type] || ACTION_COLORS.default;
+                      const Icon =
+                        ACTION_ICONS[action.type] || ACTION_ICONS.default;
+                      const color =
+                        ACTION_COLORS[action.type] || ACTION_COLORS.default;
                       const isCurrent = action.index === currentIndex;
                       const isFuture = action.index > currentIndex;
 
@@ -283,7 +306,7 @@ export function FlowStateUndoHistory({
                               ? "bg-blue-500/20 border border-blue-500/30"
                               : isFuture
                                 ? "opacity-50 hover:opacity-75 hover:bg-slate-800/50"
-                                : "hover:bg-slate-800/50"
+                                : "hover:bg-slate-800/50",
                           )}
                           onClick={() => handleJumpTo(action.index)}
                           whileHover={{ x: 2 }}
@@ -296,10 +319,12 @@ export function FlowStateUndoHistory({
                             <Icon className="h-3 w-3" style={{ color }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={cn(
-                              "text-sm truncate",
-                              isFuture ? "text-white/40" : "text-white"
-                            )}>
+                            <p
+                              className={cn(
+                                "text-sm truncate",
+                                isFuture ? "text-white/40" : "text-white",
+                              )}
+                            >
                               {action.description}
                             </p>
                             <p className="text-[10px] text-white/40">
@@ -323,7 +348,9 @@ export function FlowStateUndoHistory({
 
           <div className="absolute bottom-4 left-4 right-4 pt-4 border-t border-slate-800 bg-slate-950">
             <div className="flex items-center justify-between text-xs text-white/40">
-              <span>{actions.length} / {maxHistory} actions</span>
+              <span>
+                {actions.length} / {maxHistory} actions
+              </span>
               <span>Position: {currentIndex + 1}</span>
             </div>
           </div>
@@ -333,38 +360,34 @@ export function FlowStateUndoHistory({
   );
 }
 
-export function useUndoHistory<T>(
-  initialState: T,
-  maxHistory: number = 100
-) {
+export function useUndoHistory<T>(initialState: T, maxHistory: number = 100) {
   const [history, setHistory] = useState<HistoryAction[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [state, setState] = useState<T>(initialState);
 
-  const pushState = useCallback((
-    newState: T,
-    type: string,
-    description: string
-  ) => {
-    const action: HistoryAction = {
-      id: `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type,
-      description,
-      timestamp: Date.now(),
-      data: JSON.parse(JSON.stringify(newState)),
-    };
+  const pushState = useCallback(
+    (newState: T, type: string, description: string) => {
+      const action: HistoryAction = {
+        id: `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type,
+        description,
+        timestamp: Date.now(),
+        data: JSON.parse(JSON.stringify(newState)),
+      };
 
-    setHistory(prev => {
-      const newHistory = [...prev.slice(0, currentIndex + 1), action];
-      if (newHistory.length > maxHistory) {
-        return newHistory.slice(-maxHistory);
-      }
-      return newHistory;
-    });
+      setHistory((prev) => {
+        const newHistory = [...prev.slice(0, currentIndex + 1), action];
+        if (newHistory.length > maxHistory) {
+          return newHistory.slice(-maxHistory);
+        }
+        return newHistory;
+      });
 
-    setCurrentIndex(prev => Math.min(prev + 1, maxHistory - 1));
-    setState(newState);
-  }, [currentIndex, maxHistory]);
+      setCurrentIndex((prev) => Math.min(prev + 1, maxHistory - 1));
+      setState(newState);
+    },
+    [currentIndex, maxHistory],
+  );
 
   const undo = useCallback(() => {
     if (currentIndex > 0) {
@@ -382,12 +405,15 @@ export function useUndoHistory<T>(
     }
   }, [currentIndex, history]);
 
-  const jumpTo = useCallback((index: number) => {
-    if (index >= 0 && index < history.length) {
-      setCurrentIndex(index);
-      setState(history[index].data);
-    }
-  }, [history]);
+  const jumpTo = useCallback(
+    (index: number) => {
+      if (index >= 0 && index < history.length) {
+        setCurrentIndex(index);
+        setState(history[index].data);
+      }
+    },
+    [history],
+  );
 
   const clear = useCallback(() => {
     setHistory([]);
@@ -395,9 +421,13 @@ export function useUndoHistory<T>(
   }, []);
 
   const bookmark = useCallback((index: number) => {
-    setHistory(prev => prev.map((action, i) =>
-      i === index ? { ...action, isBookmarked: !action.isBookmarked } : action
-    ));
+    setHistory((prev) =>
+      prev.map((action, i) =>
+        i === index
+          ? { ...action, isBookmarked: !action.isBookmarked }
+          : action,
+      ),
+    );
   }, []);
 
   return {

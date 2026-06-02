@@ -21,14 +21,30 @@
  * - Weighted recency model: last 7 days worth 3x more than days 8-30
  */
 
-import { db } from '../db.js';
-import { customerHealthScores, sessions, featureEvents, users, subscriptions } from '@shared/schema';
-import { eq, and, gte, count, countDistinct, desc, gt, asc, sql } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import { newBullMQRedisConnection } from '../lib/redisClient.js';
-import { Queue } from 'bullmq';
+import { db } from "../db.js";
+import {
+  customerHealthScores,
+  sessions,
+  featureEvents,
+  users,
+  subscriptions,
+} from "@shared/schema";
+import {
+  eq,
+  and,
+  gte,
+  count,
+  countDistinct,
+  desc,
+  gt,
+  asc,
+  sql,
+} from "drizzle-orm";
+import { logger } from "../logger.js";
+import { newBullMQRedisConnection } from "../lib/redisClient.js";
+import { Queue } from "bullmq";
 
-export type RiskLevel = 'healthy' | 'at_risk' | 'churning';
+export type RiskLevel = "healthy" | "at_risk" | "churning";
 
 export interface HealthScoreResult {
   score: number;
@@ -40,7 +56,7 @@ export interface HealthScoreResult {
   daysSinceLastLogin: number;
   featuresUsed: number;
   totalSessions: number;
-  trend?: 'improving' | 'stable' | 'declining';
+  trend?: "improving" | "stable" | "declining";
   interventionPriority?: number;
 }
 
@@ -66,14 +82,22 @@ class CustomerHealthScoreService {
       .limit(1);
 
     const daysSinceLastLogin = lastSessionRow?.lastActivity
-      ? Math.floor((now.getTime() - lastSessionRow.lastActivity.getTime()) / (24 * 60 * 60 * 1000))
+      ? Math.floor(
+          (now.getTime() - lastSessionRow.lastActivity.getTime()) /
+            (24 * 60 * 60 * 1000),
+        )
       : 999;
 
     // ── Session count (30-day window) ─────────────────────────────────────────
     const [sessionCountRow] = await db
       .select({ count: count() })
       .from(sessions)
-      .where(and(eq(sessions.userId, userId), gte(sessions.createdAt!, thirtyDaysAgo)))
+      .where(
+        and(
+          eq(sessions.userId, userId),
+          gte(sessions.createdAt!, thirtyDaysAgo),
+        ),
+      )
       .limit(1);
 
     const totalSessions = Number(sessionCountRow?.count ?? 0);
@@ -82,7 +106,12 @@ class CustomerHealthScoreService {
     const [recentSessionRow] = await db
       .select({ count: count() })
       .from(sessions)
-      .where(and(eq(sessions.userId, userId), gte(sessions.createdAt!, sevenDaysAgo)))
+      .where(
+        and(
+          eq(sessions.userId, userId),
+          gte(sessions.createdAt!, sevenDaysAgo),
+        ),
+      )
       .limit(1);
 
     const recentSessions = Number(recentSessionRow?.count ?? 0);
@@ -91,7 +120,12 @@ class CustomerHealthScoreService {
     const [featureCountRow] = await db
       .select({ distinct: countDistinct(featureEvents.featureName) })
       .from(featureEvents)
-      .where(and(eq(featureEvents.userId, userId), gte(featureEvents.createdAt!, ninetyDaysAgo)))
+      .where(
+        and(
+          eq(featureEvents.userId, userId),
+          gte(featureEvents.createdAt!, ninetyDaysAgo),
+        ),
+      )
       .limit(1);
 
     const featuresUsed = Number(featureCountRow?.distinct ?? 0);
@@ -105,34 +139,55 @@ class CustomerHealthScoreService {
       .limit(1);
 
     const [userRow] = await db
-      .select({ subscriptionStatus: users.subscriptionStatus, subscriptionTier: users.subscriptionTier })
+      .select({
+        subscriptionStatus: users.subscriptionStatus,
+        subscriptionTier: users.subscriptionTier,
+      })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
-    const subStatus = subscriptionRow?.status ?? userRow?.subscriptionStatus ?? 'free';
-    const subTier = subscriptionRow?.plan ?? userRow?.subscriptionTier ?? 'free';
+    const subStatus =
+      subscriptionRow?.status ?? userRow?.subscriptionStatus ?? "free";
+    const subTier =
+      subscriptionRow?.plan ?? userRow?.subscriptionTier ?? "free";
 
     // ── Compute sub-scores ─────────────────────────────────────────────────────
-    const loginFrequencyScore = this.computeLoginScore(daysSinceLastLogin, totalSessions, recentSessions);
-    const featureAdoptionScore = this.computeFeatureScore(featuresUsed, subTier);
-    const engagementScore = this.computeEngagementScore(totalSessions, daysSinceLastLogin, recentSessions);
+    const loginFrequencyScore = this.computeLoginScore(
+      daysSinceLastLogin,
+      totalSessions,
+      recentSessions,
+    );
+    const featureAdoptionScore = this.computeFeatureScore(
+      featuresUsed,
+      subTier,
+    );
+    const engagementScore = this.computeEngagementScore(
+      totalSessions,
+      daysSinceLastLogin,
+      recentSessions,
+    );
     const paymentHealthScore = this.computePaymentScore(subStatus, subTier);
 
     // Fine-tuned weights: feature adoption slightly higher (strongest predictor for music platforms)
     const score = Math.round(
-      loginFrequencyScore   * 0.28 +
-      featureAdoptionScore  * 0.27 +
-      engagementScore       * 0.25 +
-      paymentHealthScore    * 0.20
+      loginFrequencyScore * 0.28 +
+        featureAdoptionScore * 0.27 +
+        engagementScore * 0.25 +
+        paymentHealthScore * 0.2,
     );
 
     // Adjusted thresholds (calibrated to reduce false "healthy" classifications)
-    const riskLevel: RiskLevel = score >= 68 ? 'healthy' : score >= 38 ? 'at_risk' : 'churning';
+    const riskLevel: RiskLevel =
+      score >= 68 ? "healthy" : score >= 38 ? "at_risk" : "churning";
 
     // Intervention priority — 0-100, higher = act faster
-    const interventionPriority = riskLevel === 'churning' ? 100 - score :
-                                  riskLevel === 'at_risk'  ? Math.round((67 - score) * 1.5) : 0;
+    const interventionPriority =
+      riskLevel === "churning"
+        ? 100 - score
+        : riskLevel === "at_risk"
+          ? Math.round((67 - score) * 1.5)
+          : 0;
 
     return {
       score,
@@ -153,7 +208,11 @@ class CustomerHealthScoreService {
    * Artists often disappear for 2-3 weeks during release prep, so recency thresholds
    * are wider than standard SaaS (where daily use is expected).
    */
-  private computeLoginScore(daysSinceLastLogin: number, sessionsLast30Days: number, sessionsLast7Days: number): number {
+  private computeLoginScore(
+    daysSinceLastLogin: number,
+    sessionsLast30Days: number,
+    sessionsLast7Days: number,
+  ): number {
     // Recency component (60%) — decays exponentially after 14 days
     let recencyScore: number;
     if (daysSinceLastLogin <= 1) recencyScore = 100;
@@ -177,7 +236,10 @@ class CustomerHealthScoreService {
     // Recent activity boost — 7-day sessions are 1.5x more predictive of retention
     const recentBoost = Math.min(15, sessionsLast7Days * 4);
 
-    return Math.min(100, Math.round(recencyScore * 0.60 + frequencyScore * 0.40 + recentBoost));
+    return Math.min(
+      100,
+      Math.round(recencyScore * 0.6 + frequencyScore * 0.4 + recentBoost),
+    );
   }
 
   /**
@@ -196,17 +258,17 @@ class CustomerHealthScoreService {
       lifetime: 50,
     };
 
-    const tierKey = tier?.toLowerCase() || 'free';
+    const tierKey = tier?.toLowerCase() || "free";
     const maxFeatures = maxFeaturesByTier[tierKey] || 15;
     const adoptionRate = Math.min(1, featuresUsed / maxFeatures);
 
     // Stepwise score with adoption rate
     if (adoptionRate >= 0.75) return 100;
-    if (adoptionRate >= 0.60) return 90;
+    if (adoptionRate >= 0.6) return 90;
     if (adoptionRate >= 0.45) return 78;
-    if (adoptionRate >= 0.30) return 62;
-    if (adoptionRate >= 0.20) return 45;
-    if (adoptionRate >= 0.10) return 28;
+    if (adoptionRate >= 0.3) return 62;
+    if (adoptionRate >= 0.2) return 45;
+    if (adoptionRate >= 0.1) return 28;
     if (featuresUsed >= 1) return 15;
     return 0;
   }
@@ -215,9 +277,14 @@ class CustomerHealthScoreService {
    * Engagement depth score — combines 30-day sessions with recent activity weighting.
    * Music platform: an artist in production mode may have fewer but longer sessions.
    */
-  private computeEngagementScore(sessions30d: number, daysSinceLastLogin: number, sessionsLast7Days: number): number {
+  private computeEngagementScore(
+    sessions30d: number,
+    daysSinceLastLogin: number,
+    sessionsLast7Days: number,
+  ): number {
     if (daysSinceLastLogin > 60) return 0;
-    if (daysSinceLastLogin > 30) return Math.max(0, 10 - Math.floor((daysSinceLastLogin - 30) / 5));
+    if (daysSinceLastLogin > 30)
+      return Math.max(0, 10 - Math.floor((daysSinceLastLogin - 30) / 5));
 
     // Base score from 30-day sessions
     let baseScore: number;
@@ -242,21 +309,30 @@ class CustomerHealthScoreService {
    */
   private computePaymentScore(status: string, tier: string): number {
     switch (status?.toLowerCase()) {
-      case 'active':     return 100;
-      case 'trialing':   return 90;  // Trialing users convert at ~60% — healthy
-      case 'past_due':   return 25;  // High involuntary churn risk
-      case 'unpaid':     return 8;   // Almost certainly going to churn
-      case 'canceled':
-      case 'cancelled':
-      case 'canceled_':  return 0;
-      case 'paused':     return 30;  // Intentional pause — reactivatable
+      case "active":
+        return 100;
+      case "trialing":
+        return 90; // Trialing users convert at ~60% — healthy
+      case "past_due":
+        return 25; // High involuntary churn risk
+      case "unpaid":
+        return 8; // Almost certainly going to churn
+      case "canceled":
+      case "cancelled":
+      case "canceled_":
+        return 0;
+      case "paused":
+        return 30; // Intentional pause — reactivatable
       default:
         // Free tier: score 45 — not paying but not a churn problem per se
-        return tier?.toLowerCase() === 'free' ? 45 : 35;
+        return tier?.toLowerCase() === "free" ? 45 : 35;
     }
   }
 
-  private async store(userId: string, result: HealthScoreResult): Promise<void> {
+  private async store(
+    userId: string,
+    result: HealthScoreResult,
+  ): Promise<void> {
     try {
       await db
         .insert(customerHealthScores)
@@ -289,7 +365,7 @@ class CustomerHealthScoreService {
           },
         });
     } catch (err) {
-      logger.warn({ err: err }, '[HealthScore] Failed to store health score:');
+      logger.warn({ err: err }, "[HealthScore] Failed to store health score:");
     }
   }
 
@@ -297,24 +373,32 @@ class CustomerHealthScoreService {
     try {
       const redis = newBullMQRedisConnection();
       if (redis) {
-        const queue = new Queue('retention-jobs', { connection: redis });
-        await queue.add('health-score-batch', { cursor: 0, batchSize: 100 });
-        logger.info('[HealthScore] Enqueued batch compute job via BullMQ');
+        const queue = new Queue("retention-jobs", { connection: redis });
+        await queue.add("health-score-batch", { cursor: 0, batchSize: 100 });
+        logger.info("[HealthScore] Enqueued batch compute job via BullMQ");
         return;
       }
 
-      const allUsers = await db.select({ id: users.id }).from(users).limit(limit);
+      const allUsers = await db
+        .select({ id: users.id })
+        .from(users)
+        .limit(limit);
       const results = await Promise.allSettled(
-        allUsers.map((u) => this.computeAndStore(u.id))
+        allUsers.map((u) => this.computeAndStore(u.id)),
       );
-      const failed = results.filter((r) => r.status === 'rejected').length;
-      logger.info(`[HealthScore] Batch complete: ${allUsers.length - failed} updated, ${failed} failed`);
+      const failed = results.filter((r) => r.status === "rejected").length;
+      logger.info(
+        `[HealthScore] Batch complete: ${allUsers.length - failed} updated, ${failed} failed`,
+      );
     } catch (err) {
-      logger.warn({ err: err }, '[HealthScore] Batch compute failed:');
+      logger.warn({ err: err }, "[HealthScore] Batch compute failed:");
     }
   }
 
-  async batchComputePaged(cursor: number | string, batchSize: number): Promise<string | null> {
+  async batchComputePaged(
+    cursor: number | string,
+    batchSize: number,
+  ): Promise<string | null> {
     try {
       const batch = await db
         .select({ id: users.id })
@@ -330,7 +414,7 @@ class CustomerHealthScoreService {
 
       return batch[batch.length - 1].id;
     } catch (err) {
-      logger.warn({ err: err }, '[HealthScore] Batch compute paged failed:');
+      logger.warn({ err: err }, "[HealthScore] Batch compute paged failed:");
       throw err;
     }
   }
@@ -339,7 +423,9 @@ class CustomerHealthScoreService {
    * Get users at risk sorted by intervention priority (highest first).
    * Used by retention campaigns to prioritize outreach.
    */
-  async getAtRiskUsers(limit = 100): Promise<Array<{ userId: string; score: number; riskLevel: RiskLevel }>> {
+  async getAtRiskUsers(
+    limit = 100,
+  ): Promise<Array<{ userId: string; score: number; riskLevel: RiskLevel }>> {
     try {
       const results = await db
         .select({
@@ -349,18 +435,18 @@ class CustomerHealthScoreService {
         })
         .from(customerHealthScores)
         .where(
-          sql`${customerHealthScores.riskLevel} IN ('at_risk', 'churning')`
+          sql`${customerHealthScores.riskLevel} IN ('at_risk', 'churning')`,
         )
         .orderBy(asc(customerHealthScores.score))
         .limit(limit);
 
-      return results.map(r => ({
+      return results.map((r) => ({
         userId: r.userId,
         score: r.score,
         riskLevel: r.riskLevel as RiskLevel,
       }));
     } catch (err) {
-      logger.warn({ err: err }, '[HealthScore] Failed to get at-risk users:');
+      logger.warn({ err: err }, "[HealthScore] Failed to get at-risk users:");
       return [];
     }
   }

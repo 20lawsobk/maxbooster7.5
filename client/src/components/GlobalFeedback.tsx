@@ -1,9 +1,23 @@
-import { useState, useCallback, useEffect, createContext, useContext, ReactNode } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  createContext,
+  useContext,
+  ReactNode,
+} from "react";
+import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import {
   CheckCircle,
   XCircle,
@@ -17,9 +31,9 @@ import {
   Trophy,
   Rocket,
   PartyPopper,
-} from 'lucide-react';
+} from "lucide-react";
 
-export type FeedbackType = 'success' | 'error' | 'warning' | 'info' | 'loading';
+export type FeedbackType = "success" | "error" | "warning" | "info" | "loading";
 
 export interface NextStepSuggestion {
   label: string;
@@ -47,22 +61,42 @@ export interface FeedbackOptions {
 interface GlobalFeedbackContextValue {
   showFeedback: (options: FeedbackOptions) => string;
   hideFeedback: (id: string) => void;
-  showSuccess: (title: string, description?: string, nextSteps?: NextStepSuggestion[]) => string;
-  showError: (title: string, description?: string, action?: FeedbackOptions['action']) => string;
+  showSuccess: (
+    title: string,
+    description?: string,
+    nextSteps?: NextStepSuggestion[],
+  ) => string;
+  showError: (
+    title: string,
+    description?: string,
+    action?: FeedbackOptions["action"],
+  ) => string;
   showWarning: (title: string, description?: string) => string;
   showInfo: (title: string, description?: string) => string;
   showLoading: (title: string, description?: string) => string;
   updateFeedback: (id: string, options: Partial<FeedbackOptions>) => void;
-  showProgress: (title: string, progress: number, description?: string) => string;
-  showCelebration: (title: string, description?: string, achievement?: string) => void;
+  showProgress: (
+    title: string,
+    progress: number,
+    description?: string,
+  ) => string;
+  showCelebration: (
+    title: string,
+    description?: string,
+    achievement?: string,
+  ) => void;
 }
 
-const GlobalFeedbackContext = createContext<GlobalFeedbackContextValue | null>(null);
+const GlobalFeedbackContext = createContext<GlobalFeedbackContextValue | null>(
+  null,
+);
 
 export function useGlobalFeedback() {
   const context = useContext(GlobalFeedbackContext);
   if (!context) {
-    throw new Error('useGlobalFeedback must be used within a GlobalFeedbackProvider');
+    throw new Error(
+      "useGlobalFeedback must be used within a GlobalFeedbackProvider",
+    );
   }
   return context;
 }
@@ -76,11 +110,11 @@ const feedbackIcons: Record<FeedbackType, ReactNode> = {
 };
 
 const feedbackVariants: Record<FeedbackType, string> = {
-  success: 'success',
-  error: 'destructive',
-  warning: 'warning',
-  info: 'info',
-  loading: 'loading',
+  success: "success",
+  error: "destructive",
+  warning: "warning",
+  info: "info",
+  loading: "loading",
 } as const;
 
 interface FeedbackItem extends FeedbackOptions {
@@ -90,16 +124,31 @@ interface FeedbackItem extends FeedbackOptions {
 export function GlobalFeedbackProvider({ children }: { children: ReactNode }) {
   const [activeFeedback, setActiveFeedback] = useState<FeedbackItem[]>([]);
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
-  const [celebrationData, setCelebrationData] = useState<{ title: string; description?: string; achievement?: string } | null>(null);
+  const [celebrationData, setCelebrationData] = useState<{
+    title: string;
+    description?: string;
+    achievement?: string;
+  } | null>(null);
 
-  const generateId = () => `feedback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const generateId = () =>
+    `feedback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   const showFeedback = useCallback((options: FeedbackOptions): string => {
     const id = generateId();
-    const { type, title, description, duration = 5000, action, nextSteps, showConfetti, persistent, dismissible = true } = options;
+    const {
+      type,
+      title,
+      description,
+      duration = 5000,
+      action,
+      nextSteps,
+      showConfetti,
+      persistent,
+      dismissible = true,
+    } = options;
 
     if (nextSteps && nextSteps.length > 0) {
-      setActiveFeedback(prev => [...prev, { ...options, id }]);
+      setActiveFeedback((prev) => [...prev, { ...options, id }]);
     } else {
       const toastResult = toast({
         title: (
@@ -109,7 +158,7 @@ export function GlobalFeedbackProvider({ children }: { children: ReactNode }) {
           </div>
         ) as unknown as string,
         description,
-        variant: feedbackVariants[type] as 'default' | 'destructive',
+        variant: feedbackVariants[type] as "default" | "destructive",
         duration: persistent ? Infinity : duration,
       });
 
@@ -137,14 +186,14 @@ export function GlobalFeedbackProvider({ children }: { children: ReactNode }) {
                 </Button>
               </div>
             ) as unknown as string,
-            variant: feedbackVariants[type] as 'default' | 'destructive',
+            variant: feedbackVariants[type] as "default" | "destructive",
             duration: persistent ? Infinity : duration,
           });
         }, 0);
       }
     }
 
-    if (showConfetti && type === 'success') {
+    if (showConfetti && type === "success") {
       triggerConfetti();
     }
 
@@ -152,70 +201,132 @@ export function GlobalFeedbackProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const hideFeedback = useCallback((id: string) => {
-    setActiveFeedback(prev => prev.filter(f => f.id !== id));
+    setActiveFeedback((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
-  const updateFeedback = useCallback((id: string, options: Partial<FeedbackOptions>) => {
-    setActiveFeedback(prev => 
-      prev.map(f => f.id === id ? { ...f, ...options } : f)
-    );
-  }, []);
+  const updateFeedback = useCallback(
+    (id: string, options: Partial<FeedbackOptions>) => {
+      setActiveFeedback((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, ...options } : f)),
+      );
+    },
+    [],
+  );
 
-  const showSuccess = useCallback((title: string, description?: string, nextSteps?: NextStepSuggestion[]): string => {
-    return showFeedback({ type: 'success', title, description, nextSteps, duration: nextSteps ? 10000 : 5000 });
-  }, [showFeedback]);
+  const showSuccess = useCallback(
+    (
+      title: string,
+      description?: string,
+      nextSteps?: NextStepSuggestion[],
+    ): string => {
+      return showFeedback({
+        type: "success",
+        title,
+        description,
+        nextSteps,
+        duration: nextSteps ? 10000 : 5000,
+      });
+    },
+    [showFeedback],
+  );
 
-  const showError = useCallback((title: string, description?: string, action?: FeedbackOptions['action']): string => {
-    return showFeedback({ type: 'error', title, description, action, duration: 8000 });
-  }, [showFeedback]);
+  const showError = useCallback(
+    (
+      title: string,
+      description?: string,
+      action?: FeedbackOptions["action"],
+    ): string => {
+      return showFeedback({
+        type: "error",
+        title,
+        description,
+        action,
+        duration: 8000,
+      });
+    },
+    [showFeedback],
+  );
 
-  const showWarning = useCallback((title: string, description?: string): string => {
-    return showFeedback({ type: 'warning', title, description });
-  }, [showFeedback]);
+  const showWarning = useCallback(
+    (title: string, description?: string): string => {
+      return showFeedback({ type: "warning", title, description });
+    },
+    [showFeedback],
+  );
 
-  const showInfo = useCallback((title: string, description?: string): string => {
-    return showFeedback({ type: 'info', title, description });
-  }, [showFeedback]);
+  const showInfo = useCallback(
+    (title: string, description?: string): string => {
+      return showFeedback({ type: "info", title, description });
+    },
+    [showFeedback],
+  );
 
-  const showLoading = useCallback((title: string, description?: string): string => {
-    return showFeedback({ type: 'loading', title, description, persistent: true, dismissible: false });
-  }, [showFeedback]);
+  const showLoading = useCallback(
+    (title: string, description?: string): string => {
+      return showFeedback({
+        type: "loading",
+        title,
+        description,
+        persistent: true,
+        dismissible: false,
+      });
+    },
+    [showFeedback],
+  );
 
-  const showProgress = useCallback((title: string, progress: number, description?: string): string => {
-    const id = generateId();
-    toast({
-      title: (
-        <div className="space-y-2 w-full">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{title}</span>
+  const showProgress = useCallback(
+    (title: string, progress: number, description?: string): string => {
+      const id = generateId();
+      toast({
+        title: (
+          <div className="space-y-2 w-full">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>{title}</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+            {description && (
+              <p className="text-xs text-muted-foreground">{description}</p>
+            )}
           </div>
-          <Progress value={progress} className="h-2" />
-          {description && <p className="text-xs text-muted-foreground">{description}</p>}
-        </div>
-      ) as unknown as string,
-      duration: Infinity,
-    });
-    return id;
-  }, []);
+        ) as unknown as string,
+        duration: Infinity,
+      });
+      return id;
+    },
+    [],
+  );
 
-  const showCelebration = useCallback((title: string, description?: string, achievement?: string) => {
-    setCelebrationData({ title, description, achievement });
-    setShowCelebrationModal(true);
-    triggerConfetti();
-  }, []);
+  const showCelebration = useCallback(
+    (title: string, description?: string, achievement?: string) => {
+      setCelebrationData({ title, description, achievement });
+      setShowCelebrationModal(true);
+      triggerConfetti();
+    },
+    [],
+  );
 
   const triggerConfetti = () => {
-    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    const colors = [
+      "#ff0000",
+      "#00ff00",
+      "#0000ff",
+      "#ffff00",
+      "#ff00ff",
+      "#00ffff",
+    ];
     const confettiCount = 150;
-    
+
     for (let i = 0; i < confettiCount; i++) {
-      createConfettiPiece(colors[Math.floor(Math.random() * colors.length)], i * 10);
+      createConfettiPiece(
+        colors[Math.floor(Math.random() * colors.length)],
+        i * 10,
+      );
     }
   };
 
   const createConfettiPiece = (color: string, delay: number) => {
-    const piece = document.createElement('div');
+    const piece = document.createElement("div");
     piece.style.cssText = `
       position: fixed;
       width: 10px;
@@ -229,13 +340,13 @@ export function GlobalFeedbackProvider({ children }: { children: ReactNode }) {
       animation-delay: ${delay}ms;
       transform: rotate(${Math.random() * 360}deg);
     `;
-    
+
     document.body.appendChild(piece);
     setTimeout(() => piece.remove(), 3000 + delay);
   };
 
   useEffect(() => {
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       @keyframes confetti-fall {
         0% {
@@ -276,8 +387,8 @@ export function GlobalFeedbackProvider({ children }: { children: ReactNode }) {
   return (
     <GlobalFeedbackContext.Provider value={value}>
       {children}
-      
-      {activeFeedback.map(feedback => (
+
+      {activeFeedback.map((feedback) => (
         <NextStepsFeedback
           key={feedback.id}
           feedback={feedback}
@@ -307,13 +418,15 @@ function NextStepsFeedback({ feedback, onDismiss }: NextStepsFeedbackProps) {
 
   return (
     <div className="fixed bottom-20 lg:bottom-4 right-4 z-[10000] animate-in slide-in-from-bottom-5 duration-300">
-      <Card className={cn(
-        'w-80 shadow-lg border-l-4',
-        type === 'success' && 'border-l-green-500',
-        type === 'error' && 'border-l-red-500',
-        type === 'warning' && 'border-l-yellow-500',
-        type === 'info' && 'border-l-blue-500',
-      )}>
+      <Card
+        className={cn(
+          "w-80 shadow-lg border-l-4",
+          type === "success" && "border-l-green-500",
+          type === "error" && "border-l-red-500",
+          type === "warning" && "border-l-yellow-500",
+          type === "info" && "border-l-blue-500",
+        )}
+      >
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
@@ -321,7 +434,12 @@ function NextStepsFeedback({ feedback, onDismiss }: NextStepsFeedbackProps) {
               <CardTitle className="text-sm">{title}</CardTitle>
             </div>
             {dismissible && (
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onDismiss}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={onDismiss}
+              >
                 <X className="h-4 w-4" />
               </Button>
             )}
@@ -330,15 +448,17 @@ function NextStepsFeedback({ feedback, onDismiss }: NextStepsFeedbackProps) {
             <CardDescription className="text-xs">{description}</CardDescription>
           )}
         </CardHeader>
-        
+
         {nextSteps && nextSteps.length > 0 && (
           <CardContent className="pt-0 pb-2">
-            <p className="text-xs text-muted-foreground mb-2">Suggested next steps:</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Suggested next steps:
+            </p>
             <div className="space-y-2">
               {nextSteps.map((step, index) => (
                 <Button
                   key={index}
-                  variant={step.primary ? 'default' : 'outline'}
+                  variant={step.primary ? "default" : "outline"}
                   size="sm"
                   className="w-full justify-between text-xs"
                   onClick={() => {
@@ -356,9 +476,14 @@ function NextStepsFeedback({ feedback, onDismiss }: NextStepsFeedbackProps) {
             </div>
           </CardContent>
         )}
-        
+
         <CardFooter className="pt-0">
-          <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={onDismiss}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={onDismiss}
+          >
             Dismiss
           </Button>
         </CardFooter>
@@ -374,7 +499,12 @@ interface CelebrationModalProps {
   onClose: () => void;
 }
 
-function CelebrationModal({ title, description, achievement, onClose }: CelebrationModalProps) {
+function CelebrationModal({
+  title,
+  description,
+  achievement,
+  onClose,
+}: CelebrationModalProps) {
   useEffect(() => {
     const timer = setTimeout(onClose, 5000);
     return () => clearTimeout(timer);
@@ -382,7 +512,10 @@ function CelebrationModal({ title, description, achievement, onClose }: Celebrat
 
   return (
     <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-      <Card className="w-96 text-center shadow-2xl animate-in zoom-in-95 duration-300" style={{ animation: 'celebration-bounce 0.5s ease-in-out' }}>
+      <Card
+        className="w-96 text-center shadow-2xl animate-in zoom-in-95 duration-300"
+        style={{ animation: "celebration-bounce 0.5s ease-in-out" }}
+      >
         <CardContent className="pt-8 pb-6">
           <div className="mb-4 flex justify-center">
             <div className="relative">
@@ -396,17 +529,19 @@ function CelebrationModal({ title, description, achievement, onClose }: Celebrat
               <Sparkles className="absolute -top-2 -right-2 h-6 w-6 text-yellow-400 animate-bounce" />
             </div>
           </div>
-          
+
           <h2 className="text-2xl font-bold mb-2">{title}</h2>
-          {description && <p className="text-muted-foreground mb-4">{description}</p>}
-          
+          {description && (
+            <p className="text-muted-foreground mb-4">{description}</p>
+          )}
+
           {achievement && (
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-medium">
               <Trophy className="h-4 w-4" />
               {achievement}
             </div>
           )}
-          
+
           <Button className="mt-6 w-full" onClick={onClose}>
             Continue
           </Button>
@@ -416,11 +551,20 @@ function CelebrationModal({ title, description, achievement, onClose }: Celebrat
   );
 }
 
-export function SuccessAnimation({ children, show }: { children: ReactNode; show: boolean }) {
+export function SuccessAnimation({
+  children,
+  show,
+}: {
+  children: ReactNode;
+  show: boolean;
+}) {
   if (!show) return <>{children}</>;
-  
+
   return (
-    <div className="relative inline-block" style={{ animation: 'success-pulse 0.3s ease-in-out' }}>
+    <div
+      className="relative inline-block"
+      style={{ animation: "success-pulse 0.3s ease-in-out" }}
+    >
       <div className="absolute inset-0 bg-green-500/20 rounded-lg animate-ping" />
       {children}
     </div>
@@ -431,9 +575,9 @@ export function ActionFeedback({
   isLoading,
   isSuccess,
   isError,
-  loadingText = 'Processing...',
-  successText = 'Done!',
-  errorText = 'Failed',
+  loadingText = "Processing...",
+  successText = "Done!",
+  errorText = "Failed",
   children,
 }: {
   isLoading: boolean;
@@ -474,7 +618,15 @@ export function ActionFeedback({
   return <>{children}</>;
 }
 
-export function InlineSuccessMessage({ message, show, onHide }: { message: string; show: boolean; onHide?: () => void }) {
+export function InlineSuccessMessage({
+  message,
+  show,
+  onHide,
+}: {
+  message: string;
+  show: boolean;
+  onHide?: () => void;
+}) {
   useEffect(() => {
     if (show && onHide) {
       const timer = setTimeout(onHide, 3000);

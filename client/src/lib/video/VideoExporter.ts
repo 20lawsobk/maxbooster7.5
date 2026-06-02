@@ -1,7 +1,10 @@
-import type { VideoProject, RenderProgress } from '../../../../shared/video/VideoRendererEngine';
+import type {
+  VideoProject,
+  RenderProgress,
+} from "../../../../shared/video/VideoRendererEngine";
 
-export type VideoFormat = 'webm' | 'mp4';
-export type VideoResolution = '720p' | '1080p' | '4k';
+export type VideoFormat = "webm" | "mp4";
+export type VideoResolution = "720p" | "1080p" | "4k";
 export type FrameRate = 24 | 30 | 60;
 
 export interface ResolutionConfig {
@@ -10,9 +13,9 @@ export interface ResolutionConfig {
 }
 
 export const RESOLUTION_PRESETS: Record<VideoResolution, ResolutionConfig> = {
-  '720p': { width: 1280, height: 720 },
-  '1080p': { width: 1920, height: 1080 },
-  '4k': { width: 3840, height: 2160 },
+  "720p": { width: 1280, height: 720 },
+  "1080p": { width: 1920, height: 1080 },
+  "4k": { width: 3840, height: 2160 },
 };
 
 export interface ExportOptions {
@@ -27,7 +30,7 @@ export interface ExportOptions {
 }
 
 export interface ExportProgress {
-  phase: 'preparing' | 'rendering' | 'encoding' | 'muxing' | 'finalizing';
+  phase: "preparing" | "rendering" | "encoding" | "muxing" | "finalizing";
   currentFrame: number;
   totalFrames: number;
   percentage: number;
@@ -46,34 +49,38 @@ export interface ExportResult {
 export type FrameRenderer = (
   canvas: HTMLCanvasElement | OffscreenCanvas,
   frameNumber: number,
-  timestamp: number
+  timestamp: number,
 ) => void | Promise<void>;
 
 export class VideoExportError extends Error {
   constructor(
     message: string,
     public readonly code: VideoExportErrorCode,
-    public readonly details?: unknown
+    public readonly details?: unknown,
   ) {
     super(message);
-    this.name = 'VideoExportError';
+    this.name = "VideoExportError";
   }
 }
 
 export type VideoExportErrorCode =
-  | 'UNSUPPORTED_FORMAT'
-  | 'MEDIARECORDER_NOT_SUPPORTED'
-  | 'CANVAS_CAPTURE_FAILED'
-  | 'ENCODING_FAILED'
-  | 'AUDIO_LOAD_FAILED'
-  | 'MUXING_FAILED'
-  | 'ABORTED'
-  | 'UNKNOWN';
+  | "UNSUPPORTED_FORMAT"
+  | "MEDIARECORDER_NOT_SUPPORTED"
+  | "CANVAS_CAPTURE_FAILED"
+  | "ENCODING_FAILED"
+  | "AUDIO_LOAD_FAILED"
+  | "MUXING_FAILED"
+  | "ABORTED"
+  | "UNKNOWN";
 
 function getMimeType(format: VideoFormat): string {
   const mimeTypes: Record<VideoFormat, string[]> = {
-    webm: ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'],
-    mp4: ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'],
+    webm: [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm",
+    ],
+    mp4: ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4"],
   };
 
   for (const mimeType of mimeTypes[format]) {
@@ -84,15 +91,18 @@ function getMimeType(format: VideoFormat): string {
 
   throw new VideoExportError(
     `No supported codec found for format: ${format}`,
-    'UNSUPPORTED_FORMAT'
+    "UNSUPPORTED_FORMAT",
   );
 }
 
-function getDefaultBitrate(resolution: VideoResolution, frameRate: FrameRate): number {
+function getDefaultBitrate(
+  resolution: VideoResolution,
+  frameRate: FrameRate,
+): number {
   const baseBitrates: Record<VideoResolution, number> = {
-    '720p': 5_000_000,
-    '1080p': 10_000_000,
-    '4k': 35_000_000,
+    "720p": 5_000_000,
+    "1080p": 10_000_000,
+    "4k": 35_000_000,
   };
 
   const fpsMultiplier = frameRate / 30;
@@ -111,19 +121,19 @@ export class VideoExporter {
   async export(
     project: VideoProject,
     frameRenderer: FrameRenderer,
-    options: ExportOptions
+    options: ExportOptions,
   ): Promise<ExportResult> {
-    if (typeof MediaRecorder === 'undefined') {
+    if (typeof MediaRecorder === "undefined") {
       throw new VideoExportError(
-        'MediaRecorder API is not supported in this browser',
-        'MEDIARECORDER_NOT_SUPPORTED'
+        "MediaRecorder API is not supported in this browser",
+        "MEDIARECORDER_NOT_SUPPORTED",
       );
     }
 
     if (this.isExporting) {
       throw new VideoExportError(
-        'Export already in progress',
-        'ENCODING_FAILED'
+        "Export already in progress",
+        "ENCODING_FAILED",
       );
     }
 
@@ -134,17 +144,18 @@ export class VideoExporter {
 
     const resolution = RESOLUTION_PRESETS[options.resolution];
     const { frameRate, format } = options;
-    const videoBitrate = options.videoBitrate ?? getDefaultBitrate(options.resolution, frameRate);
+    const videoBitrate =
+      options.videoBitrate ?? getDefaultBitrate(options.resolution, frameRate);
 
     if (options.signal) {
-      options.signal.addEventListener('abort', () => {
+      options.signal.addEventListener("abort", () => {
         this.abort();
       });
     }
 
     try {
       this.reportProgress(options.onProgress, {
-        phase: 'preparing',
+        phase: "preparing",
         currentFrame: 0,
         totalFrames: Math.ceil(project.duration * frameRate),
         percentage: 0,
@@ -152,15 +163,15 @@ export class VideoExporter {
         elapsedTime: 0,
       });
 
-      this.canvas = document.createElement('canvas');
+      this.canvas = document.createElement("canvas");
       this.canvas.width = resolution.width;
       this.canvas.height = resolution.height;
 
       this.stream = this.canvas.captureStream(frameRate);
       if (!this.stream) {
         throw new VideoExportError(
-          'Failed to capture canvas stream',
-          'CANVAS_CAPTURE_FAILED'
+          "Failed to capture canvas stream",
+          "CANVAS_CAPTURE_FAILED",
         );
       }
 
@@ -182,18 +193,18 @@ export class VideoExporter {
         frameRenderer,
         resolution,
         frameRate,
-        options.onProgress
+        options.onProgress,
       );
 
       if (this.aborted) {
-        throw new VideoExportError('Export was cancelled', 'ABORTED');
+        throw new VideoExportError("Export was cancelled", "ABORTED");
       }
 
       let finalBlob = videoBlob;
 
       if (options.audioUrl) {
         this.reportProgress(options.onProgress, {
-          phase: 'muxing',
+          phase: "muxing",
           currentFrame: Math.ceil(project.duration * frameRate),
           totalFrames: Math.ceil(project.duration * frameRate),
           percentage: 95,
@@ -201,11 +212,16 @@ export class VideoExporter {
           elapsedTime: (performance.now() - this.startTime) / 1000,
         });
 
-        finalBlob = await this.muxAudio(videoBlob, options.audioUrl, format, options.audioBitrate);
+        finalBlob = await this.muxAudio(
+          videoBlob,
+          options.audioUrl,
+          format,
+          options.audioBitrate,
+        );
       }
 
       this.reportProgress(options.onProgress, {
-        phase: 'finalizing',
+        phase: "finalizing",
         currentFrame: Math.ceil(project.duration * frameRate),
         totalFrames: Math.ceil(project.duration * frameRate),
         percentage: 100,
@@ -230,11 +246,13 @@ export class VideoExporter {
     frameRenderer: FrameRenderer,
     resolution: ResolutionConfig,
     frameRate: FrameRate,
-    onProgress?: (progress: ExportProgress) => void
+    onProgress?: (progress: ExportProgress) => void,
   ): Promise<Blob> {
     return new Promise((resolve, reject) => {
       if (!this.mediaRecorder || !this.canvas) {
-        reject(new VideoExportError('Recorder not initialized', 'ENCODING_FAILED'));
+        reject(
+          new VideoExportError("Recorder not initialized", "ENCODING_FAILED"),
+        );
         return;
       }
 
@@ -249,17 +267,19 @@ export class VideoExporter {
       };
 
       this.mediaRecorder.onstop = () => {
-        const mimeType = this.mediaRecorder?.mimeType ?? 'video/webm';
+        const mimeType = this.mediaRecorder?.mimeType ?? "video/webm";
         const blob = new Blob(this.recordedChunks, { type: mimeType });
         resolve(blob);
       };
 
       this.mediaRecorder.onerror = (event) => {
-        reject(new VideoExportError(
-          `MediaRecorder error: ${(event as ErrorEvent).message || 'Unknown error'}`,
-          'ENCODING_FAILED',
-          event
-        ));
+        reject(
+          new VideoExportError(
+            `MediaRecorder error: ${(event as ErrorEvent).message || "Unknown error"}`,
+            "ENCODING_FAILED",
+            event,
+          ),
+        );
       };
 
       this.mediaRecorder.start();
@@ -280,11 +300,13 @@ export class VideoExporter {
         try {
           await frameRenderer(this.canvas!, currentFrame, timestamp);
         } catch (error) {
-          reject(new VideoExportError(
-            `Frame rendering failed at frame ${currentFrame}`,
-            'ENCODING_FAILED',
-            error
-          ));
+          reject(
+            new VideoExportError(
+              `Frame rendering failed at frame ${currentFrame}`,
+              "ENCODING_FAILED",
+              error,
+            ),
+          );
           return;
         }
 
@@ -293,10 +315,11 @@ export class VideoExporter {
         const elapsedTime = (performance.now() - this.startTime) / 1000;
         const framesPerSecond = currentFrame / elapsedTime;
         const remainingFrames = totalFrames - currentFrame;
-        const estimatedTimeRemaining = framesPerSecond > 0 ? remainingFrames / framesPerSecond : 0;
+        const estimatedTimeRemaining =
+          framesPerSecond > 0 ? remainingFrames / framesPerSecond : 0;
 
         this.reportProgress(onProgress, {
-          phase: 'rendering',
+          phase: "rendering",
           currentFrame,
           totalFrames,
           percentage: Math.round((currentFrame / totalFrames) * 90),
@@ -317,24 +340,26 @@ export class VideoExporter {
     videoBlob: Blob,
     audioUrl: string,
     format: VideoFormat,
-    audioBitrate?: number
+    audioBitrate?: number,
   ): Promise<Blob> {
     try {
       const audioResponse = await fetch(audioUrl);
       if (!audioResponse.ok) {
         throw new VideoExportError(
           `Failed to fetch audio: ${audioResponse.status} ${audioResponse.statusText}`,
-          'AUDIO_LOAD_FAILED'
+          "AUDIO_LOAD_FAILED",
         );
       }
 
       const audioContext = new AudioContext();
-      const audioBuffer = await audioContext.decodeAudioData(await audioResponse.arrayBuffer());
-      
+      const audioBuffer = await audioContext.decodeAudioData(
+        await audioResponse.arrayBuffer(),
+      );
+
       const offlineContext = new OfflineAudioContext(
         audioBuffer.numberOfChannels,
         audioBuffer.length,
-        audioBuffer.sampleRate
+        audioBuffer.sampleRate,
       );
 
       const source = offlineContext.createBufferSource();
@@ -344,7 +369,7 @@ export class VideoExporter {
 
       const renderedBuffer = await offlineContext.startRendering();
 
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = 1;
       canvas.height = 1;
       const stream = canvas.captureStream(1);
@@ -381,12 +406,14 @@ export class VideoExporter {
         };
         recorder.onerror = (e) => {
           audioContext.close();
-          reject(new VideoExportError('Audio muxing failed', 'MUXING_FAILED', e));
+          reject(
+            new VideoExportError("Audio muxing failed", "MUXING_FAILED", e),
+          );
         };
 
         bufferSource.start();
         recorder.start();
-        
+
         setTimeout(() => {
           recorder.stop();
           bufferSource.stop();
@@ -395,16 +422,16 @@ export class VideoExporter {
     } catch (error) {
       if (error instanceof VideoExportError) throw error;
       throw new VideoExportError(
-        `Audio muxing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'MUXING_FAILED',
-        error
+        `Audio muxing failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "MUXING_FAILED",
+        error,
       );
     }
   }
 
   abort(): void {
     this.aborted = true;
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
       this.mediaRecorder.stop();
     }
     this.cleanup();
@@ -412,14 +439,14 @@ export class VideoExporter {
 
   private cleanup(): void {
     this.isExporting = false;
-    
+
     if (this.stream) {
       for (const track of this.stream.getTracks()) {
         track.stop();
       }
       this.stream = null;
     }
-    
+
     this.mediaRecorder = null;
     this.canvas = null;
     this.recordedChunks = [];
@@ -427,7 +454,7 @@ export class VideoExporter {
 
   private reportProgress(
     callback: ((progress: ExportProgress) => void) | undefined,
-    progress: ExportProgress
+    progress: ExportProgress,
   ): void {
     if (callback) {
       callback(progress);
@@ -448,11 +475,14 @@ export class VideoExporter {
   }
 
   static getSupportedFormats(): VideoFormat[] {
-    const formats: VideoFormat[] = ['webm', 'mp4'];
+    const formats: VideoFormat[] = ["webm", "mp4"];
     return formats.filter((format) => VideoExporter.isFormatSupported(format));
   }
 
-  static getRecommendedBitrate(resolution: VideoResolution, frameRate: FrameRate): number {
+  static getRecommendedBitrate(
+    resolution: VideoResolution,
+    frameRate: FrameRate,
+  ): number {
     return getDefaultBitrate(resolution, frameRate);
   }
 }
@@ -461,13 +491,13 @@ export async function exportToFile(
   project: VideoProject,
   frameRenderer: FrameRenderer,
   options: ExportOptions,
-  filename?: string
+  filename?: string,
 ): Promise<void> {
   const exporter = new VideoExporter();
   const result = await exporter.export(project, frameRenderer, options);
 
   const url = URL.createObjectURL(result.blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = filename ?? `export_${Date.now()}.${options.format}`;
   document.body.appendChild(link);

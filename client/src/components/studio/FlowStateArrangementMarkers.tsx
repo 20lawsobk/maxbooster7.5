@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Flag,
   Plus,
@@ -17,20 +17,20 @@ import {
   Repeat,
   SkipForward,
   SkipBack,
-  Loader2
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -38,19 +38,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { useMarkers } from '@/hooks/useMarkers';
-import { useStudioStore } from '@/lib/studioStore';
+} from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useMarkers } from "@/hooks/useMarkers";
+import { useStudioStore } from "@/lib/studioStore";
 
-type MarkerType = 'intro' | 'verse' | 'prechorus' | 'chorus' | 'bridge' | 'breakdown' | 'drop' | 'outro' | 'custom';
+type MarkerType =
+  | "intro"
+  | "verse"
+  | "prechorus"
+  | "chorus"
+  | "bridge"
+  | "breakdown"
+  | "drop"
+  | "outro"
+  | "custom";
 
 interface Marker {
   id: string;
@@ -72,21 +81,44 @@ interface FlowStateArrangementMarkersProps {
   className?: string;
 }
 
-const MARKER_TYPES: { type: MarkerType; label: string; color: string; defaultDuration: number }[] = [
-  { type: 'intro', label: 'Intro', color: '#3b82f6', defaultDuration: 8 },
-  { type: 'verse', label: 'Verse', color: '#22c55e', defaultDuration: 16 },
-  { type: 'prechorus', label: 'Pre-Chorus', color: '#eab308', defaultDuration: 8 },
-  { type: 'chorus', label: 'Chorus', color: '#ef4444', defaultDuration: 16 },
-  { type: 'bridge', label: 'Bridge', color: '#8b5cf6', defaultDuration: 8 },
-  { type: 'breakdown', label: 'Breakdown', color: '#06b6d4', defaultDuration: 8 },
-  { type: 'drop', label: 'Drop', color: '#f97316', defaultDuration: 16 },
-  { type: 'outro', label: 'Outro', color: '#6b7280', defaultDuration: 8 },
-  { type: 'custom', label: 'Custom', color: '#ec4899', defaultDuration: 8 },
+const MARKER_TYPES: {
+  type: MarkerType;
+  label: string;
+  color: string;
+  defaultDuration: number;
+}[] = [
+  { type: "intro", label: "Intro", color: "#3b82f6", defaultDuration: 8 },
+  { type: "verse", label: "Verse", color: "#22c55e", defaultDuration: 16 },
+  {
+    type: "prechorus",
+    label: "Pre-Chorus",
+    color: "#eab308",
+    defaultDuration: 8,
+  },
+  { type: "chorus", label: "Chorus", color: "#ef4444", defaultDuration: 16 },
+  { type: "bridge", label: "Bridge", color: "#8b5cf6", defaultDuration: 8 },
+  {
+    type: "breakdown",
+    label: "Breakdown",
+    color: "#06b6d4",
+    defaultDuration: 8,
+  },
+  { type: "drop", label: "Drop", color: "#f97316", defaultDuration: 16 },
+  { type: "outro", label: "Outro", color: "#6b7280", defaultDuration: 8 },
+  { type: "custom", label: "Custom", color: "#ec4899", defaultDuration: 8 },
 ];
 
 const COLORS = [
-  '#3b82f6', '#22c55e', '#eab308', '#ef4444', '#8b5cf6',
-  '#06b6d4', '#f97316', '#ec4899', '#6b7280', '#14b8a6'
+  "#3b82f6",
+  "#22c55e",
+  "#eab308",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
+  "#f97316",
+  "#ec4899",
+  "#6b7280",
+  "#14b8a6",
 ];
 
 export function FlowStateArrangementMarkers({
@@ -95,59 +127,161 @@ export function FlowStateArrangementMarkers({
   currentTime = 0,
   onSeekToMarker,
   onUpdateMarkers,
-  className
+  className,
 }: FlowStateArrangementMarkersProps) {
   const { toast } = useToast();
   const studioStore = useStudioStore();
   const currentProjectId = projectId || studioStore.currentProjectId;
-  
+
   const defaultMarkers: Marker[] = [
-    { id: 'm1', name: 'Intro', type: 'intro', time: 0, duration: 8, color: '#3b82f6', isLocked: false, notes: '' },
-    { id: 'm2', name: 'Verse 1', type: 'verse', time: 8, duration: 16, color: '#22c55e', isLocked: false, notes: '' },
-    { id: 'm3', name: 'Pre-Chorus', type: 'prechorus', time: 24, duration: 8, color: '#eab308', isLocked: false, notes: '' },
-    { id: 'm4', name: 'Chorus 1', type: 'chorus', time: 32, duration: 16, color: '#ef4444', isLocked: true, notes: 'Main hook' },
-    { id: 'm5', name: 'Verse 2', type: 'verse', time: 48, duration: 16, color: '#22c55e', isLocked: false, notes: '' },
-    { id: 'm6', name: 'Pre-Chorus', type: 'prechorus', time: 64, duration: 8, color: '#eab308', isLocked: false, notes: '' },
-    { id: 'm7', name: 'Chorus 2', type: 'chorus', time: 72, duration: 16, color: '#ef4444', isLocked: false, notes: '' },
-    { id: 'm8', name: 'Bridge', type: 'bridge', time: 88, duration: 16, color: '#8b5cf6', isLocked: false, notes: '' },
-    { id: 'm9', name: 'Drop', type: 'drop', time: 104, duration: 16, color: '#f97316', isLocked: false, notes: '' },
-    { id: 'm10', name: 'Chorus 3', type: 'chorus', time: 120, duration: 16, color: '#ef4444', isLocked: false, notes: '' },
-    { id: 'm11', name: 'Outro', type: 'outro', time: 136, duration: 16, color: '#6b7280', isLocked: false, notes: '' },
+    {
+      id: "m1",
+      name: "Intro",
+      type: "intro",
+      time: 0,
+      duration: 8,
+      color: "#3b82f6",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m2",
+      name: "Verse 1",
+      type: "verse",
+      time: 8,
+      duration: 16,
+      color: "#22c55e",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m3",
+      name: "Pre-Chorus",
+      type: "prechorus",
+      time: 24,
+      duration: 8,
+      color: "#eab308",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m4",
+      name: "Chorus 1",
+      type: "chorus",
+      time: 32,
+      duration: 16,
+      color: "#ef4444",
+      isLocked: true,
+      notes: "Main hook",
+    },
+    {
+      id: "m5",
+      name: "Verse 2",
+      type: "verse",
+      time: 48,
+      duration: 16,
+      color: "#22c55e",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m6",
+      name: "Pre-Chorus",
+      type: "prechorus",
+      time: 64,
+      duration: 8,
+      color: "#eab308",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m7",
+      name: "Chorus 2",
+      type: "chorus",
+      time: 72,
+      duration: 16,
+      color: "#ef4444",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m8",
+      name: "Bridge",
+      type: "bridge",
+      time: 88,
+      duration: 16,
+      color: "#8b5cf6",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m9",
+      name: "Drop",
+      type: "drop",
+      time: 104,
+      duration: 16,
+      color: "#f97316",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m10",
+      name: "Chorus 3",
+      type: "chorus",
+      time: 120,
+      duration: 16,
+      color: "#ef4444",
+      isLocked: false,
+      notes: "",
+    },
+    {
+      id: "m11",
+      name: "Outro",
+      type: "outro",
+      time: 136,
+      duration: 16,
+      color: "#6b7280",
+      isLocked: false,
+      notes: "",
+    },
   ];
-  
+
   const [demoMarkers, setDemoMarkers] = useState<Marker[]>(defaultMarkers);
-  
+
   const {
     markers: apiMarkers,
     isLoading,
     error: markersError,
     createMarker,
     updateMarker: updateMarkerApi,
-    deleteMarker: deleteMarkerApi
+    deleteMarker: deleteMarkerApi,
   } = useMarkers(currentProjectId);
-  
+
   useEffect(() => {
     if (markersError) {
-      toast({ title: 'Failed to load markers, using demo data', variant: 'destructive' });
+      toast({
+        title: "Failed to load markers, using demo data",
+        variant: "destructive",
+      });
     }
   }, [markersError, toast]);
-  
+
   const markers: Marker[] = useMemo(() => {
     if (currentProjectId && apiMarkers && !markersError) {
       return apiMarkers.map((m: Record<string, unknown>) => ({
         id: m.id,
-        name: m.name || 'Marker',
-        type: (m.type || 'custom') as MarkerType,
+        name: m.name || "Marker",
+        type: (m.type || "custom") as MarkerType,
         time: m.position ?? m.time ?? 0,
         duration: m.duration || 8,
-        color: m.color || '#3b82f6',
+        color: m.color || "#3b82f6",
         isLocked: m.isLocked ?? false,
-        notes: m.notes || ''
+        notes: m.notes || "",
       }));
     }
     return demoMarkers;
   }, [currentProjectId, apiMarkers, markersError, demoMarkers]);
-  
+
   const setMarkers = currentProjectId ? () => {} : setDemoMarkers;
 
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
@@ -156,61 +290,75 @@ export function FlowStateArrangementMarkers({
   const [isPlaying, setIsPlaying] = useState(false);
   const [loopMarker, setLoopMarker] = useState<string | null>(null);
 
-  const currentMarker = useMemo(() => 
-    markers.find(m => currentTime >= m.time && currentTime < m.time + m.duration),
-    [markers, currentTime]
+  const currentMarker = useMemo(
+    () =>
+      markers.find(
+        (m) => currentTime >= m.time && currentTime < m.time + m.duration,
+      ),
+    [markers, currentTime],
   );
 
-  const addMarker = useCallback((atTime?: number) => {
-    const time = atTime ?? currentTime;
-    const typeInfo = MARKER_TYPES.find(t => t.type === 'custom')!;
-    
-    const newMarkerData = {
-      name: 'New Section',
-      type: 'custom',
-      time,
-      position: time,
-      duration: typeInfo.defaultDuration,
-      color: typeInfo.color,
-      isLocked: false,
-      notes: ''
-    };
+  const addMarker = useCallback(
+    (atTime?: number) => {
+      const time = atTime ?? currentTime;
+      const typeInfo = MARKER_TYPES.find((t) => t.type === "custom")!;
 
-    if (currentProjectId && createMarker) {
-      createMarker(newMarkerData);
-    } else {
-      const newMarker: Marker = {
-        id: `m${Date.now()}`,
-        ...(newMarkerData as Record<string, unknown>)
+      const newMarkerData = {
+        name: "New Section",
+        type: "custom",
+        time,
+        position: time,
+        duration: typeInfo.defaultDuration,
+        color: typeInfo.color,
+        isLocked: false,
+        notes: "",
       };
-      setMarkers(prev => [...prev, newMarker].sort((a, b) => a.time - b.time));
-      setEditingMarker(newMarker);
-      setIsEditing(true);
-      toast({ title: 'Marker added' });
-    }
-  }, [currentTime, currentProjectId, createMarker, toast]);
 
-  const handleDeleteMarker = useCallback((markerId: string) => {
-    const marker = markers.find(m => m.id === markerId);
-    if (marker?.isLocked) {
-      toast({ title: 'Cannot delete locked marker', variant: 'destructive' });
-      return;
-    }
-    
-    if (currentProjectId && deleteMarkerApi) {
-      deleteMarkerApi(markerId);
-    } else {
-      setMarkers(prev => prev.filter(m => m.id !== markerId));
-    }
-    if (selectedMarker === markerId) setSelectedMarker(null);
-  }, [markers, currentProjectId, deleteMarkerApi, selectedMarker, toast]);
+      if (currentProjectId && createMarker) {
+        createMarker(newMarkerData);
+      } else {
+        const newMarker: Marker = {
+          id: `m${Date.now()}`,
+          ...(newMarkerData as Record<string, unknown>),
+        };
+        setMarkers((prev) =>
+          [...prev, newMarker].sort((a, b) => a.time - b.time),
+        );
+        setEditingMarker(newMarker);
+        setIsEditing(true);
+        toast({ title: "Marker added" });
+      }
+    },
+    [currentTime, currentProjectId, createMarker, toast],
+  );
 
-  const updateMarker = useCallback((updates: Partial<Marker>) => {
-    if (!editingMarker) return;
-    
-    const updated = { ...editingMarker, ...updates };
-    setEditingMarker(updated);
-  }, [editingMarker]);
+  const handleDeleteMarker = useCallback(
+    (markerId: string) => {
+      const marker = markers.find((m) => m.id === markerId);
+      if (marker?.isLocked) {
+        toast({ title: "Cannot delete locked marker", variant: "destructive" });
+        return;
+      }
+
+      if (currentProjectId && deleteMarkerApi) {
+        deleteMarkerApi(markerId);
+      } else {
+        setMarkers((prev) => prev.filter((m) => m.id !== markerId));
+      }
+      if (selectedMarker === markerId) setSelectedMarker(null);
+    },
+    [markers, currentProjectId, deleteMarkerApi, selectedMarker, toast],
+  );
+
+  const updateMarker = useCallback(
+    (updates: Partial<Marker>) => {
+      if (!editingMarker) return;
+
+      const updated = { ...editingMarker, ...updates };
+      setEditingMarker(updated);
+    },
+    [editingMarker],
+  );
 
   const saveMarker = () => {
     if (!editingMarker) return;
@@ -224,14 +372,16 @@ export function FlowStateArrangementMarkers({
           position: editingMarker.time,
           color: editingMarker.color,
           isLocked: editingMarker.isLocked,
-          notes: editingMarker.notes
-        }
+          notes: editingMarker.notes,
+        },
       });
     } else {
-      setMarkers(prev => prev.map(m =>
-        m.id === editingMarker.id ? editingMarker : m
-      ).sort((a, b) => a.time - b.time));
-      toast({ title: 'Marker updated' });
+      setMarkers((prev) =>
+        prev
+          .map((m) => (m.id === editingMarker.id ? editingMarker : m))
+          .sort((a, b) => a.time - b.time),
+      );
+      toast({ title: "Marker updated" });
     }
 
     setIsEditing(false);
@@ -240,23 +390,25 @@ export function FlowStateArrangementMarkers({
   };
 
   const toggleLock = (markerId: string) => {
-    const marker = markers.find(m => m.id === markerId);
+    const marker = markers.find((m) => m.id === markerId);
     if (!marker) return;
-    
+
     if (currentProjectId && updateMarkerApi) {
       updateMarkerApi({
         id: markerId,
-        updates: { isLocked: !marker.isLocked }
+        updates: { isLocked: !marker.isLocked },
       });
     } else {
-      setMarkers(prev => prev.map(m =>
-        m.id === markerId ? { ...m, isLocked: !m.isLocked } : m
-      ));
+      setMarkers((prev) =>
+        prev.map((m) =>
+          m.id === markerId ? { ...m, isLocked: !m.isLocked } : m,
+        ),
+      );
     }
   };
 
   const duplicateMarker = (markerId: string) => {
-    const marker = markers.find(m => m.id === markerId);
+    const marker = markers.find((m) => m.id === markerId);
     if (!marker) return;
 
     const newMarkerData = {
@@ -267,34 +419,40 @@ export function FlowStateArrangementMarkers({
       duration: marker.duration,
       color: marker.color,
       isLocked: false,
-      notes: marker.notes
+      notes: marker.notes,
     };
 
     if (currentProjectId && createMarker) {
       createMarker(newMarkerData);
-      toast({ title: 'Marker duplicated' });
+      toast({ title: "Marker duplicated" });
     } else {
       const newMarker: Marker = {
         ...marker,
         id: `m${Date.now()}`,
         name: `${marker.name} (copy)`,
         time: marker.time + marker.duration,
-        isLocked: false
+        isLocked: false,
       };
-      setMarkers(prev => [...prev, newMarker].sort((a, b) => a.time - b.time));
-      toast({ title: 'Marker duplicated' });
+      setMarkers((prev) =>
+        [...prev, newMarker].sort((a, b) => a.time - b.time),
+      );
+      toast({ title: "Marker duplicated" });
     }
   };
 
-  const navigateMarker = (direction: 'prev' | 'next') => {
+  const navigateMarker = (direction: "prev" | "next") => {
     const sortedMarkers = [...markers].sort((a, b) => a.time - b.time);
-    const currentIdx = sortedMarkers.findIndex(m => m.id === currentMarker?.id);
+    const currentIdx = sortedMarkers.findIndex(
+      (m) => m.id === currentMarker?.id,
+    );
 
-    if (direction === 'prev') {
-      const prevIdx = currentIdx > 0 ? currentIdx - 1 : sortedMarkers.length - 1;
+    if (direction === "prev") {
+      const prevIdx =
+        currentIdx > 0 ? currentIdx - 1 : sortedMarkers.length - 1;
       onSeekToMarker?.(sortedMarkers[prevIdx].time);
     } else {
-      const nextIdx = currentIdx < sortedMarkers.length - 1 ? currentIdx + 1 : 0;
+      const nextIdx =
+        currentIdx < sortedMarkers.length - 1 ? currentIdx + 1 : 0;
       onSeekToMarker?.(sortedMarkers[nextIdx].time);
     }
   };
@@ -302,7 +460,7 @@ export function FlowStateArrangementMarkers({
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const formatBars = (seconds: number, bpm: number = 120): string => {
@@ -313,10 +471,12 @@ export function FlowStateArrangementMarkers({
     return `${bars}.${beat}`;
   };
 
-  const selectedMarkerData = markers.find(m => m.id === selectedMarker);
+  const selectedMarkerData = markers.find((m) => m.id === selectedMarker);
 
   return (
-    <div className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}>
+    <div
+      className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <div className="flex items-center gap-3">
@@ -328,7 +488,10 @@ export function FlowStateArrangementMarkers({
             <p className="text-xs text-zinc-500">{markers.length} sections</p>
           </div>
         </div>
-        <Button onClick={() => addMarker()} className="bg-red-500 hover:bg-red-600">
+        <Button
+          onClick={() => addMarker()}
+          className="bg-red-500 hover:bg-red-600"
+        >
           <Plus className="w-4 h-4 mr-1" />
           Add Marker
         </Button>
@@ -349,7 +512,7 @@ export function FlowStateArrangementMarkers({
           </div>
 
           {/* Markers */}
-          {markers.map(marker => {
+          {markers.map((marker) => {
             const left = (marker.time / projectDuration) * 100;
             const width = (marker.duration / projectDuration) * 100;
             const isSelected = selectedMarker === marker.id;
@@ -361,12 +524,12 @@ export function FlowStateArrangementMarkers({
                 className={cn(
                   "absolute top-1 bottom-1 rounded cursor-pointer transition-all",
                   isSelected && "ring-2 ring-white",
-                  isCurrent && "ring-2 ring-yellow-400"
+                  isCurrent && "ring-2 ring-yellow-400",
                 )}
                 style={{
                   left: `${left}%`,
                   width: `${width}%`,
-                  backgroundColor: marker.color + '80'
+                  backgroundColor: marker.color + "80",
                 }}
                 onClick={() => setSelectedMarker(marker.id)}
                 onDoubleClick={() => {
@@ -401,7 +564,7 @@ export function FlowStateArrangementMarkers({
           <span>0:00</span>
           <span>{formatTime(projectDuration / 4)}</span>
           <span>{formatTime(projectDuration / 2)}</span>
-          <span>{formatTime(projectDuration * 3 / 4)}</span>
+          <span>{formatTime((projectDuration * 3) / 4)}</span>
           <span>{formatTime(projectDuration)}</span>
         </div>
       </div>
@@ -411,7 +574,11 @@ export function FlowStateArrangementMarkers({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="icon" variant="outline" onClick={() => navigateMarker('prev')}>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => navigateMarker("prev")}
+              >
                 <SkipBack className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
@@ -428,7 +595,8 @@ export function FlowStateArrangementMarkers({
               />
               <span className="font-medium">{currentMarker.name}</span>
               <span className="text-xs text-zinc-500">
-                ({formatTime(currentMarker.time)} - {formatTime(currentMarker.time + currentMarker.duration)})
+                ({formatTime(currentMarker.time)} -{" "}
+                {formatTime(currentMarker.time + currentMarker.duration)})
               </span>
             </>
           )}
@@ -438,7 +606,11 @@ export function FlowStateArrangementMarkers({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="icon" variant="outline" onClick={() => navigateMarker('next')}>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => navigateMarker("next")}
+              >
                 <SkipForward className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
@@ -456,17 +628,21 @@ export function FlowStateArrangementMarkers({
               className={cn(
                 "bg-zinc-900 border-zinc-800 p-3 cursor-pointer transition-all",
                 selectedMarker === marker.id && "border-l-4",
-                currentMarker?.id === marker.id && "bg-zinc-800/50"
+                currentMarker?.id === marker.id && "bg-zinc-800/50",
               )}
               style={{
-                borderLeftColor: selectedMarker === marker.id ? marker.color : undefined
+                borderLeftColor:
+                  selectedMarker === marker.id ? marker.color : undefined,
               }}
               onClick={() => setSelectedMarker(marker.id)}
             >
               <div className="flex items-center gap-3">
                 <div
                   className="w-8 h-8 rounded flex items-center justify-center text-xs font-bold"
-                  style={{ backgroundColor: marker.color + '30', color: marker.color }}
+                  style={{
+                    backgroundColor: marker.color + "30",
+                    color: marker.color,
+                  }}
                 >
                   {idx + 1}
                 </div>
@@ -475,14 +651,21 @@ export function FlowStateArrangementMarkers({
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{marker.name}</span>
                     <Badge variant="secondary" className="text-xs">
-                      {MARKER_TYPES.find(t => t.type === marker.type)?.label}
+                      {MARKER_TYPES.find((t) => t.type === marker.type)?.label}
                     </Badge>
-                    {marker.isLocked && <Lock className="w-3 h-3 text-zinc-500" />}
+                    {marker.isLocked && (
+                      <Lock className="w-3 h-3 text-zinc-500" />
+                    )}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-zinc-500 mt-0.5">
-                    <span>{formatTime(marker.time)} - {formatTime(marker.time + marker.duration)}</span>
+                    <span>
+                      {formatTime(marker.time)} -{" "}
+                      {formatTime(marker.time + marker.duration)}
+                    </span>
                     <span>•</span>
-                    <span>{marker.duration}s ({formatBars(marker.duration)} bars)</span>
+                    <span>
+                      {marker.duration}s ({formatBars(marker.duration)} bars)
+                    </span>
                   </div>
                 </div>
 
@@ -509,10 +692,15 @@ export function FlowStateArrangementMarkers({
                         <Button
                           size="icon"
                           variant="ghost"
-                          className={cn("h-7 w-7", loopMarker === marker.id && "text-yellow-400")}
+                          className={cn(
+                            "h-7 w-7",
+                            loopMarker === marker.id && "text-yellow-400",
+                          )}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setLoopMarker(loopMarker === marker.id ? null : marker.id);
+                            setLoopMarker(
+                              loopMarker === marker.id ? null : marker.id,
+                            );
                           }}
                         >
                           <Repeat className="w-3.5 h-3.5" />
@@ -558,7 +746,10 @@ export function FlowStateArrangementMarkers({
                         <Button
                           size="icon"
                           variant="ghost"
-                          className={cn("h-7 w-7", marker.isLocked && "text-yellow-400")}
+                          className={cn(
+                            "h-7 w-7",
+                            marker.isLocked && "text-yellow-400",
+                          )}
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleLock(marker.id);
@@ -571,7 +762,9 @@ export function FlowStateArrangementMarkers({
                           )}
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{marker.isLocked ? 'Unlock' : 'Lock'}</TooltipContent>
+                      <TooltipContent>
+                        {marker.isLocked ? "Unlock" : "Lock"}
+                      </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -603,9 +796,7 @@ export function FlowStateArrangementMarkers({
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
             <DialogTitle>Edit Marker</DialogTitle>
-            <DialogDescription>
-              Update the section details
-            </DialogDescription>
+            <DialogDescription>Update the section details</DialogDescription>
           </DialogHeader>
           {editingMarker && (
             <div className="space-y-4 py-4">
@@ -624,15 +815,18 @@ export function FlowStateArrangementMarkers({
                   <Select
                     value={editingMarker.type}
                     onValueChange={(v) => {
-                      const typeInfo = MARKER_TYPES.find(t => t.type === v);
-                      updateMarker({ type: v as MarkerType, color: typeInfo?.color || editingMarker.color });
+                      const typeInfo = MARKER_TYPES.find((t) => t.type === v);
+                      updateMarker({
+                        type: v as MarkerType,
+                        color: typeInfo?.color || editingMarker.color,
+                      });
                     }}
                   >
                     <SelectTrigger className="bg-zinc-800 border-zinc-700">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {MARKER_TYPES.map(type => (
+                      {MARKER_TYPES.map((type) => (
                         <SelectItem key={type.type} value={type.type}>
                           {type.label}
                         </SelectItem>
@@ -644,12 +838,13 @@ export function FlowStateArrangementMarkers({
                 <div className="space-y-2">
                   <Label>Color</Label>
                   <div className="flex gap-1">
-                    {COLORS.map(color => (
+                    {COLORS.map((color) => (
                       <button
                         key={color}
                         className={cn(
                           "w-6 h-6 rounded transition-transform",
-                          editingMarker.color === color && "ring-2 ring-white scale-110"
+                          editingMarker.color === color &&
+                            "ring-2 ring-white scale-110",
                         )}
                         style={{ backgroundColor: color }}
                         onClick={() => updateMarker({ color })}
@@ -665,7 +860,9 @@ export function FlowStateArrangementMarkers({
                   <Input
                     type="number"
                     value={editingMarker.time}
-                    onChange={(e) => updateMarker({ time: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      updateMarker({ time: parseFloat(e.target.value) || 0 })
+                    }
                     className="bg-zinc-800 border-zinc-700"
                   />
                 </div>
@@ -674,7 +871,11 @@ export function FlowStateArrangementMarkers({
                   <Input
                     type="number"
                     value={editingMarker.duration}
-                    onChange={(e) => updateMarker({ duration: parseFloat(e.target.value) || 8 })}
+                    onChange={(e) =>
+                      updateMarker({
+                        duration: parseFloat(e.target.value) || 8,
+                      })
+                    }
                     className="bg-zinc-800 border-zinc-700"
                   />
                 </div>
@@ -695,9 +896,7 @@ export function FlowStateArrangementMarkers({
             <Button variant="outline" onClick={() => setIsEditing(false)}>
               Cancel
             </Button>
-            <Button onClick={saveMarker}>
-              Save Changes
-            </Button>
+            <Button onClick={saveMarker}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

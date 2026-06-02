@@ -1,21 +1,21 @@
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useBatchSelectContext } from './BatchSelectProvider';
+} from "@/components/ui/tooltip";
+import { useBatchSelectContext } from "./BatchSelectProvider";
 import {
   X,
   Trash2,
@@ -33,13 +33,13 @@ import {
   Share2,
   Archive,
   Tag,
-} from 'lucide-react';
+} from "lucide-react";
 
 export type BatchAction = {
   id: string;
   label: string;
   icon?: React.ReactNode;
-  variant?: 'default' | 'destructive' | 'outline';
+  variant?: "default" | "destructive" | "outline";
   disabled?: boolean;
   hidden?: boolean;
   onClick: (selectedIds: string[]) => void;
@@ -53,9 +53,8 @@ export interface BatchActionBarProps {
   onStatusChange?: (ids: string[], status: string) => void;
   showDefaultActions?: boolean;
   className?: string;
-  position?: 'top' | 'bottom' | 'floating';
+  position?: "top" | "bottom" | "floating";
 }
-
 
 export function BatchActionBar({
   actions = [],
@@ -65,9 +64,10 @@ export function BatchActionBar({
   onStatusChange,
   showDefaultActions = true,
   className,
-  position = 'floating',
+  position = "floating",
 }: BatchActionBarProps) {
-  const { selectedIds, selectedCount, clearSelection, resource } = useBatchSelectContext();
+  const { selectedIds, selectedCount, clearSelection, resource } =
+    useBatchSelectContext();
 
   if (selectedCount === 0) return null;
 
@@ -76,47 +76,47 @@ export function BatchActionBar({
   const mergedActions: BatchAction[] = showDefaultActions
     ? [
         {
-          id: 'edit',
-          label: 'Edit',
+          id: "edit",
+          label: "Edit",
           icon: <Edit className="h-4 w-4" />,
           onClick: () => onEdit?.(selectedArray),
           hidden: !onEdit,
         },
         {
-          id: 'export',
-          label: 'Export',
+          id: "export",
+          label: "Export",
           icon: <Download className="h-4 w-4" />,
           onClick: () => onExport?.(selectedArray),
           hidden: !onExport,
         },
         ...actions,
         {
-          id: 'delete',
-          label: 'Delete',
+          id: "delete",
+          label: "Delete",
           icon: <Trash2 className="h-4 w-4" />,
-          variant: 'destructive',
+          variant: "destructive",
           onClick: () => onDelete?.(selectedArray),
           hidden: !onDelete,
         },
-      ].filter(a => !a.hidden)
-    : actions.filter(a => !a.hidden);
+      ].filter((a) => !a.hidden)
+    : actions.filter((a) => !a.hidden);
 
   const visibleActions = mergedActions.slice(0, 4);
   const moreActions = mergedActions.slice(4);
 
   const positionClasses = {
-    top: 'sticky top-0 z-40',
-    bottom: 'sticky bottom-0 z-40',
-    floating: 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 shadow-lg',
+    top: "sticky top-0 z-40",
+    bottom: "sticky bottom-0 z-40",
+    floating: "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 shadow-lg",
   };
 
   return (
     <TooltipProvider>
       <div
         className={cn(
-          'flex items-center gap-2 px-4 py-3 bg-background/95 backdrop-blur-sm border rounded-lg',
+          "flex items-center gap-2 px-4 py-3 bg-background/95 backdrop-blur-sm border rounded-lg",
           positionClasses[position],
-          className
+          className,
         )}
         role="toolbar"
         aria-label="Batch actions"
@@ -132,7 +132,7 @@ export function BatchActionBar({
             <Tooltip key={action.id}>
               <TooltipTrigger asChild>
                 <Button
-                  variant={action.variant || 'outline'}
+                  variant={action.variant || "outline"}
                   size="sm"
                   onClick={() => action.onClick(selectedArray)}
                   disabled={action.disabled}
@@ -161,7 +161,9 @@ export function BatchActionBar({
                     key={action.id}
                     onClick={() => action.onClick(selectedArray)}
                     disabled={action.disabled}
-                    className={action.variant === 'destructive' ? 'text-destructive' : ''}
+                    className={
+                      action.variant === "destructive" ? "text-destructive" : ""
+                    }
                   >
                     {action.icon}
                     <span className="ml-2">{action.label}</span>
@@ -204,20 +206,20 @@ export function DistributionBatchActionBar({
 }) {
   const distributionActions: BatchAction[] = [
     {
-      id: 'submit',
-      label: 'Submit',
+      id: "submit",
+      label: "Submit",
       icon: <Send className="h-4 w-4" />,
       onClick: (ids) => onSubmit?.(ids),
       hidden: !onSubmit,
     },
     {
-      id: 'withdraw',
-      label: 'Withdraw',
+      id: "withdraw",
+      label: "Withdraw",
       icon: <Archive className="h-4 w-4" />,
       onClick: (ids) => onWithdraw?.(ids),
       hidden: !onWithdraw,
     },
-  ].filter(a => !a.hidden);
+  ].filter((a) => !a.hidden);
 
   return <BatchActionBar {...props} actions={distributionActions} />;
 }
@@ -232,20 +234,20 @@ export function SocialBatchActionBar({
 }) {
   const socialActions: BatchAction[] = [
     {
-      id: 'schedule',
-      label: 'Schedule',
+      id: "schedule",
+      label: "Schedule",
       icon: <Calendar className="h-4 w-4" />,
       onClick: (ids) => onSchedule?.(ids),
       hidden: !onSchedule,
     },
     {
-      id: 'publish',
-      label: 'Publish Now',
+      id: "publish",
+      label: "Publish Now",
       icon: <Send className="h-4 w-4" />,
       onClick: (ids) => onPublish?.(ids),
       hidden: !onPublish,
     },
-  ].filter(a => !a.hidden);
+  ].filter((a) => !a.hidden);
 
   return <BatchActionBar {...props} actions={socialActions} />;
 }
@@ -260,20 +262,20 @@ export function MarketplaceBatchActionBar({
 }) {
   const marketplaceActions: BatchAction[] = [
     {
-      id: 'updatePrice',
-      label: 'Update Price',
+      id: "updatePrice",
+      label: "Update Price",
       icon: <Tag className="h-4 w-4" />,
       onClick: (ids) => onUpdatePrice?.(ids),
       hidden: !onUpdatePrice,
     },
     {
-      id: 'duplicate',
-      label: 'Duplicate',
+      id: "duplicate",
+      label: "Duplicate",
       icon: <Copy className="h-4 w-4" />,
       onClick: (ids) => onDuplicate?.(ids),
       hidden: !onDuplicate,
     },
-  ].filter(a => !a.hidden);
+  ].filter((a) => !a.hidden);
 
   return <BatchActionBar {...props} actions={marketplaceActions} />;
 }
@@ -288,20 +290,20 @@ export function StudioBatchActionBar({
 }) {
   const studioActions: BatchAction[] = [
     {
-      id: 'process',
-      label: 'Process',
+      id: "process",
+      label: "Process",
       icon: <RefreshCw className="h-4 w-4" />,
       onClick: (ids) => onProcess?.(ids),
       hidden: !onProcess,
     },
     {
-      id: 'normalize',
-      label: 'Normalize',
+      id: "normalize",
+      label: "Normalize",
       icon: <Settings className="h-4 w-4" />,
       onClick: (ids) => onNormalize?.(ids),
       hidden: !onNormalize,
     },
-  ].filter(a => !a.hidden);
+  ].filter((a) => !a.hidden);
 
   return <BatchActionBar {...props} actions={studioActions} />;
 }

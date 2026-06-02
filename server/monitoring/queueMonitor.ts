@@ -1,6 +1,6 @@
-import { logger } from '../logger.js';
-import { alertingService } from './alertingService.js';
-import { metricsCollector } from './metricsCollector.js';
+import { logger } from "../logger.js";
+import { alertingService } from "./alertingService.js";
+import { metricsCollector } from "./metricsCollector.js";
 
 export interface QueueMetrics {
   queueName: string;
@@ -88,7 +88,10 @@ class QueueMonitor {
 
       return metrics;
     } catch (error) {
-      logger.warn({ err: error }, `Error collecting metrics for queue ${queueName}:`);
+      logger.warn(
+        { err: error },
+        `Error collecting metrics for queue ${queueName}:`,
+      );
       return null;
     }
   }
@@ -101,7 +104,7 @@ class QueueMonitor {
       metrics.waiting > this.alertThresholds.maxWaitingJobs
     ) {
       alerts.push(
-        `⚠️ High waiting jobs: ${metrics.waiting} (threshold: ${this.alertThresholds.maxWaitingJobs})`
+        `⚠️ High waiting jobs: ${metrics.waiting} (threshold: ${this.alertThresholds.maxWaitingJobs})`,
       );
     }
 
@@ -111,7 +114,7 @@ class QueueMonitor {
       metrics.failedRate > this.alertThresholds.maxFailedRate
     ) {
       alerts.push(
-        `⚠️ High failure rate: ${(metrics.failedRate * 100).toFixed(2)}% (threshold: ${(this.alertThresholds.maxFailedRate * 100).toFixed(2)}%)`
+        `⚠️ High failure rate: ${(metrics.failedRate * 100).toFixed(2)}% (threshold: ${(this.alertThresholds.maxFailedRate * 100).toFixed(2)}%)`,
       );
     }
 
@@ -121,7 +124,7 @@ class QueueMonitor {
       metrics.stalledJobs > this.alertThresholds.maxStalledJobs
     ) {
       alerts.push(
-        `⚠️ High stalled jobs: ${metrics.stalledJobs} (threshold: ${this.alertThresholds.maxStalledJobs})`
+        `⚠️ High stalled jobs: ${metrics.stalledJobs} (threshold: ${this.alertThresholds.maxStalledJobs})`,
       );
     }
 
@@ -131,15 +134,17 @@ class QueueMonitor {
       metrics.redisLatency > this.alertThresholds.maxRedisLatency
     ) {
       alerts.push(
-        `⚠️ High latency: ${metrics.redisLatency}ms (threshold: ${this.alertThresholds.maxRedisLatency}ms)`
+        `⚠️ High latency: ${metrics.redisLatency}ms (threshold: ${this.alertThresholds.maxRedisLatency}ms)`,
       );
     }
 
     if (alerts.length > 0) {
-      logger.warn(`🚨 Queue alerts for ${metrics.queueName}:\n${alerts.join('\n')}`);
+      logger.warn(
+        `🚨 Queue alerts for ${metrics.queueName}:\n${alerts.join("\n")}`,
+      );
 
       alertingService.checkQueueMetrics(metrics).catch((error) => {
-        logger.warn({ err: error }, 'Failed to send queue alerts:');
+        logger.warn({ err: error }, "Failed to send queue alerts:");
       });
     }
   }
@@ -180,12 +185,15 @@ class QueueMonitor {
 
   setAlertThresholds(thresholds: Partial<AlertThresholds>): void {
     this.alertThresholds = { ...this.alertThresholds, ...thresholds };
-    logger.info('📊 Queue monitor alert thresholds updated:', this.alertThresholds);
+    logger.info(
+      "📊 Queue monitor alert thresholds updated:",
+      this.alertThresholds,
+    );
   }
 
   startMonitoring(): void {
     if (this.monitoringInterval) {
-      logger.warn('Queue monitoring already started');
+      logger.warn("Queue monitoring already started");
       return;
     }
 
@@ -195,7 +203,9 @@ class QueueMonitor {
       const firstQueue = allMetrics.values().next().value;
       if (firstQueue) {
         try {
-          const { aiModelManager } = await import('../services/aiModelManager.js');
+          const { aiModelManager } = await import(
+            "../services/aiModelManager.js"
+          );
           const aiMetrics = aiModelManager.getMetrics();
 
           const memUsage = process.memoryUsage();
@@ -205,15 +215,19 @@ class QueueMonitor {
             cpuPercent: 0,
           };
 
-          await metricsCollector.collectSnapshot(firstQueue, aiMetrics, systemMetrics);
+          await metricsCollector.collectSnapshot(
+            firstQueue,
+            aiMetrics,
+            systemMetrics,
+          );
         } catch (error) {
-          logger.debug('Failed to collect metrics snapshot:', error);
+          logger.debug("Failed to collect metrics snapshot:", error);
         }
       }
     }, this.MONITORING_INTERVAL);
 
     logger.info(
-      `📊 Queue monitoring started (interval: ${this.MONITORING_INTERVAL / 1000}s)`
+      `📊 Queue monitoring started (interval: ${this.MONITORING_INTERVAL / 1000}s)`,
     );
   }
 
@@ -221,7 +235,7 @@ class QueueMonitor {
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
       this.monitoringInterval = undefined;
-      logger.info('📊 Queue monitoring stopped');
+      logger.info("📊 Queue monitoring stopped");
     }
   }
 
@@ -229,21 +243,24 @@ class QueueMonitor {
     healthy: boolean;
     queues: Map<string, { status: string; metrics: QueueMetrics | null }>;
   }> {
-    const queues = new Map<string, { status: string; metrics: QueueMetrics | null }>();
+    const queues = new Map<
+      string,
+      { status: string; metrics: QueueMetrics | null }
+    >();
     let healthy = true;
 
     for (const queueName of this.queues.keys()) {
       const metrics = await this.collectMetrics(queueName);
 
-      let status = 'healthy';
+      let status = "healthy";
       if (!metrics) {
-        status = 'error';
+        status = "error";
         healthy = false;
       } else if (
         (metrics.stalledJobs && metrics.stalledJobs > 5) ||
         (metrics.failedRate && metrics.failedRate > 0.2)
       ) {
-        status = 'degraded';
+        status = "degraded";
         healthy = false;
       }
 

@@ -1,11 +1,14 @@
-import { Request, Response, NextFunction } from 'express';
-import { getBoosterStateClient, BoosterStateClient } from './lib/boosterStateClient.js';
-import { promisify } from 'util';
-import { exec } from 'child_process';
-import cluster from 'cluster';
-import * as os from 'os';
-import { logger } from './logger.js';
-import { isProductionEnv } from './lib/envHelpers.js';
+import { Request, Response, NextFunction } from "express";
+import {
+  getBoosterStateClient,
+  BoosterStateClient,
+} from "./lib/boosterStateClient.js";
+import { promisify } from "util";
+import { exec } from "child_process";
+import cluster from "cluster";
+import * as os from "os";
+import { logger } from "./logger.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
 const execAsync = promisify(exec);
 
@@ -54,7 +57,7 @@ export class ScalabilitySystem {
   private async initializeSystem(): Promise<void> {
     this.client = await getBoosterStateClient();
     this.cacheManager = new CacheManager(this.client);
-    logger.info('✅ BoosterState connected for caching');
+    logger.info("✅ BoosterState connected for caching");
 
     this.startPerformanceMonitoring();
     this.startAutoScaling();
@@ -64,7 +67,7 @@ export class ScalabilitySystem {
       this.setupCluster();
     }
 
-    logger.info('🚀 Scalability system initialized with BoosterState');
+    logger.info("🚀 Scalability system initialized with BoosterState");
   }
 
   // Setup cluster for multi-core processing
@@ -79,12 +82,12 @@ export class ScalabilitySystem {
         cluster.fork();
       }
 
-      cluster.on('exit', (worker, code, signal) => {
+      cluster.on("exit", (worker, code, signal) => {
         logger.info(`💀 Worker ${worker.process.pid} died`);
         cluster.fork(); // Restart worker
       });
 
-      cluster.on('online', (worker) => {
+      cluster.on("online", (worker) => {
         logger.info(`👷 Worker ${worker.process.pid} is online`);
       });
     } else {
@@ -98,25 +101,39 @@ export class ScalabilitySystem {
       try {
         await this.collectMetrics();
         await this.analyzePerformance();
-      } catch { /* non-fatal */ }
+      } catch {
+        /* non-fatal */
+      }
     }, 5000); // Monitor every 5 seconds
 
     setInterval(async () => {
-      try { await this.optimizePerformance(); } catch { /* non-fatal */ }
+      try {
+        await this.optimizePerformance();
+      } catch {
+        /* non-fatal */
+      }
     }, 30000); // Optimize every 30 seconds
   }
 
   // Start auto-scaling
   private startAutoScaling(): void {
     setInterval(async () => {
-      try { await this.checkScalingNeeds(); } catch { /* non-fatal */ }
+      try {
+        await this.checkScalingNeeds();
+      } catch {
+        /* non-fatal */
+      }
     }, 10000); // Check scaling every 10 seconds
   }
 
   // Start optimization
   private startOptimization(): void {
     setInterval(async () => {
-      try { await this.performOptimization(); } catch { /* non-fatal */ }
+      try {
+        await this.performOptimization();
+      } catch {
+        /* non-fatal */
+      }
     }, 60000); // Optimize every minute
   }
 
@@ -147,9 +164,13 @@ export class ScalabilitySystem {
       const errorRate = await this.getErrorRate();
       this.metrics.errorRate = errorRate;
 
-      await this.client.setex('scalability:metrics', 300, JSON.stringify(this.metrics));
+      await this.client.setex(
+        "scalability:metrics",
+        300,
+        JSON.stringify(this.metrics),
+      );
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error collecting metrics:');
+      logger.warn({ err: error }, "Error collecting metrics:");
     }
   }
 
@@ -157,7 +178,7 @@ export class ScalabilitySystem {
   private async getCPUUsage(): Promise<number> {
     try {
       const { stdout } = await execAsync(
-        "top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | awk -F'%' '{print $1}'"
+        "top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | awk -F'%' '{print $1}'",
       );
       return parseFloat(stdout.trim()) || 0;
     } catch (error: unknown) {
@@ -169,7 +190,7 @@ export class ScalabilitySystem {
   private async getMemoryUsage(): Promise<number> {
     try {
       const { stdout } = await execAsync(
-        'free | grep Mem | awk \'{printf "%.2f", $3/$2 * 100.0}\''
+        "free | grep Mem | awk '{printf \"%.2f\", $3/$2 * 100.0}'",
       );
       return parseFloat(stdout.trim()) || 0;
     } catch (error: unknown) {
@@ -180,7 +201,9 @@ export class ScalabilitySystem {
   // Get active connections
   private async getActiveConnections(): Promise<number> {
     try {
-      const { stdout } = await execAsync('netstat -an | grep ESTABLISHED | wc -l');
+      const { stdout } = await execAsync(
+        "netstat -an | grep ESTABLISHED | wc -l",
+      );
       return parseInt(stdout.trim()) || 0;
     } catch (error: unknown) {
       return 0;
@@ -193,16 +216,21 @@ export class ScalabilitySystem {
       // Calculate requests per second
       const currentTime = Date.now();
       const timeWindow = 60000; // 1 minute
-      const requests = await this.client.get('scalability:requests:count');
-      const lastReset = await this.client.get('scalability:requests:last_reset');
+      const requests = await this.client.get("scalability:requests:count");
+      const lastReset = await this.client.get(
+        "scalability:requests:last_reset",
+      );
 
       if (!lastReset || currentTime - parseInt(lastReset) > timeWindow) {
-        await this.client.set('scalability:requests:count', '0');
-        await this.client.set('scalability:requests:last_reset', currentTime.toString());
+        await this.client.set("scalability:requests:count", "0");
+        await this.client.set(
+          "scalability:requests:last_reset",
+          currentTime.toString(),
+        );
         return 0;
       }
 
-      return parseInt(requests || '0') / (timeWindow / 1000);
+      return parseInt(requests || "0") / (timeWindow / 1000);
     } catch (error: unknown) {
       return 0;
     }
@@ -211,11 +239,13 @@ export class ScalabilitySystem {
   // Get error rate
   private async getErrorRate(): Promise<number> {
     try {
-      const totalRequests = await this.client.get('scalability:requests:total');
-      const errorRequests = await this.client.get('scalability:requests:errors');
+      const totalRequests = await this.client.get("scalability:requests:total");
+      const errorRequests = await this.client.get(
+        "scalability:requests:errors",
+      );
 
-      const total = parseInt(totalRequests || '0');
-      const errors = parseInt(errorRequests || '0');
+      const total = parseInt(totalRequests || "0");
+      const errors = parseInt(errorRequests || "0");
 
       return total > 0 ? (errors / total) * 100 : 0;
     } catch (error: unknown) {
@@ -229,29 +259,29 @@ export class ScalabilitySystem {
 
     // Performance analysis
     if (cpuUsage > 80) {
-      logger.info('⚠️ High CPU usage detected:', cpuUsage + '%');
+      logger.info("⚠️ High CPU usage detected:", cpuUsage + "%");
       await this.optimizeCPU();
     }
 
     if (memoryUsage > 85) {
-      logger.info('⚠️ High memory usage detected:', memoryUsage + '%');
+      logger.info("⚠️ High memory usage detected:", memoryUsage + "%");
       await this.optimizeMemory();
     }
 
     if (cacheHitRate < 70) {
-      logger.info('⚠️ Low cache hit rate detected:', cacheHitRate + '%');
+      logger.info("⚠️ Low cache hit rate detected:", cacheHitRate + "%");
       await this.optimizeCache();
     }
 
     if (errorRate > 5) {
-      logger.info('⚠️ High error rate detected:', errorRate + '%');
+      logger.info("⚠️ High error rate detected:", errorRate + "%");
       await this.optimizeErrorHandling();
     }
   }
 
   // Optimize performance
   private async optimizePerformance(): Promise<void> {
-    logger.info('🔧 Optimizing performance...');
+    logger.info("🔧 Optimizing performance...");
 
     // Optimize database connections
     await this.optimizeDatabaseConnections();
@@ -271,24 +301,25 @@ export class ScalabilitySystem {
 
   // Check scaling needs
   private async checkScalingNeeds(): Promise<void> {
-    const { cpuUsage, memoryUsage, activeConnections, throughput } = this.metrics;
+    const { cpuUsage, memoryUsage, activeConnections, throughput } =
+      this.metrics;
 
     // Scale up conditions for extreme concurrency
     if (cpuUsage > 75 || memoryUsage > 80 || activeConnections > 1000000000) {
-      logger.info('📈 Scaling up resources for 80B users...');
+      logger.info("📈 Scaling up resources for 80B users...");
       await this.scaleUp();
     }
 
     // Scale down conditions
     if (cpuUsage < 30 && memoryUsage < 40 && activeConnections < 1000000) {
-      logger.info('📉 Scaling down resources...');
+      logger.info("📉 Scaling down resources...");
       await this.scaleDown();
     }
   }
 
   // Perform optimization
   private async performOptimization(): Promise<void> {
-    logger.info('🚀 Performing system optimization for 80B users...');
+    logger.info("🚀 Performing system optimization for 80B users...");
 
     // Database optimization
     await this.optimizeDatabase();
@@ -307,73 +338,73 @@ export class ScalabilitySystem {
     this.metrics.lastOptimization = Date.now();
     this.isOptimized = true;
 
-    logger.info('✅ System optimization for 80B users completed');
+    logger.info("✅ System optimization for 80B users completed");
   }
 
   // Optimization implementations
   private async optimizeCPU(): Promise<void> {
     // Implement CPU optimization
-    logger.info('🔧 Optimizing CPU usage...');
+    logger.info("🔧 Optimizing CPU usage...");
   }
 
   private async optimizeMemory(): Promise<void> {
     // Implement memory optimization
-    logger.info('🔧 Optimizing memory usage...');
+    logger.info("🔧 Optimizing memory usage...");
   }
 
   private async optimizeCache(): Promise<void> {
     // Implement cache optimization
-    logger.info('🔧 Optimizing cache strategy...');
+    logger.info("🔧 Optimizing cache strategy...");
   }
 
   private async optimizeErrorHandling(): Promise<void> {
     // Implement error handling optimization
-    logger.info('🔧 Optimizing error handling...');
+    logger.info("🔧 Optimizing error handling...");
   }
 
   private async optimizeDatabaseConnections(): Promise<void> {
     // Implement database connection optimization
-    logger.info('🔧 Optimizing database connections...');
+    logger.info("🔧 Optimizing database connections...");
   }
 
   private async optimizeCacheStrategy(): Promise<void> {
     // Implement cache strategy optimization
-    logger.info('🔧 Optimizing cache strategy...');
+    logger.info("🔧 Optimizing cache strategy...");
   }
 
   private async optimizeMemoryUsage(): Promise<void> {
     // Implement memory usage optimization
-    logger.info('🔧 Optimizing memory usage...');
+    logger.info("🔧 Optimizing memory usage...");
   }
 
   private async optimizeCPUUsage(): Promise<void> {
     // Implement CPU usage optimization
-    logger.info('🔧 Optimizing CPU usage...');
+    logger.info("🔧 Optimizing CPU usage...");
   }
 
   private async scaleUp(): Promise<void> {
     // Implement scale up logic
-    logger.info('📈 Scaling up system resources...');
+    logger.info("📈 Scaling up system resources...");
   }
 
   private async scaleDown(): Promise<void> {
     // Implement scale down logic
-    logger.info('📉 Scaling down system resources...');
+    logger.info("📉 Scaling down system resources...");
   }
 
   private async optimizeDatabase(): Promise<void> {
     // Implement database optimization
-    logger.info('🗄️ Optimizing database...');
+    logger.info("🗄️ Optimizing database...");
   }
 
   private async optimizeNetwork(): Promise<void> {
     // Implement network optimization
-    logger.info('🌐 Optimizing network...');
+    logger.info("🌐 Optimizing network...");
   }
 
   private async optimizeApplication(): Promise<void> {
     // Implement application optimization
-    logger.info('⚡ Optimizing application...');
+    logger.info("⚡ Optimizing application...");
   }
 
   // Calculate optimization score
@@ -403,21 +434,26 @@ export class ScalabilitySystem {
   }
 
   // Middleware for request tracking
-  public requestTrackingMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  public requestTrackingMiddleware = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
     const startTime = Date.now();
 
     // Track request
     this.metrics.totalRequests++;
 
-    this.client.incr('scalability:requests:count');
-    this.client.incr('scalability:requests:total');
+    this.client.incr("scalability:requests:count");
+    this.client.incr("scalability:requests:total");
 
-    res.on('finish', async () => {
+    res.on("finish", async () => {
       const responseTime = Date.now() - startTime;
-      this.metrics.averageResponseTime = (this.metrics.averageResponseTime + responseTime) / 2;
+      this.metrics.averageResponseTime =
+        (this.metrics.averageResponseTime + responseTime) / 2;
 
       if (res.statusCode >= 400) {
-        await this.client.incr('scalability:requests:errors');
+        await this.client.incr("scalability:requests:errors");
       }
     });
 
@@ -440,7 +476,11 @@ export class ScalabilitySystem {
 
         res.send = function (data) {
           if (res.statusCode === 200) {
-            client.setex(cacheKey, ttl, typeof data === 'string' ? data : JSON.stringify(data));
+            client.setex(
+              cacheKey,
+              ttl,
+              typeof data === "string" ? data : JSON.stringify(data),
+            );
           }
           return originalSend.call(this, data);
         };
@@ -453,10 +493,12 @@ export class ScalabilitySystem {
   };
 
   // Rate limiting middleware
-  public rateLimitMiddleware = (maxRequests: number = 100, windowMs: number = 60000) => {
+  public rateLimitMiddleware = (
+    maxRequests: number = 100,
+    windowMs: number = 60000,
+  ) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-
-      const clientId = req.ip || 'unknown';
+      const clientId = req.ip || "unknown";
       const key = `rate_limit:${clientId}`;
 
       try {
@@ -468,7 +510,7 @@ export class ScalabilitySystem {
 
         if (current > maxRequests) {
           return res.status(429).json({
-            error: 'Too many requests',
+            error: "Too many requests",
             retryAfter: Math.ceil(windowMs / 1000),
           });
         }
@@ -506,7 +548,7 @@ class CacheManager {
   private missCount: number = 0;
 
   constructor(client?: BoosterStateClient) {
-    if (!client) throw new Error('CacheManager requires a BoosterStateClient');
+    if (!client) throw new Error("CacheManager requires a BoosterStateClient");
     this.client = client;
   }
 
@@ -585,7 +627,7 @@ interface Server {
   host: string;
   port: number;
   weight: number;
-  health: 'healthy' | 'unhealthy';
+  health: "healthy" | "unhealthy";
 }
 
 export default ScalabilitySystem;

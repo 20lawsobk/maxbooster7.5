@@ -1,13 +1,13 @@
-import { db } from '../db.js';
+import { db } from "../db.js";
 import {
   emailMessages,
   emailEvents,
   type InsertEmailMessage,
   type InsertEmailEvent,
-} from '@shared/schema';
-import { eq, desc, sql, and, gte } from 'drizzle-orm';
-import nacl from 'tweetnacl';
-import { logger } from '../logger.js';
+} from "@shared/schema";
+import { eq, desc, sql, and, gte } from "drizzle-orm";
+import nacl from "tweetnacl";
+import { logger } from "../logger.js";
 
 export class EmailTrackingService {
   /**
@@ -17,7 +17,7 @@ export class EmailTrackingService {
     try {
       await db.insert(emailMessages).values(data).onConflictDoNothing();
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to record sent email:');
+      logger.warn({ err: error }, "Failed to record sent email:");
     }
   }
 
@@ -28,7 +28,7 @@ export class EmailTrackingService {
     try {
       await db.insert(emailEvents).values(data).onConflictDoNothing();
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to record email event:');
+      logger.warn({ err: error }, "Failed to record email event:");
     }
   }
 
@@ -45,7 +45,9 @@ export class EmailTrackingService {
     clicked: number;
   }> {
     try {
-      const dateFilter = startDate ? gte(emailMessages.sentAt, startDate) : undefined;
+      const dateFilter = startDate
+        ? gte(emailMessages.sentAt, startDate)
+        : undefined;
 
       const [sentCount] = await db
         .select({ count: sql<number>`count(*)::int` })
@@ -59,7 +61,10 @@ export class EmailTrackingService {
           count: sql<number>`count(*)::int`,
         })
         .from(emailEvents)
-        .innerJoin(emailMessages, eq(emailEvents.messageId, emailMessages.messageId))
+        .innerJoin(
+          emailMessages,
+          eq(emailEvents.messageId, emailMessages.messageId),
+        )
         .where(dateFilter ? gte(emailMessages.sentAt, startDate) : undefined)
         .groupBy(emailEvents.eventType);
 
@@ -74,17 +79,17 @@ export class EmailTrackingService {
       };
 
       eventCounts.forEach((row) => {
-        if (row.eventType === 'delivered') stats.delivered = row.count;
-        if (row.eventType === 'bounce') stats.bounced = row.count;
-        if (row.eventType === 'spam') stats.spam = row.count;
-        if (row.eventType === 'unsubscribe') stats.unsubscribed = row.count;
-        if (row.eventType === 'open') stats.opened = row.count;
-        if (row.eventType === 'click') stats.clicked = row.count;
+        if (row.eventType === "delivered") stats.delivered = row.count;
+        if (row.eventType === "bounce") stats.bounced = row.count;
+        if (row.eventType === "spam") stats.spam = row.count;
+        if (row.eventType === "unsubscribe") stats.unsubscribed = row.count;
+        if (row.eventType === "open") stats.opened = row.count;
+        if (row.eventType === "click") stats.clicked = row.count;
       });
 
       return stats;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to get email stats:');
+      logger.warn({ err: error }, "Failed to get email stats:");
       return {
         sent: 0,
         delivered: 0,
@@ -113,14 +118,17 @@ export class EmailTrackingService {
           eventAt: emailEvents.eventAt,
         })
         .from(emailEvents)
-        .innerJoin(emailMessages, eq(emailEvents.messageId, emailMessages.messageId))
-        .where(eq(emailEvents.eventType, 'bounce'))
+        .innerJoin(
+          emailMessages,
+          eq(emailEvents.messageId, emailMessages.messageId),
+        )
+        .where(eq(emailEvents.eventType, "bounce"))
         .orderBy(desc(emailEvents.eventAt))
         .limit(limit);
 
       return bounces;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to get recent bounces:');
+      logger.warn({ err: error }, "Failed to get recent bounces:");
       return [];
     }
   }
@@ -129,27 +137,35 @@ export class EmailTrackingService {
    * Verify SendGrid webhook signature using Ed25519
    * SendGrid uses Ed25519 digital signatures for webhook verification
    */
-  verifySendGridSignature(payload: string, signature: string, timestamp: string): boolean {
+  verifySendGridSignature(
+    payload: string,
+    signature: string,
+    timestamp: string,
+  ): boolean {
     const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
     if (!publicKey) {
-      logger.warn('SendGrid webhook public key not configured');
+      logger.warn("SendGrid webhook public key not configured");
       return false;
     }
 
     try {
       const signedPayload = timestamp + payload;
 
-      const publicKeyBytes = Buffer.from(publicKey, 'base64');
+      const publicKeyBytes = Buffer.from(publicKey, "base64");
 
-      const signatureBytes = Buffer.from(signature, 'base64');
+      const signatureBytes = Buffer.from(signature, "base64");
 
-      const messageBytes = Buffer.from(signedPayload, 'utf-8');
+      const messageBytes = Buffer.from(signedPayload, "utf-8");
 
-      const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKeyBytes,
+      );
 
       return isValid;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Ed25519 signature verification failed:');
+      logger.warn({ err: error }, "Ed25519 signature verification failed:");
       return false;
     }
   }

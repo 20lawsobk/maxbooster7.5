@@ -1,6 +1,6 @@
-import React, { useCallback, useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { announcePolite } from '@/lib/a11y/screenReader';
+import React, { useCallback, useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { announcePolite } from "@/lib/a11y/screenReader";
 
 export interface SkipLinkItem {
   id: string;
@@ -18,14 +18,24 @@ export interface SkipToContentProps {
 }
 
 const defaultLinks: SkipLinkItem[] = [
-  { id: 'main-content', label: 'Skip to main content', shortcut: 'Alt+1', priority: 1 },
-  { id: 'navigation', label: 'Skip to navigation', shortcut: 'Alt+2', priority: 2 },
-  { id: 'search', label: 'Skip to search', shortcut: 'Alt+3', priority: 3 },
+  {
+    id: "main-content",
+    label: "Skip to main content",
+    shortcut: "Alt+1",
+    priority: 1,
+  },
+  {
+    id: "navigation",
+    label: "Skip to navigation",
+    shortcut: "Alt+2",
+    priority: 2,
+  },
+  { id: "search", label: "Skip to search", shortcut: "Alt+3", priority: 3 },
 ];
 
 export function SkipToContent({
-  mainContentId = 'main-content',
-  mainContentLabel = 'Skip to main content',
+  mainContentId = "main-content",
+  mainContentLabel = "Skip to main content",
   additionalLinks = [],
   respectReducedMotion = true,
   className,
@@ -34,7 +44,12 @@ export function SkipToContent({
   const [availableLinks, setAvailableLinks] = useState<SkipLinkItem[]>([]);
 
   const allLinks: SkipLinkItem[] = [
-    { id: mainContentId, label: mainContentLabel, shortcut: 'Alt+1', priority: 0 },
+    {
+      id: mainContentId,
+      label: mainContentLabel,
+      shortcut: "Alt+1",
+      priority: 0,
+    },
     ...additionalLinks,
   ];
 
@@ -44,11 +59,11 @@ export function SkipToContent({
         const element = document.getElementById(link.id);
         if (!element) return false;
         const style = window.getComputedStyle(element);
-        return style.display !== 'none' && style.visibility !== 'hidden';
+        return style.display !== "none" && style.visibility !== "hidden";
       });
 
       setAvailableLinks(
-        available.sort((a, b) => (a.priority || 99) - (b.priority || 99))
+        available.sort((a, b) => (a.priority || 99) - (b.priority || 99)),
       );
     };
 
@@ -64,31 +79,32 @@ export function SkipToContent({
     (targetId: string, label: string) => {
       const element = document.getElementById(targetId);
       if (element) {
-        element.setAttribute('tabindex', '-1');
+        element.setAttribute("tabindex", "-1");
         element.focus({ preventScroll: false });
 
         const prefersReducedMotion = window.matchMedia(
-          '(prefers-reduced-motion: reduce)'
+          "(prefers-reduced-motion: reduce)",
         ).matches;
         element.scrollIntoView({
-          behavior: respectReducedMotion && prefersReducedMotion ? 'auto' : 'smooth',
-          block: 'start',
+          behavior:
+            respectReducedMotion && prefersReducedMotion ? "auto" : "smooth",
+          block: "start",
         });
 
-        announcePolite(`Navigated to ${label.replace('Skip to ', '')}`);
+        announcePolite(`Navigated to ${label.replace("Skip to ", "")}`);
 
         const handleBlur = () => {
-          if (!element.hasAttribute('data-original-tabindex')) {
-            element.removeAttribute('tabindex');
+          if (!element.hasAttribute("data-original-tabindex")) {
+            element.removeAttribute("tabindex");
           }
-          element.removeEventListener('blur', handleBlur);
+          element.removeEventListener("blur", handleBlur);
         };
-        element.addEventListener('blur', handleBlur);
+        element.addEventListener("blur", handleBlur);
       } else {
-        announcePolite(`${label.replace('Skip to ', '')} section not found`);
+        announcePolite(`${label.replace("Skip to ", "")} section not found`);
       }
     },
-    [respectReducedMotion]
+    [respectReducedMotion],
   );
 
   useEffect(() => {
@@ -105,8 +121,8 @@ export function SkipToContent({
       }
     };
 
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
   }, [availableLinks, skipToTarget]);
 
   if (availableLinks.length === 0) return null;
@@ -116,9 +132,9 @@ export function SkipToContent({
       className={`
         fixed top-0 left-0 z-[9999] bg-background border-b shadow-lg p-4 
         transform transition-transform duration-200 ease-in-out
-        ${focused ? 'translate-y-0' : '-translate-y-full'}
+        ${focused ? "translate-y-0" : "-translate-y-full"}
         focus-within:translate-y-0
-        ${className || ''}
+        ${className || ""}
       `}
       onFocus={() => setFocused(true)}
       onBlur={(e) => {
@@ -139,7 +155,7 @@ export function SkipToContent({
             size="sm"
             onClick={() => skipToTarget(link.id, link.label)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 skipToTarget(link.id, link.label);
               }
@@ -168,16 +184,16 @@ export interface SkipLinkProps {
 
 export function SkipLink({
   targetId,
-  label = 'Skip to content',
+  label = "Skip to content",
   className,
 }: SkipLinkProps) {
   const handleClick = useCallback(() => {
     const element = document.getElementById(targetId);
     if (element) {
-      element.setAttribute('tabindex', '-1');
+      element.setAttribute("tabindex", "-1");
       element.focus();
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      announcePolite(`Navigated to ${label.replace('Skip to ', '')}`);
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+      announcePolite(`Navigated to ${label.replace("Skip to ", "")}`);
     }
   }, [targetId, label]);
 
@@ -194,7 +210,7 @@ export function SkipLink({
         focus:bg-background focus:text-foreground
         focus:px-4 focus:py-2 focus:rounded-md focus:shadow-lg
         focus:ring-2 focus:ring-primary focus:ring-offset-2
-        ${className || ''}
+        ${className || ""}
       `}
     >
       {label}

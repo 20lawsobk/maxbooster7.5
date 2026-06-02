@@ -1,5 +1,5 @@
-import { logger } from '../lib/logger';
-import { useCallback, useRef, useEffect } from 'react';
+import { logger } from "../lib/logger";
+import { useCallback, useRef, useEffect } from "react";
 
 interface FilePickerAcceptType {
   description?: string;
@@ -13,31 +13,31 @@ interface UseFullscreenFileUploadOptions {
 }
 
 function supportsFileSystemAccess(): boolean {
-  return 'showOpenFilePicker' in window;
+  return "showOpenFilePicker" in window;
 }
 
 function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
-  if (accept === '*' || accept === '*/*') {
+  if (accept === "*" || accept === "*/*") {
     return [];
   }
 
   const types: FilePickerAcceptType[] = [];
-  const parts = accept.split(',').map(p => p.trim());
+  const parts = accept.split(",").map((p) => p.trim());
 
   const audioExtensions: string[] = [];
   const mimeTypes: Record<string, string[]> = {};
 
   for (const part of parts) {
-    if (part.startsWith('.')) {
+    if (part.startsWith(".")) {
       audioExtensions.push(part);
-    } else if (part.includes('/')) {
-      const [category] = part.split('/');
+    } else if (part.includes("/")) {
+      const [category] = part.split("/");
       if (!mimeTypes[part]) {
         mimeTypes[part] = [];
       }
-      if (category === 'audio') {
-        const ext = part.split('/')[1];
-        if (ext && ext !== '*') {
+      if (category === "audio") {
+        const ext = part.split("/")[1];
+        if (ext && ext !== "*") {
           mimeTypes[part].push(`.${ext}`);
         }
       }
@@ -48,7 +48,7 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
     const acceptObj: Record<string, string[]> = {};
 
     if (audioExtensions.length > 0) {
-      acceptObj['audio/*'] = audioExtensions;
+      acceptObj["audio/*"] = audioExtensions;
     }
 
     for (const [mime, exts] of Object.entries(mimeTypes)) {
@@ -61,8 +61,8 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
 
     if (Object.keys(acceptObj).length > 0) {
       types.push({
-        description: 'Audio Files',
-        accept: acceptObj
+        description: "Audio Files",
+        accept: acceptObj,
       });
     }
   }
@@ -70,17 +70,19 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
   return types;
 }
 
-export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions = {}) {
-  const { onFilesSelected, accept = '*', multiple = true } = options;
+export function useFullscreenFileUpload(
+  options: UseFullscreenFileUploadOptions = {},
+) {
+  const { onFilesSelected, accept = "*", multiple = true } = options;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const wasFullscreenRef = useRef(false);
   const fullscreenElementRef = useRef<Element | null>(null);
 
   useEffect(() => {
     if (!fileInputRef.current) {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.style.display = 'none';
+      const input = document.createElement("input");
+      input.type = "file";
+      input.style.display = "none";
       input.accept = accept;
       input.multiple = multiple;
       document.body.appendChild(input);
@@ -99,20 +101,20 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
           try {
             fullscreenElementRef.current?.requestFullscreen?.();
           } catch (e) {
-            logger.warn('Could not re-enter fullscreen:', e);
+            logger.warn("Could not re-enter fullscreen:", e);
           }
           wasFullscreenRef.current = false;
           fullscreenElementRef.current = null;
         }, 100);
       }
 
-      input.value = '';
+      input.value = "";
     };
 
-    input.addEventListener('change', handleChange);
+    input.addEventListener("change", handleChange);
 
     return () => {
-      input.removeEventListener('change', handleChange);
+      input.removeEventListener("change", handleChange);
     };
   }, [accept, multiple, onFilesSelected]);
 
@@ -125,7 +127,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
         const handles = await window.showOpenFilePicker({
           multiple,
           types: fileTypes.length > 0 ? fileTypes : undefined,
-          excludeAcceptAllOption: false
+          excludeAcceptAllOption: false,
         });
 
         const files: File[] = [];
@@ -139,10 +141,10 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
         }
         return;
       } catch (e) {
-        if (e instanceof Error && e.name === 'AbortError') {
+        if (e instanceof Error && e.name === "AbortError") {
           return;
         }
-        logger.warn('File System Access API failed, falling back:', e);
+        logger.warn("File System Access API failed, falling back:", e);
       }
     }
 
@@ -163,7 +165,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
           await document.msExitFullscreen();
         }
       } catch (e) {
-        logger.warn('Could not exit fullscreen:', e);
+        logger.warn("Could not exit fullscreen:", e);
       }
 
       setTimeout(() => {
@@ -188,7 +190,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
   return {
     openFilePicker,
     isFullscreen: isInFullscreenMode(),
-    supportsFullscreenFilePicker: supportsFileSystemAccess()
+    supportsFullscreenFilePicker: supportsFileSystemAccess(),
   };
 }
 
@@ -202,7 +204,8 @@ export function isInFullscreenMode(): boolean {
 }
 
 export async function exitFullscreenForUpload(): Promise<Element | null> {
-  const fullscreenElement = document.fullscreenElement ||
+  const fullscreenElement =
+    document.fullscreenElement ||
     document.webkitFullscreenElement ||
     document.mozFullScreenElement ||
     document.msFullscreenElement;
@@ -220,13 +223,15 @@ export async function exitFullscreenForUpload(): Promise<Element | null> {
       await document.msExitFullscreen();
     }
   } catch (e) {
-    logger.warn('Could not exit fullscreen:', e);
+    logger.warn("Could not exit fullscreen:", e);
   }
 
   return fullscreenElement;
 }
 
-export async function reenterFullscreen(element: Element | null): Promise<void> {
+export async function reenterFullscreen(
+  element: Element | null,
+): Promise<void> {
   if (!element) return;
 
   try {
@@ -240,7 +245,7 @@ export async function reenterFullscreen(element: Element | null): Promise<void> 
       await element.msRequestFullscreen();
     }
   } catch (e) {
-    logger.warn('Could not re-enter fullscreen:', e);
+    logger.warn("Could not re-enter fullscreen:", e);
   }
 }
 
@@ -248,7 +253,7 @@ export async function openFilePickerInFullscreen(options: {
   accept?: string;
   multiple?: boolean;
 }): Promise<File[]> {
-  const { accept = '*', multiple = true } = options;
+  const { accept = "*", multiple = true } = options;
 
   if (supportsFileSystemAccess()) {
     try {
@@ -256,7 +261,7 @@ export async function openFilePickerInFullscreen(options: {
       const handles = await window.showOpenFilePicker({
         multiple,
         types: fileTypes.length > 0 ? fileTypes : undefined,
-        excludeAcceptAllOption: false
+        excludeAcceptAllOption: false,
       });
 
       const files: File[] = [];
@@ -266,14 +271,14 @@ export async function openFilePickerInFullscreen(options: {
       }
       return files;
     } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') {
+      if (e instanceof Error && e.name === "AbortError") {
         return [];
       }
       throw e;
     }
   }
 
-  throw new Error('File System Access API not supported');
+  throw new Error("File System Access API not supported");
 }
 
 export function canPickFilesInFullscreen(): boolean {

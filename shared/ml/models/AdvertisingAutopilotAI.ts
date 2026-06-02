@@ -1,40 +1,40 @@
 /**
  * Custom Advertising Autopilot AI - PERSONAL AD NETWORK OPTIMIZER
- * 
+ *
  * ZERO AD SPEND PHILOSOPHY:
  * Replicates peak performance of paid advertising WITHOUT actual ad spend.
  * Uses connected social media accounts as "Personal Ad Networks" for organic reach.
- * 
+ *
  * How It Works:
  * - Connected accounts become organic ad distribution channels
- * - AI optimizes content for each platform's algorithm  
+ * - AI optimizes content for each platform's algorithm
  * - Posts are strategically timed for maximum organic reach
  * - The artist's following becomes their advertising audience
  * - Saves artists $500-5000+/month in typical ad spend
- * 
+ *
  * HYBRID RULE-BASED + ML ARCHITECTURE:
  * - Rule Engine: Enforces posting frequency, content optimization, timing constraints
  * - Learning Layer: Learns from YOUR engagement data, adapts to YOUR audience
  * - Coordination: Works with SocialMediaAutopilotAI through shared coordinator
- * 
+ *
  * 100% custom implementation - no external APIs
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { BaseModel } from './BaseModel.js';
-import { 
-  advertisingRuleEngine, 
-  type AdContext, 
+import * as tf from "@tensorflow/tfjs";
+import { BaseModel } from "./BaseModel.js";
+import {
+  advertisingRuleEngine,
+  type AdContext,
   type AdRuleEvaluationResult,
-  MUSIC_CAMPAIGN_BENCHMARKS 
-} from '../coordination/AdvertisingRuleEngine.js';
-import { 
-  autopilotCoordinator, 
-  type ExecutionIntent, 
+  MUSIC_CAMPAIGN_BENCHMARKS,
+} from "../coordination/AdvertisingRuleEngine.js";
+import {
+  autopilotCoordinator,
+  type ExecutionIntent,
   type CoordinationDecision,
-  type CampaignState 
-} from '../coordination/AutopilotCoordinator.js';
-import { featureStore } from '../coordination/FeatureStore.js';
+  type CampaignState,
+} from "../coordination/AutopilotCoordinator.js";
+import { featureStore } from "../coordination/FeatureStore.js";
 
 export interface CampaignData {
   campaignId: string;
@@ -49,8 +49,8 @@ export interface CampaignData {
   cpc: number;
   cpa: number;
   roi: number;
-  objective: 'awareness' | 'engagement' | 'conversions';
-  creativeType: 'text' | 'image' | 'video' | 'carousel';
+  objective: "awareness" | "engagement" | "conversions";
+  creativeType: "text" | "image" | "video" | "carousel";
   audienceSize: number;
   bidAmount: number;
 }
@@ -107,9 +107,9 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
   constructor() {
     super({
-      name: 'AdvertisingAutopilotAI',
-      type: 'regression',
-      version: '2.0.0',
+      name: "AdvertisingAutopilotAI",
+      type: "regression",
+      version: "2.0.0",
       inputShape: [19],
       outputShape: [3],
     });
@@ -120,7 +120,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
       layers: [
         tf.layers.dense({
           units: 128,
-          activation: 'relu',
+          activation: "relu",
           inputShape: [15],
           kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
         }),
@@ -129,26 +129,26 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
         tf.layers.dense({
           units: 64,
-          activation: 'relu',
+          activation: "relu",
         }),
         tf.layers.dropout({ rate: 0.3 }),
 
         tf.layers.dense({
           units: 32,
-          activation: 'relu',
+          activation: "relu",
         }),
 
         tf.layers.dense({
           units: 3,
-          activation: 'linear',
+          activation: "linear",
         }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'meanSquaredError',
-      metrics: ['mae'],
+      loss: "meanSquaredError",
+      metrics: ["mae"],
     });
 
     return model;
@@ -159,27 +159,27 @@ export class AdvertisingAutopilotAI extends BaseModel {
       layers: [
         tf.layers.dense({
           units: 64,
-          activation: 'relu',
+          activation: "relu",
           inputShape: [8],
         }),
         tf.layers.dropout({ rate: 0.2 }),
 
         tf.layers.dense({
           units: 32,
-          activation: 'relu',
+          activation: "relu",
         }),
 
         tf.layers.dense({
           units: 1,
-          activation: 'linear',
+          activation: "linear",
         }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'meanSquaredError',
-      metrics: ['mae'],
+      loss: "meanSquaredError",
+      metrics: ["mae"],
     });
 
     return model;
@@ -190,32 +190,32 @@ export class AdvertisingAutopilotAI extends BaseModel {
       layers: [
         tf.layers.dense({
           units: 96,
-          activation: 'relu',
+          activation: "relu",
           inputShape: [19],
         }),
         tf.layers.dropout({ rate: 0.25 }),
 
         tf.layers.dense({
           units: 48,
-          activation: 'relu',
+          activation: "relu",
         }),
 
         tf.layers.dense({
           units: 24,
-          activation: 'relu',
+          activation: "relu",
         }),
 
         tf.layers.dense({
           units: 3,
-          activation: 'linear',
+          activation: "linear",
         }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'meanSquaredError',
-      metrics: ['mae'],
+      loss: "meanSquaredError",
+      metrics: ["mae"],
     });
 
     return model;
@@ -228,7 +228,10 @@ export class AdvertisingAutopilotAI extends BaseModel {
     accuracy: Record<string, number>;
   }> {
     if (campaigns.length < 30) {
-      throw new Error('Need at least 30 campaigns to train effectively. Current: ' + campaigns.length);
+      throw new Error(
+        "Need at least 30 campaigns to train effectively. Current: " +
+          campaigns.length,
+      );
     }
 
     this.campaignHistory = campaigns;
@@ -237,19 +240,19 @@ export class AdvertisingAutopilotAI extends BaseModel {
     const accuracy: Record<string, number> = {};
 
     const budgetAccuracy = await this.trainBudgetAllocator(campaigns);
-    modelsTrained.push('budget_allocator');
-    accuracy['budget_allocator'] = budgetAccuracy;
+    modelsTrained.push("budget_allocator");
+    accuracy["budget_allocator"] = budgetAccuracy;
 
     const perfAccuracy = await this.trainPerformancePredictor(campaigns);
-    modelsTrained.push('performance_predictor');
-    accuracy['performance_predictor'] = perfAccuracy;
+    modelsTrained.push("performance_predictor");
+    accuracy["performance_predictor"] = perfAccuracy;
 
     const bidAccuracy = await this.trainBidOptimizer(campaigns);
-    modelsTrained.push('bid_optimizer');
-    accuracy['bid_optimizer'] = bidAccuracy;
+    modelsTrained.push("bid_optimizer");
+    accuracy["bid_optimizer"] = bidAccuracy;
 
     this.discoverAudienceSegments(campaigns);
-    modelsTrained.push('audience_segmentation');
+    modelsTrained.push("audience_segmentation");
 
     this.calculatePlatformStatistics(campaigns);
 
@@ -264,7 +267,9 @@ export class AdvertisingAutopilotAI extends BaseModel {
     };
   }
 
-  private async trainBudgetAllocator(campaigns: CampaignData[]): Promise<number> {
+  private async trainBudgetAllocator(
+    campaigns: CampaignData[],
+  ): Promise<number> {
     this.budgetModel = this.buildBudgetOptimizer();
 
     const features: number[][] = [];
@@ -301,23 +306,28 @@ export class AdvertisingAutopilotAI extends BaseModel {
         callbacks: {
           onEpochEnd: (epoch, logs) => {
             if (epoch % 25 === 0 && logs) {
-              console.log(`Budget Model Epoch ${epoch}: loss=${logs.loss?.toFixed(4)}`);
+              console.log(
+                `Budget Model Epoch ${epoch}: loss=${logs.loss?.toFixed(4)}`,
+              );
             }
           },
         },
       });
-      
-      const finalLoss = history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
+
+      const finalLoss =
+        history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
       finalAccuracy = Math.max(0.5, 1 - Math.min(finalLoss as number, 0.5));
     } finally {
       xTrain.dispose();
       yTrain.dispose();
     }
-    
+
     return finalAccuracy;
   }
 
-  private async trainPerformancePredictor(campaigns: CampaignData[]): Promise<number> {
+  private async trainPerformancePredictor(
+    campaigns: CampaignData[],
+  ): Promise<number> {
     this.performanceModel = this.buildPerformancePredictor();
 
     const features: number[][] = [];
@@ -360,14 +370,15 @@ export class AdvertisingAutopilotAI extends BaseModel {
         validationSplit: 0.2,
         verbose: 0,
       });
-      
-      const finalLoss = history.history.val_loss?.[history.history.val_loss.length - 1] || 0.25;
+
+      const finalLoss =
+        history.history.val_loss?.[history.history.val_loss.length - 1] || 0.25;
       finalAccuracy = Math.max(0.6, 1 - Math.min(finalLoss as number, 0.4));
     } finally {
       xTrain.dispose();
       yTrain.dispose();
     }
-    
+
     return finalAccuracy;
   }
 
@@ -405,25 +416,36 @@ export class AdvertisingAutopilotAI extends BaseModel {
         validationSplit: 0.2,
         verbose: 0,
       });
-      
-      const finalLoss = history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
+
+      const finalLoss =
+        history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
       finalAccuracy = Math.max(0.55, 1 - Math.min(finalLoss as number, 0.45));
     } finally {
       xTrain.dispose();
       yTrain.dispose();
     }
-    
+
     return finalAccuracy;
   }
 
   public optimizeBudgetAllocation(
     totalBudget: number,
     platforms: string[],
-    campaignObjective: 'awareness' | 'engagement' | 'conversions',
-    userCampaignHistory?: CampaignData[]
+    campaignObjective: "awareness" | "engagement" | "conversions",
+    userCampaignHistory?: CampaignData[],
   ): BudgetAllocation[] {
-    if (!this.isTrained || !this.budgetModel || !userCampaignHistory || userCampaignHistory.length < 10) {
-      return this.getFallbackBudgetAllocation(totalBudget, platforms, campaignObjective, false);
+    if (
+      !this.isTrained ||
+      !this.budgetModel ||
+      !userCampaignHistory ||
+      userCampaignHistory.length < 10
+    ) {
+      return this.getFallbackBudgetAllocation(
+        totalBudget,
+        platforms,
+        campaignObjective,
+        false,
+      );
     }
 
     const allocations: BudgetAllocation[] = [];
@@ -431,7 +453,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
     for (const platform of platforms) {
       const platformCampaigns = userCampaignHistory.filter(
-        (c) => c.platform === platform && c.objective === campaignObjective
+        (c) => c.platform === platform && c.objective === campaignObjective,
       );
 
       if (platformCampaigns.length === 0) {
@@ -439,14 +461,24 @@ export class AdvertisingAutopilotAI extends BaseModel {
         continue;
       }
 
-      const avgROI = platformCampaigns.reduce((sum, c) => sum + c.roi, 0) / platformCampaigns.length;
+      const avgROI =
+        platformCampaigns.reduce((sum, c) => sum + c.roi, 0) /
+        platformCampaigns.length;
       platformROI.set(platform, avgROI);
     }
 
-    const totalWeight = Array.from(platformROI.values()).reduce((sum, roi) => sum + roi, 0);
-    
+    const totalWeight = Array.from(platformROI.values()).reduce(
+      (sum, roi) => sum + roi,
+      0,
+    );
+
     if (totalWeight === 0) {
-      return this.getFallbackBudgetAllocation(totalBudget, platforms, campaignObjective, false);
+      return this.getFallbackBudgetAllocation(
+        totalBudget,
+        platforms,
+        campaignObjective,
+        false,
+      );
     }
 
     for (const platform of platforms) {
@@ -454,12 +486,18 @@ export class AdvertisingAutopilotAI extends BaseModel {
       const weight = roi / totalWeight;
       const allocatedBudget = totalBudget * weight;
 
-      const platformCampaigns = userCampaignHistory.filter((c) => c.platform === platform);
-      const avgConversions = platformCampaigns.length > 0
-        ? platformCampaigns.reduce((sum, c) => sum + c.conversions, 0) / platformCampaigns.length
-        : 10;
+      const platformCampaigns = userCampaignHistory.filter(
+        (c) => c.platform === platform,
+      );
+      const avgConversions =
+        platformCampaigns.length > 0
+          ? platformCampaigns.reduce((sum, c) => sum + c.conversions, 0) /
+            platformCampaigns.length
+          : 10;
 
-      const expectedConversions = Math.floor((allocatedBudget / 100) * avgConversions);
+      const expectedConversions = Math.floor(
+        (allocatedBudget / 100) * avgConversions,
+      );
 
       allocations.push({
         platform,
@@ -477,16 +515,20 @@ export class AdvertisingAutopilotAI extends BaseModel {
   public async predictCreativePerformance(
     creative: any,
     platform: string,
-    objective: 'awareness' | 'engagement' | 'conversions',
-    userCampaignHistory?: CampaignData[]
+    objective: "awareness" | "engagement" | "conversions",
+    userCampaignHistory?: CampaignData[],
   ): Promise<CreativePerformancePrediction> {
-    if (!this.performanceModel || !userCampaignHistory || userCampaignHistory.length < 10) {
+    if (
+      !this.performanceModel ||
+      !userCampaignHistory ||
+      userCampaignHistory.length < 10
+    ) {
       return this.getFallbackCreativePerformance(creative, platform, false);
     }
 
     const platformEncoding = this.encodePlatform(platform);
     const objectiveEncoding = this.encodeObjective(objective);
-    const creativeEncoding = this.encodeCreativeType(creative.type || 'image');
+    const creativeEncoding = this.encodeCreativeType(creative.type || "image");
 
     const features = [
       creative.budget / 10000 || 0.5,
@@ -505,26 +547,36 @@ export class AdvertisingAutopilotAI extends BaseModel {
     const inputTensor = tf.tensor2d(scaled);
 
     try {
-      const prediction = this.performanceModel.predict(inputTensor) as tf.Tensor;
-      const [predictedCTR, predictedCVR, predictedROI] = await prediction.data();
+      const prediction = this.performanceModel.predict(
+        inputTensor,
+      ) as tf.Tensor;
+      const [predictedCTR, predictedCVR, predictedROI] =
+        await prediction.data();
       prediction.dispose();
 
-      const platformCampaigns = userCampaignHistory.filter((c) => c.platform === platform);
-      const avgCPC = platformCampaigns.reduce((sum, c) => sum + c.cpc, 0) / platformCampaigns.length;
+      const platformCampaigns = userCampaignHistory.filter(
+        (c) => c.platform === platform,
+      );
+      const avgCPC =
+        platformCampaigns.reduce((sum, c) => sum + c.cpc, 0) /
+        platformCampaigns.length;
 
       const estimatedClicks = 10000 * predictedCTR;
       const predictedConversions = estimatedClicks * predictedCVR;
       const predictedCost = estimatedClicks * avgCPC;
 
       return {
-        creativeName: creative.name || 'Untitled',
+        creativeName: creative.name || "Untitled",
         predictedCTR,
         predictedCVR,
         predictedConversions,
         predictedCost,
         predictedROI,
         confidence: 0.85,
-        topElements: this.identifyTopElementsFromData(creative, platformCampaigns),
+        topElements: this.identifyTopElementsFromData(
+          creative,
+          platformCampaigns,
+        ),
         basedOnUserCampaigns: true,
       };
     } finally {
@@ -535,15 +587,19 @@ export class AdvertisingAutopilotAI extends BaseModel {
   public optimizeBid(
     platform: string,
     currentBid: number,
-    objective: 'awareness' | 'engagement' | 'conversions',
-    userCampaignHistory?: CampaignData[]
+    objective: "awareness" | "engagement" | "conversions",
+    userCampaignHistory?: CampaignData[],
   ): BidOptimization {
-    if (!this.bidOptimizer || !userCampaignHistory || userCampaignHistory.length < 10) {
+    if (
+      !this.bidOptimizer ||
+      !userCampaignHistory ||
+      userCampaignHistory.length < 10
+    ) {
       return this.getFallbackBidOptimization(platform, currentBid, false);
     }
 
     const platformCampaigns = userCampaignHistory.filter(
-      (c) => c.platform === platform && c.objective === objective
+      (c) => c.platform === platform && c.objective === objective,
     );
 
     if (platformCampaigns.length === 0) {
@@ -551,11 +607,12 @@ export class AdvertisingAutopilotAI extends BaseModel {
     }
 
     const bestPerformingCampaign = platformCampaigns.reduce((best, current) =>
-      current.roi > best.roi ? current : best
+      current.roi > best.roi ? current : best,
     );
 
     const optimizedBid = bestPerformingCampaign.bidAmount;
-    const expectedImprovement = ((optimizedBid - currentBid) / currentBid) * 100;
+    const expectedImprovement =
+      ((optimizedBid - currentBid) / currentBid) * 100;
 
     return {
       platform,
@@ -567,7 +624,9 @@ export class AdvertisingAutopilotAI extends BaseModel {
     };
   }
 
-  public async discoverAudienceSegments(campaigns: CampaignData[]): Promise<AudienceSegment[]> {
+  public async discoverAudienceSegments(
+    campaigns: CampaignData[],
+  ): Promise<AudienceSegment[]> {
     const segments = this.performKMeansClustering(campaigns, 5);
 
     this.audienceSegments = segments.map((segment, idx) => ({
@@ -619,8 +678,10 @@ export class AdvertisingAutopilotAI extends BaseModel {
       for (let i = 0; i < k; i++) {
         if (clusters[i].length === 0) continue;
 
-        const newCentroid = clusters[i][0].map((_, featureIdx) =>
-          clusters[i].reduce((sum, point) => sum + point[featureIdx], 0) / clusters[i].length
+        const newCentroid = clusters[i][0].map(
+          (_, featureIdx) =>
+            clusters[i].reduce((sum, point) => sum + point[featureIdx], 0) /
+            clusters[i].length,
         );
 
         centroids[i] = newCentroid;
@@ -639,7 +700,8 @@ export class AdvertisingAutopilotAI extends BaseModel {
       avgROI: centroid[2],
       avgBid: centroid[3],
       characteristics: {
-        performanceLevel: centroid[2] > 3 ? 'High' : centroid[2] > 2 ? 'Medium' : 'Low',
+        performanceLevel:
+          centroid[2] > 3 ? "High" : centroid[2] > 2 ? "Medium" : "Low",
         ctr: centroid[0],
         cvr: centroid[1],
       },
@@ -659,8 +721,8 @@ export class AdvertisingAutopilotAI extends BaseModel {
     }
 
     featureStore.recordLearningEvent({
-      eventType: 'campaign',
-      source: 'advertising',
+      eventType: "campaign",
+      source: "advertising",
       platform: newCampaign.platform,
       input: {
         budget: newCampaign.budget,
@@ -678,7 +740,9 @@ export class AdvertisingAutopilotAI extends BaseModel {
     });
   }
 
-  public evaluateAdRequestWithRules(context: AdContext): AdRuleEvaluationResult {
+  public evaluateAdRequestWithRules(
+    context: AdContext,
+  ): AdRuleEvaluationResult {
     return advertisingRuleEngine.evaluateAdRequest(context);
   }
 
@@ -686,9 +750,9 @@ export class AdvertisingAutopilotAI extends BaseModel {
     platform: string,
     budget: number,
     bidAmount: number,
-    objective: 'awareness' | 'engagement' | 'conversions',
+    objective: "awareness" | "engagement" | "conversions",
     creativeText: string,
-    audienceCohort?: string
+    audienceCohort?: string,
   ): Promise<{
     approved: boolean;
     adjustedBudget: number;
@@ -707,7 +771,12 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
     const adContext: AdContext = {
       platform,
-      campaignType: objective === 'conversions' ? 'conversions' : objective === 'engagement' ? 'engagement' : 'awareness',
+      campaignType:
+        objective === "conversions"
+          ? "conversions"
+          : objective === "engagement"
+            ? "engagement"
+            : "awareness",
       objective,
       budget,
       dailySpend,
@@ -734,15 +803,15 @@ export class AdvertisingAutopilotAI extends BaseModel {
         approved: false,
         adjustedBudget: ruleEval.adjustedBudget || budget,
         adjustedBid: ruleEval.adjustedBid || bidAmount,
-        adjustments: ruleEval.violations.map(v => v.message),
+        adjustments: ruleEval.violations.map((v) => v.message),
         conflictWarnings: [],
-        paceRecommendation: ruleEval.paceRecommendation || 'pause',
+        paceRecommendation: ruleEval.paceRecommendation || "pause",
       };
     }
 
     const intent: ExecutionIntent = {
-      source: 'advertising',
-      action: 'boost',
+      source: "advertising",
+      action: "boost",
       platform,
       audienceCohort,
       budgetImpact: ruleEval.adjustedBudget || budget,
@@ -758,22 +827,26 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
     if (!coordination.approved) {
       conflictWarnings.push(coordination.reason);
-      
+
       if (coordination.adjustments?.budgetImpact) {
-        adjustments.push(`Budget adjusted to ${coordination.adjustments.budgetImpact} based on coordination`);
+        adjustments.push(
+          `Budget adjusted to ${coordination.adjustments.budgetImpact} based on coordination`,
+        );
       }
     }
 
     if (coordination.conflictsWith) {
       for (const conflict of coordination.conflictsWith) {
-        conflictWarnings.push(`Conflicts with ${conflict.source} ${conflict.action} on ${conflict.platform}`);
+        conflictWarnings.push(
+          `Conflicts with ${conflict.source} ${conflict.action} on ${conflict.platform}`,
+        );
       }
     }
 
     const pauseCheck = advertisingRuleEngine.shouldPauseForOrganicPerformance(
       organicEngagementRate,
       budget,
-      intent.expectedOutcome.conversions || intent.expectedOutcome.engagement
+      intent.expectedOutcome.conversions || intent.expectedOutcome.engagement,
     );
 
     if (pauseCheck.shouldPause) {
@@ -781,33 +854,35 @@ export class AdvertisingAutopilotAI extends BaseModel {
       adjustments.push(pauseCheck.recommendation);
     }
 
-    const coordinatorAcceptsWithAlternative = 
-      !coordination.approved && 
+    const coordinatorAcceptsWithAlternative =
+      !coordination.approved &&
       coordination.alternativeRecommendation !== undefined &&
       coordination.alternativeRecommendation.budgetImpact !== undefined;
 
-    const finalApproval = 
-      ruleEval.allowed && 
-      (coordination.approved || coordinatorAcceptsWithAlternative) && 
+    const finalApproval =
+      ruleEval.allowed &&
+      (coordination.approved || coordinatorAcceptsWithAlternative) &&
       !pauseCheck.shouldPause;
 
     return {
       approved: finalApproval,
-      adjustedBudget: coordinatorAcceptsWithAlternative 
-        ? (coordination.alternativeRecommendation?.budgetImpact || ruleEval.adjustedBudget || budget)
-        : (ruleEval.adjustedBudget || budget),
+      adjustedBudget: coordinatorAcceptsWithAlternative
+        ? coordination.alternativeRecommendation?.budgetImpact ||
+          ruleEval.adjustedBudget ||
+          budget
+        : ruleEval.adjustedBudget || budget,
       adjustedBid: ruleEval.adjustedBid || bidAmount,
       adjustments,
       conflictWarnings,
-      paceRecommendation: ruleEval.paceRecommendation || 'maintain',
+      paceRecommendation: ruleEval.paceRecommendation || "maintain",
     };
   }
 
   public registerCampaignWithCoordinator(
     campaignId: string,
-    campaignType: CampaignState['campaignType'],
-    priority: CampaignState['priority'],
-    budgetAllocated: number
+    campaignType: CampaignState["campaignType"],
+    priority: CampaignState["priority"],
+    budgetAllocated: number,
   ): void {
     const campaignState: CampaignState = {
       campaignId,
@@ -826,13 +901,23 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
   public reportCampaignOutcome(
     platform: string,
-    outcome: { reach: number; engagement: number; conversions: number; spend: number; roi: number }
+    outcome: {
+      reach: number;
+      engagement: number;
+      conversions: number;
+      spend: number;
+      roi: number;
+    },
   ): void {
     const intent: ExecutionIntent = {
-      source: 'advertising',
-      action: 'boost',
+      source: "advertising",
+      action: "boost",
       platform,
-      expectedOutcome: { reach: outcome.reach, engagement: outcome.engagement, conversions: outcome.conversions },
+      expectedOutcome: {
+        reach: outcome.reach,
+        engagement: outcome.engagement,
+        conversions: outcome.conversions,
+      },
       conflictRisk: 0,
     };
 
@@ -840,7 +925,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
     featureStore.recordCampaignInsight({
       campaignId: `campaign_${Date.now()}`,
-      campaignType: 'awareness',
+      campaignType: "awareness",
       totalSpend: outcome.spend,
       totalReach: outcome.reach,
       totalEngagement: outcome.engagement,
@@ -857,32 +942,43 @@ export class AdvertisingAutopilotAI extends BaseModel {
   public getOptimalBidStrategy(
     platform: string,
     objective: string,
-    competitionLevel: number
+    competitionLevel: number,
   ): { strategy: string; suggestedBid: number; reasoning: string } {
-    return advertisingRuleEngine.getOptimalBidStrategy(platform, objective, competitionLevel);
+    return advertisingRuleEngine.getOptimalBidStrategy(
+      platform,
+      objective,
+      competitionLevel,
+    );
   }
 
   public getRecommendedBudgetAllocation(
     totalBudget: number,
-    campaignType: CampaignState['campaignType']
+    campaignType: CampaignState["campaignType"],
   ): { organic: number; paid: number; reserve: number } {
-    return autopilotCoordinator.getRecommendedBudgetAllocation(totalBudget, campaignType);
+    return autopilotCoordinator.getRecommendedBudgetAllocation(
+      totalBudget,
+      campaignType,
+    );
   }
 
   public getBudgetDistribution(
     totalBudget: number,
     campaignDuration: number,
-    releaseDate?: Date
+    releaseDate?: Date,
   ): Array<{ day: number; budgetPercentage: number; reasoning: string }> {
-    return advertisingRuleEngine.calculateBudgetDistribution(totalBudget, campaignDuration, releaseDate);
+    return advertisingRuleEngine.calculateBudgetDistribution(
+      totalBudget,
+      campaignDuration,
+      releaseDate,
+    );
   }
 
   private calculateDailySpend(platform: string): number {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     return this.campaignHistory
-      .filter(c => c.platform === platform)
+      .filter((c) => c.platform === platform)
       .reduce((sum, c) => sum + c.spend / 30, 0);
   }
 
@@ -892,7 +988,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
   private calculateMonthlySpend(platform: string): number {
     return this.campaignHistory
-      .filter(c => c.platform === platform)
+      .filter((c) => c.platform === platform)
       .reduce((sum, c) => sum + c.spend, 0);
   }
 
@@ -903,14 +999,16 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
   private calculateAudienceSaturation(platform: string): number {
     const recentCampaigns = this.campaignHistory
-      .filter(c => c.platform === platform)
+      .filter((c) => c.platform === platform)
       .slice(-10);
-    
+
     if (recentCampaigns.length === 0) return 0;
 
-    const avgFrequency = recentCampaigns.reduce((sum, c) => 
-      sum + (c.impressions / c.audienceSize), 0
-    ) / recentCampaigns.length;
+    const avgFrequency =
+      recentCampaigns.reduce(
+        (sum, c) => sum + c.impressions / c.audienceSize,
+        0,
+      ) / recentCampaigns.length;
 
     return Math.min(1, avgFrequency / 5);
   }
@@ -918,8 +1016,8 @@ export class AdvertisingAutopilotAI extends BaseModel {
   private estimateReach(platform: string, budget: number): number {
     const stats = this.platformStats.get(platform);
     if (!stats) return Math.round(budget * 100);
-    
-    const cpm = stats.avgCPC * 1000 / (stats.avgCTR || 0.01);
+
+    const cpm = (stats.avgCPC * 1000) / (stats.avgCTR || 0.01);
     return Math.round((budget / cpm) * 1000);
   }
 
@@ -930,8 +1028,12 @@ export class AdvertisingAutopilotAI extends BaseModel {
     return Math.round(reach * engagementRate);
   }
 
-  private estimateConversions(platform: string, budget: number, objective: string): number {
-    if (objective === 'awareness') return 0;
+  private estimateConversions(
+    platform: string,
+    budget: number,
+    objective: string,
+  ): number {
+    if (objective === "awareness") return 0;
     const stats = this.platformStats.get(platform);
     const cvr = stats?.avgCVR || 0.01;
     const clicks = this.estimateEngagement(platform, budget);
@@ -952,15 +1054,28 @@ export class AdvertisingAutopilotAI extends BaseModel {
     const platforms = [...new Set(campaigns.map((c) => c.platform))];
 
     for (const platform of platforms) {
-      const platformCampaigns = campaigns.filter((c) => c.platform === platform);
+      const platformCampaigns = campaigns.filter(
+        (c) => c.platform === platform,
+      );
 
       const stats = {
-        avgROI: platformCampaigns.reduce((sum, c) => sum + c.roi, 0) / platformCampaigns.length,
-        avgCTR: platformCampaigns.reduce((sum, c) => sum + c.ctr, 0) / platformCampaigns.length,
-        avgCVR: platformCampaigns.reduce((sum, c) => sum + c.cvr, 0) / platformCampaigns.length,
-        avgCPC: platformCampaigns.reduce((sum, c) => sum + c.cpc, 0) / platformCampaigns.length,
+        avgROI:
+          platformCampaigns.reduce((sum, c) => sum + c.roi, 0) /
+          platformCampaigns.length,
+        avgCTR:
+          platformCampaigns.reduce((sum, c) => sum + c.ctr, 0) /
+          platformCampaigns.length,
+        avgCVR:
+          platformCampaigns.reduce((sum, c) => sum + c.cvr, 0) /
+          platformCampaigns.length,
+        avgCPC:
+          platformCampaigns.reduce((sum, c) => sum + c.cpc, 0) /
+          platformCampaigns.length,
         totalSpend: platformCampaigns.reduce((sum, c) => sum + c.spend, 0),
-        totalConversions: platformCampaigns.reduce((sum, c) => sum + c.conversions, 0),
+        totalConversions: platformCampaigns.reduce(
+          (sum, c) => sum + c.conversions,
+          0,
+        ),
       };
 
       this.platformStats.set(platform, stats);
@@ -968,21 +1083,32 @@ export class AdvertisingAutopilotAI extends BaseModel {
   }
 
   private encodePlatform(platform: string): number[] {
-    const platforms = ['facebook', 'instagram', 'google', 'youtube', 'tiktok', 'linkedin', 'twitter'];
+    const platforms = [
+      "facebook",
+      "instagram",
+      "google",
+      "youtube",
+      "tiktok",
+      "linkedin",
+      "twitter",
+    ];
     return platforms.map((p) => (p === platform ? 1 : 0));
   }
 
   private encodeObjective(objective: string): number[] {
-    const objectives = ['awareness', 'engagement', 'conversions'];
+    const objectives = ["awareness", "engagement", "conversions"];
     return objectives.map((o) => (o === objective ? 1 : 0));
   }
 
   private encodeCreativeType(type: string): number[] {
-    const types = ['text', 'image', 'video', 'carousel'];
+    const types = ["text", "image", "video", "carousel"];
     return types.map((t) => (t === type ? 1 : 0));
   }
 
-  private calculateScaler(features: number[][]): { mean: number[]; std: number[] } {
+  private calculateScaler(features: number[][]): {
+    mean: number[];
+    std: number[];
+  } {
     const numFeatures = features[0].length;
     const mean: number[] = new Array(numFeatures).fill(0);
     const std: number[] = new Array(numFeatures).fill(0);
@@ -991,37 +1117,53 @@ export class AdvertisingAutopilotAI extends BaseModel {
       const values = features.map((f) => f[i]);
       mean[i] = values.reduce((sum, val) => sum + val, 0) / values.length;
 
-      const variance = values.reduce((sum, val) => sum + Math.pow(val - mean[i], 2), 0) / values.length;
+      const variance =
+        values.reduce((sum, val) => sum + Math.pow(val - mean[i], 2), 0) /
+        values.length;
       std[i] = Math.sqrt(variance) || 1;
     }
 
     return { mean, std };
   }
 
-  private scaleFeatures(features: number[][], scaler: { mean: number[]; std: number[] }): number[][] {
+  private scaleFeatures(
+    features: number[][],
+    scaler: { mean: number[]; std: number[] },
+  ): number[][] {
     return features.map((f) =>
-      f.map((val, idx) => (val - scaler.mean[idx]) / scaler.std[idx])
+      f.map((val, idx) => (val - scaler.mean[idx]) / scaler.std[idx]),
     );
   }
 
   private euclideanDistance(a: number[], b: number[]): number {
-    return Math.sqrt(a.reduce((sum, val, idx) => sum + Math.pow(val - b[idx], 2), 0));
+    return Math.sqrt(
+      a.reduce((sum, val, idx) => sum + Math.pow(val - b[idx], 2), 0),
+    );
   }
 
   private identifyTopElementsFromData(
     creative: any,
-    campaigns: CampaignData[]
+    campaigns: CampaignData[],
   ): Array<{ element: string; impact: number }> {
     const factors: Array<{ element: string; impact: number }> = [];
 
-    const videoROI = campaigns.filter((c) => c.creativeType === 'video').reduce((sum, c) => sum + c.roi, 0) /
-      Math.max(campaigns.filter((c) => c.creativeType === 'video').length, 1);
+    const videoROI =
+      campaigns
+        .filter((c) => c.creativeType === "video")
+        .reduce((sum, c) => sum + c.roi, 0) /
+      Math.max(campaigns.filter((c) => c.creativeType === "video").length, 1);
 
-    const imageROI = campaigns.filter((c) => c.creativeType === 'image').reduce((sum, c) => sum + c.roi, 0) /
-      Math.max(campaigns.filter((c) => c.creativeType === 'image').length, 1);
+    const imageROI =
+      campaigns
+        .filter((c) => c.creativeType === "image")
+        .reduce((sum, c) => sum + c.roi, 0) /
+      Math.max(campaigns.filter((c) => c.creativeType === "image").length, 1);
 
     if (videoROI > imageROI) {
-      factors.push({ element: `Video (YOUR ${videoROI.toFixed(2)}x ROI)`, impact: videoROI / 5 });
+      factors.push({
+        element: `Video (YOUR ${videoROI.toFixed(2)}x ROI)`,
+        impact: videoROI / 5,
+      });
     }
 
     return factors;
@@ -1031,7 +1173,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
     totalBudget: number,
     platforms: string[],
     objective: string,
-    basedOnData: boolean
+    basedOnData: boolean,
   ): BudgetAllocation[] {
     const defaultROI: Record<string, number> = {
       facebook: 2.5,
@@ -1041,7 +1183,10 @@ export class AdvertisingAutopilotAI extends BaseModel {
       tiktok: 3.2,
     };
 
-    const totalWeight = platforms.reduce((sum, p) => sum + (defaultROI[p] || 2.0), 0);
+    const totalWeight = platforms.reduce(
+      (sum, p) => sum + (defaultROI[p] || 2.0),
+      0,
+    );
 
     return platforms.map((platform) => {
       const roi = defaultROI[platform] || 2.0;
@@ -1058,21 +1203,29 @@ export class AdvertisingAutopilotAI extends BaseModel {
     });
   }
 
-  private getFallbackCreativePerformance(creative: any, platform: string, basedOnData: boolean): CreativePerformancePrediction {
+  private getFallbackCreativePerformance(
+    creative: any,
+    platform: string,
+    basedOnData: boolean,
+  ): CreativePerformancePrediction {
     return {
-      creativeName: creative.name || 'Untitled',
+      creativeName: creative.name || "Untitled",
       predictedCTR: 0.025,
       predictedCVR: 0.02,
       predictedConversions: 50,
       predictedCost: 250,
       predictedROI: 2.5,
       confidence: 0.65,
-      topElements: [{ element: 'Industry baseline', impact: 0.5 }],
+      topElements: [{ element: "Industry baseline", impact: 0.5 }],
       basedOnUserCampaigns: basedOnData,
     };
   }
 
-  private getFallbackBidOptimization(platform: string, currentBid: number, basedOnData: boolean): BidOptimization {
+  private getFallbackBidOptimization(
+    platform: string,
+    currentBid: number,
+    basedOnData: boolean,
+  ): BidOptimization {
     const multiplier = 1.1;
     const optimizedBid = currentBid * multiplier;
 
@@ -1106,9 +1259,9 @@ export class AdvertisingAutopilotAI extends BaseModel {
       platformsTracked: Array.from(this.platformStats.keys()),
       audienceSegments: this.audienceSegments.length,
       modelsTrained: [
-        this.budgetModel ? 'budget_allocator' : null,
-        this.performanceModel ? 'performance_predictor' : null,
-        this.bidOptimizer ? 'bid_optimizer' : null,
+        this.budgetModel ? "budget_allocator" : null,
+        this.performanceModel ? "performance_predictor" : null,
+        this.bidOptimizer ? "bid_optimizer" : null,
       ].filter(Boolean) as string[],
       lastTrained: this.metadata.lastTrained,
     };

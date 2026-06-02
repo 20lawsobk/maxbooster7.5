@@ -1,5 +1,60 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbEthnicKotoPlugin: PluginDefinition = { id: 'mb-ethnic-koto', slug: 'mb-ethnic-koto', name: 'MB Koto', category: 'instrument', type: 'ethnic' as any, version: '1.0.0', description: 'Japanese koto with silk string articulation', author: 'Max Booster', grade: 'A', oscillators: [{ type: 'triangle', detune: 0, gain: 0.5 }, { type: 'sine', detune: 1200, gain: 0.3 }, { type: 'sine', detune: 0, gain: 0.2 }], envelope: { attack: 0.001, decay: 0.8, sustain: 0.2, release: 0.5 }, parameters: [{ id: 'pluck', name: 'Pluck Position', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'bridge', name: 'Bridge Pressure', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'brightness', name: 'Brightness', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { pluck: 0.5, bridge: 0.4, brightness: 0.6, volume: 0.8 } };
+const MbEthnicKotoPlugin: PluginDefinition = {
+  id: "mb-ethnic-koto",
+  slug: "mb-ethnic-koto",
+  name: "MB Koto",
+  category: "instrument",
+  type: "ethnic" as any,
+  version: "1.0.0",
+  description: "Japanese koto with silk string articulation",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "triangle", detune: 0, gain: 0.5 },
+    { type: "sine", detune: 1200, gain: 0.3 },
+    { type: "sine", detune: 0, gain: 0.2 },
+  ],
+  envelope: { attack: 0.001, decay: 0.8, sustain: 0.2, release: 0.5 },
+  parameters: [
+    {
+      id: "pluck",
+      name: "Pluck Position",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "bridge",
+      name: "Bridge Pressure",
+      type: "float",
+      defaultValue: 0.4,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "brightness",
+      name: "Brightness",
+      type: "float",
+      defaultValue: 0.6,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { pluck: 0.5, bridge: 0.4, brightness: 0.6, volume: 0.8 },
+};
 
 export default MbEthnicKotoPlugin;

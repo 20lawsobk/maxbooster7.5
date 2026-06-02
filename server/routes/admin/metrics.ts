@@ -1,18 +1,18 @@
-import { Router, type RequestHandler } from 'express';
-import { require2FA } from '../../middleware/auth.js';
-import { metricsService } from '../../services/metricsService.js';
-import { emailTrackingService } from '../../services/emailTrackingService.js';
-import { logger } from '../../logger.js';
+import { Router, type RequestHandler } from "express";
+import { require2FA } from "../../middleware/auth.js";
+import { metricsService } from "../../services/metricsService.js";
+import { emailTrackingService } from "../../services/emailTrackingService.js";
+import { logger } from "../../logger.js";
 
 const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return res.status(401).json({ error: "Authentication required" });
   }
 
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
 
   next();
@@ -24,12 +24,12 @@ router.use(require2FA);
 /**
  * Get system metrics for a time period
  */
-router.get('/metrics', async (req, res) => {
+router.get("/metrics", async (req, res) => {
   try {
-    const { metric, period = '24', source } = req.query;
+    const { metric, period = "24", source } = req.query;
 
     if (!metric) {
-      return res.status(400).json({ error: 'Metric name required' });
+      return res.status(400).json({ error: "Metric name required" });
     }
 
     const hours = parseInt(period as string);
@@ -40,58 +40,59 @@ router.get('/metrics', async (req, res) => {
       metric as string,
       startTime,
       endTime,
-      source as string | undefined
+      source as string | undefined,
     );
 
     res.json({ metrics });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching metrics:');
-    res.status(500).json({ error: 'Failed to fetch metrics' });
+    logger.warn({ err: error }, "Error fetching metrics:");
+    res.status(500).json({ error: "Failed to fetch metrics" });
   }
 });
 
 /**
  * Record a test metric
  */
-router.post('/metrics/test', async (req, res) => {
+router.post("/metrics/test", async (req, res) => {
   try {
     const { metricName, value, source, tags } = req.body;
 
     if (!metricName || value === undefined) {
-      return res.status(400).json({ error: 'metricName and value required' });
+      return res.status(400).json({ error: "metricName and value required" });
     }
 
     await metricsService.recordMetric(metricName, value, source, tags);
 
-    res.json({ success: true, message: 'Test metric recorded' });
+    res.json({ success: true, message: "Test metric recorded" });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error recording test metric:');
-    res.status(500).json({ error: 'Failed to record metric' });
+    logger.warn({ err: error }, "Error recording test metric:");
+    res.status(500).json({ error: "Failed to record metric" });
   }
 });
 
 /**
  * Get active alert incidents
  */
-router.get('/alerts/incidents', async (req, res) => {
+router.get("/alerts/incidents", async (req, res) => {
   try {
     const incidents = await metricsService.getActiveIncidents();
     res.json({ incidents });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching incidents:');
-    res.status(500).json({ error: 'Failed to fetch incidents' });
+    logger.warn({ err: error }, "Error fetching incidents:");
+    res.status(500).json({ error: "Failed to fetch incidents" });
   }
 });
 
 /**
  * Create an alert rule
  */
-router.post('/alerts/rules', async (req, res) => {
+router.post("/alerts/rules", async (req, res) => {
   try {
-    const { name, metricName, condition, threshold, durationSecs, channels } = req.body;
+    const { name, metricName, condition, threshold, durationSecs, channels } =
+      req.body;
 
     if (!name || !metricName || !condition || threshold === undefined) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
     await metricsService.createAlertRule({
@@ -104,32 +105,32 @@ router.post('/alerts/rules', async (req, res) => {
       isActive: true,
     });
 
-    res.json({ success: true, message: 'Alert rule created' });
+    res.json({ success: true, message: "Alert rule created" });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error creating alert rule:');
-    res.status(500).json({ error: 'Failed to create alert rule' });
+    logger.warn({ err: error }, "Error creating alert rule:");
+    res.status(500).json({ error: "Failed to create alert rule" });
   }
 });
 
 /**
  * Trigger alert evaluation (for testing)
  */
-router.post('/alerts/evaluate', async (req, res) => {
+router.post("/alerts/evaluate", async (req, res) => {
   try {
     await metricsService.evaluateAlerts();
-    res.json({ success: true, message: 'Alerts evaluated' });
+    res.json({ success: true, message: "Alerts evaluated" });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error evaluating alerts:');
-    res.status(500).json({ error: 'Failed to evaluate alerts' });
+    logger.warn({ err: error }, "Error evaluating alerts:");
+    res.status(500).json({ error: "Failed to evaluate alerts" });
   }
 });
 
 /**
  * Get email delivery stats
  */
-router.get('/email/stats', async (req, res) => {
+router.get("/email/stats", async (req, res) => {
   try {
-    const { days = '30' } = req.query;
+    const { days = "30" } = req.query;
     const daysNum = parseInt(days as string);
     const startDate = new Date(Date.now() - daysNum * 24 * 60 * 60 * 1000);
 
@@ -138,8 +139,8 @@ router.get('/email/stats', async (req, res) => {
 
     res.json({ stats, recentBounces });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching email stats:');
-    res.status(500).json({ error: 'Failed to fetch email stats' });
+    logger.warn({ err: error }, "Error fetching email stats:");
+    res.status(500).json({ error: "Failed to fetch email stats" });
   }
 });
 

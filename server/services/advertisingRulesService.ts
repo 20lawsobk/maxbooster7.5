@@ -1,5 +1,5 @@
-import { storage } from '../storage';
-import { logger } from '../logger.js';
+import { storage } from "../storage";
+import { logger } from "../logger.js";
 
 /**
  * Advertisement Kill/Pivot Rules Service
@@ -16,10 +16,10 @@ export class AdvertisingRulesService {
     const executions: unknown[] = [];
 
     for (const rule of rules) {
-      if (rule.status !== 'active') continue;
+      if (rule.status !== "active") continue;
 
       for (const variant of variants) {
-        if (variant.status === 'killed') continue; // Skip already killed variants
+        if (variant.status === "killed") continue; // Skip already killed variants
 
         if (this.shouldTrigger(rule, variant)) {
           const execution = await this.executeRule(rule, variant);
@@ -39,25 +39,50 @@ export class AdvertisingRulesService {
     const metrics = variant.actualMetrics || {};
 
     switch (condition.metric) {
-      case 'engagement':
-        return this.compareMetric(metrics.engagement || 0, condition.operator, condition.threshold);
-      case 'reach':
-        return this.compareMetric(metrics.reach || 0, condition.operator, condition.threshold);
-      case 'shares':
-        return this.compareMetric(metrics.shares || 0, condition.operator, condition.threshold);
-      case 'clicks':
-        return this.compareMetric(metrics.clicks || 0, condition.operator, condition.threshold);
-      case 'saves':
-        return this.compareMetric(metrics.saves || 0, condition.operator, condition.threshold);
-      case 'time':
+      case "engagement":
+        return this.compareMetric(
+          metrics.engagement || 0,
+          condition.operator,
+          condition.threshold,
+        );
+      case "reach":
+        return this.compareMetric(
+          metrics.reach || 0,
+          condition.operator,
+          condition.threshold,
+        );
+      case "shares":
+        return this.compareMetric(
+          metrics.shares || 0,
+          condition.operator,
+          condition.threshold,
+        );
+      case "clicks":
+        return this.compareMetric(
+          metrics.clicks || 0,
+          condition.operator,
+          condition.threshold,
+        );
+      case "saves":
+        return this.compareMetric(
+          metrics.saves || 0,
+          condition.operator,
+          condition.threshold,
+        );
+      case "time":
         const hoursSinceCreated =
-          (Date.now() - new Date(variant.createdAt).getTime()) / (1000 * 60 * 60);
-        return this.compareMetric(hoursSinceCreated, condition.operator, condition.threshold);
-      case 'viralityScore':
+          (Date.now() - new Date(variant.createdAt).getTime()) /
+          (1000 * 60 * 60);
+        return this.compareMetric(
+          hoursSinceCreated,
+          condition.operator,
+          condition.threshold,
+        );
+      case "viralityScore":
         return this.compareMetric(
           variant.viralityScore || 0,
           condition.operator,
-          condition.threshold
+          condition.threshold,
         );
       default:
         return false;
@@ -67,17 +92,21 @@ export class AdvertisingRulesService {
   /**
    * Compare metric value against threshold
    */
-  private compareMetric(value: number, operator: string, threshold: number): boolean {
+  private compareMetric(
+    value: number,
+    operator: string,
+    threshold: number,
+  ): boolean {
     switch (operator) {
-      case '<':
+      case "<":
         return value < threshold;
-      case '<=':
+      case "<=":
         return value <= threshold;
-      case '>':
+      case ">":
         return value > threshold;
-      case '>=':
+      case ">=":
         return value >= threshold;
-      case '==':
+      case "==":
         return value === threshold;
       default:
         return false;
@@ -92,23 +121,23 @@ export class AdvertisingRulesService {
     const learnings = this.extractLearnings(rule, variant);
 
     // Execute action
-    let actionTaken = 'none';
+    let actionTaken = "none";
     switch (rule.action) {
-      case 'kill':
-        await storage.updateAdCampaignVariant(variant.id, { status: 'killed' });
-        actionTaken = 'killed';
+      case "kill":
+        await storage.updateAdCampaignVariant(variant.id, { status: "killed" });
+        actionTaken = "killed";
         break;
-      case 'pause':
-        await storage.updateAdCampaignVariant(variant.id, { status: 'paused' });
-        actionTaken = 'paused';
+      case "pause":
+        await storage.updateAdCampaignVariant(variant.id, { status: "paused" });
+        actionTaken = "paused";
         break;
-      case 'pivot':
+      case "pivot":
         await this.executePivot(rule.pivotStrategy, variant);
-        actionTaken = 'pivoted';
+        actionTaken = "pivoted";
         break;
-      case 'alert':
+      case "alert":
         // Would send notification via notificationService
-        actionTaken = 'alerted';
+        actionTaken = "alerted";
         break;
     }
 
@@ -155,28 +184,30 @@ export class AdvertisingRulesService {
       const performanceRatio = metrics.engagement / variant.predictedEngagement;
       if (performanceRatio < 0.5) {
         learnings.push(
-          `Organic engagement ${Math.round((1 - performanceRatio) * 100)}% below prediction - content may not resonate with audience`
+          `Organic engagement ${Math.round((1 - performanceRatio) * 100)}% below prediction - content may not resonate with audience`,
         );
       } else if (performanceRatio > 1.5) {
         learnings.push(
-          `Organic engagement ${Math.round((performanceRatio - 1) * 100)}% above prediction - high-performing content, allocate more reach to similar posts`
+          `Organic engagement ${Math.round((performanceRatio - 1) * 100)}% above prediction - high-performing content, allocate more reach to similar posts`,
         );
       }
     }
 
     // Platform-specific learnings
     learnings.push(
-      `${variant.platform} organic performance: ${this.formatMetricSnapshot(metrics)}`
+      `${variant.platform} organic performance: ${this.formatMetricSnapshot(metrics)}`,
     );
 
     // Virality learnings
     if (variant.viralityScore) {
       if (variant.viralityScore < 50) {
         learnings.push(
-          'Low virality score - optimize with more hashtags, questions, and visual content'
+          "Low virality score - optimize with more hashtags, questions, and visual content",
         );
       } else if (variant.viralityScore > 80) {
-        learnings.push('High virality score - excellent organic amplification potential');
+        learnings.push(
+          "High virality score - excellent organic amplification potential",
+        );
       }
     }
 
@@ -184,17 +215,20 @@ export class AdvertisingRulesService {
     const organicReach = metrics.reach || 0;
     if (organicReach > 0) {
       learnings.push(
-        `Achieved ${organicReach} organic reach with $0 ad spend - equivalent to ~$${this.estimateAdSpendEquivalent(organicReach, variant.platform)} in traditional advertising`
+        `Achieved ${organicReach} organic reach with $0 ad spend - equivalent to ~$${this.estimateAdSpendEquivalent(organicReach, variant.platform)} in traditional advertising`,
       );
     }
 
-    return learnings.join('. ');
+    return learnings.join(". ");
   }
 
   /**
    * Execute pivot strategy
    */
-  private async executePivot(strategy: unknown, variant: unknown): Promise<void> {
+  private async executePivot(
+    strategy: unknown,
+    variant: unknown,
+  ): Promise<void> {
     if (!strategy) return;
 
     if (strategy.reallocateBudget) {
@@ -216,10 +250,10 @@ export class AdvertisingRulesService {
 
     if (strategy.swapCreative) {
       // Pause underperforming variant
-      await storage.updateAdCampaignVariant(variant.id, { status: 'paused' });
+      await storage.updateAdCampaignVariant(variant.id, { status: "paused" });
       // Would create new variant with different creative
       logger.info(
-        `Pivot: Paused underperforming ${variant.platform} variant, recommend new creative`
+        `Pivot: Paused underperforming ${variant.platform} variant, recommend new creative`,
       );
     }
   }
@@ -229,15 +263,15 @@ export class AdvertisingRulesService {
    */
   private formatMetric(value: number, metricType: string): string {
     switch (metricType) {
-      case 'engagement':
-      case 'ctr':
+      case "engagement":
+      case "ctr":
         return `${(value * 100).toFixed(2)}%`;
-      case 'reach':
-      case 'shares':
-      case 'clicks':
-      case 'saves':
+      case "reach":
+      case "shares":
+      case "clicks":
+      case "saves":
         return value.toLocaleString();
-      case 'viralityScore':
+      case "viralityScore":
         return `${value}/100`;
       default:
         return value.toFixed(2);
@@ -251,12 +285,13 @@ export class AdvertisingRulesService {
     const parts: string[] = [];
 
     if (metrics.reach) parts.push(`${metrics.reach} reach`);
-    if (metrics.engagement) parts.push(`${(metrics.engagement * 100).toFixed(1)}% engagement`);
+    if (metrics.engagement)
+      parts.push(`${(metrics.engagement * 100).toFixed(1)}% engagement`);
     if (metrics.shares) parts.push(`${metrics.shares} shares`);
     if (metrics.clicks) parts.push(`${metrics.clicks} clicks`);
     if (metrics.saves) parts.push(`${metrics.saves} saves`);
 
-    return parts.join(', ') || 'No metrics yet';
+    return parts.join(", ") || "No metrics yet";
   }
 
   /**
@@ -280,6 +315,8 @@ export class AdvertisingRulesService {
    * Get variant run duration in hours
    */
   private getRunDuration(variant: unknown): number {
-    return Math.round((Date.now() - new Date(variant.createdAt).getTime()) / (1000 * 60 * 60));
+    return Math.round(
+      (Date.now() - new Date(variant.createdAt).getTime()) / (1000 * 60 * 60),
+    );
   }
 }

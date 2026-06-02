@@ -1,9 +1,9 @@
-import { db } from '../db.js';
-import { 
-  royaltyStatements, 
-  recoupmentAccounts, 
-  splitContracts, 
-  dspRates, 
+import { db } from "../db.js";
+import {
+  royaltyStatements,
+  recoupmentAccounts,
+  splitContracts,
+  dspRates,
   exchangeRates,
   revenueEvents,
   projectRoyaltySplits,
@@ -13,14 +13,20 @@ import {
   type RoyaltyStatement,
   type InsertRoyaltyStatement,
   type RecoupmentAccount,
-} from '@shared/schema';
-import { eq, and, gte, lte, desc, sql, between, isNull, or } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
+} from "@shared/schema";
+import { eq, and, gte, lte, desc, sql, between, isNull, or } from "drizzle-orm";
+import { logger } from "../logger.js";
+import crypto from "crypto";
 
-export type RoyaltyType = 'streaming' | 'mechanical' | 'performance' | 'sync' | 'download' | 'other';
-export type FeeTier = 'free' | 'standard' | 'pro' | 'label' | 'enterprise';
-export type CalculationModel = 'pro_rata' | 'user_centric';
+export type RoyaltyType =
+  | "streaming"
+  | "mechanical"
+  | "performance"
+  | "sync"
+  | "download"
+  | "other";
+export type FeeTier = "free" | "standard" | "pro" | "label" | "enterprise";
+export type CalculationModel = "pro_rata" | "user_centric";
 
 export interface StreamData {
   dsp: string;
@@ -79,7 +85,7 @@ export interface MechanicalRoyalty {
 export interface PerformanceRoyalty {
   isrcCode: string;
   pro: string;
-  performanceType: 'broadcast' | 'digital' | 'live' | 'background';
+  performanceType: "broadcast" | "digital" | "live" | "background";
   publisherShare: number;
   writerShare: number;
   totalPerformance: number;
@@ -87,7 +93,7 @@ export interface PerformanceRoyalty {
 
 export interface SyncRoyalty {
   licenseId: string;
-  licenseeType: 'film' | 'tv' | 'commercial' | 'game' | 'trailer' | 'other';
+  licenseeType: "film" | "tv" | "commercial" | "game" | "trailer" | "other";
   masterFee: number;
   publishingFee: number;
   totalSyncFee: number;
@@ -115,7 +121,7 @@ export interface PeriodStatement {
   lineItems: LineItem[];
   territoryBreakdown: TerritoryBreakdown[];
   dspBreakdown: DspBreakdown[];
-  status: 'draft' | 'pending' | 'finalized' | 'disputed' | 'paid';
+  status: "draft" | "pending" | "finalized" | "disputed" | "paid";
 }
 
 export interface LineItem {
@@ -166,34 +172,73 @@ export interface SplitBreakdown {
 const DEFAULT_PLATFORM_FEE_RATE = 0.15;
 const DEFAULT_DISTRIBUTION_FEE_RATE = 0.09;
 
-export const FEE_TIERS: Record<FeeTier, { platformFee: number; distributionFee: number; name: string; description: string }> = {
-  free: { platformFee: 0.20, distributionFee: 0.15, name: 'Free', description: 'Basic tier with standard fees' },
-  standard: { platformFee: 0, distributionFee: 0, name: 'Standard', description: 'All-inclusive subscription — distribution included' },
-  pro: { platformFee: 0, distributionFee: 0, name: 'Pro', description: 'All-inclusive subscription — distribution included' },
-  label: { platformFee: 0, distributionFee: 0, name: 'Label', description: 'All-inclusive subscription — distribution included' },
-  enterprise: { platformFee: 0, distributionFee: 0, name: 'Enterprise', description: 'All-inclusive subscription — distribution included' },
+export const FEE_TIERS: Record<
+  FeeTier,
+  {
+    platformFee: number;
+    distributionFee: number;
+    name: string;
+    description: string;
+  }
+> = {
+  free: {
+    platformFee: 0.2,
+    distributionFee: 0.15,
+    name: "Free",
+    description: "Basic tier with standard fees",
+  },
+  standard: {
+    platformFee: 0,
+    distributionFee: 0,
+    name: "Standard",
+    description: "All-inclusive subscription — distribution included",
+  },
+  pro: {
+    platformFee: 0,
+    distributionFee: 0,
+    name: "Pro",
+    description: "All-inclusive subscription — distribution included",
+  },
+  label: {
+    platformFee: 0,
+    distributionFee: 0,
+    name: "Label",
+    description: "All-inclusive subscription — distribution included",
+  },
+  enterprise: {
+    platformFee: 0,
+    distributionFee: 0,
+    name: "Enterprise",
+    description: "All-inclusive subscription — distribution included",
+  },
 };
 
-export const MECHANICAL_RATES: Record<string, { rate: number; type: 'statutory' | 'negotiated' }> = {
-  US: { rate: 0.00091, type: 'statutory' },
-  CA: { rate: 0.00083, type: 'statutory' },
-  GB: { rate: 0.00085, type: 'statutory' },
-  EU: { rate: 0.00077, type: 'statutory' },
-  AU: { rate: 0.00072, type: 'statutory' },
-  JP: { rate: 0.00068, type: 'statutory' },
-  default: { rate: 0.00065, type: 'negotiated' },
+export const MECHANICAL_RATES: Record<
+  string,
+  { rate: number; type: "statutory" | "negotiated" }
+> = {
+  US: { rate: 0.00091, type: "statutory" },
+  CA: { rate: 0.00083, type: "statutory" },
+  GB: { rate: 0.00085, type: "statutory" },
+  EU: { rate: 0.00077, type: "statutory" },
+  AU: { rate: 0.00072, type: "statutory" },
+  JP: { rate: 0.00068, type: "statutory" },
+  default: { rate: 0.00065, type: "negotiated" },
 };
 
-export const PERFORMANCE_SPLITS: Record<string, { publisherShare: number; writerShare: number }> = {
-  ASCAP: { publisherShare: 0.50, writerShare: 0.50 },
-  BMI: { publisherShare: 0.50, writerShare: 0.50 },
-  SESAC: { publisherShare: 0.50, writerShare: 0.50 },
-  GMR: { publisherShare: 0.50, writerShare: 0.50 },
-  PRS: { publisherShare: 0.50, writerShare: 0.50 },
-  GEMA: { publisherShare: 0.60, writerShare: 0.40 },
-  SACEM: { publisherShare: 0.50, writerShare: 0.50 },
-  JASRAC: { publisherShare: 0.50, writerShare: 0.50 },
-  default: { publisherShare: 0.50, writerShare: 0.50 },
+export const PERFORMANCE_SPLITS: Record<
+  string,
+  { publisherShare: number; writerShare: number }
+> = {
+  ASCAP: { publisherShare: 0.5, writerShare: 0.5 },
+  BMI: { publisherShare: 0.5, writerShare: 0.5 },
+  SESAC: { publisherShare: 0.5, writerShare: 0.5 },
+  GMR: { publisherShare: 0.5, writerShare: 0.5 },
+  PRS: { publisherShare: 0.5, writerShare: 0.5 },
+  GEMA: { publisherShare: 0.6, writerShare: 0.4 },
+  SACEM: { publisherShare: 0.5, writerShare: 0.5 },
+  JASRAC: { publisherShare: 0.5, writerShare: 0.5 },
+  default: { publisherShare: 0.5, writerShare: 0.5 },
 };
 
 const DSP_BASE_RATES: Record<string, number> = {
@@ -225,43 +270,43 @@ const DSP_PREMIUM_MULTIPLIERS: Record<string, number> = {
 const TERRITORY_MULTIPLIERS: Record<string, number> = {
   US: 1.0,
   GB: 0.95,
-  CA: 0.90,
+  CA: 0.9,
   AU: 0.88,
   DE: 0.92,
-  FR: 0.90,
+  FR: 0.9,
   JP: 0.85,
-  BR: 0.40,
+  BR: 0.4,
   IN: 0.15,
   MX: 0.35,
-  ES: 0.80,
+  ES: 0.8,
   IT: 0.82,
   NL: 0.88,
   SE: 0.95,
   NO: 0.95,
   DK: 0.92,
-  FI: 0.90,
-  KR: 0.70,
-  ZA: 0.30,
+  FI: 0.9,
+  KR: 0.7,
+  ZA: 0.3,
   GLOBAL: 0.75,
-  default: 0.60,
+  default: 0.6,
 };
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  JPY: '¥',
-  CAD: 'C$',
-  AUD: 'A$',
-  CHF: 'CHF',
-  SEK: 'kr',
-  NOK: 'kr',
-  DKK: 'kr',
-  BRL: 'R$',
-  INR: '₹',
-  MXN: 'MX$',
-  KRW: '₩',
-  ZAR: 'R',
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  JPY: "¥",
+  CAD: "C$",
+  AUD: "A$",
+  CHF: "CHF",
+  SEK: "kr",
+  NOK: "kr",
+  DKK: "kr",
+  BRL: "R$",
+  INR: "₹",
+  MXN: "MX$",
+  KRW: "₩",
+  ZAR: "R",
 };
 
 export class RoyaltyEngine {
@@ -270,16 +315,23 @@ export class RoyaltyEngine {
 
   constructor(
     platformFeeRate: number = DEFAULT_PLATFORM_FEE_RATE,
-    distributionFeeRate: number = DEFAULT_DISTRIBUTION_FEE_RATE
+    distributionFeeRate: number = DEFAULT_DISTRIBUTION_FEE_RATE,
   ) {
     this.platformFeeRate = platformFeeRate;
     this.distributionFeeRate = distributionFeeRate;
   }
 
-  async calculateStream(stream: StreamData, userTier: FeeTier = 'standard'): Promise<RoyaltyCalculation> {
-    const dspSlug = stream.dsp.toLowerCase().replace(/\s+/g, '_');
-    
-    const customRate = await this.getDspRate(dspSlug, stream.territory, stream.reportDate);
+  async calculateStream(
+    stream: StreamData,
+    userTier: FeeTier = "standard",
+  ): Promise<RoyaltyCalculation> {
+    const dspSlug = stream.dsp.toLowerCase().replace(/\s+/g, "_");
+
+    const customRate = await this.getDspRate(
+      dspSlug,
+      stream.territory,
+      stream.reportDate,
+    );
     // Fallback chain: time-effective custom rate → admin-editable DB rate → hardcoded default
     let baseRate: number;
     let dbPremiumMultiplier: number = 1.0;
@@ -295,12 +347,15 @@ export class RoyaltyEngine {
       }
     }
 
-    const territoryMultiplier = TERRITORY_MULTIPLIERS[stream.territory] || TERRITORY_MULTIPLIERS.default;
-    const premiumMultiplier = stream.isUserCentric ? (dbPremiumMultiplier || DSP_PREMIUM_MULTIPLIERS[dspSlug] || 1.0) : 1.0;
-    
+    const territoryMultiplier =
+      TERRITORY_MULTIPLIERS[stream.territory] || TERRITORY_MULTIPLIERS.default;
+    const premiumMultiplier = stream.isUserCentric
+      ? dbPremiumMultiplier || DSP_PREMIUM_MULTIPLIERS[dspSlug] || 1.0
+      : 1.0;
+
     const effectiveRate = baseRate * territoryMultiplier * premiumMultiplier;
     const perStreamRate = effectiveRate;
-    
+
     let grossRevenue: number;
     if (stream.rawRevenue !== undefined) {
       grossRevenue = stream.rawRevenue;
@@ -311,19 +366,24 @@ export class RoyaltyEngine {
       }
     }
 
-    const exchangeRate = await this.getExchangeRate(stream.currency, 'USD', stream.reportDate);
+    const exchangeRate = await this.getExchangeRate(
+      stream.currency,
+      "USD",
+      stream.reportDate,
+    );
     const grossRevenueUSD = grossRevenue * exchangeRate;
-    
+
     const tierConfig = FEE_TIERS[userTier];
     const platformFee = grossRevenueUSD * tierConfig.platformFee;
     const distributionFee = grossRevenueUSD * tierConfig.distributionFee;
     const netRevenue = grossRevenueUSD - platformFee - distributionFee;
-    
-    const mechanicalRate = MECHANICAL_RATES[stream.territory] || MECHANICAL_RATES.default;
+
+    const mechanicalRate =
+      MECHANICAL_RATES[stream.territory] || MECHANICAL_RATES.default;
     const mechanicalShare = stream.streams * mechanicalRate.rate;
     const performanceShare = netRevenue * 0.5;
 
-    const royaltyType: RoyaltyType = stream.royaltyType || 'streaming';
+    const royaltyType: RoyaltyType = stream.royaltyType || "streaming";
 
     return {
       grossRevenue,
@@ -358,9 +418,10 @@ export class RoyaltyEngine {
     isrcCode: string,
     territory: string,
     streams: number,
-    publisherPercentage: number = 0.5
+    publisherPercentage: number = 0.5,
   ): MechanicalRoyalty {
-    const mechanicalConfig = MECHANICAL_RATES[territory] || MECHANICAL_RATES.default;
+    const mechanicalConfig =
+      MECHANICAL_RATES[territory] || MECHANICAL_RATES.default;
     const totalMechanical = streams * mechanicalConfig.rate;
     const publisherShare = totalMechanical * publisherPercentage;
     const writerShare = totalMechanical * (1 - publisherPercentage);
@@ -372,16 +433,16 @@ export class RoyaltyEngine {
       publisherShare,
       writerShare,
       totalMechanical,
-      hfaRate: territory === 'US' ? 0.00091 : undefined,
-      mriRate: territory === 'US' ? 0.00091 : undefined,
+      hfaRate: territory === "US" ? 0.00091 : undefined,
+      mriRate: territory === "US" ? 0.00091 : undefined,
     };
   }
 
   calculatePerformanceRoyalty(
     isrcCode: string,
     pro: string,
-    performanceType: 'broadcast' | 'digital' | 'live' | 'background',
-    totalRevenue: number
+    performanceType: "broadcast" | "digital" | "live" | "background",
+    totalRevenue: number,
   ): PerformanceRoyalty {
     const proConfig = PERFORMANCE_SPLITS[pro] || PERFORMANCE_SPLITS.default;
     const totalPerformance = totalRevenue;
@@ -400,12 +461,12 @@ export class RoyaltyEngine {
 
   calculateSyncRoyalty(
     licenseId: string,
-    licenseeType: 'film' | 'tv' | 'commercial' | 'game' | 'trailer' | 'other',
+    licenseeType: "film" | "tv" | "commercial" | "game" | "trailer" | "other",
     masterFee: number,
     publishingFee: number,
     territory: string,
     termMonths: number = 12,
-    exclusivity: boolean = false
+    exclusivity: boolean = false,
   ): SyncRoyalty {
     const exclusivityMultiplier = exclusivity ? 1.5 : 1.0;
     const adjustedMasterFee = masterFee * exclusivityMultiplier;
@@ -423,24 +484,35 @@ export class RoyaltyEngine {
     };
   }
 
-  getFeeTierInfo(tier: FeeTier): { platformFee: number; distributionFee: number; name: string; description: string } {
+  getFeeTierInfo(tier: FeeTier): {
+    platformFee: number;
+    distributionFee: number;
+    name: string;
+    description: string;
+  } {
     return FEE_TIERS[tier];
   }
 
-  calculateNetByTier(grossRevenue: number, tier: FeeTier): { 
-    platformFee: number; 
-    distributionFee: number; 
+  calculateNetByTier(
+    grossRevenue: number,
+    tier: FeeTier,
+  ): {
+    platformFee: number;
+    distributionFee: number;
     netRevenue: number;
     savings: number;
   } {
     const tierConfig = FEE_TIERS[tier];
     const freeConfig = FEE_TIERS.free;
-    
+
     const platformFee = grossRevenue * tierConfig.platformFee;
     const distributionFee = grossRevenue * tierConfig.distributionFee;
     const netRevenue = grossRevenue - platformFee - distributionFee;
-    
-    const freeNetRevenue = grossRevenue - (grossRevenue * freeConfig.platformFee) - (grossRevenue * freeConfig.distributionFee);
+
+    const freeNetRevenue =
+      grossRevenue -
+      grossRevenue * freeConfig.platformFee -
+      grossRevenue * freeConfig.distributionFee;
     const savings = netRevenue - freeNetRevenue;
 
     return { platformFee, distributionFee, netRevenue, savings };
@@ -450,13 +522,13 @@ export class RoyaltyEngine {
     userId: string,
     startDate: Date,
     endDate: Date,
-    releaseId?: string
+    releaseId?: string,
   ): Promise<PeriodStatement> {
     const period = this.formatPeriod(startDate);
-    
+
     const dateConditions = and(
       gte(revenueEvents.occurredAt, startDate),
-      lte(revenueEvents.occurredAt, endDate)
+      lte(revenueEvents.occurredAt, endDate),
     );
     const whereClause = releaseId
       ? and(dateConditions, eq(revenueEvents.projectId, releaseId))
@@ -469,9 +541,15 @@ export class RoyaltyEngine {
       .limit(5000);
 
     const lineItems: LineItem[] = [];
-    const territoryMap = new Map<string, { streams: number; revenue: number }>();
-    const dspMap = new Map<string, { streams: number; revenue: number; rates: number[] }>();
-    
+    const territoryMap = new Map<
+      string,
+      { streams: number; revenue: number }
+    >();
+    const dspMap = new Map<
+      string,
+      { streams: number; revenue: number; rates: number[] }
+    >();
+
     let totalGross = 0;
     let totalPlatformFees = 0;
     let totalDistributionFees = 0;
@@ -481,7 +559,7 @@ export class RoyaltyEngine {
     for (const event of events) {
       const calculation = await this.calculateStream({
         dsp: event.source,
-        territory: event.sourceType || 'GLOBAL',
+        territory: event.sourceType || "GLOBAL",
         streams: 1,
         currency: event.currency,
         reportDate: event.occurredAt,
@@ -490,7 +568,7 @@ export class RoyaltyEngine {
 
       const lineItem: LineItem = {
         dsp: event.source,
-        territory: event.sourceType || 'GLOBAL',
+        territory: event.sourceType || "GLOBAL",
         streams: 1,
         downloads: 0,
         grossRevenue: Number(event.amount),
@@ -505,8 +583,11 @@ export class RoyaltyEngine {
       totalDistributionFees += calculation.distributionFee;
       totalStreams += 1;
 
-      const territory = event.sourceType || 'GLOBAL';
-      const existing = territoryMap.get(territory) || { streams: 0, revenue: 0 };
+      const territory = event.sourceType || "GLOBAL";
+      const existing = territoryMap.get(territory) || {
+        streams: 0,
+        revenue: 0,
+      };
       territoryMap.set(territory, {
         streams: existing.streams + 1,
         revenue: existing.revenue + calculation.usdEquivalent,
@@ -520,24 +601,34 @@ export class RoyaltyEngine {
       dspMap.set(dsp, dspData);
     }
 
-    const recoupmentDeductions = await this.calculateRecoupmentDeductions(userId, totalGross - totalPlatformFees - totalDistributionFees);
-    
+    const recoupmentDeductions = await this.calculateRecoupmentDeductions(
+      userId,
+      totalGross - totalPlatformFees - totalDistributionFees,
+    );
+
     const netRevenue = totalGross - totalPlatformFees - totalDistributionFees;
     const payableAmount = netRevenue - recoupmentDeductions;
 
-    const territoryBreakdown: TerritoryBreakdown[] = Array.from(territoryMap.entries()).map(([territory, data]) => ({
+    const territoryBreakdown: TerritoryBreakdown[] = Array.from(
+      territoryMap.entries(),
+    ).map(([territory, data]) => ({
       territory,
       streams: data.streams,
       revenue: data.revenue,
       percentage: totalGross > 0 ? (data.revenue / totalGross) * 100 : 0,
     }));
 
-    const dspBreakdown: DspBreakdown[] = Array.from(dspMap.entries()).map(([dsp, data]) => ({
-      dsp,
-      streams: data.streams,
-      revenue: data.revenue,
-      averageRate: data.rates.length > 0 ? data.rates.reduce((a, b) => a + b, 0) / data.rates.length : 0,
-    }));
+    const dspBreakdown: DspBreakdown[] = Array.from(dspMap.entries()).map(
+      ([dsp, data]) => ({
+        dsp,
+        streams: data.streams,
+        revenue: data.revenue,
+        averageRate:
+          data.rates.length > 0
+            ? data.rates.reduce((a, b) => a + b, 0) / data.rates.length
+            : 0,
+      }),
+    );
 
     const statementId = crypto.randomUUID();
 
@@ -553,26 +644,29 @@ export class RoyaltyEngine {
       recoupmentDeductions,
       netRevenue,
       payableAmount,
-      currency: 'USD',
+      currency: "USD",
       usdEquivalent: totalGross,
       totalStreams,
       totalDownloads,
       lineItems,
       territoryBreakdown,
       dspBreakdown,
-      status: 'draft',
+      status: "draft",
     };
   }
 
-  async applyRecoupment(userId: string, amount: number): Promise<RecoupmentResult[]> {
+  async applyRecoupment(
+    userId: string,
+    amount: number,
+  ): Promise<RecoupmentResult[]> {
     const activeAccounts = await db
       .select()
       .from(recoupmentAccounts)
       .where(
         and(
           eq(recoupmentAccounts.userId, userId),
-          eq(recoupmentAccounts.isActive, true)
-        )
+          eq(recoupmentAccounts.isActive, true),
+        ),
       )
       .orderBy(recoupmentAccounts.priority)
       .limit(50);
@@ -628,8 +722,8 @@ export class RoyaltyEngine {
       .where(
         and(
           eq(splitContracts.releaseId, releaseId),
-          eq(splitContracts.status, 'active')
-        )
+          eq(splitContracts.status, "active"),
+        ),
       )
       .limit(1);
 
@@ -639,10 +733,10 @@ export class RoyaltyEngine {
         .from(projectRoyaltySplits)
         .where(eq(projectRoyaltySplits.projectId, releaseId));
 
-      return projectSplits.map(split => ({
+      return projectSplits.map((split) => ({
         participantId: split.collaboratorId,
         participantName: split.collaboratorId,
-        role: split.role || 'collaborator',
+        role: split.role || "collaborator",
         splitPercentage: Number(split.splitPercentage),
         grossAmount: 0,
         netAmount: 0,
@@ -659,7 +753,7 @@ export class RoyaltyEngine {
       splitPercentage: number;
     }>;
 
-    return participants.map(p => ({
+    return participants.map((p) => ({
       participantId: p.userId,
       participantName: p.name,
       role: p.role,
@@ -674,27 +768,29 @@ export class RoyaltyEngine {
   async calculateSplitAmounts(
     releaseId: string,
     grossRevenue: number,
-    netRevenue: number
+    netRevenue: number,
   ): Promise<SplitBreakdown[]> {
     const splits = await this.getSplitBreakdown(releaseId);
-    
-    return await Promise.all(splits.map(async (split) => {
-      const grossAmount = grossRevenue * (split.splitPercentage / 100);
-      const netAmount = netRevenue * (split.splitPercentage / 100);
-      
-      const recoupmentDeduction = await this.calculateRecoupmentDeductions(
-        split.participantId,
-        netAmount
-      );
 
-      return {
-        ...split,
-        grossAmount,
-        netAmount,
-        recoupmentDeduction,
-        payableAmount: netAmount - recoupmentDeduction,
-      };
-    }));
+    return await Promise.all(
+      splits.map(async (split) => {
+        const grossAmount = grossRevenue * (split.splitPercentage / 100);
+        const netAmount = netRevenue * (split.splitPercentage / 100);
+
+        const recoupmentDeduction = await this.calculateRecoupmentDeductions(
+          split.participantId,
+          netAmount,
+        );
+
+        return {
+          ...split,
+          grossAmount,
+          netAmount,
+          recoupmentDeduction,
+          payableAmount: netAmount - recoupmentDeduction,
+        };
+      }),
+    );
   }
 
   async saveStatement(statement: PeriodStatement): Promise<RoyaltyStatement> {
@@ -739,10 +835,13 @@ export class RoyaltyEngine {
 
   async getUserStatements(
     userId: string,
-    options?: { limit?: number; offset?: number; status?: string }
+    options?: { limit?: number; offset?: number; status?: string },
   ): Promise<RoyaltyStatement[]> {
     const conditions = [eq(royaltyStatements.userId, userId)];
-    if (options?.status) conditions.push(eq(royaltyStatements.status, options.status as Record<string, unknown>));
+    if (options?.status)
+      conditions.push(
+        eq(royaltyStatements.status, options.status as Record<string, unknown>),
+      );
 
     return await db
       .select()
@@ -757,7 +856,7 @@ export class RoyaltyEngine {
     const [updated] = await db
       .update(royaltyStatements)
       .set({
-        status: 'finalized',
+        status: "finalized",
         finalizedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -771,7 +870,7 @@ export class RoyaltyEngine {
     const [updated] = await db
       .update(royaltyStatements)
       .set({
-        status: 'paid',
+        status: "paid",
         paidAt: new Date(),
         updatedAt: new Date(),
       })
@@ -784,7 +883,7 @@ export class RoyaltyEngine {
   private async getDspRate(
     dspSlug: string,
     territory: string,
-    date: Date
+    date: Date,
   ): Promise<number | null> {
     const [rate] = await db
       .select()
@@ -794,14 +893,11 @@ export class RoyaltyEngine {
           eq(dspRates.dspSlug, dspSlug),
           or(
             eq(dspRates.territory, territory),
-            eq(dspRates.territory, 'GLOBAL')
+            eq(dspRates.territory, "GLOBAL"),
           ),
           lte(dspRates.effectiveFrom, date),
-          or(
-            isNull(dspRates.effectiveTo),
-            gte(dspRates.effectiveTo, date)
-          )
-        )
+          or(isNull(dspRates.effectiveTo), gte(dspRates.effectiveTo, date)),
+        ),
       )
       .orderBy(desc(dspRates.effectiveFrom))
       .limit(1);
@@ -810,16 +906,24 @@ export class RoyaltyEngine {
   }
 
   // In-memory cache for platform_royalty_rates (TTL: 1 hour)
-  private _platformRatesCache: { data: Map<string, { baseRate: number; premiumMultiplier: number }>; expiresAt: number } | null = null;
+  private _platformRatesCache: {
+    data: Map<string, { baseRate: number; premiumMultiplier: number }>;
+    expiresAt: number;
+  } | null = null;
 
-  private async getPlatformBaseRateFromDB(dspSlug: string): Promise<{ baseRate: number; premiumMultiplier: number } | null> {
+  private async getPlatformBaseRateFromDB(
+    dspSlug: string,
+  ): Promise<{ baseRate: number; premiumMultiplier: number } | null> {
     const now = Date.now();
 
     // Populate cache if empty or expired
     if (!this._platformRatesCache || now > this._platformRatesCache.expiresAt) {
       try {
         const rows = await db.select().from(platformRoyaltyRates);
-        const map = new Map<string, { baseRate: number; premiumMultiplier: number }>();
+        const map = new Map<
+          string,
+          { baseRate: number; premiumMultiplier: number }
+        >();
         for (const row of rows) {
           map.set(row.platform, {
             baseRate: row.baseRatePerStream,
@@ -828,7 +932,10 @@ export class RoyaltyEngine {
         }
         this._platformRatesCache = { data: map, expiresAt: now + 3600_000 };
       } catch (err) {
-        logger.warn({ err: err }, 'Failed to load platform royalty rates from DB, using hardcoded fallback:');
+        logger.warn(
+          { err: err },
+          "Failed to load platform royalty rates from DB, using hardcoded fallback:",
+        );
         return null;
       }
     }
@@ -843,7 +950,7 @@ export class RoyaltyEngine {
   private async getExchangeRate(
     fromCurrency: string,
     toCurrency: string,
-    date: Date
+    date: Date,
   ): Promise<number> {
     if (fromCurrency === toCurrency) return 1;
 
@@ -854,8 +961,8 @@ export class RoyaltyEngine {
         and(
           eq(exchangeRates.fromCurrency, fromCurrency),
           eq(exchangeRates.toCurrency, toCurrency),
-          lte(exchangeRates.rateDate, date)
-        )
+          lte(exchangeRates.rateDate, date),
+        ),
       )
       .orderBy(desc(exchangeRates.rateDate))
       .limit(1);
@@ -863,15 +970,18 @@ export class RoyaltyEngine {
     return rate ? Number(rate.rate) : 1;
   }
 
-  private async calculateRecoupmentDeductions(userId: string, availableAmount: number): Promise<number> {
+  private async calculateRecoupmentDeductions(
+    userId: string,
+    availableAmount: number,
+  ): Promise<number> {
     const activeAccounts = await db
       .select()
       .from(recoupmentAccounts)
       .where(
         and(
           eq(recoupmentAccounts.userId, userId),
-          eq(recoupmentAccounts.isActive, true)
-        )
+          eq(recoupmentAccounts.isActive, true),
+        ),
       );
 
     let totalDeduction = 0;
@@ -884,7 +994,7 @@ export class RoyaltyEngine {
       const rate = Number(account.recoupmentRate) / 100;
       const maxDeduction = remaining * rate;
       const actualDeduction = Math.min(maxDeduction, balance);
-      
+
       totalDeduction += actualDeduction;
       remaining -= actualDeduction;
     }
@@ -894,24 +1004,24 @@ export class RoyaltyEngine {
 
   private formatPeriod(date: Date): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     return `${year}-${month}`;
   }
 
   async seedDefaultDspRates(): Promise<void> {
     const existingRates = await db.select().from(dspRates).limit(1);
     if (existingRates.length > 0) {
-      logger.info('DSP rates already seeded');
+      logger.info("DSP rates already seeded");
       return;
     }
 
     const now = new Date();
     const ratesToInsert = Object.entries(DSP_BASE_RATES).map(([dsp, rate]) => ({
-      dspName: dsp.charAt(0).toUpperCase() + dsp.slice(1).replace(/_/g, ' '),
+      dspName: dsp.charAt(0).toUpperCase() + dsp.slice(1).replace(/_/g, " "),
       dspSlug: dsp,
-      territory: 'GLOBAL',
+      territory: "GLOBAL",
       ratePerStream: String(rate),
-      currency: 'USD',
+      currency: "USD",
       effectiveFrom: now,
     }));
 

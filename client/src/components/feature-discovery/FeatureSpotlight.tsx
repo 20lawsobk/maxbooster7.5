@@ -1,7 +1,12 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Zap } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Zap } from "lucide-react";
 
 interface FeatureSpotlightProps {
   onClose: () => void;
@@ -10,32 +15,38 @@ interface FeatureSpotlightProps {
 
 const spotlightFeatures = [
   {
-    id: 'ai-advertising',
-    title: 'AI Advertising Revolution',
-    description: 'Zero-cost advertising that outperforms paid campaigns',
-    badge: 'New',
-    badgeColor: 'bg-green-500',
+    id: "ai-advertising",
+    title: "AI Advertising Revolution",
+    description: "Zero-cost advertising that outperforms paid campaigns",
+    badge: "New",
+    badgeColor: "bg-green-500",
   },
   {
-    id: 'ai-mixing',
-    title: 'AI-Powered Mixing',
-    description: 'Professional-grade mixing with AI assistance',
-    badge: 'Popular',
-    badgeColor: 'bg-blue-500',
+    id: "ai-mixing",
+    title: "AI-Powered Mixing",
+    description: "Professional-grade mixing with AI assistance",
+    badge: "Popular",
+    badgeColor: "bg-blue-500",
   },
   {
-    id: 'analytics',
-    title: 'Advanced Analytics',
-    description: 'Deep insights into your music performance',
-    badge: 'Trending',
-    badgeColor: 'bg-purple-500',
+    id: "analytics",
+    title: "Advanced Analytics",
+    description: "Deep insights into your music performance",
+    badge: "Trending",
+    badgeColor: "bg-purple-500",
   },
 ];
 
-export default function FeatureSpotlight({ onClose, onExploreFeature }: FeatureSpotlightProps) {
+export default function FeatureSpotlight({
+  onClose,
+  onExploreFeature,
+}: FeatureSpotlightProps) {
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl" data-testid="dialog-feature-spotlight">
+      <DialogContent
+        className="max-w-2xl"
+        data-testid="dialog-feature-spotlight"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="w-5 h-5" />
@@ -53,7 +64,9 @@ export default function FeatureSpotlight({ onClose, onExploreFeature }: FeatureS
                 <h3 className="font-semibold">{feature.title}</h3>
                 <Badge className={feature.badgeColor}>{feature.badge}</Badge>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">{feature.description}</p>
+              <p className="text-sm text-muted-foreground mb-3">
+                {feature.description}
+              </p>
               <Button
                 size="sm"
                 onClick={() => onExploreFeature(feature.id)}

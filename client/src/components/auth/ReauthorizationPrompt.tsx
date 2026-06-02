@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,14 +6,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/queryClient";
 import {
   ShieldAlert,
   Lock,
@@ -23,15 +23,15 @@ import {
   LogIn,
   KeyRound,
   AlertTriangle,
-} from 'lucide-react';
+} from "lucide-react";
 
 export type ReauthReason =
-  | 'session_expired'
-  | 'token_refresh_failed'
-  | 'sensitive_action'
-  | 'security_verification'
-  | 'token_revoked'
-  | 'scope_insufficient';
+  | "session_expired"
+  | "token_refresh_failed"
+  | "sensitive_action"
+  | "security_verification"
+  | "token_revoked"
+  | "scope_insufficient";
 
 interface ReauthorizationPromptProps {
   open: boolean;
@@ -45,35 +45,40 @@ interface ReauthorizationPromptProps {
   sensitiveAction?: string;
 }
 
-const REASON_CONFIG: Record<ReauthReason, { title: string; description: string; icon: React.ReactNode }> = {
+const REASON_CONFIG: Record<
+  ReauthReason,
+  { title: string; description: string; icon: React.ReactNode }
+> = {
   session_expired: {
-    title: 'Session Expired',
-    description: 'Your session has expired. Please sign in again to continue.',
+    title: "Session Expired",
+    description: "Your session has expired. Please sign in again to continue.",
     icon: Lock,
   },
   token_refresh_failed: {
-    title: 'Authentication Required',
-    description: 'We couldn\'t refresh your credentials. Please sign in again.',
+    title: "Authentication Required",
+    description: "We couldn't refresh your credentials. Please sign in again.",
     icon: ShieldAlert,
   },
   sensitive_action: {
-    title: 'Confirm Your Identity',
-    description: 'This action requires you to re-enter your password for security.',
+    title: "Confirm Your Identity",
+    description:
+      "This action requires you to re-enter your password for security.",
     icon: KeyRound,
   },
   security_verification: {
-    title: 'Security Verification',
-    description: 'For your security, please verify your identity.',
+    title: "Security Verification",
+    description: "For your security, please verify your identity.",
     icon: ShieldAlert,
   },
   token_revoked: {
-    title: 'Access Revoked',
-    description: 'Your access has been revoked. Please sign in again.',
+    title: "Access Revoked",
+    description: "Your access has been revoked. Please sign in again.",
     icon: AlertTriangle,
   },
   scope_insufficient: {
-    title: 'Additional Permissions Required',
-    description: 'This action requires additional permissions. Please re-authorize.',
+    title: "Additional Permissions Required",
+    description:
+      "This action requires additional permissions. Please re-authorize.",
     icon: ShieldAlert,
   },
 };
@@ -81,7 +86,7 @@ const REASON_CONFIG: Record<ReauthReason, { title: string; description: string; 
 export function ReauthorizationPrompt({
   open,
   onOpenChange,
-  reason = 'session_expired',
+  reason = "session_expired",
   onSuccess,
   onCancel,
   title,
@@ -91,7 +96,7 @@ export function ReauthorizationPrompt({
 }: ReauthorizationPromptProps) {
   const { user, login } = useAuth();
   const { toast } = useToast();
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,12 +106,12 @@ export function ReauthorizationPrompt({
 
   const handleReauthorize = useCallback(async () => {
     if (!user?.email && !user?.username) {
-      setError('Unable to verify identity. Please log in again.');
+      setError("Unable to verify identity. Please log in again.");
       return;
     }
 
     if (requiresPassword && !password) {
-      setError('Please enter your password.');
+      setError("Please enter your password.");
       return;
     }
 
@@ -120,22 +125,22 @@ export function ReauthorizationPrompt({
       });
 
       toast({
-        title: 'Verified Successfully',
-        description: 'Your identity has been confirmed.',
+        title: "Verified Successfully",
+        description: "Your identity has been confirmed.",
       });
 
-      setPassword('');
+      setPassword("");
       onSuccess?.();
       onOpenChange(false);
     } catch (err) {
-      setError(err.message || 'Incorrect password. Please try again.');
+      setError(err.message || "Incorrect password. Please try again.");
     } finally {
       setIsLoading(false);
     }
   }, [user, password, requiresPassword, login, toast, onSuccess, onOpenChange]);
 
   const handleCancel = useCallback(() => {
-    setPassword('');
+    setPassword("");
     setError(null);
     onCancel?.();
     onOpenChange(false);
@@ -175,12 +180,12 @@ export function ReauthorizationPrompt({
               <div className="relative">
                 <Input
                   id="reauth-password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   className="pr-10"
-                  onKeyDown={(e) => e.key === 'Enter' && handleReauthorize()}
+                  onKeyDown={(e) => e.key === "Enter" && handleReauthorize()}
                   autoFocus
                 />
                 <Button
@@ -202,11 +207,7 @@ export function ReauthorizationPrompt({
         )}
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
             Cancel
           </Button>
           <Button
@@ -219,7 +220,7 @@ export function ReauthorizationPrompt({
             ) : (
               <LogIn className="h-4 w-4" />
             )}
-            {requiresPassword ? 'Verify' : 'Continue'}
+            {requiresPassword ? "Verify" : "Continue"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -229,14 +230,20 @@ export function ReauthorizationPrompt({
 
 export function useReauthorization() {
   const [isOpen, setIsOpen] = useState(false);
-  const [pendingReason, setPendingReason] = useState<ReauthReason>('session_expired');
-  const [pendingCallback, setPendingCallback] = useState<(() => void) | null>(null);
+  const [pendingReason, setPendingReason] =
+    useState<ReauthReason>("session_expired");
+  const [pendingCallback, setPendingCallback] = useState<(() => void) | null>(
+    null,
+  );
 
-  const requestReauthorization = useCallback((reason: ReauthReason, onSuccess?: () => void) => {
-    setPendingReason(reason);
-    setPendingCallback(() => onSuccess || null);
-    setIsOpen(true);
-  }, []);
+  const requestReauthorization = useCallback(
+    (reason: ReauthReason, onSuccess?: () => void) => {
+      setPendingReason(reason);
+      setPendingCallback(() => onSuccess || null);
+      setIsOpen(true);
+    },
+    [],
+  );
 
   const handleSuccess = useCallback(() => {
     if (pendingCallback) {

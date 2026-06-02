@@ -1,24 +1,24 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -27,8 +27,16 @@ import {
   LinkedInIcon,
   ThreadsIcon,
   GoogleIcon,
-} from '@/components/ui/brand-icons';
-import { MessageCircle, Calendar, Clock, Hash, AtSign, MapPin, FileText } from 'lucide-react';
+} from "@/components/ui/brand-icons";
+import {
+  MessageCircle,
+  Calendar,
+  Clock,
+  Hash,
+  AtSign,
+  MapPin,
+  FileText,
+} from "lucide-react";
 
 interface SchedulePostDialogProps {
   open: boolean;
@@ -47,25 +55,30 @@ export interface SchedulePostData {
   hashtags: string[];
   mentions: string[];
   location: string;
-  status: 'draft' | 'scheduled';
+  status: "draft" | "scheduled";
 }
 
 const PLATFORMS = [
-  { id: 'facebook', name: 'Facebook', icon: FacebookIcon, color: '#1877F2' },
-  { id: 'instagram', name: 'Instagram', icon: InstagramIcon, color: '#E4405F' },
-  { id: 'twitter', name: 'Twitter (X)', icon: MessageCircle, color: '#000000' },
-  { id: 'youtube', name: 'YouTube', icon: YouTubeIcon, color: '#FF0000' },
-  { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, color: '#000000' },
-  { id: 'linkedin', name: 'LinkedIn', icon: LinkedInIcon, color: '#0077B5' },
-  { id: 'threads', name: 'Threads', icon: ThreadsIcon, color: '#000000' },
-  { id: 'googlebusiness', name: 'Google Business', icon: GoogleIcon, color: '#4285F4' },
+  { id: "facebook", name: "Facebook", icon: FacebookIcon, color: "#1877F2" },
+  { id: "instagram", name: "Instagram", icon: InstagramIcon, color: "#E4405F" },
+  { id: "twitter", name: "Twitter (X)", icon: MessageCircle, color: "#000000" },
+  { id: "youtube", name: "YouTube", icon: YouTubeIcon, color: "#FF0000" },
+  { id: "tiktok", name: "TikTok", icon: TikTokIcon, color: "#000000" },
+  { id: "linkedin", name: "LinkedIn", icon: LinkedInIcon, color: "#0077B5" },
+  { id: "threads", name: "Threads", icon: ThreadsIcon, color: "#000000" },
+  {
+    id: "googlebusiness",
+    name: "Google Business",
+    icon: GoogleIcon,
+    color: "#4285F4",
+  },
 ];
 
 const POST_TYPES = [
-  { value: 'post', label: 'Post' },
-  { value: 'story', label: 'Story' },
-  { value: 'reel', label: 'Reel' },
-  { value: 'video', label: 'Video' },
+  { value: "post", label: "Post" },
+  { value: "story", label: "Story" },
+  { value: "reel", label: "Reel" },
+  { value: "video", label: "Video" },
 ];
 
 export function SchedulePostDialog({
@@ -75,20 +88,20 @@ export function SchedulePostDialog({
   initialData,
 }: SchedulePostDialogProps) {
   const [formData, setFormData] = useState<SchedulePostData>({
-    title: initialData?.title || '',
-    scheduledFor: initialData?.scheduledFor || '',
+    title: initialData?.title || "",
+    scheduledFor: initialData?.scheduledFor || "",
     platforms: initialData?.platforms || [],
-    postType: initialData?.postType || 'post',
-    content: initialData?.content || '',
+    postType: initialData?.postType || "post",
+    content: initialData?.content || "",
     mediaUrls: initialData?.mediaUrls || [],
     hashtags: initialData?.hashtags || [],
     mentions: initialData?.mentions || [],
-    location: initialData?.location || '',
-    status: initialData?.status || 'draft',
+    location: initialData?.location || "",
+    status: initialData?.status || "draft",
   });
 
-  const [hashtagInput, setHashtagInput] = useState('');
-  const [mentionInput, setMentionInput] = useState('');
+  const [hashtagInput, setHashtagInput] = useState("");
+  const [mentionInput, setMentionInput] = useState("");
 
   const handlePlatformToggle = (platformId: string) => {
     setFormData((prev) => ({
@@ -101,14 +114,14 @@ export function SchedulePostDialog({
 
   const addHashtag = () => {
     if (hashtagInput.trim()) {
-      const tag = hashtagInput.trim().startsWith('#')
+      const tag = hashtagInput.trim().startsWith("#")
         ? hashtagInput.trim()
         : `#${hashtagInput.trim()}`;
       setFormData((prev) => ({
         ...prev,
         hashtags: [...prev.hashtags, tag],
       }));
-      setHashtagInput('');
+      setHashtagInput("");
     }
   };
 
@@ -121,14 +134,14 @@ export function SchedulePostDialog({
 
   const addMention = () => {
     if (mentionInput.trim()) {
-      const mention = mentionInput.trim().startsWith('@')
+      const mention = mentionInput.trim().startsWith("@")
         ? mentionInput.trim()
         : `@${mentionInput.trim()}`;
       setFormData((prev) => ({
         ...prev,
         mentions: [...prev.mentions, mention],
       }));
-      setMentionInput('');
+      setMentionInput("");
     }
   };
 
@@ -139,20 +152,20 @@ export function SchedulePostDialog({
     }));
   };
 
-  const handleSubmit = (status: 'draft' | 'scheduled') => {
+  const handleSubmit = (status: "draft" | "scheduled") => {
     onSchedule({ ...formData, status });
     onOpenChange(false);
     setFormData({
-      title: '',
-      scheduledFor: '',
+      title: "",
+      scheduledFor: "",
       platforms: [],
-      postType: 'post',
-      content: '',
+      postType: "post",
+      content: "",
       mediaUrls: [],
       hashtags: [],
       mentions: [],
-      location: '',
-      status: 'draft',
+      location: "",
+      status: "draft",
     });
   };
 
@@ -173,7 +186,9 @@ export function SchedulePostDialog({
               id="title"
               placeholder="Enter post title..."
               value={formData.title}
-              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
             />
           </div>
 
@@ -186,10 +201,13 @@ export function SchedulePostDialog({
               <Input
                 id="date"
                 type="date"
-                value={formData.scheduledFor.split('T')[0]}
+                value={formData.scheduledFor.split("T")[0]}
                 onChange={(e) => {
-                  const time = formData.scheduledFor.split('T')[1] || '12:00';
-                  setFormData((prev) => ({ ...prev, scheduledFor: `${e.target.value}T${time}` }));
+                  const time = formData.scheduledFor.split("T")[1] || "12:00";
+                  setFormData((prev) => ({
+                    ...prev,
+                    scheduledFor: `${e.target.value}T${time}`,
+                  }));
                 }}
               />
             </div>
@@ -202,11 +220,15 @@ export function SchedulePostDialog({
               <Input
                 id="time"
                 type="time"
-                value={formData.scheduledFor.split('T')[1] || ''}
+                value={formData.scheduledFor.split("T")[1] || ""}
                 onChange={(e) => {
                   const date =
-                    formData.scheduledFor.split('T')[0] || new Date().toISOString().split('T')[0];
-                  setFormData((prev) => ({ ...prev, scheduledFor: `${date}T${e.target.value}` }));
+                    formData.scheduledFor.split("T")[0] ||
+                    new Date().toISOString().split("T")[0];
+                  setFormData((prev) => ({
+                    ...prev,
+                    scheduledFor: `${date}T${e.target.value}`,
+                  }));
                 }}
               />
             </div>
@@ -218,13 +240,19 @@ export function SchedulePostDialog({
               {PLATFORMS.map((platform) => {
                 const Icon = platform.icon;
                 return (
-                  <div key={platform.id} className="flex items-center space-x-2">
+                  <div
+                    key={platform.id}
+                    className="flex items-center space-x-2"
+                  >
                     <Checkbox
                       id={platform.id}
                       checked={formData.platforms.includes(platform.id)}
                       onCheckedChange={() => handlePlatformToggle(platform.id)}
                     />
-                    <Label htmlFor={platform.id} className="flex items-center gap-2 cursor-pointer">
+                    <Label
+                      htmlFor={platform.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <Icon size={16} style={{ color: platform.color }} />
                       {platform.name}
                     </Label>
@@ -238,7 +266,9 @@ export function SchedulePostDialog({
             <Label htmlFor="postType">Post Type</Label>
             <Select
               value={formData.postType}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, postType: value }))}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, postType: value }))
+              }
             >
               <SelectTrigger id="postType">
                 <SelectValue />
@@ -254,13 +284,16 @@ export function SchedulePostDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content" className="flex items-center justify-between">
+            <Label
+              htmlFor="content"
+              className="flex items-center justify-between"
+            >
               <span className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Content
               </span>
               <span
-                className={`text-xs ${characterCount > characterLimit ? 'text-red-500' : 'text-gray-500'}`}
+                className={`text-xs ${characterCount > characterLimit ? "text-red-500" : "text-gray-500"}`}
               >
                 {characterCount} / {characterLimit}
               </span>
@@ -269,7 +302,9 @@ export function SchedulePostDialog({
               id="content"
               placeholder="What's happening?"
               value={formData.content}
-              onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, content: e.target.value }))
+              }
               rows={4}
               className="resize-none"
             />
@@ -286,7 +321,9 @@ export function SchedulePostDialog({
                 placeholder="Add hashtag..."
                 value={hashtagInput}
                 onChange={(e) => setHashtagInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addHashtag())}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addHashtag())
+                }
               />
               <Button type="button" onClick={addHashtag} variant="outline">
                 Add
@@ -319,7 +356,9 @@ export function SchedulePostDialog({
                 placeholder="Add mention..."
                 value={mentionInput}
                 onChange={(e) => setMentionInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMention())}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addMention())
+                }
               />
               <Button type="button" onClick={addMention} variant="outline">
                 Add
@@ -350,18 +389,24 @@ export function SchedulePostDialog({
               id="location"
               placeholder="Add location..."
               value={formData.location}
-              onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, location: e.target.value }))
+              }
             />
           </div>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => handleSubmit('draft')}>
+          <Button variant="outline" onClick={() => handleSubmit("draft")}>
             Save Draft
           </Button>
           <Button
-            onClick={() => handleSubmit('scheduled')}
-            disabled={!formData.title || !formData.scheduledFor || formData.platforms.length === 0}
+            onClick={() => handleSubmit("scheduled")}
+            disabled={
+              !formData.title ||
+              !formData.scheduledFor ||
+              formData.platforms.length === 0
+            }
           >
             Schedule Post
           </Button>

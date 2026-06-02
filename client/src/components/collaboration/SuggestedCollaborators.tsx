@@ -1,23 +1,33 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { CollaboratorCard } from './CollaboratorCard';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Sparkles, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CollaboratorCard } from "./CollaboratorCard";
 
 interface SuggestedCollaboratorsProps {
   limit?: number;
 }
 
-export function SuggestedCollaborators({ limit = 6 }: SuggestedCollaboratorsProps) {
-  const { data: suggestions, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['/api/collaborations/suggestions', limit],
+export function SuggestedCollaborators({
+  limit = 6,
+}: SuggestedCollaboratorsProps) {
+  const {
+    data: suggestions,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["/api/collaborations/suggestions", limit],
     queryFn: async () => {
-      const res = await fetch(`/api/collaborations/suggestions?limit=${limit}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to fetch suggestions');
+      const res = await fetch(
+        `/api/collaborations/suggestions?limit=${limit}`,
+        {
+          credentials: "include",
+        },
+      );
+      if (!res.ok) throw new Error("Failed to fetch suggestions");
       return res.json();
     },
     staleTime: 5 * 60 * 1000,
@@ -55,7 +65,9 @@ export function SuggestedCollaborators({ limit = 6 }: SuggestedCollaboratorsProp
           onClick={() => refetch()}
           disabled={isFetching}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </CardHeader>
@@ -78,7 +90,9 @@ export function SuggestedCollaborators({ limit = 6 }: SuggestedCollaboratorsProp
           <div className="text-center py-8 text-muted-foreground">
             <Sparkles className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>No suggestions available</p>
-            <p className="text-sm">Complete your profile to get better matches!</p>
+            <p className="text-sm">
+              Complete your profile to get better matches!
+            </p>
           </div>
         )}
       </CardContent>

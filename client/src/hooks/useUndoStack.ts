@@ -1,12 +1,18 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { UndoStack, UndoAction, UndoActionType, getUndoStack, UndoStackConfig } from '@/lib/undoSystem';
+import { useState, useCallback, useEffect, useMemo } from "react";
+import {
+  UndoStack,
+  UndoAction,
+  UndoActionType,
+  getUndoStack,
+  UndoStackConfig,
+} from "@/lib/undoSystem";
 
 export interface UseUndoStackOptions extends Partial<UndoStackConfig> {
   createNewInstance?: boolean;
 }
 
 export interface UseUndoStackReturn {
-  push: (action: Omit<UndoAction, 'id' | 'timestamp'>) => Promise<UndoAction>;
+  push: (action: Omit<UndoAction, "id" | "timestamp">) => Promise<UndoAction>;
   undo: () => Promise<UndoAction | null>;
   redo: () => Promise<UndoAction | null>;
   canUndo: boolean;
@@ -24,7 +30,9 @@ export interface UseUndoStackReturn {
   isGrouping: boolean;
 }
 
-export function useUndoStack(options: UseUndoStackOptions = {}): UseUndoStackReturn {
+export function useUndoStack(
+  options: UseUndoStackOptions = {},
+): UseUndoStackReturn {
   const { createNewInstance, ...config } = options;
 
   const undoStack = useMemo(() => {
@@ -35,8 +43,12 @@ export function useUndoStack(options: UseUndoStackOptions = {}): UseUndoStackRet
   }, [createNewInstance]);
 
   const [state, setState] = useState(() => undoStack.getState());
-  const [history, setHistory] = useState<UndoAction[]>(() => undoStack.getHistory());
-  const [redoStackList, setRedoStack] = useState<UndoAction[]>(() => undoStack.getRedoStack());
+  const [history, setHistory] = useState<UndoAction[]>(() =>
+    undoStack.getHistory(),
+  );
+  const [redoStackList, setRedoStack] = useState<UndoAction[]>(() =>
+    undoStack.getRedoStack(),
+  );
 
   useEffect(() => {
     const unsubscribe = undoStack.subscribe(() => {
@@ -49,10 +61,12 @@ export function useUndoStack(options: UseUndoStackOptions = {}): UseUndoStackRet
   }, [undoStack]);
 
   const push = useCallback(
-    async (action: Omit<UndoAction, 'id' | 'timestamp'>): Promise<UndoAction> => {
+    async (
+      action: Omit<UndoAction, "id" | "timestamp">,
+    ): Promise<UndoAction> => {
       return undoStack.push(action);
     },
-    [undoStack]
+    [undoStack],
   );
 
   const undo = useCallback(async (): Promise<UndoAction | null> => {
@@ -71,28 +85,28 @@ export function useUndoStack(options: UseUndoStackOptions = {}): UseUndoStackRet
     (name: string): string => {
       return undoStack.startGroup(name);
     },
-    [undoStack]
+    [undoStack],
   );
 
   const endGroup = useCallback(
     (groupId?: string): void => {
       undoStack.endGroup(groupId);
     },
-    [undoStack]
+    [undoStack],
   );
 
   const undoToRestorePoint = useCallback(
     async (actionId: string): Promise<void> => {
       await undoStack.undoToRestorePoint(actionId);
     },
-    [undoStack]
+    [undoStack],
   );
 
   const createRestorePoint = useCallback(
     (description: string): UndoAction => {
       return undoStack.createRestorePoint(description);
     },
-    [undoStack]
+    [undoStack],
   );
 
   const getRestorePoints = useCallback((): UndoAction[] => {
@@ -130,7 +144,7 @@ export function useUndoableOperation<T, Args extends any[] = any[]>(
   options: UseUndoableOperationOptions,
   execute: (...args: Args) => Promise<T>,
   undo: (result: T, ...args: Args) => Promise<void>,
-  redo?: (...args: Args) => Promise<T>
+  redo?: (...args: Args) => Promise<T>,
 ): (...args: Args) => Promise<T> {
   const { push } = useUndoStack();
 
@@ -139,11 +153,11 @@ export function useUndoableOperation<T, Args extends any[] = any[]>(
       let result: T;
 
       const description =
-        typeof options.description === 'function'
+        typeof options.description === "function"
           ? options.description(args)
           : options.description || `${options.type} action`;
 
-      const action: Omit<UndoAction, 'id' | 'timestamp'> = {
+      const action: Omit<UndoAction, "id" | "timestamp"> = {
         type: options.type,
         description,
         module: options.module,
@@ -165,7 +179,7 @@ export function useUndoableOperation<T, Args extends any[] = any[]>(
 
       return result!;
     },
-    [push, execute, undo, redo, options]
+    [push, execute, undo, redo, options],
   );
 }
 

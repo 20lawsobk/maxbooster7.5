@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,15 +6,20 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Search,
   Mic,
@@ -42,7 +47,7 @@ import {
   FileJson,
   ArrowRight,
   ArrowRightLeft,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   TrackPreset,
   PresetCategory,
@@ -63,7 +68,7 @@ import {
   getLastUndoState,
   saveUndoState,
   createPresetFromTrack,
-} from '@/lib/trackPresets';
+} from "@/lib/trackPresets";
 
 interface TrackPresetManagerProps {
   open: boolean;
@@ -72,7 +77,10 @@ interface TrackPresetManagerProps {
   selectedTracks?: StudioTrackSnapshot[];
   onApplyPreset?: (preset: TrackPreset, trackId: string) => void;
   onApplyPresetToMultiple?: (preset: TrackPreset, trackIds: string[]) => void;
-  onUndoPreset?: (trackId: string, previousData: Partial<StudioTrackSnapshot>) => void;
+  onUndoPreset?: (
+    trackId: string,
+    previousData: Partial<StudioTrackSnapshot>,
+  ) => void;
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -93,17 +101,17 @@ function getCategoryIcon(iconName: string): React.ElementType {
 }
 
 function EffectTypeIcon({ type }: { type: string }) {
-  const iconClasses = 'w-3 h-3';
+  const iconClasses = "w-3 h-3";
   switch (type) {
-    case 'eq':
+    case "eq":
       return <Sliders className={iconClasses} />;
-    case 'compressor':
+    case "compressor":
       return <Waves className={iconClasses} />;
-    case 'reverb':
+    case "reverb":
       return <Sparkles className={iconClasses} />;
-    case 'delay':
+    case "delay":
       return <ArrowRightLeft className={iconClasses} />;
-    case 'gate':
+    case "gate":
       return <Lock className={iconClasses} />;
     default:
       return <Settings className={iconClasses} />;
@@ -115,7 +123,7 @@ function EffectChainVisualization({ effects }: { effects: PresetEffect[] }) {
     return (
       <div
         className="text-xs text-center py-4"
-        style={{ color: 'var(--studio-text-subtle)' }}
+        style={{ color: "var(--studio-text-subtle)" }}
       >
         No effects in chain
       </div>
@@ -128,24 +136,30 @@ function EffectChainVisualization({ effects }: { effects: PresetEffect[] }) {
         <div key={effect.id} className="flex items-center gap-1">
           <div
             className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${
-              effect.bypass ? 'opacity-50' : ''
+              effect.bypass ? "opacity-50" : ""
             }`}
             style={{
-              backgroundColor: 'var(--studio-bg-deep)',
-              border: '1px solid var(--studio-border-subtle)',
-              color: 'var(--studio-text)',
+              backgroundColor: "var(--studio-bg-deep)",
+              border: "1px solid var(--studio-border-subtle)",
+              color: "var(--studio-text)",
             }}
           >
             <EffectTypeIcon type={effect.type} />
             <span>{effect.name}</span>
             {effect.bypass && (
-              <span className="text-[10px]" style={{ color: 'var(--studio-text-subtle)' }}>
+              <span
+                className="text-[10px]"
+                style={{ color: "var(--studio-text-subtle)" }}
+              >
                 (OFF)
               </span>
             )}
           </div>
           {index < effects.length - 1 && (
-            <ArrowRight className="w-3 h-3" style={{ color: 'var(--studio-text-subtle)' }} />
+            <ArrowRight
+              className="w-3 h-3"
+              style={{ color: "var(--studio-text-subtle)" }}
+            />
           )}
         </div>
       ))}
@@ -171,16 +185,14 @@ function PresetCard({
     <div
       className={`relative p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
         isSelected
-          ? 'border-[var(--studio-accent)] shadow-lg'
-          : 'border-[var(--studio-border-subtle)] hover:border-[var(--studio-border)]'
+          ? "border-[var(--studio-accent)] shadow-lg"
+          : "border-[var(--studio-border-subtle)] hover:border-[var(--studio-border)]"
       }`}
       style={{
         backgroundColor: isSelected
-          ? 'var(--studio-surface-elevated)'
-          : 'var(--studio-surface)',
-        boxShadow: isSelected
-          ? '0 0 20px rgba(74, 158, 255, 0.15)'
-          : undefined,
+          ? "var(--studio-surface-elevated)"
+          : "var(--studio-surface)",
+        boxShadow: isSelected ? "0 0 20px rgba(74, 158, 255, 0.15)" : undefined,
       }}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
@@ -189,7 +201,8 @@ function PresetCard({
         <div
           className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
           style={{
-            background: 'linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)',
+            background:
+              "linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)",
           }}
         >
           <Check className="w-2.5 h-2.5 text-white" />
@@ -211,17 +224,20 @@ function PresetCard({
           <div className="flex items-center gap-1.5">
             <h3
               className="font-medium text-sm truncate"
-              style={{ color: 'var(--studio-text)' }}
+              style={{ color: "var(--studio-text)" }}
             >
               {preset.name}
             </h3>
             {preset.isFactory && (
-              <Lock className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--studio-text-subtle)' }} />
+              <Lock
+                className="w-3 h-3 flex-shrink-0"
+                style={{ color: "var(--studio-text-subtle)" }}
+              />
             )}
           </div>
           <p
             className="text-xs mt-0.5 line-clamp-1"
-            style={{ color: 'var(--studio-text-muted)' }}
+            style={{ color: "var(--studio-text-muted)" }}
           >
             {preset.description}
           </p>
@@ -242,16 +258,17 @@ function PresetCard({
         </Badge>
         <span
           className="text-[10px]"
-          style={{ color: 'var(--studio-text-subtle)' }}
+          style={{ color: "var(--studio-text-subtle)" }}
         >
-          {preview.effectCount} {preview.effectCount === 1 ? 'effect' : 'effects'}
+          {preview.effectCount}{" "}
+          {preview.effectCount === 1 ? "effect" : "effects"}
         </span>
         {preview.sendCount > 0 && (
           <span
             className="text-[10px]"
-            style={{ color: 'var(--studio-text-subtle)' }}
+            style={{ color: "var(--studio-text-subtle)" }}
           >
-            {preview.sendCount} {preview.sendCount === 1 ? 'send' : 'sends'}
+            {preview.sendCount} {preview.sendCount === 1 ? "send" : "sends"}
           </span>
         )}
       </div>
@@ -282,12 +299,12 @@ function PresetDetailsPanel({
   return (
     <div
       className="h-full flex flex-col rounded-lg overflow-hidden"
-      style={{ backgroundColor: 'var(--studio-bg-medium)' }}
+      style={{ backgroundColor: "var(--studio-bg-medium)" }}
     >
       <div
         className="p-4 border-b"
         style={{
-          borderColor: 'var(--studio-border)',
+          borderColor: "var(--studio-border)",
           background: `linear-gradient(135deg, ${preset.color}10 0%, transparent 100%)`,
         }}
       >
@@ -305,7 +322,7 @@ function PresetDetailsPanel({
             <div className="flex items-center gap-2">
               <h2
                 className="font-bold text-lg truncate"
-                style={{ color: 'var(--studio-text)' }}
+                style={{ color: "var(--studio-text)" }}
               >
                 {preset.name}
               </h2>
@@ -313,7 +330,10 @@ function PresetDetailsPanel({
                 <Badge
                   variant="outline"
                   className="text-[10px] flex-shrink-0"
-                  style={{ borderColor: 'var(--studio-border)', color: 'var(--studio-text-subtle)' }}
+                  style={{
+                    borderColor: "var(--studio-border)",
+                    color: "var(--studio-text-subtle)",
+                  }}
                 >
                   Factory
                 </Badge>
@@ -334,7 +354,7 @@ function PresetDetailsPanel({
         </div>
         <p
           className="text-sm mt-3"
-          style={{ color: 'var(--studio-text-muted)' }}
+          style={{ color: "var(--studio-text-muted)" }}
         >
           {preset.description}
         </p>
@@ -345,7 +365,7 @@ function PresetDetailsPanel({
           <div>
             <h3
               className="text-xs font-semibold uppercase mb-2 flex items-center gap-2"
-              style={{ color: 'var(--studio-text-subtle)' }}
+              style={{ color: "var(--studio-text-subtle)" }}
             >
               <Layers className="w-3.5 h-3.5" />
               Effect Chain
@@ -356,34 +376,34 @@ function PresetDetailsPanel({
           <div className="grid grid-cols-2 gap-3">
             <div
               className="p-3 rounded-lg"
-              style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+              style={{ backgroundColor: "var(--studio-bg-deep)" }}
             >
               <div
                 className="text-xs font-medium"
-                style={{ color: 'var(--studio-text-subtle)' }}
+                style={{ color: "var(--studio-text-subtle)" }}
               >
                 Effects
               </div>
               <div
                 className="text-lg font-bold mt-1"
-                style={{ color: 'var(--studio-text)' }}
+                style={{ color: "var(--studio-text)" }}
               >
                 {preview.effectCount}
               </div>
             </div>
             <div
               className="p-3 rounded-lg"
-              style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+              style={{ backgroundColor: "var(--studio-bg-deep)" }}
             >
               <div
                 className="text-xs font-medium"
-                style={{ color: 'var(--studio-text-subtle)' }}
+                style={{ color: "var(--studio-text-subtle)" }}
               >
                 Sends
               </div>
               <div
                 className="text-lg font-bold mt-1"
-                style={{ color: 'var(--studio-text)' }}
+                style={{ color: "var(--studio-text)" }}
               >
                 {preview.sendCount}
               </div>
@@ -392,32 +412,45 @@ function PresetDetailsPanel({
 
           <div
             className="p-3 rounded-lg"
-            style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+            style={{ backgroundColor: "var(--studio-bg-deep)" }}
           >
             <div
               className="text-xs font-medium mb-2"
-              style={{ color: 'var(--studio-text-subtle)' }}
+              style={{ color: "var(--studio-text-subtle)" }}
             >
               Track Settings
             </div>
-            <div className="space-y-1.5 text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+            <div
+              className="space-y-1.5 text-xs"
+              style={{ color: "var(--studio-text-muted)" }}
+            >
               <div className="flex justify-between">
                 <span>Track Type</span>
-                <span style={{ color: 'var(--studio-text)' }}>{preset.data.trackType}</span>
+                <span style={{ color: "var(--studio-text)" }}>
+                  {preset.data.trackType}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Volume</span>
-                <span style={{ color: 'var(--studio-text)' }}>{Math.round(preset.data.volume * 100)}%</span>
+                <span style={{ color: "var(--studio-text)" }}>
+                  {Math.round(preset.data.volume * 100)}%
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Pan</span>
-                <span style={{ color: 'var(--studio-text)' }}>
-                  {preset.data.pan === 0 ? 'C' : preset.data.pan > 0 ? `R${Math.round(preset.data.pan * 100)}` : `L${Math.round(Math.abs(preset.data.pan) * 100)}`}
+                <span style={{ color: "var(--studio-text)" }}>
+                  {preset.data.pan === 0
+                    ? "C"
+                    : preset.data.pan > 0
+                      ? `R${Math.round(preset.data.pan * 100)}`
+                      : `L${Math.round(Math.abs(preset.data.pan) * 100)}`}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Output Bus</span>
-                <span style={{ color: 'var(--studio-text)' }}>{preset.data.outputBus}</span>
+                <span style={{ color: "var(--studio-text)" }}>
+                  {preset.data.outputBus}
+                </span>
               </div>
             </div>
           </div>
@@ -426,7 +459,7 @@ function PresetDetailsPanel({
             <div>
               <h3
                 className="text-xs font-semibold uppercase mb-2"
-                style={{ color: 'var(--studio-text-subtle)' }}
+                style={{ color: "var(--studio-text-subtle)" }}
               >
                 Sends
               </h3>
@@ -435,10 +468,14 @@ function PresetDetailsPanel({
                   <div
                     key={send.busId}
                     className="flex items-center justify-between px-2 py-1.5 rounded text-xs"
-                    style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+                    style={{ backgroundColor: "var(--studio-bg-deep)" }}
                   >
-                    <span style={{ color: 'var(--studio-text-muted)' }}>{send.busName}</span>
-                    <span style={{ color: 'var(--studio-text)' }}>{Math.round(send.level * 100)}%</span>
+                    <span style={{ color: "var(--studio-text-muted)" }}>
+                      {send.busName}
+                    </span>
+                    <span style={{ color: "var(--studio-text)" }}>
+                      {Math.round(send.level * 100)}%
+                    </span>
                   </div>
                 ))}
               </div>
@@ -449,7 +486,7 @@ function PresetDetailsPanel({
             <div>
               <h3
                 className="text-xs font-semibold uppercase mb-2"
-                style={{ color: 'var(--studio-text-subtle)' }}
+                style={{ color: "var(--studio-text-subtle)" }}
               >
                 Tags
               </h3>
@@ -460,8 +497,8 @@ function PresetDetailsPanel({
                     variant="secondary"
                     className="text-[10px]"
                     style={{
-                      backgroundColor: 'var(--studio-bg-light)',
-                      color: 'var(--studio-text-muted)',
+                      backgroundColor: "var(--studio-bg-light)",
+                      color: "var(--studio-text-muted)",
                     }}
                   >
                     {tag}
@@ -475,8 +512,8 @@ function PresetDetailsPanel({
             <div
               className="text-xs pt-2 border-t"
               style={{
-                color: 'var(--studio-text-subtle)',
-                borderColor: 'var(--studio-border-subtle)',
+                color: "var(--studio-text-subtle)",
+                borderColor: "var(--studio-border-subtle)",
               }}
             >
               Created by {preset.author}
@@ -487,13 +524,10 @@ function PresetDetailsPanel({
 
       <div
         className="p-4 border-t space-y-2"
-        style={{ borderColor: 'var(--studio-border)' }}
+        style={{ borderColor: "var(--studio-border)" }}
       >
         <div className="flex gap-2">
-          <Button
-            onClick={onApply}
-            className="flex-1 studio-btn-accent"
-          >
+          <Button onClick={onApply} className="flex-1 studio-btn-accent">
             <ArrowRight className="w-4 h-4 mr-1" />
             Apply to Track
           </Button>
@@ -506,8 +540,8 @@ function PresetDetailsPanel({
                     variant="outline"
                     size="icon"
                     style={{
-                      borderColor: 'var(--studio-border)',
-                      backgroundColor: 'var(--studio-surface)',
+                      borderColor: "var(--studio-border)",
+                      backgroundColor: "var(--studio-surface)",
                     }}
                   >
                     <Copy className="w-4 h-4" />
@@ -526,7 +560,7 @@ function PresetDetailsPanel({
                 variant="ghost"
                 size="sm"
                 className="flex-1"
-                style={{ color: 'var(--studio-text)' }}
+                style={{ color: "var(--studio-text)" }}
               >
                 <Edit3 className="w-3.5 h-3.5 mr-1" />
                 Edit
@@ -561,16 +595,18 @@ function SavePresetDialog({
   track?: StudioTrackSnapshot;
   editPreset?: TrackPreset;
 }) {
-  const [name, setName] = useState(editPreset?.name || '');
-  const [description, setDescription] = useState(editPreset?.description || '');
-  const [category, setCategory] = useState<PresetCategory>(editPreset?.category || 'custom');
-  const [tags, setTags] = useState(editPreset?.tags.join(', ') || '');
+  const [name, setName] = useState(editPreset?.name || "");
+  const [description, setDescription] = useState(editPreset?.description || "");
+  const [category, setCategory] = useState<PresetCategory>(
+    editPreset?.category || "custom",
+  );
+  const [tags, setTags] = useState(editPreset?.tags.join(", ") || "");
 
   const handleSave = () => {
     if (!name.trim()) return;
 
     const tagList = tags
-      .split(',')
+      .split(",")
       .map((t) => t.trim().toLowerCase())
       .filter((t) => t.length > 0);
 
@@ -587,15 +623,21 @@ function SavePresetDialog({
         onSave(updated);
       }
     } else if (track) {
-      const preset = createPresetFromTrack(track, name.trim(), description.trim(), category, tagList);
+      const preset = createPresetFromTrack(
+        track,
+        name.trim(),
+        description.trim(),
+        category,
+        tagList,
+      );
       const saved = saveUserPreset(preset);
       onSave(saved);
     }
 
-    setName('');
-    setDescription('');
-    setCategory('custom');
-    setTags('');
+    setName("");
+    setDescription("");
+    setCategory("custom");
+    setTags("");
     onOpenChange(false);
   };
 
@@ -604,24 +646,27 @@ function SavePresetDialog({
       <DialogContent
         className="max-w-md"
         style={{
-          backgroundColor: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          backgroundColor: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
       >
         <DialogHeader>
-          <DialogTitle style={{ color: 'var(--studio-text)' }}>
-            {editPreset ? 'Edit Preset' : 'Save as Preset'}
+          <DialogTitle style={{ color: "var(--studio-text)" }}>
+            {editPreset ? "Edit Preset" : "Save as Preset"}
           </DialogTitle>
-          <DialogDescription style={{ color: 'var(--studio-text-muted)' }}>
+          <DialogDescription style={{ color: "var(--studio-text-muted)" }}>
             {editPreset
-              ? 'Update the preset metadata.'
-              : 'Save the current track configuration as a reusable preset.'}
+              ? "Update the preset metadata."
+              : "Save the current track configuration as a reusable preset."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="preset-name" style={{ color: 'var(--studio-text)' }}>
+            <Label
+              htmlFor="preset-name"
+              style={{ color: "var(--studio-text)" }}
+            >
               Preset Name
             </Label>
             <Input
@@ -630,16 +675,19 @@ function SavePresetDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               style={{
-                backgroundColor: 'var(--studio-bg-deep)',
-                borderColor: 'var(--studio-border)',
-                color: 'var(--studio-text)',
+                backgroundColor: "var(--studio-bg-deep)",
+                borderColor: "var(--studio-border)",
+                color: "var(--studio-text)",
               }}
               autoFocus
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="preset-category" style={{ color: 'var(--studio-text)' }}>
+            <Label
+              htmlFor="preset-category"
+              style={{ color: "var(--studio-text)" }}
+            >
               Category
             </Label>
             <div className="grid grid-cols-5 gap-1">
@@ -654,17 +702,25 @@ function SavePresetDialog({
                           type="button"
                           onClick={() => setCategory(cat)}
                           className={`p-2 rounded flex items-center justify-center transition-all ${
-                            isActive ? 'ring-2 ring-offset-1' : ''
+                            isActive ? "ring-2 ring-offset-1" : ""
                           }`}
                           style={{
-                            backgroundColor: isActive ? `${CATEGORY_INFO[cat].color}20` : 'var(--studio-bg-deep)',
-                            borderColor: isActive ? CATEGORY_INFO[cat].color : 'var(--studio-border-subtle)',
+                            backgroundColor: isActive
+                              ? `${CATEGORY_INFO[cat].color}20`
+                              : "var(--studio-bg-deep)",
+                            borderColor: isActive
+                              ? CATEGORY_INFO[cat].color
+                              : "var(--studio-border-subtle)",
                             ringColor: CATEGORY_INFO[cat].color,
                           }}
                         >
                           <Icon
                             className="w-4 h-4"
-                            style={{ color: isActive ? CATEGORY_INFO[cat].color : 'var(--studio-text-muted)' }}
+                            style={{
+                              color: isActive
+                                ? CATEGORY_INFO[cat].color
+                                : "var(--studio-text-muted)",
+                            }}
                           />
                         </button>
                       </TooltipTrigger>
@@ -677,7 +733,10 @@ function SavePresetDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="preset-description" style={{ color: 'var(--studio-text)' }}>
+            <Label
+              htmlFor="preset-description"
+              style={{ color: "var(--studio-text)" }}
+            >
               Description (optional)
             </Label>
             <Textarea
@@ -687,15 +746,18 @@ function SavePresetDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               style={{
-                backgroundColor: 'var(--studio-bg-deep)',
-                borderColor: 'var(--studio-border)',
-                color: 'var(--studio-text)',
+                backgroundColor: "var(--studio-bg-deep)",
+                borderColor: "var(--studio-border)",
+                color: "var(--studio-text)",
               }}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="preset-tags" style={{ color: 'var(--studio-text)' }}>
+            <Label
+              htmlFor="preset-tags"
+              style={{ color: "var(--studio-text)" }}
+            >
               Tags (comma separated)
             </Label>
             <Input
@@ -704,9 +766,9 @@ function SavePresetDialog({
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               style={{
-                backgroundColor: 'var(--studio-bg-deep)',
-                borderColor: 'var(--studio-border)',
-                color: 'var(--studio-text)',
+                backgroundColor: "var(--studio-bg-deep)",
+                borderColor: "var(--studio-border)",
+                color: "var(--studio-text)",
               }}
             />
           </div>
@@ -716,7 +778,7 @@ function SavePresetDialog({
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            style={{ color: 'var(--studio-text)' }}
+            style={{ color: "var(--studio-text)" }}
           >
             Cancel
           </Button>
@@ -726,7 +788,7 @@ function SavePresetDialog({
             className="studio-btn-accent"
           >
             <Save className="w-4 h-4 mr-2" />
-            {editPreset ? 'Update Preset' : 'Save Preset'}
+            {editPreset ? "Update Preset" : "Save Preset"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -750,21 +812,24 @@ function DeleteConfirmDialog({
       <DialogContent
         className="max-w-sm"
         style={{
-          backgroundColor: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          backgroundColor: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
       >
         <DialogHeader>
-          <DialogTitle style={{ color: 'var(--studio-text)' }}>Delete Preset</DialogTitle>
-          <DialogDescription style={{ color: 'var(--studio-text-muted)' }}>
-            Are you sure you want to delete "{presetName}"? This action cannot be undone.
+          <DialogTitle style={{ color: "var(--studio-text)" }}>
+            Delete Preset
+          </DialogTitle>
+          <DialogDescription style={{ color: "var(--studio-text-muted)" }}>
+            Are you sure you want to delete "{presetName}"? This action cannot
+            be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="mt-4">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            style={{ color: 'var(--studio-text)' }}
+            style={{ color: "var(--studio-text)" }}
           >
             Cancel
           </Button>
@@ -793,39 +858,56 @@ function CategorySidebar({
   onCategoryChange: (category: string) => void;
   presetCounts: Record<string, number>;
 }) {
-  const categories = ['all', ...Object.keys(CATEGORY_INFO)];
+  const categories = ["all", ...Object.keys(CATEGORY_INFO)];
 
   return (
     <div className="w-48 flex-shrink-0 space-y-1">
       {categories.map((cat) => {
         const isActive = activeCategory === cat;
-        const catInfo = cat === 'all' ? null : CATEGORY_INFO[cat as PresetCategory];
-        const Icon = cat === 'all' ? Layers : getCategoryIcon(catInfo?.icon || 'Settings');
-        const count = cat === 'all' ? Object.values(presetCounts).reduce((a, b) => a + b, 0) : presetCounts[cat] || 0;
+        const catInfo =
+          cat === "all" ? null : CATEGORY_INFO[cat as PresetCategory];
+        const Icon =
+          cat === "all" ? Layers : getCategoryIcon(catInfo?.icon || "Settings");
+        const count =
+          cat === "all"
+            ? Object.values(presetCounts).reduce((a, b) => a + b, 0)
+            : presetCounts[cat] || 0;
 
         return (
           <button
             key={cat}
             onClick={() => onCategoryChange(cat)}
             className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-              isActive ? 'font-medium' : ''
+              isActive ? "font-medium" : ""
             }`}
             style={{
-              backgroundColor: isActive ? 'var(--studio-surface-elevated)' : 'transparent',
-              color: isActive ? 'var(--studio-text)' : 'var(--studio-text-muted)',
-              border: isActive ? '1px solid var(--studio-border)' : '1px solid transparent',
+              backgroundColor: isActive
+                ? "var(--studio-surface-elevated)"
+                : "transparent",
+              color: isActive
+                ? "var(--studio-text)"
+                : "var(--studio-text-muted)",
+              border: isActive
+                ? "1px solid var(--studio-border)"
+                : "1px solid transparent",
             }}
           >
             <Icon
               className="w-4 h-4"
-              style={{ color: isActive && catInfo ? catInfo.color : 'currentColor' }}
+              style={{
+                color: isActive && catInfo ? catInfo.color : "currentColor",
+              }}
             />
-            <span className="flex-1 text-left capitalize">{cat === 'all' ? 'All Presets' : catInfo?.name}</span>
+            <span className="flex-1 text-left capitalize">
+              {cat === "all" ? "All Presets" : catInfo?.name}
+            </span>
             <span
               className="text-xs px-1.5 py-0.5 rounded"
               style={{
-                backgroundColor: isActive ? 'var(--studio-bg-deep)' : 'var(--studio-surface)',
-                color: 'var(--studio-text-subtle)',
+                backgroundColor: isActive
+                  ? "var(--studio-bg-deep)"
+                  : "var(--studio-surface)",
+                color: "var(--studio-text-subtle)",
               }}
             >
               {count}
@@ -846,13 +928,16 @@ export function TrackPresetManager({
   onApplyPresetToMultiple,
   onUndoPreset,
 }: TrackPresetManagerProps) {
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPreset, setSelectedPreset] = useState<TrackPreset | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState<TrackPreset | null>(
+    null,
+  );
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingPreset, setEditingPreset] = useState<TrackPreset | null>(null);
-  const [lastAppliedUndo, setLastAppliedUndo] = useState<PresetUndoState | null>(null);
+  const [lastAppliedUndo, setLastAppliedUndo] =
+    useState<PresetUndoState | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allPresets = useMemo(() => getAllPresets(), [open]);
@@ -867,15 +952,15 @@ export function TrackPresetManager({
 
   const filteredPresets = useMemo(() => {
     const options: Parameters<typeof filterPresets>[0] = {};
-    
-    if (activeCategory !== 'all') {
+
+    if (activeCategory !== "all") {
       options.category = activeCategory as PresetCategory;
     }
-    
+
     if (searchQuery) {
       options.search = searchQuery;
     }
-    
+
     return filterPresets(options);
   }, [activeCategory, searchQuery, allPresets]);
 
@@ -895,7 +980,12 @@ export function TrackPresetManager({
   }, [selectedPreset, selectedTrack, onApplyPreset]);
 
   const handleApplyToMultiple = useCallback(() => {
-    if (!selectedPreset || selectedTracks.length === 0 || !onApplyPresetToMultiple) return;
+    if (
+      !selectedPreset ||
+      selectedTracks.length === 0 ||
+      !onApplyPresetToMultiple
+    )
+      return;
 
     selectedTracks.forEach((track) => {
       const undoState: PresetUndoState = {
@@ -907,12 +997,18 @@ export function TrackPresetManager({
       saveUndoState(undoState);
     });
 
-    onApplyPresetToMultiple(selectedPreset, selectedTracks.map((t) => t.id));
+    onApplyPresetToMultiple(
+      selectedPreset,
+      selectedTracks.map((t) => t.id),
+    );
   }, [selectedPreset, selectedTracks, onApplyPresetToMultiple]);
 
   const handleUndo = useCallback(() => {
     if (!lastAppliedUndo || !onUndoPreset) return;
-    onUndoPreset(lastAppliedUndo.trackId, lastAppliedUndo.previousData as Partial<StudioTrackSnapshot>);
+    onUndoPreset(
+      lastAppliedUndo.trackId,
+      lastAppliedUndo.previousData as Partial<StudioTrackSnapshot>,
+    );
     setLastAppliedUndo(null);
   }, [lastAppliedUndo, onUndoPreset]);
 
@@ -927,32 +1023,35 @@ export function TrackPresetManager({
     if (userPresets.length === 0) {
       return;
     }
-    
+
     const json = exportPresets(userPresets);
-    const blob = new Blob([json], { type: 'application/json' });
+    const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `track-presets-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `track-presets-${new Date().toISOString().split("T")[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }, []);
 
-  const handleImport = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleImport = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      const result = importPresets(content);
-      if (result.success) {
-        setSelectedPreset(null);
-      }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-  }, []);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        const result = importPresets(content);
+        if (result.success) {
+          setSelectedPreset(null);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    },
+    [],
+  );
 
   const handleSavePreset = useCallback((preset: TrackPreset) => {
     setSelectedPreset(preset);
@@ -965,21 +1064,27 @@ export function TrackPresetManager({
         <DialogContent
           className="max-w-5xl h-[80vh] flex flex-col p-0"
           style={{
-            backgroundColor: 'var(--studio-bg-dark)',
-            borderColor: 'var(--studio-border)',
+            backgroundColor: "var(--studio-bg-dark)",
+            borderColor: "var(--studio-border)",
           }}
         >
-          <DialogHeader className="px-6 pt-6 pb-4 border-b" style={{ borderColor: 'var(--studio-border)' }}>
+          <DialogHeader
+            className="px-6 pt-6 pb-4 border-b"
+            style={{ borderColor: "var(--studio-border)" }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <DialogTitle
                   className="text-xl font-bold"
-                  style={{ color: 'var(--studio-text)' }}
+                  style={{ color: "var(--studio-text)" }}
                 >
                   Track Presets
                 </DialogTitle>
-                <DialogDescription style={{ color: 'var(--studio-text-muted)' }}>
-                  Browse and apply track presets, or save your own configurations.
+                <DialogDescription
+                  style={{ color: "var(--studio-text-muted)" }}
+                >
+                  Browse and apply track presets, or save your own
+                  configurations.
                 </DialogDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -992,15 +1097,17 @@ export function TrackPresetManager({
                           variant="outline"
                           size="sm"
                           style={{
-                            borderColor: 'var(--studio-border)',
-                            backgroundColor: 'var(--studio-surface)',
+                            borderColor: "var(--studio-border)",
+                            backgroundColor: "var(--studio-surface)",
                           }}
                         >
                           <Undo className="w-4 h-4 mr-1" />
                           Undo
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Undo last preset application</TooltipContent>
+                      <TooltipContent>
+                        Undo last preset application
+                      </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 )}
@@ -1011,7 +1118,7 @@ export function TrackPresetManager({
                         onClick={handleExport}
                         variant="ghost"
                         size="icon"
-                        style={{ color: 'var(--studio-text)' }}
+                        style={{ color: "var(--studio-text)" }}
                       >
                         <Download className="w-4 h-4" />
                       </Button>
@@ -1026,7 +1133,7 @@ export function TrackPresetManager({
                         onClick={() => fileInputRef.current?.click()}
                         variant="ghost"
                         size="icon"
-                        style={{ color: 'var(--studio-text)' }}
+                        style={{ color: "var(--studio-text)" }}
                       >
                         <Upload className="w-4 h-4" />
                       </Button>
@@ -1057,11 +1164,14 @@ export function TrackPresetManager({
 
           <div className="flex-1 flex overflow-hidden">
             <div className="flex flex-col flex-1 min-w-0">
-              <div className="px-6 py-3 border-b" style={{ borderColor: 'var(--studio-border-subtle)' }}>
+              <div
+                className="px-6 py-3 border-b"
+                style={{ borderColor: "var(--studio-border-subtle)" }}
+              >
                 <div className="relative">
                   <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                    style={{ color: 'var(--studio-text-subtle)' }}
+                    style={{ color: "var(--studio-text-subtle)" }}
                   />
                   <Input
                     placeholder="Search presets..."
@@ -1069,16 +1179,16 @@ export function TrackPresetManager({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
                     style={{
-                      backgroundColor: 'var(--studio-bg-medium)',
-                      borderColor: 'var(--studio-border)',
-                      color: 'var(--studio-text)',
+                      backgroundColor: "var(--studio-bg-medium)",
+                      borderColor: "var(--studio-border)",
+                      color: "var(--studio-text)",
                     }}
                   />
                   {searchQuery && (
                     <button
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => setSearchQuery("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2"
-                      style={{ color: 'var(--studio-text-subtle)' }}
+                      style={{ color: "var(--studio-text-subtle)" }}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -1098,11 +1208,13 @@ export function TrackPresetManager({
                     {filteredPresets.length === 0 ? (
                       <div
                         className="col-span-2 flex flex-col items-center justify-center py-12 text-center"
-                        style={{ color: 'var(--studio-text-muted)' }}
+                        style={{ color: "var(--studio-text-muted)" }}
                       >
                         <Layers className="w-12 h-12 mb-4 opacity-50" />
                         <p className="font-medium">No presets found</p>
-                        <p className="text-sm mt-1">Try adjusting your search or category filter.</p>
+                        <p className="text-sm mt-1">
+                          Try adjusting your search or category filter.
+                        </p>
                       </div>
                     ) : (
                       filteredPresets.map((preset) => (
@@ -1123,12 +1235,16 @@ export function TrackPresetManager({
             {selectedPreset && (
               <div
                 className="w-80 flex-shrink-0 border-l"
-                style={{ borderColor: 'var(--studio-border)' }}
+                style={{ borderColor: "var(--studio-border)" }}
               >
                 <PresetDetailsPanel
                   preset={selectedPreset}
                   onApply={handleApplyPreset}
-                  onApplyToMultiple={selectedTracks.length > 1 ? handleApplyToMultiple : undefined}
+                  onApplyToMultiple={
+                    selectedTracks.length > 1
+                      ? handleApplyToMultiple
+                      : undefined
+                  }
                   onEdit={() => {
                     setEditingPreset(selectedPreset);
                     setShowSaveDialog(true);
@@ -1154,7 +1270,7 @@ export function TrackPresetManager({
       <DeleteConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        presetName={selectedPreset?.name || ''}
+        presetName={selectedPreset?.name || ""}
         onConfirm={handleDeletePreset}
       />
     </>

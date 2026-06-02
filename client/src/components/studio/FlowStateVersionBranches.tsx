@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   GitBranch,
   GitMerge,
@@ -16,14 +16,14 @@ import {
   RotateCcw,
   ArrowRight,
   Tag,
-  Edit2
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+  Edit2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -32,9 +32,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Commit {
   id: string;
@@ -67,98 +67,154 @@ interface FlowStateVersionBranchesProps {
 }
 
 const BRANCH_COLORS = [
-  'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500',
-  'bg-pink-500', 'bg-cyan-500', 'bg-amber-500', 'bg-indigo-500'
+  "bg-green-500",
+  "bg-blue-500",
+  "bg-purple-500",
+  "bg-orange-500",
+  "bg-pink-500",
+  "bg-cyan-500",
+  "bg-amber-500",
+  "bg-indigo-500",
 ];
 
 export function FlowStateVersionBranches({
-  projectName = 'My Project',
+  projectName = "My Project",
   onSwitchBranch,
   onMergeBranch,
-  className
+  className,
 }: FlowStateVersionBranchesProps) {
   const { toast } = useToast();
   const [branches, setBranches] = useState<Branch[]>([
     {
-      id: 'main',
-      name: 'main',
-      description: 'Main production mix',
+      id: "main",
+      name: "main",
+      description: "Main production mix",
       isMain: true,
       isActive: true,
       isFavorite: true,
       createdAt: new Date(Date.now() - 86400000 * 7),
       lastModified: new Date(),
       color: BRANCH_COLORS[0],
-      tags: ['release', 'v1.0'],
+      tags: ["release", "v1.0"],
       commits: [
-        { id: 'c1', message: 'Final master adjustments', timestamp: new Date(Date.now() - 3600000), changes: ['Master EQ', 'Limiter'], author: 'You' },
-        { id: 'c2', message: 'Vocal automation tweaks', timestamp: new Date(Date.now() - 7200000), changes: ['Lead Vocals', 'Backing Vocals'], author: 'You' },
-        { id: 'c3', message: 'Initial mix complete', timestamp: new Date(Date.now() - 86400000), changes: ['All tracks'], author: 'You' },
-      ]
+        {
+          id: "c1",
+          message: "Final master adjustments",
+          timestamp: new Date(Date.now() - 3600000),
+          changes: ["Master EQ", "Limiter"],
+          author: "You",
+        },
+        {
+          id: "c2",
+          message: "Vocal automation tweaks",
+          timestamp: new Date(Date.now() - 7200000),
+          changes: ["Lead Vocals", "Backing Vocals"],
+          author: "You",
+        },
+        {
+          id: "c3",
+          message: "Initial mix complete",
+          timestamp: new Date(Date.now() - 86400000),
+          changes: ["All tracks"],
+          author: "You",
+        },
+      ],
     },
     {
-      id: 'experimental',
-      name: 'experimental-synths',
-      description: 'Trying new synth patches and arrangements',
+      id: "experimental",
+      name: "experimental-synths",
+      description: "Trying new synth patches and arrangements",
       isMain: false,
       isActive: false,
       isFavorite: false,
       createdAt: new Date(Date.now() - 86400000 * 2),
       lastModified: new Date(Date.now() - 3600000),
-      parentBranchId: 'main',
+      parentBranchId: "main",
       color: BRANCH_COLORS[1],
       tags: [],
       commits: [
-        { id: 'c4', message: 'Added new synth lead', timestamp: new Date(Date.now() - 3600000), changes: ['Synth Lead', 'FX Bus'], author: 'You' },
-        { id: 'c5', message: 'Branched from main', timestamp: new Date(Date.now() - 86400000 * 2), changes: [], author: 'System' },
-      ]
+        {
+          id: "c4",
+          message: "Added new synth lead",
+          timestamp: new Date(Date.now() - 3600000),
+          changes: ["Synth Lead", "FX Bus"],
+          author: "You",
+        },
+        {
+          id: "c5",
+          message: "Branched from main",
+          timestamp: new Date(Date.now() - 86400000 * 2),
+          changes: [],
+          author: "System",
+        },
+      ],
     },
     {
-      id: 'acoustic',
-      name: 'acoustic-version',
-      description: 'Stripped down acoustic arrangement',
+      id: "acoustic",
+      name: "acoustic-version",
+      description: "Stripped down acoustic arrangement",
       isMain: false,
       isActive: false,
       isFavorite: true,
       createdAt: new Date(Date.now() - 86400000 * 5),
       lastModified: new Date(Date.now() - 86400000),
-      parentBranchId: 'main',
+      parentBranchId: "main",
       color: BRANCH_COLORS[3],
-      tags: ['alternate'],
+      tags: ["alternate"],
       commits: [
-        { id: 'c6', message: 'Removed electronic elements', timestamp: new Date(Date.now() - 86400000), changes: ['Drums', 'Bass', 'Synths'], author: 'You' },
-        { id: 'c7', message: 'Added acoustic guitar', timestamp: new Date(Date.now() - 86400000 * 2), changes: ['Acoustic Guitar'], author: 'You' },
-        { id: 'c8', message: 'Branched from main', timestamp: new Date(Date.now() - 86400000 * 5), changes: [], author: 'System' },
-      ]
-    }
+        {
+          id: "c6",
+          message: "Removed electronic elements",
+          timestamp: new Date(Date.now() - 86400000),
+          changes: ["Drums", "Bass", "Synths"],
+          author: "You",
+        },
+        {
+          id: "c7",
+          message: "Added acoustic guitar",
+          timestamp: new Date(Date.now() - 86400000 * 2),
+          changes: ["Acoustic Guitar"],
+          author: "You",
+        },
+        {
+          id: "c8",
+          message: "Branched from main",
+          timestamp: new Date(Date.now() - 86400000 * 5),
+          changes: [],
+          author: "System",
+        },
+      ],
+    },
   ]);
 
-  const [selectedBranch, setSelectedBranch] = useState<string>('main');
-  const [expandedBranches, setExpandedBranches] = useState<string[]>(['main']);
+  const [selectedBranch, setSelectedBranch] = useState<string>("main");
+  const [expandedBranches, setExpandedBranches] = useState<string[]>(["main"]);
   const [isCreatingBranch, setIsCreatingBranch] = useState(false);
-  const [newBranchName, setNewBranchName] = useState('');
-  const [newBranchDescription, setNewBranchDescription] = useState('');
+  const [newBranchName, setNewBranchName] = useState("");
+  const [newBranchDescription, setNewBranchDescription] = useState("");
   const [showMergeDialog, setShowMergeDialog] = useState(false);
   const [mergeSource, setMergeSource] = useState<string | null>(null);
 
-  const activeBranch = branches.find(b => b.isActive);
-  const selectedBranchData = branches.find(b => b.id === selectedBranch);
+  const activeBranch = branches.find((b) => b.isActive);
+  const selectedBranchData = branches.find((b) => b.id === selectedBranch);
 
   const toggleExpand = (branchId: string) => {
-    setExpandedBranches(prev =>
+    setExpandedBranches((prev) =>
       prev.includes(branchId)
-        ? prev.filter(id => id !== branchId)
-        : [...prev, branchId]
+        ? prev.filter((id) => id !== branchId)
+        : [...prev, branchId],
     );
   };
 
   const switchBranch = (branchId: string) => {
-    setBranches(prev => prev.map(b => ({
-      ...b,
-      isActive: b.id === branchId
-    })));
+    setBranches((prev) =>
+      prev.map((b) => ({
+        ...b,
+        isActive: b.id === branchId,
+      })),
+    );
     onSwitchBranch?.(branchId);
-    const branch = branches.find(b => b.id === branchId);
+    const branch = branches.find((b) => b.id === branchId);
     toast({ title: `Switched to branch: ${branch?.name}` });
   };
 
@@ -167,7 +223,7 @@ export function FlowStateVersionBranches({
 
     const newBranch: Branch = {
       id: `branch-${Date.now()}`,
-      name: newBranchName.toLowerCase().replace(/\s+/g, '-'),
+      name: newBranchName.toLowerCase().replace(/\s+/g, "-"),
       description: newBranchDescription,
       isMain: false,
       isActive: false,
@@ -183,40 +239,42 @@ export function FlowStateVersionBranches({
           message: `Branched from ${activeBranch?.name}`,
           timestamp: new Date(),
           changes: [],
-          author: 'System'
-        }
-      ]
+          author: "System",
+        },
+      ],
     };
 
-    setBranches(prev => [...prev, newBranch]);
-    setNewBranchName('');
-    setNewBranchDescription('');
+    setBranches((prev) => [...prev, newBranch]);
+    setNewBranchName("");
+    setNewBranchDescription("");
     setIsCreatingBranch(false);
-    toast({ title: 'Branch created', description: newBranch.name });
+    toast({ title: "Branch created", description: newBranch.name });
   };
 
   const deleteBranch = (branchId: string) => {
-    const branch = branches.find(b => b.id === branchId);
+    const branch = branches.find((b) => b.id === branchId);
     if (branch?.isMain) {
-      toast({ title: 'Cannot delete main branch', variant: 'destructive' });
+      toast({ title: "Cannot delete main branch", variant: "destructive" });
       return;
     }
     if (branch?.isActive) {
-      switchBranch('main');
+      switchBranch("main");
     }
-    setBranches(prev => prev.filter(b => b.id !== branchId));
+    setBranches((prev) => prev.filter((b) => b.id !== branchId));
     toast({ title: `Branch "${branch?.name}" deleted` });
   };
 
   const toggleFavorite = (branchId: string) => {
-    setBranches(prev => prev.map(b =>
-      b.id === branchId ? { ...b, isFavorite: !b.isFavorite } : b
-    ));
+    setBranches((prev) =>
+      prev.map((b) =>
+        b.id === branchId ? { ...b, isFavorite: !b.isFavorite } : b,
+      ),
+    );
   };
 
   const mergeBranch = (sourceId: string, targetId: string) => {
-    const source = branches.find(b => b.id === sourceId);
-    const target = branches.find(b => b.id === targetId);
+    const source = branches.find((b) => b.id === sourceId);
+    const target = branches.find((b) => b.id === targetId);
 
     if (!source || !target) return;
 
@@ -224,31 +282,42 @@ export function FlowStateVersionBranches({
       id: `c${Date.now()}`,
       message: `Merged ${source.name} into ${target.name}`,
       timestamp: new Date(),
-      changes: source.commits.flatMap(c => c.changes),
-      author: 'You'
+      changes: source.commits.flatMap((c) => c.changes),
+      author: "You",
     };
 
-    setBranches(prev => prev.map(b =>
-      b.id === targetId
-        ? { ...b, commits: [mergeCommit, ...b.commits], lastModified: new Date() }
-        : b
-    ));
+    setBranches((prev) =>
+      prev.map((b) =>
+        b.id === targetId
+          ? {
+              ...b,
+              commits: [mergeCommit, ...b.commits],
+              lastModified: new Date(),
+            }
+          : b,
+      ),
+    );
 
     onMergeBranch?.(sourceId, targetId);
     setShowMergeDialog(false);
     setMergeSource(null);
-    toast({ title: 'Branch merged successfully', description: `${source.name} → ${target.name}` });
+    toast({
+      title: "Branch merged successfully",
+      description: `${source.name} → ${target.name}`,
+    });
   };
 
   const addTag = (branchId: string, tag: string) => {
-    setBranches(prev => prev.map(b =>
-      b.id === branchId ? { ...b, tags: [...b.tags, tag] } : b
-    ));
+    setBranches((prev) =>
+      prev.map((b) =>
+        b.id === branchId ? { ...b, tags: [...b.tags, tag] } : b,
+      ),
+    );
   };
 
   const formatTimeAgo = (date: Date): string => {
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-    if (seconds < 60) return 'just now';
+    if (seconds < 60) return "just now";
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
@@ -258,7 +327,9 @@ export function FlowStateVersionBranches({
   };
 
   return (
-    <div className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}>
+    <div
+      className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <div className="flex items-center gap-3">
@@ -285,7 +356,7 @@ export function FlowStateVersionBranches({
         {/* Branch List */}
         <div className="w-80 border-r border-zinc-800 overflow-auto p-4">
           <div className="space-y-2">
-            {branches.map(branch => (
+            {branches.map((branch) => (
               <motion.div
                 key={branch.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -295,20 +366,26 @@ export function FlowStateVersionBranches({
                   className={cn(
                     "bg-zinc-900 border-zinc-800 transition-all cursor-pointer",
                     selectedBranch === branch.id && "border-emerald-500/50",
-                    branch.isActive && "bg-emerald-500/5"
+                    branch.isActive && "bg-emerald-500/5",
                   )}
                   onClick={() => setSelectedBranch(branch.id)}
                 >
                   <div className="p-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
-                        <div className={cn("w-3 h-3 rounded-full", branch.color)} />
+                        <div
+                          className={cn("w-3 h-3 rounded-full", branch.color)}
+                        />
                         <span className="font-medium">{branch.name}</span>
                         {branch.isMain && (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">main</Badge>
+                          <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">
+                            main
+                          </Badge>
                         )}
                         {branch.isActive && (
-                          <Badge className="bg-blue-500/20 text-blue-400 text-xs">active</Badge>
+                          <Badge className="bg-blue-500/20 text-blue-400 text-xs">
+                            active
+                          </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-1">
@@ -350,8 +427,12 @@ export function FlowStateVersionBranches({
 
                     {branch.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {branch.tags.map(tag => (
-                          <Badge key={tag} variant="secondary" className="text-xs">
+                        {branch.tags.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className="text-xs"
+                          >
                             <Tag className="w-2 h-2 mr-1" />
                             {tag}
                           </Badge>
@@ -364,21 +445,27 @@ export function FlowStateVersionBranches({
                       {expandedBranches.includes(branch.id) && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
+                          animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           className="mt-3 pt-3 border-t border-zinc-800"
                         >
                           <div className="space-y-2">
                             {branch.commits.slice(0, 3).map((commit, idx) => (
-                              <div key={commit.id} className="flex items-start gap-2">
+                              <div
+                                key={commit.id}
+                                className="flex items-start gap-2"
+                              >
                                 <div className="flex flex-col items-center">
                                   <GitCommit className="w-3 h-3 text-zinc-500" />
-                                  {idx < branch.commits.slice(0, 3).length - 1 && (
+                                  {idx <
+                                    branch.commits.slice(0, 3).length - 1 && (
                                     <div className="w-px h-4 bg-zinc-700" />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs truncate">{commit.message}</p>
+                                  <p className="text-xs truncate">
+                                    {commit.message}
+                                  </p>
                                   <p className="text-[10px] text-zinc-500">
                                     {formatTimeAgo(commit.timestamp)}
                                   </p>
@@ -409,10 +496,19 @@ export function FlowStateVersionBranches({
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-3">
-                    <div className={cn("w-4 h-4 rounded-full", selectedBranchData.color)} />
-                    <h3 className="text-xl font-semibold">{selectedBranchData.name}</h3>
+                    <div
+                      className={cn(
+                        "w-4 h-4 rounded-full",
+                        selectedBranchData.color,
+                      )}
+                    />
+                    <h3 className="text-xl font-semibold">
+                      {selectedBranchData.name}
+                    </h3>
                   </div>
-                  <p className="text-sm text-zinc-400 mt-1">{selectedBranchData.description}</p>
+                  <p className="text-sm text-zinc-400 mt-1">
+                    {selectedBranchData.description}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   {!selectedBranchData.isActive && (
@@ -462,15 +558,21 @@ export function FlowStateVersionBranches({
               <div className="grid grid-cols-3 gap-4">
                 <Card className="bg-zinc-900 border-zinc-800 p-4">
                   <span className="text-xs text-zinc-500">Created</span>
-                  <p className="font-mono">{selectedBranchData.createdAt.toLocaleDateString()}</p>
+                  <p className="font-mono">
+                    {selectedBranchData.createdAt.toLocaleDateString()}
+                  </p>
                 </Card>
                 <Card className="bg-zinc-900 border-zinc-800 p-4">
                   <span className="text-xs text-zinc-500">Last Modified</span>
-                  <p className="font-mono">{formatTimeAgo(selectedBranchData.lastModified)}</p>
+                  <p className="font-mono">
+                    {formatTimeAgo(selectedBranchData.lastModified)}
+                  </p>
                 </Card>
                 <Card className="bg-zinc-900 border-zinc-800 p-4">
                   <span className="text-xs text-zinc-500">Commits</span>
-                  <p className="font-mono">{selectedBranchData.commits.length}</p>
+                  <p className="font-mono">
+                    {selectedBranchData.commits.length}
+                  </p>
                 </Card>
               </div>
 
@@ -479,14 +581,27 @@ export function FlowStateVersionBranches({
                 <h4 className="font-medium mb-3">Commit History</h4>
                 <div className="space-y-3">
                   {selectedBranchData.commits.map((commit, idx) => (
-                    <Card key={commit.id} className="bg-zinc-900 border-zinc-800 p-4">
+                    <Card
+                      key={commit.id}
+                      className="bg-zinc-900 border-zinc-800 p-4"
+                    >
                       <div className="flex items-start gap-4">
                         <div className="flex flex-col items-center">
-                          <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center",
-                            selectedBranchData.color + '/20'
-                          )}>
-                            <GitCommit className="w-4 h-4" style={{ color: selectedBranchData.color.replace('bg-', '') }} />
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center",
+                              selectedBranchData.color + "/20",
+                            )}
+                          >
+                            <GitCommit
+                              className="w-4 h-4"
+                              style={{
+                                color: selectedBranchData.color.replace(
+                                  "bg-",
+                                  "",
+                                ),
+                              }}
+                            />
                           </div>
                           {idx < selectedBranchData.commits.length - 1 && (
                             <div className="w-px flex-1 bg-zinc-700 mt-2" />
@@ -502,7 +617,11 @@ export function FlowStateVersionBranches({
                           {commit.changes.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">
                               {commit.changes.map((change, i) => (
-                                <Badge key={i} variant="secondary" className="text-xs">
+                                <Badge
+                                  key={i}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
                                   {change}
                                 </Badge>
                               ))}
@@ -557,7 +676,10 @@ export function FlowStateVersionBranches({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreatingBranch(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreatingBranch(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -577,13 +699,15 @@ export function FlowStateVersionBranches({
           <DialogHeader>
             <DialogTitle>Merge Branch</DialogTitle>
             <DialogDescription>
-              Merge changes from {branches.find(b => b.id === mergeSource)?.name} into another branch
+              Merge changes from{" "}
+              {branches.find((b) => b.id === mergeSource)?.name} into another
+              branch
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="flex items-center gap-4 justify-center">
               <Badge className="text-lg px-4 py-2">
-                {branches.find(b => b.id === mergeSource)?.name}
+                {branches.find((b) => b.id === mergeSource)?.name}
               </Badge>
               <ArrowRight className="w-6 h-6 text-zinc-500" />
               <Badge variant="outline" className="text-lg px-4 py-2">
@@ -591,7 +715,9 @@ export function FlowStateVersionBranches({
               </Badge>
             </div>
             <p className="text-sm text-zinc-400 text-center">
-              This will apply {branches.find(b => b.id === mergeSource)?.commits.length} commits to main
+              This will apply{" "}
+              {branches.find((b) => b.id === mergeSource)?.commits.length}{" "}
+              commits to main
             </p>
           </div>
           <DialogFooter>
@@ -600,7 +726,7 @@ export function FlowStateVersionBranches({
             </Button>
             <Button
               className="bg-emerald-500 hover:bg-emerald-600"
-              onClick={() => mergeSource && mergeBranch(mergeSource, 'main')}
+              onClick={() => mergeSource && mergeBranch(mergeSource, "main")}
             >
               <GitMerge className="w-4 h-4 mr-1" />
               Merge to Main

@@ -1,43 +1,59 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Slider } from '@/components/ui/slider';
+} from "@/components/ui/accordion";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { VolumeX, Headphones, Music, Mic, Settings2, Maximize2, CircleDot, Radio, ArrowRight, Snowflake } from 'lucide-react';
-import { useStudioStore } from '@/lib/studioStore';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import AudioEngine from '@/lib/audioEngine';
-import { useToast } from '@/hooks/use-toast';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ProfessionalFader } from './ProfessionalFader';
-import { Knob } from './Knob';
-import { VUMeter } from './VUMeter';
-import { SpectrumAnalyzer } from './SpectrumAnalyzer';
-import { logger } from '@/lib/logger';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  VolumeX,
+  Headphones,
+  Music,
+  Mic,
+  Settings2,
+  Maximize2,
+  CircleDot,
+  Radio,
+  ArrowRight,
+  Snowflake,
+} from "lucide-react";
+import { useStudioStore } from "@/lib/studioStore";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import AudioEngine from "@/lib/audioEngine";
+import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { ProfessionalFader } from "./ProfessionalFader";
+import { Knob } from "./Knob";
+import { VUMeter } from "./VUMeter";
+import { SpectrumAnalyzer } from "./SpectrumAnalyzer";
+import { logger } from "@/lib/logger";
 
 const audioEngine = AudioEngine.getInstance();
 
 interface StudioTrack {
   id: string;
   name: string;
-  trackType: 'audio' | 'midi' | 'instrument';
+  trackType: "audio" | "midi" | "instrument";
   volume: number;
   pan: number;
   mute: boolean;
@@ -121,7 +137,7 @@ const defaultEffects: TrackEffects = {
   },
   reverb: {
     mix: 0.2,
-    irId: 'default',
+    irId: "default",
     bypass: false,
   },
 };
@@ -143,20 +159,28 @@ export function MixerPanel({
   const { toast } = useToast();
   const { frozenTracks, isTrackFrozen } = useStudioStore();
   const [masterVolume, setMasterVolume] = useState(0.8);
-  const [trackEffects, setTrackEffects] = useState<Record<string, TrackEffects>>(() =>
+  const [trackEffects, setTrackEffects] = useState<
+    Record<string, TrackEffects>
+  >(() =>
     tracks.reduce(
       (acc, track) => ({
         ...acc,
         [track.id]: track.effects
           ? {
               eq: { ...defaultEffects.eq, ...(track.effects.eq || {}) },
-              compressor: { ...defaultEffects.compressor, ...(track.effects.compressor || {}) },
-              reverb: { ...defaultEffects.reverb, ...(track.effects.reverb || {}) },
+              compressor: {
+                ...defaultEffects.compressor,
+                ...(track.effects.compressor || {}),
+              },
+              reverb: {
+                ...defaultEffects.reverb,
+                ...(track.effects.reverb || {}),
+              },
             }
           : { ...defaultEffects },
       }),
-      {}
-    )
+      {},
+    ),
   );
 
   // Resync trackEffects when tracks prop updates (handles async TanStack Query data)
@@ -168,8 +192,14 @@ export function MixerPanel({
         updated[track.id] = track.effects
           ? {
               eq: { ...defaultEffects.eq, ...(track.effects.eq || {}) },
-              compressor: { ...defaultEffects.compressor, ...(track.effects.compressor || {}) },
-              reverb: { ...defaultEffects.reverb, ...(track.effects.reverb || {}) },
+              compressor: {
+                ...defaultEffects.compressor,
+                ...(track.effects.compressor || {}),
+              },
+              reverb: {
+                ...defaultEffects.reverb,
+                ...(track.effects.reverb || {}),
+              },
             }
           : prev[track.id] || { ...defaultEffects };
       });
@@ -186,26 +216,36 @@ export function MixerPanel({
       effects: Partial<TrackEffects>;
     }) => {
       if (!projectId) {
-        throw new Error('Project ID is required');
+        throw new Error("Project ID is required");
       }
-      await apiRequest('PATCH', `/api/projects/${projectId}/tracks/${trackId}/effects`, effects);
+      await apiRequest(
+        "PATCH",
+        `/api/projects/${projectId}/tracks/${trackId}/effects`,
+        effects,
+      );
     },
     onSuccess: () => {
       // Invalidate tracks query to refetch and keep cache in sync
       if (projectId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/studio/projects", projectId, "tracks"],
+        });
       }
     },
     onError: (error) => {
       toast({
-        title: 'Error',
+        title: "Error",
         description: `Failed to save effects: ${error.message}`,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
 
-  const updateEQ = (trackId: string, field: keyof TrackEffects['eq'], value: number | boolean) => {
+  const updateEQ = (
+    trackId: string,
+    field: keyof TrackEffects["eq"],
+    value: number | boolean,
+  ) => {
     setTrackEffects((prev) => {
       const updated = {
         ...prev,
@@ -238,8 +278,8 @@ export function MixerPanel({
 
   const updateCompressor = (
     trackId: string,
-    field: keyof TrackEffects['compressor'],
-    value: number | boolean
+    field: keyof TrackEffects["compressor"],
+    value: number | boolean,
   ) => {
     setTrackEffects((prev) => {
       const updated = {
@@ -274,8 +314,8 @@ export function MixerPanel({
 
   const updateReverb = (
     trackId: string,
-    field: keyof TrackEffects['reverb'],
-    value: number | string | boolean
+    field: keyof TrackEffects["reverb"],
+    value: number | string | boolean,
   ) => {
     setTrackEffects((prev) => {
       const updated = {
@@ -308,10 +348,12 @@ export function MixerPanel({
   };
 
   // Simulated level meters (in production, these would come from audio analysis)
-  const [trackLevels, setTrackLevels] = useState<Record<string, { level: number; peak: number }>>(
-    {}
+  const [trackLevels, setTrackLevels] = useState<
+    Record<string, { level: number; peak: number }>
+  >({});
+  const [masterAnalyser, setMasterAnalyser] = useState<AnalyserNode | null>(
+    null,
   );
-  const [masterAnalyser, setMasterAnalyser] = useState<AnalyserNode | null>(null);
 
   // Initialize master analyser
   useEffect(() => {
@@ -321,7 +363,7 @@ export function MixerPanel({
         const analyser = audioEngine.getMasterAnalyser();
         setMasterAnalyser(analyser);
       } catch (error: unknown) {
-        logger.error('Failed to initialize audio analyser:', error);
+        logger.error("Failed to initialize audio analyser:", error);
       }
     };
     initAnalyser();
@@ -334,7 +376,9 @@ export function MixerPanel({
         const updated: typeof prev = {};
         tracks.forEach((track) => {
           const baseLevel = track.mute ? -60 : -20 + (Math.random() * 15 - 7.5);
-          const peak = track.mute ? -60 : Math.max(baseLevel, prev[track.id]?.peak ?? -60) - 0.5;
+          const peak = track.mute
+            ? -60
+            : Math.max(baseLevel, prev[track.id]?.peak ?? -60) - 0.5;
           updated[track.id] = {
             level: baseLevel,
             peak: peak > baseLevel ? peak : baseLevel,
@@ -370,37 +414,52 @@ export function MixerPanel({
               >
                 <Card
                   className={`w-44 sm:w-56 md:w-72 border-gray-700 overflow-hidden group shrink-0 ${
-                    isFrozen ? 'frozen-channel' : ''
+                    isFrozen ? "frozen-channel" : ""
                   }`}
                   style={{
-                    background: isFrozen 
-                      ? 'linear-gradient(180deg, rgba(6, 182, 212, 0.15), rgba(30, 58, 138, 0.2))'
-                      : 'var(--studio-panel)',
-                    borderColor: isFrozen ? 'rgba(6, 182, 212, 0.4)' : 'var(--studio-border)',
-                    boxShadow: isFrozen ? '0 0 15px rgba(6, 182, 212, 0.2)' : undefined,
+                    background: isFrozen
+                      ? "linear-gradient(180deg, rgba(6, 182, 212, 0.15), rgba(30, 58, 138, 0.2))"
+                      : "var(--studio-panel)",
+                    borderColor: isFrozen
+                      ? "rgba(6, 182, 212, 0.4)"
+                      : "var(--studio-border)",
+                    boxShadow: isFrozen
+                      ? "0 0 15px rgba(6, 182, 212, 0.2)"
+                      : undefined,
                   }}
                 >
                   {/* Track Color Strip */}
-                  <div className="h-1 w-full" style={{ background: isFrozen ? '#06b6d4' : track.color }} />
+                  <div
+                    className="h-1 w-full"
+                    style={{ background: isFrozen ? "#06b6d4" : track.color }}
+                  />
 
                   <CardContent className="p-2 sm:p-4 flex flex-col gap-2 sm:gap-4">
                     {/* Track Header */}
                     <motion.div
                       className="flex items-center justify-between"
                       whileHover={{ scale: 1.02 }}
-                      transition={{ type: 'spring', stiffness: 400 }}
+                      transition={{ type: "spring", stiffness: 400 }}
                     >
                       <div className="flex items-center gap-2">
                         {isFrozen ? (
                           <Snowflake className="w-3 h-3 text-cyan-400" />
-                        ) : track.trackType === 'audio' ? (
-                          <Music className="w-3 h-3" style={{ color: track.color }} />
-                        ) : track.trackType === 'instrument' ? (
-                          <Mic className="w-3 h-3" style={{ color: track.color }} />
+                        ) : track.trackType === "audio" ? (
+                          <Music
+                            className="w-3 h-3"
+                            style={{ color: track.color }}
+                          />
+                        ) : track.trackType === "instrument" ? (
+                          <Mic
+                            className="w-3 h-3"
+                            style={{ color: track.color }}
+                          />
                         ) : null}
                         <div
                           className="text-sm font-medium truncate"
-                          style={{ color: isFrozen ? '#06b6d4' : 'var(--studio-text)' }}
+                          style={{
+                            color: isFrozen ? "#06b6d4" : "var(--studio-text)",
+                          }}
                           data-testid={`text-track-name-${track.id}`}
                         >
                           {track.name}
@@ -415,7 +474,9 @@ export function MixerPanel({
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Track is frozen - CPU optimized</p>
-                                <p className="text-xs text-gray-400">Unfreeze to edit plugins</p>
+                                <p className="text-xs text-gray-400">
+                                  Unfreeze to edit plugins
+                                </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -423,11 +484,11 @@ export function MixerPanel({
                       </div>
                       <Settings2
                         className={`w-3 h-3 transition-opacity cursor-pointer ${
-                          isFrozen 
-                            ? 'opacity-30 cursor-not-allowed' 
-                            : 'opacity-0 group-hover:opacity-100'
+                          isFrozen
+                            ? "opacity-30 cursor-not-allowed"
+                            : "opacity-0 group-hover:opacity-100"
                         }`}
-                        style={{ color: 'var(--studio-text-muted)' }}
+                        style={{ color: "var(--studio-text-muted)" }}
                       />
                     </motion.div>
 
@@ -471,18 +532,27 @@ export function MixerPanel({
                         color={track.color}
                         data-testid={`slider-pan-${track.id}`}
                       />
-                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <Button
                           size="sm"
-                          variant={track.phaseInvert ? 'default' : 'ghost'}
+                          variant={track.phaseInvert ? "default" : "ghost"}
                           className="h-7 w-7 px-0 transition-all touch-manipulation font-bold text-xs"
                           onClick={() => onPhaseInvert?.(track.id)}
                           data-testid={`button-mixer-phase-${track.id}`}
                           title="Phase Invert"
                           style={{
-                            background: track.phaseInvert ? '#eab308' : 'transparent',
-                            borderColor: track.phaseInvert ? '#eab308' : 'var(--studio-border)',
-                            color: track.phaseInvert ? '#000' : 'var(--studio-text)',
+                            background: track.phaseInvert
+                              ? "#eab308"
+                              : "transparent",
+                            borderColor: track.phaseInvert
+                              ? "#eab308"
+                              : "var(--studio-border)",
+                            color: track.phaseInvert
+                              ? "#000"
+                              : "var(--studio-text)",
                           }}
                         >
                           Ø
@@ -492,66 +562,94 @@ export function MixerPanel({
 
                     {/* Mute/Solo Buttons with Animation */}
                     <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
-                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <Button
                           size="sm"
-                          variant={track.mute ? 'destructive' : 'ghost'}
+                          variant={track.mute ? "destructive" : "ghost"}
                           className="h-9 sm:h-8 px-2 sm:px-3 transition-all touch-manipulation"
                           onClick={() => onMuteToggle(track.id)}
                           data-testid={`button-mixer-mute-${track.id}`}
                           style={{
-                            background: track.mute ? '#ef4444' : 'transparent',
-                            borderColor: track.mute ? '#ef4444' : 'var(--studio-border)',
+                            background: track.mute ? "#ef4444" : "transparent",
+                            borderColor: track.mute
+                              ? "#ef4444"
+                              : "var(--studio-border)",
                           }}
                         >
                           <VolumeX className="h-3 w-3 sm:mr-1" />
-                          <span className="text-[10px] sm:text-xs hidden sm:inline">MUTE</span>
+                          <span className="text-[10px] sm:text-xs hidden sm:inline">
+                            MUTE
+                          </span>
                         </Button>
                       </motion.div>
-                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <Button
                           size="sm"
-                          variant={track.solo ? 'default' : 'ghost'}
+                          variant={track.solo ? "default" : "ghost"}
                           className="h-9 sm:h-8 px-2 sm:px-3 transition-all touch-manipulation"
                           onClick={() => onSoloToggle(track.id)}
                           data-testid={`button-mixer-solo-${track.id}`}
                           style={{
-                            background: track.solo ? '#fbbf24' : 'transparent',
-                            borderColor: track.solo ? '#fbbf24' : 'var(--studio-border)',
-                            color: track.solo ? '#000' : 'var(--studio-text)',
+                            background: track.solo ? "#fbbf24" : "transparent",
+                            borderColor: track.solo
+                              ? "#fbbf24"
+                              : "var(--studio-border)",
+                            color: track.solo ? "#000" : "var(--studio-text)",
                           }}
                         >
                           <Headphones className="h-3 w-3 sm:mr-1" />
-                          <span className="text-[10px] sm:text-xs hidden sm:inline">SOLO</span>
+                          <span className="text-[10px] sm:text-xs hidden sm:inline">
+                            SOLO
+                          </span>
                         </Button>
                       </motion.div>
-                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <Button
                           size="sm"
-                          variant={track.armed ? 'default' : 'ghost'}
+                          variant={track.armed ? "default" : "ghost"}
                           className="h-9 sm:h-8 w-9 sm:w-8 px-0 transition-all touch-manipulation font-bold"
                           onClick={() => onTrackArm?.(track.id)}
                           data-testid={`button-mixer-arm-${track.id}`}
                           style={{
-                            background: track.armed ? '#ef4444' : 'transparent',
-                            borderColor: track.armed ? '#ef4444' : 'var(--studio-border)',
-                            color: track.armed ? '#fff' : 'var(--studio-text)',
+                            background: track.armed ? "#ef4444" : "transparent",
+                            borderColor: track.armed
+                              ? "#ef4444"
+                              : "var(--studio-border)",
+                            color: track.armed ? "#fff" : "var(--studio-text)",
                           }}
                         >
                           <CircleDot className="h-3 w-3" />
                         </Button>
                       </motion.div>
-                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <Button
                           size="sm"
-                          variant={track.inputMonitoring ? 'default' : 'ghost'}
+                          variant={track.inputMonitoring ? "default" : "ghost"}
                           className="h-9 sm:h-8 w-9 sm:w-8 px-0 transition-all touch-manipulation"
                           onClick={() => onInputMonitoring?.(track.id)}
                           data-testid={`button-mixer-monitor-${track.id}`}
                           style={{
-                            background: track.inputMonitoring ? '#22c55e' : 'transparent',
-                            borderColor: track.inputMonitoring ? '#22c55e' : 'var(--studio-border)',
-                            color: track.inputMonitoring ? '#fff' : 'var(--studio-text)',
+                            background: track.inputMonitoring
+                              ? "#22c55e"
+                              : "transparent",
+                            borderColor: track.inputMonitoring
+                              ? "#22c55e"
+                              : "var(--studio-border)",
+                            color: track.inputMonitoring
+                              ? "#fff"
+                              : "var(--studio-text)",
                           }}
                         >
                           <Radio className="h-3 w-3" />
@@ -560,7 +658,10 @@ export function MixerPanel({
                     </div>
 
                     <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="effects" className="border-gray-700">
+                      <AccordionItem
+                        value="effects"
+                        className="border-gray-700"
+                      >
                         <AccordionTrigger className="text-xs text-gray-300 py-2 hover:text-white">
                           Effects
                         </AccordionTrigger>
@@ -568,7 +669,7 @@ export function MixerPanel({
                           {/* EQ Section with Professional Knobs */}
                           <motion.div
                             className="space-y-3 pb-3 border-b"
-                            style={{ borderColor: 'var(--studio-border)' }}
+                            style={{ borderColor: "var(--studio-border)" }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.1 }}
@@ -577,7 +678,7 @@ export function MixerPanel({
                             <div className="flex items-center justify-between">
                               <Label
                                 className="text-xs"
-                                style={{ color: 'var(--studio-text-muted)' }}
+                                style={{ color: "var(--studio-text-muted)" }}
                               >
                                 3-BAND EQ
                               </Label>
@@ -588,7 +689,7 @@ export function MixerPanel({
                                 <Label
                                   htmlFor={`eq-bypass-${track.id}`}
                                   className="text-xs"
-                                  style={{ color: 'var(--studio-text-muted)' }}
+                                  style={{ color: "var(--studio-text-muted)" }}
                                 >
                                   Bypass
                                 </Label>
@@ -596,7 +697,7 @@ export function MixerPanel({
                                   id={`eq-bypass-${track.id}`}
                                   checked={effects.eq.bypass}
                                   onCheckedChange={(checked) =>
-                                    updateEQ(track.id, 'bypass', checked)
+                                    updateEQ(track.id, "bypass", checked)
                                   }
                                   data-testid={`toggle-eq-bypass-${track.id}`}
                                 />
@@ -609,7 +710,9 @@ export function MixerPanel({
                               <div className="flex flex-col items-center">
                                 <Knob
                                   value={effects.eq.lowGain}
-                                  onChange={(value) => updateEQ(track.id, 'lowGain', value)}
+                                  onChange={(value) =>
+                                    updateEQ(track.id, "lowGain", value)
+                                  }
                                   label="LOW"
                                   size={42}
                                   min={-12}
@@ -624,7 +727,9 @@ export function MixerPanel({
                               <div className="flex flex-col items-center">
                                 <Knob
                                   value={effects.eq.midGain}
-                                  onChange={(value) => updateEQ(track.id, 'midGain', value)}
+                                  onChange={(value) =>
+                                    updateEQ(track.id, "midGain", value)
+                                  }
                                   label="MID"
                                   size={42}
                                   min={-12}
@@ -636,7 +741,9 @@ export function MixerPanel({
                                 {/* Mid Frequency Control */}
                                 <Knob
                                   value={effects.eq.midFrequency}
-                                  onChange={(value) => updateEQ(track.id, 'midFrequency', value)}
+                                  onChange={(value) =>
+                                    updateEQ(track.id, "midFrequency", value)
+                                  }
                                   label="FREQ"
                                   size={32}
                                   min={200}
@@ -651,7 +758,9 @@ export function MixerPanel({
                               <div className="flex flex-col items-center">
                                 <Knob
                                   value={effects.eq.highGain}
-                                  onChange={(value) => updateEQ(track.id, 'highGain', value)}
+                                  onChange={(value) =>
+                                    updateEQ(track.id, "highGain", value)
+                                  }
                                   label="HIGH"
                                   size={42}
                                   min={-12}
@@ -670,7 +779,9 @@ export function MixerPanel({
                             data-testid={`effect-slot-${track.id}-compressor`}
                           >
                             <div className="flex items-center justify-between">
-                              <Label className="text-xs text-gray-400">Compressor</Label>
+                              <Label className="text-xs text-gray-400">
+                                Compressor
+                              </Label>
                               <div className="flex items-center gap-2">
                                 <Label
                                   htmlFor={`comp-bypass-${track.id}`}
@@ -682,7 +793,11 @@ export function MixerPanel({
                                   id={`comp-bypass-${track.id}`}
                                   checked={effects.compressor.bypass}
                                   onCheckedChange={(checked) =>
-                                    updateCompressor(track.id, 'bypass', checked)
+                                    updateCompressor(
+                                      track.id,
+                                      "bypass",
+                                      checked,
+                                    )
                                   }
                                   data-testid={`toggle-comp-bypass-${track.id}`}
                                 />
@@ -691,7 +806,9 @@ export function MixerPanel({
 
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-xs">
-                                <Label className="text-gray-400">Threshold</Label>
+                                <Label className="text-gray-400">
+                                  Threshold
+                                </Label>
                                 <span className="text-gray-300">
                                   {effects.compressor.threshold.toFixed(1)} dB
                                 </span>
@@ -702,7 +819,7 @@ export function MixerPanel({
                                 step={1}
                                 value={[effects.compressor.threshold]}
                                 onValueChange={([value]) =>
-                                  updateCompressor(track.id, 'threshold', value)
+                                  updateCompressor(track.id, "threshold", value)
                                 }
                                 data-testid={`slider-comp-threshold-${track.id}`}
                                 className="cursor-pointer"
@@ -722,7 +839,7 @@ export function MixerPanel({
                                 step={0.5}
                                 value={[effects.compressor.ratio]}
                                 onValueChange={([value]) =>
-                                  updateCompressor(track.id, 'ratio', value)
+                                  updateCompressor(track.id, "ratio", value)
                                 }
                                 data-testid={`slider-comp-ratio-${track.id}`}
                                 className="cursor-pointer"
@@ -742,7 +859,7 @@ export function MixerPanel({
                                 step={1}
                                 value={[effects.compressor.attack]}
                                 onValueChange={([value]) =>
-                                  updateCompressor(track.id, 'attack', value)
+                                  updateCompressor(track.id, "attack", value)
                                 }
                                 data-testid={`slider-comp-attack-${track.id}`}
                                 className="cursor-pointer"
@@ -762,7 +879,7 @@ export function MixerPanel({
                                 step={10}
                                 value={[effects.compressor.release]}
                                 onValueChange={([value]) =>
-                                  updateCompressor(track.id, 'release', value)
+                                  updateCompressor(track.id, "release", value)
                                 }
                                 data-testid={`slider-comp-release-${track.id}`}
                                 className="cursor-pointer"
@@ -771,9 +888,14 @@ export function MixerPanel({
                           </div>
 
                           {/* Reverb Section */}
-                          <div className="space-y-3" data-testid={`effect-slot-${track.id}-reverb`}>
+                          <div
+                            className="space-y-3"
+                            data-testid={`effect-slot-${track.id}-reverb`}
+                          >
                             <div className="flex items-center justify-between">
-                              <Label className="text-xs text-gray-400">Reverb</Label>
+                              <Label className="text-xs text-gray-400">
+                                Reverb
+                              </Label>
                               <div className="flex items-center gap-2">
                                 <Label
                                   htmlFor={`reverb-bypass-${track.id}`}
@@ -785,7 +907,7 @@ export function MixerPanel({
                                   id={`reverb-bypass-${track.id}`}
                                   checked={effects.reverb.bypass}
                                   onCheckedChange={(checked) =>
-                                    updateReverb(track.id, 'bypass', checked)
+                                    updateReverb(track.id, "bypass", checked)
                                   }
                                   data-testid={`toggle-reverb-bypass-${track.id}`}
                                 />
@@ -804,17 +926,23 @@ export function MixerPanel({
                                 max={1}
                                 step={0.05}
                                 value={[effects.reverb.mix]}
-                                onValueChange={([value]) => updateReverb(track.id, 'mix', value)}
+                                onValueChange={([value]) =>
+                                  updateReverb(track.id, "mix", value)
+                                }
                                 data-testid={`slider-reverb-mix-${track.id}`}
                                 className="cursor-pointer"
                               />
                             </div>
 
                             <div className="space-y-2">
-                              <Label className="text-xs text-gray-400">Impulse Response</Label>
+                              <Label className="text-xs text-gray-400">
+                                Impulse Response
+                              </Label>
                               <Select
                                 value={effects.reverb.irId}
-                                onValueChange={(value) => updateReverb(track.id, 'irId', value)}
+                                onValueChange={(value) =>
+                                  updateReverb(track.id, "irId", value)
+                                }
                               >
                                 <SelectTrigger
                                   className="h-8 text-xs"
@@ -823,9 +951,15 @@ export function MixerPanel({
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="default">Default</SelectItem>
-                                  <SelectItem value="small-room">Small Room</SelectItem>
-                                  <SelectItem value="large-hall">Large Hall</SelectItem>
+                                  <SelectItem value="default">
+                                    Default
+                                  </SelectItem>
+                                  <SelectItem value="small-room">
+                                    Small Room
+                                  </SelectItem>
+                                  <SelectItem value="large-hall">
+                                    Large Hall
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -840,20 +974,22 @@ export function MixerPanel({
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
                           {[
-                            { id: 'send1', label: 'Send 1 (Reverb)' },
-                            { id: 'send2', label: 'Send 2 (Delay)' },
-                            { id: 'send3', label: 'Send 3 (Chorus)' },
-                            { id: 'send4', label: 'Send 4 (Aux)' },
+                            { id: "send1", label: "Send 1 (Reverb)" },
+                            { id: "send2", label: "Send 2 (Delay)" },
+                            { id: "send3", label: "Send 3 (Chorus)" },
+                            { id: "send4", label: "Send 4 (Aux)" },
                           ].map((send) => {
-                            const trackSend = track.sends?.find(s => s.id === send.id);
+                            const trackSend = track.sends?.find(
+                              (s) => s.id === send.id,
+                            );
                             const sendLevel = trackSend?.level ?? 0;
                             const preFader = trackSend?.preFader ?? false;
-                            
+
                             return (
                               <div
                                 key={send.id}
                                 className="flex items-center gap-2 pb-2 border-b"
-                                style={{ borderColor: 'var(--studio-border)' }}
+                                style={{ borderColor: "var(--studio-border)" }}
                                 data-testid={`send-slot-${track.id}-${send.id}`}
                               >
                                 <div className="flex-1">
@@ -863,7 +999,9 @@ export function MixerPanel({
                                   <div className="flex items-center gap-2">
                                     <Knob
                                       value={sendLevel}
-                                      onChange={(value) => onSendChange?.(track.id, send.id, value)}
+                                      onChange={(value) =>
+                                        onSendChange?.(track.id, send.id, value)
+                                      }
                                       size={32}
                                       min={0}
                                       max={100}
@@ -871,7 +1009,9 @@ export function MixerPanel({
                                       color="#8b5cf6"
                                     />
                                     <div className="flex items-center gap-1">
-                                      <Label className="text-[9px] text-gray-500">PRE</Label>
+                                      <Label className="text-[9px] text-gray-500">
+                                        PRE
+                                      </Label>
                                       <Switch
                                         checked={preFader}
                                         onCheckedChange={() => {}}
@@ -892,12 +1032,17 @@ export function MixerPanel({
                     </Accordion>
 
                     {/* Bus Assignment */}
-                    <div className="mt-2 pt-2 border-t" style={{ borderColor: 'var(--studio-border)' }}>
+                    <div
+                      className="mt-2 pt-2 border-t"
+                      style={{ borderColor: "var(--studio-border)" }}
+                    >
                       <div className="flex items-center gap-2">
                         <ArrowRight className="w-3 h-3 text-gray-500" />
                         <Select
-                          value={track.busAssignment || 'main'}
-                          onValueChange={(value) => onBusAssign?.(track.id, value)}
+                          value={track.busAssignment || "main"}
+                          onValueChange={(value) =>
+                            onBusAssign?.(track.id, value)
+                          }
                         >
                           <SelectTrigger
                             className="h-7 text-[10px] flex-1"
@@ -932,15 +1077,18 @@ export function MixerPanel({
             <Card
               className="w-80 border-2 overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, var(--studio-panel) 0%, #2a2a2f 100%)',
-                borderColor: '#fbbf24',
-                boxShadow: '0 0 20px rgba(251, 191, 36, 0.2)',
+                background:
+                  "linear-gradient(135deg, var(--studio-panel) 0%, #2a2a2f 100%)",
+                borderColor: "#fbbf24",
+                boxShadow: "0 0 20px rgba(251, 191, 36, 0.2)",
               }}
             >
               {/* Master Header */}
               <div
                 className="h-2 w-full"
-                style={{ background: 'linear-gradient(90deg, #fbbf24, #f59e0b)' }}
+                style={{
+                  background: "linear-gradient(90deg, #fbbf24, #f59e0b)",
+                }}
               />
 
               <CardContent className="p-4 flex flex-col gap-4">
@@ -948,21 +1096,21 @@ export function MixerPanel({
                   className="flex items-center justify-center gap-2"
                   whileHover={{ scale: 1.02 }}
                 >
-                  <Maximize2 className="w-4 h-4" style={{ color: '#fbbf24' }} />
+                  <Maximize2 className="w-4 h-4" style={{ color: "#fbbf24" }} />
                   <div
                     className="text-lg font-bold tracking-wider"
-                    style={{ color: '#fbbf24' }}
+                    style={{ color: "#fbbf24" }}
                     data-testid="text-master-channel"
                   >
                     MASTER BUS
                   </div>
-                  <Maximize2 className="w-4 h-4" style={{ color: '#fbbf24' }} />
+                  <Maximize2 className="w-4 h-4" style={{ color: "#fbbf24" }} />
                 </motion.div>
 
                 {/* Master Spectrum Analyzer */}
                 <div
                   className="rounded overflow-hidden border"
-                  style={{ borderColor: 'var(--studio-border)' }}
+                  style={{ borderColor: "var(--studio-border)" }}
                 >
                   <SpectrumAnalyzer
                     analyserNode={masterAnalyser}

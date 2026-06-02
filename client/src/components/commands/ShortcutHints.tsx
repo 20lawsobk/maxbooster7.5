@@ -1,18 +1,22 @@
-import { useMemo, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Keyboard, X, Lightbulb, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { useShortcuts, useShortcutGuide } from '@/contexts/ShortcutContext';
-import { ShortcutHint } from '@/components/shortcuts/ShortcutHint';
-import { ShortcutDefinition, ShortcutContext } from '@/lib/shortcuts/types';
+import { useMemo, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Keyboard, X, Lightbulb, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { useShortcuts, useShortcutGuide } from "@/contexts/ShortcutContext";
+import { ShortcutHint } from "@/components/shortcuts/ShortcutHint";
+import { ShortcutDefinition, ShortcutContext } from "@/lib/shortcuts/types";
 
 interface ShortcutHintsProps {
   context?: ShortcutContext;
   maxHints?: number;
-  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   autoHide?: boolean;
   autoHideDelay?: number;
   className?: string;
@@ -21,7 +25,7 @@ interface ShortcutHintsProps {
 export function ShortcutHints({
   context,
   maxHints = 3,
-  position = 'bottom-right',
+  position = "bottom-right",
   autoHide = true,
   autoHideDelay = 10000,
   className,
@@ -37,7 +41,7 @@ export function ShortcutHints({
     if (!shortcutManager) return [];
 
     const shortcuts = shortcutManager.getShortcutsByContext(activeContext);
-    const priorityCategories = ['actions', 'transport', 'navigation'];
+    const priorityCategories = ["actions", "transport", "navigation"];
 
     return shortcuts
       .filter((s) => s.enabled !== false)
@@ -68,10 +72,10 @@ export function ShortcutHints({
   if (isDismissed || contextualHints.length === 0) return null;
 
   const positionClasses = {
-    'bottom-right': 'bottom-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'top-right': 'top-4 right-4',
-    'top-left': 'top-4 left-4',
+    "bottom-right": "bottom-4 right-4",
+    "bottom-left": "bottom-4 left-4",
+    "top-right": "top-4 right-4",
+    "top-left": "top-4 left-4",
   };
 
   return (
@@ -81,11 +85,7 @@ export function ShortcutHints({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className={cn(
-            'fixed z-40',
-            positionClasses[position],
-            className
-          )}
+          className={cn("fixed z-40", positionClasses[position], className)}
         >
           <div className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg shadow-xl p-3 max-w-xs">
             <div className="flex items-center justify-between mb-2">
@@ -107,9 +107,14 @@ export function ShortcutHints({
                   key={shortcut.id}
                   className="flex items-center justify-between gap-3 text-sm"
                 >
-                  <span className="text-zinc-300 truncate">{shortcut.description}</span>
+                  <span className="text-zinc-300 truncate">
+                    {shortcut.description}
+                  </span>
                   <ShortcutHint
-                    shortcut={{ key: shortcut.key, modifiers: shortcut.modifiers }}
+                    shortcut={{
+                      key: shortcut.key,
+                      modifiers: shortcut.modifiers,
+                    }}
                     size="xs"
                     variant="muted"
                   />
@@ -135,21 +140,27 @@ interface TooltipWithShortcutProps {
   children: React.ReactNode;
   action: string;
   shortcut?: string | { key: string; modifiers?: string[] };
-  side?: 'top' | 'bottom' | 'left' | 'right';
+  side?: "top" | "bottom" | "left" | "right";
 }
 
 export function TooltipWithShortcut({
   children,
   action,
   shortcut,
-  side = 'top',
+  side = "top",
 }: TooltipWithShortcutProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent side={side} className="flex items-center gap-2">
         <span>{action}</span>
-        {shortcut && <ShortcutHint shortcut={shortcut as Record<string, unknown>} size="xs" variant="ghost" />}
+        {shortcut && (
+          <ShortcutHint
+            shortcut={shortcut as Record<string, unknown>}
+            size="xs"
+            variant="ghost"
+          />
+        )}
       </TooltipContent>
     </Tooltip>
   );
@@ -160,7 +171,10 @@ interface ContextualShortcutBannerProps {
   className?: string;
 }
 
-export function ContextualShortcutBanner({ context, className }: ContextualShortcutBannerProps) {
+export function ContextualShortcutBanner({
+  context,
+  className,
+}: ContextualShortcutBannerProps) {
   const { open: openShortcutGuide } = useShortcutGuide();
   const { shortcutManager } = useShortcuts();
 
@@ -174,8 +188,8 @@ export function ContextualShortcutBanner({ context, className }: ContextualShort
   return (
     <div
       className={cn(
-        'flex items-center gap-4 px-3 py-2 bg-zinc-900/50 border-b border-zinc-800 text-xs',
-        className
+        "flex items-center gap-4 px-3 py-2 bg-zinc-900/50 border-b border-zinc-800 text-xs",
+        className,
       )}
     >
       <div className="flex items-center gap-1 text-zinc-500">
@@ -208,7 +222,9 @@ interface ShortcutCheatSheetTriggerProps {
   className?: string;
 }
 
-export function ShortcutCheatSheetTrigger({ className }: ShortcutCheatSheetTriggerProps) {
+export function ShortcutCheatSheetTrigger({
+  className,
+}: ShortcutCheatSheetTriggerProps) {
   const { open: openShortcutGuide } = useShortcutGuide();
 
   return (
@@ -216,7 +232,7 @@ export function ShortcutCheatSheetTrigger({ className }: ShortcutCheatSheetTrigg
       variant="ghost"
       size="sm"
       onClick={openShortcutGuide}
-      className={cn('text-zinc-400 hover:text-white', className)}
+      className={cn("text-zinc-400 hover:text-white", className)}
     >
       <Keyboard className="w-4 h-4 mr-1" />
       <span className="hidden sm:inline">Shortcuts</span>

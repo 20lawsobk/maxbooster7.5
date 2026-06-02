@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
-import { z } from 'zod';
-import { logger } from '../logger.js';
-import { offlineModeService } from '../services/offlineModeService';
+import { Router } from "express";
+import { requireAuth } from "../middleware/auth.js";
+import { z } from "zod";
+import { logger } from "../logger.js";
+import { offlineModeService } from "../services/offlineModeService";
 
 const router = Router();
 
@@ -13,15 +13,15 @@ const cacheProjectSchema = z.object({
 const updateSettingsSchema = z.object({
   maxCacheSize: z.number().int().positive().optional(),
   autoCacheProjects: z.boolean().optional(),
-  cacheAudioQuality: z.enum(['original', 'high', 'medium', 'low']).optional(),
+  cacheAudioQuality: z.enum(["original", "high", "medium", "low"]).optional(),
   syncOnReconnect: z.boolean().optional(),
-  conflictResolution: z.enum(['local', 'server', 'ask']).optional(),
+  conflictResolution: z.enum(["local", "server", "ask"]).optional(),
   backgroundSync: z.boolean().optional(),
   syncInterval: z.number().int().min(60000).optional(),
   offlineNotifications: z.boolean().optional(),
 });
 
-router.get('/status', requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
     const isOnline = offlineModeService.getOnlineStatus();
     const capabilities = offlineModeService.getOfflineCapabilities();
@@ -40,12 +40,12 @@ router.get('/status', requireAuth, async (req, res) => {
       lastOnlineCheck: offlineModeService.getLastOnlineCheck(),
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error getting offline status:');
-    res.status(500).json({ error: 'Failed to get offline status' });
+    logger.warn({ err: error }, "Error getting offline status:");
+    res.status(500).json({ error: "Failed to get offline status" });
   }
 });
 
-router.get('/capabilities', requireAuth, async (req, res) => {
+router.get("/capabilities", requireAuth, async (req, res) => {
   try {
     const capabilities = offlineModeService.getOfflineCapabilities();
 
@@ -53,30 +53,34 @@ router.get('/capabilities', requireAuth, async (req, res) => {
       success: true,
       capabilities,
       description: {
-        projectEditing: 'Edit projects, add tracks, and make changes offline',
-        audioPlayback: 'Play back audio from cached projects',
-        midiEditing: 'Create and edit MIDI data offline',
-        mixing: 'Adjust volume, pan, and effects offline',
-        pluginProcessing: 'Use built-in plugins for audio processing',
-        aiFeatures: 'Requires internet - AI mixing, mastering, content generation',
-        distribution: 'Requires internet - Upload and distribute music',
-        socialMedia: 'Requires internet - Social media scheduling and posting',
-        analytics: 'Requires internet - View streaming and revenue analytics',
-        marketplace: 'Requires internet - Browse and sell on marketplace',
+        projectEditing: "Edit projects, add tracks, and make changes offline",
+        audioPlayback: "Play back audio from cached projects",
+        midiEditing: "Create and edit MIDI data offline",
+        mixing: "Adjust volume, pan, and effects offline",
+        pluginProcessing: "Use built-in plugins for audio processing",
+        aiFeatures:
+          "Requires internet - AI mixing, mastering, content generation",
+        distribution: "Requires internet - Upload and distribute music",
+        socialMedia: "Requires internet - Social media scheduling and posting",
+        analytics: "Requires internet - View streaming and revenue analytics",
+        marketplace: "Requires internet - Browse and sell on marketplace",
       },
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error getting offline capabilities:');
-    res.status(500).json({ error: 'Failed to get offline capabilities' });
+    logger.warn({ err: error }, "Error getting offline capabilities:");
+    res.status(500).json({ error: "Failed to get offline capabilities" });
   }
 });
 
-router.post('/cache', requireAuth, async (req, res) => {
+router.post("/cache", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { projectId } = cacheProjectSchema.parse(req.body);
 
-    const cachedProject = await offlineModeService.cacheProject(projectId, userId);
+    const cachedProject = await offlineModeService.cacheProject(
+      projectId,
+      userId,
+    );
 
     res.status(201).json({
       success: true,
@@ -90,15 +94,17 @@ router.post('/cache', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error caching project:');
+    logger.warn({ err: error }, "Error caching project:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid request data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to cache project' });
+    res.status(500).json({ error: "Failed to cache project" });
   }
 });
 
-router.delete('/cache/:projectId', requireAuth, async (req, res) => {
+router.delete("/cache/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
 
@@ -106,19 +112,19 @@ router.delete('/cache/:projectId', requireAuth, async (req, res) => {
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error uncaching project:');
-    res.status(500).json({ error: 'Failed to uncache project' });
+    logger.warn({ err: error }, "Error uncaching project:");
+    res.status(500).json({ error: "Failed to uncache project" });
   }
 });
 
-router.get('/cache', requireAuth, async (req, res) => {
+router.get("/cache", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const cachedProjects = offlineModeService.getCachedProjects(userId);
 
     res.json({
       success: true,
-      projects: cachedProjects.map(p => ({
+      projects: cachedProjects.map((p) => ({
         id: p.id,
         projectId: p.projectId,
         name: p.name,
@@ -133,18 +139,18 @@ router.get('/cache', requireAuth, async (req, res) => {
       stats: offlineModeService.getCacheStats(),
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error getting cached projects:');
-    res.status(500).json({ error: 'Failed to get cached projects' });
+    logger.warn({ err: error }, "Error getting cached projects:");
+    res.status(500).json({ error: "Failed to get cached projects" });
   }
 });
 
-router.get('/cache/:projectId', requireAuth, async (req, res) => {
+router.get("/cache/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const cached = offlineModeService.getCachedProject(projectId);
 
     if (!cached) {
-      return res.status(404).json({ error: 'Project not cached' });
+      return res.status(404).json({ error: "Project not cached" });
     }
 
     res.json({
@@ -152,12 +158,12 @@ router.get('/cache/:projectId', requireAuth, async (req, res) => {
       project: cached,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error getting cached project:');
-    res.status(500).json({ error: 'Failed to get cached project' });
+    logger.warn({ err: error }, "Error getting cached project:");
+    res.status(500).json({ error: "Failed to get cached project" });
   }
 });
 
-router.get('/cache/:projectId/check', requireAuth, async (req, res) => {
+router.get("/cache/:projectId/check", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const isCached = offlineModeService.isProjectCached(projectId);
@@ -168,12 +174,12 @@ router.get('/cache/:projectId/check', requireAuth, async (req, res) => {
       isCached,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error checking cache status:');
-    res.status(500).json({ error: 'Failed to check cache status' });
+    logger.warn({ err: error }, "Error checking cache status:");
+    res.status(500).json({ error: "Failed to check cache status" });
   }
 });
 
-router.post('/sync/:projectId', requireAuth, async (req, res) => {
+router.post("/sync/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const result = await offlineModeService.syncProject(projectId);
@@ -183,12 +189,12 @@ router.post('/sync/:projectId', requireAuth, async (req, res) => {
       result,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error syncing project:');
-    res.status(500).json({ error: 'Failed to sync project' });
+    logger.warn({ err: error }, "Error syncing project:");
+    res.status(500).json({ error: "Failed to sync project" });
   }
 });
 
-router.post('/sync-all', requireAuth, async (req, res) => {
+router.post("/sync-all", requireAuth, async (req, res) => {
   try {
     const { results, totalTime } = await offlineModeService.syncAll();
 
@@ -198,17 +204,17 @@ router.post('/sync-all', requireAuth, async (req, res) => {
       totalTime,
       summary: {
         total: results.length,
-        successful: results.filter(r => r.success).length,
-        failed: results.filter(r => !r.success).length,
+        successful: results.filter((r) => r.success).length,
+        failed: results.filter((r) => !r.success).length,
       },
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error syncing all projects:');
-    res.status(500).json({ error: 'Failed to sync all projects' });
+    logger.warn({ err: error }, "Error syncing all projects:");
+    res.status(500).json({ error: "Failed to sync all projects" });
   }
 });
 
-router.get('/settings', requireAuth, async (req, res) => {
+router.get("/settings", requireAuth, async (req, res) => {
   try {
     const settings = offlineModeService.getSettings();
 
@@ -217,12 +223,12 @@ router.get('/settings', requireAuth, async (req, res) => {
       settings,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error getting offline settings:');
-    res.status(500).json({ error: 'Failed to get offline settings' });
+    logger.warn({ err: error }, "Error getting offline settings:");
+    res.status(500).json({ error: "Failed to get offline settings" });
   }
 });
 
-router.put('/settings', requireAuth, async (req, res) => {
+router.put("/settings", requireAuth, async (req, res) => {
   try {
     const updates = updateSettingsSchema.parse(req.body);
     const settings = offlineModeService.updateSettings(updates);
@@ -232,29 +238,31 @@ router.put('/settings', requireAuth, async (req, res) => {
       settings,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error updating offline settings:');
+    logger.warn({ err: error }, "Error updating offline settings:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid request data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to update offline settings' });
+    res.status(500).json({ error: "Failed to update offline settings" });
   }
 });
 
-router.delete('/cache', requireAuth, async (req, res) => {
+router.delete("/cache", requireAuth, async (req, res) => {
   try {
     await offlineModeService.clearCache();
 
     res.json({
       success: true,
-      message: 'Cache cleared successfully',
+      message: "Cache cleared successfully",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error clearing cache:');
-    res.status(500).json({ error: 'Failed to clear cache' });
+    logger.warn({ err: error }, "Error clearing cache:");
+    res.status(500).json({ error: "Failed to clear cache" });
   }
 });
 
-router.post('/cleanup', requireAuth, async (req, res) => {
+router.post("/cleanup", requireAuth, async (req, res) => {
   try {
     const { maxAge } = req.body;
     const cleaned = await offlineModeService.cleanupOldCache(maxAge);
@@ -264,56 +272,62 @@ router.post('/cleanup', requireAuth, async (req, res) => {
       removedProjects: cleaned,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error cleaning up cache:');
-    res.status(500).json({ error: 'Failed to cleanup cache' });
+    logger.warn({ err: error }, "Error cleaning up cache:");
+    res.status(500).json({ error: "Failed to cleanup cache" });
   }
 });
 
-router.post('/export/:projectId', requireAuth, async (req, res) => {
+router.post("/export/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const userId = req.user!.id;
 
-    const exportResult = await offlineModeService.exportProjectForOffline(projectId, userId);
+    const exportResult = await offlineModeService.exportProjectForOffline(
+      projectId,
+      userId,
+    );
 
     res.json({
       success: true,
       ...exportResult,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error exporting project for offline:');
-    res.status(500).json({ error: 'Failed to export project for offline use' });
+    logger.warn({ err: error }, "Error exporting project for offline:");
+    res.status(500).json({ error: "Failed to export project for offline use" });
   }
 });
 
-router.post('/import', requireAuth, async (req, res) => {
+router.post("/import", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const projectData = req.body;
 
-    const projectId = await offlineModeService.importOfflineProject(userId, projectData);
+    const projectId = await offlineModeService.importOfflineProject(
+      userId,
+      projectData,
+    );
 
     res.json({
       success: true,
       projectId,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error importing offline project:');
-    res.status(500).json({ error: 'Failed to import offline project' });
+    logger.warn({ err: error }, "Error importing offline project:");
+    res.status(500).json({ error: "Failed to import offline project" });
   }
 });
 
-router.post('/change/:projectId', requireAuth, async (req, res) => {
+router.post("/change/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const { type } = req.body;
 
-    if (type === 'local') {
+    if (type === "local") {
       offlineModeService.recordLocalChange(projectId);
-    } else if (type === 'server') {
+    } else if (type === "server") {
       offlineModeService.recordServerChange(projectId);
     } else {
-      return res.status(400).json({ error: 'Invalid change type' });
+      return res.status(400).json({ error: "Invalid change type" });
     }
 
     res.json({
@@ -321,8 +335,8 @@ router.post('/change/:projectId', requireAuth, async (req, res) => {
       message: `${type} change recorded`,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error recording change:');
-    res.status(500).json({ error: 'Failed to record change' });
+    logger.warn({ err: error }, "Error recording change:");
+    res.status(500).json({ error: "Failed to record change" });
   }
 });
 

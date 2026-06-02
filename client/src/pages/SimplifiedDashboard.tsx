@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { useLocation } from 'wouter';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import SimplifiedDashboardComponent from '@/components/onboarding/SimplifiedDashboard';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import SimplifiedDashboardComponent from "@/components/onboarding/SimplifiedDashboard";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 export default function SimplifiedDashboard() {
   const { user, isLoading } = useRequireAuth();
@@ -13,35 +13,37 @@ export default function SimplifiedDashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: onboardingStatus} = useQuery({
-    queryKey: ['/api/auth/onboarding-status'],
+  const { data: onboardingStatus } = useQuery({
+    queryKey: ["/api/auth/onboarding-status"],
     enabled: !!user,
   });
 
   const upgradeToFullModeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/auth/update-onboarding', {
+      const response = await apiRequest("POST", "/api/auth/update-onboarding", {
         hasCompletedOnboarding: true,
         onboardingData: {
-          userLevel: 'intermediate',
+          userLevel: "intermediate",
           preferSimplifiedView: false,
         },
       });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/onboarding-status'] });
-      setLocation('/dashboard');
+      queryClient.invalidateQueries({
+        queryKey: ["/api/auth/onboarding-status"],
+      });
+      setLocation("/dashboard");
       toast({
-        title: 'Upgraded Successfully',
-        description: 'You now have access to all advanced features!',
+        title: "Upgraded Successfully",
+        description: "You now have access to all advanced features!",
       });
     },
     onError: () => {
       toast({
-        title: 'Upgrade Failed',
-        description: 'Failed to upgrade to full mode. Please try again.',
-        variant: 'destructive',
+        title: "Upgrade Failed",
+        description: "Failed to upgrade to full mode. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -55,7 +57,7 @@ export default function SimplifiedDashboard() {
       onboardingStatus?.hasCompletedOnboarding &&
       onboardingStatus?.onboardingData?.preferSimplifiedView === false
     ) {
-      setLocation('/dashboard');
+      setLocation("/dashboard");
     }
   }, [onboardingStatus, setLocation]);
 
@@ -67,11 +69,14 @@ export default function SimplifiedDashboard() {
     );
   }
 
-const userLevel = onboardingStatus?.onboardingData?.userLevel || 'beginner';
+  const userLevel = onboardingStatus?.onboardingData?.userLevel || "beginner";
 
   return (
     <AppLayout>
-      <SimplifiedDashboardComponent onUpgrade={handleUpgrade} userLevel={userLevel} />
+      <SimplifiedDashboardComponent
+        onUpgrade={handleUpgrade}
+        userLevel={userLevel}
+      />
     </AppLayout>
   );
 }

@@ -1,8 +1,11 @@
-import { randomBytes } from 'crypto';
-import { logger } from '../logger.js';
-import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
+import { randomBytes } from "crypto";
+import { logger } from "../logger.js";
+import {
+  getRedisClient,
+  RedisClientType,
+} from "../lib/redisConnectionFactory.js";
 
-import { MaxCoreAIClient } from './maxcoreClient.js';
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 function seededIndex(seed: string, len: number): number {
   let h = 0x811c9dc5;
@@ -33,8 +36,14 @@ export interface ContentData {
   id?: string;
   caption: string;
   hashtags: string[];
-  platform: 'tiktok' | 'instagram' | 'youtube' | 'twitter' | 'facebook' | 'linkedin';
-  contentType: 'video' | 'image' | 'carousel' | 'text' | 'story' | 'reel';
+  platform:
+    | "tiktok"
+    | "instagram"
+    | "youtube"
+    | "twitter"
+    | "facebook"
+    | "linkedin";
+  contentType: "video" | "image" | "carousel" | "text" | "story" | "reel";
   mediaUrl?: string;
   targetAudience?: {
     ageRange: string;
@@ -45,7 +54,13 @@ export interface ContentData {
 export interface Hook {
   id: string;
   text: string;
-  type: 'question' | 'statement' | 'statistic' | 'story' | 'controversy' | 'mystery';
+  type:
+    | "question"
+    | "statement"
+    | "statistic"
+    | "story"
+    | "controversy"
+    | "mystery";
   predictedStrength: number;
   targetEmotion: string;
 }
@@ -76,87 +91,151 @@ export interface VariantResult {
 
 class ContentVariantGeneratorService {
   private readonly REDIS_TTL = 3600;
-  private readonly CACHE_PREFIX = 'variants:';
+  private readonly CACHE_PREFIX = "variants:";
 
   private readonly hookTemplates: Record<string, string[]> = {
     question: [
-      'Did you know that {topic}?',
-      'Have you ever wondered why {topic}?',
-      'What if I told you {topic}?',
-      'Why does no one talk about {topic}?',
-      'Is this the secret to {topic}?',
+      "Did you know that {topic}?",
+      "Have you ever wondered why {topic}?",
+      "What if I told you {topic}?",
+      "Why does no one talk about {topic}?",
+      "Is this the secret to {topic}?",
     ],
     statement: [
-      'This is why {topic} matters',
-      'The truth about {topic}',
-      'Here\'s what nobody tells you about {topic}',
-      '{Topic} changed everything for me',
-      'Stop making this mistake with {topic}',
+      "This is why {topic} matters",
+      "The truth about {topic}",
+      "Here's what nobody tells you about {topic}",
+      "{Topic} changed everything for me",
+      "Stop making this mistake with {topic}",
     ],
     statistic: [
-      '90% of {audience} don\'t know this about {topic}',
-      'I spent 1000 hours learning {topic} so you don\'t have to',
-      'Only 1% of {audience} understand {topic}',
-      '{Topic} increased my results by 300%',
-      'After 5 years of {topic}, here\'s what I learned',
+      "90% of {audience} don't know this about {topic}",
+      "I spent 1000 hours learning {topic} so you don't have to",
+      "Only 1% of {audience} understand {topic}",
+      "{Topic} increased my results by 300%",
+      "After 5 years of {topic}, here's what I learned",
     ],
     story: [
-      'Last week, something incredible happened with {topic}',
-      'My journey with {topic} started when...',
-      'I used to hate {topic} until I discovered this',
-      'This one thing about {topic} changed my perspective',
-      'The day I realized the truth about {topic}',
+      "Last week, something incredible happened with {topic}",
+      "My journey with {topic} started when...",
+      "I used to hate {topic} until I discovered this",
+      "This one thing about {topic} changed my perspective",
+      "The day I realized the truth about {topic}",
     ],
     controversy: [
-      'Unpopular opinion: {topic}',
-      'I\'m probably going to get hate for this, but {topic}',
-      'Hot take: {topic} is overrated',
-      'Nobody wants to admit that {topic}',
-      'This might be controversial but {topic}',
+      "Unpopular opinion: {topic}",
+      "I'm probably going to get hate for this, but {topic}",
+      "Hot take: {topic} is overrated",
+      "Nobody wants to admit that {topic}",
+      "This might be controversial but {topic}",
     ],
     mystery: [
-      'The {topic} secret that industry experts hide',
-      'What they don\'t want you to know about {topic}',
-      'The hidden truth behind {topic}',
-      'This {topic} hack is criminally underrated',
-      'You\'ve been lied to about {topic}',
+      "The {topic} secret that industry experts hide",
+      "What they don't want you to know about {topic}",
+      "The hidden truth behind {topic}",
+      "This {topic} hack is criminally underrated",
+      "You've been lied to about {topic}",
     ],
   };
 
   private readonly hashtagCategories: Record<string, string[]> = {
-    music: ['#music', '#musician', '#artist', '#producer', '#songwriter', '#newmusic', '#indieartist'],
-    producer: ['#beatmaker', '#producer', '#musicproducer', '#beats', '#hiphopproducer', '#trapbeats'],
-    viral: ['#viral', '#fyp', '#foryou', '#trending', '#explore', '#foryoupage'],
-    engagement: ['#follow', '#like', '#share', '#comment', '#supportsmallartists'],
-    niche: ['#undergroundmusic', '#independentartist', '#unsigned', '#emergingartist'],
-    genre: ['#hiphop', '#rnb', '#pop', '#electronic', '#trap', '#lofi', '#afrobeats'],
+    music: [
+      "#music",
+      "#musician",
+      "#artist",
+      "#producer",
+      "#songwriter",
+      "#newmusic",
+      "#indieartist",
+    ],
+    producer: [
+      "#beatmaker",
+      "#producer",
+      "#musicproducer",
+      "#beats",
+      "#hiphopproducer",
+      "#trapbeats",
+    ],
+    viral: [
+      "#viral",
+      "#fyp",
+      "#foryou",
+      "#trending",
+      "#explore",
+      "#foryoupage",
+    ],
+    engagement: [
+      "#follow",
+      "#like",
+      "#share",
+      "#comment",
+      "#supportsmallartists",
+    ],
+    niche: [
+      "#undergroundmusic",
+      "#independentartist",
+      "#unsigned",
+      "#emergingartist",
+    ],
+    genre: [
+      "#hiphop",
+      "#rnb",
+      "#pop",
+      "#electronic",
+      "#trap",
+      "#lofi",
+      "#afrobeats",
+    ],
   };
 
   private readonly emotionKeywords: Record<string, string[]> = {
-    excitement: ['amazing', 'incredible', 'mind-blowing', 'insane', 'epic'],
-    curiosity: ['secret', 'hidden', 'discover', 'reveal', 'uncover'],
-    urgency: ['now', 'today', 'immediately', 'don\'t miss', 'limited'],
-    relatability: ['we all', 'everyone', 'finally', 'exactly', 'literally'],
-    inspiration: ['dream', 'achieve', 'success', 'journey', 'growth'],
+    excitement: ["amazing", "incredible", "mind-blowing", "insane", "epic"],
+    curiosity: ["secret", "hidden", "discover", "reveal", "uncover"],
+    urgency: ["now", "today", "immediately", "don't miss", "limited"],
+    relatability: ["we all", "everyone", "finally", "exactly", "literally"],
+    inspiration: ["dream", "achieve", "success", "journey", "growth"],
   };
 
   constructor() {
-    logger.info('✅ Content Variant Generator service initialized');
+    logger.info("✅ Content Variant Generator service initialized");
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
     return await getRedisClient();
   }
 
-  async generateCaptionVariants(original: string, count: number = 30): Promise<string[]> {
+  async generateCaptionVariants(
+    original: string,
+    count: number = 30,
+  ): Promise<string[]> {
     const variants: string[] = [];
     const topic = this.extractTopic(original);
     const audience = this.inferAudience(original);
 
     // Hyper A/B: cycle all platforms × all tones for maximum variate coverage
-    const platforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin'];
-    const tones = ['energetic', 'chill', 'inspirational', 'curious', 'bold', 'intimate'];
-    const goals = ['growth', 'engagement', 'conversion', 'awareness', 'retention'];
+    const platforms = [
+      "tiktok",
+      "instagram",
+      "youtube",
+      "twitter",
+      "facebook",
+      "linkedin",
+    ];
+    const tones = [
+      "energetic",
+      "chill",
+      "inspirational",
+      "curious",
+      "bold",
+      "intimate",
+    ];
+    const goals = [
+      "growth",
+      "engagement",
+      "conversion",
+      "awareness",
+      "retention",
+    ];
 
     // ── MaxCore (sole AI source) ──────────────────────────────────────────────
     // Call MaxCore directly for every variant slot.  Falls back to string
@@ -165,19 +244,26 @@ class ContentVariantGeneratorService {
     try {
       for (let i = 0; i < count && aiVariantsGenerated < count; i++) {
         const platform = platforms[i % platforms.length];
-        const tone    = tones[i % tones.length];
-        const goal    = goals[i % goals.length];
-        const mc = await MaxCoreAIClient.infer<{ hook?: string; body?: string; cta?: string; caption?: string }>(
-          '/api/generate/content',
-          { platform, topic, tone, goal },
-        );
+        const tone = tones[i % tones.length];
+        const goal = goals[i % goals.length];
+        const mc = await MaxCoreAIClient.infer<{
+          hook?: string;
+          body?: string;
+          cta?: string;
+          caption?: string;
+        }>("/api/generate/content", { platform, topic, tone, goal });
         if (mc?.hook) {
-          variants.push(`${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim());
+          variants.push(
+            `${mc.hook}\n\n${mc.body || ""}\n\n${mc.cta || ""}`.trim(),
+          );
           aiVariantsGenerated++;
         }
       }
     } catch (err) {
-      logger.warn({ err: err }, '[VariantGen] MaxCore unavailable, filling with template variants:');
+      logger.warn(
+        { err: err },
+        "[VariantGen] MaxCore unavailable, filling with template variants:",
+      );
     }
 
     // Fill remaining slots by cycling all hook templates across multiple passes
@@ -187,28 +273,39 @@ class ContentVariantGeneratorService {
     for (let i = 0; i < remaining; i++) {
       const hookType = hookTypes[i % hookTypes.length];
       const templates = this.hookTemplates[hookType];
-      const template  = templates[(Math.floor(i / hookTypes.length)) % templates.length];
+      const template =
+        templates[Math.floor(i / hookTypes.length) % templates.length];
 
       const newHook = template
-        .replace('{topic}', topic)
-        .replace('{Topic}', topic.charAt(0).toUpperCase() + topic.slice(1))
-        .replace('{audience}', audience);
+        .replace("{topic}", topic)
+        .replace("{Topic}", topic.charAt(0).toUpperCase() + topic.slice(1))
+        .replace("{audience}", audience);
 
-      const bodyLines = original.split('\n').slice(1).join('\n');
+      const bodyLines = original.split("\n").slice(1).join("\n");
       const variant = `${newHook}\n\n${bodyLines || original}`;
 
       variants.push(this.enhanceWithEmotions(variant));
     }
 
-    logger.info(`📝 Generated ${variants.length} caption variates (${aiVariantsGenerated} AI-powered) for hyper A/B`);
+    logger.info(
+      `📝 Generated ${variants.length} caption variates (${aiVariantsGenerated} AI-powered) for hyper A/B`,
+    );
     return variants;
   }
 
-  async generateHashtagSets(content: ContentData, count: number = 5): Promise<string[][]> {
+  async generateHashtagSets(
+    content: ContentData,
+    count: number = 5,
+  ): Promise<string[][]> {
     const sets: string[][] = [];
-    const existingHashtags = new Set(content.hashtags.map(h => h.toLowerCase()));
+    const existingHashtags = new Set(
+      content.hashtags.map((h) => h.toLowerCase()),
+    );
 
-    const platformOptimal: Record<string, { total: number; viral: number; niche: number }> = {
+    const platformOptimal: Record<
+      string,
+      { total: number; viral: number; niche: number }
+    > = {
       tiktok: { total: 5, viral: 2, niche: 3 },
       instagram: { total: 12, viral: 3, niche: 5 },
       youtube: { total: 6, viral: 2, niche: 3 },
@@ -217,40 +314,63 @@ class ContentVariantGeneratorService {
       linkedin: { total: 5, viral: 1, niche: 3 },
     };
 
-    const config = platformOptimal[content.platform] || platformOptimal.instagram;
+    const config =
+      platformOptimal[content.platform] || platformOptimal.instagram;
 
     for (let i = 0; i < count; i++) {
       const set: string[] = [];
 
-      const viralTags = this.shuffleArray([...this.hashtagCategories.viral])
-        .slice(0, config.viral);
+      const viralTags = this.shuffleArray([
+        ...this.hashtagCategories.viral,
+      ]).slice(0, config.viral);
       set.push(...viralTags);
 
       const topicHashtags = this.generateTopicHashtags(content.caption);
       set.push(...topicHashtags.slice(0, config.niche));
 
-      if (content.caption.toLowerCase().includes('music') || 
-          content.caption.toLowerCase().includes('beat') ||
-          content.caption.toLowerCase().includes('song')) {
-        const musicTags = seededShuffle([...this.hashtagCategories.music], `${content.id || content.caption}:music-tags`)
-          .slice(0, 2);
+      if (
+        content.caption.toLowerCase().includes("music") ||
+        content.caption.toLowerCase().includes("beat") ||
+        content.caption.toLowerCase().includes("song")
+      ) {
+        const musicTags = seededShuffle(
+          [...this.hashtagCategories.music],
+          `${content.id || content.caption}:music-tags`,
+        ).slice(0, 2);
         set.push(...musicTags);
       }
 
       while (set.length < config.total) {
         const allTags = Object.values(this.hashtagCategories).flat();
-        const randomTag = allTags[seededIndex(`${content.id || content.caption}:hashtag-fill:${set.length}`, allTags.length)];
+        const randomTag =
+          allTags[
+            seededIndex(
+              `${content.id || content.caption}:hashtag-fill:${set.length}`,
+              allTags.length,
+            )
+          ];
         if (!set.includes(randomTag)) {
           set.push(randomTag);
         } else {
-          set.push(allTags[(seededIndex(`${content.id || content.caption}:hashtag-fill:${set.length}`, allTags.length) + set.length) % allTags.length]);
+          set.push(
+            allTags[
+              (seededIndex(
+                `${content.id || content.caption}:hashtag-fill:${set.length}`,
+                allTags.length,
+              ) +
+                set.length) %
+                allTags.length
+            ],
+          );
         }
       }
 
       sets.push([...new Set(set)].slice(0, config.total));
     }
 
-    logger.info(`#️⃣ Generated ${sets.length} hashtag sets for ${content.platform}`);
+    logger.info(
+      `#️⃣ Generated ${sets.length} hashtag sets for ${content.platform}`,
+    );
     return sets;
   }
 
@@ -259,16 +379,22 @@ class ContentVariantGeneratorService {
     const topic = this.extractTopic(content.caption);
 
     for (const [type, templates] of Object.entries(this.hookTemplates)) {
-      const template = templates[seededIndex(`${content.id || content.caption}:hook:${type}`, templates.length)];
+      const template =
+        templates[
+          seededIndex(
+            `${content.id || content.caption}:hook:${type}`,
+            templates.length,
+          )
+        ];
       const hookText = template
-        .replace('{topic}', topic)
-        .replace('{Topic}', topic.charAt(0).toUpperCase() + topic.slice(1))
-        .replace('{audience}', this.inferAudience(content.caption));
+        .replace("{topic}", topic)
+        .replace("{Topic}", topic.charAt(0).toUpperCase() + topic.slice(1))
+        .replace("{audience}", this.inferAudience(content.caption));
 
       hooks.push({
-        id: randomBytes(8).toString('hex'),
+        id: randomBytes(8).toString("hex"),
         text: hookText,
-        type: type as Hook['type'],
+        type: type as Hook["type"],
         predictedStrength: this.predictHookStrength(hookText, type),
         targetEmotion: this.getTargetEmotion(type),
       });
@@ -282,7 +408,7 @@ class ContentVariantGeneratorService {
       return variants.sort((a, b) => b.predictedScore - a.predictedScore)[0];
     }
 
-    const metricsMap = new Map(metrics.map(m => [m.variantId, m]));
+    const metricsMap = new Map(metrics.map((m) => [m.variantId, m]));
 
     let bestVariant = variants[0];
     let bestScore = -1;
@@ -301,9 +427,12 @@ class ContentVariantGeneratorService {
     return bestVariant;
   }
 
-  async generateVariants(content: ContentData, count: number = 5): Promise<VariantResult> {
-    const cacheKey = `${this.CACHE_PREFIX}${content.id || randomBytes(8).toString('hex')}`;
-    
+  async generateVariants(
+    content: ContentData,
+    count: number = 5,
+  ): Promise<VariantResult> {
+    const cacheKey = `${this.CACHE_PREFIX}${content.id || randomBytes(8).toString("hex")}`;
+
     const redis = await this.getRedis();
     if (redis) {
       const cached = await redis.get(cacheKey);
@@ -312,16 +441,22 @@ class ContentVariantGeneratorService {
       }
     }
 
-    const captionVariants = await this.generateCaptionVariants(content.caption, count);
+    const captionVariants = await this.generateCaptionVariants(
+      content.caption,
+      count,
+    );
     const hashtagSets = await this.generateHashtagSets(content, count);
     const hooks = await this.generateHookVariants(content);
 
     const variants: Variant[] = captionVariants.map((caption, index) => ({
-      id: randomBytes(8).toString('hex'),
+      id: randomBytes(8).toString("hex"),
       caption,
       hashtags: hashtagSets[index] || content.hashtags,
-      hookType: hooks[index]?.type || 'statement',
-      predictedScore: Math.min(100, 55 + (hooks[index]?.predictedStrength || 0) / 2),
+      hookType: hooks[index]?.type || "statement",
+      predictedScore: Math.min(
+        100,
+        55 + (hooks[index]?.predictedStrength || 0) / 2,
+      ),
       changes: this.identifyChanges(content.caption, caption),
     }));
 
@@ -344,64 +479,104 @@ class ContentVariantGeneratorService {
 
   private extractTopic(caption: string): string {
     const words = caption.toLowerCase().split(/\s+/);
-    const stopWords = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'this', 'that', 'it', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'and', 'or', 'but', 'i', 'you', 'we', 'they', 'my', 'your', 'our']);
-    
-    const meaningfulWords = words.filter(w => 
-      !stopWords.has(w) && 
-      w.length > 3 && 
-      !w.startsWith('#') && 
-      !w.startsWith('@')
+    const stopWords = new Set([
+      "the",
+      "a",
+      "an",
+      "is",
+      "are",
+      "was",
+      "were",
+      "this",
+      "that",
+      "it",
+      "to",
+      "of",
+      "in",
+      "for",
+      "on",
+      "with",
+      "at",
+      "by",
+      "from",
+      "as",
+      "and",
+      "or",
+      "but",
+      "i",
+      "you",
+      "we",
+      "they",
+      "my",
+      "your",
+      "our",
+    ]);
+
+    const meaningfulWords = words.filter(
+      (w) =>
+        !stopWords.has(w) &&
+        w.length > 3 &&
+        !w.startsWith("#") &&
+        !w.startsWith("@"),
     );
 
-    return meaningfulWords.slice(0, 3).join(' ') || 'your content';
+    return meaningfulWords.slice(0, 3).join(" ") || "your content";
   }
 
   private inferAudience(caption: string): string {
     const lowerCaption = caption.toLowerCase();
-    
-    if (lowerCaption.includes('producer') || lowerCaption.includes('beat')) {
-      return 'producers';
-    } else if (lowerCaption.includes('artist') || lowerCaption.includes('singer')) {
-      return 'artists';
-    } else if (lowerCaption.includes('music') || lowerCaption.includes('song')) {
-      return 'music lovers';
+
+    if (lowerCaption.includes("producer") || lowerCaption.includes("beat")) {
+      return "producers";
+    } else if (
+      lowerCaption.includes("artist") ||
+      lowerCaption.includes("singer")
+    ) {
+      return "artists";
+    } else if (
+      lowerCaption.includes("music") ||
+      lowerCaption.includes("song")
+    ) {
+      return "music lovers";
     }
-    
-    return 'creators';
+
+    return "creators";
   }
 
   private enhanceWithEmotions(text: string): string {
     const emotions = Object.values(this.emotionKeywords).flat();
-    const hasEmotion = emotions.some(e => text.toLowerCase().includes(e));
-    
+    const hasEmotion = emotions.some((e) => text.toLowerCase().includes(e));
+
     if (!hasEmotion) {
-      const randomEmotion = emotions[seededIndex(`${text}:emotion`, emotions.length)];
+      const randomEmotion =
+        emotions[seededIndex(`${text}:emotion`, emotions.length)];
       return text.replace(/\.$/, ` - ${randomEmotion}!`);
     }
-    
+
     return text;
   }
 
   private generateTopicHashtags(caption: string): string[] {
-    const words = caption.toLowerCase()
-      .replace(/[^\w\s]/g, '')
+    const words = caption
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "")
       .split(/\s+/)
-      .filter(w => w.length > 3);
+      .filter((w) => w.length > 3);
 
-    return words.slice(0, 5).map(w => `#${w}`);
+    return words.slice(0, 5).map((w) => `#${w}`);
   }
 
-  private shuffleArray<T>(array: T[], seed: string = 'default'): T[] {
+  private shuffleArray<T>(array: T[], seed: string = "default"): T[] {
     return seededShuffle(array, seed);
   }
 
   private predictHookStrength(hookText: string, type: string): number {
     let strength = 50;
 
-    if (hookText.includes('?')) strength += 10;
+    if (hookText.includes("?")) strength += 10;
     if (hookText.length > 20 && hookText.length < 80) strength += 10;
     if (/\d+/.test(hookText)) strength += 8;
-    if (['question', 'controversy', 'mystery'].includes(type)) strength += 12;
+    if (["question", "controversy", "mystery"].includes(type)) strength += 12;
 
     const emotionWords = Object.values(this.emotionKeywords).flat();
     for (const word of emotionWords) {
@@ -416,50 +591,54 @@ class ContentVariantGeneratorService {
 
   private getTargetEmotion(hookType: string): string {
     const emotionMap: Record<string, string> = {
-      question: 'curiosity',
-      statement: 'authority',
-      statistic: 'credibility',
-      story: 'connection',
-      controversy: 'engagement',
-      mystery: 'intrigue',
+      question: "curiosity",
+      statement: "authority",
+      statistic: "credibility",
+      story: "connection",
+      controversy: "engagement",
+      mystery: "intrigue",
     };
-    return emotionMap[hookType] || 'interest';
+    return emotionMap[hookType] || "interest";
   }
 
   private calculatePerformanceScore(metrics: PerformanceMetrics): number {
-    const engagementRate = metrics.impressions > 0 
-      ? (metrics.engagement / metrics.impressions) * 100 
-      : 0;
-    const shareRate = metrics.engagement > 0 
-      ? (metrics.shares / metrics.engagement) * 100 
-      : 0;
-    
-    return (engagementRate * 0.4) + (shareRate * 0.3) + (metrics.conversionRate * 30);
+    const engagementRate =
+      metrics.impressions > 0
+        ? (metrics.engagement / metrics.impressions) * 100
+        : 0;
+    const shareRate =
+      metrics.engagement > 0 ? (metrics.shares / metrics.engagement) * 100 : 0;
+
+    return engagementRate * 0.4 + shareRate * 0.3 + metrics.conversionRate * 30;
   }
 
   private identifyChanges(original: string, variant: string): string[] {
     const changes: string[] = [];
-    
-    const origFirstLine = original.split('\n')[0];
-    const varFirstLine = variant.split('\n')[0];
-    
+
+    const origFirstLine = original.split("\n")[0];
+    const varFirstLine = variant.split("\n")[0];
+
     if (origFirstLine !== varFirstLine) {
-      changes.push('Modified opening hook');
+      changes.push("Modified opening hook");
     }
 
     if (variant.length !== original.length) {
-      changes.push(variant.length > original.length ? 'Extended content' : 'Condensed content');
+      changes.push(
+        variant.length > original.length
+          ? "Extended content"
+          : "Condensed content",
+      );
     }
 
-    if (variant.includes('?') && !original.includes('?')) {
-      changes.push('Added question format');
+    if (variant.includes("?") && !original.includes("?")) {
+      changes.push("Added question format");
     }
 
     if (/\d/.test(variant) && !/\d/.test(original)) {
-      changes.push('Added statistics/numbers');
+      changes.push("Added statistics/numbers");
     }
 
-    return changes.length > 0 ? changes : ['Hook style variation'];
+    return changes.length > 0 ? changes : ["Hook style variation"];
   }
 
   private estimateOriginalScore(content: ContentData): number {
@@ -468,38 +647,49 @@ class ContentVariantGeneratorService {
     if (content.caption.length > 50) score += 10;
     if (content.hashtags.length >= 3) score += 10;
     if (content.hashtags.length <= 15) score += 5;
-    if (content.caption.includes('?')) score += 5;
+    if (content.caption.includes("?")) score += 5;
 
     return Math.min(100, score);
   }
 
-  private generateRecommendations(content: ContentData, variants: Variant[]): string[] {
+  private generateRecommendations(
+    content: ContentData,
+    variants: Variant[],
+  ): string[] {
     const recommendations: string[] = [];
 
     const topVariant = variants[0];
     if (topVariant && topVariant.predictedScore > 70) {
-      recommendations.push(`Top variant shows ${topVariant.predictedScore - 60}% improvement potential`);
+      recommendations.push(
+        `Top variant shows ${topVariant.predictedScore - 60}% improvement potential`,
+      );
     }
 
-    if (content.hashtags.length < 5 && content.platform === 'instagram') {
-      recommendations.push('Consider using more hashtags for Instagram (optimal: 8-15)');
+    if (content.hashtags.length < 5 && content.platform === "instagram") {
+      recommendations.push(
+        "Consider using more hashtags for Instagram (optimal: 8-15)",
+      );
     }
 
-    if (!content.caption.includes('?')) {
-      recommendations.push('Question-based hooks typically increase engagement by 20%');
+    if (!content.caption.includes("?")) {
+      recommendations.push(
+        "Question-based hooks typically increase engagement by 20%",
+      );
     }
 
-    recommendations.push(`Hyper A/B test your top 30 variates simultaneously — winner declared at 80% confidence with 30 impressions/variate`);
+    recommendations.push(
+      `Hyper A/B test your top 30 variates simultaneously — winner declared at 80% confidence with 30 impressions/variate`,
+    );
 
     return recommendations;
   }
 
   async createABTest(
     content: ContentData,
-    variantCount: number = 30
+    variantCount: number = 30,
   ): Promise<{ variants: Variant[]; testId: string; recommendation: string }> {
     const result = await this.generateVariants(content, variantCount);
-    const testId = randomBytes(8).toString('hex');
+    const testId = randomBytes(8).toString("hex");
 
     return {
       variants: result.variants.slice(0, variantCount),
@@ -509,4 +699,5 @@ class ContentVariantGeneratorService {
   }
 }
 
-export const contentVariantGeneratorService = new ContentVariantGeneratorService();
+export const contentVariantGeneratorService =
+  new ContentVariantGeneratorService();

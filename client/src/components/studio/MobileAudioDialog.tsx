@@ -1,16 +1,29 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { X, Headphones, Mic, MicOff, Volume2, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  X,
+  Headphones,
+  Mic,
+  MicOff,
+  Volume2,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MobileAudioDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-type PermissionState = 'unknown' | 'granted' | 'denied' | 'requesting';
+type PermissionState = "unknown" | "granted" | "denied" | "requesting";
 
-export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogProps) {
-  const [micPermission, setMicPermission] = useState<PermissionState>('unknown');
+export default function MobileAudioDialog({
+  open,
+  onClose,
+}: MobileAudioDialogProps) {
+  const [micPermission, setMicPermission] =
+    useState<PermissionState>("unknown");
   const [sampleRate, setSampleRate] = useState<number>(44100);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
@@ -20,14 +33,28 @@ export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogPr
   const checkPermissions = useCallback(async () => {
     try {
       if (navigator.permissions) {
-        const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-        setMicPermission(result.state === 'granted' ? 'granted' : result.state === 'denied' ? 'denied' : 'unknown');
-        result.addEventListener('change', () => {
-          setMicPermission(result.state === 'granted' ? 'granted' : result.state === 'denied' ? 'denied' : 'unknown');
+        const result = await navigator.permissions.query({
+          name: "microphone" as PermissionName,
+        });
+        setMicPermission(
+          result.state === "granted"
+            ? "granted"
+            : result.state === "denied"
+              ? "denied"
+              : "unknown",
+        );
+        result.addEventListener("change", () => {
+          setMicPermission(
+            result.state === "granted"
+              ? "granted"
+              : result.state === "denied"
+                ? "denied"
+                : "unknown",
+          );
         });
       }
     } catch {
-      setMicPermission('unknown');
+      setMicPermission("unknown");
     }
   }, []);
 
@@ -36,13 +63,13 @@ export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogPr
   }, [open, checkPermissions]);
 
   const requestMicPermission = useCallback(async () => {
-    setMicPermission('requesting');
+    setMicPermission("requesting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((t) => t.stop());
-      setMicPermission('granted');
+      setMicPermission("granted");
     } catch {
-      setMicPermission('denied');
+      setMicPermission("denied");
     }
   }, []);
 
@@ -66,15 +93,15 @@ export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogPr
         setIsTesting(false);
       }, 500);
     } catch (err) {
-      setTestResult('Failed: ' + String(err));
+      setTestResult("Failed: " + String(err));
       setIsTesting(false);
     }
   }, [sampleRate]);
 
   if (!open) return null;
 
-  const micGranted = micPermission === 'granted';
-  const micDenied = micPermission === 'denied';
+  const micGranted = micPermission === "granted";
+  const micDenied = micPermission === "denied";
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center">
@@ -94,15 +121,17 @@ export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogPr
 
         <div className="px-5 py-4 space-y-5">
           <div>
-            <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Microphone Access</p>
+            <p className="text-xs text-white/40 uppercase tracking-wider mb-3">
+              Microphone Access
+            </p>
             <div
               className={cn(
-                'flex items-center justify-between p-4 rounded-xl border transition-colors',
+                "flex items-center justify-between p-4 rounded-xl border transition-colors",
                 micGranted
-                  ? 'bg-emerald-900/20 border-emerald-500/30'
+                  ? "bg-emerald-900/20 border-emerald-500/30"
                   : micDenied
-                  ? 'bg-red-900/20 border-red-500/30'
-                  : 'bg-white/5 border-white/10'
+                    ? "bg-red-900/20 border-red-500/30"
+                    : "bg-white/5 border-white/10",
               )}
             >
               <div className="flex items-center gap-3">
@@ -115,43 +144,51 @@ export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogPr
                 )}
                 <div>
                   <p className="text-sm font-medium text-white">
-                    {micGranted ? 'Microphone enabled' : micDenied ? 'Access denied' : 'Microphone access'}
+                    {micGranted
+                      ? "Microphone enabled"
+                      : micDenied
+                        ? "Access denied"
+                        : "Microphone access"}
                   </p>
                   <p className="text-xs text-white/40 mt-0.5">
                     {micGranted
-                      ? 'Recording is available'
+                      ? "Recording is available"
                       : micDenied
-                      ? 'Enable in device settings'
-                      : 'Required for recording'}
+                        ? "Enable in device settings"
+                        : "Required for recording"}
                   </p>
                 </div>
               </div>
               {!micGranted && !micDenied && (
                 <button
                   onClick={requestMicPermission}
-                  disabled={micPermission === 'requesting'}
+                  disabled={micPermission === "requesting"}
                   className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg disabled:opacity-50"
                 >
-                  {micPermission === 'requesting' ? 'Requesting…' : 'Allow'}
+                  {micPermission === "requesting" ? "Requesting…" : "Allow"}
                 </button>
               )}
-              {micGranted && <CheckCircle2 className="h-5 w-5 text-emerald-400" />}
+              {micGranted && (
+                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              )}
               {micDenied && <AlertCircle className="h-5 w-5 text-red-400" />}
             </div>
           </div>
 
           <div>
-            <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Sample Rate</p>
+            <p className="text-xs text-white/40 uppercase tracking-wider mb-3">
+              Sample Rate
+            </p>
             <div className="flex gap-2">
               {SAMPLE_RATES.map((rate) => (
                 <button
                   key={rate}
                   onClick={() => setSampleRate(rate)}
                   className={cn(
-                    'flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors',
+                    "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors",
                     sampleRate === rate
-                      ? 'bg-blue-600 border-blue-500 text-white'
-                      : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
+                      ? "bg-blue-600 border-blue-500 text-white"
+                      : "bg-white/5 border-white/10 text-white/60 hover:text-white",
                   )}
                 >
                   {rate / 1000}kHz
@@ -161,7 +198,9 @@ export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogPr
           </div>
 
           <div>
-            <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Output</p>
+            <p className="text-xs text-white/40 uppercase tracking-wider mb-2">
+              Output
+            </p>
             <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
               <Volume2 className="h-5 w-5 text-white/50" />
               <div>
@@ -176,14 +215,14 @@ export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogPr
               onClick={testAudio}
               disabled={isTesting}
               className={cn(
-                'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-colors',
+                "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border transition-colors",
                 isTesting
-                  ? 'bg-white/5 border-white/10 text-white/40'
-                  : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                  ? "bg-white/5 border-white/10 text-white/40"
+                  : "bg-white/5 border-white/10 text-white hover:bg-white/10",
               )}
             >
               <Volume2 className="h-4 w-4" />
-              {isTesting ? 'Testing…' : 'Test Audio'}
+              {isTesting ? "Testing…" : "Test Audio"}
             </button>
             <button
               onClick={checkPermissions}
@@ -196,10 +235,10 @@ export default function MobileAudioDialog({ open, onClose }: MobileAudioDialogPr
           {testResult && (
             <div
               className={cn(
-                'p-3 rounded-xl text-xs font-mono border',
-                testResult.startsWith('OK')
-                  ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-300'
-                  : 'bg-red-900/20 border-red-500/30 text-red-300'
+                "p-3 rounded-xl text-xs font-mono border",
+                testResult.startsWith("OK")
+                  ? "bg-emerald-900/20 border-emerald-500/30 text-emerald-300"
+                  : "bg-red-900/20 border-red-500/30 text-red-300",
               )}
             >
               {testResult}

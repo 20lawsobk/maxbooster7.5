@@ -96,7 +96,18 @@ void main() {
   fragColor = vec4(v_color.rgb, alpha);
 }
 `,
-  uniforms: ['u_time', 'u_resolution', 'u_gravity', 'u_friction', 'u_audioReactivity', 'u_bass', 'u_mid', 'u_treble', 'u_shape', 'u_softness']
+  uniforms: [
+    "u_time",
+    "u_resolution",
+    "u_gravity",
+    "u_friction",
+    "u_audioReactivity",
+    "u_bass",
+    "u_mid",
+    "u_treble",
+    "u_shape",
+    "u_softness",
+  ],
 };
 
 export const BLOOM_SHADER: ShaderSource = {
@@ -158,7 +169,14 @@ void main() {
   fragColor = vec4(result, color.a);
 }
 `,
-  uniforms: ['u_texture', 'u_resolution', 'u_threshold', 'u_intensity', 'u_radius', 'u_pass']
+  uniforms: [
+    "u_texture",
+    "u_resolution",
+    "u_threshold",
+    "u_intensity",
+    "u_radius",
+    "u_pass",
+  ],
 };
 
 export const GRADIENT_SHADER: ShaderSource = {
@@ -236,7 +254,20 @@ void main() {
   fragColor = mixColors(t);
 }
 `,
-  uniforms: ['u_type', 'u_color1', 'u_color2', 'u_color3', 'u_color4', 'u_angle', 'u_center', 'u_radius', 'u_time', 'u_animated', 'u_stops', 'u_numStops']
+  uniforms: [
+    "u_type",
+    "u_color1",
+    "u_color2",
+    "u_color3",
+    "u_color4",
+    "u_angle",
+    "u_center",
+    "u_radius",
+    "u_time",
+    "u_animated",
+    "u_stops",
+    "u_numStops",
+  ],
 };
 
 export const WAVE_DISTORTION_SHADER: ShaderSource = {
@@ -289,7 +320,17 @@ void main() {
   fragColor = texture(u_texture, uv);
 }
 `,
-  uniforms: ['u_texture', 'u_time', 'u_amplitude', 'u_frequency', 'u_speed', 'u_type', 'u_center', 'u_audioReactivity', 'u_bass']
+  uniforms: [
+    "u_texture",
+    "u_time",
+    "u_amplitude",
+    "u_frequency",
+    "u_speed",
+    "u_type",
+    "u_center",
+    "u_audioReactivity",
+    "u_bass",
+  ],
 };
 
 export const CHROMATIC_ABERRATION_SHADER: ShaderSource = {
@@ -330,7 +371,15 @@ void main() {
   fragColor = vec4(r, g, b, a);
 }
 `,
-  uniforms: ['u_texture', 'u_amount', 'u_angle', 'u_center', 'u_radial', 'u_audioReactivity', 'u_bass']
+  uniforms: [
+    "u_texture",
+    "u_amount",
+    "u_angle",
+    "u_center",
+    "u_radial",
+    "u_audioReactivity",
+    "u_bass",
+  ],
 };
 
 export const VIGNETTE_SHADER: ShaderSource = {
@@ -371,7 +420,15 @@ void main() {
   fragColor = vec4(finalColor, texColor.a);
 }
 `,
-  uniforms: ['u_texture', 'u_intensity', 'u_radius', 'u_softness', 'u_center', 'u_color', 'u_type']
+  uniforms: [
+    "u_texture",
+    "u_intensity",
+    "u_radius",
+    "u_softness",
+    "u_center",
+    "u_color",
+    "u_type",
+  ],
 };
 
 export const COLOR_GRADING_SHADER: ShaderSource = {
@@ -505,11 +562,24 @@ void main() {
 }
 `,
   uniforms: [
-    'u_texture', 'u_brightness', 'u_contrast', 'u_saturation', 'u_hue',
-    'u_exposure', 'u_gamma', 'u_shadows', 'u_midtones', 'u_highlights',
-    'u_temperature', 'u_tint', 'u_vibrance', 'u_lift', 'u_gain',
-    'u_filmGrain', 'u_time'
-  ]
+    "u_texture",
+    "u_brightness",
+    "u_contrast",
+    "u_saturation",
+    "u_hue",
+    "u_exposure",
+    "u_gamma",
+    "u_shadows",
+    "u_midtones",
+    "u_highlights",
+    "u_temperature",
+    "u_tint",
+    "u_vibrance",
+    "u_lift",
+    "u_gain",
+    "u_filmGrain",
+    "u_time",
+  ],
 };
 
 export const NOISE_SHADER: ShaderSource = {
@@ -614,7 +684,16 @@ void main() {
   fragColor = mix(u_color1, u_color2, n);
 }
 `,
-  uniforms: ['u_time', 'u_scale', 'u_octaves', 'u_persistence', 'u_lacunarity', 'u_color1', 'u_color2', 'u_type']
+  uniforms: [
+    "u_time",
+    "u_scale",
+    "u_octaves",
+    "u_persistence",
+    "u_lacunarity",
+    "u_color1",
+    "u_color2",
+    "u_type",
+  ],
 };
 
 export const BLUR_SHADER: ShaderSource = {
@@ -686,7 +765,7 @@ void main() {
   fragColor = result / total;
 }
 `,
-  uniforms: ['u_texture', 'u_resolution', 'u_radius', 'u_direction', 'u_type']
+  uniforms: ["u_texture", "u_resolution", "u_radius", "u_direction", "u_type"],
 };
 
 export const KALEIDOSCOPE_SHADER: ShaderSource = {
@@ -730,7 +809,15 @@ void main() {
   fragColor = texture(u_texture, newUV);
 }
 `,
-  uniforms: ['u_texture', 'u_segments', 'u_rotation', 'u_center', 'u_zoom', 'u_time', 'u_animated']
+  uniforms: [
+    "u_texture",
+    "u_segments",
+    "u_rotation",
+    "u_center",
+    "u_zoom",
+    "u_time",
+    "u_animated",
+  ],
 };
 
 export const PIXELATE_SHADER: ShaderSource = {
@@ -779,7 +866,7 @@ void main() {
   fragColor = texture(u_texture, uv);
 }
 `,
-  uniforms: ['u_texture', 'u_resolution', 'u_pixelSize', 'u_type']
+  uniforms: ["u_texture", "u_resolution", "u_pixelSize", "u_type"],
 };
 
 export const GLITCH_SHADER: ShaderSource = {
@@ -831,7 +918,14 @@ void main() {
   fragColor = texture(u_texture, uv);
 }
 `,
-  uniforms: ['u_texture', 'u_time', 'u_intensity', 'u_speed', 'u_blockSize', 'u_seed']
+  uniforms: [
+    "u_texture",
+    "u_time",
+    "u_intensity",
+    "u_speed",
+    "u_blockSize",
+    "u_seed",
+  ],
 };
 
 export const AUDIO_VISUALIZER_SHADER: ShaderSource = {
@@ -920,9 +1014,20 @@ void main() {
 }
 `,
   uniforms: [
-    'u_audioData', 'u_time', 'u_color1', 'u_color2', 'u_type', 'u_sensitivity',
-    'u_smoothing', 'u_barCount', 'u_barWidth', 'u_mirror', 'u_radius', 'u_lineWidth', 'u_center'
-  ]
+    "u_audioData",
+    "u_time",
+    "u_color1",
+    "u_color2",
+    "u_type",
+    "u_sensitivity",
+    "u_smoothing",
+    "u_barCount",
+    "u_barWidth",
+    "u_mirror",
+    "u_radius",
+    "u_lineWidth",
+    "u_center",
+  ],
 };
 
 export const SHADER_PRESETS = {
@@ -947,10 +1052,13 @@ export function getShaderPreset(name: ShaderPresetName): ShaderSource {
   return SHADER_PRESETS[name];
 }
 
-export function createCustomShader(fragmentCode: string, additionalUniforms: string[] = []): ShaderSource {
+export function createCustomShader(
+  fragmentCode: string,
+  additionalUniforms: string[] = [],
+): ShaderSource {
   return {
     vertex: COMMON_VERTEX_SHADER,
     fragment: fragmentCode,
-    uniforms: ['u_texture', 'u_time', 'u_resolution', ...additionalUniforms],
+    uniforms: ["u_texture", "u_time", "u_resolution", ...additionalUniforms],
   };
 }

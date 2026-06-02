@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect } from "react";
 import {
   announcePolite,
   announceAssertive,
@@ -13,9 +13,9 @@ import {
   announceListUpdate,
   announceFormErrors,
   announceFormValidation,
-} from '@/lib/a11y/screenReader';
+} from "@/lib/a11y/screenReader";
 
-export type AnnouncementPriority = 'polite' | 'assertive';
+export type AnnouncementPriority = "polite" | "assertive";
 
 export interface UseAnnouncerOptions {
   defaultPriority?: AnnouncementPriority;
@@ -27,20 +27,29 @@ export interface UseAnnouncerResult {
   announcePolite: (message: string) => void;
   announceAssertive: (message: string) => void;
   announcePageTransition: (pageName: string) => void;
-  announceToast: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
+  announceToast: (
+    message: string,
+    type?: "success" | "error" | "warning" | "info",
+  ) => void;
   announceLoadingStart: (context?: string) => void;
   announceLoadingComplete: (context?: string) => void;
   announceDialogOpen: (dialogName: string) => void;
   announceDialogClose: (dialogName: string) => void;
   announceSelection: (itemName: string, isSelected: boolean) => void;
-  announceListUpdate: (action: 'added' | 'removed', itemName: string) => void;
+  announceListUpdate: (action: "added" | "removed", itemName: string) => void;
   announceFormErrors: (errors: Record<string, string>) => void;
-  announceFormValidation: (fieldName: string, isValid: boolean, errorMessage?: string) => void;
+  announceFormValidation: (
+    fieldName: string,
+    isValid: boolean,
+    errorMessage?: string,
+  ) => void;
   clear: () => void;
 }
 
-export function useAnnouncer(options: UseAnnouncerOptions = {}): UseAnnouncerResult {
-  const { defaultPriority = 'polite', debounceMs = 0 } = options;
+export function useAnnouncer(
+  options: UseAnnouncerOptions = {},
+): UseAnnouncerResult {
+  const { defaultPriority = "polite", debounceMs = 0 } = options;
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -54,7 +63,7 @@ export function useAnnouncer(options: UseAnnouncerOptions = {}): UseAnnouncerRes
   const announce = useCallback(
     (message: string, priority: AnnouncementPriority = defaultPriority) => {
       const doAnnounce = () => {
-        if (priority === 'assertive') {
+        if (priority === "assertive") {
           announceAssertive(message);
         } else {
           announcePolite(message);
@@ -70,7 +79,7 @@ export function useAnnouncer(options: UseAnnouncerOptions = {}): UseAnnouncerRes
         doAnnounce();
       }
     },
-    [defaultPriority, debounceMs]
+    [defaultPriority, debounceMs],
   );
 
   return {

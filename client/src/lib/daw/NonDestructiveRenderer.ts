@@ -1,4 +1,4 @@
-import { PeakData, peakCacheEngine } from './PeakCacheEngine';
+import { PeakData, peakCacheEngine } from "./PeakCacheEngine";
 
 export interface DataZoomState {
   verticalScale: number;
@@ -36,10 +36,10 @@ export interface WaveformRenderResult {
 }
 
 export interface FadeOverlay {
-  type: 'fadeIn' | 'fadeOut' | 'crossfade';
+  type: "fadeIn" | "fadeOut" | "crossfade";
   startX: number;
   endX: number;
-  curve: 'linear' | 'exponential' | 'logarithmic' | 's-curve' | 'equal-power';
+  curve: "linear" | "exponential" | "logarithmic" | "s-curve" | "equal-power";
 }
 
 export class NonDestructiveRenderer {
@@ -52,13 +52,13 @@ export class NonDestructiveRenderer {
 
   createCoordinateMapping(
     viewport: RenderViewport,
-    sampleRate: number
+    sampleRate: number,
   ): CoordinateMapping {
     const { x, y, width, height, startTime, endTime, verticalScale } = viewport;
     const durationVisible = endTime - startTime;
     const pixelsPerSecond = width / durationVisible;
     const centerY = y + height / 2;
-    const amplitudeRange = height / 2 * verticalScale;
+    const amplitudeRange = (height / 2) * verticalScale;
 
     return {
       sampleToPixelX: (sample: number) => {
@@ -87,17 +87,20 @@ export class NonDestructiveRenderer {
   renderWaveform(
     sourceId: string,
     sampleRate: number,
-    viewport: RenderViewport
+    viewport: RenderViewport,
   ): WaveformRenderResult | null {
     const startMs = performance.now();
-    const startSample = Math.max(0, Math.floor(viewport.startTime * sampleRate));
+    const startSample = Math.max(
+      0,
+      Math.floor(viewport.startTime * sampleRate),
+    );
     const endSample = Math.ceil(viewport.endTime * sampleRate);
 
     const peakResult = peakCacheEngine.getPeaksForView(
       sourceId,
       startSample,
       endSample,
-      viewport.width
+      viewport.width,
     );
 
     if (!peakResult) {
@@ -105,8 +108,9 @@ export class NonDestructiveRenderer {
     }
 
     const mapping = this.createCoordinateMapping(viewport, sampleRate);
-    const path: WaveformRenderResult['path'] = [];
-    const peakDuration = (viewport.endTime - viewport.startTime) / peakResult.peaks.length;
+    const path: WaveformRenderResult["path"] = [];
+    const peakDuration =
+      (viewport.endTime - viewport.startTime) / peakResult.peaks.length;
 
     for (let i = 0; i < peakResult.peaks.length; i++) {
       const peak = peakResult.peaks[i];
@@ -138,7 +142,7 @@ export class NonDestructiveRenderer {
     fade: FadeOverlay,
     height: number,
     centerY: number,
-    points: number = 64
+    points: number = 64,
   ): { x: number; y: number }[] {
     const path: { x: number; y: number }[] = [];
     const width = fade.endX - fade.startX;
@@ -148,24 +152,26 @@ export class NonDestructiveRenderer {
       let gain: number;
 
       switch (fade.curve) {
-        case 'exponential':
-          gain = fade.type === 'fadeIn' ? t * t : (1 - t) * (1 - t);
+        case "exponential":
+          gain = fade.type === "fadeIn" ? t * t : (1 - t) * (1 - t);
           break;
-        case 'logarithmic':
-          gain = fade.type === 'fadeIn' ? Math.sqrt(t) : Math.sqrt(1 - t);
+        case "logarithmic":
+          gain = fade.type === "fadeIn" ? Math.sqrt(t) : Math.sqrt(1 - t);
           break;
-        case 's-curve':
-          gain = fade.type === 'fadeIn'
-            ? t * t * (3 - 2 * t)
-            : 1 - t * t * (3 - 2 * t);
+        case "s-curve":
+          gain =
+            fade.type === "fadeIn"
+              ? t * t * (3 - 2 * t)
+              : 1 - t * t * (3 - 2 * t);
           break;
-        case 'equal-power':
-          gain = fade.type === 'fadeIn'
-            ? Math.sin(t * Math.PI / 2)
-            : Math.cos(t * Math.PI / 2);
+        case "equal-power":
+          gain =
+            fade.type === "fadeIn"
+              ? Math.sin((t * Math.PI) / 2)
+              : Math.cos((t * Math.PI) / 2);
           break;
         default:
-          gain = fade.type === 'fadeIn' ? t : 1 - t;
+          gain = fade.type === "fadeIn" ? t : 1 - t;
       }
 
       path.push({
@@ -218,7 +224,8 @@ export class NonDestructiveRenderer {
       }
 
       if (maxAmplitude > 0) {
-        this.dataZoom.verticalScale = (viewport.height / 2) / maxAmplitude * 0.9;
+        this.dataZoom.verticalScale =
+          (viewport.height / 2 / maxAmplitude) * 0.9;
       }
     }
   }
@@ -227,7 +234,7 @@ export class NonDestructiveRenderer {
     totalDuration: number,
     containerWidth: number,
     scrollOffset: number,
-    horizontalZoom: number
+    horizontalZoom: number,
   ): { startTime: number; endTime: number; pixelsPerSecond: number } {
     const visibleDuration = totalDuration / horizontalZoom;
     const maxOffset = Math.max(0, totalDuration - visibleDuration);

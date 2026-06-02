@@ -1,10 +1,10 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Upload,
   Link,
@@ -20,12 +20,18 @@ import {
   AlertCircle,
   CheckCircle,
   Calendar,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface ActionSuggestion {
   id: string;
-  type: 'distribution' | 'social' | 'marketing' | 'studio' | 'analytics' | 'setup';
-  priority: 'high' | 'medium' | 'low';
+  type:
+    | "distribution"
+    | "social"
+    | "marketing"
+    | "studio"
+    | "analytics"
+    | "setup";
+  priority: "high" | "medium" | "low";
   title: string;
   description: string;
   action: string;
@@ -45,36 +51,46 @@ const iconMap: Record<string, React.ElementType> = {
   upload: Upload,
   link: Link,
   compass: Compass,
-  'trending-up': TrendingUp,
+  "trending-up": TrendingUp,
   users: Users,
-  'dollar-sign': DollarSign,
+  "dollar-sign": DollarSign,
   music: Music,
   clock: Clock,
   zap: Zap,
   calendar: Calendar,
 };
 
-const priorityStyles: Record<string, { bg: string; border: string; badge: string }> = {
+const priorityStyles: Record<
+  string,
+  { bg: string; border: string; badge: string }
+> = {
   high: {
-    bg: 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30',
-    border: 'border-red-200 dark:border-red-800',
-    badge: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+    bg: "bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30",
+    border: "border-red-200 dark:border-red-800",
+    badge: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
   },
   medium: {
-    bg: 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30',
-    border: 'border-blue-200 dark:border-blue-800',
-    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    bg: "bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30",
+    border: "border-blue-200 dark:border-blue-800",
+    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
   },
   low: {
-    bg: 'bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30',
-    border: 'border-gray-200 dark:border-gray-700',
-    badge: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    bg: "bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30",
+    border: "border-gray-200 dark:border-gray-700",
+    badge: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
   },
 };
 
-export function SmartActionBar({ onNavigate, maxActions = 4 }: SmartActionBarProps) {
-  const { data: suggestions, isLoading, error } = useQuery<ActionSuggestion[]>({
-    queryKey: ['/api/personalization/suggestions'],
+export function SmartActionBar({
+  onNavigate,
+  maxActions = 4,
+}: SmartActionBarProps) {
+  const {
+    data: suggestions,
+    isLoading,
+    error,
+  } = useQuery<ActionSuggestion[]>({
+    queryKey: ["/api/personalization/suggestions"],
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -97,7 +113,10 @@ export function SmartActionBar({ onNavigate, maxActions = 4 }: SmartActionBarPro
           </div>
           <div className="flex gap-3 overflow-hidden">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-24 w-64 flex-shrink-0 rounded-lg" />
+              <Skeleton
+                key={i}
+                className="h-24 w-64 flex-shrink-0 rounded-lg"
+              />
             ))}
           </div>
         </CardContent>
@@ -149,7 +168,9 @@ export function SmartActionBar({ onNavigate, maxActions = 4 }: SmartActionBarPro
                           <IconComponent className="h-4 w-4 text-purple-600" />
                         </div>
                         <Badge className={`text-xs ${styles.badge}`}>
-                          {suggestion.priority === 'high' && <AlertCircle className="h-3 w-3 mr-1" />}
+                          {suggestion.priority === "high" && (
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                          )}
                           {suggestion.priority}
                         </Badge>
                       </div>

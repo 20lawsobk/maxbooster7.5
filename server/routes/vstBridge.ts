@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
-import { z } from 'zod';
-import { logger } from '../logger.js';
-import { vstPluginBridge } from '../services/vstPluginBridge';
+import { Router } from "express";
+import { requireAuth } from "../middleware/auth.js";
+import { z } from "zod";
+import { logger } from "../logger.js";
+import { vstPluginBridge } from "../services/vstPluginBridge";
 
 const router = Router();
 
@@ -31,7 +31,7 @@ const loadProgramSchema = z.object({
   programIndex: z.number().int().min(0),
 });
 
-router.get('/status', requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
     const stats = vstPluginBridge.getStats();
     res.json({
@@ -44,25 +44,25 @@ router.get('/status', requireAuth, async (req, res) => {
       lastScanTime: stats.lastScanTime,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error getting VST bridge status:');
-    res.status(500).json({ error: 'Failed to get VST bridge status' });
+    logger.warn({ err: error }, "Error getting VST bridge status:");
+    res.status(500).json({ error: "Failed to get VST bridge status" });
   }
 });
 
-router.post('/initialize', requireAuth, async (req, res) => {
+router.post("/initialize", requireAuth, async (req, res) => {
   try {
     await vstPluginBridge.initialize();
     res.json({
       success: true,
-      message: 'VST Plugin Bridge initialized',
+      message: "VST Plugin Bridge initialized",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error initializing VST bridge:');
-    res.status(500).json({ error: 'Failed to initialize VST bridge' });
+    logger.warn({ err: error }, "Error initializing VST bridge:");
+    res.status(500).json({ error: "Failed to initialize VST bridge" });
   }
 });
 
-router.post('/connect-desktop', requireAuth, async (req, res) => {
+router.post("/connect-desktop", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { sessionId } = connectDesktopSchema.parse(req.body);
@@ -75,7 +75,7 @@ router.post('/connect-desktop', requireAuth, async (req, res) => {
     if (connected) {
       res.json({
         success: true,
-        message: 'Desktop app connected successfully',
+        message: "Desktop app connected successfully",
         capabilities: {
           vstSupport: true,
           auSupport: true,
@@ -85,31 +85,33 @@ router.post('/connect-desktop', requireAuth, async (req, res) => {
         },
       });
     } else {
-      res.status(400).json({ error: 'Failed to connect desktop app' });
+      res.status(400).json({ error: "Failed to connect desktop app" });
     }
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error connecting desktop app:');
+    logger.warn({ err: error }, "Error connecting desktop app:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid request data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to connect desktop app' });
+    res.status(500).json({ error: "Failed to connect desktop app" });
   }
 });
 
-router.post('/disconnect-desktop', requireAuth, async (req, res) => {
+router.post("/disconnect-desktop", requireAuth, async (req, res) => {
   try {
     vstPluginBridge.disconnectDesktopApp();
     res.json({
       success: true,
-      message: 'Desktop app disconnected',
+      message: "Desktop app disconnected",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error disconnecting desktop app:');
-    res.status(500).json({ error: 'Failed to disconnect desktop app' });
+    logger.warn({ err: error }, "Error disconnecting desktop app:");
+    res.status(500).json({ error: "Failed to disconnect desktop app" });
   }
 });
 
-router.post('/scan', requireAuth, async (req, res) => {
+router.post("/scan", requireAuth, async (req, res) => {
   try {
     const { paths } = scanPathsSchema.parse(req.body);
     const result = await vstPluginBridge.scanPlugins(paths);
@@ -119,26 +121,30 @@ router.post('/scan', requireAuth, async (req, res) => {
       result,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error scanning VST plugins:');
+    logger.warn({ err: error }, "Error scanning VST plugins:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid request data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to scan VST plugins' });
+    res.status(500).json({ error: "Failed to scan VST plugins" });
   }
 });
 
-router.get('/plugins', requireAuth, async (req, res) => {
+router.get("/plugins", requireAuth, async (req, res) => {
   try {
     const { category, format } = req.query;
 
     let plugins = vstPluginBridge.getScannedPlugins();
 
-    if (category && (category === 'instrument' || category === 'effect')) {
+    if (category && (category === "instrument" || category === "effect")) {
       plugins = vstPluginBridge.getPluginsByCategory(category);
     }
 
-    if (format && ['vst2', 'vst3', 'au', 'aax'].includes(format as string)) {
-      plugins = vstPluginBridge.getPluginsByFormat(format as Record<string, unknown>);
+    if (format && ["vst2", "vst3", "au", "aax"].includes(format as string)) {
+      plugins = vstPluginBridge.getPluginsByFormat(
+        format as Record<string, unknown>,
+      );
     }
 
     res.json({
@@ -147,18 +153,18 @@ router.get('/plugins', requireAuth, async (req, res) => {
       count: plugins.length,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching VST plugins:');
-    res.status(500).json({ error: 'Failed to fetch VST plugins' });
+    logger.warn({ err: error }, "Error fetching VST plugins:");
+    res.status(500).json({ error: "Failed to fetch VST plugins" });
   }
 });
 
-router.get('/plugins/:id', requireAuth, async (req, res) => {
+router.get("/plugins/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const plugin = vstPluginBridge.getPluginById(id);
 
     if (!plugin) {
-      return res.status(404).json({ error: 'Plugin not found' });
+      return res.status(404).json({ error: "Plugin not found" });
     }
 
     res.json({
@@ -166,12 +172,12 @@ router.get('/plugins/:id', requireAuth, async (req, res) => {
       plugin,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching VST plugin details:');
-    res.status(500).json({ error: 'Failed to fetch plugin details' });
+    logger.warn({ err: error }, "Error fetching VST plugin details:");
+    res.status(500).json({ error: "Failed to fetch plugin details" });
   }
 });
 
-router.post('/instances', requireAuth, async (req, res) => {
+router.post("/instances", requireAuth, async (req, res) => {
   try {
     const data = createInstanceSchema.parse(req.body);
 
@@ -181,7 +187,7 @@ router.post('/instances', requireAuth, async (req, res) => {
       data.trackId,
       data.chainPosition,
       data.sampleRate,
-      data.blockSize
+      data.blockSize,
     );
 
     res.status(201).json({
@@ -189,25 +195,29 @@ router.post('/instances', requireAuth, async (req, res) => {
       instance,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error creating VST instance:');
+    logger.warn({ err: error }, "Error creating VST instance:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid request data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to create VST instance' });
+    res.status(500).json({ error: "Failed to create VST instance" });
   }
 });
 
-router.get('/instances', requireAuth, async (req, res) => {
+router.get("/instances", requireAuth, async (req, res) => {
   try {
     const { projectId, trackId } = req.query;
 
     let instances;
-    if (trackId && typeof trackId === 'string') {
+    if (trackId && typeof trackId === "string") {
       instances = vstPluginBridge.getTrackInstances(trackId);
-    } else if (projectId && typeof projectId === 'string') {
+    } else if (projectId && typeof projectId === "string") {
       instances = vstPluginBridge.getProjectInstances(projectId);
     } else {
-      return res.status(400).json({ error: 'projectId or trackId is required' });
+      return res
+        .status(400)
+        .json({ error: "projectId or trackId is required" });
     }
 
     res.json({
@@ -215,18 +225,18 @@ router.get('/instances', requireAuth, async (req, res) => {
       instances,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching VST instances:');
-    res.status(500).json({ error: 'Failed to fetch VST instances' });
+    logger.warn({ err: error }, "Error fetching VST instances:");
+    res.status(500).json({ error: "Failed to fetch VST instances" });
   }
 });
 
-router.get('/instances/:id', requireAuth, async (req, res) => {
+router.get("/instances/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const instance = vstPluginBridge.getInstance(id);
 
     if (!instance) {
-      return res.status(404).json({ error: 'Instance not found' });
+      return res.status(404).json({ error: "Instance not found" });
     }
 
     res.json({
@@ -234,12 +244,12 @@ router.get('/instances/:id', requireAuth, async (req, res) => {
       instance,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching VST instance:');
-    res.status(500).json({ error: 'Failed to fetch VST instance' });
+    logger.warn({ err: error }, "Error fetching VST instance:");
+    res.status(500).json({ error: "Failed to fetch VST instance" });
   }
 });
 
-router.put('/instances/:id/parameters', requireAuth, async (req, res) => {
+router.put("/instances/:id/parameters", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { parameters } = updateParametersSchema.parse(req.body);
@@ -251,21 +261,23 @@ router.put('/instances/:id/parameters', requireAuth, async (req, res) => {
       instance,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error updating VST parameters:');
+    logger.warn({ err: error }, "Error updating VST parameters:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid request data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to update VST parameters' });
+    res.status(500).json({ error: "Failed to update VST parameters" });
   }
 });
 
-router.put('/instances/:id/bypass', requireAuth, async (req, res) => {
+router.put("/instances/:id/bypass", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { bypassed } = req.body;
 
-    if (typeof bypassed !== 'boolean') {
-      return res.status(400).json({ error: 'bypassed must be a boolean' });
+    if (typeof bypassed !== "boolean") {
+      return res.status(400).json({ error: "bypassed must be a boolean" });
     }
 
     const instance = await vstPluginBridge.setBypass(id, bypassed);
@@ -275,12 +287,12 @@ router.put('/instances/:id/bypass', requireAuth, async (req, res) => {
       instance,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error setting VST bypass:');
-    res.status(500).json({ error: 'Failed to set VST bypass' });
+    logger.warn({ err: error }, "Error setting VST bypass:");
+    res.status(500).json({ error: "Failed to set VST bypass" });
   }
 });
 
-router.post('/instances/:id/program', requireAuth, async (req, res) => {
+router.post("/instances/:id/program", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { programIndex } = loadProgramSchema.parse(req.body);
@@ -289,18 +301,20 @@ router.post('/instances/:id/program', requireAuth, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Program loaded successfully',
+      message: "Program loaded successfully",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error loading VST program:');
+    logger.warn({ err: error }, "Error loading VST program:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid request data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to load VST program' });
+    res.status(500).json({ error: "Failed to load VST program" });
   }
 });
 
-router.post('/instances/:id/editor/open', requireAuth, async (req, res) => {
+router.post("/instances/:id/editor/open", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await vstPluginBridge.openEditor(id);
@@ -310,76 +324,76 @@ router.post('/instances/:id/editor/open', requireAuth, async (req, res) => {
       windowId: result.windowId,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error opening VST editor:');
-    res.status(500).json({ error: 'Failed to open VST editor' });
+    logger.warn({ err: error }, "Error opening VST editor:");
+    res.status(500).json({ error: "Failed to open VST editor" });
   }
 });
 
-router.post('/instances/:id/editor/close', requireAuth, async (req, res) => {
+router.post("/instances/:id/editor/close", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     await vstPluginBridge.closeEditor(id);
 
     res.json({
       success: true,
-      message: 'Editor closed',
+      message: "Editor closed",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error closing VST editor:');
-    res.status(500).json({ error: 'Failed to close VST editor' });
+    logger.warn({ err: error }, "Error closing VST editor:");
+    res.status(500).json({ error: "Failed to close VST editor" });
   }
 });
 
-router.delete('/instances/:id', requireAuth, async (req, res) => {
+router.delete("/instances/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     await vstPluginBridge.deleteInstance(id);
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error deleting VST instance:');
-    res.status(500).json({ error: 'Failed to delete VST instance' });
+    logger.warn({ err: error }, "Error deleting VST instance:");
+    res.status(500).json({ error: "Failed to delete VST instance" });
   }
 });
 
-router.get('/formats', requireAuth, async (req, res) => {
+router.get("/formats", requireAuth, async (req, res) => {
   try {
     res.json({
       success: true,
       formats: [
         {
-          id: 'vst2',
-          name: 'VST 2.4',
-          description: 'Steinberg VST 2.4 plugin format',
-          platforms: ['windows', 'macos'],
-          fileExtensions: ['.dll', '.vst'],
+          id: "vst2",
+          name: "VST 2.4",
+          description: "Steinberg VST 2.4 plugin format",
+          platforms: ["windows", "macos"],
+          fileExtensions: [".dll", ".vst"],
         },
         {
-          id: 'vst3',
-          name: 'VST 3',
-          description: 'Steinberg VST 3 plugin format',
-          platforms: ['windows', 'macos', 'linux'],
-          fileExtensions: ['.vst3'],
+          id: "vst3",
+          name: "VST 3",
+          description: "Steinberg VST 3 plugin format",
+          platforms: ["windows", "macos", "linux"],
+          fileExtensions: [".vst3"],
         },
         {
-          id: 'au',
-          name: 'Audio Unit',
-          description: 'Apple Audio Unit plugin format',
-          platforms: ['macos'],
-          fileExtensions: ['.component'],
+          id: "au",
+          name: "Audio Unit",
+          description: "Apple Audio Unit plugin format",
+          platforms: ["macos"],
+          fileExtensions: [".component"],
         },
         {
-          id: 'aax',
-          name: 'AAX',
-          description: 'Avid AAX plugin format (Pro Tools)',
-          platforms: ['windows', 'macos'],
-          fileExtensions: ['.aaxplugin'],
+          id: "aax",
+          name: "AAX",
+          description: "Avid AAX plugin format (Pro Tools)",
+          platforms: ["windows", "macos"],
+          fileExtensions: [".aaxplugin"],
         },
       ],
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching plugin formats:');
-    res.status(500).json({ error: 'Failed to fetch plugin formats' });
+    logger.warn({ err: error }, "Error fetching plugin formats:");
+    res.status(500).json({ error: "Failed to fetch plugin formats" });
   }
 });
 

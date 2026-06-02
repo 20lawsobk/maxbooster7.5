@@ -16,36 +16,36 @@
  *   - Returns SERVFAIL on upstream errors (never drops queries silently)
  */
 
-'use strict';
+"use strict";
 
-const dgram = require('dgram');
-const net   = require('net');
-const https = require('https');
-const http  = require('http');
-const url   = require('url');
+const dgram = require("dgram");
+const net = require("net");
+const https = require("https");
+const http = require("http");
+const url = require("url");
 
 // ── Config (all overridable via environment variables) ────────────────────────
 
-const APP_URL    = process.env.APP_URL    || 'https://maxbooster.replit.app';
-const LISTEN_IP  = process.env.LISTEN_IP  || '0.0.0.0';
-const DNS_PORT   = parseInt(process.env.DNS_PORT   || '53',   10);
-const TIMEOUT_MS = parseInt(process.env.TIMEOUT_MS || '5000', 10);
+const APP_URL = process.env.APP_URL || "https://maxbooster.replit.app";
+const LISTEN_IP = process.env.LISTEN_IP || "0.0.0.0";
+const DNS_PORT = parseInt(process.env.DNS_PORT || "53", 10);
+const TIMEOUT_MS = parseInt(process.env.TIMEOUT_MS || "5000", 10);
 
 // ── Parse upstream URL ────────────────────────────────────────────────────────
 
-const parsed   = url.parse(APP_URL);
-const USE_TLS  = parsed.protocol === 'https:';
+const parsed = url.parse(APP_URL);
+const USE_TLS = parsed.protocol === "https:";
 const DOH_HOST = parsed.hostname;
-const DOH_PORT = parsed.port ? parseInt(parsed.port, 10) : (USE_TLS ? 443 : 80);
-const DOH_PATH = (parsed.path || '').replace(/\/$/, '') + '/api/dns/query';
+const DOH_PORT = parsed.port ? parseInt(parsed.port, 10) : USE_TLS ? 443 : 80;
+const DOH_PATH = (parsed.path || "").replace(/\/$/, "") + "/api/dns/query";
 
 // ── Keep-alive HTTPS agent (reuse connections = lower RTT) ────────────────────
 
 const agent = new (USE_TLS ? https : http).Agent({
-  keepAlive:        true,
-  maxSockets:       64,
-  maxFreeSockets:   16,
-  timeout:          TIMEOUT_MS + 1000,
+  keepAlive: true,
+  maxSockets: 64,
+  maxFreeSockets: 16,
+  timeout: TIMEOUT_MS + 1000,
 });
 
 // ── DoH forwarder ─────────────────────────────────────────────────────────────
@@ -64,32 +64,38 @@ function forwardQuery(queryBuffer) {
     const options = {
       agent,
       hostname: DOH_HOST,
-      port:     DOH_PORT,
-      path:     DOH_PATH,
-      method:   'POST',
+      port: DOH_PORT,
+      path: DOH_PATH,
+      method: "POST",
       headers: {
-        'Content-Type':   'application/dns-message',
-        'Accept':         'application/dns-message',
-        'Content-Length': queryBuffer.length,
-        'User-Agent':     'MaxBooster-DNS-Proxy-Node/2.0',
+        "Content-Type": "application/dns-message",
+        Accept: "application/dns-message",
+        "Content-Length": queryBuffer.length,
+        "User-Agent": "MaxBooster-DNS-Proxy-Node/2.0",
       },
     };
 
     const transport = USE_TLS ? https : http;
     const req = transport.request(options, (res) => {
       const chunks = [];
-      res.on('data', (chunk) => chunks.push(chunk));
-      res.on('end', () => {
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => {
         clearTimeout(deadline);
         if (res.statusCode !== 200) {
           return reject(new Error(`DoH upstream HTTP ${res.statusCode}`));
         }
         resolve(Buffer.concat(chunks));
       });
-      res.on('error', (err) => { clearTimeout(deadline); reject(err); });
+      res.on("error", (err) => {
+        clearTimeout(deadline);
+        reject(err);
+      });
     });
 
-    req.on('error', (err) => { clearTimeout(deadline); reject(err); });
+    req.on("error", (err) => {
+      clearTimeout(deadline);
+      reject(err);
+    });
     req.write(queryBuffer);
     req.end();
   });
@@ -106,29 +112,31 @@ function buildServfail(queryBuffer) {
   const sf = Buffer.alloc(12);
   sf[0] = queryBuffer[0];
   sf[1] = queryBuffer[1];
-  sf[2] = 0x81;  // QR=1, RD=1
-  sf[3] = 0x82;  // RA=1, RCODE=2 (SERVFAIL)
+  sf[2] = 0x81; // QR=1, RD=1
+  sf[3] = 0x82; // RA=1, RCODE=2 (SERVFAIL)
   return sf;
 }
 
 // ── UDP server ────────────────────────────────────────────────────────────────
 
-const udp = dgram.createSocket('udp4');
+const udp = dgram.createSocket("udp4");
 
-udp.on('message', async (msg, rinfo) => {
+udp.on("message", async (msg, rinfo) => {
   try {
     const response = await forwardQuery(msg);
     udp.send(response, rinfo.port, rinfo.address, (err) => {
       if (err) process.stderr.write(`[UDP] send error: ${err.message}\n`);
     });
   } catch (err) {
-    process.stderr.write(`[UDP] ${rinfo.address}:${rinfo.port} — forward error: ${err.message}\n`);
+    process.stderr.write(
+      `[UDP] ${rinfo.address}:${rinfo.port} — forward error: ${err.message}\n`,
+    );
     const sf = buildServfail(msg);
     if (sf.length > 0) udp.send(sf, rinfo.port, rinfo.address);
   }
 });
 
-udp.on('error', (err) => {
+udp.on("error", (err) => {
   process.stderr.write(`[UDP] Fatal error: ${err.message}\n`);
   process.exit(1);
 });
@@ -139,7 +147,7 @@ const tcp = net.createServer((socket) => {
   socket.setTimeout(30000);
   let buf = Buffer.alloc(0);
 
-  socket.on('data', (chunk) => {
+  socket.on("data", (chunk) => {
     buf = Buffer.concat([buf, chunk]);
 
     // DNS-over-TCP: first 2 bytes = big-endian message length
@@ -154,7 +162,8 @@ const tcp = net.createServer((socket) => {
         .then((response) => {
           const lenBuf = Buffer.allocUnsafe(2);
           lenBuf.writeUInt16BE(response.length, 0);
-          if (!socket.destroyed) socket.write(Buffer.concat([lenBuf, response]));
+          if (!socket.destroyed)
+            socket.write(Buffer.concat([lenBuf, response]));
         })
         .catch((err) => {
           process.stderr.write(`[TCP] forward error: ${err.message}\n`);
@@ -169,15 +178,15 @@ const tcp = net.createServer((socket) => {
     }
   });
 
-  socket.on('timeout', () => socket.destroy());
-  socket.on('error', (err) => {
-    if (err.code !== 'ECONNRESET' && err.code !== 'EPIPE') {
+  socket.on("timeout", () => socket.destroy());
+  socket.on("error", (err) => {
+    if (err.code !== "ECONNRESET" && err.code !== "EPIPE") {
       process.stderr.write(`[TCP] socket error: ${err.message}\n`);
     }
   });
 });
 
-tcp.on('error', (err) => {
+tcp.on("error", (err) => {
   process.stderr.write(`[TCP] Fatal error: ${err.message}\n`);
   process.exit(1);
 });
@@ -190,8 +199,8 @@ function shutdown(signal) {
   tcp.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 3000);
 }
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT',  () => shutdown('SIGINT'));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 
@@ -205,5 +214,7 @@ tcp.listen(DNS_PORT, LISTEN_IP, () => {
 
 process.stdout.write(`Max Booster DNS Proxy (Node.js fallback) started\n`);
 process.stdout.write(`  Forwarding → ${APP_URL}/api/dns/query\n`);
-process.stdout.write(`  Host       : ${DOH_HOST}:${DOH_PORT} (TLS: ${USE_TLS})\n`);
+process.stdout.write(
+  `  Host       : ${DOH_HOST}:${DOH_PORT} (TLS: ${USE_TLS})\n`,
+);
 process.stdout.write(`  Timeout    : ${TIMEOUT_MS} ms\n`);

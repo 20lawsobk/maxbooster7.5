@@ -1,7 +1,7 @@
-import { logger } from '@/lib/logger';
-import { useRef, useEffect, useCallback, useState } from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { logger } from "@/lib/logger";
+import { useRef, useEffect, useCallback, useState } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface FlowStateSpectralVisualizerProps {
   audioContext: AudioContext | null;
@@ -9,7 +9,7 @@ interface FlowStateSpectralVisualizerProps {
   isPlaying: boolean;
   width?: number;
   height?: number;
-  mode?: 'spectrum' | 'waveform' | 'circular';
+  mode?: "spectrum" | "waveform" | "circular";
 }
 
 const VERTEX_SHADER = `
@@ -160,52 +160,59 @@ interface WebGLResources {
   positionBuffer: WebGLBuffer;
 }
 
-function compileShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
+function compileShader(
+  gl: WebGLRenderingContext,
+  type: number,
+  source: string,
+): WebGLShader | null {
   const shader = gl.createShader(type);
   if (!shader) {
-    logger.error('Failed to create shader');
+    logger.error("Failed to create shader");
     return null;
   }
-  
+
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
-  
+
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    logger.error('Shader compile error:', gl.getShaderInfoLog(shader));
+    logger.error("Shader compile error:", gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
     return null;
   }
-  
+
   return shader;
 }
 
 function createProgram(
   gl: WebGLRenderingContext,
   vertexShader: WebGLShader,
-  fragmentShader: WebGLShader
+  fragmentShader: WebGLShader,
 ): WebGLProgram | null {
   const program = gl.createProgram();
   if (!program) {
-    logger.error('Failed to create program');
+    logger.error("Failed to create program");
     return null;
   }
-  
+
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
-  
+
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    logger.error('Program link error:', gl.getProgramInfoLog(program));
+    logger.error("Program link error:", gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
     return null;
   }
-  
+
   return program;
 }
 
-function cleanupWebGL(gl: WebGLRenderingContext, resources: WebGLResources | null) {
+function cleanupWebGL(
+  gl: WebGLRenderingContext,
+  resources: WebGLResources | null,
+) {
   if (!resources) return;
-  
+
   gl.deleteProgram(resources.program);
   gl.deleteShader(resources.vertexShader);
   gl.deleteShader(resources.fragmentShader);
@@ -218,7 +225,7 @@ export function FlowStateSpectralVisualizer({
   isPlaying,
   width = 400,
   height = 200,
-  mode = 'spectrum',
+  mode = "spectrum",
 }: FlowStateSpectralVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
@@ -231,9 +238,9 @@ export function FlowStateSpectralVisualizer({
 
   const getFragmentShader = useCallback((m: typeof mode) => {
     switch (m) {
-      case 'waveform':
+      case "waveform":
         return WAVEFORM_FRAGMENT_SHADER;
-      case 'circular':
+      case "circular":
         return CIRCULAR_FRAGMENT_SHADER;
       default:
         return SPECTRUM_FRAGMENT_SHADER;
@@ -244,14 +251,14 @@ export function FlowStateSpectralVisualizer({
     const canvas = canvasRef.current;
     if (!canvas) return false;
 
-    const gl = canvas.getContext('webgl', {
+    const gl = canvas.getContext("webgl", {
       alpha: true,
       antialias: true,
       preserveDrawingBuffer: false,
     });
-    
+
     if (!gl) {
-      logger.warn('WebGL not supported');
+      logger.warn("WebGL not supported");
       setHasWebGL(false);
       return false;
     }
@@ -260,14 +267,18 @@ export function FlowStateSpectralVisualizer({
 
     const vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
     if (!vertexShader) {
-      setGlError('Failed to compile vertex shader');
+      setGlError("Failed to compile vertex shader");
       return false;
     }
 
-    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, getFragmentShader(currentMode));
+    const fragmentShader = compileShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      getFragmentShader(currentMode),
+    );
     if (!fragmentShader) {
       gl.deleteShader(vertexShader);
-      setGlError('Failed to compile fragment shader');
+      setGlError("Failed to compile fragment shader");
       return false;
     }
 
@@ -275,7 +286,7 @@ export function FlowStateSpectralVisualizer({
     if (!program) {
       gl.deleteShader(vertexShader);
       gl.deleteShader(fragmentShader);
-      setGlError('Failed to create WebGL program');
+      setGlError("Failed to create WebGL program");
       return false;
     }
 
@@ -286,7 +297,7 @@ export function FlowStateSpectralVisualizer({
       gl.deleteProgram(program);
       gl.deleteShader(vertexShader);
       gl.deleteShader(fragmentShader);
-      setGlError('Failed to create buffer');
+      setGlError("Failed to create buffer");
       return false;
     }
 
@@ -294,10 +305,10 @@ export function FlowStateSpectralVisualizer({
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
-      gl.STATIC_DRAW
+      gl.STATIC_DRAW,
     );
 
-    const positionLocation = gl.getAttribLocation(program, 'a_position');
+    const positionLocation = gl.getAttribLocation(program, "a_position");
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
@@ -318,7 +329,7 @@ export function FlowStateSpectralVisualizer({
   const render = useCallback(() => {
     const gl = glRef.current;
     const resources = resourcesRef.current;
-    
+
     if (!gl || !resources || gl.isContextLost()) {
       return;
     }
@@ -342,13 +353,19 @@ export function FlowStateSpectralVisualizer({
 
     gl.useProgram(resources.program);
 
-    const timeLocation = gl.getUniformLocation(resources.program, 'u_time');
+    const timeLocation = gl.getUniformLocation(resources.program, "u_time");
     gl.uniform1f(timeLocation, timeRef.current);
 
-    const freqCountLocation = gl.getUniformLocation(resources.program, 'u_freqCount');
+    const freqCountLocation = gl.getUniformLocation(
+      resources.program,
+      "u_freqCount",
+    );
     gl.uniform1f(freqCountLocation, 128);
 
-    const freqLocation = gl.getUniformLocation(resources.program, 'u_frequencies');
+    const freqLocation = gl.getUniformLocation(
+      resources.program,
+      "u_frequencies",
+    );
     const floatFreqs = new Float32Array(128);
     for (let i = 0; i < 128; i++) {
       floatFreqs[i] = frequencies[i];
@@ -366,7 +383,7 @@ export function FlowStateSpectralVisualizer({
 
     const handleContextLost = (e: Event) => {
       e.preventDefault();
-      logger.warn('WebGL context lost');
+      logger.warn("WebGL context lost");
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = undefined;
@@ -375,14 +392,14 @@ export function FlowStateSpectralVisualizer({
     };
 
     const handleContextRestored = () => {
-      logger.info('WebGL context restored');
+      logger.info("WebGL context restored");
       if (initGL()) {
         animationRef.current = requestAnimationFrame(render);
       }
     };
 
-    canvas.addEventListener('webglcontextlost', handleContextLost);
-    canvas.addEventListener('webglcontextrestored', handleContextRestored);
+    canvas.addEventListener("webglcontextlost", handleContextLost);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored);
 
     if (initGL()) {
       animationRef.current = requestAnimationFrame(render);
@@ -393,10 +410,10 @@ export function FlowStateSpectralVisualizer({
         cancelAnimationFrame(animationRef.current);
         animationRef.current = undefined;
       }
-      
-      canvas.removeEventListener('webglcontextlost', handleContextLost);
-      canvas.removeEventListener('webglcontextrestored', handleContextRestored);
-      
+
+      canvas.removeEventListener("webglcontextlost", handleContextLost);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored);
+
       if (glRef.current && resourcesRef.current) {
         cleanupWebGL(glRef.current, resourcesRef.current);
         resourcesRef.current = null;
@@ -405,7 +422,11 @@ export function FlowStateSpectralVisualizer({
   }, [initGL, render]);
 
   useEffect(() => {
-    if (resourcesRef.current && glRef.current && !glRef.current.isContextLost()) {
+    if (
+      resourcesRef.current &&
+      glRef.current &&
+      !glRef.current.isContextLost()
+    ) {
       animationRef.current = requestAnimationFrame(render);
     }
     return () => {
@@ -431,7 +452,12 @@ export function FlowStateSpectralVisualizer({
   }, [mode, currentMode]);
 
   useEffect(() => {
-    if (!resourcesRef.current && glRef.current && hasWebGL && !glRef.current.isContextLost()) {
+    if (
+      !resourcesRef.current &&
+      glRef.current &&
+      hasWebGL &&
+      !glRef.current.isContextLost()
+    ) {
       if (initGL()) {
         animationRef.current = requestAnimationFrame(render);
       }
@@ -439,9 +465,9 @@ export function FlowStateSpectralVisualizer({
   }, [currentMode, initGL, hasWebGL, render]);
 
   const modes: { id: typeof mode; label: string }[] = [
-    { id: 'spectrum', label: 'Spectrum' },
-    { id: 'waveform', label: 'Waveform' },
-    { id: 'circular', label: 'Circular' },
+    { id: "spectrum", label: "Spectrum" },
+    { id: "waveform", label: "Waveform" },
+    { id: "circular", label: "Circular" },
   ];
 
   if (!hasWebGL) {
@@ -464,13 +490,13 @@ export function FlowStateSpectralVisualizer({
         style={{ width, height }}
         className="rounded-xl bg-black/40 backdrop-blur-sm border border-white/5"
       />
-      
+
       {glError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
           <span className="text-xs text-red-400">{glError}</span>
         </div>
       )}
-      
+
       <div className="absolute top-2 right-2 flex gap-1 bg-black/50 rounded-lg p-1 backdrop-blur-sm">
         {modes.map((m) => (
           <motion.button
@@ -480,7 +506,7 @@ export function FlowStateSpectralVisualizer({
               "px-2 py-1 text-[10px] font-medium rounded transition-all",
               currentMode === m.id
                 ? "bg-purple-600 text-white"
-                : "text-white/50 hover:text-white hover:bg-white/10"
+                : "text-white/50 hover:text-white hover:bg-white/10",
             )}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -491,12 +517,14 @@ export function FlowStateSpectralVisualizer({
       </div>
 
       <div className="absolute bottom-2 left-2 flex items-center gap-2">
-        <div className={cn(
-          "w-2 h-2 rounded-full",
-          isPlaying ? "bg-green-500 animate-pulse" : "bg-white/30"
-        )} />
+        <div
+          className={cn(
+            "w-2 h-2 rounded-full",
+            isPlaying ? "bg-green-500 animate-pulse" : "bg-white/30",
+          )}
+        />
         <span className="text-[10px] text-white/50">
-          {isPlaying && analyserNode ? 'Analyzing...' : 'Demo Mode'}
+          {isPlaying && analyserNode ? "Analyzing..." : "Demo Mode"}
         </span>
       </div>
     </div>

@@ -1,13 +1,13 @@
-import type { Request, Response, NextFunction } from 'express';
-import { jwtAuthService } from '../services/jwtAuthService.js';
-import { storage } from '../storage.js';
-import { logger } from '../logger.js';
+import type { Request, Response, NextFunction } from "express";
+import { jwtAuthService } from "../services/jwtAuthService.js";
+import { storage } from "../storage.js";
+import { logger } from "../logger.js";
 
 async function resolveJwtUser(req: Request): Promise<void> {
   if (req.isAuthenticated && req.isAuthenticated()) return;
 
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return;
+  if (!authHeader?.startsWith("Bearer ")) return;
 
   const token = authHeader.substring(7);
   try {
@@ -20,26 +20,30 @@ async function resolveJwtUser(req: Request): Promise<void> {
       }
     }
   } catch (err) {
-    logger.warn({ err }, '[Auth] JWT verification error:');
+    logger.warn({ err }, "[Auth] JWT verification error:");
   }
 }
 
-export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const requireAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   await resolveJwtUser(req);
 
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    res.status(401).json({ error: 'Authentication required' });
+    res.status(401).json({ error: "Authentication required" });
     return;
   }
 
   const user = req.user!;
 
-  if (user.email === 'demo@maxbooster.ai') {
+  if (user.email === "demo@maxbooster.ai") {
     next();
     return;
   }
 
-  if (user.role === 'admin') {
+  if (user.role === "admin") {
     next();
     return;
   }
@@ -49,16 +53,18 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
   if (user.trialEndsAt) {
     if (now > user.trialEndsAt) {
       res.status(403).json({
-        error: 'Your 30-day trial has expired. Please contact support to continue using Max Booster.',
+        error:
+          "Your 30-day trial has expired. Please contact support to continue using Max Booster.",
         trialExpired: true,
       });
       return;
     }
   }
 
-  if (user.subscriptionEndsAt && user.subscriptionTier !== 'lifetime') {
+  if (user.subscriptionEndsAt && user.subscriptionTier !== "lifetime") {
     if (now > user.subscriptionEndsAt) {
-      const planName = user.subscriptionTier === 'monthly' ? 'monthly' : 'yearly';
+      const planName =
+        user.subscriptionTier === "monthly" ? "monthly" : "yearly";
       res.status(403).json({
         error: `Your ${planName} subscription has expired. Please renew your subscription to continue using Max Booster.`,
         subscriptionExpired: true,
@@ -77,25 +83,33 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
  * Use on content generation endpoints that are already behind
  * the frontend's protected-route subscription check.
  */
-export const requireAuthOnly = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const requireAuthOnly = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   await resolveJwtUser(req);
 
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    res.status(401).json({ error: 'Authentication required' });
+    res.status(401).json({ error: "Authentication required" });
     return;
   }
 
   next();
 };
 
-export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+export const requireAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (req.user?.role === 'admin') {
+  if (req.user?.role === "admin") {
     return next();
   }
-  res.status(403).json({ error: 'Admin access required' });
+  res.status(403).json({ error: "Admin access required" });
 };
 
 /**
@@ -108,13 +122,13 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
 export const require2FA = (req: Request, res: Response, next: NextFunction) => {
   const user = req.user;
   if (!user) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return res.status(401).json({ error: "Authentication required" });
   }
   if (user.twoFactorEnabled) {
     const sess = req.session as unknown as Record<string, unknown>;
     if (!sess?.twoFactorVerified) {
       return res.status(403).json({
-        error: 'Two-factor authentication required for this action',
+        error: "Two-factor authentication required for this action",
         requiresTwoFactor: true,
       });
     }

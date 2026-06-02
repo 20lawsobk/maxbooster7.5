@@ -1,6 +1,6 @@
-import { useState, useMemo, memo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { useState, useMemo, memo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import {
   PieChart,
   Pie,
@@ -15,11 +15,17 @@ import {
   BarChart,
   Bar,
   Legend,
-} from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "recharts";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Users,
   Globe,
@@ -32,11 +38,18 @@ import {
   UserMinus,
   Activity,
   Target,
-} from 'lucide-react';
-import { DateRangePicker } from '@/components/analytics/DateRangePicker';
-import { AudienceEmptyState, GeoEmptyState } from '@/components/analytics/AnalyticsEmptyStates';
-import { DemographicsSkeleton, GeographicSkeleton, StatCardRowSkeleton } from '@/components/analytics/AnalyticsLoadingSkeletons';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { DateRangePicker } from "@/components/analytics/DateRangePicker";
+import {
+  AudienceEmptyState,
+  GeoEmptyState,
+} from "@/components/analytics/AnalyticsEmptyStates";
+import {
+  DemographicsSkeleton,
+  GeographicSkeleton,
+  StatCardRowSkeleton,
+} from "@/components/analytics/AnalyticsLoadingSkeletons";
+import { cn } from "@/lib/utils";
 
 interface DemographicData {
   age: Array<{ range: string; percentage: number; count: number }>;
@@ -68,9 +81,21 @@ interface FanGrowthMetric {
 }
 
 const COUNTRY_FLAGS: Record<string, string> = {
-  US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', FR: '🇫🇷', BR: '🇧🇷',
-  JP: '🇯🇵', AU: '🇦🇺', CA: '🇨🇦', MX: '🇲🇽', ES: '🇪🇸',
-  IT: '🇮🇹', NL: '🇳🇱', SE: '🇸🇪', IN: '🇮🇳', KR: '🇰🇷',
+  US: "🇺🇸",
+  GB: "🇬🇧",
+  DE: "🇩🇪",
+  FR: "🇫🇷",
+  BR: "🇧🇷",
+  JP: "🇯🇵",
+  AU: "🇦🇺",
+  CA: "🇨🇦",
+  MX: "🇲🇽",
+  ES: "🇪🇸",
+  IT: "🇮🇹",
+  NL: "🇳🇱",
+  SE: "🇸🇪",
+  IN: "🇮🇳",
+  KR: "🇰🇷",
 };
 
 const CustomTooltip = ({ active, payload, label }: Record<string, unknown>) => {
@@ -80,7 +105,10 @@ const CustomTooltip = ({ active, payload, label }: Record<string, unknown>) => {
         <p className="font-semibold text-sm mb-2">{label}</p>
         {payload.map((entry: Record<string, unknown>, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
             <span className="text-muted-foreground">{entry.name}:</span>
             <span className="font-medium">{entry.value.toLocaleString()}</span>
           </div>
@@ -91,56 +119,66 @@ const CustomTooltip = ({ active, payload, label }: Record<string, unknown>) => {
   return null;
 };
 
-const MetricCard = memo(({
-  title,
-  value,
-  change,
-  icon: Icon,
-  color = 'blue',
-}: {
-  title: string;
-  value: string | number;
-  change?: number;
-  icon: React.ElementType;
-  color?: string;
-}) => {
-  const colorClasses = {
-    blue: 'from-blue-500/10 to-blue-600/5 border-blue-500/20',
-    green: 'from-green-500/10 to-green-600/5 border-green-500/20',
-    purple: 'from-purple-500/10 to-purple-600/5 border-purple-500/20',
-    orange: 'from-orange-500/10 to-orange-600/5 border-orange-500/20',
-  };
+const MetricCard = memo(
+  ({
+    title,
+    value,
+    change,
+    icon: Icon,
+    color = "blue",
+  }: {
+    title: string;
+    value: string | number;
+    change?: number;
+    icon: React.ElementType;
+    color?: string;
+  }) => {
+    const colorClasses = {
+      blue: "from-blue-500/10 to-blue-600/5 border-blue-500/20",
+      green: "from-green-500/10 to-green-600/5 border-green-500/20",
+      purple: "from-purple-500/10 to-purple-600/5 border-purple-500/20",
+      orange: "from-orange-500/10 to-orange-600/5 border-orange-500/20",
+    };
 
-  return (
-    <Card className={cn("bg-gradient-to-br", colorClasses[color as keyof typeof colorClasses])}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
-            {change !== undefined && (
-              <div className="flex items-center gap-1 mt-1">
-                {change > 0 ? (
-                  <TrendingUp className="w-3 h-3 text-green-500" />
-                ) : (
-                  <TrendingDown className="w-3 h-3 text-red-500" />
-                )}
-                <span className={cn(
-                  "text-xs",
-                  change > 0 ? "text-green-500" : "text-red-500"
-                )}>
-                  {change > 0 ? '+' : ''}{change}%
-                </span>
-              </div>
-            )}
+    return (
+      <Card
+        className={cn(
+          "bg-gradient-to-br",
+          colorClasses[color as keyof typeof colorClasses],
+        )}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">{title}</p>
+              <p className="text-2xl font-bold">{value}</p>
+              {change !== undefined && (
+                <div className="flex items-center gap-1 mt-1">
+                  {change > 0 ? (
+                    <TrendingUp className="w-3 h-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3 text-red-500" />
+                  )}
+                  <span
+                    className={cn(
+                      "text-xs",
+                      change > 0 ? "text-green-500" : "text-red-500",
+                    )}
+                  >
+                    {change > 0 ? "+" : ""}
+                    {change}%
+                  </span>
+                </div>
+              )}
+            </div>
+            <Icon className="h-5 w-5 text-muted-foreground" />
           </div>
-          <Icon className="h-5 w-5 text-muted-foreground" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
-MetricCard.displayName = 'MetricCard';
+        </CardContent>
+      </Card>
+    );
+  },
+);
+MetricCard.displayName = "MetricCard";
 
 interface AudienceInsightsProps {
   userId?: string;
@@ -150,25 +188,31 @@ interface AudienceInsightsProps {
 
 export function AudienceInsights({
   userId,
-  timeRange = '30d',
+  timeRange = "30d",
   onTimeRangeChange,
 }: AudienceInsightsProps) {
-  const { data, isLoading} = useQuery({
-    queryKey: ['/api/analytics/audience', timeRange],
+  const { data, isLoading } = useQuery({
+    queryKey: ["/api/analytics/audience", timeRange],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics/dashboard?range=${timeRange}`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch audience data');
+      const response = await fetch(
+        `/api/analytics/dashboard?range=${timeRange}`,
+        {
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to fetch audience data");
       return response.json();
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const demographics = useMemo<DemographicData>(() => ({
-    age: data?.audience?.demographics?.age || [],
-    gender: data?.audience?.demographics?.gender || [],
-  }), [data]);
+  const demographics = useMemo<DemographicData>(
+    () => ({
+      age: data?.audience?.demographics?.age || [],
+      gender: data?.audience?.demographics?.gender || [],
+    }),
+    [data],
+  );
 
   const geoData = useMemo<GeoData[]>(() => {
     if (!data?.audience?.geographic) {
@@ -176,7 +220,7 @@ export function AudienceInsights({
     }
     return data.audience.geographic.map((g: Record<string, unknown>) => ({
       ...g,
-      flag: COUNTRY_FLAGS[g.code] || '🌍',
+      flag: COUNTRY_FLAGS[g.code] || "🌍",
     }));
   }, [data]);
 
@@ -191,18 +235,45 @@ export function AudienceInsights({
     const totalListeners = data?.audience?.totalListeners || 0;
     const totalStreams = data?.overview?.totalStreams || 0;
     const superFans = Math.round(totalListeners * 0.12);
-    const engagementRate = totalListeners > 0 && totalStreams > 0
-      ? parseFloat((totalStreams / totalListeners).toFixed(1))
-      : 0;
+    const engagementRate =
+      totalListeners > 0 && totalStreams > 0
+        ? parseFloat((totalStreams / totalListeners).toFixed(1))
+        : 0;
     return [
-      { label: 'Total Followers', current: data?.overview?.totalFollowers || 0, previous: 0, change: data?.overview?.growthRate || 0, target: 0 },
-      { label: 'Monthly Listeners', current: totalListeners, previous: 0, change: 0, target: 0 },
-      { label: 'Super Fans', current: superFans, previous: 0, change: 0, target: 0 },
-      { label: 'Engagement Rate', current: engagementRate, previous: 0, change: 0, target: 0 },
+      {
+        label: "Total Followers",
+        current: data?.overview?.totalFollowers || 0,
+        previous: 0,
+        change: data?.overview?.growthRate || 0,
+        target: 0,
+      },
+      {
+        label: "Monthly Listeners",
+        current: totalListeners,
+        previous: 0,
+        change: 0,
+        target: 0,
+      },
+      {
+        label: "Super Fans",
+        current: superFans,
+        previous: 0,
+        change: 0,
+        target: 0,
+      },
+      {
+        label: "Engagement Rate",
+        current: engagementRate,
+        previous: 0,
+        change: 0,
+        target: 0,
+      },
     ];
   }, [data]);
 
-  const totalListeners = data?.audience?.totalListeners || geoData.reduce((sum, g) => sum + g.listeners, 0);
+  const totalListeners =
+    data?.audience?.totalListeners ||
+    geoData.reduce((sum, g) => sum + g.listeners, 0);
   const hasData = totalListeners > 0 || (data?.overview?.totalStreams || 0) > 0;
 
   if (isLoading) {
@@ -217,12 +288,15 @@ export function AudienceInsights({
     );
   }
 
-if (!hasData) {
+  if (!hasData) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Audience Insights</h2>
-          <DateRangePicker value={timeRange} onChange={onTimeRangeChange || (() => {})} />
+          <DateRangePicker
+            value={timeRange}
+            onChange={onTimeRangeChange || (() => {})}
+          />
         </div>
         <AudienceEmptyState />
       </div>
@@ -234,9 +308,14 @@ if (!hasData) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Audience Insights</h2>
-          <p className="text-sm text-muted-foreground">Understand your listeners and fan demographics</p>
+          <p className="text-sm text-muted-foreground">
+            Understand your listeners and fan demographics
+          </p>
         </div>
-        <DateRangePicker value={timeRange} onChange={onTimeRangeChange || (() => {})} />
+        <DateRangePicker
+          value={timeRange}
+          onChange={onTimeRangeChange || (() => {})}
+        />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -272,7 +351,9 @@ if (!hasData) {
       <Card>
         <CardHeader>
           <CardTitle>Listener Trends</CardTitle>
-          <CardDescription>New vs returning listeners over time</CardDescription>
+          <CardDescription>
+            New vs returning listeners over time
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
@@ -283,12 +364,21 @@ if (!hasData) {
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorReturning" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient
+                    id="colorReturning"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-slate-200 dark:stroke-slate-700"
+                />
                 <XAxis dataKey="date" className="text-xs" />
                 <YAxis className="text-xs" />
                 <Tooltip content={<CustomTooltip />} />
@@ -340,16 +430,29 @@ if (!hasData) {
                     <span className="text-2xl">{geo.flag}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium truncate">{geo.country}</span>
-                        <span className="text-sm font-semibold">{geo.listeners.toLocaleString()}</span>
+                        <span className="font-medium truncate">
+                          {geo.country}
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {geo.listeners.toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Progress value={geo.percentage} className="h-2 flex-1" />
-                        <span className="text-xs text-muted-foreground w-10">{geo.percentage}%</span>
+                        <Progress
+                          value={geo.percentage}
+                          className="h-2 flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground w-10">
+                          {geo.percentage}%
+                        </span>
                       </div>
                     </div>
-                    <Badge variant={geo.growth > 0 ? "default" : "secondary"} className="text-xs">
-                      {geo.growth > 0 ? '+' : ''}{geo.growth}%
+                    <Badge
+                      variant={geo.growth > 0 ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {geo.growth > 0 ? "+" : ""}
+                      {geo.growth}%
                     </Badge>
                   </motion.div>
                 ))}
@@ -369,7 +472,9 @@ if (!hasData) {
                   <div key={age.range} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{age.range}</span>
-                      <span className="text-muted-foreground">{age.percentage}%</span>
+                      <span className="text-muted-foreground">
+                        {age.percentage}%
+                      </span>
                     </div>
                     <Progress value={age.percentage} className="h-2" />
                   </div>
@@ -411,7 +516,9 @@ if (!hasData) {
                         style={{ backgroundColor: g.color }}
                       />
                       <span className="text-sm">{g.type}</span>
-                      <span className="font-semibold ml-auto">{g.percentage}%</span>
+                      <span className="font-semibold ml-auto">
+                        {g.percentage}%
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -427,7 +534,9 @@ if (!hasData) {
             <Target className="h-5 w-5" />
             Fan Growth Goals
           </CardTitle>
-          <CardDescription>Track your progress towards growth targets</CardDescription>
+          <CardDescription>
+            Track your progress towards growth targets
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -443,16 +552,23 @@ if (!hasData) {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">{metric.label}</span>
-                    <Badge variant={metric.change > 0 ? "default" : "secondary"} className="text-xs">
-                      {metric.change > 0 ? '+' : ''}{metric.change}%
+                    <Badge
+                      variant={metric.change > 0 ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {metric.change > 0 ? "+" : ""}
+                      {metric.change}%
                     </Badge>
                   </div>
                   <p className="text-2xl font-bold mb-2">
-                    {typeof metric.current === 'number' && metric.current < 100 
-                      ? `${metric.current}%` 
+                    {typeof metric.current === "number" && metric.current < 100
+                      ? `${metric.current}%`
                       : metric.current.toLocaleString()}
                   </p>
-                  <Progress value={Math.min(progress, 100)} className="h-2 mb-1" />
+                  <Progress
+                    value={Math.min(progress, 100)}
+                    className="h-2 mb-1"
+                  />
                   <p className="text-xs text-muted-foreground">
                     Target: {metric.target.toLocaleString()}
                   </p>

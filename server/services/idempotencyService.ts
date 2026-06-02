@@ -1,7 +1,7 @@
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
-import { logger } from '../logger.js';
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
-const IDEMPOTENCY_PREFIX = 'idempotency:';
+const IDEMPOTENCY_PREFIX = "idempotency:";
 const DEFAULT_TTL_SECONDS = 86400;
 
 export interface IdempotencyResult<T = any> {
@@ -16,7 +16,10 @@ export interface IdempotencyOptions {
 }
 
 class IdempotencyService {
-  private memoryFallback: Map<string, { data: Record<string, unknown>; expiresAt: number }> = new Map();
+  private memoryFallback: Map<
+    string,
+    { data: Record<string, unknown>; expiresAt: number }
+  > = new Map();
   private readonly maxMemoryEntries = 1000;
 
   private getFullKey(key: string, prefix?: string): string {
@@ -41,7 +44,7 @@ class IdempotencyService {
   async checkAndSet<T>(
     key: string,
     result: T,
-    options: IdempotencyOptions = {}
+    options: IdempotencyOptions = {},
   ): Promise<IdempotencyResult<T>> {
     const { ttlSeconds = DEFAULT_TTL_SECONDS, prefix } = options;
     const fullKey = this.getFullKey(key, prefix);
@@ -74,7 +77,9 @@ class IdempotencyService {
         return { exists: false };
       }
     } catch (error: unknown) {
-      logger.warn(`Redis unavailable for idempotency, using memory fallback: ${(error as Error).message}`);
+      logger.warn(
+        `Redis unavailable for idempotency, using memory fallback: ${(error as Error).message}`,
+      );
     }
 
     this.cleanupMemoryFallback();
@@ -95,7 +100,10 @@ class IdempotencyService {
     return { exists: false };
   }
 
-  async check(key: string, options: IdempotencyOptions = {}): Promise<IdempotencyResult> {
+  async check(
+    key: string,
+    options: IdempotencyOptions = {},
+  ): Promise<IdempotencyResult> {
     const { prefix } = options;
     const fullKey = this.getFullKey(key, prefix);
 
@@ -119,7 +127,9 @@ class IdempotencyService {
         return { exists: false };
       }
     } catch (error: unknown) {
-      logger.warn(`Redis unavailable for idempotency check: ${(error as Error).message}`);
+      logger.warn(
+        `Redis unavailable for idempotency check: ${(error as Error).message}`,
+      );
     }
 
     const existing = this.memoryFallback.get(fullKey);
@@ -136,7 +146,7 @@ class IdempotencyService {
   async set<T>(
     key: string,
     result: T,
-    options: IdempotencyOptions = {}
+    options: IdempotencyOptions = {},
   ): Promise<void> {
     const { ttlSeconds = DEFAULT_TTL_SECONDS, prefix } = options;
     const fullKey = this.getFullKey(key, prefix);
@@ -154,7 +164,9 @@ class IdempotencyService {
         return;
       }
     } catch (error: unknown) {
-      logger.warn(`Redis unavailable for idempotency set: ${(error as Error).message}`);
+      logger.warn(
+        `Redis unavailable for idempotency set: ${(error as Error).message}`,
+      );
     }
 
     this.cleanupMemoryFallback();
@@ -164,7 +176,10 @@ class IdempotencyService {
     });
   }
 
-  async get<T>(key: string, options: IdempotencyOptions = {}): Promise<T | null> {
+  async get<T>(
+    key: string,
+    options: IdempotencyOptions = {},
+  ): Promise<T | null> {
     const { prefix } = options;
     const fullKey = this.getFullKey(key, prefix);
 
@@ -184,7 +199,9 @@ class IdempotencyService {
         return null;
       }
     } catch (error: unknown) {
-      logger.warn(`Redis unavailable for idempotency get: ${(error as Error).message}`);
+      logger.warn(
+        `Redis unavailable for idempotency get: ${(error as Error).message}`,
+      );
     }
 
     const existing = this.memoryFallback.get(fullKey);
@@ -207,13 +224,18 @@ class IdempotencyService {
         return;
       }
     } catch (error: unknown) {
-      logger.warn(`Redis unavailable for idempotency remove: ${(error as Error).message}`);
+      logger.warn(
+        `Redis unavailable for idempotency remove: ${(error as Error).message}`,
+      );
     }
 
     this.memoryFallback.delete(fullKey);
   }
 
-  async markProcessing(key: string, options: IdempotencyOptions = {}): Promise<boolean> {
+  async markProcessing(
+    key: string,
+    options: IdempotencyOptions = {},
+  ): Promise<boolean> {
     const { ttlSeconds = 300, prefix } = options;
     const fullKey = this.getFullKey(`processing:${key}`, prefix);
 
@@ -223,11 +245,13 @@ class IdempotencyService {
       if (redis) {
         const existing = await redis.get(fullKey);
         if (existing) return false;
-        await redis.setex(fullKey, ttlSeconds, 'processing');
+        await redis.setex(fullKey, ttlSeconds, "processing");
         return true;
       }
     } catch (error: unknown) {
-      logger.warn(`Redis unavailable for markProcessing: ${(error as Error).message}`);
+      logger.warn(
+        `Redis unavailable for markProcessing: ${(error as Error).message}`,
+      );
     }
 
     if (this.memoryFallback.has(fullKey)) {
@@ -237,13 +261,16 @@ class IdempotencyService {
       }
     }
     this.memoryFallback.set(fullKey, {
-      data: 'processing',
+      data: "processing",
       expiresAt: Date.now() + ttlSeconds * 1000,
     });
     return true;
   }
 
-  async clearProcessing(key: string, options: IdempotencyOptions = {}): Promise<void> {
+  async clearProcessing(
+    key: string,
+    options: IdempotencyOptions = {},
+  ): Promise<void> {
     const { prefix } = options;
     const fullKey = this.getFullKey(`processing:${key}`, prefix);
 
@@ -255,31 +282,39 @@ class IdempotencyService {
         return;
       }
     } catch (error: unknown) {
-      logger.warn(`Redis unavailable for clearProcessing: ${(error as Error).message}`);
+      logger.warn(
+        `Redis unavailable for clearProcessing: ${(error as Error).message}`,
+      );
     }
 
     this.memoryFallback.delete(fullKey);
   }
 
   generateKey(...parts: (string | number)[]): string {
-    return parts.filter(Boolean).join(':');
+    return parts.filter(Boolean).join(":");
   }
 
   generateWebhookKey(eventId: string, eventType?: string): string {
-    return this.generateKey('webhook', eventType || 'event', eventId);
+    return this.generateKey("webhook", eventType || "event", eventId);
   }
 
   generatePayoutKey(userId: string, amount: number, currency: string): string {
     const timestamp = Math.floor(Date.now() / 60000);
-    return this.generateKey('payout', userId, amount.toString(), currency, timestamp.toString());
+    return this.generateKey(
+      "payout",
+      userId,
+      amount.toString(),
+      currency,
+      timestamp.toString(),
+    );
   }
 
   generatePaymentKey(userId: string, paymentIntent: string): string {
-    return this.generateKey('payment', userId, paymentIntent);
+    return this.generateKey("payment", userId, paymentIntent);
   }
 
   generateDistributionKey(releaseId: string, action: string): string {
-    return this.generateKey('distribution', releaseId, action);
+    return this.generateKey("distribution", releaseId, action);
   }
 }
 

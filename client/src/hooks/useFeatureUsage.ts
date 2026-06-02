@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { useCallback, useMemo, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export interface FeatureUsageEntry {
   featureId: string;
@@ -33,9 +33,20 @@ export interface FeaturePriorityUpdate {
 }
 
 const ALL_FEATURES = [
-  'studio', 'distribution', 'analytics', 'social', 'marketplace',
-  'collaborations', 'contracts', 'advertising', 'notifications',
-  'settings', 'billing', 'support', 'ai-coach', 'releases',
+  "studio",
+  "distribution",
+  "analytics",
+  "social",
+  "marketplace",
+  "collaborations",
+  "contracts",
+  "advertising",
+  "notifications",
+  "settings",
+  "billing",
+  "support",
+  "ai-coach",
+  "releases",
 ];
 
 export function useFeatureUsage() {
@@ -44,76 +55,107 @@ export function useFeatureUsage() {
   const featureStartTime = useRef<number>(0);
 
   const { data: usageData, isLoading } = useQuery<FeatureUsageStats>({
-    queryKey: ['/api/personalization/feature-usage'],
+    queryKey: ["/api/personalization/feature-usage"],
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: visibilitySettings } = useQuery<FeatureVisibility[]>({
-    queryKey: ['/api/personalization/preferences'],
+    queryKey: ["/api/personalization/preferences"],
     staleTime: 10 * 60 * 1000,
     select: (data: Record<string, unknown>) => {
       const hiddenFeatures = data?.hiddenFeatures || [];
       const featurePrefs = data?.featurePreferences || {};
-      
+
       return ALL_FEATURES.map((featureId, index) => ({
         featureId,
         isVisible: !hiddenFeatures.includes(featureId),
         inMoreMenu: hiddenFeatures.includes(featureId),
-        priority: featurePrefs[featureId]?.priority || (ALL_FEATURES.length - index),
+        priority:
+          featurePrefs[featureId]?.priority || ALL_FEATURES.length - index,
       }));
     },
   });
 
   const trackFeatureMutation = useMutation({
-    mutationFn: async ({ feature, duration }: { feature: string; duration?: number }) => {
-      const response = await apiRequest('POST', '/api/personalization/track-feature', {
-        feature,
-        duration,
-      });
+    mutationFn: async ({
+      feature,
+      duration,
+    }: {
+      feature: string;
+      duration?: number;
+    }) => {
+      const response = await apiRequest(
+        "POST",
+        "/api/personalization/track-feature",
+        {
+          feature,
+          duration,
+        },
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/feature-usage'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/behavior-analysis'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/feature-usage"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/behavior-analysis"],
+      });
     },
   });
 
   const updatePriorityMutation = useMutation({
     mutationFn: async (update: FeaturePriorityUpdate) => {
-      const response = await apiRequest('PUT', '/api/personalization/feature-priority', update);
+      const response = await apiRequest(
+        "PUT",
+        "/api/personalization/feature-priority",
+        update,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/preferences'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/preferences"],
+      });
     },
   });
 
   const resetPrioritiesMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/personalization/reset-feature-priorities');
+      const response = await apiRequest(
+        "POST",
+        "/api/personalization/reset-feature-priorities",
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/preferences'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/preferences"],
+      });
     },
   });
 
   const applySuggestedMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/personalization/apply-suggested-priorities');
+      const response = await apiRequest(
+        "POST",
+        "/api/personalization/apply-suggested-priorities",
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/preferences'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/preferences"],
+      });
     },
   });
 
   const frequentlyUsed = useMemo(() => {
-    return usageData?.mostUsed?.slice(0, 5).map(f => f.featureId) || [];
+    return usageData?.mostUsed?.slice(0, 5).map((f) => f.featureId) || [];
   }, [usageData]);
 
   const rarelyUsed = useMemo(() => {
-    return usageData?.leastUsed?.slice(0, 5).map(f => f.featureId) || [];
+    return usageData?.leastUsed?.slice(0, 5).map((f) => f.featureId) || [];
   }, [usageData]);
 
   const suggestedToHide = useMemo(() => {
@@ -126,76 +168,100 @@ export function useFeatureUsage() {
 
   const visibleFeatures = useMemo(() => {
     return (visibilitySettings || [])
-      .filter(f => f.isVisible)
+      .filter((f) => f.isVisible)
       .sort((a, b) => b.priority - a.priority)
-      .map(f => f.featureId);
+      .map((f) => f.featureId);
   }, [visibilitySettings]);
 
   const hiddenFeatures = useMemo(() => {
     return (visibilitySettings || [])
-      .filter(f => !f.isVisible)
-      .map(f => f.featureId);
+      .filter((f) => !f.isVisible)
+      .map((f) => f.featureId);
   }, [visibilitySettings]);
 
-  const trackFeatureStart = useCallback((featureId: string) => {
-    if (activeFeature.current && activeFeature.current !== featureId) {
-      const duration = Date.now() - featureStartTime.current;
-      if (duration > 1000) {
-        trackFeatureMutation.mutate({
-          feature: activeFeature.current,
-          duration,
-        });
+  const trackFeatureStart = useCallback(
+    (featureId: string) => {
+      if (activeFeature.current && activeFeature.current !== featureId) {
+        const duration = Date.now() - featureStartTime.current;
+        if (duration > 1000) {
+          trackFeatureMutation.mutate({
+            feature: activeFeature.current,
+            duration,
+          });
+        }
       }
-    }
-    activeFeature.current = featureId;
-    featureStartTime.current = Date.now();
-    trackFeatureMutation.mutate({ feature: featureId });
-  }, [trackFeatureMutation]);
+      activeFeature.current = featureId;
+      featureStartTime.current = Date.now();
+      trackFeatureMutation.mutate({ feature: featureId });
+    },
+    [trackFeatureMutation],
+  );
 
-  const trackFeatureEnd = useCallback((featureId: string) => {
-    if (activeFeature.current === featureId) {
-      const duration = Date.now() - featureStartTime.current;
-      if (duration > 1000) {
-        trackFeatureMutation.mutate({ feature: featureId, duration });
+  const trackFeatureEnd = useCallback(
+    (featureId: string) => {
+      if (activeFeature.current === featureId) {
+        const duration = Date.now() - featureStartTime.current;
+        if (duration > 1000) {
+          trackFeatureMutation.mutate({ feature: featureId, duration });
+        }
+        activeFeature.current = null;
+        featureStartTime.current = 0;
       }
-      activeFeature.current = null;
-      featureStartTime.current = 0;
-    }
-  }, [trackFeatureMutation]);
+    },
+    [trackFeatureMutation],
+  );
 
-  const isFrequentlyUsed = useCallback((featureId: string): boolean => {
-    return frequentlyUsed.includes(featureId);
-  }, [frequentlyUsed]);
+  const isFrequentlyUsed = useCallback(
+    (featureId: string): boolean => {
+      return frequentlyUsed.includes(featureId);
+    },
+    [frequentlyUsed],
+  );
 
-  const isRarelyUsed = useCallback((featureId: string): boolean => {
-    return rarelyUsed.includes(featureId);
-  }, [rarelyUsed]);
+  const isRarelyUsed = useCallback(
+    (featureId: string): boolean => {
+      return rarelyUsed.includes(featureId);
+    },
+    [rarelyUsed],
+  );
 
-  const getUsageCount = useCallback((featureId: string): number => {
-    const entry = usageData?.mostUsed?.find(f => f.featureId === featureId);
-    return entry?.usageCount || 0;
-  }, [usageData]);
+  const getUsageCount = useCallback(
+    (featureId: string): number => {
+      const entry = usageData?.mostUsed?.find((f) => f.featureId === featureId);
+      return entry?.usageCount || 0;
+    },
+    [usageData],
+  );
 
-  const hideFeature = useCallback(async (featureId: string) => {
-    await updatePriorityMutation.mutateAsync({
-      featureId,
-      isVisible: false,
-    });
-  }, [updatePriorityMutation]);
+  const hideFeature = useCallback(
+    async (featureId: string) => {
+      await updatePriorityMutation.mutateAsync({
+        featureId,
+        isVisible: false,
+      });
+    },
+    [updatePriorityMutation],
+  );
 
-  const showFeature = useCallback(async (featureId: string) => {
-    await updatePriorityMutation.mutateAsync({
-      featureId,
-      isVisible: true,
-    });
-  }, [updatePriorityMutation]);
+  const showFeature = useCallback(
+    async (featureId: string) => {
+      await updatePriorityMutation.mutateAsync({
+        featureId,
+        isVisible: true,
+      });
+    },
+    [updatePriorityMutation],
+  );
 
-  const updatePriority = useCallback(async (featureId: string, priority: number) => {
-    await updatePriorityMutation.mutateAsync({
-      featureId,
-      priority,
-    });
-  }, [updatePriorityMutation]);
+  const updatePriority = useCallback(
+    async (featureId: string, priority: number) => {
+      await updatePriorityMutation.mutateAsync({
+        featureId,
+        priority,
+      });
+    },
+    [updatePriorityMutation],
+  );
 
   const resetToDefaults = useCallback(async () => {
     await resetPrioritiesMutation.mutateAsync();
@@ -209,16 +275,19 @@ export function useFeatureUsage() {
     const handleBeforeUnload = () => {
       if (activeFeature.current) {
         const duration = Date.now() - featureStartTime.current;
-        navigator.sendBeacon('/api/personalization/track-feature', JSON.stringify({
-          feature: activeFeature.current,
-          duration,
-        }));
+        navigator.sendBeacon(
+          "/api/personalization/track-feature",
+          JSON.stringify({
+            feature: activeFeature.current,
+            duration,
+          }),
+        );
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
       if (activeFeature.current) {
         trackFeatureEnd(activeFeature.current);
       }
@@ -244,7 +313,8 @@ export function useFeatureUsage() {
     updatePriority,
     resetToDefaults,
     applySuggestedPriorities,
-    isUpdating: updatePriorityMutation.isPending || resetPrioritiesMutation.isPending,
+    isUpdating:
+      updatePriorityMutation.isPending || resetPrioritiesMutation.isPending,
   };
 }
 
@@ -258,7 +328,8 @@ export function useFeatureTracking(featureId: string) {
 }
 
 export function useFeatureVisibility(featureId: string) {
-  const { visibleFeatures, hiddenFeatures, isFrequentlyUsed, isRarelyUsed } = useFeatureUsage();
+  const { visibleFeatures, hiddenFeatures, isFrequentlyUsed, isRarelyUsed } =
+    useFeatureUsage();
 
   return {
     isVisible: visibleFeatures.includes(featureId),

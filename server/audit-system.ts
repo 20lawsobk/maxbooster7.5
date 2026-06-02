@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
-import { promisify } from 'util';
-import { exec } from 'child_process';
-import fs from 'fs/promises';
-import path from 'path';
-import crypto from 'crypto';
-import { logger } from './logger.js';
+import { Request, Response, NextFunction } from "express";
+import { promisify } from "util";
+import { exec } from "child_process";
+import fs from "fs/promises";
+import path from "path";
+import crypto from "crypto";
+import { logger } from "./logger.js";
 
 const execAsync = promisify(exec);
 
@@ -60,7 +60,7 @@ export class AuditSystem {
   // Initialize audit system
   private async initializeAuditSystem(): Promise<void> {
     try {
-      logger.info('🔍 Initializing comprehensive audit system...');
+      logger.info("🔍 Initializing comprehensive audit system...");
 
       // Start continuous auditing
       this.startContinuousAuditing();
@@ -68,9 +68,9 @@ export class AuditSystem {
       // Perform initial audit
       await this.performFullAudit();
 
-      logger.info('✅ Audit system initialized');
+      logger.info("✅ Audit system initialized");
     } catch (error: unknown) {
-      logger.warn({ err: error }, '❌ Failed to initialize audit system:');
+      logger.warn({ err: error }, "❌ Failed to initialize audit system:");
     }
   }
 
@@ -78,59 +78,85 @@ export class AuditSystem {
   private startContinuousAuditing(): void {
     // Security audit every 5 minutes
     setInterval(async () => {
-      try { await this.performSecurityAudit(); } catch { /* non-fatal */ }
+      try {
+        await this.performSecurityAudit();
+      } catch {
+        /* non-fatal */
+      }
     }, 300000);
 
     // Performance audit every 10 minutes
     setInterval(async () => {
-      try { await this.performPerformanceAudit(); } catch { /* non-fatal */ }
+      try {
+        await this.performPerformanceAudit();
+      } catch {
+        /* non-fatal */
+      }
     }, 600000);
 
     // Functionality audit every hour
     setInterval(async () => {
-      try { await this.performFunctionalityAudit(); } catch { /* non-fatal */ }
+      try {
+        await this.performFunctionalityAudit();
+      } catch {
+        /* non-fatal */
+      }
     }, 3600000);
 
     // Full audit every 24 hours
     setInterval(async () => {
-      try { await this.performFullAudit(); } catch { /* non-fatal */ }
+      try {
+        await this.performFullAudit();
+      } catch {
+        /* non-fatal */
+      }
     }, 86400000);
   }
 
   // Perform full audit
   public async performFullAudit(): Promise<AuditResults> {
-    logger.info('🔍 Starting comprehensive audit...');
+    logger.info("🔍 Starting comprehensive audit...");
 
     try {
       // Security audit
       const securityResults = await this.securityAuditor.audit();
       this.auditResults.securityScore = securityResults.score;
       this.auditResults.issues.push(...securityResults.issues);
-      this.auditResults.recommendations.push(...securityResults.recommendations);
+      this.auditResults.recommendations.push(
+        ...securityResults.recommendations,
+      );
 
       // Functionality audit
       const functionalityResults = await this.functionalityAuditor.audit();
       this.auditResults.functionalityScore = functionalityResults.score;
       this.auditResults.issues.push(...functionalityResults.issues);
-      this.auditResults.recommendations.push(...functionalityResults.recommendations);
+      this.auditResults.recommendations.push(
+        ...functionalityResults.recommendations,
+      );
 
       // Performance audit
       const performanceResults = await this.performanceAuditor.audit();
       this.auditResults.performanceScore = performanceResults.score;
       this.auditResults.issues.push(...performanceResults.issues);
-      this.auditResults.recommendations.push(...performanceResults.recommendations);
+      this.auditResults.recommendations.push(
+        ...performanceResults.recommendations,
+      );
 
       // Code quality audit
       const codeQualityResults = await this.codeQualityAuditor.audit();
       this.auditResults.codeQualityScore = codeQualityResults.score;
       this.auditResults.issues.push(...codeQualityResults.issues);
-      this.auditResults.recommendations.push(...codeQualityResults.recommendations);
+      this.auditResults.recommendations.push(
+        ...codeQualityResults.recommendations,
+      );
 
       // Accessibility audit
       const accessibilityResults = await this.accessibilityAuditor.audit();
       this.auditResults.accessibilityScore = accessibilityResults.score;
       this.auditResults.issues.push(...accessibilityResults.issues);
-      this.auditResults.recommendations.push(...accessibilityResults.recommendations);
+      this.auditResults.recommendations.push(
+        ...accessibilityResults.recommendations,
+      );
 
       // SEO audit
       const seoResults = await this.seoAuditor.audit();
@@ -147,11 +173,13 @@ export class AuditSystem {
       // Update last audit time
       this.auditResults.lastAudit = Date.now();
 
-      logger.info(`✅ Audit completed. Overall score: ${this.auditResults.overallScore}/100`);
+      logger.info(
+        `✅ Audit completed. Overall score: ${this.auditResults.overallScore}/100`,
+      );
 
       return this.auditResults;
     } catch (error: unknown) {
-      logger.warn({ err: error }, '❌ Audit failed:');
+      logger.warn({ err: error }, "❌ Audit failed:");
       throw error;
     }
   }
@@ -166,7 +194,7 @@ export class AuditSystem {
         logger.info(`⚠️ Security score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Security audit error:');
+      logger.warn({ err: error }, "Security audit error:");
     }
   }
 
@@ -177,10 +205,12 @@ export class AuditSystem {
       this.auditResults.performanceScore = results.score;
 
       if (results.score < 85) {
-        logger.info(`⚠️ Performance score below threshold: ${results.score}/100`);
+        logger.info(
+          `⚠️ Performance score below threshold: ${results.score}/100`,
+        );
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Performance audit error:');
+      logger.warn({ err: error }, "Performance audit error:");
     }
   }
 
@@ -191,10 +221,12 @@ export class AuditSystem {
       this.auditResults.functionalityScore = results.score;
 
       if (results.score < 95) {
-        logger.info(`⚠️ Functionality score below threshold: ${results.score}/100`);
+        logger.info(
+          `⚠️ Functionality score below threshold: ${results.score}/100`,
+        );
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Functionality audit error:');
+      logger.warn({ err: error }, "Functionality audit error:");
     }
   }
 
@@ -215,7 +247,7 @@ export class AuditSystem {
         this.auditResults.performanceScore * weights.performance +
         this.auditResults.codeQualityScore * weights.codeQuality +
         this.auditResults.accessibilityScore * weights.accessibility +
-        this.auditResults.seoScore * weights.seo
+        this.auditResults.seoScore * weights.seo,
     );
   }
 
@@ -255,7 +287,7 @@ export class AuditSystem {
         hasRightToErasure
       );
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'GDPR compliance check error:');
+      logger.warn({ err: error }, "GDPR compliance check error:");
       return false;
     }
   }
@@ -270,7 +302,7 @@ export class AuditSystem {
 
       return hasPrivacyNotice && hasOptOut && hasDataDisclosure;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'CCPA compliance check error:');
+      logger.warn({ err: error }, "CCPA compliance check error:");
       return false;
     }
   }
@@ -285,7 +317,7 @@ export class AuditSystem {
 
       return hasFinancialControls && hasAuditTrail && hasDataIntegrity;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'SOX compliance check error:');
+      logger.warn({ err: error }, "SOX compliance check error:");
       return false;
     }
   }
@@ -300,7 +332,7 @@ export class AuditSystem {
 
       return hasAccessControls && hasAuditLogs && hasDataEncryption;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'HIPAA compliance check error:');
+      logger.warn({ err: error }, "HIPAA compliance check error:");
       return false;
     }
   }
@@ -311,11 +343,14 @@ export class AuditSystem {
       // Check for PCI DSS compliance
       const hasSecureNetwork = await this.checkSecureNetwork();
       const hasCardholderData = await this.checkCardholderData();
-      const hasVulnerabilityManagement = await this.checkVulnerabilityManagement();
+      const hasVulnerabilityManagement =
+        await this.checkVulnerabilityManagement();
 
-      return hasSecureNetwork && hasCardholderData && hasVulnerabilityManagement;
+      return (
+        hasSecureNetwork && hasCardholderData && hasVulnerabilityManagement
+      );
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'PCI compliance check error:');
+      logger.warn({ err: error }, "PCI compliance check error:");
       return false;
     }
   }
@@ -326,31 +361,52 @@ export class AuditSystem {
   // non-throwing so a missing optional check never crashes the audit cycle.
 
   private async fileExists(p: string): Promise<boolean> {
-    try { await fs.access(p); return true; } catch { return false; }
+    try {
+      await fs.access(p);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private async checkDataEncryption(): Promise<boolean> {
     // Real: verify TLS is on (production), DB connection uses SSL, and a
     // bcrypt/argon password hashing salt rounds env is sane.
-    const inProd = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
-    const dbUrl = process.env.DATABASE_URL || '';
-    const dbHasSsl = dbUrl.includes('sslmode=require') || dbUrl.includes('sslmode=verify') || !inProd;
-    const tlsOk = !inProd || !!process.env.TLS_CERT_PATH || !!process.env.REPLIT_DEPLOYMENT;
+    const inProd =
+      process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+    const dbUrl = process.env.DATABASE_URL || "";
+    const dbHasSsl =
+      dbUrl.includes("sslmode=require") ||
+      dbUrl.includes("sslmode=verify") ||
+      !inProd;
+    const tlsOk =
+      !inProd || !!process.env.TLS_CERT_PATH || !!process.env.REPLIT_DEPLOYMENT;
     return dbHasSsl && tlsOk;
   }
 
   private async checkDataRetention(): Promise<boolean> {
     // Real: a retention policy file must exist OR an env var must declare it.
-    const hasPolicyFile = await this.fileExists(path.join(process.cwd(), 'server/compliance/policies/data-retention.md'));
+    const hasPolicyFile = await this.fileExists(
+      path.join(process.cwd(), "server/compliance/policies/data-retention.md"),
+    );
     return hasPolicyFile || !!process.env.DATA_RETENTION_DAYS;
   }
 
   private async checkUserConsent(): Promise<boolean> {
     // Real: a cookie/consent banner component must exist on the client.
     return (
-      (await this.fileExists(path.join(process.cwd(), 'client/src/components/CookieConsent.tsx'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'client/src/components/CookieBanner.tsx'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'client/src/components/legal/CookieConsent.tsx')))
+      (await this.fileExists(
+        path.join(process.cwd(), "client/src/components/CookieConsent.tsx"),
+      )) ||
+      (await this.fileExists(
+        path.join(process.cwd(), "client/src/components/CookieBanner.tsx"),
+      )) ||
+      (await this.fileExists(
+        path.join(
+          process.cwd(),
+          "client/src/components/legal/CookieConsent.tsx",
+        ),
+      ))
     );
   }
 
@@ -358,7 +414,7 @@ export class AuditSystem {
     // Real: an account/export endpoint must be registered.
     try {
       const grep = await execAsync(
-        `grep -rE "/account/export|/export/data|/gdpr/export" server/routes server/routes.ts 2>/dev/null | head -1`
+        `grep -rE "/account/export|/export/data|/gdpr/export" server/routes server/routes.ts 2>/dev/null | head -1`,
       );
       return grep.stdout.trim().length > 0;
     } catch {
@@ -369,7 +425,7 @@ export class AuditSystem {
   private async checkRightToErasure(): Promise<boolean> {
     try {
       const grep = await execAsync(
-        `grep -rE "/account/delete|deleteAccount|deleteUser|/gdpr/erase" server/routes server/routes.ts 2>/dev/null | head -1`
+        `grep -rE "/account/delete|deleteAccount|deleteUser|/gdpr/erase" server/routes server/routes.ts 2>/dev/null | head -1`,
       );
       return grep.stdout.trim().length > 0;
     } catch {
@@ -379,16 +435,25 @@ export class AuditSystem {
 
   private async checkPrivacyNotice(): Promise<boolean> {
     return (
-      (await this.fileExists(path.join(process.cwd(), 'client/src/pages/Privacy.tsx'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'client/src/pages/PrivacyPolicy.tsx'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'server/compliance/policies/privacy-policy.md')))
+      (await this.fileExists(
+        path.join(process.cwd(), "client/src/pages/Privacy.tsx"),
+      )) ||
+      (await this.fileExists(
+        path.join(process.cwd(), "client/src/pages/PrivacyPolicy.tsx"),
+      )) ||
+      (await this.fileExists(
+        path.join(
+          process.cwd(),
+          "server/compliance/policies/privacy-policy.md",
+        ),
+      ))
     );
   }
 
   private async checkOptOutMechanism(): Promise<boolean> {
     try {
       const grep = await execAsync(
-        `grep -rE "doNotSell|optOut|/privacy/opt-out|emailOptOut" server/routes server/routes.ts client/src 2>/dev/null | head -1`
+        `grep -rE "doNotSell|optOut|/privacy/opt-out|emailOptOut" server/routes server/routes.ts client/src 2>/dev/null | head -1`,
       );
       return grep.stdout.trim().length > 0;
     } catch {
@@ -398,8 +463,15 @@ export class AuditSystem {
 
   private async checkDataDisclosure(): Promise<boolean> {
     return (
-      (await this.fileExists(path.join(process.cwd(), 'server/compliance/policies/data-processing-agreement.md'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'client/src/pages/DataDisclosure.tsx')))
+      (await this.fileExists(
+        path.join(
+          process.cwd(),
+          "server/compliance/policies/data-processing-agreement.md",
+        ),
+      )) ||
+      (await this.fileExists(
+        path.join(process.cwd(), "client/src/pages/DataDisclosure.tsx"),
+      ))
     );
   }
 
@@ -412,24 +484,32 @@ export class AuditSystem {
 
   private async checkAuditTrail(): Promise<boolean> {
     return (
-      (await this.fileExists(path.join(process.cwd(), 'server/services/auditLoggerService.ts'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'server/safety/auditLogger.ts'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'server/middleware/auditLogger.ts')))
+      (await this.fileExists(
+        path.join(process.cwd(), "server/services/auditLoggerService.ts"),
+      )) ||
+      (await this.fileExists(
+        path.join(process.cwd(), "server/safety/auditLogger.ts"),
+      )) ||
+      (await this.fileExists(
+        path.join(process.cwd(), "server/middleware/auditLogger.ts"),
+      ))
     );
   }
 
   private async checkDataIntegrity(): Promise<boolean> {
     // Real: DB migrations directory + drizzle config must exist.
     return (
-      (await this.fileExists(path.join(process.cwd(), 'drizzle.config.ts'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'drizzle.config.js')))
+      (await this.fileExists(path.join(process.cwd(), "drizzle.config.ts"))) ||
+      (await this.fileExists(path.join(process.cwd(), "drizzle.config.js")))
     );
   }
 
   private async checkAccessControls(): Promise<boolean> {
     return (
-      (await this.fileExists(path.join(process.cwd(), 'server/auth.ts'))) &&
-      (await this.fileExists(path.join(process.cwd(), 'server/middleware/auth.ts')))
+      (await this.fileExists(path.join(process.cwd(), "server/auth.ts"))) &&
+      (await this.fileExists(
+        path.join(process.cwd(), "server/middleware/auth.ts"),
+      ))
     );
   }
 
@@ -441,10 +521,12 @@ export class AuditSystem {
     // Helmet/CORS middleware presence + HTTPS in prod.
     try {
       const grep = await execAsync(
-        `grep -rE "helmet\\(\\)|app.use\\(helmet|cors\\(" server/index.ts server/routes.ts 2>/dev/null | head -1`
+        `grep -rE "helmet\\(\\)|app.use\\(helmet|cors\\(" server/index.ts server/routes.ts 2>/dev/null | head -1`,
       );
       const hasMiddleware = grep.stdout.trim().length > 0;
-      const httpsOk = process.env.NODE_ENV !== 'production' || !!process.env.REPLIT_DEPLOYMENT;
+      const httpsOk =
+        process.env.NODE_ENV !== "production" ||
+        !!process.env.REPLIT_DEPLOYMENT;
       return hasMiddleware && httpsOk;
     } catch {
       return false;
@@ -456,7 +538,7 @@ export class AuditSystem {
     // ensuring no `cardNumber`/`cvv`/`pan` columns exist in the schema.
     try {
       const grep = await execAsync(
-        `grep -niE "card_?number|\\bcvv\\b|\\bpan\\b" shared/schema.ts 2>/dev/null | head -1`
+        `grep -niE "card_?number|\\bcvv\\b|\\bpan\\b" shared/schema.ts 2>/dev/null | head -1`,
       );
       return grep.stdout.trim().length === 0;
     } catch {
@@ -467,9 +549,15 @@ export class AuditSystem {
   private async checkVulnerabilityManagement(): Promise<boolean> {
     // Real: a security workflow / scanner must exist.
     return (
-      (await this.fileExists(path.join(process.cwd(), '.github/workflows/security.yml'))) ||
-      (await this.fileExists(path.join(process.cwd(), '.github/workflows/codeql.yml'))) ||
-      (await this.fileExists(path.join(process.cwd(), 'server/security-system.ts')))
+      (await this.fileExists(
+        path.join(process.cwd(), ".github/workflows/security.yml"),
+      )) ||
+      (await this.fileExists(
+        path.join(process.cwd(), ".github/workflows/codeql.yml"),
+      )) ||
+      (await this.fileExists(
+        path.join(process.cwd(), "server/security-system.ts"),
+      ))
     );
   }
 
@@ -490,12 +578,16 @@ export class AuditSystem {
 
   // Get critical issues
   public getCriticalIssues(): AuditIssue[] {
-    return this.auditResults.issues.filter((issue) => issue.severity === 'critical');
+    return this.auditResults.issues.filter(
+      (issue) => issue.severity === "critical",
+    );
   }
 
   // Get high priority issues
   public getHighPriorityIssues(): AuditIssue[] {
-    return this.auditResults.issues.filter((issue) => issue.severity === 'high');
+    return this.auditResults.issues.filter(
+      (issue) => issue.severity === "high",
+    );
   }
 
   // Get recommendations
@@ -516,14 +608,14 @@ class SecurityAuditor {
       const sqlInjectionCheck = await this.checkSQLInjection();
       if (!sqlInjectionCheck.passed) {
         issues.push({
-          id: 'sql-injection',
-          type: 'security',
-          severity: 'critical',
-          title: 'SQL Injection Vulnerability',
-          description: 'Potential SQL injection vulnerability detected',
+          id: "sql-injection",
+          type: "security",
+          severity: "critical",
+          title: "SQL Injection Vulnerability",
+          description: "Potential SQL injection vulnerability detected",
           file: sqlInjectionCheck.file,
           line: sqlInjectionCheck.line,
-          recommendation: 'Use parameterized queries and input validation',
+          recommendation: "Use parameterized queries and input validation",
         });
         score -= 20;
       }
@@ -532,14 +624,15 @@ class SecurityAuditor {
       const xssCheck = await this.checkXSS();
       if (!xssCheck.passed) {
         issues.push({
-          id: 'xss',
-          type: 'security',
-          severity: 'high',
-          title: 'Cross-Site Scripting Vulnerability',
-          description: 'Potential XSS vulnerability detected',
+          id: "xss",
+          type: "security",
+          severity: "high",
+          title: "Cross-Site Scripting Vulnerability",
+          description: "Potential XSS vulnerability detected",
           file: xssCheck.file,
           line: xssCheck.line,
-          recommendation: 'Implement proper input sanitization and output encoding',
+          recommendation:
+            "Implement proper input sanitization and output encoding",
         });
         score -= 15;
       }
@@ -548,12 +641,12 @@ class SecurityAuditor {
       const csrfCheck = await this.checkCSRF();
       if (!csrfCheck.passed) {
         issues.push({
-          id: 'csrf',
-          type: 'security',
-          severity: 'high',
-          title: 'CSRF Vulnerability',
-          description: 'Missing CSRF protection',
-          recommendation: 'Implement CSRF tokens for state-changing operations',
+          id: "csrf",
+          type: "security",
+          severity: "high",
+          title: "CSRF Vulnerability",
+          description: "Missing CSRF protection",
+          recommendation: "Implement CSRF tokens for state-changing operations",
         });
         score -= 10;
       }
@@ -562,12 +655,13 @@ class SecurityAuditor {
       const authCheck = await this.checkAuthentication();
       if (!authCheck.passed) {
         issues.push({
-          id: 'auth',
-          type: 'security',
-          severity: 'critical',
-          title: 'Authentication Vulnerability',
-          description: 'Weak authentication mechanism detected',
-          recommendation: 'Implement strong authentication with multi-factor authentication',
+          id: "auth",
+          type: "security",
+          severity: "critical",
+          title: "Authentication Vulnerability",
+          description: "Weak authentication mechanism detected",
+          recommendation:
+            "Implement strong authentication with multi-factor authentication",
         });
         score -= 25;
       }
@@ -576,12 +670,12 @@ class SecurityAuditor {
       const authzCheck = await this.checkAuthorization();
       if (!authzCheck.passed) {
         issues.push({
-          id: 'authz',
-          type: 'security',
-          severity: 'high',
-          title: 'Authorization Vulnerability',
-          description: 'Insufficient authorization checks',
-          recommendation: 'Implement proper role-based access control',
+          id: "authz",
+          type: "security",
+          severity: "high",
+          title: "Authorization Vulnerability",
+          description: "Insufficient authorization checks",
+          recommendation: "Implement proper role-based access control",
         });
         score -= 15;
       }
@@ -590,12 +684,12 @@ class SecurityAuditor {
       const encryptionCheck = await this.checkDataEncryption();
       if (!encryptionCheck.passed) {
         issues.push({
-          id: 'encryption',
-          type: 'security',
-          severity: 'critical',
-          title: 'Data Encryption Missing',
-          description: 'Sensitive data not properly encrypted',
-          recommendation: 'Implement end-to-end encryption for sensitive data',
+          id: "encryption",
+          type: "security",
+          severity: "critical",
+          title: "Data Encryption Missing",
+          description: "Sensitive data not properly encrypted",
+          recommendation: "Implement end-to-end encryption for sensitive data",
         });
         score -= 20;
       }
@@ -604,12 +698,13 @@ class SecurityAuditor {
       const headersCheck = await this.checkSecurityHeaders();
       if (!headersCheck.passed) {
         issues.push({
-          id: 'headers',
-          type: 'security',
-          severity: 'medium',
-          title: 'Missing Security Headers',
-          description: 'Important security headers not implemented',
-          recommendation: 'Implement security headers (HSTS, CSP, X-Frame-Options, etc.)',
+          id: "headers",
+          type: "security",
+          severity: "medium",
+          title: "Missing Security Headers",
+          description: "Important security headers not implemented",
+          recommendation:
+            "Implement security headers (HSTS, CSP, X-Frame-Options, etc.)",
         });
         score -= 5;
       }
@@ -617,28 +712,37 @@ class SecurityAuditor {
       // Add recommendations
       if (score < 100) {
         recommendations.push({
-          id: 'security-review',
-          type: 'security',
-          priority: 'high',
-          title: 'Security Code Review',
-          description: 'Conduct comprehensive security code review',
-          action: 'Review all security-related code and implement best practices',
+          id: "security-review",
+          type: "security",
+          priority: "high",
+          title: "Security Code Review",
+          description: "Conduct comprehensive security code review",
+          action:
+            "Review all security-related code and implement best practices",
         });
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Security audit error:');
+      logger.warn({ err: error }, "Security audit error:");
       score = 0;
     }
 
     return { score: Math.max(0, score), issues, recommendations };
   }
 
-  private async checkSQLInjection(): Promise<{ passed: boolean; file?: string; line?: number }> {
+  private async checkSQLInjection(): Promise<{
+    passed: boolean;
+    file?: string;
+    line?: number;
+  }> {
     // Implement SQL injection check
     return { passed: true };
   }
 
-  private async checkXSS(): Promise<{ passed: boolean; file?: string; line?: number }> {
+  private async checkXSS(): Promise<{
+    passed: boolean;
+    file?: string;
+    line?: number;
+  }> {
     // Implement XSS check
     return { passed: true };
   }
@@ -712,7 +816,7 @@ class FunctionalityAuditor {
         score -= errorCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Functionality audit error:');
+      logger.warn({ err: error }, "Functionality audit error:");
       score = 0;
     }
 
@@ -785,7 +889,7 @@ class PerformanceAuditor {
         score -= dbPerformanceCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Performance audit error:');
+      logger.warn({ err: error }, "Performance audit error:");
       score = 0;
     }
 
@@ -849,7 +953,7 @@ class CodeQualityAuditor {
         score -= testCoverageCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Code quality audit error:');
+      logger.warn({ err: error }, "Code quality audit error:");
       score = 0;
     }
 
@@ -899,7 +1003,7 @@ class AccessibilityAuditor {
         score -= wcagCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Accessibility audit error:');
+      logger.warn({ err: error }, "Accessibility audit error:");
       score = 0;
     }
 
@@ -914,33 +1018,40 @@ class AccessibilityAuditor {
     const issues: AuditIssue[] = [];
     let scoreDeduction = 0;
     try {
-      const html = await fs.readFile(path.join(process.cwd(), 'client/index.html'), 'utf-8');
+      const html = await fs.readFile(
+        path.join(process.cwd(), "client/index.html"),
+        "utf-8",
+      );
       if (!/<html[^>]+lang=["'][a-z-]+["']/i.test(html)) {
         issues.push({
           id: crypto.randomUUID(),
-          type: 'accessibility',
-          severity: 'high',
-          title: 'Missing lang attribute on <html>',
-          description: 'WCAG 3.1.1 requires the page language be programmatically set.',
-          file: 'client/index.html',
-          recommendation: 'Add lang="en" (or the appropriate code) to the <html> element.',
+          type: "accessibility",
+          severity: "high",
+          title: "Missing lang attribute on <html>",
+          description:
+            "WCAG 3.1.1 requires the page language be programmatically set.",
+          file: "client/index.html",
+          recommendation:
+            'Add lang="en" (or the appropriate code) to the <html> element.',
         });
         scoreDeduction += 6;
       }
       if (!/<meta\s+name=["']viewport["']/i.test(html)) {
         issues.push({
           id: crypto.randomUUID(),
-          type: 'accessibility',
-          severity: 'medium',
-          title: 'Missing viewport meta',
-          description: 'Required for mobile zoom/scaling per WCAG 1.4.10 reflow.',
-          file: 'client/index.html',
-          recommendation: 'Add <meta name="viewport" content="width=device-width, initial-scale=1">',
+          type: "accessibility",
+          severity: "medium",
+          title: "Missing viewport meta",
+          description:
+            "Required for mobile zoom/scaling per WCAG 1.4.10 reflow.",
+          file: "client/index.html",
+          recommendation:
+            'Add <meta name="viewport" content="width=device-width, initial-scale=1">',
         });
         scoreDeduction += 4;
       }
     } catch (e) {
-      logger.warn({ err: e }, 'WCAG check failed');
+      logger.warn({ err: e }, "WCAG check failed");
       scoreDeduction += 5;
     }
     return { passed: scoreDeduction === 0, issues, scoreDeduction };
@@ -969,7 +1080,7 @@ class SEOAuditor {
         score -= structuredDataCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'SEO audit error:');
+      logger.warn({ err: error }, "SEO audit error:");
       score = 0;
     }
 
@@ -984,32 +1095,59 @@ class SEOAuditor {
     const issues: AuditIssue[] = [];
     let scoreDeduction = 0;
     try {
-      const html = await fs.readFile(path.join(process.cwd(), 'client/index.html'), 'utf-8');
+      const html = await fs.readFile(
+        path.join(process.cwd(), "client/index.html"),
+        "utf-8",
+      );
       const required: { name: string; pattern: RegExp; weight: number }[] = [
-        { name: 'title', pattern: /<title>[^<]+<\/title>/i, weight: 5 },
-        { name: 'description', pattern: /<meta\s+name=["']description["']\s+content=["'][^"']+["']/i, weight: 5 },
-        { name: 'viewport', pattern: /<meta\s+name=["']viewport["']/i, weight: 4 },
-        { name: 'og:title', pattern: /<meta\s+property=["']og:title["']/i, weight: 3 },
-        { name: 'og:description', pattern: /<meta\s+property=["']og:description["']/i, weight: 3 },
-        { name: 'og:image', pattern: /<meta\s+property=["']og:image["']/i, weight: 3 },
-        { name: 'twitter:card', pattern: /<meta\s+name=["']twitter:card["']/i, weight: 2 },
+        { name: "title", pattern: /<title>[^<]+<\/title>/i, weight: 5 },
+        {
+          name: "description",
+          pattern: /<meta\s+name=["']description["']\s+content=["'][^"']+["']/i,
+          weight: 5,
+        },
+        {
+          name: "viewport",
+          pattern: /<meta\s+name=["']viewport["']/i,
+          weight: 4,
+        },
+        {
+          name: "og:title",
+          pattern: /<meta\s+property=["']og:title["']/i,
+          weight: 3,
+        },
+        {
+          name: "og:description",
+          pattern: /<meta\s+property=["']og:description["']/i,
+          weight: 3,
+        },
+        {
+          name: "og:image",
+          pattern: /<meta\s+property=["']og:image["']/i,
+          weight: 3,
+        },
+        {
+          name: "twitter:card",
+          pattern: /<meta\s+name=["']twitter:card["']/i,
+          weight: 2,
+        },
       ];
       for (const r of required) {
         if (!r.pattern.test(html)) {
           issues.push({
             id: crypto.randomUUID(),
-            type: 'seo',
-            severity: r.weight >= 4 ? 'high' : 'medium',
+            type: "seo",
+            severity: r.weight >= 4 ? "high" : "medium",
             title: `Missing <${r.name}> meta tag`,
             description: `client/index.html is missing the <${r.name}> tag.`,
-            file: 'client/index.html',
+            file: "client/index.html",
             recommendation: `Add the appropriate <${r.name}> tag to client/index.html.`,
           });
           scoreDeduction += r.weight;
         }
       }
     } catch (e) {
-      logger.warn({ err: e }, 'SEO meta-tags check failed');
+      logger.warn({ err: e }, "SEO meta-tags check failed");
       scoreDeduction += 5;
     }
     return { passed: scoreDeduction === 0, issues, scoreDeduction };
@@ -1023,24 +1161,29 @@ class SEOAuditor {
     const issues: AuditIssue[] = [];
     let scoreDeduction = 0;
     try {
-      const html = await fs.readFile(path.join(process.cwd(), 'client/index.html'), 'utf-8');
-      const hasJsonLd = /<script[^>]+type=["']application\/ld\+json["']/i.test(html);
+      const html = await fs.readFile(
+        path.join(process.cwd(), "client/index.html"),
+        "utf-8",
+      );
+      const hasJsonLd = /<script[^>]+type=["']application\/ld\+json["']/i.test(
+        html,
+      );
       if (!hasJsonLd) {
         issues.push({
           id: crypto.randomUUID(),
-          type: 'seo',
-          severity: 'medium',
-          title: 'Missing JSON-LD structured data',
+          type: "seo",
+          severity: "medium",
+          title: "Missing JSON-LD structured data",
           description:
             'client/index.html does not contain a <script type="application/ld+json"> block. Search engines benefit from structured data (Organization, WebSite, BreadcrumbList).',
-          file: 'client/index.html',
+          file: "client/index.html",
           recommendation:
-            'Add a JSON-LD <script> block describing your Organization and WebSite per schema.org.',
+            "Add a JSON-LD <script> block describing your Organization and WebSite per schema.org.",
         });
         scoreDeduction += 5;
       }
     } catch (e) {
-      logger.warn({ err: e }, 'SEO structured-data check failed');
+      logger.warn({ err: e }, "SEO structured-data check failed");
       scoreDeduction += 5;
     }
     return { passed: scoreDeduction === 0, issues, scoreDeduction };
@@ -1076,8 +1219,14 @@ interface AuditResult {
 
 interface AuditIssue {
   id: string;
-  type: 'security' | 'functionality' | 'performance' | 'code-quality' | 'accessibility' | 'seo';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type:
+    | "security"
+    | "functionality"
+    | "performance"
+    | "code-quality"
+    | "accessibility"
+    | "seo";
+  severity: "low" | "medium" | "high" | "critical";
   title: string;
   description: string;
   file?: string;
@@ -1087,8 +1236,14 @@ interface AuditIssue {
 
 interface AuditRecommendation {
   id: string;
-  type: 'security' | 'functionality' | 'performance' | 'code-quality' | 'accessibility' | 'seo';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  type:
+    | "security"
+    | "functionality"
+    | "performance"
+    | "code-quality"
+    | "accessibility"
+    | "seo";
+  priority: "low" | "medium" | "high" | "critical";
   title: string;
   description: string;
   action: string;

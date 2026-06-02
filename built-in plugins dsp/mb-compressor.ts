@@ -1,5 +1,89 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbCompressorPlugin: PluginDefinition = { id: 'mb-compressor', slug: 'mb-compressor', name: 'MB Compressor', category: 'effect', type: 'compressor', version: '1.0.0', description: 'Professional dynamics compressor', author: 'Max Booster', grade: 'A', parameters: [{ id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -20, minValue: -60, maxValue: 0, automatable: true }, { id: 'ratio', name: 'Ratio', type: 'float', defaultValue: 4, minValue: 1, maxValue: 20, automatable: true }, { id: 'attack', name: 'Attack', type: 'float', defaultValue: 10, minValue: 0.1, maxValue: 200, automatable: true }, { id: 'release', name: 'Release', type: 'float', defaultValue: 100, minValue: 10, maxValue: 2000, automatable: true }, { id: 'knee', name: 'Knee', type: 'float', defaultValue: 6, minValue: 0, maxValue: 20, automatable: true }, { id: 'makeupGain', name: 'Makeup Gain', type: 'float', defaultValue: 0, minValue: -12, maxValue: 24, automatable: true }, { id: 'mix', name: 'Dry/Wet Mix', type: 'float', defaultValue: 1.0, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { threshold: -20, ratio: 4, attack: 10, release: 100, knee: 6, makeupGain: 0, mix: 1.0 } };
+const MbCompressorPlugin: PluginDefinition = {
+  id: "mb-compressor",
+  slug: "mb-compressor",
+  name: "MB Compressor",
+  category: "effect",
+  type: "compressor",
+  version: "1.0.0",
+  description: "Professional dynamics compressor",
+  author: "Max Booster",
+  grade: "A",
+  parameters: [
+    {
+      id: "threshold",
+      name: "Threshold",
+      type: "float",
+      defaultValue: -20,
+      minValue: -60,
+      maxValue: 0,
+      automatable: true,
+    },
+    {
+      id: "ratio",
+      name: "Ratio",
+      type: "float",
+      defaultValue: 4,
+      minValue: 1,
+      maxValue: 20,
+      automatable: true,
+    },
+    {
+      id: "attack",
+      name: "Attack",
+      type: "float",
+      defaultValue: 10,
+      minValue: 0.1,
+      maxValue: 200,
+      automatable: true,
+    },
+    {
+      id: "release",
+      name: "Release",
+      type: "float",
+      defaultValue: 100,
+      minValue: 10,
+      maxValue: 2000,
+      automatable: true,
+    },
+    {
+      id: "knee",
+      name: "Knee",
+      type: "float",
+      defaultValue: 6,
+      minValue: 0,
+      maxValue: 20,
+      automatable: true,
+    },
+    {
+      id: "makeupGain",
+      name: "Makeup Gain",
+      type: "float",
+      defaultValue: 0,
+      minValue: -12,
+      maxValue: 24,
+      automatable: true,
+    },
+    {
+      id: "mix",
+      name: "Dry/Wet Mix",
+      type: "float",
+      defaultValue: 1.0,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: {
+    threshold: -20,
+    ratio: 4,
+    attack: 10,
+    release: 100,
+    knee: 6,
+    makeupGain: 0,
+    mix: 1.0,
+  },
+};
 
 export default MbCompressorPlugin;

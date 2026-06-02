@@ -1,17 +1,25 @@
-import crypto from 'crypto';
-import axios from 'axios';
-import { storage } from '../storage';
-import type { InsertWebhookAttempt, InsertWebhookDeadLetterQueue } from '@shared/schema';
-import { env } from '../config/env.js';
-import { isProductionEnv } from '../lib/envHelpers.js';
+import crypto from "crypto";
+import axios from "axios";
+import { storage } from "../storage";
+import type {
+  InsertWebhookAttempt,
+  InsertWebhookDeadLetterQueue,
+} from "@shared/schema";
+import { env } from "../config/env.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 // SECURITY: Must use isProductionEnv() (not bare NODE_ENV check) because
 // Reserved VM deployments have REPLIT_DEPLOYMENT=1 but NODE_ENV=undefined.
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
-  || env.STRIPE_WEBHOOK_SECRET
-  || (isProductionEnv()
-    ? (() => { throw new Error('WEBHOOK_SECRET or STRIPE_WEBHOOK_SECRET is required in production'); })()
-    : 'dev_webhook_secret_fallback_32_chars');
+const WEBHOOK_SECRET =
+  process.env.WEBHOOK_SECRET ||
+  env.STRIPE_WEBHOOK_SECRET ||
+  (isProductionEnv()
+    ? (() => {
+        throw new Error(
+          "WEBHOOK_SECRET or STRIPE_WEBHOOK_SECRET is required in production",
+        );
+      })()
+    : "dev_webhook_secret_fallback_32_chars");
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [1000, 5000, 25000, 125000, 625000]; // Exponential backoff with jitter
 
@@ -25,7 +33,10 @@ interface WebhookDispatchResult {
 export class WebhookReliabilityService {
   private generateSignature(payload: unknown): string {
     const payloadString = JSON.stringify(payload);
-    return crypto.createHmac('sha256', WEBHOOK_SECRET).update(payloadString).digest('hex');
+    return crypto
+      .createHmac("sha256", WEBHOOK_SECRET)
+      .update(payloadString)
+      .digest("hex");
   }
 
   private calculateNextRetry(attemptNumber: number): Date | null {
@@ -33,7 +44,8 @@ export class WebhookReliabilityService {
       return null;
     }
 
-    const baseDelay = RETRY_DELAYS[attemptNumber] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
+    const baseDelay =
+      RETRY_DELAYS[attemptNumber] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
     const jitter = Math.random() * 1000;
     const delay = baseDelay + jitter;
 
@@ -44,16 +56,16 @@ export class WebhookReliabilityService {
     eventId: number,
     url: string,
     payload: unknown,
-    attemptNumber: number = 1
+    attemptNumber: number = 1,
   ): Promise<WebhookDispatchResult> {
     const signature = this.generateSignature(payload);
 
     try {
       const response = await axios.post(url, payload, {
         headers: {
-          'Content-Type': 'application/json',
-          'X-Webhook-Signature': signature,
-          'X-Webhook-Event-Id': eventId.toString(),
+          "Content-Type": "application/json",
+          "X-Webhook-Signature": signature,
+          "X-Webhook-Event-Id": eventId.toString(),
         },
         timeout: 30000,
         validateStatus: () => true,
@@ -62,10 +74,16 @@ export class WebhookReliabilityService {
       const attemptData: InsertWebhookAttempt = {
         webhookEventId: eventId,
         attempt: attemptNumber,
-        status: response.status >= 200 && response.status < 300 ? 'success' : 'failed',
+        status:
+          response.status >= 200 && response.status < 300
+            ? "success"
+            : "failed",
         responseCode: response.status,
         responseBody: JSON.stringify(response.data).substring(0, 5000),
-        error: response.status >= 200 && response.status < 300 ? null : `HTTP ${response.status}`,
+        error:
+          response.status >= 200 && response.status < 300
+            ? null
+            : `HTTP ${response.status}`,
         url,
         payload,
         nextRetryAt:
@@ -89,7 +107,7 @@ export class WebhookReliabilityService {
           eventId,
           attemptNumber,
           `Max retries exceeded. Last status: ${response.status}`,
-          payload
+          payload,
         );
       }
 
@@ -100,12 +118,12 @@ export class WebhookReliabilityService {
         error: `HTTP ${response.status}`,
       };
     } catch (error: unknown) {
-      const errorMessage = error.message || 'Unknown error';
+      const errorMessage = error.message || "Unknown error";
 
       const attemptData: InsertWebhookAttempt = {
         webhookEventId: eventId,
         attempt: attemptNumber,
-        status: 'failed',
+        status: "failed",
         responseCode: error.response?.status || null,
         responseBody: null,
         error: errorMessage.substring(0, 1000),
@@ -117,7 +135,12 @@ export class WebhookReliabilityService {
       const attempt = await storage.createWebhookAttempt(attemptData);
 
       if (attemptNumber >= MAX_RETRIES) {
-        await this.moveToDeadLetterQueue(eventId, attemptNumber, errorMessage, payload);
+        await this.moveToDeadLetterQueue(
+          eventId,
+          attemptNumber,
+          errorMessage,
+          payload,
+        );
       }
 
       return {
@@ -131,7 +154,7 @@ export class WebhookReliabilityService {
   async retryWebhook(attemptId: string): Promise<WebhookDispatchResult> {
     const attempt = await storage.getWebhookAttempt(attemptId);
     if (!attempt) {
-      throw new Error('Webhook attempt not found');
+      throw new Error("Webhook attempt not found");
     }
 
     const nextAttemptNumber = attempt.attempt + 1;
@@ -140,7 +163,7 @@ export class WebhookReliabilityService {
       attempt.webhookEventId,
       attempt.url,
       attempt.payload,
-      nextAttemptNumber
+      nextAttemptNumber,
     );
   }
 
@@ -148,14 +171,14 @@ export class WebhookReliabilityService {
     eventId: number,
     attempts: number,
     lastError: string,
-    payload: unknown
+    payload: unknown,
   ): Promise<void> {
     const dlqData: InsertWebhookDeadLetterQueue = {
       webhookEventId: eventId,
       attempts,
       lastError: lastError.substring(0, 5000),
       payload,
-      status: 'queued',
+      status: "queued",
       processedAt: null,
     };
 
@@ -165,19 +188,19 @@ export class WebhookReliabilityService {
   async reprocessDeadLetter(dlqId: string): Promise<void> {
     const item = await storage.getDeadLetterQueueItem(dlqId);
     if (!item) {
-      throw new Error('Dead letter queue item not found');
+      throw new Error("Dead letter queue item not found");
     }
 
     const webhookEvent = await storage.getWebhookEvent(item.webhookEventId);
     if (!webhookEvent) {
-      throw new Error('Webhook event not found');
+      throw new Error("Webhook event not found");
     }
 
     await storage.reprocessDeadLetter(dlqId);
 
-    const url = webhookEvent.raw?.url || webhookEvent.raw?.webhook_url || '';
+    const url = webhookEvent.raw?.url || webhookEvent.raw?.webhook_url || "";
     if (!url) {
-      throw new Error('Webhook URL not found in event data');
+      throw new Error("Webhook URL not found in event data");
     }
 
     await this.dispatchWebhook(item.webhookEventId, url, item.payload, 1);

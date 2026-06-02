@@ -10,27 +10,31 @@
  *   track('distribution'); // call when user visits or uses a feature
  */
 
-import { useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
-type TrackAction = 'used' | 'discovered' | 'completed' | 'skipped';
+type TrackAction = "used" | "discovered" | "completed" | "skipped";
 
 interface TrackOptions {
   action?: TrackAction;
   metadata?: Record<string, unknown>;
 }
 
-const pendingEvents: Array<{ featureName: string; action: TrackAction; metadata?: Record<string, unknown> }> = [];
+const pendingEvents: Array<{
+  featureName: string;
+  action: TrackAction;
+  metadata?: Record<string, unknown>;
+}> = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
 function flush() {
   if (pendingEvents.length === 0) return;
   const batch = pendingEvents.splice(0, pendingEvents.length);
   for (const event of batch) {
-    fetch('/api/retention/feature-event', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+    fetch("/api/retention/feature-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(event),
     }).catch(() => {});
   }
@@ -45,14 +49,14 @@ export function useFeatureTracking() {
 
       pendingEvents.push({
         featureName,
-        action: options.action ?? 'used',
+        action: options.action ?? "used",
         metadata: options.metadata,
       });
 
       if (flushTimer) clearTimeout(flushTimer);
       flushTimer = setTimeout(flush, 2000);
     },
-    [user]
+    [user],
   );
 
   return { track };

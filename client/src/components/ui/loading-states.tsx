@@ -1,31 +1,38 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Skeleton } from './skeleton';
-import { Progress } from './progress';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { createAriaProgressBar } from '@/lib/accessibility';
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "./skeleton";
+import { Progress } from "./progress";
+import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { createAriaProgressBar } from "@/lib/accessibility";
 
 interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   className?: string;
 }
 
 const spinnerSizes = {
-  sm: 'h-4 w-4',
-  md: 'h-6 w-6',
-  lg: 'h-8 w-8',
-  xl: 'h-12 w-12',
+  sm: "h-4 w-4",
+  md: "h-6 w-6",
+  lg: "h-8 w-8",
+  xl: "h-12 w-12",
 };
 
-export function LoadingSpinner({ size = 'md', label = 'Loading', className }: LoadingSpinnerProps) {
+export function LoadingSpinner({
+  size = "md",
+  label = "Loading",
+  className,
+}: LoadingSpinnerProps) {
   return (
     <div
-      className={cn('flex items-center justify-center gap-2', className)}
+      className={cn("flex items-center justify-center gap-2", className)}
       role="status"
       aria-label={label}
     >
-      <Loader2 className={cn('animate-spin text-primary', spinnerSizes[size])} aria-hidden="true" />
+      <Loader2
+        className={cn("animate-spin text-primary", spinnerSizes[size])}
+        aria-hidden="true"
+      />
       <span className="sr-only">{label}</span>
     </div>
   );
@@ -40,7 +47,7 @@ interface LoadingOverlayProps {
 
 export function LoadingOverlay({
   isLoading,
-  label = 'Loading content',
+  label = "Loading content",
   blur = true,
   children,
 }: LoadingOverlayProps) {
@@ -50,8 +57,8 @@ export function LoadingOverlay({
       {isLoading && (
         <div
           className={cn(
-            'absolute inset-0 flex items-center justify-center bg-background/80 z-50',
-            blur && 'backdrop-blur-sm'
+            "absolute inset-0 flex items-center justify-center bg-background/80 z-50",
+            blur && "backdrop-blur-sm",
           )}
           role="status"
           aria-label={label}
@@ -72,22 +79,22 @@ interface ProgressIndicatorProps {
   label?: string;
   showPercentage?: boolean;
   showLabel?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'success' | 'warning' | 'error';
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "success" | "warning" | "error";
   className?: string;
 }
 
 const progressSizes = {
-  sm: 'h-1',
-  md: 'h-2',
-  lg: 'h-3',
+  sm: "h-1",
+  md: "h-2",
+  lg: "h-3",
 };
 
 const progressVariants = {
-  default: '',
-  success: '[&>div]:bg-green-500',
-  warning: '[&>div]:bg-yellow-500',
-  error: '[&>div]:bg-red-500',
+  default: "",
+  success: "[&>div]:bg-green-500",
+  warning: "[&>div]:bg-yellow-500",
+  error: "[&>div]:bg-red-500",
 };
 
 export function ProgressIndicator({
@@ -96,18 +103,20 @@ export function ProgressIndicator({
   label,
   showPercentage = true,
   showLabel = true,
-  size = 'md',
-  variant = 'default',
+  size = "md",
+  variant = "default",
   className,
 }: ProgressIndicatorProps) {
   const percentage = Math.round((value / max) * 100);
   const ariaProps = createAriaProgressBar(value, 0, max, label);
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       {(showLabel || showPercentage) && (
         <div className="flex items-center justify-between text-sm">
-          {showLabel && label && <span className="text-muted-foreground">{label}</span>}
+          {showLabel && label && (
+            <span className="text-muted-foreground">{label}</span>
+          )}
           {showPercentage && <span className="font-medium">{percentage}%</span>}
         </div>
       )}
@@ -137,7 +146,7 @@ export function StepProgress({
 }: StepProgressProps) {
   return (
     <div
-      className={cn('flex items-center justify-between', className)}
+      className={cn("flex items-center justify-between", className)}
       role="progressbar"
       aria-valuenow={currentStep}
       aria-valuemin={1}
@@ -154,12 +163,15 @@ export function StepProgress({
             <div className="flex flex-col items-center gap-1">
               <div
                 className={cn(
-                  'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors',
-                  isCompleted && 'bg-primary text-primary-foreground',
-                  isCurrent && 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2',
-                  !isCompleted && !isCurrent && 'bg-muted text-muted-foreground'
+                  "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors",
+                  isCompleted && "bg-primary text-primary-foreground",
+                  isCurrent &&
+                    "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2",
+                  !isCompleted &&
+                    !isCurrent &&
+                    "bg-muted text-muted-foreground",
                 )}
-                aria-current={isCurrent ? 'step' : undefined}
+                aria-current={isCurrent ? "step" : undefined}
               >
                 {isCompleted ? (
                   <CheckCircle className="w-4 h-4" aria-hidden="true" />
@@ -170,8 +182,10 @@ export function StepProgress({
               {labels?.[i] && (
                 <span
                   className={cn(
-                    'text-xs max-w-[80px] text-center',
-                    (isCompleted || isCurrent) ? 'text-foreground' : 'text-muted-foreground'
+                    "text-xs max-w-[80px] text-center",
+                    isCompleted || isCurrent
+                      ? "text-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
                   {labels[i]}
@@ -181,8 +195,8 @@ export function StepProgress({
             {showConnector && stepNumber < totalSteps && (
               <div
                 className={cn(
-                  'flex-1 h-0.5 mx-2',
-                  isCompleted ? 'bg-primary' : 'bg-muted'
+                  "flex-1 h-0.5 mx-2",
+                  isCompleted ? "bg-primary" : "bg-muted",
                 )}
                 aria-hidden="true"
               />
@@ -195,7 +209,7 @@ export function StepProgress({
 }
 
 interface OptimisticUpdateFeedbackProps {
-  status: 'idle' | 'pending' | 'success' | 'error';
+  status: "idle" | "pending" | "success" | "error";
   pendingLabel?: string;
   successLabel?: string;
   errorLabel?: string;
@@ -204,35 +218,40 @@ interface OptimisticUpdateFeedbackProps {
 
 export function OptimisticUpdateFeedback({
   status,
-  pendingLabel = 'Saving...',
-  successLabel = 'Saved',
-  errorLabel = 'Failed to save',
+  pendingLabel = "Saving...",
+  successLabel = "Saved",
+  errorLabel = "Failed to save",
   className,
 }: OptimisticUpdateFeedbackProps) {
-  if (status === 'idle') return null;
+  if (status === "idle") return null;
 
   return (
     <div
       className={cn(
-        'flex items-center gap-2 text-sm transition-opacity',
-        className
+        "flex items-center gap-2 text-sm transition-opacity",
+        className,
       )}
       role="status"
       aria-live="polite"
     >
-      {status === 'pending' && (
+      {status === "pending" && (
         <>
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" aria-hidden="true" />
+          <Loader2
+            className="h-3 w-3 animate-spin text-muted-foreground"
+            aria-hidden="true"
+          />
           <span className="text-muted-foreground">{pendingLabel}</span>
         </>
       )}
-      {status === 'success' && (
+      {status === "success" && (
         <>
           <CheckCircle className="h-3 w-3 text-green-500" aria-hidden="true" />
-          <span className="text-green-600 dark:text-green-400">{successLabel}</span>
+          <span className="text-green-600 dark:text-green-400">
+            {successLabel}
+          </span>
         </>
       )}
-      {status === 'error' && (
+      {status === "error" && (
         <>
           <AlertCircle className="h-3 w-3 text-red-500" aria-hidden="true" />
           <span className="text-red-600 dark:text-red-400">{errorLabel}</span>
@@ -269,12 +288,21 @@ export function SkeletonContent({
 interface InlineLoadingProps {
   isLoading: boolean;
   children: React.ReactNode;
-  size?: 'sm' | 'md';
+  size?: "sm" | "md";
 }
 
-export function InlineLoading({ isLoading, children, size = 'sm' }: InlineLoadingProps) {
+export function InlineLoading({
+  isLoading,
+  children,
+  size = "sm",
+}: InlineLoadingProps) {
   if (isLoading) {
-    return <Loader2 className={cn('animate-spin', size === 'sm' ? 'h-4 w-4' : 'h-5 w-5')} aria-hidden="true" />;
+    return (
+      <Loader2
+        className={cn("animate-spin", size === "sm" ? "h-4 w-4" : "h-5 w-5")}
+        aria-hidden="true"
+      />
+    );
   }
   return <>{children}</>;
 }
@@ -285,12 +313,16 @@ interface ButtonLoadingStateProps {
   children: React.ReactNode;
 }
 
-export function ButtonLoadingState({ isLoading, loadingText, children }: ButtonLoadingStateProps) {
+export function ButtonLoadingState({
+  isLoading,
+  loadingText,
+  children,
+}: ButtonLoadingStateProps) {
   if (isLoading) {
     return (
       <>
         <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-        {loadingText || 'Loading...'}
+        {loadingText || "Loading..."}
       </>
     );
   }
@@ -298,38 +330,42 @@ export function ButtonLoadingState({ isLoading, loadingText, children }: ButtonL
 }
 
 interface PulsingDotProps {
-  color?: 'primary' | 'success' | 'warning' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  color?: "primary" | "success" | "warning" | "error";
+  size?: "sm" | "md" | "lg";
   className?: string;
 }
 
 const dotColors = {
-  primary: 'bg-primary',
-  success: 'bg-green-500',
-  warning: 'bg-yellow-500',
-  error: 'bg-red-500',
+  primary: "bg-primary",
+  success: "bg-green-500",
+  warning: "bg-yellow-500",
+  error: "bg-red-500",
 };
 
 const dotSizes = {
-  sm: 'w-2 h-2',
-  md: 'w-3 h-3',
-  lg: 'w-4 h-4',
+  sm: "w-2 h-2",
+  md: "w-3 h-3",
+  lg: "w-4 h-4",
 };
 
-export function PulsingDot({ color = 'primary', size = 'md', className }: PulsingDotProps) {
+export function PulsingDot({
+  color = "primary",
+  size = "md",
+  className,
+}: PulsingDotProps) {
   return (
-    <span className={cn('relative flex', className)}>
+    <span className={cn("relative flex", className)}>
       <span
         className={cn(
-          'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
-          dotColors[color]
+          "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
+          dotColors[color],
         )}
       />
       <span
         className={cn(
-          'relative inline-flex rounded-full',
+          "relative inline-flex rounded-full",
           dotColors[color],
-          dotSizes[size]
+          dotSizes[size],
         )}
       />
     </span>
@@ -341,13 +377,20 @@ interface ContentPlaceholderProps {
   className?: string;
 }
 
-export function ContentPlaceholder({ lines = 3, className }: ContentPlaceholderProps) {
+export function ContentPlaceholder({
+  lines = 3,
+  className,
+}: ContentPlaceholderProps) {
   return (
-    <div className={cn('space-y-3', className)} role="status" aria-label="Loading content">
+    <div
+      className={cn("space-y-3", className)}
+      role="status"
+      aria-label="Loading content"
+    >
       {Array.from({ length: lines }, (_, i) => (
         <Skeleton
           key={i}
-          className={cn('h-4', i === lines - 1 ? 'w-3/4' : 'w-full')}
+          className={cn("h-4", i === lines - 1 ? "w-3/4" : "w-full")}
         />
       ))}
       <span className="sr-only">Loading content</span>
@@ -365,13 +408,16 @@ interface ImageLoadingProps {
 export function ImageLoading({
   isLoading,
   children,
-  aspectRatio = '16/9',
+  aspectRatio = "16/9",
   className,
 }: ImageLoadingProps) {
   if (isLoading) {
     return (
       <div
-        className={cn('relative overflow-hidden bg-muted rounded-lg', className)}
+        className={cn(
+          "relative overflow-hidden bg-muted rounded-lg",
+          className,
+        )}
         style={{ aspectRatio }}
         role="status"
         aria-label="Loading image"
@@ -419,10 +465,13 @@ export function DataLoadingState({
     return (
       errorComponent || (
         <div className="flex flex-col items-center justify-center p-8 text-center">
-          <AlertCircle className="h-12 w-12 text-destructive mb-4" aria-hidden="true" />
+          <AlertCircle
+            className="h-12 w-12 text-destructive mb-4"
+            aria-hidden="true"
+          />
           <h3 className="font-semibold text-lg mb-2">Something went wrong</h3>
           <p className="text-muted-foreground text-sm">
-            {error?.message || 'Failed to load data. Please try again.'}
+            {error?.message || "Failed to load data. Please try again."}
           </p>
         </div>
       )

@@ -1,13 +1,20 @@
-import { logger } from '../lib/logger';
-import { useState, useEffect, useCallback } from 'react';
-import { syncManager, offlineQueue, offlineCache, SyncStatus, SyncProgress, QueuedAction } from '@/lib/offline';
+import { logger } from "../lib/logger";
+import { useState, useEffect, useCallback } from "react";
+import {
+  syncManager,
+  offlineQueue,
+  offlineCache,
+  SyncStatus,
+  SyncProgress,
+  QueuedAction,
+} from "@/lib/offline";
 
 export interface OfflineState {
   isOnline: boolean;
   isOffline: boolean;
   isReconnecting: boolean;
   isSyncing: boolean;
-  connectionQuality: 'excellent' | 'good' | 'slow' | 'offline';
+  connectionQuality: "excellent" | "good" | "slow" | "offline";
   syncStatus: SyncStatus;
   syncProgress: SyncProgress;
   pendingCount: number;
@@ -19,15 +26,31 @@ export interface OfflineState {
 export interface UseOfflineReturn extends OfflineState {
   sync: () => Promise<void>;
   retryFailed: () => Promise<void>;
-  queueAction: <T>(type: string, payload: T, options?: {
-    priority?: 'critical' | 'high' | 'normal' | 'low';
-    conflictStrategy?: 'local-wins' | 'server-wins' | 'merge' | 'manual';
-  }) => Promise<QueuedAction<T>>;
-  getConflicts: () => Promise<Array<{ actionId: string; localData: unknown; serverData: unknown }>>;
-  resolveConflict: (actionId: string, resolution: 'local' | 'server' | 'merged', mergedData?: unknown) => Promise<void>;
-  cacheData: <T>(key: string, data: T, category?: 'analytics' | 'dashboard' | 'ui' | 'user' | 'general') => Promise<void>;
+  queueAction: <T>(
+    type: string,
+    payload: T,
+    options?: {
+      priority?: "critical" | "high" | "normal" | "low";
+      conflictStrategy?: "local-wins" | "server-wins" | "merge" | "manual";
+    },
+  ) => Promise<QueuedAction<T>>;
+  getConflicts: () => Promise<
+    Array<{ actionId: string; localData: unknown; serverData: unknown }>
+  >;
+  resolveConflict: (
+    actionId: string,
+    resolution: "local" | "server" | "merged",
+    mergedData?: unknown,
+  ) => Promise<void>;
+  cacheData: <T>(
+    key: string,
+    data: T,
+    category?: "analytics" | "dashboard" | "ui" | "user" | "general",
+  ) => Promise<void>;
   getCachedData: <T>(key: string) => Promise<T | null>;
-  invalidateCache: (category?: 'analytics' | 'dashboard' | 'ui' | 'user' | 'general') => Promise<void>;
+  invalidateCache: (
+    category?: "analytics" | "dashboard" | "ui" | "user" | "general",
+  ) => Promise<void>;
 }
 
 export function useOffline(): UseOfflineReturn {
@@ -36,8 +59,8 @@ export function useOffline(): UseOfflineReturn {
     isOffline: !navigator.onLine,
     isReconnecting: false,
     isSyncing: false,
-    connectionQuality: navigator.onLine ? 'good' : 'offline',
-    syncStatus: 'idle',
+    connectionQuality: navigator.onLine ? "good" : "offline",
+    syncStatus: "idle",
     syncProgress: {
       total: 0,
       completed: 0,
@@ -55,14 +78,14 @@ export function useOffline(): UseOfflineReturn {
   const loadStats = useCallback(async () => {
     try {
       const stats = await offlineQueue.getStats();
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         pendingCount: stats.pending + stats.syncing,
         failedCount: stats.failed,
         conflictCount: stats.conflict,
       }));
     } catch (error) {
-      logger.error('[useOffline] Failed to load stats:', error);
+      logger.error("[useOffline] Failed to load stats:", error);
     }
   }, []);
 
@@ -70,80 +93,80 @@ export function useOffline(): UseOfflineReturn {
     loadStats();
 
     const handleOnline = () => {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isOnline: true,
         isOffline: false,
-        connectionQuality: 'good',
+        connectionQuality: "good",
         isReconnecting: true,
       }));
 
       syncManager.sync().finally(() => {
-        setState(prev => ({ ...prev, isReconnecting: false }));
+        setState((prev) => ({ ...prev, isReconnecting: false }));
         loadStats();
       });
     };
 
     const handleOffline = () => {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isOnline: false,
         isOffline: true,
-        connectionQuality: 'offline',
+        connectionQuality: "offline",
         isReconnecting: false,
       }));
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     const connection = (navigator as Record<string, unknown>).connection;
     if (connection) {
       const handleConnectionChange = () => {
         const effectiveType = connection.effectiveType;
-        let quality: 'excellent' | 'good' | 'slow' | 'offline';
+        let quality: "excellent" | "good" | "slow" | "offline";
         if (!navigator.onLine) {
-          quality = 'offline';
-        } else if (effectiveType === '4g') {
-          quality = 'excellent';
-        } else if (effectiveType === '3g') {
-          quality = 'good';
+          quality = "offline";
+        } else if (effectiveType === "4g") {
+          quality = "excellent";
+        } else if (effectiveType === "3g") {
+          quality = "good";
         } else {
-          quality = 'slow';
+          quality = "slow";
         }
-        setState(prev => ({ ...prev, connectionQuality: quality }));
+        setState((prev) => ({ ...prev, connectionQuality: quality }));
       };
-      connection.addEventListener('change', handleConnectionChange);
+      connection.addEventListener("change", handleConnectionChange);
     }
 
-    const unsubStatusChange = syncManager.on('status-change', (event) => {
+    const unsubStatusChange = syncManager.on("status-change", (event) => {
       if (event.status) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           syncStatus: event.status!,
-          isSyncing: event.status === 'syncing',
+          isSyncing: event.status === "syncing",
         }));
       }
     });
 
-    const unsubProgress = syncManager.on('progress-update', (event) => {
+    const unsubProgress = syncManager.on("progress-update", (event) => {
       if (event.progress) {
-        setState(prev => ({ ...prev, syncProgress: event.progress! }));
+        setState((prev) => ({ ...prev, syncProgress: event.progress! }));
       }
     });
 
-    const unsubComplete = syncManager.on('sync-complete', () => {
-      setState(prev => ({ ...prev, lastSyncAt: Date.now() }));
+    const unsubComplete = syncManager.on("sync-complete", () => {
+      setState((prev) => ({ ...prev, lastSyncAt: Date.now() }));
       loadStats();
     });
 
-    const unsubQueueChange = offlineQueue.on('action-added', loadStats);
-    const unsubQueueRemove = offlineQueue.on('action-removed', loadStats);
-    const unsubQueueUpdate = offlineQueue.on('action-updated', loadStats);
+    const unsubQueueChange = offlineQueue.on("action-added", loadStats);
+    const unsubQueueRemove = offlineQueue.on("action-removed", loadStats);
+    const unsubQueueUpdate = offlineQueue.on("action-updated", loadStats);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       unsubStatusChange();
       unsubProgress();
       unsubComplete();
@@ -161,51 +184,71 @@ export function useOffline(): UseOfflineReturn {
     await syncManager.retryFailed();
   }, []);
 
-  const queueAction = useCallback(async <T,>(
-    type: string,
-    payload: T,
-    options?: {
-      priority?: 'critical' | 'high' | 'normal' | 'low';
-      conflictStrategy?: 'local-wins' | 'server-wins' | 'merge' | 'manual';
-    }
-  ): Promise<QueuedAction<T>> => {
-    return offlineQueue.enqueue(type, payload, options);
-  }, []);
+  const queueAction = useCallback(
+    async <T>(
+      type: string,
+      payload: T,
+      options?: {
+        priority?: "critical" | "high" | "normal" | "low";
+        conflictStrategy?: "local-wins" | "server-wins" | "merge" | "manual";
+      },
+    ): Promise<QueuedAction<T>> => {
+      return offlineQueue.enqueue(type, payload, options);
+    },
+    [],
+  );
 
   const getConflicts = useCallback(async () => {
     return offlineQueue.getConflicts();
   }, []);
 
-  const resolveConflict = useCallback(async (
-    actionId: string,
-    resolution: 'local' | 'server' | 'merged',
-    mergedData?: unknown
-  ) => {
-    await offlineQueue.resolveConflict(actionId, resolution, mergedData);
-    await loadStats();
-  }, [loadStats]);
+  const resolveConflict = useCallback(
+    async (
+      actionId: string,
+      resolution: "local" | "server" | "merged",
+      mergedData?: unknown,
+    ) => {
+      await offlineQueue.resolveConflict(actionId, resolution, mergedData);
+      await loadStats();
+    },
+    [loadStats],
+  );
 
-  const cacheData = useCallback(async <T,>(
-    key: string,
-    data: T,
-    category: 'analytics' | 'dashboard' | 'ui' | 'user' | 'general' = 'general'
-  ) => {
-    await offlineCache.set(key, data, { category });
-  }, []);
+  const cacheData = useCallback(
+    async <T>(
+      key: string,
+      data: T,
+      category:
+        | "analytics"
+        | "dashboard"
+        | "ui"
+        | "user"
+        | "general" = "general",
+    ) => {
+      await offlineCache.set(key, data, { category });
+    },
+    [],
+  );
 
-  const getCachedData = useCallback(async <T,>(key: string): Promise<T | null> => {
-    return offlineCache.get<T>(key);
-  }, []);
+  const getCachedData = useCallback(
+    async <T>(key: string): Promise<T | null> => {
+      return offlineCache.get<T>(key);
+    },
+    [],
+  );
 
-  const invalidateCache = useCallback(async (
-    category?: 'analytics' | 'dashboard' | 'ui' | 'user' | 'general'
-  ) => {
-    if (category) {
-      await offlineCache.invalidateCategory(category);
-    } else {
-      await offlineCache.clear();
-    }
-  }, []);
+  const invalidateCache = useCallback(
+    async (
+      category?: "analytics" | "dashboard" | "ui" | "user" | "general",
+    ) => {
+      if (category) {
+        await offlineCache.invalidateCategory(category);
+      } else {
+        await offlineCache.clear();
+      }
+    },
+    [],
+  );
 
   return {
     ...state,

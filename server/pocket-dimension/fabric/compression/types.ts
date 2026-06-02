@@ -1,19 +1,19 @@
 export type CompressionProfile =
-  | 'lossless-max-dedup'
-  | 'media-lossy'
-  | 'semantic-archive';
+  | "lossless-max-dedup"
+  | "media-lossy"
+  | "semantic-archive";
 
 export type ContentClass =
-  | 'video'
-  | 'audio'
-  | 'image'
-  | 'text'
-  | 'json'
-  | 'log'
-  | 'metrics'
-  | 'binary'
-  | 'archive'
-  | 'unknown';
+  | "video"
+  | "audio"
+  | "image"
+  | "text"
+  | "json"
+  | "log"
+  | "metrics"
+  | "binary"
+  | "archive"
+  | "unknown";
 
 export interface StoreOptions {
   profile?: CompressionProfile;
@@ -46,7 +46,7 @@ export interface CdcChunk {
 }
 
 export interface DeltaOp {
-  type: 'copy' | 'insert';
+  type: "copy" | "insert";
   srcOffset?: number;
   length: number;
   data?: Buffer;

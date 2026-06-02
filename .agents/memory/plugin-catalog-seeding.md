@@ -11,6 +11,7 @@ There are (were) two functions that looked like they seeded `plugin_catalog`:
 **Why this matters:** Drizzle silently drops fields written to columns the schema doesn't define. The pluginHostService variant wrote `{kind, manifest}` — neither column exists in `plugin_catalog` — so it succeeded with no error and persisted nothing. Typecheck did not catch it. Always confirm the column names against `shared/schema.ts:pluginCatalog` (around line 2001) before assuming a write landed.
 
 **How to apply:**
+
 - All plugin-catalog seeding lives in `storage.ts:seedPluginCatalog`. Add new logic there, not in pluginHostService.
 - `pluginHostService.ensurePluginCatalogSeeded` is now a thin delegate to `storage.seedPluginCatalog()` — keep it that way to avoid the duplicate-path trap.
 - The boot log line `✅ Plugin catalog seeded` comes from `init-admin.ts`, **not** from storage; the real diagnostic is `✓ Plugin catalog: N inserted, M updated (rev …)` and `✓ Factory genre presets: …`.

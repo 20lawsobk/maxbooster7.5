@@ -1,23 +1,29 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Bot,
   Sparkles,
@@ -31,7 +37,7 @@ import {
   Target,
   Zap,
   Settings,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface PlatformSetting {
   enabled: boolean;
@@ -93,73 +99,94 @@ interface AutopilotPreferencesData {
 }
 
 const defaultPreferences: AutopilotPreferencesData = {
-  artistName: '',
-  artistBio: '',
-  genre: '',
+  artistName: "",
+  artistBio: "",
+  genre: "",
   subGenres: [],
-  brandVoice: 'casual',
-  targetAudience: '',
+  brandVoice: "casual",
+  targetAudience: "",
   uniqueSellingPoints: [],
-  contentTone: 'casual',
+  contentTone: "casual",
   preferredEmojis: [],
   avoidEmojis: false,
   preferredHashtags: [],
   avoidHashtags: [],
   contentThemes: [],
   avoidTopics: [],
-  callToActionStyle: 'direct',
+  callToActionStyle: "direct",
   contentQualityThreshold: 90,
   platformSettings: {},
   postingSchedule: {
-    timezone: 'America/New_York',
+    timezone: "America/New_York",
     preferredHours: [9, 12, 18, 21],
-    preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+    preferredDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
     avoidHours: [],
     avoidDays: [],
   },
   adAutopilotEnabled: false,
-  organicGrowthPriority: 'engagement',
+  organicGrowthPriority: "engagement",
   crossPostingEnabled: true,
-  viralOptimizationLevel: 'moderate',
+  viralOptimizationLevel: "moderate",
   contentExamples: { goodPosts: [], badPosts: [], inspirationalAccounts: [] },
   currentReleases: [],
-  customInstructions: '',
+  customInstructions: "",
   isActive: true,
 };
 
 const PLATFORMS = [
-  { id: 'twitter', name: 'Twitter/X' },
-  { id: 'instagram', name: 'Instagram' },
-  { id: 'tiktok', name: 'TikTok' },
-  { id: 'facebook', name: 'Facebook' },
-  { id: 'youtube', name: 'YouTube' },
-  { id: 'linkedin', name: 'LinkedIn' },
-  { id: 'threads', name: 'Threads' },
-  { id: 'googlebusiness', name: 'Google Business' },
+  { id: "twitter", name: "Twitter/X" },
+  { id: "instagram", name: "Instagram" },
+  { id: "tiktok", name: "TikTok" },
+  { id: "facebook", name: "Facebook" },
+  { id: "youtube", name: "YouTube" },
+  { id: "linkedin", name: "LinkedIn" },
+  { id: "threads", name: "Threads" },
+  { id: "googlebusiness", name: "Google Business" },
 ];
 
 const GENRES = [
-  'Hip-Hop/Rap', 'R&B/Soul', 'Pop', 'Rock', 'Electronic/EDM', 
-  'Country', 'Jazz', 'Classical', 'Reggae', 'Latin', 'Metal', 'Indie', 'Other'
+  "Hip-Hop/Rap",
+  "R&B/Soul",
+  "Pop",
+  "Rock",
+  "Electronic/EDM",
+  "Country",
+  "Jazz",
+  "Classical",
+  "Reggae",
+  "Latin",
+  "Metal",
+  "Indie",
+  "Other",
 ];
 
 const CONTENT_THEMES = [
-  'New Releases', 'Behind The Scenes', 'Fan Engagement', 'Promotions',
-  'Personal Updates', 'Industry News', 'Collaborations', 'Live Shows',
-  'Studio Sessions', 'Music Production Tips', 'Throwbacks', 'Challenges'
+  "New Releases",
+  "Behind The Scenes",
+  "Fan Engagement",
+  "Promotions",
+  "Personal Updates",
+  "Industry News",
+  "Collaborations",
+  "Live Shows",
+  "Studio Sessions",
+  "Music Production Tips",
+  "Throwbacks",
+  "Challenges",
 ];
 
 export function AutopilotPreferences() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [preferences, setPreferences] = useState<AutopilotPreferencesData>(defaultPreferences);
-  const [newHashtag, setNewHashtag] = useState('');
-  const [newTheme, setNewTheme] = useState('');
+  const [preferences, setPreferences] =
+    useState<AutopilotPreferencesData>(defaultPreferences);
+  const [newHashtag, setNewHashtag] = useState("");
+  const [newTheme, setNewTheme] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ['autopilot-preferences'],
+    queryKey: ["autopilot-preferences"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/autopilot/preferences');
+      const res = await apiRequest("GET", "/api/autopilot/preferences");
       return res.json();
     },
   });
@@ -172,19 +199,20 @@ export function AutopilotPreferences() {
 
   const saveMutation = useMutation({
     mutationFn: (data: AutopilotPreferencesData) =>
-      apiRequest('POST', '/api/autopilot/preferences', data),
+      apiRequest("POST", "/api/autopilot/preferences", data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['autopilot-preferences'] });
+      queryClient.invalidateQueries({ queryKey: ["autopilot-preferences"] });
       toast({
-        title: 'Preferences Saved',
-        description: 'Your autopilot preferences have been updated successfully.',
+        title: "Preferences Saved",
+        description:
+          "Your autopilot preferences have been updated successfully.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to save preferences. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -197,22 +225,25 @@ export function AutopilotPreferences() {
     if (newHashtag && !preferences.preferredHashtags.includes(newHashtag)) {
       setPreferences({
         ...preferences,
-        preferredHashtags: [...preferences.preferredHashtags, newHashtag.startsWith('#') ? newHashtag : `#${newHashtag}`],
+        preferredHashtags: [
+          ...preferences.preferredHashtags,
+          newHashtag.startsWith("#") ? newHashtag : `#${newHashtag}`,
+        ],
       });
-      setNewHashtag('');
+      setNewHashtag("");
     }
   };
 
   const removeHashtag = (tag: string) => {
     setPreferences({
       ...preferences,
-      preferredHashtags: preferences.preferredHashtags.filter(t => t !== tag),
+      preferredHashtags: preferences.preferredHashtags.filter((t) => t !== tag),
     });
   };
 
   const toggleTheme = (theme: string) => {
     const themes = preferences.contentThemes.includes(theme)
-      ? preferences.contentThemes.filter(t => t !== theme)
+      ? preferences.contentThemes.filter((t) => t !== theme)
       : [...preferences.contentThemes, theme];
     setPreferences({ ...preferences, contentThemes: themes });
   };
@@ -239,7 +270,7 @@ export function AutopilotPreferences() {
         </div>
         <Button onClick={handleSave} disabled={saveMutation.isPending}>
           <Save className="h-4 w-4 mr-2" />
-          {saveMutation.isPending ? 'Saving...' : 'Save Preferences'}
+          {saveMutation.isPending ? "Saving..." : "Save Preferences"}
         </Button>
       </div>
 
@@ -282,7 +313,12 @@ export function AutopilotPreferences() {
                   <Input
                     id="artistName"
                     value={preferences.artistName}
-                    onChange={(e) => setPreferences({ ...preferences, artistName: e.target.value })}
+                    onChange={(e) =>
+                      setPreferences({
+                        ...preferences,
+                        artistName: e.target.value,
+                      })
+                    }
                     placeholder="Your artist name"
                   />
                 </div>
@@ -290,14 +326,18 @@ export function AutopilotPreferences() {
                   <Label htmlFor="genre">Primary Genre</Label>
                   <Select
                     value={preferences.genre}
-                    onValueChange={(value) => setPreferences({ ...preferences, genre: value })}
+                    onValueChange={(value) =>
+                      setPreferences({ ...preferences, genre: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select genre" />
                     </SelectTrigger>
                     <SelectContent>
-                      {GENRES.map(genre => (
-                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                      {GENRES.map((genre) => (
+                        <SelectItem key={genre} value={genre}>
+                          {genre}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -309,7 +349,12 @@ export function AutopilotPreferences() {
                 <Textarea
                   id="artistBio"
                   value={preferences.artistBio}
-                  onChange={(e) => setPreferences({ ...preferences, artistBio: e.target.value })}
+                  onChange={(e) =>
+                    setPreferences({
+                      ...preferences,
+                      artistBio: e.target.value,
+                    })
+                  }
                   placeholder="Brief description of your music and brand..."
                   rows={3}
                 />
@@ -320,7 +365,12 @@ export function AutopilotPreferences() {
                 <Input
                   id="targetAudience"
                   value={preferences.targetAudience}
-                  onChange={(e) => setPreferences({ ...preferences, targetAudience: e.target.value })}
+                  onChange={(e) =>
+                    setPreferences({
+                      ...preferences,
+                      targetAudience: e.target.value,
+                    })
+                  }
                   placeholder="e.g., 18-35 year olds who love hip-hop and streetwear"
                 />
               </div>
@@ -330,7 +380,9 @@ export function AutopilotPreferences() {
                   <Label htmlFor="brandVoice">Brand Voice</Label>
                   <Select
                     value={preferences.brandVoice}
-                    onValueChange={(value) => setPreferences({ ...preferences, brandVoice: value })}
+                    onValueChange={(value) =>
+                      setPreferences({ ...preferences, brandVoice: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select voice" />
@@ -340,7 +392,9 @@ export function AutopilotPreferences() {
                       <SelectItem value="casual">Casual</SelectItem>
                       <SelectItem value="energetic">Energetic</SelectItem>
                       <SelectItem value="edgy">Edgy</SelectItem>
-                      <SelectItem value="inspirational">Inspirational</SelectItem>
+                      <SelectItem value="inspirational">
+                        Inspirational
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -348,7 +402,9 @@ export function AutopilotPreferences() {
                   <Label htmlFor="contentTone">Content Tone</Label>
                   <Select
                     value={preferences.contentTone}
-                    onValueChange={(value) => setPreferences({ ...preferences, contentTone: value })}
+                    onValueChange={(value) =>
+                      setPreferences({ ...preferences, contentTone: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select tone" />
@@ -381,10 +437,14 @@ export function AutopilotPreferences() {
                   Select the types of content you want the AI to create
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {CONTENT_THEMES.map(theme => (
+                  {CONTENT_THEMES.map((theme) => (
                     <Badge
                       key={theme}
-                      variant={preferences.contentThemes.includes(theme) ? 'default' : 'outline'}
+                      variant={
+                        preferences.contentThemes.includes(theme)
+                          ? "default"
+                          : "outline"
+                      }
                       className="cursor-pointer"
                       onClick={() => toggleTheme(theme)}
                     >
@@ -401,14 +461,14 @@ export function AutopilotPreferences() {
                     value={newHashtag}
                     onChange={(e) => setNewHashtag(e.target.value)}
                     placeholder="Add a hashtag"
-                    onKeyPress={(e) => e.key === 'Enter' && addHashtag()}
+                    onKeyPress={(e) => e.key === "Enter" && addHashtag()}
                   />
                   <Button onClick={addHashtag} variant="outline">
                     <Hash className="h-4 w-4" />
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {preferences.preferredHashtags.map(tag => (
+                  {preferences.preferredHashtags.map((tag) => (
                     <Badge
                       key={tag}
                       variant="secondary"
@@ -426,16 +486,29 @@ export function AutopilotPreferences() {
                   <Label htmlFor="ctaStyle">Call-to-Action Style</Label>
                   <Select
                     value={preferences.callToActionStyle}
-                    onValueChange={(value) => setPreferences({ ...preferences, callToActionStyle: value })}
+                    onValueChange={(value) =>
+                      setPreferences({
+                        ...preferences,
+                        callToActionStyle: value,
+                      })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select CTA style" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="direct">Direct (e.g., "Stream now!")</SelectItem>
-                      <SelectItem value="subtle">Subtle (e.g., "Link in bio")</SelectItem>
-                      <SelectItem value="question">Question (e.g., "Ready to listen?")</SelectItem>
-                      <SelectItem value="urgency">Urgency (e.g., "Don't miss out!")</SelectItem>
+                      <SelectItem value="direct">
+                        Direct (e.g., "Stream now!")
+                      </SelectItem>
+                      <SelectItem value="subtle">
+                        Subtle (e.g., "Link in bio")
+                      </SelectItem>
+                      <SelectItem value="question">
+                        Question (e.g., "Ready to listen?")
+                      </SelectItem>
+                      <SelectItem value="urgency">
+                        Urgency (e.g., "Don't miss out!")
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -443,7 +516,9 @@ export function AutopilotPreferences() {
                   <Switch
                     id="avoidEmojis"
                     checked={preferences.avoidEmojis}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, avoidEmojis: checked })}
+                    onCheckedChange={(checked) =>
+                      setPreferences({ ...preferences, avoidEmojis: checked })
+                    }
                   />
                   <Label htmlFor="avoidEmojis">Avoid using emojis</Label>
                 </div>
@@ -453,14 +528,22 @@ export function AutopilotPreferences() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-                    <span className="text-sm font-semibold text-purple-300">AI Quality Gate — Active</span>
+                    <span className="text-sm font-semibold text-purple-300">
+                      AI Quality Gate — Active
+                    </span>
                   </div>
                   <span className="text-xs font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
                     {preferences.contentQualityThreshold}% minimum
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Before any post goes live, the autopilot runs up to 8 generation rounds with A/B variant testing until a piece of content scores at least {preferences.contentQualityThreshold}/100. Every rejected attempt is archived in Pocket Dimension to continuously train the models. The AI learns 3x faster than human capacity — the bar stays high and the output keeps improving.
+                  Before any post goes live, the autopilot runs up to 8
+                  generation rounds with A/B variant testing until a piece of
+                  content scores at least {preferences.contentQualityThreshold}
+                  /100. Every rejected attempt is archived in Pocket Dimension
+                  to continuously train the models. The AI learns 3x faster than
+                  human capacity — the bar stays high and the output keeps
+                  improving.
                 </p>
                 <div className="w-full bg-muted rounded-full h-1.5">
                   <div
@@ -475,7 +558,12 @@ export function AutopilotPreferences() {
                 <Textarea
                   id="customInstructions"
                   value={preferences.customInstructions}
-                  onChange={(e) => setPreferences({ ...preferences, customInstructions: e.target.value })}
+                  onChange={(e) =>
+                    setPreferences({
+                      ...preferences,
+                      customInstructions: e.target.value,
+                    })
+                  }
                   placeholder="Any specific instructions for the AI when generating content..."
                   rows={4}
                 />
@@ -493,7 +581,7 @@ export function AutopilotPreferences() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {PLATFORMS.map(platform => {
+              {PLATFORMS.map((platform) => {
                 const settings = preferences.platformSettings[platform.id] || {
                   enabled: false,
                   postsPerDay: 1,
@@ -502,7 +590,10 @@ export function AutopilotPreferences() {
                 };
 
                 return (
-                  <div key={platform.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div
+                    key={platform.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center gap-4">
                       <Switch
                         checked={settings.enabled}
@@ -529,7 +620,10 @@ export function AutopilotPreferences() {
                                 ...preferences,
                                 platformSettings: {
                                   ...preferences.platformSettings,
-                                  [platform.id]: { ...settings, postsPerDay: parseInt(value) },
+                                  [platform.id]: {
+                                    ...settings,
+                                    postsPerDay: parseInt(value),
+                                  },
                                 },
                               });
                             }}
@@ -538,8 +632,10 @@ export function AutopilotPreferences() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {[1, 2, 3, 4, 5].map(n => (
-                                <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                              {[1, 2, 3, 4, 5].map((n) => (
+                                <SelectItem key={n} value={String(n)}>
+                                  {n}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -552,7 +648,10 @@ export function AutopilotPreferences() {
                                 ...preferences,
                                 platformSettings: {
                                   ...preferences.platformSettings,
-                                  [platform.id]: { ...settings, autoPost: checked },
+                                  [platform.id]: {
+                                    ...settings,
+                                    autoPost: checked,
+                                  },
                                 },
                               });
                             }}
@@ -583,22 +682,39 @@ export function AutopilotPreferences() {
                   Select the hours when you want content to be posted
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: 24 }, (_, i) => i).map(hour => (
+                  {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                     <Badge
                       key={hour}
-                      variant={preferences.postingSchedule.preferredHours.includes(hour) ? 'default' : 'outline'}
+                      variant={
+                        preferences.postingSchedule.preferredHours.includes(
+                          hour,
+                        )
+                          ? "default"
+                          : "outline"
+                      }
                       className="cursor-pointer w-12 justify-center"
                       onClick={() => {
-                        const hours = preferences.postingSchedule.preferredHours.includes(hour)
-                          ? preferences.postingSchedule.preferredHours.filter(h => h !== hour)
-                          : [...preferences.postingSchedule.preferredHours, hour];
+                        const hours =
+                          preferences.postingSchedule.preferredHours.includes(
+                            hour,
+                          )
+                            ? preferences.postingSchedule.preferredHours.filter(
+                                (h) => h !== hour,
+                              )
+                            : [
+                                ...preferences.postingSchedule.preferredHours,
+                                hour,
+                              ];
                         setPreferences({
                           ...preferences,
-                          postingSchedule: { ...preferences.postingSchedule, preferredHours: hours },
+                          postingSchedule: {
+                            ...preferences.postingSchedule,
+                            preferredHours: hours,
+                          },
                         });
                       }}
                     >
-                      {hour.toString().padStart(2, '0')}:00
+                      {hour.toString().padStart(2, "0")}:00
                     </Badge>
                   ))}
                 </div>
@@ -607,18 +723,41 @@ export function AutopilotPreferences() {
               <div className="space-y-2">
                 <Label>Preferred Posting Days</Label>
                 <div className="flex flex-wrap gap-2">
-                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
+                  {[
+                    "monday",
+                    "tuesday",
+                    "wednesday",
+                    "thursday",
+                    "friday",
+                    "saturday",
+                    "sunday",
+                  ].map((day) => (
                     <Badge
                       key={day}
-                      variant={preferences.postingSchedule.preferredDays.includes(day) ? 'default' : 'outline'}
+                      variant={
+                        preferences.postingSchedule.preferredDays.includes(day)
+                          ? "default"
+                          : "outline"
+                      }
                       className="cursor-pointer capitalize"
                       onClick={() => {
-                        const days = preferences.postingSchedule.preferredDays.includes(day)
-                          ? preferences.postingSchedule.preferredDays.filter(d => d !== day)
-                          : [...preferences.postingSchedule.preferredDays, day];
+                        const days =
+                          preferences.postingSchedule.preferredDays.includes(
+                            day,
+                          )
+                            ? preferences.postingSchedule.preferredDays.filter(
+                                (d) => d !== day,
+                              )
+                            : [
+                                ...preferences.postingSchedule.preferredDays,
+                                day,
+                              ];
                         setPreferences({
                           ...preferences,
-                          postingSchedule: { ...preferences.postingSchedule, preferredDays: days },
+                          postingSchedule: {
+                            ...preferences.postingSchedule,
+                            preferredDays: days,
+                          },
                         });
                       }}
                     >
@@ -649,7 +788,12 @@ export function AutopilotPreferences() {
                 </div>
                 <Switch
                   checked={preferences.adAutopilotEnabled}
-                  onCheckedChange={(checked) => setPreferences({ ...preferences, adAutopilotEnabled: checked })}
+                  onCheckedChange={(checked) =>
+                    setPreferences({
+                      ...preferences,
+                      adAutopilotEnabled: checked,
+                    })
+                  }
                 />
               </div>
 
@@ -662,7 +806,12 @@ export function AutopilotPreferences() {
                 </div>
                 <Switch
                   checked={preferences.crossPostingEnabled}
-                  onCheckedChange={(checked) => setPreferences({ ...preferences, crossPostingEnabled: checked })}
+                  onCheckedChange={(checked) =>
+                    setPreferences({
+                      ...preferences,
+                      crossPostingEnabled: checked,
+                    })
+                  }
                 />
               </div>
 
@@ -671,16 +820,25 @@ export function AutopilotPreferences() {
                   <Label>Organic Growth Priority</Label>
                   <Select
                     value={preferences.organicGrowthPriority}
-                    onValueChange={(value) => setPreferences({ ...preferences, organicGrowthPriority: value })}
+                    onValueChange={(value) =>
+                      setPreferences({
+                        ...preferences,
+                        organicGrowthPriority: value,
+                      })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="reach">Maximize Reach</SelectItem>
-                      <SelectItem value="engagement">Maximize Engagement</SelectItem>
+                      <SelectItem value="engagement">
+                        Maximize Engagement
+                      </SelectItem>
                       <SelectItem value="followers">Grow Followers</SelectItem>
-                      <SelectItem value="conversions">Drive Conversions</SelectItem>
+                      <SelectItem value="conversions">
+                        Drive Conversions
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -688,7 +846,12 @@ export function AutopilotPreferences() {
                   <Label>Viral Optimization Level</Label>
                   <Select
                     value={preferences.viralOptimizationLevel}
-                    onValueChange={(value) => setPreferences({ ...preferences, viralOptimizationLevel: value })}
+                    onValueChange={(value) =>
+                      setPreferences({
+                        ...preferences,
+                        viralOptimizationLevel: value,
+                      })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />

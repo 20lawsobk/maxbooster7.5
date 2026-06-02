@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, useSpring, useMotionValue, useTransform } from 'framer-motion';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { motion, useSpring, useMotionValue, useTransform } from "framer-motion";
 
 interface KnobProps {
   value: number; // -1 to 1 or 0 to 1 depending on bipolar
@@ -29,9 +29,9 @@ export function Knob({
   defaultValue = 0,
   bipolar = false,
   displayValue,
-  unit = '',
-  color = 'var(--knob-indicator)',
-  className = '',
+  unit = "",
+  color = "var(--knob-indicator)",
+  className = "",
   disabled = false,
 }: KnobProps) {
   const knobRef = useRef<HTMLDivElement>(null);
@@ -71,7 +71,10 @@ export function Knob({
       const startValue = value;
 
       const handleMouseMove = (e: MouseEvent) => {
-        const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+        const currentAngle = Math.atan2(
+          e.clientY - centerY,
+          e.clientX - centerX,
+        );
         let deltaAngle = currentAngle - startAngle;
 
         // Handle angle wrapping
@@ -79,7 +82,8 @@ export function Knob({
         if (deltaAngle < -Math.PI) deltaAngle += 2 * Math.PI;
 
         const multiplier = e.shiftKey ? 0.1 : 1; // Fine-tuning with shift
-        const deltaValue = (deltaAngle / (Math.PI * 1.5)) * (max - min) * multiplier;
+        const deltaValue =
+          (deltaAngle / (Math.PI * 1.5)) * (max - min) * multiplier;
 
         let newValue = startValue + deltaValue;
 
@@ -95,14 +99,14 @@ export function Knob({
       const handleMouseUp = () => {
         setIsDragging(false);
         setTimeout(() => setShowValue(false), 1000);
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
 
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     },
-    [value, onChange, min, max, bipolar, disabled]
+    [value, onChange, min, max, bipolar, disabled],
   );
 
   const handleDoubleClick = useCallback(() => {
@@ -130,7 +134,7 @@ export function Knob({
       setShowValue(true);
       setTimeout(() => setShowValue(false), 1000);
     },
-    [value, onChange, min, max, bipolar, disabled]
+    [value, onChange, min, max, bipolar, disabled],
   );
 
   // Format display value
@@ -138,7 +142,7 @@ export function Knob({
     if (displayValue) return displayValue;
 
     if (bipolar) {
-      if (Math.abs(value) < 0.01) return 'C';
+      if (Math.abs(value) < 0.01) return "C";
       if (value < 0) return `L${Math.abs(value * 100).toFixed(0)}`;
       return `R${(value * 100).toFixed(0)}`;
     }
@@ -156,7 +160,7 @@ export function Knob({
     >
       {/* Knob Container */}
       <div
-        className={`relative ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-grab active:cursor-grabbing'}`}
+        className={`relative ${disabled ? "cursor-not-allowed opacity-50" : "cursor-grab active:cursor-grabbing"}`}
         style={{ width: size, height: size }}
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
@@ -166,13 +170,13 @@ export function Knob({
         <div
           className="absolute inset-0 rounded-full"
           style={{
-            background: 'var(--knob-ring)',
+            background: "var(--knob-ring)",
             boxShadow: isDragging
-              ? 'var(--knob-hover-glow), inset 0 2px 4px rgba(0,0,0,0.5)'
+              ? "var(--knob-hover-glow), inset 0 2px 4px rgba(0,0,0,0.5)"
               : isHovered
-                ? '0 0 8px rgba(0, 204, 255, 0.2), inset 0 2px 4px rgba(0,0,0,0.5)'
-                : 'inset 0 2px 4px rgba(0,0,0,0.5)',
-            transition: 'box-shadow 0.2s ease',
+                ? "0 0 8px rgba(0, 204, 255, 0.2), inset 0 2px 4px rgba(0,0,0,0.5)"
+                : "inset 0 2px 4px rgba(0,0,0,0.5)",
+            transition: "box-shadow 0.2s ease",
           }}
         />
 
@@ -180,7 +184,7 @@ export function Knob({
         <svg
           className="absolute inset-0"
           viewBox="0 0 100 100"
-          style={{ transform: 'rotate(-90deg)' }}
+          style={{ transform: "rotate(-90deg)" }}
         >
           {/* Background Arc */}
           <path
@@ -193,14 +197,15 @@ export function Knob({
 
           {/* Value Arc */}
           <motion.path
-            d={`M 25 75 A 35 35 0 ${normalizedValue > 0.5 ? '1' : '0'} 1 ${
-              50 + 35 * Math.cos(((normalizedValue * 270 - 135) * Math.PI) / 180)
+            d={`M 25 75 A 35 35 0 ${normalizedValue > 0.5 ? "1" : "0"} 1 ${
+              50 +
+              35 * Math.cos(((normalizedValue * 270 - 135) * Math.PI) / 180)
             } ${50 + 35 * Math.sin(((normalizedValue * 270 - 135) * Math.PI) / 180)}`}
             fill="none"
             stroke={color}
             strokeWidth="3"
             strokeLinecap="round"
-            style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}
+            style={{ filter: "drop-shadow(0 0 3px currentColor)" }}
           />
         </svg>
 
@@ -208,8 +213,8 @@ export function Knob({
         <motion.div
           className="absolute inset-2 rounded-full"
           style={{
-            background: 'var(--knob-bg)',
-            boxShadow: 'var(--knob-shadow)',
+            background: "var(--knob-bg)",
+            boxShadow: "var(--knob-shadow)",
             rotate: springRotation,
           }}
           whileHover={{ scale: 1.02 }}
@@ -232,30 +237,30 @@ export function Knob({
             <div
               className="absolute w-0.5 h-2"
               style={{
-                top: '-6px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'var(--studio-text-muted)',
+                top: "-6px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: "var(--studio-text-muted)",
               }}
             />
             {/* Left tick */}
             <div
               className="absolute w-0.5 h-2"
               style={{
-                top: '50%',
-                left: '-6px',
-                transform: 'translateY(-50%) rotate(90deg)',
-                background: 'var(--studio-text-muted)',
+                top: "50%",
+                left: "-6px",
+                transform: "translateY(-50%) rotate(90deg)",
+                background: "var(--studio-text-muted)",
               }}
             />
             {/* Right tick */}
             <div
               className="absolute w-0.5 h-2"
               style={{
-                top: '50%',
-                right: '-6px',
-                transform: 'translateY(-50%) rotate(90deg)',
-                background: 'var(--studio-text-muted)',
+                top: "50%",
+                right: "-6px",
+                transform: "translateY(-50%) rotate(90deg)",
+                background: "var(--studio-text-muted)",
               }}
             />
           </>
@@ -266,7 +271,7 @@ export function Knob({
       {label && (
         <div
           className="text-[10px] font-medium text-center"
-          style={{ color: 'var(--studio-text-muted)' }}
+          style={{ color: "var(--studio-text-muted)" }}
         >
           {label}
         </div>
@@ -276,8 +281,8 @@ export function Knob({
       <motion.div
         className="text-[9px] font-mono text-center"
         style={{
-          color: 'var(--studio-text)',
-          minHeight: '12px',
+          color: "var(--studio-text)",
+          minHeight: "12px",
         }}
         animate={{ opacity: showValue || isDragging ? 1 : 0.5 }}
         transition={{ duration: 0.2 }}

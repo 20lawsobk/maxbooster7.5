@@ -1,69 +1,70 @@
-import { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
-import { useFocusTrap } from '@/hooks/useFocusTrap';
-import { announce } from '@/lib/accessibility';
-import { useToast } from '@/hooks/use-toast';
-import { useDialogContainer } from '@/components/ui/dialog';
+import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { X, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { announce } from "@/lib/accessibility";
+import { useToast } from "@/hooks/use-toast";
+import { useDialogContainer } from "@/components/ui/dialog";
 
 interface TutorialStep {
   id: number;
   title: string;
   description: string;
   spotlightSelector: string;
-  arrowPosition?: 'top' | 'bottom' | 'left' | 'right';
+  arrowPosition?: "top" | "bottom" | "left" | "right";
 }
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 1,
-    title: 'Welcome to Your Professional Studio',
-    description: "Let's take a quick tour of the tools that will help you create amazing music",
-    spotlightSelector: '.studio-container',
+    title: "Welcome to Your Professional Studio",
+    description:
+      "Let's take a quick tour of the tools that will help you create amazing music",
+    spotlightSelector: ".studio-container",
     arrowPosition: undefined,
   },
   {
     id: 2,
-    title: 'Track Panel',
+    title: "Track Panel",
     description:
-      'Create, organize, and manage your audio and MIDI tracks here. Drag tracks to reorder them.',
-    spotlightSelector: '.track-list-container',
-    arrowPosition: 'left',
+      "Create, organize, and manage your audio and MIDI tracks here. Drag tracks to reorder them.",
+    spotlightSelector: ".track-list-container",
+    arrowPosition: "left",
   },
   {
     id: 3,
-    title: 'Timeline & Arrangement',
+    title: "Timeline & Arrangement",
     description:
-      'Record, arrange, and edit your clips on the timeline. Zoom in/out and navigate your project here.',
-    spotlightSelector: '.timeline-container',
-    arrowPosition: 'top',
+      "Record, arrange, and edit your clips on the timeline. Zoom in/out and navigate your project here.",
+    spotlightSelector: ".timeline-container",
+    arrowPosition: "top",
   },
   {
     id: 4,
-    title: 'Sound Browser',
+    title: "Sound Browser",
     description:
-      'Browse and drag samples, loops, and plugins onto your tracks. Find everything you need to produce.',
-    spotlightSelector: '.browser-panel',
-    arrowPosition: 'right',
+      "Browse and drag samples, loops, and plugins onto your tracks. Find everything you need to produce.",
+    spotlightSelector: ".browser-panel",
+    arrowPosition: "right",
   },
   {
     id: 5,
-    title: 'Transport Controls',
+    title: "Transport Controls",
     description:
-      'Control playback, recording, tempo, and timing. Click Play to start, Record to capture audio.',
-    spotlightSelector: '.transport-container',
-    arrowPosition: 'top',
+      "Control playback, recording, tempo, and timing. Click Play to start, Record to capture audio.",
+    spotlightSelector: ".transport-container",
+    arrowPosition: "top",
   },
   {
     id: 6,
-    title: 'Mixer & Effects',
+    title: "Mixer & Effects",
     description:
-      'Adjust volume, pan, and add effects to each track. Create professional mixes with precision control.',
-    spotlightSelector: '.mixer-panel',
-    arrowPosition: 'right',
+      "Adjust volume, pan, and add effects to each track. Create professional mixes with precision control.",
+    spotlightSelector: ".mixer-panel",
+    arrowPosition: "right",
   },
 ];
 
@@ -72,7 +73,10 @@ interface StudioTutorialProps {
   onSkip: () => void;
 }
 
-export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialProps) {
+export default function StudioTutorial({
+  onComplete,
+  onSkip,
+}: StudioTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
   const [isClosing, setIsClosing] = useState(false);
@@ -83,12 +87,12 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
 
   const saveTutorialMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('POST', '/api/user/preferences', {
+      return await apiRequest("POST", "/api/user/preferences", {
         tutorialCompleted: { studio: true },
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user/preferences'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
     },
   });
 
@@ -107,34 +111,34 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
 
   useEffect(() => {
     updateSpotlight();
-    window.addEventListener('resize', updateSpotlight);
-    return () => window.removeEventListener('resize', updateSpotlight);
+    window.addEventListener("resize", updateSpotlight);
+    return () => window.removeEventListener("resize", updateSpotlight);
   }, [updateSpotlight]);
 
   useEffect(() => {
     const step = TUTORIAL_STEPS[currentStep];
     if (step) {
       announce(
-        `Step ${currentStep + 1} of ${TUTORIAL_STEPS.length}: ${step.title}. ${step.description}`
+        `Step ${currentStep + 1} of ${TUTORIAL_STEPS.length}: ${step.title}. ${step.description}`,
       );
     }
   }, [currentStep]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         handleClose();
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === "ArrowRight") {
         e.preventDefault();
         handleNext();
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         handlePrevious();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentStep]);
 
   const handleNext = () => {
@@ -156,11 +160,11 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
     try {
       await saveTutorialMutation.mutateAsync();
     } catch (error: unknown) {
-      logger.error('Failed to save tutorial completion:', error);
+      logger.error("Failed to save tutorial completion:", error);
       toast({
-        title: 'Tutorial Completed',
-        description: 'Your progress will be saved when connection is restored.',
-        variant: 'default',
+        title: "Tutorial Completed",
+        description: "Your progress will be saved when connection is restored.",
+        variant: "default",
       });
     } finally {
       setTimeout(() => {
@@ -174,11 +178,12 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
     try {
       await saveTutorialMutation.mutateAsync();
     } catch (error: unknown) {
-      logger.error('Failed to save tutorial skip:', error);
+      logger.error("Failed to save tutorial skip:", error);
       toast({
-        title: 'Tutorial Skipped',
-        description: 'Your preference will be saved when connection is restored.',
-        variant: 'default',
+        title: "Tutorial Skipped",
+        description:
+          "Your preference will be saved when connection is restored.",
+        variant: "default",
       });
     } finally {
       setTimeout(() => {
@@ -194,7 +199,7 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
   const getSpotlightStyle = (): React.CSSProperties => {
     if (!spotlightRect) {
       return {
-        clipPath: 'inset(0 0 0 0)',
+        clipPath: "inset(0 0 0 0)",
       };
     }
 
@@ -222,44 +227,44 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
 
   const getArrowStyle = (): React.CSSProperties => {
     if (!spotlightRect || !step.arrowPosition) {
-      return { display: 'none' };
+      return { display: "none" };
     }
 
     const arrowSize = 40;
     let top = 0;
     let left = 0;
-    let transform = '';
+    let transform = "";
 
     switch (step.arrowPosition) {
-      case 'top':
+      case "top":
         top = spotlightRect.top - arrowSize - 20;
         left = spotlightRect.left + spotlightRect.width / 2 - arrowSize / 2;
-        transform = 'rotate(180deg)';
+        transform = "rotate(180deg)";
         break;
-      case 'bottom':
+      case "bottom":
         top = spotlightRect.bottom + 20;
         left = spotlightRect.left + spotlightRect.width / 2 - arrowSize / 2;
         break;
-      case 'left':
+      case "left":
         top = spotlightRect.top + spotlightRect.height / 2 - arrowSize / 2;
         left = spotlightRect.left - arrowSize - 20;
-        transform = 'rotate(90deg)';
+        transform = "rotate(90deg)";
         break;
-      case 'right':
+      case "right":
         top = spotlightRect.top + spotlightRect.height / 2 - arrowSize / 2;
         left = spotlightRect.right + 20;
-        transform = 'rotate(-90deg)';
+        transform = "rotate(-90deg)";
         break;
     }
 
     return {
-      position: 'fixed',
+      position: "fixed",
       top: `${top}px`,
       left: `${left}px`,
       transform,
       width: `${arrowSize}px`,
       height: `${arrowSize}px`,
-      pointerEvents: 'none',
+      pointerEvents: "none",
       zIndex: 10002,
     };
   };
@@ -267,9 +272,9 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
   const getContentStyle = (): React.CSSProperties => {
     if (!spotlightRect) {
       return {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
       };
     }
 
@@ -279,7 +284,7 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
 
     let top = spotlightRect.bottom + margin;
     let left = spotlightRect.left;
-    let transform = '';
+    let transform = "";
 
     if (top + contentHeight > window.innerHeight) {
       top = spotlightRect.top - contentHeight - margin;
@@ -298,7 +303,7 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
     }
 
     return {
-      position: 'fixed',
+      position: "fixed",
       top: `${top}px`,
       left: `${left}px`,
       transform,
@@ -309,7 +314,7 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
     <div
       ref={containerRef}
       className={`fixed inset-0 z-[10000] transition-opacity duration-300 ${
-        isClosing ? 'opacity-0' : 'opacity-100'
+        isClosing ? "opacity-0" : "opacity-100"
       }`}
       role="dialog"
       aria-modal="true"
@@ -378,7 +383,10 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
           {step.title}
         </h2>
 
-        <p id="tutorial-description" className="text-gray-600 dark:text-gray-300 mb-6">
+        <p
+          id="tutorial-description"
+          className="text-gray-600 dark:text-gray-300 mb-6"
+        >
           {step.description}
         </p>
 
@@ -392,10 +400,10 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
                 key={index}
                 className={`h-2 w-2 rounded-full transition-colors ${
                   index === currentStep
-                    ? 'bg-purple-500'
+                    ? "bg-purple-500"
                     : index < currentStep
-                      ? 'bg-purple-300'
-                      : 'bg-gray-300 dark:bg-gray-600'
+                      ? "bg-purple-300"
+                      : "bg-gray-300 dark:bg-gray-600"
                 }`}
               />
             ))}
@@ -431,7 +439,11 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
           ) : (
             <>
               {!isFirstStep && (
-                <Button onClick={handleClose} variant="ghost" className="text-sm">
+                <Button
+                  onClick={handleClose}
+                  variant="ghost"
+                  className="text-sm"
+                >
                   Skip
                 </Button>
               )}
@@ -439,7 +451,7 @@ export default function StudioTutorial({ onComplete, onSkip }: StudioTutorialPro
                 onClick={isLastStep ? handleFinish : handleNext}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
-                {isLastStep ? 'Finish Tour' : 'Next'}
+                {isLastStep ? "Finish Tour" : "Next"}
                 {!isLastStep && <ArrowRight className="w-4 h-4 ml-2" />}
               </Button>
             </>

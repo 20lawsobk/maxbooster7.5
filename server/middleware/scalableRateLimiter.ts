@@ -1,8 +1,8 @@
-import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import { logger } from '../logger.js';
-import { getRedisClient } from '../lib/redisClient.js';
-import { isPdimConfigured } from '../lib/pdimClient.js';
-import { SLIDING_WINDOW_LUA } from './slidingWindowLua.js';
+import type { Request, Response, NextFunction, RequestHandler } from "express";
+import { logger } from "../logger.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { isPdimConfigured } from "../lib/pdimClient.js";
+import { SLIDING_WINDOW_LUA } from "./slidingWindowLua.js";
 
 const _passThrough: RequestHandler = (_req, _res, next) => next();
 
@@ -12,14 +12,22 @@ const _passThrough: RequestHandler = (_req, _res, next) => next();
  */
 export interface SlidingWindowRedis {
   /** Atomic Lua eval — one round-trip, races eliminated at the server. */
-  eval(script: string, numkeys: number | string, ...args: unknown[]): Promise<unknown>;
+  eval(
+    script: string,
+    numkeys: number | string,
+    ...args: unknown[]
+  ): Promise<unknown>;
   /**
    * Remove expired members (score < windowStart) — prunes out-of-window entries
    * so the ZSET stays bounded to at most maxRequests members on hot keys.
    * Returns the removal count, or null if the backend doesn't support this command
    * (e.g. PDIM returns HTTP 400 for ZREMRANGEBYSCORE → exec() returns null).
    */
-  zremrangebyscore(key: string, min: string | number, max: string | number): Promise<number | null>;
+  zremrangebyscore(
+    key: string,
+    min: string | number,
+    max: string | number,
+  ): Promise<number | null>;
   /** Count surviving (in-window) members; used after a successful zremrangebyscore. */
   zcard(key: string): Promise<number>;
   /**
@@ -27,7 +35,11 @@ export interface SlidingWindowRedis {
    * zremrangebyscore is not supported (PDIM returns null for that command).
    * Correctly counts only in-window entries even without explicit pruning.
    */
-  zcount(key: string, min: string | number, max: string | number): Promise<number>;
+  zcount(
+    key: string,
+    min: string | number,
+    max: string | number,
+  ): Promise<number>;
   zadd(key: string, ...args: unknown[]): Promise<number>;
   expire(key: string, seconds: number): Promise<unknown>;
 }
@@ -41,7 +53,7 @@ interface RateLimiterConfig {
 }
 
 const isProductionEnv = (): boolean =>
-  process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 
 const isDevelopmentMode = (): boolean => !isProductionEnv();
 
@@ -54,7 +66,11 @@ const RATE_LIMIT_CONGESTION_THROTTLE_MS = 30_000;
 // Resets each window period so keys don't accumulate indefinitely.
 const _localRateCounts = new Map<string, { count: number; resetAt: number }>();
 
-function _localRateCheck(key: string, maxRequests: number, windowMs: number): { limited: boolean; remaining: number } {
+function _localRateCheck(
+  key: string,
+  maxRequests: number,
+  windowMs: number,
+): { limited: boolean; remaining: number } {
   const now = Date.now();
   const entry = _localRateCounts.get(key);
   if (!entry || now >= entry.resetAt) {
@@ -73,7 +89,8 @@ function _localRateCheck(key: string, maxRequests: number, windowMs: number): { 
 }
 
 const isLoadTestMode = (): boolean =>
-  process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
+  process.env.LOAD_TEST_MODE === "true" ||
+  process.env.DISABLE_RATE_LIMIT === "true";
 
 const skipRateLimiting = (req: Request): boolean => {
   if (isDevelopmentMode()) return true;
@@ -81,23 +98,23 @@ const skipRateLimiting = (req: Request): boolean => {
 
   const path = req.path;
 
-  if (path.startsWith('/api/health')) return true;
-  if (path === '/api/version') return true;
-  if (path.startsWith('/api/monitoring')) return true;
-  if (path.startsWith('/api/system')) return true;
+  if (path.startsWith("/api/health")) return true;
+  if (path === "/api/version") return true;
+  if (path.startsWith("/api/monitoring")) return true;
+  if (path.startsWith("/api/system")) return true;
 
   // Session maintenance endpoints — exempt from global rate limiting
   // They have their own dedicated auth rate limiter
-  if (path === '/api/auth/refresh-token') return true;
-  if (path === '/api/auth/me') return true;
-  if (path === '/api/auth/heartbeat') return true;
+  if (path === "/api/auth/refresh-token") return true;
+  if (path === "/api/auth/me") return true;
+  if (path === "/api/auth/heartbeat") return true;
 
-  if (path.startsWith('/@fs/')) return true;
-  if (path.startsWith('/src/')) return true;
-  if (path.startsWith('/node_modules/')) return true;
-  if (path.startsWith('/@vite/')) return true;
-  if (path.startsWith('/@react-refresh')) return true;
-  if (path.startsWith('/@replit/')) return true;
+  if (path.startsWith("/@fs/")) return true;
+  if (path.startsWith("/src/")) return true;
+  if (path.startsWith("/node_modules/")) return true;
+  if (path.startsWith("/@vite/")) return true;
+  if (path.startsWith("/@react-refresh")) return true;
+  if (path.startsWith("/@replit/")) return true;
 
   return false;
 };
@@ -182,7 +199,10 @@ export class DistributedRateLimiter {
    * Returns the cluster-wide verdict from PDIM.  This is the ONLY method that
    * actually talks to PDIM — all coalescing logic lives in isRateLimited().
    */
-  private async syncWithPdim(key: string, batchCount: number): Promise<{ limited: boolean; remaining: number }> {
+  private async syncWithPdim(
+    key: string,
+    batchCount: number,
+  ): Promise<{ limited: boolean; remaining: number }> {
     const redisKey = `ratelimit:sw:${key}`;
     const now = Date.now();
     const windowStart = now - this.config.windowMs;
@@ -203,14 +223,19 @@ export class DistributedRateLimiter {
         String(batchCount),
       );
       const result = Array.isArray(raw) ? raw : [];
-      const limited   = Number(result[0] ?? 1) === 1;
+      const limited = Number(result[0] ?? 1) === 1;
       const remaining = Number(result[1] ?? 0);
       return { limited, remaining };
     } catch {
       // Fallback: EVAL unsupported or PDIM transient error.  Use ZCOUNT
       // followed by ZADD of `batchCount` unique entries.
-      const count = await this.redisClient.zcount(redisKey, windowStart, '+inf');
-      if (count + batchCount > this.config.maxRequests) return { limited: true, remaining: 0 };
+      const count = await this.redisClient.zcount(
+        redisKey,
+        windowStart,
+        "+inf",
+      );
+      if (count + batchCount > this.config.maxRequests)
+        return { limited: true, remaining: 0 };
       if (batchCount === 1) {
         await this.redisClient.zadd(redisKey, now, entryId);
       } else {
@@ -219,12 +244,19 @@ export class DistributedRateLimiter {
         await this.redisClient.zadd(redisKey, ...args);
       }
       // Fire-and-forget: expiry is a GC safety net, not on the critical path.
-      Promise.resolve(this.redisClient.expire(redisKey, windowExpireSecs)).catch(() => {});
-      return { limited: false, remaining: this.config.maxRequests - count - batchCount };
+      Promise.resolve(
+        this.redisClient.expire(redisKey, windowExpireSecs),
+      ).catch(() => {});
+      return {
+        limited: false,
+        remaining: this.config.maxRequests - count - batchCount,
+      };
     }
   }
 
-  async isRateLimited(key: string): Promise<{ limited: boolean; remaining: number }> {
+  async isRateLimited(
+    key: string,
+  ): Promise<{ limited: boolean; remaining: number }> {
     // 'sw' suffix distinguishes sliding-window keys from any legacy fixed-window
     // (INCR+EXPIRE) keys that may still exist in Redis under the old prefix.
     // Intentional: old keys are left to expire naturally; no counter reset needed.
@@ -248,7 +280,11 @@ export class DistributedRateLimiter {
     // If a sync is already in flight for this key, wait for it before deciding.
     // Concurrent callers naturally coalesce around that single PDIM round-trip.
     while (state.inflight) {
-      try { await state.inflight; } catch { /* sync failed; we'll re-sync below */ }
+      try {
+        await state.inflight;
+      } catch {
+        /* sync failed; we'll re-sync below */
+      }
     }
 
     // Sticky rate-limit verdict.  When PDIM most recently said limited=true,
@@ -258,18 +294,23 @@ export class DistributedRateLimiter {
     // would issue its own PDIM call — the exact opposite of what coalescing
     // should achieve.
     const nowMs = Date.now();
-    if (state.lastVerdictLimited && nowMs - state.lastSyncAt < this.coalesceMaxAgeMs) {
+    if (
+      state.lastVerdictLimited &&
+      nowMs - state.lastSyncAt < this.coalesceMaxAgeMs
+    ) {
       return { limited: true, remaining: 0 };
     }
 
     // Count this request locally.
     state.pendingLocal += 1;
 
-    const hypothetical = (state.lastRemainingFromPdim ?? Number.POSITIVE_INFINITY) - state.pendingLocal;
+    const hypothetical =
+      (state.lastRemainingFromPdim ?? Number.POSITIVE_INFINITY) -
+      state.pendingLocal;
     const noPdimDataYet = state.lastRemainingFromPdim === undefined;
-    const stale         = nowMs - state.lastSyncAt >= this.coalesceMaxAgeMs;
-    const overBatch     = state.pendingLocal >= COALESCE_MAX_BATCH;
-    const nearBoundary  = hypothetical <= COALESCE_SAFETY_BUFFER;
+    const stale = nowMs - state.lastSyncAt >= this.coalesceMaxAgeMs;
+    const overBatch = state.pendingLocal >= COALESCE_MAX_BATCH;
+    const nearBoundary = hypothetical <= COALESCE_SAFETY_BUFFER;
 
     if (noPdimDataYet || stale || overBatch || nearBoundary) {
       // Snapshot the batch and reset BEFORE issuing the PDIM call.  Concurrent
@@ -315,13 +356,17 @@ export class DistributedRateLimiter {
   }
 
   middleware(): RequestHandler {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    return async (
+      req: Request,
+      res: Response,
+      next: NextFunction,
+    ): Promise<void> => {
       if (this.config.skip?.(req)) {
         next();
         return;
       }
 
-      const key = this.config.keyGenerator?.(req) || req.ip || 'unknown';
+      const key = this.config.keyGenerator?.(req) || req.ip || "unknown";
 
       let result: { limited: boolean; remaining: number };
       try {
@@ -330,22 +375,32 @@ export class DistributedRateLimiter {
         // PDIM unavailable — fall back to in-process fixed-window counter so the
         // rate limit is still enforced per worker rather than bypassed entirely.
         const now = Date.now();
-        if (now - _lastRateLimitCongestionWarnAt >= RATE_LIMIT_CONGESTION_THROTTLE_MS) {
+        if (
+          now - _lastRateLimitCongestionWarnAt >=
+          RATE_LIMIT_CONGESTION_THROTTLE_MS
+        ) {
           _lastRateLimitCongestionWarnAt = now;
-          logger.warn('[RateLimit] PDIM unavailable — using in-process fallback counter:', (err as Error).message);
+          logger.warn(
+            "[RateLimit] PDIM unavailable — using in-process fallback counter:",
+            (err as Error).message,
+          );
         }
-        result = _localRateCheck(key, this.config.maxRequests, this.config.windowMs);
+        result = _localRateCheck(
+          key,
+          this.config.maxRequests,
+          this.config.windowMs,
+        );
       }
 
-      res.setHeader('X-RateLimit-Limit', this.config.maxRequests);
-      res.setHeader('X-RateLimit-Remaining', result.remaining);
+      res.setHeader("X-RateLimit-Limit", this.config.maxRequests);
+      res.setHeader("X-RateLimit-Remaining", result.remaining);
 
       if (result.limited) {
         if (this.config.onRateLimit) {
           this.config.onRateLimit(req, res);
         } else {
           res.status(429).json({
-            error: 'Too many requests',
+            error: "Too many requests",
             retryAfter: Math.ceil(this.config.windowMs / 1000),
           });
         }
@@ -360,10 +415,12 @@ export class DistributedRateLimiter {
 function buildDistributedGlobal(
   windowMs: number,
   maxRequests: number,
-  keyPrefix = 'global'
+  keyPrefix = "global",
 ): RequestHandler {
   if (!isPdimConfigured()) {
-    logger.warn(`[RateLimiter] PDIM not configured — ${keyPrefix} rate limiter disabled (dev mode)`);
+    logger.warn(
+      `[RateLimiter] PDIM not configured — ${keyPrefix} rate limiter disabled (dev mode)`,
+    );
     return _passThrough;
   }
   const redisClient = getRedisClient();
@@ -375,7 +432,7 @@ function buildDistributedGlobal(
       skip: skipRateLimiting,
       keyGenerator: (req) => {
         const userId = (req as Record<string, unknown>).user?.id;
-        const ip = req.ip || req.socket.remoteAddress || 'unknown';
+        const ip = req.ip || req.socket.remoteAddress || "unknown";
         return `${keyPrefix}:${userId ?? ip}`;
       },
     },
@@ -385,9 +442,13 @@ function buildDistributedGlobal(
   return limiter.middleware();
 }
 
-export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>): RequestHandler => {
+export const createScalableRateLimiter = (
+  overrides?: Partial<RateLimiterConfig>,
+): RequestHandler => {
   if (!isPdimConfigured()) {
-    logger.warn(`[RateLimiter] PDIM not configured — custom rate limiter disabled (dev mode)`);
+    logger.warn(
+      `[RateLimiter] PDIM not configured — custom rate limiter disabled (dev mode)`,
+    );
     return _passThrough;
   }
   const redisClient = getRedisClient();
@@ -400,15 +461,16 @@ export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>
       maxRequests: 1_200,
       skip: skipRateLimiting,
       keyGenerator: (req) => {
-        const ip = req.ip || req.socket.remoteAddress || 'unknown';
+        const ip = req.ip || req.socket.remoteAddress || "unknown";
         const userId = (req as Record<string, unknown>).user?.id;
         return userId ? `user:${userId}` : `ip:${ip}`;
       },
       onRateLimit: (req, res) => {
         logger.warn(`Rate limit exceeded: ${req.ip} on ${req.path}`);
         res.status(429).json({
-          error: 'Too many requests',
-          message: 'You have exceeded the rate limit. Please wait and try again.',
+          error: "Too many requests",
+          message:
+            "You have exceeded the rate limit. Please wait and try again.",
           retryAfter: 60,
         });
       },
@@ -422,27 +484,39 @@ export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>
 
 // Per-user/IP limits — keyed by authenticated user ID when present, else IP.
 // These protect against runaway clients and bots without throttling normal use.
-const GLOBAL_PER_USER_PER_MIN  = 1_200;   // 20 req/s — covers all authenticated use cases
-const AI_PER_USER_PER_MIN      =    60;   // 1 req/s — AI is compute-heavy, lower ceiling
+const GLOBAL_PER_USER_PER_MIN = 1_200; // 20 req/s — covers all authenticated use cases
+const AI_PER_USER_PER_MIN = 60; // 1 req/s — AI is compute-heavy, lower ceiling
 
-export const globalScalableRateLimiter = buildDistributedGlobal(60000, GLOBAL_PER_USER_PER_MIN, 'global');
+export const globalScalableRateLimiter = buildDistributedGlobal(
+  60000,
+  GLOBAL_PER_USER_PER_MIN,
+  "global",
+);
 
-export const apiRateLimiter = buildDistributedGlobal(60000, GLOBAL_PER_USER_PER_MIN, 'api');
+export const apiRateLimiter = buildDistributedGlobal(
+  60000,
+  GLOBAL_PER_USER_PER_MIN,
+  "api",
+);
 
-export const aiRateLimiter = buildDistributedGlobal(60000, AI_PER_USER_PER_MIN, 'ai');
+export const aiRateLimiter = buildDistributedGlobal(
+  60000,
+  AI_PER_USER_PER_MIN,
+  "ai",
+);
 
-export const authRateLimiter = buildDistributedGlobal(900000, 200, 'auth');
+export const authRateLimiter = buildDistributedGlobal(900000, 200, "auth");
 
 export const createHighScaleRateLimiter = (
-  tier: 'monthly' | 'yearly' | 'lifetime' | 'unlimited'
+  tier: "monthly" | "yearly" | "lifetime" | "unlimited",
 ): RequestHandler => {
   // Tiered limits scale with subscription value.
   // Even "unlimited" is capped to prevent runaway clients from monopolising compute.
   const limits = {
-    monthly:   { windowMs: 60000, maxRequests:  2_400 },  //  40 req/s
-    yearly:    { windowMs: 60000, maxRequests:  6_000 },  // 100 req/s
-    lifetime:  { windowMs: 60000, maxRequests: 18_000 },  // 300 req/s
-    unlimited: { windowMs: 60000, maxRequests: 60_000 },  //   1K req/s
+    monthly: { windowMs: 60000, maxRequests: 2_400 }, //  40 req/s
+    yearly: { windowMs: 60000, maxRequests: 6_000 }, // 100 req/s
+    lifetime: { windowMs: 60000, maxRequests: 18_000 }, // 300 req/s
+    unlimited: { windowMs: 60000, maxRequests: 60_000 }, //   1K req/s
   };
 
   return createScalableRateLimiter({

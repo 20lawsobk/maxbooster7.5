@@ -14,41 +14,45 @@
  *   DNS_PORT=53 HEALTH_PORT=8080 node dist/index.js
  */
 
-import 'dotenv/config';
-import { startProxy } from './sniProxy.js';
+import "dotenv/config";
+import { startProxy } from "./sniProxy.js";
 
-const VERSION = '1.0.0';
+const VERSION = "1.0.0";
 
 const BANNER = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Max Booster TLS SNI Proxy  v${VERSION}
-  Port  : ${process.env.PROXY_PORT  || '443'}
-  Backend: ${process.env.BACKEND_HOST || 'maxbooster.replit.app'}
+  Port  : ${process.env.PROXY_PORT || "443"}
+  Backend: ${process.env.BACKEND_HOST || "maxbooster.replit.app"}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
 async function main(): Promise<void> {
   console.log(BANNER);
 
   if (!process.env.DATABASE_URL) {
-    console.error('[fatal] DATABASE_URL is required');
+    console.error("[fatal] DATABASE_URL is required");
     process.exit(1);
   }
 
   if (!process.env.BACKEND_HOST) {
-    console.warn('[warn] BACKEND_HOST not set — defaulting to maxbooster.replit.app');
-    console.warn('[warn] Make sure this is NOT max-booster.com or a loop will occur!');
+    console.warn(
+      "[warn] BACKEND_HOST not set — defaulting to maxbooster.replit.app",
+    );
+    console.warn(
+      "[warn] Make sure this is NOT max-booster.com or a loop will occur!",
+    );
   }
 
   try {
     await startProxy();
-    console.log('[proxy] Ready');
+    console.log("[proxy] Ready");
   } catch (err) {
-    console.error('[fatal] Failed to start proxy:', err);
+    console.error("[fatal] Failed to start proxy:", err);
     process.exit(1);
   }
 }
 
 main().catch((err) => {
-  console.error('[fatal]', err);
+  console.error("[fatal]", err);
   process.exit(1);
 });

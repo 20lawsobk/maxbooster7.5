@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,9 +20,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Smartphone,
   Monitor,
@@ -31,14 +37,14 @@ import {
   AlertTriangle,
   CheckCircle,
   Trash2,
-} from 'lucide-react';
+} from "lucide-react";
 
 export type DeviceOutcome =
-  | 'device_trusted'
-  | 'device_untrusted'
-  | 'remote_session_terminated'
-  | 'all_other_sessions_logged_out'
-  | 'device_list_updated';
+  | "device_trusted"
+  | "device_untrusted"
+  | "remote_session_terminated"
+  | "all_other_sessions_logged_out"
+  | "device_list_updated";
 
 interface DeviceSession {
   id: string;
@@ -62,10 +68,14 @@ interface SessionsResponse {
 
 function getDeviceIcon(device: string) {
   const deviceLower = device.toLowerCase();
-  if (deviceLower.includes('iphone') || deviceLower.includes('android') || deviceLower.includes('mobile')) {
+  if (
+    deviceLower.includes("iphone") ||
+    deviceLower.includes("android") ||
+    deviceLower.includes("mobile")
+  ) {
     return Smartphone;
   }
-  if (deviceLower.includes('ipad') || deviceLower.includes('tablet')) {
+  if (deviceLower.includes("ipad") || deviceLower.includes("tablet")) {
     return Tablet;
   }
   return Monitor;
@@ -74,81 +84,95 @@ function getDeviceIcon(device: string) {
 export function DeviceManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [terminateSessionId, setTerminateSessionId] = useState<string | null>(null);
+  const [terminateSessionId, setTerminateSessionId] = useState<string | null>(
+    null,
+  );
   const [logoutAllOpen, setLogoutAllOpen] = useState(false);
 
   const { data: sessionsData, isLoading } = useQuery<SessionsResponse>({
-    queryKey: ['/api/auth/sessions'],
+    queryKey: ["/api/auth/sessions"],
   });
 
   const terminateSessionMutation = useMutation({
     mutationFn: async (sessionId: string) => {
-      const response = await apiRequest('DELETE', `/api/auth/sessions/${sessionId}`);
+      const response = await apiRequest(
+        "DELETE",
+        `/api/auth/sessions/${sessionId}`,
+      );
       return response.json();
     },
     onSuccess: (data) => {
       if (data.success) {
         toast({
-          title: 'Session Terminated',
-          description: 'The device has been logged out.',
+          title: "Session Terminated",
+          description: "The device has been logged out.",
         });
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/sessions'] });
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/sessions"] });
       }
     },
     onError: () => {
       toast({
-        title: 'Failed to Terminate Session',
-        description: 'Please try again.',
-        variant: 'destructive',
+        title: "Failed to Terminate Session",
+        description: "Please try again.",
+        variant: "destructive",
       });
     },
   });
 
   const logoutAllMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('DELETE', '/api/auth/sessions/other');
+      const response = await apiRequest("DELETE", "/api/auth/sessions/other");
       return response.json();
     },
     onSuccess: (data) => {
       if (data.success) {
         toast({
-          title: 'All Other Sessions Logged Out',
+          title: "All Other Sessions Logged Out",
           description: `${data.terminatedCount} session(s) have been terminated.`,
         });
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/sessions'] });
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/sessions"] });
         setLogoutAllOpen(false);
       }
     },
     onError: () => {
       toast({
-        title: 'Failed to Logout Sessions',
-        description: 'Please try again.',
-        variant: 'destructive',
+        title: "Failed to Logout Sessions",
+        description: "Please try again.",
+        variant: "destructive",
       });
     },
   });
 
   const trustDeviceMutation = useMutation({
-    mutationFn: async ({ deviceId, trusted }: { deviceId: string; trusted: boolean }) => {
-      const response = await apiRequest('POST', '/api/auth/devices/trust', { deviceId, trusted });
+    mutationFn: async ({
+      deviceId,
+      trusted,
+    }: {
+      deviceId: string;
+      trusted: boolean;
+    }) => {
+      const response = await apiRequest("POST", "/api/auth/devices/trust", {
+        deviceId,
+        trusted,
+      });
       return response.json();
     },
     onSuccess: (data) => {
       if (data.success) {
         toast({
-          title: data.trusted ? 'Device Trusted' : 'Device Untrusted',
-          description: data.trusted 
-            ? 'This device is now marked as trusted.'
-            : 'This device is no longer marked as trusted.',
+          title: data.trusted ? "Device Trusted" : "Device Untrusted",
+          description: data.trusted
+            ? "This device is now marked as trusted."
+            : "This device is no longer marked as trusted.",
         });
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/sessions'] });
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/sessions"] });
       }
     },
     onError: () => {
       toast({
-        title: 'Failed to Update Device',
-        description: 'Please try again.',
-        variant: 'destructive',
+        title: "Failed to Update Device",
+        description: "Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -168,7 +192,7 @@ export function DeviceManagement() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
@@ -185,8 +209,8 @@ export function DeviceManagement() {
   }
 
   const sessions = sessionsData?.sessions || [];
-  const currentSession = sessions.find(s => s.current);
-  const otherSessions = sessions.filter(s => !s.current);
+  const currentSession = sessions.find((s) => s.current);
+  const otherSessions = sessions.filter((s) => !s.current);
 
   return (
     <>
@@ -218,11 +242,16 @@ export function DeviceManagement() {
         <CardContent className="space-y-4">
           {currentSession && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Current Device</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">
+                Current Device
+              </h4>
               <DeviceCard
                 session={currentSession}
-                onTrustToggle={(trusted) => 
-                  trustDeviceMutation.mutate({ deviceId: currentSession.id, trusted })
+                onTrustToggle={(trusted) =>
+                  trustDeviceMutation.mutate({
+                    deviceId: currentSession.id,
+                    trusted,
+                  })
                 }
                 formatRelativeTime={formatRelativeTime}
               />
@@ -242,8 +271,11 @@ export function DeviceManagement() {
                       key={session.id}
                       session={session}
                       onTerminate={() => setTerminateSessionId(session.id)}
-                      onTrustToggle={(trusted) => 
-                        trustDeviceMutation.mutate({ deviceId: session.id, trusted })
+                      onTrustToggle={(trusted) =>
+                        trustDeviceMutation.mutate({
+                          deviceId: session.id,
+                          trusted,
+                        })
                       }
                       formatRelativeTime={formatRelativeTime}
                     />
@@ -262,12 +294,16 @@ export function DeviceManagement() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!terminateSessionId} onOpenChange={() => setTerminateSessionId(null)}>
+      <AlertDialog
+        open={!!terminateSessionId}
+        onOpenChange={() => setTerminateSessionId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Terminate Session?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will log out the device immediately. They will need to sign in again to access the account.
+              This will log out the device immediately. They will need to sign
+              in again to access the account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -291,7 +327,8 @@ export function DeviceManagement() {
               Log Out All Other Devices?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This will log out {otherSessions.length} device(s) immediately. You will remain logged in on this device.
+              This will log out {otherSessions.length} device(s) immediately.
+              You will remain logged in on this device.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -301,7 +338,9 @@ export function DeviceManagement() {
               className="bg-red-500 hover:bg-red-600"
               disabled={logoutAllMutation.isPending}
             >
-              {logoutAllMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {logoutAllMutation.isPending && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
               Log Out All
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -318,20 +357,34 @@ interface DeviceCardProps {
   formatRelativeTime: (date: string) => string;
 }
 
-function DeviceCard({ session, onTerminate, onTrustToggle, formatRelativeTime }: DeviceCardProps) {
+function DeviceCard({
+  session,
+  onTerminate,
+  onTrustToggle,
+  formatRelativeTime,
+}: DeviceCardProps) {
   const DeviceIcon = getDeviceIcon(session.device);
 
   return (
-    <div className={`flex items-center justify-between p-4 rounded-lg border ${session.current ? 'bg-primary/5 border-primary/20' : 'bg-card'}`}>
+    <div
+      className={`flex items-center justify-between p-4 rounded-lg border ${session.current ? "bg-primary/5 border-primary/20" : "bg-card"}`}
+    >
       <div className="flex items-center gap-4">
-        <div className={`p-2 rounded-full ${session.current ? 'bg-primary/10' : 'bg-muted'}`}>
-          <DeviceIcon className={`h-5 w-5 ${session.current ? 'text-primary' : 'text-muted-foreground'}`} />
+        <div
+          className={`p-2 rounded-full ${session.current ? "bg-primary/10" : "bg-muted"}`}
+        >
+          <DeviceIcon
+            className={`h-5 w-5 ${session.current ? "text-primary" : "text-muted-foreground"}`}
+          />
         </div>
         <div>
           <div className="flex items-center gap-2">
             <span className="font-medium">{session.device}</span>
             {session.current && (
-              <Badge variant="outline" className="text-xs border-primary text-primary">
+              <Badge
+                variant="outline"
+                className="text-xs border-primary text-primary"
+              >
                 <CheckCircle className="h-3 w-3 mr-1" />
                 This device
               </Badge>
@@ -344,13 +397,15 @@ function DeviceCard({ session, onTerminate, onTrustToggle, formatRelativeTime }:
             )}
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-            <span>{session.browser} on {session.os}</span>
+            <span>
+              {session.browser} on {session.os}
+            </span>
             <span>•</span>
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {formatRelativeTime(session.lastActivity)}
             </span>
-            {session.ipAddress && session.ipAddress !== 'Unknown' && (
+            {session.ipAddress && session.ipAddress !== "Unknown" && (
               <>
                 <span>•</span>
                 <span className="flex items-center gap-1">
@@ -367,10 +422,7 @@ function DeviceCard({ session, onTerminate, onTrustToggle, formatRelativeTime }:
         {onTrustToggle && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Trust</span>
-            <Switch
-              checked={session.trusted}
-              onCheckedChange={onTrustToggle}
-            />
+            <Switch checked={session.trusted} onCheckedChange={onTrustToggle} />
           </div>
         )}
         {onTerminate && !session.current && (

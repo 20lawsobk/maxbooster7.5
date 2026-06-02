@@ -1,12 +1,18 @@
-import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Upload,
   FileText,
@@ -17,8 +23,8 @@ import {
   Download,
   Trash2,
   RefreshCw,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface BulkPost {
   platform: string;
@@ -59,7 +65,9 @@ interface BatchStatus {
 export function BulkScheduler() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedPosts, setParsedPosts] = useState<BulkPost[]>([]);
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
+    [],
+  );
   const [validationWarnings, setValidationWarnings] = useState<
     Array<{ index: number; message: string }>
   >([]);
@@ -68,12 +76,12 @@ export function BulkScheduler() {
   const queryClient = useQueryClient();
 
   const { data: batches, refetch: refetchBatches } = useQuery({
-    queryKey: ['/api/social/bulk/batches'],
+    queryKey: ["/api/social/bulk/batches"],
     refetchInterval: 15000,
   });
 
   const { data: currentBatch, refetch: refetchCurrentBatch } = useQuery({
-    queryKey: ['/api/social/bulk/status', currentBatchId],
+    queryKey: ["/api/social/bulk/status", currentBatchId],
     enabled: !!currentBatchId,
     refetchInterval: currentBatchId ? 5000 : false,
   });
@@ -81,13 +89,16 @@ export function BulkScheduler() {
   const validateMutation = useMutation({
     mutationFn: async (posts: BulkPost[]) => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/social/bulk/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+      const res = await fetch("/api/social/bulk/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ posts }),
       });
-      if (!res.ok) throw new Error('Validation failed');
+      if (!res.ok) throw new Error("Validation failed");
       return res.json();
     },
     onSuccess: (data) => {
@@ -96,14 +107,14 @@ export function BulkScheduler() {
 
       if (data.valid) {
         toast({
-          title: 'Validation Passed',
+          title: "Validation Passed",
           description: `${data.totalPosts} posts are ready to schedule`,
         });
       } else {
         toast({
-          title: 'Validation Issues Found',
+          title: "Validation Issues Found",
           description: `${data.errors.length} errors need to be fixed`,
-          variant: 'destructive',
+          variant: "destructive",
         });
       }
     },
@@ -112,15 +123,18 @@ export function BulkScheduler() {
   const scheduleMutation = useMutation({
     mutationFn: async (posts: BulkPost[]) => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/social/bulk/schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+      const res = await fetch("/api/social/bulk/schedule", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ posts }),
       });
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Scheduling failed');
+        throw new Error(error.error || "Scheduling failed");
       }
       return res.json();
     },
@@ -132,7 +146,7 @@ export function BulkScheduler() {
       setValidationWarnings([]);
 
       toast({
-        title: 'Batch Scheduled',
+        title: "Batch Scheduled",
         description: `${data.totalPosts} posts are being processed`,
       });
 
@@ -140,9 +154,9 @@ export function BulkScheduler() {
     },
     onError: (error: Error) => {
       toast({
-        title: 'Scheduling Failed',
+        title: "Scheduling Failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -151,17 +165,17 @@ export function BulkScheduler() {
     mutationFn: async (batchId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/bulk/${batchId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+        method: "DELETE",
+        credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       });
-      if (!res.ok) throw new Error('Cancellation failed');
+      if (!res.ok) throw new Error("Cancellation failed");
       return res.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Batch Cancelled',
-        description: 'Scheduled posts have been cancelled',
+        title: "Batch Cancelled",
+        description: "Scheduled posts have been cancelled",
       });
       setCurrentBatchId(null);
       refetchBatches();
@@ -174,42 +188,42 @@ export function BulkScheduler() {
 
       reader.onload = (e) => {
         const text = e.target?.result as string;
-        const lines = text.split('\n').filter((line) => line.trim());
+        const lines = text.split("\n").filter((line) => line.trim());
 
-        const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+        const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
         const posts: BulkPost[] = [];
 
         for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map((v) => v.trim());
+          const values = lines[i].split(",").map((v) => v.trim());
           const post: BulkPost = {
-            platform: '',
-            content: '',
+            platform: "",
+            content: "",
           };
 
           headers.forEach((header, index) => {
             const value = values[index];
 
             switch (header) {
-              case 'platform':
+              case "platform":
                 post.platform = value;
                 break;
-              case 'content':
+              case "content":
                 post.content = value;
                 break;
-              case 'mediaurls':
-              case 'media_urls':
-                post.mediaUrls = value ? value.split('|') : [];
+              case "mediaurls":
+              case "media_urls":
+                post.mediaUrls = value ? value.split("|") : [];
                 break;
-              case 'scheduledat':
-              case 'scheduled_at':
+              case "scheduledat":
+              case "scheduled_at":
                 post.scheduledAt = value;
                 break;
-              case 'socialaccountid':
-              case 'social_account_id':
+              case "socialaccountid":
+              case "social_account_id":
                 post.socialAccountId = value;
                 break;
-              case 'campaignid':
-              case 'campaign_id':
+              case "campaignid":
+              case "campaign_id":
                 post.campaignId = value;
                 break;
             }
@@ -222,14 +236,14 @@ export function BulkScheduler() {
 
         setParsedPosts(posts);
         toast({
-          title: 'CSV Parsed',
+          title: "CSV Parsed",
           description: `${posts.length} posts loaded from CSV`,
         });
       };
 
       reader.readAsText(file);
     },
-    [toast]
+    [toast],
   );
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,11 +257,11 @@ export function BulkScheduler() {
   const downloadTemplate = () => {
     const template =
       'platform,content,media_urls,scheduled_at,social_account_id,campaign_id\ntwitter,"Check out our new track!","","2025-01-01T12:00:00Z","",""';
-    const blob = new Blob([template], { type: 'text/csv' });
+    const blob = new Blob([template], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'bulk-schedule-template.csv';
+    a.download = "bulk-schedule-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -268,11 +282,19 @@ export function BulkScheduler() {
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
                   <p className="mb-2 text-sm text-muted-foreground">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
+                    <span className="font-semibold">Click to upload</span> or
+                    drag and drop
                   </p>
-                  <p className="text-xs text-muted-foreground">CSV file (MAX. 500 posts)</p>
+                  <p className="text-xs text-muted-foreground">
+                    CSV file (MAX. 500 posts)
+                  </p>
                 </div>
-                <input type="file" className="hidden" accept=".csv" onChange={handleFileSelect} />
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".csv"
+                  onChange={handleFileSelect}
+                />
               </label>
               {selectedFile && (
                 <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
@@ -290,9 +312,13 @@ export function BulkScheduler() {
               </Button>
               <Button
                 onClick={() => validateMutation.mutate(parsedPosts)}
-                disabled={parsedPosts.length === 0 || validateMutation.isPending}
+                disabled={
+                  parsedPosts.length === 0 || validateMutation.isPending
+                }
               >
-                {validateMutation.isPending ? 'Validating...' : 'Validate Posts'}
+                {validateMutation.isPending
+                  ? "Validating..."
+                  : "Validate Posts"}
               </Button>
               <Button
                 onClick={() => scheduleMutation.mutate(parsedPosts)}
@@ -303,7 +329,7 @@ export function BulkScheduler() {
                 }
                 className="bg-primary"
               >
-                {scheduleMutation.isPending ? 'Scheduling...' : 'Schedule All'}
+                {scheduleMutation.isPending ? "Scheduling..." : "Schedule All"}
               </Button>
             </div>
           </div>
@@ -312,7 +338,9 @@ export function BulkScheduler() {
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>{validationErrors.length} validation errors found:</strong>
+                <strong>
+                  {validationErrors.length} validation errors found:
+                </strong>
                 <ul className="mt-2 space-y-1">
                   {validationErrors.slice(0, 5).map((error, idx) => (
                     <li key={idx} className="text-sm">
@@ -320,7 +348,9 @@ export function BulkScheduler() {
                     </li>
                   ))}
                   {validationErrors.length > 5 && (
-                    <li className="text-sm">...and {validationErrors.length - 5} more</li>
+                    <li className="text-sm">
+                      ...and {validationErrors.length - 5} more
+                    </li>
                   )}
                 </ul>
               </AlertDescription>
@@ -351,7 +381,11 @@ export function BulkScheduler() {
             <div className="flex items-center justify-between">
               <CardTitle>Current Batch Progress</CardTitle>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => refetchCurrentBatch()}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => refetchCurrentBatch()}
+                >
                   <RefreshCw className="w-4 h-4" />
                 </Button>
                 <Button
@@ -359,7 +393,8 @@ export function BulkScheduler() {
                   variant="destructive"
                   onClick={() => cancelMutation.mutate(currentBatch.batchId)}
                   disabled={
-                    currentBatch.status === 'completed' || currentBatch.status === 'cancelled'
+                    currentBatch.status === "completed" ||
+                    currentBatch.status === "cancelled"
                   }
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -378,7 +413,9 @@ export function BulkScheduler() {
                 </span>
               </div>
               <Progress
-                value={(currentBatch.processedPosts / currentBatch.totalPosts) * 100}
+                value={
+                  (currentBatch.processedPosts / currentBatch.totalPosts) * 100
+                }
                 className="h-2"
               />
             </div>
@@ -387,14 +424,20 @@ export function BulkScheduler() {
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 <div>
-                  <div className="text-2xl font-bold">{currentBatch.successfulPosts}</div>
-                  <div className="text-xs text-muted-foreground">Successful</div>
+                  <div className="text-2xl font-bold">
+                    {currentBatch.successfulPosts}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Successful
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <XCircle className="w-5 h-5 text-red-500" />
                 <div>
-                  <div className="text-2xl font-bold">{currentBatch.failedPosts}</div>
+                  <div className="text-2xl font-bold">
+                    {currentBatch.failedPosts}
+                  </div>
                   <div className="text-xs text-muted-foreground">Failed</div>
                 </div>
               </div>
@@ -430,7 +473,11 @@ export function BulkScheduler() {
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <Badge variant={batch.status === 'completed' ? 'default' : 'outline'}>
+                    <Badge
+                      variant={
+                        batch.status === "completed" ? "default" : "outline"
+                      }
+                    >
                       {batch.status}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
@@ -438,11 +485,14 @@ export function BulkScheduler() {
                     </span>
                   </div>
                   <div className="mt-1 text-sm">
-                    {batch.successfulPosts} / {batch.totalPosts} posts successful
+                    {batch.successfulPosts} / {batch.totalPosts} posts
+                    successful
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-medium">{batch.totalPosts} posts</div>
+                  <div className="text-sm font-medium">
+                    {batch.totalPosts} posts
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {batch.failedPosts > 0 && `${batch.failedPosts} failed`}
                   </div>

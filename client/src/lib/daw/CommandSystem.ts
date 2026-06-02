@@ -27,7 +27,7 @@ export class CommandHistory {
 
   execute(command: Command): void {
     command.execute();
-    
+
     if (this.isBatching) {
       this.batchCommands.push(command);
       return;
@@ -51,7 +51,7 @@ export class CommandHistory {
   undo(): boolean {
     const command = this.past.pop();
     if (!command) return false;
-    
+
     command.undo();
     this.future.push(command);
     this.notify();
@@ -61,7 +61,7 @@ export class CommandHistory {
   redo(): boolean {
     const command = this.future.pop();
     if (!command) return false;
-    
+
     command.redo();
     this.past.push(command);
     this.notify();
@@ -84,7 +84,7 @@ export class CommandHistory {
     if (this.past.length > this.maxHistory) {
       this.past.shift();
     }
-    
+
     this.future = [];
     this.isBatching = false;
     this.batchCommands = [];
@@ -120,7 +120,7 @@ export class CommandHistory {
   }
 
   private notify(): void {
-    this.listeners.forEach(l => l());
+    this.listeners.forEach((l) => l());
   }
 
   getState(): { canUndo: boolean; canRedo: boolean; historyLength: number } {
@@ -134,15 +134,18 @@ export class CommandHistory {
 
 export class BatchCommand implements Command {
   id: string;
-  type = 'batch';
+  type = "batch";
   timestamp = Date.now();
-  
-  constructor(id: string, private commands: Command[]) {
+
+  constructor(
+    id: string,
+    private commands: Command[],
+  ) {
     this.id = id;
   }
 
   execute(): void {
-    this.commands.forEach(c => c.execute());
+    this.commands.forEach((c) => c.execute());
   }
 
   undo(): void {
@@ -152,18 +155,18 @@ export class BatchCommand implements Command {
   }
 
   redo(): void {
-    this.commands.forEach(c => c.redo());
+    this.commands.forEach((c) => c.redo());
   }
 }
 
 export function createCommand<T>(
   type: string,
   state: { before: T; after: T },
-  apply: (value: T) => void
+  apply: (value: T) => void,
 ): Command {
   const before = structuredClone(state.before);
   const after = structuredClone(state.after);
-  
+
   return {
     id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     type,

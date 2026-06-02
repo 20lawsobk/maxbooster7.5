@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   AreaChart,
   Area,
@@ -19,7 +25,7 @@ import {
   ResponsiveContainer,
   Legend,
   ReferenceLine,
-} from 'recharts';
+} from "recharts";
 import {
   TrendingUp,
   TrendingDown,
@@ -33,10 +39,10 @@ import {
   Award,
   Zap,
   ChevronRight,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ForecastResult {
   period: string;
@@ -79,9 +85,9 @@ interface RevenueProjections {
 }
 
 const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(value);
@@ -94,8 +100,8 @@ const formatNumber = (num: number): string => {
 };
 
 const formatMonth = (monthStr: string): string => {
-  const date = new Date(monthStr + '-01');
-  return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  const date = new Date(monthStr + "-01");
+  return date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 };
 
 const ForecastCard: React.FC<{
@@ -110,15 +116,24 @@ const ForecastCard: React.FC<{
     <Card
       className={cn(
         "cursor-pointer transition-all hover:shadow-md",
-        isSelected && "ring-2 ring-primary shadow-lg"
+        isSelected && "ring-2 ring-primary shadow-lg",
       )}
       onClick={onClick}
     >
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-muted-foreground">{title}</span>
-          <Badge variant={isPositiveGrowth ? "default" : "destructive"} className="text-xs">
-            {isPositiveGrowth ? <ArrowUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+          <span className="text-sm font-medium text-muted-foreground">
+            {title}
+          </span>
+          <Badge
+            variant={isPositiveGrowth ? "default" : "destructive"}
+            className="text-xs"
+          >
+            {isPositiveGrowth ? (
+              <ArrowUp className="w-3 h-3 mr-1" />
+            ) : (
+              <TrendingDown className="w-3 h-3 mr-1" />
+            )}
             {Math.abs(forecast.growthRate).toFixed(1)}%
           </Badge>
         </div>
@@ -131,7 +146,8 @@ const ForecastCard: React.FC<{
           <span>{Math.round(forecast.confidence * 100)}% confidence</span>
         </div>
         <div className="text-xs text-muted-foreground mt-1">
-          Range: {formatCurrency(forecast.confidenceLow)} - {formatCurrency(forecast.confidenceHigh)}
+          Range: {formatCurrency(forecast.confidenceLow)} -{" "}
+          {formatCurrency(forecast.confidenceHigh)}
         </div>
       </CardContent>
     </Card>
@@ -139,14 +155,20 @@ const ForecastCard: React.FC<{
 };
 
 const GoalProgressCard: React.FC<{
-  goalProgress: RevenueProjections['goalProgress'];
+  goalProgress: RevenueProjections["goalProgress"];
   onGoalChange: (goal: number) => void;
 }> = ({ goalProgress, onGoalChange }) => {
   const [editingGoal, setEditingGoal] = useState(false);
   const [newGoal, setNewGoal] = useState(goalProgress.goalAmount.toString());
 
-  const progress = Math.min(100, (goalProgress.currentMonthly / goalProgress.goalAmount) * 100);
-  const projectedProgress = Math.min(100, (goalProgress.projectedMonthly / goalProgress.goalAmount) * 100);
+  const progress = Math.min(
+    100,
+    (goalProgress.currentMonthly / goalProgress.goalAmount) * 100,
+  );
+  const projectedProgress = Math.min(
+    100,
+    (goalProgress.projectedMonthly / goalProgress.goalAmount) * 100,
+  );
 
   const handleSaveGoal = () => {
     const goal = parseFloat(newGoal);
@@ -165,7 +187,11 @@ const GoalProgressCard: React.FC<{
             Revenue Goal
           </CardTitle>
           {!editingGoal ? (
-            <Button variant="ghost" size="sm" onClick={() => setEditingGoal(true)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingGoal(true)}
+            >
               Edit
             </Button>
           ) : (
@@ -176,7 +202,9 @@ const GoalProgressCard: React.FC<{
                 onChange={(e) => setNewGoal(e.target.value)}
                 className="w-24 h-8"
               />
-              <Button size="sm" onClick={handleSaveGoal}>Save</Button>
+              <Button size="sm" onClick={handleSaveGoal}>
+                Save
+              </Button>
             </div>
           )}
         </div>
@@ -185,12 +213,16 @@ const GoalProgressCard: React.FC<{
         <div className="space-y-4">
           <div className="text-3xl font-bold">
             {formatCurrency(goalProgress.goalAmount)}
-            <span className="text-sm font-normal text-muted-foreground">/month</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              /month
+            </span>
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Current: {formatCurrency(goalProgress.currentMonthly)}</span>
+              <span>
+                Current: {formatCurrency(goalProgress.currentMonthly)}
+              </span>
               <span>{progress.toFixed(1)}%</span>
             </div>
             <Progress value={progress} className="h-2" />
@@ -198,7 +230,9 @@ const GoalProgressCard: React.FC<{
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Projected: {formatCurrency(goalProgress.projectedMonthly)}</span>
+              <span>
+                Projected: {formatCurrency(goalProgress.projectedMonthly)}
+              </span>
               <span>{projectedProgress.toFixed(1)}%</span>
             </div>
             <Progress value={projectedProgress} className="h-2 bg-muted" />
@@ -208,7 +242,8 @@ const GoalProgressCard: React.FC<{
             <div className="flex items-center gap-2 text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-3 rounded-lg">
               <Zap className="w-4 h-4" />
               <span>
-                At your current rate, you'll reach {formatCurrency(goalProgress.goalAmount)}/month in{' '}
+                At your current rate, you'll reach{" "}
+                {formatCurrency(goalProgress.goalAmount)}/month in{" "}
                 <strong>{goalProgress.daysToGoal} days</strong>!
               </span>
             </div>
@@ -250,31 +285,41 @@ const TipsCard: React.FC<{ tips: string[] }> = ({ tips }) => {
 export default function RevenueForecast() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedPeriod, setSelectedPeriod] = useState<'3' | '6' | '12'>('12');
+  const [selectedPeriod, setSelectedPeriod] = useState<"3" | "6" | "12">("12");
   const [customGoal, setCustomGoal] = useState<number | null>(null);
 
-  const { data: projectionsData, isLoading, error } = useQuery({
-    queryKey: ['/api/revenue-forecast/projections'],
+  const {
+    data: projectionsData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["/api/revenue-forecast/projections"],
     staleTime: 5 * 60 * 1000,
   });
 
   const generateMutation = useMutation({
     mutationFn: async (months: number) => {
-      const response = await apiRequest('POST', '/api/revenue-forecast/generate', { months });
+      const response = await apiRequest(
+        "POST",
+        "/api/revenue-forecast/generate",
+        { months },
+      );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Forecast Generated',
-        description: 'Your revenue forecast has been updated.',
+        title: "Forecast Generated",
+        description: "Your revenue forecast has been updated.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/revenue-forecast/projections'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/revenue-forecast/projections"],
+      });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to generate forecast. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to generate forecast. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -317,15 +362,16 @@ export default function RevenueForecast() {
   }
 
   const projections: RevenueProjections = projectionsData.data;
-  const goalProgress = customGoal 
+  const goalProgress = customGoal
     ? { ...projections.goalProgress, goalAmount: customGoal }
     : projections.goalProgress;
 
-  const selectedForecast = selectedPeriod === '3' 
-    ? projections.threeMonth 
-    : selectedPeriod === '6' 
-      ? projections.sixMonth 
-      : projections.twelveMonth;
+  const selectedForecast =
+    selectedPeriod === "3"
+      ? projections.threeMonth
+      : selectedPeriod === "6"
+        ? projections.sixMonth
+        : projections.twelveMonth;
 
   const chartData = projections.monthlyBreakdown.map((m) => ({
     month: formatMonth(m.month),
@@ -338,7 +384,10 @@ export default function RevenueForecast() {
 
   const futureDate = new Date();
   futureDate.setMonth(futureDate.getMonth() + parseInt(selectedPeriod));
-  const futureDateStr = futureDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const futureDateStr = futureDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="space-y-6">
@@ -366,7 +415,10 @@ export default function RevenueForecast() {
         </Button>
       </div>
 
-      <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as '3' | '6' | '12')}>
+      <Tabs
+        value={selectedPeriod}
+        onValueChange={(v) => setSelectedPeriod(v as "3" | "6" | "12")}
+      >
         <TabsList className="grid w-full grid-cols-3 max-w-md">
           <TabsTrigger value="3">3 Months</TabsTrigger>
           <TabsTrigger value="6">6 Months</TabsTrigger>
@@ -378,20 +430,20 @@ export default function RevenueForecast() {
             <ForecastCard
               title="3 Month Projection"
               forecast={projections.threeMonth}
-              isSelected={selectedPeriod === '3'}
-              onClick={() => setSelectedPeriod('3')}
+              isSelected={selectedPeriod === "3"}
+              onClick={() => setSelectedPeriod("3")}
             />
             <ForecastCard
               title="6 Month Projection"
               forecast={projections.sixMonth}
-              isSelected={selectedPeriod === '6'}
-              onClick={() => setSelectedPeriod('6')}
+              isSelected={selectedPeriod === "6"}
+              onClick={() => setSelectedPeriod("6")}
             />
             <ForecastCard
               title="12 Month Projection"
               forecast={projections.twelveMonth}
-              isSelected={selectedPeriod === '12'}
-              onClick={() => setSelectedPeriod('12')}
+              isSelected={selectedPeriod === "12"}
+              onClick={() => setSelectedPeriod("12")}
             />
           </div>
 
@@ -403,15 +455,17 @@ export default function RevenueForecast() {
                 </div>
                 <div>
                   <p className="text-lg font-medium">
-                    At your current rate, you'll earn{' '}
+                    At your current rate, you'll earn{" "}
                     <span className="text-2xl font-bold text-primary">
                       {formatCurrency(selectedForecast.projectedRevenue)}
-                    </span>{' '}
+                    </span>{" "}
                     by {futureDateStr}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    That's approximately {formatNumber(selectedForecast.projectedStreams)} streams and{' '}
-                    {formatCurrency(selectedForecast.projectedRoyalties)} in royalties
+                    That's approximately{" "}
+                    {formatNumber(selectedForecast.projectedStreams)} streams
+                    and {formatCurrency(selectedForecast.projectedRoyalties)} in
+                    royalties
                   </p>
                 </div>
               </div>
@@ -425,7 +479,8 @@ export default function RevenueForecast() {
                 Monthly Revenue Forecast
               </CardTitle>
               <CardDescription>
-                Historical data (solid) and projected earnings (dashed) with confidence intervals
+                Historical data (solid) and projected earnings (dashed) with
+                confidence intervals
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -433,16 +488,47 @@ export default function RevenueForecast() {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
                     <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <linearGradient
+                        id="colorRevenue"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="hsl(var(--primary))"
+                          stopOpacity={0.3}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="hsl(var(--primary))"
+                          stopOpacity={0}
+                        />
                       </linearGradient>
-                      <linearGradient id="colorConfidence" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                      <linearGradient
+                        id="colorConfidence"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="hsl(var(--primary))"
+                          stopOpacity={0.1}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="hsl(var(--primary))"
+                          stopOpacity={0.05}
+                        />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
                     <XAxis dataKey="month" className="text-xs" />
                     <YAxis
                       tickFormatter={(value) => `$${value}`}
@@ -451,13 +537,13 @@ export default function RevenueForecast() {
                     <Tooltip
                       formatter={(value: number, name: string) => [
                         formatCurrency(value),
-                        name === 'revenue' ? 'Revenue' : name,
+                        name === "revenue" ? "Revenue" : name,
                       ]}
                       labelFormatter={(label) => `Month: ${label}`}
                       contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
                       }}
                     />
                     <Legend />
@@ -517,8 +603,8 @@ export default function RevenueForecast() {
                       strokeDasharray="5 5"
                       label={{
                         value: `Goal: ${formatCurrency(goalProgress.goalAmount)}/mo`,
-                        position: 'right',
-                        fill: 'hsl(var(--destructive))',
+                        position: "right",
+                        fill: "hsl(var(--destructive))",
                         fontSize: 12,
                       }}
                     />

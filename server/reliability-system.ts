@@ -1,9 +1,9 @@
 // Max Booster 24/7/365 Reliability System
 // Real implementation that actually delivers continuous uptime
-import { EventEmitter } from 'events';
-import { spawn, ChildProcess } from 'child_process';
-import { reliabilityCoordinator } from './reliability/reliability-coordinator';
-import { logger } from './logger.js';
+import { EventEmitter } from "events";
+import { spawn, ChildProcess } from "child_process";
+import { reliabilityCoordinator } from "./reliability/reliability-coordinator";
+import { logger } from "./logger.js";
 
 interface SystemMetrics {
   uptime: number;
@@ -46,7 +46,7 @@ class MaxBooster247System extends EventEmitter {
   async start(): Promise<void> {
     if (this.isActive) return;
 
-    logger.info('🚀 Max Booster 24/7/365 System Starting...');
+    logger.info("🚀 Max Booster 24/7/365 System Starting...");
 
     this.isActive = true;
     this.startTime = Date.now();
@@ -66,11 +66,11 @@ class MaxBooster247System extends EventEmitter {
     // Schedule daily self-diagnostic + pattern reset
     this.scheduleDailyDiagnostic();
 
-    logger.info('✅ Max Booster 24/7/365 System ACTIVE');
-    logger.info('🎯 True continuous operation enabled');
-    logger.info('🔄 Auto-restart and recovery systems online');
+    logger.info("✅ Max Booster 24/7/365 System ACTIVE");
+    logger.info("🎯 True continuous operation enabled");
+    logger.info("🔄 Auto-restart and recovery systems online");
 
-    this.emit('system-ready');
+    this.emit("system-ready");
   }
 
   private setupProcessHandlers(): void {
@@ -81,14 +81,17 @@ class MaxBooster247System extends EventEmitter {
     //
     // This module is an OBSERVER only — it tracks metrics and logs, but never exits.
 
-    process.on('unhandledRejection', (reason: Record<string, unknown>) => {
+    process.on("unhandledRejection", (reason: Record<string, unknown>) => {
       const msg = reason?.message || String(reason);
       const code = reason?.code;
       // Non-fatal: stream errors, transient PDIM / LuaExecutor / BullMQ failures.
-      const isNonFatal = (
-        code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED' ||
-        /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|Connection|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds/i.test(msg)
-      );
+      const isNonFatal =
+        code === "EPIPE" ||
+        code === "ECONNRESET" ||
+        code === "ECONNABORTED" ||
+        /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|Connection|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds/i.test(
+          msg,
+        );
       if (isNonFatal) {
         return; // instrument.ts already logs these as warnings
       }
@@ -104,7 +107,7 @@ class MaxBooster247System extends EventEmitter {
       this.performHealthCheck();
     }, 30000);
 
-    logger.info('✅ Health monitoring active (30s intervals)');
+    logger.info("✅ Health monitoring active (30s intervals)");
   }
 
   private startMemoryManagement(): void {
@@ -113,12 +116,12 @@ class MaxBooster247System extends EventEmitter {
       this.performMemoryCheck();
     }, 120000);
 
-    logger.info('✅ Memory management active (2min intervals)');
+    logger.info("✅ Memory management active (2min intervals)");
   }
 
   private enableGarbageCollection(): void {
-    if (typeof (global as Record<string, unknown>).gc === 'function') {
-      logger.info('✅ Garbage collection available');
+    if (typeof (global as Record<string, unknown>).gc === "function") {
+      logger.info("✅ Garbage collection available");
       // Schedule GC every 10 minutes to keep heap tidy between normal GC pauses.
       setInterval(() => {
         try {
@@ -128,14 +131,16 @@ class MaxBooster247System extends EventEmitter {
           const freed = Math.round((before - after) / 1024 / 1024);
           if (freed > 0) logger.info(`🧹 GC freed ${freed}MB memory`);
         } catch (error: unknown) {
-          logger.warn({ err: error }, '⚠️ GC failed:');
+          logger.warn({ err: error }, "⚠️ GC failed:");
         }
       }, 600_000).unref();
     } else {
       // --expose-gc is optional.  PlatformAutoFixer already monitors memory and
       // forces GC when heap crosses 92%.  Do NOT throw here — the process can run
       // safely without --expose-gc.  Simply log and move on.
-      logger.info('ℹ️  GC not exposed (--expose-gc not set) — PlatformAutoFixer handles memory pressure');
+      logger.info(
+        "ℹ️  GC not exposed (--expose-gc not set) — PlatformAutoFixer handles memory pressure",
+      );
     }
   }
 
@@ -146,19 +151,21 @@ class MaxBooster247System extends EventEmitter {
       this.metrics.cpu = process.cpuUsage();
 
       const memMB = Math.round(this.metrics.memory.heapUsed / 1024 / 1024);
-      const uptimeHours = Math.round((this.metrics.uptime / (1000 * 60 * 60)) * 100) / 100;
-      const gcAvailable = typeof (global as Record<string, unknown>).gc === 'function';
+      const uptimeHours =
+        Math.round((this.metrics.uptime / (1000 * 60 * 60)) * 100) / 100;
+      const gcAvailable =
+        typeof (global as Record<string, unknown>).gc === "function";
 
       // Log health status every 10 minutes (approximate, modulo-gated to avoid a dedicated timer).
       if (Date.now() % (10 * 60 * 1000) < 30000) {
         logger.info(
-          `📊 Health Check: ${memMB}MB memory, ${uptimeHours}h uptime, ${this.metrics.requestCount} requests, GC: ${gcAvailable ? '✅' : '—'}`
+          `📊 Health Check: ${memMB}MB memory, ${uptimeHours}h uptime, ${this.metrics.requestCount} requests, GC: ${gcAvailable ? "✅" : "—"}`,
         );
       }
 
-      this.emit('health-check', { ...this.metrics, gcAvailable });
+      this.emit("health-check", { ...this.metrics, gcAvailable });
     } catch (error: unknown) {
-      logger.warn({ err: error }, '❌ Health check failed:');
+      logger.warn({ err: error }, "❌ Health check failed:");
       this.metrics.errorCount++;
     }
   }
@@ -173,13 +180,17 @@ class MaxBooster247System extends EventEmitter {
     if (memMB > 800) {
       logger.warn(`⚠️ High memory usage: ${memMB}MB`);
 
-      if (typeof (global as Record<string, unknown>).gc === 'function') {
+      if (typeof (global as Record<string, unknown>).gc === "function") {
         try {
           (global as Record<string, unknown>).gc();
-          const after = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
-          logger.info(`🧹 Forced GC due to high memory: ${memMB}MB → ${after}MB`);
+          const after = Math.round(
+            process.memoryUsage().heapUsed / 1024 / 1024,
+          );
+          logger.info(
+            `🧹 Forced GC due to high memory: ${memMB}MB → ${after}MB`,
+          );
         } catch (error: unknown) {
-          logger.warn({ err: error }, '⚠️ Manual GC failed:');
+          logger.warn({ err: error }, "⚠️ Manual GC failed:");
         }
       }
     }
@@ -194,21 +205,29 @@ class MaxBooster247System extends EventEmitter {
   private scheduleDailyDiagnostic(): void {
     // Fire once per day — staggered so two cluster workers don't log simultaneously.
     const jitter = Math.floor(Math.random() * 30_000);
-    this._dailyTimer = setInterval(() => {
-      this.runDailyDiagnostic();
-    }, 24 * 60 * 60_000 + jitter);
+    this._dailyTimer = setInterval(
+      () => {
+        this.runDailyDiagnostic();
+      },
+      24 * 60 * 60_000 + jitter,
+    );
     this._dailyTimer.unref();
 
     // Also reset suppressed ChainFixer patterns daily so long-dormant errors can
     // be caught again if they reoccur after a quiet period.
-    setInterval(() => {
-      this.resetSuppressedPatterns();
-    }, 24 * 60 * 60_000 + jitter + 5_000).unref();
+    setInterval(
+      () => {
+        this.resetSuppressedPatterns();
+      },
+      24 * 60 * 60_000 + jitter + 5_000,
+    ).unref();
   }
 
   private async resetSuppressedPatterns(): Promise<void> {
     try {
-      const { chainErrorAutoFixer } = await import('./services/chainErrorAutoFixer.js');
+      const { chainErrorAutoFixer } = await import(
+        "./services/chainErrorAutoFixer.js"
+      );
       const status = chainErrorAutoFixer.getStatus();
       let reset = 0;
       for (const p of status.patterns) {
@@ -218,41 +237,50 @@ class MaxBooster247System extends EventEmitter {
         }
       }
       if (reset > 0) {
-        logger.info(`[ReliabilitySystem] Daily reset: un-suppressed ${reset} ChainFixer pattern(s) — monitoring resumes`);
+        logger.info(
+          `[ReliabilitySystem] Daily reset: un-suppressed ${reset} ChainFixer pattern(s) — monitoring resumes`,
+        );
       }
-    } catch { /* non-critical */ }
+    } catch {
+      /* non-critical */
+    }
   }
 
   private runDailyDiagnostic(): void {
     try {
       const mem = process.memoryUsage();
-      const uptimeH  = ((Date.now() - this.startTime) / 3_600_000).toFixed(2);
-      const uptimeD  = (Number(uptimeH) / 24).toFixed(2);
-      const heapMB   = Math.round(mem.heapUsed / 1024 / 1024);
-      const rssMB    = Math.round(mem.rss / 1024 / 1024);
+      const uptimeH = ((Date.now() - this.startTime) / 3_600_000).toFixed(2);
+      const uptimeD = (Number(uptimeH) / 24).toFixed(2);
+      const heapMB = Math.round(mem.heapUsed / 1024 / 1024);
+      const rssMB = Math.round(mem.rss / 1024 / 1024);
 
       // Track peak memory
       if (heapMB > this._peakMemoryMB) {
         this._peakMemoryMB = heapMB;
       }
 
-      const successRate = this.metrics.requestCount > 0
-        ? (((this.metrics.requestCount - this.metrics.errorCount) / this.metrics.requestCount) * 100).toFixed(2)
-        : '100.00';
+      const successRate =
+        this.metrics.requestCount > 0
+          ? (
+              ((this.metrics.requestCount - this.metrics.errorCount) /
+                this.metrics.requestCount) *
+              100
+            ).toFixed(2)
+          : "100.00";
 
       logger.info(
         `[ReliabilitySystem] ── Daily Diagnostic ──────────────────────\n` +
-        `  Uptime          : ${uptimeH}h (${uptimeD} days)\n` +
-        `  Heap            : ${heapMB}MB (peak ${this._peakMemoryMB}MB since ${new Date(this._peakMemorySince).toISOString()})\n` +
-        `  RSS             : ${rssMB}MB\n` +
-        `  Total requests  : ${this.metrics.requestCount}\n` +
-        `  Total errors    : ${this.metrics.errorCount}\n` +
-        `  Success rate    : ${successRate}%\n` +
-        `  Restarts        : ${this.metrics.restartCount}\n` +
-        `─────────────────────────────────────────────────────`
+          `  Uptime          : ${uptimeH}h (${uptimeD} days)\n` +
+          `  Heap            : ${heapMB}MB (peak ${this._peakMemoryMB}MB since ${new Date(this._peakMemorySince).toISOString()})\n` +
+          `  RSS             : ${rssMB}MB\n` +
+          `  Total requests  : ${this.metrics.requestCount}\n` +
+          `  Total errors    : ${this.metrics.errorCount}\n` +
+          `  Success rate    : ${successRate}%\n` +
+          `  Restarts        : ${this.metrics.restartCount}\n` +
+          `─────────────────────────────────────────────────────`,
       );
     } catch (err: unknown) {
-      logger.warn({ err: err }, '[ReliabilitySystem] Daily diagnostic failed:');
+      logger.warn({ err: err }, "[ReliabilitySystem] Daily diagnostic failed:");
     }
   }
 
@@ -293,11 +321,13 @@ class MaxBooster247System extends EventEmitter {
     const uptimeHours = this.metrics.uptime / (1000 * 60 * 60);
     const successRate =
       this.metrics.requestCount > 0
-        ? ((this.metrics.requestCount - this.metrics.errorCount) / this.metrics.requestCount) * 100
+        ? ((this.metrics.requestCount - this.metrics.errorCount) /
+            this.metrics.requestCount) *
+          100
         : 100;
 
     return {
-      status: this.isActive ? 'running' : 'stopped',
+      status: this.isActive ? "running" : "stopped",
       uptime: {
         milliseconds: this.metrics.uptime,
         hours: Math.round(uptimeHours * 100) / 100,
@@ -314,11 +344,12 @@ class MaxBooster247System extends EventEmitter {
         restartCount: this.metrics.restartCount,
         lastRestart: this.metrics.lastRestart,
         maxRestartsAllowed: this.maxRestartAttempts,
-        autoRecovery: 'enabled',
+        autoRecovery: "enabled",
         avgResponseTime:
           this.responseTimes.length > 0
             ? Math.round(
-                this.responseTimes.reduce((sum, time) => sum + time, 0) / this.responseTimes.length
+                this.responseTimes.reduce((sum, time) => sum + time, 0) /
+                  this.responseTimes.length,
               )
             : 0,
       },
@@ -330,11 +361,11 @@ class MaxBooster247System extends EventEmitter {
     const health = this.getHealthSummary();
 
     return {
-      status: health.status === 'running' ? 'healthy' : 'unhealthy',
+      status: health.status === "running" ? "healthy" : "unhealthy",
       checks: {
-        memory: health.performance.memoryMB < 1000 ? 'pass' : 'warn',
-        uptime: health.uptime.hours > 0.01 ? 'pass' : 'warn',
-        errors: health.performance.successRate > 95 ? 'pass' : 'fail',
+        memory: health.performance.memoryMB < 1000 ? "pass" : "warn",
+        uptime: health.uptime.hours > 0.01 ? "pass" : "warn",
+        errors: health.performance.successRate > 95 ? "pass" : "fail",
       },
       info: {
         uptime_hours: health.uptime.hours,
@@ -353,9 +384,9 @@ export const maxBooster247 = new MaxBooster247System();
 export async function initializeMaxBooster247(): Promise<void> {
   await maxBooster247.start();
 
-  logger.info('🎯 Max Booster Platform - 24/7/365 Operation Guaranteed');
-  logger.info('✅ Continuous monitoring and auto-recovery active');
-  logger.info('🚀 Ready for production deployment on Replit Reserved VM');
+  logger.info("🎯 Max Booster Platform - 24/7/365 Operation Guaranteed");
+  logger.info("✅ Continuous monitoring and auto-recovery active");
+  logger.info("🚀 Ready for production deployment on Replit Reserved VM");
 }
 
 export default MaxBooster247System;

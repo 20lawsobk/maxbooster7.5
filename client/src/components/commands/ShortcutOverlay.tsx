@@ -1,7 +1,11 @@
-import { ShortcutGuide } from '@/components/shortcuts/ShortcutGuide';
-import { ShortcutHint, ShortcutBadge, ShortcutTooltipContent } from '@/components/shortcuts/ShortcutHint';
+import { ShortcutGuide } from "@/components/shortcuts/ShortcutGuide";
+import {
+  ShortcutHint,
+  ShortcutBadge,
+  ShortcutTooltipContent,
+} from "@/components/shortcuts/ShortcutHint";
 
-export { 
+export {
   ShortcutGuide as ShortcutOverlay,
   ShortcutGuide,
   ShortcutHint,

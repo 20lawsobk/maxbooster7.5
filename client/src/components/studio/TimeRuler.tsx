@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef } from 'react';
-import { useStudioStore } from '@/lib/studioStore';
+import { useCallback, useMemo, useRef } from "react";
+import { useStudioStore } from "@/lib/studioStore";
 
 interface TimeRulerProps {
   duration: number;
@@ -23,7 +23,7 @@ export function TimeRuler({
   const { currentTime, zoom, snapEnabled, snapResolution } = useStudioStore();
   const rulerRef = useRef<HTMLDivElement>(null);
 
-  const [numerator, denominator] = timeSignature.split('/').map(Number);
+  const [numerator, denominator] = timeSignature.split("/").map(Number);
 
   // Calculate visible time range based on zoom
   const visibleDuration = duration / zoom;
@@ -43,7 +43,12 @@ export function TimeRuler({
       interval = barDuration; // Show bars at low zoom
     }
 
-    const markers: Array<{ time: number; isBar: boolean; isBeat: boolean; label: string }> = [];
+    const markers: Array<{
+      time: number;
+      isBar: boolean;
+      isBeat: boolean;
+      label: string;
+    }> = [];
     let time = 0;
     let barCount = 1;
     let beatCount = 1;
@@ -56,7 +61,7 @@ export function TimeRuler({
         time,
         isBar,
         isBeat,
-        label: isBar ? barCount.toString() : isBeat ? beatCount.toString() : '',
+        label: isBar ? barCount.toString() : isBeat ? beatCount.toString() : "",
       });
 
       if (isBar) {
@@ -87,7 +92,7 @@ export function TimeRuler({
 
       onTimelineClick(Math.max(0, Math.min(clickTime, duration)));
     },
-    [visibleDuration, snapEnabled, snapResolution, duration, onTimelineClick]
+    [visibleDuration, snapEnabled, snapResolution, duration, onTimelineClick],
   );
 
   return (
@@ -95,8 +100,8 @@ export function TimeRuler({
       ref={rulerRef}
       className="h-10 border-b relative cursor-pointer select-none"
       style={{
-        borderColor: 'var(--studio-border)',
-        backgroundColor: 'var(--studio-bg-medium)',
+        borderColor: "var(--studio-border)",
+        backgroundColor: "var(--studio-bg-medium)",
       }}
       onClick={handleClick}
     >
@@ -112,17 +117,19 @@ export function TimeRuler({
               style={{
                 left: `${position}%`,
                 borderLeft: marker.isBar
-                  ? '2px solid var(--studio-border)'
+                  ? "2px solid var(--studio-border)"
                   : marker.isBeat
-                    ? '1px solid var(--studio-border-subtle)'
-                    : '1px solid var(--studio-bg-deep)',
+                    ? "1px solid var(--studio-border-subtle)"
+                    : "1px solid var(--studio-bg-deep)",
               }}
             >
               {marker.label && (
                 <div
-                  className={`pl-1 pt-1 text-xs ${marker.isBar ? 'font-semibold' : 'font-normal'}`}
+                  className={`pl-1 pt-1 text-xs ${marker.isBar ? "font-semibold" : "font-normal"}`}
                   style={{
-                    color: marker.isBar ? 'var(--studio-text)' : 'var(--studio-text-muted)',
+                    color: marker.isBar
+                      ? "var(--studio-text)"
+                      : "var(--studio-text-muted)",
                   }}
                 >
                   {marker.label}
@@ -163,7 +170,9 @@ export function TimeRuler({
       {/* Snap Indicator */}
       {snapEnabled && (
         <div className="absolute bottom-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-tl font-mono">
-          {snapResolution < 1 ? `1/${Math.round(1 / snapResolution)}` : `${snapResolution}s`}
+          {snapResolution < 1
+            ? `1/${Math.round(1 / snapResolution)}`
+            : `${snapResolution}s`}
         </div>
       )}
     </div>

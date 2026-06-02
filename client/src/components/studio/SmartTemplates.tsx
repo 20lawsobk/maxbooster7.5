@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -7,15 +7,20 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Search,
   Mic,
@@ -39,7 +44,7 @@ import {
   Heart,
   TrendingUp,
   Zap,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   StudioTemplate,
   TemplateCategory,
@@ -48,7 +53,7 @@ import {
   CATEGORY_INFO,
   filterTemplates,
   createCustomTemplate,
-} from '@/lib/studioTemplates';
+} from "@/lib/studioTemplates";
 
 interface SmartTemplatesProps {
   open: boolean;
@@ -76,7 +81,13 @@ function getCategoryIcon(iconName: string): React.ElementType {
   return CATEGORY_ICONS[iconName] || Layers;
 }
 
-function TrackPreview({ tracks, maxDisplay = 8 }: { tracks: TemplateTrack[]; maxDisplay?: number }) {
+function TrackPreview({
+  tracks,
+  maxDisplay = 8,
+}: {
+  tracks: TemplateTrack[];
+  maxDisplay?: number;
+}) {
   const displayTracks = tracks.slice(0, maxDisplay);
   const remaining = tracks.length - maxDisplay;
 
@@ -86,7 +97,7 @@ function TrackPreview({ tracks, maxDisplay = 8 }: { tracks: TemplateTrack[]; max
         <div
           key={track.id}
           className="flex items-center gap-2 px-2 py-1 rounded text-xs"
-          style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+          style={{ backgroundColor: "var(--studio-bg-deep)" }}
         >
           <div
             className="w-2 h-2 rounded-full flex-shrink-0"
@@ -94,13 +105,13 @@ function TrackPreview({ tracks, maxDisplay = 8 }: { tracks: TemplateTrack[]; max
           />
           <span
             className="truncate flex-1"
-            style={{ color: 'var(--studio-text-muted)' }}
+            style={{ color: "var(--studio-text-muted)" }}
           >
             {track.name}
           </span>
           <span
             className="text-[10px] uppercase"
-            style={{ color: 'var(--studio-text-subtle)' }}
+            style={{ color: "var(--studio-text-subtle)" }}
           >
             {track.trackType}
           </span>
@@ -109,7 +120,7 @@ function TrackPreview({ tracks, maxDisplay = 8 }: { tracks: TemplateTrack[]; max
       {remaining > 0 && (
         <div
           className="text-xs text-center py-1"
-          style={{ color: 'var(--studio-text-subtle)' }}
+          style={{ color: "var(--studio-text-subtle)" }}
         >
           + {remaining} more tracks
         </div>
@@ -132,24 +143,26 @@ function TemplateCard({
   showDetails?: boolean;
 }) {
   const Icon = getCategoryIcon(template.icon);
-  const audioTracks = template.tracks.filter((t) => t.trackType === 'audio').length;
-  const midiTracks = template.tracks.filter((t) => t.trackType === 'midi' || t.trackType === 'instrument').length;
-  const busTracks = template.tracks.filter((t) => t.trackType === 'bus').length;
+  const audioTracks = template.tracks.filter(
+    (t) => t.trackType === "audio",
+  ).length;
+  const midiTracks = template.tracks.filter(
+    (t) => t.trackType === "midi" || t.trackType === "instrument",
+  ).length;
+  const busTracks = template.tracks.filter((t) => t.trackType === "bus").length;
 
   return (
     <div
       className={`relative p-4 rounded-lg cursor-pointer transition-all duration-200 border ${
         isSelected
-          ? 'border-[var(--studio-accent)] shadow-lg'
-          : 'border-[var(--studio-border-subtle)] hover:border-[var(--studio-border)]'
+          ? "border-[var(--studio-accent)] shadow-lg"
+          : "border-[var(--studio-border-subtle)] hover:border-[var(--studio-border)]"
       }`}
       style={{
         backgroundColor: isSelected
-          ? 'var(--studio-surface-elevated)'
-          : 'var(--studio-surface)',
-        boxShadow: isSelected
-          ? '0 0 20px rgba(74, 158, 255, 0.15)'
-          : undefined,
+          ? "var(--studio-surface-elevated)"
+          : "var(--studio-surface)",
+        boxShadow: isSelected ? "0 0 20px rgba(74, 158, 255, 0.15)" : undefined,
       }}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
@@ -158,7 +171,8 @@ function TemplateCard({
         <div
           className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
           style={{
-            background: 'linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)',
+            background:
+              "linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)",
           }}
         >
           <Check className="w-3 h-3 text-white" />
@@ -179,13 +193,13 @@ function TemplateCard({
         <div className="flex-1 min-w-0">
           <h3
             className="font-semibold text-sm truncate"
-            style={{ color: 'var(--studio-text)' }}
+            style={{ color: "var(--studio-text)" }}
           >
             {template.name}
           </h3>
           <p
             className="text-xs mt-0.5 line-clamp-2"
-            style={{ color: 'var(--studio-text-muted)' }}
+            style={{ color: "var(--studio-text-muted)" }}
           >
             {template.description}
           </p>
@@ -195,37 +209,37 @@ function TemplateCard({
       <div className="flex items-center gap-3 mt-3">
         <div
           className="flex items-center gap-1 text-xs"
-          style={{ color: 'var(--studio-text-subtle)' }}
+          style={{ color: "var(--studio-text-subtle)" }}
         >
           <Layers className="w-3 h-3" />
           <span>{template.tracks.length} tracks</span>
         </div>
         <div
           className="flex items-center gap-1 text-xs"
-          style={{ color: 'var(--studio-text-subtle)' }}
+          style={{ color: "var(--studio-text-subtle)" }}
         >
           <Clock className="w-3 h-3" />
           <span>{template.tempo} BPM</span>
         </div>
-        <div
-          className="text-xs"
-          style={{ color: 'var(--studio-text-subtle)' }}
-        >
+        <div className="text-xs" style={{ color: "var(--studio-text-subtle)" }}>
           {template.timeSignature}
         </div>
       </div>
 
       {showDetails && (
-        <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--studio-border-subtle)' }}>
+        <div
+          className="mt-3 pt-3 border-t"
+          style={{ borderColor: "var(--studio-border-subtle)" }}
+        >
           <div className="flex items-center gap-2 flex-wrap">
             {audioTracks > 0 && (
               <Badge
                 variant="outline"
                 className="text-[10px] px-1.5 py-0"
                 style={{
-                  borderColor: '#4ade8040',
-                  color: '#4ade80',
-                  backgroundColor: '#4ade8010',
+                  borderColor: "#4ade8040",
+                  color: "#4ade80",
+                  backgroundColor: "#4ade8010",
                 }}
               >
                 {audioTracks} Audio
@@ -236,9 +250,9 @@ function TemplateCard({
                 variant="outline"
                 className="text-[10px] px-1.5 py-0"
                 style={{
-                  borderColor: '#a78bfa40',
-                  color: '#a78bfa',
-                  backgroundColor: '#a78bfa10',
+                  borderColor: "#a78bfa40",
+                  color: "#a78bfa",
+                  backgroundColor: "#a78bfa10",
                 }}
               >
                 {midiTracks} Instrument
@@ -249,9 +263,9 @@ function TemplateCard({
                 variant="outline"
                 className="text-[10px] px-1.5 py-0"
                 style={{
-                  borderColor: '#8b5cf640',
-                  color: '#8b5cf6',
-                  backgroundColor: '#8b5cf610',
+                  borderColor: "#8b5cf640",
+                  color: "#8b5cf6",
+                  backgroundColor: "#8b5cf610",
                 }}
               >
                 {busTracks} Bus
@@ -270,12 +284,12 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
   return (
     <div
       className="h-full flex flex-col rounded-lg overflow-hidden"
-      style={{ backgroundColor: 'var(--studio-bg-medium)' }}
+      style={{ backgroundColor: "var(--studio-bg-medium)" }}
     >
       <div
         className="p-4 border-b"
         style={{
-          borderColor: 'var(--studio-border)',
+          borderColor: "var(--studio-border)",
           background: `linear-gradient(135deg, ${template.color}10 0%, transparent 100%)`,
         }}
       >
@@ -292,7 +306,7 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
           <div>
             <h2
               className="font-bold text-lg"
-              style={{ color: 'var(--studio-text)' }}
+              style={{ color: "var(--studio-text)" }}
             >
               {template.name}
             </h2>
@@ -311,7 +325,7 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
         </div>
         <p
           className="text-sm mt-3"
-          style={{ color: 'var(--studio-text-muted)' }}
+          style={{ color: "var(--studio-text-muted)" }}
         >
           {template.description}
         </p>
@@ -322,7 +336,7 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
           <div>
             <h3
               className="text-xs font-semibold uppercase mb-2 flex items-center gap-2"
-              style={{ color: 'var(--studio-text-subtle)' }}
+              style={{ color: "var(--studio-text-subtle)" }}
             >
               <Layers className="w-3.5 h-3.5" />
               Track Layout
@@ -333,34 +347,35 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
           <div className="grid grid-cols-2 gap-3">
             <div
               className="p-3 rounded-lg"
-              style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+              style={{ backgroundColor: "var(--studio-bg-deep)" }}
             >
               <div
                 className="text-xs font-medium"
-                style={{ color: 'var(--studio-text-subtle)' }}
+                style={{ color: "var(--studio-text-subtle)" }}
               >
                 Tempo
               </div>
               <div
                 className="text-lg font-bold mt-1"
-                style={{ color: 'var(--studio-text)' }}
+                style={{ color: "var(--studio-text)" }}
               >
-                {template.tempo} <span className="text-xs font-normal">BPM</span>
+                {template.tempo}{" "}
+                <span className="text-xs font-normal">BPM</span>
               </div>
             </div>
             <div
               className="p-3 rounded-lg"
-              style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+              style={{ backgroundColor: "var(--studio-bg-deep)" }}
             >
               <div
                 className="text-xs font-medium"
-                style={{ color: 'var(--studio-text-subtle)' }}
+                style={{ color: "var(--studio-text-subtle)" }}
               >
                 Time Signature
               </div>
               <div
                 className="text-lg font-bold mt-1"
-                style={{ color: 'var(--studio-text)' }}
+                style={{ color: "var(--studio-text)" }}
               >
                 {template.timeSignature}
               </div>
@@ -371,7 +386,7 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
             <div>
               <h3
                 className="text-xs font-semibold uppercase mb-2 flex items-center gap-2"
-                style={{ color: 'var(--studio-text-subtle)' }}
+                style={{ color: "var(--studio-text-subtle)" }}
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Best For
@@ -381,9 +396,12 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
                   <li
                     key={index}
                     className="flex items-center gap-2 text-sm"
-                    style={{ color: 'var(--studio-text-muted)' }}
+                    style={{ color: "var(--studio-text-muted)" }}
                   >
-                    <ChevronRight className="w-3 h-3" style={{ color: template.color }} />
+                    <ChevronRight
+                      className="w-3 h-3"
+                      style={{ color: template.color }}
+                    />
                     {useCase}
                   </li>
                 ))}
@@ -395,7 +413,7 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
             <div>
               <h3
                 className="text-xs font-semibold uppercase mb-2"
-                style={{ color: 'var(--studio-text-subtle)' }}
+                style={{ color: "var(--studio-text-subtle)" }}
               >
                 Tags
               </h3>
@@ -406,8 +424,8 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
                     variant="secondary"
                     className="text-[10px]"
                     style={{
-                      backgroundColor: 'var(--studio-bg-light)',
-                      color: 'var(--studio-text-muted)',
+                      backgroundColor: "var(--studio-bg-light)",
+                      color: "var(--studio-text-muted)",
                     }}
                   >
                     {tag}
@@ -420,20 +438,26 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
           {template.isCommunity && template.author && (
             <div
               className="p-3 rounded-lg"
-              style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+              style={{ backgroundColor: "var(--studio-bg-deep)" }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" style={{ color: 'var(--studio-text-subtle)' }} />
+                  <Users
+                    className="w-4 h-4"
+                    style={{ color: "var(--studio-text-subtle)" }}
+                  />
                   <span
                     className="text-sm"
-                    style={{ color: 'var(--studio-text-muted)' }}
+                    style={{ color: "var(--studio-text-muted)" }}
                   >
                     by {template.author}
                   </span>
                 </div>
                 {template.downloads !== undefined && (
-                  <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--studio-text-subtle)' }}>
+                  <div
+                    className="flex items-center gap-1 text-xs"
+                    style={{ color: "var(--studio-text-subtle)" }}
+                  >
                     <Download className="w-3 h-3" />
                     {template.downloads.toLocaleString()}
                   </div>
@@ -446,8 +470,11 @@ function TemplateDetails({ template }: { template: StudioTemplate }) {
                       key={star}
                       className="w-3 h-3"
                       style={{
-                        color: star <= template.rating! ? '#fbbf24' : 'var(--studio-text-subtle)',
-                        fill: star <= template.rating! ? '#fbbf24' : 'none',
+                        color:
+                          star <= template.rating!
+                            ? "#fbbf24"
+                            : "var(--studio-text-subtle)",
+                        fill: star <= template.rating! ? "#fbbf24" : "none",
                       }}
                     />
                   ))}
@@ -470,14 +497,14 @@ function SaveTemplateDialog({
   onOpenChange: (open: boolean) => void;
   onSave: (name: string, description: string) => void;
 }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
 
   const handleSave = () => {
     if (name.trim()) {
       onSave(name.trim(), description.trim());
-      setName('');
-      setDescription('');
+      setName("");
+      setDescription("");
       onOpenChange(false);
     }
   };
@@ -487,22 +514,25 @@ function SaveTemplateDialog({
       <DialogContent
         className="max-w-md"
         style={{
-          backgroundColor: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          backgroundColor: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
       >
         <DialogHeader>
-          <DialogTitle style={{ color: 'var(--studio-text)' }}>
+          <DialogTitle style={{ color: "var(--studio-text)" }}>
             Save as Template
           </DialogTitle>
-          <DialogDescription style={{ color: 'var(--studio-text-muted)' }}>
+          <DialogDescription style={{ color: "var(--studio-text-muted)" }}>
             Save your current project configuration as a reusable template.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="template-name" style={{ color: 'var(--studio-text)' }}>
+            <Label
+              htmlFor="template-name"
+              style={{ color: "var(--studio-text)" }}
+            >
               Template Name
             </Label>
             <Input
@@ -511,15 +541,18 @@ function SaveTemplateDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               style={{
-                backgroundColor: 'var(--studio-bg-deep)',
-                borderColor: 'var(--studio-border)',
-                color: 'var(--studio-text)',
+                backgroundColor: "var(--studio-bg-deep)",
+                borderColor: "var(--studio-border)",
+                color: "var(--studio-text)",
               }}
               autoFocus
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="template-description" style={{ color: 'var(--studio-text)' }}>
+            <Label
+              htmlFor="template-description"
+              style={{ color: "var(--studio-text)" }}
+            >
               Description (optional)
             </Label>
             <Textarea
@@ -529,9 +562,9 @@ function SaveTemplateDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               style={{
-                backgroundColor: 'var(--studio-bg-deep)',
-                borderColor: 'var(--studio-border)',
-                color: 'var(--studio-text)',
+                backgroundColor: "var(--studio-bg-deep)",
+                borderColor: "var(--studio-border)",
+                color: "var(--studio-text)",
               }}
             />
           </div>
@@ -541,7 +574,7 @@ function SaveTemplateDialog({
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            style={{ color: 'var(--studio-text)' }}
+            style={{ color: "var(--studio-text)" }}
           >
             Cancel
           </Button>
@@ -570,9 +603,10 @@ export function SmartTemplates({
   communityTemplates = [],
 }: SmartTemplatesProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<StudioTemplate | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<StudioTemplate | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const allTemplates = useMemo(() => {
@@ -589,7 +623,7 @@ export function SmartTemplates({
   const filteredTemplates = useMemo(() => {
     let templates = allTemplates;
 
-    if (activeTab !== 'all' && activeTab !== 'recent') {
+    if (activeTab !== "all" && activeTab !== "recent") {
       templates = templates.filter((t) => t.category === activeTab);
     }
 
@@ -619,58 +653,70 @@ export function SmartTemplates({
         <DialogContent
           className="max-w-5xl max-h-[85vh] p-0 overflow-hidden"
           style={{
-            backgroundColor: 'var(--studio-bg-deep)',
-            borderColor: 'var(--studio-border)',
+            backgroundColor: "var(--studio-bg-deep)",
+            borderColor: "var(--studio-border)",
           }}
         >
           <div className="flex h-[75vh]">
-            <div className="flex-1 flex flex-col border-r" style={{ borderColor: 'var(--studio-border)' }}>
+            <div
+              className="flex-1 flex flex-col border-r"
+              style={{ borderColor: "var(--studio-border)" }}
+            >
               <div
                 className="p-4 border-b"
-                style={{ borderColor: 'var(--studio-border)' }}
+                style={{ borderColor: "var(--studio-border)" }}
               >
                 <DialogHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <DialogTitle
                         className="text-xl font-bold flex items-center gap-2"
-                        style={{ color: 'var(--studio-text)' }}
+                        style={{ color: "var(--studio-text)" }}
                       >
-                        <Zap className="w-5 h-5" style={{ color: 'var(--studio-accent)' }} />
+                        <Zap
+                          className="w-5 h-5"
+                          style={{ color: "var(--studio-accent)" }}
+                        />
                         Smart Templates
                       </DialogTitle>
-                      <DialogDescription style={{ color: 'var(--studio-text-muted)' }}>
+                      <DialogDescription
+                        style={{ color: "var(--studio-text-muted)" }}
+                      >
                         Start with a pre-configured project template
                       </DialogDescription>
                     </div>
-                    {onSaveCustomTemplate && currentTracks && currentTracks.length > 0 && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setShowSaveDialog(true)}
-                              style={{
-                                borderColor: 'var(--studio-border)',
-                                color: 'var(--studio-text)',
-                              }}
-                            >
-                              <Plus className="w-4 h-4 mr-2" />
-                              Save Current
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Save current project as template</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
+                    {onSaveCustomTemplate &&
+                      currentTracks &&
+                      currentTracks.length > 0 && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowSaveDialog(true)}
+                                style={{
+                                  borderColor: "var(--studio-border)",
+                                  color: "var(--studio-text)",
+                                }}
+                              >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Save Current
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Save current project as template
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                   </div>
                 </DialogHeader>
 
                 <div className="relative mt-4">
                   <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                    style={{ color: 'var(--studio-text-muted)' }}
+                    style={{ color: "var(--studio-text-muted)" }}
                   />
                   <Input
                     placeholder="Search templates..."
@@ -678,9 +724,9 @@ export function SmartTemplates({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
                     style={{
-                      backgroundColor: 'var(--studio-bg-medium)',
-                      borderColor: 'var(--studio-border)',
-                      color: 'var(--studio-text)',
+                      backgroundColor: "var(--studio-bg-medium)",
+                      borderColor: "var(--studio-border)",
+                      color: "var(--studio-text)",
                     }}
                   />
                 </div>
@@ -693,16 +739,16 @@ export function SmartTemplates({
               >
                 <div
                   className="px-4 py-2 border-b overflow-x-auto"
-                  style={{ borderColor: 'var(--studio-border)' }}
+                  style={{ borderColor: "var(--studio-border)" }}
                 >
                   <TabsList
                     className="inline-flex gap-1 h-auto p-1 rounded-lg"
-                    style={{ backgroundColor: 'var(--studio-bg-medium)' }}
+                    style={{ backgroundColor: "var(--studio-bg-medium)" }}
                   >
                     <TabsTrigger
                       value="all"
                       className="text-xs px-3 py-1.5 rounded data-[state=active]:bg-[var(--studio-surface-elevated)]"
-                      style={{ color: 'var(--studio-text-muted)' }}
+                      style={{ color: "var(--studio-text-muted)" }}
                     >
                       All
                     </TabsTrigger>
@@ -710,7 +756,7 @@ export function SmartTemplates({
                       <TabsTrigger
                         value="recent"
                         className="text-xs px-3 py-1.5 rounded data-[state=active]:bg-[var(--studio-surface-elevated)]"
-                        style={{ color: 'var(--studio-text-muted)' }}
+                        style={{ color: "var(--studio-text-muted)" }}
                       >
                         <Clock className="w-3 h-3 mr-1" />
                         Recent
@@ -718,22 +764,29 @@ export function SmartTemplates({
                     )}
                     {Object.entries(CATEGORY_INFO).map(([key, info]) => {
                       const CategoryIcon = getCategoryIcon(info.icon);
-                      const count = allTemplates.filter((t) => t.category === key).length;
-                      if (count === 0 && key !== 'custom' && key !== 'community') return null;
+                      const count = allTemplates.filter(
+                        (t) => t.category === key,
+                      ).length;
+                      if (
+                        count === 0 &&
+                        key !== "custom" &&
+                        key !== "community"
+                      )
+                        return null;
 
                       return (
                         <TabsTrigger
                           key={key}
                           value={key}
                           className="text-xs px-3 py-1.5 rounded data-[state=active]:bg-[var(--studio-surface-elevated)]"
-                          style={{ color: 'var(--studio-text-muted)' }}
+                          style={{ color: "var(--studio-text-muted)" }}
                         >
                           <CategoryIcon className="w-3 h-3 mr-1" />
                           {info.name}
                           {count > 0 && (
                             <span
                               className="ml-1 text-[10px]"
-                              style={{ color: 'var(--studio-text-subtle)' }}
+                              style={{ color: "var(--studio-text-subtle)" }}
                             >
                               ({count})
                             </span>
@@ -762,14 +815,14 @@ export function SmartTemplates({
                       <div className="text-center py-12">
                         <Layers
                           className="w-12 h-12 mx-auto mb-4"
-                          style={{ color: 'var(--studio-text-subtle)' }}
+                          style={{ color: "var(--studio-text-subtle)" }}
                         />
-                        <p style={{ color: 'var(--studio-text-muted)' }}>
+                        <p style={{ color: "var(--studio-text-muted)" }}>
                           No templates found
                         </p>
                         <p
                           className="text-sm mt-1"
-                          style={{ color: 'var(--studio-text-subtle)' }}
+                          style={{ color: "var(--studio-text-subtle)" }}
                         >
                           Try a different search term or category
                         </p>
@@ -795,14 +848,14 @@ export function SmartTemplates({
                       <div className="text-center py-12">
                         <Clock
                           className="w-12 h-12 mx-auto mb-4"
-                          style={{ color: 'var(--studio-text-subtle)' }}
+                          style={{ color: "var(--studio-text-subtle)" }}
                         />
-                        <p style={{ color: 'var(--studio-text-muted)' }}>
+                        <p style={{ color: "var(--studio-text-muted)" }}>
                           No recent templates
                         </p>
                         <p
                           className="text-sm mt-1"
-                          style={{ color: 'var(--studio-text-subtle)' }}
+                          style={{ color: "var(--studio-text-subtle)" }}
                         >
                           Templates you use will appear here
                         </p>
@@ -811,21 +864,30 @@ export function SmartTemplates({
                   </TabsContent>
 
                   {Object.keys(CATEGORY_INFO).map((category) => (
-                    <TabsContent key={category} value={category} className="mt-0 p-4">
-                      {category === 'community' && communityTemplates.length === 0 ? (
+                    <TabsContent
+                      key={category}
+                      value={category}
+                      className="mt-0 p-4"
+                    >
+                      {category === "community" &&
+                      communityTemplates.length === 0 ? (
                         <div className="text-center py-12">
                           <Users
                             className="w-12 h-12 mx-auto mb-4"
-                            style={{ color: 'var(--studio-text-subtle)' }}
+                            style={{ color: "var(--studio-text-subtle)" }}
                           />
-                          <p style={{ color: 'var(--studio-text-muted)' }} className="font-medium">
+                          <p
+                            style={{ color: "var(--studio-text-muted)" }}
+                            className="font-medium"
+                          >
                             No community templates yet
                           </p>
                           <p
                             className="text-sm mt-1"
-                            style={{ color: 'var(--studio-text-subtle)' }}
+                            style={{ color: "var(--studio-text-subtle)" }}
                           >
-                            Save one of your custom templates to share it with other producers
+                            Save one of your custom templates to share it with
+                            other producers
                           </p>
                           <Button
                             variant="outline"
@@ -833,60 +895,63 @@ export function SmartTemplates({
                             onClick={() => {
                               if (customTemplates.length === 0) {
                                 // Prompt the user to create a custom template first
-                                setActiveTab('custom');
+                                setActiveTab("custom");
                                 toast({
-                                  title: 'Create a custom template first',
+                                  title: "Create a custom template first",
                                   description:
-                                    'Save one of your sessions as a custom template, then share it to the community.',
+                                    "Save one of your sessions as a custom template, then share it to the community.",
                                 });
                               } else {
                                 // Switch to custom tab so user can pick one to share
-                                setActiveTab('custom');
+                                setActiveTab("custom");
                                 toast({
-                                  title: 'Pick a template to share',
+                                  title: "Pick a template to share",
                                   description:
-                                    'Open any custom template and use the Share option to publish it to the community.',
+                                    "Open any custom template and use the Share option to publish it to the community.",
                                 });
                               }
                             }}
                             style={{
-                              borderColor: 'var(--studio-border)',
-                              color: 'var(--studio-text-muted)',
+                              borderColor: "var(--studio-border)",
+                              color: "var(--studio-text-muted)",
                             }}
                           >
                             <TrendingUp className="w-4 h-4 mr-2" />
                             Share a Template
                           </Button>
                         </div>
-                      ) : category === 'custom' && customTemplates.length === 0 ? (
+                      ) : category === "custom" &&
+                        customTemplates.length === 0 ? (
                         <div className="text-center py-12">
                           <Star
                             className="w-12 h-12 mx-auto mb-4"
-                            style={{ color: 'var(--studio-text-subtle)' }}
+                            style={{ color: "var(--studio-text-subtle)" }}
                           />
-                          <p style={{ color: 'var(--studio-text-muted)' }}>
+                          <p style={{ color: "var(--studio-text-muted)" }}>
                             No custom templates yet
                           </p>
                           <p
                             className="text-sm mt-1"
-                            style={{ color: 'var(--studio-text-subtle)' }}
+                            style={{ color: "var(--studio-text-subtle)" }}
                           >
                             Save your project configurations as templates
                           </p>
-                          {onSaveCustomTemplate && currentTracks && currentTracks.length > 0 && (
-                            <Button
-                              variant="outline"
-                              className="mt-4"
-                              onClick={() => setShowSaveDialog(true)}
-                              style={{
-                                borderColor: 'var(--studio-border)',
-                                color: 'var(--studio-text)',
-                              }}
-                            >
-                              <Plus className="w-4 h-4 mr-2" />
-                              Save Current Project
-                            </Button>
-                          )}
+                          {onSaveCustomTemplate &&
+                            currentTracks &&
+                            currentTracks.length > 0 && (
+                              <Button
+                                variant="outline"
+                                className="mt-4"
+                                onClick={() => setShowSaveDialog(true)}
+                                style={{
+                                  borderColor: "var(--studio-border)",
+                                  color: "var(--studio-text)",
+                                }}
+                              >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Save Current Project
+                              </Button>
+                            )}
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3">
@@ -896,7 +961,9 @@ export function SmartTemplates({
                               <TemplateCard
                                 key={template.id}
                                 template={template}
-                                isSelected={selectedTemplate?.id === template.id}
+                                isSelected={
+                                  selectedTemplate?.id === template.id
+                                }
                                 onClick={() => setSelectedTemplate(template)}
                                 onDoubleClick={handleSelectTemplate}
                                 showDetails
@@ -916,7 +983,7 @@ export function SmartTemplates({
                   <TemplateDetails template={selectedTemplate} />
                   <div
                     className="p-4 border-t"
-                    style={{ borderColor: 'var(--studio-border)' }}
+                    style={{ borderColor: "var(--studio-border)" }}
                   >
                     <Button
                       className="w-full studio-btn-accent"
@@ -932,14 +999,14 @@ export function SmartTemplates({
                   <div className="text-center">
                     <Layers
                       className="w-16 h-16 mx-auto mb-4"
-                      style={{ color: 'var(--studio-text-subtle)' }}
+                      style={{ color: "var(--studio-text-subtle)" }}
                     />
-                    <p style={{ color: 'var(--studio-text-muted)' }}>
+                    <p style={{ color: "var(--studio-text-muted)" }}>
                       Select a template to preview
                     </p>
                     <p
                       className="text-sm mt-1"
-                      style={{ color: 'var(--studio-text-subtle)' }}
+                      style={{ color: "var(--studio-text-subtle)" }}
                     >
                       Double-click to use immediately
                     </p>

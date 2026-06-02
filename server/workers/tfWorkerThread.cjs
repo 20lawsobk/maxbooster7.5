@@ -1,47 +1,62 @@
-'use strict';
-const { workerData, parentPort } = require('worker_threads');
+"use strict";
+const { workerData, parentPort } = require("worker_threads");
 
-if (!parentPort) throw new Error('Must run as worker thread');
+if (!parentPort) throw new Error("Must run as worker thread");
 
 let tf = null;
 
 async function loadTF() {
   if (!tf) {
-    tf = require('@tensorflow/tfjs-node');
+    tf = require("@tensorflow/tfjs-node");
   }
   return tf;
 }
 
 const modelCache = new Map();
 
-parentPort.on('message', async (msg) => {
+parentPort.on("message", async (msg) => {
   const { id, type, modelId, inputData, inputShape, modelPath } = msg;
 
-  if (type === 'load') {
+  if (type === "load") {
     try {
       const tfLib = await loadTF();
       if (!modelPath) {
-        parentPort.postMessage({ id, type: 'load', modelId, error: 'modelPath is required for load' });
+        parentPort.postMessage({
+          id,
+          type: "load",
+          modelId,
+          error: "modelPath is required for load",
+        });
         return;
       }
-      const fullPath = modelPath.startsWith('file://') ? modelPath : `file://${modelPath}`;
+      const fullPath = modelPath.startsWith("file://")
+        ? modelPath
+        : `file://${modelPath}`;
       const model = await tfLib.loadLayersModel(fullPath);
       modelCache.set(modelId, model);
-      parentPort.postMessage({ id, type: 'load', modelId, loaded: true });
+      parentPort.postMessage({ id, type: "load", modelId, loaded: true });
     } catch (err) {
-      parentPort.postMessage({ id, type: 'load', modelId, error: err.message || String(err) });
+      parentPort.postMessage({
+        id,
+        type: "load",
+        modelId,
+        error: err.message || String(err),
+      });
     }
     return;
   }
 
-  if (type === 'predict') {
+  if (type === "predict") {
     try {
       const tfLib = await loadTF();
       const inputTensor = tfLib.tensor(inputData, inputShape);
 
       const model = modelCache.get(modelId);
       if (!model) {
-        parentPort.postMessage({ id, error: `Model not loaded in worker: ${modelId}` });
+        parentPort.postMessage({
+          id,
+          error: `Model not loaded in worker: ${modelId}`,
+        });
         inputTensor.dispose();
         return;
       }

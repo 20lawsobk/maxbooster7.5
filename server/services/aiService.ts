@@ -2,15 +2,24 @@
 // Revolutionary AI implementation that replaces OpenAI with proprietary algorithms
 // Implements deterministic AI processing for social content, advertising, and audio analysis
 
-import { randomBytes } from 'crypto';
-import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
-import { logger } from '../logger.js';
-import { cbIsOpen } from '../lib/pdimCircuitBreaker.js';
+import { randomBytes } from "crypto";
+import {
+  getRedisClient,
+  RedisClientType,
+} from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
+import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
 
 interface SocialContentOptions {
-  platform?: 'twitter' | 'instagram' | 'youtube' | 'tiktok' | 'facebook' | 'linkedin';
-  contentType: 'post' | 'story' | 'video' | 'ad';
-  tone: 'professional' | 'casual' | 'energetic' | 'creative' | 'promotional';
+  platform?:
+    | "twitter"
+    | "instagram"
+    | "youtube"
+    | "tiktok"
+    | "facebook"
+    | "linkedin";
+  contentType: "post" | "story" | "video" | "ad";
+  tone: "professional" | "casual" | "energetic" | "creative" | "promotional";
   customPrompt?: string;
   musicData?: {
     genre: string;
@@ -28,7 +37,7 @@ interface AIAdvertisingConfig {
     demographics: string;
   };
   budget: number;
-  campaignType: 'awareness' | 'conversion' | 'engagement' | 'viral';
+  campaignType: "awareness" | "conversion" | "engagement" | "viral";
 }
 
 interface AudioAnalysisResult {
@@ -82,9 +91,19 @@ interface MixSettings {
 interface MasterSettings {
   multiband: {
     low: { threshold: number; ratio: number; gain: number; frequency: number };
-    lowMid: { threshold: number; ratio: number; gain: number; frequency: number };
+    lowMid: {
+      threshold: number;
+      ratio: number;
+      gain: number;
+      frequency: number;
+    };
     mid: { threshold: number; ratio: number; gain: number; frequency: number };
-    highMid: { threshold: number; ratio: number; gain: number; frequency: number };
+    highMid: {
+      threshold: number;
+      ratio: number;
+      gain: number;
+      frequency: number;
+    };
     high: { threshold: number; ratio: number; gain: number; frequency: number };
   };
   limiter: {
@@ -94,7 +113,7 @@ interface MasterSettings {
   };
   maximizer: {
     amount: number;
-    character: 'transparent' | 'punchy' | 'warm' | 'aggressive';
+    character: "transparent" | "punchy" | "warm" | "aggressive";
   };
   stereoEnhancer: {
     width: number;
@@ -109,8 +128,8 @@ interface MasterSettings {
 
 export class AIService {
   private readonly REDIS_TTL = 3600;
-  private readonly GENRE_PROFILES_PREFIX = 'ai:genreProfiles:';
-  private readonly AUDIO_PATTERNS_PREFIX = 'ai:audioPatterns:';
+  private readonly GENRE_PROFILES_PREFIX = "ai:genreProfiles:";
+  private readonly AUDIO_PATTERNS_PREFIX = "ai:audioPatterns:";
 
   constructor() {
     this.initializeAudioData();
@@ -143,7 +162,7 @@ export class AIService {
     try {
       const redis = await this.getRedis();
       if (!redis) {
-        logger.warn('⚠️  AIService: Redis not available, caching disabled');
+        logger.warn("⚠️  AIService: Redis not available, caching disabled");
         return;
       }
 
@@ -166,26 +185,53 @@ export class AIService {
 
       await Promise.all([
         seedIfMissing(`${this.GENRE_PROFILES_PREFIX}electronic`, {
-          bpmRange: [120, 140], keyPreferences: ['Fm', 'Am', 'Dm', 'Cm'],
-          energyRange: [0.7, 0.95], danceabilityRange: [0.8, 0.98],
-          instrumentalness: 0.85, acousticness: 0.15, valence: [0.4, 0.8],
+          bpmRange: [120, 140],
+          keyPreferences: ["Fm", "Am", "Dm", "Cm"],
+          energyRange: [0.7, 0.95],
+          danceabilityRange: [0.8, 0.98],
+          instrumentalness: 0.85,
+          acousticness: 0.15,
+          valence: [0.4, 0.8],
         }),
         seedIfMissing(`${this.GENRE_PROFILES_PREFIX}hip-hop`, {
-          bpmRange: [70, 100], keyPreferences: ['Fm', 'Cm', 'Gm', 'Dm'],
-          energyRange: [0.6, 0.9], danceabilityRange: [0.7, 0.95],
-          instrumentalness: 0.3, acousticness: 0.2, valence: [0.3, 0.7],
+          bpmRange: [70, 100],
+          keyPreferences: ["Fm", "Cm", "Gm", "Dm"],
+          energyRange: [0.6, 0.9],
+          danceabilityRange: [0.7, 0.95],
+          instrumentalness: 0.3,
+          acousticness: 0.2,
+          valence: [0.3, 0.7],
         }),
         seedIfMissing(`${this.GENRE_PROFILES_PREFIX}pop`, {
-          bpmRange: [100, 130], keyPreferences: ['C', 'G', 'Am', 'F'],
-          energyRange: [0.6, 0.9], danceabilityRange: [0.6, 0.9],
-          instrumentalness: 0.1, acousticness: 0.25, valence: [0.5, 0.9],
+          bpmRange: [100, 130],
+          keyPreferences: ["C", "G", "Am", "F"],
+          energyRange: [0.6, 0.9],
+          danceabilityRange: [0.6, 0.9],
+          instrumentalness: 0.1,
+          acousticness: 0.25,
+          valence: [0.5, 0.9],
         }),
         seedIfMissing(`${this.AUDIO_PATTERNS_PREFIX}spectral_analysis`, {
-          low_freq: { range: [20, 250],   characteristics: ['bass', 'sub-bass', 'kick'] },
-          low_mid:  { range: [250, 500],  characteristics: ['bass_presence', 'warmth'] },
-          mid:      { range: [500, 2000], characteristics: ['vocals', 'snare', 'clarity'] },
-          high_mid: { range: [2000, 4000],characteristics: ['presence', 'definition'] },
-          high:     { range: [4000, 20000], characteristics: ['air', 'brightness', 'cymbals'] },
+          low_freq: {
+            range: [20, 250],
+            characteristics: ["bass", "sub-bass", "kick"],
+          },
+          low_mid: {
+            range: [250, 500],
+            characteristics: ["bass_presence", "warmth"],
+          },
+          mid: {
+            range: [500, 2000],
+            characteristics: ["vocals", "snare", "clarity"],
+          },
+          high_mid: {
+            range: [2000, 4000],
+            characteristics: ["presence", "definition"],
+          },
+          high: {
+            range: [4000, 20000],
+            characteristics: ["air", "brightness", "cymbals"],
+          },
         }),
       ]);
       // If any individual key failed to seed (PDIM still waking up during
@@ -196,11 +242,17 @@ export class AIService {
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes('HTTP 5') || msg.includes('PDIM')) {
+      if (msg.includes("HTTP 5") || msg.includes("PDIM")) {
         // PDIM cold-start error — retry silently instead of warning
         this._scheduleAudioDataRetry(60_000);
-      } else if (process.env.NODE_ENV !== 'development' || !!process.env.REPLIT_DEPLOYMENT) {
-        logger.warn({ err: error }, 'Failed to initialize AI service audio data in Redis:');
+      } else if (
+        process.env.NODE_ENV !== "development" ||
+        !!process.env.REPLIT_DEPLOYMENT
+      ) {
+        logger.warn(
+          { err: error },
+          "Failed to initialize AI service audio data in Redis:",
+        );
       }
     }
   }
@@ -211,7 +263,7 @@ export class AIService {
    */
   async generateSuperiorAdCampaign(
     config: AIAdvertisingConfig,
-    musicData: unknown
+    musicData: unknown,
   ): Promise<{
     performanceBoost: string;
     costReduction: string;
@@ -227,7 +279,10 @@ export class AIService {
     try {
       // Calculate metrics based on actual input data
       const audienceScore = this.calculateAudienceScore(config.targetAudience);
-      const campaignEfficiency = this.calculateCampaignEfficiency(config.campaignType, musicData);
+      const campaignEfficiency = this.calculateCampaignEfficiency(
+        config.campaignType,
+        musicData,
+      );
       const viralityScore = this.calculateViralityPotential(config, musicData);
 
       // Generate campaign content using input data
@@ -248,8 +303,8 @@ export class AIService {
         },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'AI advertising error:');
-      throw new Error('Failed to generate zero-cost ad campaign');
+      logger.warn({ err: error }, "AI advertising error:");
+      throw new Error("Failed to generate zero-cost ad campaign");
     }
   }
 
@@ -260,7 +315,7 @@ export class AIService {
   async mixTrack(
     trackId: string,
     userId: string,
-    audioData?: Buffer
+    audioData?: Buffer,
   ): Promise<{ success: boolean; mixSettings: MixSettings }> {
     try {
       const analysis = audioData
@@ -276,8 +331,8 @@ export class AIService {
 
       return { success: true, mixSettings };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'AI mix error:');
-      throw new Error('Failed to mix track with AI');
+      logger.warn({ err: error }, "AI mix error:");
+      throw new Error("Failed to mix track with AI");
     }
   }
 
@@ -288,7 +343,7 @@ export class AIService {
   async masterTrack(
     trackId: string,
     userId: string,
-    audioData?: Buffer
+    audioData?: Buffer,
   ): Promise<{ success: boolean; masterSettings: MasterSettings }> {
     try {
       const analysis = audioData
@@ -305,8 +360,8 @@ export class AIService {
 
       return { success: true, masterSettings };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'AI master error:');
-      throw new Error('Failed to master track with AI');
+      logger.warn({ err: error }, "AI master error:");
+      throw new Error("Failed to master track with AI");
     }
   }
 
@@ -318,8 +373,8 @@ export class AIService {
     try {
       return await this.analyzeAudio(audioData);
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'AI analysis error:');
-      throw new Error('Failed to analyze track');
+      logger.warn({ err: error }, "AI analysis error:");
+      throw new Error("Failed to analyze track");
     }
   }
 
@@ -330,7 +385,7 @@ export class AIService {
     const detectedGenre = this.detectGenreFromBuffer(audioData, bufferHash);
     const genreProfile =
       (await this.getGenreProfile(detectedGenre.toLowerCase())) ||
-      (await this.getGenreProfile('electronic'));
+      (await this.getGenreProfile("electronic"));
 
     return {
       bpm: this.detectBPMFromBuffer(audioData, bufferHash),
@@ -338,9 +393,13 @@ export class AIService {
       genre: detectedGenre,
       mood: this.analyzeMoodFromGenre(detectedGenre, bufferHash),
       energy: this.calculateEnergyFromProfile(genreProfile, bufferHash),
-      danceability: this.calculateDanceabilityFromProfile(genreProfile, bufferHash),
+      danceability: this.calculateDanceabilityFromProfile(
+        genreProfile,
+        bufferHash,
+      ),
       valence: this.calculateValenceFromProfile(genreProfile, bufferHash),
-      instrumentalness: genreProfile.instrumentalness + ((bufferHash % 20) - 10) / 100,
+      instrumentalness:
+        genreProfile.instrumentalness + ((bufferHash % 20) - 10) / 100,
       acousticness: genreProfile.acousticness + ((bufferHash % 15) - 7) / 100,
       stems: this.detectStemsFromBuffer(audioData, bufferHash),
     };
@@ -349,9 +408,9 @@ export class AIService {
   private async getDefaultAnalysis(): Promise<AudioAnalysisResult> {
     return {
       bpm: 120,
-      key: 'C Major',
-      genre: 'Electronic',
-      mood: 'Energetic',
+      key: "C Major",
+      genre: "Electronic",
+      mood: "Energetic",
       energy: 0.8,
       danceability: 0.7,
       valence: 0.6,
@@ -390,8 +449,21 @@ export class AIService {
   }
 
   private detectKeyFromBuffer(audioData: Buffer, hash: number): string {
-    const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const modes = ['Major', 'Minor'];
+    const keys = [
+      "C",
+      "C#",
+      "D",
+      "D#",
+      "E",
+      "F",
+      "F#",
+      "G",
+      "G#",
+      "A",
+      "A#",
+      "B",
+    ];
+    const modes = ["Major", "Minor"];
 
     // Use buffer characteristics to determine key
     const keyIndex = hash % keys.length;
@@ -405,22 +477,22 @@ export class AIService {
     const size = audioData.length;
     const complexity = hash % 1000;
 
-    if (size > 2000000 && complexity > 500) return 'Electronic';
-    if (size < 1000000 && complexity < 300) return 'Hip-Hop';
-    if (complexity > 700) return 'Rock';
-    if (complexity > 400) return 'Pop';
-    return 'Electronic'; // Default
+    if (size > 2000000 && complexity > 500) return "Electronic";
+    if (size < 1000000 && complexity < 300) return "Hip-Hop";
+    if (complexity > 700) return "Rock";
+    if (complexity > 400) return "Pop";
+    return "Electronic"; // Default
   }
 
   private analyzeMoodFromGenre(genre: string, hash: number): string {
     const moodMap: Record<string, string[]> = {
-      Electronic: ['Energetic', 'Dark', 'Uplifting', 'Mysterious'],
-      'Hip-Hop': ['Aggressive', 'Confident', 'Melancholic', 'Energetic'],
-      Pop: ['Uplifting', 'Romantic', 'Energetic', 'Happy'],
-      Rock: ['Aggressive', 'Energetic', 'Dark', 'Rebellious'],
+      Electronic: ["Energetic", "Dark", "Uplifting", "Mysterious"],
+      "Hip-Hop": ["Aggressive", "Confident", "Melancholic", "Energetic"],
+      Pop: ["Uplifting", "Romantic", "Energetic", "Happy"],
+      Rock: ["Aggressive", "Energetic", "Dark", "Rebellious"],
     };
 
-    const moods = moodMap[genre] || moodMap['Electronic'];
+    const moods = moodMap[genre] || moodMap["Electronic"];
     return moods[hash % moods.length];
   }
 
@@ -429,7 +501,10 @@ export class AIService {
     return min + ((hash % 100) / 100) * (max - min);
   }
 
-  private calculateDanceabilityFromProfile(profile: unknown, hash: number): number {
+  private calculateDanceabilityFromProfile(
+    profile: unknown,
+    hash: number,
+  ): number {
     const [min, max] = profile.danceabilityRange;
     return min + (((hash >> 8) % 100) / 100) * (max - min);
   }
@@ -439,7 +514,10 @@ export class AIService {
     return min + (((hash >> 16) % 100) / 100) * (max - min);
   }
 
-  private detectStemsFromBuffer(audioData: Buffer, hash: number): AudioAnalysisResult['stems'] {
+  private detectStemsFromBuffer(
+    audioData: Buffer,
+    hash: number,
+  ): AudioAnalysisResult["stems"] {
     // Deterministic stem detection based on buffer characteristics
     return {
       vocals: hash % 10 > 2, // 80% chance
@@ -451,16 +529,21 @@ export class AIService {
   }
 
   // Advanced advertising calculation methods
-  private calculateAudienceScore(audience: AIAdvertisingConfig['targetAudience']): number {
+  private calculateAudienceScore(
+    audience: AIAdvertisingConfig["targetAudience"],
+  ): number {
     // Calculate score based on audience specificity and interests
-    const ageSpecificity = audience.age.includes('-') ? 1.5 : 1.0;
+    const ageSpecificity = audience.age.includes("-") ? 1.5 : 1.0;
     const interestDiversity = Math.min(audience.interests.length / 5, 2.0);
     const locationSpecificity = audience.location.length > 10 ? 1.3 : 1.0;
 
     return ageSpecificity * interestDiversity * locationSpecificity;
   }
 
-  private calculateCampaignEfficiency(campaignType: string, musicData: unknown): number {
+  private calculateCampaignEfficiency(
+    campaignType: string,
+    musicData: unknown,
+  ): number {
     const typeMultipliers = {
       viral: 0.95,
       engagement: 0.8,
@@ -471,11 +554,14 @@ export class AIService {
     return typeMultipliers[campaignType as keyof typeof typeMultipliers] || 0.7;
   }
 
-  private calculateViralityPotential(config: AIAdvertisingConfig, musicData: unknown): number {
+  private calculateViralityPotential(
+    config: AIAdvertisingConfig,
+    musicData: unknown,
+  ): number {
     // Calculate based on genre, target audience, and campaign type
     const genreMultipliers: Record<string, number> = {
       electronic: 0.8,
-      'hip-hop': 0.9,
+      "hip-hop": 0.9,
       pop: 0.95,
       rock: 0.6,
     };
@@ -489,24 +575,25 @@ export class AIService {
 
     const genreScore = genreMultipliers[musicData.genre?.toLowerCase()] || 0.7;
     const campaignScore = campaignMultipliers[config.campaignType] || 0.6;
-    const audienceScore = config.targetAudience.interests.length > 3 ? 0.8 : 0.6;
+    const audienceScore =
+      config.targetAudience.interests.length > 3 ? 0.8 : 0.6;
 
     return Math.min(genreScore * campaignScore * audienceScore, 0.95);
   }
 
   private generateTargetedAdContent(
     config: AIAdvertisingConfig,
-    musicData: unknown
+    musicData: unknown,
   ): { primary: string; variations: string[] } {
     // Generate ads based on campaign type and target audience
     const ageSegment = config.targetAudience.age;
-    const primaryInterest = config.targetAudience.interests[0] || 'music';
+    const primaryInterest = config.targetAudience.interests[0] || "music";
 
-    let primary = '';
+    let primary = "";
     let variations: string[] = [];
 
     switch (config.campaignType) {
-      case 'viral':
+      case "viral":
         primary = `🔥 Everyone's talking about ${musicData.title} by ${musicData.artist} - Join the movement that's taking ${config.targetAudience.location} by storm!`;
         variations = [
           `💯 ${config.targetAudience.location} can't stop playing ${musicData.title} - See what the hype is about`,
@@ -514,7 +601,7 @@ export class AIService {
           `⚡ ${musicData.artist} drops ${musicData.title} and it's everything ${ageSegment} music lovers needed`,
         ];
         break;
-      case 'engagement':
+      case "engagement":
         primary = `🎧 ${primaryInterest} meets perfection in ${musicData.title} by ${musicData.artist} - What's your favorite moment?`;
         variations = [
           `💬 Tell us: How does ${musicData.title} make you feel? ${musicData.artist} wants to know!`,
@@ -522,7 +609,7 @@ export class AIService {
           `❤️ React if ${musicData.title} by ${musicData.artist} hits different for ${ageSegment} listeners`,
         ];
         break;
-      case 'awareness':
+      case "awareness":
         primary = `✨ Discover ${musicData.artist}, the ${musicData.genre} artist ${config.targetAudience.location} is talking about. Start with ${musicData.title}`;
         variations = [
           `🎵 New to ${musicData.artist}? ${musicData.title} is the perfect introduction to their sound`,
@@ -530,7 +617,7 @@ export class AIService {
           `🌟 ${musicData.artist} brings fresh ${musicData.genre} to ${ageSegment} audiences with ${musicData.title}`,
         ];
         break;
-      case 'conversion':
+      case "conversion":
         primary = `🎯 Stream ${musicData.title} by ${musicData.artist} now - Available on all platforms. Your ${primaryInterest} playlist needs this.`;
         variations = [
           `⬇️ Download ${musicData.title} today - ${musicData.artist} delivers exactly what ${ageSegment} listeners want`,
@@ -543,46 +630,55 @@ export class AIService {
     return { primary, variations };
   }
 
-  private calculatePrecisionTargeting(audience: AIAdvertisingConfig['targetAudience']): Record<string, unknown> {
+  private calculatePrecisionTargeting(
+    audience: AIAdvertisingConfig["targetAudience"],
+  ): Record<string, unknown> {
     return {
       demographic_precision: `${audience.age} ${audience.demographics}`,
       geographic_focus: audience.location,
-      interest_alignment: audience.interests.join(', '),
-      engagement_optimization: audience.interests.length > 2 ? 'high-precision' : 'broad-reach',
-      conversion_likelihood: audience.interests.includes('music') ? 0.85 : 0.65,
-      organic_amplification: audience.location.includes('City') ? 1.4 : 1.2,
+      interest_alignment: audience.interests.join(", "),
+      engagement_optimization:
+        audience.interests.length > 2 ? "high-precision" : "broad-reach",
+      conversion_likelihood: audience.interests.includes("music") ? 0.85 : 0.65,
+      organic_amplification: audience.location.includes("City") ? 1.4 : 1.2,
     };
   }
 
-  private optimizeDistributionPlan(config: AIAdvertisingConfig, musicData: unknown): Record<string, unknown> {
+  private optimizeDistributionPlan(
+    config: AIAdvertisingConfig,
+    musicData: unknown,
+  ): Record<string, unknown> {
     // Create distribution plan based on campaign type and audience
     const platforms =
-      config.campaignType === 'viral'
-        ? ['tiktok', 'instagram', 'twitter', 'youtube']
-        : ['instagram', 'facebook', 'youtube', 'twitter'];
+      config.campaignType === "viral"
+        ? ["tiktok", "instagram", "twitter", "youtube"]
+        : ["instagram", "facebook", "youtube", "twitter"];
 
     return {
       primary_platforms: platforms.slice(0, 2),
       secondary_platforms: platforms.slice(2),
-      timing_strategy: config.targetAudience.age.includes('18-')
-        ? 'evening_peak'
-        : 'afternoon_drive',
-      content_seeding: config.campaignType === 'viral' ? 'influencer_network' : 'organic_growth',
+      timing_strategy: config.targetAudience.age.includes("18-")
+        ? "evening_peak"
+        : "afternoon_drive",
+      content_seeding:
+        config.campaignType === "viral"
+          ? "influencer_network"
+          : "organic_growth",
       budget_allocation: {
-        content_creation: '0%', // Zero cost system
-        distribution: '0%',
-        amplification: '0%',
-        optimization: '100% automated',
+        content_creation: "0%", // Zero cost system
+        distribution: "0%",
+        amplification: "0%",
+        optimization: "100% automated",
       },
     };
   }
 
   // Audio processing calculation methods (using analysis data)
-  private calculateOptimalEQ(analysis: AudioAnalysisResult): MixSettings['eq'] {
+  private calculateOptimalEQ(analysis: AudioAnalysisResult): MixSettings["eq"] {
     // Calculate EQ based on genre and energy characteristics
     const genreEQ = {
       Electronic: { lowGain: -1, midGain: 1.5, highGain: 2 },
-      'Hip-Hop': { lowGain: 2, midGain: 0.5, highGain: -0.5 },
+      "Hip-Hop": { lowGain: 2, midGain: 0.5, highGain: -0.5 },
       Pop: { lowGain: 0, midGain: 1, highGain: 1 },
       Rock: { lowGain: 1, midGain: 2, highGain: 1.5 },
     }[analysis.genre] || { lowGain: 0, midGain: 1, highGain: 1 };
@@ -593,26 +689,34 @@ export class AIService {
       midGain: genreEQ.midGain + (analysis.valence > 0.6 ? 0.5 : 0),
       highMidGain: 0.8 + analysis.energy * 0.4,
       highGain: genreEQ.highGain + (analysis.acousticness < 0.3 ? 0.5 : -0.5),
-      lowCut: analysis.genre === 'Electronic' ? 30 : 50,
+      lowCut: analysis.genre === "Electronic" ? 30 : 50,
       highCut: 18000 + analysis.energy * 2000,
     };
   }
 
-  private calculateOptimalCompression(analysis: AudioAnalysisResult): MixSettings['compression'] {
+  private calculateOptimalCompression(
+    analysis: AudioAnalysisResult,
+  ): MixSettings["compression"] {
     // Genre-specific compression settings
     const baseRatio =
-      analysis.genre === 'Hip-Hop' ? 4.0 : analysis.genre === 'Electronic' ? 3.5 : 3.0;
+      analysis.genre === "Hip-Hop"
+        ? 4.0
+        : analysis.genre === "Electronic"
+          ? 3.5
+          : 3.0;
 
     return {
       threshold: -12 + analysis.energy * 4, // More aggressive for high energy
       ratio: baseRatio + analysis.danceability * 0.8,
-      attack: analysis.genre === 'Electronic' ? 1 : 3,
+      attack: analysis.genre === "Electronic" ? 1 : 3,
       release: 100 - analysis.danceability * 30,
       makeupGain: 2 + analysis.energy * 2,
     };
   }
 
-  private calculateOptimalEffects(analysis: AudioAnalysisResult): MixSettings['effects'] {
+  private calculateOptimalEffects(
+    analysis: AudioAnalysisResult,
+  ): MixSettings["effects"] {
     return {
       reverb: {
         wetness: analysis.acousticness * 0.4 + 0.1,
@@ -620,14 +724,17 @@ export class AIService {
         damping: 0.3 + analysis.energy * 0.2,
       },
       delay: {
-        time: analysis.bpm > 120 ? 60000 / analysis.bpm / 4 : 60000 / analysis.bpm / 2,
+        time:
+          analysis.bpm > 120
+            ? 60000 / analysis.bpm / 4
+            : 60000 / analysis.bpm / 2,
         feedback: 0.15 + analysis.danceability * 0.15,
-        wetness: analysis.genre === 'Electronic' ? 0.15 : 0.08,
+        wetness: analysis.genre === "Electronic" ? 0.15 : 0.08,
       },
       chorus: {
         rate: 0.3 + analysis.valence * 0.4,
         depth: 0.2 + analysis.energy * 0.2,
-        wetness: analysis.genre === 'Pop' ? 0.2 : 0.1,
+        wetness: analysis.genre === "Pop" ? 0.2 : 0.1,
       },
       saturation: {
         drive: analysis.energy * 0.4,
@@ -636,16 +743,19 @@ export class AIService {
     };
   }
 
-  private calculateStereoImaging(analysis: AudioAnalysisResult): MixSettings['stereoImaging'] {
+  private calculateStereoImaging(
+    analysis: AudioAnalysisResult,
+  ): MixSettings["stereoImaging"] {
     return {
-      width: analysis.genre === 'Electronic' ? 1.3 : 1.0 + analysis.energy * 0.2,
+      width:
+        analysis.genre === "Electronic" ? 1.3 : 1.0 + analysis.energy * 0.2,
       bassMonoFreq: analysis.danceability > 0.8 ? 100 : 150,
     };
   }
 
   private calculateMultibandCompression(
-    analysis: AudioAnalysisResult
-  ): MasterSettings['multiband'] {
+    analysis: AudioAnalysisResult,
+  ): MasterSettings["multiband"] {
     const baseSettings = {
       low: { threshold: -8, ratio: 2.5, gain: 1.5, frequency: 250 },
       lowMid: { threshold: -10, ratio: 3.0, gain: 0.8, frequency: 600 },
@@ -664,31 +774,39 @@ export class AIService {
     return baseSettings;
   }
 
-  private calculateLimiterSettings(analysis: AudioAnalysisResult): MasterSettings['limiter'] {
+  private calculateLimiterSettings(
+    analysis: AudioAnalysisResult,
+  ): MasterSettings["limiter"] {
     return {
       ceiling: -0.1 - analysis.energy * 0.2, // More headroom for energetic tracks
-      release: analysis.genre === 'Electronic' ? 30 + analysis.danceability * 20 : 50,
+      release:
+        analysis.genre === "Electronic" ? 30 + analysis.danceability * 20 : 50,
       lookahead: 3 + analysis.energy * 4,
     };
   }
 
-  private calculateMaximizerSettings(analysis: AudioAnalysisResult): MasterSettings['maximizer'] {
-    const characterMap: Record<string, MasterSettings['maximizer']['character']> = {
-      'Hip-Hop': 'punchy',
-      Electronic: 'aggressive',
-      Pop: 'warm',
-      Rock: 'aggressive',
+  private calculateMaximizerSettings(
+    analysis: AudioAnalysisResult,
+  ): MasterSettings["maximizer"] {
+    const characterMap: Record<
+      string,
+      MasterSettings["maximizer"]["character"]
+    > = {
+      "Hip-Hop": "punchy",
+      Electronic: "aggressive",
+      Pop: "warm",
+      Rock: "aggressive",
     };
 
     return {
       amount: 80 + analysis.energy * 15,
-      character: characterMap[analysis.genre] || 'warm',
+      character: characterMap[analysis.genre] || "warm",
     };
   }
 
   private calculateStereoEnhancement(
-    analysis: AudioAnalysisResult
-  ): MasterSettings['stereoEnhancer'] {
+    analysis: AudioAnalysisResult,
+  ): MasterSettings["stereoEnhancer"] {
     return {
       width: 1.0 + analysis.energy * 0.15,
       bassWidth: analysis.danceability > 0.7 ? 0.7 : 0.9, // Tighter bass for danceable tracks
@@ -696,10 +814,11 @@ export class AIService {
   }
 
   private calculateSpectralBalance(
-    analysis: AudioAnalysisResult
-  ): MasterSettings['spectralBalance'] {
+    analysis: AudioAnalysisResult,
+  ): MasterSettings["spectralBalance"] {
     return {
-      lowShelf: analysis.genre === 'Hip-Hop' ? 1.5 + analysis.energy * 0.5 : 1.0,
+      lowShelf:
+        analysis.genre === "Hip-Hop" ? 1.5 + analysis.energy * 0.5 : 1.0,
       highShelf: 1.2 + analysis.energy * 0.6,
       presence: 1.0 + analysis.valence * 0.5, // More presence for positive tracks
     };

@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useCallback, type ReactNode } from 'react';
-import { getFocusableElements } from '@/lib/accessibility';
-import { useFocusReturn } from '@/hooks/useFocusReturn';
+import React, { useRef, useEffect, useCallback, type ReactNode } from "react";
+import { getFocusableElements } from "@/lib/accessibility";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 
 export interface FocusTrapProps {
   children: ReactNode;
@@ -23,7 +23,7 @@ export function FocusTrap({
   finalFocus,
   onEscape,
   className,
-  as: Component = 'div',
+  as: Component = "div",
 }: FocusTrapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { saveFocus, restoreFocus: restore } = useFocusReturn();
@@ -36,7 +36,9 @@ export function FocusTrap({
     if (autoFocus) {
       const focusTarget = initialFocus?.current || containerRef.current;
       if (focusTarget) {
-        const focusableElements = getFocusableElements(focusTarget as HTMLElement);
+        const focusableElements = getFocusableElements(
+          focusTarget as HTMLElement,
+        );
         const firstFocusable = focusableElements[0] || focusTarget;
 
         requestAnimationFrame(() => {
@@ -56,19 +58,27 @@ export function FocusTrap({
         }
       }
     };
-  }, [active, autoFocus, restoreFocus, saveFocus, restore, initialFocus, finalFocus]);
+  }, [
+    active,
+    autoFocus,
+    restoreFocus,
+    saveFocus,
+    restore,
+    initialFocus,
+    finalFocus,
+  ]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (!active || !containerRef.current) return;
 
-      if (event.key === 'Escape' && onEscape) {
+      if (event.key === "Escape" && onEscape) {
         event.preventDefault();
         onEscape();
         return;
       }
 
-      if (event.key !== 'Tab') return;
+      if (event.key !== "Tab") return;
 
       const focusableElements = getFocusableElements(containerRef.current);
 
@@ -92,7 +102,7 @@ export function FocusTrap({
         }
       }
     },
-    [active, onEscape]
+    [active, onEscape],
   );
 
   const handleFocusOut = useCallback(
@@ -107,7 +117,7 @@ export function FocusTrap({
         }
       }
     },
-    [active]
+    [active],
   );
 
   return React.createElement(
@@ -117,9 +127,9 @@ export function FocusTrap({
       onKeyDown: handleKeyDown,
       onBlur: handleFocusOut,
       className,
-      'data-focus-trap': active,
+      "data-focus-trap": active,
     },
-    children
+    children,
   );
 }
 
@@ -140,7 +150,7 @@ export function useFocusTrapHook(enabled = true) {
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab') return;
+      if (event.key !== "Tab") return;
 
       const focusable = getFocusableElements(container);
       if (focusable.length === 0) {
@@ -164,10 +174,10 @@ export function useFocusTrapHook(enabled = true) {
       }
     };
 
-    container.addEventListener('keydown', handleKeyDown);
+    container.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      container.removeEventListener('keydown', handleKeyDown);
+      container.removeEventListener("keydown", handleKeyDown);
       restoreFocus();
     };
   }, [enabled, saveFocus, restoreFocus]);

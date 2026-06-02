@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export type NavigationOrientation = 'horizontal' | 'vertical' | 'grid' | 'both';
+export type NavigationOrientation = "horizontal" | "vertical" | "grid" | "both";
 
 export interface UseKeyboardNavigationOptions {
   orientation?: NavigationOrientation;
@@ -27,17 +27,17 @@ export interface UseKeyboardNavigationResult<T extends HTMLElement> {
   handleKeyDown: (event: React.KeyboardEvent) => void;
   getItemProps: (index: number) => {
     tabIndex: number;
-    'aria-selected'?: boolean;
+    "aria-selected"?: boolean;
     onFocus: () => void;
   };
 }
 
 export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
   itemCount: number,
-  options: UseKeyboardNavigationOptions = {}
+  options: UseKeyboardNavigationOptions = {},
 ): UseKeyboardNavigationResult<T> {
   const {
-    orientation = 'vertical',
+    orientation = "vertical",
     loop = true,
     columns = 1,
     preventScroll = true,
@@ -52,16 +52,16 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
 
   const containerRef = useRef<T>(null);
   const [focusedIndex, setFocusedIndexState] = useState(-1);
-  const typeAheadBufferRef = useRef('');
+  const typeAheadBufferRef = useRef("");
   const typeAheadTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const getNavigableItems = useCallback((): HTMLElement[] => {
     if (!containerRef.current) return [];
-    
+
     const selector = [
-      'button:not([disabled])',
-      'a[href]',
-      'input:not([disabled])',
+      "button:not([disabled])",
+      "a[href]",
+      "input:not([disabled])",
       '[tabindex]:not([tabindex="-1"])',
       '[role="menuitem"]',
       '[role="option"]',
@@ -69,29 +69,29 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
       '[role="treeitem"]',
       '[role="gridcell"]',
       '[data-navigable="true"]',
-    ].join(',');
+    ].join(",");
 
-    return Array.from(containerRef.current.querySelectorAll<HTMLElement>(selector)).filter(
-      (el) => {
-        const style = window.getComputedStyle(el);
-        return style.display !== 'none' && style.visibility !== 'hidden';
-      }
-    );
+    return Array.from(
+      containerRef.current.querySelectorAll<HTMLElement>(selector),
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== "none" && style.visibility !== "hidden";
+    });
   }, []);
 
   const setFocusedIndex = useCallback(
     (index: number) => {
       const items = getNavigableItems();
       const clampedIndex = Math.max(-1, Math.min(index, items.length - 1));
-      
+
       setFocusedIndexState(clampedIndex);
-      
+
       if (clampedIndex >= 0 && items[clampedIndex]) {
         items[clampedIndex].focus({ preventScroll });
         onFocusChange?.(clampedIndex, items[clampedIndex]);
       }
     },
-    [getNavigableItems, preventScroll, onFocusChange]
+    [getNavigableItems, preventScroll, onFocusChange],
   );
 
   const focusFirst = useCallback(() => {
@@ -108,11 +108,11 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     if (items.length === 0) return;
 
     let nextIndex = focusedIndex + 1;
-    
+
     if (nextIndex >= items.length) {
       nextIndex = loop ? 0 : items.length - 1;
     }
-    
+
     setFocusedIndex(nextIndex);
   }, [focusedIndex, loop, getNavigableItems, setFocusedIndex]);
 
@@ -121,11 +121,11 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     if (items.length === 0) return;
 
     let prevIndex = focusedIndex - 1;
-    
+
     if (prevIndex < 0) {
       prevIndex = loop ? items.length - 1 : 0;
     }
-    
+
     setFocusedIndex(prevIndex);
   }, [focusedIndex, loop, getNavigableItems, setFocusedIndex]);
 
@@ -134,7 +134,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     if (items.length === 0) return;
 
     const nextIndex = focusedIndex + columns;
-    
+
     if (nextIndex >= items.length) {
       if (loop) {
         setFocusedIndex(focusedIndex % columns);
@@ -149,7 +149,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     if (items.length === 0) return;
 
     const prevIndex = focusedIndex - columns;
-    
+
     if (prevIndex < 0) {
       if (loop) {
         const lastRowStart = Math.floor((items.length - 1) / columns) * columns;
@@ -172,7 +172,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
       typeAheadBufferRef.current += key.toLowerCase();
 
       typeAheadTimeoutRef.current = setTimeout(() => {
-        typeAheadBufferRef.current = '';
+        typeAheadBufferRef.current = "";
       }, typeAheadTimeout);
 
       const items = getNavigableItems();
@@ -180,8 +180,8 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
 
       for (let i = 0; i < items.length; i++) {
         const index = (searchStart + i) % items.length;
-        const text = items[index].textContent?.toLowerCase() || '';
-        
+        const text = items[index].textContent?.toLowerCase() || "";
+
         if (text.startsWith(typeAheadBufferRef.current)) {
           setFocusedIndex(index);
           return true;
@@ -190,7 +190,13 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
 
       return false;
     },
-    [typeAheadEnabled, typeAheadTimeout, focusedIndex, getNavigableItems, setFocusedIndex]
+    [
+      typeAheadEnabled,
+      typeAheadTimeout,
+      focusedIndex,
+      getNavigableItems,
+      setFocusedIndex,
+    ],
   );
 
   const handleKeyDown = useCallback(
@@ -201,56 +207,64 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
       let handled = false;
 
       switch (key) {
-        case 'ArrowDown':
-          if (orientation === 'vertical' || orientation === 'both') {
+        case "ArrowDown":
+          if (orientation === "vertical" || orientation === "both") {
             focusNext();
             handled = true;
-          } else if (orientation === 'grid') {
+          } else if (orientation === "grid") {
             focusNextRow();
             handled = true;
           }
           break;
 
-        case 'ArrowUp':
-          if (orientation === 'vertical' || orientation === 'both') {
+        case "ArrowUp":
+          if (orientation === "vertical" || orientation === "both") {
             focusPrevious();
             handled = true;
-          } else if (orientation === 'grid') {
+          } else if (orientation === "grid") {
             focusPreviousRow();
             handled = true;
           }
           break;
 
-        case 'ArrowRight':
-          if (orientation === 'horizontal' || orientation === 'both' || orientation === 'grid') {
+        case "ArrowRight":
+          if (
+            orientation === "horizontal" ||
+            orientation === "both" ||
+            orientation === "grid"
+          ) {
             focusNext();
             handled = true;
           }
           break;
 
-        case 'ArrowLeft':
-          if (orientation === 'horizontal' || orientation === 'both' || orientation === 'grid') {
+        case "ArrowLeft":
+          if (
+            orientation === "horizontal" ||
+            orientation === "both" ||
+            orientation === "grid"
+          ) {
             focusPrevious();
             handled = true;
           }
           break;
 
-        case 'Home':
+        case "Home":
           if (homeEndEnabled) {
             focusFirst();
             handled = true;
           }
           break;
 
-        case 'End':
+        case "End":
           if (homeEndEnabled) {
             focusLast();
             handled = true;
           }
           break;
 
-        case 'Enter':
-        case ' ':
+        case "Enter":
+        case " ":
           if (focusedIndex >= 0) {
             const items = getNavigableItems();
             onSelect?.(focusedIndex, items[focusedIndex] || null);
@@ -258,7 +272,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
           }
           break;
 
-        case 'Escape':
+        case "Escape":
           onEscape?.();
           handled = true;
           break;
@@ -290,16 +304,17 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
       onSelect,
       onEscape,
       handleTypeAhead,
-    ]
+    ],
   );
 
   const getItemProps = useCallback(
     (index: number) => ({
-      tabIndex: focusedIndex === index || (focusedIndex === -1 && index === 0) ? 0 : -1,
-      'aria-selected': focusedIndex === index ? true : undefined,
+      tabIndex:
+        focusedIndex === index || (focusedIndex === -1 && index === 0) ? 0 : -1,
+      "aria-selected": focusedIndex === index ? true : undefined,
       onFocus: () => setFocusedIndexState(index),
     }),
-    [focusedIndex]
+    [focusedIndex],
   );
 
   useEffect(() => {

@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -15,14 +15,14 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +32,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Bookmark,
   Plus,
@@ -47,9 +47,9 @@ import {
   Filter,
   Loader2,
   ChevronDown,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface FilterPreset {
   id: string;
@@ -65,7 +65,7 @@ interface FilterPresetsManagerProps {
   currentFilters: Record<string, any>;
   onApplyPreset: (filters: Record<string, any>) => void;
   onSavePreset?: (name: string, filters: Record<string, any>) => void;
-  context?: 'marketplace' | 'analytics' | 'social' | 'distribution' | 'global';
+  context?: "marketplace" | "analytics" | "social" | "distribution" | "global";
   className?: string;
   compact?: boolean;
 }
@@ -74,22 +74,22 @@ export function FilterPresetsManager({
   currentFilters,
   onApplyPreset,
   onSavePreset,
-  context = 'global',
+  context = "global",
   className,
   compact = false,
 }: FilterPresetsManagerProps) {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [editingPreset, setEditingPreset] = useState<FilterPreset | null>(null);
-  const [presetName, setPresetName] = useState('');
+  const [presetName, setPresetName] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: presetsData, isLoading } = useQuery({
-    queryKey: ['/api/search/filter-presets', context],
+    queryKey: ["/api/search/filter-presets", context],
     queryFn: async () => {
       const res = await fetch(`/api/search/filter-presets?context=${context}`, {
-        credentials: 'include',
+        credentials: "include",
       });
       if (!res.ok) return { presets: [] };
       return res.json();
@@ -97,32 +97,41 @@ export function FilterPresetsManager({
   });
 
   const savePresetMutation = useMutation({
-    mutationFn: async (data: { name: string; filters: Record<string, any>; id?: string }) => {
+    mutationFn: async (data: {
+      name: string;
+      filters: Record<string, any>;
+      id?: string;
+    }) => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/search/filter-presets', {
-        method: data.id ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+      const res = await fetch("/api/search/filter-presets", {
+        method: data.id ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ ...data, context }),
       });
-      if (!res.ok) throw new Error('Failed to save preset');
+      if (!res.ok) throw new Error("Failed to save preset");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/search/filter-presets'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/search/filter-presets"],
+      });
       setShowSaveDialog(false);
       setEditingPreset(null);
-      setPresetName('');
+      setPresetName("");
       toast({
-        title: 'Preset Saved',
-        description: 'Your filter preset has been saved successfully.',
+        title: "Preset Saved",
+        description: "Your filter preset has been saved successfully.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to save filter preset.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to save filter preset.",
+        variant: "destructive",
       });
     },
   });
@@ -131,26 +140,28 @@ export function FilterPresetsManager({
     mutationFn: async (presetId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/search/filter-presets/${presetId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+        method: "DELETE",
+        credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       });
-      if (!res.ok) throw new Error('Failed to delete preset');
+      if (!res.ok) throw new Error("Failed to delete preset");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/search/filter-presets'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/search/filter-presets"],
+      });
       setShowDeleteDialog(null);
       toast({
-        title: 'Preset Deleted',
-        description: 'Filter preset has been removed.',
+        title: "Preset Deleted",
+        description: "Filter preset has been removed.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to delete filter preset.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to delete filter preset.",
+        variant: "destructive",
       });
     },
   });
@@ -158,25 +169,32 @@ export function FilterPresetsManager({
   const setDefaultMutation = useMutation({
     mutationFn: async (presetId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch(`/api/search/filter-presets/${presetId}/default`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
-      });
-      if (!res.ok) throw new Error('Failed to set default');
+      const res = await fetch(
+        `/api/search/filter-presets/${presetId}/default`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+        },
+      );
+      if (!res.ok) throw new Error("Failed to set default");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/search/filter-presets'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/search/filter-presets"],
+      });
       toast({
-        title: 'Default Updated',
-        description: 'Default preset has been updated.',
+        title: "Default Updated",
+        description: "Default preset has been updated.",
       });
     },
   });
 
   const presets: FilterPreset[] = presetsData?.presets || [];
-  const hasActiveFilters = Object.keys(currentFilters).filter(k => currentFilters[k] !== undefined).length > 0;
+  const hasActiveFilters =
+    Object.keys(currentFilters).filter((k) => currentFilters[k] !== undefined)
+      .length > 0;
 
   const handleSave = () => {
     if (!presetName.trim()) return;
@@ -193,16 +211,19 @@ export function FilterPresetsManager({
     setShowSaveDialog(true);
   };
 
-  const formatFilterValue = (key: string, value: Record<string, unknown>): string => {
-    if (key.includes('price')) return `$${value}`;
-    if (key.includes('bpm')) return `${value} BPM`;
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  const formatFilterValue = (
+    key: string,
+    value: Record<string, unknown>,
+  ): string => {
+    if (key.includes("price")) return `$${value}`;
+    if (key.includes("bpm")) return `${value} BPM`;
+    if (typeof value === "boolean") return value ? "Yes" : "No";
     return String(value);
   };
 
   if (compact) {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
+      <div className={cn("flex items-center gap-2", className)}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="border-slate-600">
@@ -211,7 +232,10 @@ export function FilterPresetsManager({
               <ChevronDown className="h-4 w-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-slate-900 border-slate-700">
+          <DropdownMenuContent
+            align="end"
+            className="w-56 bg-slate-900 border-slate-700"
+          >
             {isLoading ? (
               <div className="p-2">
                 <Skeleton className="h-8 w-full bg-slate-700" />
@@ -228,11 +252,15 @@ export function FilterPresetsManager({
                   className="flex items-center justify-between cursor-pointer"
                 >
                   <span className="flex items-center gap-2">
-                    {preset.isDefault && <Star className="h-3 w-3 text-yellow-400" />}
+                    {preset.isDefault && (
+                      <Star className="h-3 w-3 text-yellow-400" />
+                    )}
                     {preset.name}
                   </span>
                   {preset.isBuiltIn && (
-                    <Badge variant="secondary" className="text-[10px]">Built-in</Badge>
+                    <Badge variant="secondary" className="text-[10px]">
+                      Built-in
+                    </Badge>
                   )}
                 </DropdownMenuItem>
               ))
@@ -267,7 +295,7 @@ export function FilterPresetsManager({
   }
 
   return (
-    <Card className={cn('bg-slate-800/50 border-slate-700', className)}>
+    <Card className={cn("bg-slate-800/50 border-slate-700", className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -331,24 +359,31 @@ export function FilterPresetsManager({
         currentFilters={currentFilters}
       />
 
-      <AlertDialog open={!!showDeleteDialog} onOpenChange={() => setShowDeleteDialog(null)}>
+      <AlertDialog
+        open={!!showDeleteDialog}
+        onOpenChange={() => setShowDeleteDialog(null)}
+      >
         <AlertDialogContent className="bg-slate-900 border-slate-700">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Preset</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this filter preset? This action cannot be undone.
+              Are you sure you want to delete this filter preset? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => showDeleteDialog && deletePresetMutation.mutate(showDeleteDialog)}
+              onClick={() =>
+                showDeleteDialog &&
+                deletePresetMutation.mutate(showDeleteDialog)
+              }
               className="bg-red-600 hover:bg-red-700"
             >
               {deletePresetMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                'Delete'
+                "Delete"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -371,14 +406,13 @@ function PresetItem({
   onDelete: () => void;
   onSetDefault: () => void;
 }) {
-  const filterCount = Object.keys(preset.filters).filter(k => preset.filters[k] !== undefined).length;
+  const filterCount = Object.keys(preset.filters).filter(
+    (k) => preset.filters[k] !== undefined,
+  ).length;
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/30 hover:bg-slate-700/50 transition-colors group">
-      <button
-        onClick={onApply}
-        className="flex-1 text-left"
-      >
+      <button onClick={onApply} className="flex-1 text-left">
         <div className="flex items-center gap-2">
           {preset.isDefault && <Star className="h-4 w-4 text-yellow-400" />}
           <span className="font-medium text-white">{preset.name}</span>
@@ -389,8 +423,11 @@ function PresetItem({
           )}
         </div>
         <div className="flex items-center gap-1 mt-1">
-          <Badge variant="outline" className="text-[10px] border-slate-600 text-slate-400">
-            {filterCount} filter{filterCount !== 1 ? 's' : ''}
+          <Badge
+            variant="outline"
+            className="text-[10px] border-slate-600 text-slate-400"
+          >
+            {filterCount} filter{filterCount !== 1 ? "s" : ""}
           </Badge>
           {Object.entries(preset.filters)
             .filter(([_, v]) => v !== undefined)
@@ -406,7 +443,7 @@ function PresetItem({
             ))}
         </div>
       </button>
-      
+
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button
           variant="ghost"
@@ -423,7 +460,10 @@ function PresetItem({
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700">
+            <DropdownMenuContent
+              align="end"
+              className="bg-slate-900 border-slate-700"
+            >
               <DropdownMenuItem onClick={onEdit}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
@@ -473,18 +513,21 @@ function SavePresetDialog({
   isEditing: boolean;
   currentFilters: Record<string, any>;
 }) {
-  const activeFilters = Object.entries(currentFilters)
-    .filter(([_, v]) => v !== undefined && v !== '' && v !== false);
+  const activeFilters = Object.entries(currentFilters).filter(
+    ([_, v]) => v !== undefined && v !== "" && v !== false,
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-slate-900 border-slate-700">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Preset' : 'Save Filter Preset'}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit Preset" : "Save Filter Preset"}
+          </DialogTitle>
           <DialogDescription>
-            {isEditing 
-              ? 'Update the name of your filter preset.'
-              : 'Save your current filters as a reusable preset.'}
+            {isEditing
+              ? "Update the name of your filter preset."
+              : "Save your current filters as a reusable preset."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -528,7 +571,7 @@ function SavePresetDialog({
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                {isEditing ? 'Update' : 'Save'}
+                {isEditing ? "Update" : "Save"}
               </>
             )}
           </Button>

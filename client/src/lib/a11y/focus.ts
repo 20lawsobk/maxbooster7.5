@@ -1,4 +1,4 @@
-import { getFocusableElements } from '@/lib/accessibility';
+import { getFocusableElements } from "@/lib/accessibility";
 
 export interface FocusRestoreState {
   element: HTMLElement | null;
@@ -63,7 +63,7 @@ export function focusFirstElement(container: HTMLElement): boolean {
     focusable[0].focus();
     return true;
   }
-  container.setAttribute('tabindex', '-1');
+  container.setAttribute("tabindex", "-1");
   container.focus();
   return false;
 }
@@ -88,7 +88,7 @@ export function focusByIndex(container: HTMLElement, index: number): boolean {
 
 export function getNextFocusable(
   container: HTMLElement,
-  currentElement: HTMLElement
+  currentElement: HTMLElement,
 ): HTMLElement | null {
   const focusable = getFocusableElements(container);
   const currentIndex = focusable.indexOf(currentElement);
@@ -100,7 +100,7 @@ export function getNextFocusable(
 
 export function getPreviousFocusable(
   container: HTMLElement,
-  currentElement: HTMLElement
+  currentElement: HTMLElement,
 ): HTMLElement | null {
   const focusable = getFocusableElements(container);
   const currentIndex = focusable.indexOf(currentElement);
@@ -114,16 +114,18 @@ export interface FocusIndicatorOptions {
   offset?: number;
   color?: string;
   width?: number;
-  style?: 'solid' | 'dashed' | 'dotted';
+  style?: "solid" | "dashed" | "dotted";
   borderRadius?: number;
 }
 
-export function createFocusIndicatorStyles(options: FocusIndicatorOptions = {}): string {
+export function createFocusIndicatorStyles(
+  options: FocusIndicatorOptions = {},
+): string {
   const {
     offset = 2,
-    color = 'currentColor',
+    color = "currentColor",
     width = 2,
-    style = 'solid',
+    style = "solid",
     borderRadius = 4,
   } = options;
 
@@ -136,7 +138,7 @@ export function createFocusIndicatorStyles(options: FocusIndicatorOptions = {}):
 
 export function applyFocusIndicator(
   element: HTMLElement,
-  options: FocusIndicatorOptions = {}
+  options: FocusIndicatorOptions = {},
 ): () => void {
   const originalOutline = element.style.outline;
   const originalOutlineOffset = element.style.outlineOffset;
@@ -144,9 +146,9 @@ export function applyFocusIndicator(
 
   const {
     offset = 2,
-    color = 'hsl(var(--primary))',
+    color = "hsl(var(--primary))",
     width = 2,
-    style = 'solid',
+    style = "solid",
     borderRadius = 4,
   } = options;
 
@@ -162,12 +164,12 @@ export function applyFocusIndicator(
     element.style.borderRadius = originalBorderRadius;
   };
 
-  element.addEventListener('focus', handleFocus);
-  element.addEventListener('blur', handleBlur);
+  element.addEventListener("focus", handleFocus);
+  element.addEventListener("blur", handleBlur);
 
   return () => {
-    element.removeEventListener('focus', handleFocus);
-    element.removeEventListener('blur', handleBlur);
+    element.removeEventListener("focus", handleFocus);
+    element.removeEventListener("blur", handleBlur);
     element.style.outline = originalOutline;
     element.style.outlineOffset = originalOutlineOffset;
     element.style.borderRadius = originalBorderRadius;
@@ -176,49 +178,56 @@ export function applyFocusIndicator(
 
 export function setTabOrder(elements: HTMLElement[], startIndex = 1): void {
   elements.forEach((element, index) => {
-    element.setAttribute('tabindex', String(startIndex + index));
+    element.setAttribute("tabindex", String(startIndex + index));
   });
 }
 
 export function removeFromTabOrder(element: HTMLElement): void {
-  element.setAttribute('tabindex', '-1');
+  element.setAttribute("tabindex", "-1");
 }
 
 export function addToTabOrder(element: HTMLElement, index = 0): void {
-  element.setAttribute('tabindex', String(index));
+  element.setAttribute("tabindex", String(index));
 }
 
 export function isElementFocusable(element: HTMLElement): boolean {
-  if (element.hasAttribute('disabled')) return false;
-  if (element.getAttribute('tabindex') === '-1') return false;
+  if (element.hasAttribute("disabled")) return false;
+  if (element.getAttribute("tabindex") === "-1") return false;
 
   const style = window.getComputedStyle(element);
-  if (style.display === 'none' || style.visibility === 'hidden') return false;
+  if (style.display === "none" || style.visibility === "hidden") return false;
 
   const tagName = element.tagName.toLowerCase();
-  const focusableTags = ['a', 'button', 'input', 'textarea', 'select', 'details'];
-  
+  const focusableTags = [
+    "a",
+    "button",
+    "input",
+    "textarea",
+    "select",
+    "details",
+  ];
+
   if (focusableTags.includes(tagName)) {
-    if (tagName === 'a' && !element.hasAttribute('href')) return false;
+    if (tagName === "a" && !element.hasAttribute("href")) return false;
     return true;
   }
 
-  return element.hasAttribute('tabindex');
+  return element.hasAttribute("tabindex");
 }
 
 export function moveFocusWithinContainer(
   container: HTMLElement,
-  direction: 'next' | 'previous'
+  direction: "next" | "previous",
 ): void {
   const activeElement = document.activeElement as HTMLElement;
-  
+
   if (!container.contains(activeElement)) {
     focusFirstElement(container);
     return;
   }
 
   const nextElement =
-    direction === 'next'
+    direction === "next"
       ? getNextFocusable(container, activeElement)
       : getPreviousFocusable(container, activeElement);
 
@@ -229,21 +238,22 @@ export function createFocusScope(container: HTMLElement): {
   lock: () => void;
   unlock: () => void;
 } {
-  const externalElements: { element: HTMLElement; tabindex: string | null }[] = [];
+  const externalElements: { element: HTMLElement; tabindex: string | null }[] =
+    [];
 
   const lock = () => {
     const allFocusable = document.querySelectorAll<HTMLElement>(
-      'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
+      'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])',
     );
 
     allFocusable.forEach((element) => {
       if (!container.contains(element)) {
         externalElements.push({
           element,
-          tabindex: element.getAttribute('tabindex'),
+          tabindex: element.getAttribute("tabindex"),
         });
-        element.setAttribute('tabindex', '-1');
-        element.setAttribute('data-focus-scope-disabled', 'true');
+        element.setAttribute("tabindex", "-1");
+        element.setAttribute("data-focus-scope-disabled", "true");
       }
     });
   };
@@ -251,11 +261,11 @@ export function createFocusScope(container: HTMLElement): {
   const unlock = () => {
     externalElements.forEach(({ element, tabindex }) => {
       if (tabindex === null) {
-        element.removeAttribute('tabindex');
+        element.removeAttribute("tabindex");
       } else {
-        element.setAttribute('tabindex', tabindex);
+        element.setAttribute("tabindex", tabindex);
       }
-      element.removeAttribute('data-focus-scope-disabled');
+      element.removeAttribute("data-focus-scope-disabled");
     });
     externalElements.length = 0;
   };

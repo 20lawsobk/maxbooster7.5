@@ -1,19 +1,31 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatDistanceToNow, format } from 'date-fns';
-import { 
-  Activity, 
-  UserPlus, 
-  UserMinus, 
-  Shield, 
-  Settings, 
-  FileText, 
-  Share2, 
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { formatDistanceToNow, format } from "date-fns";
+import {
+  Activity,
+  UserPlus,
+  UserMinus,
+  Shield,
+  Settings,
+  FileText,
+  Share2,
   Download,
   AlertTriangle,
   CheckCircle,
@@ -22,31 +34,31 @@ import {
   Eye,
   Clock,
   Filter,
-  RefreshCw
-} from 'lucide-react';
+  RefreshCw,
+} from "lucide-react";
 
 export type ActivityType =
-  | 'workspace.created'
-  | 'workspace.updated'
-  | 'workspace.deleted'
-  | 'member.invited'
-  | 'member.joined'
-  | 'member.removed'
-  | 'member.role_changed'
-  | 'role.created'
-  | 'role.updated'
-  | 'role.deleted'
-  | 'project.shared'
-  | 'project.unshared'
-  | 'share_link.created'
-  | 'share_link.revoked'
-  | 'invitation.sent'
-  | 'invitation.accepted'
-  | 'invitation.cancelled'
-  | 'audit.exported'
-  | 'security.alert'
-  | 'comment.added'
-  | 'comment.resolved';
+  | "workspace.created"
+  | "workspace.updated"
+  | "workspace.deleted"
+  | "member.invited"
+  | "member.joined"
+  | "member.removed"
+  | "member.role_changed"
+  | "role.created"
+  | "role.updated"
+  | "role.deleted"
+  | "project.shared"
+  | "project.unshared"
+  | "share_link.created"
+  | "share_link.revoked"
+  | "invitation.sent"
+  | "invitation.accepted"
+  | "invitation.cancelled"
+  | "audit.exported"
+  | "security.alert"
+  | "comment.added"
+  | "comment.resolved";
 
 export interface ActivityItem {
   id: string;
@@ -71,75 +83,162 @@ interface ActivityFeedProps {
   canExport?: boolean;
 }
 
-const activityConfig: Record<ActivityType, { icon: React.ElementType; color: string; label: string }> = {
-  'workspace.created': { icon: CheckCircle, color: 'text-green-500', label: 'Workspace Created' },
-  'workspace.updated': { icon: Settings, color: 'text-blue-500', label: 'Workspace Updated' },
-  'workspace.deleted': { icon: XCircle, color: 'text-red-500', label: 'Workspace Deleted' },
-  'member.invited': { icon: UserPlus, color: 'text-blue-500', label: 'Member Invited' },
-  'member.joined': { icon: UserPlus, color: 'text-green-500', label: 'Member Joined' },
-  'member.removed': { icon: UserMinus, color: 'text-red-500', label: 'Member Removed' },
-  'member.role_changed': { icon: Shield, color: 'text-purple-500', label: 'Role Changed' },
-  'role.created': { icon: Shield, color: 'text-green-500', label: 'Role Created' },
-  'role.updated': { icon: Shield, color: 'text-blue-500', label: 'Role Updated' },
-  'role.deleted': { icon: Shield, color: 'text-red-500', label: 'Role Deleted' },
-  'project.shared': { icon: Share2, color: 'text-blue-500', label: 'Project Shared' },
-  'project.unshared': { icon: Share2, color: 'text-orange-500', label: 'Share Revoked' },
-  'share_link.created': { icon: Share2, color: 'text-green-500', label: 'Share Link Created' },
-  'share_link.revoked': { icon: XCircle, color: 'text-red-500', label: 'Share Link Revoked' },
-  'invitation.sent': { icon: UserPlus, color: 'text-blue-500', label: 'Invitation Sent' },
-  'invitation.accepted': { icon: CheckCircle, color: 'text-green-500', label: 'Invitation Accepted' },
-  'invitation.cancelled': { icon: XCircle, color: 'text-orange-500', label: 'Invitation Cancelled' },
-  'audit.exported': { icon: Download, color: 'text-blue-500', label: 'Audit Exported' },
-  'security.alert': { icon: AlertTriangle, color: 'text-red-500', label: 'Security Alert' },
-  'comment.added': { icon: FileText, color: 'text-blue-500', label: 'Comment Added' },
-  'comment.resolved': { icon: CheckCircle, color: 'text-green-500', label: 'Comment Resolved' },
+const activityConfig: Record<
+  ActivityType,
+  { icon: React.ElementType; color: string; label: string }
+> = {
+  "workspace.created": {
+    icon: CheckCircle,
+    color: "text-green-500",
+    label: "Workspace Created",
+  },
+  "workspace.updated": {
+    icon: Settings,
+    color: "text-blue-500",
+    label: "Workspace Updated",
+  },
+  "workspace.deleted": {
+    icon: XCircle,
+    color: "text-red-500",
+    label: "Workspace Deleted",
+  },
+  "member.invited": {
+    icon: UserPlus,
+    color: "text-blue-500",
+    label: "Member Invited",
+  },
+  "member.joined": {
+    icon: UserPlus,
+    color: "text-green-500",
+    label: "Member Joined",
+  },
+  "member.removed": {
+    icon: UserMinus,
+    color: "text-red-500",
+    label: "Member Removed",
+  },
+  "member.role_changed": {
+    icon: Shield,
+    color: "text-purple-500",
+    label: "Role Changed",
+  },
+  "role.created": {
+    icon: Shield,
+    color: "text-green-500",
+    label: "Role Created",
+  },
+  "role.updated": {
+    icon: Shield,
+    color: "text-blue-500",
+    label: "Role Updated",
+  },
+  "role.deleted": {
+    icon: Shield,
+    color: "text-red-500",
+    label: "Role Deleted",
+  },
+  "project.shared": {
+    icon: Share2,
+    color: "text-blue-500",
+    label: "Project Shared",
+  },
+  "project.unshared": {
+    icon: Share2,
+    color: "text-orange-500",
+    label: "Share Revoked",
+  },
+  "share_link.created": {
+    icon: Share2,
+    color: "text-green-500",
+    label: "Share Link Created",
+  },
+  "share_link.revoked": {
+    icon: XCircle,
+    color: "text-red-500",
+    label: "Share Link Revoked",
+  },
+  "invitation.sent": {
+    icon: UserPlus,
+    color: "text-blue-500",
+    label: "Invitation Sent",
+  },
+  "invitation.accepted": {
+    icon: CheckCircle,
+    color: "text-green-500",
+    label: "Invitation Accepted",
+  },
+  "invitation.cancelled": {
+    icon: XCircle,
+    color: "text-orange-500",
+    label: "Invitation Cancelled",
+  },
+  "audit.exported": {
+    icon: Download,
+    color: "text-blue-500",
+    label: "Audit Exported",
+  },
+  "security.alert": {
+    icon: AlertTriangle,
+    color: "text-red-500",
+    label: "Security Alert",
+  },
+  "comment.added": {
+    icon: FileText,
+    color: "text-blue-500",
+    label: "Comment Added",
+  },
+  "comment.resolved": {
+    icon: CheckCircle,
+    color: "text-green-500",
+    label: "Comment Resolved",
+  },
 };
 
 function getActivityDescription(activity: ActivityItem): string {
   const { type, userName, previousValues, newValues, metadata } = activity;
 
   switch (type) {
-    case 'workspace.created':
+    case "workspace.created":
       return `${userName} created the workspace`;
-    case 'workspace.updated':
+    case "workspace.updated":
       return `${userName} updated workspace settings`;
-    case 'workspace.deleted':
+    case "workspace.deleted":
       return `${userName} deleted the workspace`;
-    case 'member.invited':
-      return `${userName} invited ${newValues?.email || 'a member'}`;
-    case 'member.joined':
+    case "member.invited":
+      return `${userName} invited ${newValues?.email || "a member"}`;
+    case "member.joined":
       return `${userName} joined the workspace`;
-    case 'member.removed':
-      return `${userName} removed ${previousValues?.userName || 'a member'}`;
-    case 'member.role_changed':
-      return `${userName} changed ${metadata?.memberName || 'member'}'s role from ${previousValues?.role} to ${newValues?.role}`;
-    case 'role.created':
+    case "member.removed":
+      return `${userName} removed ${previousValues?.userName || "a member"}`;
+    case "member.role_changed":
+      return `${userName} changed ${metadata?.memberName || "member"}'s role from ${previousValues?.role} to ${newValues?.role}`;
+    case "role.created":
       return `${userName} created the "${newValues?.name}" role`;
-    case 'role.updated':
+    case "role.updated":
       return `${userName} updated the "${newValues?.name || previousValues?.name}" role`;
-    case 'role.deleted':
+    case "role.deleted":
       return `${userName} deleted the "${previousValues?.name}" role`;
-    case 'project.shared':
+    case "project.shared":
       return `${userName} shared a project`;
-    case 'project.unshared':
+    case "project.unshared":
       return `${userName} revoked project access`;
-    case 'share_link.created':
+    case "share_link.created":
       return `${userName} created a share link`;
-    case 'share_link.revoked':
+    case "share_link.revoked":
       return `${userName} revoked a share link`;
-    case 'invitation.sent':
+    case "invitation.sent":
       return `${userName} sent an invitation to ${newValues?.email}`;
-    case 'invitation.accepted':
+    case "invitation.accepted":
       return `${userName} accepted the invitation`;
-    case 'invitation.cancelled':
+    case "invitation.cancelled":
       return `${userName} cancelled an invitation`;
-    case 'audit.exported':
+    case "audit.exported":
       return `${userName} exported the audit log`;
-    case 'security.alert':
-      return `Security alert: ${metadata?.reason || 'Suspicious activity detected'}`;
-    case 'comment.added':
+    case "security.alert":
+      return `Security alert: ${metadata?.reason || "Suspicious activity detected"}`;
+    case "comment.added":
       return `${userName} added a comment`;
-    case 'comment.resolved':
+    case "comment.resolved":
       return `${userName} resolved a comment`;
     default:
       return `${userName} performed an action`;
@@ -153,21 +252,24 @@ export function ActivityFeed({
   onExportAudit,
   canExport = false,
 }: ActivityFeedProps) {
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>("all");
 
-  const filteredActivities = activities.filter(activity => {
-    if (filter === 'all') return true;
-    if (filter === 'members') return activity.type.startsWith('member.');
-    if (filter === 'roles') return activity.type.startsWith('role.');
-    if (filter === 'sharing') return activity.type.includes('share') || activity.type.includes('project.');
-    if (filter === 'security') return activity.type === 'security.alert';
+  const filteredActivities = activities.filter((activity) => {
+    if (filter === "all") return true;
+    if (filter === "members") return activity.type.startsWith("member.");
+    if (filter === "roles") return activity.type.startsWith("role.");
+    if (filter === "sharing")
+      return (
+        activity.type.includes("share") || activity.type.includes("project.")
+      );
+    if (filter === "security") return activity.type === "security.alert";
     return true;
   });
 
   const groupActivitiesByDate = (items: ActivityItem[]) => {
     const groups: Record<string, ActivityItem[]> = {};
-    items.forEach(item => {
-      const date = format(new Date(item.timestamp), 'yyyy-MM-dd');
+    items.forEach((item) => {
+      const date = format(new Date(item.timestamp), "yyyy-MM-dd");
       if (!groups[date]) groups[date] = [];
       groups[date].push(item);
     });
@@ -185,7 +287,9 @@ export function ActivityFeed({
               <Activity className="h-5 w-5" />
               Activity Feed
             </CardTitle>
-            <CardDescription>Track all workspace activities and changes</CardDescription>
+            <CardDescription>
+              Track all workspace activities and changes
+            </CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Select value={filter} onValueChange={setFilter}>
@@ -202,8 +306,15 @@ export function ActivityFeed({
               </SelectContent>
             </Select>
             {onRefresh && (
-              <Button variant="ghost" size="icon" onClick={onRefresh} disabled={isLoading}>
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onRefresh}
+                disabled={isLoading}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                />
               </Button>
             )}
             {canExport && onExportAudit && (
@@ -229,11 +340,11 @@ export function ActivityFeed({
                   <div className="flex items-center gap-2 mb-3">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-muted-foreground">
-                      {format(new Date(date), 'MMMM d, yyyy')}
+                      {format(new Date(date), "MMMM d, yyyy")}
                     </span>
                   </div>
                   <div className="space-y-3 border-l-2 border-muted pl-4 ml-2">
-                    {items.map(activity => {
+                    {items.map((activity) => {
                       const config = activityConfig[activity.type];
                       const Icon = config?.icon || Activity;
 
@@ -249,11 +360,20 @@ export function ActivityFeed({
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <Icon className={`h-4 w-4 ${config?.color || 'text-muted-foreground'}`} />
-                                <span className="text-sm">{getActivityDescription(activity)}</span>
+                                <Icon
+                                  className={`h-4 w-4 ${config?.color || "text-muted-foreground"}`}
+                                />
+                                <span className="text-sm">
+                                  {getActivityDescription(activity)}
+                                </span>
                               </div>
                               <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                                <span>{formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}</span>
+                                <span>
+                                  {formatDistanceToNow(
+                                    new Date(activity.timestamp),
+                                    { addSuffix: true },
+                                  )}
+                                </span>
                                 {activity.ipAddress && (
                                   <>
                                     <span>•</span>

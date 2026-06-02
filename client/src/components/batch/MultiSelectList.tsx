@@ -1,7 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useBatchSelectContext, useOptionalBatchSelectContext } from './BatchSelectProvider';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  useBatchSelectContext,
+  useOptionalBatchSelectContext,
+} from "./BatchSelectProvider";
 
 export interface MultiSelectListProps<T extends { id: string }> {
   items: T[];
@@ -35,70 +38,112 @@ export function MultiSelectList<T extends { id: string }>({
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const { isSelected, toggleWithShift, selectAll, deselectAll, isAllSelected, isSomeSelected, setAllIds } = batchSelect;
-  const allIds = items.map(item => keyExtractor(item));
+  const {
+    isSelected,
+    toggleWithShift,
+    selectAll,
+    deselectAll,
+    isAllSelected,
+    isSomeSelected,
+    setAllIds,
+  } = batchSelect;
+  const allIds = items.map((item) => keyExtractor(item));
 
   useEffect(() => {
     setAllIds(allIds);
-  }, [allIds.join(','), setAllIds]);
+  }, [allIds.join(","), setAllIds]);
 
-  const handleItemClick = useCallback((item: T, index: number, e: React.MouseEvent) => {
-    setFocusedIndex(index);
-    
-    if (e.ctrlKey || e.metaKey || showCheckboxes) {
-      toggleWithShift(keyExtractor(item), allIds, e.shiftKey && enableShiftSelect);
-    } else {
-      onItemClick?.(item);
-    }
-  }, [toggleWithShift, allIds, enableShiftSelect, onItemClick, keyExtractor, showCheckboxes]);
+  const handleItemClick = useCallback(
+    (item: T, index: number, e: React.MouseEvent) => {
+      setFocusedIndex(index);
 
-  const handleCheckboxChange = useCallback((item: T, e: React.MouseEvent) => {
-    e.stopPropagation();
-    toggleWithShift(keyExtractor(item), allIds, e.shiftKey && enableShiftSelect);
-  }, [toggleWithShift, allIds, enableShiftSelect, keyExtractor]);
+      if (e.ctrlKey || e.metaKey || showCheckboxes) {
+        toggleWithShift(
+          keyExtractor(item),
+          allIds,
+          e.shiftKey && enableShiftSelect,
+        );
+      } else {
+        onItemClick?.(item);
+      }
+    },
+    [
+      toggleWithShift,
+      allIds,
+      enableShiftSelect,
+      onItemClick,
+      keyExtractor,
+      showCheckboxes,
+    ],
+  );
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!enableKeyboardNavigation) return;
+  const handleCheckboxChange = useCallback(
+    (item: T, e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggleWithShift(
+        keyExtractor(item),
+        allIds,
+        e.shiftKey && enableShiftSelect,
+      );
+    },
+    [toggleWithShift, allIds, enableShiftSelect, keyExtractor],
+  );
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setFocusedIndex(prev => Math.min(prev + 1, items.length - 1));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setFocusedIndex(prev => Math.max(prev - 1, 0));
-        break;
-      case ' ':
-        e.preventDefault();
-        if (focusedIndex >= 0 && focusedIndex < items.length) {
-          const item = items[focusedIndex];
-          toggleWithShift(keyExtractor(item), allIds, e.shiftKey);
-        }
-        break;
-      case 'a':
-        if (e.ctrlKey || e.metaKey) {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!enableKeyboardNavigation) return;
+
+      switch (e.key) {
+        case "ArrowDown":
           e.preventDefault();
-          if (isAllSelected(allIds)) {
-            deselectAll();
-          } else {
-            selectAll(allIds);
+          setFocusedIndex((prev) => Math.min(prev + 1, items.length - 1));
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setFocusedIndex((prev) => Math.max(prev - 1, 0));
+          break;
+        case " ":
+          e.preventDefault();
+          if (focusedIndex >= 0 && focusedIndex < items.length) {
+            const item = items[focusedIndex];
+            toggleWithShift(keyExtractor(item), allIds, e.shiftKey);
           }
-        }
-        break;
-      case 'Escape':
-        deselectAll();
-        break;
-      case 'Home':
-        e.preventDefault();
-        setFocusedIndex(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        setFocusedIndex(items.length - 1);
-        break;
-    }
-  }, [enableKeyboardNavigation, items, focusedIndex, toggleWithShift, allIds, isAllSelected, deselectAll, selectAll, keyExtractor]);
+          break;
+        case "a":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (isAllSelected(allIds)) {
+              deselectAll();
+            } else {
+              selectAll(allIds);
+            }
+          }
+          break;
+        case "Escape":
+          deselectAll();
+          break;
+        case "Home":
+          e.preventDefault();
+          setFocusedIndex(0);
+          break;
+        case "End":
+          e.preventDefault();
+          setFocusedIndex(items.length - 1);
+          break;
+      }
+    },
+    [
+      enableKeyboardNavigation,
+      items,
+      focusedIndex,
+      toggleWithShift,
+      allIds,
+      isAllSelected,
+      deselectAll,
+      selectAll,
+      keyExtractor,
+    ],
+  );
 
   useEffect(() => {
     if (focusedIndex >= 0 && focusedIndex < items.length) {
@@ -118,7 +163,7 @@ export function MultiSelectList<T extends { id: string }>({
   return (
     <div
       ref={listRef}
-      className={cn('space-y-1', className)}
+      className={cn("space-y-1", className)}
       role="listbox"
       aria-multiselectable="true"
       onKeyDown={handleKeyDown}
@@ -143,7 +188,7 @@ export function MultiSelectList<T extends { id: string }>({
             aria-label="Select all items"
           />
           <span className="text-sm text-muted-foreground">
-            {allSelected ? 'Deselect all' : 'Select all'} ({items.length} items)
+            {allSelected ? "Deselect all" : "Select all"} ({items.length} items)
           </span>
         </div>
       )}
@@ -169,11 +214,11 @@ export function MultiSelectList<T extends { id: string }>({
             aria-label={label}
             tabIndex={isFocused ? 0 : -1}
             className={cn(
-              'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
-              'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-              selected && 'bg-muted',
-              isFocused && 'ring-2 ring-ring',
-              itemClassName
+              "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors",
+              "hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+              selected && "bg-muted",
+              isFocused && "ring-2 ring-ring",
+              itemClassName,
             )}
             onClick={(e) => handleItemClick(item, index, e)}
           >
@@ -209,7 +254,7 @@ export function SelectableCard({
   showCheckbox = true,
 }: SelectableCardProps) {
   const batchSelect = useOptionalBatchSelectContext();
-  
+
   if (!batchSelect) {
     return <div className={className}>{children}</div>;
   }
@@ -222,9 +267,9 @@ export function SelectableCard({
       role="option"
       aria-selected={selected}
       className={cn(
-        'relative transition-colors rounded-lg',
-        selected && 'ring-2 ring-primary',
-        className
+        "relative transition-colors rounded-lg",
+        selected && "ring-2 ring-primary",
+        className,
       )}
       onClick={(e) => {
         if (e.ctrlKey || e.metaKey || showCheckbox) {

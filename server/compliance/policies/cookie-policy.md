@@ -14,7 +14,7 @@ Cookies are small text files stored on your device (computer, tablet, or mobile)
 **Session Cookies:** Temporary cookies deleted when you close your browser  
 **Persistent Cookies:** Remain on your device until expiration or deletion  
 **First-Party Cookies:** Set by Max Booster directly  
-**Third-Party Cookies:** Set by external services we use  
+**Third-Party Cookies:** Set by external services we use
 
 ## 2. How We Use Cookies
 
@@ -22,13 +22,13 @@ Cookies are small text files stored on your device (computer, tablet, or mobile)
 
 These cookies are strictly necessary for the website to function and cannot be disabled.
 
-| Cookie Name | Purpose | Duration | Type |
-|-------------|---------|----------|------|
-| `session_id` | Maintain your logged-in session | Session | First-party |
-| `csrf_token` | Prevent cross-site request forgery attacks | Session | First-party |
-| `auth_token` | Secure authentication | 30 days | First-party |
-| `cookie_consent` | Remember your cookie preferences | 1 year | First-party |
-| `load_balancer` | Distribute traffic across servers | Session | First-party |
+| Cookie Name      | Purpose                                    | Duration | Type        |
+| ---------------- | ------------------------------------------ | -------- | ----------- |
+| `session_id`     | Maintain your logged-in session            | Session  | First-party |
+| `csrf_token`     | Prevent cross-site request forgery attacks | Session  | First-party |
+| `auth_token`     | Secure authentication                      | 30 days  | First-party |
+| `cookie_consent` | Remember your cookie preferences           | 1 year   | First-party |
+| `load_balancer`  | Distribute traffic across servers          | Session  | First-party |
 
 **Legal Basis:** Strictly necessary for service provision (GDPR Art. 6.1.b)
 
@@ -36,15 +36,16 @@ These cookies are strictly necessary for the website to function and cannot be d
 
 These cookies help us understand how visitors use our platform so we can improve it.
 
-| Cookie Name | Purpose | Duration | Provider |
-|-------------|---------|----------|----------|
-| `_ga` | Distinguish unique users | 2 years | Google Analytics |
-| `_gat` | Limit request rate | 1 minute | Google Analytics |
-| `_gid` | Distinguish users | 24 hours | Google Analytics |
-| `ab_test_*` | A/B testing experiments | 30 days | First-party |
-| `heatmap_session` | User behavior analysis | Session | Hotjar |
+| Cookie Name       | Purpose                  | Duration | Provider         |
+| ----------------- | ------------------------ | -------- | ---------------- |
+| `_ga`             | Distinguish unique users | 2 years  | Google Analytics |
+| `_gat`            | Limit request rate       | 1 minute | Google Analytics |
+| `_gid`            | Distinguish users        | 24 hours | Google Analytics |
+| `ab_test_*`       | A/B testing experiments  | 30 days  | First-party      |
+| `heatmap_session` | User behavior analysis   | Session  | Hotjar           |
 
 **What We Learn:**
+
 - Which pages are most popular
 - How long users spend on pages
 - Common user journeys through the site
@@ -52,6 +53,7 @@ These cookies help us understand how visitors use our platform so we can improve
 - Performance issues and errors
 
 **Data Privacy:**
+
 - All analytics data is anonymized
 - IP addresses are masked
 - No personally identifiable information (PII) stored
@@ -65,14 +67,15 @@ These cookies help us understand how visitors use our platform so we can improve
 
 These cookies enable enhanced functionality and personalization.
 
-| Cookie Name | Purpose | Duration | Type |
-|-------------|---------|----------|------|
-| `user_preferences` | Remember your settings (theme, language, etc.) | 1 year | First-party |
-| `notifications_enabled` | Track notification preferences | 6 months | First-party |
-| `dashboard_layout` | Remember dashboard customization | 1 year | First-party |
-| `audio_settings` | Audio player preferences (volume, quality) | 6 months | First-party |
+| Cookie Name             | Purpose                                        | Duration | Type        |
+| ----------------------- | ---------------------------------------------- | -------- | ----------- |
+| `user_preferences`      | Remember your settings (theme, language, etc.) | 1 year   | First-party |
+| `notifications_enabled` | Track notification preferences                 | 6 months | First-party |
+| `dashboard_layout`      | Remember dashboard customization               | 1 year   | First-party |
+| `audio_settings`        | Audio player preferences (volume, quality)     | 6 months | First-party |
 
 **Features Enabled:**
+
 - Saved dashboard layouts and preferences
 - Customized UI themes (dark/light mode)
 - Language preferences
@@ -85,14 +88,15 @@ These cookies enable enhanced functionality and personalization.
 
 These cookies track your activity to show you relevant ads and measure campaign effectiveness.
 
-| Cookie Name | Purpose | Duration | Provider |
-|-------------|---------|----------|----------|
-| `_fbp` | Facebook Pixel - ad targeting | 90 days | Facebook |
-| `_gcl_au` | Google Ads - conversion tracking | 90 days | Google |
-| `li_fat_id` | LinkedIn Ads - campaign tracking | 30 days | LinkedIn |
-| `utm_*` | Campaign attribution | 30 days | First-party |
+| Cookie Name | Purpose                          | Duration | Provider    |
+| ----------- | -------------------------------- | -------- | ----------- |
+| `_fbp`      | Facebook Pixel - ad targeting    | 90 days  | Facebook    |
+| `_gcl_au`   | Google Ads - conversion tracking | 90 days  | Google      |
+| `li_fat_id` | LinkedIn Ads - campaign tracking | 30 days  | LinkedIn    |
+| `utm_*`     | Campaign attribution             | 30 days  | First-party |
 
 **Marketing Activities:**
+
 - Display relevant ads on social media
 - Measure advertising campaign effectiveness
 - Retarget visitors who showed interest
@@ -100,11 +104,13 @@ These cookies track your activity to show you relevant ads and measure campaign 
 - Attribute conversions to campaigns
 
 **Third-Party Advertising Partners:**
+
 - Google Ads
 - Facebook Ads
 - LinkedIn Ads
 
 **Opt-Out Options:**
+
 - Cookie consent banner (decline marketing cookies)
 - Ad platform settings (Facebook Ad Preferences, Google Ad Settings)
 - Industry opt-out: aboutads.info, youronlinechoices.eu
@@ -117,6 +123,7 @@ These cookies track your activity to show you relevant ads and measure campaign 
 ### 3.1 Cookie Consent Banner
 
 When you first visit Max Booster, you'll see a cookie consent banner allowing you to:
+
 - **Accept All:** Allow all cookies
 - **Reject All:** Block non-essential cookies
 - **Customize:** Choose which cookie categories to accept
@@ -127,6 +134,7 @@ Your preferences are saved and applied across all future visits.
 ### 3.2 Change Your Preferences
 
 You can change your cookie preferences anytime:
+
 - Click "Cookie Settings" in the website footer
 - Update preferences in your Account Settings
 - Clear cookies via browser settings (resets to defaults)
@@ -160,6 +168,7 @@ Chrome → Settings → Site Settings → Cookies
 ## 4. Do Not Track (DNT)
 
 We respect Do Not Track (DNT) browser signals. When DNT is enabled:
+
 - We disable non-essential tracking cookies
 - Analytics cookies are not set
 - Marketing cookies are not set
@@ -167,12 +176,12 @@ We respect Do Not Track (DNT) browser signals. When DNT is enabled:
 
 ## 5. Cookie Lifespan
 
-| Category | Maximum Duration | Auto-Renewal |
-|----------|-----------------|--------------|
-| Essential | Session to 30 days | Yes (necessary for service) |
-| Analytics | 24 hours to 2 years | Only with consent |
-| Functional | 6 months to 1 year | Only with consent |
-| Marketing | 30 days to 90 days | Only with consent |
+| Category   | Maximum Duration    | Auto-Renewal                |
+| ---------- | ------------------- | --------------------------- |
+| Essential  | Session to 30 days  | Yes (necessary for service) |
+| Analytics  | 24 hours to 2 years | Only with consent           |
+| Functional | 6 months to 1 year  | Only with consent           |
+| Marketing  | 30 days to 90 days  | Only with consent           |
 
 ## 6. Third-Party Cookies
 
@@ -181,16 +190,19 @@ We use third-party services that may set their own cookies:
 ### 6.1 Service Providers
 
 **Google Analytics:**
+
 - Purpose: Website analytics and performance monitoring
 - Privacy Policy: https://policies.google.com/privacy
 - Opt-out: https://tools.google.com/dlpage/gaoptout
 
 **Stripe:**
+
 - Purpose: Payment processing and fraud prevention
 - Privacy Policy: https://stripe.com/privacy
 - Cookies: Essential for payment security
 
 **Hotjar:**
+
 - Purpose: User behavior analytics (heatmaps, session recordings)
 - Privacy Policy: https://www.hotjar.com/legal/policies/privacy
 - Opt-out: https://www.hotjar.com/policies/do-not-track/
@@ -198,11 +210,13 @@ We use third-party services that may set their own cookies:
 ### 6.2 Social Media Plugins
 
 When you use social sharing buttons (Facebook, Twitter, LinkedIn):
+
 - Social networks may set cookies
 - Your activity may be tracked by these networks
 - Refer to their privacy policies for details
 
 **We recommend:**
+
 - Reviewing privacy settings on social media platforms
 - Logging out of social media when not in use
 - Using browser privacy features
@@ -212,6 +226,7 @@ When you use social sharing buttons (Facebook, Twitter, LinkedIn):
 ### 7.1 Data Collected via Cookies
 
 Cookies may collect:
+
 - Browser and device information
 - IP address (anonymized for analytics)
 - Pages visited and actions taken
@@ -221,6 +236,7 @@ Cookies may collect:
 ### 7.2 Data Security
 
 Cookie data is protected by:
+
 - Secure transmission (HTTPS only)
 - Encryption for sensitive cookies (auth tokens)
 - HttpOnly flags to prevent JavaScript access
@@ -237,6 +253,7 @@ Cookie data is protected by:
 ### 7.4 International Transfers
 
 Cookies set by third-party providers (Google, Facebook) may transfer data internationally. These providers comply with:
+
 - EU-US Data Privacy Framework
 - Standard Contractual Clauses (SCCs)
 - GDPR requirements for international transfers
@@ -248,7 +265,7 @@ Under GDPR, you have rights regarding cookie data:
 **Right to Withdraw Consent:** Change cookie preferences anytime  
 **Right to Access:** Request information about cookie data collected  
 **Right to Deletion:** Delete cookies via browser or contact us  
-**Right to Object:** Opt-out of analytics and marketing cookies  
+**Right to Object:** Opt-out of analytics and marketing cookies
 
 **Exercise Your Rights:** Email privacy@maxbooster.com
 
@@ -259,12 +276,14 @@ Max Booster is not intended for children under 16. We do not knowingly use cooki
 ## 10. Updates to This Cookie Policy
 
 We may update this policy to reflect:
+
 - New cookies or technologies
 - Changes in third-party services
 - Legal or regulatory requirements
 - User feedback and best practices
 
 **Notification:**
+
 - Material changes: Cookie consent banner notification
 - Last Updated date reflects most recent changes
 - Previous versions available upon request
@@ -293,6 +312,7 @@ We maintain a record of all cookies used on our platform, reviewed quarterly.
 ## 13. Consent Record
 
 Your cookie consent is logged and includes:
+
 - Date and time of consent
 - Cookies accepted/rejected
 - IP address (anonymized)
@@ -303,6 +323,7 @@ You can request your consent record: privacy@maxbooster.com
 ## 14. Compliance Certifications
 
 Our cookie practices comply with:
+
 - ✅ GDPR (EU General Data Protection Regulation)
 - ✅ ePrivacy Directive (Cookie Law)
 - ✅ CCPA (California Consumer Privacy Act)
@@ -313,6 +334,7 @@ Our cookie practices comply with:
 ### 15.1 Cookie Consent Management
 
 We use a Consent Management Platform (CMP) that:
+
 - Presents clear, non-intrusive cookie banners
 - Allows granular cookie preferences
 - Records consent decisions
@@ -322,6 +344,7 @@ We use a Consent Management Platform (CMP) that:
 ### 15.2 Cookie Blocking
 
 Before consent:
+
 - Only essential cookies are set
 - Analytics and marketing scripts are blocked
 - Third-party tracking is disabled
@@ -341,16 +364,18 @@ Before consent:
 **Third-Party Cookie:** Cookie set by external service  
 **HttpOnly:** Cookie not accessible via JavaScript (security feature)  
 **Secure:** Cookie only sent over HTTPS (security feature)  
-**SameSite:** Cookie restriction to prevent CSRF attacks  
+**SameSite:** Cookie restriction to prevent CSRF attacks
 
 ## 17. Additional Resources
 
 **Learn More About Cookies:**
+
 - All About Cookies: https://www.allaboutcookies.org
 - ICO Cookie Guidance: https://ico.org.uk/for-organisations/guide-to-pecr/cookies
 - IAB Europe: https://www.iabeurope.eu/transparency-consent-framework
 
 **Manage Cookies:**
+
 - Your Online Choices: https://www.youronlinechoices.eu
 - About Ads: https://www.aboutads.info
 - Network Advertising Initiative: https://www.networkadvertising.org/choices

@@ -1,10 +1,10 @@
-import { EventEmitter } from 'events';
-import { randomUUID } from 'crypto';
-import { platformAPI } from './platform-apis.js';
-import { logger } from './logger.js';
-import { advancedSocialAIService } from './services/advancedSocialAIService.js';
-import { autopilotLearningService } from './services/autopilotLearningService.js';
-import { evolutionRegistry } from './services/evolutionRegistry.js';
+import { EventEmitter } from "events";
+import { randomUUID } from "crypto";
+import { platformAPI } from "./platform-apis.js";
+import { logger } from "./logger.js";
+import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
+import { autopilotLearningService } from "./services/autopilotLearningService.js";
+import { evolutionRegistry } from "./services/evolutionRegistry.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -26,25 +26,25 @@ function seededIndex(seed: string, length: number): number {
 // configured type that best expresses that format — staying within the artist's
 // configured content types rather than inventing new ones.
 const CONTENT_TYPE_FORMAT_AFFINITY: Record<string, string> = {
-  announcements: 'image',
-  announcement: 'image',
-  'behind-the-scenes': 'video',
-  bts: 'video',
-  questions: 'text',
-  polls: 'text',
-  tips: 'carousel',
-  insights: 'carousel',
-  promotional: 'image',
-  promo: 'image',
+  announcements: "image",
+  announcement: "image",
+  "behind-the-scenes": "video",
+  bts: "video",
+  questions: "text",
+  polls: "text",
+  tips: "carousel",
+  insights: "carousel",
+  promotional: "image",
+  promo: "image",
 };
 
 interface AutopilotJob {
   id: string;
-  type: 'content_generation' | 'content_publishing' | 'performance_analysis';
+  type: "content_generation" | "content_publishing" | "performance_analysis";
   scheduledAt: Date;
   platform: string;
   data: Record<string, unknown>;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: "pending" | "running" | "completed" | "failed";
   retries: number;
   maxRetries: number;
 }
@@ -53,8 +53,8 @@ interface AutopilotConfig {
   enabled: boolean;
   platforms: string[];
   topics: string[];
-  postingFrequency: 'hourly' | 'daily' | 'twice-daily' | 'weekly';
-  brandVoice: 'professional' | 'casual' | 'energetic' | 'informative';
+  postingFrequency: "hourly" | "daily" | "twice-daily" | "weekly";
+  brandVoice: "professional" | "casual" | "energetic" | "informative";
   contentTypes: string[];
   targetAudience: string;
   businessGoals: string[];
@@ -95,10 +95,10 @@ export class AutopilotEngine extends EventEmitter {
     const engine = new AutopilotEngine(userId);
     engine.configure({
       enabled: false,
-      platforms: ['Twitter', 'Instagram', 'TikTok', 'Facebook', 'LinkedIn'],
-      postingFrequency: 'twice-daily',
-      brandVoice: 'energetic',
-      contentTypes: ['announcements', 'questions', 'tips', 'insights'],
+      platforms: ["Twitter", "Instagram", "TikTok", "Facebook", "LinkedIn"],
+      postingFrequency: "twice-daily",
+      brandVoice: "energetic",
+      contentTypes: ["announcements", "questions", "tips", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: true,
       engagementThreshold: 0.03,
@@ -110,10 +110,10 @@ export class AutopilotEngine extends EventEmitter {
     const engine = new AutopilotEngine(userId);
     engine.configure({
       enabled: false,
-      platforms: ['Twitter', 'LinkedIn'],
-      postingFrequency: 'daily',
-      brandVoice: 'informative',
-      contentTypes: ['announcements', 'insights'],
+      platforms: ["Twitter", "LinkedIn"],
+      postingFrequency: "daily",
+      brandVoice: "informative",
+      contentTypes: ["announcements", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: false,
       engagementThreshold: 0.02,
@@ -125,10 +125,10 @@ export class AutopilotEngine extends EventEmitter {
     const engine = new AutopilotEngine(userId);
     engine.configure({
       enabled: false,
-      platforms: ['Twitter', 'LinkedIn'],
-      postingFrequency: 'weekly',
-      brandVoice: 'professional',
-      contentTypes: ['announcements', 'insights'],
+      platforms: ["Twitter", "LinkedIn"],
+      postingFrequency: "weekly",
+      brandVoice: "professional",
+      contentTypes: ["announcements", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: false,
       engagementThreshold: 0.01,
@@ -141,10 +141,10 @@ export class AutopilotEngine extends EventEmitter {
       enabled: false,
       platforms: [],
       topics: [],
-      postingFrequency: 'daily',
-      brandVoice: 'professional',
-      contentTypes: ['tips', 'insights', 'questions', 'announcements'],
-      targetAudience: '',
+      postingFrequency: "daily",
+      brandVoice: "professional",
+      contentTypes: ["tips", "insights", "questions", "announcements"],
+      targetAudience: "",
       businessGoals: [],
       autoPublish: false,
       optimalTimesOnly: true,
@@ -163,7 +163,7 @@ export class AutopilotEngine extends EventEmitter {
       await this.stop();
     }
 
-    this.emit('configUpdated', this.config);
+    this.emit("configUpdated", this.config);
   }
 
   async getConfig(): Promise<AutopilotConfig> {
@@ -175,7 +175,7 @@ export class AutopilotEngine extends EventEmitter {
     if (this.isRunning) return;
 
     this.isRunning = true;
-    this.emit('autopilotStarted');
+    this.emit("autopilotStarted");
 
     // Initialize content generation jobs
     await this.scheduleContentGeneration();
@@ -186,7 +186,7 @@ export class AutopilotEngine extends EventEmitter {
       this.pruneCompletedJobs();
     }, 60000); // Check every minute
 
-    logger.info('Autopilot started with config:', this.config);
+    logger.info("Autopilot started with config:", this.config);
   }
 
   /** Remove completed/failed jobs older than 24 h to prevent the Map growing unbounded. */
@@ -194,7 +194,7 @@ export class AutopilotEngine extends EventEmitter {
     const cutoff = Date.now() - 86_400_000;
     for (const [id, job] of this.jobs.entries()) {
       if (
-        (job.status === 'completed' || job.status === 'failed') &&
+        (job.status === "completed" || job.status === "failed") &&
         job.scheduledAt.getTime() < cutoff
       ) {
         this.jobs.delete(id);
@@ -214,13 +214,13 @@ export class AutopilotEngine extends EventEmitter {
 
     // Cancel pending jobs
     this.jobs.forEach((job) => {
-      if (job.status === 'pending') {
-        job.status = 'failed';
+      if (job.status === "pending") {
+        job.status = "failed";
       }
     });
 
-    this.emit('autopilotStopped');
-    logger.info('Autopilot stopped');
+    this.emit("autopilotStopped");
+    logger.info("Autopilot stopped");
   }
 
   // Content Generation Pipeline
@@ -235,7 +235,7 @@ export class AutopilotEngine extends EventEmitter {
 
       const job: AutopilotJob = {
         id: randomUUID(),
-        type: 'content_generation',
+        type: "content_generation",
         scheduledAt: generationTime,
         platform,
         data: {
@@ -243,7 +243,7 @@ export class AutopilotEngine extends EventEmitter {
           brandVoice: this.config.brandVoice,
           contentType: this.selectContentType(platform),
         },
-        status: 'pending',
+        status: "pending",
         retries: 0,
         maxRetries: 3,
       };
@@ -253,11 +253,11 @@ export class AutopilotEngine extends EventEmitter {
       // Schedule the actual publishing
       const publishJob: AutopilotJob = {
         id: randomUUID(),
-        type: 'content_publishing',
+        type: "content_publishing",
         scheduledAt: nextPostTime,
         platform,
         data: { contentJobId: job.id },
-        status: 'pending',
+        status: "pending",
         retries: 0,
         maxRetries: 2,
       };
@@ -280,10 +280,10 @@ export class AutopilotEngine extends EventEmitter {
     let nextTime = new Date(now);
 
     switch (this.config.postingFrequency) {
-      case 'hourly':
+      case "hourly":
         nextTime.setHours(now.getHours() + 1, 0, 0, 0);
         break;
-      case 'twice-daily':
+      case "twice-daily":
         const morningHour = optimalTimes[0] || 9;
         const eveningHour = optimalTimes[1] || 17;
 
@@ -296,7 +296,7 @@ export class AutopilotEngine extends EventEmitter {
           nextTime.setHours(morningHour, 0, 0, 0);
         }
         break;
-      case 'daily': {
+      case "daily": {
         const optimalHour = optimalTimes[0] || 14;
         // If the optimal hour hasn't passed yet today, schedule for today
         // (the prior implementation always pushed to tomorrow, wasting up
@@ -309,7 +309,7 @@ export class AutopilotEngine extends EventEmitter {
         }
         break;
       }
-      case 'weekly':
+      case "weekly":
         nextTime.setDate(nextTime.getDate() + 7);
         nextTime.setHours(optimalTimes[0] || 14, 0, 0, 0);
         break;
@@ -323,20 +323,22 @@ export class AutopilotEngine extends EventEmitter {
     const frequency = this.config.postingFrequency;
 
     switch (frequency) {
-      case 'hourly':
+      case "hourly":
         return now + 60 * 60 * 1000; // 1 hour
-      case 'twice-daily':
+      case "twice-daily":
         return now + 12 * 60 * 60 * 1000; // 12 hours
-      case 'daily':
+      case "daily":
         return now + 24 * 60 * 60 * 1000; // 24 hours
-      case 'weekly':
+      case "weekly":
         return now + 7 * 24 * 60 * 60 * 1000; // 7 days
       default:
         return now + 24 * 60 * 60 * 1000;
     }
   }
 
-  private async getOptimalTimesForPlatform(platform: string): Promise<number[]> {
+  private async getOptimalTimesForPlatform(
+    platform: string,
+  ): Promise<number[]> {
     // Prefer learned times derived from this artist's real performance data
     // — autopilotLearningService aggregates the last 30 days from
     // autopilot_learning_data by (hour, dayOfWeek) and returns descending
@@ -349,7 +351,10 @@ export class AutopilotEngine extends EventEmitter {
         platformKey,
       );
       if (learned && learned.length > 0) {
-        const hours = Array.from(new Set(learned.map((r) => r.hour))).slice(0, 5);
+        const hours = Array.from(new Set(learned.map((r) => r.hour))).slice(
+          0,
+          5,
+        );
         if (hours.length > 0) return hours;
       }
     } catch (err) {
@@ -366,12 +371,15 @@ export class AutopilotEngine extends EventEmitter {
       const override = evolutionRegistry.getOptimalHoursOverride(platform);
       if (override && override.length > 0) {
         logger.info(
-          `[Autopilot] Using self-evolution posting-hours override for ${platform}: ${override.join(',')}`,
+          `[Autopilot] Using self-evolution posting-hours override for ${platform}: ${override.join(",")}`,
         );
         return override;
       }
     } catch (err) {
-      logger.warn({ err }, `[Autopilot] Failed to read evolution hours override for ${platform}`);
+      logger.warn(
+        { err },
+        `[Autopilot] Failed to read evolution hours override for ${platform}`,
+      );
     }
 
     const platformTimes: Record<string, number[]> = {
@@ -386,7 +394,7 @@ export class AutopilotEngine extends EventEmitter {
 
   private selectNextTopic(): string {
     if (this.config.topics.length === 0) {
-      return 'business insights';
+      return "business insights";
     }
 
     // Rotate through topics to ensure variety
@@ -396,8 +404,9 @@ export class AutopilotEngine extends EventEmitter {
 
   private selectContentType(platform?: string): string {
     const types = this.config.contentTypes;
-    if (types.length === 0) return 'insights';
-    const seeded = types[seededIndex(this.userId + ':' + types.join(','), types.length)];
+    if (types.length === 0) return "insights";
+    const seeded =
+      types[seededIndex(this.userId + ":" + types.join(","), types.length)];
 
     // A self-evolution posting_optimization override may prioritize certain
     // media formats (from a real detected industry change). Bias the configured
@@ -406,7 +415,9 @@ export class AutopilotEngine extends EventEmitter {
     // keep the deterministic seeded pick. Sits ABOVE the seeded default and is
     // fully reversible (deactivating the enhancement restores the seeded pick).
     try {
-      const posting = platform ? evolutionRegistry.getPostingOptimization(platform) : null;
+      const posting = platform
+        ? evolutionRegistry.getPostingOptimization(platform)
+        : null;
       const priority = posting?.contentFormatPriority;
       if (priority && priority.length > 0) {
         let best: string | undefined;
@@ -423,7 +434,7 @@ export class AutopilotEngine extends EventEmitter {
         if (best) {
           logger.info(
             `[Autopilot] Using self-evolution content-format priority for ${platform}: ` +
-              `picked "${best}" (formats=${priority.join(',')})`,
+              `picked "${best}" (formats=${priority.join(",")})`,
           );
           return best;
         }
@@ -442,7 +453,7 @@ export class AutopilotEngine extends EventEmitter {
   private async processJobs(): Promise<void> {
     const now = new Date();
     const pendingJobs = Array.from(this.jobs.values())
-      .filter((job) => job.status === 'pending' && job.scheduledAt <= now)
+      .filter((job) => job.status === "pending" && job.scheduledAt <= now)
       .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
     for (const job of pendingJobs) {
@@ -452,33 +463,33 @@ export class AutopilotEngine extends EventEmitter {
 
   private async executeJob(job: AutopilotJob): Promise<void> {
     try {
-      job.status = 'running';
-      this.emit('jobStarted', job);
+      job.status = "running";
+      this.emit("jobStarted", job);
 
       switch (job.type) {
-        case 'content_generation':
+        case "content_generation":
           await this.executeContentGeneration(job);
           break;
-        case 'content_publishing':
+        case "content_publishing":
           await this.executeContentPublishing(job);
           break;
-        case 'performance_analysis':
+        case "performance_analysis":
           await this.executePerformanceAnalysis(job);
           break;
       }
 
-      job.status = 'completed';
-      this.emit('jobCompleted', job);
+      job.status = "completed";
+      this.emit("jobCompleted", job);
     } catch (error: unknown) {
       logger.warn({ err: error }, `Job ${job.id} failed:`);
 
       if (job.retries < job.maxRetries) {
         job.retries++;
-        job.status = 'pending';
+        job.status = "pending";
         job.scheduledAt = new Date(Date.now() + 5 * 60 * 1000); // Retry in 5 minutes
       } else {
-        job.status = 'failed';
-        this.emit('jobFailed', job, error);
+        job.status = "failed";
+        this.emit("jobFailed", job, error);
       }
     }
   }
@@ -506,7 +517,7 @@ export class AutopilotEngine extends EventEmitter {
         text: generatedContent.text,
         hashtags: generatedContent.hashtags,
         platforms: [job.platform],
-        status: 'draft',
+        status: "draft",
         type: contentType,
         topic,
         createdAt: new Date(),
@@ -518,11 +529,11 @@ export class AutopilotEngine extends EventEmitter {
       }
       this.contentQueue.get(job.platform)!.push(content);
 
-      this.emit('contentGenerated', { job, content });
+      this.emit("contentGenerated", { job, content });
     } catch (error: unknown) {
       // If AI service is not configured, create a placeholder request
       throw new Error(
-        'AI content generation service not configured. Please connect your AI service.'
+        "AI content generation service not configured. Please connect your AI service.",
       );
     }
   }
@@ -538,11 +549,15 @@ export class AutopilotEngine extends EventEmitter {
 
     if (this.config.autoPublish) {
       // Publish immediately
-      const results = await platformAPI.publishContent(content, [job.platform], this.userId);
+      const results = await platformAPI.publishContent(
+        content,
+        [job.platform],
+        this.userId,
+      );
       const successfulResults = results.filter((r: unknown) => r.success);
 
       if (successfulResults.length > 0) {
-        content.status = 'published';
+        content.status = "published";
         content.publishedAt = new Date();
 
         // Persist publish context durably (content is no longer in the queue
@@ -553,7 +568,7 @@ export class AutopilotEngine extends EventEmitter {
         }
         this.publishContext.set(content.id, {
           publishedAt: content.publishedAt,
-          type: content.type ?? 'social_post',
+          type: content.type ?? "social_post",
           hashtags: content.hashtags ?? [],
           text: content.text,
           topic: content.topic,
@@ -562,11 +577,11 @@ export class AutopilotEngine extends EventEmitter {
         // Schedule performance analysis for later
         const analysisJob: AutopilotJob = {
           id: randomUUID(),
-          type: 'performance_analysis',
+          type: "performance_analysis",
           scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours later
           platform: job.platform,
           data: { contentId: content.id, postId: successfulResults[0].postId },
-          status: 'pending',
+          status: "pending",
           retries: 0,
           maxRetries: 2,
         };
@@ -574,11 +589,11 @@ export class AutopilotEngine extends EventEmitter {
         this.jobs.set(analysisJob.id, analysisJob);
       }
 
-      this.emit('contentPublished', { job, content, results });
+      this.emit("contentPublished", { job, content, results });
     } else {
       // Schedule for review
-      content.status = 'scheduled';
-      this.emit('contentScheduled', { job, content });
+      content.status = "scheduled";
+      this.emit("contentScheduled", { job, content });
     }
   }
 
@@ -586,7 +601,11 @@ export class AutopilotEngine extends EventEmitter {
     const { contentId, postId } = job.data;
 
     // Collect real engagement data
-    const analytics = await platformAPI.collectEngagementData(postId, job.platform, this.userId);
+    const analytics = await platformAPI.collectEngagementData(
+      postId,
+      job.platform,
+      this.userId,
+    );
 
     if (analytics) {
       // Store performance data for learning — evict oldest entry first when at cap.
@@ -602,10 +621,11 @@ export class AutopilotEngine extends EventEmitter {
         platform: job.platform,
         engagement: analytics,
         timestamp: new Date(),
-        publishedAt: ctx?.publishedAt instanceof Date
-          ? ctx.publishedAt
-          : new Date(Date.now() - 2 * 60 * 60 * 1000),
-        contentType: ctx?.type ?? 'social_post',
+        publishedAt:
+          ctx?.publishedAt instanceof Date
+            ? ctx.publishedAt
+            : new Date(Date.now() - 2 * 60 * 60 * 1000),
+        contentType: ctx?.type ?? "social_post",
         hashtags: ctx?.hashtags ?? [],
         text: ctx?.text,
         postId,
@@ -621,7 +641,7 @@ export class AutopilotEngine extends EventEmitter {
       // Learn from performance
       await this.learnFromPerformance(contentId, analytics);
 
-      this.emit('performanceAnalyzed', { job, analytics });
+      this.emit("performanceAnalyzed", { job, analytics });
     }
   }
 
@@ -633,58 +653,87 @@ export class AutopilotEngine extends EventEmitter {
     contentType: string;
     targetAudience: string;
     businessGoals: string[];
-  }): Promise<{ text: string; hashtags: string[]; hook?: string; cta?: string; viralScore?: number }> {
+  }): Promise<{
+    text: string;
+    hashtags: string[];
+    hook?: string;
+    cta?: string;
+    viralScore?: number;
+  }> {
     try {
       // Consult the Self-Evolution registry for a bounded content_optimization
       // override derived from a real detected industry change. Only the two
       // already-supported generator knobs (variantCount, includeEmojis) are
       // touched, so the MaxCore contract is unchanged; absent an override these
       // fall back to the prior defaults.
-      const contentOpt = evolutionRegistry.getContentOptimization(params.platform.toLowerCase());
+      const contentOpt = evolutionRegistry.getContentOptimization(
+        params.platform.toLowerCase(),
+      );
       const variantCount =
-        typeof contentOpt?.variantCount === 'number' ? contentOpt.variantCount : 3;
+        typeof contentOpt?.variantCount === "number"
+          ? contentOpt.variantCount
+          : 3;
       const includeEmojis =
-        typeof contentOpt?.visualPriority === 'boolean' ? contentOpt.visualPriority : true;
+        typeof contentOpt?.visualPriority === "boolean"
+          ? contentOpt.visualPriority
+          : true;
       // The remaining content_optimization knobs reshape the hashtags, caption
       // length, and call-to-action of the generated post. Pass them through only
       // when present; absent an override they stay undefined and the generator
       // uses its prior behavior.
       const hashtagStrategy = contentOpt?.hashtagStrategy as
-        | 'trending' | 'niche' | 'branded' | 'balanced' | undefined;
+        | "trending"
+        | "niche"
+        | "branded"
+        | "balanced"
+        | undefined;
       const captionLength = contentOpt?.captionLength as
-        | 'short' | 'optimal' | 'long' | undefined;
+        | "short"
+        | "optimal"
+        | "long"
+        | undefined;
       const callToActionStrength = contentOpt?.callToActionStrength as
-        | 'low' | 'medium' | 'high' | undefined;
+        | "low"
+        | "medium"
+        | "high"
+        | undefined;
 
       // A self-evolution posting_optimization override may call for prioritizing
       // engagement (from a real detected industry change). When engagementTargeting
       // is 'high', steer the generator's objective toward engagement-driving
       // content regardless of the configured business goals; 'standard' (or no
       // override) keeps the goal-derived objective. Fully reversible.
-      const posting = evolutionRegistry.getPostingOptimization(params.platform.toLowerCase());
+      const posting = evolutionRegistry.getPostingOptimization(
+        params.platform.toLowerCase(),
+      );
       let objective = this.mapGoalsToObjective(params.businessGoals);
-      if (posting?.engagementTargeting === 'high') {
-        objective = 'engagement';
+      if (posting?.engagementTargeting === "high") {
+        objective = "engagement";
       }
 
       // Use Advanced Social AI for GPT-5.2 level content generation
-      const advancedResult = await advancedSocialAIService.generateAdvancedContent({
-        userId: this.userId,
-        topic: params.topic,
-        platforms: [params.platform.toLowerCase()],
-        objective,
-        tone: this.mapBrandVoiceToTone(params.brandVoice),
-        targetAudience: params.targetAudience?.toLowerCase().replace(/\s+/g, '_'),
-        contentType: this.mapContentType(params.contentType),
-        includeHashtags: true,
-        includeEmojis,
-        variantCount,
-        hashtagStrategy,
-        captionLength,
-        callToActionStrength,
-      });
+      const advancedResult =
+        await advancedSocialAIService.generateAdvancedContent({
+          userId: this.userId,
+          topic: params.topic,
+          platforms: [params.platform.toLowerCase()],
+          objective,
+          tone: this.mapBrandVoiceToTone(params.brandVoice),
+          targetAudience: params.targetAudience
+            ?.toLowerCase()
+            .replace(/\s+/g, "_"),
+          contentType: this.mapContentType(params.contentType),
+          includeHashtags: true,
+          includeEmojis,
+          variantCount,
+          hashtagStrategy,
+          captionLength,
+          callToActionStrength,
+        });
 
-      logger.info(`[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult.viralPotential.score.toFixed(1)}`);
+      logger.info(
+        `[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult.viralPotential.score.toFixed(1)}`,
+      );
 
       return {
         text: advancedResult.primary.body,
@@ -708,50 +757,84 @@ export class AutopilotEngine extends EventEmitter {
     }
   }
 
-  private mapGoalsToObjective(goals: string[]): 'awareness' | 'engagement' | 'conversions' | 'viral' {
-    const goalsLower = goals.map(g => g.toLowerCase()).join(' ');
-    if (goalsLower.includes('sales') || goalsLower.includes('revenue') || goalsLower.includes('conversion')) {
-      return 'conversions';
+  private mapGoalsToObjective(
+    goals: string[],
+  ): "awareness" | "engagement" | "conversions" | "viral" {
+    const goalsLower = goals.map((g) => g.toLowerCase()).join(" ");
+    if (
+      goalsLower.includes("sales") ||
+      goalsLower.includes("revenue") ||
+      goalsLower.includes("conversion")
+    ) {
+      return "conversions";
     }
-    if (goalsLower.includes('viral') || goalsLower.includes('growth') || goalsLower.includes('reach')) {
-      return 'viral';
+    if (
+      goalsLower.includes("viral") ||
+      goalsLower.includes("growth") ||
+      goalsLower.includes("reach")
+    ) {
+      return "viral";
     }
-    if (goalsLower.includes('brand') || goalsLower.includes('awareness')) {
-      return 'awareness';
+    if (goalsLower.includes("brand") || goalsLower.includes("awareness")) {
+      return "awareness";
     }
-    return 'engagement';
+    return "engagement";
   }
 
-  private mapBrandVoiceToTone(brandVoice: string): 'professional' | 'casual' | 'energetic' | 'inspirational' | 'humorous' | 'storytelling' {
+  private mapBrandVoiceToTone(
+    brandVoice: string,
+  ):
+    | "professional"
+    | "casual"
+    | "energetic"
+    | "inspirational"
+    | "humorous"
+    | "storytelling" {
     const voiceLower = brandVoice.toLowerCase();
-    if (voiceLower === 'professional') return 'professional';
-    if (voiceLower === 'energetic') return 'energetic';
-    if (voiceLower === 'informative') return 'professional';
-    if (voiceLower === 'humorous' || voiceLower === 'funny') return 'humorous';
-    if (voiceLower === 'inspirational' || voiceLower === 'motivational') return 'inspirational';
-    return 'casual';
+    if (voiceLower === "professional") return "professional";
+    if (voiceLower === "energetic") return "energetic";
+    if (voiceLower === "informative") return "professional";
+    if (voiceLower === "humorous" || voiceLower === "funny") return "humorous";
+    if (voiceLower === "inspirational" || voiceLower === "motivational")
+      return "inspirational";
+    return "casual";
   }
 
-  private mapContentType(contentType: string): 'announcement' | 'behind_scenes' | 'engagement' | 'promotional' | 'storytelling' {
+  private mapContentType(
+    contentType: string,
+  ):
+    | "announcement"
+    | "behind_scenes"
+    | "engagement"
+    | "promotional"
+    | "storytelling" {
     const typeLower = contentType.toLowerCase();
-    if (typeLower === 'announcements' || typeLower === 'announcement') return 'announcement';
-    if (typeLower === 'behind-the-scenes' || typeLower === 'bts') return 'behind_scenes';
-    if (typeLower === 'questions' || typeLower === 'polls') return 'engagement';
-    if (typeLower === 'promotional' || typeLower === 'promo') return 'promotional';
-    if (typeLower === 'tips' || typeLower === 'insights') return 'storytelling';
-    return 'engagement';
+    if (typeLower === "announcements" || typeLower === "announcement")
+      return "announcement";
+    if (typeLower === "behind-the-scenes" || typeLower === "bts")
+      return "behind_scenes";
+    if (typeLower === "questions" || typeLower === "polls") return "engagement";
+    if (typeLower === "promotional" || typeLower === "promo")
+      return "promotional";
+    if (typeLower === "tips" || typeLower === "insights") return "storytelling";
+    return "engagement";
   }
 
   // Performance Learning
-  private async learnFromPerformance(contentId: string, analytics: unknown): Promise<void> {
+  private async learnFromPerformance(
+    contentId: string,
+    analytics: unknown,
+  ): Promise<void> {
     // Persist real engagement to autopilot_learning_data via the canonical
     // learning service. This is the same store consumed by
     // getOptimalPostingTimes(), getContentPatternWeights() and the
     // recommendations engine — so every published piece of content now
     // measurably tightens the feedback loop for this artist.
     const a = (analytics ?? {}) as Record<string, unknown>;
-    const cached = this.performanceData.get(contentId) as Record<string, unknown> | undefined;
-    const platform = String(cached?.platform ?? a.platform ?? 'unknown');
+    const cached = this.performanceData.get(contentId) as
+      | Record<string, unknown>
+      | undefined;
+    const platform = String(cached?.platform ?? a.platform ?? "unknown");
     const engagementRate = Number(a.engagementRate ?? 0);
 
     try {
@@ -759,14 +842,17 @@ export class AutopilotEngine extends EventEmitter {
         this.userId,
         {
           platform,
-          contentType: String(cached?.contentType ?? 'social_post'),
+          contentType: String(cached?.contentType ?? "social_post"),
           hookType: cached?.hookType ? String(cached.hookType) : undefined,
-          hashtags: Array.isArray(cached?.hashtags) ? (cached!.hashtags as string[]) : [],
+          hashtags: Array.isArray(cached?.hashtags)
+            ? (cached!.hashtags as string[])
+            : [],
           contentText: cached?.text ? String(cached.text) : undefined,
           postId: cached?.postId ? String(cached.postId) : undefined,
-          postedAt: cached?.publishedAt instanceof Date
-            ? (cached.publishedAt as Date)
-            : new Date(),
+          postedAt:
+            cached?.publishedAt instanceof Date
+              ? (cached.publishedAt as Date)
+              : new Date(),
           metadata: { contentId },
         },
         {
@@ -781,13 +867,20 @@ export class AutopilotEngine extends EventEmitter {
         },
       );
     } catch (err) {
-      logger.warn({ err }, `[Autopilot] Failed to record performance for ${contentId}`);
+      logger.warn(
+        { err },
+        `[Autopilot] Failed to record performance for ${contentId}`,
+      );
     }
 
     if (engagementRate > this.config.engagementThreshold * 2) {
-      logger.info(`High performing content detected: ${contentId} (${engagementRate}% engagement)`);
+      logger.info(
+        `High performing content detected: ${contentId} (${engagementRate}% engagement)`,
+      );
     } else if (engagementRate < this.config.engagementThreshold * 0.5) {
-      logger.info(`Low performing content detected: ${contentId} (${engagementRate}% engagement)`);
+      logger.info(
+        `Low performing content detected: ${contentId} (${engagementRate}% engagement)`,
+      );
     }
   }
 
@@ -801,17 +894,17 @@ export class AutopilotEngine extends EventEmitter {
     nextScheduledJob?: Date;
   }> {
     const jobs = Array.from(this.jobs.values());
-    const pendingJobs = jobs.filter((j) => j.status === 'pending');
+    const pendingJobs = jobs.filter((j) => j.status === "pending");
     const nextJob = pendingJobs.sort(
-      (a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime()
+      (a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime(),
     )[0];
 
     return {
       isRunning: this.isRunning,
       totalJobs: jobs.length,
       pendingJobs: pendingJobs.length,
-      completedJobs: jobs.filter((j) => j.status === 'completed').length,
-      failedJobs: jobs.filter((j) => j.status === 'failed').length,
+      completedJobs: jobs.filter((j) => j.status === "completed").length,
+      failedJobs: jobs.filter((j) => j.status === "failed").length,
       nextScheduledJob: nextJob?.scheduledAt,
     };
   }
@@ -823,7 +916,9 @@ export class AutopilotEngine extends EventEmitter {
   }
 
   // Content Queue Management
-  async getContentQueue(platform?: string): Promise<Map<string, any[]> | any[]> {
+  async getContentQueue(
+    platform?: string,
+  ): Promise<Map<string, any[]> | any[]> {
     if (platform) {
       return this.contentQueue.get(platform) || [];
     }

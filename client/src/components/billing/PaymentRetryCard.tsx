@@ -1,22 +1,29 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { useQueryClient } from '@tanstack/react-query';
-import { 
-  RefreshCw, 
-  CreditCard, 
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  RefreshCw,
+  CreditCard,
   Calendar,
   AlertTriangle,
   CheckCircle,
   Clock,
   Loader2,
-  ArrowRight
-} from 'lucide-react';
+  ArrowRight,
+} from "lucide-react";
 
 interface PaymentRetryCardProps {
   subscriptionStatus: string;
@@ -46,51 +53,66 @@ export default function PaymentRetryCard({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isRetrying, setIsRetrying] = useState(false);
-  const [retryResult, setRetryResult] = useState<'success' | 'failed' | 'requires_action' | null>(null);
+  const [retryResult, setRetryResult] = useState<
+    "success" | "failed" | "requires_action" | null
+  >(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const retriesRemaining = maxRetries - retryAttempts;
   const retriesExhausted = retriesRemaining <= 0;
-  const progressPercent = Math.max(0, ((maxRetries - retryAttempts) / maxRetries) * 100);
+  const progressPercent = Math.max(
+    0,
+    ((maxRetries - retryAttempts) / maxRetries) * 100,
+  );
 
   const handleRetryPayment = async () => {
     setIsRetrying(true);
     setRetryResult(null);
 
     try {
-      const response = await apiRequest('POST', '/api/billing/retry-payment');
+      const response = await apiRequest("POST", "/api/billing/retry-payment");
       const data = await response.json();
 
-      if (data.success || data.code === 'PAYMENT_SUCCESS' || data.code === 'ALREADY_PAID') {
-        setRetryResult('success');
-        queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/billing/grace-period-status'] });
+      if (
+        data.success ||
+        data.code === "PAYMENT_SUCCESS" ||
+        data.code === "ALREADY_PAID"
+      ) {
+        setRetryResult("success");
+        queryClient.invalidateQueries({
+          queryKey: ["/api/billing/subscription"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/billing/grace-period-status"],
+        });
 
         toast({
-          title: 'Payment Successful!',
-          description: 'Your subscription is now active.',
+          title: "Payment Successful!",
+          description: "Your subscription is now active.",
         });
 
         onSuccess?.();
-      } else if (data.code === 'REQUIRES_3D_SECURE') {
-        setRetryResult('requires_action');
+      } else if (data.code === "REQUIRES_3D_SECURE") {
+        setRetryResult("requires_action");
         setClientSecret(data.clientSecret);
 
         toast({
-          title: 'Additional Verification Required',
-          description: 'Please complete the 3D Secure authentication.',
+          title: "Additional Verification Required",
+          description: "Please complete the 3D Secure authentication.",
         });
       } else {
         throw data;
       }
     } catch (error) {
       const errorData = error.body || error;
-      setRetryResult('failed');
+      setRetryResult("failed");
 
       toast({
-        title: 'Payment Failed',
-        description: errorData.message || 'Please update your payment method and try again.',
-        variant: 'destructive',
+        title: "Payment Failed",
+        description:
+          errorData.message ||
+          "Please update your payment method and try again.",
+        variant: "destructive",
       });
     } finally {
       setIsRetrying(false);
@@ -98,28 +120,28 @@ export default function PaymentRetryCard({
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getTimeUntil = (dateStr: string) => {
     const diff = new Date(dateStr).getTime() - Date.now();
-    if (diff <= 0) return 'now';
-    
+    if (diff <= 0) return "now";
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
-    
-    if (days > 0) return `in ${days} day${days > 1 ? 's' : ''}`;
-    if (hours > 0) return `in ${hours} hour${hours > 1 ? 's' : ''}`;
-    return 'soon';
+
+    if (days > 0) return `in ${days} day${days > 1 ? "s" : ""}`;
+    if (hours > 0) return `in ${hours} hour${hours > 1 ? "s" : ""}`;
+    return "soon";
   };
 
-  if (subscriptionStatus !== 'past_due' && subscriptionStatus !== 'unpaid') {
+  if (subscriptionStatus !== "past_due" && subscriptionStatus !== "unpaid") {
     return null;
   }
 
@@ -139,7 +161,7 @@ export default function PaymentRetryCard({
             </div>
           </div>
           <Badge variant="destructive">
-            {subscriptionStatus === 'past_due' ? 'Past Due' : 'Unpaid'}
+            {subscriptionStatus === "past_due" ? "Past Due" : "Unpaid"}
           </Badge>
         </div>
       </CardHeader>
@@ -148,13 +170,11 @@ export default function PaymentRetryCard({
         {lastPaymentError && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              {lastPaymentError.message}
-            </AlertDescription>
+            <AlertDescription>{lastPaymentError.message}</AlertDescription>
           </Alert>
         )}
 
-        {retryResult === 'success' && (
+        {retryResult === "success" && (
           <Alert className="border-green-500 bg-green-50 dark:bg-green-950/30">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-700 dark:text-green-400">
@@ -163,18 +183,21 @@ export default function PaymentRetryCard({
           </Alert>
         )}
 
-        {retryResult === 'requires_action' && clientSecret && (
+        {retryResult === "requires_action" && clientSecret && (
           <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950/30">
             <AlertTriangle className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-700 dark:text-blue-400">
-              Your bank requires additional verification. Please complete 3D Secure authentication.
+              Your bank requires additional verification. Please complete 3D
+              Secure authentication.
             </AlertDescription>
           </Alert>
         )}
 
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Retry attempts remaining</span>
+            <span className="text-muted-foreground">
+              Retry attempts remaining
+            </span>
             <span className="font-medium">
               {retriesRemaining} of {maxRetries}
             </span>
@@ -187,7 +210,9 @@ export default function PaymentRetryCard({
             <Clock className="h-4 w-4 text-muted-foreground" />
             <span>
               Next automatic retry: <strong>{getTimeUntil(nextRetryAt)}</strong>
-              <span className="text-muted-foreground ml-1">({formatDate(nextRetryAt)})</span>
+              <span className="text-muted-foreground ml-1">
+                ({formatDate(nextRetryAt)})
+              </span>
             </span>
           </div>
         )}
@@ -205,7 +230,8 @@ export default function PaymentRetryCard({
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              All automatic retries have been exhausted. Please update your payment method to continue.
+              All automatic retries have been exhausted. Please update your
+              payment method to continue.
             </AlertDescription>
           </Alert>
         )}
@@ -214,7 +240,7 @@ export default function PaymentRetryCard({
       <CardFooter className="flex gap-3">
         <Button
           onClick={handleRetryPayment}
-          disabled={isRetrying || retriesExhausted || retryResult === 'success'}
+          disabled={isRetrying || retriesExhausted || retryResult === "success"}
           className="flex-1"
         >
           {isRetrying ? (
@@ -229,9 +255,13 @@ export default function PaymentRetryCard({
             </>
           )}
         </Button>
-        
+
         {onUpdatePaymentMethod && (
-          <Button variant="outline" onClick={onUpdatePaymentMethod} className="flex-1">
+          <Button
+            variant="outline"
+            onClick={onUpdatePaymentMethod}
+            className="flex-1"
+          >
             <CreditCard className="h-4 w-4 mr-2" />
             Update Card
             <ArrowRight className="h-4 w-4 ml-2" />

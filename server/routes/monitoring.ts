@@ -1,11 +1,11 @@
-import { Router } from 'express';
-import { logger } from '../logger.js';
-import { queueMonitor } from '../monitoring/queueMonitor.js';
-import { aiModelManager } from '../services/aiModelManager.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
-import { alertingService } from '../monitoring/alertingService.js';
-import { metricsCollector } from '../monitoring/metricsCollector.js';
-import { requireAdmin, require2FA } from '../middleware/auth.js';
+import { Router } from "express";
+import { logger } from "../logger.js";
+import { queueMonitor } from "../monitoring/queueMonitor.js";
+import { aiModelManager } from "../services/aiModelManager.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { alertingService } from "../monitoring/alertingService.js";
+import { metricsCollector } from "../monitoring/metricsCollector.js";
+import { requireAdmin, require2FA } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -13,14 +13,16 @@ router.use(requireAdmin);
 router.use(require2FA);
 
 router.get(
-  '/queue-metrics',
+  "/queue-metrics",
   asyncHandler(async (req, res) => {
     try {
       const metrics = await queueMonitor.collectAllMetrics();
-      const metricsArray = Array.from(metrics.entries()).map(([name, data]) => ({
-        queue: name,
-        ...data,
-      }));
+      const metricsArray = Array.from(metrics.entries()).map(
+        ([name, data]) => ({
+          queue: name,
+          ...data,
+        }),
+      );
 
       res.json({
         success: true,
@@ -28,14 +30,14 @@ router.get(
         metrics: metricsArray,
       });
     } catch (error) {
-      logger.warn('Error in queue-metrics:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in queue-metrics:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.get(
-  '/queue-metrics/:queueName',
+  "/queue-metrics/:queueName",
   asyncHandler(async (req, res) => {
     try {
       const { queueName } = req.params;
@@ -53,14 +55,14 @@ router.get(
         metrics,
       });
     } catch (error) {
-      logger.warn('Error in queue-metrics by name:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in queue-metrics by name:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.get(
-  '/queue-health',
+  "/queue-health",
   asyncHandler(async (req, res) => {
     try {
       const healthStatus = await queueMonitor.getHealthStatus();
@@ -68,20 +70,22 @@ router.get(
       res.json({
         success: true,
         healthy: healthStatus.healthy,
-        queues: Array.from(healthStatus.queues.entries()).map(([name, data]) => ({
-          name,
-          ...data,
-        })),
+        queues: Array.from(healthStatus.queues.entries()).map(
+          ([name, data]) => ({
+            name,
+            ...data,
+          }),
+        ),
       });
     } catch (error) {
-      logger.warn('Error in queue-health:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in queue-health:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.get(
-  '/ai-models',
+  "/ai-models",
   asyncHandler(async (req, res) => {
     try {
       const metrics = aiModelManager.getMetrics();
@@ -95,14 +99,14 @@ router.get(
         cacheStats,
       });
     } catch (error) {
-      logger.warn('Error in ai-models:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in ai-models:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.get(
-  '/system-health',
+  "/system-health",
   asyncHandler(async (req, res) => {
     try {
       const [queueHealth, aiMetrics] = await Promise.all([
@@ -112,22 +116,26 @@ router.get(
 
       const allQueuesHealthy = queueHealth.healthy;
       const aiModelsHealthy =
-        aiMetrics.socialAutopilot.currentSize <= aiMetrics.socialAutopilot.maxSize &&
-        aiMetrics.advertisingAutopilot.currentSize <= aiMetrics.advertisingAutopilot.maxSize;
+        aiMetrics.socialAutopilot.currentSize <=
+          aiMetrics.socialAutopilot.maxSize &&
+        aiMetrics.advertisingAutopilot.currentSize <=
+          aiMetrics.advertisingAutopilot.maxSize;
 
       const systemHealthy = allQueuesHealthy && aiModelsHealthy;
 
       res.json({
         success: true,
         healthy: systemHealthy,
-        status: systemHealthy ? 'healthy' : 'degraded',
+        status: systemHealthy ? "healthy" : "degraded",
         components: {
           queues: {
             healthy: allQueuesHealthy,
-            details: Array.from(queueHealth.queues.entries()).map(([name, data]) => ({
-              name,
-              status: data.status,
-            })),
+            details: Array.from(queueHealth.queues.entries()).map(
+              ([name, data]) => ({
+                name,
+                status: data.status,
+              }),
+            ),
           },
           aiModels: {
             healthy: aiModelsHealthy,
@@ -135,7 +143,8 @@ router.get(
               current: aiMetrics.socialAutopilot.currentSize,
               max: aiMetrics.socialAutopilot.maxSize,
               utilizationPercent: (
-                (aiMetrics.socialAutopilot.currentSize / aiMetrics.socialAutopilot.maxSize) *
+                (aiMetrics.socialAutopilot.currentSize /
+                  aiMetrics.socialAutopilot.maxSize) *
                 100
               ).toFixed(1),
             },
@@ -153,17 +162,18 @@ router.get(
         timestamp: new Date(),
       });
     } catch (error) {
-      logger.warn('Error in system-health:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in system-health:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.post(
-  '/set-thresholds',
+  "/set-thresholds",
   asyncHandler(async (req, res) => {
     try {
-      const { maxWaitingJobs, maxFailedRate, maxStalledJobs, maxRedisLatency } = req.body;
+      const { maxWaitingJobs, maxFailedRate, maxStalledJobs, maxRedisLatency } =
+        req.body;
 
       queueMonitor.setAlertThresholds({
         maxWaitingJobs,
@@ -172,24 +182,29 @@ router.post(
         maxRedisLatency,
       });
 
-      logger.info('📊 Queue monitoring thresholds updated by admin', {
+      logger.info("📊 Queue monitoring thresholds updated by admin", {
         adminId: req.user.id,
-        thresholds: { maxWaitingJobs, maxFailedRate, maxStalledJobs, maxRedisLatency },
+        thresholds: {
+          maxWaitingJobs,
+          maxFailedRate,
+          maxStalledJobs,
+          maxRedisLatency,
+        },
       });
 
       res.json({
         success: true,
-        message: 'Alert thresholds updated successfully',
+        message: "Alert thresholds updated successfully",
       });
     } catch (error) {
-      logger.warn('Error in set-thresholds:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in set-thresholds:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.get(
-  '/dashboard',
+  "/dashboard",
   asyncHandler(async (req, res) => {
     try {
       const dashboardData = metricsCollector.getDashboardData();
@@ -206,21 +221,21 @@ router.get(
         timestamp: new Date(),
       });
     } catch (error) {
-      logger.warn('Error in monitoring dashboard:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in monitoring dashboard:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.post(
-  '/baseline/save',
+  "/baseline/save",
   asyncHandler(async (req, res) => {
     try {
       const { name } = req.body;
-      const baselineName = name || 'baseline';
+      const baselineName = name || "baseline";
       const filepath = await metricsCollector.saveBaseline(baselineName);
 
-      logger.info('📊 Baseline metrics saved by admin', {
+      logger.info("📊 Baseline metrics saved by admin", {
         adminId: req.user.id,
         baselineName,
         filepath,
@@ -228,18 +243,18 @@ router.post(
 
       res.json({
         success: true,
-        message: 'Baseline metrics saved successfully',
+        message: "Baseline metrics saved successfully",
         filepath,
       });
     } catch (error) {
-      logger.warn('Error in baseline save:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in baseline save:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.get(
-  '/alerting/config',
+  "/alerting/config",
   asyncHandler(async (req, res) => {
     try {
       const config = alertingService.getConfig();
@@ -254,33 +269,33 @@ router.get(
         },
       });
     } catch (error) {
-      logger.warn('Error in alerting config:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in alerting config:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 router.post(
-  '/alerting/test',
+  "/alerting/test",
   asyncHandler(async (req, res) => {
     try {
       await alertingService.sendAlert({
-        severity: 'info',
-        title: 'Test Alert',
-        message: 'This is a test alert from Max Booster monitoring system.',
+        severity: "info",
+        title: "Test Alert",
+        message: "This is a test alert from Max Booster monitoring system.",
         timestamp: new Date(),
         metadata: { testBy: req.user.email },
       });
 
       res.json({
         success: true,
-        message: 'Test alert sent successfully',
+        message: "Test alert sent successfully",
       });
     } catch (error) {
-      logger.warn('Error in alerting test:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error in alerting test:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 export default router;

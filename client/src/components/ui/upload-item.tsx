@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   FileAudio,
   X,
@@ -10,14 +10,20 @@ import {
   RotateCcw,
   Pause,
   Play,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface UploadItemData {
   id: string;
   fileName: string;
   fileSize: number;
   progress: number;
-  status: 'queued' | 'uploading' | 'processing' | 'success' | 'error' | 'paused';
+  status:
+    | "queued"
+    | "uploading"
+    | "processing"
+    | "success"
+    | "error"
+    | "paused";
   error?: string;
   uploadedBytes?: number;
 }
@@ -32,11 +38,11 @@ interface UploadItemProps {
 }
 
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
+  if (bytes === 0) return "0 B";
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
 function formatProgress(uploaded: number, total: number): string {
@@ -51,7 +57,15 @@ export function UploadItem({
   onResume,
   compact = false,
 }: UploadItemProps) {
-  const { id, fileName, fileSize, progress, status, error, uploadedBytes = 0 } = item;
+  const {
+    id,
+    fileName,
+    fileSize,
+    progress,
+    status,
+    error,
+    uploadedBytes = 0,
+  } = item;
 
   const statusIcon = {
     queued: <Loader2 className="h-4 w-4 text-muted-foreground animate-pulse" />,
@@ -63,37 +77,39 @@ export function UploadItem({
   };
 
   const statusText = {
-    queued: 'Queued',
+    queued: "Queued",
     uploading: `${progress}%`,
-    processing: 'Processing...',
-    success: 'Complete',
-    error: error || 'Failed',
-    paused: 'Paused',
+    processing: "Processing...",
+    success: "Complete",
+    error: error || "Failed",
+    paused: "Paused",
   };
 
   const statusColor = {
-    queued: 'bg-muted',
-    uploading: 'bg-primary/10',
-    processing: 'bg-amber-500/10',
-    success: 'bg-green-500/10',
-    error: 'bg-destructive/10',
-    paused: 'bg-muted',
+    queued: "bg-muted",
+    uploading: "bg-primary/10",
+    processing: "bg-amber-500/10",
+    success: "bg-green-500/10",
+    error: "bg-destructive/10",
+    paused: "bg-muted",
   };
 
   if (compact) {
     return (
       <div
         className={cn(
-          'flex items-center gap-2 p-2 rounded-md text-sm transition-colors',
-          statusColor[status]
+          "flex items-center gap-2 p-2 rounded-md text-sm transition-colors",
+          statusColor[status],
         )}
       >
         {statusIcon[status]}
         <span className="flex-1 truncate text-xs font-medium">{fileName}</span>
-        {status === 'uploading' && (
-          <span className="text-xs text-muted-foreground tabular-nums">{progress}%</span>
+        {status === "uploading" && (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {progress}%
+          </span>
         )}
-        {(status === 'error' || status === 'queued') && onCancel && (
+        {(status === "error" || status === "queued") && onCancel && (
           <Button
             variant="ghost"
             size="icon"
@@ -103,7 +119,7 @@ export function UploadItem({
             <X className="h-3 w-3" />
           </Button>
         )}
-        {status === 'error' && onRetry && (
+        {status === "error" && onRetry && (
           <Button
             variant="ghost"
             size="icon"
@@ -120,20 +136,22 @@ export function UploadItem({
   return (
     <div
       className={cn(
-        'flex flex-col gap-2 p-3 sm:p-4 rounded-lg border transition-all',
-        status === 'error' ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-card',
-        status === 'success' && 'border-green-500/50 bg-green-500/5'
+        "flex flex-col gap-2 p-3 sm:p-4 rounded-lg border transition-all",
+        status === "error"
+          ? "border-destructive/50 bg-destructive/5"
+          : "border-border bg-card",
+        status === "success" && "border-green-500/50 bg-green-500/5",
       )}
     >
       <div className="flex items-start gap-3">
         <div
           className={cn(
-            'flex-shrink-0 p-2 rounded-lg',
-            status === 'success'
-              ? 'bg-green-500/10'
-              : status === 'error'
-                ? 'bg-destructive/10'
-                : 'bg-primary/10'
+            "flex-shrink-0 p-2 rounded-lg",
+            status === "success"
+              ? "bg-green-500/10"
+              : status === "error"
+                ? "bg-destructive/10"
+                : "bg-primary/10",
           )}
         >
           <FileAudio className="h-5 w-5 text-primary" />
@@ -146,9 +164,9 @@ export function UploadItem({
               {statusIcon[status]}
               <span
                 className={cn(
-                  'text-xs font-medium',
-                  status === 'error' && 'text-destructive',
-                  status === 'success' && 'text-green-600'
+                  "text-xs font-medium",
+                  status === "error" && "text-destructive",
+                  status === "success" && "text-green-600",
                 )}
               >
                 {statusText[status]}
@@ -156,7 +174,7 @@ export function UploadItem({
             </div>
           </div>
 
-          {(status === 'uploading' || status === 'paused') && (
+          {(status === "uploading" || status === "paused") && (
             <>
               <Progress value={progress} className="h-2" />
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -166,27 +184,29 @@ export function UploadItem({
             </>
           )}
 
-          {status === 'queued' && (
+          {status === "queued" && (
             <p className="text-xs text-muted-foreground">
               {formatFileSize(fileSize)} - Waiting to upload
             </p>
           )}
 
-          {status === 'processing' && (
+          {status === "processing" && (
             <p className="text-xs text-amber-600">Server processing file...</p>
           )}
 
-          {status === 'success' && (
-            <p className="text-xs text-green-600">{formatFileSize(fileSize)} uploaded</p>
+          {status === "success" && (
+            <p className="text-xs text-green-600">
+              {formatFileSize(fileSize)} uploaded
+            </p>
           )}
 
-          {status === 'error' && error && (
+          {status === "error" && error && (
             <p className="text-xs text-destructive truncate">{error}</p>
           )}
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          {status === 'uploading' && onPause && (
+          {status === "uploading" && onPause && (
             <Button
               variant="ghost"
               size="icon"
@@ -197,7 +217,7 @@ export function UploadItem({
               <Pause className="h-4 w-4" />
             </Button>
           )}
-          {status === 'paused' && onResume && (
+          {status === "paused" && onResume && (
             <Button
               variant="ghost"
               size="icon"
@@ -208,7 +228,7 @@ export function UploadItem({
               <Play className="h-4 w-4" />
             </Button>
           )}
-          {status === 'error' && onRetry && (
+          {status === "error" && onRetry && (
             <Button
               variant="ghost"
               size="icon"
@@ -219,7 +239,10 @@ export function UploadItem({
               <RotateCcw className="h-4 w-4" />
             </Button>
           )}
-          {(status === 'queued' || status === 'uploading' || status === 'error' || status === 'paused') &&
+          {(status === "queued" ||
+            status === "uploading" ||
+            status === "error" ||
+            status === "paused") &&
             onCancel && (
               <Button
                 variant="ghost"
@@ -256,16 +279,22 @@ export function UploadList({
 }: UploadListProps) {
   if (items.length === 0) return null;
 
-  const activeUploads = items.filter((i) => i.status === 'uploading' || i.status === 'queued');
-  const completedUploads = items.filter((i) => i.status === 'success');
-  const errorUploads = items.filter((i) => i.status === 'error');
+  const activeUploads = items.filter(
+    (i) => i.status === "uploading" || i.status === "queued",
+  );
+  const completedUploads = items.filter((i) => i.status === "success");
+  const errorUploads = items.filter((i) => i.status === "error");
 
   const totalSize = items.reduce((sum, i) => sum + i.fileSize, 0);
-  const uploadedSize = items.reduce((sum, i) => sum + (i.uploadedBytes || 0), 0);
-  const overallProgress = totalSize > 0 ? Math.round((uploadedSize / totalSize) * 100) : 0;
+  const uploadedSize = items.reduce(
+    (sum, i) => sum + (i.uploadedBytes || 0),
+    0,
+  );
+  const overallProgress =
+    totalSize > 0 ? Math.round((uploadedSize / totalSize) * 100) : 0;
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn("space-y-3", className)}>
       {items.length > 1 && !compact && (
         <div className="flex items-center justify-between px-1">
           <div className="text-sm text-muted-foreground">
@@ -277,7 +306,12 @@ export function UploadList({
             )}
           </div>
           {activeUploads.length > 0 && onCancelAll && (
-            <Button variant="ghost" size="sm" onClick={onCancelAll} className="h-7 text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancelAll}
+              className="h-7 text-xs"
+            >
               Cancel All
             </Button>
           )}
@@ -288,12 +322,13 @@ export function UploadList({
         <div className="space-y-1 px-1">
           <Progress value={overallProgress} className="h-1.5" />
           <p className="text-xs text-muted-foreground text-right tabular-nums">
-            {formatFileSize(uploadedSize)} / {formatFileSize(totalSize)} ({overallProgress}%)
+            {formatFileSize(uploadedSize)} / {formatFileSize(totalSize)} (
+            {overallProgress}%)
           </p>
         </div>
       )}
 
-      <div className={cn('space-y-2', compact && 'space-y-1')}>
+      <div className={cn("space-y-2", compact && "space-y-1")}>
         {items.map((item) => (
           <UploadItem
             key={item.id}

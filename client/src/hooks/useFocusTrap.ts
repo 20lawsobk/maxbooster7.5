@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { trapFocus } from '@/lib/accessibility';
+import { useEffect, useRef } from "react";
+import { trapFocus } from "@/lib/accessibility";
 
 export function useFocusTrap(enabled = true) {
   const containerRef = useRef<HTMLDivElement>(null);

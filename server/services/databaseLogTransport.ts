@@ -1,9 +1,9 @@
-import type { LogEntry, LogLevel } from './structuredLogger.js';
-import { addLogTransport } from './structuredLogger.js';
-import { db } from '../db.js';
-import { systemLogs } from '@shared/schema';
+import type { LogEntry, LogLevel } from "./structuredLogger.js";
+import { addLogTransport } from "./structuredLogger.js";
+import { db } from "../db.js";
+import { systemLogs } from "@shared/schema";
 
-type LogLevelWithFatal = LogLevel | 'fatal';
+type LogLevelWithFatal = LogLevel | "fatal";
 
 interface DatabaseTransportConfig {
   minLevel: LogLevel;
@@ -13,10 +13,10 @@ interface DatabaseTransportConfig {
 }
 
 const DEFAULT_CONFIG: DatabaseTransportConfig = {
-  minLevel: 'warn',
+  minLevel: "warn",
   batchSize: 25,
   flushIntervalMs: 8000,
-  defaultService: 'api',
+  defaultService: "api",
 };
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
@@ -26,7 +26,16 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
   error: 3,
 };
 
-const VALID_SERVICES = ['api', 'auth', 'database', 'ai', 'storage', 'queue', 'email', 'social'];
+const VALID_SERVICES = [
+  "api",
+  "auth",
+  "database",
+  "ai",
+  "storage",
+  "queue",
+  "email",
+  "social",
+];
 
 class DatabaseLogTransport {
   private buffer: LogEntry[] = [];
@@ -64,13 +73,33 @@ class DatabaseLogTransport {
       return service;
     }
     if (service) {
-      if (service.toLowerCase().includes('auth')) return 'auth';
-      if (service.toLowerCase().includes('db') || service.toLowerCase().includes('database')) return 'database';
-      if (service.toLowerCase().includes('ai') || service.toLowerCase().includes('ml')) return 'ai';
-      if (service.toLowerCase().includes('storage') || service.toLowerCase().includes('file')) return 'storage';
-      if (service.toLowerCase().includes('queue') || service.toLowerCase().includes('job')) return 'queue';
-      if (service.toLowerCase().includes('email') || service.toLowerCase().includes('mail')) return 'email';
-      if (service.toLowerCase().includes('social')) return 'social';
+      if (service.toLowerCase().includes("auth")) return "auth";
+      if (
+        service.toLowerCase().includes("db") ||
+        service.toLowerCase().includes("database")
+      )
+        return "database";
+      if (
+        service.toLowerCase().includes("ai") ||
+        service.toLowerCase().includes("ml")
+      )
+        return "ai";
+      if (
+        service.toLowerCase().includes("storage") ||
+        service.toLowerCase().includes("file")
+      )
+        return "storage";
+      if (
+        service.toLowerCase().includes("queue") ||
+        service.toLowerCase().includes("job")
+      )
+        return "queue";
+      if (
+        service.toLowerCase().includes("email") ||
+        service.toLowerCase().includes("mail")
+      )
+        return "email";
+      if (service.toLowerCase().includes("social")) return "social";
     }
     return this.config.defaultService;
   }
@@ -105,7 +134,10 @@ class DatabaseLogTransport {
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
     }
-    this.flushTimer = setTimeout(() => this.flush(), Math.max(0, effectiveDelay));
+    this.flushTimer = setTimeout(
+      () => this.flush(),
+      Math.max(0, effectiveDelay),
+    );
   }
 
   private async flush(): Promise<void> {
@@ -138,21 +170,33 @@ class DatabaseLogTransport {
     } catch (error) {
       this.consecutiveFailures++;
 
-      const pgCode = (error as Record<string, unknown>)?.cause?.code ?? (error as Record<string, unknown>)?.code ?? '';
+      const pgCode =
+        (error as Record<string, unknown>)?.cause?.code ??
+        (error as Record<string, unknown>)?.code ??
+        "";
 
       // 53100/53300/too_many_connections: pool contention or Neon connection limit.
       // During the startup grace period (~90s) this is a transient boot-burst
       // condition — the pool frees up once initialization completes.  Treat it
       // as a regular retryable failure rather than immediately giving up forever.
-      const isTooManyConnections = pgCode === '53100' || pgCode === '53300' ||
-        String((error as Record<string, unknown>)?.message ?? '').includes('too many connections') ||
-        String((error as Record<string, unknown>)?.message ?? '').includes('53100');
+      const isTooManyConnections =
+        pgCode === "53100" ||
+        pgCode === "53300" ||
+        String((error as Record<string, unknown>)?.message ?? "").includes(
+          "too many connections",
+        ) ||
+        String((error as Record<string, unknown>)?.message ?? "").includes(
+          "53100",
+        );
 
       // Pool exhaustion (53100/53300) is ALWAYS transient — the pool frees itself
       // once in-flight queries complete.  Never permanently disable for connection
       // errors; use exponential backoff instead and keep retrying forever.
       // Only permanently disable for non-connection errors that exceed the threshold.
-      if (!isTooManyConnections && this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD) {
+      if (
+        !isTooManyConnections &&
+        this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD
+      ) {
         this.disabled = true;
         this.buffer.length = 0;
         if (this.flushTimer) {
@@ -162,7 +206,7 @@ class DatabaseLogTransport {
         this.isFlushing = false;
         process.stderr.write(
           `[DatabaseLogTransport] Permanently disabled — ${this.consecutiveFailures} consecutive non-connection failures. ` +
-          `All further log persistence suppressed. Restart the process to re-enable.\n`
+            `All further log persistence suppressed. Restart the process to re-enable.\n`,
         );
         return;
       }
@@ -171,16 +215,23 @@ class DatabaseLogTransport {
         // Pool exhaustion — exponential backoff, never permanently disable.
         // In-grace:   graceRemaining + 10 s (waits for boot burst to clear).
         // Post-grace: 30 s → 60 s → 120 s (capped) based on consecutive count.
-        const inGracePeriod = (Date.now() - this._startedAt) < this.STARTUP_GRACE_PERIOD_MS;
+        const inGracePeriod =
+          Date.now() - this._startedAt < this.STARTUP_GRACE_PERIOD_MS;
         let backoffMs: number;
         if (inGracePeriod) {
-          const graceRemaining = this.STARTUP_GRACE_PERIOD_MS - (Date.now() - this._startedAt);
+          const graceRemaining =
+            this.STARTUP_GRACE_PERIOD_MS - (Date.now() - this._startedAt);
           backoffMs = Math.min(graceRemaining + 10_000, 120_000);
         } else {
-          backoffMs = Math.min(30_000 * Math.pow(2, Math.min(this.consecutiveFailures - 1, 2)), 120_000);
+          backoffMs = Math.min(
+            30_000 * Math.pow(2, Math.min(this.consecutiveFailures - 1, 2)),
+            120_000,
+          );
         }
-        const label = inGracePeriod ? 'Boot-burst' : 'Post-boot';
-        process.stderr.write(`[DatabaseLogTransport] ${label} connection error (${pgCode}) — retry #${this.consecutiveFailures} in ${Math.ceil(backoffMs / 1000)}s\n`);
+        const label = inGracePeriod ? "Boot-burst" : "Post-boot";
+        process.stderr.write(
+          `[DatabaseLogTransport] ${label} connection error (${pgCode}) — retry #${this.consecutiveFailures} in ${Math.ceil(backoffMs / 1000)}s\n`,
+        );
         this.buffer.unshift(...logsToInsert);
         if (this.buffer.length > 500) this.buffer.length = 500;
         this.isFlushing = false;
@@ -194,22 +245,41 @@ class DatabaseLogTransport {
         }, backoffMs);
         return;
       }
-      const pgDetail = (error as Record<string, unknown>)?.cause?.detail ?? (error as Record<string, unknown>)?.detail ?? '';
-      const errMsg = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
-      process.stderr.write(`[DatabaseLogTransport] Failed to persist logs: ${errMsg}${pgCode ? ' PG_CODE=' + pgCode : ''}${pgDetail ? ' DETAIL=' + pgDetail : ''}\n`);
+      const pgDetail =
+        (error as Record<string, unknown>)?.cause?.detail ??
+        (error as Record<string, unknown>)?.detail ??
+        "";
+      const errMsg =
+        error instanceof Error
+          ? error.message.slice(0, 200)
+          : String(error).slice(0, 200);
+      process.stderr.write(
+        `[DatabaseLogTransport] Failed to persist logs: ${errMsg}${pgCode ? " PG_CODE=" + pgCode : ""}${pgDetail ? " DETAIL=" + pgDetail : ""}\n`,
+      );
 
       if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
         // Drop the failed batch entirely after too many consecutive failures to prevent
         // the buffer from growing indefinitely in a retry storm
-        const backoffMs = Math.min(this.BACKOFF_BASE_MS * Math.pow(2, this.consecutiveFailures - this.MAX_CONSECUTIVE_FAILURES), 120_000);
-        process.stderr.write(`[DatabaseLogTransport] ${this.consecutiveFailures} consecutive failures — dropping batch of ${logsToInsert.length} to prevent buffer storm; next retry in ${backoffMs}ms\n`);
+        const backoffMs = Math.min(
+          this.BACKOFF_BASE_MS *
+            Math.pow(
+              2,
+              this.consecutiveFailures - this.MAX_CONSECUTIVE_FAILURES,
+            ),
+          120_000,
+        );
+        process.stderr.write(
+          `[DatabaseLogTransport] ${this.consecutiveFailures} consecutive failures — dropping batch of ${logsToInsert.length} to prevent buffer storm; next retry in ${backoffMs}ms\n`,
+        );
         // Still re-add the logs but only if there's remaining space
         if (this.buffer.length < 200) {
           this.buffer.unshift(...logsToInsert);
         }
         if (this.buffer.length > 500) {
           this.buffer.splice(0, this.buffer.length - 200);
-          process.stderr.write(`[DatabaseLogTransport] Buffer overflow, dropping oldest logs\n`);
+          process.stderr.write(
+            `[DatabaseLogTransport] Buffer overflow, dropping oldest logs\n`,
+          );
         }
         this.isFlushing = false;
         backoffHandled = true;
@@ -223,7 +293,9 @@ class DatabaseLogTransport {
       this.buffer.unshift(...logsToInsert);
       if (this.buffer.length > 1000) {
         this.buffer.length = 1000;
-        process.stderr.write(`[DatabaseLogTransport] Buffer overflow, dropping oldest logs\n`);
+        process.stderr.write(
+          `[DatabaseLogTransport] Buffer overflow, dropping oldest logs\n`,
+        );
       }
     } finally {
       if (!backoffHandled) {
@@ -248,13 +320,17 @@ class DatabaseLogTransport {
       this.flushTimer = null;
     }
     if (dropped > 0) {
-      process.stderr.write(`[DatabaseLogTransport] clearBuffer() discarded ${dropped} buffered log entries\n`);
+      process.stderr.write(
+        `[DatabaseLogTransport] clearBuffer() discarded ${dropped} buffered log entries\n`,
+      );
     }
     return dropped;
   }
 
   /** How many entries are currently buffered (for health reporting). */
-  get bufferSize(): number { return this.buffer.length; }
+  get bufferSize(): number {
+    return this.buffer.length;
+  }
 
   async shutdown(): Promise<void> {
     if (this.flushTimer) {
@@ -270,13 +346,17 @@ class DatabaseLogTransport {
     }
     addLogTransport((entry) => this.transport(entry));
     this.isInitialized = true;
-    process.stdout.write(`[DatabaseLogTransport] Initialized - persisting ${this.config.minLevel}+ logs to database\n`);
+    process.stdout.write(
+      `[DatabaseLogTransport] Initialized - persisting ${this.config.minLevel}+ logs to database\n`,
+    );
   }
 }
 
 let transportInstance: DatabaseLogTransport | null = null;
 
-export function initializeDatabaseLogTransport(config?: Partial<DatabaseTransportConfig>): DatabaseLogTransport {
+export function initializeDatabaseLogTransport(
+  config?: Partial<DatabaseTransportConfig>,
+): DatabaseLogTransport {
   if (!transportInstance) {
     transportInstance = new DatabaseLogTransport(config);
     transportInstance.initialize();

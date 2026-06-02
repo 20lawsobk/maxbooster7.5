@@ -1,22 +1,26 @@
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'small';
+  size?: "sm" | "md" | "lg" | "small";
   showText?: boolean;
   className?: string;
 }
 
-export function Logo({ size = 'md', showText = true, className = '' }: LogoProps) {
+export function Logo({
+  size = "md",
+  showText = true,
+  className = "",
+}: LogoProps) {
   const sizeMap = {
-    sm: 'h-8 w-8',
-    small: 'h-8 w-8',
-    md: 'h-10 w-10',
-    lg: 'h-14 w-14',
+    sm: "h-8 w-8",
+    small: "h-8 w-8",
+    md: "h-10 w-10",
+    lg: "h-14 w-14",
   };
 
   const textSizeMap = {
-    sm: 'text-lg',
-    small: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-2xl',
+    sm: "text-lg",
+    small: "text-lg",
+    md: "text-xl",
+    lg: "text-2xl",
   };
 
   return (
@@ -35,7 +39,9 @@ export function Logo({ size = 'md', showText = true, className = '' }: LogoProps
           >
             Max Booster
           </span>
-          <span className="text-xs text-muted-foreground leading-tight">by B-Lawz Music</span>
+          <span className="text-xs text-muted-foreground leading-tight">
+            by B-Lawz Music
+          </span>
         </div>
       )}
     </div>

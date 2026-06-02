@@ -1,15 +1,25 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, X, Send, Lightbulb, Music, TrendingUp, Zap, Minimize2, Maximize2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sparkles,
+  X,
+  Send,
+  Lightbulb,
+  Music,
+  TrendingUp,
+  Zap,
+  Minimize2,
+  Maximize2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
@@ -21,20 +31,28 @@ interface Suggestion {
 }
 
 const QUICK_SUGGESTIONS: Suggestion[] = [
-  { icon: Music, text: 'What is Max Booster?', color: 'text-purple-400' },
-  { icon: TrendingUp, text: 'How does distribution work?', color: 'text-blue-400' },
-  { icon: Zap, text: 'Tell me about the AI features', color: 'text-amber-400' },
-  { icon: Lightbulb, text: 'How do I sell beats?', color: 'text-green-400' },
+  { icon: Music, text: "What is Max Booster?", color: "text-purple-400" },
+  {
+    icon: TrendingUp,
+    text: "How does distribution work?",
+    color: "text-blue-400",
+  },
+  { icon: Zap, text: "Tell me about the AI features", color: "text-amber-400" },
+  { icon: Lightbulb, text: "How do I sell beats?", color: "text-green-400" },
 ];
 
-const WELCOME = "Hey there! I'm Max, your AI assistant — built entirely in-house by the B-Lawz Music team. Ask me anything about Max Booster: the Studio, distribution, social media, advertising, marketplace, analytics, and more. What do you want to know?";
+const WELCOME =
+  "Hey there! I'm Max, your AI assistant — built entirely in-house by the B-Lawz Music team. Ask me anything about Max Booster: the Studio, distribution, social media, advertising, marketplace, analytics, and more. What do you want to know?";
 
 async function fetchChat(message: string): Promise<string> {
   const csrfToken = getCsrfTokenFromCookie();
-  const res = await fetch('/api/assistant/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-    credentials: 'include',
+  const res = await fetch("/api/assistant/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
+    credentials: "include",
     body: JSON.stringify({ message }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -46,7 +64,7 @@ export function AIAssistantPublic() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -58,12 +76,14 @@ export function AIAssistantPublic() {
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      setMessages([{
-        id: 'welcome',
-        role: 'assistant',
-        content: WELCOME,
-        timestamp: new Date(),
-      }]);
+      setMessages([
+        {
+          id: "welcome",
+          role: "assistant",
+          content: WELCOME,
+          timestamp: new Date(),
+        },
+      ]);
     }
   }, [isOpen, messages.length]);
 
@@ -73,30 +93,37 @@ export function AIAssistantPublic() {
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: 'user',
+      role: "user",
       content: textToSend,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInputValue('');
+    setInputValue("");
     setIsTyping(true);
 
     try {
       const content = await fetchChat(textToSend);
-      setMessages((prev) => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content,
-        timestamp: new Date(),
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content,
+          timestamp: new Date(),
+        },
+      ]);
     } catch {
-      setMessages((prev) => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "I'm having trouble connecting right now. Please try again in a moment.",
-        timestamp: new Date(),
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content:
+            "I'm having trouble connecting right now. Please try again in a moment.",
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -118,10 +145,14 @@ export function AIAssistantPublic() {
   }
 
   return (
-    <div className={cn(
-      "fixed bottom-20 lg:bottom-6 right-2 sm:right-6 z-[45] transition-all duration-200",
-      isMinimized ? "w-[calc(100vw-1rem)] sm:w-80" : "w-[calc(100vw-1rem)] sm:w-96"
-    )}>
+    <div
+      className={cn(
+        "fixed bottom-20 lg:bottom-6 right-2 sm:right-6 z-[45] transition-all duration-200",
+        isMinimized
+          ? "w-[calc(100vw-1rem)] sm:w-80"
+          : "w-[calc(100vw-1rem)] sm:w-96",
+      )}
+    >
       <Card className="shadow-2xl border-2 border-purple-500/20 bg-[#1a1a1a]">
         <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-purple-500/20 p-4">
           <div className="flex items-center justify-between">
@@ -131,7 +162,9 @@ export function AIAssistantPublic() {
               </div>
               <div>
                 <div className="text-sm font-semibold">Max</div>
-                <div className="text-xs text-gray-400 font-normal">In-House AI Assistant</div>
+                <div className="text-xs text-gray-400 font-normal">
+                  In-House AI Assistant
+                </div>
               </div>
             </CardTitle>
             <div className="flex items-center gap-1">
@@ -141,7 +174,11 @@ export function AIAssistantPublic() {
                 className="h-8 w-8 p-0 text-gray-400 hover:text-white"
                 onClick={() => setIsMinimized(!isMinimized)}
               >
-                {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+                {isMinimized ? (
+                  <Maximize2 className="h-4 w-4" />
+                ) : (
+                  <Minimize2 className="h-4 w-4" />
+                )}
               </Button>
               <Button
                 variant="ghost"
@@ -164,15 +201,15 @@ export function AIAssistantPublic() {
                     key={message.id}
                     className={cn(
                       "flex",
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                      message.role === "user" ? "justify-end" : "justify-start",
                     )}
                   >
                     <div
                       className={cn(
                         "max-w-[80%] rounded-lg px-4 py-2 whitespace-pre-wrap text-sm",
-                        message.role === 'user'
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                          : 'bg-[#252525] text-gray-100 border border-gray-700'
+                        message.role === "user"
+                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                          : "bg-[#252525] text-gray-100 border border-gray-700",
                       )}
                     >
                       {message.content}
@@ -184,9 +221,18 @@ export function AIAssistantPublic() {
                   <div className="flex justify-start">
                     <div className="bg-[#252525] text-gray-100 border border-gray-700 rounded-lg px-4 py-2">
                       <div className="flex space-x-2">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div
+                          className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -202,8 +248,15 @@ export function AIAssistantPublic() {
                         className="justify-start text-left h-auto py-2 px-3 border-gray-700 hover:border-purple-500/50 hover:bg-purple-500/10"
                         onClick={() => handleSendMessage(suggestion.text)}
                       >
-                        <suggestion.icon className={cn("h-4 w-4 mr-2 flex-shrink-0", suggestion.color)} />
-                        <span className="text-xs text-gray-300">{suggestion.text}</span>
+                        <suggestion.icon
+                          className={cn(
+                            "h-4 w-4 mr-2 flex-shrink-0",
+                            suggestion.color,
+                          )}
+                        />
+                        <span className="text-xs text-gray-300">
+                          {suggestion.text}
+                        </span>
                       </Button>
                     ))}
                   </div>
@@ -217,7 +270,7 @@ export function AIAssistantPublic() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSendMessage();
                     }

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Copy,
@@ -19,32 +19,32 @@ import {
   Volume2,
   Layers,
   FolderPlus,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface Track {
   id: string;
   name: string;
-  type: 'audio' | 'midi' | 'aux' | 'bus' | 'folder';
+  type: "audio" | "midi" | "aux" | "bus" | "folder";
   color: string;
   volume: number;
   pan: number;
@@ -53,7 +53,7 @@ interface Track {
 }
 
 interface TrackOutcome {
-  type: 'added' | 'deleted' | 'duplicated' | 'bounced';
+  type: "added" | "deleted" | "duplicated" | "bounced";
   track: Track;
   timestamp: Date;
   canUndo: boolean;
@@ -61,7 +61,7 @@ interface TrackOutcome {
 
 interface TrackManagementProps {
   tracks: Track[];
-  onAddTrack: (track: Omit<Track, 'id'>) => Promise<Track>;
+  onAddTrack: (track: Omit<Track, "id">) => Promise<Track>;
   onDeleteTrack: (trackId: string) => Promise<void>;
   onDuplicateTrack: (trackId: string) => Promise<Track>;
   onBounceTrack: (trackId: string, options: BounceOptions) => Promise<string>;
@@ -70,7 +70,7 @@ interface TrackManagementProps {
 }
 
 interface BounceOptions {
-  format: 'wav' | 'mp3' | 'flac';
+  format: "wav" | "mp3" | "flac";
   normalize: boolean;
   includeEffects: boolean;
   startTime?: number;
@@ -78,25 +78,58 @@ interface BounceOptions {
 }
 
 const TRACK_TYPES = [
-  { id: 'audio', name: 'Audio', icon: Waves, description: 'Record or import audio' },
-  { id: 'midi', name: 'MIDI', icon: Piano, description: 'Virtual instruments & MIDI' },
-  { id: 'aux', name: 'Aux', icon: Volume2, description: 'Send effects & buses' },
-  { id: 'bus', name: 'Bus', icon: Layers, description: 'Group tracks together' },
-  { id: 'folder', name: 'Folder', icon: FolderPlus, description: 'Organize tracks' },
+  {
+    id: "audio",
+    name: "Audio",
+    icon: Waves,
+    description: "Record or import audio",
+  },
+  {
+    id: "midi",
+    name: "MIDI",
+    icon: Piano,
+    description: "Virtual instruments & MIDI",
+  },
+  {
+    id: "aux",
+    name: "Aux",
+    icon: Volume2,
+    description: "Send effects & buses",
+  },
+  {
+    id: "bus",
+    name: "Bus",
+    icon: Layers,
+    description: "Group tracks together",
+  },
+  {
+    id: "folder",
+    name: "Folder",
+    icon: FolderPlus,
+    description: "Organize tracks",
+  },
 ];
 
 const TRACK_PRESETS = [
-  { name: 'Vocals', type: 'audio', color: '#f43f5e', icon: Mic },
-  { name: 'Drums', type: 'audio', color: '#f97316', icon: Drum },
-  { name: 'Bass', type: 'audio', color: '#8b5cf6', icon: Music },
-  { name: 'Guitar', type: 'audio', color: '#22c55e', icon: Guitar },
-  { name: 'Synth', type: 'midi', color: '#06b6d4', icon: Piano },
-  { name: 'Pad', type: 'midi', color: '#6366f1', icon: Waves },
+  { name: "Vocals", type: "audio", color: "#f43f5e", icon: Mic },
+  { name: "Drums", type: "audio", color: "#f97316", icon: Drum },
+  { name: "Bass", type: "audio", color: "#8b5cf6", icon: Music },
+  { name: "Guitar", type: "audio", color: "#22c55e", icon: Guitar },
+  { name: "Synth", type: "midi", color: "#06b6d4", icon: Piano },
+  { name: "Pad", type: "midi", color: "#6366f1", icon: Waves },
 ];
 
 const COLORS = [
-  '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6',
-  '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899',
+  "#f43f5e",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#14b8a6",
+  "#06b6d4",
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#ec4899",
 ];
 
 export function TrackManagementOutcomes({
@@ -118,20 +151,20 @@ export function TrackManagementOutcomes({
   const [recentOutcomes, setRecentOutcomes] = useState<TrackOutcome[]>([]);
 
   const [newTrack, setNewTrack] = useState({
-    name: '',
-    type: 'audio' as Track['type'],
+    name: "",
+    type: "audio" as Track["type"],
     color: COLORS[0],
   });
 
   const [bounceOptions, setBounceOptions] = useState<BounceOptions>({
-    format: 'wav',
+    format: "wav",
     normalize: true,
     includeEffects: true,
   });
 
   const handleAddTrack = useCallback(async () => {
     if (!newTrack.name.trim()) return;
-    
+
     setIsProcessing(true);
     try {
       const track = await onAddTrack({
@@ -143,32 +176,35 @@ export function TrackManagementOutcomes({
         mute: false,
         solo: false,
       });
-      
+
       const outcome: TrackOutcome = {
-        type: 'added',
+        type: "added",
         track,
         timestamp: new Date(),
         canUndo: true,
       };
-      setRecentOutcomes(prev => [outcome, ...prev].slice(0, 5));
-      
+      setRecentOutcomes((prev) => [outcome, ...prev].slice(0, 5));
+
       toast({
-        title: 'Track Added',
+        title: "Track Added",
         description: (
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: track.color }} />
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: track.color }}
+            />
             <span>"{track.name}" has been added to your project</span>
           </div>
         ),
       });
-      
+
       setShowAddDialog(false);
-      setNewTrack({ name: '', type: 'audio', color: COLORS[0] });
+      setNewTrack({ name: "", type: "audio", color: COLORS[0] });
     } catch (error) {
       toast({
-        title: 'Failed to Add Track',
-        description: 'An error occurred while adding the track',
-        variant: 'destructive',
+        title: "Failed to Add Track",
+        description: "An error occurred while adding the track",
+        variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
@@ -177,21 +213,21 @@ export function TrackManagementOutcomes({
 
   const handleDeleteTrack = useCallback(async () => {
     if (!selectedTrack) return;
-    
+
     setIsProcessing(true);
     try {
       await onDeleteTrack(selectedTrack.id);
-      
+
       const outcome: TrackOutcome = {
-        type: 'deleted',
+        type: "deleted",
         track: selectedTrack,
         timestamp: new Date(),
         canUndo: true,
       };
-      setRecentOutcomes(prev => [outcome, ...prev].slice(0, 5));
-      
+      setRecentOutcomes((prev) => [outcome, ...prev].slice(0, 5));
+
       toast({
-        title: 'Track Deleted',
+        title: "Track Deleted",
         description: (
           <div className="flex items-center justify-between w-full">
             <span>"{selectedTrack.name}" has been removed</span>
@@ -207,79 +243,84 @@ export function TrackManagementOutcomes({
           </div>
         ),
       });
-      
+
       setShowDeleteDialog(false);
       setSelectedTrack(null);
     } catch (error) {
       toast({
-        title: 'Failed to Delete Track',
-        description: 'An error occurred while deleting the track',
-        variant: 'destructive',
+        title: "Failed to Delete Track",
+        description: "An error occurred while deleting the track",
+        variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
     }
   }, [selectedTrack, onDeleteTrack, onUndo, toast]);
 
-  const handleDuplicateTrack = useCallback(async (track: Track) => {
-    setIsProcessing(true);
-    try {
-      const duplicated = await onDuplicateTrack(track.id);
-      
-      const outcome: TrackOutcome = {
-        type: 'duplicated',
-        track: duplicated,
-        timestamp: new Date(),
-        canUndo: true,
-      };
-      setRecentOutcomes(prev => [outcome, ...prev].slice(0, 5));
-      
-      toast({
-        title: 'Track Duplicated',
-        description: (
-          <div className="flex items-center gap-2">
-            <Copy className="w-4 h-4 text-green-400" />
-            <span>"{track.name}" duplicated as "{duplicated.name}"</span>
-          </div>
-        ),
-      });
-    } catch (error) {
-      toast({
-        title: 'Failed to Duplicate Track',
-        description: 'An error occurred while duplicating the track',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [onDuplicateTrack, toast]);
+  const handleDuplicateTrack = useCallback(
+    async (track: Track) => {
+      setIsProcessing(true);
+      try {
+        const duplicated = await onDuplicateTrack(track.id);
+
+        const outcome: TrackOutcome = {
+          type: "duplicated",
+          track: duplicated,
+          timestamp: new Date(),
+          canUndo: true,
+        };
+        setRecentOutcomes((prev) => [outcome, ...prev].slice(0, 5));
+
+        toast({
+          title: "Track Duplicated",
+          description: (
+            <div className="flex items-center gap-2">
+              <Copy className="w-4 h-4 text-green-400" />
+              <span>
+                "{track.name}" duplicated as "{duplicated.name}"
+              </span>
+            </div>
+          ),
+        });
+      } catch (error) {
+        toast({
+          title: "Failed to Duplicate Track",
+          description: "An error occurred while duplicating the track",
+          variant: "destructive",
+        });
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [onDuplicateTrack, toast],
+  );
 
   const handleBounceTrack = useCallback(async () => {
     if (!selectedTrack) return;
-    
+
     setIsProcessing(true);
     setBounceProgress(0);
-    
+
     try {
       const progressInterval = setInterval(() => {
-        setBounceProgress(p => Math.min(p + 5, 95));
+        setBounceProgress((p) => Math.min(p + 5, 95));
       }, 200);
-      
+
       const downloadUrl = await onBounceTrack(selectedTrack.id, bounceOptions);
-      
+
       clearInterval(progressInterval);
       setBounceProgress(100);
-      
+
       const outcome: TrackOutcome = {
-        type: 'bounced',
+        type: "bounced",
         track: selectedTrack,
         timestamp: new Date(),
         canUndo: false,
       };
-      setRecentOutcomes(prev => [outcome, ...prev].slice(0, 5));
-      
+      setRecentOutcomes((prev) => [outcome, ...prev].slice(0, 5));
+
       toast({
-        title: 'Track Bounced',
+        title: "Track Bounced",
         description: (
           <div className="flex items-center justify-between w-full">
             <span>"{selectedTrack.name}" exported successfully</span>
@@ -287,7 +328,7 @@ export function TrackManagementOutcomes({
               size="sm"
               variant="ghost"
               className="h-6 text-xs"
-              onClick={() => window.open(downloadUrl, '_blank')}
+              onClick={() => window.open(downloadUrl, "_blank")}
             >
               <Download className="w-3 h-3 mr-1" />
               Download
@@ -295,14 +336,14 @@ export function TrackManagementOutcomes({
           </div>
         ),
       });
-      
+
       setShowBounceDialog(false);
       setSelectedTrack(null);
     } catch (error) {
       toast({
-        title: 'Bounce Failed',
-        description: 'An error occurred while bouncing the track',
-        variant: 'destructive',
+        title: "Bounce Failed",
+        description: "An error occurred while bouncing the track",
+        variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
@@ -323,7 +364,7 @@ export function TrackManagementOutcomes({
   return (
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center gap-2">
-        <Button 
+        <Button
           onClick={() => setShowAddDialog(true)}
           className="bg-gradient-to-r from-green-600 to-emerald-600"
         >
@@ -340,13 +381,15 @@ export function TrackManagementOutcomes({
               Add New Track
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Track Name</Label>
               <Input
                 value={newTrack.name}
-                onChange={(e) => setNewTrack(s => ({ ...s, name: e.target.value }))}
+                onChange={(e) =>
+                  setNewTrack((s) => ({ ...s, name: e.target.value }))
+                }
                 placeholder="Enter track name..."
                 className="bg-zinc-900 border-zinc-700"
               />
@@ -360,19 +403,26 @@ export function TrackManagementOutcomes({
                   return (
                     <button
                       key={type.id}
-                      onClick={() => setNewTrack(s => ({ ...s, type: type.id as Track['type'] }))}
+                      onClick={() =>
+                        setNewTrack((s) => ({
+                          ...s,
+                          type: type.id as Track["type"],
+                        }))
+                      }
                       className={cn(
                         "p-3 rounded-lg border text-left transition-all",
                         newTrack.type === type.id
                           ? "border-green-500 bg-green-500/10"
-                          : "border-zinc-700 hover:border-zinc-600"
+                          : "border-zinc-700 hover:border-zinc-600",
                       )}
                     >
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4 text-zinc-400" />
                         <span className="font-medium text-sm">{type.name}</span>
                       </div>
-                      <p className="text-xs text-zinc-500 mt-1">{type.description}</p>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        {type.description}
+                      </p>
                     </button>
                   );
                 })}
@@ -387,14 +437,19 @@ export function TrackManagementOutcomes({
                   return (
                     <button
                       key={preset.name}
-                      onClick={() => setNewTrack({
-                        name: preset.name,
-                        type: preset.type as Track['type'],
-                        color: preset.color,
-                      })}
+                      onClick={() =>
+                        setNewTrack({
+                          name: preset.name,
+                          type: preset.type as Track["type"],
+                          color: preset.color,
+                        })
+                      }
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors"
                     >
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: preset.color }} />
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: preset.color }}
+                      />
                       <Icon className="w-3 h-3" />
                       <span className="text-xs">{preset.name}</span>
                     </button>
@@ -409,10 +464,10 @@ export function TrackManagementOutcomes({
                 {COLORS.map((color) => (
                   <button
                     key={color}
-                    onClick={() => setNewTrack(s => ({ ...s, color }))}
+                    onClick={() => setNewTrack((s) => ({ ...s, color }))}
                     className={cn(
                       "w-8 h-8 rounded-lg transition-transform",
-                      newTrack.color === color && "scale-110 ring-2 ring-white"
+                      newTrack.color === color && "scale-110 ring-2 ring-white",
                     )}
                     style={{ backgroundColor: color }}
                   />
@@ -425,7 +480,7 @@ export function TrackManagementOutcomes({
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleAddTrack}
               disabled={!newTrack.name.trim() || isProcessing}
               className="bg-green-600 hover:bg-green-700"
@@ -449,7 +504,7 @@ export function TrackManagementOutcomes({
               Delete Track
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedTrack && (
             <div className="py-4">
               <p className="text-zinc-300">
@@ -458,22 +513,32 @@ export function TrackManagementOutcomes({
               <p className="text-sm text-zinc-500 mt-2">
                 This action can be undone within the next few minutes.
               </p>
-              
+
               <div className="mt-4 p-3 bg-zinc-900 rounded-lg flex items-center gap-3">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: selectedTrack.color }} />
+                <div
+                  className="w-4 h-4 rounded"
+                  style={{ backgroundColor: selectedTrack.color }}
+                />
                 <div>
-                  <div className="font-medium text-sm">{selectedTrack.name}</div>
-                  <div className="text-xs text-zinc-500">{selectedTrack.type} track</div>
+                  <div className="font-medium text-sm">
+                    {selectedTrack.name}
+                  </div>
+                  <div className="text-xs text-zinc-500">
+                    {selectedTrack.type} track
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleDeleteTrack}
               disabled={isProcessing}
               variant="destructive"
@@ -497,14 +562,21 @@ export function TrackManagementOutcomes({
               Bounce Track
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedTrack && (
             <div className="space-y-4 py-4">
               <div className="p-3 bg-zinc-900 rounded-lg flex items-center gap-3">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: selectedTrack.color }} />
+                <div
+                  className="w-4 h-4 rounded"
+                  style={{ backgroundColor: selectedTrack.color }}
+                />
                 <div>
-                  <div className="font-medium text-sm">{selectedTrack.name}</div>
-                  <div className="text-xs text-zinc-500">Export as audio file</div>
+                  <div className="font-medium text-sm">
+                    {selectedTrack.name}
+                  </div>
+                  <div className="text-xs text-zinc-500">
+                    Export as audio file
+                  </div>
                 </div>
               </div>
 
@@ -512,7 +584,12 @@ export function TrackManagementOutcomes({
                 <Label>Format</Label>
                 <Select
                   value={bounceOptions.format}
-                  onValueChange={(v) => setBounceOptions(s => ({ ...s, format: v as 'wav' | 'mp3' | 'flac' }))}
+                  onValueChange={(v) =>
+                    setBounceOptions((s) => ({
+                      ...s,
+                      format: v as "wav" | "mp3" | "flac",
+                    }))
+                  }
                 >
                   <SelectTrigger className="bg-zinc-900 border-zinc-700">
                     <SelectValue />
@@ -531,7 +608,12 @@ export function TrackManagementOutcomes({
                   <input
                     type="checkbox"
                     checked={bounceOptions.normalize}
-                    onChange={(e) => setBounceOptions(s => ({ ...s, normalize: e.target.checked }))}
+                    onChange={(e) =>
+                      setBounceOptions((s) => ({
+                        ...s,
+                        normalize: e.target.checked,
+                      }))
+                    }
                     className="rounded"
                   />
                 </div>
@@ -540,7 +622,12 @@ export function TrackManagementOutcomes({
                   <input
                     type="checkbox"
                     checked={bounceOptions.includeEffects}
-                    onChange={(e) => setBounceOptions(s => ({ ...s, includeEffects: e.target.checked }))}
+                    onChange={(e) =>
+                      setBounceOptions((s) => ({
+                        ...s,
+                        includeEffects: e.target.checked,
+                      }))
+                    }
                     className="rounded"
                   />
                 </div>
@@ -559,10 +646,13 @@ export function TrackManagementOutcomes({
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBounceDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowBounceDialog(false)}
+            >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleBounceTrack}
               disabled={isProcessing}
               className="bg-blue-600 hover:bg-blue-700"
@@ -582,21 +672,37 @@ export function TrackManagementOutcomes({
         {recentOutcomes.length > 0 && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="p-3 bg-zinc-900/50 rounded-lg space-y-2"
           >
-            <h4 className="text-xs font-medium text-zinc-500 uppercase">Recent Actions</h4>
+            <h4 className="text-xs font-medium text-zinc-500 uppercase">
+              Recent Actions
+            </h4>
             {recentOutcomes.slice(0, 3).map((outcome, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
-                {outcome.type === 'added' && <Plus className="w-3 h-3 text-green-400" />}
-                {outcome.type === 'deleted' && <Trash2 className="w-3 h-3 text-red-400" />}
-                {outcome.type === 'duplicated' && <Copy className="w-3 h-3 text-blue-400" />}
-                {outcome.type === 'bounced' && <Download className="w-3 h-3 text-purple-400" />}
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: outcome.track.color }} />
+                {outcome.type === "added" && (
+                  <Plus className="w-3 h-3 text-green-400" />
+                )}
+                {outcome.type === "deleted" && (
+                  <Trash2 className="w-3 h-3 text-red-400" />
+                )}
+                {outcome.type === "duplicated" && (
+                  <Copy className="w-3 h-3 text-blue-400" />
+                )}
+                {outcome.type === "bounced" && (
+                  <Download className="w-3 h-3 text-purple-400" />
+                )}
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: outcome.track.color }}
+                />
                 <span className="text-zinc-400">{outcome.track.name}</span>
                 <span className="text-zinc-600 ml-auto text-xs">
-                  {outcome.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {outcome.timestamp.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               </div>
             ))}

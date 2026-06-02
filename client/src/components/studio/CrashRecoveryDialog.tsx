@@ -1,5 +1,5 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect } from 'react';
+import { logger } from "@/lib/logger";
+import { useState, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -7,13 +7,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
-const RECOVERY_KEY = 'daw_recovery';
-const RECOVERY_TIMESTAMP_KEY = 'daw_recovery_timestamp';
+const RECOVERY_KEY = "daw_recovery";
+const RECOVERY_TIMESTAMP_KEY = "daw_recovery_timestamp";
 
 interface RecoveryData {
   metadata?: {
@@ -27,10 +27,13 @@ interface CrashRecoveryDialogProps {
   onDiscard: () => void;
 }
 
-export function CrashRecoveryDialog({ onRecover, onDiscard }: CrashRecoveryDialogProps) {
+export function CrashRecoveryDialog({
+  onRecover,
+  onDiscard,
+}: CrashRecoveryDialogProps) {
   const [open, setOpen] = useState(false);
   const [recoveryData, setRecoveryData] = useState<string | null>(null);
-  const [projectName, setProjectName] = useState<string>('Unknown Project');
+  const [projectName, setProjectName] = useState<string>("Unknown Project");
   const [lastModified, setLastModified] = useState<number | null>(null);
   const [isRecovering, setIsRecovering] = useState(false);
 
@@ -61,7 +64,7 @@ export function CrashRecoveryDialog({ onRecover, onDiscard }: CrashRecoveryDialo
         setOpen(true);
       }
     } catch (error) {
-      logger.error('[CrashRecovery] Failed to check for recovery data:', error);
+      logger.error("[CrashRecovery] Failed to check for recovery data:", error);
     }
   }, []);
 
@@ -75,7 +78,7 @@ export function CrashRecoveryDialog({ onRecover, onDiscard }: CrashRecoveryDialo
       localStorage.removeItem(RECOVERY_TIMESTAMP_KEY);
       setOpen(false);
     } catch (error) {
-      logger.error('[CrashRecovery] Recovery failed:', error);
+      logger.error("[CrashRecovery] Recovery failed:", error);
     } finally {
       setIsRecovering(false);
     }
@@ -99,14 +102,13 @@ export function CrashRecoveryDialog({ onRecover, onDiscard }: CrashRecoveryDialo
             Recover Unsaved Work?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-gray-400 space-y-2">
-            <p>
-              It looks like there was unsaved work from a previous session.
-            </p>
+            <p>It looks like there was unsaved work from a previous session.</p>
             <div className="bg-[#2a2a2e] rounded-md p-3 mt-3 border border-[#444]">
               <p className="text-white font-medium">{projectName}</p>
               {lastModified && (
                 <p className="text-sm text-gray-500 mt-1">
-                  Last modified {formatDistanceToNow(lastModified, { addSuffix: true })}
+                  Last modified{" "}
+                  {formatDistanceToNow(lastModified, { addSuffix: true })}
                 </p>
               )}
             </div>
@@ -130,8 +132,10 @@ export function CrashRecoveryDialog({ onRecover, onDiscard }: CrashRecoveryDialo
             disabled={isRecovering}
             className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRecovering ? 'animate-spin' : ''}`} />
-            {isRecovering ? 'Recovering...' : 'Recover Work'}
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isRecovering ? "animate-spin" : ""}`}
+            />
+            {isRecovering ? "Recovering..." : "Recover Work"}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

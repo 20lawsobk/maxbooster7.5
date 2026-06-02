@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import { logger } from '../logger.js';
+import type { Request, Response, NextFunction, RequestHandler } from "express";
+import { logger } from "../logger.js";
 
 interface CacheEntry {
   data: Record<string, unknown>;
@@ -33,17 +33,21 @@ class InMemoryCache {
   }
 
   private generateEtag(data: Record<string, unknown>): string {
-    const str = typeof data === 'string' ? data : JSON.stringify(data);
+    const str = typeof data === "string" ? data : JSON.stringify(data);
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return `"${Math.abs(hash).toString(16)}"`;
   }
 
-  set(key: string, data: Record<string, unknown>, contentType: string = 'application/json'): void {
+  set(
+    key: string,
+    data: Record<string, unknown>,
+    contentType: string = "application/json",
+  ): void {
     if (!this.config.enabled) return;
 
     if (this.cache.size >= this.config.maxEntries) {
@@ -83,7 +87,7 @@ class InMemoryCache {
     }
 
     this.hits++;
-    
+
     const index = this.accessOrder.indexOf(key);
     if (index > -1) {
       this.accessOrder.splice(index, 1);
@@ -95,9 +99,9 @@ class InMemoryCache {
 
   invalidate(pattern: string | RegExp): void {
     const keysToDelete: string[] = [];
-    
+
     for (const key of this.cache.keys()) {
-      if (typeof pattern === 'string') {
+      if (typeof pattern === "string") {
         if (key.includes(pattern)) {
           keysToDelete.push(key);
         }
@@ -174,17 +178,23 @@ interface CachingMiddlewareOptions {
   cacheInstance?: InMemoryCache;
 }
 
-export const createCachingMiddleware = (options: CachingMiddlewareOptions = {}): RequestHandler => {
+export const createCachingMiddleware = (
+  options: CachingMiddlewareOptions = {},
+): RequestHandler => {
   const cache = options.cacheInstance || globalCache;
-  
-  const generateKey = options.keyGenerator || ((req: Request) => {
-    const userId = (req as Record<string, unknown>).user?.id || 'anonymous';
-    return `${req.method}:${req.originalUrl}:${userId}`;
-  });
 
-  const shouldCache = options.shouldCache || ((req: Request) => {
-    return req.method === 'GET' && !req.originalUrl.includes('/auth/');
-  });
+  const generateKey =
+    options.keyGenerator ||
+    ((req: Request) => {
+      const userId = (req as Record<string, unknown>).user?.id || "anonymous";
+      return `${req.method}:${req.originalUrl}:${userId}`;
+    });
+
+  const shouldCache =
+    options.shouldCache ||
+    ((req: Request) => {
+      return req.method === "GET" && !req.originalUrl.includes("/auth/");
+    });
 
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!shouldCache(req, res)) {
@@ -196,19 +206,19 @@ export const createCachingMiddleware = (options: CachingMiddlewareOptions = {}):
     const cached = cache.get(key);
 
     if (cached) {
-      const clientEtag = req.headers['if-none-match'];
-      
+      const clientEtag = req.headers["if-none-match"];
+
       if (clientEtag === cached.etag) {
         res.status(304).end();
         return;
       }
 
-      res.setHeader('X-Cache', 'HIT');
-      res.setHeader('ETag', cached.etag);
-      res.setHeader('Cache-Control', 'private, max-age=30');
-      res.setHeader('Content-Type', cached.contentType);
-      
-      if (typeof cached.data === 'object') {
+      res.setHeader("X-Cache", "HIT");
+      res.setHeader("ETag", cached.etag);
+      res.setHeader("Cache-Control", "private, max-age=30");
+      res.setHeader("Content-Type", cached.contentType);
+
+      if (typeof cached.data === "object") {
         res.json(cached.data);
       } else {
         res.send(cached.data);
@@ -216,21 +226,22 @@ export const createCachingMiddleware = (options: CachingMiddlewareOptions = {}):
       return;
     }
 
-    res.setHeader('X-Cache', 'MISS');
+    res.setHeader("X-Cache", "MISS");
 
     const originalJson = res.json.bind(res);
     const originalSend = res.send.bind(res);
 
     res.json = (data: Record<string, unknown>) => {
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        cache.set(key, data, 'application/json');
+        cache.set(key, data, "application/json");
       }
       return originalJson(data);
     };
 
     res.send = (data: Record<string, unknown>) => {
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        const contentType = res.getHeader('Content-Type') as string || 'text/html';
+        const contentType =
+          (res.getHeader("Content-Type") as string) || "text/html";
         cache.set(key, data, contentType);
       }
       return originalSend(data);
@@ -243,20 +254,20 @@ export const createCachingMiddleware = (options: CachingMiddlewareOptions = {}):
 export const apiResponseCache = createCachingMiddleware({
   cacheInstance: shortTermCache,
   keyGenerator: (req) => {
-    const userId = (req as Record<string, unknown>).user?.id || 'anon';
+    const userId = (req as Record<string, unknown>).user?.id || "anon";
     return `api:${req.originalUrl}:${userId}`;
   },
   shouldCache: (req) => {
-    if (req.method !== 'GET') return false;
-    
+    if (req.method !== "GET") return false;
+
     const noCachePaths = [
-      '/api/auth',
-      '/api/user/profile',
-      '/api/notifications',
-      '/api/messages',
+      "/api/auth",
+      "/api/user/profile",
+      "/api/notifications",
+      "/api/messages",
     ];
-    
-    return !noCachePaths.some(path => req.originalUrl.startsWith(path));
+
+    return !noCachePaths.some((path) => req.originalUrl.startsWith(path));
   },
 });
 
@@ -265,20 +276,26 @@ export const staticDataCache = createCachingMiddleware({
   keyGenerator: (req) => `static:${req.originalUrl}`,
   shouldCache: (req) => {
     const staticPaths = [
-      '/api/distribution/platforms',
-      '/api/marketplace/categories',
-      '/api/genres',
-      '/api/instruments',
+      "/api/distribution/platforms",
+      "/api/marketplace/categories",
+      "/api/genres",
+      "/api/instruments",
     ];
-    return req.method === 'GET' && staticPaths.some(p => req.originalUrl.startsWith(p));
+    return (
+      req.method === "GET" &&
+      staticPaths.some((p) => req.originalUrl.startsWith(p))
+    );
   },
 });
 
 export const noCacheMiddleware: RequestHandler = (_req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
   next();
 };
 

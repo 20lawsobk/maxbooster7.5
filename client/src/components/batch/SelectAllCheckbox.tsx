@@ -1,15 +1,18 @@
-import React, { useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
-import { logger } from '@/lib/logger';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useBatchSelectContext, useOptionalBatchSelectContext } from './BatchSelectProvider';
+import React, { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  useBatchSelectContext,
+  useOptionalBatchSelectContext,
+} from "./BatchSelectProvider";
 
 export interface SelectAllCheckboxProps {
   ids?: string[];
   label?: string;
   showLabel?: boolean;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
 }
 
@@ -18,19 +21,26 @@ export function SelectAllCheckbox({
   label,
   showLabel = true,
   className,
-  size = 'md',
+  size = "md",
   disabled = false,
 }: SelectAllCheckboxProps) {
   const context = useOptionalBatchSelectContext();
   const checkboxRef = useRef<HTMLButtonElement>(null);
 
   if (!context) {
-    logger.warn('SelectAllCheckbox: Must be used within BatchSelectProvider');
+    logger.warn("SelectAllCheckbox: Must be used within BatchSelectProvider");
     return null;
   }
 
-  const { selectAll, deselectAll, isAllSelected, isSomeSelected, allIds, selectedCount } = context;
-  
+  const {
+    selectAll,
+    deselectAll,
+    isAllSelected,
+    isSomeSelected,
+    allIds,
+    selectedCount,
+  } = context;
+
   const targetIds = ids || allIds;
   const allSelected = isAllSelected(targetIds);
   const someSelected = isSomeSelected(targetIds);
@@ -38,7 +48,9 @@ export function SelectAllCheckbox({
 
   useEffect(() => {
     if (checkboxRef.current) {
-      const nativeInput = checkboxRef.current.querySelector('input[type="checkbox"]');
+      const nativeInput = checkboxRef.current.querySelector(
+        'input[type="checkbox"]',
+      );
       if (nativeInput) {
         (nativeInput as HTMLInputElement).indeterminate = isIndeterminate;
       }
@@ -54,21 +66,21 @@ export function SelectAllCheckbox({
   };
 
   const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-5 w-5',
-    lg: 'h-6 w-6',
+    sm: "h-4 w-4",
+    md: "h-5 w-5",
+    lg: "h-6 w-6",
   };
 
   const labelSizeClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base',
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
   };
 
-  const displayLabel = label || (allSelected ? 'Deselect all' : 'Select all');
+  const displayLabel = label || (allSelected ? "Deselect all" : "Select all");
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       <Checkbox
         ref={checkboxRef}
         checked={allSelected}
@@ -81,9 +93,9 @@ export function SelectAllCheckbox({
       {showLabel && (
         <label
           className={cn(
-            'cursor-pointer text-muted-foreground select-none',
+            "cursor-pointer text-muted-foreground select-none",
             labelSizeClasses[size],
-            disabled && 'opacity-50 cursor-not-allowed'
+            disabled && "opacity-50 cursor-not-allowed",
           )}
           onClick={() => !disabled && handleChange()}
         >
@@ -107,7 +119,7 @@ export function StandaloneSelectAllCheckbox({
   label,
   showLabel = true,
   className,
-  size = 'md',
+  size = "md",
   disabled = false,
 }: {
   allIds: string[];
@@ -117,20 +129,24 @@ export function StandaloneSelectAllCheckbox({
   label?: string;
   showLabel?: boolean;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
 }) {
   const checkboxRef = useRef<HTMLButtonElement>(null);
-  
-  const selectedSet = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
+
+  const selectedSet =
+    selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
   const selectedCount = selectedSet.size;
-  const allSelected = allIds.length > 0 && allIds.every(id => selectedSet.has(id));
+  const allSelected =
+    allIds.length > 0 && allIds.every((id) => selectedSet.has(id));
   const someSelected = selectedCount > 0 && selectedCount < allIds.length;
   const isIndeterminate = someSelected;
 
   useEffect(() => {
     if (checkboxRef.current) {
-      const nativeInput = checkboxRef.current.querySelector('input[type="checkbox"]');
+      const nativeInput = checkboxRef.current.querySelector(
+        'input[type="checkbox"]',
+      );
       if (nativeInput) {
         (nativeInput as HTMLInputElement).indeterminate = isIndeterminate;
       }
@@ -146,21 +162,21 @@ export function StandaloneSelectAllCheckbox({
   };
 
   const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-5 w-5',
-    lg: 'h-6 w-6',
+    sm: "h-4 w-4",
+    md: "h-5 w-5",
+    lg: "h-6 w-6",
   };
 
   const labelSizeClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base',
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
   };
 
-  const displayLabel = label || (allSelected ? 'Deselect all' : 'Select all');
+  const displayLabel = label || (allSelected ? "Deselect all" : "Select all");
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       <Checkbox
         ref={checkboxRef}
         checked={allSelected}
@@ -173,9 +189,9 @@ export function StandaloneSelectAllCheckbox({
       {showLabel && (
         <label
           className={cn(
-            'cursor-pointer text-muted-foreground select-none',
+            "cursor-pointer text-muted-foreground select-none",
             labelSizeClasses[size],
-            disabled && 'opacity-50 cursor-not-allowed'
+            disabled && "opacity-50 cursor-not-allowed",
           )}
           onClick={() => !disabled && handleChange()}
         >

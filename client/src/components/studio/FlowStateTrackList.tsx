@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   Volume2,
   VolumeX,
@@ -11,12 +11,12 @@ import {
   Music,
   Mic,
   Piano,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Track {
   id: string;
   name: string;
-  type: 'audio' | 'midi';
+  type: "audio" | "midi";
   color: string;
   volume: number;
   pan: number;
@@ -48,7 +48,7 @@ export function FlowStateTrackList({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const toggleExpand = (id: string) => {
-    setExpandedTracks(prev => {
+    setExpandedTracks((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -61,16 +61,19 @@ export function FlowStateTrackList({
 
   const getTrackIcon = (type: string) => {
     switch (type) {
-      case 'audio': return Mic;
-      case 'midi': return Piano;
-      default: return Music;
+      case "audio":
+        return Mic;
+      case "midi":
+        return Piano;
+      default:
+        return Music;
     }
   };
 
   const playheadPosition = currentTime * 100 * zoom;
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="flex-1 overflow-auto bg-[var(--flow-bg-space)] relative"
     >
@@ -83,21 +86,26 @@ export function FlowStateTrackList({
       />
 
       {/* Tracks */}
-      <Reorder.Group axis="y" values={tracks} onReorder={() => {}} className="divide-y divide-white/5">
+      <Reorder.Group
+        axis="y"
+        values={tracks}
+        onReorder={() => {}}
+        className="divide-y divide-white/5"
+      >
         {tracks.map((track, index) => {
           const isSelected = selectedTrackId === track.id;
           const isExpanded = expandedTracks.has(track.id);
           const TrackIcon = getTrackIcon(track.type);
-          
+
           return (
             <Reorder.Item
               key={track.id}
               value={track}
-              className={`flow-track ${isSelected ? 'selected' : ''}`}
+              className={`flow-track ${isSelected ? "selected" : ""}`}
               onClick={() => onSelectTrack(track.id)}
             >
               {/* Color Bar */}
-              <div 
+              <div
                 className="flow-track-color-bar"
                 style={{ backgroundColor: track.color }}
               />
@@ -106,7 +114,10 @@ export function FlowStateTrackList({
               <div className="flow-track-header">
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={(e) => { e.stopPropagation(); toggleExpand(track.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(track.id);
+                    }}
                     className="p-1 rounded hover:bg-white/5 text-slate-500"
                   >
                     {isExpanded ? (
@@ -115,21 +126,24 @@ export function FlowStateTrackList({
                       <ChevronRight className="w-3 h-3" />
                     )}
                   </button>
-                  
-                  <div 
+
+                  <div
                     className="w-6 h-6 rounded flex items-center justify-center"
-                    style={{ backgroundColor: track.color + '20' }}
+                    style={{ backgroundColor: track.color + "20" }}
                   >
-                    <TrackIcon className="w-3 h-3" style={{ color: track.color }} />
+                    <TrackIcon
+                      className="w-3 h-3"
+                      style={{ color: track.color }}
+                    />
                   </div>
-                  
+
                   <span className="flow-track-name truncate">{track.name}</span>
                 </div>
 
                 {/* Track Controls */}
                 <div className="flow-track-controls mt-1">
                   <button
-                    className={`flow-track-btn mute ${track.mute ? 'active' : ''}`}
+                    className={`flow-track-btn mute ${track.mute ? "active" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       onUpdateTrack(track.id, { mute: !track.mute });
@@ -138,9 +152,9 @@ export function FlowStateTrackList({
                   >
                     M
                   </button>
-                  
+
                   <button
-                    className={`flow-track-btn solo ${track.solo ? 'active' : ''}`}
+                    className={`flow-track-btn solo ${track.solo ? "active" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       onUpdateTrack(track.id, { solo: !track.solo });
@@ -149,9 +163,9 @@ export function FlowStateTrackList({
                   >
                     S
                   </button>
-                  
+
                   <button
-                    className={`flow-track-btn record ${track.armed ? 'active' : ''}`}
+                    className={`flow-track-btn record ${track.armed ? "active" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       onUpdateTrack(track.id, { armed: !track.armed });
@@ -172,7 +186,9 @@ export function FlowStateTrackList({
                       value={track.volume}
                       onChange={(e) => {
                         e.stopPropagation();
-                        onUpdateTrack(track.id, { volume: parseFloat(e.target.value) });
+                        onUpdateTrack(track.id, {
+                          volume: parseFloat(e.target.value),
+                        });
                       }}
                       onClick={(e) => e.stopPropagation()}
                       className="w-16 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer
@@ -193,10 +209,10 @@ export function FlowStateTrackList({
                 <motion.div
                   className="flow-waveform-clip"
                   style={{
-                    left: `${(index * 50) * zoom}px`,
+                    left: `${index * 50 * zoom}px`,
                     width: `${200 * zoom}px`,
-                    backgroundColor: track.color + '15',
-                    borderColor: track.color + '40',
+                    backgroundColor: track.color + "15",
+                    borderColor: track.color + "40",
                   }}
                   whileHover={{ scale: 1.01 }}
                   transition={{ duration: 0.1 }}
@@ -205,10 +221,28 @@ export function FlowStateTrackList({
                   <div className="h-full flex items-center px-1">
                     <svg className="w-full h-[80%]" preserveAspectRatio="none">
                       <defs>
-                        <linearGradient id={`waveGrad-${track.id}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={track.color} stopOpacity="0.8" />
-                          <stop offset="50%" stopColor={track.color} stopOpacity="0.4" />
-                          <stop offset="100%" stopColor={track.color} stopOpacity="0.8" />
+                        <linearGradient
+                          id={`waveGrad-${track.id}`}
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor={track.color}
+                            stopOpacity="0.8"
+                          />
+                          <stop
+                            offset="50%"
+                            stopColor={track.color}
+                            stopOpacity="0.4"
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor={track.color}
+                            stopOpacity="0.8"
+                          />
                         </linearGradient>
                       </defs>
                       <path
@@ -219,9 +253,9 @@ export function FlowStateTrackList({
                       />
                     </svg>
                   </div>
-                  
+
                   {/* Clip name */}
-                  <div 
+                  <div
                     className="absolute top-1 left-2 text-[10px] font-medium"
                     style={{ color: track.color }}
                   >
@@ -236,22 +270,25 @@ export function FlowStateTrackList({
                     style={{
                       left: `${(index * 50 + 250) * zoom}px`,
                       width: `${150 * zoom}px`,
-                      backgroundColor: track.color + '15',
-                      borderColor: track.color + '40',
+                      backgroundColor: track.color + "15",
+                      borderColor: track.color + "40",
                     }}
                     whileHover={{ scale: 1.01 }}
                   >
                     <div className="h-full flex items-center px-1">
-                      <svg className="w-full h-[80%]" preserveAspectRatio="none">
+                      <svg
+                        className="w-full h-[80%]"
+                        preserveAspectRatio="none"
+                      >
                         <path
-                          d={generateWaveformPath(track.id + '-2')}
+                          d={generateWaveformPath(track.id + "-2")}
                           fill={`url(#waveGrad-${track.id})`}
                           stroke={track.color}
                           strokeWidth="0.5"
                         />
                       </svg>
                     </div>
-                    <div 
+                    <div
                       className="absolute top-1 left-2 text-[10px] font-medium"
                       style={{ color: track.color }}
                     >
@@ -270,7 +307,7 @@ export function FlowStateTrackList({
         className="w-full py-4 border-t border-dashed border-white/10 
           text-slate-500 text-sm hover:text-slate-300 hover:bg-white/5
           flex items-center justify-center gap-2 transition-colors"
-        whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+        whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
       >
         <Music className="w-4 h-4" />
         Add New Track
@@ -280,11 +317,11 @@ export function FlowStateTrackList({
 }
 
 function generateWaveformPath(seed: string): string {
-  const hash = seed.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
+  const hash = seed.split("").reduce((a, b) => {
+    a = (a << 5) - a + b.charCodeAt(0);
     return a & a;
   }, 0);
-  
+
   const random = (i: number) => {
     const x = Math.sin(hash + i) * 10000;
     return x - Math.floor(x);
@@ -296,7 +333,7 @@ function generateWaveformPath(seed: string): string {
   const midY = height / 2;
 
   points.push(`M 0 ${midY}`);
-  
+
   for (let i = 0; i <= segments; i++) {
     const x = (i / segments) * 100;
     const amplitude = (random(i) * 0.6 + 0.2) * (midY - 5);
@@ -311,6 +348,6 @@ function generateWaveformPath(seed: string): string {
     points.push(`L ${x} ${y}`);
   }
 
-  points.push('Z');
-  return points.join(' ');
+  points.push("Z");
+  return points.join(" ");
 }

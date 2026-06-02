@@ -1,6 +1,6 @@
-import { logger } from '@/lib/logger';
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { logger } from "@/lib/logger";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
   Pause,
@@ -42,33 +42,46 @@ import {
   Eraser,
   Plus,
   HelpCircle,
-} from 'lucide-react';
-import './FlowStateTheme.css';
-import { useFlowStateAdapter, type FlowStateMode } from '@/hooks/useFlowStateAdapter';
-import { FlowState3DWorkspace } from './FlowState3DWorkspace';
-import { FlowStateAIPanel } from './FlowStateAIPanel';
-import { FlowStateSmartToolbar } from './FlowStateSmartToolbar';
-import { FlowStateMixer } from './FlowStateMixer';
-import { FlowStateSpectralVisualizer } from './FlowStateSpectralVisualizer';
-import { FlowStateCollaborationPresence, useCollaborationPresence } from './FlowStateCollaborationPresence';
-import { FlowStatePluginChain, type PluginNode } from './FlowStatePluginChain';
-import { FlowStateTimeline, FlowStatePlayhead } from './FlowStateTimeline';
-import { FlowStateAddTrack, AddTrackButton } from './FlowStateAddTrack';
-import { FlowStateEmptyState } from './FlowStateEmptyState';
-import { FlowStateKeyboardShortcuts } from './FlowStateKeyboardShortcuts';
-import { FlowStateContextMenu, TRACK_CONTEXT_MENU_ITEMS } from './FlowStateContextMenu';
-import { FlowStatePluginBrowser } from './FlowStatePluginBrowser';
-import { FlowStateImportAudio } from './FlowStateImportAudio';
-import { FlowStateTemplateDialog } from './FlowStateTemplateDialog';
-import { FlowStateAIGenerate } from './FlowStateAIGenerate';
-import { FlowStateInstrumentDialog, type InstrumentInstance, type InstrumentType } from './FlowStateInstrumentDialog';
-import { PluginControlDialog } from './PluginControlDialog';
-import { AIGeneratorDialog } from './AIGeneratorDialog';
-import { FlowStateProjectSelector } from './FlowStateProjectSelector';
-import { cn } from '@/lib/utils';
-import { dawCore } from '@/lib/daw';
-import { useStudioStore } from '@/lib/studioStore';
-import type { PluginInstance, PluginType } from './PluginRack';
+} from "lucide-react";
+import "./FlowStateTheme.css";
+import {
+  useFlowStateAdapter,
+  type FlowStateMode,
+} from "@/hooks/useFlowStateAdapter";
+import { FlowState3DWorkspace } from "./FlowState3DWorkspace";
+import { FlowStateAIPanel } from "./FlowStateAIPanel";
+import { FlowStateSmartToolbar } from "./FlowStateSmartToolbar";
+import { FlowStateMixer } from "./FlowStateMixer";
+import { FlowStateSpectralVisualizer } from "./FlowStateSpectralVisualizer";
+import {
+  FlowStateCollaborationPresence,
+  useCollaborationPresence,
+} from "./FlowStateCollaborationPresence";
+import { FlowStatePluginChain, type PluginNode } from "./FlowStatePluginChain";
+import { FlowStateTimeline, FlowStatePlayhead } from "./FlowStateTimeline";
+import { FlowStateAddTrack, AddTrackButton } from "./FlowStateAddTrack";
+import { FlowStateEmptyState } from "./FlowStateEmptyState";
+import { FlowStateKeyboardShortcuts } from "./FlowStateKeyboardShortcuts";
+import {
+  FlowStateContextMenu,
+  TRACK_CONTEXT_MENU_ITEMS,
+} from "./FlowStateContextMenu";
+import { FlowStatePluginBrowser } from "./FlowStatePluginBrowser";
+import { FlowStateImportAudio } from "./FlowStateImportAudio";
+import { FlowStateTemplateDialog } from "./FlowStateTemplateDialog";
+import { FlowStateAIGenerate } from "./FlowStateAIGenerate";
+import {
+  FlowStateInstrumentDialog,
+  type InstrumentInstance,
+  type InstrumentType,
+} from "./FlowStateInstrumentDialog";
+import { PluginControlDialog } from "./PluginControlDialog";
+import { AIGeneratorDialog } from "./AIGeneratorDialog";
+import { FlowStateProjectSelector } from "./FlowStateProjectSelector";
+import { cn } from "@/lib/utils";
+import { dawCore } from "@/lib/daw";
+import { useStudioStore } from "@/lib/studioStore";
+import type { PluginInstance, PluginType } from "./PluginRack";
 
 interface FlowStateStudioProProps {
   projectId: string | null;
@@ -83,25 +96,53 @@ interface FlowStateStudioProProps {
   onProjectChange?: (projectId: string, projectName: string) => void;
 }
 
-const MODE_CONFIG: Record<FlowStateMode, { label: string; icon: typeof Music; color: string; description: string }> = {
-  create: { label: 'Create', icon: Sparkles, color: 'from-purple-500 to-pink-500', description: 'Compose & arrange' },
-  record: { label: 'Record', icon: Mic, color: 'from-red-500 to-orange-500', description: 'Capture performance' },
-  mix: { label: 'Mix', icon: Sliders, color: 'from-blue-500 to-cyan-500', description: 'Balance & process' },
-  master: { label: 'Master', icon: Gauge, color: 'from-amber-500 to-yellow-500', description: 'Finalize & polish' },
-  perform: { label: 'Perform', icon: Radio, color: 'from-green-500 to-emerald-500', description: 'Live session' },
+const MODE_CONFIG: Record<
+  FlowStateMode,
+  { label: string; icon: typeof Music; color: string; description: string }
+> = {
+  create: {
+    label: "Create",
+    icon: Sparkles,
+    color: "from-purple-500 to-pink-500",
+    description: "Compose & arrange",
+  },
+  record: {
+    label: "Record",
+    icon: Mic,
+    color: "from-red-500 to-orange-500",
+    description: "Capture performance",
+  },
+  mix: {
+    label: "Mix",
+    icon: Sliders,
+    color: "from-blue-500 to-cyan-500",
+    description: "Balance & process",
+  },
+  master: {
+    label: "Master",
+    icon: Gauge,
+    color: "from-amber-500 to-yellow-500",
+    description: "Finalize & polish",
+  },
+  perform: {
+    label: "Perform",
+    icon: Radio,
+    color: "from-green-500 to-emerald-500",
+    description: "Live session",
+  },
 };
 
 const EDIT_TOOLS = [
-  { id: 'pointer', icon: MousePointer, label: 'Select' },
-  { id: 'range', icon: Move, label: 'Range' },
-  { id: 'draw', icon: Pencil, label: 'Draw' },
-  { id: 'split', icon: Scissors, label: 'Split' },
-  { id: 'erase', icon: Eraser, label: 'Erase' },
+  { id: "pointer", icon: MousePointer, label: "Select" },
+  { id: "range", icon: Move, label: "Range" },
+  { id: "draw", icon: Pencil, label: "Draw" },
+  { id: "split", icon: Scissors, label: "Split" },
+  { id: "erase", icon: Eraser, label: "Erase" },
 ];
 
 export function FlowStateStudioPro({
   projectId,
-  projectName = 'Untitled Project',
+  projectName = "Untitled Project",
   onSave,
   onExport,
   onAIMix,
@@ -116,7 +157,9 @@ export function FlowStateStudioPro({
   const collaboration = useCollaborationPresence(projectId);
 
   // Set currentProjectId in store when component mounts/project changes
-  const setCurrentProjectId = useStudioStore((state) => state.setCurrentProjectId);
+  const setCurrentProjectId = useStudioStore(
+    (state) => state.setCurrentProjectId,
+  );
   useEffect(() => {
     setCurrentProjectId(projectId);
     return () => setCurrentProjectId(null);
@@ -133,47 +176,61 @@ export function FlowStateStudioPro({
   const [showImportAudioDialog, setShowImportAudioDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showAIGenerateDialog, setShowAIGenerateDialog] = useState(false);
-  const [activeTool, setActiveTool] = useState('pointer');
+  const [activeTool, setActiveTool] = useState("pointer");
   const [chromeVisible, setChromeVisible] = useState(true);
   const [masterPlugins, setMasterPlugins] = useState<PluginNode[]>([]);
   const [timelineZoom, setTimelineZoom] = useState(1);
   const [loopStart, setLoopStart] = useState(0);
   const [loopEnd, setLoopEnd] = useState(8);
-  const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; position: { x: number; y: number }; trackId: string | null }>({
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean;
+    position: { x: number; y: number };
+    trackId: string | null;
+  }>({
     isOpen: false,
     position: { x: 0, y: 0 },
     trackId: null,
   });
   const [showPluginBrowser, setShowPluginBrowser] = useState(false);
-  const [selectedPlugin, setSelectedPlugin] = useState<PluginInstance | null>(null);
-  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentInstance | null>(null);
+  const [selectedPlugin, setSelectedPlugin] = useState<PluginInstance | null>(
+    null,
+  );
+  const [selectedInstrument, setSelectedInstrument] =
+    useState<InstrumentInstance | null>(null);
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
   const [instrumentDialogOpen, setInstrumentDialogOpen] = useState(false);
-  const [activeTrackForPlugin, setActiveTrackForPlugin] = useState<string | null>(null);
+  const [activeTrackForPlugin, setActiveTrackForPlugin] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      )
+        return;
 
       switch (e.code) {
-        case 'Space':
+        case "Space":
           e.preventDefault();
-          if (transport.isPlaying) adapter.pause(); else adapter.play();
+          if (transport.isPlaying) adapter.pause();
+          else adapter.play();
           break;
-        case 'KeyR':
+        case "KeyR":
           if (!e.metaKey && !e.ctrlKey) {
             adapter.record();
           }
           break;
-        case 'KeyL':
+        case "KeyL":
           adapter.toggleLoop();
           break;
-        case 'KeyM':
+        case "KeyM":
           if (context.selectedTrackIds[0]) {
             adapter.toggleTrackMute(context.selectedTrackIds[0]);
           }
           break;
-        case 'KeyS':
+        case "KeyS":
           if (e.metaKey || e.ctrlKey) {
             e.preventDefault();
             onSave?.();
@@ -181,55 +238,61 @@ export function FlowStateStudioPro({
             adapter.toggleTrackSolo(context.selectedTrackIds[0]);
           }
           break;
-        case 'Home':
+        case "Home":
           adapter.seek(0);
           break;
-        case 'Tab':
+        case "Tab":
           e.preventDefault();
-          setChromeVisible(prev => !prev);
+          setChromeVisible((prev) => !prev);
           break;
-        case 'Digit1':
-        case 'Digit2':
-        case 'Digit3':
-        case 'Digit4':
-        case 'Digit5':
-          const modeIndex = parseInt(e.code.replace('Digit', '')) - 1;
-          const modes: FlowStateMode[] = ['create', 'record', 'mix', 'master', 'perform'];
+        case "Digit1":
+        case "Digit2":
+        case "Digit3":
+        case "Digit4":
+        case "Digit5":
+          const modeIndex = parseInt(e.code.replace("Digit", "")) - 1;
+          const modes: FlowStateMode[] = [
+            "create",
+            "record",
+            "mix",
+            "master",
+            "perform",
+          ];
           if (modes[modeIndex]) {
             adapter.setMode(modes[modeIndex]);
           }
           break;
-        case 'Slash':
+        case "Slash":
           if (e.shiftKey) {
             e.preventDefault();
-            setShowKeyboardShortcuts(prev => !prev);
+            setShowKeyboardShortcuts((prev) => !prev);
           }
           break;
-        case 'KeyN':
+        case "KeyN":
           if (e.metaKey || e.ctrlKey) {
             e.preventDefault();
             setShowAddTrackDialog(true);
           }
           break;
-        case 'KeyP':
+        case "KeyP":
           if (e.shiftKey) {
             e.preventDefault();
             setShowPluginBrowser(true);
           }
           break;
-        case 'Escape':
+        case "Escape":
           setShowKeyboardShortcuts(false);
           setShowAddTrackDialog(false);
           setShowPluginBrowser(false);
           setPluginDialogOpen(false);
           setInstrumentDialogOpen(false);
-          setContextMenu(prev => ({ ...prev, isOpen: false }));
+          setContextMenu((prev) => ({ ...prev, isOpen: false }));
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [adapter, transport, context, onSave]);
 
   useEffect(() => {
@@ -241,15 +304,18 @@ export function FlowStateStudioPro({
     collaboration.setRecordingStatus(transport.isRecording);
   }, [transport.isRecording, collaboration]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    collaboration.updateCursorPosition(e.clientX, e.clientY);
-  }, [collaboration]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      collaboration.updateCursorPosition(e.clientX, e.clientY);
+    },
+    [collaboration],
+  );
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     const ms = Math.floor((seconds % 1) * 100);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
   };
 
   const formatBars = (seconds: number) => {
@@ -263,100 +329,131 @@ export function FlowStateStudioPro({
 
   const currentModeConfig = MODE_CONFIG[context.mode];
 
-  const handleTrackVolumeChange = useCallback((trackId: string, volume: number) => {
-    adapter.setTrackVolume(trackId, volume);
-  }, [adapter]);
+  const handleTrackVolumeChange = useCallback(
+    (trackId: string, volume: number) => {
+      adapter.setTrackVolume(trackId, volume);
+    },
+    [adapter],
+  );
 
-  const handleTrackPanChange = useCallback((trackId: string, pan: number) => {
-    adapter.setTrackPan(trackId, pan);
-  }, [adapter]);
+  const handleTrackPanChange = useCallback(
+    (trackId: string, pan: number) => {
+      adapter.setTrackPan(trackId, pan);
+    },
+    [adapter],
+  );
 
-  const handleTrackMuteToggle = useCallback((trackId: string) => {
-    adapter.toggleTrackMute(trackId);
-  }, [adapter]);
+  const handleTrackMuteToggle = useCallback(
+    (trackId: string) => {
+      adapter.toggleTrackMute(trackId);
+    },
+    [adapter],
+  );
 
-  const handleTrackSoloToggle = useCallback((trackId: string) => {
-    adapter.toggleTrackSolo(trackId);
-  }, [adapter]);
+  const handleTrackSoloToggle = useCallback(
+    (trackId: string) => {
+      adapter.toggleTrackSolo(trackId);
+    },
+    [adapter],
+  );
 
   const handleGenerateMelody = useCallback(() => {
-    logger.info('[FlowState] Generate Melody pattern');
+    logger.info("[FlowState] Generate Melody pattern");
   }, []);
 
   const handleGenerateBass = useCallback(() => {
-    logger.info('[FlowState] Generate Bass pattern');
+    logger.info("[FlowState] Generate Bass pattern");
   }, []);
 
   const handleGenerateDrums = useCallback(() => {
-    logger.info('[FlowState] Generate Drums pattern');
+    logger.info("[FlowState] Generate Drums pattern");
   }, []);
 
   const handleGeneratePercussion = useCallback(() => {
-    logger.info('[FlowState] Generate Percussion pattern');
+    logger.info("[FlowState] Generate Percussion pattern");
   }, []);
 
   const handleAnalyzeAudio = useCallback(() => {
-    logger.info('[FlowState] Analyze Audio');
+    logger.info("[FlowState] Analyze Audio");
   }, []);
 
-  const handleAddPlugin = useCallback((pluginId: string, type: 'effect' | 'instrument') => {
-    const friendlyName = pluginId
-      .split(/[-_]/)
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
+  const handleAddPlugin = useCallback(
+    (pluginId: string, type: "effect" | "instrument") => {
+      const friendlyName = pluginId
+        .split(/[-_]/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
 
-    // Wire the plugin into the actual audio graph on the targeted track
-    if (activeTrackForPlugin) {
-      dawCore.addPlugin(activeTrackForPlugin, pluginId, friendlyName);
-    }
+      // Wire the plugin into the actual audio graph on the targeted track
+      if (activeTrackForPlugin) {
+        dawCore.addPlugin(activeTrackForPlugin, pluginId, friendlyName);
+      }
 
-    if (type === 'effect') {
-      const newPlugin: PluginInstance = {
-        id: `plugin-${Date.now()}`,
-        type: pluginId as PluginType,
-        name: friendlyName,
-        bypass: false,
-        expanded: true,
-        parameters: {},
-      };
-      setSelectedPlugin(newPlugin);
-      setPluginDialogOpen(true);
-    } else {
-      const newInstrument: InstrumentInstance = {
-        id: `inst-${Date.now()}`,
-        type: pluginId as InstrumentType,
-        name: friendlyName,
-        bypass: false,
-        parameters: {},
-      };
-      setSelectedInstrument(newInstrument);
-      setInstrumentDialogOpen(true);
-    }
-    setShowPluginBrowser(false);
-  }, [activeTrackForPlugin]);
+      if (type === "effect") {
+        const newPlugin: PluginInstance = {
+          id: `plugin-${Date.now()}`,
+          type: pluginId as PluginType,
+          name: friendlyName,
+          bypass: false,
+          expanded: true,
+          parameters: {},
+        };
+        setSelectedPlugin(newPlugin);
+        setPluginDialogOpen(true);
+      } else {
+        const newInstrument: InstrumentInstance = {
+          id: `inst-${Date.now()}`,
+          type: pluginId as InstrumentType,
+          name: friendlyName,
+          bypass: false,
+          parameters: {},
+        };
+        setSelectedInstrument(newInstrument);
+        setInstrumentDialogOpen(true);
+      }
+      setShowPluginBrowser(false);
+    },
+    [activeTrackForPlugin],
+  );
 
-  const handlePluginParameterChange = useCallback((key: string, value: number) => {
-    setSelectedPlugin(prev => prev ? { ...prev, parameters: { ...prev.parameters, [key]: value } } : null);
-  }, []);
+  const handlePluginParameterChange = useCallback(
+    (key: string, value: number) => {
+      setSelectedPlugin((prev) =>
+        prev
+          ? { ...prev, parameters: { ...prev.parameters, [key]: value } }
+          : null,
+      );
+    },
+    [],
+  );
 
   const handlePluginBypassChange = useCallback((bypass: boolean) => {
-    setSelectedPlugin(prev => prev ? { ...prev, bypass } : null);
+    setSelectedPlugin((prev) => (prev ? { ...prev, bypass } : null));
   }, []);
 
   const handlePluginReset = useCallback(() => {
-    setSelectedPlugin(prev => prev ? { ...prev, parameters: {} } : null);
+    setSelectedPlugin((prev) => (prev ? { ...prev, parameters: {} } : null));
   }, []);
 
-  const handleInstrumentParameterChange = useCallback((key: string, value: number) => {
-    setSelectedInstrument(prev => prev ? { ...prev, parameters: { ...prev.parameters, [key]: value } } : null);
-  }, []);
+  const handleInstrumentParameterChange = useCallback(
+    (key: string, value: number) => {
+      setSelectedInstrument((prev) =>
+        prev
+          ? { ...prev, parameters: { ...prev.parameters, [key]: value } }
+          : null,
+      );
+    },
+    [],
+  );
 
   const handleInstrumentBypassChange = useCallback((bypass: boolean) => {
-    setSelectedInstrument(prev => prev ? { ...prev, bypass } : null);
+    setSelectedInstrument((prev) => (prev ? { ...prev, bypass } : null));
   }, []);
 
   const handleInstrumentReset = useCallback(() => {
-    setSelectedInstrument(prev => prev ? { ...prev, parameters: {} } : null);
+    setSelectedInstrument((prev) =>
+      prev ? { ...prev, parameters: {} } : null,
+    );
   }, []);
 
   const handleOpenPluginBrowser = useCallback((trackId?: string) => {
@@ -364,77 +461,104 @@ export function FlowStateStudioPro({
     setShowPluginBrowser(true);
   }, []);
 
-  const handleToolbarAction = useCallback((actionId: string) => {
-    const selectedTrack = context.selectedTrackIds[0];
-    
-    switch (actionId) {
-      case 'mute':
-        if (selectedTrack) adapter.toggleTrackMute(selectedTrack);
-        break;
-      case 'solo':
-        if (selectedTrack) adapter.toggleTrackSolo(selectedTrack);
-        break;
-      case 'arm':
-        if (selectedTrack) adapter.toggleTrackArm(selectedTrack);
-        break;
-      case 'delete':
-        if (selectedTrack) adapter.deleteTrack(selectedTrack);
-        break;
-      case 'duplicate':
-        if (selectedTrack) adapter.duplicateTrack(selectedTrack);
-        break;
-      case 'analyze':
-        logger.info('[FlowState] Analyze track:', selectedTrack || 'No track selected');
-        break;
-      case 'stem-separate':
-        logger.info('[FlowState] Stem separation:', selectedTrack || 'No track selected');
-        break;
-      case 'ai-process':
-        logger.info('[FlowState] AI Process track:', selectedTrack || 'No track selected');
-        break;
-      case 'ai-enhance':
-        logger.info('[FlowState] AI Enhance:', context.selectedClipIds[0] || 'No clip selected');
-        break;
-      case 'quantize':
-        logger.info('[FlowState] Quantize MIDI:', context.selectedClipIds[0] || 'No clip selected');
-        break;
-      case 'humanize':
-        logger.info('[FlowState] Humanize MIDI:', context.selectedClipIds[0] || 'No clip selected');
-        break;
-      default:
-        logger.info('[FlowState] Toolbar action:', actionId);
-    }
-  }, [adapter, context]);
+  const handleToolbarAction = useCallback(
+    (actionId: string) => {
+      const selectedTrack = context.selectedTrackIds[0];
 
-  const handleAddTrack = useCallback((type: string, name: string) => {
-    logger.info('[FlowState] Add track:', type, name);
-    adapter.addTrack(type, name);
-  }, [adapter]);
+      switch (actionId) {
+        case "mute":
+          if (selectedTrack) adapter.toggleTrackMute(selectedTrack);
+          break;
+        case "solo":
+          if (selectedTrack) adapter.toggleTrackSolo(selectedTrack);
+          break;
+        case "arm":
+          if (selectedTrack) adapter.toggleTrackArm(selectedTrack);
+          break;
+        case "delete":
+          if (selectedTrack) adapter.deleteTrack(selectedTrack);
+          break;
+        case "duplicate":
+          if (selectedTrack) adapter.duplicateTrack(selectedTrack);
+          break;
+        case "analyze":
+          logger.info(
+            "[FlowState] Analyze track:",
+            selectedTrack || "No track selected",
+          );
+          break;
+        case "stem-separate":
+          logger.info(
+            "[FlowState] Stem separation:",
+            selectedTrack || "No track selected",
+          );
+          break;
+        case "ai-process":
+          logger.info(
+            "[FlowState] AI Process track:",
+            selectedTrack || "No track selected",
+          );
+          break;
+        case "ai-enhance":
+          logger.info(
+            "[FlowState] AI Enhance:",
+            context.selectedClipIds[0] || "No clip selected",
+          );
+          break;
+        case "quantize":
+          logger.info(
+            "[FlowState] Quantize MIDI:",
+            context.selectedClipIds[0] || "No clip selected",
+          );
+          break;
+        case "humanize":
+          logger.info(
+            "[FlowState] Humanize MIDI:",
+            context.selectedClipIds[0] || "No clip selected",
+          );
+          break;
+        default:
+          logger.info("[FlowState] Toolbar action:", actionId);
+      }
+    },
+    [adapter, context],
+  );
 
-  const handleTrackContextMenu = useCallback((e: React.MouseEvent, trackId: string) => {
-    e.preventDefault();
-    setContextMenu({
-      isOpen: true,
-      position: { x: e.clientX, y: e.clientY },
-      trackId,
-    });
-  }, []);
+  const handleAddTrack = useCallback(
+    (type: string, name: string) => {
+      logger.info("[FlowState] Add track:", type, name);
+      adapter.addTrack(type, name);
+    },
+    [adapter],
+  );
+
+  const handleTrackContextMenu = useCallback(
+    (e: React.MouseEvent, trackId: string) => {
+      e.preventDefault();
+      setContextMenu({
+        isOpen: true,
+        position: { x: e.clientX, y: e.clientY },
+        trackId,
+      });
+    },
+    [],
+  );
 
   const getTrackContextMenuItems = useCallback(() => {
-    const track = tracks.find(t => t.id === contextMenu.trackId);
+    const track = tracks.find((t) => t.id === contextMenu.trackId);
     if (!track) return [];
-    
+
     return TRACK_CONTEXT_MENU_ITEMS({
       onDuplicate: () => adapter.duplicateTrack(track.id),
       onDelete: () => adapter.deleteTrack(track.id),
       onMute: () => adapter.toggleTrackMute(track.id),
       onSolo: () => adapter.toggleTrackSolo(track.id),
-      onRename: () => logger.info('[FlowState] Rename track:', track.id),
-      onChangeColor: () => logger.info('[FlowState] Change color:', track.id),
-      onMoveUp: () => logger.info('[FlowState] Move up:', track.id),
-      onMoveDown: () => logger.info('[FlowState] Move down:', track.id),
-      onFreeze: () => logger.info('[FlowState] Freeze:', track.id),
-      onAIProcess: () => logger.info('[FlowState] AI Process:', track.id),
+      onRename: () => logger.info("[FlowState] Rename track:", track.id),
+      onChangeColor: () => logger.info("[FlowState] Change color:", track.id),
+      onMoveUp: () => logger.info("[FlowState] Move up:", track.id),
+      onMoveDown: () => logger.info("[FlowState] Move down:", track.id),
+      onFreeze: () => logger.info("[FlowState] Freeze:", track.id),
+      onAIProcess: () => logger.info("[FlowState] AI Process:", track.id),
       onAddPlugin: () => handleOpenPluginBrowser(track.id),
       isMuted: track.mute,
       isSolo: track.solo,
@@ -453,7 +577,7 @@ export function FlowStateStudioPro({
         collaborators={collaboration.collaborators}
         currentUserId="current-user"
         isConnected={collaboration.isConnected}
-        onInvite={() => logger.info('Invite collaborators')}
+        onInvite={() => logger.info("Invite collaborators")}
         onReconnect={() => collaboration.reconnect()}
       />
 
@@ -486,7 +610,9 @@ export function FlowStateStudioPro({
             className="h-14 flex-shrink-0 border-b border-white/5 bg-black/30 backdrop-blur-xl flex items-center px-4 gap-4"
           >
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${currentModeConfig.color} flex items-center justify-center`}>
+              <div
+                className={`w-8 h-8 rounded-lg bg-gradient-to-br ${currentModeConfig.color} flex items-center justify-center`}
+              >
                 <currentModeConfig.icon className="w-4 h-4 text-white" />
               </div>
               <FlowStateProjectSelector
@@ -509,12 +635,19 @@ export function FlowStateStudioPro({
                 }}
                 isDirty={dawCore.project.getState().isDirty}
               />
-              <p className="text-[10px] text-white/50">{currentModeConfig.label} Mode</p>
+              <p className="text-[10px] text-white/50">
+                {currentModeConfig.label} Mode
+              </p>
             </div>
 
             <div className="flex-1 flex justify-center">
               <div className="flex items-center gap-1 bg-black/40 rounded-full p-1 border border-white/5">
-                {(Object.entries(MODE_CONFIG) as [FlowStateMode, typeof currentModeConfig][]).map(([mode, config]) => (
+                {(
+                  Object.entries(MODE_CONFIG) as [
+                    FlowStateMode,
+                    typeof currentModeConfig,
+                  ][]
+                ).map(([mode, config]) => (
                   <motion.button
                     key={mode}
                     onClick={() => adapter.setMode(mode)}
@@ -522,7 +655,7 @@ export function FlowStateStudioPro({
                       "px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5",
                       context.mode === mode
                         ? `bg-gradient-to-r ${config.color} text-white shadow-lg`
-                        : "text-white/50 hover:text-white hover:bg-white/5"
+                        : "text-white/50 hover:text-white hover:bg-white/5",
                     )}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -541,7 +674,7 @@ export function FlowStateStudioPro({
                   "p-2 rounded-lg transition-all",
                   show3DWorkspace
                     ? "bg-indigo-600 text-white"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white",
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -551,12 +684,14 @@ export function FlowStateStudioPro({
               </motion.button>
 
               <motion.button
-                onClick={() => setShowSpectralVisualizer(!showSpectralVisualizer)}
+                onClick={() =>
+                  setShowSpectralVisualizer(!showSpectralVisualizer)
+                }
                 className={cn(
                   "p-2 rounded-lg transition-all",
                   showSpectralVisualizer
                     ? "bg-cyan-600 text-white"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white",
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -564,14 +699,14 @@ export function FlowStateStudioPro({
               >
                 <Activity className="w-4 h-4" />
               </motion.button>
-              
+
               <motion.button
                 onClick={() => setShowMixer(!showMixer)}
                 className={cn(
                   "p-2 rounded-lg transition-all",
                   showMixer
                     ? "bg-indigo-600 text-white"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white",
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -579,14 +714,14 @@ export function FlowStateStudioPro({
               >
                 <Sliders className="w-4 h-4" />
               </motion.button>
-              
+
               <motion.button
                 onClick={() => setShowPluginChain(!showPluginChain)}
                 className={cn(
                   "p-2 rounded-lg transition-all",
                   showPluginChain
                     ? "bg-amber-600 text-white"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white",
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -594,14 +729,14 @@ export function FlowStateStudioPro({
               >
                 <Layers className="w-4 h-4" />
               </motion.button>
-              
+
               <motion.button
                 onClick={() => setShowAIGeneratorDialog(true)}
                 className={cn(
                   "p-2 rounded-lg transition-all",
                   showAIGeneratorDialog
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white",
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -619,7 +754,7 @@ export function FlowStateStudioPro({
               >
                 <Save className="w-4 h-4" />
               </motion.button>
-              
+
               <motion.button
                 onClick={onExport}
                 className="p-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
@@ -629,7 +764,7 @@ export function FlowStateStudioPro({
               >
                 <Download className="w-4 h-4" />
               </motion.button>
-              
+
               <motion.button
                 onClick={() => setShowAddTrackDialog(true)}
                 className="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white"
@@ -639,7 +774,7 @@ export function FlowStateStudioPro({
               >
                 <Plus className="w-4 h-4" />
               </motion.button>
-              
+
               <motion.button
                 onClick={() => setShowPluginBrowser(true)}
                 className="p-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
@@ -649,7 +784,7 @@ export function FlowStateStudioPro({
               >
                 <Layers className="w-4 h-4" />
               </motion.button>
-              
+
               <motion.button
                 onClick={() => setShowKeyboardShortcuts(true)}
                 className="p-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
@@ -681,7 +816,7 @@ export function FlowStateStudioPro({
                     "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
                     activeTool === tool.id
                       ? "bg-indigo-600 text-white"
-                      : "text-white/50 hover:bg-white/5 hover:text-white"
+                      : "text-white/50 hover:bg-white/5 hover:text-white",
                   )}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -741,19 +876,22 @@ export function FlowStateStudioPro({
                 zoom={timelineZoom}
                 onTimeChange={(time) => adapter.seek(time)}
                 onZoomChange={setTimelineZoom}
-                onLoopChange={(start, end) => { setLoopStart(start); setLoopEnd(end); }}
+                onLoopChange={(start, end) => {
+                  setLoopStart(start);
+                  setLoopEnd(end);
+                }}
                 onLoopToggle={adapter.toggleLoop}
               />
 
               <div className="flex-1 bg-gradient-to-b from-slate-900/50 to-slate-950/50 overflow-hidden relative">
                 <div className="absolute inset-0 overflow-auto">
                   <div className="min-w-full min-h-full p-4 relative">
-                    <FlowStatePlayhead 
+                    <FlowStatePlayhead
                       position={transport.currentTime * pixelsPerSecond + 180}
                       height={tracks.length * 112 + 100}
                       isPlaying={transport.isPlaying}
                     />
-                    
+
                     {tracks.length === 0 ? (
                       <FlowStateEmptyState
                         onAddTrack={() => setShowAddTrackDialog(true)}
@@ -767,12 +905,14 @@ export function FlowStateStudioPro({
                           <motion.div
                             key={track.id}
                             onClick={() => adapter.selectTrack(track.id)}
-                            onContextMenu={(e) => handleTrackContextMenu(e, track.id)}
+                            onContextMenu={(e) =>
+                              handleTrackContextMenu(e, track.id)
+                            }
                             className={cn(
                               "h-24 rounded-xl border transition-all cursor-pointer",
                               context.selectedTrackIds.includes(track.id)
                                 ? "border-indigo-500 bg-indigo-500/10"
-                                : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
+                                : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]",
                             )}
                             whileHover={{ scale: 1.005 }}
                             layout
@@ -782,10 +922,14 @@ export function FlowStateStudioPro({
                                 className="w-3 h-16 rounded-full"
                                 style={{ backgroundColor: track.color }}
                               />
-                              
+
                               <div className="w-32">
-                                <p className="text-sm font-medium text-white">{track.name}</p>
-                                <p className="text-xs text-white/50 capitalize">{track.type}</p>
+                                <p className="text-sm font-medium text-white">
+                                  {track.name}
+                                </p>
+                                <p className="text-xs text-white/50 capitalize">
+                                  {track.type}
+                                </p>
                               </div>
 
                               <div className="flex items-center gap-2">
@@ -798,14 +942,14 @@ export function FlowStateStudioPro({
                                     "w-8 h-8 rounded flex items-center justify-center text-xs font-bold",
                                     track.mute
                                       ? "bg-red-500 text-white"
-                                      : "bg-white/10 text-white/60"
+                                      : "bg-white/10 text-white/60",
                                   )}
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                 >
                                   M
                                 </motion.button>
-                                
+
                                 <motion.button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -815,14 +959,14 @@ export function FlowStateStudioPro({
                                     "w-8 h-8 rounded flex items-center justify-center text-xs font-bold",
                                     track.solo
                                       ? "bg-yellow-500 text-black"
-                                      : "bg-white/10 text-white/60"
+                                      : "bg-white/10 text-white/60",
                                   )}
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                 >
                                   S
                                 </motion.button>
-                                
+
                                 <motion.button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -832,12 +976,15 @@ export function FlowStateStudioPro({
                                     "w-8 h-8 rounded flex items-center justify-center",
                                     track.armed
                                       ? "bg-red-600 text-white animate-pulse"
-                                      : "bg-white/10 text-white/60"
+                                      : "bg-white/10 text-white/60",
                                   )}
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                 >
-                                  <Circle className="w-3 h-3" fill={track.armed ? "currentColor" : "none"} />
+                                  <Circle
+                                    className="w-3 h-3"
+                                    fill={track.armed ? "currentColor" : "none"}
+                                  />
                                 </motion.button>
                               </div>
 
@@ -854,10 +1001,12 @@ export function FlowStateStudioPro({
                                     }}
                                   />
                                 ))}
-                                
+
                                 <div className="absolute inset-0 flex items-center justify-center">
                                   {track.clips.length === 0 && (
-                                    <span className="text-xs text-white/30">Drop audio here</span>
+                                    <span className="text-xs text-white/30">
+                                      Drop audio here
+                                    </span>
                                   )}
                                 </div>
                               </div>
@@ -879,9 +1028,11 @@ export function FlowStateStudioPro({
                             </div>
                           </motion.div>
                         ))}
-                        
+
                         <div className="mt-4">
-                          <AddTrackButton onClick={() => setShowAddTrackDialog(true)} />
+                          <AddTrackButton
+                            onClick={() => setShowAddTrackDialog(true)}
+                          />
                         </div>
                       </div>
                     )}
@@ -900,7 +1051,7 @@ export function FlowStateStudioPro({
                 className="border-t border-white/5 overflow-hidden"
               >
                 <FlowStateMixer
-                  tracks={tracks.map(t => ({
+                  tracks={tracks.map((t) => ({
                     id: t.id,
                     name: t.name,
                     color: t.color,
@@ -931,9 +1082,12 @@ export function FlowStateStudioPro({
             >
               <FlowStatePluginChain
                 trackId={context.selectedTrackIds[0] || null}
-                trackName={context.selectedTrackIds[0] 
-                  ? tracks.find(t => t.id === context.selectedTrackIds[0])?.name || 'Selected Track'
-                  : 'Master'}
+                trackName={
+                  context.selectedTrackIds[0]
+                    ? tracks.find((t) => t.id === context.selectedTrackIds[0])
+                        ?.name || "Selected Track"
+                    : "Master"
+                }
                 plugins={masterPlugins}
                 onPluginsChange={setMasterPlugins}
                 onClose={() => setShowPluginChain(false)}
@@ -951,7 +1105,7 @@ export function FlowStateStudioPro({
               className="border-l border-white/5 overflow-hidden"
             >
               <FlowStateAIPanel
-                suggestions={suggestions.map(s => ({
+                suggestions={suggestions.map((s) => ({
                   id: s.id,
                   type: s.type as Record<string, unknown>,
                   title: s.title,
@@ -981,17 +1135,21 @@ export function FlowStateStudioPro({
         className={cn(
           "h-20 flex-shrink-0 border-t border-white/5 bg-gradient-to-r from-black/40 via-black/30 to-black/40 backdrop-blur-xl",
           "flex items-center justify-between px-6",
-          !chromeVisible && "opacity-80"
+          !chromeVisible && "opacity-80",
         )}
       >
         <div className="flex items-center gap-4 text-sm font-mono">
           <div className="bg-black/50 rounded-lg px-4 py-2 border border-white/10">
             <span className="text-white/50 text-xs block">Time</span>
-            <span className="text-white text-lg">{formatTime(transport.currentTime)}</span>
+            <span className="text-white text-lg">
+              {formatTime(transport.currentTime)}
+            </span>
           </div>
           <div className="bg-black/50 rounded-lg px-4 py-2 border border-white/10">
             <span className="text-white/50 text-xs block">Bars</span>
-            <span className="text-white text-lg">{formatBars(transport.currentTime)}</span>
+            <span className="text-white text-lg">
+              {formatBars(transport.currentTime)}
+            </span>
           </div>
         </div>
 
@@ -1006,12 +1164,14 @@ export function FlowStateStudioPro({
           </motion.button>
 
           <motion.button
-            onClick={() => transport.isPlaying ? adapter.pause() : adapter.play()}
+            onClick={() =>
+              transport.isPlaying ? adapter.pause() : adapter.play()
+            }
             className={cn(
               "w-16 h-16 rounded-2xl flex items-center justify-center text-white transition-all shadow-xl",
               transport.isPlaying
                 ? "bg-gradient-to-br from-indigo-500 to-purple-600"
-                : "bg-gradient-to-br from-green-500 to-emerald-600"
+                : "bg-gradient-to-br from-green-500 to-emerald-600",
             )}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1038,12 +1198,15 @@ export function FlowStateStudioPro({
               "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
               transport.isRecording
                 ? "bg-red-600 text-white animate-pulse"
-                : "bg-white/5 text-red-400 hover:bg-red-600/20"
+                : "bg-white/5 text-red-400 hover:bg-red-600/20",
             )}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Circle className="w-5 h-5" fill={transport.isRecording ? "currentColor" : "none"} />
+            <Circle
+              className="w-5 h-5"
+              fill={transport.isRecording ? "currentColor" : "none"}
+            />
           </motion.button>
 
           <div className="w-px h-10 bg-white/10 mx-2" />
@@ -1054,7 +1217,7 @@ export function FlowStateStudioPro({
               "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
               transport.loopEnabled
                 ? "bg-indigo-600 text-white"
-                : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"
+                : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white",
             )}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1068,7 +1231,7 @@ export function FlowStateStudioPro({
               "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
               transport.metronomeEnabled
                 ? "bg-amber-600 text-white"
-                : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"
+                : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white",
             )}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1086,16 +1249,16 @@ export function FlowStateStudioPro({
                 "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
                 isAIMixing
                   ? "bg-blue-600 text-white animate-pulse"
-                  : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white"
+                  : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white",
               )}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
               <Wand2 className="w-4 h-4" />
-              {isAIMixing ? 'Mixing...' : 'AI Mix'}
+              {isAIMixing ? "Mixing..." : "AI Mix"}
             </motion.button>
           )}
-          
+
           {onAIMaster && (
             <motion.button
               onClick={onAIMaster}
@@ -1104,18 +1267,18 @@ export function FlowStateStudioPro({
                 "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
                 isAIMastering
                   ? "bg-amber-600 text-white animate-pulse"
-                  : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white"
+                  : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white",
               )}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
               <Sparkles className="w-4 h-4" />
-              {isAIMastering ? 'Mastering...' : 'AI Master'}
+              {isAIMastering ? "Mastering..." : "AI Master"}
             </motion.button>
           )}
-          
+
           <div className="w-px h-8 bg-white/10" />
-          
+
           <div className="bg-black/50 rounded-lg px-4 py-2 border border-white/10 flex items-center gap-2">
             <span className="text-white/50 text-xs">BPM</span>
             <input
@@ -1129,7 +1292,9 @@ export function FlowStateStudioPro({
           </div>
           <div className="bg-black/50 rounded-lg px-4 py-2 border border-white/10">
             <span className="text-white/50 text-xs block">Sig</span>
-            <span className="text-white text-lg font-mono">{transport.timeSignature}</span>
+            <span className="text-white text-lg font-mono">
+              {transport.timeSignature}
+            </span>
           </div>
         </div>
       </motion.div>
@@ -1164,7 +1329,7 @@ export function FlowStateStudioPro({
         isOpen={contextMenu.isOpen}
         position={contextMenu.position}
         items={getTrackContextMenuItems()}
-        onClose={() => setContextMenu(prev => ({ ...prev, isOpen: false }))}
+        onClose={() => setContextMenu((prev) => ({ ...prev, isOpen: false }))}
       />
 
       <FlowStatePluginBrowser
@@ -1198,7 +1363,7 @@ export function FlowStateStudioPro({
         onOpenChange={setShowImportAudioDialog}
         projectId={projectId || undefined}
         onImportComplete={(files) => {
-          logger.info('[FlowState] Audio files imported:', files);
+          logger.info("[FlowState] Audio files imported:", files);
         }}
       />
 
@@ -1206,7 +1371,7 @@ export function FlowStateStudioPro({
         open={showTemplateDialog}
         onOpenChange={setShowTemplateDialog}
         onProjectCreated={(project) => {
-          logger.info('[FlowState] Project created from template:', project);
+          logger.info("[FlowState] Project created from template:", project);
         }}
       />
 
@@ -1215,7 +1380,7 @@ export function FlowStateStudioPro({
         onOpenChange={setShowAIGenerateDialog}
         projectId={projectId || undefined}
         onGenerationComplete={(result) => {
-          logger.info('[FlowState] AI generation complete:', result);
+          logger.info("[FlowState] AI generation complete:", result);
         }}
       />
     </div>

@@ -1,33 +1,64 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Play, Pause, Square, Circle, SkipBack, SkipForward,
-  Repeat, Magnet, Grid, Layers, Sliders, Music, Mic,
-  Volume2, Clock, Gauge, Save, FolderOpen, Plus, Undo2, Redo2,
-  Wand2, Brain, Lightbulb, ChevronDown, Settings, Zap,
-  SlidersHorizontal, GitBranch, Route, Piano, Drum
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { logger } from "@/lib/logger";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Play,
+  Pause,
+  Square,
+  Circle,
+  SkipBack,
+  SkipForward,
+  Repeat,
+  Magnet,
+  Grid,
+  Layers,
+  Sliders,
+  Music,
+  Mic,
+  Volume2,
+  Clock,
+  Gauge,
+  Save,
+  FolderOpen,
+  Plus,
+  Undo2,
+  Redo2,
+  Wand2,
+  Brain,
+  Lightbulb,
+  ChevronDown,
+  Settings,
+  Zap,
+  SlidersHorizontal,
+  GitBranch,
+  Route,
+  Piano,
+  Drum,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useDAWCore } from '@/hooks/useDAWCore';
-import { cn } from '@/lib/utils';
-import type { EditMode, AutomationMode } from '@/lib/daw';
+} from "@/components/ui/select";
+import { useDAWCore } from "@/hooks/useDAWCore";
+import { cn } from "@/lib/utils";
+import type { EditMode, AutomationMode } from "@/lib/daw";
 
 interface DAWEngineControlsProps {
   onOpenPluginBrowser: () => void;
@@ -47,7 +78,9 @@ export function DAWEngineControls({
 
   useEffect(() => {
     if (!daw.isInitialized) {
-      daw.initialize().catch((err: unknown) => logger.error('DAW init failed:', err));
+      daw
+        .initialize()
+        .catch((err: unknown) => logger.error("DAW init failed:", err));
     }
   }, [daw]);
 
@@ -67,14 +100,14 @@ export function DAWEngineControls({
     const bar = Math.floor(position.musical.bar);
     const beat = Math.floor(position.musical.beat);
     const tick = Math.floor(position.musical.tick);
-    return `${bar.toString().padStart(3, '0')}.${beat}.${tick.toString().padStart(3, '0')}`;
+    return `${bar.toString().padStart(3, "0")}.${beat}.${tick.toString().padStart(3, "0")}`;
   };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     const ms = Math.floor((seconds % 1) * 100);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -162,12 +195,12 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                aria-label={daw.isPlaying ? 'Pause' : 'Play'}
+                aria-label={daw.isPlaying ? "Pause" : "Play"}
                 variant="ghost"
                 size="icon"
                 className={cn(
                   "h-10 w-10 rounded-full",
-                  daw.isPlaying && "bg-green-600/20 text-green-500"
+                  daw.isPlaying && "bg-green-600/20 text-green-500",
                 )}
                 onClick={daw.isPlaying ? daw.pause : daw.play}
               >
@@ -178,7 +211,9 @@ export function DAWEngineControls({
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{daw.isPlaying ? 'Pause (Space)' : 'Play (Space)'}</TooltipContent>
+            <TooltipContent>
+              {daw.isPlaying ? "Pause (Space)" : "Play (Space)"}
+            </TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -199,16 +234,18 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                aria-label={daw.isRecording ? 'Stop Recording' : 'Record'}
+                aria-label={daw.isRecording ? "Stop Recording" : "Record"}
                 variant="ghost"
                 size="icon"
                 className={cn(
                   "h-10 w-10 rounded-full",
-                  daw.isRecording && "bg-red-600/20 text-red-500 animate-pulse"
+                  daw.isRecording && "bg-red-600/20 text-red-500 animate-pulse",
                 )}
                 onClick={daw.record}
               >
-                <Circle className={cn("w-5 h-5", daw.isRecording && "fill-red-500")} />
+                <Circle
+                  className={cn("w-5 h-5", daw.isRecording && "fill-red-500")}
+                />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Record (R)</TooltipContent>
@@ -217,13 +254,13 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                aria-label={daw.isLooping ? 'Disable Loop' : 'Enable Loop'}
+                aria-label={daw.isLooping ? "Disable Loop" : "Enable Loop"}
                 aria-pressed={daw.isLooping}
                 variant="ghost"
                 size="icon"
                 className={cn(
                   "h-8 w-8",
-                  daw.isLooping && "bg-blue-600/20 text-blue-500"
+                  daw.isLooping && "bg-blue-600/20 text-blue-500",
                 )}
                 onClick={daw.toggleLoop}
               >
@@ -240,7 +277,9 @@ export function DAWEngineControls({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => daw.setPosition(daw.position.musical.totalBeats + 4)}
+                onClick={() =>
+                  daw.setPosition(daw.position.musical.totalBeats + 4)
+                }
               >
                 <SkipForward className="w-4 h-4" />
               </Button>
@@ -270,9 +309,11 @@ export function DAWEngineControls({
               <input
                 type="number"
                 value={localTempo}
-                onChange={(e) => handleTempoChange(parseFloat(e.target.value) || 120)}
+                onChange={(e) =>
+                  handleTempoChange(parseFloat(e.target.value) || 120)
+                }
                 onBlur={handleTempoCommit}
-                onKeyDown={(e) => e.key === 'Enter' && handleTempoCommit()}
+                onKeyDown={(e) => e.key === "Enter" && handleTempoCommit()}
                 className="w-14 text-center font-mono text-sm bg-zinc-800 text-white px-1 py-0.5 rounded border-0 focus:ring-1 focus:ring-purple-500"
                 min={20}
                 max={999}
@@ -290,7 +331,7 @@ export function DAWEngineControls({
                 size="sm"
                 className={cn(
                   "gap-1",
-                  daw.snapEnabled && "bg-purple-600/20 text-purple-500"
+                  daw.snapEnabled && "bg-purple-600/20 text-purple-500",
                 )}
                 onClick={() => daw.setSnap(!daw.snapEnabled)}
               >
@@ -365,28 +406,28 @@ export function DAWEngineControls({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => daw.addTrack('audio')}>
+              <DropdownMenuItem onClick={() => daw.addTrack("audio")}>
                 <Volume2 className="w-4 h-4 mr-2" />
                 Audio Track
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => daw.addTrack('instrument')}>
+              <DropdownMenuItem onClick={() => daw.addTrack("instrument")}>
                 <Music className="w-4 h-4 mr-2" />
                 Instrument Track
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => daw.addTrack('midi')}>
+              <DropdownMenuItem onClick={() => daw.addTrack("midi")}>
                 <Piano className="w-4 h-4 mr-2" />
                 MIDI Track
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => daw.createBus('Bus')}>
+              <DropdownMenuItem onClick={() => daw.createBus("Bus")}>
                 <GitBranch className="w-4 h-4 mr-2" />
                 Bus Track
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => daw.addTrack('aux')}>
+              <DropdownMenuItem onClick={() => daw.addTrack("aux")}>
                 <Route className="w-4 h-4 mr-2" />
                 Aux Track
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => daw.addTrack('folder')}>
+              <DropdownMenuItem onClick={() => daw.addTrack("folder")}>
                 <Layers className="w-4 h-4 mr-2" />
                 Folder Track
               </DropdownMenuItem>
@@ -397,7 +438,12 @@ export function DAWEngineControls({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={onOpenMixer}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-xs"
+                onClick={onOpenMixer}
+              >
                 <SlidersHorizontal className="w-3 h-3" />
                 Mixer
               </Button>
@@ -407,7 +453,12 @@ export function DAWEngineControls({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={onOpenPianoRoll}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-xs"
+                onClick={onOpenPianoRoll}
+              >
                 <Piano className="w-3 h-3" />
                 Piano Roll
               </Button>
@@ -417,7 +468,12 @@ export function DAWEngineControls({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={onOpenPluginBrowser}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-xs"
+                onClick={onOpenPluginBrowser}
+              >
                 <Sliders className="w-3 h-3" />
                 Plugins
               </Button>
@@ -450,7 +506,7 @@ export function DAWEngineControls({
                 className="gap-1 text-xs"
                 onClick={() => {
                   const suggestions = daw.analyzeMix();
-                  logger.info('Mix Analysis:', suggestions);
+                  logger.info("Mix Analysis:", suggestions);
                 }}
               >
                 <Lightbulb className="w-3 h-3" />
@@ -468,7 +524,7 @@ export function DAWEngineControls({
                 className="gap-1 text-xs"
                 onClick={() => {
                   const chords = daw.suggestChords();
-                  logger.info('Chord Suggestions:', chords);
+                  logger.info("Chord Suggestions:", chords);
                 }}
               >
                 <Music className="w-3 h-3" />

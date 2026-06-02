@@ -19,32 +19,108 @@ interface PreReleaseChecklistItem {
 }
 
 const PRE_RELEASE_CHECKLIST_TEMPLATES: PreReleaseChecklistItem[] = [
-  { task: "Finalize album artwork and promotional images", dueOffset: -28, category: "4_weeks" },
-  { task: "Confirm final release date with distributor", dueOffset: -28, category: "4_weeks" },
-  { task: "Write release bio and press materials", dueOffset: -28, category: "4_weeks" },
-  { task: "Submit to digital streaming platforms (DSPs)", dueOffset: -21, category: "3_weeks" },
-  { task: "Create press kit with photos, bio, and assets", dueOffset: -21, category: "3_weeks" },
-  { task: "Reach out to music blogs and press contacts", dueOffset: -21, category: "3_weeks" },
-  { task: "Tease release on social media with snippets", dueOffset: -14, category: "2_weeks" },
-  { task: "Pitch to playlist curators and editors", dueOffset: -14, category: "2_weeks" },
-  { task: "Create countdown content for stories/posts", dueOffset: -14, category: "2_weeks" },
+  {
+    task: "Finalize album artwork and promotional images",
+    dueOffset: -28,
+    category: "4_weeks",
+  },
+  {
+    task: "Confirm final release date with distributor",
+    dueOffset: -28,
+    category: "4_weeks",
+  },
+  {
+    task: "Write release bio and press materials",
+    dueOffset: -28,
+    category: "4_weeks",
+  },
+  {
+    task: "Submit to digital streaming platforms (DSPs)",
+    dueOffset: -21,
+    category: "3_weeks",
+  },
+  {
+    task: "Create press kit with photos, bio, and assets",
+    dueOffset: -21,
+    category: "3_weeks",
+  },
+  {
+    task: "Reach out to music blogs and press contacts",
+    dueOffset: -21,
+    category: "3_weeks",
+  },
+  {
+    task: "Tease release on social media with snippets",
+    dueOffset: -14,
+    category: "2_weeks",
+  },
+  {
+    task: "Pitch to playlist curators and editors",
+    dueOffset: -14,
+    category: "2_weeks",
+  },
+  {
+    task: "Create countdown content for stories/posts",
+    dueOffset: -14,
+    category: "2_weeks",
+  },
   { task: "Launch pre-save campaign link", dueOffset: -7, category: "1_week" },
-  { task: "Reach out to influencers for collaboration", dueOffset: -7, category: "1_week" },
-  { task: "Schedule release day announcement posts", dueOffset: -7, category: "1_week" },
-  { task: "Send email newsletter to fans about release", dueOffset: -3, category: "1_week" },
-  { task: "Announce release across all platforms", dueOffset: 0, category: "release_day" },
-  { task: "Engage with fan comments and reactions", dueOffset: 0, category: "release_day" },
-  { task: "Go live on social media to celebrate", dueOffset: 0, category: "release_day" },
-  { task: "Share first streaming milestone with fans", dueOffset: 1, category: "post_release" },
-  { task: "Thank fans for support with personal message", dueOffset: 1, category: "post_release" },
-  { task: "Share user-generated content and reactions", dueOffset: 3, category: "post_release" },
-  { task: "Analyze first week streaming data", dueOffset: 7, category: "post_release" },
+  {
+    task: "Reach out to influencers for collaboration",
+    dueOffset: -7,
+    category: "1_week",
+  },
+  {
+    task: "Schedule release day announcement posts",
+    dueOffset: -7,
+    category: "1_week",
+  },
+  {
+    task: "Send email newsletter to fans about release",
+    dueOffset: -3,
+    category: "1_week",
+  },
+  {
+    task: "Announce release across all platforms",
+    dueOffset: 0,
+    category: "release_day",
+  },
+  {
+    task: "Engage with fan comments and reactions",
+    dueOffset: 0,
+    category: "release_day",
+  },
+  {
+    task: "Go live on social media to celebrate",
+    dueOffset: 0,
+    category: "release_day",
+  },
+  {
+    task: "Share first streaming milestone with fans",
+    dueOffset: 1,
+    category: "post_release",
+  },
+  {
+    task: "Thank fans for support with personal message",
+    dueOffset: 1,
+    category: "post_release",
+  },
+  {
+    task: "Share user-generated content and reactions",
+    dueOffset: 3,
+    category: "post_release",
+  },
+  {
+    task: "Analyze first week streaming data",
+    dueOffset: 7,
+    category: "post_release",
+  },
 ];
 
 class ReleaseCountdownService {
   async createCountdown(
     userId: string,
-    releaseData: Omit<InsertReleaseCountdown, "userId">
+    releaseData: Omit<InsertReleaseCountdown, "userId">,
   ): Promise<ReleaseCountdown> {
     try {
       const [countdown] = await db
@@ -55,7 +131,9 @@ class ReleaseCountdownService {
         })
         .returning();
 
-      const tasks = this.generatePreReleaseChecklist(new Date(releaseData.releaseDate));
+      const tasks = this.generatePreReleaseChecklist(
+        new Date(releaseData.releaseDate),
+      );
       await this.bulkAddTasks(countdown.id, tasks);
 
       logger.info(`Created countdown ${countdown.id} for user ${userId}`);
@@ -66,12 +144,20 @@ class ReleaseCountdownService {
     }
   }
 
-  async getCountdown(countdownId: string, userId: string): Promise<ReleaseCountdown | undefined> {
+  async getCountdown(
+    countdownId: string,
+    userId: string,
+  ): Promise<ReleaseCountdown | undefined> {
     try {
       const [countdown] = await db
         .select()
         .from(releaseCountdowns)
-        .where(and(eq(releaseCountdowns.id, countdownId), eq(releaseCountdowns.userId, userId)))
+        .where(
+          and(
+            eq(releaseCountdowns.id, countdownId),
+            eq(releaseCountdowns.userId, userId),
+          ),
+        )
         .limit(1);
       return countdown;
     } catch (error) {
@@ -85,7 +171,12 @@ class ReleaseCountdownService {
       const countdowns = await db
         .select()
         .from(releaseCountdowns)
-        .where(and(eq(releaseCountdowns.userId, userId), eq(releaseCountdowns.status, "active")))
+        .where(
+          and(
+            eq(releaseCountdowns.userId, userId),
+            eq(releaseCountdowns.status, "active"),
+          ),
+        )
         .orderBy(releaseCountdowns.releaseDate);
       return countdowns;
     } catch (error) {
@@ -111,13 +202,18 @@ class ReleaseCountdownService {
   async updateCountdown(
     countdownId: string,
     userId: string,
-    data: Partial<InsertReleaseCountdown>
+    data: Partial<InsertReleaseCountdown>,
   ): Promise<ReleaseCountdown> {
     try {
       const [updated] = await db
         .update(releaseCountdowns)
         .set(data)
-        .where(and(eq(releaseCountdowns.id, countdownId), eq(releaseCountdowns.userId, userId)))
+        .where(
+          and(
+            eq(releaseCountdowns.id, countdownId),
+            eq(releaseCountdowns.userId, userId),
+          ),
+        )
         .returning();
       return updated;
     } catch (error) {
@@ -126,10 +222,16 @@ class ReleaseCountdownService {
     }
   }
 
-  async addTask(countdownId: string, taskData: Omit<InsertCountdownTask, "countdownId">): Promise<CountdownTask> {
+  async addTask(
+    countdownId: string,
+    taskData: Omit<InsertCountdownTask, "countdownId">,
+  ): Promise<CountdownTask> {
     try {
       const existingTasks = await this.getTasks(countdownId);
-      const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+      const maxOrder = existingTasks.reduce(
+        (max, t) => Math.max(max, t.order || 0),
+        0,
+      );
 
       const [task] = await db
         .insert(countdownTasks)
@@ -150,7 +252,7 @@ class ReleaseCountdownService {
 
   async bulkAddTasks(
     countdownId: string,
-    tasks: Array<Omit<InsertCountdownTask, "countdownId">>
+    tasks: Array<Omit<InsertCountdownTask, "countdownId">>,
   ): Promise<CountdownTask[]> {
     try {
       if (tasks.length === 0) return [];
@@ -161,9 +263,14 @@ class ReleaseCountdownService {
         ...task,
       }));
 
-      const insertedTasks = await db.insert(countdownTasks).values(tasksToInsert).returning();
+      const insertedTasks = await db
+        .insert(countdownTasks)
+        .values(tasksToInsert)
+        .returning();
 
-      logger.info(`Added ${insertedTasks.length} tasks to countdown ${countdownId}`);
+      logger.info(
+        `Added ${insertedTasks.length} tasks to countdown ${countdownId}`,
+      );
       return insertedTasks;
     } catch (error) {
       logger.warn("Error bulk adding tasks:", error);
@@ -185,7 +292,9 @@ class ReleaseCountdownService {
     }
   }
 
-  async getTasksForCountdowns(countdownIds: string[]): Promise<Map<string, CountdownTask[]>> {
+  async getTasksForCountdowns(
+    countdownIds: string[],
+  ): Promise<Map<string, CountdownTask[]>> {
     if (countdownIds.length === 0) return new Map();
     try {
       const rows = await db
@@ -206,12 +315,20 @@ class ReleaseCountdownService {
     }
   }
 
-  async completeTask(countdownId: string, taskId: string): Promise<CountdownTask> {
+  async completeTask(
+    countdownId: string,
+    taskId: string,
+  ): Promise<CountdownTask> {
     try {
       const [task] = await db
         .update(countdownTasks)
         .set({ completedAt: new Date() })
-        .where(and(eq(countdownTasks.id, taskId), eq(countdownTasks.countdownId, countdownId)))
+        .where(
+          and(
+            eq(countdownTasks.id, taskId),
+            eq(countdownTasks.countdownId, countdownId),
+          ),
+        )
         .returning();
 
       logger.info(`Completed task ${taskId} for countdown ${countdownId}`);
@@ -222,12 +339,20 @@ class ReleaseCountdownService {
     }
   }
 
-  async uncompleteTask(countdownId: string, taskId: string): Promise<CountdownTask> {
+  async uncompleteTask(
+    countdownId: string,
+    taskId: string,
+  ): Promise<CountdownTask> {
     try {
       const [task] = await db
         .update(countdownTasks)
         .set({ completedAt: null })
-        .where(and(eq(countdownTasks.id, taskId), eq(countdownTasks.countdownId, countdownId)))
+        .where(
+          and(
+            eq(countdownTasks.id, taskId),
+            eq(countdownTasks.countdownId, countdownId),
+          ),
+        )
         .returning();
 
       logger.info(`Uncompleted task ${taskId} for countdown ${countdownId}`);
@@ -238,7 +363,9 @@ class ReleaseCountdownService {
     }
   }
 
-  async getCountdownAnalytics(countdownId: string): Promise<CountdownAnalytic[]> {
+  async getCountdownAnalytics(
+    countdownId: string,
+  ): Promise<CountdownAnalytic[]> {
     try {
       const analytics = await db
         .select()
@@ -254,7 +381,7 @@ class ReleaseCountdownService {
 
   async recordAnalytics(
     countdownId: string,
-    data: { presaves?: number; shares?: number; pageViews?: number }
+    data: { presaves?: number; shares?: number; pageViews?: number },
   ): Promise<CountdownAnalytic> {
     try {
       const today = new Date();
@@ -263,7 +390,12 @@ class ReleaseCountdownService {
       const [existing] = await db
         .select()
         .from(countdownAnalytics)
-        .where(and(eq(countdownAnalytics.countdownId, countdownId), gte(countdownAnalytics.date, today)))
+        .where(
+          and(
+            eq(countdownAnalytics.countdownId, countdownId),
+            gte(countdownAnalytics.date, today),
+          ),
+        )
         .limit(1);
 
       if (existing) {
@@ -310,7 +442,7 @@ class ReleaseCountdownService {
           totalShares: acc.totalShares + (record.shares || 0),
           totalPageViews: acc.totalPageViews + (record.pageViews || 0),
         }),
-        { totalPresaves: 0, totalShares: 0, totalPageViews: 0 }
+        { totalPresaves: 0, totalShares: 0, totalPageViews: 0 },
       );
 
       return {
@@ -323,7 +455,9 @@ class ReleaseCountdownService {
     }
   }
 
-  generatePreReleaseChecklist(releaseDate: Date): Array<Omit<InsertCountdownTask, "countdownId">> {
+  generatePreReleaseChecklist(
+    releaseDate: Date,
+  ): Array<Omit<InsertCountdownTask, "countdownId">> {
     return PRE_RELEASE_CHECKLIST_TEMPLATES.map((template) => {
       const dueDate = new Date(releaseDate);
       dueDate.setDate(dueDate.getDate() + template.dueOffset);
@@ -340,26 +474,59 @@ class ReleaseCountdownService {
   async generateAISuggestedTasks(
     countdownId: string,
     genre?: string,
-    targetAudience?: string
+    targetAudience?: string,
   ): Promise<Array<Omit<InsertCountdownTask, "countdownId">>> {
     const baseTasks = PRE_RELEASE_CHECKLIST_TEMPLATES;
 
     const genreSpecificTasks: PreReleaseChecklistItem[] = [];
 
-    if (genre?.toLowerCase().includes("hip-hop") || genre?.toLowerCase().includes("rap")) {
+    if (
+      genre?.toLowerCase().includes("hip-hop") ||
+      genre?.toLowerCase().includes("rap")
+    ) {
       genreSpecificTasks.push(
-        { task: "Submit to hip-hop focused playlists on Spotify", dueOffset: -14, category: "2_weeks" },
-        { task: "Connect with hip-hop blogs for premiere", dueOffset: -10, category: "2_weeks" }
+        {
+          task: "Submit to hip-hop focused playlists on Spotify",
+          dueOffset: -14,
+          category: "2_weeks",
+        },
+        {
+          task: "Connect with hip-hop blogs for premiere",
+          dueOffset: -10,
+          category: "2_weeks",
+        },
       );
-    } else if (genre?.toLowerCase().includes("electronic") || genre?.toLowerCase().includes("edm")) {
+    } else if (
+      genre?.toLowerCase().includes("electronic") ||
+      genre?.toLowerCase().includes("edm")
+    ) {
       genreSpecificTasks.push(
-        { task: "Submit to EDM-focused YouTube channels", dueOffset: -14, category: "2_weeks" },
-        { task: "Reach out to dance music podcasts", dueOffset: -10, category: "2_weeks" }
+        {
+          task: "Submit to EDM-focused YouTube channels",
+          dueOffset: -14,
+          category: "2_weeks",
+        },
+        {
+          task: "Reach out to dance music podcasts",
+          dueOffset: -10,
+          category: "2_weeks",
+        },
       );
-    } else if (genre?.toLowerCase().includes("indie") || genre?.toLowerCase().includes("alternative")) {
+    } else if (
+      genre?.toLowerCase().includes("indie") ||
+      genre?.toLowerCase().includes("alternative")
+    ) {
       genreSpecificTasks.push(
-        { task: "Pitch to indie music blogs and magazines", dueOffset: -14, category: "2_weeks" },
-        { task: "Submit to college radio stations", dueOffset: -10, category: "2_weeks" }
+        {
+          task: "Pitch to indie music blogs and magazines",
+          dueOffset: -14,
+          category: "2_weeks",
+        },
+        {
+          task: "Submit to college radio stations",
+          dueOffset: -10,
+          category: "2_weeks",
+        },
       );
     }
 
@@ -392,7 +559,7 @@ class ReleaseCountdownService {
 
   async getCountdownWithTasks(
     countdownId: string,
-    userId: string
+    userId: string,
   ): Promise<{ countdown: ReleaseCountdown; tasks: CountdownTask[] } | null> {
     try {
       const countdown = await this.getCountdown(countdownId, userId);
@@ -406,7 +573,11 @@ class ReleaseCountdownService {
     }
   }
 
-  calculateProgress(tasks: CountdownTask[]): { completed: number; total: number; percentage: number } {
+  calculateProgress(tasks: CountdownTask[]): {
+    completed: number;
+    total: number;
+    percentage: number;
+  } {
     const total = tasks.length;
     const completed = tasks.filter((t) => t.completedAt !== null).length;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;

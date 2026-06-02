@@ -1,12 +1,18 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Sparkles,
   Image as ImageIcon,
@@ -23,44 +29,50 @@ import {
   Share2,
   Zap,
   Target,
-} from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AnalysisResult {
-  type: 'image' | 'video' | 'audio' | 'text' | 'website';
+  type: "image" | "video" | "audio" | "text" | "website";
   data: Record<string, unknown>;
   timestamp: string;
 }
 
 export function ContentAnalyzer() {
-  const [activeTab, setActiveTab] = useState<'image' | 'video' | 'audio' | 'text' | 'website'>('image');
-  const [imageUrl, setImageUrl] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
-  const [audioUrl, setAudioUrl] = useState('');
-  const [textContent, setTextContent] = useState('');
-  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [activeTab, setActiveTab] = useState<
+    "image" | "video" | "audio" | "text" | "website"
+  >("image");
+  const [imageUrl, setImageUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [textContent, setTextContent] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const { toast } = useToast();
 
-  const analyzeContent = async (type: string, url: string, content?: string) => {
+  const analyzeContent = async (
+    type: string,
+    url: string,
+    content?: string,
+  ) => {
     setAnalyzing(true);
     setResult(null);
 
     try {
       const endpoint = `/api/content-analysis/${type}`;
       const payload =
-        type === 'text'
+        type === "text"
           ? { text: content }
-          : type === 'video'
-          ? { videoUrl: url, duration: 30 }
-          : type === 'audio'
-          ? { audioUrl: url }
-          : type === 'website'
-          ? { url }
-          : { imageUrl: url };
+          : type === "video"
+            ? { videoUrl: url, duration: 30 }
+            : type === "audio"
+              ? { audioUrl: url }
+              : type === "website"
+                ? { url }
+                : { imageUrl: url };
 
-      const rawResponse = await apiRequest('POST', endpoint, payload);
+      const rawResponse = await apiRequest("POST", endpoint, payload);
       const response = await rawResponse.json();
 
       if (response.success) {
@@ -70,15 +82,16 @@ export function ContentAnalyzer() {
           timestamp: response.timestamp,
         });
         toast({
-          title: '✨ Analysis Complete',
+          title: "✨ Analysis Complete",
           description: `Your ${type} has been analyzed with AI-powered insights.`,
         });
       }
     } catch (error) {
       toast({
-        title: 'Analysis Failed',
-        description: error.message || 'Failed to analyze content. Please try again.',
-        variant: 'destructive',
+        title: "Analysis Failed",
+        description:
+          error.message || "Failed to analyze content. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setAnalyzing(false);
@@ -90,23 +103,33 @@ export function ContentAnalyzer() {
 
     try {
       // Save analyzed features to database for autopilot training
-      await apiRequest('POST', '/api/autopilot/save-features', {
+      await apiRequest("POST", "/api/autopilot/save-features", {
         contentType: result.type,
         features: result.data,
-        contentUrl: result.type === 'image' ? imageUrl : result.type === 'video' ? videoUrl : result.type === 'audio' ? audioUrl : result.type === 'website' ? websiteUrl : undefined,
-        contentText: result.type === 'text' ? textContent : undefined,
+        contentUrl:
+          result.type === "image"
+            ? imageUrl
+            : result.type === "video"
+              ? videoUrl
+              : result.type === "audio"
+                ? audioUrl
+                : result.type === "website"
+                  ? websiteUrl
+                  : undefined,
+        contentText: result.type === "text" ? textContent : undefined,
       });
 
       toast({
-        title: '🎯 Saved for Training',
-        description: 'This content analysis will be used to improve your autopilot AI predictions.',
+        title: "🎯 Saved for Training",
+        description:
+          "This content analysis will be used to improve your autopilot AI predictions.",
         duration: 3000,
       });
     } catch (error) {
       toast({
-        title: 'Save Failed',
-        description: error.message || 'Failed to save for autopilot training.',
-        variant: 'destructive',
+        title: "Save Failed",
+        description: error.message || "Failed to save for autopilot training.",
+        variant: "destructive",
       });
     }
   };
@@ -129,11 +152,17 @@ export function ContentAnalyzer() {
           </div>
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Complexity</p>
-            <Progress value={data.composition?.complexity * 100} className="h-2" />
+            <Progress
+              value={data.composition?.complexity * 100}
+              className="h-2"
+            />
           </div>
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Attention Score</p>
-            <Progress value={data.engagement?.attentionGrabbing * 100} className="h-2" />
+            <Progress
+              value={data.engagement?.attentionGrabbing * 100}
+              className="h-2"
+            />
           </div>
         </div>
       </div>
@@ -146,10 +175,12 @@ export function ContentAnalyzer() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm">Shareability</span>
-            <span className="text-sm font-medium">{Math.round(data.engagement?.shareability * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.engagement?.shareability * 100)}%
+            </span>
           </div>
           <Progress value={data.engagement?.shareability * 100} />
-          
+
           <div className="flex items-center justify-between">
             <span className="text-sm">Emotional Impact</span>
             <Badge>{data.engagement?.emotionalImpact}</Badge>
@@ -162,11 +193,12 @@ export function ContentAnalyzer() {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            Faces: {data.content?.hasFaces ? `Yes (${data.content.faceCount})` : 'No'}
+            Faces:{" "}
+            {data.content?.hasFaces ? `Yes (${data.content.faceCount})` : "No"}
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            Text: {data.content?.hasText ? data.content.textAmount : 'None'}
+            Text: {data.content?.hasText ? data.content.textAmount : "None"}
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
@@ -184,7 +216,9 @@ export function ContentAnalyzer() {
           <h4 className="font-semibold mb-2">Visual Vibe</h4>
           <div className="flex flex-wrap gap-2">
             {data.vibe.map((v: string, i: number) => (
-              <Badge key={i} variant="outline">{v}</Badge>
+              <Badge key={i} variant="outline">
+                {v}
+              </Badge>
             ))}
           </div>
         </div>
@@ -219,13 +253,17 @@ export function ContentAnalyzer() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm">Hook Strength</span>
-            <span className="text-sm font-medium">{Math.round(data.engagement?.hookStrength * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.engagement?.hookStrength * 100)}%
+            </span>
           </div>
           <Progress value={data.engagement?.hookStrength * 100} />
-          
+
           <div className="flex items-center justify-between">
             <span className="text-sm">Viral Potential</span>
-            <span className="text-sm font-medium">{Math.round(data.viralPotential * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.viralPotential * 100)}%
+            </span>
           </div>
           <Progress value={data.viralPotential * 100} />
         </div>
@@ -236,13 +274,17 @@ export function ContentAnalyzer() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm">First 5 Seconds</span>
-            <span className="text-sm font-medium">{Math.round(data.engagement?.retention?.first5Seconds * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.engagement?.retention?.first5Seconds * 100)}%
+            </span>
           </div>
           <Progress value={data.engagement?.retention?.first5Seconds * 100} />
-          
+
           <div className="flex items-center justify-between">
             <span className="text-sm">Overall Retention</span>
-            <span className="text-sm font-medium">{Math.round(data.engagement?.retention?.overall * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.engagement?.retention?.overall * 100)}%
+            </span>
           </div>
           <Progress value={data.engagement?.retention?.overall * 100} />
         </div>
@@ -253,15 +295,15 @@ export function ContentAnalyzer() {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            Music: {data.audio?.hasMusic ? 'Yes' : 'No'}
+            Music: {data.audio?.hasMusic ? "Yes" : "No"}
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            Speech: {data.audio?.hasSpeech ? 'Yes' : 'No'}
+            Speech: {data.audio?.hasSpeech ? "Yes" : "No"}
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            CTA: {data.engagement?.callToActionPresence ? 'Present' : 'None'}
+            CTA: {data.engagement?.callToActionPresence ? "Present" : "None"}
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
@@ -303,19 +345,25 @@ export function ContentAnalyzer() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm">Energy Level</span>
-            <span className="text-sm font-medium">{Math.round(data.tone?.energy * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.tone?.energy * 100)}%
+            </span>
           </div>
           <Progress value={data.tone?.energy * 100} />
-          
+
           <div className="flex items-center justify-between">
             <span className="text-sm">Viral Potential</span>
-            <span className="text-sm font-medium">{Math.round(data.engagement?.viralPotential * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.engagement?.viralPotential * 100)}%
+            </span>
           </div>
           <Progress value={data.engagement?.viralPotential * 100} />
-          
+
           <div className="flex items-center justify-between">
             <span className="text-sm">Persuasiveness</span>
-            <span className="text-sm font-medium">{Math.round(data.quality?.persuasiveness * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.quality?.persuasiveness * 100)}%
+            </span>
           </div>
           <Progress value={data.quality?.persuasiveness * 100} />
         </div>
@@ -326,7 +374,9 @@ export function ContentAnalyzer() {
           <h4 className="font-semibold mb-2">Main Topics</h4>
           <div className="flex flex-wrap gap-2">
             {data.content.mainTopics.map((topic: string, i: number) => (
-              <Badge key={i} variant="outline">{topic}</Badge>
+              <Badge key={i} variant="outline">
+                {topic}
+              </Badge>
             ))}
           </div>
         </div>
@@ -363,12 +413,17 @@ export function ContentAnalyzer() {
           </div>
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Visual Hierarchy</p>
-            <Progress value={data.design?.visualHierarchy * 100} className="h-2" />
+            <Progress
+              value={data.design?.visualHierarchy * 100}
+              className="h-2"
+            />
           </div>
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Mobile Optimized</p>
-            <Badge variant={data.ux?.mobileOptimized ? 'default' : 'destructive'}>
-              {data.ux?.mobileOptimized ? 'Yes' : 'No'}
+            <Badge
+              variant={data.ux?.mobileOptimized ? "default" : "destructive"}
+            >
+              {data.ux?.mobileOptimized ? "Yes" : "No"}
             </Badge>
           </div>
         </div>
@@ -382,13 +437,17 @@ export function ContentAnalyzer() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm">CTA Clarity</span>
-            <span className="text-sm font-medium">{Math.round(data.content?.ctaClarity * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.content?.ctaClarity * 100)}%
+            </span>
           </div>
           <Progress value={data.content?.ctaClarity * 100} />
-          
+
           <div className="flex items-center justify-between">
             <span className="text-sm">Overall Conversion Score</span>
-            <span className="text-sm font-medium">{Math.round(data.conversion?.conversionOptimization * 100)}%</span>
+            <span className="text-sm font-medium">
+              {Math.round(data.conversion?.conversionOptimization * 100)}%
+            </span>
           </div>
           <Progress value={data.conversion?.conversionOptimization * 100} />
         </div>
@@ -399,19 +458,19 @@ export function ContentAnalyzer() {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            Social Proof: {data.content?.socialProof ? 'Yes' : 'No'}
+            Social Proof: {data.content?.socialProof ? "Yes" : "No"}
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            Urgency: {data.conversion?.urgency ? 'Yes' : 'No'}
+            Urgency: {data.conversion?.urgency ? "Yes" : "No"}
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            Scarcity: {data.conversion?.scarcity ? 'Yes' : 'No'}
+            Scarcity: {data.conversion?.scarcity ? "Yes" : "No"}
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3 w-3" />
-            Guarantees: {data.conversion?.guarantees ? 'Yes' : 'No'}
+            Guarantees: {data.conversion?.guarantees ? "Yes" : "No"}
           </div>
         </div>
       </div>
@@ -421,7 +480,9 @@ export function ContentAnalyzer() {
           <h4 className="font-semibold mb-2">Trust Elements</h4>
           <div className="flex flex-wrap gap-2">
             {data.content.trustSignals.map((signal: string, i: number) => (
-              <Badge key={i} variant="outline">{signal}</Badge>
+              <Badge key={i} variant="outline">
+                {signal}
+              </Badge>
             ))}
           </div>
         </div>
@@ -437,11 +498,16 @@ export function ContentAnalyzer() {
           <CardTitle>Multimodal Content Analysis</CardTitle>
         </div>
         <CardDescription>
-          AI-powered analysis of images, videos, audio, text, and websites to maximize engagement
+          AI-powered analysis of images, videos, audio, text, and websites to
+          maximize engagement
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Record<string, unknown>)} className="space-y-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as Record<string, unknown>)}
+          className="space-y-4"
+        >
           <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="image">
               <ImageIcon className="h-4 w-4 mr-2" />
@@ -475,14 +541,20 @@ export function ContentAnalyzer() {
                   onChange={(e) => setImageUrl(e.target.value)}
                 />
                 <Button
-                  onClick={() => analyzeContent('image', imageUrl)}
+                  onClick={() => analyzeContent("image", imageUrl)}
                   disabled={analyzing || !imageUrl}
                 >
-                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Analyze'}
+                  {analyzing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Analyze"
+                  )}
                 </Button>
               </div>
             </div>
-            {result && result.type === 'image' && renderImageAnalysis(result.data)}
+            {result &&
+              result.type === "image" &&
+              renderImageAnalysis(result.data)}
           </TabsContent>
 
           <TabsContent value="video" className="space-y-4">
@@ -495,14 +567,20 @@ export function ContentAnalyzer() {
                   onChange={(e) => setVideoUrl(e.target.value)}
                 />
                 <Button
-                  onClick={() => analyzeContent('video', videoUrl)}
+                  onClick={() => analyzeContent("video", videoUrl)}
                   disabled={analyzing || !videoUrl}
                 >
-                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Analyze'}
+                  {analyzing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Analyze"
+                  )}
                 </Button>
               </div>
             </div>
-            {result && result.type === 'video' && renderVideoAnalysis(result.data)}
+            {result &&
+              result.type === "video" &&
+              renderVideoAnalysis(result.data)}
           </TabsContent>
 
           <TabsContent value="audio" className="space-y-4">
@@ -515,14 +593,18 @@ export function ContentAnalyzer() {
                   onChange={(e) => setAudioUrl(e.target.value)}
                 />
                 <Button
-                  onClick={() => analyzeContent('audio', audioUrl)}
+                  onClick={() => analyzeContent("audio", audioUrl)}
                   disabled={analyzing || !audioUrl}
                 >
-                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Analyze'}
+                  {analyzing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Analyze"
+                  )}
                 </Button>
               </div>
             </div>
-            {result && result.type === 'audio' && (
+            {result && result.type === "audio" && (
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold mb-2">Music Analysis</h4>
@@ -546,12 +628,16 @@ export function ContentAnalyzer() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Energy</span>
-                      <span className="text-sm font-medium">{Math.round(result.data.music?.energy * 100)}%</span>
+                      <span className="text-sm font-medium">
+                        {Math.round(result.data.music?.energy * 100)}%
+                      </span>
                     </div>
                     <Progress value={result.data.music?.energy * 100} />
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Marketability</span>
-                      <span className="text-sm font-medium">{Math.round(result.data.marketability * 100)}%</span>
+                      <span className="text-sm font-medium">
+                        {Math.round(result.data.marketability * 100)}%
+                      </span>
                     </div>
                     <Progress value={result.data.marketability * 100} />
                   </div>
@@ -571,15 +657,21 @@ export function ContentAnalyzer() {
                   onChange={(e) => setTextContent(e.target.value)}
                 />
                 <Button
-                  onClick={() => analyzeContent('text', '', textContent)}
+                  onClick={() => analyzeContent("text", "", textContent)}
                   disabled={analyzing || !textContent}
                   className="w-full"
                 >
-                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Analyze Text'}
+                  {analyzing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Analyze Text"
+                  )}
                 </Button>
               </div>
             </div>
-            {result && result.type === 'text' && renderTextAnalysis(result.data)}
+            {result &&
+              result.type === "text" &&
+              renderTextAnalysis(result.data)}
           </TabsContent>
 
           <TabsContent value="website" className="space-y-4">
@@ -594,16 +686,25 @@ export function ContentAnalyzer() {
                 <Button
                   onClick={() => {
                     const url = websiteUrl.trim();
-                    const normalized = url && !/^https?:\/\//i.test(url) ? `https://${url}` : url;
-                    analyzeContent('website', normalized);
+                    const normalized =
+                      url && !/^https?:\/\//i.test(url)
+                        ? `https://${url}`
+                        : url;
+                    analyzeContent("website", normalized);
                   }}
                   disabled={analyzing || !websiteUrl}
                 >
-                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Analyze'}
+                  {analyzing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Analyze"
+                  )}
                 </Button>
               </div>
             </div>
-            {result && result.type === 'website' && renderWebsiteAnalysis(result.data)}
+            {result &&
+              result.type === "website" &&
+              renderWebsiteAnalysis(result.data)}
           </TabsContent>
         </Tabs>
 
@@ -617,7 +718,8 @@ export function ContentAnalyzer() {
                   Use for Autopilot Training
                 </h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Save this analysis to improve your AI autopilot predictions for future content
+                  Save this analysis to improve your AI autopilot predictions
+                  for future content
                 </p>
               </div>
               <Button

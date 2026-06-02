@@ -1,9 +1,22 @@
 import {
-  AudioBuffer, DSPContext, createBuffer,
-  BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, CombFilter,
-  LFO, Oscillator, ADSR, EnvelopeFollower,
-  msToSamples, dbToLinear, clamp, softClip, hardClip
-} from '../core';
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  AllPassFilter,
+  CombFilter,
+  LFO,
+  Oscillator,
+  ADSR,
+  EnvelopeFollower,
+  msToSamples,
+  dbToLinear,
+  clamp,
+  softClip,
+  hardClip,
+} from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -82,9 +95,18 @@ export class MinimoogSynth implements SynthesizerEngine {
 
       let sample = osc1Out + osc2Out + osc3Out;
 
-      const filterFreq = this.filterCutoff + filterEnvValue * 3000 + lfoValue * 100;
-      this.ladderFilter.setLowpass(clamp(filterFreq, 50, 12000), this.filterResonance, this.sampleRate);
-      this.lpFilter2.setLowpass(clamp(filterFreq * 1.1, 50, 14000), this.filterResonance * 0.8, this.sampleRate);
+      const filterFreq =
+        this.filterCutoff + filterEnvValue * 3000 + lfoValue * 100;
+      this.ladderFilter.setLowpass(
+        clamp(filterFreq, 50, 12000),
+        this.filterResonance,
+        this.sampleRate,
+      );
+      this.lpFilter2.setLowpass(
+        clamp(filterFreq * 1.1, 50, 14000),
+        this.filterResonance * 0.8,
+        this.sampleRate,
+      );
 
       sample = this.ladderFilter.process(sample);
       sample = this.lpFilter2.process(sample);
@@ -116,7 +138,7 @@ export class MinimoogSynth implements SynthesizerEngine {
 }
 
 export class ProphetSynth implements SynthesizerEngine {
-  private oscillators: { osc1: Oscillator, osc2: Oscillator }[] = [];
+  private oscillators: { osc1: Oscillator; osc2: Oscillator }[] = [];
   private envelope: ADSR;
   private filterEnvelope: ADSR;
   private lpFilter: BiquadFilter;
@@ -132,7 +154,7 @@ export class ProphetSynth implements SynthesizerEngine {
     for (let i = 0; i < this.voiceCount; i++) {
       this.oscillators.push({
         osc1: new Oscillator(),
-        osc2: new Oscillator()
+        osc2: new Oscillator(),
       });
     }
     this.envelope = new ADSR(0.01, 0.3, 0.75, 0.4, 44100);
@@ -151,8 +173,14 @@ export class ProphetSynth implements SynthesizerEngine {
     const detuneAmounts = [-0.05, -0.02, 0, 0.02, 0.05];
     for (let i = 0; i < this.voiceCount; i++) {
       const detune = 1 + detuneAmounts[i] * 0.01;
-      this.oscillators[i].osc1.setFrequency(frequency * detune, context.sampleRate);
-      this.oscillators[i].osc2.setFrequency(frequency * detune * 1.002, context.sampleRate);
+      this.oscillators[i].osc1.setFrequency(
+        frequency * detune,
+        context.sampleRate,
+      );
+      this.oscillators[i].osc2.setFrequency(
+        frequency * detune * 1.002,
+        context.sampleRate,
+      );
     }
 
     this.polyModLFO.setFrequency(0.3, context.sampleRate);
@@ -197,8 +225,13 @@ export class ProphetSynth implements SynthesizerEngine {
       sampleL /= this.voiceCount;
       sampleR /= this.voiceCount;
 
-      const filterFreq = 600 + filterEnvValue * 3500 + polyMod * 300 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 100, 12000), 2 + filterEnvValue * 2, this.sampleRate);
+      const filterFreq =
+        600 + filterEnvValue * 3500 + polyMod * 300 + this.velocity * 2000;
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 100, 12000),
+        2 + filterEnvValue * 2,
+        this.sampleRate,
+      );
 
       sampleL = this.lpFilter.process(sampleL);
       sampleR = this.lpFilter.process(sampleR);
@@ -220,7 +253,7 @@ export class ProphetSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(v => {
+    this.oscillators.forEach((v) => {
       v.osc1.reset();
       v.osc2.reset();
     });
@@ -323,7 +356,11 @@ export class JupiterSynth implements SynthesizerEngine {
       sampleR /= 6;
 
       const filterFreq = 500 + filterEnvValue * 4000 + this.velocity * 2500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 100, 14000), 2 + filterEnvValue * 2.5, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 100, 14000),
+        2 + filterEnvValue * 2.5,
+        this.sampleRate,
+      );
 
       sampleL = this.lpFilter.process(sampleL);
       sampleR = this.lpFilter.process(sampleR);
@@ -355,7 +392,7 @@ export class JupiterSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.subOsc.reset();
     this.chorusLFO1.reset();
     this.chorusLFO2.reset();
@@ -430,11 +467,20 @@ export class OberheimSynth implements SynthesizerEngine {
 
       let sample = saw1 * 0.4 + saw2 * 0.3 + pulse1 * 0.3;
 
-      const filterFreq = 700 + filterEnvValue * 4500 + lfoValue * 150 + this.velocity * 2000;
+      const filterFreq =
+        700 + filterEnvValue * 4500 + lfoValue * 150 + this.velocity * 2000;
       const resonance = 3 + filterEnvValue * 3;
 
-      this.stateVariableLP.setLowpass(clamp(filterFreq, 100, 12000), resonance, this.sampleRate);
-      this.stateVariableBP.setBandpass(clamp(filterFreq, 100, 12000), resonance * 0.7, this.sampleRate);
+      this.stateVariableLP.setLowpass(
+        clamp(filterFreq, 100, 12000),
+        resonance,
+        this.sampleRate,
+      );
+      this.stateVariableBP.setBandpass(
+        clamp(filterFreq, 100, 12000),
+        resonance * 0.7,
+        this.sampleRate,
+      );
 
       const lpOut = this.stateVariableLP.process(sample);
       const bpOut = this.stateVariableBP.process(sample);
@@ -540,11 +586,21 @@ export class ARP2600Synth implements SynthesizerEngine {
 
       const ringMod = vco1Out * vco2Out * this.ringModDepth;
 
-      let sample = vco1Out * 0.35 + vco2Out * 0.25 + vco3Out * 0.2 + ringMod + noise;
+      let sample =
+        vco1Out * 0.35 + vco2Out * 0.25 + vco3Out * 0.2 + ringMod + noise;
 
-      const filterFreq = 300 + filterEnvValue * 4000 + shValue * 500 + this.velocity * 2000;
-      this.vcf.setLowpass(clamp(filterFreq, 50, 14000), 4 + filterEnvValue * 4, this.sampleRate);
-      this.vcf2.setLowpass(clamp(filterFreq * 1.2, 50, 16000), 2, this.sampleRate);
+      const filterFreq =
+        300 + filterEnvValue * 4000 + shValue * 500 + this.velocity * 2000;
+      this.vcf.setLowpass(
+        clamp(filterFreq, 50, 14000),
+        4 + filterEnvValue * 4,
+        this.sampleRate,
+      );
+      this.vcf2.setLowpass(
+        clamp(filterFreq * 1.2, 50, 16000),
+        2,
+        this.sampleRate,
+      );
 
       sample = this.vcf.process(sample);
       sample = this.vcf2.process(sample);
@@ -640,8 +696,13 @@ export class SH101Synth implements SynthesizerEngine {
 
       let sample = saw * 0.4 + pulse * 0.35 + sub * 0.25;
 
-      const filterFreq = 500 + filterEnvValue * 5000 + lfoValue * 200 + this.velocity * 2500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 80, 14000), 3 + filterEnvValue * 4, this.sampleRate);
+      const filterFreq =
+        500 + filterEnvValue * 5000 + lfoValue * 200 + this.velocity * 2500;
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 80, 14000),
+        3 + filterEnvValue * 4,
+        this.sampleRate,
+      );
 
       sample = this.lpFilter.process(sample);
       sample = this.hpFilter.process(sample);
@@ -749,7 +810,11 @@ export class JunoSynth implements SynthesizerEngine {
       sample += sub;
 
       const filterFreq = 600 + filterEnvValue * 4000 + this.velocity * 2500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 100, 12000), 2 + filterEnvValue * 2, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 100, 12000),
+        2 + filterEnvValue * 2,
+        this.sampleRate,
+      );
 
       sample = this.lpFilter.process(sample);
       sample = this.hpFilter.process(sample);
@@ -776,7 +841,7 @@ export class JunoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.subOsc.reset();
     this.chorusLFO.reset();
     this.pwmLFO.reset();
@@ -855,9 +920,17 @@ export class MS20Synth implements SynthesizerEngine {
 
       const hpFreq = 100 + filterEnvValue * 800 + lfoValue * 100;
       const lpFreq = 400 + filterEnvValue * 5000 + this.velocity * 3000;
-      
-      this.hpFilter.setHighpass(clamp(hpFreq, 30, 2000), 6 + filterEnvValue * 6, this.sampleRate);
-      this.lpFilter.setLowpass(clamp(lpFreq, 100, 14000), 5 + filterEnvValue * 5, this.sampleRate);
+
+      this.hpFilter.setHighpass(
+        clamp(hpFreq, 30, 2000),
+        6 + filterEnvValue * 6,
+        this.sampleRate,
+      );
+      this.lpFilter.setLowpass(
+        clamp(lpFreq, 100, 14000),
+        5 + filterEnvValue * 5,
+        this.sampleRate,
+      );
       this.resonanceFilter.setPeaking(lpFreq * 0.9, 4, 8, this.sampleRate);
 
       sample = this.hpFilter.process(sample);
@@ -960,8 +1033,16 @@ export class OdysseySynth implements SynthesizerEngine {
       const ringMod = saw1 * saw2 * 0.15;
       sample += ringMod;
 
-      const filterFreq = 500 + filterEnvValue * 4500 + this.sampleAndHold * 300 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 80, 14000), 3 + filterEnvValue * 4, this.sampleRate);
+      const filterFreq =
+        500 +
+        filterEnvValue * 4500 +
+        this.sampleAndHold * 300 +
+        this.velocity * 2000;
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 80, 14000),
+        3 + filterEnvValue * 4,
+        this.sampleRate,
+      );
 
       sample = this.lpFilter.process(sample);
       sample = this.hpFilter.process(sample);
@@ -1081,7 +1162,11 @@ export class PolysixSynth implements SynthesizerEngine {
       sampleR /= 6;
 
       const filterFreq = 600 + filterEnvValue * 3500 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 100, 10000), 1.5 + filterEnvValue * 2, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 100, 10000),
+        1.5 + filterEnvValue * 2,
+        this.sampleRate,
+      );
 
       sampleL = this.lpFilter.process(sampleL);
       sampleR = this.lpFilter.process(sampleR);
@@ -1118,7 +1203,7 @@ export class PolysixSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.subOsc.reset();
     this.chorusLFO.reset();
     this.pwmLFO.reset();
@@ -1130,15 +1215,18 @@ export class PolysixSynth implements SynthesizerEngine {
   }
 }
 
-export const ANALOG_SYNTH_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
-  'minimoog': MinimoogSynth,
-  'prophet': ProphetSynth,
-  'jupiter': JupiterSynth,
-  'oberheim': OberheimSynth,
-  'arp-2600': ARP2600Synth,
-  'sh-101': SH101Synth,
-  'juno': JunoSynth,
-  'ms-20': MS20Synth,
-  'odyssey': OdysseySynth,
-  'polysix': PolysixSynth,
+export const ANALOG_SYNTH_SYNTHESIZERS: Record<
+  string,
+  new () => SynthesizerEngine
+> = {
+  minimoog: MinimoogSynth,
+  prophet: ProphetSynth,
+  jupiter: JupiterSynth,
+  oberheim: OberheimSynth,
+  "arp-2600": ARP2600Synth,
+  "sh-101": SH101Synth,
+  juno: JunoSynth,
+  "ms-20": MS20Synth,
+  odyssey: OdysseySynth,
+  polysix: PolysixSynth,
 };

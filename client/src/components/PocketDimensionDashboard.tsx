@@ -1,28 +1,34 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect } from 'react';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Database, 
-  FolderOpen, 
-  FileText, 
-  Layers, 
-  Sparkles, 
-  ArrowDown, 
+import { logger } from "@/lib/logger";
+import { useState, useEffect } from "react";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Database,
+  FolderOpen,
+  FileText,
+  Layers,
+  Sparkles,
+  ArrowDown,
   ArrowUp,
   RefreshCw,
   Plus,
   Trash2,
   Lock,
   Unlock,
-  HardDrive
-} from 'lucide-react';
+  HardDrive,
+} from "lucide-react";
 
 interface PocketStats {
   totalEntries: number;
@@ -36,7 +42,7 @@ interface PocketStats {
 
 interface PocketEntry {
   path: string;
-  type: 'file' | 'directory' | 'dimension';
+  type: "file" | "directory" | "dimension";
   size: number;
   compressedSize: number;
   compressionRatio: string;
@@ -56,22 +62,22 @@ export function PocketDimensionDashboard() {
   const [selectedPocket, setSelectedPocket] = useState<string | null>(null);
   const [pocketStats, setPocketStats] = useState<PocketStats | null>(null);
   const [entries, setEntries] = useState<PocketEntry[]>([]);
-  const [newPocketId, setNewPocketId] = useState('');
-  const [newFilePath, setNewFilePath] = useState('');
-  const [newFileContent, setNewFileContent] = useState('');
+  const [newPocketId, setNewPocketId] = useState("");
+  const [newFilePath, setNewFilePath] = useState("");
+  const [newFileContent, setNewFileContent] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchPockets = async () => {
     try {
-      const response = await fetch('/api/pocket/list');
+      const response = await fetch("/api/pocket/list");
       const data = await response.json();
       if (data.success) {
         setPockets(data.pockets);
         setGlobalStats(data.stats);
       }
     } catch (error) {
-      logger.error('Failed to fetch pockets:', error);
+      logger.error("Failed to fetch pockets:", error);
     }
   };
 
@@ -81,10 +87,10 @@ export function PocketDimensionDashboard() {
         fetch(`/api/pocket/${pocketId}/stats`),
         fetch(`/api/pocket/${pocketId}/list`),
       ]);
-      
+
       const statsData = await statsRes.json();
       const entriesData = await entriesRes.json();
-      
+
       if (statsData.success) {
         setPocketStats(statsData.stats);
       }
@@ -92,66 +98,91 @@ export function PocketDimensionDashboard() {
         setEntries(entriesData.entries);
       }
     } catch (error) {
-      logger.error('Failed to fetch pocket details:', error);
+      logger.error("Failed to fetch pocket details:", error);
     }
   };
 
   const createPocket = async () => {
     if (!newPocketId.trim()) {
-      toast({ title: 'Error', description: 'Please enter a pocket ID', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Please enter a pocket ID",
+        variant: "destructive",
+      });
       return;
     }
-    
+
     setLoading(true);
     try {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch('/api/pocket/create', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
+      const response = await fetch("/api/pocket/create", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
         body: JSON.stringify({ id: newPocketId, encrypted: false }),
       });
-      
+
       const data = await response.json();
       if (data.success) {
-        toast({ title: 'Pocket Dimension Created', description: `Created pocket: ${newPocketId}` });
-        setNewPocketId('');
+        toast({
+          title: "Pocket Dimension Created",
+          description: `Created pocket: ${newPocketId}`,
+        });
+        setNewPocketId("");
         fetchPockets();
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to create pocket dimension', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to create pocket dimension",
+        variant: "destructive",
+      });
     }
     setLoading(false);
   };
 
   const writeFile = async () => {
     if (!selectedPocket || !newFilePath.trim() || !newFileContent.trim()) {
-      toast({ title: 'Error', description: 'Please fill in all fields', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
       return;
     }
-    
+
     setLoading(true);
     try {
       const csrfToken2 = getCsrfTokenFromCookie();
       const response = await fetch(`/api/pocket/${selectedPocket}/write`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken2 ? { 'x-csrf-token': csrfToken2 } : {}) },
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken2 ? { "x-csrf-token": csrfToken2 } : {}),
+        },
         body: JSON.stringify({ path: newFilePath, data: newFileContent }),
       });
-      
+
       const data = await response.json();
       if (data.success) {
-        toast({ 
-          title: 'File Written to Pocket Dimension', 
-          description: `${data.entry.size} bytes compressed to ${data.entry.compressedSize} bytes (${data.entry.compressionRatio}x)` 
+        toast({
+          title: "File Written to Pocket Dimension",
+          description: `${data.entry.size} bytes compressed to ${data.entry.compressedSize} bytes (${data.entry.compressionRatio}x)`,
         });
-        setNewFilePath('');
-        setNewFileContent('');
+        setNewFilePath("");
+        setNewFileContent("");
         fetchPocketDetails(selectedPocket);
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to write file', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to write file",
+        variant: "destructive",
+      });
     }
     setLoading(false);
   };
@@ -159,17 +190,21 @@ export function PocketDimensionDashboard() {
   const runDemo = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/pocket/demo');
+      const response = await fetch("/api/pocket/demo");
       const data = await response.json();
       if (data.success) {
-        toast({ 
-          title: 'Demo Created!', 
-          description: `Compression ratio: ${data.stats.compressionRatio}` 
+        toast({
+          title: "Demo Created!",
+          description: `Compression ratio: ${data.stats.compressionRatio}`,
         });
         fetchPockets();
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to run demo', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to run demo",
+        variant: "destructive",
+      });
     }
     setLoading(false);
   };
@@ -199,7 +234,8 @@ export function PocketDimensionDashboard() {
             Pocket Dimension Storage
           </h1>
           <p className="text-muted-foreground mt-1">
-            Infinite-like storage through streaming compression, chunking, and deduplication
+            Infinite-like storage through streaming compression, chunking, and
+            deduplication
           </p>
         </div>
         <div className="flex gap-2">
@@ -218,7 +254,9 @@ export function PocketDimensionDashboard() {
         <div className="grid grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Pockets</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Active Pockets
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold flex items-center gap-2">
@@ -229,7 +267,9 @@ export function PocketDimensionDashboard() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Original Size</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Original Size
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold flex items-center gap-2">
@@ -240,7 +280,9 @@ export function PocketDimensionDashboard() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Compressed Size</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Compressed Size
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold flex items-center gap-2">
@@ -251,14 +293,16 @@ export function PocketDimensionDashboard() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Compression Ratio</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Compression Ratio
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-yellow-500" />
-                {globalStats.totalSize > 0 
+                {globalStats.totalSize > 0
                   ? `${(globalStats.totalSize / globalStats.compressedSize).toFixed(2)}x`
-                  : '0x'}
+                  : "0x"}
               </div>
             </CardContent>
           </Card>
@@ -272,7 +316,9 @@ export function PocketDimensionDashboard() {
               <Database className="h-5 w-5" />
               Pocket Dimensions
             </CardTitle>
-            <CardDescription>Manage your storage pocket dimensions</CardDescription>
+            <CardDescription>
+              Manage your storage pocket dimensions
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
@@ -286,7 +332,7 @@ export function PocketDimensionDashboard() {
                 Create
               </Button>
             </div>
-            
+
             <ScrollArea className="h-[300px]">
               <div className="space-y-2">
                 {pockets.length === 0 ? (
@@ -298,9 +344,9 @@ export function PocketDimensionDashboard() {
                     <div
                       key={pocket}
                       className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedPocket === pocket 
-                          ? 'bg-purple-500/20 border-purple-500' 
-                          : 'hover:bg-muted/50'
+                        selectedPocket === pocket
+                          ? "bg-purple-500/20 border-purple-500"
+                          : "hover:bg-muted/50"
                       }`}
                       onClick={() => setSelectedPocket(pocket)}
                     >
@@ -323,12 +369,14 @@ export function PocketDimensionDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              {selectedPocket ? `Contents: ${selectedPocket}` : 'Select a Pocket'}
+              {selectedPocket
+                ? `Contents: ${selectedPocket}`
+                : "Select a Pocket"}
             </CardTitle>
             <CardDescription>
-              {selectedPocket 
+              {selectedPocket
                 ? `Access via: pocket['${selectedPocket}']['path/to/file']`
-                : 'Select a pocket dimension to view its contents'}
+                : "Select a pocket dimension to view its contents"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -338,19 +386,25 @@ export function PocketDimensionDashboard() {
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div className="p-2 bg-muted rounded">
                       <div className="text-muted-foreground">Entries</div>
-                      <div className="font-bold">{pocketStats.totalEntries}</div>
+                      <div className="font-bold">
+                        {pocketStats.totalEntries}
+                      </div>
                     </div>
                     <div className="p-2 bg-muted rounded">
                       <div className="text-muted-foreground">Compression</div>
-                      <div className="font-bold">{pocketStats.compressionRatio}</div>
+                      <div className="font-bold">
+                        {pocketStats.compressionRatio}
+                      </div>
                     </div>
                     <div className="p-2 bg-muted rounded">
                       <div className="text-muted-foreground">Nested Dims</div>
-                      <div className="font-bold">{pocketStats.nestedDimensions}</div>
+                      <div className="font-bold">
+                        {pocketStats.nestedDimensions}
+                      </div>
                     </div>
                   </div>
                 )}
-                
+
                 <div className="space-y-2">
                   <Input
                     placeholder="File path (e.g., audio/track.mp3)..."
@@ -362,12 +416,16 @@ export function PocketDimensionDashboard() {
                     value={newFileContent}
                     onChange={(e) => setNewFileContent(e.target.value)}
                   />
-                  <Button className="w-full" onClick={writeFile} disabled={loading}>
+                  <Button
+                    className="w-full"
+                    onClick={writeFile}
+                    disabled={loading}
+                  >
                     <ArrowUp className="h-4 w-4 mr-2" />
                     Write to Pocket Dimension
                   </Button>
                 </div>
-                
+
                 <ScrollArea className="h-[200px]">
                   <div className="space-y-2">
                     {entries.length === 0 ? (
@@ -376,9 +434,12 @@ export function PocketDimensionDashboard() {
                       </div>
                     ) : (
                       entries.map((entry) => (
-                        <div key={entry.path} className="p-2 rounded border text-sm">
+                        <div
+                          key={entry.path}
+                          className="p-2 rounded border text-sm"
+                        >
                           <div className="flex items-center gap-2">
-                            {entry.type === 'dimension' ? (
+                            {entry.type === "dimension" ? (
                               <Layers className="h-4 w-4 text-purple-500" />
                             ) : (
                               <FileText className="h-4 w-4 text-blue-500" />
@@ -389,7 +450,8 @@ export function PocketDimensionDashboard() {
                             </Badge>
                           </div>
                           <div className="text-muted-foreground text-xs mt-1">
-                            {formatBytes(entry.size)} → {formatBytes(entry.compressedSize)}
+                            {formatBytes(entry.size)} →{" "}
+                            {formatBytes(entry.compressedSize)}
                           </div>
                         </div>
                       ))
@@ -414,32 +476,39 @@ export function PocketDimensionDashboard() {
             <div className="p-4 bg-background/50 rounded-lg">
               <h4 className="font-bold mb-2">1. Chunking</h4>
               <p className="text-muted-foreground">
-                Data is split into 1MB chunks for efficient processing and deduplication.
+                Data is split into 1MB chunks for efficient processing and
+                deduplication.
               </p>
             </div>
             <div className="p-4 bg-background/50 rounded-lg">
               <h4 className="font-bold mb-2">2. Compression</h4>
               <p className="text-muted-foreground">
-                Each chunk is compressed using maximum gzip compression (level 9).
+                Each chunk is compressed using maximum gzip compression (level
+                9).
               </p>
             </div>
             <div className="p-4 bg-background/50 rounded-lg">
               <h4 className="font-bold mb-2">3. Deduplication</h4>
               <p className="text-muted-foreground">
-                Content-addressed storage ensures identical chunks are stored only once.
+                Content-addressed storage ensures identical chunks are stored
+                only once.
               </p>
             </div>
             <div className="p-4 bg-background/50 rounded-lg">
               <h4 className="font-bold mb-2">4. Nesting</h4>
               <p className="text-muted-foreground">
-                Create dimensions within dimensions - inception-style storage up to 10 levels deep.
+                Create dimensions within dimensions - inception-style storage up
+                to 10 levels deep.
               </p>
             </div>
           </div>
           <div className="mt-4 p-4 bg-background/50 rounded-lg font-mono text-sm">
-            <div className="text-muted-foreground mb-2">Bracket Notation Access:</div>
+            <div className="text-muted-foreground mb-2">
+              Bracket Notation Access:
+            </div>
             <code className="text-purple-400">
-              pocket['audio-files']['tracks/song.mp3'].write(audioBuffer)<br/>
+              pocket['audio-files']['tracks/song.mp3'].write(audioBuffer)
+              <br />
               pocket['projects']['my-album']['nested-dimension']['deep/path'].createDimension()
             </code>
           </div>

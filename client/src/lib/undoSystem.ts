@@ -1,5 +1,12 @@
-import { logger } from '@/lib/logger';
-export type UndoActionType = 'create' | 'update' | 'delete' | 'move' | 'reorder' | 'batch' | 'custom';
+import { logger } from "@/lib/logger";
+export type UndoActionType =
+  | "create"
+  | "update"
+  | "delete"
+  | "move"
+  | "reorder"
+  | "batch"
+  | "custom";
 
 export interface UndoAction<T = unknown> {
   id: string;
@@ -40,7 +47,7 @@ export interface UndoStackConfig {
 const DEFAULT_CONFIG: UndoStackConfig = {
   maxHistorySize: 100,
   persistToStorage: false,
-  storageKey: 'maxbooster_undo_stack',
+  storageKey: "maxbooster_undo_stack",
 };
 
 export class UndoStack {
@@ -57,7 +64,7 @@ export class UndoStack {
   }
 
   private loadFromStorage(): void {
-    if (!this.config.persistToStorage || typeof window === 'undefined') return;
+    if (!this.config.persistToStorage || typeof window === "undefined") return;
 
     try {
       const stored = sessionStorage.getItem(this.config.storageKey);
@@ -67,16 +74,16 @@ export class UndoStack {
         this.redoStack = parsed.redoStack || [];
       }
     } catch (error) {
-      logger.warn('Failed to load undo stack from storage:', error);
+      logger.warn("Failed to load undo stack from storage:", error);
     }
   }
 
   private saveToStorage(): void {
-    if (!this.config.persistToStorage || typeof window === 'undefined') return;
+    if (!this.config.persistToStorage || typeof window === "undefined") return;
 
     try {
       const serialized = {
-        history: this.history.map(a => ({
+        history: this.history.map((a) => ({
           id: a.id,
           type: a.type,
           description: a.description,
@@ -87,7 +94,7 @@ export class UndoStack {
           groupId: a.groupId,
           isRestorePoint: a.isRestorePoint,
         })),
-        redoStack: this.redoStack.map(a => ({
+        redoStack: this.redoStack.map((a) => ({
           id: a.id,
           type: a.type,
           description: a.description,
@@ -95,22 +102,27 @@ export class UndoStack {
           timestamp: a.timestamp,
         })),
       };
-      sessionStorage.setItem(this.config.storageKey, JSON.stringify(serialized));
+      sessionStorage.setItem(
+        this.config.storageKey,
+        JSON.stringify(serialized),
+      );
     } catch (error) {
-      logger.warn('Failed to save undo stack to storage:', error);
+      logger.warn("Failed to save undo stack to storage:", error);
     }
   }
 
   private notify(): void {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener());
     this.saveToStorage();
   }
 
-  static generateId(prefix: string = 'action'): string {
+  static generateId(prefix: string = "action"): string {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 
-  async push(action: Omit<UndoAction, 'id' | 'timestamp'>): Promise<UndoAction> {
+  async push(
+    action: Omit<UndoAction, "id" | "timestamp">,
+  ): Promise<UndoAction> {
     const fullAction: UndoAction = {
       ...action,
       id: UndoStack.generateId(),
@@ -140,7 +152,7 @@ export class UndoStack {
 
       return fullAction;
     } catch (error) {
-      logger.error('Failed to execute action:', error);
+      logger.error("Failed to execute action:", error);
       throw error;
     }
   }
@@ -163,7 +175,7 @@ export class UndoStack {
       return action;
     } catch (error) {
       this.history.push(action);
-      logger.error('Failed to undo action:', error);
+      logger.error("Failed to undo action:", error);
       throw error;
     }
   }
@@ -183,13 +195,13 @@ export class UndoStack {
       return action;
     } catch (error) {
       this.redoStack.push(action);
-      logger.error('Failed to redo action:', error);
+      logger.error("Failed to redo action:", error);
       throw error;
     }
   }
 
   startGroup(name: string): string {
-    const groupId = UndoStack.generateId('group');
+    const groupId = UndoStack.generateId("group");
     const group: ActionGroup = {
       id: groupId,
       name,
@@ -216,7 +228,7 @@ export class UndoStack {
 
     for (let i = group.actions.length - 1; i >= 0; i--) {
       const action = group.actions[i];
-      const historyIndex = this.history.findIndex(a => a.id === action.id);
+      const historyIndex = this.history.findIndex((a) => a.id === action.id);
       if (historyIndex !== -1) {
         this.history.splice(historyIndex, 1);
         await action.undo();
@@ -229,7 +241,7 @@ export class UndoStack {
   }
 
   async undoToRestorePoint(actionId: string): Promise<void> {
-    const targetIndex = this.history.findIndex(a => a.id === actionId);
+    const targetIndex = this.history.findIndex((a) => a.id === actionId);
     if (targetIndex === -1) return;
 
     const actionsToUndo = this.history.slice(targetIndex + 1).reverse();
@@ -240,10 +252,10 @@ export class UndoStack {
 
   createRestorePoint(description: string): UndoAction {
     const restorePoint: UndoAction = {
-      id: UndoStack.generateId('restore'),
-      type: 'custom',
+      id: UndoStack.generateId("restore"),
+      type: "custom",
       description,
-      module: 'system',
+      module: "system",
       timestamp: Date.now(),
       isRestorePoint: true,
       execute: async () => {},
@@ -277,11 +289,14 @@ export class UndoStack {
   }
 
   getRestorePoints(): UndoAction[] {
-    return this.history.filter(a => a.isRestorePoint);
+    return this.history.filter((a) => a.isRestorePoint);
   }
 
   getActionById(id: string): UndoAction | undefined {
-    return this.history.find(a => a.id === id) || this.redoStack.find(a => a.id === id);
+    return (
+      this.history.find((a) => a.id === id) ||
+      this.redoStack.find((a) => a.id === id)
+    );
   }
 
   clear(): void {
@@ -347,8 +362,8 @@ export function createUndoAction<T>(
   description: string,
   module: string,
   state: { before: T; after: T },
-  apply: (value: T) => void | Promise<void>
-): Omit<UndoAction<T>, 'id' | 'timestamp'> {
+  apply: (value: T) => void | Promise<void>,
+): Omit<UndoAction<T>, "id" | "timestamp"> {
   const before = structuredClone(state.before);
   const after = structuredClone(state.after);
 

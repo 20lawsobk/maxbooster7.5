@@ -15,10 +15,10 @@
  *      so cmsgpack.unpack() receives already-decoded Lua tables (identity fn).
  */
 
-import { Worker } from 'worker_threads';
-import { Unpackr } from 'msgpackr';
-import { logger } from '../logger.js';
-import { cbIsOpen } from './pdimCircuitBreaker.js';
+import { Worker } from "worker_threads";
+import { Unpackr } from "msgpackr";
+import { logger } from "../logger.js";
+import { cbIsOpen } from "./pdimCircuitBreaker.js";
 
 const _msgUnpacker = new Unpackr({ useRecords: false });
 
@@ -52,7 +52,9 @@ let _maxWaitMs = 90_000;
 export function setLuaScriptTimeout(ms: number): void {
   _maxWaitMs = Math.max(90_000, Math.min(180_000, ms));
 }
-export function getLuaScriptTimeout(): number { return _maxWaitMs; }
+export function getLuaScriptTimeout(): number {
+  return _maxWaitMs;
+}
 // Backpressure cap: reject immediately when the wait queue exceeds this size.
 // Without a cap, sustained BullMQ load causes _waitQueue to grow without bound,
 // holding thousands of timer handles and consuming unbounded memory.
@@ -81,7 +83,10 @@ const LUA_PDIM_ERR_BACKOFF_CAP_MS = 8_000;
 
 function _luaComputeBackoff(): number {
   if (_luaConsecutivePdimErrors < 2) return 0;
-  return Math.min(LUA_PDIM_ERR_BACKOFF_CAP_MS, 500 * Math.pow(2, _luaConsecutivePdimErrors - 2));
+  return Math.min(
+    LUA_PDIM_ERR_BACKOFF_CAP_MS,
+    500 * Math.pow(2, _luaConsecutivePdimErrors - 2),
+  );
 }
 
 // Module-level boot timestamp — used to gate the 30s/60s watchdog WARNs
@@ -96,7 +101,10 @@ let _activeWorkers = 0;
 // The previous design stored a combined resolver = () => { _activeWorkers++; resolve(); }
 // and called it from _releaseWorkerSlot without decrementing first, causing
 // _activeWorkers to drift above MAX_CONCURRENT_WORKERS by +1 per handoff.
-interface _Waiter { resolve: () => void; timer: ReturnType<typeof setTimeout>; }
+interface _Waiter {
+  resolve: () => void;
+  timer: ReturnType<typeof setTimeout>;
+}
 const _waitQueue: _Waiter[] = [];
 
 async function _acquireWorkerSlot(): Promise<void> {
@@ -109,7 +117,9 @@ async function _acquireWorkerSlot(): Promise<void> {
   // bound, holding thousands of 60-second timer handles and consuming unbounded
   // memory — a silent kill under infinite workload.
   if (_waitQueue.length >= MAX_QUEUE_SIZE) {
-    throw new Error('[LuaExecutor] Wait queue saturated — shedding BullMQ request (backpressure)');
+    throw new Error(
+      "[LuaExecutor] Wait queue saturated — shedding BullMQ request (backpressure)",
+    );
   }
   // Queue the caller until a slot frees up — transfer increments the count.
   return new Promise<void>((resolve, reject) => {
@@ -118,7 +128,11 @@ async function _acquireWorkerSlot(): Promise<void> {
       timer: setTimeout(() => {
         const idx = _waitQueue.indexOf(entry);
         if (idx !== -1) _waitQueue.splice(idx, 1);
-        reject(new Error(`[LuaExecutor] Timeout waiting for worker slot (${Math.round(_maxWaitMs / 1000)}s)`));
+        reject(
+          new Error(
+            `[LuaExecutor] Timeout waiting for worker slot (${Math.round(_maxWaitMs / 1000)}s)`,
+          ),
+        );
       }, _maxWaitMs),
     };
     _waitQueue.push(entry);
@@ -161,8 +175,16 @@ export function resetLuaExecutorSemaphore(): number {
 }
 
 /** Snapshot of the LuaExecutor semaphore — used by the chain error fixer health check. */
-export function getLuaExecutorStats(): { active: number; queued: number; max: number } {
-  return { active: _activeWorkers, queued: _waitQueue.length, max: MAX_CONCURRENT_WORKERS };
+export function getLuaExecutorStats(): {
+  active: number;
+  queued: number;
+  max: number;
+} {
+  return {
+    active: _activeWorkers,
+    queued: _waitQueue.length,
+    max: MAX_CONCURRENT_WORKERS,
+  };
 }
 
 // ── Registration-mode gate ────────────────────────────────────────────────────
@@ -174,12 +196,16 @@ export function getLuaExecutorStats(): { active: number; queued: number; max: nu
 // script, not a stuck or deadlocked worker).  Both probers skip their congestion
 // WARN logic while this flag is true.
 let _luaRegistrationMode = false;
-export function setLuaRegistrationMode(active: boolean): void { _luaRegistrationMode = active; }
-export function isLuaRegistrationMode(): boolean { return _luaRegistrationMode; }
+export function setLuaRegistrationMode(active: boolean): void {
+  _luaRegistrationMode = active;
+}
+export function isLuaRegistrationMode(): boolean {
+  return _luaRegistrationMode;
+}
 
 // process.cwd() always resolves to the project root regardless of CJS/ESM build format
 const _projectRoot = process.cwd();
-const _wasmoonUrl  = `file://${_projectRoot}/node_modules/wasmoon/dist/index.js`;
+const _wasmoonUrl = `file://${_projectRoot}/node_modules/wasmoon/dist/index.js`;
 const _msgpackrUrl = `file://${_projectRoot}/node_modules/msgpackr/dist/node.cjs`;
 
 const WORKER_CODE = `
@@ -331,11 +357,11 @@ export async function execLuaViaPdim(
       try {
         return _msgUnpacker.unpack(arg);
       } catch {
-        return Buffer.from(arg).toString('binary');
+        return Buffer.from(arg).toString("binary");
       }
     }
-    if (arg === null || arg === undefined) return '';
-    return typeof arg === 'string' ? arg : String(arg);
+    if (arg === null || arg === undefined) return "";
+    return typeof arg === "string" ? arg : String(arg);
   });
 
   // ── Pre-flight PDIM health throttle ─────────────────────────────────────────
@@ -357,8 +383,10 @@ export async function execLuaViaPdim(
   if (_luaConsecutivePdimErrors >= 2) {
     const preflightWaitMs = _luaComputeBackoff();
     if (preflightWaitMs > 0) {
-      logger.debug(`[LuaExecutor] pre-flight backoff ${preflightWaitMs}ms (${_luaConsecutivePdimErrors} consecutive PDIM errors)`);
-      await new Promise<void>(r => setTimeout(r, preflightWaitMs));
+      logger.debug(
+        `[LuaExecutor] pre-flight backoff ${preflightWaitMs}ms (${_luaConsecutivePdimErrors} consecutive PDIM errors)`,
+      );
+      await new Promise<void>((r) => setTimeout(r, preflightWaitMs));
     }
   }
 
@@ -373,7 +401,7 @@ export async function execLuaViaPdim(
   // which escapes to stderr as raw Error: stack traces regardless of our
   // process-level unhandledRejection handlers.
   if (cbIsOpen()) {
-    await new Promise<void>(r => setTimeout(r, CIRCUIT_OPEN_BACKOFF_MS));
+    await new Promise<void>((r) => setTimeout(r, CIRCUIT_OPEN_BACKOFF_MS));
     return [];
   }
 
@@ -388,7 +416,7 @@ export async function execLuaViaPdim(
   if (cbIsOpen()) {
     // Sleep BEFORE releasing the slot so the drain cascade is throttled —
     // the next waiter won't get the slot until this sleep expires.
-    await new Promise<void>(r => setTimeout(r, CIRCUIT_OPEN_BACKOFF_MS));
+    await new Promise<void>((r) => setTimeout(r, CIRCUIT_OPEN_BACKOFF_MS));
     _releaseWorkerSlot();
     return [];
   }
@@ -454,7 +482,7 @@ export async function execLuaViaPdim(
     const watchdog = setInterval(async () => {
       if (_watchdogCancelled) return;
       const elapsedMs = Date.now() - _scriptStart;
-      const elapsedS  = Math.round(elapsedMs / 1000);
+      const elapsedS = Math.round(elapsedMs / 1000);
       _watchdogTick++;
       if (elapsedMs >= SCRIPT_HARD_KILL_MS) {
         // ── False-positive guard ──────────────────────────────────────────────
@@ -467,21 +495,27 @@ export async function execLuaViaPdim(
         if (_activeWorkers === 0 && _waitQueue.length === 0) {
           logger.debug(
             `[LuaExecutor] watchdog 90s tick — semaphore already externally reset ` +
-            `(elapsed ${elapsedS}s); skipping hard-kill`
+              `(elapsed ${elapsedS}s); skipping hard-kill`,
           );
-          _watchdogCancelled = true; clearInterval(watchdog);
+          _watchdogCancelled = true;
+          clearInterval(watchdog);
           return;
         }
         logger.error(
           `[LuaExecutor] script hard-killed after ${elapsedS}s ` +
-          `(active=${_activeWorkers}, queued=${_waitQueue.length}) — ` +
-          `Atomics.wait stall detected; releasing semaphore slot`
+            `(active=${_activeWorkers}, queued=${_waitQueue.length}) — ` +
+            `Atomics.wait stall detected; releasing semaphore slot`,
         );
-        _watchdogCancelled = true; clearInterval(watchdog);
+        _watchdogCancelled = true;
+        clearInterval(watchdog);
         settle(() => {
           worker.terminate();
           _luaConsecutivePdimErrors++;
-          reject(new Error(`[LuaExecutor] worker hard-killed after ${elapsedS}s (stuck script timeout)`));
+          reject(
+            new Error(
+              `[LuaExecutor] worker hard-killed after ${elapsedS}s (stuck script timeout)`,
+            ),
+          );
         });
       } else {
         // Always log ticks 1-2 (30s, 60s); they precede the 90s hard-kill.
@@ -498,7 +532,7 @@ export async function execLuaViaPdim(
         if (_activeWorkers === 0 && _waitQueue.length === 0) {
           logger.debug(
             `[LuaExecutor] script still running after ${elapsedS}s — ` +
-            `semaphore was externally reset (active counter zeroed by ChainFixer)`
+              `semaphore was externally reset (active counter zeroed by ChainFixer)`,
           );
           return;
         }
@@ -509,7 +543,7 @@ export async function execLuaViaPdim(
         if (_luaRegistrationMode) {
           logger.debug(
             `[LuaExecutor] script still running after ${elapsedS}s — ` +
-            `registration in progress (active=${_activeWorkers}, queued=${_waitQueue.length})`
+              `registration in progress (active=${_activeWorkers}, queued=${_waitQueue.length})`,
           );
           return;
         }
@@ -519,50 +553,52 @@ export async function execLuaViaPdim(
         if (Date.now() - _executorBootTs < 120_000) {
           logger.debug(
             `[LuaExecutor] script still running after ${elapsedS}s — ` +
-            `boot settling window (active=${_activeWorkers}, queued=${_waitQueue.length})`
+              `boot settling window (active=${_activeWorkers}, queued=${_waitQueue.length})`,
           );
           return;
         }
         try {
-          const { getPdimQueueDepth } = await import('./pdimClient.js');
+          const { getPdimQueueDepth } = await import("./pdimClient.js");
           const depth = getPdimQueueDepth();
           if (depth > 100) {
             // Hundreds of callers queued: stall is due to PDIM back-pressure,
             // not a WASM/Lua bug.  Log at debug to avoid log avalanche.
             logger.debug(
               `[LuaExecutor] script paused ${elapsedS}s — PDIM back-pressure ` +
-              `(${depth} queued, active=${_activeWorkers})`
+                `(${depth} queued, active=${_activeWorkers})`,
             );
             return;
           }
-        } catch { /* pdimClient not yet loaded — fall through to warn */ }
+        } catch {
+          /* pdimClient not yet loaded — fall through to warn */
+        }
         logger.warn(
           `[LuaExecutor] script still running after ${elapsedS}s — ` +
-          `active=${_activeWorkers}, queued=${_waitQueue.length}`
+            `active=${_activeWorkers}, queued=${_waitQueue.length}`,
         );
       }
     }, 30_000);
 
-    worker.on('message', async (msg: Record<string, unknown>) => {
-      if (msg.type === 'redis') {
+    worker.on("message", async (msg: Record<string, unknown>) => {
+      if (msg.type === "redis") {
         let payload: string;
         let status: 1 | 2;
         try {
           let r: Record<string, unknown>;
           const cmd = (msg.cmd as string).toUpperCase();
-          if (cmd === 'HMSET') {
+          if (cmd === "HMSET") {
             // PDIM's Redis only accepts HSET with one field-value pair at a time.
             // Split "HMSET key f1 v1 f2 v2 ..." into sequential HSET calls.
             const [key, ...pairs] = msg.args as string[];
             for (let i = 0; i < pairs.length - 1; i += 2) {
-              r = await pdimExec(['HSET', key, pairs[i], pairs[i + 1]]);
+              r = await pdimExec(["HSET", key, pairs[i], pairs[i + 1]]);
             }
-            r = r ?? 'OK';
+            r = r ?? "OK";
           } else {
             r = await pdimExec([msg.cmd, ...msg.args]);
           }
           payload = JSON.stringify(r ?? null);
-          status  = 1; // success
+          status = 1; // success
         } catch (e) {
           const short = (e.message as string).slice(0, 200);
           // 5xx, 429, and circuit-open fast-fails are already captured at
@@ -570,37 +606,43 @@ export async function execLuaViaPdim(
           // them per-command floods the console during startup bursts — demote
           // all to debug so only the root-cause site emits the visible warn.
           if (
-            short.includes('429') ||
-            short.includes('500') ||
-            short.includes('502') ||
-            short.includes('Circuit OPEN')
+            short.includes("429") ||
+            short.includes("500") ||
+            short.includes("502") ||
+            short.includes("Circuit OPEN")
           ) {
             logger.debug(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
           } else {
             logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
           }
           payload = `ERR ${short}`;
-          status  = 2; // error — Lua will throw
+          status = 2; // error — Lua will throw
         }
-        const buf  = Buffer.from(payload, 'utf8');
-        const sab  = msg.sab as SharedArrayBuffer;
+        const buf = Buffer.from(payload, "utf8");
+        const sab = msg.sab as SharedArrayBuffer;
         const ctrl = new Int32Array(sab, 0, 1);
-        const len  = new Int32Array(sab, 4, 1);
+        const len = new Int32Array(sab, 4, 1);
         const data = new Uint8Array(sab, 8);
         buf.copy(Buffer.from(data.buffer, data.byteOffset, data.byteLength));
-        Atomics.store(len,  0, buf.length);
+        Atomics.store(len, 0, buf.length);
         Atomics.store(ctrl, 0, status);
         Atomics.notify(ctrl, 0, 1);
-      } else if (msg.type === 'result') {
-        _watchdogCancelled = true; clearInterval(watchdog);
+      } else if (msg.type === "result") {
+        _watchdogCancelled = true;
+        clearInterval(watchdog);
         // Script completed successfully — reset the consecutive PDIM error counter
         // so the next call gets no pre-flight delay.
         _luaConsecutivePdimErrors = 0;
-        settle(() => { worker.terminate(); resolve(msg.result); });
-      } else if (msg.type === 'error') {
-        _watchdogCancelled = true; clearInterval(watchdog);
-        const errMsg = String(msg.error ?? '');
-        const isPdim5xx = errMsg.includes('HTTP 500') || errMsg.includes('HTTP 502');
+        settle(() => {
+          worker.terminate();
+          resolve(msg.result);
+        });
+      } else if (msg.type === "error") {
+        _watchdogCancelled = true;
+        clearInterval(watchdog);
+        const errMsg = String(msg.error ?? "");
+        const isPdim5xx =
+          errMsg.includes("HTTP 500") || errMsg.includes("HTTP 502");
         if (isPdim5xx && !pdim5xxCounted) {
           // Count this failure so the NEXT call's pre-flight wait is longer.
           // The pre-flight await (above the slot acquire) is where throttling
@@ -610,12 +652,16 @@ export async function execLuaViaPdim(
         } else if (!isPdim5xx) {
           _luaConsecutivePdimErrors = 0;
         }
-        settle(() => { worker.terminate(); reject(new Error(errMsg)); });
+        settle(() => {
+          worker.terminate();
+          reject(new Error(errMsg));
+        });
       }
     });
 
-    worker.on('error', (err) => {
-      _watchdogCancelled = true; clearInterval(watchdog);
+    worker.on("error", (err) => {
+      _watchdogCancelled = true;
+      clearInterval(watchdog);
       settle(() => reject(err));
     });
 
@@ -633,8 +679,9 @@ export async function execLuaViaPdim(
     // 'result' nor 'error' was received by then, we settle here and also count
     // the exit as a potential PDIM 5xx error (code=0 means the Lua script
     // completed but threw — almost always because redis.call() got a 5xx).
-    worker.on('exit', (code) => {
-      _watchdogCancelled = true; clearInterval(watchdog);
+    worker.on("exit", (code) => {
+      _watchdogCancelled = true;
+      clearInterval(watchdog);
       setImmediate(() => {
         if (!settled) {
           // Neither 'result' nor 'error' message was processed before exit.
@@ -645,7 +692,13 @@ export async function execLuaViaPdim(
             pdim5xxCounted = true;
             _luaConsecutivePdimErrors++;
           }
-          settle(() => reject(new Error(`[LuaExecutor] worker exited unexpectedly (code=${code})`)));
+          settle(() =>
+            reject(
+              new Error(
+                `[LuaExecutor] worker exited unexpectedly (code=${code})`,
+              ),
+            ),
+          );
         }
       });
     });

@@ -1,8 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { useShortcuts } from '@/contexts/ShortcutContext';
-import { ShortcutConfig, ShortcutModifier, ShortcutConflict } from '@/lib/shortcuts/types';
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { useShortcuts } from "@/contexts/ShortcutContext";
+import {
+  ShortcutConfig,
+  ShortcutModifier,
+  ShortcutConflict,
+} from "@/lib/shortcuts/types";
 
 export interface CustomShortcut {
   id: string;
@@ -17,29 +21,38 @@ export interface ShortcutPreferences {
 }
 
 async function fetchUserShortcuts(): Promise<ShortcutPreferences | null> {
-  const response = await fetch('/api/shortcuts/user', { credentials: 'include' });
+  const response = await fetch("/api/shortcuts/user", {
+    credentials: "include",
+  });
   if (!response.ok) {
     if (response.status === 401) return null;
-    throw new Error('Failed to fetch shortcuts');
+    throw new Error("Failed to fetch shortcuts");
   }
   return response.json();
 }
 
-async function saveUserShortcuts(shortcuts: CustomShortcut[]): Promise<ShortcutPreferences> {
+async function saveUserShortcuts(
+  shortcuts: CustomShortcut[],
+): Promise<ShortcutPreferences> {
   const csrfToken = getCsrfTokenFromCookie();
-  const response = await fetch('/api/shortcuts/user', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-    credentials: 'include',
+  const response = await fetch("/api/shortcuts/user", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    },
+    credentials: "include",
     body: JSON.stringify({ shortcuts }),
   });
-  if (!response.ok) throw new Error('Failed to save shortcuts');
+  if (!response.ok) throw new Error("Failed to save shortcuts");
   return response.json();
 }
 
 async function fetchDefaultShortcuts(): Promise<CustomShortcut[]> {
-  const response = await fetch('/api/shortcuts/defaults', { credentials: 'include' });
-  if (!response.ok) throw new Error('Failed to fetch defaults');
+  const response = await fetch("/api/shortcuts/defaults", {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to fetch defaults");
   const data = await response.json();
   return data.shortcuts;
 }
@@ -47,18 +60,24 @@ async function fetchDefaultShortcuts(): Promise<CustomShortcut[]> {
 export function useShortcutCustomization() {
   const queryClient = useQueryClient();
   const { shortcutManager } = useShortcuts();
-  const [pendingChanges, setPendingChanges] = useState<Map<string, Partial<ShortcutConfig>>>(new Map());
+  const [pendingChanges, setPendingChanges] = useState<
+    Map<string, Partial<ShortcutConfig>>
+  >(new Map());
   const [conflicts, setConflicts] = useState<ShortcutConflict[]>([]);
 
-  const { data: userShortcuts, isLoading: isLoadingUser, error: userError } = useQuery({
-    queryKey: ['/api/shortcuts/user'],
+  const {
+    data: userShortcuts,
+    isLoading: isLoadingUser,
+    error: userError,
+  } = useQuery({
+    queryKey: ["/api/shortcuts/user"],
     queryFn: fetchUserShortcuts,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const { data: defaultShortcuts, isLoading: isLoadingDefaults } = useQuery({
-    queryKey: ['/api/shortcuts/defaults'],
+    queryKey: ["/api/shortcuts/defaults"],
     queryFn: fetchDefaultShortcuts,
     staleTime: 24 * 60 * 60 * 1000,
   });
@@ -66,7 +85,7 @@ export function useShortcutCustomization() {
   const saveMutation = useMutation({
     mutationFn: saveUserShortcuts,
     onSuccess: (data) => {
-      queryClient.setQueryData(['/api/shortcuts/user'], data);
+      queryClient.setQueryData(["/api/shortcuts/user"], data);
       setPendingChanges(new Map());
     },
   });
@@ -100,7 +119,10 @@ export function useShortcutCustomization() {
         const sameMods =
           (s.modifiers || []).length === newModifiers.length &&
           (s.modifiers || []).every((m) => newModifiers.includes(m));
-        const sameContext = s.context === existing.context || s.context === 'global' || existing.context === 'global';
+        const sameContext =
+          s.context === existing.context ||
+          s.context === "global" ||
+          existing.context === "global";
         return sameKey && sameMods && sameContext;
       });
 
@@ -126,7 +148,7 @@ export function useShortcutCustomization() {
 
       return true;
     },
-    [shortcutManager]
+    [shortcutManager],
   );
 
   const resetShortcut = useCallback(
@@ -151,7 +173,7 @@ export function useShortcutCustomization() {
       });
       setConflicts([]);
     },
-    [shortcutManager, defaultShortcuts]
+    [shortcutManager, defaultShortcuts],
   );
 
   const resetAllShortcuts = useCallback(() => {
@@ -159,7 +181,7 @@ export function useShortcutCustomization() {
     shortcutManager.resetAllShortcuts();
     setPendingChanges(new Map());
     setConflicts([]);
-    queryClient.setQueryData(['/api/shortcuts/user'], null);
+    queryClient.setQueryData(["/api/shortcuts/user"], null);
   }, [shortcutManager, queryClient]);
 
   const saveChanges = useCallback(async () => {
@@ -167,7 +189,11 @@ export function useShortcutCustomization() {
 
     const allShortcuts = shortcutManager.getAllShortcuts();
     const customized: CustomShortcut[] = allShortcuts
-      .filter((s) => pendingChanges.has(s.id) || userShortcuts?.shortcuts.some((us) => us.id === s.id))
+      .filter(
+        (s) =>
+          pendingChanges.has(s.id) ||
+          userShortcuts?.shortcuts.some((us) => us.id === s.id),
+      )
       .map((s) => ({
         id: s.id,
         key: s.key,

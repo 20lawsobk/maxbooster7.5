@@ -1,7 +1,7 @@
 UNITED STATES PATENT APPLICATION
 
-APPLICANT/ASSIGNEE:  B-Lawz Music LLC
-CORRESPONDENCE ADDRESS:  B-Lawz Music LLC
+APPLICANT/ASSIGNEE: B-Lawz Music LLC
+CORRESPONDENCE ADDRESS: B-Lawz Music LLC
 
 TITLE OF INVENTION
 
@@ -25,7 +25,7 @@ The present invention provides a four-tier hierarchical memory replay system com
 
 In a first aspect, the invention provides a multi-factor priority score computed as:
 
-  priority = loss_norm × (0.5 + 0.5 × novelty) × recency_decay × scene_weight
+priority = loss_norm × (0.5 + 0.5 × novelty) × recency_decay × scene_weight
 
 where loss_norm is the frame's loss relative to the scene average, novelty is one minus the cosine similarity between the frame's visual mean and the running scene mean, recency_decay is an exponential decay in time since storage, and scene_weight is a function of the gap between the scene's average loss and its best-ever loss.
 
@@ -39,10 +39,10 @@ I. System Architecture
 
 The four-tier memory system (hereinafter "the Memory") is organized as follows:
 
-  Tier 1 — HotCache:      in-RAM ring buffer, maxlen = 1000 entries, zero disk I/O
-  Tier 2 — EpisodicStore: disk-backed scene-sharded NPZ archive, priority-scored
-  Tier 3 — PromptIndex:   TF-IDF semantic nearest-neighbor index, disk-persisted
-  Tier 4 — GradientMemory: per-scene gradient norm tracker, disk-persisted as JSON
+Tier 1 — HotCache: in-RAM ring buffer, maxlen = 1000 entries, zero disk I/O
+Tier 2 — EpisodicStore: disk-backed scene-sharded NPZ archive, priority-scored
+Tier 3 — PromptIndex: TF-IDF semantic nearest-neighbor index, disk-persisted
+Tier 4 — GradientMemory: per-scene gradient norm tracker, disk-persisted as JSON
 
 All four tiers are initialized at process start and updated in concert during the training loop.
 
@@ -50,9 +50,9 @@ II. Tier 1 — HotCache
 
 The HotCache is an in-process deque with a fixed maximum length (default 1000). Every training frame that is processed is pushed into the HotCache immediately after the gradient update. The HotCache provides three sampling strategies:
 
-  priority: softmax-weighted sampling over loss values (higher-loss frames sampled more)
-  recent:   LIFO sampling of the last n entries
-  uniform:  uniform random sampling without replacement
+priority: softmax-weighted sampling over loss values (higher-loss frames sampled more)
+recent: LIFO sampling of the last n entries
+uniform: uniform random sampling without replacement
 
 The HotCache requires no disk I/O and has zero network overhead. It provides the training loop with instant access to the most recent training frames for immediate replay within the same epoch.
 
@@ -63,39 +63,39 @@ The EpisodicStore is a disk-backed archive organized as one NPZ shard file per s
 A. Entry Structure
 
 Each entry in the EpisodicStore index contains:
-  id:        SHA1-derived 16-character hex identifier
-  scene:     scene category string
-  prompt:    truncated conditioning prompt (max 120 chars)
-  loss:      per-frame reconstruction loss at time of storage
-  grad_norm: gradient norm at time of storage
-  priority:  multi-factor priority score (see Section III.B)
-  epoch:     training epoch when stored
-  step:      training step when stored
-  ts:        Unix timestamp when stored
+id: SHA1-derived 16-character hex identifier
+scene: scene category string
+prompt: truncated conditioning prompt (max 120 chars)
+loss: per-frame reconstruction loss at time of storage
+grad_norm: gradient norm at time of storage
+priority: multi-factor priority score (see Section III.B)
+epoch: training epoch when stored
+step: training step when stored
+ts: Unix timestamp when stored
 
 B. Multi-Factor Priority Score
 
 The priority of a stored frame is computed as:
 
-  priority = loss_norm × (0.5 + 0.5 × novelty) × recency_decay × scene_weight
+priority = loss_norm × (0.5 + 0.5 × novelty) × recency_decay × scene_weight
 
 where:
 
-  loss_norm    = loss / (scene_avg_loss + ε)
-    A value > 1 means this frame is harder than average for this scene.
+loss_norm = loss / (scene_avg_loss + ε)
+A value > 1 means this frame is harder than average for this scene.
 
-  novelty      = 1 − max(0, cosine_sim(frame_mean, scene_running_mean))
-    frame_mean is the spatial mean color of the frame sequence.
-    scene_running_mean is an exponential moving average of all stored frame means for the scene.
-    novelty = 1 means the frame is visually unlike anything previously stored.
+novelty = 1 − max(0, cosine_sim(frame_mean, scene_running_mean))
+frame_mean is the spatial mean color of the frame sequence.
+scene_running_mean is an exponential moving average of all stored frame means for the scene.
+novelty = 1 means the frame is visually unlike anything previously stored.
 
-  recency_decay = exp(−λ × age_days)    where λ = RECENCY_LAMBDA (default 0.1)
-    A frame stored today has decay = 1.0; one stored 7 days ago has decay ≈ 0.50.
+recency_decay = exp(−λ × age_days) where λ = RECENCY_LAMBDA (default 0.1)
+A frame stored today has decay = 1.0; one stored 7 days ago has decay ≈ 0.50.
 
-  scene_weight  = 1.0 + log1p(max(0, scene_avg_loss − scene_best_loss × 0.8))
-    Scenes with a large gap between average and best-ever loss earn higher weight.
-    A scene where the model has never improved its best has scene_weight = 1.0.
-    A scene where average loss is 50% above best has scene_weight ≈ 1.41.
+scene_weight = 1.0 + log1p(max(0, scene_avg_loss − scene_best_loss × 0.8))
+Scenes with a large gap between average and best-ever loss earn higher weight.
+A scene where the model has never improved its best has scene_weight = 1.0.
+A scene where average loss is 50% above best has scene_weight ≈ 1.41.
 
 The priority is bounded to [0, 10] for readability.
 
@@ -109,18 +109,18 @@ D. Sampling Strategies
 
 The EpisodicStore exposes three sampling strategies:
 
-  sample_priority(n, scene=None):
-    Sample n entries weighted by priority score.
-    If scene is specified, sample only from that scene's entries.
-    Enables targeted replay of the hardest frames from the current training scene.
+sample_priority(n, scene=None):
+Sample n entries weighted by priority score.
+If scene is specified, sample only from that scene's entries.
+Enables targeted replay of the hardest frames from the current training scene.
 
-  sample_hardest(n, scene=None):
-    Return the n entries with the highest loss values (deterministic).
-    Used for targeted loss-focused replay.
+sample_hardest(n, scene=None):
+Return the n entries with the highest loss values (deterministic).
+Used for targeted loss-focused replay.
 
-  sample_newest(n):
-    Return the n most recently added entries (deterministic).
-    Used for recency-focused replay after a significant distribution shift.
+sample_newest(n):
+Return the n most recently added entries (deterministic).
+Used for recency-focused replay after a significant distribution shift.
 
 IV. Tier 3 — PromptIndex
 
@@ -144,20 +144,20 @@ V. Tier 4 — GradientMemory
 
 The GradientMemory tracks per-step gradient norms, loss values, and loss deltas, organized by scene category. It exposes:
 
-  record(scene, grad_norm, loss, loss_delta, epoch, step)
-    Appends a record to the in-memory deque and the per-scene gradient norm list.
+record(scene, grad_norm, loss, loss_delta, epoch, step)
+Appends a record to the in-memory deque and the per-scene gradient norm list.
 
-  avg_grad_norm(last_n=50)
-    Returns the average gradient norm over the last n steps across all scenes.
+avg_grad_norm(last_n=50)
+Returns the average gradient norm over the last n steps across all scenes.
 
-  scene_grad_health() → Dict[scene: "healthy" | "vanishing" | "exploding"]
-    Classifies each scene as healthy (avg gradient norm 0.01–5.0),
-    vanishing (< 0.01), or exploding (> 5.0).
-    This output is consumed by the scenario engine's job family selector to
-    boost training attention toward scenes with unhealthy gradients.
+scene_grad_health() → Dict[scene: "healthy" | "vanishing" | "exploding"]
+Classifies each scene as healthy (avg gradient norm 0.01–5.0),
+vanishing (< 0.01), or exploding (> 5.0).
+This output is consumed by the scenario engine's job family selector to
+boost training attention toward scenes with unhealthy gradients.
 
-  stats() → dict
-    Returns per-scene gradient statistics for monitoring and debugging.
+stats() → dict
+Returns per-scene gradient statistics for monitoring and debugging.
 
 The GradientMemory persists its data to gradient_memory.json atomically, storing at most the last 200 records and last 50 gradient norms per scene.
 
@@ -165,20 +165,21 @@ VI. Unified Replay Controller
 
 A replay controller coordinates all four tiers during training:
 
-  1. Each training step pushes the processed frame to HotCache (Tier 1)
-  2. High-loss frames (loss > scene_average × threshold) are stored in EpisodicStore (Tier 2) and indexed in PromptIndex (Tier 3)
-  3. Each step records gradient metrics in GradientMemory (Tier 4)
-  4. After each epoch, the replay controller queries the Year-Equivalent deficit from the time simulator and runs recommended_replay_cycles passes from EpisodicStore using sample_priority()
-  5. The PromptIndex is queried before each interpolation step to identify cross-scene interpolation partners
+1. Each training step pushes the processed frame to HotCache (Tier 1)
+2. High-loss frames (loss > scene_average × threshold) are stored in EpisodicStore (Tier 2) and indexed in PromptIndex (Tier 3)
+3. Each step records gradient metrics in GradientMemory (Tier 4)
+4. After each epoch, the replay controller queries the Year-Equivalent deficit from the time simulator and runs recommended_replay_cycles passes from EpisodicStore using sample_priority()
+5. The PromptIndex is queried before each interpolation step to identify cross-scene interpolation partners
 
 VII. Integration with Other Systems
 
 The GradientMemory's scene_grad_health() output feeds into:
-  - The MusicScenarioEngine's _pick_job_family() (biases toward scenes with poor gradient health)
-  - The ABTestScenarioLayer's _ucb1_select_family() (gradient health tiebreaker)
-  - The ABTestScenarioLayer's _rotate_job_family() (sorts rotation by ascending scene health)
 
-The EpisodicStore's sample_priority() is called by the training loop for post-epoch experience replay, consuming YE credits at _REPLAY_YEAR_WEIGHT = 12 per frame.
+- The MusicScenarioEngine's \_pick_job_family() (biases toward scenes with poor gradient health)
+- The ABTestScenarioLayer's \_ucb1_select_family() (gradient health tiebreaker)
+- The ABTestScenarioLayer's \_rotate_job_family() (sorts rotation by ascending scene health)
+
+The EpisodicStore's sample_priority() is called by the training loop for post-epoch experience replay, consuming YE credits at \_REPLAY_YEAR_WEIGHT = 12 per frame.
 
 CLAIMS
 
@@ -213,10 +214,10 @@ CLAIMS
 13. The system of claim 1, further comprising a replay controller that queries a year-equivalent step deficit from a training time simulator and runs a computed number of post-epoch replay passes from the second tier's priority-sampled entries to close the informational density gap.
 
 14. A method of prioritized experience replay for training a diffusion model, the method comprising:
-   storing training frames in a disk-backed archive organized by scene category, each frame indexed by a priority score computed from a product of a loss normalization factor, a novelty factor, a recency decay factor, and a scene weight factor;
-   sampling frames for replay proportionally to their priority scores;
-   updating the priority score of each stored frame as new frames are added to the same scene, causing the effective priority of older, lower-loss, or less-novel frames to decay over time; and
-   evicting the lowest-priority frame from a scene when the scene's archive reaches capacity.
+    storing training frames in a disk-backed archive organized by scene category, each frame indexed by a priority score computed from a product of a loss normalization factor, a novelty factor, a recency decay factor, and a scene weight factor;
+    sampling frames for replay proportionally to their priority scores;
+    updating the priority score of each stored frame as new frames are added to the same scene, causing the effective priority of older, lower-loss, or less-novel frames to decay over time; and
+    evicting the lowest-priority frame from a scene when the scene's archive reaches capacity.
 
 15. The method of claim 14, further comprising recording per-scene gradient norm histories and computing scene health classifications that inform the downstream selection of training scenarios to prioritize scenes with degraded gradient flow.
 
@@ -225,10 +226,10 @@ CLAIMS
 17. The method of claim 14, wherein storing training frames includes converting frame data from 32-bit floating point to 16-bit floating point before writing to disk, reducing storage requirements by a factor of two without significant degradation of replay frame quality.
 
 18. A non-transitory computer-readable medium storing instructions that, when executed by a processor, implement:
-   a ring buffer configured to store a fixed maximum number of recent training frames in process memory and support priority-weighted, recency-based, and uniform sampling strategies;
-   a scene-sharded archive configured to store compressed frame sequences on disk organized by scene category, compute multi-factor priority scores for each entry, and evict the lowest-priority entry when a scene reaches its maximum capacity;
-   a TF-IDF prompt index configured to vectorize conditioning prompts, maintain an inverse document frequency vector, and return nearest-neighbor entries by cosine similarity for a query prompt; and
-   a gradient memory configured to record per-step gradient norms organized by scene category and classify each scene as healthy, vanishing, or exploding based on the running average of recent gradient norms.
+    a ring buffer configured to store a fixed maximum number of recent training frames in process memory and support priority-weighted, recency-based, and uniform sampling strategies;
+    a scene-sharded archive configured to store compressed frame sequences on disk organized by scene category, compute multi-factor priority scores for each entry, and evict the lowest-priority entry when a scene reaches its maximum capacity;
+    a TF-IDF prompt index configured to vectorize conditioning prompts, maintain an inverse document frequency vector, and return nearest-neighbor entries by cosine similarity for a query prompt; and
+    a gradient memory configured to record per-step gradient norms organized by scene category and classify each scene as healthy, vanishing, or exploding based on the running average of recent gradient norms.
 
 19. The computer-readable medium of claim 18, wherein the scene-sharded archive writes new and updated archive files using an atomic write-to-temporary-file-then-rename pattern to prevent data corruption under process interruption.
 

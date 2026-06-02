@@ -1,13 +1,18 @@
-import Redis from 'ioredis';
-import { logger } from '../logger.js';
-import { isPdimConfigured, getPdimClient } from '../lib/pdimClient.js';
-import { env } from '../config/env.js';
+import Redis from "ioredis";
+import { logger } from "../logger.js";
+import { isPdimConfigured, getPdimClient } from "../lib/pdimClient.js";
+import { env } from "../config/env.js";
 
-const CHANNEL_USER = 'ws:user:notify';
-const CHANNEL_BROADCAST = 'ws:broadcast';
+const CHANNEL_USER = "ws:user:notify";
+const CHANNEL_BROADCAST = "ws:broadcast";
 
-let publisher: { publish: (channel: string, msg: string) => Promise<unknown> } | null = null;
-let subscriber: { subscribe: (channel: string, cb: (msg: string) => void) => Promise<unknown>; on: (event: string, cb: (...args: unknown[]) => void) => void } | null = null;
+let publisher: {
+  publish: (channel: string, msg: string) => Promise<unknown>;
+} | null = null;
+let subscriber: {
+  subscribe: (channel: string, cb: (msg: string) => void) => Promise<unknown>;
+  on: (event: string, cb: (...args: unknown[]) => void) => void;
+} | null = null;
 let _ready = false;
 
 type UserNotifyHandler = (userId: string, notification: object) => void;
@@ -18,7 +23,7 @@ let onBroadcast: BroadcastHandler | null = null;
 
 export function registerHandlers(
   userHandler: UserNotifyHandler,
-  broadcastHandler: BroadcastHandler
+  broadcastHandler: BroadcastHandler,
 ): void {
   onUserNotify = userHandler;
   onBroadcast = broadcastHandler;
@@ -28,10 +33,10 @@ export async function initRedisPubSub(): Promise<void> {
   // PDIM is the sole backend — use it for pub/sub directly (no ioredis socket)
   if (isPdimConfigured()) {
     try {
-      publisher  = getPdimClient();
+      publisher = getPdimClient();
       subscriber = getPdimClient().duplicate();
       // PDIM subscribe is HTTP-polled; register message handler if supported
-      subscriber.on?.('message', (channel: string, message: string) => {
+      subscriber.on?.("message", (channel: string, message: string) => {
         try {
           const payload = JSON.parse(message);
           if (channel === CHANNEL_USER && onUserNotify) {
@@ -45,7 +50,9 @@ export async function initRedisPubSub(): Promise<void> {
       });
       await subscriber.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
       _ready = true;
-      logger.info('✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance');
+      logger.info(
+        "✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance",
+      );
     } catch (err) {
       logger.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${err.message}`);
       _ready = !!publisher;
@@ -55,7 +62,9 @@ export async function initRedisPubSub(): Promise<void> {
 
   const url = env.REDIS_URL;
   if (!url) {
-    logger.warn('[WS PubSub] REDIS_URL not set — cross-instance broadcasting disabled');
+    logger.warn(
+      "[WS PubSub] REDIS_URL not set — cross-instance broadcasting disabled",
+    );
     return;
   }
 
@@ -73,7 +82,7 @@ export async function initRedisPubSub(): Promise<void> {
     publisher = makeClient();
     subscriber = makeClient();
 
-    subscriber.on('message', (channel: string, message: string) => {
+    subscriber.on("message", (channel: string, message: string) => {
       try {
         const payload = JSON.parse(message);
         if (channel === CHANNEL_USER && onUserNotify) {
@@ -88,9 +97,13 @@ export async function initRedisPubSub(): Promise<void> {
 
     await subscriber.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
     _ready = true;
-    logger.info('✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance');
+    logger.info(
+      "✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance",
+    );
   } catch (err) {
-    logger.warn(`[WS PubSub] Failed to init Redis Pub/Sub: ${err.message} — single-instance only`);
+    logger.warn(
+      `[WS PubSub] Failed to init Redis Pub/Sub: ${err.message} — single-instance only`,
+    );
     publisher = null;
     subscriber = null;
     _ready = false;
@@ -101,10 +114,16 @@ export function isReady(): boolean {
   return _ready;
 }
 
-export async function publishUserNotification(userId: string, notification: object): Promise<void> {
+export async function publishUserNotification(
+  userId: string,
+  notification: object,
+): Promise<void> {
   if (!publisher || !_ready) return;
   try {
-    await publisher.publish(CHANNEL_USER, JSON.stringify({ userId, notification }));
+    await publisher.publish(
+      CHANNEL_USER,
+      JSON.stringify({ userId, notification }),
+    );
   } catch {
     // silent — local delivery still works
   }
@@ -113,15 +132,26 @@ export async function publishUserNotification(userId: string, notification: obje
 export async function publishBroadcast(notification: object): Promise<void> {
   if (!publisher || !_ready) return;
   try {
-    await publisher.publish(CHANNEL_BROADCAST, JSON.stringify({ notification }));
+    await publisher.publish(
+      CHANNEL_BROADCAST,
+      JSON.stringify({ notification }),
+    );
   } catch {
     // silent
   }
 }
 
 export async function closePubSub(): Promise<void> {
-  try { if (subscriber?.quit) await subscriber.quit(); } catch { /* ignore */ }
-  try { if (publisher?.quit) await publisher.quit(); } catch { /* ignore */ }
+  try {
+    if (subscriber?.quit) await subscriber.quit();
+  } catch {
+    /* ignore */
+  }
+  try {
+    if (publisher?.quit) await publisher.quit();
+  } catch {
+    /* ignore */
+  }
   subscriber = null;
   publisher = null;
   _ready = false;

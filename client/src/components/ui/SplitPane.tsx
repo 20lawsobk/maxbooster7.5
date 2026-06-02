@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback, useEffect, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-import { triggerHapticFeedback } from '@/hooks/useTouchGestures';
+import { useState, useRef, useCallback, useEffect, ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { triggerHapticFeedback } from "@/hooks/useTouchGestures";
 
-export type SplitDirection = 'horizontal' | 'vertical';
+export type SplitDirection = "horizontal" | "vertical";
 
 interface SplitPaneProps {
   direction?: SplitDirection;
@@ -22,7 +22,7 @@ interface SplitPaneProps {
 }
 
 export function SplitPane({
-  direction = 'horizontal',
+  direction = "horizontal",
   defaultSize = 300,
   minSize = 100,
   maxSize = 800,
@@ -43,7 +43,7 @@ export function SplitPane({
   const startPos = useRef<number>(0);
   const startSize = useRef<number>(0);
 
-  const isHorizontal = direction === 'horizontal';
+  const isHorizontal = direction === "horizontal";
 
   const clampSize = useCallback(
     (newSize: number): number => {
@@ -51,22 +51,36 @@ export function SplitPane({
         ? containerRef.current?.offsetWidth || 0
         : containerRef.current?.offsetHeight || 0;
 
-      const effectiveMaxSize = Math.min(maxSize, containerSize - secondaryMinSize);
+      const effectiveMaxSize = Math.min(
+        maxSize,
+        containerSize - secondaryMinSize,
+      );
       const effectiveMinSize = Math.max(minSize, primaryMinSize);
 
-      let clampedSize = Math.max(effectiveMinSize, Math.min(effectiveMaxSize, newSize));
+      let clampedSize = Math.max(
+        effectiveMinSize,
+        Math.min(effectiveMaxSize, newSize),
+      );
 
       for (const snapSize of snapSizes) {
         if (Math.abs(clampedSize - snapSize) < snapThreshold) {
           clampedSize = snapSize;
-          triggerHapticFeedback('light');
+          triggerHapticFeedback("light");
           break;
         }
       }
 
       return clampedSize;
     },
-    [isHorizontal, maxSize, minSize, primaryMinSize, secondaryMinSize, snapSizes, snapThreshold]
+    [
+      isHorizontal,
+      maxSize,
+      minSize,
+      primaryMinSize,
+      secondaryMinSize,
+      snapSizes,
+      snapThreshold,
+    ],
   );
 
   const handleMouseDown = useCallback(
@@ -76,9 +90,9 @@ export function SplitPane({
       setIsDragging(true);
       startPos.current = isHorizontal ? e.clientX : e.clientY;
       startSize.current = size;
-      triggerHapticFeedback('light');
+      triggerHapticFeedback("light");
     },
-    [disabled, isHorizontal, size]
+    [disabled, isHorizontal, size],
   );
 
   const handleTouchStart = useCallback(
@@ -88,9 +102,9 @@ export function SplitPane({
       const touch = e.touches[0];
       startPos.current = isHorizontal ? touch.clientX : touch.clientY;
       startSize.current = size;
-      triggerHapticFeedback('light');
+      triggerHapticFeedback("light");
     },
-    [disabled, isHorizontal, size]
+    [disabled, isHorizontal, size],
   );
 
   useEffect(() => {
@@ -115,33 +129,33 @@ export function SplitPane({
 
     const handleEnd = () => {
       setIsDragging(false);
-      triggerHapticFeedback('medium');
+      triggerHapticFeedback("medium");
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleEnd);
-    document.addEventListener('touchmove', handleTouchMove, { passive: true });
-    document.addEventListener('touchend', handleEnd);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleEnd);
+    document.addEventListener("touchmove", handleTouchMove, { passive: true });
+    document.addEventListener("touchend", handleEnd);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleEnd);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleEnd);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleEnd);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleEnd);
     };
   }, [isDragging, isHorizontal, clampSize, onResize]);
 
   const resizerStyle = isHorizontal
-    ? { width: 8, cursor: 'col-resize' }
-    : { height: 8, cursor: 'row-resize' };
+    ? { width: 8, cursor: "col-resize" }
+    : { height: 8, cursor: "row-resize" };
 
   return (
     <div
       ref={containerRef}
       className={cn(
-        'flex overflow-hidden',
-        isHorizontal ? 'flex-row' : 'flex-col',
-        className
+        "flex overflow-hidden",
+        isHorizontal ? "flex-row" : "flex-col",
+        className,
       )}
     >
       <div
@@ -153,17 +167,17 @@ export function SplitPane({
 
       <div
         className={cn(
-          'flex-shrink-0 bg-border/50 hover:bg-primary/20 transition-colors touch-none select-none',
-          'flex items-center justify-center',
-          isDragging && 'bg-primary/30',
-          disabled && 'cursor-not-allowed opacity-50',
-          resizerClassName
+          "flex-shrink-0 bg-border/50 hover:bg-primary/20 transition-colors touch-none select-none",
+          "flex items-center justify-center",
+          isDragging && "bg-primary/30",
+          disabled && "cursor-not-allowed opacity-50",
+          resizerClassName,
         )}
         style={resizerStyle}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         role="separator"
-        aria-orientation={isHorizontal ? 'vertical' : 'horizontal'}
+        aria-orientation={isHorizontal ? "vertical" : "horizontal"}
         aria-valuenow={size}
         aria-valuemin={minSize}
         aria-valuemax={maxSize}
@@ -171,8 +185,8 @@ export function SplitPane({
       >
         <div
           className={cn(
-            'rounded-full bg-muted-foreground/30',
-            isHorizontal ? 'w-1 h-8' : 'h-1 w-8'
+            "rounded-full bg-muted-foreground/30",
+            isHorizontal ? "w-1 h-8" : "h-1 w-8",
           )}
         />
       </div>
@@ -184,7 +198,7 @@ export function SplitPane({
   );
 }
 
-interface CollapsibleSplitPaneProps extends Omit<SplitPaneProps, 'disabled'> {
+interface CollapsibleSplitPaneProps extends Omit<SplitPaneProps, "disabled"> {
   collapsed?: boolean;
   collapsedSize?: number;
   onCollapsedChange?: (collapsed: boolean) => void;

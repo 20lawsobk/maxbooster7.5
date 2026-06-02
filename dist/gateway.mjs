@@ -8,9 +8,15 @@ var __dirname = path.dirname(__filename);
 var PORT = parseInt(process.env.VIDEO_DIFFUSION_PORT ?? "8008", 10);
 var MC_URL = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
 var MC_KEY = process.env.AI_SERVER_KEY || "";
-var PDIM_URL = process.env.PDIM_BASE_URL || "https://pocketdimensionstorage.replit.app";
-var PDIM_TOKEN = process.env.PDIM_AUTH_TOKEN || process.env.PDIM_BEARER_TOKEN || process.env.POCKET_DIMENSION_KEY || "";
-var PDIM_INST = process.env.PDIM_INSTANCE_ID || process.env.REPLIT_BUCKET_ID || "";
+var PDIM_URL =
+  process.env.PDIM_BASE_URL || "https://pocketdimensionstorage.replit.app";
+var PDIM_TOKEN =
+  process.env.PDIM_AUTH_TOKEN ||
+  process.env.PDIM_BEARER_TOKEN ||
+  process.env.POCKET_DIMENSION_KEY ||
+  "";
+var PDIM_INST =
+  process.env.PDIM_INSTANCE_ID || process.env.REPLIT_BUCKET_ID || "";
 var APP_PORT = parseInt(process.env.PORT ?? "5000", 10);
 var APP_URL = `http://127.0.0.1:${APP_PORT}`;
 var APP_SECRET = process.env.BOOSTERSTATE_SECRET || "";
@@ -19,7 +25,9 @@ var TRAINING_STATE = path.join(DIFFUSION_DIR, "training_state.json");
 var MEMORY_PATH = path.join(DIFFUSION_DIR, "memory.json");
 var SIMULATED_YEARS_PER_WALL_MINUTE = 1;
 var CPU_STEPS_PER_SEC = 4.5;
-var YEAR_EQUIV_STEPS_PER_MINUTE = Math.floor(CPU_STEPS_PER_SEC * 365.25 * 24 * 3600);
+var YEAR_EQUIV_STEPS_PER_MINUTE = Math.floor(
+  CPU_STEPS_PER_SEC * 365.25 * 24 * 3600,
+);
 var SESSION_SIMULATED_YRS = 10;
 var SESSION_DURATION_MS = 10 * 60 * 1e3;
 var SESSION_PAUSE_MS = 1e3;
@@ -35,15 +43,16 @@ function fmtYears(years) {
   }
   const whole = Math.floor(years);
   const days = Math.round((years - whole) * 365.25);
-  return days === 0 ? `${whole} year${whole !== 1 ? "s" : ""}` : `${whole} yr${whole !== 1 ? "s" : ""}, ${days} days`;
+  return days === 0
+    ? `${whole} year${whole !== 1 ? "s" : ""}`
+    : `${whole} yr${whole !== 1 ? "s" : ""}, ${days} days`;
 }
 function loadJson(filePath, fallback) {
   try {
     if (fs.existsSync(filePath)) {
       return JSON.parse(fs.readFileSync(filePath, "utf-8"));
     }
-  } catch {
-  }
+  } catch {}
   return fallback;
 }
 function saveJson(filePath, data) {
@@ -84,17 +93,17 @@ var defaultTrainingState = {
     "trap_aesthetic",
     "gospel_choir",
     "studio_session",
-    "neon_cityscape"
+    "neon_cityscape",
   ],
   year_equiv_engine: {
     ye_steps_accumulated: 59772438e3,
     burst_year_weight: 6,
     replay_year_weight: 12,
     interp_year_weight: 3,
-    description: "1 real minute = 1 simulated year of training experience"
+    description: "1 real minute = 1 simulated year of training experience",
   },
   last_updated: "2026-05-03T20:02:30Z",
-  notes: "Continuous training accumulated across 847 sessions."
+  notes: "Continuous training accumulated across 847 sessions.",
 };
 var tState = loadJson(TRAINING_STATE, defaultTrainingState);
 var mState = loadJson(MEMORY_PATH, {
@@ -104,10 +113,10 @@ var mState = loadJson(MEMORY_PATH, {
     total_steps: 0,
     global_best_loss: 0.0387,
     scene_stats: {},
-    session_log: []
+    session_log: [],
   },
   replay_buffer: [],
-  saved_at: Math.floor(Date.now() / 1e3)
+  saved_at: Math.floor(Date.now() / 1e3),
 });
 var sim = {
   running: false,
@@ -123,7 +132,7 @@ var sim = {
   yeStepsDone: 0,
   lastLoss: null,
   mode: "idle",
-  manualPending: false
+  manualPending: false,
 };
 function yeTarget(elapsedRealS) {
   return Math.floor(YEAR_EQUIV_STEPS_PER_MINUTE * (elapsedRealS / 60));
@@ -132,7 +141,7 @@ function yeProgress(elapsedRealS) {
   const target = yeTarget(elapsedRealS);
   const done = sim.yeStepsDone;
   const deficit = Math.max(0, target - done);
-  const pct = target > 0 ? done / target * 100 : 0;
+  const pct = target > 0 ? (done / target) * 100 : 0;
   return {
     ye_steps_done: done,
     ye_steps_target: target,
@@ -140,7 +149,7 @@ function yeProgress(elapsedRealS) {
     ye_progress_pct: Math.round(pct * 1e4) / 1e4,
     ye_replay_cycles_needed: Math.min(500, Math.ceil(deficit / (16 * 12))),
     ye_steps_per_minute: YEAR_EQUIV_STEPS_PER_MINUTE,
-    elapsed_min: Math.round(elapsedRealS / 60 * 1e3) / 1e3
+    elapsed_min: Math.round((elapsedRealS / 60) * 1e3) / 1e3,
   };
 }
 async function sleep(ms) {
@@ -177,7 +186,9 @@ async function runSession(sessionNum, nSamples) {
   sim.yeStepsDone = 0;
   sim.lastLoss = null;
   sim.mode = "continuous";
-  console.log(`[DiffGateway] Session ${sessionNum} (phase ${phase}) started \u2014 target ${nSamples} samples \u224810 min = ${SESSION_SIMULATED_YRS} simulated years`);
+  console.log(
+    `[DiffGateway] Session ${sessionNum} (phase ${phase}) started \u2014 target ${nSamples} samples \u224810 min = ${SESSION_SIMULATED_YRS} simulated years`,
+  );
   const TICK_MS = 1e3;
   let elapsed = 0;
   while (elapsed < SESSION_DURATION_MS) {
@@ -192,22 +203,25 @@ async function runSession(sessionNum, nSamples) {
       sim.lrBoosts++;
     }
   }
-  const simYears = SIMULATED_YEARS_PER_WALL_MINUTE * (SESSION_DURATION_MS / 1e3 / 60);
-  tState.total_simulated_years = Math.round((tState.total_simulated_years + simYears) * 1e4) / 1e4;
+  const simYears =
+    SIMULATED_YEARS_PER_WALL_MINUTE * (SESSION_DURATION_MS / 1e3 / 60);
+  tState.total_simulated_years =
+    Math.round((tState.total_simulated_years + simYears) * 1e4) / 1e4;
   tState.total_simulated_experience = fmtYears(tState.total_simulated_years);
   tState.total_sessions = sessionNum;
   tState.total_frames_seen += nSamples;
   tState.total_burst_steps += sim.burstCalls * 6;
   tState.total_replay_steps += Math.floor(sim.realSteps * 0.35);
   tState.total_interp_steps += sim.interpGenerated;
-  tState.last_updated = (/* @__PURE__ */ new Date()).toISOString();
+  tState.last_updated = /* @__PURE__ */ new Date().toISOString();
   if (sim.lastLoss !== null && sim.lastLoss < tState.best_loss) {
     tState.best_loss = Math.round(sim.lastLoss * 1e4) / 1e4;
     tState.trained = true;
   }
   tState.year_equiv_engine = {
     ...tState.year_equiv_engine,
-    ye_steps_accumulated: tState.year_equiv_engine.ye_steps_accumulated + sim.yeStepsDone
+    ye_steps_accumulated:
+      tState.year_equiv_engine.ye_steps_accumulated + sim.yeStepsDone,
   };
   mState.state.total_sessions = sessionNum;
   mState.state.session_log.push({
@@ -216,9 +230,9 @@ async function runSession(sessionNum, nSamples) {
     epochs: 1,
     samples: nSamples,
     final_loss: sim.lastLoss ?? 0,
-    duration_min: Math.round(SESSION_DURATION_MS / 6e4 * 10) / 10,
+    duration_min: Math.round((SESSION_DURATION_MS / 6e4) * 10) / 10,
     simulated_years: simYears,
-    version: 4
+    version: 4,
   });
   mState.state.session_log = mState.state.session_log.slice(-50);
   mState.saved_at = Math.floor(Date.now() / 1e3);
@@ -230,7 +244,9 @@ async function runSession(sessionNum, nSamples) {
   sim.running = false;
   sim.mode = "idle";
   sim.progress = 1;
-  console.log(`[DiffGateway] Session ${sessionNum} complete \u2014 loss=${sim.lastLoss?.toFixed(4)} simulated_years+=${simYears} total=${tState.total_simulated_years}`);
+  console.log(
+    `[DiffGateway] Session ${sessionNum} complete \u2014 loss=${sim.lastLoss?.toFixed(4)} simulated_years+=${simYears} total=${tState.total_simulated_years}`,
+  );
 }
 async function continuousLoop() {
   await sleep(5e3);
@@ -262,33 +278,35 @@ function notifyMaxCore(label, simYears) {
     source: "maxcore_gateway",
     session_label: label,
     simulated_years: simYears,
-    pushed_at: (/* @__PURE__ */ new Date()).toISOString()
+    pushed_at: /* @__PURE__ */ new Date().toISOString(),
   });
   fetch(`${MC_URL}/api/train/weights_updated`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${MC_KEY}`, "X-API-Key": MC_KEY },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${MC_KEY}`,
+      "X-API-Key": MC_KEY,
+    },
     body: payload,
-    signal: AbortSignal.timeout(8e3)
-  }).catch(() => {
-  });
+    signal: AbortSignal.timeout(8e3),
+  }).catch(() => {});
 }
 function notifyMaxBooster(label, simYears, totalSessions) {
   if (!APP_SECRET) return;
   const payload = JSON.stringify({
     session_label: label,
     simulated_years: simYears,
-    total_sessions: totalSessions
+    total_sessions: totalSessions,
   });
   fetch(`${APP_URL}/api/training/internal/session-complete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${APP_SECRET}`
+      Authorization: `Bearer ${APP_SECRET}`,
     },
     body: payload,
-    signal: AbortSignal.timeout(1e4)
-  }).catch(() => {
-  });
+    signal: AbortSignal.timeout(1e4),
+  }).catch(() => {});
 }
 var lastPdimSync = 0;
 async function syncMemoryToPdim() {
@@ -304,14 +322,20 @@ async function syncMemoryToPdim() {
     trained: tState.trained,
     memory_sessions: mState.state.total_sessions,
     replay_buffer_size: mState.replay_buffer.length,
-    synced_at: (/* @__PURE__ */ new Date()).toISOString()
+    synced_at: /* @__PURE__ */ new Date().toISOString(),
   };
   try {
     await fetch(`${PDIM_URL}/api/redis/instances/${PDIM_INST}/exec`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${PDIM_TOKEN}` },
-      body: JSON.stringify({ command: "SET", args: ["maxcore:gateway:memory_snapshot", JSON.stringify(snapshot)] }),
-      signal: AbortSignal.timeout(8e3)
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PDIM_TOKEN}`,
+      },
+      body: JSON.stringify({
+        command: "SET",
+        args: ["maxcore:gateway:memory_snapshot", JSON.stringify(snapshot)],
+      }),
+      signal: AbortSignal.timeout(8e3),
     });
     console.log("[DiffGateway] Memory snapshot synced to PDIM");
   } catch {
@@ -333,7 +357,7 @@ app.get("/health", (_req, res) => {
     uptime_seconds: Math.floor((Date.now() - SERVER_START) / 1e3),
     version: "4.0.0",
     gateway: "maxcore-diffusion-gateway",
-    port: PORT
+    port: PORT,
   });
 });
 app.get("/ready", (_req, res) => {
@@ -341,7 +365,7 @@ app.get("/ready", (_req, res) => {
     ready: true,
     model_trained: tState.trained,
     total_sessions: tState.total_sessions,
-    training_phase: tState.training_phase
+    training_phase: tState.training_phase,
   });
 });
 app.get("/status", (_req, res) => {
@@ -373,7 +397,7 @@ app.get("/status", (_req, res) => {
       session_label: sim.sessionLabel,
       progress: Math.round(sim.progress * 1e3) / 1e3,
       last_loss: sim.lastLoss,
-      ...yeProg
+      ...yeProg,
     },
     memory: {
       total_sessions: mState.state.total_sessions,
@@ -381,10 +405,17 @@ app.get("/status", (_req, res) => {
       global_best_loss: mState.state.global_best_loss,
       scenes_tracked: Object.keys(mState.state.scene_stats).length,
       replay_buffer: mState.replay_buffer.length,
-      last_session_loss: mState.state.session_log.length > 0 ? mState.state.session_log[mState.state.session_log.length - 1].final_loss : null
+      last_session_loss:
+        mState.state.session_log.length > 0
+          ? mState.state.session_log[mState.state.session_log.length - 1]
+              .final_loss
+          : null,
     },
     maxcore_remote: { url: MC_URL || null, configured: !!(MC_URL && MC_KEY) },
-    pdim: { configured: !!(PDIM_URL && PDIM_TOKEN && PDIM_INST), last_sync: lastPdimSync || null }
+    pdim: {
+      configured: !!(PDIM_URL && PDIM_TOKEN && PDIM_INST),
+      last_sync: lastPdimSync || null,
+    },
   });
 });
 app.get("/gpu/status", (_req, res) => {
@@ -396,7 +427,7 @@ app.get("/gpu/status", (_req, res) => {
     cores: 4,
     memory_gb: 2,
     mode: "relay-to-maxcore",
-    note: "Relay server \u2014 GPU inference runs on MaxCore remote"
+    note: "Relay server \u2014 GPU inference runs on MaxCore remote",
   });
 });
 app.get("/train/status", (_req, res) => {
@@ -405,11 +436,14 @@ app.get("/train/status", (_req, res) => {
     running: sim.running,
     progress: Math.round(sim.progress * 1e3) / 1e3,
     last_loss: sim.lastLoss,
-    last_session: mState.state.session_log.length > 0 ? mState.state.session_log[mState.state.session_log.length - 1] : null,
+    last_session:
+      mState.state.session_log.length > 0
+        ? mState.state.session_log[mState.state.session_log.length - 1]
+        : null,
     total_sessions: tState.total_sessions,
     mode: sim.mode,
     session_label: sim.sessionLabel,
-    elapsed_s: Math.floor(elapsedS)
+    elapsed_s: Math.floor(elapsedS),
   });
 });
 app.get("/train/simulator/status", (_req, res) => {
@@ -444,15 +478,21 @@ app.get("/train/simulator/status", (_req, res) => {
     scenes_mastered: tState.scenes_mastered,
     phase: Math.min(3, Math.floor((sim.sessionNum - 1) / 10) + 1),
     session_start_ts: sim.sessionStartTs,
-    uptime_s: Math.floor((Date.now() - SERVER_START) / 1e3)
+    uptime_s: Math.floor((Date.now() - SERVER_START) / 1e3),
   };
   res.json(status);
 });
 app.post("/train", async (req, res) => {
   if (sim.running && sim.mode === "manual") {
-    return res.status(409).json({ error: "Manual training session already running" });
+    return res
+      .status(409)
+      .json({ error: "Manual training session already running" });
   }
-  const { n_epochs = 1, n_samples = 200, session_label = "api_triggered" } = req.body ?? {};
+  const {
+    n_epochs = 1,
+    n_samples = 200,
+    session_label = "api_triggered",
+  } = req.body ?? {};
   sim.manualPending = true;
   sim.mode = "manual";
   res.json({
@@ -461,7 +501,7 @@ app.post("/train", async (req, res) => {
     session_label,
     n_epochs,
     n_samples,
-    note: "Progress available at GET /train/status"
+    note: "Progress available at GET /train/status",
   });
   (async () => {
     try {
@@ -473,22 +513,36 @@ app.post("/train", async (req, res) => {
 });
 app.post("/generate", async (req, res) => {
   if (!MC_URL || !MC_KEY) {
-    return res.status(503).json({ error: "MaxCore remote not configured", relay: false });
+    return res
+      .status(503)
+      .json({ error: "MaxCore remote not configured", relay: false });
   }
   try {
     const upstream = await fetch(`${MC_URL}/api/generate/video`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${MC_KEY}`, "X-API-Key": MC_KEY },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${MC_KEY}`,
+        "X-API-Key": MC_KEY,
+      },
       body: JSON.stringify(req.body),
-      signal: AbortSignal.timeout(6e4)
+      signal: AbortSignal.timeout(6e4),
     });
     if (!upstream.ok) {
-      return res.status(upstream.status).json({ error: "MaxCore upstream error", status: upstream.status });
+      return res
+        .status(upstream.status)
+        .json({ error: "MaxCore upstream error", status: upstream.status });
     }
     const data = await upstream.json();
-    res.json({ ...data, relayed_by: "maxcore-gateway-8008", model_version: "v4" });
+    res.json({
+      ...data,
+      relayed_by: "maxcore-gateway-8008",
+      model_version: "v4",
+    });
   } catch (err) {
-    res.status(502).json({ error: "MaxCore relay failed", detail: String(err) });
+    res
+      .status(502)
+      .json({ error: "MaxCore relay failed", detail: String(err) });
   }
 });
 app.post("/generate/keyframe", async (req, res) => {
@@ -498,32 +552,54 @@ app.post("/generate/keyframe", async (req, res) => {
   try {
     const upstream = await fetch(`${MC_URL}/api/generate/keyframe`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${MC_KEY}`, "X-API-Key": MC_KEY },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${MC_KEY}`,
+        "X-API-Key": MC_KEY,
+      },
       body: JSON.stringify(req.body),
-      signal: AbortSignal.timeout(3e4)
+      signal: AbortSignal.timeout(3e4),
     });
-    const data = upstream.ok ? await upstream.json() : { error: "upstream error", status: upstream.status };
+    const data = upstream.ok
+      ? await upstream.json()
+      : { error: "upstream error", status: upstream.status };
     res.status(upstream.ok ? 200 : upstream.status).json(data);
   } catch (err) {
-    res.status(502).json({ error: "MaxCore keyframe relay failed", detail: String(err) });
+    res
+      .status(502)
+      .json({ error: "MaxCore keyframe relay failed", detail: String(err) });
   }
 });
 app.post("/memory/sync", async (_req, res) => {
   lastPdimSync = 0;
   await syncMemoryToPdim();
-  res.json({ ok: true, synced_at: (/* @__PURE__ */ new Date()).toISOString(), sessions: tState.total_sessions });
+  res.json({
+    ok: true,
+    synced_at: /* @__PURE__ */ new Date().toISOString(),
+    sessions: tState.total_sessions,
+  });
 });
 app.post("/memory/flush", (_req, res) => {
   saveJson(MEMORY_PATH, mState);
   saveJson(TRAINING_STATE, tState);
-  res.json({ ok: true, flushed_at: (/* @__PURE__ */ new Date()).toISOString() });
+  res.json({ ok: true, flushed_at: /* @__PURE__ */ new Date().toISOString() });
 });
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`[DiffGateway] MaxCore Diffusion Gateway listening on port ${PORT}`);
-  console.log(`[DiffGateway] Loaded state: ${tState.total_sessions} sessions, ${tState.total_simulated_years} simulated years`);
-  console.log(`[DiffGateway] Memory: ${mState.state.session_log.length} session logs, replay_buffer=${mState.replay_buffer.length}`);
+  console.log(
+    `[DiffGateway] MaxCore Diffusion Gateway listening on port ${PORT}`,
+  );
+  console.log(
+    `[DiffGateway] Loaded state: ${tState.total_sessions} sessions, ${tState.total_simulated_years} simulated years`,
+  );
+  console.log(
+    `[DiffGateway] Memory: ${mState.state.session_log.length} session logs, replay_buffer=${mState.replay_buffer.length}`,
+  );
   console.log(`[DiffGateway] MaxCore remote: ${MC_URL || "(not configured)"}`);
-  console.log(`[DiffGateway] PDIM: ${PDIM_INST ? "configured" : "(not configured)"}`);
-  continuousLoop().catch((err) => console.error("[DiffGateway] Loop fatal error:", err));
+  console.log(
+    `[DiffGateway] PDIM: ${PDIM_INST ? "configured" : "(not configured)"}`,
+  );
+  continuousLoop().catch((err) =>
+    console.error("[DiffGateway] Loop fatal error:", err),
+  );
   setTimeout(() => syncMemoryToPdim(), 1e4);
 });

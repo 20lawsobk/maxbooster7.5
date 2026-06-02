@@ -1,16 +1,22 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Plus, ChevronUp, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
-import { StudioOneChannelStrip } from './StudioOneChannelStrip';
-import { ConsoleNavColumn } from './ConsoleNavColumn';
-import { studioOneTheme } from '@/lib/studioOneTheme';
-import { useStudioLayoutStore } from '@/lib/studioLayoutStore';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import {
+  Plus,
+  ChevronUp,
+  ChevronDown,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
+import { StudioOneChannelStrip } from "./StudioOneChannelStrip";
+import { ConsoleNavColumn } from "./ConsoleNavColumn";
+import { studioOneTheme } from "@/lib/studioOneTheme";
+import { useStudioLayoutStore } from "@/lib/studioLayoutStore";
 
 interface StudioTrack {
   id: string;
   name: string;
-  trackType: 'audio' | 'midi' | 'instrument';
+  trackType: "audio" | "midi" | "instrument";
   trackNumber: number;
   volume: number;
   pan: number;
@@ -22,7 +28,7 @@ interface StudioTrack {
   inserts?: Array<{
     id: string;
     name: string;
-    type: 'eq' | 'compressor' | 'reverb' | 'delay' | 'distortion' | 'chorus';
+    type: "eq" | "compressor" | "reverb" | "delay" | "distortion" | "chorus";
     bypass: boolean;
     params?: Record<string, number>;
   }>;
@@ -88,18 +94,22 @@ export function StudioOneConsole({
   selectedTrackId,
   onTrackSelect,
 }: StudioOneConsoleProps) {
-  const { consolePanel, setPanelHeight, consoleSections } = useStudioLayoutStore();
+  const { consolePanel, setPanelHeight, consoleSections } =
+    useStudioLayoutStore();
   const [isResizing, setIsResizing] = useState(false);
   const [startY, setStartY] = useState(0);
   const [startHeight, setStartHeight] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    setIsResizing(true);
-    setStartY(e.clientY);
-    setStartHeight(consolePanel.height || 300);
-    e.preventDefault();
-  }, [consolePanel.height]);
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      setIsResizing(true);
+      setStartY(e.clientY);
+      setStartHeight(consolePanel.height || 300);
+      e.preventDefault();
+    },
+    [consolePanel.height],
+  );
 
   useEffect(() => {
     if (!isResizing) return;
@@ -107,18 +117,18 @@ export function StudioOneConsole({
     const handleMouseMove = (e: MouseEvent) => {
       const delta = startY - e.clientY;
       const newHeight = Math.max(150, Math.min(600, startHeight + delta));
-      setPanelHeight('console', newHeight);
+      setPanelHeight("console", newHeight);
     };
 
     const handleMouseUp = () => {
       setIsResizing(false);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isResizing, startY, startHeight, setPanelHeight]);
 
@@ -184,7 +194,10 @@ export function StudioOneConsole({
               }}
               onClick={onAddTrack}
             >
-              <Plus className="h-5 w-5" style={{ color: studioOneTheme.colors.text.muted }} />
+              <Plus
+                className="h-5 w-5"
+                style={{ color: studioOneTheme.colors.text.muted }}
+              />
             </div>
 
             {/* Separator */}
@@ -224,7 +237,10 @@ export function StudioOneConsole({
               }}
               onClick={onAddBus}
             >
-              <Plus className="h-5 w-5" style={{ color: studioOneTheme.colors.accent.cyan }} />
+              <Plus
+                className="h-5 w-5"
+                style={{ color: studioOneTheme.colors.accent.cyan }}
+              />
             </div>
 
             {/* Separator */}

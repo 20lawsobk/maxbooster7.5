@@ -33,14 +33,24 @@ const tierColors = {
 };
 
 const confettiColors = [
-  "#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1", 
-  "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8",
-  "#F7DC6F", "#BB8FCE", "#85C1E9", "#F8B500"
+  "#FFD700",
+  "#FF6B6B",
+  "#4ECDC4",
+  "#45B7D1",
+  "#96CEB4",
+  "#FFEAA7",
+  "#DDA0DD",
+  "#98D8C8",
+  "#F7DC6F",
+  "#BB8FCE",
+  "#85C1E9",
+  "#F8B500",
 ];
 
 export function AchievementNotification() {
   const queryClient = useQueryClient();
-  const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null);
+  const [currentAchievement, setCurrentAchievement] =
+    useState<Achievement | null>(null);
   const [confetti, setConfetti] = useState<Confetti[]>([]);
   const [queue, setQueue] = useState<Achievement[]>([]);
 
@@ -51,11 +61,16 @@ export function AchievementNotification() {
 
   const markNotifiedMutation = useMutation({
     mutationFn: async (achievementId: string) => {
-      const res = await apiRequest("POST", `/api/achievements/mark-notified/${achievementId}`);
+      const res = await apiRequest(
+        "POST",
+        `/api/achievements/mark-notified/${achievementId}`,
+      );
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/achievements/unnotified"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/achievements/unnotified"],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements/user"] });
     },
   });
@@ -67,7 +82,8 @@ export function AchievementNotification() {
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
-        color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+        color:
+          confettiColors[Math.floor(Math.random() * confettiColors.length)],
         size: Math.random() * 10 + 5,
         rotation: Math.random() * 360,
       });
@@ -79,8 +95,9 @@ export function AchievementNotification() {
   useEffect(() => {
     if (unnotified && unnotified.length > 0) {
       const newAchievements = unnotified.filter(
-        (a) => !queue.some((q) => q.id === a.id) && 
-               (!currentAchievement || currentAchievement.id !== a.id)
+        (a) =>
+          !queue.some((q) => q.id === a.id) &&
+          (!currentAchievement || currentAchievement.id !== a.id),
       );
       if (newAchievements.length > 0) {
         setQueue((prev) => [...prev, ...newAchievements]);
@@ -94,19 +111,23 @@ export function AchievementNotification() {
       setQueue((prev) => prev.slice(1));
       setCurrentAchievement(next);
       createConfetti();
-      
+
       try {
-        const audioCtx = new (window.AudioContext || (window as Record<string, unknown>).webkitAudioContext)();
+        const audioCtx = new (window.AudioContext ||
+          (window as Record<string, unknown>).webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        oscillator.type = 'sine';
+        oscillator.type = "sine";
         gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
         oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
         oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
         oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioCtx.currentTime + 0.5,
+        );
         oscillator.start(audioCtx.currentTime);
         oscillator.stop(audioCtx.currentTime + 0.5);
       } catch {}
@@ -170,7 +191,7 @@ export function AchievementNotification() {
                 "relative max-w-md w-full rounded-2xl overflow-hidden",
                 "bg-gradient-to-br",
                 tierColors[currentAchievement.tier],
-                "shadow-2xl"
+                "shadow-2xl",
               )}
               initial={{ scale: 0, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -254,7 +275,8 @@ export function AchievementNotification() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.7 }}
                   >
-                    +{queue.length} more achievement{queue.length > 1 ? "s" : ""} unlocked!
+                    +{queue.length} more achievement
+                    {queue.length > 1 ? "s" : ""} unlocked!
                   </motion.p>
                 )}
               </div>

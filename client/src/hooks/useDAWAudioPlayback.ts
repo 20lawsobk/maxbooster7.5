@@ -1,6 +1,9 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { logger } from '@/lib/logger';
-import type { UnifiedTrack, UnifiedTransport } from '@/stores/unifiedStoreAdapter';
+import { useEffect, useRef, useCallback } from "react";
+import { logger } from "@/lib/logger";
+import type {
+  UnifiedTrack,
+  UnifiedTransport,
+} from "@/stores/unifiedStoreAdapter";
 
 interface UseDAWAudioPlaybackOptions {
   tracks: UnifiedTrack[];
@@ -13,7 +16,10 @@ interface ActiveSource {
   clipId: string;
 }
 
-export function useDAWAudioPlayback({ tracks, transport }: UseDAWAudioPlaybackOptions) {
+export function useDAWAudioPlayback({
+  tracks,
+  transport,
+}: UseDAWAudioPlaybackOptions) {
   const contextRef = useRef<AudioContext | null>(null);
   const buffersRef = useRef<Map<string, AudioBuffer>>(new Map());
   const activeSourcesRef = useRef<Map<string, ActiveSource>>(new Map());
@@ -22,30 +28,35 @@ export function useDAWAudioPlayback({ tracks, transport }: UseDAWAudioPlaybackOp
   const isPlayingRef = useRef(false);
 
   const getOrCreateContext = useCallback((): AudioContext => {
-    if (!contextRef.current || contextRef.current.state === 'closed') {
-      const AudioCtx = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
-      contextRef.current = new AudioCtx({ latencyHint: 'interactive' });
+    if (!contextRef.current || contextRef.current.state === "closed") {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as Record<string, unknown>).webkitAudioContext;
+      contextRef.current = new AudioCtx({ latencyHint: "interactive" });
     }
     return contextRef.current;
   }, []);
 
-  const decodeAudio = useCallback(async (sourceUrl: string): Promise<AudioBuffer | null> => {
-    if (buffersRef.current.has(sourceUrl)) {
-      return buffersRef.current.get(sourceUrl)!;
-    }
-    try {
-      const ctx = getOrCreateContext();
-      const response = await fetch(sourceUrl);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-      buffersRef.current.set(sourceUrl, audioBuffer);
-      return audioBuffer;
-    } catch (err) {
-      logger.warn('[DAWPlayback] Failed to decode audio:', sourceUrl, err);
-      return null;
-    }
-  }, [getOrCreateContext]);
+  const decodeAudio = useCallback(
+    async (sourceUrl: string): Promise<AudioBuffer | null> => {
+      if (buffersRef.current.has(sourceUrl)) {
+        return buffersRef.current.get(sourceUrl)!;
+      }
+      try {
+        const ctx = getOrCreateContext();
+        const response = await fetch(sourceUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        buffersRef.current.set(sourceUrl, audioBuffer);
+        return audioBuffer;
+      } catch (err) {
+        logger.warn("[DAWPlayback] Failed to decode audio:", sourceUrl, err);
+        return null;
+      }
+    },
+    [getOrCreateContext],
+  );
 
   useEffect(() => {
     const allUrls = new Set<string>();
@@ -55,7 +66,7 @@ export function useDAWAudioPlayback({ tracks, transport }: UseDAWAudioPlaybackOp
         if (clip.sourceUrl) allUrls.add(clip.sourceUrl);
       }
     }
-    allUrls.forEach(url => {
+    allUrls.forEach((url) => {
       if (!buffersRef.current.has(url)) {
         decodeAudio(url);
       }
@@ -72,75 +83,89 @@ export function useDAWAudioPlayback({ tracks, transport }: UseDAWAudioPlaybackOp
         } else {
           node.stop();
         }
-      } catch {
-      }
+      } catch {}
     });
     activeSourcesRef.current.clear();
   }, []);
 
-  const scheduleClips = useCallback((position: number) => {
-    const ctx = getOrCreateContext();
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
+  const scheduleClips = useCallback(
+    (position: number) => {
+      const ctx = getOrCreateContext();
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
+      }
 
-    stopAllSources(false);
+      stopAllSources(false);
 
-    const contextNow = ctx.currentTime;
-    playStartContextTimeRef.current = contextNow;
-    playStartPositionRef.current = position;
+      const contextNow = ctx.currentTime;
+      playStartContextTimeRef.current = contextNow;
+      playStartPositionRef.current = position;
 
-    const soloExists = tracks.some(t => t.solo);
+      const soloExists = tracks.some((t) => t.solo);
 
-    for (const track of tracks) {
-      if (track.muted) continue;
-      if (soloExists && !track.solo) continue;
+      for (const track of tracks) {
+        if (track.muted) continue;
+        if (soloExists && !track.solo) continue;
 
-      for (const clip of track.audioClips) {
-        if (!clip.sourceUrl) continue;
-        const buffer = buffersRef.current.get(clip.sourceUrl);
-        if (!buffer) continue;
+        for (const clip of track.audioClips) {
+          if (!clip.sourceUrl) continue;
+          const buffer = buffersRef.current.get(clip.sourceUrl);
+          if (!buffer) continue;
 
-        const clipStart = clip.startTime;
-        const clipEnd = clip.startTime + clip.duration;
+          const clipStart = clip.startTime;
+          const clipEnd = clip.startTime + clip.duration;
 
-        if (position > clipEnd) continue;
+          if (position > clipEnd) continue;
 
-        const sourceNode = ctx.createBufferSource();
-        sourceNode.buffer = buffer;
+          const sourceNode = ctx.createBufferSource();
+          sourceNode.buffer = buffer;
 
-        const gainNode = ctx.createGain();
-        gainNode.gain.value = Math.max(0, Math.min(1, track.volume ?? 0.8));
-        sourceNode.connect(gainNode);
-        gainNode.connect(ctx.destination);
+          const gainNode = ctx.createGain();
+          gainNode.gain.value = Math.max(0, Math.min(1, track.volume ?? 0.8));
+          sourceNode.connect(gainNode);
+          gainNode.connect(ctx.destination);
 
-        let startContextTime: number;
-        let offsetIntoClip: number;
+          let startContextTime: number;
+          let offsetIntoClip: number;
 
-        if (position < clipStart) {
-          startContextTime = contextNow + (clipStart - position);
-          offsetIntoClip = 0;
-        } else {
-          startContextTime = contextNow;
-          offsetIntoClip = position - clipStart;
-        }
+          if (position < clipStart) {
+            startContextTime = contextNow + (clipStart - position);
+            offsetIntoClip = 0;
+          } else {
+            startContextTime = contextNow;
+            offsetIntoClip = position - clipStart;
+          }
 
-        const remainingDuration = clip.duration - offsetIntoClip;
-        if (remainingDuration <= 0) continue;
+          const remainingDuration = clip.duration - offsetIntoClip;
+          if (remainingDuration <= 0) continue;
 
-        try {
-          sourceNode.start(startContextTime, offsetIntoClip, remainingDuration);
-          activeSourcesRef.current.set(clip.id, { node: sourceNode, gainNode, clipId: clip.id });
+          try {
+            sourceNode.start(
+              startContextTime,
+              offsetIntoClip,
+              remainingDuration,
+            );
+            activeSourcesRef.current.set(clip.id, {
+              node: sourceNode,
+              gainNode,
+              clipId: clip.id,
+            });
 
-          sourceNode.onended = () => {
-            activeSourcesRef.current.delete(clip.id);
-          };
-        } catch (err) {
-          logger.warn('[DAWPlayback] Failed to start source for clip:', clip.id, err);
+            sourceNode.onended = () => {
+              activeSourcesRef.current.delete(clip.id);
+            };
+          } catch (err) {
+            logger.warn(
+              "[DAWPlayback] Failed to start source for clip:",
+              clip.id,
+              err,
+            );
+          }
         }
       }
-    }
-  }, [tracks, getOrCreateContext, stopAllSources]);
+    },
+    [tracks, getOrCreateContext, stopAllSources],
+  );
 
   useEffect(() => {
     if (transport.isPlaying && !isPlayingRef.current) {
@@ -167,7 +192,7 @@ export function useDAWAudioPlayback({ tracks, transport }: UseDAWAudioPlaybackOp
 
   const unlockAudio = useCallback(() => {
     const ctx = getOrCreateContext();
-    if (ctx.state === 'suspended') {
+    if (ctx.state === "suspended") {
       ctx.resume().catch(() => {});
     }
   }, [getOrCreateContext]);

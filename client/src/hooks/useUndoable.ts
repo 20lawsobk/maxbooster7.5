@@ -1,12 +1,12 @@
-import { useCallback, useRef } from 'react';
-import { useUndo } from '@/contexts/UndoContext';
+import { useCallback, useRef } from "react";
+import { useUndo } from "@/contexts/UndoContext";
 import {
   UndoableAction,
   ActionType,
   ActionCategory,
   ActionMetadata,
   isDestructiveAction,
-} from '@/lib/undo/types';
+} from "@/lib/undo/types";
 
 export interface UseUndoableOptions<T = unknown> {
   type: ActionType;
@@ -31,7 +31,7 @@ export function useUndoable<T, Args extends unknown[]>(
   options: UseUndoableOptions<T>,
   executeFn: (...args: Args) => Promise<T>,
   undoFn: (result: T, ...args: Args) => Promise<void>,
-  redoFn?: (...args: Args) => Promise<T>
+  redoFn?: (...args: Args) => Promise<T>,
 ): UseUndoableReturn<T, Args> {
   const { executeAction, showUndoToast } = useUndo();
   const isExecutingRef = useRef(false);
@@ -39,7 +39,7 @@ export function useUndoable<T, Args extends unknown[]>(
   const execute = useCallback(
     async (...args: Args): Promise<T> => {
       if (isExecutingRef.current) {
-        throw new Error('Action already in progress');
+        throw new Error("Action already in progress");
       }
 
       isExecutingRef.current = true;
@@ -52,13 +52,14 @@ export function useUndoable<T, Args extends unknown[]>(
           category: options.category,
           entityId: options.entityId,
           entityType: options.entityType,
-          isDestructive: options.isDestructive ?? isDestructiveAction(options.type),
+          isDestructive:
+            options.isDestructive ?? isDestructiveAction(options.type),
           requiresConfirmation: options.requiresConfirmation,
         };
 
         let actionResult: T;
 
-        const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
+        const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
           type: options.type,
           metadata,
           execute: async () => {
@@ -86,7 +87,7 @@ export function useUndoable<T, Args extends unknown[]>(
         isExecutingRef.current = false;
       }
     },
-    [executeAction, executeFn, undoFn, redoFn, options]
+    [executeAction, executeFn, undoFn, redoFn, options],
   );
 
   return {
@@ -99,14 +100,14 @@ export function useUndoableWithState<T, S>(
   options: UseUndoableOptions<T>,
   executeFn: (previousState: S) => Promise<{ result: T; newState: S }>,
   undoFn: (newState: S, previousState: S) => Promise<void>,
-  getCurrentState: () => S
+  getCurrentState: () => S,
 ) {
   const { executeAction } = useUndo();
   const stateRef = useRef<{ previous: S; current: S } | null>(null);
 
   const execute = useCallback(async (): Promise<T> => {
     const previousState = getCurrentState();
-    
+
     const metadata: ActionMetadata = {
       timestamp: Date.now(),
       module: options.module,
@@ -119,7 +120,7 @@ export function useUndoableWithState<T, S>(
       previousState,
     };
 
-    const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
+    const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
       type: options.type,
       metadata,
       execute: async () => {
@@ -134,8 +135,13 @@ export function useUndoableWithState<T, S>(
         }
       },
       redo: async () => {
-        const { result, newState } = await executeFn(stateRef.current?.previous || previousState);
-        stateRef.current = { previous: stateRef.current?.previous || previousState, current: newState };
+        const { result, newState } = await executeFn(
+          stateRef.current?.previous || previousState,
+        );
+        stateRef.current = {
+          previous: stateRef.current?.previous || previousState,
+          current: newState,
+        };
         return result;
       },
       canUndo: () => stateRef.current !== null,
@@ -154,7 +160,7 @@ export function useUndoableAsync<T>(
     execute: () => Promise<T>;
     undo: (result: T) => Promise<void>;
     redo?: () => Promise<T>;
-  }
+  },
 ) {
   const { executeAction } = useUndo();
 
@@ -172,7 +178,7 @@ export function useUndoableAsync<T>(
 
     let result: T;
 
-    const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
+    const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
       type: options.type,
       metadata,
       execute: async () => {
@@ -191,10 +197,7 @@ export function useUndoableAsync<T>(
   }, [executeAction, config, options]);
 }
 
-export function useUndoableBatch<T>(
-  module: string,
-  description: string
-) {
+export function useUndoableBatch<T>(module: string, description: string) {
   const { executeAction, startGroup, endGroup } = useUndo();
 
   const executeBatch = useCallback(
@@ -205,7 +208,7 @@ export function useUndoableBatch<T>(
         execute: () => Promise<T>;
         undo: (result: T) => Promise<void>;
         description?: string;
-      }>
+      }>,
     ): Promise<T[]> => {
       const groupId = startGroup(description);
       const results: T[] = [];
@@ -221,7 +224,10 @@ export function useUndoableBatch<T>(
 
           let actionResult: T;
 
-          const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
+          const action: Omit<
+            UndoableAction<T>,
+            "id" | "isUndone" | "result"
+          > = {
             type: actionConfig.type,
             metadata,
             execute: async () => {
@@ -243,7 +249,7 @@ export function useUndoableBatch<T>(
         endGroup(groupId);
       }
     },
-    [executeAction, startGroup, endGroup, module, description]
+    [executeAction, startGroup, endGroup, module, description],
   );
 
   return executeBatch;
@@ -258,4 +264,4 @@ export {
   useUndoableUpdate,
   useUndoableSettingsChange,
   createUndoableAction,
-} from '@/lib/undo/hooks';
+} from "@/lib/undo/hooks";

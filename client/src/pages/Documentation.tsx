@@ -1,8 +1,8 @@
-import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Logo } from '@/components/ui/Logo';
-import { BookOpen, Code, Zap, Database, Cloud, Lock } from 'lucide-react';
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Logo } from "@/components/ui/Logo";
+import { BookOpen, Code, Zap, Database, Cloud, Lock } from "lucide-react";
 
 export default function Documentation() {
   return (
@@ -39,7 +39,8 @@ export default function Documentation() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Comprehensive guides, tutorials, and API documentation for Max Booster
+            Comprehensive guides, tutorials, and API documentation for Max
+            Booster
           </p>
         </div>
       </section>
@@ -47,37 +48,53 @@ export default function Documentation() {
       {/* Quick Start */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Quick Start Guides</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+            Quick Start Guides
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
                 icon: Zap,
-                title: 'Getting Started',
-                description: 'Set up your account and start creating music in 5 minutes',
+                title: "Getting Started",
+                description:
+                  "Set up your account and start creating music in 5 minutes",
                 topics: [
-                  'Account Setup',
-                  'First Project',
-                  'Profile Configuration',
-                  'Payment Setup',
+                  "Account Setup",
+                  "First Project",
+                  "Profile Configuration",
+                  "Payment Setup",
                 ],
               },
               {
                 icon: Code,
-                title: 'Studio Basics',
-                description: 'Learn the DAW workspace and production tools',
-                topics: ['Track Creation', 'Audio Recording', 'AI Mixing', 'Plugin Usage'],
+                title: "Studio Basics",
+                description: "Learn the DAW workspace and production tools",
+                topics: [
+                  "Track Creation",
+                  "Audio Recording",
+                  "AI Mixing",
+                  "Plugin Usage",
+                ],
               },
               {
                 icon: Cloud,
-                title: 'Distribution',
-                description: 'Release your music to streaming platforms worldwide',
-                topics: ['Release Setup', 'DSP Selection', 'Royalty Tracking', 'Analytics'],
+                title: "Distribution",
+                description:
+                  "Release your music to streaming platforms worldwide",
+                topics: [
+                  "Release Setup",
+                  "DSP Selection",
+                  "Royalty Tracking",
+                  "Analytics",
+                ],
               },
             ].map((guide, i) => (
               <Card key={i} className="hover-lift">
                 <CardContent className="p-6">
                   <guide.icon className="h-10 w-10 text-blue-600 mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{guide.title}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {guide.title}
+                  </h3>
                   <p className="text-gray-600 mb-4">{guide.description}</p>
                   <ul className="space-y-1">
                     {guide.topics.map((topic, j) => (
@@ -102,53 +119,55 @@ export default function Documentation() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               {
-                title: 'AI Studio & Production',
+                title: "AI Studio & Production",
                 topics: [
-                  'DAW Interface Overview',
-                  'AI Mixing Guide',
-                  'AI Mastering Guide',
-                  'Plugin Management',
-                  'Collaboration Features',
-                  'Cloud Storage & Autosave',
+                  "DAW Interface Overview",
+                  "AI Mixing Guide",
+                  "AI Mastering Guide",
+                  "Plugin Management",
+                  "Collaboration Features",
+                  "Cloud Storage & Autosave",
                 ],
               },
               {
-                title: 'Distribution & Royalties',
+                title: "Distribution & Royalties",
                 topics: [
-                  'Creating Releases',
-                  'DSP Submission',
-                  'ISRC/UPC Codes',
-                  'Royalty Analytics',
-                  'Payment Processing',
-                  'Split Payments',
+                  "Creating Releases",
+                  "DSP Submission",
+                  "ISRC/UPC Codes",
+                  "Royalty Analytics",
+                  "Payment Processing",
+                  "Split Payments",
                 ],
               },
               {
-                title: 'Social Media Automation',
+                title: "Social Media Automation",
                 topics: [
-                  'Platform Connections',
-                  'AI Content Generation',
-                  'Post Scheduling',
-                  'A/B Testing',
-                  'Analytics Dashboard',
-                  'Campaign Management',
+                  "Platform Connections",
+                  "AI Content Generation",
+                  "Post Scheduling",
+                  "A/B Testing",
+                  "Analytics Dashboard",
+                  "Campaign Management",
                 ],
               },
               {
-                title: 'Beat Marketplace',
+                title: "Beat Marketplace",
                 topics: [
-                  'Creating Listings',
-                  'Pricing Strategy',
-                  'License Types',
-                  'Stripe Integration',
-                  'Sales Analytics',
-                  'Buyer Protection',
+                  "Creating Listings",
+                  "Pricing Strategy",
+                  "License Types",
+                  "Stripe Integration",
+                  "Sales Analytics",
+                  "Buyer Protection",
                 ],
               },
             ].map((section, i) => (
               <Card key={i}>
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">{section.title}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                    {section.title}
+                  </h3>
                   <ul className="space-y-2">
                     {section.topics.map((topic, j) => (
                       <li key={j} className="flex items-center text-gray-700">
@@ -167,34 +186,40 @@ export default function Documentation() {
       {/* Technical Resources */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Technical Resources</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+            Technical Resources
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
                 icon: Code,
-                title: 'API Reference',
-                description: 'Complete REST API documentation with examples',
-                link: '/api-docs',
+                title: "API Reference",
+                description: "Complete REST API documentation with examples",
+                link: "/api-docs",
               },
               {
                 icon: Database,
-                title: 'Webhooks',
-                description: 'Real-time event notifications for integrations',
-                link: '/api-docs#webhooks',
+                title: "Webhooks",
+                description: "Real-time event notifications for integrations",
+                link: "/api-docs#webhooks",
               },
               {
                 icon: Lock,
-                title: 'Security',
-                description: 'Authentication, encryption, and best practices',
-                link: '/security',
+                title: "Security",
+                description: "Authentication, encryption, and best practices",
+                link: "/security",
               },
             ].map((resource, i) => (
               <Link key={i} href={resource.link}>
                 <Card className="hover-lift cursor-pointer">
                   <CardContent className="p-6 text-center">
                     <resource.icon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{resource.title}</h3>
-                    <p className="text-gray-600 text-sm">{resource.description}</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {resource.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {resource.description}
+                    </p>
                   </CardContent>
                 </Card>
               </Link>
@@ -208,14 +233,12 @@ export default function Documentation() {
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-4">Need Help?</h2>
           <p className="text-xl text-white/90 mb-8">
-            Can't find what you're looking for? Check out the Help Center for comprehensive guides.
+            Can't find what you're looking for? Check out the Help Center for
+            comprehensive guides.
           </p>
           <div className="flex justify-center">
             <Link href="/help">
-              <Button
-                size="lg"
-                variant="secondary"
-              >
+              <Button size="lg" variant="secondary">
                 Visit Help Center
               </Button>
             </Link>

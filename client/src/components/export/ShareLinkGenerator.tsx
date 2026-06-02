@@ -1,34 +1,40 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Link2,
   Copy,
@@ -51,18 +57,18 @@ import {
   Loader2,
   QrCode,
   Link,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 export interface ShareLink {
   id: string;
   url: string;
   shortCode: string;
   name: string;
-  resourceType: 'audio' | 'project' | 'stems' | 'analytics' | 'document';
+  resourceType: "audio" | "project" | "stems" | "analytics" | "document";
   resourceId: string;
   createdAt: Date;
   expiresAt?: Date;
@@ -81,7 +87,7 @@ export interface ShareLink {
 interface ShareLinkGeneratorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  resourceType: 'audio' | 'project' | 'stems' | 'analytics' | 'document';
+  resourceType: "audio" | "project" | "stems" | "analytics" | "document";
   resourceId: string;
   resourceName: string;
   onLinkCreated?: (link: ShareLink) => void;
@@ -96,23 +102,23 @@ interface ShareLinkListProps {
 }
 
 const EXPIRATION_OPTIONS = [
-  { value: 'never', label: 'Never expires' },
-  { value: '1h', label: '1 hour' },
-  { value: '24h', label: '24 hours' },
-  { value: '7d', label: '7 days' },
-  { value: '30d', label: '30 days' },
-  { value: '90d', label: '90 days' },
-  { value: 'custom', label: 'Custom date' },
+  { value: "never", label: "Never expires" },
+  { value: "1h", label: "1 hour" },
+  { value: "24h", label: "24 hours" },
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
+  { value: "90d", label: "90 days" },
+  { value: "custom", label: "Custom date" },
 ];
 
 const DOWNLOAD_LIMIT_OPTIONS = [
-  { value: 0, label: 'Unlimited' },
-  { value: 1, label: '1 download' },
-  { value: 5, label: '5 downloads' },
-  { value: 10, label: '10 downloads' },
-  { value: 25, label: '25 downloads' },
-  { value: 50, label: '50 downloads' },
-  { value: 100, label: '100 downloads' },
+  { value: 0, label: "Unlimited" },
+  { value: 1, label: "1 download" },
+  { value: 5, label: "5 downloads" },
+  { value: 10, label: "10 downloads" },
+  { value: 25, label: "25 downloads" },
+  { value: 50, label: "50 downloads" },
+  { value: 100, label: "100 downloads" },
 ];
 
 export function ShareLinkGenerator({
@@ -126,55 +132,55 @@ export function ShareLinkGenerator({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<ShareLink | null>(null);
-  
-  const [expiration, setExpiration] = useState('7d');
+
+  const [expiration, setExpiration] = useState("7d");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [enablePassword, setEnablePassword] = useState(false);
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [downloadLimit, setDownloadLimit] = useState(0);
   const [requireEmail, setRequireEmail] = useState(false);
-  const [allowedEmails, setAllowedEmails] = useState('');
+  const [allowedEmails, setAllowedEmails] = useState("");
 
   useEffect(() => {
     if (open) {
       setGeneratedLink(null);
       setCopied(false);
-      setExpiration('7d');
+      setExpiration("7d");
       setEnablePassword(false);
-      setPassword('');
+      setPassword("");
       setDownloadLimit(0);
       setRequireEmail(false);
-      setAllowedEmails('');
+      setAllowedEmails("");
     }
   }, [open]);
 
   const generateMutation = useMutation({
     mutationFn: async () => {
       let expiresAt: Date | null = null;
-      
-      if (expiration !== 'never') {
-        if (expiration === 'custom' && customDate) {
+
+      if (expiration !== "never") {
+        if (expiration === "custom" && customDate) {
           expiresAt = customDate;
         } else {
           const now = new Date();
           const durations: Record<string, number> = {
-            '1h': 60 * 60 * 1000,
-            '24h': 24 * 60 * 60 * 1000,
-            '7d': 7 * 24 * 60 * 60 * 1000,
-            '30d': 30 * 24 * 60 * 60 * 1000,
-            '90d': 90 * 24 * 60 * 60 * 1000,
+            "1h": 60 * 60 * 1000,
+            "24h": 24 * 60 * 60 * 1000,
+            "7d": 7 * 24 * 60 * 60 * 1000,
+            "30d": 30 * 24 * 60 * 60 * 1000,
+            "90d": 90 * 24 * 60 * 60 * 1000,
           };
           expiresAt = new Date(now.getTime() + (durations[expiration] || 0));
         }
       }
 
       const emails = allowedEmails
-        .split(',')
-        .map(e => e.trim())
-        .filter(e => e.length > 0);
+        .split(",")
+        .map((e) => e.trim())
+        .filter((e) => e.length > 0);
 
-      const response = await apiRequest('POST', '/api/export/share-links', {
+      const response = await apiRequest("POST", "/api/export/share-links", {
         resourceType,
         resourceId,
         name: resourceName,
@@ -184,47 +190,50 @@ export function ShareLinkGenerator({
         requiresEmail: requireEmail,
         allowedEmails: emails.length > 0 ? emails : null,
       });
-      
+
       return response.json();
     },
     onSuccess: (data: ShareLink) => {
       setGeneratedLink(data);
       onLinkCreated?.(data);
       toast({
-        title: 'Link Created',
-        description: 'Your shareable link has been generated',
+        title: "Link Created",
+        description: "Your shareable link has been generated",
       });
     },
     onError: (error: Error) => {
       toast({
-        variant: 'destructive',
-        title: 'Failed to Create Link',
-        description: error.message || 'An error occurred',
+        variant: "destructive",
+        title: "Failed to Create Link",
+        description: error.message || "An error occurred",
       });
     },
   });
 
-  const copyToClipboard = useCallback(async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      toast({
-        title: 'Copied!',
-        description: 'Link copied to clipboard',
-      });
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast({
-        variant: 'destructive',
-        title: 'Copy Failed',
-        description: 'Failed to copy to clipboard',
-      });
-    }
-  }, [toast]);
+  const copyToClipboard = useCallback(
+    async (text: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        toast({
+          title: "Copied!",
+          description: "Link copied to clipboard",
+        });
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Copy Failed",
+          description: "Failed to copy to clipboard",
+        });
+      }
+    },
+    [toast],
+  );
 
   const generatePassword = useCallback(() => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-    let result = '';
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    let result = "";
     for (let i = 0; i < 12; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -262,7 +271,7 @@ export function ShareLinkGenerator({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-700">
-                    {EXPIRATION_OPTIONS.map(opt => (
+                    {EXPIRATION_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>
@@ -270,7 +279,7 @@ export function ShareLinkGenerator({
                   </SelectContent>
                 </Select>
 
-                {expiration === 'custom' && (
+                {expiration === "custom" && (
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -278,7 +287,7 @@ export function ShareLinkGenerator({
                         className="w-full justify-start text-left border-zinc-700 bg-zinc-900"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDate ? format(customDate, 'PPP') : 'Pick a date'}
+                        {customDate ? format(customDate, "PPP") : "Pick a date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 bg-zinc-900 border-zinc-700">
@@ -303,9 +312,14 @@ export function ShareLinkGenerator({
                       <Lock className="h-4 w-4 text-amber-400" />
                       Password Protection
                     </Label>
-                    <p className="text-xs text-zinc-500">Require password to access</p>
+                    <p className="text-xs text-zinc-500">
+                      Require password to access
+                    </p>
                   </div>
-                  <Switch checked={enablePassword} onCheckedChange={setEnablePassword} />
+                  <Switch
+                    checked={enablePassword}
+                    onCheckedChange={setEnablePassword}
+                  />
                 </div>
 
                 {enablePassword && (
@@ -313,7 +327,7 @@ export function ShareLinkGenerator({
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <Input
-                          type={showPassword ? 'text' : 'password'}
+                          type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Enter password"
@@ -361,7 +375,7 @@ export function ShareLinkGenerator({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-700">
-                    {DOWNLOAD_LIMIT_OPTIONS.map(opt => (
+                    {DOWNLOAD_LIMIT_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value.toString()}>
                         {opt.label}
                       </SelectItem>
@@ -379,9 +393,14 @@ export function ShareLinkGenerator({
                       <Mail className="h-4 w-4 text-green-400" />
                       Require Email
                     </Label>
-                    <p className="text-xs text-zinc-500">Collect email before download</p>
+                    <p className="text-xs text-zinc-500">
+                      Collect email before download
+                    </p>
                   </div>
-                  <Switch checked={requireEmail} onCheckedChange={setRequireEmail} />
+                  <Switch
+                    checked={requireEmail}
+                    onCheckedChange={setRequireEmail}
+                  />
                 </div>
 
                 {requireEmail && (
@@ -402,7 +421,9 @@ export function ShareLinkGenerator({
               <Button
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 onClick={() => generateMutation.mutate()}
-                disabled={generateMutation.isPending || (enablePassword && !password)}
+                disabled={
+                  generateMutation.isPending || (enablePassword && !password)
+                }
               >
                 {generateMutation.isPending ? (
                   <>
@@ -469,8 +490,8 @@ export function ShareLinkGenerator({
                   </div>
                   <p className="font-medium">
                     {generatedLink.expiresAt
-                      ? format(new Date(generatedLink.expiresAt), 'PPP')
-                      : 'Never'}
+                      ? format(new Date(generatedLink.expiresAt), "PPP")
+                      : "Never"}
                   </p>
                 </div>
                 <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
@@ -479,7 +500,7 @@ export function ShareLinkGenerator({
                     Downloads
                   </div>
                   <p className="font-medium">
-                    {generatedLink.maxDownloads || 'Unlimited'}
+                    {generatedLink.maxDownloads || "Unlimited"}
                   </p>
                 </div>
                 <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
@@ -492,7 +513,7 @@ export function ShareLinkGenerator({
                     Password
                   </div>
                   <p className="font-medium">
-                    {generatedLink.isPasswordProtected ? 'Protected' : 'None'}
+                    {generatedLink.isPasswordProtected ? "Protected" : "None"}
                   </p>
                 </div>
                 <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
@@ -501,7 +522,7 @@ export function ShareLinkGenerator({
                     Email
                   </div>
                   <p className="font-medium">
-                    {generatedLink.requiresEmail ? 'Required' : 'Not required'}
+                    {generatedLink.requiresEmail ? "Required" : "Not required"}
                   </p>
                 </div>
               </div>
@@ -541,7 +562,7 @@ export function ShareLinkGenerator({
                 <Button
                   className="flex-1"
                   onClick={() => {
-                    window.open(generatedLink.url, '_blank');
+                    window.open(generatedLink.url, "_blank");
                   }}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
@@ -567,7 +588,8 @@ const ShareLinkRow = memo(function ShareLinkRow({
 }) {
   const [copied, setCopied] = useState(false);
   const isExpired = link.expiresAt && new Date(link.expiresAt) < new Date();
-  const isLimitReached = link.maxDownloads && link.downloadCount >= link.maxDownloads;
+  const isLimitReached =
+    link.maxDownloads && link.downloadCount >= link.maxDownloads;
   const isDisabled = !link.isActive || isExpired || isLimitReached;
 
   const handleCopy = useCallback(() => {
@@ -577,12 +599,14 @@ const ShareLinkRow = memo(function ShareLinkRow({
   }, [link.url, onCopyLink]);
 
   return (
-    <div className={cn(
-      "p-4 rounded-lg border transition-all",
-      isDisabled
-        ? "bg-zinc-900/50 border-zinc-800 opacity-60"
-        : "bg-zinc-900 border-zinc-800 hover:border-zinc-700"
-    )}>
+    <div
+      className={cn(
+        "p-4 rounded-lg border transition-all",
+        isDisabled
+          ? "bg-zinc-900/50 border-zinc-800 opacity-60"
+          : "bg-zinc-900 border-zinc-800 hover:border-zinc-700",
+      )}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -593,12 +617,16 @@ const ShareLinkRow = memo(function ShareLinkRow({
             )}
             {isDisabled && (
               <Badge variant="destructive" className="text-[10px]">
-                {!link.isActive ? 'Revoked' : isExpired ? 'Expired' : 'Limit Reached'}
+                {!link.isActive
+                  ? "Revoked"
+                  : isExpired
+                    ? "Expired"
+                    : "Limit Reached"}
               </Badge>
             )}
           </div>
           <p className="text-xs text-zinc-500 font-mono truncate">{link.url}</p>
-          
+
           <div className="flex items-center gap-4 mt-2 text-xs text-zinc-500">
             <span className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
@@ -606,12 +634,15 @@ const ShareLinkRow = memo(function ShareLinkRow({
             </span>
             <span className="flex items-center gap-1">
               <Download className="h-3 w-3" />
-              {link.downloadCount}{link.maxDownloads ? `/${link.maxDownloads}` : ''} downloads
+              {link.downloadCount}
+              {link.maxDownloads ? `/${link.maxDownloads}` : ""} downloads
             </span>
             {link.expiresAt && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {isExpired ? 'Expired' : `Expires ${format(new Date(link.expiresAt), 'MMM d')}`}
+                {isExpired
+                  ? "Expired"
+                  : `Expires ${format(new Date(link.expiresAt), "MMM d")}`}
               </span>
             )}
           </div>
@@ -653,8 +684,8 @@ export function ShareLinkList({
   onCopyLink,
   className,
 }: ShareLinkListProps) {
-  const activeLinks = links.filter(l => l.isActive);
-  const inactiveLinks = links.filter(l => !l.isActive);
+  const activeLinks = links.filter((l) => l.isActive);
+  const inactiveLinks = links.filter((l) => !l.isActive);
 
   if (links.length === 0) {
     return (
@@ -664,7 +695,9 @@ export function ShareLinkList({
             <Link2 className="h-8 w-8 text-zinc-600" />
           </div>
           <h3 className="font-medium text-zinc-400">No Shared Links</h3>
-          <p className="text-sm text-zinc-600 mt-1">Create a link to share your files</p>
+          <p className="text-sm text-zinc-600 mt-1">
+            Create a link to share your files
+          </p>
         </CardContent>
       </Card>
     );
@@ -689,7 +722,7 @@ export function ShareLinkList({
                 <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
                   Active Links
                 </h4>
-                {activeLinks.map(link => (
+                {activeLinks.map((link) => (
                   <ShareLinkRow
                     key={link.id}
                     link={link}
@@ -699,13 +732,13 @@ export function ShareLinkList({
                 ))}
               </div>
             )}
-            
+
             {inactiveLinks.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mt-4">
                   Inactive Links
                 </h4>
-                {inactiveLinks.map(link => (
+                {inactiveLinks.map((link) => (
                   <ShareLinkRow
                     key={link.id}
                     link={link}

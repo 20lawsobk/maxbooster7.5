@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Command, Keyboard } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useDialogContainer } from '@/components/ui/dialog';
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Command, Keyboard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useDialogContainer } from "@/components/ui/dialog";
 
 interface ShortcutCategory {
   name: string;
@@ -16,97 +16,97 @@ interface ShortcutCategory {
 
 const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
   {
-    name: 'Transport',
+    name: "Transport",
     shortcuts: [
-      { keys: ['Space'], description: 'Play / Pause' },
-      { keys: ['S'], description: 'Stop' },
-      { keys: ['R'], description: 'Toggle Record' },
-      { keys: ['L'], description: 'Toggle Loop' },
-      { keys: ['K'], description: 'Toggle Metronome' },
-      { keys: [','], description: 'Skip Back' },
-      { keys: ['.'], description: 'Skip Forward' },
-      { keys: ['Home'], description: 'Go to Start' },
-      { keys: ['End'], description: 'Go to End' },
+      { keys: ["Space"], description: "Play / Pause" },
+      { keys: ["S"], description: "Stop" },
+      { keys: ["R"], description: "Toggle Record" },
+      { keys: ["L"], description: "Toggle Loop" },
+      { keys: ["K"], description: "Toggle Metronome" },
+      { keys: [","], description: "Skip Back" },
+      { keys: ["."], description: "Skip Forward" },
+      { keys: ["Home"], description: "Go to Start" },
+      { keys: ["End"], description: "Go to End" },
     ],
   },
   {
-    name: 'Navigation',
+    name: "Navigation",
     shortcuts: [
-      { keys: ['F'], description: 'Toggle Autoscroll Mode' },
-      { keys: ['Ctrl', '+'], description: 'Zoom In' },
-      { keys: ['Ctrl', '-'], description: 'Zoom Out' },
-      { keys: ['Ctrl', '0'], description: 'Zoom to Fit' },
-      { keys: ['['], description: 'Previous Marker' },
-      { keys: [']'], description: 'Next Marker' },
-      { keys: ['Scroll'], description: 'Horizontal Scroll' },
-      { keys: ['Ctrl', 'Scroll'], description: 'Zoom Timeline' },
+      { keys: ["F"], description: "Toggle Autoscroll Mode" },
+      { keys: ["Ctrl", "+"], description: "Zoom In" },
+      { keys: ["Ctrl", "-"], description: "Zoom Out" },
+      { keys: ["Ctrl", "0"], description: "Zoom to Fit" },
+      { keys: ["["], description: "Previous Marker" },
+      { keys: ["]"], description: "Next Marker" },
+      { keys: ["Scroll"], description: "Horizontal Scroll" },
+      { keys: ["Ctrl", "Scroll"], description: "Zoom Timeline" },
     ],
   },
   {
-    name: 'Track Controls',
+    name: "Track Controls",
     shortcuts: [
-      { keys: ['M'], description: 'Mute Selected Track' },
-      { keys: ['O'], description: 'Solo Selected Track' },
-      { keys: ['T'], description: 'Add New Audio Track' },
-      { keys: ['↑'], description: 'Select Previous Track' },
-      { keys: ['↓'], description: 'Select Next Track' },
-      { keys: ['E'], description: 'Toggle Inspector/Effects' },
+      { keys: ["M"], description: "Mute Selected Track" },
+      { keys: ["O"], description: "Solo Selected Track" },
+      { keys: ["T"], description: "Add New Audio Track" },
+      { keys: ["↑"], description: "Select Previous Track" },
+      { keys: ["↓"], description: "Select Next Track" },
+      { keys: ["E"], description: "Toggle Inspector/Effects" },
     ],
   },
   {
-    name: 'Editing',
+    name: "Editing",
     shortcuts: [
-      { keys: ['Ctrl', 'Z'], description: 'Undo' },
-      { keys: ['Ctrl', 'Y'], description: 'Redo' },
-      { keys: ['Ctrl', 'Shift', 'Z'], description: 'Redo (Alt)' },
-      { keys: ['Ctrl', 'C'], description: 'Copy' },
-      { keys: ['Ctrl', 'V'], description: 'Paste' },
-      { keys: ['Ctrl', 'X'], description: 'Cut' },
-      { keys: ['Ctrl', 'D'], description: 'Duplicate' },
-      { keys: ['Ctrl', 'A'], description: 'Select All' },
-      { keys: ['Delete'], description: 'Delete Selected' },
-      { keys: ['Esc'], description: 'Clear Selection' },
+      { keys: ["Ctrl", "Z"], description: "Undo" },
+      { keys: ["Ctrl", "Y"], description: "Redo" },
+      { keys: ["Ctrl", "Shift", "Z"], description: "Redo (Alt)" },
+      { keys: ["Ctrl", "C"], description: "Copy" },
+      { keys: ["Ctrl", "V"], description: "Paste" },
+      { keys: ["Ctrl", "X"], description: "Cut" },
+      { keys: ["Ctrl", "D"], description: "Duplicate" },
+      { keys: ["Ctrl", "A"], description: "Select All" },
+      { keys: ["Delete"], description: "Delete Selected" },
+      { keys: ["Esc"], description: "Clear Selection" },
     ],
   },
   {
-    name: 'Tools (Number Keys)',
+    name: "Tools (Number Keys)",
     shortcuts: [
-      { keys: ['1'], description: 'Selection Tool' },
-      { keys: ['2'], description: 'Range Selection Tool' },
-      { keys: ['3'], description: 'Draw/Pencil Tool' },
-      { keys: ['4'], description: 'Eraser Tool' },
-      { keys: ['5'], description: 'Split Tool' },
+      { keys: ["1"], description: "Selection Tool" },
+      { keys: ["2"], description: "Range Selection Tool" },
+      { keys: ["3"], description: "Draw/Pencil Tool" },
+      { keys: ["4"], description: "Eraser Tool" },
+      { keys: ["5"], description: "Split Tool" },
     ],
   },
   {
-    name: 'Grid & Snap',
+    name: "Grid & Snap",
     shortcuts: [
-      { keys: ['N'], description: 'Toggle Snap to Grid' },
-      { keys: ['G'], description: 'Finer Grid' },
-      { keys: ['Shift', 'G'], description: 'Coarser Grid' },
+      { keys: ["N"], description: "Toggle Snap to Grid" },
+      { keys: ["G"], description: "Finer Grid" },
+      { keys: ["Shift", "G"], description: "Coarser Grid" },
     ],
   },
   {
-    name: 'View & Panels',
+    name: "View & Panels",
     shortcuts: [
-      { keys: ['B'], description: 'Toggle Browser Panel' },
-      { keys: ['I'], description: 'Toggle Inspector' },
-      { keys: ['Shift', 'R'], description: 'Toggle Routing Matrix' },
-      { keys: ['Ctrl', 'U'], description: 'Upload Audio Files' },
+      { keys: ["B"], description: "Toggle Browser Panel" },
+      { keys: ["I"], description: "Toggle Inspector" },
+      { keys: ["Shift", "R"], description: "Toggle Routing Matrix" },
+      { keys: ["Ctrl", "U"], description: "Upload Audio Files" },
     ],
   },
   {
-    name: 'Lyrics',
+    name: "Lyrics",
     shortcuts: [
-      { keys: ['Y'], description: 'Toggle Lyrics Display' },
-      { keys: ['Alt', 'Enter'], description: 'Snap Lyric to Playhead' },
+      { keys: ["Y"], description: "Toggle Lyrics Display" },
+      { keys: ["Alt", "Enter"], description: "Snap Lyric to Playhead" },
     ],
   },
   {
-    name: 'File & Project',
+    name: "File & Project",
     shortcuts: [
-      { keys: ['Ctrl', 'S'], description: 'Save Project' },
-      { keys: ['?'], description: 'Show Keyboard Shortcuts' },
+      { keys: ["Ctrl", "S"], description: "Save Project" },
+      { keys: ["?"], description: "Show Keyboard Shortcuts" },
     ],
   },
 ];
@@ -116,21 +116,24 @@ interface KeyboardShortcutsOverlayProps {
   onClose: () => void;
 }
 
-export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsOverlayProps) {
+export function KeyboardShortcutsOverlay({
+  isOpen,
+  onClose,
+}: KeyboardShortcutsOverlayProps) {
   const container = useDialogContainer();
-  
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
-      if (e.key === '?' && !isOpen) {
+      if (e.key === "?" && !isOpen) {
         e.preventDefault();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   const overlayContent = (
@@ -153,31 +156,40 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
           <motion.div
             className="relative z-10 w-full max-w-4xl max-h-[85vh] rounded-xl overflow-hidden"
             style={{
-              background: 'var(--studio-bg-medium)',
-              border: '1px solid var(--studio-border)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              background: "var(--studio-bg-medium)",
+              border: "1px solid var(--studio-border)",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
             }}
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
             <div
               className="flex items-center justify-between px-6 py-4 border-b"
-              style={{ borderColor: 'var(--studio-border)' }}
+              style={{ borderColor: "var(--studio-border)" }}
             >
               <div className="flex items-center gap-3">
                 <div
                   className="p-2 rounded-lg"
-                  style={{ background: 'var(--studio-accent)', color: '#ffffff' }}
+                  style={{
+                    background: "var(--studio-accent)",
+                    color: "#ffffff",
+                  }}
                 >
                   <Keyboard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold" style={{ color: 'var(--studio-text)' }}>
+                  <h2
+                    className="text-lg font-bold"
+                    style={{ color: "var(--studio-text)" }}
+                  >
                     Keyboard Shortcuts
                   </h2>
-                  <p className="text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Quick reference for all studio shortcuts
                   </p>
                 </div>
@@ -200,15 +212,15 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
                     key={category.name}
                     className="rounded-lg p-4"
                     style={{
-                      background: 'var(--studio-bg-deep)',
-                      border: '1px solid var(--studio-border)',
+                      background: "var(--studio-bg-deep)",
+                      border: "1px solid var(--studio-border)",
                     }}
                   >
                     <h3
                       className="text-sm font-bold uppercase tracking-wider mb-3 pb-2 border-b"
                       style={{
-                        color: 'var(--studio-accent)',
-                        borderColor: 'var(--studio-border)',
+                        color: "var(--studio-accent)",
+                        borderColor: "var(--studio-border)",
                       }}
                     >
                       {category.name}
@@ -222,7 +234,7 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
                         >
                           <span
                             className="text-sm"
-                            style={{ color: 'var(--studio-text-muted)' }}
+                            style={{ color: "var(--studio-text-muted)" }}
                           >
                             {shortcut.description}
                           </span>
@@ -232,13 +244,14 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
                                 <kbd
                                   className="px-2 py-0.5 rounded text-[11px] font-mono font-medium"
                                   style={{
-                                    background: 'var(--studio-surface)',
-                                    color: 'var(--studio-text)',
-                                    border: '1px solid var(--studio-border)',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                                    background: "var(--studio-surface)",
+                                    color: "var(--studio-text)",
+                                    border: "1px solid var(--studio-border)",
+                                    boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
                                   }}
                                 >
-                                  {key === 'Ctrl' && navigator.platform.includes('Mac') ? (
+                                  {key === "Ctrl" &&
+                                  navigator.platform.includes("Mac") ? (
                                     <span className="flex items-center gap-0.5">
                                       <Command className="w-3 h-3" />
                                     </span>
@@ -249,7 +262,9 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
                                 {keyIdx < shortcut.keys.length - 1 && (
                                   <span
                                     className="mx-0.5 text-xs"
-                                    style={{ color: 'var(--studio-text-muted)' }}
+                                    style={{
+                                      color: "var(--studio-text-muted)",
+                                    }}
                                   >
                                     +
                                   </span>
@@ -268,15 +283,41 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
             <div
               className="px-6 py-3 border-t flex items-center justify-between"
               style={{
-                borderColor: 'var(--studio-border)',
-                background: 'var(--studio-bg-deep)',
+                borderColor: "var(--studio-border)",
+                background: "var(--studio-bg-deep)",
               }}
             >
-              <span className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
-                Press <kbd className="px-1.5 py-0.5 rounded text-[10px] mx-1" style={{ background: 'var(--studio-surface)', border: '1px solid var(--studio-border)' }}>?</kbd> to toggle this overlay
+              <span
+                className="text-xs"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
+                Press{" "}
+                <kbd
+                  className="px-1.5 py-0.5 rounded text-[10px] mx-1"
+                  style={{
+                    background: "var(--studio-surface)",
+                    border: "1px solid var(--studio-border)",
+                  }}
+                >
+                  ?
+                </kbd>{" "}
+                to toggle this overlay
               </span>
-              <span className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
-                Press <kbd className="px-1.5 py-0.5 rounded text-[10px] mx-1" style={{ background: 'var(--studio-surface)', border: '1px solid var(--studio-border)' }}>Esc</kbd> to close
+              <span
+                className="text-xs"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
+                Press{" "}
+                <kbd
+                  className="px-1.5 py-0.5 rounded text-[10px] mx-1"
+                  style={{
+                    background: "var(--studio-surface)",
+                    border: "1px solid var(--studio-border)",
+                  }}
+                >
+                  Esc
+                </kbd>{" "}
+                to close
               </span>
             </div>
           </motion.div>
@@ -292,7 +333,13 @@ export function KeyboardShortcutsOverlay({ isOpen, onClose }: KeyboardShortcutsO
   return overlayContent;
 }
 
-export function KeyboardShortcutHint({ keys, className = '' }: { keys: string[]; className?: string }) {
+export function KeyboardShortcutHint({
+  keys,
+  className = "",
+}: {
+  keys: string[];
+  className?: string;
+}) {
   return (
     <span className={`inline-flex items-center gap-0.5 ${className}`}>
       {keys.map((key, idx) => (
@@ -300,15 +347,18 @@ export function KeyboardShortcutHint({ keys, className = '' }: { keys: string[];
           <kbd
             className="px-1 py-0.5 rounded text-[9px] font-mono"
             style={{
-              background: 'var(--studio-surface)',
-              color: 'var(--studio-text-muted)',
-              border: '1px solid var(--studio-border)',
+              background: "var(--studio-surface)",
+              color: "var(--studio-text-muted)",
+              border: "1px solid var(--studio-border)",
             }}
           >
-            {key === 'Ctrl' && navigator.platform.includes('Mac') ? '⌘' : key}
+            {key === "Ctrl" && navigator.platform.includes("Mac") ? "⌘" : key}
           </kbd>
           {idx < keys.length - 1 && (
-            <span className="text-[9px] mx-0.5" style={{ color: 'var(--studio-text-muted)' }}>
+            <span
+              className="text-[9px] mx-0.5"
+              style={{ color: "var(--studio-text-muted)" }}
+            >
               +
             </span>
           )}

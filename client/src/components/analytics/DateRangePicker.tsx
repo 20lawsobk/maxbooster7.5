@@ -1,13 +1,13 @@
-import { useState, useCallback } from 'react';
-import { Calendar, ChevronDown, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState, useCallback } from "react";
+import { Calendar, ChevronDown, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface DatePreset {
   label: string;
@@ -16,14 +16,14 @@ interface DatePreset {
 }
 
 const DATE_PRESETS: DatePreset[] = [
-  { label: 'Today', value: '1d', days: 1 },
-  { label: 'Last 7 days', value: '7d', days: 7 },
-  { label: 'Last 14 days', value: '14d', days: 14 },
-  { label: 'Last 30 days', value: '30d', days: 30 },
-  { label: 'Last 90 days', value: '90d', days: 90 },
-  { label: 'Last 6 months', value: '180d', days: 180 },
-  { label: 'Last year', value: '365d', days: 365 },
-  { label: 'All time', value: 'all', days: -1 },
+  { label: "Today", value: "1d", days: 1 },
+  { label: "Last 7 days", value: "7d", days: 7 },
+  { label: "Last 14 days", value: "14d", days: 14 },
+  { label: "Last 30 days", value: "30d", days: 30 },
+  { label: "Last 90 days", value: "90d", days: 90 },
+  { label: "Last 6 months", value: "180d", days: 180 },
+  { label: "Last year", value: "365d", days: 365 },
+  { label: "All time", value: "all", days: -1 },
 ];
 
 interface DateRangePickerProps {
@@ -45,28 +45,33 @@ export function DateRangePicker({
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const currentPreset = DATE_PRESETS.find(p => p.value === value) || DATE_PRESETS[3];
+  const currentPreset =
+    DATE_PRESETS.find((p) => p.value === value) || DATE_PRESETS[3];
 
-  const handleSelect = useCallback((preset: DatePreset) => {
-    onChange(preset.value);
-    setIsOpen(false);
-  }, [onChange]);
+  const handleSelect = useCallback(
+    (preset: DatePreset) => {
+      onChange(preset.value);
+      setIsOpen(false);
+    },
+    [onChange],
+  );
 
   const getDateRangeText = useCallback(() => {
     const now = new Date();
-    const preset = DATE_PRESETS.find(p => p.value === value);
-    if (!preset) return 'Custom range';
-    if (preset.days === -1) return 'All time';
-    
+    const preset = DATE_PRESETS.find((p) => p.value === value);
+    if (!preset) return "Custom range";
+    if (preset.days === -1) return "All time";
+
     const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - preset.days);
-    
-    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: preset.days > 90 ? 'numeric' : undefined 
-    });
-    
+
+    const formatDate = (date: Date) =>
+      date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: preset.days > 90 ? "numeric" : undefined,
+      });
+
     return `${formatDate(startDate)} - ${formatDate(now)}`;
   }, [value]);
 
@@ -77,7 +82,7 @@ export function DateRangePicker({
           variant="outline"
           className={cn(
             "justify-between min-w-[200px] bg-white dark:bg-slate-900",
-            className
+            className,
           )}
         >
           <div className="flex items-center gap-2">
@@ -91,7 +96,7 @@ export function DateRangePicker({
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold">Select Date Range</span>
-            {value !== '30d' && (
+            {value !== "30d" && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -114,7 +119,7 @@ export function DateRangePicker({
                 size="sm"
                 className={cn(
                   "justify-start h-9",
-                  value === preset.value && "bg-primary/10 text-primary"
+                  value === preset.value && "bg-primary/10 text-primary",
                 )}
                 onClick={() => handleSelect(preset)}
               >
@@ -167,7 +172,7 @@ export function QuickDateFilters({
           size="sm"
           className={cn(
             "h-7 text-xs",
-            value === preset.value && "bg-primary text-primary-foreground"
+            value === preset.value && "bg-primary text-primary-foreground",
           )}
           onClick={() => onChange(preset.value)}
         >

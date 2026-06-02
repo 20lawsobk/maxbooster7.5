@@ -16,8 +16,11 @@ import {
   CLASS_IN,
   RCODE_FORMERR,
   TYPE,
-  DnsHeader, DnsQuestion, DnsRecord, DnsPacket,
-} from './types.js';
+  DnsHeader,
+  DnsQuestion,
+  DnsRecord,
+  DnsPacket,
+} from "./types.js";
 
 // ── Reader helper ──────────────────────────────────────────────────────────
 
@@ -25,9 +28,19 @@ class Reader {
   pos = 0;
   constructor(public buf: Buffer) {}
 
-  u8():  number { return this.buf.readUInt8(this.pos++); }
-  u16(): number { const v = this.buf.readUInt16BE(this.pos); this.pos += 2; return v; }
-  u32(): number { const v = this.buf.readUInt32BE(this.pos); this.pos += 4; return v; }
+  u8(): number {
+    return this.buf.readUInt8(this.pos++);
+  }
+  u16(): number {
+    const v = this.buf.readUInt16BE(this.pos);
+    this.pos += 2;
+    return v;
+  }
+  u32(): number {
+    const v = this.buf.readUInt32BE(this.pos);
+    this.pos += 4;
+    return v;
+  }
 
   slice(len: number): Buffer {
     const s = this.buf.slice(this.pos, this.pos + len);
@@ -53,8 +66,8 @@ class Reader {
       }
 
       // Compression pointer: top 2 bits = 11
-      if ((len & 0xC0) === 0xC0) {
-        const offset = ((len & 0x3F) << 8) | this.buf.readUInt8(p + 1);
+      if ((len & 0xc0) === 0xc0) {
+        const offset = ((len & 0x3f) << 8) | this.buf.readUInt8(p + 1);
         if (!jumped) this.pos = p + 2;
         if (visited.has(offset)) break; // loop guard
         visited.add(offset);
@@ -64,11 +77,11 @@ class Reader {
       }
 
       p++;
-      labels.push(this.buf.slice(p, p + len).toString('ascii'));
+      labels.push(this.buf.slice(p, p + len).toString("ascii"));
       p += len;
     }
 
-    return labels.length ? labels.join('.') : '.';
+    return labels.length ? labels.join(".") : ".";
   }
 }
 
@@ -77,25 +90,46 @@ class Reader {
 class Writer {
   parts: Buffer[] = [];
 
-  u8(v: number)  { const b = Buffer.alloc(1); b.writeUInt8(v, 0);         this.parts.push(b); }
-  u16(v: number) { const b = Buffer.alloc(2); b.writeUInt16BE(v, 0);      this.parts.push(b); }
-  u32(v: number) { const b = Buffer.alloc(4); b.writeUInt32BE(v, 0);      this.parts.push(b); }
-  raw(b: Buffer) { this.parts.push(b); }
+  u8(v: number) {
+    const b = Buffer.alloc(1);
+    b.writeUInt8(v, 0);
+    this.parts.push(b);
+  }
+  u16(v: number) {
+    const b = Buffer.alloc(2);
+    b.writeUInt16BE(v, 0);
+    this.parts.push(b);
+  }
+  u32(v: number) {
+    const b = Buffer.alloc(4);
+    b.writeUInt32BE(v, 0);
+    this.parts.push(b);
+  }
+  raw(b: Buffer) {
+    this.parts.push(b);
+  }
 
   /** Write a DNS name as uncompressed labels. */
   name(n: string) {
-    const fqdn = n.endsWith('.') ? n.slice(0, -1) : n;
-    if (!fqdn || fqdn === '.') { this.u8(0); return; }
-    for (const label of fqdn.toLowerCase().split('.')) {
-      const lb = Buffer.from(label, 'ascii');
+    const fqdn = n.endsWith(".") ? n.slice(0, -1) : n;
+    if (!fqdn || fqdn === ".") {
+      this.u8(0);
+      return;
+    }
+    for (const label of fqdn.toLowerCase().split(".")) {
+      const lb = Buffer.from(label, "ascii");
       this.u8(lb.length);
       this.raw(lb);
     }
     this.u8(0);
   }
 
-  build(): Buffer { return Buffer.concat(this.parts); }
-  byteLength(): number { return this.parts.reduce((s, b) => s + b.length, 0); }
+  build(): Buffer {
+    return Buffer.concat(this.parts);
+  }
+  byteLength(): number {
+    return this.parts.reduce((s, b) => s + b.length, 0);
+  }
 }
 
 // ── Parse ──────────────────────────────────────────────────────────────────
@@ -103,42 +137,42 @@ class Writer {
 export function parsePacket(buf: Buffer): DnsPacket {
   const r = new Reader(buf);
 
-  const id     = r.u16();
-  const flags  = r.u16();
-  const qdcnt  = r.u16();
-  const ancnt  = r.u16();
-  const nscnt  = r.u16();
-  const arcnt  = r.u16();
+  const id = r.u16();
+  const flags = r.u16();
+  const qdcnt = r.u16();
+  const ancnt = r.u16();
+  const nscnt = r.u16();
+  const arcnt = r.u16();
 
   const header: DnsHeader = {
     id,
-    qr:     (flags >> 15) & 1,
-    opcode: (flags >> 11) & 0xF,
-    aa:     (flags >> 10) & 1,
-    tc:     (flags >>  9) & 1,
-    rd:     (flags >>  8) & 1,
-    ra:     (flags >>  7) & 1,
-    z:      (flags >>  6) & 1,
-    ad:     (flags >>  5) & 1,
-    cd:     (flags >>  4) & 1,
-    rcode:  flags & 0xF,
+    qr: (flags >> 15) & 1,
+    opcode: (flags >> 11) & 0xf,
+    aa: (flags >> 10) & 1,
+    tc: (flags >> 9) & 1,
+    rd: (flags >> 8) & 1,
+    ra: (flags >> 7) & 1,
+    z: (flags >> 6) & 1,
+    ad: (flags >> 5) & 1,
+    cd: (flags >> 4) & 1,
+    rcode: flags & 0xf,
   };
 
   const questions: DnsQuestion[] = [];
   for (let i = 0; i < qdcnt; i++) {
-    const name  = r.name();
-    const type  = r.u16();
-    const cls   = r.u16();
+    const name = r.name();
+    const type = r.u16();
+    const cls = r.u16();
     questions.push({ name, type, class: cls });
   }
 
   function readRRs(count: number): DnsRecord[] {
     const rrs: DnsRecord[] = [];
     for (let i = 0; i < count; i++) {
-      const name  = r.name();
-      const type  = r.u16();
-      const cls   = r.u16();
-      const ttl   = r.u32();
+      const name = r.name();
+      const type = r.u16();
+      const cls = r.u16();
+      const ttl = r.u32();
       const rdlen = r.u16();
       const rdata = r.slice(rdlen);
       rrs.push({ name, type, class: cls, ttl, rdata });
@@ -149,8 +183,8 @@ export function parsePacket(buf: Buffer): DnsPacket {
   return {
     header,
     questions,
-    answers:    readRRs(ancnt),
-    authority:  readRRs(nscnt),
+    answers: readRRs(ancnt),
+    authority: readRRs(nscnt),
     additional: readRRs(arcnt),
     raw: buf,
   };
@@ -161,8 +195,11 @@ export function parsePacket(buf: Buffer): DnsPacket {
 /** Encode an IPv4 address string as 4-byte RDATA. */
 export function rdataA(ip: string): Buffer {
   const b = Buffer.alloc(4);
-  const parts = ip.split('.').map(Number);
-  b[0] = parts[0]; b[1] = parts[1]; b[2] = parts[2]; b[3] = parts[3];
+  const parts = ip.split(".").map(Number);
+  b[0] = parts[0];
+  b[1] = parts[1];
+  b[2] = parts[2];
+  b[3] = parts[3];
   return b;
 }
 
@@ -178,12 +215,13 @@ export function rdataAAAA(ip: string): Buffer {
 }
 
 function expandIPv6(ip: string): number[] {
-  const halves = ip.split('::');
-  const expand = (s: string) => s ? s.split(':').map(g => parseInt(g || '0', 16)) : [];
+  const halves = ip.split("::");
+  const expand = (s: string) =>
+    s ? s.split(":").map((g) => parseInt(g || "0", 16)) : [];
   if (halves.length === 2) {
-    const left  = expand(halves[0]);
+    const left = expand(halves[0]);
     const right = expand(halves[1]);
-    const mid   = Array(8 - left.length - right.length).fill(0);
+    const mid = Array(8 - left.length - right.length).fill(0);
     return [...left, ...mid, ...right];
   }
   return expand(ip);
@@ -198,7 +236,8 @@ export function rdataName(name: string): Buffer {
 
 /** Encode SOA RDATA: mname rname serial refresh retry expire minimum */
 export function rdataSOA(value: string): Buffer {
-  const [mname, rname, serialS, refreshS, retryS, expireS, minimumS] = value.split(/\s+/);
+  const [mname, rname, serialS, refreshS, retryS, expireS, minimumS] =
+    value.split(/\s+/);
   const w = new Writer();
   w.name(mname);
   w.name(rname);
@@ -214,10 +253,10 @@ export function rdataSOA(value: string): Buffer {
 export function rdataTXT(value: string): Buffer {
   const parts: Buffer[] = [];
   // Split into 255-byte chunks
-  const text = value.replace(/^"(.*)"$/, '$1');
+  const text = value.replace(/^"(.*)"$/, "$1");
   let offset = 0;
   while (offset < text.length) {
-    const chunk = Buffer.from(text.slice(offset, offset + 255), 'utf8');
+    const chunk = Buffer.from(text.slice(offset, offset + 255), "utf8");
     parts.push(Buffer.from([chunk.length]), chunk);
     offset += 255;
   }
@@ -235,13 +274,13 @@ export function rdataMX(value: string, priority = 10): Buffer {
 /** Encode CAA RDATA: 1-byte flags, 1-byte tag length, tag, value */
 export function rdataCAA(value: string): Buffer {
   // Format: "0 issue \"letsencrypt.org\""
-  const parts  = value.match(/^(\d+)\s+(\w+)\s+"?([^"]*)"?$/) || [];
-  const flags  = parseInt(parts[1] ?? '0');
-  const tag    = parts[2] ?? 'issue';
-  const val    = parts[3] ?? '';
-  const tagBuf = Buffer.from(tag, 'ascii');
-  const valBuf = Buffer.from(val, 'ascii');
-  const b      = Buffer.alloc(2 + tagBuf.length + valBuf.length);
+  const parts = value.match(/^(\d+)\s+(\w+)\s+"?([^"]*)"?$/) || [];
+  const flags = parseInt(parts[1] ?? "0");
+  const tag = parts[2] ?? "issue";
+  const val = parts[3] ?? "";
+  const tagBuf = Buffer.from(tag, "ascii");
+  const valBuf = Buffer.from(val, "ascii");
+  const b = Buffer.alloc(2 + tagBuf.length + valBuf.length);
   b[0] = flags;
   b[1] = tagBuf.length;
   tagBuf.copy(b, 2);
@@ -252,35 +291,43 @@ export function rdataCAA(value: string): Buffer {
 // ── Encode a full DNS response packet ─────────────────────────────────────
 
 export interface EncodeOpts {
-  id:         number;
-  opcode?:    number;
-  aa?:        number;
-  tc?:        number;
-  rd?:        number;
-  ra?:        number;
-  ad?:        number;
-  rcode?:     number;
-  questions:  DnsQuestion[];
-  answers:    DnsRecord[];
-  authority:  DnsRecord[];
+  id: number;
+  opcode?: number;
+  aa?: number;
+  tc?: number;
+  rd?: number;
+  ra?: number;
+  ad?: number;
+  rcode?: number;
+  questions: DnsQuestion[];
+  answers: DnsRecord[];
+  authority: DnsRecord[];
   additional: DnsRecord[];
 }
 
 export function encodePacket(opts: EncodeOpts): Buffer {
   const w = new Writer();
 
-  const qr     = 1;
+  const qr = 1;
   const opcode = opts.opcode ?? 0;
-  const aa     = opts.aa     ?? 0;
-  const tc     = opts.tc     ?? 0;
-  const rd     = opts.rd     ?? 0;
-  const ra     = opts.ra     ?? 0;
-  const ad     = opts.ad     ?? 0;
-  const cd     = 0;
-  const rcode  = opts.rcode  ?? 0;
+  const aa = opts.aa ?? 0;
+  const tc = opts.tc ?? 0;
+  const rd = opts.rd ?? 0;
+  const ra = opts.ra ?? 0;
+  const ad = opts.ad ?? 0;
+  const cd = 0;
+  const rcode = opts.rcode ?? 0;
 
-  const flags = (qr << 15) | (opcode << 11) | (aa << 10) | (tc << 9) |
-                (rd << 8)  | (ra << 7)  | (ad << 5)  | (cd << 4)  | rcode;
+  const flags =
+    (qr << 15) |
+    (opcode << 11) |
+    (aa << 10) |
+    (tc << 9) |
+    (rd << 8) |
+    (ra << 7) |
+    (ad << 5) |
+    (cd << 4) |
+    rcode;
 
   w.u16(opts.id);
   w.u16(flags);
@@ -310,34 +357,42 @@ export function encodePacket(opts: EncodeOpts): Buffer {
 }
 
 /** Build a minimal error response (FORMERR, SERVFAIL, etc.) */
-export function errorPacket(id: number, rcode: number, questions: DnsQuestion[] = []): Buffer {
+export function errorPacket(
+  id: number,
+  rcode: number,
+  questions: DnsQuestion[] = [],
+): Buffer {
   return encodePacket({
-    id, rcode, questions,
-    answers: [], authority: [], additional: [],
+    id,
+    rcode,
+    questions,
+    answers: [],
+    authority: [],
+    additional: [],
   });
 }
 
 // ── EDNS0 OPT record ──────────────────────────────────────────────────────
 
 export interface OPTRecord {
-  udpSize:  number;
+  udpSize: number;
   extRcode: number;
-  version:  number;
+  version: number;
   dnssecOk: boolean;
-  options:  Array<{ code: number; data: Buffer }>;
+  options: Array<{ code: number; data: Buffer }>;
 }
 
 export function parseOPT(rr: DnsRecord): OPTRecord {
-  const udpSize  = rr.class;
-  const extRcode = (rr.ttl >>> 24) & 0xFF;
-  const version  = (rr.ttl >>> 16) & 0xFF;
+  const udpSize = rr.class;
+  const extRcode = (rr.ttl >>> 24) & 0xff;
+  const version = (rr.ttl >>> 16) & 0xff;
   const dnssecOk = ((rr.ttl >>> 15) & 1) === 1;
 
   const options: Array<{ code: number; data: Buffer }> = [];
   let p = 0;
   while (p + 4 <= rr.rdata.length) {
     const code = rr.rdata.readUInt16BE(p);
-    const len  = rr.rdata.readUInt16BE(p + 2);
+    const len = rr.rdata.readUInt16BE(p + 2);
     const data = rr.rdata.slice(p + 4, p + 4 + len);
     options.push({ code, data });
     p += 4 + len;
@@ -346,7 +401,11 @@ export function parseOPT(rr: DnsRecord): OPTRecord {
   return { udpSize, extRcode, version, dnssecOk, options };
 }
 
-export function buildOPT(udpSize: number, dnssecOk: boolean, options: Array<{ code: number; data: Buffer }>): DnsRecord {
+export function buildOPT(
+  udpSize: number,
+  dnssecOk: boolean,
+  options: Array<{ code: number; data: Buffer }>,
+): DnsRecord {
   const flags = dnssecOk ? 0x8000 : 0;
 
   const parts: Buffer[] = [];
@@ -358,19 +417,21 @@ export function buildOPT(udpSize: number, dnssecOk: boolean, options: Array<{ co
   }
 
   return {
-    name:  '.',
-    type:  TYPE.OPT,
+    name: ".",
+    type: TYPE.OPT,
     class: udpSize,
-    ttl:   flags,
+    ttl: flags,
     rdata: Buffer.concat(parts),
   };
 }
 
 // ── ECS (EDNS Client Subnet, option code 8) ───────────────────────────────
 
-export function parseECS(optData: Buffer): { address: string; sourcePrefix: number; family: number } | null {
+export function parseECS(
+  optData: Buffer,
+): { address: string; sourcePrefix: number; family: number } | null {
   if (optData.length < 4) return null;
-  const family       = optData.readUInt16BE(0);
+  const family = optData.readUInt16BE(0);
   const sourcePrefix = optData.readUInt8(2);
   // const scopePrefix  = optData.readUInt8(3);
 
@@ -379,7 +440,7 @@ export function parseECS(optData: Buffer): { address: string; sourcePrefix: numb
     // IPv4 — pad to 4 bytes
     const padded = Buffer.alloc(4);
     addrBytes.copy(padded, 0);
-    const address = Array.from(padded).join('.');
+    const address = Array.from(padded).join(".");
     return { address, sourcePrefix, family };
   }
   if (family === 2) {
@@ -387,18 +448,26 @@ export function parseECS(optData: Buffer): { address: string; sourcePrefix: numb
     const padded = Buffer.alloc(16);
     addrBytes.copy(padded, 0);
     const groups: string[] = [];
-    for (let i = 0; i < 16; i += 2) groups.push(padded.readUInt16BE(i).toString(16));
-    const address = groups.join(':');
+    for (let i = 0; i < 16; i += 2)
+      groups.push(padded.readUInt16BE(i).toString(16));
+    const address = groups.join(":");
     return { address, sourcePrefix, family };
   }
   return null;
 }
 
-export function buildECSOption(address: string, sourcePrefix: number, scopePrefix: number, family: number): Buffer {
+export function buildECSOption(
+  address: string,
+  sourcePrefix: number,
+  scopePrefix: number,
+  family: number,
+): Buffer {
   let addrBuf: Buffer;
   if (family === 1) {
     const full = Buffer.alloc(4);
-    address.split('.').forEach((o, i) => { full[i] = parseInt(o); });
+    address.split(".").forEach((o, i) => {
+      full[i] = parseInt(o);
+    });
     const bytesNeeded = Math.ceil(sourcePrefix / 8);
     addrBuf = full.slice(0, bytesNeeded);
   } else {
@@ -429,7 +498,7 @@ export function canonicalName(name: string): Buffer {
  */
 export function canonicalWire(rr: DnsRecord): Buffer {
   const nameBuf = canonicalName(rr.name);
-  const hdr     = Buffer.alloc(10);
+  const hdr = Buffer.alloc(10);
   hdr.writeUInt16BE(rr.type, 0);
   hdr.writeUInt16BE(rr.class, 2);
   hdr.writeUInt32BE(rr.ttl, 4);

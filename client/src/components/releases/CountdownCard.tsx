@@ -3,7 +3,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Clock, CheckCircle2, Music, ArrowRight, Rocket, Calendar } from "lucide-react";
+import {
+  Clock,
+  CheckCircle2,
+  Music,
+  ArrowRight,
+  Rocket,
+  Calendar,
+} from "lucide-react";
 import { useLocation } from "wouter";
 
 interface CountdownCardProps {
@@ -52,7 +59,11 @@ export function CountdownCard({
       >
         <CardContent className="p-4 flex items-center gap-4">
           {artworkUrl ? (
-            <img src={artworkUrl} alt={title} className="w-12 h-12 rounded object-cover" />
+            <img
+              src={artworkUrl}
+              alt={title}
+              className="w-12 h-12 rounded object-cover"
+            />
           ) : (
             <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center">
               <Music className="h-6 w-6 text-primary" />
@@ -65,7 +76,9 @@ export function CountdownCard({
               {timeRemaining.isReleased ? (
                 <span className="text-green-500">Released!</span>
               ) : (
-                <span>{timeRemaining.days}d {timeRemaining.hours}h</span>
+                <span>
+                  {timeRemaining.days}d {timeRemaining.hours}h
+                </span>
               )}
             </div>
           </div>
@@ -76,10 +89,17 @@ export function CountdownCard({
   }
 
   return (
-    <Card className="overflow-hidden cursor-pointer hover:border-primary/50 transition-all group" onClick={handleClick}>
+    <Card
+      className="overflow-hidden cursor-pointer hover:border-primary/50 transition-all group"
+      onClick={handleClick}
+    >
       <div className="relative h-32">
         {artworkUrl ? (
-          <img src={artworkUrl} alt={title} className="w-full h-full object-cover" />
+          <img
+            src={artworkUrl}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
             <Music className="h-12 w-12 text-primary/40" />
@@ -118,12 +138,15 @@ export function CountdownCard({
               <span className="font-medium text-green-500">Released!</span>
             ) : (
               <span className="font-medium">
-                {timeRemaining.days}d {timeRemaining.hours}h {timeRemaining.minutes}m
+                {timeRemaining.days}d {timeRemaining.hours}h{" "}
+                {timeRemaining.minutes}m
               </span>
             )}
           </div>
           {presaveCount !== undefined && (
-            <Badge variant="secondary">{presaveCount.toLocaleString()} pre-saves</Badge>
+            <Badge variant="secondary">
+              {presaveCount.toLocaleString()} pre-saves
+            </Badge>
           )}
         </div>
 
@@ -137,7 +160,10 @@ export function CountdownCard({
           <Progress value={progress.percentage} className="h-2" />
         </div>
 
-        <Button variant="ghost" className="w-full group-hover:bg-primary/10 transition-colors">
+        <Button
+          variant="ghost"
+          className="w-full group-hover:bg-primary/10 transition-colors"
+        >
           View Details
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>

@@ -1,5 +1,5 @@
-import { logger } from '@/lib/logger';
-import { useState, useMemo } from 'react';
+import { logger } from "@/lib/logger";
+import { useState, useMemo } from "react";
 import {
   Flag,
   GitBranch,
@@ -10,12 +10,12 @@ import {
   ChevronRight,
   AlertTriangle,
   CheckCircle2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,10 +34,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
-import { useUndoStack } from '@/hooks/useUndoStack';
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { useUndoStack } from "@/hooks/useUndoStack";
 
 export interface RestorePoint {
   id: string;
@@ -54,11 +54,20 @@ function formatTimestamp(timestamp: number): string {
   const diff = now.getTime() - timestamp;
 
   if (diff < 86400000) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   } else if (diff < 604800000) {
-    return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString([], {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 interface RestorePointCardProps {
@@ -68,20 +77,27 @@ interface RestorePointCardProps {
   onDelete: () => void;
 }
 
-function RestorePointCard({ point, isActive, onRestore, onDelete }: RestorePointCardProps) {
+function RestorePointCard({
+  point,
+  isActive,
+  onRestore,
+  onDelete,
+}: RestorePointCardProps) {
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-3 rounded-lg border transition-colors',
-        'hover:bg-muted/50',
-        isActive && 'bg-primary/5 border-primary/30'
+        "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+        "hover:bg-muted/50",
+        isActive && "bg-primary/5 border-primary/30",
       )}
     >
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            'w-8 h-8 rounded-full flex items-center justify-center',
-            isActive ? 'bg-primary text-primary-foreground' : 'bg-amber-500/10 text-amber-500'
+            "w-8 h-8 rounded-full flex items-center justify-center",
+            isActive
+              ? "bg-primary text-primary-foreground"
+              : "bg-amber-500/10 text-amber-500",
           )}
         >
           <Flag className="w-4 h-4" />
@@ -138,13 +154,16 @@ export interface RestorePointDialogProps {
   trigger?: React.ReactNode;
 }
 
-export function RestorePointDialog({ className, trigger }: RestorePointDialogProps) {
-  const { 
-    history, 
-    createRestorePoint, 
-    getRestorePoints, 
+export function RestorePointDialog({
+  className,
+  trigger,
+}: RestorePointDialogProps) {
+  const {
+    history,
+    createRestorePoint,
+    getRestorePoints,
     undoToRestorePoint,
-    historyLength 
+    historyLength,
   } = useUndoStack();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -153,32 +172,34 @@ export function RestorePointDialog({ className, trigger }: RestorePointDialogPro
   const [selectedPoint, setSelectedPoint] = useState<RestorePoint | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
 
-  const [newPointName, setNewPointName] = useState('');
-  const [newPointDescription, setNewPointDescription] = useState('');
+  const [newPointName, setNewPointName] = useState("");
+  const [newPointDescription, setNewPointDescription] = useState("");
 
   const restorePoints: RestorePoint[] = useMemo(() => {
     const points = getRestorePoints();
-    return points.map((action, index) => {
-      const pointIndex = history.findIndex((a) => a.id === action.id);
-      const actionsAfter = historyLength - pointIndex - 1;
-      
-      return {
-        id: action.id,
-        name: action.description,
-        description: action.customData?.description as string | undefined,
-        createdAt: action.timestamp,
-        module: action.module,
-        actionsCount: actionsAfter >= 0 ? actionsAfter : 0,
-      };
-    }).reverse();
+    return points
+      .map((action, index) => {
+        const pointIndex = history.findIndex((a) => a.id === action.id);
+        const actionsAfter = historyLength - pointIndex - 1;
+
+        return {
+          id: action.id,
+          name: action.description,
+          description: action.customData?.description as string | undefined,
+          createdAt: action.timestamp,
+          module: action.module,
+          actionsCount: actionsAfter >= 0 ? actionsAfter : 0,
+        };
+      })
+      .reverse();
   }, [history, getRestorePoints, historyLength]);
 
   const handleCreateRestorePoint = () => {
     if (!newPointName.trim()) return;
 
     createRestorePoint(newPointName.trim());
-    setNewPointName('');
-    setNewPointDescription('');
+    setNewPointName("");
+    setNewPointDescription("");
     setIsCreateOpen(false);
   };
 
@@ -201,7 +222,7 @@ export function RestorePointDialog({ className, trigger }: RestorePointDialogPro
   };
 
   const handleDeleteRestorePoint = (pointId: string) => {
-    logger.info('Delete restore point:', pointId);
+    logger.info("Delete restore point:", pointId);
   };
 
   return (
@@ -209,7 +230,11 @@ export function RestorePointDialog({ className, trigger }: RestorePointDialogPro
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           {trigger || (
-            <Button variant="outline" size="sm" className={cn('gap-2', className)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn("gap-2", className)}
+            >
               <Flag className="w-4 h-4" />
               Restore Points
               {restorePoints.length > 0 && (
@@ -227,14 +252,16 @@ export function RestorePointDialog({ className, trigger }: RestorePointDialogPro
               Restore Points
             </DialogTitle>
             <DialogDescription>
-              Create restore points to save your progress. You can return to any restore point at any time.
+              Create restore points to save your progress. You can return to any
+              restore point at any time.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm text-muted-foreground">
-                {restorePoints.length} restore point{restorePoints.length !== 1 ? 's' : ''}
+                {restorePoints.length} restore point
+                {restorePoints.length !== 1 ? "s" : ""}
               </span>
               <Button
                 variant="outline"
@@ -312,7 +339,9 @@ export function RestorePointDialog({ className, trigger }: RestorePointDialogPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="restore-point-description">Description (optional)</Label>
+              <Label htmlFor="restore-point-description">
+                Description (optional)
+              </Label>
               <Textarea
                 id="restore-point-description"
                 placeholder="Add notes about this restore point..."
@@ -346,7 +375,10 @@ export function RestorePointDialog({ className, trigger }: RestorePointDialogPro
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
+      <AlertDialog
+        open={confirmRestoreOpen}
+        onOpenChange={setConfirmRestoreOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -357,11 +389,18 @@ export function RestorePointDialog({ className, trigger }: RestorePointDialogPro
               {selectedPoint && (
                 <>
                   <p className="mb-3">
-                    Are you sure you want to restore to this point? This will undo{' '}
-                    <strong>{selectedPoint.actionsCount} action{selectedPoint.actionsCount !== 1 ? 's' : ''}</strong>.
+                    Are you sure you want to restore to this point? This will
+                    undo{" "}
+                    <strong>
+                      {selectedPoint.actionsCount} action
+                      {selectedPoint.actionsCount !== 1 ? "s" : ""}
+                    </strong>
+                    .
                   </p>
                   <div className="p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">{selectedPoint.name}</div>
+                    <div className="font-medium text-foreground">
+                      {selectedPoint.name}
+                    </div>
                     <div className="text-xs mt-1 text-muted-foreground">
                       Created {formatTimestamp(selectedPoint.createdAt)}
                     </div>

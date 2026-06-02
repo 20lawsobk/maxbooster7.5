@@ -4,15 +4,15 @@ import {
   withTimeout,
   CircuitBreakerError,
   TimeoutError,
-} from './circuitBreaker.js';
-import { logger } from '../logger.js';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
+} from "./circuitBreaker.js";
+import { logger } from "../logger.js";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
 
-const CACHE_PREFIX = 'circuit_breaker:cache:';
+const CACHE_PREFIX = "circuit_breaker:cache:";
 const CACHE_TTL = 300;
 
 export const stripeCircuit = new CircuitBreaker({
-  name: 'stripe',
+  name: "stripe",
   failureThreshold: 3,
   resetTimeout: 30000,
   monitorInterval: 5000,
@@ -21,7 +21,7 @@ export const stripeCircuit = new CircuitBreaker({
 });
 
 export const sendgridCircuit = new CircuitBreaker({
-  name: 'sendgrid',
+  name: "sendgrid",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -30,7 +30,7 @@ export const sendgridCircuit = new CircuitBreaker({
 });
 
 export const socialApiCircuit = new CircuitBreaker({
-  name: 'socialApi',
+  name: "socialApi",
   failureThreshold: 5,
   resetTimeout: 45000,
   monitorInterval: 5000,
@@ -39,7 +39,7 @@ export const socialApiCircuit = new CircuitBreaker({
 });
 
 export const twitterCircuit = new CircuitBreaker({
-  name: 'twitter',
+  name: "twitter",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -48,7 +48,7 @@ export const twitterCircuit = new CircuitBreaker({
 });
 
 export const facebookCircuit = new CircuitBreaker({
-  name: 'facebook',
+  name: "facebook",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -57,7 +57,7 @@ export const facebookCircuit = new CircuitBreaker({
 });
 
 export const instagramCircuit = new CircuitBreaker({
-  name: 'instagram',
+  name: "instagram",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -66,7 +66,7 @@ export const instagramCircuit = new CircuitBreaker({
 });
 
 export const linkedinCircuit = new CircuitBreaker({
-  name: 'linkedin',
+  name: "linkedin",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -75,7 +75,7 @@ export const linkedinCircuit = new CircuitBreaker({
 });
 
 export const tiktokCircuit = new CircuitBreaker({
-  name: 'tiktok',
+  name: "tiktok",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -84,7 +84,7 @@ export const tiktokCircuit = new CircuitBreaker({
 });
 
 export const tiktokSandboxCircuit = new CircuitBreaker({
-  name: 'tiktok_sandbox',
+  name: "tiktok_sandbox",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -93,7 +93,7 @@ export const tiktokSandboxCircuit = new CircuitBreaker({
 });
 
 export const youtubeCircuit = new CircuitBreaker({
-  name: 'youtube',
+  name: "youtube",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -102,7 +102,7 @@ export const youtubeCircuit = new CircuitBreaker({
 });
 
 export const threadsCircuit = new CircuitBreaker({
-  name: 'threads',
+  name: "threads",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -111,7 +111,7 @@ export const threadsCircuit = new CircuitBreaker({
 });
 
 export const googleBusinessCircuit = new CircuitBreaker({
-  name: 'googlebusiness',
+  name: "googlebusiness",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -120,7 +120,7 @@ export const googleBusinessCircuit = new CircuitBreaker({
 });
 
 export const aiServiceCircuit = new CircuitBreaker({
-  name: 'aiService',
+  name: "aiService",
   failureThreshold: 3,
   resetTimeout: 45000,
   monitorInterval: 5000,
@@ -129,7 +129,7 @@ export const aiServiceCircuit = new CircuitBreaker({
 });
 
 export const labelGridCircuit = new CircuitBreaker({
-  name: 'labelGrid',
+  name: "labelGrid",
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
@@ -138,7 +138,7 @@ export const labelGridCircuit = new CircuitBreaker({
 });
 
 export const dspCircuit = new CircuitBreaker({
-  name: 'dsp',
+  name: "dsp",
   failureThreshold: 5,
   resetTimeout: 120000,
   monitorInterval: 10000,
@@ -166,17 +166,19 @@ function setupCircuitBreakerLogging(): void {
   const circuits = circuitBreakerRegistry.getAll();
 
   circuits.forEach((circuit) => {
-    circuit.on('state_change', (event) => {
+    circuit.on("state_change", (event) => {
       logger.warn(
-        `🔌 Circuit ${event.name} state changed: ${event.previousState} → ${event.newState}`
+        `🔌 Circuit ${event.name} state changed: ${event.previousState} → ${event.newState}`,
       );
     });
 
-    circuit.on('failure', (event) => {
-      logger.warn(`⚠️ Circuit ${event.name} failure: ${event.error?.message || 'Unknown error'}`);
+    circuit.on("failure", (event) => {
+      logger.warn(
+        `⚠️ Circuit ${event.name} failure: ${event.error?.message || "Unknown error"}`,
+      );
     });
 
-    circuit.on('timeout', (event) => {
+    circuit.on("timeout", (event) => {
       logger.warn(`⏱️ Circuit ${event.name} timeout`);
     });
   });
@@ -200,7 +202,11 @@ async function getCachedData<T>(key: string): Promise<T | null> {
   }
 }
 
-async function setCachedData<T>(key: string, data: T, ttl: number = CACHE_TTL): Promise<void> {
+async function setCachedData<T>(
+  key: string,
+  data: T,
+  ttl: number = CACHE_TTL,
+): Promise<void> {
   try {
     const redis = await getRedisClient();
     if (!redis) return;
@@ -228,7 +234,7 @@ export function queueForRetry(
   serviceName: string,
   operation: string,
   payload: unknown,
-  maxAttempts: number = 3
+  maxAttempts: number = 3,
 ): string {
   const id = `${serviceName}:${operation}:${Date.now()}`;
 
@@ -257,7 +263,7 @@ export function clearRetryQueue(): void {
 
 export interface FallbackResult<T> {
   data: T;
-  source: 'live' | 'cache' | 'fallback';
+  source: "live" | "cache" | "fallback";
   warning?: string;
 }
 
@@ -271,9 +277,16 @@ export async function executeWithFallback<T>(
     queueOnFailure?: boolean;
     operationName?: string;
     payload?: unknown;
-  } = {}
+  } = {},
 ): Promise<FallbackResult<T>> {
-  const { cacheKey, cacheTtl, fallbackValue, queueOnFailure, operationName, payload } = options;
+  const {
+    cacheKey,
+    cacheTtl,
+    fallbackValue,
+    queueOnFailure,
+    operationName,
+    payload,
+  } = options;
 
   try {
     const result = await circuit.execute(operation);
@@ -282,7 +295,7 @@ export async function executeWithFallback<T>(
       await setCachedData(cacheKey, result, cacheTtl);
     }
 
-    return { data: result, source: 'live' };
+    return { data: result, source: "live" };
   } catch (error) {
     const errorMessage =
       error instanceof CircuitBreakerError || error instanceof TimeoutError
@@ -297,7 +310,7 @@ export async function executeWithFallback<T>(
         logger.info(`📦 Using cached data for ${circuit.name}`);
         return {
           data: cached,
-          source: 'cache',
+          source: "cache",
           warning: `Using cached data due to: ${errorMessage}`,
         };
       }
@@ -310,7 +323,7 @@ export async function executeWithFallback<T>(
     if (fallbackValue !== undefined) {
       return {
         data: fallbackValue,
-        source: 'fallback',
+        source: "fallback",
         warning: `Using fallback value due to: ${errorMessage}`,
       };
     }
@@ -324,12 +337,12 @@ export async function executeStripeOperation<T>(
   options?: {
     cacheKey?: string;
     fallbackValue?: T;
-  }
+  },
 ): Promise<FallbackResult<T>> {
   return executeWithFallback(stripeCircuit, operation, {
     ...options,
     queueOnFailure: true,
-    operationName: 'stripe_operation',
+    operationName: "stripe_operation",
   });
 }
 
@@ -340,18 +353,28 @@ export async function executeSendgridOperation<T>(
     fallbackValue?: T;
     queueOnFailure?: boolean;
     emailData?: unknown;
-  }
+  },
 ): Promise<FallbackResult<T>> {
   return executeWithFallback(sendgridCircuit, operation, {
     ...options,
     queueOnFailure: options?.queueOnFailure ?? true,
-    operationName: 'sendgrid_email',
+    operationName: "sendgrid_email",
     payload: options?.emailData,
   });
 }
 
 export async function executeSocialApiOperation<T>(
-  platform: 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'tiktok' | 'tiktok_sandbox' | 'youtube' | 'threads' | 'googlebusiness' | 'generic',
+  platform:
+    | "twitter"
+    | "facebook"
+    | "instagram"
+    | "linkedin"
+    | "tiktok"
+    | "tiktok_sandbox"
+    | "youtube"
+    | "threads"
+    | "googlebusiness"
+    | "generic",
   operation: () => Promise<T>,
   options?: {
     cacheKey?: string;
@@ -359,7 +382,7 @@ export async function executeSocialApiOperation<T>(
     fallbackValue?: T;
     queueOnFailure?: boolean;
     postData?: unknown;
-  }
+  },
 ): Promise<FallbackResult<T>> {
   const circuitMap: Record<string, CircuitBreaker> = {
     twitter: twitterCircuit,
@@ -390,7 +413,7 @@ export async function executeAiOperation<T>(
     cacheKey?: string;
     cacheTtl?: number;
     fallbackValue?: T;
-  }
+  },
 ): Promise<FallbackResult<T>> {
   return executeWithFallback(aiServiceCircuit, operation, {
     ...options,
@@ -405,12 +428,12 @@ export async function executeLabelGridOperation<T>(
     cacheTtl?: number;
     fallbackValue?: T;
     queueOnFailure?: boolean;
-  }
+  },
 ): Promise<FallbackResult<T>> {
   return executeWithFallback(labelGridCircuit, operation, {
     ...options,
     queueOnFailure: options?.queueOnFailure ?? true,
-    operationName: 'labelgrid_operation',
+    operationName: "labelgrid_operation",
   });
 }
 
@@ -421,12 +444,12 @@ export async function executeDspOperation<T>(
     cacheTtl?: number;
     fallbackValue?: T;
     queueOnFailure?: boolean;
-  }
+  },
 ): Promise<FallbackResult<T>> {
   return executeWithFallback(dspCircuit, operation, {
     ...options,
     queueOnFailure: options?.queueOnFailure ?? true,
-    operationName: 'dsp_operation',
+    operationName: "dsp_operation",
   });
 }
 
@@ -460,4 +483,4 @@ export {
   circuitBreakerRegistry,
 };
 
-logger.info('🔌 External service circuit breakers initialized');
+logger.info("🔌 External service circuit breakers initialized");

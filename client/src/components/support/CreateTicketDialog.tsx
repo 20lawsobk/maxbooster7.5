@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
+import { useState } from "react";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -7,19 +7,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 interface CreateTicketDialogProps {
   open: boolean;
@@ -27,10 +27,16 @@ interface CreateTicketDialogProps {
   onSuccess?: () => void;
 }
 
-export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTicketDialogProps) {
-  const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
+export function CreateTicketDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CreateTicketDialogProps) {
+  const [subject, setSubject] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<
+    "low" | "medium" | "high" | "critical"
+  >("medium");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -39,9 +45,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
     if (!subject.trim() || !description.trim()) {
       toast({
-        title: 'Missing information',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
       });
       return;
     }
@@ -50,10 +56,13 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
     try {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch('/api/support/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+      const response = await fetch("/api/support/tickets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({
           subject,
           description,
@@ -61,26 +70,26 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to create ticket');
+      if (!response.ok) throw new Error("Failed to create ticket");
 
       const ticket = await response.json();
 
       toast({
-        title: 'Ticket created!',
+        title: "Ticket created!",
         description: `Your support ticket has been created. Ticket ID: ${ticket.id.substring(0, 8)}`,
       });
 
-      setSubject('');
-      setDescription('');
-      setPriority('medium');
+      setSubject("");
+      setDescription("");
+      setPriority("medium");
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      logger.error('Error creating ticket:', error);
+      logger.error("Error creating ticket:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to create support ticket. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to create support ticket. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -110,7 +119,10 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
             </div>
             <div className="grid gap-2">
               <Label htmlFor="priority">Priority</Label>
-              <Select value={priority} onValueChange={(value: unknown) => setPriority(value)}>
+              <Select
+                value={priority}
+                onValueChange={(value: unknown) => setPriority(value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -135,11 +147,15 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Ticket'}
+              {isSubmitting ? "Creating..." : "Create Ticket"}
             </Button>
           </DialogFooter>
         </form>

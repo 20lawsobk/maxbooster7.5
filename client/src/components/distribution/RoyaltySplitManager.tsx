@@ -1,28 +1,41 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Users, Plus, Trash2, AlertCircle, CheckCircle, Mail } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  Users,
+  Plus,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  Mail,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 
 interface RoyaltySplit {
   id: string;
   name: string;
   email: string;
-  role: 'songwriter' | 'producer' | 'performer' | 'manager' | 'featured_artist';
+  role: "songwriter" | "producer" | "performer" | "manager" | "featured_artist";
   percentage: number;
-  inviteStatus: 'pending' | 'accepted' | 'declined';
+  inviteStatus: "pending" | "accepted" | "declined";
 }
 
 interface RoyaltySplitManagerProps {
@@ -32,51 +45,58 @@ interface RoyaltySplitManagerProps {
 }
 
 const ROLES = [
-  { value: 'songwriter', label: 'Songwriter' },
-  { value: 'producer', label: 'Producer' },
-  { value: 'performer', label: 'Performer' },
-  { value: 'featured_artist', label: 'Featured Artist' },
-  { value: 'manager', label: 'Manager' },
+  { value: "songwriter", label: "Songwriter" },
+  { value: "producer", label: "Producer" },
+  { value: "performer", label: "Performer" },
+  { value: "featured_artist", label: "Featured Artist" },
+  { value: "manager", label: "Manager" },
 ];
 
-export function RoyaltySplitManager({ splits, onChange, onSendInvites }: RoyaltySplitManagerProps) {
+export function RoyaltySplitManager({
+  splits,
+  onChange,
+  onSendInvites,
+}: RoyaltySplitManagerProps) {
   const [newSplit, setNewSplit] = useState({
-    name: '',
-    email: '',
-    role: 'songwriter' as const,
+    name: "",
+    email: "",
+    role: "songwriter" as const,
     percentage: 0,
   });
   const { toast } = useToast();
   const { trackCollaboratorInvited } = useOnboardingProgress();
 
-  const totalPercentage = splits.reduce((sum, split) => sum + split.percentage, 0);
+  const totalPercentage = splits.reduce(
+    (sum, split) => sum + split.percentage,
+    0,
+  );
   const remainingPercentage = 100 - totalPercentage;
   const isValid = totalPercentage === 100;
 
   const addSplit = () => {
     if (!newSplit.name.trim()) {
       toast({
-        title: 'Name required',
-        description: 'Please enter collaborator name',
-        variant: 'destructive',
+        title: "Name required",
+        description: "Please enter collaborator name",
+        variant: "destructive",
       });
       return;
     }
 
-    if (!newSplit.email.trim() || !newSplit.email.includes('@')) {
+    if (!newSplit.email.trim() || !newSplit.email.includes("@")) {
       toast({
-        title: 'Valid email required',
-        description: 'Please enter a valid email address',
-        variant: 'destructive',
+        title: "Valid email required",
+        description: "Please enter a valid email address",
+        variant: "destructive",
       });
       return;
     }
 
     if (newSplit.percentage <= 0 || newSplit.percentage > remainingPercentage) {
       toast({
-        title: 'Invalid percentage',
+        title: "Invalid percentage",
         description: `Must be between 1 and ${remainingPercentage}%`,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return;
     }
@@ -84,20 +104,20 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
     const split: RoyaltySplit = {
       id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       ...newSplit,
-      inviteStatus: 'pending',
+      inviteStatus: "pending",
     };
 
     onChange([...splits, split]);
 
     setNewSplit({
-      name: '',
-      email: '',
-      role: 'songwriter',
+      name: "",
+      email: "",
+      role: "songwriter",
       percentage: 0,
     });
 
     toast({
-      title: 'Collaborator added',
+      title: "Collaborator added",
       description: `${split.name} will receive ${split.percentage}% of royalties`,
     });
   };
@@ -113,19 +133,19 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
   const handleSendInvites = async () => {
     if (!isValid) {
       toast({
-        title: 'Invalid splits',
-        description: 'Percentages must total 100% before sending invites',
-        variant: 'destructive',
+        title: "Invalid splits",
+        description: "Percentages must total 100% before sending invites",
+        variant: "destructive",
       });
       return;
     }
 
-    const pendingSplits = splits.filter((s) => s.inviteStatus === 'pending');
+    const pendingSplits = splits.filter((s) => s.inviteStatus === "pending");
 
     if (pendingSplits.length === 0) {
       toast({
-        title: 'No pending invites',
-        description: 'All collaborators have been invited',
+        title: "No pending invites",
+        description: "All collaborators have been invited",
       });
       return;
     }
@@ -135,15 +155,16 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
         await onSendInvites(pendingSplits);
       }
       toast({
-        title: 'Invites sent',
+        title: "Invites sent",
         description: `${pendingSplits.length} email invitation(s) sent successfully`,
       });
       trackCollaboratorInvited();
     } catch (error: unknown) {
       toast({
-        title: 'Failed to send invites',
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive',
+        title: "Failed to send invites",
+        description:
+          error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
       });
     }
   };
@@ -164,14 +185,20 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Total Allocated</span>
-            <span className={`font-medium ${isValid ? 'text-green-600' : 'text-orange-600'}`}>
+            <span
+              className={`font-medium ${isValid ? "text-green-600" : "text-orange-600"}`}
+            >
               {totalPercentage}%
             </span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={`h-full transition-all ${
-                totalPercentage > 100 ? 'bg-destructive' : isValid ? 'bg-green-600' : 'bg-primary'
+                totalPercentage > 100
+                  ? "bg-destructive"
+                  : isValid
+                    ? "bg-green-600"
+                    : "bg-primary"
               }`}
               style={{ width: `${Math.min(totalPercentage, 100)}%` }}
             />
@@ -184,11 +211,13 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
 
         {/* Validation Alert */}
         {splits.length > 0 && (
-          <Alert variant={isValid ? 'default' : 'destructive'}>
+          <Alert variant={isValid ? "default" : "destructive"}>
             {isValid ? (
               <>
                 <CheckCircle className="h-4 w-4" />
-                <AlertDescription>Royalty splits are valid and total 100%</AlertDescription>
+                <AlertDescription>
+                  Royalty splits are valid and total 100%
+                </AlertDescription>
               </>
             ) : (
               <>
@@ -209,25 +238,33 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
             <Label>Collaborators ({splits.length})</Label>
             <div className="space-y-2">
               {splits.map((split) => (
-                <div key={split.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <div
+                  key={split.id}
+                  className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium truncate">{split.name}</p>
                       <Badge variant="outline" className="text-xs">
                         {ROLES.find((r) => r.value === split.role)?.label}
                       </Badge>
-                      {split.inviteStatus === 'accepted' && (
-                        <Badge variant="default" className="text-xs bg-green-600">
+                      {split.inviteStatus === "accepted" && (
+                        <Badge
+                          variant="default"
+                          className="text-xs bg-green-600"
+                        >
                           Accepted
                         </Badge>
                       )}
-                      {split.inviteStatus === 'pending' && (
+                      {split.inviteStatus === "pending" && (
                         <Badge variant="secondary" className="text-xs">
                           Pending
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{split.email}</p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {split.email}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -273,7 +310,9 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
                 id="split-name"
                 placeholder="Collaborator name"
                 value={newSplit.name}
-                onChange={(e) => setNewSplit({ ...newSplit, name: e.target.value })}
+                onChange={(e) =>
+                  setNewSplit({ ...newSplit, name: e.target.value })
+                }
               />
             </div>
 
@@ -286,7 +325,9 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
                 type="email"
                 placeholder="email@example.com"
                 value={newSplit.email}
-                onChange={(e) => setNewSplit({ ...newSplit, email: e.target.value })}
+                onChange={(e) =>
+                  setNewSplit({ ...newSplit, email: e.target.value })
+                }
               />
             </div>
           </div>
@@ -298,7 +339,9 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
               </Label>
               <Select
                 value={newSplit.role}
-                onValueChange={(value: unknown) => setNewSplit({ ...newSplit, role: value })}
+                onValueChange={(value: unknown) =>
+                  setNewSplit({ ...newSplit, role: value })
+                }
               >
                 <SelectTrigger id="split-role">
                   <SelectValue />
@@ -330,7 +373,7 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
                   max={remainingPercentage}
                   step={0.1}
                   placeholder="0.0"
-                  value={newSplit.percentage || ''}
+                  value={newSplit.percentage || ""}
                   onChange={(e) =>
                     setNewSplit({
                       ...newSplit,
@@ -338,7 +381,9 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
                     })
                   }
                 />
-                <span className="flex items-center text-muted-foreground">%</span>
+                <span className="flex items-center text-muted-foreground">
+                  %
+                </span>
               </div>
             </div>
           </div>
@@ -357,7 +402,12 @@ export function RoyaltySplitManager({ splits, onChange, onSendInvites }: Royalty
 
         {/* Send Invites */}
         {splits.length > 0 && onSendInvites && (
-          <Button type="button" className="w-full" onClick={handleSendInvites} disabled={!isValid}>
+          <Button
+            type="button"
+            className="w-full"
+            onClick={handleSendInvites}
+            disabled={!isValid}
+          >
             <Mail className="h-4 w-4 mr-2" />
             Send Email Invitations
           </Button>

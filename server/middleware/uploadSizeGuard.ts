@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from "express";
 
 const PRESIGNED_URL_THRESHOLD_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -17,18 +17,18 @@ const PRESIGNED_URL_THRESHOLD_BYTES = 5 * 1024 * 1024; // 5 MB
 export function requirePresignedForLargeUploads(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
-  const transferEncoding = req.headers['transfer-encoding'];
-  const contentLengthHeader = req.headers['content-length'];
+  const transferEncoding = req.headers["transfer-encoding"];
+  const contentLengthHeader = req.headers["content-length"];
 
   // Chunked transfer: no Content-Length, so we cannot enforce the limit
   // after the fact without buffering the entire body.  Reject early.
-  if (transferEncoding && transferEncoding.toLowerCase().includes('chunked')) {
+  if (transferEncoding && transferEncoding.toLowerCase().includes("chunked")) {
     res.status(413).json({
-      error: 'Payload Too Large',
+      error: "Payload Too Large",
       message: `Chunked upload detected. Files must be uploaded via the presigned URL flow to avoid buffering.`,
-      presignedUrlEndpoint: '/api/uploads/request-url',
+      presignedUrlEndpoint: "/api/uploads/request-url",
       sizeLimitBytes: PRESIGNED_URL_THRESHOLD_BYTES,
     });
     return;
@@ -37,11 +37,14 @@ export function requirePresignedForLargeUploads(
   // Standard request: check Content-Length header.
   if (contentLengthHeader) {
     const contentLength = parseInt(contentLengthHeader, 10);
-    if (!isNaN(contentLength) && contentLength > PRESIGNED_URL_THRESHOLD_BYTES) {
+    if (
+      !isNaN(contentLength) &&
+      contentLength > PRESIGNED_URL_THRESHOLD_BYTES
+    ) {
       res.status(413).json({
-        error: 'Payload Too Large',
+        error: "Payload Too Large",
         message: `Files larger than ${PRESIGNED_URL_THRESHOLD_BYTES / 1024 / 1024}MB must be uploaded via the presigned URL flow.`,
-        presignedUrlEndpoint: '/api/uploads/request-url',
+        presignedUrlEndpoint: "/api/uploads/request-url",
         sizeLimitBytes: PRESIGNED_URL_THRESHOLD_BYTES,
         receivedBytes: contentLength,
       });

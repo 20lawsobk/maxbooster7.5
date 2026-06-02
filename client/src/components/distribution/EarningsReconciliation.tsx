@@ -1,12 +1,18 @@
-import { useState, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+import { useState, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -14,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -22,18 +28,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChartCard, SimpleAreaChart, DonutChart } from '@/components/ui/chart-card';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  ChartCard,
+  SimpleAreaChart,
+  DonutChart,
+} from "@/components/ui/chart-card";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   DollarSign,
   TrendingUp,
@@ -65,7 +75,7 @@ import {
   Info,
   ExternalLink,
   Copy,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -74,7 +84,7 @@ import {
   TidalIcon,
   SoundCloudIcon,
   DeezerIcon,
-} from '@/components/ui/brand-icons';
+} from "@/components/ui/brand-icons";
 
 interface RoyaltyStatement {
   id: string;
@@ -83,7 +93,7 @@ interface RoyaltyStatement {
   statementDate: string;
   fileName: string;
   fileSize: number;
-  status: 'pending' | 'processing' | 'imported' | 'error' | 'reconciled';
+  status: "pending" | "processing" | "imported" | "error" | "reconciled";
   totalAmount: number;
   totalStreams: number;
   trackCount: number;
@@ -104,15 +114,15 @@ interface EarningsEntry {
   payRate: number;
   currency: string;
   territory: string;
-  type: 'stream' | 'download' | 'sync' | 'mechanical' | 'performance';
+  type: "stream" | "download" | "sync" | "mechanical" | "performance";
 }
 
 interface PayoutRecord {
   id: string;
   amount: number;
   currency: string;
-  method: 'bank' | 'paypal' | 'wise' | 'payoneer' | 'check';
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'returned';
+  method: "bank" | "paypal" | "wise" | "payoneer" | "check";
+  status: "pending" | "processing" | "completed" | "failed" | "returned";
   scheduledDate: string;
   processedDate?: string;
   platforms: string[];
@@ -145,112 +155,137 @@ interface TerritoryBreakdown {
 
 const PLATFORM_ICONS: Record<string, React.ElementType> = {
   spotify: SpotifyIcon,
-  'apple-music': AppleMusicIcon,
-  'youtube-music': YouTubeIcon,
-  'amazon-music': AmazonIcon,
+  "apple-music": AppleMusicIcon,
+  "youtube-music": YouTubeIcon,
+  "amazon-music": AmazonIcon,
   tidal: TidalIcon,
   soundcloud: SoundCloudIcon,
   deezer: DeezerIcon,
 };
 
 const PLATFORM_COLORS: Record<string, string> = {
-  spotify: '#1DB954',
-  'apple-music': '#FA243C',
-  'youtube-music': '#FF0000',
-  'amazon-music': '#FF9900',
-  tidal: '#000000',
-  soundcloud: '#FF3300',
-  deezer: '#FEAA2D',
-  other: '#666666',
+  spotify: "#1DB954",
+  "apple-music": "#FA243C",
+  "youtube-music": "#FF0000",
+  "amazon-music": "#FF9900",
+  tidal: "#000000",
+  soundcloud: "#FF3300",
+  deezer: "#FEAA2D",
+  other: "#666666",
 };
 
 const PAYOUT_METHODS = [
-  { value: 'bank', label: 'Bank Transfer', icon: Building },
-  { value: 'paypal', label: 'PayPal', icon: CreditCard },
-  { value: 'wise', label: 'Wise', icon: Globe },
-  { value: 'payoneer', label: 'Payoneer', icon: Wallet },
-  { value: 'check', label: 'Check', icon: Receipt },
+  { value: "bank", label: "Bank Transfer", icon: Building },
+  { value: "paypal", label: "PayPal", icon: CreditCard },
+  { value: "wise", label: "Wise", icon: Globe },
+  { value: "payoneer", label: "Payoneer", icon: Wallet },
+  { value: "check", label: "Check", icon: Receipt },
 ];
 
 export function EarningsReconciliation() {
-  const [activeTab, setActiveTab] = useState('statements');
-  const [dateRange, setDateRange] = useState('30d');
-  const [selectedPlatform, setSelectedPlatform] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState("statements");
+  const [dateRange, setDateRange] = useState("30d");
+  const [selectedPlatform, setSelectedPlatform] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isPayoutOpen, setIsPayoutOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [selectedStatement, setSelectedStatement] = useState<RoyaltyStatement | null>(null);
-  const [selectedPayout, setSelectedPayout] = useState<PayoutRecord | null>(null);
-  const [payoutAmount, setPayoutAmount] = useState('');
-  const [payoutMethod, setPayoutMethod] = useState('bank');
+  const [selectedStatement, setSelectedStatement] =
+    useState<RoyaltyStatement | null>(null);
+  const [selectedPayout, setSelectedPayout] = useState<PayoutRecord | null>(
+    null,
+  );
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutMethod, setPayoutMethod] = useState("bank");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: statements = [], isLoading: statementsLoading } = useQuery<RoyaltyStatement[]>({
-    queryKey: ['/api/distribution/earnings/statements', dateRange],
+  const { data: statements = [], isLoading: statementsLoading } = useQuery<
+    RoyaltyStatement[]
+  >({
+    queryKey: ["/api/distribution/earnings/statements", dateRange],
   });
 
-  const { data: earnings = [], isLoading: earningsLoading } = useQuery<EarningsEntry[]>({
-    queryKey: ['/api/distribution/earnings/entries', dateRange, selectedPlatform],
+  const { data: earnings = [], isLoading: earningsLoading } = useQuery<
+    EarningsEntry[]
+  >({
+    queryKey: [
+      "/api/distribution/earnings/entries",
+      dateRange,
+      selectedPlatform,
+    ],
   });
 
-  const { data: payouts = [], isLoading: payoutsLoading } = useQuery<PayoutRecord[]>({
-    queryKey: ['/api/distribution/earnings/payouts'],
+  const { data: payouts = [], isLoading: payoutsLoading } = useQuery<
+    PayoutRecord[]
+  >({
+    queryKey: ["/api/distribution/earnings/payouts"],
   });
 
   const { data: summary } = useQuery<ReconciliationSummary>({
-    queryKey: ['/api/distribution/earnings/summary', dateRange],
+    queryKey: ["/api/distribution/earnings/summary", dateRange],
   });
 
   const { data: territoryData = [] } = useQuery<TerritoryBreakdown[]>({
-    queryKey: ['/api/distribution/earnings/territories', dateRange],
+    queryKey: ["/api/distribution/earnings/territories", dateRange],
   });
 
   const importStatementMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append('statement', file);
-      const response = await apiRequest('POST', '/api/distribution/earnings/import', formData);
+      formData.append("statement", file);
+      const response = await apiRequest(
+        "POST",
+        "/api/distribution/earnings/import",
+        formData,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/earnings/statements'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/earnings/statements"],
+      });
       setIsImportOpen(false);
       toast({
-        title: 'Statement Imported',
-        description: 'Your royalty statement is being processed',
+        title: "Statement Imported",
+        description: "Your royalty statement is being processed",
       });
     },
     onError: () => {
       toast({
-        title: 'Import Failed',
-        description: 'Unable to import royalty statement',
-        variant: 'destructive',
+        title: "Import Failed",
+        description: "Unable to import royalty statement",
+        variant: "destructive",
       });
     },
   });
 
   const requestPayoutMutation = useMutation({
     mutationFn: async (data: { amount: number; method: string }) => {
-      const response = await apiRequest('POST', '/api/distribution/earnings/payout', data);
+      const response = await apiRequest(
+        "POST",
+        "/api/distribution/earnings/payout",
+        data,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/earnings/payouts'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/earnings/payouts"],
+      });
       setIsPayoutOpen(false);
-      setPayoutAmount('');
+      setPayoutAmount("");
       toast({
-        title: 'Payout Requested',
-        description: 'Your payout request has been submitted',
+        title: "Payout Requested",
+        description: "Your payout request has been submitted",
       });
     },
     onError: () => {
       toast({
-        title: 'Request Failed',
-        description: 'Unable to request payout',
-        variant: 'destructive',
+        title: "Request Failed",
+        description: "Unable to request payout",
+        variant: "destructive",
       });
     },
   });
@@ -258,16 +293,18 @@ export function EarningsReconciliation() {
   const reconcileMutation = useMutation({
     mutationFn: async (statementId: string) => {
       const response = await apiRequest(
-        'POST',
-        `/api/distribution/earnings/statements/${statementId}/reconcile`
+        "POST",
+        `/api/distribution/earnings/statements/${statementId}/reconcile`,
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/earnings/statements'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/earnings/statements"],
+      });
       toast({
-        title: 'Reconciliation Complete',
-        description: 'Statement has been reconciled with your earnings',
+        title: "Reconciliation Complete",
+        description: "Statement has been reconciled with your earnings",
       });
     },
   });
@@ -283,25 +320,28 @@ export function EarningsReconciliation() {
     averagePayRate: 0,
   };
 
-  const earningsTrendData = dormantSummary.totalEarnings > 0 ? [
-    { label: 'Current', value: dormantSummary.totalEarnings },
-  ] : [];
+  const earningsTrendData =
+    dormantSummary.totalEarnings > 0
+      ? [{ label: "Current", value: dormantSummary.totalEarnings }]
+      : [];
 
-  const platformDonutData = earnings.length > 0 ? 
-    Object.entries(
-      earnings.reduce((acc: Record<string, number>, e) => {
-        acc[e.platform] = (acc[e.platform] || 0) + e.earnings;
-        return acc;
-      }, {})
-    ).map(([platform, value]) => ({
-      label: platform,
-      value,
-      color: PLATFORM_COLORS[platform] || PLATFORM_COLORS.other,
-    })) : [];
+  const platformDonutData =
+    earnings.length > 0
+      ? Object.entries(
+          earnings.reduce((acc: Record<string, number>, e) => {
+            acc[e.platform] = (acc[e.platform] || 0) + e.earnings;
+            return acc;
+          }, {}),
+        ).map(([platform, value]) => ({
+          label: platform,
+          value,
+          color: PLATFORM_COLORS[platform] || PLATFORM_COLORS.other,
+        }))
+      : [];
 
-  const formatCurrency = (amount: number, currency: string = 'USD'): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+  const formatCurrency = (amount: number, currency: string = "USD"): string => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency,
       minimumFractionDigits: 2,
     }).format(amount);
@@ -309,36 +349,65 @@ export function EarningsReconciliation() {
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
+      return (num / 1000000).toFixed(1) + "M";
     }
     if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
+      return (num / 1000).toFixed(1) + "K";
     }
     return num.toString();
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   const getStatusBadge = (status: string) => {
-    const styles: Record<string, { className: string; icon: React.ElementType }> = {
-      pending: { className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: Clock },
-      processing: { className: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: RefreshCw },
-      imported: { className: 'bg-green-500/10 text-green-500 border-green-500/20', icon: FileCheck },
-      reconciled: { className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: CheckCircle },
-      completed: { className: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-      error: { className: 'bg-red-500/10 text-red-500 border-red-500/20', icon: AlertCircle },
-      failed: { className: 'bg-red-500/10 text-red-500 border-red-500/20', icon: AlertCircle },
-      returned: { className: 'bg-orange-500/10 text-orange-500 border-orange-500/20', icon: AlertTriangle },
+    const styles: Record<
+      string,
+      { className: string; icon: React.ElementType }
+    > = {
+      pending: {
+        className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+        icon: Clock,
+      },
+      processing: {
+        className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+        icon: RefreshCw,
+      },
+      imported: {
+        className: "bg-green-500/10 text-green-500 border-green-500/20",
+        icon: FileCheck,
+      },
+      reconciled: {
+        className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+        icon: CheckCircle,
+      },
+      completed: {
+        className: "bg-green-500/10 text-green-500 border-green-500/20",
+        icon: CheckCircle,
+      },
+      error: {
+        className: "bg-red-500/10 text-red-500 border-red-500/20",
+        icon: AlertCircle,
+      },
+      failed: {
+        className: "bg-red-500/10 text-red-500 border-red-500/20",
+        icon: AlertCircle,
+      },
+      returned: {
+        className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+        icon: AlertTriangle,
+      },
     };
     const config = styles[status] || styles.pending;
     const Icon = config.icon;
     return (
       <Badge className={`gap-1 ${config.className}`}>
-        <Icon className={`h-3 w-3 ${status === 'processing' ? 'animate-spin' : ''}`} />
+        <Icon
+          className={`h-3 w-3 ${status === "processing" ? "animate-spin" : ""}`}
+        />
         {status}
       </Badge>
     );
@@ -359,8 +428,8 @@ export function EarningsReconciliation() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: 'Copied',
-      description: 'Transaction ID copied to clipboard',
+      title: "Copied",
+      description: "Transaction ID copied to clipboard",
     });
   };
 
@@ -368,11 +437,13 @@ export function EarningsReconciliation() {
     const matchesSearch =
       entry.releaseTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       entry.trackTitle.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPlatform = selectedPlatform === 'all' || entry.platform === selectedPlatform;
+    const matchesPlatform =
+      selectedPlatform === "all" || entry.platform === selectedPlatform;
     return matchesSearch && matchesPlatform;
   });
 
-  const availableBalance = dormantSummary.totalEarnings - dormantSummary.pendingPayouts;
+  const availableBalance =
+    dormantSummary.totalEarnings - dormantSummary.pendingPayouts;
   const minimumPayout = 25;
 
   return (
@@ -405,7 +476,10 @@ export function EarningsReconciliation() {
               <Upload className="h-4 w-4 mr-2" />
               Import Statement
             </Button>
-            <Button onClick={() => setIsPayoutOpen(true)} disabled={availableBalance < minimumPayout}>
+            <Button
+              onClick={() => setIsPayoutOpen(true)}
+              disabled={availableBalance < minimumPayout}
+            >
               <Wallet className="h-4 w-4 mr-2" />
               Request Payout
             </Button>
@@ -418,7 +492,9 @@ export function EarningsReconciliation() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Earnings</p>
-                <p className="text-2xl font-bold">{formatCurrency(dormantSummary.totalEarnings)}</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(dormantSummary.totalEarnings)}
+                </p>
               </div>
               <div className="flex items-center gap-1 text-sm text-green-500">
                 <ArrowUpRight className="h-4 w-4" />
@@ -429,20 +505,26 @@ export function EarningsReconciliation() {
           <Card className="p-4">
             <div>
               <p className="text-sm text-muted-foreground">Total Streams</p>
-              <p className="text-2xl font-bold">{formatNumber(dormantSummary.totalStreams)}</p>
+              <p className="text-2xl font-bold">
+                {formatNumber(dormantSummary.totalStreams)}
+              </p>
             </div>
           </Card>
           <Card className="p-4">
             <div>
               <p className="text-sm text-muted-foreground">Avg Pay Rate</p>
-              <p className="text-2xl font-bold">${dormantSummary.averagePayRate.toFixed(5)}</p>
+              <p className="text-2xl font-bold">
+                ${dormantSummary.averagePayRate.toFixed(5)}
+              </p>
               <p className="text-xs text-muted-foreground">per stream</p>
             </div>
           </Card>
           <Card className="p-4">
             <div>
               <p className="text-sm text-muted-foreground">Available Balance</p>
-              <p className="text-2xl font-bold text-green-500">{formatCurrency(availableBalance)}</p>
+              <p className="text-2xl font-bold text-green-500">
+                {formatCurrency(availableBalance)}
+              </p>
             </div>
           </Card>
           <Card className="p-4">
@@ -456,7 +538,9 @@ export function EarningsReconciliation() {
           <Card className="p-4">
             <div>
               <p className="text-sm text-muted-foreground">Discrepancies</p>
-              <p className="text-2xl font-bold text-orange-500">{dormantSummary.discrepancyCount}</p>
+              <p className="text-2xl font-bold text-orange-500">
+                {dormantSummary.discrepancyCount}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {formatCurrency(dormantSummary.discrepancyAmount)} unmatched
               </p>
@@ -466,7 +550,11 @@ export function EarningsReconciliation() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ChartCard title="Earnings Trend" subtitle="Last 4 months">
-            <SimpleAreaChart data={earningsTrendData} color="emerald" height={200} />
+            <SimpleAreaChart
+              data={earningsTrendData}
+              color="emerald"
+              height={200}
+            />
           </ChartCard>
           <ChartCard title="Platform Breakdown" subtitle="Revenue distribution">
             <div className="flex items-center gap-6">
@@ -479,7 +567,10 @@ export function EarningsReconciliation() {
               />
               <div className="flex-1 space-y-2">
                 {platformDonutData.slice(0, 4).map((p) => (
-                  <div key={p.label} className="flex items-center justify-between">
+                  <div
+                    key={p.label}
+                    className="flex items-center justify-between"
+                  >
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full"
@@ -487,7 +578,9 @@ export function EarningsReconciliation() {
                       />
                       <span className="text-sm">{p.label}</span>
                     </div>
-                    <span className="text-sm font-medium">{formatCurrency(p.value)}</span>
+                    <span className="text-sm font-medium">
+                      {formatCurrency(p.value)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -519,10 +612,7 @@ export function EarningsReconciliation() {
             <div className="flex items-center gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search statements..."
-                  className="pl-10"
-                />
+                <Input placeholder="Search statements..." className="pl-10" />
               </div>
               <Select defaultValue="all">
                 <SelectTrigger className="w-40">
@@ -557,44 +647,54 @@ export function EarningsReconciliation() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getPlatformIcon(statement.platform)}
-                        <span className="capitalize">{statement.platform.replace('-', ' ')}</span>
+                        <span className="capitalize">
+                          {statement.platform.replace("-", " ")}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>{statement.period}</TableCell>
                     <TableCell>
                       <div>
-                        <p className="text-sm font-medium">{statement.fileName}</p>
+                        <p className="text-sm font-medium">
+                          {statement.fileName}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {formatFileSize(statement.fileSize)}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {statement.totalAmount > 0 ? formatCurrency(statement.totalAmount) : '-'}
+                      {statement.totalAmount > 0
+                        ? formatCurrency(statement.totalAmount)
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-right">
-                      {statement.totalStreams > 0 ? formatNumber(statement.totalStreams) : '-'}
+                      {statement.totalStreams > 0
+                        ? formatNumber(statement.totalStreams)
+                        : "-"}
                     </TableCell>
                     <TableCell>{getStatusBadge(statement.status)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {statement.importedAt
                         ? new Date(statement.importedAt).toLocaleDateString()
-                        : '-'}
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {statement.status === 'imported' && (
+                        {statement.status === "imported" && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => reconcileMutation.mutate(statement.id)}
+                            onClick={() =>
+                              reconcileMutation.mutate(statement.id)
+                            }
                             disabled={reconcileMutation.isPending}
                           >
                             <RefreshCw className="h-4 w-4 mr-1" />
                             Reconcile
                           </Button>
                         )}
-                        {statement.status === 'error' && (
+                        {statement.status === "error" && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -621,7 +721,9 @@ export function EarningsReconciliation() {
               <div className="text-center py-12 text-muted-foreground">
                 <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p className="font-medium">No statements imported yet</p>
-                <p className="text-sm mt-1">Import your first royalty statement to get started</p>
+                <p className="text-sm mt-1">
+                  Import your first royalty statement to get started
+                </p>
                 <Button className="mt-4" onClick={() => setIsImportOpen(true)}>
                   <Upload className="h-4 w-4 mr-2" />
                   Import Statement
@@ -641,7 +743,10 @@ export function EarningsReconciliation() {
                   className="pl-10"
                 />
               </div>
-              <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+              <Select
+                value={selectedPlatform}
+                onValueChange={setSelectedPlatform}
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Platform" />
                 </SelectTrigger>
@@ -676,13 +781,17 @@ export function EarningsReconciliation() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{entry.trackTitle}</p>
-                        <p className="text-sm text-muted-foreground">{entry.releaseTitle}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {entry.releaseTitle}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getPlatformIcon(entry.platform)}
-                        <span className="capitalize">{entry.platform.replace('-', ' ')}</span>
+                        <span className="capitalize">
+                          {entry.platform.replace("-", " ")}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>{entry.territory}</TableCell>
@@ -709,29 +818,45 @@ export function EarningsReconciliation() {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                         {(() => {
-                          const method = PAYOUT_METHODS.find((m) => m.value === payout.method);
+                          const method = PAYOUT_METHODS.find(
+                            (m) => m.value === payout.method,
+                          );
                           const Icon = method?.icon || Wallet;
                           return <Icon className="h-6 w-6 text-primary" />;
                         })()}
                       </div>
                       <div>
-                        <p className="text-2xl font-bold">{formatCurrency(payout.amount)}</p>
+                        <p className="text-2xl font-bold">
+                          {formatCurrency(payout.amount)}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {PAYOUT_METHODS.find((m) => m.value === payout.method)?.label} • {payout.period}
+                          {
+                            PAYOUT_METHODS.find(
+                              (m) => m.value === payout.method,
+                            )?.label
+                          }{" "}
+                          • {payout.period}
                         </p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {payout.platforms.map((platform) => (
-                        <Badge key={platform} variant="outline" className="gap-1">
+                        <Badge
+                          key={platform}
+                          variant="outline"
+                          className="gap-1"
+                        >
                           {getPlatformIcon(platform)}
-                          <span className="capitalize">{platform.replace('-', ' ')}</span>
+                          <span className="capitalize">
+                            {platform.replace("-", " ")}
+                          </span>
                         </Badge>
                       ))}
                     </div>
                     {payout.bankDetails && (
                       <p className="text-sm text-muted-foreground">
-                        {payout.bankDetails.bankName} ••••{payout.bankDetails.accountLast4}
+                        {payout.bankDetails.bankName} ••••
+                        {payout.bankDetails.accountLast4}
                       </p>
                     )}
                     {payout.transactionId && (
@@ -753,14 +878,22 @@ export function EarningsReconciliation() {
                   <div className="text-right space-y-2">
                     {getStatusBadge(payout.status)}
                     <div className="text-sm text-muted-foreground">
-                      {payout.status === 'completed' && payout.processedDate ? (
-                        <p>Completed {new Date(payout.processedDate).toLocaleDateString()}</p>
+                      {payout.status === "completed" && payout.processedDate ? (
+                        <p>
+                          Completed{" "}
+                          {new Date(payout.processedDate).toLocaleDateString()}
+                        </p>
                       ) : (
-                        <p>Scheduled {new Date(payout.scheduledDate).toLocaleDateString()}</p>
+                        <p>
+                          Scheduled{" "}
+                          {new Date(payout.scheduledDate).toLocaleDateString()}
+                        </p>
                       )}
                     </div>
                     {payout.fee !== undefined && (
-                      <p className="text-xs text-muted-foreground">Fee: {formatCurrency(payout.fee)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Fee: {formatCurrency(payout.fee)}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -772,7 +905,8 @@ export function EarningsReconciliation() {
                 <Banknote className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p className="font-medium">No payouts yet</p>
                 <p className="text-sm mt-1">
-                  Request your first payout when you reach the minimum balance of {formatCurrency(minimumPayout)}
+                  Request your first payout when you reach the minimum balance
+                  of {formatCurrency(minimumPayout)}
                 </p>
               </div>
             )}
@@ -782,7 +916,9 @@ export function EarningsReconciliation() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Top Territories by Earnings</CardTitle>
+                  <CardTitle className="text-lg">
+                    Top Territories by Earnings
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {territoryData.map((territory, index) => (
@@ -792,12 +928,19 @@ export function EarningsReconciliation() {
                           <span className="w-6 h-6 bg-muted rounded-full flex items-center justify-center text-xs font-medium">
                             {index + 1}
                           </span>
-                          <span className="font-medium">{territory.territory}</span>
+                          <span className="font-medium">
+                            {territory.territory}
+                          </span>
                         </div>
-                        <span className="font-medium">{formatCurrency(territory.earnings)}</span>
+                        <span className="font-medium">
+                          {formatCurrency(territory.earnings)}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Progress value={territory.percentage} className="h-2 flex-1" />
+                        <Progress
+                          value={territory.percentage}
+                          className="h-2 flex-1"
+                        />
                         <span className="text-sm text-muted-foreground w-12 text-right">
                           {territory.percentage.toFixed(1)}%
                         </span>
@@ -809,7 +952,9 @@ export function EarningsReconciliation() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Territory Distribution</CardTitle>
+                  <CardTitle className="text-lg">
+                    Territory Distribution
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <DonutChart
@@ -825,10 +970,15 @@ export function EarningsReconciliation() {
                   />
                   <div className="grid grid-cols-2 gap-2 mt-4">
                     {territoryData.slice(0, 4).map((t, i) => (
-                      <div key={t.territory} className="flex items-center gap-2">
+                      <div
+                        key={t.territory}
+                        className="flex items-center gap-2"
+                      >
                         <div
                           className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: `hsl(${i * 60}, 70%, 50%)` }}
+                          style={{
+                            backgroundColor: `hsl(${i * 60}, 70%, 50%)`,
+                          }}
                         />
                         <span className="text-sm truncate">{t.territory}</span>
                       </div>
@@ -850,13 +1000,19 @@ export function EarningsReconciliation() {
               <TableBody>
                 {territoryData.map((territory) => (
                   <TableRow key={territory.territory}>
-                    <TableCell className="font-medium">{territory.territory}</TableCell>
-                    <TableCell className="text-right">{formatNumber(territory.streams)}</TableCell>
+                    <TableCell className="font-medium">
+                      {territory.territory}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatNumber(territory.streams)}
+                    </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(territory.earnings)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Badge variant="outline">{territory.percentage.toFixed(1)}%</Badge>
+                      <Badge variant="outline">
+                        {territory.percentage.toFixed(1)}%
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -879,7 +1035,9 @@ export function EarningsReconciliation() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="font-medium mb-2">Click to upload or drag and drop</p>
+                <p className="font-medium mb-2">
+                  Click to upload or drag and drop
+                </p>
                 <p className="text-sm text-muted-foreground">
                   CSV, XLSX, XLS files (max 50MB)
                 </p>
@@ -895,8 +1053,8 @@ export function EarningsReconciliation() {
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Supported formats: Spotify, Apple Music, YouTube Music, Amazon Music, 
-                  Tidal, and most other DSP royalty exports.
+                  Supported formats: Spotify, Apple Music, YouTube Music, Amazon
+                  Music, Tidal, and most other DSP royalty exports.
                 </AlertDescription>
               </Alert>
 
@@ -943,7 +1101,8 @@ export function EarningsReconciliation() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Minimum: {formatCurrency(minimumPayout)} • Maximum: {formatCurrency(availableBalance)}
+                  Minimum: {formatCurrency(minimumPayout)} • Maximum:{" "}
+                  {formatCurrency(availableBalance)}
                 </p>
               </div>
 
@@ -957,13 +1116,15 @@ export function EarningsReconciliation() {
                         key={method.value}
                         className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                           payoutMethod === method.value
-                            ? 'border-primary bg-primary/10'
-                            : 'border-muted hover:border-primary/50'
+                            ? "border-primary bg-primary/10"
+                            : "border-muted hover:border-primary/50"
                         }`}
                         onClick={() => setPayoutMethod(method.value)}
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="text-sm font-medium">{method.label}</span>
+                        <span className="text-sm font-medium">
+                          {method.label}
+                        </span>
                       </div>
                     );
                   })}
@@ -1027,7 +1188,8 @@ export function EarningsReconciliation() {
                 </Alert>
               ))}
               <p className="text-sm text-muted-foreground mt-4">
-                Please fix these issues and re-import the statement, or contact support if you need help.
+                Please fix these issues and re-import the statement, or contact
+                support if you need help.
               </p>
             </div>
             <DialogFooter>

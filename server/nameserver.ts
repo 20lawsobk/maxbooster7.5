@@ -11,24 +11,32 @@
  *   DNS_PORT=5354 DNS_SERVER_ROLE=ns2 tsx server/nameserver.ts
  */
 
-import 'dotenv/config';
-import { logger } from './logger.js';
-import { startDNSServer, isDNSRunning, getQueryCount } from './services/dnsServer.js';
+import "dotenv/config";
+import { logger } from "./logger.js";
+import {
+  startDNSServer,
+  isDNSRunning,
+  getQueryCount,
+} from "./services/dnsServer.js";
 
-const ROLE    = process.env.DNS_SERVER_ROLE || 'ns1';
-const PORT    = parseInt(process.env.DNS_PORT || '5353', 10);
-const BASE    = process.env.BASE_DOMAIN      || 'max-booster.com';
+const ROLE = process.env.DNS_SERVER_ROLE || "ns1";
+const PORT = parseInt(process.env.DNS_PORT || "5353", 10);
+const BASE = process.env.BASE_DOMAIN || "max-booster.com";
 const HEALTH_INTERVAL_MS = 60_000;
 
 async function main() {
   logger.info(`[${ROLE}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  logger.info(`[${ROLE}] Max Booster Nameserver — role=${ROLE} port=${PORT} zone=${BASE}`);
+  logger.info(
+    `[${ROLE}] Max Booster Nameserver — role=${ROLE} port=${PORT} zone=${BASE}`,
+  );
   logger.info(`[${ROLE}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
   await startDNSServer();
 
   if (!isDNSRunning()) {
-    logger.error(`[${ROLE}] ❌ DNS server failed to start on port ${PORT}. Exiting.`);
+    logger.error(
+      `[${ROLE}] ❌ DNS server failed to start on port ${PORT}. Exiting.`,
+    );
     process.exit(1);
   }
 
@@ -45,11 +53,11 @@ async function main() {
     logger.info(`[${ROLE}] Received ${sig} — shutting down`);
     process.exit(0);
   };
-  process.once('SIGTERM', () => shutdown('SIGTERM'));
-  process.once('SIGINT',  () => shutdown('SIGINT'));
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 }
 
-main().catch(err => {
-  logger.error({ err }, '[nameserver] Fatal startup error');
+main().catch((err) => {
+  logger.error({ err }, "[nameserver] Fatal startup error");
   process.exit(1);
 });

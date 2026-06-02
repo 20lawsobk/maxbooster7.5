@@ -1,14 +1,14 @@
-import type { AdCreative, AdCampaign } from '@shared/schema';
-import { storage } from '../storage';
-import { db } from '../db';
+import type { AdCreative, AdCampaign } from "@shared/schema";
+import { storage } from "../storage";
+import { db } from "../db";
 import {
   adCampaigns,
   adCompetitorIntelligence,
   adAudienceSegments,
   adCreativePredictions,
   adConversions,
-} from '@shared/schema';
-import { eq, and, gte, desc, sql } from 'drizzle-orm';
+} from "@shared/schema";
+import { eq, and, gte, desc, sql } from "drizzle-orm";
 
 interface CampaignInput {
   budget?: number;
@@ -114,13 +114,13 @@ interface OrganicBaselineMetrics {
  * All algorithms are deterministic for reproducibility
  */
 export class AdvertisingAIService {
-  private modelVersion = 'v3.0-professional-suite';
+  private modelVersion = "v3.0-professional-suite";
 
   // AI Model names for governance
-  private readonly COMPETITOR_ANALYZER = 'competitor_analyzer_v1';
-  private readonly AUDIENCE_CLUSTERER = 'audience_clusterer_v1';
-  private readonly CREATIVE_PREDICTOR = 'creative_predictor_v1';
-  private readonly BUDGET_OPTIMIZER = 'budget_optimizer_v1';
+  private readonly COMPETITOR_ANALYZER = "competitor_analyzer_v1";
+  private readonly AUDIENCE_CLUSTERER = "audience_clusterer_v1";
+  private readonly CREATIVE_PREDICTOR = "creative_predictor_v1";
+  private readonly BUDGET_OPTIMIZER = "budget_optimizer_v1";
 
   /**
    * PHASE 1: Amplify creative for maximum organic reach
@@ -129,17 +129,21 @@ export class AdvertisingAIService {
   async amplifyCreative(
     creative: AdCreative,
     campaign: CampaignInput,
-    platforms: string[]
+    platforms: string[],
   ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Calculate organic amplification potential (100%+ boost vs paid ads)
     const viralityScore = this.calculateViralityScore(creative);
-    const organicReachMultiplier = this.calculateOrganicReachMultiplier(viralityScore);
-    const platformPerformance = this.predictPlatformPerformance(creative, platforms);
+    const organicReachMultiplier =
+      this.calculateOrganicReachMultiplier(viralityScore);
+    const platformPerformance = this.predictPlatformPerformance(
+      creative,
+      platforms,
+    );
     const engagementOptimizations = this.generateEngagementOptimizations(
       creative,
-      platformPerformance
+      platformPerformance,
     );
 
     const outputs = {
@@ -147,9 +151,13 @@ export class AdvertisingAIService {
       organicReachMultiplier, // 100%+ amplification vs paid ads
       platformPredictions: platformPerformance,
       engagementOptimizations,
-      costSavings: this.calculateAdSpendSavings(platformPerformance, campaign.budget || 0),
+      costSavings: this.calculateAdSpendSavings(
+        platformPerformance,
+        campaign.budget || 0,
+      ),
       optimalPostSchedule: this.generatePostSchedule(platforms),
-      expectedOrganicReach: this.calculateExpectedOrganicReach(platformPerformance),
+      expectedOrganicReach:
+        this.calculateExpectedOrganicReach(platformPerformance),
     };
 
     // Record AI run for determinism verification
@@ -173,7 +181,11 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #1: Competitor Intelligence System
    * Analyzes competitor content and strategies with deterministic simulation
    */
-  async analyzeCompetitor(competitorName: string, platform: string, userId: string): Promise<Record<string, unknown>> {
+  async analyzeCompetitor(
+    competitorName: string,
+    platform: string,
+    userId: string,
+  ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Deterministic simulation based on industry benchmarks
@@ -190,67 +202,67 @@ export class AdvertisingAIService {
 
     // Content type distribution
     const contentTypes = [
-      { type: 'video', percentage: 40 + random() * 20 },
-      { type: 'image', percentage: 30 + random() * 15 },
-      { type: 'carousel', percentage: 15 + random() * 10 },
-      { type: 'text', percentage: 10 + random() * 5 },
+      { type: "video", percentage: 40 + random() * 20 },
+      { type: "image", percentage: 30 + random() * 15 },
+      { type: "carousel", percentage: 15 + random() * 10 },
+      { type: "text", percentage: 10 + random() * 5 },
     ];
 
     // Top hashtags (deterministic based on seed)
     const hashtagPool = [
-      '#music',
-      '#newmusic',
-      '#artist',
-      '#producer',
-      '#beats',
-      '#hiphop',
-      '#rap',
-      '#rnb',
-      '#pop',
-      '#indie',
+      "#music",
+      "#newmusic",
+      "#artist",
+      "#producer",
+      "#beats",
+      "#hiphop",
+      "#rap",
+      "#rnb",
+      "#pop",
+      "#indie",
     ];
     const topHashtags = hashtagPool.slice(0, 5 + Math.floor(random() * 3));
 
     // Posting times analysis
     const postingTimes = [
-      { day: 'Monday', hour: 18, count: Math.floor(15 + random() * 10) },
-      { day: 'Wednesday', hour: 12, count: Math.floor(10 + random() * 15) },
-      { day: 'Friday', hour: 20, count: Math.floor(20 + random() * 15) },
-      { day: 'Sunday', hour: 14, count: Math.floor(12 + random() * 10) },
+      { day: "Monday", hour: 18, count: Math.floor(15 + random() * 10) },
+      { day: "Wednesday", hour: 12, count: Math.floor(10 + random() * 15) },
+      { day: "Friday", hour: 20, count: Math.floor(20 + random() * 15) },
+      { day: "Sunday", hour: 14, count: Math.floor(12 + random() * 10) },
     ];
 
     // AI-generated insights
     const strengths = [
-      'Consistent posting schedule with high frequency',
-      'Strong video content performance',
-      'High engagement rate above industry average',
-      'Effective use of trending hashtags',
+      "Consistent posting schedule with high frequency",
+      "Strong video content performance",
+      "High engagement rate above industry average",
+      "Effective use of trending hashtags",
     ];
 
     const weaknesses = [
-      'Limited carousel content usage',
-      'Low weekend posting frequency',
-      'Inconsistent brand messaging',
-      'Minimal user-generated content',
+      "Limited carousel content usage",
+      "Low weekend posting frequency",
+      "Inconsistent brand messaging",
+      "Minimal user-generated content",
     ];
 
     const contentGaps = [
-      'Behind-the-scenes studio content',
-      'Collaborative posts with other artists',
-      'Educational music production tips',
-      'Fan engagement contests',
+      "Behind-the-scenes studio content",
+      "Collaborative posts with other artists",
+      "Educational music production tips",
+      "Fan engagement contests",
     ];
 
     const opportunities = [
-      'Increase carousel posts for higher engagement',
-      'Optimize posting times for weekend audience',
-      'Leverage trending audio formats',
-      'Create more interactive poll content',
+      "Increase carousel posts for higher engagement",
+      "Optimize posting times for weekend audience",
+      "Leverage trending audio formats",
+      "Create more interactive poll content",
     ];
 
     const analysisData = {
       seed,
-      benchmarkSource: 'industry_average_2024',
+      benchmarkSource: "industry_average_2024",
       confidence: 0.82,
       lastUpdated: new Date().toISOString(),
     };
@@ -308,7 +320,12 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #2: Audience Clustering (Deterministic AI)
    * Segments audience into 5-10 clusters based on demographics, behavior, interests
    */
-  async clusterAudience(campaignId: number): Promise<{ segments: AudienceSegment[]; summary: Record<string, unknown> }> {
+  async clusterAudience(
+    campaignId: number,
+  ): Promise<{
+    segments: AudienceSegment[];
+    summary: Record<string, unknown>;
+  }> {
     const startTime = Date.now();
 
     // Deterministic k-means style clustering with fixed seed
@@ -321,156 +338,198 @@ export class AdvertisingAIService {
     // Generate deterministic audience segments
     const segmentTemplates = [
       {
-        name: 'Young Trendsetters',
+        name: "Young Trendsetters",
         demographics: {
-          ageRange: '18-24',
-          gender: 'Mixed',
-          location: ['Urban areas', 'Major cities'],
-          income: '$20k-$40k',
-        },
-        interests: ['New music', 'Social media', 'Streaming', 'Concerts', 'Fashion'],
-        behaviors: {
-          engagementLevel: 'High',
-          purchaseIntent: 'Medium',
-          contentPreferences: ['Short videos', 'Stories', 'Reels'],
-        },
-        targetingRecommendations: {
-          platforms: ['TikTok', 'Instagram'],
-          contentTypes: ['video', 'carousel'],
-          messagingTone: 'Casual',
-          callToAction: 'Stream Now',
-        },
-      },
-      {
-        name: 'Music Enthusiasts',
-        demographics: {
-          ageRange: '25-34',
-          gender: 'Mixed',
-          location: ['Suburban', 'Urban'],
-          income: '$40k-$70k',
-        },
-        interests: ['Music discovery', 'Playlists', 'Artist following', 'Music blogs', 'Vinyl'],
-        behaviors: {
-          engagementLevel: 'Very High',
-          purchaseIntent: 'High',
-          contentPreferences: ['Full videos', 'Articles', 'Podcasts'],
-        },
-        targetingRecommendations: {
-          platforms: ['YouTube', 'Spotify'],
-          contentTypes: ['video', 'text'],
-          messagingTone: 'Informative',
-          callToAction: 'Add to Playlist',
-        },
-      },
-      {
-        name: 'Casual Listeners',
-        demographics: {
-          ageRange: '35-44',
-          gender: 'Mixed',
-          location: ['Suburban', 'Rural'],
-          income: '$50k-$80k',
-        },
-        interests: ['Background music', 'Radio', 'Curated playlists', 'Familiar genres'],
-        behaviors: {
-          engagementLevel: 'Medium',
-          purchaseIntent: 'Low',
-          contentPreferences: ['Radio', 'Playlists', 'Auto-play'],
-        },
-        targetingRecommendations: {
-          platforms: ['Facebook', 'Spotify'],
-          contentTypes: ['image', 'text'],
-          messagingTone: 'Friendly',
-          callToAction: 'Listen Now',
-        },
-      },
-      {
-        name: 'Industry Professionals',
-        demographics: {
-          ageRange: '28-45',
-          gender: 'Mixed',
-          location: ['Major cities'],
-          income: '$60k-$120k',
-        },
-        interests: ['Music production', 'Industry news', 'Collaborations', 'Equipment', 'Mixing'],
-        behaviors: {
-          engagementLevel: 'Medium',
-          purchaseIntent: 'Very High',
-          contentPreferences: ['Tutorials', 'Behind-the-scenes', 'Technical content'],
-        },
-        targetingRecommendations: {
-          platforms: ['LinkedIn', 'YouTube'],
-          contentTypes: ['video', 'text'],
-          messagingTone: 'Professional',
-          callToAction: 'Learn More',
-        },
-      },
-      {
-        name: 'Gen Z Streamers',
-        demographics: {
-          ageRange: '16-22',
-          gender: 'Mixed',
-          location: ['Global'],
-          income: '$0-$25k',
-        },
-        interests: ['Viral music', 'Dance challenges', 'Memes', 'Gaming', 'Content creation'],
-        behaviors: {
-          engagementLevel: 'Very High',
-          purchaseIntent: 'Low',
-          contentPreferences: ['Short clips', 'Challenges', 'Trends'],
-        },
-        targetingRecommendations: {
-          platforms: ['TikTok', 'YouTube Shorts'],
-          contentTypes: ['video'],
-          messagingTone: 'Fun',
-          callToAction: 'Use This Sound',
-        },
-      },
-      {
-        name: 'Mature Audiophiles',
-        demographics: {
-          ageRange: '45-60',
-          gender: 'Male-leaning',
-          location: ['Suburban'],
-          income: '$70k-$150k',
+          ageRange: "18-24",
+          gender: "Mixed",
+          location: ["Urban areas", "Major cities"],
+          income: "$20k-$40k",
         },
         interests: [
-          'High-quality audio',
-          'Album releases',
-          'Artist catalogs',
-          'Concerts',
-          'Collectibles',
+          "New music",
+          "Social media",
+          "Streaming",
+          "Concerts",
+          "Fashion",
         ],
         behaviors: {
-          engagementLevel: 'Low',
-          purchaseIntent: 'Very High',
-          contentPreferences: ['Full albums', 'Artist interviews', 'Reviews'],
+          engagementLevel: "High",
+          purchaseIntent: "Medium",
+          contentPreferences: ["Short videos", "Stories", "Reels"],
         },
         targetingRecommendations: {
-          platforms: ['YouTube', 'Facebook'],
-          contentTypes: ['video', 'text'],
-          messagingTone: 'Respectful',
-          callToAction: 'Pre-Order Album',
+          platforms: ["TikTok", "Instagram"],
+          contentTypes: ["video", "carousel"],
+          messagingTone: "Casual",
+          callToAction: "Stream Now",
         },
       },
       {
-        name: 'Social Sharers',
+        name: "Music Enthusiasts",
         demographics: {
-          ageRange: '22-35',
-          gender: 'Female-leaning',
-          location: ['Urban'],
-          income: '$30k-$60k',
+          ageRange: "25-34",
+          gender: "Mixed",
+          location: ["Suburban", "Urban"],
+          income: "$40k-$70k",
         },
-        interests: ['Sharing music', 'Recommendations', 'Social connections', 'Group playlists'],
+        interests: [
+          "Music discovery",
+          "Playlists",
+          "Artist following",
+          "Music blogs",
+          "Vinyl",
+        ],
         behaviors: {
-          engagementLevel: 'High',
-          purchaseIntent: 'Medium',
-          contentPreferences: ['Shareable content', 'Quote graphics', 'Stories'],
+          engagementLevel: "Very High",
+          purchaseIntent: "High",
+          contentPreferences: ["Full videos", "Articles", "Podcasts"],
         },
         targetingRecommendations: {
-          platforms: ['Instagram', 'Facebook'],
-          contentTypes: ['image', 'carousel'],
-          messagingTone: 'Engaging',
-          callToAction: 'Share With Friends',
+          platforms: ["YouTube", "Spotify"],
+          contentTypes: ["video", "text"],
+          messagingTone: "Informative",
+          callToAction: "Add to Playlist",
+        },
+      },
+      {
+        name: "Casual Listeners",
+        demographics: {
+          ageRange: "35-44",
+          gender: "Mixed",
+          location: ["Suburban", "Rural"],
+          income: "$50k-$80k",
+        },
+        interests: [
+          "Background music",
+          "Radio",
+          "Curated playlists",
+          "Familiar genres",
+        ],
+        behaviors: {
+          engagementLevel: "Medium",
+          purchaseIntent: "Low",
+          contentPreferences: ["Radio", "Playlists", "Auto-play"],
+        },
+        targetingRecommendations: {
+          platforms: ["Facebook", "Spotify"],
+          contentTypes: ["image", "text"],
+          messagingTone: "Friendly",
+          callToAction: "Listen Now",
+        },
+      },
+      {
+        name: "Industry Professionals",
+        demographics: {
+          ageRange: "28-45",
+          gender: "Mixed",
+          location: ["Major cities"],
+          income: "$60k-$120k",
+        },
+        interests: [
+          "Music production",
+          "Industry news",
+          "Collaborations",
+          "Equipment",
+          "Mixing",
+        ],
+        behaviors: {
+          engagementLevel: "Medium",
+          purchaseIntent: "Very High",
+          contentPreferences: [
+            "Tutorials",
+            "Behind-the-scenes",
+            "Technical content",
+          ],
+        },
+        targetingRecommendations: {
+          platforms: ["LinkedIn", "YouTube"],
+          contentTypes: ["video", "text"],
+          messagingTone: "Professional",
+          callToAction: "Learn More",
+        },
+      },
+      {
+        name: "Gen Z Streamers",
+        demographics: {
+          ageRange: "16-22",
+          gender: "Mixed",
+          location: ["Global"],
+          income: "$0-$25k",
+        },
+        interests: [
+          "Viral music",
+          "Dance challenges",
+          "Memes",
+          "Gaming",
+          "Content creation",
+        ],
+        behaviors: {
+          engagementLevel: "Very High",
+          purchaseIntent: "Low",
+          contentPreferences: ["Short clips", "Challenges", "Trends"],
+        },
+        targetingRecommendations: {
+          platforms: ["TikTok", "YouTube Shorts"],
+          contentTypes: ["video"],
+          messagingTone: "Fun",
+          callToAction: "Use This Sound",
+        },
+      },
+      {
+        name: "Mature Audiophiles",
+        demographics: {
+          ageRange: "45-60",
+          gender: "Male-leaning",
+          location: ["Suburban"],
+          income: "$70k-$150k",
+        },
+        interests: [
+          "High-quality audio",
+          "Album releases",
+          "Artist catalogs",
+          "Concerts",
+          "Collectibles",
+        ],
+        behaviors: {
+          engagementLevel: "Low",
+          purchaseIntent: "Very High",
+          contentPreferences: ["Full albums", "Artist interviews", "Reviews"],
+        },
+        targetingRecommendations: {
+          platforms: ["YouTube", "Facebook"],
+          contentTypes: ["video", "text"],
+          messagingTone: "Respectful",
+          callToAction: "Pre-Order Album",
+        },
+      },
+      {
+        name: "Social Sharers",
+        demographics: {
+          ageRange: "22-35",
+          gender: "Female-leaning",
+          location: ["Urban"],
+          income: "$30k-$60k",
+        },
+        interests: [
+          "Sharing music",
+          "Recommendations",
+          "Social connections",
+          "Group playlists",
+        ],
+        behaviors: {
+          engagementLevel: "High",
+          purchaseIntent: "Medium",
+          contentPreferences: [
+            "Shareable content",
+            "Quote graphics",
+            "Stories",
+          ],
+        },
+        targetingRecommendations: {
+          platforms: ["Instagram", "Facebook"],
+          contentTypes: ["image", "carousel"],
+          messagingTone: "Engaging",
+          callToAction: "Share With Friends",
         },
       },
     ];
@@ -537,7 +596,10 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #3: Creative Performance Prediction
    * Predicts CTR, engagement, conversion rates with confidence intervals
    */
-  async predictCreativePerformance(creative: AdCreative, targetAudience?: TargetAudienceInput): Promise<Record<string, unknown>> {
+  async predictCreativePerformance(
+    creative: AdCreative,
+    targetAudience?: TargetAudienceInput,
+  ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Feature extraction from creative
@@ -594,7 +656,9 @@ export class AdvertisingAIService {
       const [belowRow] = await db
         .select({ belowCount: sql<number>`COUNT(*)` })
         .from(adCreativePredictions)
-        .where(sql`CAST(${adCreativePredictions.predictedCTR} AS FLOAT) < ${predictedCTR}`);
+        .where(
+          sql`CAST(${adCreativePredictions.predictedCTR} AS FLOAT) < ${predictedCTR}`,
+        );
       const below = Number(belowRow?.belowCount ?? 0);
       percentile = Math.round((below / historicalCount) * 100);
     } else {
@@ -657,7 +721,11 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #4: Budget Optimizer
    * Allocates budget across platforms, segments, and time to maximize ROI
    */
-  async optimizeBudget(campaignId: number, totalBudget: number, goals: BudgetGoals): Promise<Record<string, unknown>> {
+  async optimizeBudget(
+    campaignId: number,
+    totalBudget: number,
+    goals: BudgetGoals,
+  ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     // Get campaign data
@@ -667,7 +735,7 @@ export class AdvertisingAIService {
       .where(eq(adCampaigns.id, campaignId))
       .limit(1);
     if (!campaign || campaign.length === 0) {
-      throw new Error('Campaign not found');
+      throw new Error("Campaign not found");
     }
 
     // Get audience segments
@@ -677,7 +745,11 @@ export class AdvertisingAIService {
       .where(eq(adAudienceSegments.campaignId, campaignId))
       .orderBy(adAudienceSegments.segmentIndex);
 
-    const platforms = campaign[0].platforms || ['facebook', 'instagram', 'tiktok'];
+    const platforms = campaign[0].platforms || [
+      "facebook",
+      "instagram",
+      "tiktok",
+    ];
 
     // Deterministic optimization algorithm
     const seed = campaignId * 67890;
@@ -709,28 +781,40 @@ export class AdvertisingAIService {
       platformAllocations[platform] = {
         budget: Math.round(allocation),
         expectedReach: Math.floor(allocation * 100 * (1 + random() * 0.2)), // ~100 reach per $1
-        expectedConversions: Math.floor(allocation * 0.02 * (1 + random() * 0.3)), // ~2% conversion
+        expectedConversions: Math.floor(
+          allocation * 0.02 * (1 + random() * 0.3),
+        ), // ~2% conversion
         expectedROI: roi + random() * 0.5,
         bidStrategy: this.getBidStrategy(platform, goals),
       };
     }
 
     // Audience segment allocation
-    const segmentAllocations: Record<string, { budget: number; size: number; expectedConversions: number; platforms: string[] }> = {};
+    const segmentAllocations: Record<
+      string,
+      {
+        budget: number;
+        size: number;
+        expectedConversions: number;
+        platforms: string[];
+      }
+    > = {};
     const totalSegmentValue = segments.reduce(
-      (sum: number, s: { predictedValue?: string; size: number }) => sum + parseFloat(s.predictedValue || '0') * s.size,
-      0
+      (sum: number, s: { predictedValue?: string; size: number }) =>
+        sum + parseFloat(s.predictedValue || "0") * s.size,
+      0,
     );
 
     for (const segment of segments) {
-      const segmentValue = parseFloat(segment.predictedValue || '0') * segment.size;
+      const segmentValue =
+        parseFloat(segment.predictedValue || "0") * segment.size;
       const allocation = (segmentValue / totalSegmentValue) * totalBudget * 0.7; // 70% to segments
 
       segmentAllocations[segment.segmentName] = {
         budget: Math.round(allocation),
         size: segment.size,
         expectedConversions: Math.floor(allocation * 0.025),
-        platforms: segment.targetingRecommendations?.platforms || ['instagram'],
+        platforms: segment.targetingRecommendations?.platforms || ["instagram"],
       };
     }
 
@@ -750,21 +834,22 @@ export class AdvertisingAIService {
     const expectedResults = {
       totalReach: Object.values(platformAllocations).reduce(
         (sum: number, p: PlatformAllocation) => sum + p.expectedReach,
-        0
+        0,
       ),
       totalConversions: Object.values(platformAllocations).reduce(
         (sum: number, p: PlatformAllocation) => sum + p.expectedConversions,
-        0
+        0,
       ),
       expectedROI:
         totalBudget > 0
           ? (
               Object.values(platformAllocations).reduce(
-                (sum: number, p: PlatformAllocation) => sum + p.expectedConversions * 50,
-                0
+                (sum: number, p: PlatformAllocation) =>
+                  sum + p.expectedConversions * 50,
+                0,
               ) / totalBudget
             ).toFixed(2)
-          : '0',
+          : "0",
       breakEvenPoint: Math.ceil(duration * 0.4), // Day 12 of 30
     };
 
@@ -805,7 +890,7 @@ export class AdvertisingAIService {
     conversionType: string,
     conversionValue: number,
     touchpoints: Touchpoint[] = [],
-    attributionModel: 'last_click' | 'first_click' | 'linear' = 'last_click'
+    attributionModel: "last_click" | "first_click" | "linear" = "last_click",
   ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
@@ -814,20 +899,20 @@ export class AdvertisingAIService {
     let attributedSegmentId = null;
 
     if (touchpoints.length > 0) {
-      if (attributionModel === 'last_click') {
+      if (attributionModel === "last_click") {
         const lastTouch = touchpoints[touchpoints.length - 1];
         attributedCreativeId = lastTouch.creativeId;
-      } else if (attributionModel === 'first_click') {
+      } else if (attributionModel === "first_click") {
         const firstTouch = touchpoints[0];
         attributedCreativeId = firstTouch.creativeId;
-      } else if (attributionModel === 'linear') {
+      } else if (attributionModel === "linear") {
         // For linear, use the most frequent creative
         const creativeFreq: Record<string, number> = {};
         for (const tp of touchpoints) {
           creativeFreq[tp.creativeId] = (creativeFreq[tp.creativeId] || 0) + 1;
         }
         attributedCreativeId = Object.keys(creativeFreq).reduce((a, b) =>
-          creativeFreq[a] > creativeFreq[b] ? a : b
+          creativeFreq[a] > creativeFreq[b] ? a : b,
         );
       }
     }
@@ -850,8 +935,8 @@ export class AdvertisingAIService {
     const costPerConversion = campaignBudget / totalConversions;
 
     const totalRevenue = existingConversions.reduce(
-      (sum, c) => sum + parseFloat(c.conversionValue?.toString() || '0'),
-      conversionValue
+      (sum, c) => sum + parseFloat(c.conversionValue?.toString() || "0"),
+      conversionValue,
     );
     const roas = campaignBudget > 0 ? totalRevenue / campaignBudget : 0;
 
@@ -866,9 +951,9 @@ export class AdvertisingAIService {
       attributionModel,
       touchpoints: touchpoints.map((tp) => ({
         timestamp: tp.timestamp || new Date().toISOString(),
-        platform: tp.platform || 'unknown',
-        creativeId: tp.creativeId || '',
-        interaction: tp.interaction || 'view',
+        platform: tp.platform || "unknown",
+        creativeId: tp.creativeId || "",
+        interaction: tp.interaction || "view",
       })),
       costPerConversion: costPerConversion.toFixed(2),
       roas: roas.toFixed(2),
@@ -899,7 +984,7 @@ export class AdvertisingAIService {
 
     await storage.createAdAIRun({
       creativeId: attributedCreativeId || `campaign_${campaignId}`,
-      modelVersion: 'conversion_tracker_v1',
+      modelVersion: "conversion_tracker_v1",
       inferenceInputs: { campaignId, conversionType, attributionModel },
       inferenceOutputs: outputs,
       executionTime: Date.now() - startTime,
@@ -913,7 +998,10 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #6: Campaign Performance Forecasting
    * Predicts campaign metrics over time with confidence bands
    */
-  async forecastCampaignPerformance(campaignSettings: CampaignSettings, duration: number): Promise<Record<string, unknown>> {
+  async forecastCampaignPerformance(
+    campaignSettings: CampaignSettings,
+    duration: number,
+  ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
     const { campaignId, budget = 0, platforms, objective } = campaignSettings;
@@ -940,11 +1028,15 @@ export class AdvertisingAIService {
       const dailyMultiplier = 0.5 + growthFactor;
 
       const dailyReach = Math.floor(
-        dailyBudget * 100 * dailyMultiplier * (1 + (random() - 0.5) * 0.2)
+        dailyBudget * 100 * dailyMultiplier * (1 + (random() - 0.5) * 0.2),
       );
       const dailyImpressions = Math.floor(dailyReach * (2 + random()));
-      const dailyClicks = Math.floor(dailyImpressions * (0.02 + random() * 0.03));
-      const dailyConversions = Math.floor(dailyClicks * (0.03 + random() * 0.02));
+      const dailyClicks = Math.floor(
+        dailyImpressions * (0.02 + random() * 0.03),
+      );
+      const dailyConversions = Math.floor(
+        dailyClicks * (0.03 + random() * 0.02),
+      );
       const dailySpendActual = dailyBudget * (0.9 + random() * 0.2); // 90-110% of budget
 
       cumulativeReach += dailyReach;
@@ -955,7 +1047,9 @@ export class AdvertisingAIService {
 
       dailyProjections.push({
         day,
-        date: new Date(Date.now() + day * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() + day * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
         reach: {
           value: dailyReach,
           lowerBound: Math.floor(dailyReach * 0.8),
@@ -991,10 +1085,18 @@ export class AdvertisingAIService {
         weeklyProjections.push({
           week: Math.ceil(day / 7),
           totalReach: weekData.reduce((sum, d) => sum + d.reach.value, 0),
-          totalImpressions: weekData.reduce((sum, d) => sum + d.impressions.value, 0),
+          totalImpressions: weekData.reduce(
+            (sum, d) => sum + d.impressions.value,
+            0,
+          ),
           totalClicks: weekData.reduce((sum, d) => sum + d.clicks.value, 0),
-          totalConversions: weekData.reduce((sum, d) => sum + d.conversions.value, 0),
-          totalSpend: Math.round(weekData.reduce((sum, d) => sum + d.spend.value, 0)),
+          totalConversions: weekData.reduce(
+            (sum, d) => sum + d.conversions.value,
+            0,
+          ),
+          totalSpend: Math.round(
+            weekData.reduce((sum, d) => sum + d.spend.value, 0),
+          ),
         });
       }
     }
@@ -1005,7 +1107,9 @@ export class AdvertisingAIService {
     const expectedConversionRate = 0.03;
 
     if (dailyProjections.length > 7) {
-      const week1Clicks = dailyProjections.slice(0, 7).reduce((sum, d) => sum + d.clicks.value, 0);
+      const week1Clicks = dailyProjections
+        .slice(0, 7)
+        .reduce((sum, d) => sum + d.clicks.value, 0);
       const week1Impressions = dailyProjections
         .slice(0, 7)
         .reduce((sum, d) => sum + d.impressions.value, 0);
@@ -1013,10 +1117,10 @@ export class AdvertisingAIService {
 
       if (actualCTR < expectedCTR * 0.7) {
         warnings.push({
-          type: 'low_ctr',
-          severity: 'high',
+          type: "low_ctr",
+          severity: "high",
           message: `CTR below target: ${(actualCTR * 100).toFixed(2)}% vs ${(expectedCTR * 100).toFixed(2)}% expected`,
-          recommendation: 'Revise ad creative and targeting',
+          recommendation: "Revise ad creative and targeting",
           detectedAt: 7,
         });
       }
@@ -1032,10 +1136,15 @@ export class AdvertisingAIService {
       projectedSpend: Math.round(cumulativeSpend),
       projectedROI:
         cumulativeSpend > 0
-          ? ((cumulativeConversions * 50 - cumulativeSpend) / cumulativeSpend).toFixed(2)
-          : '0',
-      averageCTR: ((cumulativeClicks / cumulativeImpressions) * 100).toFixed(2) + '%',
-      averageConversionRate: ((cumulativeConversions / cumulativeClicks) * 100).toFixed(2) + '%',
+          ? (
+              (cumulativeConversions * 50 - cumulativeSpend) /
+              cumulativeSpend
+            ).toFixed(2)
+          : "0",
+      averageCTR:
+        ((cumulativeClicks / cumulativeImpressions) * 100).toFixed(2) + "%",
+      averageConversionRate:
+        ((cumulativeConversions / cumulativeClicks) * 100).toFixed(2) + "%",
     };
 
     // Record AI inference
@@ -1051,7 +1160,7 @@ export class AdvertisingAIService {
 
     await storage.createAdAIRun({
       creativeId: `campaign_${campaignId}_forecast`,
-      modelVersion: 'campaign_forecaster_v1',
+      modelVersion: "campaign_forecaster_v1",
       inferenceInputs: { campaignId, budget, duration, platforms },
       inferenceOutputs: outputs,
       executionTime: Date.now() - startTime,
@@ -1072,12 +1181,14 @@ export class AdvertisingAIService {
   private calculateViralityScore(creative: AdCreative): number {
     let score = 50; // baseline
 
-    const text = creative.normalizedContent || creative.rawContent || '';
+    const text = creative.normalizedContent || creative.rawContent || "";
 
     // Text engagement factors
     const hashtagCount = (text.match(/#/g) || []).length;
     const questionCount = (text.match(/\?/g) || []).length;
-    const emojiCount = (text.match(new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu')) || []).length;
+    const emojiCount = (
+      text.match(new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu")) || []
+    ).length;
     const mentionCount = (text.match(/@\w+/g) || []).length;
     const wordCount = text.split(/\s+/).length;
 
@@ -1100,12 +1211,12 @@ export class AdvertisingAIService {
 
     // Media multiplier (visual content performs 10x better organically)
     if (creative.assetUrls && creative.assetUrls.length > 0) {
-      const mediaBonus = creative.contentType === 'video' ? 20 : 15;
+      const mediaBonus = creative.contentType === "video" ? 20 : 15;
       score += mediaBonus;
     }
 
     // Content type bonuses
-    if (creative.contentType === 'carousel') score += 8; // High engagement format
+    if (creative.contentType === "carousel") score += 8; // High engagement format
 
     return Math.min(Math.max(score, 0), 100);
   }
@@ -1129,22 +1240,36 @@ export class AdvertisingAIService {
    */
   private predictPlatformPerformance(
     creative: AdCreative,
-    platforms: string[]
+    platforms: string[],
   ): Record<string, PlatformMetrics> {
     const predictions: Record<string, PlatformMetrics> = {};
 
     for (const platform of platforms) {
       const baselineMetrics = this.getOrganicBaselineMetrics(platform);
-      const contentMultiplier = this.getContentTypeMultiplier(creative.contentType, platform);
+      const contentMultiplier = this.getContentTypeMultiplier(
+        creative.contentType,
+        platform,
+      );
 
       predictions[platform] = {
-        estimatedReach: Math.round(baselineMetrics.avgFollowerReach * contentMultiplier),
+        estimatedReach: Math.round(
+          baselineMetrics.avgFollowerReach * contentMultiplier,
+        ),
         estimatedEngagement: baselineMetrics.engagementRate * contentMultiplier,
-        estimatedShares: Math.round(baselineMetrics.avgShares * contentMultiplier),
-        estimatedClicks: Math.round(baselineMetrics.avgClicks * contentMultiplier),
-        estimatedSaves: Math.round(baselineMetrics.avgSaves * contentMultiplier),
+        estimatedShares: Math.round(
+          baselineMetrics.avgShares * contentMultiplier,
+        ),
+        estimatedClicks: Math.round(
+          baselineMetrics.avgClicks * contentMultiplier,
+        ),
+        estimatedSaves: Math.round(
+          baselineMetrics.avgSaves * contentMultiplier,
+        ),
         confidence: 0.85,
-        costSavings: this.calculatePlatformAdCost(platform, baselineMetrics.avgFollowerReach),
+        costSavings: this.calculatePlatformAdCost(
+          platform,
+          baselineMetrics.avgFollowerReach,
+        ),
       };
     }
 
@@ -1205,7 +1330,10 @@ export class AdvertisingAIService {
   /**
    * Get content type multiplier for platform
    */
-  private getContentTypeMultiplier(contentType: string, platform: string): number {
+  private getContentTypeMultiplier(
+    contentType: string,
+    platform: string,
+  ): number {
     const multipliers: Record<string, Record<string, number>> = {
       video: {
         tiktok: 2.0,
@@ -1248,7 +1376,7 @@ export class AdvertisingAIService {
    */
   private calculateAdSpendSavings(
     platformPerformance: Record<string, PlatformMetrics>,
-    suggestedBudget: number
+    suggestedBudget: number,
   ): number {
     let totalSavings = 0;
     const adCosts: Record<string, number> = {
@@ -1262,7 +1390,8 @@ export class AdvertisingAIService {
 
     for (const [platform, metrics] of Object.entries(platformPerformance)) {
       const costPerEngagement = adCosts[platform] || 0.5;
-      const organicEngagements = metrics.estimatedReach * metrics.estimatedEngagement;
+      const organicEngagements =
+        metrics.estimatedReach * metrics.estimatedEngagement;
       totalSavings += organicEngagements * costPerEngagement;
     }
 
@@ -1289,34 +1418,43 @@ export class AdvertisingAIService {
    */
   private generateEngagementOptimizations(
     creative: AdCreative,
-    platformPerformance: Record<string, PlatformMetrics>
+    platformPerformance: Record<string, PlatformMetrics>,
   ): string[] {
     const optimizations: string[] = [];
-    const text = creative.normalizedContent || creative.rawContent || '';
+    const text = creative.normalizedContent || creative.rawContent || "";
 
     if (text.length < 50) {
       optimizations.push(
-        'Expand content to 100-150 characters for optimal engagement (+35% interaction rate)'
+        "Expand content to 100-150 characters for optimal engagement (+35% interaction rate)",
       );
     }
 
     const hashtagCount = (text.match(/#/g) || []).length;
     if (hashtagCount < 3) {
-      optimizations.push('Add 3-5 relevant hashtags to increase organic discovery (+50% reach)');
+      optimizations.push(
+        "Add 3-5 relevant hashtags to increase organic discovery (+50% reach)",
+      );
     }
 
-    if (!text.includes('?')) {
-      optimizations.push('Include a question to drive comments (+70% comment rate)');
+    if (!text.includes("?")) {
+      optimizations.push(
+        "Include a question to drive comments (+70% comment rate)",
+      );
     }
 
     if (!creative.assetUrls || creative.assetUrls.length === 0) {
       optimizations.push(
-        'Add visual content (images/videos increase engagement by 400%+ organically)'
+        "Add visual content (images/videos increase engagement by 400%+ organically)",
       );
     }
 
-    if (!text.toLowerCase().includes('link') && !text.toLowerCase().includes('bio')) {
-      optimizations.push('Add clear call-to-action directing to music link (+25% click-through)');
+    if (
+      !text.toLowerCase().includes("link") &&
+      !text.toLowerCase().includes("bio")
+    ) {
+      optimizations.push(
+        "Add clear call-to-action directing to music link (+25% click-through)",
+      );
     }
 
     return optimizations;
@@ -1327,17 +1465,17 @@ export class AdvertisingAIService {
    */
   private generatePostSchedule(platforms: string[]): Record<string, string> {
     const optimalTimes: Record<string, string> = {
-      facebook: 'Wednesday 1:00 PM - 3:00 PM',
-      instagram: 'Tuesday & Thursday 11:00 AM',
-      twitter: 'Wednesday 12:00 PM',
-      linkedin: 'Tuesday & Thursday 7:30 AM',
-      tiktok: 'Tuesday 6:00 PM - 10:00 PM',
-      youtube: 'Thursday 3:00 PM - 4:00 PM',
+      facebook: "Wednesday 1:00 PM - 3:00 PM",
+      instagram: "Tuesday & Thursday 11:00 AM",
+      twitter: "Wednesday 12:00 PM",
+      linkedin: "Tuesday & Thursday 7:30 AM",
+      tiktok: "Tuesday 6:00 PM - 10:00 PM",
+      youtube: "Thursday 3:00 PM - 4:00 PM",
     };
 
     const schedule: Record<string, string> = {};
     for (const platform of platforms) {
-      schedule[platform] = optimalTimes[platform] || 'Weekday 12:00 PM';
+      schedule[platform] = optimalTimes[platform] || "Weekday 12:00 PM";
     }
     return schedule;
   }
@@ -1345,10 +1483,12 @@ export class AdvertisingAIService {
   /**
    * Calculate expected organic reach
    */
-  private calculateExpectedOrganicReach(platformPerformance: Record<string, PlatformMetrics>): number {
+  private calculateExpectedOrganicReach(
+    platformPerformance: Record<string, PlatformMetrics>,
+  ): number {
     return Object.values(platformPerformance).reduce(
       (sum: number, metrics: PlatformMetrics) => sum + metrics.estimatedReach,
-      0
+      0,
     );
   }
 
@@ -1356,25 +1496,28 @@ export class AdvertisingAIService {
    * Extract creative features for AI analysis
    */
   private extractCreativeFeatures(creative: AdCreative): CreativeFeatures {
-    const text = creative.normalizedContent || creative.rawContent || '';
+    const text = creative.normalizedContent || creative.rawContent || "";
 
     return {
       visualElements:
         creative.assetUrls?.length > 0
-          ? creative.contentType === 'video'
-            ? ['video']
-            : ['image']
-          : ['text-only'],
+          ? creative.contentType === "video"
+            ? ["video"]
+            : ["image"]
+          : ["text-only"],
       copyLength: text.length,
       ctaPlacement:
-        text.toLowerCase().includes('link') || text.toLowerCase().includes('click')
-          ? 'explicit'
-          : 'implicit',
+        text.toLowerCase().includes("link") ||
+        text.toLowerCase().includes("click")
+          ? "explicit"
+          : "implicit",
       emotionalTone: this.detectEmotionalTone(text),
-      colorScheme: 'default', // Would analyze image if available
+      colorScheme: "default", // Would analyze image if available
       hasHashtags: (text.match(/#/g) || []).length > 0,
-      hasEmojis: (text.match(new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'gu')) || []).length > 0,
-      hasQuestions: text.includes('?'),
+      hasEmojis:
+        (text.match(new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu")) || []).length >
+        0,
+      hasQuestions: text.includes("?"),
       hasMentions: (text.match(/@\w+/g) || []).length > 0,
     };
   }
@@ -1385,66 +1528,75 @@ export class AdvertisingAIService {
   private detectEmotionalTone(text: string): string {
     const lowerText = text.toLowerCase();
 
-    if (lowerText.match(/excit|amaz|love|great|awesome|incredible/)) return 'excited';
-    if (lowerText.match(/new|fresh|innovat|unique/)) return 'innovative';
-    if (lowerText.match(/thank|appreciat|grateful/)) return 'grateful';
-    if (lowerText.match(/free|deal|save|discount/)) return 'promotional';
-    if (lowerText.match(/\?|what|how|why/)) return 'curious';
+    if (lowerText.match(/excit|amaz|love|great|awesome|incredible/))
+      return "excited";
+    if (lowerText.match(/new|fresh|innovat|unique/)) return "innovative";
+    if (lowerText.match(/thank|appreciat|grateful/)) return "grateful";
+    if (lowerText.match(/free|deal|save|discount/)) return "promotional";
+    if (lowerText.match(/\?|what|how|why/)) return "curious";
 
-    return 'neutral';
+    return "neutral";
   }
 
   /**
    * Generate explanation for predictions
    */
-  private generatePredictionExplanation(features: CreativeFeatures, viralityScore: number): string {
+  private generatePredictionExplanation(
+    features: CreativeFeatures,
+    viralityScore: number,
+  ): string {
     const factors: string[] = [];
 
-    if (viralityScore > 70) factors.push('High virality score (+20% CTR)');
-    if (features.hasHashtags) factors.push('Hashtags improve discoverability (+15% reach)');
-    if (features.hasQuestions) factors.push('Questions drive engagement (+25% comments)');
-    if (features.visualElements.includes('video'))
-      factors.push('Video content boosts performance (+40% engagement)');
+    if (viralityScore > 70) factors.push("High virality score (+20% CTR)");
+    if (features.hasHashtags)
+      factors.push("Hashtags improve discoverability (+15% reach)");
+    if (features.hasQuestions)
+      factors.push("Questions drive engagement (+25% comments)");
+    if (features.visualElements.includes("video"))
+      factors.push("Video content boosts performance (+40% engagement)");
     if (features.copyLength > 50 && features.copyLength < 150)
-      factors.push('Optimal copy length (+10% engagement)');
+      factors.push("Optimal copy length (+10% engagement)");
 
-    return factors.join('; ') || 'Standard performance expected based on baseline metrics';
+    return (
+      factors.join("; ") ||
+      "Standard performance expected based on baseline metrics"
+    );
   }
 
   /**
    * Get bid strategy for platform and goals
    */
   private getBidStrategy(platform: string, goals: BudgetGoals): string {
-    const objective = goals?.objective || 'engagement';
+    const objective = goals?.objective || "engagement";
 
     const strategies: Record<string, Record<string, string>> = {
       engagement: {
-        facebook: 'Optimize for Post Engagement',
-        instagram: 'Optimize for Engagement',
-        tiktok: 'Maximum Delivery',
-        youtube: 'Target CPV',
-        twitter: 'Promoted Engagement',
-        linkedin: 'Maximize Engagement',
+        facebook: "Optimize for Post Engagement",
+        instagram: "Optimize for Engagement",
+        tiktok: "Maximum Delivery",
+        youtube: "Target CPV",
+        twitter: "Promoted Engagement",
+        linkedin: "Maximize Engagement",
       },
       conversions: {
-        facebook: 'Lowest Cost per Conversion',
-        instagram: 'App Installs / Web Conversions',
-        tiktok: 'Conversion Optimization',
-        youtube: 'Target CPA',
-        twitter: 'Website Conversions',
-        linkedin: 'Maximize Conversions',
+        facebook: "Lowest Cost per Conversion",
+        instagram: "App Installs / Web Conversions",
+        tiktok: "Conversion Optimization",
+        youtube: "Target CPA",
+        twitter: "Website Conversions",
+        linkedin: "Maximize Conversions",
       },
       reach: {
-        facebook: 'Reach & Frequency',
-        instagram: 'Maximum Reach',
-        tiktok: 'Reach',
-        youtube: 'Target CPM',
-        twitter: 'Maximum Reach',
-        linkedin: 'Brand Awareness',
+        facebook: "Reach & Frequency",
+        instagram: "Maximum Reach",
+        tiktok: "Reach",
+        youtube: "Target CPM",
+        twitter: "Maximum Reach",
+        linkedin: "Brand Awareness",
       },
     };
 
-    return strategies[objective]?.[platform] || 'Automatic Bidding';
+    return strategies[objective]?.[platform] || "Automatic Bidding";
   }
 
   /**

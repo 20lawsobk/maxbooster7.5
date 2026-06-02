@@ -1,12 +1,18 @@
-import { useParams, useLocation } from 'wouter';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useParams, useLocation } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Music,
   ShoppingCart,
@@ -30,9 +36,9 @@ import {
   Copy,
   AlertTriangle,
   CheckCircle2,
-} from 'lucide-react';
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { Star, UserPlus, UserCheck, Pause } from 'lucide-react';
+} from "lucide-react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Star, UserPlus, UserCheck, Pause } from "lucide-react";
 
 interface Storefront {
   id: string;
@@ -92,7 +98,7 @@ interface MembershipTier {
   description: string;
   priceCents: number;
   currency: string;
-  interval: 'month' | 'year';
+  interval: "month" | "year";
   benefits: {
     exclusiveContent?: boolean;
     earlyAccess?: boolean;
@@ -182,35 +188,38 @@ export default function Storefront() {
   const [cart, setCart] = useState<string[]>([]);
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [userRatingValue, setUserRatingValue] = useState(0);
-  const [userReview, setUserReview] = useState('');
+  const [userReview, setUserReview] = useState("");
   const [playingListingId, setPlayingListingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const handlePlayListing = useCallback((listing: MarketplaceListing) => {
-    if (playingListingId === listing.id) {
-      audioRef.current?.pause();
-      setPlayingListingId(null);
-      return;
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    let audioUrl = listing.audioUrl;
-    if (!audioUrl) return;
-    if (!audioUrl.startsWith('http')) {
-      if (!audioUrl.startsWith('/')) {
-        audioUrl = `/api/marketplace/audio/${audioUrl}`;
-      } else if (!audioUrl.startsWith('/api/')) {
-        audioUrl = `/api/marketplace/audio${audioUrl}`;
+  const handlePlayListing = useCallback(
+    (listing: MarketplaceListing) => {
+      if (playingListingId === listing.id) {
+        audioRef.current?.pause();
+        setPlayingListingId(null);
+        return;
       }
-    }
-    const audio = new Audio(audioUrl);
-    audio.play().catch(() => {});
-    audio.onended = () => setPlayingListingId(null);
-    audio.onerror = () => setPlayingListingId(null);
-    audioRef.current = audio;
-    setPlayingListingId(listing.id);
-  }, [playingListingId]);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      let audioUrl = listing.audioUrl;
+      if (!audioUrl) return;
+      if (!audioUrl.startsWith("http")) {
+        if (!audioUrl.startsWith("/")) {
+          audioUrl = `/api/marketplace/audio/${audioUrl}`;
+        } else if (!audioUrl.startsWith("/api/")) {
+          audioUrl = `/api/marketplace/audio${audioUrl}`;
+        }
+      }
+      const audio = new Audio(audioUrl);
+      audio.play().catch(() => {});
+      audio.onended = () => setPlayingListingId(null);
+      audio.onerror = () => setPlayingListingId(null);
+      audioRef.current = audio;
+      setPlayingListingId(listing.id);
+    },
+    [playingListingId],
+  );
 
   useEffect(() => {
     return () => {
@@ -223,39 +232,45 @@ export default function Storefront() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const checkoutStatus = params.get('checkout');
-    const membershipStatus = params.get('membership');
-    if (checkoutStatus === 'success') {
+    const checkoutStatus = params.get("checkout");
+    const membershipStatus = params.get("membership");
+    if (checkoutStatus === "success") {
       toast({
-        title: 'Purchase Complete!',
-        description: 'Your beats have been purchased successfully. Check your purchases page for downloads.',
+        title: "Purchase Complete!",
+        description:
+          "Your beats have been purchased successfully. Check your purchases page for downloads.",
       });
       setCart([]);
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (checkoutStatus === 'canceled') {
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (checkoutStatus === "canceled") {
       toast({
-        title: 'Checkout Canceled',
-        description: 'Your checkout was canceled. Your cart items are still available.',
-        variant: 'destructive',
+        title: "Checkout Canceled",
+        description:
+          "Your checkout was canceled. Your cart items are still available.",
+        variant: "destructive",
       });
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (membershipStatus === 'success') {
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (membershipStatus === "success") {
       toast({
-        title: 'Membership Activated!',
-        description: 'Welcome! Your membership subscription is now active.',
+        title: "Membership Activated!",
+        description: "Welcome! Your membership subscription is now active.",
       });
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (membershipStatus === 'canceled') {
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (membershipStatus === "canceled") {
       toast({
-        title: 'Subscription Canceled',
-        description: 'You did not complete the membership subscription.',
-        variant: 'destructive',
+        title: "Subscription Canceled",
+        description: "You did not complete the membership subscription.",
+        variant: "destructive",
       });
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, "", window.location.pathname);
     }
   }, [toast]);
 
-  const { data: publicStorefront, isLoading: publicLoading, isError: publicError } = useQuery<Storefront>({
+  const {
+    data: publicStorefront,
+    isLoading: publicLoading,
+    isError: publicError,
+  } = useQuery<Storefront>({
     queryKey: [`/api/storefront/public/${slug}`],
     enabled: !!slug,
     retry: 1,
@@ -263,32 +278,41 @@ export default function Storefront() {
 
   // Owner preview: fires when the public endpoint returns nothing (private/inactive)
   // and the user is authenticated. The server verifies ownership.
-  const { data: previewStorefront, isLoading: previewLoading } = useQuery<Storefront>({
-    queryKey: [`/api/storefront/preview/${slug}`],
-    enabled: !!slug && !!user && (publicError || !publicStorefront),
-    retry: false,
-  });
+  const { data: previewStorefront, isLoading: previewLoading } =
+    useQuery<Storefront>({
+      queryKey: [`/api/storefront/preview/${slug}`],
+      enabled: !!slug && !!user && (publicError || !publicStorefront),
+      retry: false,
+    });
 
   const storefront = publicStorefront ?? previewStorefront;
-  const storefrontLoading = publicLoading || (!!user && previewLoading && !publicStorefront);
-  const isOwnerPreview = !!user && !!storefront && storefront.userId === user.id;
+  const storefrontLoading =
+    publicLoading || (!!user && previewLoading && !publicStorefront);
+  const isOwnerPreview =
+    !!user && !!storefront && storefront.userId === user.id;
 
-  const { data: tiers = [], isLoading: tiersLoading } = useQuery<MembershipTier[]>({
+  const { data: tiers = [], isLoading: tiersLoading } = useQuery<
+    MembershipTier[]
+  >({
     queryKey: [`/api/storefront/${storefront?.id}/membership-tiers/public`],
     enabled: !!storefront?.id,
     queryFn: async () => {
-      const res = await fetch(`/api/storefront/${storefront!.id}/membership-tiers/public`);
-      if (!res.ok) throw new Error('Failed to fetch tiers');
+      const res = await fetch(
+        `/api/storefront/${storefront!.id}/membership-tiers/public`,
+      );
+      if (!res.ok) throw new Error("Failed to fetch tiers");
       return res.json();
     },
   });
 
-  const { data: listings = [], isLoading: listingsLoading } = useQuery<MarketplaceListing[]>({
+  const { data: listings = [], isLoading: listingsLoading } = useQuery<
+    MarketplaceListing[]
+  >({
     queryKey: [`/api/storefront/${storefront?.id}/listings`],
     enabled: !!storefront?.id,
     queryFn: async () => {
       const res = await fetch(`/api/storefront/${storefront!.id}/listings`);
-      if (!res.ok) throw new Error('Failed to fetch listings');
+      if (!res.ok) throw new Error("Failed to fetch listings");
       return res.json();
     },
   });
@@ -323,7 +347,13 @@ export default function Storefront() {
   });
 
   interface CheckoutPreview {
-    items: Array<{ id: string; title: string; priceCents: number; isFree: boolean; discountPercent: number }>;
+    items: Array<{
+      id: string;
+      title: string;
+      priceCents: number;
+      isFree: boolean;
+      discountPercent: number;
+    }>;
     subtotalCents: number;
     discountCents: number;
     totalCents: number;
@@ -334,37 +364,59 @@ export default function Storefront() {
     queryKey: [`/api/storefront/${storefront?.id}/checkout/preview`, cart],
     enabled: !!storefront?.id && cart.length > 0,
     queryFn: async () => {
-      const res = await apiRequest('POST', `/api/storefront/${storefront!.id}/checkout/preview`, { listingIds: cart });
+      const res = await apiRequest(
+        "POST",
+        `/api/storefront/${storefront!.id}/checkout/preview`,
+        { listingIds: cart },
+      );
       return res as CheckoutPreview;
     },
   });
 
   const likeMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', `/api/storefront/${storefront!.id}/like`, {});
+      return apiRequest("POST", `/api/storefront/${storefront!.id}/like`, {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefront?.id}/social`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/storefront/${storefront?.id}/social`],
+      });
     },
   });
 
   const followMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', `/api/storefront/${storefront!.id}/follow`, {});
+      return apiRequest("POST", `/api/storefront/${storefront!.id}/follow`, {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefront?.id}/social`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/storefront/${storefront?.id}/social`],
+      });
     },
   });
 
   const rateMutation = useMutation({
-    mutationFn: async ({ rating, review }: { rating: number; review?: string }) => {
-      return apiRequest('POST', `/api/storefront/${storefront!.id}/rate`, { rating, review });
+    mutationFn: async ({
+      rating,
+      review,
+    }: {
+      rating: number;
+      review?: string;
+    }) => {
+      return apiRequest("POST", `/api/storefront/${storefront!.id}/rate`, {
+        rating,
+        review,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefront?.id}/social`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/storefront/${storefront?.id}/social`],
+      });
       setShowRatingDialog(false);
-      toast({ title: 'Rating submitted', description: 'Thank you for your feedback!' });
+      toast({
+        title: "Rating submitted",
+        description: "Thank you for your feedback!",
+      });
     },
   });
 
@@ -378,23 +430,22 @@ export default function Storefront() {
 
   const handleShare = useCallback(async () => {
     const url = window.location.href;
-    const title = storefront?.name || 'Check out this storefront';
+    const title = storefront?.name || "Check out this storefront";
 
     if (navigator.share) {
       try {
         await navigator.share({ title, url });
-      } catch {
-      }
+      } catch {}
     } else {
       try {
         await navigator.clipboard.writeText(url);
         toast({
-          title: 'Link copied!',
-          description: 'Storefront link has been copied to your clipboard',
+          title: "Link copied!",
+          description: "Storefront link has been copied to your clipboard",
         });
       } catch {
         toast({
-          title: 'Share',
+          title: "Share",
           description: url,
         });
       }
@@ -403,7 +454,11 @@ export default function Storefront() {
 
   const subscribeMutation = useMutation({
     mutationFn: async (tierId: string) => {
-      const response = await apiRequest('POST', `/api/storefront/subscribe/${tierId}`, {});
+      const response = await apiRequest(
+        "POST",
+        `/api/storefront/subscribe/${tierId}`,
+        {},
+      );
       return response.json();
     },
     onSuccess: (data) => {
@@ -411,30 +466,39 @@ export default function Storefront() {
         window.location.href = data.checkoutUrl;
       } else {
         toast({
-          title: 'Subscription Successful!',
-          description: 'Welcome to the membership tier!',
+          title: "Subscription Successful!",
+          description: "Welcome to the membership tier!",
         });
         queryClient.invalidateQueries({
-          queryKey: [`/api/storefront/${storefront?.id}/membership-tiers/public`],
+          queryKey: [
+            `/api/storefront/${storefront?.id}/membership-tiers/public`,
+          ],
         });
       }
     },
     onError: (error: Error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process subscription';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to process subscription";
       toast({
-        title: 'Subscription Failed',
+        title: "Subscription Failed",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', `/api/storefront/${storefront!.id}/checkout`, {
-        listingIds: cart,
-        licenseType: 'basic',
-      });
+      const response = await apiRequest(
+        "POST",
+        `/api/storefront/${storefront!.id}/checkout`,
+        {
+          listingIds: cart,
+          licenseType: "basic",
+        },
+      );
       return response.json();
     },
     onSuccess: (data: { checkoutUrl?: string }) => {
@@ -442,18 +506,19 @@ export default function Storefront() {
         window.location.href = data.checkoutUrl;
       } else {
         toast({
-          title: 'Purchase Complete!',
-          description: 'Your beats are ready for download.',
+          title: "Purchase Complete!",
+          description: "Your beats are ready for download.",
         });
         setCart([]);
       }
     },
     onError: (error: Error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Checkout failed';
+      const errorMessage =
+        error instanceof Error ? error.message : "Checkout failed";
       toast({
-        title: 'Checkout Failed',
+        title: "Checkout Failed",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -467,14 +532,14 @@ export default function Storefront() {
     if (cart.includes(listingId)) {
       setCart(cart.filter((id) => id !== listingId));
       toast({
-        title: 'Removed from Cart',
-        description: 'Item removed from your cart',
+        title: "Removed from Cart",
+        description: "Item removed from your cart",
       });
     } else {
       setCart([...cart, listingId]);
       toast({
-        title: 'Added to Cart',
-        description: 'Item added to your cart',
+        title: "Added to Cart",
+        description: "Item added to your cart",
       });
     }
   };
@@ -491,7 +556,10 @@ export default function Storefront() {
   }
 
   // Visitors can't see private/inactive storefronts; owners can always preview
-  if (!storefront || ((!storefront.isActive || !storefront.isPublic) && !isOwnerPreview)) {
+  if (
+    !storefront ||
+    ((!storefront.isActive || !storefront.isPublic) && !isOwnerPreview)
+  ) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md w-full mx-4">
@@ -514,20 +582,20 @@ export default function Storefront() {
   const fonts = customization.fonts || {};
   const socialLinks = customization.socialLinks || {};
 
-  const primaryColor = colors.primary || '#8B5CF6';
-  const secondaryColor = colors.secondary || '#EC4899';
-  const bgColor = colors.background || '#FFFFFF';
-  const textColor = colors.text || '#000000';
-  const headingFont = fonts.heading || 'Inter';
-  const bodyFont = fonts.body || 'Inter';
+  const primaryColor = colors.primary || "#8B5CF6";
+  const secondaryColor = colors.secondary || "#EC4899";
+  const bgColor = colors.background || "#FFFFFF";
+  const textColor = colors.text || "#000000";
+  const headingFont = fonts.heading || "Inter";
+  const bodyFont = fonts.body || "Inter";
 
   const customStyles = {
-    '--primary-color': primaryColor,
-    '--secondary-color': secondaryColor,
-    '--background-color': bgColor,
-    '--text-color': textColor,
-    '--heading-font': headingFont,
-    '--body-font': bodyFont,
+    "--primary-color": primaryColor,
+    "--secondary-color": secondaryColor,
+    "--background-color": bgColor,
+    "--text-color": textColor,
+    "--heading-font": headingFont,
+    "--body-font": bodyFont,
     backgroundColor: bgColor,
     color: textColor,
     fontFamily: bodyFont,
@@ -537,15 +605,17 @@ export default function Storefront() {
     const url = window.location.href;
     try {
       await navigator.clipboard.writeText(url);
-      toast({ title: 'Link copied', description: 'Storefront URL copied to clipboard' });
+      toast({
+        title: "Link copied",
+        description: "Storefront URL copied to clipboard",
+      });
     } catch {
-      toast({ title: 'Link', description: url });
+      toast({ title: "Link", description: url });
     }
   }, [toast]);
 
   return (
     <div className="min-h-screen" style={customStyles}>
-
       {/* ── Owner Preview Banner ── */}
       {isOwnerPreview && (
         <div className="sticky top-0 z-50 w-full bg-gray-900 border-b border-gray-700 shadow-lg">
@@ -584,7 +654,7 @@ export default function Storefront() {
                 size="sm"
                 variant="outline"
                 className="border-gray-600 text-gray-200 hover:bg-gray-800 h-7 text-xs gap-1.5"
-                onClick={() => setLocation('/marketplace?tab=storefronts')}
+                onClick={() => setLocation("/marketplace?tab=storefronts")}
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Edit
@@ -593,7 +663,7 @@ export default function Storefront() {
                 <Button
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white h-7 text-xs gap-1.5"
-                  onClick={() => setLocation('/marketplace?tab=storefronts')}
+                  onClick={() => setLocation("/marketplace?tab=storefronts")}
                 >
                   <Globe className="w-3.5 h-3.5" />
                   Go Live
@@ -605,16 +675,15 @@ export default function Storefront() {
             <div className="bg-amber-900/40 border-t border-amber-800/50 px-4 py-1.5">
               <p className="text-xs text-amber-300 flex items-center gap-1.5 max-w-6xl mx-auto">
                 <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                Your storefront is not public yet. Go to your storefront settings to publish it and make it visible to visitors.
+                Your storefront is not public yet. Go to your storefront
+                settings to publish it and make it visible to visitors.
               </p>
             </div>
           )}
         </div>
       )}
 
-      {customization.banner && (
-        <BannerImage url={customization.banner} />
-      )}
+      {customization.banner && <BannerImage url={customization.banner} />}
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
@@ -641,7 +710,11 @@ export default function Storefront() {
                   {customization.bio && (
                     <p
                       className="text-lg max-w-2xl"
-                      style={{ fontFamily: bodyFont, color: textColor, opacity: 0.7 }}
+                      style={{
+                        fontFamily: bodyFont,
+                        color: textColor,
+                        opacity: 0.7,
+                      }}
                     >
                       {customization.bio}
                     </p>
@@ -651,24 +724,36 @@ export default function Storefront() {
                   {!isOwnerPreview && (
                     <>
                       <Button
-                        variant={socialData?.userFollowing ? 'default' : 'outline'}
+                        variant={
+                          socialData?.userFollowing ? "default" : "outline"
+                        }
                         size="sm"
                         onClick={handleFollow}
                         className="gap-1"
                       >
                         {socialData?.userFollowing ? (
-                          <><UserCheck className="w-4 h-4" /> Following</>
+                          <>
+                            <UserCheck className="w-4 h-4" /> Following
+                          </>
                         ) : (
-                          <><UserPlus className="w-4 h-4" /> Follow</>
+                          <>
+                            <UserPlus className="w-4 h-4" /> Follow
+                          </>
                         )}
                       </Button>
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={handleLike}
-                        aria-label={socialData?.userLiked ? 'Remove from favorites' : 'Add to favorites'}
+                        aria-label={
+                          socialData?.userLiked
+                            ? "Remove from favorites"
+                            : "Add to favorites"
+                        }
                       >
-                        <Heart className={`w-5 h-5 ${socialData?.userLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                        <Heart
+                          className={`w-5 h-5 ${socialData?.userLiked ? "fill-red-500 text-red-500" : ""}`}
+                        />
                       </Button>
                     </>
                   )}
@@ -687,7 +772,9 @@ export default function Storefront() {
                       onClick={() => setShowRatingDialog(!showRatingDialog)}
                       aria-label="Rate storefront"
                     >
-                      <Star className={`w-5 h-5 ${socialData?.userRating ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                      <Star
+                        className={`w-5 h-5 ${socialData?.userRating ? "fill-yellow-400 text-yellow-400" : ""}`}
+                      />
                     </Button>
                   )}
                 </div>
@@ -700,7 +787,7 @@ export default function Storefront() {
                 <div className="flex gap-3 mb-6">
                   {socialLinks.instagram && (
                     <a
-                      href={`https://instagram.com/${socialLinks.instagram.replace('@', '')}`}
+                      href={`https://instagram.com/${socialLinks.instagram.replace("@", "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: textColor, opacity: 0.6 }}
@@ -711,7 +798,7 @@ export default function Storefront() {
                   )}
                   {socialLinks.twitter && (
                     <a
-                      href={`https://twitter.com/${socialLinks.twitter.replace('@', '')}`}
+                      href={`https://twitter.com/${socialLinks.twitter.replace("@", "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: textColor, opacity: 0.6 }}
@@ -757,7 +844,9 @@ export default function Storefront() {
                       >
                         <Star
                           className={`w-6 h-6 cursor-pointer transition-colors ${
-                            star <= userRatingValue ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+                            star <= userRatingValue
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground"
                           }`}
                         />
                       </button>
@@ -774,11 +863,20 @@ export default function Storefront() {
                     <Button
                       size="sm"
                       disabled={userRatingValue === 0}
-                      onClick={() => rateMutation.mutate({ rating: userRatingValue, review: userReview || undefined })}
+                      onClick={() =>
+                        rateMutation.mutate({
+                          rating: userRatingValue,
+                          review: userReview || undefined,
+                        })
+                      }
                     >
                       Submit
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setShowRatingDialog(false)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setShowRatingDialog(false)}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -791,24 +889,34 @@ export default function Storefront() {
                 </div>
                 <div className="flex items-center gap-1">
                   <Heart className="w-3.5 h-3.5" />
-                  <span className="font-medium">{socialData?.likes || 0}</span> likes
+                  <span className="font-medium">
+                    {socialData?.likes || 0}
+                  </span>{" "}
+                  likes
                 </div>
                 <div className="flex items-center gap-1">
                   <UserPlus className="w-3.5 h-3.5" />
-                  <span className="font-medium">{socialData?.follows || 0}</span> followers
+                  <span className="font-medium">
+                    {socialData?.follows || 0}
+                  </span>{" "}
+                  followers
                 </div>
                 {(socialData?.ratingsCount ?? 0) > 0 && (
                   <div className="flex items-center gap-1">
                     <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{(socialData?.avgRating || 0).toFixed(1)}</span>
+                    <span className="font-medium">
+                      {(socialData?.avgRating || 0).toFixed(1)}
+                    </span>
                     <span>({socialData?.ratingsCount} ratings)</span>
                   </div>
                 )}
                 <div className="flex items-center gap-1">
-                  <span className="font-medium">{listings.length}</span> products
+                  <span className="font-medium">{listings.length}</span>{" "}
+                  products
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="font-medium">{tiers.length}</span> membership tiers
+                  <span className="font-medium">{tiers.length}</span> membership
+                  tiers
                 </div>
               </div>
             </div>
@@ -818,7 +926,10 @@ export default function Storefront() {
             <section className="mb-12">
               <div className="flex items-center gap-3 mb-6">
                 <Crown className="w-8 h-8" style={{ color: primaryColor }} />
-                <h2 className="text-3xl font-bold" style={{ fontFamily: headingFont, color: textColor }}>
+                <h2
+                  className="text-3xl font-bold"
+                  style={{ fontFamily: headingFont, color: textColor }}
+                >
                   Join the Community
                 </h2>
               </div>
@@ -829,13 +940,14 @@ export default function Storefront() {
                   .sort((a, b) => a.sortOrder - b.sortOrder)
                   .map((tier) => {
                     const isLimited =
-                      tier.maxSubscribers && tier.currentSubscribers >= tier.maxSubscribers;
+                      tier.maxSubscribers &&
+                      tier.currentSubscribers >= tier.maxSubscribers;
                     const isMostPopular = tier.sortOrder === 1;
 
                     return (
                       <Card
                         key={tier.id}
-                        className={`relative ${isMostPopular ? 'border-2 shadow-lg' : ''}`}
+                        className={`relative ${isMostPopular ? "border-2 shadow-lg" : ""}`}
                         style={{
                           backgroundColor: bgColor,
                           color: textColor,
@@ -854,12 +966,24 @@ export default function Storefront() {
                         <CardHeader>
                           <CardTitle
                             className="flex items-center gap-2"
-                            style={{ fontFamily: headingFont, color: textColor }}
+                            style={{
+                              fontFamily: headingFont,
+                              color: textColor,
+                            }}
                           >
-                            <Crown className="w-5 h-5" style={{ color: primaryColor }} />
+                            <Crown
+                              className="w-5 h-5"
+                              style={{ color: primaryColor }}
+                            />
                             {tier.name}
                           </CardTitle>
-                          <CardDescription style={{ fontFamily: bodyFont, color: textColor, opacity: 0.7 }}>
+                          <CardDescription
+                            style={{
+                              fontFamily: bodyFont,
+                              color: textColor,
+                              opacity: 0.7,
+                            }}
+                          >
                             {tier.description}
                           </CardDescription>
                         </CardHeader>
@@ -869,11 +993,14 @@ export default function Storefront() {
                               <span className="text-4xl font-bold">
                                 ${(tier.priceCents / 100).toFixed(2)}
                               </span>
-                              <span className="text-muted-foreground">/ {tier.interval}</span>
+                              <span className="text-muted-foreground">
+                                / {tier.interval}
+                              </span>
                             </div>
                             {tier.maxSubscribers && (
                               <p className="text-sm text-muted-foreground">
-                                {tier.currentSubscribers} / {tier.maxSubscribers} subscribers
+                                {tier.currentSubscribers} /{" "}
+                                {tier.maxSubscribers} subscribers
                               </p>
                             )}
                           </div>
@@ -891,16 +1018,21 @@ export default function Storefront() {
                                 <span>Early access to new releases</span>
                               </div>
                             )}
-                            {tier.benefits.discounts && tier.benefits.discounts.percentage > 0 && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <Check className="w-4 h-4 text-green-500" />
-                                <span>
-                                  {tier.benefits.discounts.percentage}% discount on all purchases
-                                </span>
-                              </div>
-                            )}
+                            {tier.benefits.discounts &&
+                              tier.benefits.discounts.percentage > 0 && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Check className="w-4 h-4 text-green-500" />
+                                  <span>
+                                    {tier.benefits.discounts.percentage}%
+                                    discount on all purchases
+                                  </span>
+                                </div>
+                              )}
                             {tier.benefits.customPerks?.map((perk, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-sm">
+                              <div
+                                key={idx}
+                                className="flex items-center gap-2 text-sm"
+                              >
                                 <Check className="w-4 h-4 text-green-500" />
                                 <span>{perk}</span>
                               </div>
@@ -908,7 +1040,12 @@ export default function Storefront() {
                           </div>
 
                           {isOwnerPreview ? (
-                            <Button className="w-full" size="lg" disabled variant="outline">
+                            <Button
+                              className="w-full"
+                              size="lg"
+                              disabled
+                              variant="outline"
+                            >
                               <Eye className="w-4 h-4 mr-2" />
                               Preview Only
                             </Button>
@@ -918,9 +1055,12 @@ export default function Storefront() {
                               size="lg"
                               disabled={isLimited}
                               onClick={() => subscribeMutation.mutate(tier.id)}
-                              style={{ backgroundColor: primaryColor, color: '#FFFFFF' }}
+                              style={{
+                                backgroundColor: primaryColor,
+                                color: "#FFFFFF",
+                              }}
                             >
-                              {isLimited ? 'Sold Out' : 'Subscribe Now'}
+                              {isLimited ? "Sold Out" : "Subscribe Now"}
                             </Button>
                           )}
                         </CardContent>
@@ -952,10 +1092,13 @@ export default function Storefront() {
                           : `Buy ${promo.buyQuantity}, Get ${promo.getQuantity} at ${promo.getDiscountPercent}% Off!`}
                       </p>
                       {promo.description && (
-                        <p className="text-sm text-muted-foreground mt-0.5">{promo.description}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {promo.description}
+                        </p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        Add {promo.buyQuantity + promo.getQuantity} or more items to your cart to qualify
+                        Add {promo.buyQuantity + promo.getQuantity} or more
+                        items to your cart to qualify
                       </p>
                     </div>
                   </div>
@@ -968,7 +1111,10 @@ export default function Storefront() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Music className="w-8 h-8" style={{ color: primaryColor }} />
-                <h2 className="text-3xl font-bold" style={{ fontFamily: headingFont, color: textColor }}>
+                <h2
+                  className="text-3xl font-bold"
+                  style={{ fontFamily: headingFont, color: textColor }}
+                >
                   Products
                 </h2>
               </div>
@@ -984,7 +1130,9 @@ export default function Storefront() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Music className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No products available yet</p>
+                  <p className="text-muted-foreground">
+                    No products available yet
+                  </p>
                 </CardContent>
               </Card>
             ) : (
@@ -1009,33 +1157,59 @@ export default function Storefront() {
                           src={listing.coverArtUrl}
                           alt={listing.title}
                           className="absolute inset-0 w-full h-48 object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
+                          }}
                         />
                       )}
                       <div className="absolute top-2 right-2">
-                        <Badge variant={listing.isExclusive ? 'default' : 'secondary'}>
-                          {listing.isExclusive ? 'Exclusive' : 'Non-Exclusive'}
+                        <Badge
+                          variant={
+                            listing.isExclusive ? "default" : "secondary"
+                          }
+                        >
+                          {listing.isExclusive ? "Exclusive" : "Non-Exclusive"}
                         </Badge>
                       </div>
                     </div>
                     <CardHeader>
-                      <CardTitle className="text-lg" style={{ fontFamily: headingFont, color: textColor }}>
+                      <CardTitle
+                        className="text-lg"
+                        style={{ fontFamily: headingFont, color: textColor }}
+                      >
                         {listing.title}
                       </CardTitle>
-                      <CardDescription style={{ fontFamily: bodyFont, color: textColor, opacity: 0.7 }}>
+                      <CardDescription
+                        style={{
+                          fontFamily: bodyFont,
+                          color: textColor,
+                          opacity: 0.7,
+                        }}
+                      >
                         {listing.description}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {listing.genre && <Badge variant="outline">{listing.genre}</Badge>}
-                        {listing.bpm && <Badge variant="outline">{listing.bpm} BPM</Badge>}
-                        {listing.key && <Badge variant="outline">{listing.key}</Badge>}
+                        {listing.genre && (
+                          <Badge variant="outline">{listing.genre}</Badge>
+                        )}
+                        {listing.bpm && (
+                          <Badge variant="outline">{listing.bpm} BPM</Badge>
+                        )}
+                        {listing.key && (
+                          <Badge variant="outline">{listing.key}</Badge>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between">
                         <div>
-                          {listing.discountPercent && listing.discountPriceCents != null && (!listing.discountExpiresAt || new Date(listing.discountExpiresAt) > new Date()) ? (
+                          {listing.discountPercent &&
+                          listing.discountPriceCents != null &&
+                          (!listing.discountExpiresAt ||
+                            new Date(listing.discountExpiresAt) >
+                              new Date()) ? (
                             <div className="flex items-center gap-2">
                               <span className="text-2xl font-bold text-green-600">
                                 ${(listing.discountPriceCents / 100).toFixed(2)}
@@ -1054,7 +1228,11 @@ export default function Storefront() {
                           )}
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="icon" onClick={() => handlePlayListing(listing)}>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handlePlayListing(listing)}
+                          >
                             {playingListingId === listing.id ? (
                               <Pause className="w-4 h-4" />
                             ) : (
@@ -1069,10 +1247,17 @@ export default function Storefront() {
                           ) : (
                             <Button
                               onClick={() => addToCart(listing.id)}
-                              variant={cart.includes(listing.id) ? 'secondary' : 'default'}
+                              variant={
+                                cart.includes(listing.id)
+                                  ? "secondary"
+                                  : "default"
+                              }
                               style={
                                 !cart.includes(listing.id)
-                                  ? { backgroundColor: primaryColor, color: '#FFFFFF' }
+                                  ? {
+                                      backgroundColor: primaryColor,
+                                      color: "#FFFFFF",
+                                    }
                                   : undefined
                               }
                             >
@@ -1105,7 +1290,10 @@ export default function Storefront() {
                   <div className="flex items-center gap-2 text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 rounded-lg px-3 py-1.5">
                     <Gift className="w-3.5 h-3.5" />
                     {checkoutPreview.promotionApplied.summary}
-                    <Badge variant="secondary" className="ml-auto text-[10px] bg-green-100 text-green-700">
+                    <Badge
+                      variant="secondary"
+                      className="ml-auto text-[10px] bg-green-100 text-green-700"
+                    >
                       Save ${(checkoutPreview.discountCents / 100).toFixed(2)}
                     </Badge>
                   </div>
@@ -1113,7 +1301,7 @@ export default function Storefront() {
                 <div className="flex items-center gap-4">
                   <div className="text-sm">
                     <span className="text-muted-foreground">
-                      {cart.length} item{cart.length > 1 ? 's' : ''}
+                      {cart.length} item{cart.length > 1 ? "s" : ""}
                     </span>
                     {checkoutPreview ? (
                       <span className="ml-2">
@@ -1128,14 +1316,20 @@ export default function Storefront() {
                       </span>
                     ) : (
                       <span className="ml-2 font-bold">
-                        ${(listings
-                          .filter(l => cart.includes(l.id))
-                          .reduce((sum, l) => {
-                            const price = l.discountPercent && l.discountPriceCents != null &&
-                              (!l.discountExpiresAt || new Date(l.discountExpiresAt) > new Date())
-                              ? l.discountPriceCents : l.priceCents;
-                            return sum + price;
-                          }, 0) / 100
+                        $
+                        {(
+                          listings
+                            .filter((l) => cart.includes(l.id))
+                            .reduce((sum, l) => {
+                              const price =
+                                l.discountPercent &&
+                                l.discountPriceCents != null &&
+                                (!l.discountExpiresAt ||
+                                  new Date(l.discountExpiresAt) > new Date())
+                                  ? l.discountPriceCents
+                                  : l.priceCents;
+                              return sum + price;
+                            }, 0) / 100
                         ).toFixed(2)}
                       </span>
                     )}

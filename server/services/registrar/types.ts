@@ -9,19 +9,19 @@
 // ── Domain pricing ────────────────────────────────────────────────────────────
 
 export interface DomainPrice {
-  tld:               string;
+  tld: string;
   registrationCents: number;
-  renewalCents:      number;
-  transferCents?:    number;
-  isPremium:         boolean;
+  renewalCents: number;
+  transferCents?: number;
+  isPremium: boolean;
 }
 
 // ── Availability ──────────────────────────────────────────────────────────────
 
 export interface AvailabilityResult {
-  fqdn:      string;
+  fqdn: string;
   available: boolean;
-  price?:    DomainPrice;
+  price?: DomainPrice;
   /** Domain is registered and managed within Max Booster's own system */
   ownedByPlatform?: boolean;
 }
@@ -29,92 +29,94 @@ export interface AvailabilityResult {
 // ── Contact profile ───────────────────────────────────────────────────────────
 
 export interface ContactProfile {
-  name:       string;
-  org?:       string;
-  email:      string;
-  phone?:     string;
+  name: string;
+  org?: string;
+  email: string;
+  phone?: string;
   address?: {
-    street:     string;
-    city:       string;
-    state:      string;
+    street: string;
+    city: string;
+    state: string;
     postalCode: string;
-    country:    string;   // ISO 3166-1 alpha-2
+    country: string; // ISO 3166-1 alpha-2
   };
 }
 
 // ── Registration ──────────────────────────────────────────────────────────────
 
 export interface RegisterParams {
-  fqdn:           string;
-  userId:         string;
-  contact:        ContactProfile;
-  nameservers:    string[];
-  years:          number;
+  fqdn: string;
+  userId: string;
+  contact: ContactProfile;
+  nameservers: string[];
+  years: number;
   privacyEnabled: boolean;
 }
 
 export interface RegisterResult {
-  ok:          true;
-  registryId?: string;           // opaque ID from upstream registrar / registry
-  expiresAt:   Date;
+  ok: true;
+  registryId?: string; // opaque ID from upstream registrar / registry
+  expiresAt: Date;
   nameservers: string[];
-  status:      string;           // 'active' | 'pendingVerification' | 'pendingCreate'
-  message?:    string;
+  status: string; // 'active' | 'pendingVerification' | 'pendingCreate'
+  message?: string;
 }
 
 // ── Renew ─────────────────────────────────────────────────────────────────────
 
 export interface RenewResult {
-  ok:        true;
+  ok: true;
   expiresAt: Date;
-  years:     number;
+  years: number;
 }
 
 // ── Transfer in ───────────────────────────────────────────────────────────────
 
 export interface TransferParams {
-  fqdn:     string;
-  userId:   string;
+  fqdn: string;
+  userId: string;
   authCode: string;
-  contact:  ContactProfile;
+  contact: ContactProfile;
 }
 
 export interface TransferResult {
-  ok:          true;
-  status:      'pendingTransfer' | 'active';
-  expiresAt?:  Date;
-  message?:    string;
+  ok: true;
+  status: "pendingTransfer" | "active";
+  expiresAt?: Date;
+  message?: string;
 }
 
 // ── Domain info ───────────────────────────────────────────────────────────────
 
 export interface DomainInfo {
-  fqdn:        string;
-  status:      string;
-  expiresAt?:  Date;
+  fqdn: string;
+  status: string;
+  expiresAt?: Date;
   nameservers: string[];
   registryId?: string;
-  autoRenew:   boolean;
-  locked:      boolean;
-  contacts?:   Partial<Record<'registrant' | 'admin' | 'tech' | 'billing', ContactProfile>>;
+  autoRenew: boolean;
+  locked: boolean;
+  contacts?: Partial<
+    Record<"registrant" | "admin" | "tech" | "billing", ContactProfile>
+  >;
 }
 
 // ── Domain lifecycle states ───────────────────────────────────────────────────
 // Full state machine as surfaced in the DB claimed_domains.status field
 
 export type DomainLifecycleState =
-  | 'requested'          // user initiated, pre-registrar call
-  | 'pending_create'     // submitted to registrar, awaiting confirmation
-  | 'active'             // registered and DNS is live
-  | 'platform_managed'  // BYOD — DNS hosted here but registered externally
-  | 'pending_verification' // ICANN/registry email verification outstanding
-  | 'expiring_soon'      // within 30 days of expiry
-  | 'grace'              // expired at registry, in grace period (DNS still works)
-  | 'non_renewing'       // subscription canceled; will not auto-renew
-  | 'released'           // soft-released from quota; no longer consuming a slot
-  | 'expired'            // past grace period, DNS removed
-  | 'transferring'       // transfer-in in progress
-  | 'suspended';         // held by registry (clientHold / serverHold)
+  | "requested" // user initiated, pre-registrar call
+  | "pending_create" // submitted to registrar, awaiting confirmation
+  | "active" // registered and DNS is live
+  | "platform_managed" // BYOD — DNS hosted here but registered externally
+  | "pending_verification" // ICANN/registry email verification outstanding
+  | "expiring_soon" // within 30 days of expiry
+  | "grace" // expired at registry, in grace period (DNS still works)
+  | "non_renewing" // subscription canceled; will not auto-renew
+  | "released" // soft-released from quota; no longer consuming a slot
+  | "expired" // past grace period, DNS removed
+  | "transferring" // transfer-in in progress
+  | "suspended"; // held by registry (clientHold / serverHold)
 
 // ── Provider interface ────────────────────────────────────────────────────────
 
@@ -153,17 +155,17 @@ export interface RegistrarProvider {
 // ── Domain event types (for the event ledger) ─────────────────────────────────
 
 export type DomainEventType =
-  | 'DomainRegistered'
-  | 'DomainRenewed'
-  | 'DomainReleased'
-  | 'DomainTransferInitiated'
-  | 'DomainTransferCompleted'
-  | 'DomainNameserversUpdated'
-  | 'DomainExpiringSoon'
-  | 'DomainEnteredGrace'
-  | 'DomainExpired'
-  | 'DomainSuspended'
-  | 'DomainContactUpdated'
-  | 'DomainAutoRenewChanged'
-  | 'QuotaEnforced'
-  | 'SubscriptionCouplingUpdated';
+  | "DomainRegistered"
+  | "DomainRenewed"
+  | "DomainReleased"
+  | "DomainTransferInitiated"
+  | "DomainTransferCompleted"
+  | "DomainNameserversUpdated"
+  | "DomainExpiringSoon"
+  | "DomainEnteredGrace"
+  | "DomainExpired"
+  | "DomainSuspended"
+  | "DomainContactUpdated"
+  | "DomainAutoRenewChanged"
+  | "QuotaEnforced"
+  | "SubscriptionCouplingUpdated";

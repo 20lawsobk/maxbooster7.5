@@ -1,8 +1,8 @@
-import { logger } from '../lib/logger';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { useCallback } from 'react';
+import { logger } from "../lib/logger";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useCallback } from "react";
 
 interface OnboardingTask {
   id: string;
@@ -32,36 +32,40 @@ interface OnboardingProgress {
   recommendedNextStep: OnboardingTask | null;
 }
 
-export type OnboardingTaskName = 
-  | 'Complete your profile'
-  | 'Upload first track'
-  | 'Try AI Music Generator'
-  | 'Connect a social account'
-  | 'Activate Social Autopilot'
-  | 'Set up your beat store'
-  | 'Schedule first post'
-  | 'Explore Zero-Cost Advertising'
-  | 'Explore analytics'
-  | 'Invite a collaborator';
+export type OnboardingTaskName =
+  | "Complete your profile"
+  | "Upload first track"
+  | "Try AI Music Generator"
+  | "Connect a social account"
+  | "Activate Social Autopilot"
+  | "Set up your beat store"
+  | "Schedule first post"
+  | "Explore Zero-Cost Advertising"
+  | "Explore analytics"
+  | "Invite a collaborator";
 
 export function useOnboardingProgress() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: progress, isLoading } = useQuery<OnboardingProgress>({
-    queryKey: ['/api/onboarding/progress'],
+    queryKey: ["/api/onboarding/progress"],
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
 
   const completeStepMutation = useMutation({
     mutationFn: async (stepId: string) => {
-      const response = await apiRequest('POST', '/api/onboarding/complete-step', { stepId });
+      const response = await apiRequest(
+        "POST",
+        "/api/onboarding/complete-step",
+        { stepId },
+      );
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/progress'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["/api/onboarding/progress"] });
+
       if (data.pointsAwarded > 0) {
         toast({
           title: `+${data.pointsAwarded} XP!`,
@@ -70,97 +74,109 @@ export function useOnboardingProgress() {
       }
     },
     onError: (error) => {
-      logger.error('Failed to complete onboarding step:', error);
+      logger.error("Failed to complete onboarding step:", error);
     },
   });
 
-  const findTaskByName = useCallback((name: OnboardingTaskName): OnboardingTask | undefined => {
-    return progress?.tasks.find(t => t.name === name);
-  }, [progress?.tasks]);
+  const findTaskByName = useCallback(
+    (name: OnboardingTaskName): OnboardingTask | undefined => {
+      return progress?.tasks.find((t) => t.name === name);
+    },
+    [progress?.tasks],
+  );
 
-  const isTaskCompleted = useCallback((name: OnboardingTaskName): boolean => {
-    const task = findTaskByName(name);
-    return task?.completed ?? false;
-  }, [findTaskByName]);
+  const isTaskCompleted = useCallback(
+    (name: OnboardingTaskName): boolean => {
+      const task = findTaskByName(name);
+      return task?.completed ?? false;
+    },
+    [findTaskByName],
+  );
 
-  const completeTaskByName = useCallback(async (name: OnboardingTaskName): Promise<boolean> => {
-    const task = findTaskByName(name);
-    if (!task) {
-      logger.warn(`Onboarding task not found: ${name}`);
-      return false;
-    }
-    
-    if (task.completed) {
-      return true;
-    }
+  const completeTaskByName = useCallback(
+    async (name: OnboardingTaskName): Promise<boolean> => {
+      const task = findTaskByName(name);
+      if (!task) {
+        logger.warn(`Onboarding task not found: ${name}`);
+        return false;
+      }
 
-    try {
-      await completeStepMutation.mutateAsync(task.id);
-      return true;
-    } catch (error) {
-      logger.error(`Failed to complete task: ${name}`, error);
-      return false;
-    }
-  }, [findTaskByName, completeStepMutation]);
+      if (task.completed) {
+        return true;
+      }
 
-  const completeTaskById = useCallback(async (stepId: string): Promise<boolean> => {
-    const task = progress?.tasks.find(t => t.id === stepId);
-    if (!task) {
-      logger.warn(`Onboarding task not found with id: ${stepId}`);
-      return false;
-    }
+      try {
+        await completeStepMutation.mutateAsync(task.id);
+        return true;
+      } catch (error) {
+        logger.error(`Failed to complete task: ${name}`, error);
+        return false;
+      }
+    },
+    [findTaskByName, completeStepMutation],
+  );
 
-    if (task.completed) {
-      return true;
-    }
+  const completeTaskById = useCallback(
+    async (stepId: string): Promise<boolean> => {
+      const task = progress?.tasks.find((t) => t.id === stepId);
+      if (!task) {
+        logger.warn(`Onboarding task not found with id: ${stepId}`);
+        return false;
+      }
 
-    try {
-      await completeStepMutation.mutateAsync(stepId);
-      return true;
-    } catch (error) {
-      logger.error(`Failed to complete task: ${stepId}`, error);
-      return false;
-    }
-  }, [progress?.tasks, completeStepMutation]);
+      if (task.completed) {
+        return true;
+      }
+
+      try {
+        await completeStepMutation.mutateAsync(stepId);
+        return true;
+      } catch (error) {
+        logger.error(`Failed to complete task: ${stepId}`, error);
+        return false;
+      }
+    },
+    [progress?.tasks, completeStepMutation],
+  );
 
   const trackProfileComplete = useCallback(async () => {
-    await completeTaskByName('Complete your profile');
+    await completeTaskByName("Complete your profile");
   }, [completeTaskByName]);
 
   const trackFirstTrackUpload = useCallback(async () => {
-    await completeTaskByName('Upload first track');
+    await completeTaskByName("Upload first track");
   }, [completeTaskByName]);
 
   const trackAIGeneratorUsed = useCallback(async () => {
-    await completeTaskByName('Try AI Music Generator');
+    await completeTaskByName("Try AI Music Generator");
   }, [completeTaskByName]);
 
   const trackSocialAccountConnected = useCallback(async () => {
-    await completeTaskByName('Connect a social account');
+    await completeTaskByName("Connect a social account");
   }, [completeTaskByName]);
 
   const trackSocialAutopilotActivated = useCallback(async () => {
-    await completeTaskByName('Activate Social Autopilot');
+    await completeTaskByName("Activate Social Autopilot");
   }, [completeTaskByName]);
 
   const trackBeatStoreSetup = useCallback(async () => {
-    await completeTaskByName('Set up your beat store');
+    await completeTaskByName("Set up your beat store");
   }, [completeTaskByName]);
 
   const trackFirstPostScheduled = useCallback(async () => {
-    await completeTaskByName('Schedule first post');
+    await completeTaskByName("Schedule first post");
   }, [completeTaskByName]);
 
   const trackZeroCostAdvertisingExplored = useCallback(async () => {
-    await completeTaskByName('Explore Zero-Cost Advertising');
+    await completeTaskByName("Explore Zero-Cost Advertising");
   }, [completeTaskByName]);
 
   const trackAnalyticsExplored = useCallback(async () => {
-    await completeTaskByName('Explore analytics');
+    await completeTaskByName("Explore analytics");
   }, [completeTaskByName]);
 
   const trackCollaboratorInvited = useCallback(async () => {
-    await completeTaskByName('Invite a collaborator');
+    await completeTaskByName("Invite a collaborator");
   }, [completeTaskByName]);
 
   return {
@@ -169,11 +185,11 @@ export function useOnboardingProgress() {
     isOnboardingActive: !progress?.completedAt && !progress?.skippedAt,
     completionPercentage: progress?.completionPercentage ?? 0,
     totalPoints: progress?.totalPoints ?? 0,
-    
+
     isTaskCompleted,
     completeTaskByName,
     completeTaskById,
-    
+
     trackProfileComplete,
     trackFirstTrackUpload,
     trackAIGeneratorUsed,

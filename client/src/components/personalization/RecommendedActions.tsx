@@ -1,13 +1,17 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { apiRequest } from '@/lib/queryClient';
-import { useSmartDefaultsContext, CareerStage, ArtistType } from './SmartDefaultsProvider';
+import React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  useSmartDefaultsContext,
+  CareerStage,
+  ArtistType,
+} from "./SmartDefaultsProvider";
 import {
   ArrowRight,
   Clock,
@@ -26,18 +30,18 @@ import {
   Settings,
   BarChart3,
   Sparkles,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface RecommendedAction {
   id: string;
-  type: 'action' | 'feature' | 'content' | 'setting';
+  type: "action" | "feature" | "content" | "setting";
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   category: string;
   link?: string;
   estimatedTime?: string;
-  impact: 'high' | 'medium' | 'low';
+  impact: "high" | "medium" | "low";
   careerStage?: CareerStage[];
   artistTypes?: ArtistType[];
   contextual: boolean;
@@ -67,16 +71,17 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 const priorityColors: Record<string, string> = {
-  high: 'bg-red-500',
-  medium: 'bg-yellow-500',
-  low: 'bg-green-500',
+  high: "bg-red-500",
+  medium: "bg-yellow-500",
+  low: "bg-green-500",
 };
 
-const impactBadgeVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
-  high: 'default',
-  medium: 'secondary',
-  low: 'outline',
-};
+const impactBadgeVariants: Record<string, "default" | "secondary" | "outline"> =
+  {
+    high: "default",
+    medium: "secondary",
+    low: "outline",
+  };
 
 const typeIcons: Record<string, React.ElementType> = {
   action: Zap,
@@ -96,36 +101,50 @@ export function RecommendedActions({
   const queryClient = useQueryClient();
   const { preferences, trackInteraction } = useSmartDefaultsContext();
 
-  const { data: recommendations = [], isLoading, error } = useQuery<RecommendedAction[]>({
-    queryKey: ['/api/personalization/recommendations'],
+  const {
+    data: recommendations = [],
+    isLoading,
+    error,
+  } = useQuery<RecommendedAction[]>({
+    queryKey: ["/api/personalization/recommendations"],
     staleTime: 10 * 60 * 1000,
   });
 
   const completeActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
-      const response = await apiRequest('POST', `/api/personalization/complete-action/${actionId}`);
+      const response = await apiRequest(
+        "POST",
+        `/api/personalization/complete-action/${actionId}`,
+      );
       return response.json();
     },
     onSuccess: (_, actionId) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/recommendations'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/recommendations"],
+      });
       onActionComplete?.(actionId);
     },
   });
 
   const dismissActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
-      const response = await apiRequest('POST', `/api/personalization/dismiss-action/${actionId}`);
+      const response = await apiRequest(
+        "POST",
+        `/api/personalization/dismiss-action/${actionId}`,
+      );
       return response.json();
     },
     onSuccess: (_, actionId) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/recommendations'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/recommendations"],
+      });
       onActionDismiss?.(actionId);
     },
   });
 
   const handleActionClick = (action: RecommendedAction) => {
     trackInteraction({
-      type: 'click',
+      type: "click",
       target: `recommendation-${action.id}`,
       context: { category: action.category, type: action.type },
     });
@@ -133,13 +152,15 @@ export function RecommendedActions({
   };
 
   const filteredActions = recommendations
-    .filter(action => !action.completed && !action.dismissed)
+    .filter((action) => !action.completed && !action.dismissed)
     .slice(0, limit);
 
-  const contextualActions = filteredActions.filter(a => a.contextual);
-  const generalActions = filteredActions.filter(a => !a.contextual);
+  const contextualActions = filteredActions.filter((a) => a.contextual);
+  const generalActions = filteredActions.filter((a) => !a.contextual);
 
-  const highPriorityCount = filteredActions.filter(a => a.priority === 'high').length;
+  const highPriorityCount = filteredActions.filter(
+    (a) => a.priority === "high",
+  ).length;
 
   if (isLoading) {
     return (
@@ -212,7 +233,8 @@ export function RecommendedActions({
           </div>
           {preferences?.careerStage && (
             <p className="text-xs text-muted-foreground mt-1">
-              Personalized for {preferences.careerStage} {preferences.artistType}
+              Personalized for {preferences.careerStage}{" "}
+              {preferences.artistType}
             </p>
           )}
         </CardHeader>
@@ -236,7 +258,8 @@ export function RecommendedActions({
                     onComplete={() => completeActionMutation.mutate(action.id)}
                     onDismiss={() => dismissActionMutation.mutate(action.id)}
                     isLoading={
-                      completeActionMutation.isPending || dismissActionMutation.isPending
+                      completeActionMutation.isPending ||
+                      dismissActionMutation.isPending
                     }
                   />
                 ))}
@@ -252,7 +275,8 @@ export function RecommendedActions({
                 onComplete={() => completeActionMutation.mutate(action.id)}
                 onDismiss={() => dismissActionMutation.mutate(action.id)}
                 isLoading={
-                  completeActionMutation.isPending || dismissActionMutation.isPending
+                  completeActionMutation.isPending ||
+                  dismissActionMutation.isPending
                 }
               />
             ))}
@@ -286,23 +310,27 @@ function ActionCard({
   return (
     <div
       className={`p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer ${
-        action.priority === 'high' ? 'border-red-200 dark:border-red-800' : ''
+        action.priority === "high" ? "border-red-200 dark:border-red-800" : ""
       }`}
       onClick={onClick}
     >
       <div className="flex items-start gap-3">
-        <div className={`p-2 rounded-lg ${
-          action.priority === 'high' 
-            ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400' 
-            : 'bg-muted'
-        }`}>
+        <div
+          className={`p-2 rounded-lg ${
+            action.priority === "high"
+              ? "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400"
+              : "bg-muted"
+          }`}
+        >
           <CategoryIcon className="h-4 w-4" />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-medium text-sm truncate">{action.title}</h4>
-            <div className={`h-2 w-2 rounded-full ${priorityColors[action.priority]}`} />
+            <div
+              className={`h-2 w-2 rounded-full ${priorityColors[action.priority]}`}
+            />
           </div>
 
           {!compact && (
@@ -312,7 +340,10 @@ function ActionCard({
           )}
 
           <div className="flex items-center gap-3 mt-2">
-            <Badge variant={impactBadgeVariants[action.impact]} className="text-xs">
+            <Badge
+              variant={impactBadgeVariants[action.impact]}
+              className="text-xs"
+            >
               <Star className="h-3 w-3 mr-1" />
               {action.impact} impact
             </Badge>

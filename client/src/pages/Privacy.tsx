@@ -1,7 +1,7 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Shield, Lock, Eye, UserX, Download } from 'lucide-react';
-import { Link } from 'wouter';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Shield, Lock, Eye, UserX, Download } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Privacy() {
   return (
@@ -57,27 +57,37 @@ export default function Privacy() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
               <p>
-                Max Booster (operated by a solo founder) is committed to protecting your privacy.
-                This Privacy Policy explains how I collect, use, disclose, and safeguard your
-                information when you use the AI-powered music platform and distribution services.
+                Max Booster (operated by a solo founder) is committed to
+                protecting your privacy. This Privacy Policy explains how I
+                collect, use, disclose, and safeguard your information when you
+                use the AI-powered music platform and distribution services.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">2. Information Collected</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                2. Information Collected
+              </h2>
 
-              <h3 className="text-xl font-semibold mb-3 mt-6">Personal Information</h3>
+              <h3 className="text-xl font-semibold mb-3 mt-6">
+                Personal Information
+              </h3>
               <p className="mb-4">
-                When you register and use Max Booster's services, the following is collected:
+                When you register and use Max Booster's services, the following
+                is collected:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Name and email address</li>
                 <li>Payment information (processed securely through Stripe)</li>
                 <li>Profile information you choose to provide</li>
-                <li>Social media account connections (when you authorize them)</li>
+                <li>
+                  Social media account connections (when you authorize them)
+                </li>
               </ul>
 
-              <h3 className="text-xl font-semibold mb-3 mt-6">Content and Usage Data</h3>
+              <h3 className="text-xl font-semibold mb-3 mt-6">
+                Content and Usage Data
+              </h3>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Music files and metadata you upload</li>
                 <li>Project data and analytics</li>
@@ -98,7 +108,9 @@ export default function Privacy() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">3. How Your Information Is Used</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                3. How Your Information Is Used
+              </h2>
               <p className="mb-4">Your information is used to:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Provide, operate, and maintain the services</li>
@@ -113,10 +125,14 @@ export default function Privacy() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">4. Data Sharing and Disclosure</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                4. Data Sharing and Disclosure
+              </h2>
               <p className="mb-4">Your information may be shared with:</p>
 
-              <h3 className="text-xl font-semibold mb-3 mt-6">Service Providers</h3>
+              <h3 className="text-xl font-semibold mb-3 mt-6">
+                Service Providers
+              </h3>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>
                   <strong>Stripe:</strong> Payment processing
@@ -128,27 +144,34 @@ export default function Privacy() {
                   <strong>Neon:</strong> Database hosting
                 </li>
                 <li>
-                  <strong>Streaming Platforms:</strong> When you distribute your music
+                  <strong>Streaming Platforms:</strong> When you distribute your
+                  music
                 </li>
               </ul>
 
-              <h3 className="text-xl font-semibold mb-3 mt-6">Legal Requirements</h3>
+              <h3 className="text-xl font-semibold mb-3 mt-6">
+                Legal Requirements
+              </h3>
               <p>
-                Your information may be disclosed if required by law, court order, or governmental
-                request, or to protect Max Booster's rights, property, or safety.
+                Your information may be disclosed if required by law, court
+                order, or governmental request, or to protect Max Booster's
+                rights, property, or safety.
               </p>
 
-              <h3 className="text-xl font-semibold mb-3 mt-6">Business Transfers</h3>
+              <h3 className="text-xl font-semibold mb-3 mt-6">
+                Business Transfers
+              </h3>
               <p>
-                In the event of a merger, acquisition, or sale of assets, your information may be
-                transferred to the acquiring entity.
+                In the event of a merger, acquisition, or sale of assets, your
+                information may be transferred to the acquiring entity.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">5. Data Security</h2>
               <p className="mb-4">
-                Industry-standard security measures are implemented to protect your data:
+                Industry-standard security measures are implemented to protect
+                your data:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Encryption in transit (HTTPS/TLS)</li>
@@ -159,14 +182,19 @@ export default function Privacy() {
                 <li>24/7 system monitoring</li>
               </ul>
               <p className="mt-4">
-                While I strive to protect your information, no method of transmission over the
-                internet is 100% secure. Absolute security cannot be guaranteed.
+                While I strive to protect your information, no method of
+                transmission over the internet is 100% secure. Absolute security
+                cannot be guaranteed.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">6. Your Rights and Choices</h2>
-              <p className="mb-4">You have the following rights regarding your data:</p>
+              <h2 className="text-2xl font-semibold mb-4">
+                6. Your Rights and Choices
+              </h2>
+              <p className="mb-4">
+                You have the following rights regarding your data:
+              </p>
 
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
@@ -211,13 +239,18 @@ export default function Privacy() {
               </div>
 
               <p className="mt-4">
-                To exercise these rights, contact us at <strong>privacy@maxbooster.ai</strong>
+                To exercise these rights, contact us at{" "}
+                <strong>privacy@maxbooster.ai</strong>
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">7. Cookies and Tracking</h2>
-              <p className="mb-4">Cookies and similar technologies are used to:</p>
+              <h2 className="text-2xl font-semibold mb-4">
+                7. Cookies and Tracking
+              </h2>
+              <p className="mb-4">
+                Cookies and similar technologies are used to:
+              </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Keep you logged in</li>
                 <li>Remember your preferences</li>
@@ -225,54 +258,66 @@ export default function Privacy() {
                 <li>Improve performance and user experience</li>
               </ul>
               <p className="mt-4">
-                You can control cookies through your browser settings, but disabling them may limit
-                functionality.
+                You can control cookies through your browser settings, but
+                disabling them may limit functionality.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">8. Data Retention</h2>
               <p>
-                Your information is retained for as long as your account is active or as needed to
-                provide services. After account deletion, certain data may be retained as required
-                by law or for legitimate business purposes (e.g., fraud prevention, financial
+                Your information is retained for as long as your account is
+                active or as needed to provide services. After account deletion,
+                certain data may be retained as required by law or for
+                legitimate business purposes (e.g., fraud prevention, financial
                 records).
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">9. Children's Privacy</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                9. Children's Privacy
+              </h2>
               <p>
-                Max Booster services are not intended for users under 13 years of age. Personal
-                information from children under 13 is not knowingly collected. If such information
-                is discovered, it will be deleted immediately.
+                Max Booster services are not intended for users under 13 years
+                of age. Personal information from children under 13 is not
+                knowingly collected. If such information is discovered, it will
+                be deleted immediately.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">10. International Data Transfers</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                10. International Data Transfers
+              </h2>
               <p>
-                Your information may be transferred to and maintained on servers located outside
-                your state, province, or country where data protection laws may differ. By using Max
-                Booster services, you consent to this transfer.
+                Your information may be transferred to and maintained on servers
+                located outside your state, province, or country where data
+                protection laws may differ. By using Max Booster services, you
+                consent to this transfer.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">11. Changes to This Policy</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                11. Changes to This Policy
+              </h2>
               <p>
-                This Privacy Policy may be updated from time to time. You will be notified of any
-                material changes by posting the new policy on this page and updating the "Last
-                updated" date. Continued use of Max Booster services after changes constitutes
-                acceptance of the updated policy.
+                This Privacy Policy may be updated from time to time. You will
+                be notified of any material changes by posting the new policy on
+                this page and updating the "Last updated" date. Continued use of
+                Max Booster services after changes constitutes acceptance of the
+                updated policy.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">12. Contact Information</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                12. Contact Information
+              </h2>
               <p className="mb-4">
-                If you have questions or concerns about this Privacy Policy or our data practices,
-                contact us:
+                If you have questions or concerns about this Privacy Policy or
+                our data practices, contact us:
               </p>
               <ul className="list-none space-y-2">
                 <li>
@@ -288,11 +333,14 @@ export default function Privacy() {
             </section>
 
             <div className="mt-12 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h3 className="font-semibold text-lg mb-2">Your Privacy Matters</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                Your Privacy Matters
+              </h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                At Max Booster, we're committed to transparency and protecting your rights. We
-                believe in giving you control over your data and being clear about how we use it to
-                provide you with the best possible music platform experience.
+                At Max Booster, we're committed to transparency and protecting
+                your rights. We believe in giving you control over your data and
+                being clear about how we use it to provide you with the best
+                possible music platform experience.
               </p>
             </div>
           </CardContent>

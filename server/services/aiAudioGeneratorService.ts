@@ -1,16 +1,21 @@
 /**
  * AI Audio Generator Service - Server-Side Integration
- * 
+ *
  * Provides REST API endpoints for the in-house AI audio generation system
  */
 
-import wavefilePkg from 'wavefile';
-const WaveFile = (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
-import { randomBytes } from 'crypto';
+import wavefilePkg from "wavefile";
+const WaveFile =
+  (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
+import { randomBytes } from "crypto";
 
-import { AIAudioGenerator, type GenerationOutput, type GenerationType } from '../../shared/ml/audio/AIAudioGenerator.js';
-import { logger } from '../logger.js';
-import { storageService } from './storageService.js';
+import {
+  AIAudioGenerator,
+  type GenerationOutput,
+  type GenerationType,
+} from "../../shared/ml/audio/AIAudioGenerator.js";
+import { logger } from "../logger.js";
+import { storageService } from "./storageService.js";
 
 // Initialize generator
 const audioGenerator = new AIAudioGenerator(48000);
@@ -50,35 +55,51 @@ export interface GenerationResult {
     genre: string;
   };
   duration: number;
-  sourceType: 'text' | 'audio';
-  generatedNotes?: Array<{ note: string; octave: number; time: number; duration: number; velocity: number }>;
+  sourceType: "text" | "audio";
+  generatedNotes?: Array<{
+    note: string;
+    octave: number;
+    time: number;
+    duration: number;
+    velocity: number;
+  }>;
   generatedChords?: Array<{ chord: string; time: number; duration: number }>;
 }
 
-async function saveToWav(audioData: Float32Array, sampleRate: number): Promise<string> {
+async function saveToWav(
+  audioData: Float32Array,
+  sampleRate: number,
+): Promise<string> {
   const int16Data = new Int16Array(audioData.length);
   for (let i = 0; i < audioData.length; i++) {
-    int16Data[i] = Math.max(-32768, Math.min(32767, Math.floor(audioData[i] * 32767)));
+    int16Data[i] = Math.max(
+      -32768,
+      Math.min(32767, Math.floor(audioData[i] * 32767)),
+    );
   }
 
   const wav = new WaveFile();
-  wav.fromScratch(1, sampleRate, '16', Array.from(int16Data));
+  wav.fromScratch(1, sampleRate, "16", Array.from(int16Data));
 
-  const filename = `ai_generated_${Date.now()}_${randomBytes(8).toString('hex')}.wav`;
+  const filename = `ai_generated_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
   const key = `generated-content/audio/${filename}`;
   const buffer = Buffer.from(wav.toBuffer());
 
-  await storageService.uploadFile(buffer, key, 'audio/wav');
+  await storageService.uploadFile(buffer, key, "audio/wav");
   return await storageService.getDownloadUrl(key);
 }
 
-export async function generateFromText(request: TextToAudioRequest): Promise<GenerationResult> {
+export async function generateFromText(
+  request: TextToAudioRequest,
+): Promise<GenerationResult> {
   await ensureInitialized();
-  
+
   logger.info(`[AI Audio] Generating from text: "${request.text}"`);
-  
+
   try {
-    logger.info(`[AI Audio] Request — bars: ${request.bars}, tempo: ${request.tempo}`);
+    logger.info(
+      `[AI Audio] Request — bars: ${request.bars}, tempo: ${request.tempo}`,
+    );
 
     const output = await audioGenerator.generateFromText({
       text: request.text,
@@ -87,16 +108,20 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
       tempo: request.tempo,
     });
 
-    logger.info(`[AI Audio] Synthesis complete — samples: ${output.audioData.length}, sampleRate: ${output.sampleRate}, duration: ${output.duration.toFixed(2)}s`);
+    logger.info(
+      `[AI Audio] Synthesis complete — samples: ${output.audioData.length}, sampleRate: ${output.sampleRate}, duration: ${output.duration.toFixed(2)}s`,
+    );
 
     const audioFilePath = await saveToWav(output.audioData, output.sampleRate);
 
-    logger.info(`[AI Audio] Generated ${output.metadata.type} at ${output.metadata.tempo}bpm in ${output.metadata.key} ${output.metadata.scale}`);
+    logger.info(
+      `[AI Audio] Generated ${output.metadata.type} at ${output.metadata.tempo}bpm in ${output.metadata.key} ${output.metadata.scale}`,
+    );
 
     // Extract notes from patterns
-    const generatedNotes: GenerationResult['generatedNotes'] = [];
-    const generatedChords: GenerationResult['generatedChords'] = [];
-    
+    const generatedNotes: GenerationResult["generatedNotes"] = [];
+    const generatedChords: GenerationResult["generatedChords"] = [];
+
     if (output.metadata.patterns) {
       // Extract bass notes
       if (output.metadata.patterns.bass?.notes) {
@@ -110,7 +135,7 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
           });
         }
       }
-      
+
       // Extract melodic notes
       if (output.metadata.patterns.melody?.notes) {
         for (const note of output.metadata.patterns.melody.notes) {
@@ -123,17 +148,22 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
           });
         }
       }
-      
+
       // Count drum hits as notes too (for drums-only generation)
       if (output.metadata.patterns.drums) {
         const drums = output.metadata.patterns.drums;
         let drumNoteCount = 0;
-        ['kick', 'snare', 'hihat', 'clap', 'perc'].forEach((drumType) => {
+        ["kick", "snare", "hihat", "clap", "perc"].forEach((drumType) => {
           const pattern = drums[drumType as keyof typeof drums];
           if (Array.isArray(pattern)) {
             for (let i = 0; i < pattern.length; i++) {
               const step = pattern[i];
-              if (step && typeof step === 'object' && 'active' in step && step.active) {
+              if (
+                step &&
+                typeof step === "object" &&
+                "active" in step &&
+                step.active
+              ) {
                 drumNoteCount++;
                 generatedNotes.push({
                   note: drumType.toUpperCase(),
@@ -147,25 +177,28 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
           }
         });
       }
-      
+
       // Generate chord names from bass notes (simplified chord detection)
-      if (output.metadata.patterns.bass?.notes && output.metadata.patterns.bass.notes.length > 0) {
+      if (
+        output.metadata.patterns.bass?.notes &&
+        output.metadata.patterns.bass.notes.length > 0
+      ) {
         const bassNotes = output.metadata.patterns.bass.notes;
         const scale = output.metadata.scale;
         const key = output.metadata.key;
-        
+
         // Group notes by position to form chords
         const notesByTime: Record<number, string[]> = {};
-        bassNotes.forEach(n => {
+        bassNotes.forEach((n) => {
           const timeKey = Math.floor(n.time);
           if (!notesByTime[timeKey]) notesByTime[timeKey] = [];
           notesByTime[timeKey].push(n.note);
         });
-        
+
         Object.entries(notesByTime).forEach(([timeStr, notes]) => {
           const time = parseInt(timeStr);
           if (notes.length > 0) {
-            const chordName = notes[0] + (scale === 'minor' ? 'm' : '');
+            const chordName = notes[0] + (scale === "minor" ? "m" : "");
             generatedChords.push({
               chord: chordName,
               time,
@@ -176,7 +209,9 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
       }
     }
 
-    logger.info(`[AI Audio] Generated ${generatedNotes.length} notes, ${generatedChords.length} chords`);
+    logger.info(
+      `[AI Audio] Generated ${generatedNotes.length} notes, ${generatedChords.length} chords`,
+    );
 
     return {
       success: true,
@@ -189,24 +224,28 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
         genre: output.metadata.genre,
       },
       duration: output.duration,
-      sourceType: 'text',
+      sourceType: "text",
       generatedNotes,
       generatedChords,
     };
   } catch (error) {
-    logger.warn({ err: error }, '[AI Audio] Text generation failed:');
+    logger.warn({ err: error }, "[AI Audio] Text generation failed:");
     throw error;
   }
 }
 
-export async function generateFromReference(request: AudioToAudioRequest): Promise<GenerationResult> {
+export async function generateFromReference(
+  request: AudioToAudioRequest,
+): Promise<GenerationResult> {
   await ensureInitialized();
-  
-  logger.info(`[AI Audio] Generating ${request.targetType} from audio reference`);
-  
+
+  logger.info(
+    `[AI Audio] Generating ${request.targetType} from audio reference`,
+  );
+
   try {
     const audioData = bufferToFloat32Array(request.audioBuffer);
-    
+
     const output = await audioGenerator.generateFromReference({
       referenceAudio: audioData,
       referenceSampleRate: 48000,
@@ -217,7 +256,9 @@ export async function generateFromReference(request: AudioToAudioRequest): Promi
 
     const audioFilePath = await saveToWav(output.audioData, output.sampleRate);
 
-    logger.info(`[AI Audio] Generated ${output.metadata.type} matching reference style`);
+    logger.info(
+      `[AI Audio] Generated ${output.metadata.type} matching reference style`,
+    );
 
     return {
       success: true,
@@ -230,20 +271,20 @@ export async function generateFromReference(request: AudioToAudioRequest): Promi
         genre: output.metadata.genre,
       },
       duration: output.duration,
-      sourceType: 'audio',
+      sourceType: "audio",
     };
   } catch (error) {
-    logger.warn({ err: error }, '[AI Audio] Reference generation failed:');
+    logger.warn({ err: error }, "[AI Audio] Reference generation failed:");
     throw error;
   }
 }
 
 export async function generateDrumHit(
-  type: 'kick' | 'snare' | 'hihat' | 'clap',
-  preset?: string
+  type: "kick" | "snare" | "hihat" | "clap",
+  preset?: string,
 ): Promise<string> {
   await ensureInitialized();
-  
+
   const audioData = audioGenerator.generateDrumHit(type, preset, 1);
   return saveToWav(audioData, 48000);
 }
@@ -251,25 +292,36 @@ export async function generateDrumHit(
 export async function generateBassNote(
   note: string,
   octave: number = 1,
-  preset: string = 'trap808',
-  duration: number = 1
+  preset: string = "trap808",
+  duration: number = 1,
 ): Promise<string> {
   await ensureInitialized();
-  
-  const audioData = audioGenerator.generateBassNote(note, octave, preset, duration);
+
+  const audioData = audioGenerator.generateBassNote(
+    note,
+    octave,
+    preset,
+    duration,
+  );
   return saveToWav(audioData, 48000);
 }
 
 export async function generateSynthNote(
   note: string,
   octave: number = 4,
-  type: 'lead' | 'pad' | 'pluck' = 'lead',
-  preset: string = 'classic',
-  duration: number = 1
+  type: "lead" | "pad" | "pluck" = "lead",
+  preset: string = "classic",
+  duration: number = 1,
 ): Promise<string> {
   await ensureInitialized();
-  
-  const audioData = audioGenerator.generateSynthNote(note, octave, type, preset, duration);
+
+  const audioData = audioGenerator.generateSynthNote(
+    note,
+    octave,
+    type,
+    preset,
+    duration,
+  );
   return saveToWav(audioData, 48000);
 }
 

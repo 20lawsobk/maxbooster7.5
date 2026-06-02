@@ -1,9 +1,9 @@
-import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
-import { logger } from '../logger.js';
-import { RATE_LIMITS } from './rateLimiter.js';
+import type { Request, Response, NextFunction, RequestHandler } from "express";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
+import { RATE_LIMITS } from "./rateLimiter.js";
 
-const CAPTCHA_KEY_PREFIX = 'captcha:attempts:';
+const CAPTCHA_KEY_PREFIX = "captcha:attempts:";
 const CAPTCHA_WINDOW_MS = 900000; // 15 minutes
 
 interface CaptchaStatus {
@@ -13,11 +13,11 @@ interface CaptchaStatus {
 }
 
 function getClientIP(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') {
-    return forwarded.split(',')[0].trim();
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") {
+    return forwarded.split(",")[0].trim();
   }
-  return req.ip || req.socket.remoteAddress || 'unknown';
+  return req.ip || req.socket.remoteAddress || "unknown";
 }
 
 export async function getFailedAttempts(ip: string): Promise<number> {
@@ -29,7 +29,7 @@ export async function getFailedAttempts(ip: string): Promise<number> {
     const count = await redis.get(key);
     return count ? parseInt(count, 10) : 0;
   } catch (error) {
-    logger.warn({ err: error }, 'Error getting failed attempts:');
+    logger.warn({ err: error }, "Error getting failed attempts:");
     return 0;
   }
 }
@@ -41,15 +41,15 @@ export async function incrementFailedAttempts(ip: string): Promise<number> {
   try {
     const key = `${CAPTCHA_KEY_PREFIX}${ip}`;
     const newCount = await redis.incr(key);
-    
+
     const ttl = await redis.ttl(key);
     if (ttl < 0) {
       await redis.expire(key, Math.ceil(CAPTCHA_WINDOW_MS / 1000));
     }
-    
+
     return newCount;
   } catch (error) {
-    logger.warn({ err: error }, 'Error incrementing failed attempts:');
+    logger.warn({ err: error }, "Error incrementing failed attempts:");
     return 0;
   }
 }
@@ -63,7 +63,7 @@ export async function resetFailedAttempts(ip: string): Promise<boolean> {
     await redis.del(key);
     return true;
   } catch (error) {
-    logger.warn({ err: error }, 'Error resetting failed attempts:');
+    logger.warn({ err: error }, "Error resetting failed attempts:");
     return false;
   }
 }
@@ -71,59 +71,74 @@ export async function resetFailedAttempts(ip: string): Promise<boolean> {
 export async function getCaptchaStatus(ip: string): Promise<CaptchaStatus> {
   const attempts = await getFailedAttempts(ip);
   const threshold = RATE_LIMITS.auth.captchaThreshold;
-  
+
   return {
     required: attempts >= threshold,
     attempts,
-    threshold
+    threshold,
   };
 }
 
-async function verifyCaptchaToken(token: string, secret: string): Promise<boolean> {
+async function verifyCaptchaToken(
+  token: string,
+  secret: string,
+): Promise<boolean> {
   if (!secret || !token) {
-    logger.warn('Captcha verification skipped - no secret configured');
+    logger.warn("Captcha verification skipped - no secret configured");
     return true;
   }
 
   try {
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      signal: AbortSignal.timeout(8_000), // 8 s — fail open on Google outage, don't block auth
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+    const response = await fetch(
+      "https://www.google.com/recaptcha/api/siteverify",
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(8_000), // 8 s — fail open on Google outage, don't block auth
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          secret,
+          response: token,
+        }),
       },
-      body: new URLSearchParams({
-        secret,
-        response: token,
-      }),
-    });
+    );
 
-    const data = await response.json() as { success: boolean; score?: number };
-    
+    const data = (await response.json()) as {
+      success: boolean;
+      score?: number;
+    };
+
     if (data.success && (data.score === undefined || data.score >= 0.5)) {
       return true;
     }
-    
-    logger.warn('Captcha verification failed:', { success: data.success, score: data.score });
+
+    logger.warn("Captcha verification failed:", {
+      success: data.success,
+      score: data.score,
+    });
     return false;
   } catch (error) {
-    logger.warn({ err: error }, 'Captcha verification error:');
+    logger.warn({ err: error }, "Captcha verification error:");
     return false;
   }
 }
 
-async function verifyHCaptchaToken(token: string, secret: string): Promise<boolean> {
+async function verifyHCaptchaToken(
+  token: string,
+  secret: string,
+): Promise<boolean> {
   if (!secret || !token) {
-    logger.warn('hCaptcha verification skipped - no secret configured');
+    logger.warn("hCaptcha verification skipped - no secret configured");
     return true;
   }
 
   try {
-    const response = await fetch('https://hcaptcha.com/siteverify', {
-      method: 'POST',
+    const response = await fetch("https://hcaptcha.com/siteverify", {
+      method: "POST",
       signal: AbortSignal.timeout(8_000), // 8 s — fail open on hCaptcha outage
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
         secret,
@@ -131,10 +146,10 @@ async function verifyHCaptchaToken(token: string, secret: string): Promise<boole
       }),
     });
 
-    const data = await response.json() as { success: boolean };
+    const data = (await response.json()) as { success: boolean };
     return data.success;
   } catch (error) {
-    logger.warn({ err: error }, 'hCaptcha verification error:');
+    logger.warn({ err: error }, "hCaptcha verification error:");
     return false;
   }
 }
@@ -142,7 +157,7 @@ async function verifyHCaptchaToken(token: string, secret: string): Promise<boole
 export const captchaMiddleware: RequestHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   const ip = getClientIP(req);
   const status = await getCaptchaStatus(ip);
@@ -152,15 +167,16 @@ export const captchaMiddleware: RequestHandler = async (
     return;
   }
 
-  const captchaToken = req.body?.captchaToken || req.headers['x-captcha-token'];
+  const captchaToken = req.body?.captchaToken || req.headers["x-captcha-token"];
 
   if (!captchaToken) {
     res.status(403).json({
-      error: 'Captcha Required',
-      message: 'Too many failed attempts. Please complete the captcha verification.',
+      error: "Captcha Required",
+      message:
+        "Too many failed attempts. Please complete the captcha verification.",
       captchaRequired: true,
       attempts: status.attempts,
-      threshold: status.threshold
+      threshold: status.threshold,
     });
     return;
   }
@@ -175,15 +191,15 @@ export const captchaMiddleware: RequestHandler = async (
   } else if (hcaptchaSecret) {
     isValid = await verifyHCaptchaToken(captchaToken as string, hcaptchaSecret);
   } else {
-    logger.warn('No captcha secret configured - allowing request');
+    logger.warn("No captcha secret configured - allowing request");
     isValid = true;
   }
 
   if (!isValid) {
     res.status(403).json({
-      error: 'Captcha Verification Failed',
-      message: 'The captcha verification failed. Please try again.',
-      captchaRequired: true
+      error: "Captcha Verification Failed",
+      message: "The captcha verification failed. Please try again.",
+      captchaRequired: true,
     });
     return;
   }
@@ -193,7 +209,7 @@ export const captchaMiddleware: RequestHandler = async (
 
 export async function trackLoginAttempt(
   ip: string,
-  success: boolean
+  success: boolean,
 ): Promise<{ captchaRequired: boolean; attempts: number }> {
   if (success) {
     await resetFailedAttempts(ip);
@@ -202,18 +218,22 @@ export async function trackLoginAttempt(
 
   const attempts = await incrementFailedAttempts(ip);
   const threshold = RATE_LIMITS.auth.captchaThreshold;
-  
+
   return {
     captchaRequired: attempts >= threshold,
-    attempts
+    attempts,
   };
 }
 
 export function createCaptchaCheckMiddleware(): RequestHandler {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     const ip = getClientIP(req);
     const status = await getCaptchaStatus(ip);
-    
+
     (req as Record<string, unknown>).captchaStatus = status;
     next();
   };

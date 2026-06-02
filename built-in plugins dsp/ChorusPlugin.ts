@@ -1,4 +1,4 @@
-import { BasePlugin } from './BasePlugin';
+import { BasePlugin } from "./BasePlugin";
 
 export class ChorusPlugin extends BasePlugin {
   private static readonly MAX_VOICES = 8;
@@ -58,7 +58,11 @@ export class ChorusPlugin extends BasePlugin {
 
   private calculatePan(voiceIndex: number, totalVoices: number): number {
     if (totalVoices <= 1) return 0;
-    return ((voiceIndex % 2 === 0 ? -1 : 1) * ((Math.floor(voiceIndex / 2) + 1) / Math.ceil(totalVoices / 2))) * this.stereoSpread;
+    return (
+      (voiceIndex % 2 === 0 ? -1 : 1) *
+      ((Math.floor(voiceIndex / 2) + 1) / Math.ceil(totalVoices / 2)) *
+      this.stereoSpread
+    );
   }
 
   private updateVoiceGains(): void {
@@ -72,7 +76,7 @@ export class ChorusPlugin extends BasePlugin {
     for (let i = 0; i < ChorusPlugin.MAX_VOICES; i++) {
       this.panners[i].pan.setValueAtTime(
         this.calculatePan(i, this.activeVoices),
-        this.context.currentTime
+        this.context.currentTime,
       );
     }
   }
@@ -92,7 +96,10 @@ export class ChorusPlugin extends BasePlugin {
   }
 
   setVoices(count: number): void {
-    this.activeVoices = Math.max(1, Math.min(ChorusPlugin.MAX_VOICES, Math.round(count)));
+    this.activeVoices = Math.max(
+      1,
+      Math.min(ChorusPlugin.MAX_VOICES, Math.round(count)),
+    );
     this.updateVoiceGains();
     this.updatePanning();
   }
@@ -110,7 +117,7 @@ export class ChorusPlugin extends BasePlugin {
   }
 
   getName(): string {
-    return 'Max Booster Chorus';
+    return "Max Booster Chorus";
   }
 
   getParameters(): Record<string, any> {
@@ -129,7 +136,8 @@ export class ChorusPlugin extends BasePlugin {
     if (params.rate !== undefined) this.setRate(params.rate);
     if (params.depth !== undefined) this.setDepth(params.depth);
     if (params.voices !== undefined) this.setVoices(params.voices);
-    if (params.stereoSpread !== undefined) this.setStereoSpread(params.stereoSpread);
+    if (params.stereoSpread !== undefined)
+      this.setStereoSpread(params.stereoSpread);
     if (params.feedback !== undefined) this.setFeedback(params.feedback);
     if (params.mix !== undefined) this.setMix(params.mix);
     if (params.bypass !== undefined) this.setBypass(params.bypass);

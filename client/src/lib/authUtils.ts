@@ -12,6 +12,6 @@
 export function isUnauthorizedError(error: Error): boolean {
   const apiError = error as Error & { status?: number; code?: string };
   if (apiError.status === 401) return true;
-  if (apiError.code === 'UNAUTHORIZED') return true;
+  if (apiError.code === "UNAUTHORIZED") return true;
   return /401|unauthorized|not authenticated/i.test(error.message);
 }

@@ -1,19 +1,19 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Globe } from 'lucide-react';
+} from "@/components/ui/select";
+import { Globe } from "lucide-react";
 
 const languages = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "ja", name: "日本語", flag: "🇯🇵" },
 ];
 
 export function LanguageSwitcher() {
@@ -24,8 +24,9 @@ export function LanguageSwitcher() {
   };
 
   // Normalize language code to base language (e.g., en-US -> en)
-  const normalizedLanguage = i18n.language.split('-')[0];
-  const currentLanguage = languages.find((lang) => lang.code === normalizedLanguage) || languages[0];
+  const normalizedLanguage = i18n.language.split("-")[0];
+  const currentLanguage =
+    languages.find((lang) => lang.code === normalizedLanguage) || languages[0];
 
   return (
     <Select value={normalizedLanguage} onValueChange={handleLanguageChange}>

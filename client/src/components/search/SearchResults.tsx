@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Music,
   User,
@@ -21,9 +21,9 @@ import {
   Heart,
   MoreHorizontal,
   ExternalLink,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { SearchEmptyState } from './SearchEmptyState';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SearchEmptyState } from "./SearchEmptyState";
 
 interface SearchResultsProps {
   query: string;
@@ -36,7 +36,7 @@ interface SearchResultsProps {
 
 interface SearchResult {
   id: string;
-  type: 'beat' | 'user' | 'project' | 'release';
+  type: "beat" | "user" | "project" | "release";
   title?: string;
   username?: string;
   firstName?: string;
@@ -56,15 +56,19 @@ export function SearchResults({
   onFilterChange,
   onResultClick,
   showFilters = true,
-  initialCategory = 'all',
+  initialCategory = "all",
 }: SearchResultsProps) {
   const [activeCategory, setActiveCategory] = useState(initialCategory);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(0);
   const limit = 20;
 
-  const { data: searchData, isLoading, error } = useQuery({
-    queryKey: ['/api/search/unified', query, filters, activeCategory, page],
+  const {
+    data: searchData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["/api/search/unified", query, filters, activeCategory, page],
     queryFn: async () => {
       const params = new URLSearchParams({
         q: query,
@@ -72,14 +76,16 @@ export function SearchResults({
         limit: String(limit),
         offset: String(page * limit),
         ...Object.fromEntries(
-          Object.entries(filters).filter(([_, v]) => v !== undefined && v !== '')
+          Object.entries(filters).filter(
+            ([_, v]) => v !== undefined && v !== "",
+          ),
         ),
       });
-      
+
       const res = await fetch(`/api/search/unified?${params}`, {
-        credentials: 'include',
+        credentials: "include",
       });
-      if (!res.ok) throw new Error('Search failed');
+      if (!res.ok) throw new Error("Search failed");
       return res.json();
     },
     enabled: query.length >= 2,
@@ -88,11 +94,16 @@ export function SearchResults({
 
   const getCategoryIcon = (type: string) => {
     switch (type) {
-      case 'beats': return <Music className="h-4 w-4" />;
-      case 'users': return <User className="h-4 w-4" />;
-      case 'projects': return <Folder className="h-4 w-4" />;
-      case 'releases': return <Disc className="h-4 w-4" />;
-      default: return null;
+      case "beats":
+        return <Music className="h-4 w-4" />;
+      case "users":
+        return <User className="h-4 w-4" />;
+      case "projects":
+        return <Folder className="h-4 w-4" />;
+      case "releases":
+        return <Disc className="h-4 w-4" />;
+      default:
+        return null;
     }
   };
 
@@ -103,7 +114,7 @@ export function SearchResults({
 
   const getDisplayResults = () => {
     if (!searchData) return [];
-    if (activeCategory === 'all') {
+    if (activeCategory === "all") {
       return searchData.allResults || [];
     }
     return searchData.categories?.[activeCategory]?.items || [];
@@ -134,7 +145,12 @@ export function SearchResults({
   }
 
   if (totalResults === 0) {
-    return <SearchEmptyState query={query} onSuggestionClick={(q) => onResultClick?.({ query: q }, 'search')} />;
+    return (
+      <SearchEmptyState
+        query={query}
+        onSuggestionClick={(q) => onResultClick?.({ query: q }, "search")}
+      />
+    );
   }
 
   return (
@@ -144,25 +160,29 @@ export function SearchResults({
           <h2 className="text-lg font-semibold text-white">
             {totalResults.toLocaleString()} results for "{query}"
           </h2>
-          {Object.keys(filters).filter(k => filters[k]).length > 0 && (
-            <Badge variant="secondary" className="bg-purple-500/20 text-purple-300">
-              {Object.keys(filters).filter(k => filters[k]).length} filters active
+          {Object.keys(filters).filter((k) => filters[k]).length > 0 && (
+            <Badge
+              variant="secondary"
+              className="bg-purple-500/20 text-purple-300"
+            >
+              {Object.keys(filters).filter((k) => filters[k]).length} filters
+              active
             </Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+            variant={viewMode === "grid" ? "secondary" : "ghost"}
             size="icon"
-            onClick={() => setViewMode('grid')}
+            onClick={() => setViewMode("grid")}
             className="h-8 w-8"
           >
             <Grid className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+            variant={viewMode === "list" ? "secondary" : "ghost"}
             size="icon"
-            onClick={() => setViewMode('list')}
+            onClick={() => setViewMode("list")}
             className="h-8 w-8"
           >
             <List className="h-4 w-4" />
@@ -172,29 +192,44 @@ export function SearchResults({
 
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>
         <TabsList className="bg-slate-800/50">
-          <TabsTrigger value="all" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="all"
+            className="data-[state=active]:bg-purple-600"
+          >
             All ({totalResults})
           </TabsTrigger>
-          <TabsTrigger value="beats" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="beats"
+            className="data-[state=active]:bg-purple-600"
+          >
             <Music className="h-4 w-4 mr-1" />
-            Beats ({getCategoryCount('beats')})
+            Beats ({getCategoryCount("beats")})
           </TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="users"
+            className="data-[state=active]:bg-purple-600"
+          >
             <User className="h-4 w-4 mr-1" />
-            Users ({getCategoryCount('users')})
+            Users ({getCategoryCount("users")})
           </TabsTrigger>
-          <TabsTrigger value="projects" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="projects"
+            className="data-[state=active]:bg-purple-600"
+          >
             <Folder className="h-4 w-4 mr-1" />
-            Projects ({getCategoryCount('projects')})
+            Projects ({getCategoryCount("projects")})
           </TabsTrigger>
-          <TabsTrigger value="releases" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="releases"
+            className="data-[state=active]:bg-purple-600"
+          >
             <Disc className="h-4 w-4 mr-1" />
-            Releases ({getCategoryCount('releases')})
+            Releases ({getCategoryCount("releases")})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeCategory} className="mt-4">
-          {viewMode === 'grid' ? (
+          {viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {results.map((result: SearchResult) => (
                 <ResultCard
@@ -223,7 +258,7 @@ export function SearchResults({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.max(0, p - 1))}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
             className="border-slate-700"
           >
@@ -236,7 +271,7 @@ export function SearchResults({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
             className="border-slate-700"
           >
@@ -249,56 +284,63 @@ export function SearchResults({
   );
 }
 
-function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => void }) {
+function ResultCard({
+  result,
+  onClick,
+}: {
+  result: SearchResult;
+  onClick: () => void;
+}) {
   const getTypeStyles = () => {
     switch (result.type) {
-      case 'beat':
-        return 'border-purple-500/30 hover:border-purple-500/60';
-      case 'user':
-        return 'border-blue-500/30 hover:border-blue-500/60';
-      case 'project':
-        return 'border-green-500/30 hover:border-green-500/60';
-      case 'release':
-        return 'border-orange-500/30 hover:border-orange-500/60';
+      case "beat":
+        return "border-purple-500/30 hover:border-purple-500/60";
+      case "user":
+        return "border-blue-500/30 hover:border-blue-500/60";
+      case "project":
+        return "border-green-500/30 hover:border-green-500/60";
+      case "release":
+        return "border-orange-500/30 hover:border-orange-500/60";
       default:
-        return 'border-slate-700 hover:border-slate-600';
+        return "border-slate-700 hover:border-slate-600";
     }
   };
 
   const getName = () => {
     if (result.title) return result.title;
-    if (result.firstName && result.lastName) return `${result.firstName} ${result.lastName}`;
-    return result.username || 'Untitled';
+    if (result.firstName && result.lastName)
+      return `${result.firstName} ${result.lastName}`;
+    return result.username || "Untitled";
   };
 
   return (
-    <Card 
+    <Card
       className={cn(
-        'bg-slate-800/50 border cursor-pointer transition-all hover:bg-slate-800',
-        getTypeStyles()
+        "bg-slate-800/50 border cursor-pointer transition-all hover:bg-slate-800",
+        getTypeStyles(),
       )}
       onClick={onClick}
     >
       <CardContent className="p-4">
         <div className="aspect-square rounded-lg bg-slate-700/50 mb-3 flex items-center justify-center overflow-hidden">
           {result.artworkUrl || result.avatarUrl ? (
-            <img 
-              src={result.artworkUrl || result.avatarUrl} 
+            <img
+              src={result.artworkUrl || result.avatarUrl}
               alt={getName()}
               className="w-full h-full object-cover"
             />
           ) : (
             <div className="text-slate-600">
-              {result.type === 'beat' && <Music className="h-12 w-12" />}
-              {result.type === 'user' && <User className="h-12 w-12" />}
-              {result.type === 'project' && <Folder className="h-12 w-12" />}
-              {result.type === 'release' && <Disc className="h-12 w-12" />}
+              {result.type === "beat" && <Music className="h-12 w-12" />}
+              {result.type === "user" && <User className="h-12 w-12" />}
+              {result.type === "project" && <Folder className="h-12 w-12" />}
+              {result.type === "release" && <Disc className="h-12 w-12" />}
             </div>
           )}
         </div>
         <div className="space-y-1">
           <h3 className="font-medium text-white truncate">{getName()}</h3>
-          {result.type === 'user' && result.username && (
+          {result.type === "user" && result.username && (
             <p className="text-sm text-slate-400">@{result.username}</p>
           )}
           {result.genre && (
@@ -325,21 +367,33 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
   );
 }
 
-function ResultListItem({ result, onClick }: { result: SearchResult; onClick: () => void }) {
+function ResultListItem({
+  result,
+  onClick,
+}: {
+  result: SearchResult;
+  onClick: () => void;
+}) {
   const getTypeIcon = () => {
     switch (result.type) {
-      case 'beat': return <Music className="h-5 w-5 text-purple-400" />;
-      case 'user': return <User className="h-5 w-5 text-blue-400" />;
-      case 'project': return <Folder className="h-5 w-5 text-green-400" />;
-      case 'release': return <Disc className="h-5 w-5 text-orange-400" />;
-      default: return null;
+      case "beat":
+        return <Music className="h-5 w-5 text-purple-400" />;
+      case "user":
+        return <User className="h-5 w-5 text-blue-400" />;
+      case "project":
+        return <Folder className="h-5 w-5 text-green-400" />;
+      case "release":
+        return <Disc className="h-5 w-5 text-orange-400" />;
+      default:
+        return null;
     }
   };
 
   const getName = () => {
     if (result.title) return result.title;
-    if (result.firstName && result.lastName) return `${result.firstName} ${result.lastName}`;
-    return result.username || 'Untitled';
+    if (result.firstName && result.lastName)
+      return `${result.firstName} ${result.lastName}`;
+    return result.username || "Untitled";
   };
 
   return (
@@ -349,8 +403,8 @@ function ResultListItem({ result, onClick }: { result: SearchResult; onClick: ()
     >
       <div className="w-12 h-12 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0 overflow-hidden">
         {result.artworkUrl || result.avatarUrl ? (
-          <img 
-            src={result.artworkUrl || result.avatarUrl} 
+          <img
+            src={result.artworkUrl || result.avatarUrl}
             alt={getName()}
             className="w-full h-full object-cover"
           />
@@ -361,12 +415,17 @@ function ResultListItem({ result, onClick }: { result: SearchResult; onClick: ()
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-white truncate">{getName()}</h3>
-          <Badge variant="outline" className="text-xs capitalize border-slate-600">
+          <Badge
+            variant="outline"
+            className="text-xs capitalize border-slate-600"
+          >
             {result.type}
           </Badge>
         </div>
         <p className="text-sm text-slate-400 truncate">
-          {result.description || result.genre || (result.username && `@${result.username}`)}
+          {result.description ||
+            result.genre ||
+            (result.username && `@${result.username}`)}
         </p>
       </div>
       <div className="flex items-center gap-4 flex-shrink-0">
@@ -377,9 +436,7 @@ function ResultListItem({ result, onClick }: { result: SearchResult; onClick: ()
           </span>
         )}
         {result.price !== undefined && (
-          <span className="text-green-400 font-medium">
-            ${result.price}
-          </span>
+          <span className="text-green-400 font-medium">${result.price}</span>
         )}
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Heart className="h-4 w-4" />
@@ -392,8 +449,8 @@ function ResultListItem({ result, onClick }: { result: SearchResult; onClick: ()
   );
 }
 
-function SearchResultsSkeleton({ viewMode }: { viewMode: 'grid' | 'list' }) {
-  if (viewMode === 'grid') {
+function SearchResultsSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
+  if (viewMode === "grid") {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-4">
@@ -421,7 +478,10 @@ function SearchResultsSkeleton({ viewMode }: { viewMode: 'grid' | 'list' }) {
       <Skeleton className="h-10 w-full max-w-lg bg-slate-700" />
       <div className="space-y-2">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-slate-800/50">
+          <div
+            key={i}
+            className="flex items-center gap-4 p-4 rounded-lg bg-slate-800/50"
+          >
             <Skeleton className="w-12 h-12 rounded-lg bg-slate-700" />
             <div className="flex-1 space-y-2">
               <Skeleton className="h-4 w-1/3 bg-slate-700" />

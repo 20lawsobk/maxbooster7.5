@@ -1,11 +1,14 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
-import { Play, Pause, ShoppingCart, Heart, Settings2 } from 'lucide-react';
-import { BeatPreviewControls, BeatPreviewBadges } from '@/components/marketplace/BeatPreviewControls';
-import { useState } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { Play, Pause, ShoppingCart, Heart, Settings2 } from "lucide-react";
+import {
+  BeatPreviewControls,
+  BeatPreviewBadges,
+} from "@/components/marketplace/BeatPreviewControls";
+import { useState } from "react";
 
 interface BeatCardProps {
   id: string;
@@ -27,14 +30,14 @@ interface BeatCardProps {
 }
 
 const waveformColors = {
-  cyan: 'from-cyan-400 to-cyan-600',
-  purple: 'from-purple-400 to-purple-600',
-  pink: 'from-pink-400 to-pink-600',
-  orange: 'from-orange-400 to-orange-600',
-  yellow: 'from-yellow-400 to-yellow-600',
-  emerald: 'from-emerald-400 to-emerald-600',
-  blue: 'from-blue-400 to-blue-600',
-  red: 'from-red-400 to-red-600',
+  cyan: "from-cyan-400 to-cyan-600",
+  purple: "from-purple-400 to-purple-600",
+  pink: "from-pink-400 to-pink-600",
+  orange: "from-orange-400 to-orange-600",
+  yellow: "from-yellow-400 to-yellow-600",
+  emerald: "from-emerald-400 to-emerald-600",
+  blue: "from-blue-400 to-blue-600",
+  red: "from-red-400 to-red-600",
 };
 
 export function BeatCard({
@@ -46,7 +49,7 @@ export function BeatCard({
   key: musicalKey,
   genre,
   audioUrl,
-  waveformColor = 'cyan',
+  waveformColor = "cyan",
   isPlaying = false,
   isLiked = false,
   onPlay,
@@ -55,7 +58,9 @@ export function BeatCard({
   className,
   showPreviewControls = true,
 }: BeatCardProps) {
-  const colorClass = waveformColors[waveformColor as keyof typeof waveformColors] || waveformColors.cyan;
+  const colorClass =
+    waveformColors[waveformColor as keyof typeof waveformColors] ||
+    waveformColors.cyan;
   const [showControls, setShowControls] = useState(false);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
 
@@ -69,13 +74,16 @@ export function BeatCard({
   return (
     <Card
       className={cn(
-        'group overflow-hidden bg-slate-800/50 border-slate-700/50 hover:border-slate-600 transition-all hover:shadow-xl hover:shadow-cyan-500/5',
-        className
+        "group overflow-hidden bg-slate-800/50 border-slate-700/50 hover:border-slate-600 transition-all hover:shadow-xl hover:shadow-cyan-500/5",
+        className,
       )}
     >
       <CardContent className="p-4 space-y-4">
         <div className="relative h-24 flex items-center justify-center">
-          <WaveformVisualization colorClass={colorClass} isPlaying={isPreviewPlaying} />
+          <WaveformVisualization
+            colorClass={colorClass}
+            isPlaying={isPreviewPlaying}
+          />
           <button
             onClick={handlePlayClick}
             className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -123,17 +131,26 @@ export function BeatCard({
 
           <div className="flex items-center gap-2 flex-wrap">
             {bpm && (
-              <Badge variant="secondary" className="bg-slate-700/50 text-slate-300 text-xs">
+              <Badge
+                variant="secondary"
+                className="bg-slate-700/50 text-slate-300 text-xs"
+              >
                 {bpm} BPM
               </Badge>
             )}
             {musicalKey && (
-              <Badge variant="secondary" className="bg-slate-700/50 text-slate-300 text-xs">
+              <Badge
+                variant="secondary"
+                className="bg-slate-700/50 text-slate-300 text-xs"
+              >
                 {musicalKey}
               </Badge>
             )}
             {genre && (
-              <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-400 text-xs">
+              <Badge
+                variant="secondary"
+                className="bg-cyan-500/20 text-cyan-400 text-xs"
+              >
                 {genre}
               </Badge>
             )}
@@ -148,15 +165,17 @@ export function BeatCard({
             size="sm"
             variant="ghost"
             className={cn(
-              'flex-1',
-              isLiked ? 'text-red-400 hover:text-red-300' : 'text-slate-400 hover:text-white'
+              "flex-1",
+              isLiked
+                ? "text-red-400 hover:text-red-300"
+                : "text-slate-400 hover:text-white",
             )}
             onClick={(e) => {
               e.stopPropagation();
               onLike?.();
             }}
           >
-            <Heart className={cn('h-4 w-4 mr-1', isLiked && 'fill-current')} />
+            <Heart className={cn("h-4 w-4 mr-1", isLiked && "fill-current")} />
             Like
           </Button>
           <Button
@@ -176,7 +195,13 @@ export function BeatCard({
   );
 }
 
-function WaveformVisualization({ colorClass, isPlaying = false }: { colorClass: string; isPlaying?: boolean }) {
+function WaveformVisualization({
+  colorClass,
+  isPlaying = false,
+}: {
+  colorClass: string;
+  isPlaying?: boolean;
+}) {
   const bars = 32;
 
   return (
@@ -189,15 +214,19 @@ function WaveformVisualization({ colorClass, isPlaying = false }: { colorClass: 
           <div
             key={i}
             className={cn(
-              'w-1 rounded-full bg-gradient-to-t transition-all duration-150',
+              "w-1 rounded-full bg-gradient-to-t transition-all duration-150",
               colorClass,
-              isPlaying && 'animate-pulse'
+              isPlaying && "animate-pulse",
             )}
             style={{
               height: `${baseHeight}%`,
-              opacity: isPlaying ? 0.8 + Math.sin(Date.now() / 200 + i) * 0.2 : 0.6 + (i % 3) * 0.1,
+              opacity: isPlaying
+                ? 0.8 + Math.sin(Date.now() / 200 + i) * 0.2
+                : 0.6 + (i % 3) * 0.1,
               animationDelay: `${delay}s`,
-              transform: isPlaying ? `scaleY(${0.8 + Math.random() * 0.4})` : 'scaleY(1)',
+              transform: isPlaying
+                ? `scaleY(${0.8 + Math.random() * 0.4})`
+                : "scaleY(1)",
             }}
           />
         );
@@ -215,8 +244,8 @@ export function BeatGrid({ children, className }: BeatGridProps) {
   return (
     <div
       className={cn(
-        'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4',
-        className
+        "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4",
+        className,
       )}
     >
       {children}
@@ -240,15 +269,26 @@ export function FilterRail({
   className,
 }: FilterRailProps) {
   return (
-    <div className={cn('space-y-6', className)} role="group" aria-label="Genre filters">
+    <div
+      className={cn("space-y-6", className)}
+      role="group"
+      aria-label="Genre filters"
+    >
       <div>
-        <h3 className="text-sm font-semibold text-white mb-3" id="genre-filter-heading">
+        <h3
+          className="text-sm font-semibold text-white mb-3"
+          id="genre-filter-heading"
+        >
           Genres
         </h3>
-        <div className="space-y-2" role="group" aria-labelledby="genre-filter-heading">
+        <div
+          className="space-y-2"
+          role="group"
+          aria-labelledby="genre-filter-heading"
+        >
           {genres.map((genre) => {
             const isChecked = selectedGenres.includes(genre);
-            const inputId = `genre-filter-${genre.toLowerCase().replace(/\s+/g, '-')}`;
+            const inputId = `genre-filter-${genre.toLowerCase().replace(/\s+/g, "-")}`;
             return (
               <label
                 key={genre}
@@ -292,13 +332,17 @@ export function ProducerProfile({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors cursor-pointer',
-        className
+        "flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors cursor-pointer",
+        className,
       )}
     >
       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-bold">
         {avatar ? (
-          <img src={avatar} alt={name} className="w-full h-full rounded-full object-cover" />
+          <img
+            src={avatar}
+            alt={name}
+            className="w-full h-full rounded-full object-cover"
+          />
         ) : (
           name.charAt(0).toUpperCase()
         )}

@@ -1,8 +1,8 @@
-import { Resend } from 'resend';
-import { emailMonitor } from '../monitoring/emailMonitor';
-import { logger } from '../logger.js';
-import { queueForRetry } from './externalServices.js';
-import { env } from '../config/env.js';
+import { Resend } from "resend";
+import { emailMonitor } from "../monitoring/emailMonitor";
+import { logger } from "../logger.js";
+import { queueForRetry } from "./externalServices.js";
+import { env } from "../config/env.js";
 
 interface EmailData {
   to: string | string[];
@@ -19,7 +19,7 @@ interface InvitationEmailData {
   projectName?: string;
   role?: string;
   inviteLink?: string;
-  inviteType: 'collaboration' | 'team' | 'general';
+  inviteType: "collaboration" | "team" | "general";
 }
 
 interface WelcomeEmailData {
@@ -37,7 +37,7 @@ interface DistributionNotificationData {
   firstName: string;
   releaseName: string;
   platforms: string[];
-  status: 'submitted' | 'processing' | 'live' | 'failed';
+  status: "submitted" | "processing" | "live" | "failed";
   errorMessage?: string;
 }
 
@@ -61,18 +61,23 @@ class EmailService {
       try {
         this.resend = new Resend(env.RESEND_API_KEY);
         this.isInitialized = true;
-        logger.info('✅ Resend EmailService initialized');
+        logger.info("✅ Resend EmailService initialized");
       } catch (error: unknown) {
-        logger.warn({ err: error }, '❌ Failed to initialize Resend EmailService:');
+        logger.warn(
+          { err: error },
+          "❌ Failed to initialize Resend EmailService:",
+        );
       }
     } else if (!env.RESEND_API_KEY) {
-      logger.warn('⚠️  Resend API key not configured. Email features will be disabled.');
+      logger.warn(
+        "⚠️  Resend API key not configured. Email features will be disabled.",
+      );
     }
   }
 
   private async sendWithCircuitBreaker(
     emailData: EmailData,
-    shouldQueue: boolean = true
+    shouldQueue: boolean = true,
   ): Promise<boolean> {
     if (!this.resend) return false;
     const startTime = Date.now();
@@ -86,15 +91,23 @@ class EmailService {
         text: emailData.text,
       });
       const deliveryTime = Date.now() - startTime;
-      emailMonitor.logEmail(emailData as any, 'sent', undefined, deliveryTime);
+      emailMonitor.logEmail(emailData as any, "sent", undefined, deliveryTime);
       return true;
     } catch (error: unknown) {
       const deliveryTime = Date.now() - startTime;
-      const errorMessage = (error as Error).message || 'Unknown error';
+      const errorMessage = (error as Error).message || "Unknown error";
       logger.warn(`⚠️ Resend error for ${emailData.to}: ${errorMessage}`);
-      emailMonitor.logEmail(emailData as any, 'failed', errorMessage, deliveryTime);
+      emailMonitor.logEmail(
+        emailData as any,
+        "failed",
+        errorMessage,
+        deliveryTime,
+      );
       if (shouldQueue) {
-        queueForRetry('resend', 'send_email', { to: emailData.to, subject: emailData.subject });
+        queueForRetry("resend", "send_email", {
+          to: emailData.to,
+          subject: emailData.subject,
+        });
         logger.info(`📥 Email to ${emailData.to} queued for retry`);
       }
       return false;
@@ -103,12 +116,15 @@ class EmailService {
 
   async sendInvitationEmail(data: InvitationEmailData): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized, skipping invitation email to:', data.to);
+      logger.warn(
+        "⚠️  SendGrid not initialized, skipping invitation email to:",
+        data.to,
+      );
       return false;
     }
 
     const template = this.getInvitationTemplate(data);
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     const emailData = {
       to: data.to,
@@ -120,7 +136,9 @@ class EmailService {
 
     const success = await this.sendWithCircuitBreaker(emailData);
     if (success) {
-      logger.info(`📧 Invitation email sent to ${data.to} from ${data.inviterName}`);
+      logger.info(
+        `📧 Invitation email sent to ${data.to} from ${data.inviterName}`,
+      );
     }
     return success;
   }
@@ -130,7 +148,7 @@ class EmailService {
     inviterName: string,
     inviterEmail: string,
     projectName: string,
-    role: string
+    role: string,
   ): Promise<boolean> {
     return this.sendInvitationEmail({
       to,
@@ -138,7 +156,7 @@ class EmailService {
       inviterEmail,
       projectName,
       role,
-      inviteType: 'collaboration',
+      inviteType: "collaboration",
     });
   }
 
@@ -146,14 +164,14 @@ class EmailService {
     to: string,
     inviterName: string,
     inviterEmail: string,
-    role: string
+    role: string,
   ): Promise<boolean> {
     return this.sendInvitationEmail({
       to,
       inviterName,
       inviterEmail,
       role,
-      inviteType: 'team',
+      inviteType: "team",
     });
   }
 
@@ -161,14 +179,14 @@ class EmailService {
     to: string,
     inviterName: string,
     inviterEmail: string,
-    inviteLink?: string
+    inviteLink?: string,
   ): Promise<boolean> {
     return this.sendInvitationEmail({
       to,
       inviterName,
       inviterEmail,
       inviteLink,
-      inviteType: 'general',
+      inviteType: "general",
     });
   }
 
@@ -176,14 +194,16 @@ class EmailService {
     to: string,
     userName: string,
     ticketSubject: string,
-    ticketId: string
+    ticketId: string,
   ): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized, skipping ticket created email');
+      logger.warn(
+        "⚠️  SendGrid not initialized, skipping ticket created email",
+      );
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     const emailData = {
       to,
@@ -229,16 +249,18 @@ class EmailService {
     userName: string,
     ticketSubject: string,
     ticketId: string,
-    replyMessage: string
+    replyMessage: string,
   ): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized, skipping ticket reply email');
+      logger.warn("⚠️  SendGrid not initialized, skipping ticket reply email");
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const truncatedMessage =
-      replyMessage.length > 200 ? replyMessage.substring(0, 200) + '...' : replyMessage;
+      replyMessage.length > 200
+        ? replyMessage.substring(0, 200) + "..."
+        : replyMessage;
 
     const emailData = {
       to,
@@ -282,19 +304,21 @@ class EmailService {
     userName: string,
     ticketSubject: string,
     ticketId: string,
-    newStatus: string
+    newStatus: string,
   ): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized, skipping ticket status update email');
+      logger.warn(
+        "⚠️  SendGrid not initialized, skipping ticket status update email",
+      );
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const statusMessages: Record<string, string> = {
-      open: 'Your ticket is now open and awaiting review.',
-      in_progress: 'Our team is actively working on your ticket.',
-      resolved: 'Your ticket has been resolved!',
-      closed: 'Your ticket has been closed.',
+      open: "Your ticket is now open and awaiting review.",
+      in_progress: "Our team is actively working on your ticket.",
+      resolved: "Your ticket has been resolved!",
+      closed: "Your ticket has been closed.",
     };
 
     const emailData = {
@@ -317,8 +341,8 @@ class EmailService {
                   <p style="margin: 0; font-weight: bold;">Ticket:</p>
                   <p style="margin: 5px 0 15px;">${ticketSubject}</p>
                   <p style="margin: 0; font-weight: bold;">New Status:</p>
-                  <p style="margin: 5px 0 0; color: #667eea; font-size: 18px; text-transform: uppercase;">${newStatus.replace('_', ' ')}</p>
-                  <p style="margin: 10px 0 0; color: #6b7280;">${statusMessages[newStatus] || 'Status has been updated.'}</p>
+                  <p style="margin: 5px 0 0; color: #667eea; font-size: 18px; text-transform: uppercase;">${newStatus.replace("_", " ")}</p>
+                  <p style="margin: 10px 0 0; color: #6b7280;">${statusMessages[newStatus] || "Status has been updated."}</p>
                 </div>
                 <div style="text-align: center; margin: 30px 0;">
                   <a href="https://maxbooster.ai/support/tickets/${ticketId}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Ticket</a>
@@ -329,7 +353,7 @@ class EmailService {
         </body>
         </html>
       `,
-      text: `Hi ${userName},\n\nYour support ticket status has been updated to: ${newStatus.replace('_', ' ').toUpperCase()}\n\nTicket: ${ticketSubject}\n\n${statusMessages[newStatus] || 'Status has been updated.'}\n\nView ticket: https://maxbooster.ai/support/tickets/${ticketId}`,
+      text: `Hi ${userName},\n\nYour support ticket status has been updated to: ${newStatus.replace("_", " ").toUpperCase()}\n\nTicket: ${ticketSubject}\n\n${statusMessages[newStatus] || "Status has been updated."}\n\nView ticket: https://maxbooster.ai/support/tickets/${ticketId}`,
     };
 
     return this.sendWithCircuitBreaker(emailData);
@@ -337,11 +361,11 @@ class EmailService {
 
   async sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized, skipping welcome email');
+      logger.warn("⚠️  SendGrid not initialized, skipping welcome email");
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const html = `
 <!DOCTYPE html>
 <html>
@@ -376,7 +400,7 @@ class EmailService {
     const emailData = {
       to: data.email,
       from: fromEmail,
-      subject: '🎵 Welcome to Max Booster - Your Music Career Starts Here!',
+      subject: "🎵 Welcome to Max Booster - Your Music Career Starts Here!",
       html,
       text: `Hi ${data.firstName},\n\nWelcome to Max Booster!\n\nYou now have access to our complete platform including Studio, Distribution, Social Media Management, Marketplace, and Analytics.\n\nGet started: https://maxbooster.ai/dashboard\n\nBest,\nThe Max Booster Team`,
     };
@@ -388,13 +412,18 @@ class EmailService {
     return success;
   }
 
-  async sendPasswordResetEmail(data: PasswordResetEmailData, to: string): Promise<boolean> {
+  async sendPasswordResetEmail(
+    data: PasswordResetEmailData,
+    to: string,
+  ): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized, skipping password reset email');
+      logger.warn(
+        "⚠️  SendGrid not initialized, skipping password reset email",
+      );
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const html = `
 <!DOCTYPE html>
 <html>
@@ -430,7 +459,7 @@ class EmailService {
     const emailData = {
       to,
       from: fromEmail,
-      subject: '🔒 Reset Your Max Booster Password',
+      subject: "🔒 Reset Your Max Booster Password",
       html,
       text: `Hi ${data.firstName},\n\nWe received a request to reset your password.\n\nReset link: ${data.resetLink}\n\nThis link expires in ${data.expiresIn}.\n\nIf you didn't request this, please ignore this email.\n\nBest,\nThe Max Booster Team`,
     };
@@ -444,34 +473,36 @@ class EmailService {
 
   async sendDistributionNotification(
     data: DistributionNotificationData,
-    to: string
+    to: string,
   ): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized, skipping distribution notification');
+      logger.warn(
+        "⚠️  SendGrid not initialized, skipping distribution notification",
+      );
       return false;
     }
 
     const statusEmojis = {
-      submitted: '📤',
-      processing: '⚙️',
-      live: '🎉',
-      failed: '❌',
+      submitted: "📤",
+      processing: "⚙️",
+      live: "🎉",
+      failed: "❌",
     };
 
     const statusTitles = {
-      submitted: 'Release Submitted',
-      processing: 'Release Processing',
-      live: 'Release is Live!',
-      failed: 'Distribution Failed',
+      submitted: "Release Submitted",
+      processing: "Release Processing",
+      live: "Release is Live!",
+      failed: "Distribution Failed",
     };
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const platformsTags = data.platforms
       .map(
         (p) =>
-          `<span style="display: inline-block; background: #e0e7ff; color: #4c51bf; padding: 5px 12px; border-radius: 12px; margin: 3px; font-size: 13px;">${p}</span>`
+          `<span style="display: inline-block; background: #e0e7ff; color: #4c51bf; padding: 5px 12px; border-radius: 12px; margin: 3px; font-size: 13px;">${p}</span>`,
       )
-      .join('');
+      .join("");
 
     const html = `
 <!DOCTYPE html>
@@ -484,19 +515,19 @@ class EmailService {
       </div>
       <div style="padding: 30px;">
         <p>Hi ${data.firstName},</p>
-        <p>Your release "<strong>${data.releaseName}</strong>" ${data.status === 'live' ? 'is now live!' : `status: ${data.status}`}</p>
+        <p>Your release "<strong>${data.releaseName}</strong>" ${data.status === "live" ? "is now live!" : `status: ${data.status}`}</p>
         <div style="background: white; padding: 15px; border-radius: 4px; margin: 15px 0;">
           <strong>Platforms:</strong><br>
           ${platformsTags}
         </div>
         ${
-          data.status === 'failed' && data.errorMessage
+          data.status === "failed" && data.errorMessage
             ? `
         <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
           <strong>Error Details:</strong><br>${data.errorMessage}
         </div>
         `
-            : ''
+            : ""
         }
         <div style="text-align: center; margin: 30px 0;">
           <a href="https://maxbooster.ai/distribution" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Distribution Status</a>
@@ -513,7 +544,7 @@ class EmailService {
       from: fromEmail,
       subject: `${statusEmojis[data.status]} ${statusTitles[data.status]}: ${data.releaseName}`,
       html,
-      text: `Hi ${data.firstName},\n\nYour release "${data.releaseName}" status: ${data.status}\n\nPlatforms: ${data.platforms.join(', ')}\n\n${data.errorMessage || ''}\n\nView status: https://maxbooster.ai/distribution\n\nBest,\nThe Max Booster Team`,
+      text: `Hi ${data.firstName},\n\nYour release "${data.releaseName}" status: ${data.status}\n\nPlatforms: ${data.platforms.join(", ")}\n\n${data.errorMessage || ""}\n\nView status: https://maxbooster.ai/distribution\n\nBest,\nThe Max Booster Team`,
     };
 
     const success = await this.sendWithCircuitBreaker(emailData);
@@ -523,13 +554,18 @@ class EmailService {
     return success;
   }
 
-  async sendSubscriptionConfirmation(data: SubscriptionEmailData, to: string): Promise<boolean> {
+  async sendSubscriptionConfirmation(
+    data: SubscriptionEmailData,
+    to: string,
+  ): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized, skipping subscription confirmation');
+      logger.warn(
+        "⚠️  SendGrid not initialized, skipping subscription confirmation",
+      );
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const html = `
 <!DOCTYPE html>
 <html>
@@ -561,9 +597,9 @@ class EmailService {
     const emailData = {
       to,
       from: fromEmail,
-      subject: '🎉 Welcome to Max Booster! Your Subscription is Active',
+      subject: "🎉 Welcome to Max Booster! Your Subscription is Active",
       html,
-      text: `Hi ${data.firstName},\n\nThank you for subscribing to Max Booster!\n\nPlan: ${data.plan}\nAmount: ${data.amount}\n${data.nextBillingDate ? `Next billing: ${data.nextBillingDate}` : 'Lifetime Access'}\n\nView dashboard: https://maxbooster.ai/dashboard\n\nBest,\nThe Max Booster Team`,
+      text: `Hi ${data.firstName},\n\nThank you for subscribing to Max Booster!\n\nPlan: ${data.plan}\nAmount: ${data.amount}\n${data.nextBillingDate ? `Next billing: ${data.nextBillingDate}` : "Lifetime Access"}\n\nView dashboard: https://maxbooster.ai/dashboard\n\nBest,\nThe Max Booster Team`,
     };
 
     const success = await this.sendWithCircuitBreaker(emailData);
@@ -578,21 +614,28 @@ class EmailService {
     html: string;
     text: string;
   } {
-    const { inviterName, inviterEmail, projectName, role, inviteLink, inviteType } = data;
+    const {
+      inviterName,
+      inviterEmail,
+      projectName,
+      role,
+      inviteLink,
+      inviteType,
+    } = data;
 
-    let subject = '';
-    let mainMessage = '';
-    let actionButton = '';
+    let subject = "";
+    let mainMessage = "";
+    let actionButton = "";
 
     switch (inviteType) {
-      case 'collaboration':
+      case "collaboration":
         subject = `${inviterName} invited you to collaborate on "${projectName}"`;
         mainMessage = `
           <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             <strong>${inviterName}</strong> (${inviterEmail}) has invited you to collaborate on the project <strong>"${projectName}"</strong>.
           </p>
           <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-            Your role: <strong>${role || 'Collaborator'}</strong>
+            Your role: <strong>${role || "Collaborator"}</strong>
           </p>
           <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             Log in to Max Booster to view the project and start collaborating!
@@ -601,14 +644,14 @@ class EmailService {
         actionButton = `<a href="https://maxbooster.ai/dashboard" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">View Project</a>`;
         break;
 
-      case 'team':
+      case "team":
         subject = `${inviterName} invited you to join their team on Max Booster`;
         mainMessage = `
           <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             <strong>${inviterName}</strong> (${inviterEmail}) has invited you to join their team on Max Booster.
           </p>
           <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-            Your role: <strong>${role || 'Team Member'}</strong>
+            Your role: <strong>${role || "Team Member"}</strong>
           </p>
           <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             Join their team to collaborate on music projects, manage releases, and grow together!
@@ -617,7 +660,7 @@ class EmailService {
         actionButton = `<a href="https://maxbooster.ai/dashboard" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">Accept Invitation</a>`;
         break;
 
-      case 'general':
+      case "general":
         subject = `${inviterName} invited you to Max Booster`;
         mainMessage = `
           <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
@@ -693,15 +736,15 @@ class EmailService {
     const text = `
 ${subject}
 
-${inviterName} (${inviterEmail}) has invited you ${inviteType === 'collaboration' ? `to collaborate on "${projectName}"` : 'to Max Booster'}.
+${inviterName} (${inviterEmail}) has invited you ${inviteType === "collaboration" ? `to collaborate on "${projectName}"` : "to Max Booster"}.
 
-${role ? `Your role: ${role}` : ''}
+${role ? `Your role: ${role}` : ""}
 
-${inviteType === 'collaboration' ? 'Log in to Max Booster to view the project and start collaborating!' : ''}
-${inviteType === 'team' ? 'Join their team to collaborate on music projects and grow together!' : ''}
-${inviteType === 'general' ? 'Max Booster helps artists distribute music, manage royalties, create AI-powered content, and grow their music career.' : ''}
+${inviteType === "collaboration" ? "Log in to Max Booster to view the project and start collaborating!" : ""}
+${inviteType === "team" ? "Join their team to collaborate on music projects and grow together!" : ""}
+${inviteType === "general" ? "Max Booster helps artists distribute music, manage royalties, create AI-powered content, and grow their music career." : ""}
 
-${inviteLink || 'https://maxbooster.ai/dashboard'}
+${inviteLink || "https://maxbooster.ai/dashboard"}
 
 If you have any questions, feel free to contact ${inviterName} at ${inviterEmail}.
 
@@ -724,10 +767,14 @@ If you did not expect this invitation, you can safely ignore this email.
    * Generic transactional email — used by dunning and re-engagement services.
    * Bypasses template-specific methods for operational emails.
    */
-  async sendTransactional(to: string, subject: string, html: string): Promise<boolean> {
+  async sendTransactional(
+    to: string,
+    subject: string,
+    html: string,
+  ): Promise<boolean> {
     const emailData: sgMail.MailDataRequired = {
       to,
-      from: env.SENDGRID_FROM_EMAIL ?? 'noreply@max-booster.com',
+      from: env.SENDGRID_FROM_EMAIL ?? "noreply@max-booster.com",
       subject,
       html,
     };
@@ -737,17 +784,27 @@ If you did not expect this invitation, you can safely ignore this email.
   /**
    * Generic email sender — use for fan broadcasts, custom notifications, etc.
    */
-  async send(options: { to: string; subject: string; html: string; text?: string; from?: string }): Promise<boolean> {
+  async send(options: {
+    to: string;
+    subject: string;
+    html: string;
+    text?: string;
+    from?: string;
+  }): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn('⚠️  SendGrid not initialized — skipping email to:', options.to);
+      logger.warn(
+        "⚠️  SendGrid not initialized — skipping email to:",
+        options.to,
+      );
       return false;
     }
     const emailData: sgMail.MailDataRequired = {
       to: options.to,
-      from: options.from ?? env.SENDGRID_FROM_EMAIL ?? 'noreply@max-booster.com',
+      from:
+        options.from ?? env.SENDGRID_FROM_EMAIL ?? "noreply@max-booster.com",
       subject: options.subject,
       html: options.html,
-      text: options.text ?? options.html.replace(/<[^>]+>/g, ''),
+      text: options.text ?? options.html.replace(/<[^>]+>/g, ""),
     };
     return this.sendWithCircuitBreaker(emailData, true);
   }

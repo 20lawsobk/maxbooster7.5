@@ -22,58 +22,68 @@
  *   isBackgroundTraining()     — quick boolean check
  */
 
-import { spawn, ChildProcess } from 'child_process';
-import { PYTHON } from './pythonPath.js';
-import path from 'path';
-import fs from 'fs';
-import os from 'os';
-import { fileURLToPath } from 'url';
-import { logger } from '../logger.js';
+import { spawn, ChildProcess } from "child_process";
+import { PYTHON } from "./pythonPath.js";
+import path from "path";
+import fs from "fs";
+import os from "os";
+import { fileURLToPath } from "url";
+import { logger } from "../logger.js";
 
-const __metaUrl = (import.meta as Record<string, unknown>)?.url as string | undefined;
-const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as
+  | string
+  | undefined;
+const __filename = __metaUrl
+  ? fileURLToPath(__metaUrl)
+  : path.resolve(process.argv[1] ?? "");
 const __dirname = path.dirname(__filename);
 
-const SYNTH_SCRIPT = path.join(__dirname, 'diffusion', 'synthesizer.py');
-const META_PATH    = path.join(__dirname, 'diffusion', 'meta.json');
-const MEMORY_PATH  = path.join(__dirname, 'diffusion', 'memory.json');
-const STATUS_PATH  = path.join(os.tmpdir(), 'diffusion_bg_status.json');
+const SYNTH_SCRIPT = path.join(__dirname, "diffusion", "synthesizer.py");
+const META_PATH = path.join(__dirname, "diffusion", "meta.json");
+const MEMORY_PATH = path.join(__dirname, "diffusion", "memory.json");
+const STATUS_PATH = path.join(os.tmpdir(), "diffusion_bg_status.json");
 
-const TIER_SEQUENCE: Array<'quick' | 'medium' | 'deep'> = [
-  'quick', 'medium', 'deep', 'medium', 'deep', 'medium', 'deep',
+const TIER_SEQUENCE: Array<"quick" | "medium" | "deep"> = [
+  "quick",
+  "medium",
+  "deep",
+  "medium",
+  "deep",
+  "medium",
+  "deep",
 ];
 
 interface BgStatus {
-  running:       boolean;
-  paused:        boolean;
-  session:       number;
-  currentTier:   string;
-  startedAt:     number | null;
-  lastLoss:      number | null;
+  running: boolean;
+  paused: boolean;
+  session: number;
+  currentTier: string;
+  startedAt: number | null;
+  lastLoss: number | null;
   totalSessions: number;
-  totalSteps:    number;
-  replayBuffer:  number;
-  pid:           number | null;
-  logTail:       string[];
+  totalSteps: number;
+  replayBuffer: number;
+  pid: number | null;
+  logTail: string[];
 }
 
 const state: BgStatus = {
-  running:       false,
-  paused:        false,
-  session:       0,
-  currentTier:   'quick',
-  startedAt:     null,
-  lastLoss:      null,
+  running: false,
+  paused: false,
+  session: 0,
+  currentTier: "quick",
+  startedAt: null,
+  lastLoss: null,
   totalSessions: 0,
-  totalSteps:    0,
-  replayBuffer:  0,
-  pid:           null,
-  logTail:       [],
+  totalSteps: 0,
+  replayBuffer: 0,
+  pid: null,
+  logTail: [],
 };
 
-let _proc:       ChildProcess | null = null;
-let _stopFlag:   boolean             = false;
-let _loopTimer:  NodeJS.Timeout | null = null;
+let _proc: ChildProcess | null = null;
+let _stopFlag: boolean = false;
+let _loopTimer: NodeJS.Timeout | null = null;
 
 const MAX_LOG_LINES = 50;
 
@@ -84,78 +94,97 @@ function _appendLog(line: string) {
   }
 }
 
-function _getTier(sessionIndex: number): 'quick' | 'medium' | 'deep' {
+function _getTier(sessionIndex: number): "quick" | "medium" | "deep" {
   return TIER_SEQUENCE[sessionIndex % TIER_SEQUENCE.length];
 }
 
 function _syncMemoryStats() {
   try {
     if (fs.existsSync(MEMORY_PATH)) {
-      const raw  = JSON.parse(fs.readFileSync(MEMORY_PATH, 'utf8'));
-      const s    = raw?.state ?? {};
+      const raw = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf8"));
+      const s = raw?.state ?? {};
       state.totalSessions = s.total_sessions ?? state.totalSessions;
-      state.totalSteps    = s.total_steps    ?? state.totalSteps;
-      state.replayBuffer  = (raw?.replay_buffer ?? []).length;
+      state.totalSteps = s.total_steps ?? state.totalSteps;
+      state.replayBuffer = (raw?.replay_buffer ?? []).length;
     }
     if (fs.existsSync(META_PATH)) {
-      const meta = JSON.parse(fs.readFileSync(META_PATH, 'utf8'));
+      const meta = JSON.parse(fs.readFileSync(META_PATH, "utf8"));
       state.lastLoss = meta.final_loss ?? state.lastLoss;
     }
-  } catch { /* non-critical */ }
+  } catch {
+    /* non-critical */
+  }
 }
 
 function _saveStatus() {
   try {
     fs.writeFileSync(STATUS_PATH, JSON.stringify(state, null, 2));
-  } catch { /* non-critical */ }
+  } catch {
+    /* non-critical */
+  }
 }
-
 
 /**
  * Run one training session.
  * Returns a Promise that resolves when the Python process exits.
  */
-function _runSession(tier: 'quick' | 'medium' | 'deep'): Promise<boolean> {
+function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
   return new Promise((resolve) => {
-    if (_stopFlag) { resolve(false); return; }
+    if (_stopFlag) {
+      resolve(false);
+      return;
+    }
 
     state.currentTier = tier;
-    state.startedAt   = Date.now();
-    _appendLog(`[BgTrainer] Session ${state.session + 1} starting  tier=${tier}`);
+    state.startedAt = Date.now();
+    _appendLog(
+      `[BgTrainer] Session ${state.session + 1} starting  tier=${tier}`,
+    );
     _saveStatus();
 
-    const args = [SYNTH_SCRIPT, '--train-only', '--tier', tier];
+    const args = [SYNTH_SCRIPT, "--train-only", "--tier", tier];
     _proc = spawn(PYTHON, args, {
-      stdio:  ['ignore', 'pipe', 'pipe'],
+      stdio: ["ignore", "pipe", "pipe"],
       detached: false,
     });
 
-    state.pid     = _proc.pid ?? null;
+    state.pid = _proc.pid ?? null;
     state.running = true;
 
-    _proc.stdout?.on('data', (d: Buffer) => {
-      d.toString().split('\n').filter(Boolean).forEach(line => {
-        _appendLog(line.trim());
-        if (process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT) {
-          process.stdout.write(`[DiffBG] ${line}\n`);
-        }
-      });
+    _proc.stdout?.on("data", (d: Buffer) => {
+      d.toString()
+        .split("\n")
+        .filter(Boolean)
+        .forEach((line) => {
+          _appendLog(line.trim());
+          if (
+            process.env.NODE_ENV !== "production" &&
+            !process.env.REPLIT_DEPLOYMENT
+          ) {
+            process.stdout.write(`[DiffBG] ${line}\n`);
+          }
+        });
     });
 
-    _proc.stderr?.on('data', (d: Buffer) => {
-      d.toString().split('\n').filter(Boolean).forEach(line => {
-        _appendLog(`[err] ${line.trim()}`);
-      });
+    _proc.stderr?.on("data", (d: Buffer) => {
+      d.toString()
+        .split("\n")
+        .filter(Boolean)
+        .forEach((line) => {
+          _appendLog(`[err] ${line.trim()}`);
+        });
     });
 
-    _proc.on('close', (code: number | null) => {
+    _proc.on("close", (code: number | null) => {
       state.pid = null;
       _syncMemoryStats();
       if (code === 0) {
         state.session++;
-        _appendLog(`[BgTrainer] Session ${state.session} complete ✓  `
-                  + `loss=${state.lastLoss?.toFixed(4) ?? '?'}  `
-                  + `replay=${state.replayBuffer}`);
+        _appendLog(
+          `[BgTrainer] Session ${state.session} complete ✓  ` +
+            `loss=${state.lastLoss?.toFixed(4) ?? "?"}  ` +
+            `replay=${state.replayBuffer}`,
+        );
         resolve(true);
       } else {
         _appendLog(`[BgTrainer] Session exited with code ${code}`);
@@ -164,7 +193,7 @@ function _runSession(tier: 'quick' | 'medium' | 'deep'): Promise<boolean> {
       _saveStatus();
     });
 
-    _proc.on('error', (err: Error) => {
+    _proc.on("error", (err: Error) => {
       _appendLog(`[BgTrainer] Process error: ${err.message}`);
       state.pid = null;
       resolve(false);
@@ -172,37 +201,37 @@ function _runSession(tier: 'quick' | 'medium' | 'deep'): Promise<boolean> {
   });
 }
 
-
 /**
  * Main training loop — runs sessions indefinitely until stopBackgroundTraining()
  * is called. Waits 10 seconds between sessions (cool-down).
  */
 async function _trainingLoop() {
-  _appendLog('[BgTrainer] Background self-training loop started');
+  _appendLog("[BgTrainer] Background self-training loop started");
 
   while (!_stopFlag) {
     const tier = _getTier(state.session);
-    const ok   = await _runSession(tier);
+    const ok = await _runSession(tier);
 
     if (!ok && !_stopFlag) {
-      _appendLog('[BgTrainer] Session failed — retrying in 60s');
+      _appendLog("[BgTrainer] Session failed — retrying in 60s");
       await _sleep(60_000);
     } else if (!_stopFlag) {
-      _appendLog('[BgTrainer] Cool-down 10s before next session...');
+      _appendLog("[BgTrainer] Cool-down 10s before next session...");
       await _sleep(10_000);
     }
   }
 
   state.running = false;
-  state.paused  = false;
+  state.paused = false;
   _saveStatus();
-  _appendLog('[BgTrainer] Background training loop stopped');
+  _appendLog("[BgTrainer] Background training loop stopped");
 }
 
 function _sleep(ms: number): Promise<void> {
-  return new Promise(r => { _loopTimer = setTimeout(r, ms); });
+  return new Promise((r) => {
+    _loopTimer = setTimeout(r, ms);
+  });
 }
-
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -211,11 +240,13 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4_000);
-    const res = await fetch('http://localhost:8008/health', { signal: ctrl.signal });
+    const res = await fetch("http://localhost:8008/health", {
+      signal: ctrl.signal,
+    });
     clearTimeout(timer);
     if (!res.ok) return false;
     const data = await res.json().catch(() => null);
-    return !!(data && (data as Record<string, unknown>).status === 'ok');
+    return !!(data && (data as Record<string, unknown>).status === "ok");
   } catch {
     return false;
   }
@@ -232,7 +263,7 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
  */
 export async function startBackgroundTraining(): Promise<void> {
   if (state.running) {
-    logger.info('[DiffBG] Already running — ignoring start request');
+    logger.info("[DiffBG] Already running — ignoring start request");
     return;
   }
 
@@ -243,22 +274,26 @@ export async function startBackgroundTraining(): Promise<void> {
   // weights_v4.npz file and waste CPU resources.
   const gatewayUp = await _isMaxCoreGatewayRunning();
   if (gatewayUp) {
-    logger.info('[DiffBG] MaxCore Diffusion Gateway detected on port 8008 — ' +
-      'deferring diffusion training to MaxCore (local synthesizer will not run)');
+    logger.info(
+      "[DiffBG] MaxCore Diffusion Gateway detected on port 8008 — " +
+        "deferring diffusion training to MaxCore (local synthesizer will not run)",
+    );
     return;
   }
 
-  logger.info('[DiffBG] MaxCore Diffusion Gateway not available — ' +
-    'starting local fallback self-training loop');
-
-  _stopFlag     = false;
-  state.running = true;
-  state.paused  = false;
-  _syncMemoryStats();
-  _trainingLoop().catch(err =>
-    logger.warn({ err: err }, '[DiffBG] Unhandled loop error:')
+  logger.info(
+    "[DiffBG] MaxCore Diffusion Gateway not available — " +
+      "starting local fallback self-training loop",
   );
-  logger.info('[DiffBG] Local fallback self-training started');
+
+  _stopFlag = false;
+  state.running = true;
+  state.paused = false;
+  _syncMemoryStats();
+  _trainingLoop().catch((err) =>
+    logger.warn({ err: err }, "[DiffBG] Unhandled loop error:"),
+  );
+  logger.info("[DiffBG] Local fallback self-training started");
 }
 
 /**
@@ -267,10 +302,13 @@ export async function startBackgroundTraining(): Promise<void> {
  */
 export function stopBackgroundTraining(): void {
   _stopFlag = true;
-  if (_loopTimer) { clearTimeout(_loopTimer); _loopTimer = null; }
+  if (_loopTimer) {
+    clearTimeout(_loopTimer);
+    _loopTimer = null;
+  }
   state.paused = true;
   _saveStatus();
-  logger.info('[DiffBG] Stop requested — will halt after current session');
+  logger.info("[DiffBG] Stop requested — will halt after current session");
 }
 
 /**
@@ -278,16 +316,21 @@ export function stopBackgroundTraining(): void {
  */
 export function forceStopBackgroundTraining(): void {
   _stopFlag = true;
-  if (_loopTimer) { clearTimeout(_loopTimer); _loopTimer = null; }
+  if (_loopTimer) {
+    clearTimeout(_loopTimer);
+    _loopTimer = null;
+  }
   if (_proc && !_proc.killed) {
-    _proc.kill('SIGTERM');
-    setTimeout(() => { if (_proc && !_proc.killed) _proc.kill('SIGKILL'); }, 5000);
+    _proc.kill("SIGTERM");
+    setTimeout(() => {
+      if (_proc && !_proc.killed) _proc.kill("SIGKILL");
+    }, 5000);
   }
   state.running = false;
-  state.paused  = false;
-  state.pid     = null;
+  state.paused = false;
+  state.pid = null;
   _saveStatus();
-  logger.info('[DiffBG] Force-stopped');
+  logger.info("[DiffBG] Force-stopped");
 }
 
 export function isBackgroundTraining(): boolean {
@@ -296,15 +339,19 @@ export function isBackgroundTraining(): boolean {
 
 export function getBackgroundStatus(): BgStatus & { eta: string } {
   _syncMemoryStats();
-  const tierMins: Record<string, number> = { quick: 28, medium: 110, deep: 275 };
+  const tierMins: Record<string, number> = {
+    quick: 28,
+    medium: 110,
+    deep: 275,
+  };
   const elapsedMin = state.startedAt
     ? Math.round((Date.now() - state.startedAt) / 60_000)
     : 0;
-  const totalMin  = tierMins[state.currentTier] ?? 60;
+  const totalMin = tierMins[state.currentTier] ?? 60;
   const remaining = Math.max(0, totalMin - elapsedMin);
   const eta = state.running
     ? `~${remaining}min remaining in current ${state.currentTier} session`
-    : 'not running';
+    : "not running";
 
   return { ...state, eta };
 }

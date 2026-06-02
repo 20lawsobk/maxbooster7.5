@@ -1,4 +1,4 @@
-import { BasePlugin } from './BasePlugin';
+import { BasePlugin } from "./BasePlugin";
 
 export class PhaserPlugin extends BasePlugin {
   private allPassFilters: BiquadFilterNode[] = [];
@@ -27,13 +27,13 @@ export class PhaserPlugin extends BasePlugin {
 
     this.lfo = context.createOscillator();
     this.lfoGain = context.createGain();
-    this.lfo.type = 'sine';
+    this.lfo.type = "sine";
     this.lfo.frequency.value = this.currentRate;
     this.lfoGain.gain.value = this.currentDepth;
 
     for (let i = 0; i < this.maxStages; i++) {
       const filter = context.createBiquadFilter();
-      filter.type = 'allpass';
+      filter.type = "allpass";
       filter.frequency.value = 440 + i * 200;
       filter.Q.value = 0.5;
       this.allPassFilters.push(filter);
@@ -48,12 +48,16 @@ export class PhaserPlugin extends BasePlugin {
   }
 
   private rebuildChain(): void {
-    try { this.input.disconnect(); } catch (_) {}
+    try {
+      this.input.disconnect();
+    } catch (_) {}
     this.input.connect(this.dryGain);
 
     this.allPassFilters.forEach((f) => {
       f.disconnect();
-      try { this.lfoGain.disconnect(f.frequency); } catch (_) {}
+      try {
+        this.lfoGain.disconnect(f.frequency);
+      } catch (_) {}
     });
     this.feedback.disconnect();
 
@@ -93,7 +97,7 @@ export class PhaserPlugin extends BasePlugin {
 
     this.lfoR = this.context.createOscillator();
     this.lfoGainR = this.context.createGain();
-    this.lfoR.type = 'sine';
+    this.lfoR.type = "sine";
     this.lfoR.frequency.value = this.currentRate;
     this.lfoGainR.gain.value = this.currentDepth;
     this.lfoR.connect(this.lfoGainR);
@@ -102,7 +106,7 @@ export class PhaserPlugin extends BasePlugin {
     this.allPassFiltersR = [];
     for (let i = 0; i < this.maxStages; i++) {
       const filter = this.context.createBiquadFilter();
-      filter.type = 'allpass';
+      filter.type = "allpass";
       filter.frequency.value = this.allPassFilters[i].frequency.value;
       filter.Q.value = this.allPassFilters[i].Q.value;
       this.allPassFiltersR.push(filter);
@@ -137,7 +141,9 @@ export class PhaserPlugin extends BasePlugin {
 
   private teardownStereo(): void {
     if (this.lfoR) {
-      try { this.lfoR.stop(); } catch (_) {}
+      try {
+        this.lfoR.stop();
+      } catch (_) {}
       this.lfoR.disconnect();
       this.lfoR = null;
     }
@@ -220,7 +226,7 @@ export class PhaserPlugin extends BasePlugin {
   }
 
   getName(): string {
-    return 'Max Booster Phaser';
+    return "Max Booster Phaser";
   }
 
   getParameters(): Record<string, any> {

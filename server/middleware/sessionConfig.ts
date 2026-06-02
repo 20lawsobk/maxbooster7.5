@@ -1,12 +1,12 @@
-import session from 'express-session';
-import { RedisStore } from 'connect-redis';
-import crypto from 'crypto';
-import { getRedisClient } from '../lib/redisClient.js';
-import { isPdimConfigured } from '../lib/pdimClient.js';
-import { logger } from '../logger.js';
-import { env } from '../config/env.js';
-import { db } from '../db.js';
-import { sql } from 'drizzle-orm';
+import session from "express-session";
+import { RedisStore } from "connect-redis";
+import crypto from "crypto";
+import { getRedisClient } from "../lib/redisClient.js";
+import { isPdimConfigured } from "../lib/pdimClient.js";
+import { logger } from "../logger.js";
+import { env } from "../config/env.js";
+import { db } from "../db.js";
+import { sql } from "drizzle-orm";
 
 // ── PostgreSQL session fallback ───────────────────────────────────────────────
 // When PDIM is unavailable (circuit OPEN) AND L1 in-process cache is empty
@@ -32,7 +32,10 @@ async function ensurePgSessionTable(): Promise<void> {
       CREATE INDEX IF NOT EXISTS pg_sessions_expire_idx ON pg_sessions (expire)
     `);
   } catch (err) {
-    logger.warn({ err }, '[PgSessions] Could not create pg_sessions table — PG fallback unavailable');
+    logger.warn(
+      { err },
+      "[PgSessions] Could not create pg_sessions table — PG fallback unavailable",
+    );
   }
 }
 
@@ -54,7 +57,10 @@ async function pgSessionGet(sid: string): Promise<session.SessionData | null> {
   }
 }
 
-async function pgSessionSet(sid: string, sess: session.SessionData): Promise<void> {
+async function pgSessionSet(
+  sid: string,
+  sess: session.SessionData,
+): Promise<void> {
   try {
     const expire = Date.now() + PG_SESSION_TTL_MS;
     const data = JSON.stringify(sess);
@@ -77,9 +83,14 @@ async function pgSessionDestroy(sid: string): Promise<void> {
 }
 
 // Periodically purge expired PG sessions (runs once an hour, non-blocking).
-setInterval(() => {
-  db.execute(sql`DELETE FROM pg_sessions WHERE expire <= ${Date.now()}`).catch(() => {});
-}, 60 * 60 * 1000).unref();
+setInterval(
+  () => {
+    db.execute(
+      sql`DELETE FROM pg_sessions WHERE expire <= ${Date.now()}`,
+    ).catch(() => {});
+  },
+  60 * 60 * 1000,
+).unref();
 
 /**
  * In-process session cache — eliminates repeated PDIM round-trips for hot
@@ -89,20 +100,23 @@ setInterval(() => {
  *
  * Sizing: 5 000 entries × ~2 KB average session ≈ 10 MB max — negligible.
  */
-const L1_TTL_MS       = 300_000; // 5 minutes — must exceed the heartbeat interval (2 min)
-                                  // and the maximum PDIM cold-start window (~90 s) so that
-                                  // active sessions survive a brief PDIM restart without a 401.
-const L1_ERR_TTL_MS   = 5_000;   // 5 seconds — short TTL when caching a PDIM error null,
-                                  // so we stop hammering PDIM while it's down but recover
-                                  // within 5 s once it comes back.
-const L1_MAX_SIZE     = 5_000;
+const L1_TTL_MS = 300_000; // 5 minutes — must exceed the heartbeat interval (2 min)
+// and the maximum PDIM cold-start window (~90 s) so that
+// active sessions survive a brief PDIM restart without a 401.
+const L1_ERR_TTL_MS = 5_000; // 5 seconds — short TTL when caching a PDIM error null,
+// so we stop hammering PDIM while it's down but recover
+// within 5 s once it comes back.
+const L1_MAX_SIZE = 5_000;
 
 // Rate-limit the WARN log to once per 30 s — PDIM can be down for minutes and
 // logging on every request creates thousands of lines of useless noise.
-let _lastFetchWarnAt  = 0;
+let _lastFetchWarnAt = 0;
 const WARN_THROTTLE_MS = 30_000;
 
-interface L1Entry { data: session.SessionData | null; expiresAt: number; }
+interface L1Entry {
+  data: session.SessionData | null;
+  expiresAt: number;
+}
 
 class SessionL1Cache {
   private readonly map = new Map<string, L1Entry>();
@@ -129,7 +143,9 @@ class SessionL1Cache {
     this.map.delete(sid);
   }
 
-  get size(): number { return this.map.size; }
+  get size(): number {
+    return this.map.size;
+  }
 }
 
 /**
@@ -144,7 +160,13 @@ class SessionL1Cache {
  *   del(key1, key2)   ← spread, not array
  *   scan / no scanIterator
  */
-function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise<unknown>; set: (...a: unknown[]) => Promise<unknown>; del: (...a: unknown[]) => Promise<unknown>; expire: (...a: unknown[]) => Promise<unknown>; scan: (...a: unknown[]) => Promise<unknown> }) {
+function createIoredisAdapter(ioredisClient: {
+  get: (...a: unknown[]) => Promise<unknown>;
+  set: (...a: unknown[]) => Promise<unknown>;
+  del: (...a: unknown[]) => Promise<unknown>;
+  expire: (...a: unknown[]) => Promise<unknown>;
+  scan: (...a: unknown[]) => Promise<unknown>;
+}) {
   return {
     get(key: string): Promise<string | null> {
       return ioredisClient.get(key) as Promise<string | null>;
@@ -153,11 +175,11 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
     set(
       key: string,
       val: string,
-      opts?: { expiration?: { type?: string; value?: number } }
+      opts?: { expiration?: { type?: string; value?: number } },
     ): Promise<unknown> {
       const ttl = opts?.expiration?.value;
       if (ttl && ttl > 0) {
-        return ioredisClient.set(key, val, 'EX', ttl);
+        return ioredisClient.set(key, val, "EX", ttl);
       }
       return ioredisClient.set(key, val);
     },
@@ -175,24 +197,24 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
     },
 
     async *scanIterator(
-      opts: { MATCH?: string; COUNT?: number } = {}
+      opts: { MATCH?: string; COUNT?: number } = {},
     ): AsyncGenerator<string[]> {
-      const pattern = opts.MATCH || '*';
+      const pattern = opts.MATCH || "*";
       const count = opts.COUNT || 100;
-      let cursor = '0';
+      let cursor = "0";
       do {
-        const [nextCursor, keys] = await ioredisClient.scan(
+        const [nextCursor, keys] = (await ioredisClient.scan(
           cursor,
-          'MATCH',
+          "MATCH",
           pattern,
-          'COUNT',
-          count
-        ) as [string, string[]];
+          "COUNT",
+          count,
+        )) as [string, string[]];
         cursor = nextCursor;
         if (keys.length > 0) {
           yield keys;
         }
-      } while (cursor !== '0');
+      } while (cursor !== "0");
     },
   };
 }
@@ -219,9 +241,9 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
 // Before this change: unbounded (L1 session cache was 60 s; revocation wrote to PDIM/DB
 // but other pods' L1 caches were never cleared).
 
-const REVOKE_L1_TTL_ACTIVE_MS  =  5_000; // 5 s — normal users; ≤5 s cross-pod propagation
-const REVOKE_L1_TTL_REVOKED_MS =    200; // 200 ms — just-revoked user; fast re-check
-const REVOKE_PDIM_TTL_S        =    310; // slightly longer than L1_TTL_MS (300 s / 5 min)
+const REVOKE_L1_TTL_ACTIVE_MS = 5_000; // 5 s — normal users; ≤5 s cross-pod propagation
+const REVOKE_L1_TTL_REVOKED_MS = 200; // 200 ms — just-revoked user; fast re-check
+const REVOKE_PDIM_TTL_S = 310; // slightly longer than L1_TTL_MS (300 s / 5 min)
 
 // In-process revocation-flag cache: key = userId; value = { revoked, expiresAt }
 // This is module-scoped (not class-scoped) so the exported revokeUserSessions()
@@ -231,7 +253,10 @@ const _revokeL1 = new Map<string, { revoked: boolean; expiresAt: number }>();
 function _revokeL1Get(userId: string): boolean | undefined {
   const entry = _revokeL1.get(userId);
   if (!entry) return undefined;
-  if (Date.now() > entry.expiresAt) { _revokeL1.delete(userId); return undefined; }
+  if (Date.now() > entry.expiresAt) {
+    _revokeL1.delete(userId);
+    return undefined;
+  }
   return entry.revoked;
 }
 
@@ -275,10 +300,13 @@ async function isRevoked(userId: string): Promise<boolean> {
 /**
  * Extract the user ID from session data for revocation checks.
  */
-function extractUserIdFromSession(data: session.SessionData | null): string | undefined {
+function extractUserIdFromSession(
+  data: session.SessionData | null,
+): string | undefined {
   if (!data) return undefined;
-  const d = (data as unknown) as Record<string, unknown>;
-  const passportUser = (d.passport as Record<string, unknown> | undefined)?.user;
+  const d = data as unknown as Record<string, unknown>;
+  const passportUser = (d.passport as Record<string, unknown> | undefined)
+    ?.user;
   const uid = d.userId ?? passportUser;
   return uid ? String(uid) : undefined;
 }
@@ -303,10 +331,15 @@ export async function revokeUserSessions(userId: string): Promise<void> {
 
   try {
     const redis = getRedisClient();
-    await redis.set(`session:revoke:${userId}`, '1', 'EX', REVOKE_PDIM_TTL_S);
-    logger.info(`[SessionRevoke] Revocation flag set for user ${userId} (TTL=${REVOKE_PDIM_TTL_S}s, max cross-pod lag=${REVOKE_L1_TTL_ACTIVE_MS / 1000}s)`);
+    await redis.set(`session:revoke:${userId}`, "1", "EX", REVOKE_PDIM_TTL_S);
+    logger.info(
+      `[SessionRevoke] Revocation flag set for user ${userId} (TTL=${REVOKE_PDIM_TTL_S}s, max cross-pod lag=${REVOKE_L1_TTL_ACTIVE_MS / 1000}s)`,
+    );
   } catch (err: unknown) {
-    logger.warn({ err }, `[SessionRevoke] Failed to write revocation flag for user ${userId} — other pods may still serve old sessions for up to 60 s`);
+    logger.warn(
+      { err },
+      `[SessionRevoke] Failed to write revocation flag for user ${userId} — other pods may still serve old sessions for up to 60 s`,
+    );
   }
 }
 
@@ -328,21 +361,26 @@ class PdimSessionStore extends session.Store {
     this.inner = inner;
   }
 
-  get(sid: string, cb: (err: unknown, session?: session.SessionData | null) => void): void {
+  get(
+    sid: string,
+    cb: (err: unknown, session?: session.SessionData | null) => void,
+  ): void {
     const cached = this.l1.get(sid);
     if (cached !== undefined) {
       const userId = extractUserIdFromSession(cached);
       if (userId) {
         // Async revocation check — does not block; uses L1 for the check itself (5 s TTL)
-        isRevoked(userId).then(revoked => {
-          if (revoked) {
-            this.l1.invalidate(sid);
-            // Best-effort PDIM destroy so the revoked session is cleaned up
-            this.inner.destroy(sid, () => {});
-            return cb(null, null);
-          }
-          return cb(null, cached);
-        }).catch(() => cb(null, cached)); // on error, serve cached (don't block)
+        isRevoked(userId)
+          .then((revoked) => {
+            if (revoked) {
+              this.l1.invalidate(sid);
+              // Best-effort PDIM destroy so the revoked session is cleaned up
+              this.inner.destroy(sid, () => {});
+              return cb(null, null);
+            }
+            return cb(null, cached);
+          })
+          .catch(() => cb(null, cached)); // on error, serve cached (don't block)
         return;
       }
       return cb(null, cached);
@@ -360,13 +398,23 @@ class PdimSessionStore extends session.Store {
       const now = Date.now();
       if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
         _lastFetchWarnAt = now;
-        logger.warn('[SessionStore] PDIM session fetch timed out — falling back to PostgreSQL');
+        logger.warn(
+          "[SessionStore] PDIM session fetch timed out — falling back to PostgreSQL",
+        );
       }
-      pgSessionGet(sid).then(pgData => {
-        if (pgData) { this.l1.set(sid, pgData); return cb(null, pgData); }
-        this.l1.set(sid, null, L1_ERR_TTL_MS);
-        return cb(null, null);
-      }).catch(() => { this.l1.set(sid, null, L1_ERR_TTL_MS); cb(null, null); });
+      pgSessionGet(sid)
+        .then((pgData) => {
+          if (pgData) {
+            this.l1.set(sid, pgData);
+            return cb(null, pgData);
+          }
+          this.l1.set(sid, null, L1_ERR_TTL_MS);
+          return cb(null, null);
+        })
+        .catch(() => {
+          this.l1.set(sid, null, L1_ERR_TTL_MS);
+          cb(null, null);
+        });
     }, SESSION_PDIM_TIMEOUT_MS);
 
     this.inner.get(sid, (err, data) => {
@@ -378,41 +426,48 @@ class PdimSessionStore extends session.Store {
         // PDIM unavailable — fall back to the PostgreSQL session store before
         // giving up and serving a session-less (logged-out) response.  This
         // keeps users authenticated across PDIM outages and server restarts.
-        pgSessionGet(sid).then(pgData => {
-          if (pgData) {
-            // PG had a valid session — warm L1 so subsequent requests are fast.
-            this.l1.set(sid, pgData);
-            return cb(null, pgData);
-          }
-          // Neither PDIM nor PG has this session.
-          this.l1.set(sid, null, L1_ERR_TTL_MS);
-          const now = Date.now();
-          if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
-            _lastFetchWarnAt = now;
-            logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session fetch failed — PG fallback also missed, serving session-less response');
-          }
-          return cb(null, null);
-        }).catch(() => {
-          this.l1.set(sid, null, L1_ERR_TTL_MS);
-          return cb(null, null);
-        });
+        pgSessionGet(sid)
+          .then((pgData) => {
+            if (pgData) {
+              // PG had a valid session — warm L1 so subsequent requests are fast.
+              this.l1.set(sid, pgData);
+              return cb(null, pgData);
+            }
+            // Neither PDIM nor PG has this session.
+            this.l1.set(sid, null, L1_ERR_TTL_MS);
+            const now = Date.now();
+            if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
+              _lastFetchWarnAt = now;
+              logger.warn(
+                { err: err instanceof Error ? err.message : String(err) },
+                "[SessionStore] PDIM session fetch failed — PG fallback also missed, serving session-less response",
+              );
+            }
+            return cb(null, null);
+          })
+          .catch(() => {
+            this.l1.set(sid, null, L1_ERR_TTL_MS);
+            return cb(null, null);
+          });
         return;
       }
 
       const result = data ?? null;
       const userId = extractUserIdFromSession(result);
       if (userId) {
-        isRevoked(userId).then(revoked => {
-          if (revoked) {
-            this.inner.destroy(sid, () => {});
-            return cb(null, null);
-          }
-          this.l1.set(sid, result);
-          cb(null, result);
-        }).catch(() => {
-          this.l1.set(sid, result);
-          cb(null, result);
-        });
+        isRevoked(userId)
+          .then((revoked) => {
+            if (revoked) {
+              this.inner.destroy(sid, () => {});
+              return cb(null, null);
+            }
+            this.l1.set(sid, result);
+            cb(null, result);
+          })
+          .catch(() => {
+            this.l1.set(sid, result);
+            cb(null, result);
+          });
         return;
       }
 
@@ -421,7 +476,11 @@ class PdimSessionStore extends session.Store {
     });
   }
 
-  set(sid: string, sess: session.SessionData, cb?: (err?: unknown) => void): void {
+  set(
+    sid: string,
+    sess: session.SessionData,
+    cb?: (err?: unknown) => void,
+  ): void {
     this.l1.set(sid, sess);
     // Write to PG first (async, best-effort) so the session survives PDIM outages.
     pgSessionSet(sid, sess).catch(() => {});
@@ -432,7 +491,10 @@ class PdimSessionStore extends session.Store {
     cb?.();
     this.inner.set(sid, sess, (err?: unknown) => {
       if (err) {
-        logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session write failed (session held in L1+PG)');
+        logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          "[SessionStore] PDIM session write failed (session held in L1+PG)",
+        );
       }
     });
   }
@@ -446,12 +508,19 @@ class PdimSessionStore extends session.Store {
     cb?.();
     this.inner.destroy(sid, (err?: unknown) => {
       if (err) {
-        logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session destroy failed (L1 already invalidated)');
+        logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          "[SessionStore] PDIM session destroy failed (L1 already invalidated)",
+        );
       }
     });
   }
 
-  touch(sid: string, sess: session.SessionData, cb?: (err?: unknown) => void): void {
+  touch(
+    sid: string,
+    sess: session.SessionData,
+    cb?: (err?: unknown) => void,
+  ): void {
     this.l1.set(sid, sess);
     // Call cb() IMMEDIATELY — express-session with rolling:true intercepts res.end()
     // and waits for cb() before flushing the HTTP response to the client.
@@ -460,19 +529,32 @@ class PdimSessionStore extends session.Store {
     // The L1 in-process cache already holds the refreshed session; the PDIM
     // TTL refresh is best-effort / fire-and-forget exactly like set() and destroy().
     cb?.();
-    const primaryTouch = (this.inner as unknown as Record<string, unknown>).touch;
+    const primaryTouch = (this.inner as unknown as Record<string, unknown>)
+      .touch;
     if (primaryTouch) {
-      (primaryTouch as Function).call(this.inner, sid, sess, (err?: unknown) => {
-        if (err) {
-          logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM congested during touch — TTL refresh skipped (best-effort)');
-        }
-      });
+      (primaryTouch as Function).call(
+        this.inner,
+        sid,
+        sess,
+        (err?: unknown) => {
+          if (err) {
+            logger.warn(
+              { err: err instanceof Error ? err.message : String(err) },
+              "[SessionStore] PDIM congested during touch — TTL refresh skipped (best-effort)",
+            );
+          }
+        },
+      );
     }
   }
 }
 
 // VM-reserved deployment: retry PDIM ping a few times on startup.
-async function pingWithRetry(client: { ping: () => Promise<string> }, maxAttempts = 8, delayMs = 2_000): Promise<void> {
+async function pingWithRetry(
+  client: { ping: () => Promise<string> },
+  maxAttempts = 8,
+  delayMs = 2_000,
+): Promise<void> {
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -481,8 +563,10 @@ async function pingWithRetry(client: { ping: () => Promise<string> }, maxAttempt
     } catch (err) {
       lastErr = err;
       const isLast = attempt === maxAttempts;
-      logger.warn(`[SessionStore] PDIM ping attempt ${attempt}/${maxAttempts} failed${isLast ? ' — giving up' : ` — retrying in ${delayMs / 1000}s`}`);
-      if (!isLast) await new Promise(r => setTimeout(r, delayMs));
+      logger.warn(
+        `[SessionStore] PDIM ping attempt ${attempt}/${maxAttempts} failed${isLast ? " — giving up" : ` — retrying in ${delayMs / 1000}s`}`,
+      );
+      if (!isLast) await new Promise((r) => setTimeout(r, delayMs));
     }
   }
   throw lastErr;
@@ -497,8 +581,10 @@ export async function createSessionStore(): Promise<session.Store> {
   await ensurePgSessionTable();
 
   if (!isPdimConfigured()) {
-    logger.warn('⚠️  PDIM not configured — using in-memory session store (development mode, sessions will not persist across restarts)');
-    const MemoryStore = (await import('memorystore')).default(session);
+    logger.warn(
+      "⚠️  PDIM not configured — using in-memory session store (development mode, sessions will not persist across restarts)",
+    );
+    const MemoryStore = (await import("memorystore")).default(session);
     return new MemoryStore({ checkPeriod: 86400000 });
   }
   try {
@@ -506,37 +592,50 @@ export async function createSessionStore(): Promise<session.Store> {
     await pingWithRetry(ioredisClient);
 
     const redisStore = new RedisStore({
-      client: createIoredisAdapter(ioredisClient as unknown as Parameters<typeof createIoredisAdapter>[0]) as Record<string, unknown>,
-      prefix: 'sess:',
+      client: createIoredisAdapter(
+        ioredisClient as unknown as Parameters<typeof createIoredisAdapter>[0],
+      ) as Record<string, unknown>,
+      prefix: "sess:",
       ttl: 24 * 60 * 60,
     });
 
-    logger.info('✅ PDIM session store created with PG fallback (sessions survive restarts and PDIM outages)');
+    logger.info(
+      "✅ PDIM session store created with PG fallback (sessions survive restarts and PDIM outages)",
+    );
     return new PdimSessionStore(redisStore);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
-    logger.warn({ errMsg }, '❌ Failed to create PDIM session store');
-    throw new Error(`Session store initialization failed: ${errMsg}. Sessions cannot be stored safely.`);
+    logger.warn({ errMsg }, "❌ Failed to create PDIM session store");
+    throw new Error(
+      `Session store initialization failed: ${errMsg}. Sessions cannot be stored safely.`,
+    );
   }
 }
 
 export function getSessionConfig(store: session.Store) {
-  const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+  const isProduction =
+    process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
   // Session cookies are only marked Secure when running under TLS in production.
   // REPLIT_DEPLOYMENT=1 can be set even for dev servers running on plain HTTP
   // (e.g. localhost:5000 accessed by the test suite), so we gate the Secure
   // flag on NODE_ENV=production to allow session cookies over HTTP in dev.
-  const useSecureCookies = process.env.NODE_ENV === 'production';
+  const useSecureCookies = process.env.NODE_ENV === "production";
   const sessionSecret = env.SESSION_SECRET;
 
   if (isProduction) {
-    if (!sessionSecret) throw new Error('SESSION_SECRET environment variable is required in production');
-    if (sessionSecret.length < 32) throw new Error('SESSION_SECRET must be at least 32 characters');
+    if (!sessionSecret)
+      throw new Error(
+        "SESSION_SECRET environment variable is required in production",
+      );
+    if (sessionSecret.length < 32)
+      throw new Error("SESSION_SECRET must be at least 32 characters");
   } else if (!sessionSecret) {
-    logger.warn('⚠️  SESSION_SECRET not set. Using random default for development only.');
+    logger.warn(
+      "⚠️  SESSION_SECRET not set. Using random default for development only.",
+    );
   }
 
-  const finalSecret = sessionSecret || crypto.randomBytes(32).toString('hex');
+  const finalSecret = sessionSecret || crypto.randomBytes(32).toString("hex");
 
   return {
     store,
@@ -544,15 +643,15 @@ export function getSessionConfig(store: session.Store) {
     resave: false,
     saveUninitialized: false,
     rolling: true,
-    name: 'sessionId',
+    name: "sessionId",
     proxy: isProduction,
     cookie: {
       secure: useSecureCookies,
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'lax' as const,
-      path: '/',
+      sameSite: "lax" as const,
+      path: "/",
     },
-    genid: () => crypto.randomBytes(32).toString('hex'),
+    genid: () => crypto.randomBytes(32).toString("hex"),
   };
 }

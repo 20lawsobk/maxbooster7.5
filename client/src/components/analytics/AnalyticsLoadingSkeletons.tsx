@@ -1,6 +1,6 @@
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface SkeletonProps {
   className?: string;
@@ -26,7 +26,10 @@ export function StatCardSkeleton({ className }: SkeletonProps) {
   );
 }
 
-export function StatCardRowSkeleton({ count = 4, className }: { count?: number } & SkeletonProps) {
+export function StatCardRowSkeleton({
+  count = 4,
+  className,
+}: { count?: number } & SkeletonProps) {
   return (
     <div className={cn("grid grid-cols-2 md:grid-cols-4 gap-4", className)}>
       {Array.from({ length: count }).map((_, i) => (
@@ -36,7 +39,10 @@ export function StatCardRowSkeleton({ count = 4, className }: { count?: number }
   );
 }
 
-export function ChartCardSkeleton({ className, height = 300 }: { height?: number } & SkeletonProps) {
+export function ChartCardSkeleton({
+  className,
+  height = 300,
+}: { height?: number } & SkeletonProps) {
   return (
     <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="pb-2">
@@ -55,7 +61,11 @@ export function ChartCardSkeleton({ className, height = 300 }: { height?: number
   );
 }
 
-export function TableSkeleton({ rows = 5, columns = 4, className }: { rows?: number; columns?: number } & SkeletonProps) {
+export function TableSkeleton({
+  rows = 5,
+  columns = 4,
+  className,
+}: { rows?: number; columns?: number } & SkeletonProps) {
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center gap-4 pb-2 border-b">
@@ -66,12 +76,12 @@ export function TableSkeleton({ rows = 5, columns = 4, className }: { rows?: num
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div key={rowIndex} className="flex items-center gap-4">
           {Array.from({ length: columns }).map((_, colIndex) => (
-            <Skeleton 
-              key={colIndex} 
-              className="h-6 flex-1" 
-              style={{ 
-                animationDelay: `${(rowIndex * columns + colIndex) * 50}ms` 
-              }} 
+            <Skeleton
+              key={colIndex}
+              className="h-6 flex-1"
+              style={{
+                animationDelay: `${(rowIndex * columns + colIndex) * 50}ms`,
+              }}
             />
           ))}
         </div>
@@ -80,7 +90,10 @@ export function TableSkeleton({ rows = 5, columns = 4, className }: { rows?: num
   );
 }
 
-export function PlatformListSkeleton({ count = 6, className }: { count?: number } & SkeletonProps) {
+export function PlatformListSkeleton({
+  count = 6,
+  className,
+}: { count?: number } & SkeletonProps) {
   return (
     <div className={cn("space-y-4", className)}>
       {Array.from({ length: count }).map((_, i) => (
@@ -176,7 +189,10 @@ export function RevenueBreakdownSkeleton({ className }: SkeletonProps) {
       <CardContent>
         <div className="grid grid-cols-3 gap-4 mb-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="text-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <div
+              key={i}
+              className="text-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg"
+            >
               <Skeleton className="h-8 w-24 mx-auto mb-2" />
               <Skeleton className="h-3 w-16 mx-auto" />
             </div>
@@ -221,7 +237,10 @@ export function PlaylistTrackingSkeleton({ className }: SkeletonProps) {
         <CardContent className="p-4">
           <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+              <div
+                key={i}
+                className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg"
+              >
                 <Skeleton className="h-10 w-10 rounded" />
                 <div className="flex-1">
                   <Skeleton className="h-4 w-48 mb-1" />

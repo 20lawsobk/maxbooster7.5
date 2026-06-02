@@ -1,8 +1,14 @@
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   LineChart,
   Line,
@@ -14,7 +20,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
+} from "recharts";
 import {
   TrendingUp,
   TrendingDown,
@@ -30,8 +36,8 @@ import {
   Trophy,
   ArrowUp,
   ArrowDown,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface GrowthMetrics {
   weekOverWeek: {
@@ -46,7 +52,7 @@ interface GrowthMetrics {
     revenue: number;
     engagement: number;
   };
-  trend: 'rising' | 'stable' | 'declining';
+  trend: "rising" | "stable" | "declining";
   velocity: number;
 }
 
@@ -95,9 +101,9 @@ const formatNumber = (num: number): string => {
 };
 
 const formatCurrency = (num: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(num);
@@ -109,20 +115,41 @@ const CareerScoreGauge: React.FC<{ score: number }> = ({ score }) => {
   const offset = circumference - progress;
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return { stroke: '#22c55e', bg: 'from-green-500/20 to-emerald-500/20', text: 'text-green-500' };
-    if (score >= 60) return { stroke: '#3b82f6', bg: 'from-blue-500/20 to-cyan-500/20', text: 'text-blue-500' };
-    if (score >= 40) return { stroke: '#f59e0b', bg: 'from-yellow-500/20 to-orange-500/20', text: 'text-yellow-500' };
-    return { stroke: '#ef4444', bg: 'from-red-500/20 to-pink-500/20', text: 'text-red-500' };
+    if (score >= 80)
+      return {
+        stroke: "#22c55e",
+        bg: "from-green-500/20 to-emerald-500/20",
+        text: "text-green-500",
+      };
+    if (score >= 60)
+      return {
+        stroke: "#3b82f6",
+        bg: "from-blue-500/20 to-cyan-500/20",
+        text: "text-blue-500",
+      };
+    if (score >= 40)
+      return {
+        stroke: "#f59e0b",
+        bg: "from-yellow-500/20 to-orange-500/20",
+        text: "text-yellow-500",
+      };
+    return {
+      stroke: "#ef4444",
+      bg: "from-red-500/20 to-pink-500/20",
+      text: "text-red-500",
+    };
   };
 
   const colors = getScoreColor(score);
 
   return (
-    <div className={cn(
-      "relative flex items-center justify-center p-6 rounded-2xl",
-      "bg-gradient-to-br",
-      colors.bg
-    )}>
+    <div
+      className={cn(
+        "relative flex items-center justify-center p-6 rounded-2xl",
+        "bg-gradient-to-br",
+        colors.bg,
+      )}
+    >
       <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
         <circle
           cx="50"
@@ -150,10 +177,10 @@ const CareerScoreGauge: React.FC<{ score: number }> = ({ score }) => {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-4xl font-bold", colors.text)}>
-          {score}
+        <span className={cn("text-4xl font-bold", colors.text)}>{score}</span>
+        <span className="text-xs text-muted-foreground font-medium">
+          Career Score
         </span>
-        <span className="text-xs text-muted-foreground font-medium">Career Score</span>
       </div>
     </div>
   );
@@ -163,18 +190,19 @@ const MetricCard: React.FC<{
   title: string;
   current: number;
   previous: number;
-  format?: 'number' | 'currency' | 'percent';
+  format?: "number" | "currency" | "percent";
   icon: React.ReactNode;
   gradient: string;
-}> = ({ title, current, previous, format = 'number', icon, gradient }) => {
-  const percentChange = previous > 0 ? ((current - previous) / previous) * 100 : 0;
+}> = ({ title, current, previous, format = "number", icon, gradient }) => {
+  const percentChange =
+    previous > 0 ? ((current - previous) / previous) * 100 : 0;
   const isPositive = percentChange >= 0;
 
   const formatValue = (val: number) => {
     switch (format) {
-      case 'currency':
+      case "currency":
         return formatCurrency(val);
-      case 'percent':
+      case "percent":
         return `${val.toFixed(1)}%`;
       default:
         return formatNumber(val);
@@ -191,14 +219,24 @@ const MetricCard: React.FC<{
             </div>
             <div>
               <p className="text-xs text-white/70 font-medium">{title}</p>
-              <p className="text-2xl font-bold text-white">{formatValue(current)}</p>
+              <p className="text-2xl font-bold text-white">
+                {formatValue(current)}
+              </p>
             </div>
           </div>
-          <div className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold",
-            isPositive ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"
-          )}>
-            {isPositive ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+          <div
+            className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold",
+              isPositive
+                ? "bg-green-500/20 text-green-300"
+                : "bg-red-500/20 text-red-300",
+            )}
+          >
+            {isPositive ? (
+              <ArrowUp className="w-3 h-3" />
+            ) : (
+              <ArrowDown className="w-3 h-3" />
+            )}
             {Math.abs(percentChange).toFixed(1)}%
           </div>
         </div>
@@ -207,12 +245,12 @@ const MetricCard: React.FC<{
   );
 };
 
-const GrowthChart: React.FC<{ data: HistoryDataPoint[]; dataKey: keyof HistoryDataPoint; color: string; title: string }> = ({
-  data,
-  dataKey,
-  color,
-  title,
-}) => {
+const GrowthChart: React.FC<{
+  data: HistoryDataPoint[];
+  dataKey: keyof HistoryDataPoint;
+  color: string;
+  title: string;
+}> = ({ data, dataKey, color, title }) => {
   return (
     <Card className="col-span-1">
       <CardHeader className="pb-2">
@@ -220,9 +258,18 @@ const GrowthChart: React.FC<{ data: HistoryDataPoint[]; dataKey: keyof HistoryDa
       </CardHeader>
       <CardContent className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
+          <AreaChart
+            data={data}
+            margin={{ top: 5, right: 5, bottom: 5, left: 0 }}
+          >
             <defs>
-              <linearGradient id={`gradient-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient
+                id={`gradient-${dataKey}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
                 <stop offset="5%" stopColor={color} stopOpacity={0.3} />
                 <stop offset="95%" stopColor={color} stopOpacity={0} />
               </linearGradient>
@@ -231,7 +278,12 @@ const GrowthChart: React.FC<{ data: HistoryDataPoint[]; dataKey: keyof HistoryDa
             <XAxis
               dataKey="date"
               tick={{ fontSize: 10 }}
-              tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              tickFormatter={(value) =>
+                new Date(value).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })
+              }
               className="text-muted-foreground"
             />
             <YAxis
@@ -241,9 +293,9 @@ const GrowthChart: React.FC<{ data: HistoryDataPoint[]; dataKey: keyof HistoryDa
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
+                backgroundColor: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "8px",
               }}
               labelFormatter={(value) => new Date(value).toLocaleDateString()}
               formatter={(value: number) => [formatNumber(value), title]}
@@ -262,15 +314,23 @@ const GrowthChart: React.FC<{ data: HistoryDataPoint[]; dataKey: keyof HistoryDa
   );
 };
 
-const MilestoneTimeline: React.FC<{ milestones: CareerMilestone[] }> = ({ milestones }) => {
+const MilestoneTimeline: React.FC<{ milestones: CareerMilestone[] }> = ({
+  milestones,
+}) => {
   const getIconComponent = (icon: string) => {
     switch (icon) {
-      case '🎵': return <Music className="w-4 h-4" />;
-      case '👥': return <Users className="w-4 h-4" />;
-      case '💰': return <DollarSign className="w-4 h-4" />;
-      case '💿': return <Award className="w-4 h-4" />;
-      case '⚡': return <Zap className="w-4 h-4" />;
-      default: return <Star className="w-4 h-4" />;
+      case "🎵":
+        return <Music className="w-4 h-4" />;
+      case "👥":
+        return <Users className="w-4 h-4" />;
+      case "💰":
+        return <DollarSign className="w-4 h-4" />;
+      case "💿":
+        return <Award className="w-4 h-4" />;
+      case "⚡":
+        return <Zap className="w-4 h-4" />;
+      default:
+        return <Star className="w-4 h-4" />;
     }
   };
 
@@ -292,7 +352,7 @@ const MilestoneTimeline: React.FC<{ milestones: CareerMilestone[] }> = ({ milest
                 "flex items-start gap-3 p-3 rounded-lg transition-all duration-300",
                 "bg-gradient-to-r from-primary/5 to-transparent",
                 "hover:from-primary/10 hover:to-primary/5",
-                "border-l-2 border-primary/50"
+                "border-l-2 border-primary/50",
               )}
               style={{
                 animationDelay: `${index * 100}ms`,
@@ -308,7 +368,9 @@ const MilestoneTimeline: React.FC<{ milestones: CareerMilestone[] }> = ({ milest
                     {new Date(milestone.achievedAt).toLocaleDateString()}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{milestone.description}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {milestone.description}
+                </p>
               </div>
             </div>
           ))}
@@ -320,9 +382,12 @@ const MilestoneTimeline: React.FC<{ milestones: CareerMilestone[] }> = ({ milest
 
 const PercentileCard: React.FC<{ percentile: number }> = ({ percentile }) => {
   const getMessage = (p: number) => {
-    if (p <= 5) return { text: "Elite Artist", emoji: "🏆", color: "text-yellow-500" };
-    if (p <= 15) return { text: "Rising Star", emoji: "⭐", color: "text-purple-500" };
-    if (p <= 30) return { text: "Growing Artist", emoji: "🚀", color: "text-blue-500" };
+    if (p <= 5)
+      return { text: "Elite Artist", emoji: "🏆", color: "text-yellow-500" };
+    if (p <= 15)
+      return { text: "Rising Star", emoji: "⭐", color: "text-purple-500" };
+    if (p <= 30)
+      return { text: "Growing Artist", emoji: "🚀", color: "text-blue-500" };
     return { text: "Emerging Talent", emoji: "🌱", color: "text-green-500" };
   };
 
@@ -345,9 +410,9 @@ const PercentileCard: React.FC<{ percentile: number }> = ({ percentile }) => {
 const GrowthIndicator: React.FC<{ metrics: GrowthMetrics }> = ({ metrics }) => {
   const getTrendIcon = () => {
     switch (metrics.trend) {
-      case 'rising':
+      case "rising":
         return <Flame className="w-5 h-5 text-orange-500" />;
-      case 'declining':
+      case "declining":
         return <TrendingDown className="w-5 h-5 text-red-500" />;
       default:
         return <Target className="w-5 h-5 text-blue-500" />;
@@ -356,12 +421,12 @@ const GrowthIndicator: React.FC<{ metrics: GrowthMetrics }> = ({ metrics }) => {
 
   const getTrendColor = () => {
     switch (metrics.trend) {
-      case 'rising':
-        return 'bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border-orange-500/30';
-      case 'declining':
-        return 'bg-gradient-to-r from-red-500/20 to-pink-500/20 border-red-500/30';
+      case "rising":
+        return "bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border-orange-500/30";
+      case "declining":
+        return "bg-gradient-to-r from-red-500/20 to-pink-500/20 border-red-500/30";
       default:
-        return 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30';
+        return "bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30";
     }
   };
 
@@ -381,11 +446,17 @@ const GrowthIndicator: React.FC<{ metrics: GrowthMetrics }> = ({ metrics }) => {
               {Object.entries(metrics.weekOverWeek).map(([key, value]) => (
                 <div key={key} className="flex items-center justify-between">
                   <span className="text-xs capitalize">{key}</span>
-                  <span className={cn(
-                    "text-xs font-semibold flex items-center gap-1",
-                    value >= 0 ? "text-green-500" : "text-red-500"
-                  )}>
-                    {value >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                  <span
+                    className={cn(
+                      "text-xs font-semibold flex items-center gap-1",
+                      value >= 0 ? "text-green-500" : "text-red-500",
+                    )}
+                  >
+                    {value >= 0 ? (
+                      <ArrowUp className="w-3 h-3" />
+                    ) : (
+                      <ArrowDown className="w-3 h-3" />
+                    )}
                     {Math.abs(value).toFixed(1)}%
                   </span>
                 </div>
@@ -393,16 +464,24 @@ const GrowthIndicator: React.FC<{ metrics: GrowthMetrics }> = ({ metrics }) => {
             </div>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Month over Month</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Month over Month
+            </p>
             <div className="space-y-2">
               {Object.entries(metrics.monthOverMonth).map(([key, value]) => (
                 <div key={key} className="flex items-center justify-between">
                   <span className="text-xs capitalize">{key}</span>
-                  <span className={cn(
-                    "text-xs font-semibold flex items-center gap-1",
-                    value >= 0 ? "text-green-500" : "text-red-500"
-                  )}>
-                    {value >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                  <span
+                    className={cn(
+                      "text-xs font-semibold flex items-center gap-1",
+                      value >= 0 ? "text-green-500" : "text-red-500",
+                    )}
+                  >
+                    {value >= 0 ? (
+                      <ArrowUp className="w-3 h-3" />
+                    ) : (
+                      <ArrowDown className="w-3 h-3" />
+                    )}
                     {Math.abs(value).toFixed(1)}%
                   </span>
                 </div>
@@ -416,18 +495,24 @@ const GrowthIndicator: React.FC<{ metrics: GrowthMetrics }> = ({ metrics }) => {
 };
 
 export const ArtistProgressDashboard: React.FC = () => {
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery<{ data: DashboardData }>({
-    queryKey: ['/api/artist-progress/dashboard'],
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery<{
+    data: DashboardData;
+  }>({
+    queryKey: ["/api/artist-progress/dashboard"],
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: historyData, isLoading: historyLoading } = useQuery<{ data: HistoryDataPoint[] }>({
-    queryKey: ['/api/artist-progress/history'],
+  const { data: historyData, isLoading: historyLoading } = useQuery<{
+    data: HistoryDataPoint[];
+  }>({
+    queryKey: ["/api/artist-progress/history"],
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: milestonesData, isLoading: milestonesLoading } = useQuery<{ data: CareerMilestone[] }>({
-    queryKey: ['/api/artist-progress/milestones'],
+  const { data: milestonesData, isLoading: milestonesLoading } = useQuery<{
+    data: CareerMilestone[];
+  }>({
+    queryKey: ["/api/artist-progress/milestones"],
     staleTime: 5 * 60 * 1000,
   });
 
@@ -473,7 +558,9 @@ export const ArtistProgressDashboard: React.FC = () => {
             <Crown className="w-6 h-6 text-yellow-500" />
             Artist Progress Dashboard
           </h2>
-          <p className="text-muted-foreground">Track your career growth and achievements</p>
+          <p className="text-muted-foreground">
+            Track your career growth and achievements
+          </p>
         </div>
         <Badge variant="outline" className="text-sm">
           Updated {new Date().toLocaleDateString()}
@@ -538,25 +625,60 @@ export const ArtistProgressDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={history} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                <LineChart
+                  data={history}
+                  margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted/30"
+                  />
                   <XAxis
                     dataKey="date"
                     tick={{ fontSize: 10 }}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }
                   />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(value) => formatNumber(value)} />
+                  <YAxis
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(value) => formatNumber(value)}
+                  />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
                     }}
                   />
                   <Legend />
-                  <Line type="monotone" dataKey="streams" stroke="#8b5cf6" strokeWidth={2} dot={false} name="Streams" />
-                  <Line type="monotone" dataKey="followers" stroke="#ec4899" strokeWidth={2} dot={false} name="Followers" />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} dot={false} name="Revenue" />
+                  <Line
+                    type="monotone"
+                    dataKey="streams"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    dot={false}
+                    name="Streams"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="followers"
+                    stroke="#ec4899"
+                    strokeWidth={2}
+                    dot={false}
+                    name="Followers"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={false}
+                    name="Revenue"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -565,9 +687,24 @@ export const ArtistProgressDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <GrowthChart data={history} dataKey="streams" color="#8b5cf6" title="Streams Over Time" />
-        <GrowthChart data={history} dataKey="followers" color="#ec4899" title="Followers Over Time" />
-        <GrowthChart data={history} dataKey="revenue" color="#10b981" title="Revenue Over Time" />
+        <GrowthChart
+          data={history}
+          dataKey="streams"
+          color="#8b5cf6"
+          title="Streams Over Time"
+        />
+        <GrowthChart
+          data={history}
+          dataKey="followers"
+          color="#ec4899"
+          title="Followers Over Time"
+        />
+        <GrowthChart
+          data={history}
+          dataKey="revenue"
+          color="#10b981"
+          title="Revenue Over Time"
+        />
       </div>
 
       <MilestoneTimeline milestones={milestones} />

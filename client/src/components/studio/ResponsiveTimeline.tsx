@@ -1,6 +1,6 @@
-import { useRef, useState, useCallback, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-import { studioOneTheme } from '@/lib/studioOneTheme';
+import { useRef, useState, useCallback, ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { studioOneTheme } from "@/lib/studioOneTheme";
 
 interface ResponsiveTimelineProps {
   children: ReactNode;
@@ -31,7 +31,7 @@ export function ResponsiveTimeline({
 }: ResponsiveTimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pinchZoomEnabled = false;
-  
+
   const [isPinching, setIsPinching] = useState(false);
   const [initialPinchDistance, setInitialPinchDistance] = useState(0);
   const [initialZoom, setInitialZoom] = useState(zoomLevel);
@@ -46,53 +46,72 @@ export function ResponsiveTimeline({
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && pinchZoomEnabled) {
-      setIsPinching(true);
-      setInitialPinchDistance(getPinchDistance(e.touches));
-      setInitialZoom(zoomLevel);
-    } else if (e.touches.length === 1) {
-      setIsDragging(true);
-      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-      setScrollStart({ x: scrollX, y: scrollY });
-    }
-  }, [pinchZoomEnabled, getPinchDistance, zoomLevel, scrollX, scrollY]);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 2 && pinchZoomEnabled) {
+        setIsPinching(true);
+        setInitialPinchDistance(getPinchDistance(e.touches));
+        setInitialZoom(zoomLevel);
+      } else if (e.touches.length === 1) {
+        setIsDragging(true);
+        setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+        setScrollStart({ x: scrollX, y: scrollY });
+      }
+    },
+    [pinchZoomEnabled, getPinchDistance, zoomLevel, scrollX, scrollY],
+  );
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isPinching && e.touches.length === 2) {
-      e.preventDefault();
-      const currentDistance = getPinchDistance(e.touches);
-      const scale = currentDistance / initialPinchDistance;
-      const newZoom = Math.min(5, Math.max(0.25, initialZoom * scale));
-      onZoomChange(newZoom);
-    } else if (isDragging && e.touches.length === 1) {
-      const dx = dragStart.x - e.touches[0].clientX;
-      const dy = dragStart.y - e.touches[0].clientY;
-      onScrollChange(
-        Math.max(0, scrollStart.x + dx),
-        Math.max(0, scrollStart.y + dy)
-      );
-    }
-  }, [isPinching, isDragging, getPinchDistance, initialPinchDistance, initialZoom, dragStart, scrollStart, onZoomChange, onScrollChange]);
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (isPinching && e.touches.length === 2) {
+        e.preventDefault();
+        const currentDistance = getPinchDistance(e.touches);
+        const scale = currentDistance / initialPinchDistance;
+        const newZoom = Math.min(5, Math.max(0.25, initialZoom * scale));
+        onZoomChange(newZoom);
+      } else if (isDragging && e.touches.length === 1) {
+        const dx = dragStart.x - e.touches[0].clientX;
+        const dy = dragStart.y - e.touches[0].clientY;
+        onScrollChange(
+          Math.max(0, scrollStart.x + dx),
+          Math.max(0, scrollStart.y + dy),
+        );
+      }
+    },
+    [
+      isPinching,
+      isDragging,
+      getPinchDistance,
+      initialPinchDistance,
+      initialZoom,
+      dragStart,
+      scrollStart,
+      onZoomChange,
+      onScrollChange,
+    ],
+  );
 
   const handleTouchEnd = useCallback(() => {
     setIsPinching(false);
     setIsDragging(false);
   }, []);
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.min(5, Math.max(0.25, zoomLevel * delta));
-      onZoomChange(newZoom);
-    } else {
-      onScrollChange(
-        Math.max(0, scrollX + e.deltaX),
-        Math.max(0, scrollY + e.deltaY)
-      );
-    }
-  }, [zoomLevel, scrollX, scrollY, onZoomChange, onScrollChange]);
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.min(5, Math.max(0.25, zoomLevel * delta));
+        onZoomChange(newZoom);
+      } else {
+        onScrollChange(
+          Math.max(0, scrollX + e.deltaX),
+          Math.max(0, scrollY + e.deltaY),
+        );
+      }
+    },
+    [zoomLevel, scrollX, scrollY, onZoomChange, onScrollChange],
+  );
 
   const trackHeight = TRACK_HEIGHT;
   const effectivePixelsPerBar = pixelsPerBar * zoomLevel;
@@ -100,7 +119,7 @@ export function ResponsiveTimeline({
   return (
     <div
       ref={containerRef}
-      className={cn('relative overflow-hidden touch-none', className)}
+      className={cn("relative overflow-hidden touch-none", className)}
       style={{ background: studioOneTheme.colors.bg.deep }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -115,7 +134,7 @@ export function ResponsiveTimeline({
         bpm={bpm}
         pixelsPerBar={effectivePixelsPerBar}
       />
-      
+
       <div
         className="relative"
         style={{
@@ -124,7 +143,6 @@ export function ResponsiveTimeline({
       >
         {children}
       </div>
-      
     </div>
   );
 }
@@ -145,11 +163,11 @@ function TimelineRuler({
   pixelsPerBar,
 }: TimelineRulerProps) {
   const rulerHeight = 20;
-  
+
   const bars = [];
   const visibleBars = Math.ceil(1200 / pixelsPerBar) + 2;
   const startBar = Math.floor(scrollX / pixelsPerBar);
-  
+
   for (let i = startBar; i < Math.min(startBar + visibleBars, totalBars); i++) {
     const x = i * pixelsPerBar - scrollX;
     bars.push(
@@ -168,7 +186,7 @@ function TimelineRuler({
         >
           {i + 1}
         </span>
-      </div>
+      </div>,
     );
   }
 
@@ -223,13 +241,15 @@ export function ResponsiveTrackRow({
   return (
     <div
       className={cn(
-        'flex border-b transition-colors',
-        selected && 'ring-1 ring-inset ring-blue-500/50',
-        className
+        "flex border-b transition-colors",
+        selected && "ring-1 ring-inset ring-blue-500/50",
+        className,
       )}
       style={{
         height: trackHeight,
-        background: selected ? studioOneTheme.colors.bg.tertiary : studioOneTheme.colors.bg.secondary,
+        background: selected
+          ? studioOneTheme.colors.bg.tertiary
+          : studioOneTheme.colors.bg.secondary,
         borderColor: studioOneTheme.colors.border.primary,
       }}
       onClick={onSelect}
@@ -248,42 +268,48 @@ export function ResponsiveTrackRow({
         >
           {name}
         </span>
-        
+
         <div className="flex gap-0.5">
-            <button
-              onClick={(e) => { e.stopPropagation(); onMuteToggle?.(); }}
-              className={cn(
-                'rounded text-[10px] font-bold touch-manipulation',
-                mute ? 'bg-red-500 text-white' : 'bg-white/10 hover:bg-white/20'
-              )}
-              style={{
-                width: touchSize * 0.7,
-                height: touchSize * 0.7,
-                color: mute ? undefined : studioOneTheme.colors.text.secondary,
-              }}
-            >
-              M
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onSoloToggle?.(); }}
-              className={cn(
-                'rounded text-[10px] font-bold touch-manipulation',
-                solo ? 'bg-yellow-500 text-black' : 'bg-white/10 hover:bg-white/20'
-              )}
-              style={{
-                width: touchSize * 0.7,
-                height: touchSize * 0.7,
-                color: solo ? undefined : studioOneTheme.colors.text.secondary,
-              }}
-            >
-              S
-            </button>
-          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMuteToggle?.();
+            }}
+            className={cn(
+              "rounded text-[10px] font-bold touch-manipulation",
+              mute ? "bg-red-500 text-white" : "bg-white/10 hover:bg-white/20",
+            )}
+            style={{
+              width: touchSize * 0.7,
+              height: touchSize * 0.7,
+              color: mute ? undefined : studioOneTheme.colors.text.secondary,
+            }}
+          >
+            M
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSoloToggle?.();
+            }}
+            className={cn(
+              "rounded text-[10px] font-bold touch-manipulation",
+              solo
+                ? "bg-yellow-500 text-black"
+                : "bg-white/10 hover:bg-white/20",
+            )}
+            style={{
+              width: touchSize * 0.7,
+              height: touchSize * 0.7,
+              color: solo ? undefined : studioOneTheme.colors.text.secondary,
+            }}
+          >
+            S
+          </button>
+        </div>
       </div>
-      
-      <div className="flex-1 relative overflow-hidden">
-        {children}
-      </div>
+
+      <div className="flex-1 relative overflow-hidden">{children}</div>
     </div>
   );
 }

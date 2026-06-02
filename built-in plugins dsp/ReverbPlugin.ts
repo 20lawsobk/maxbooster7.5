@@ -1,4 +1,4 @@
-import { BasePlugin } from './BasePlugin';
+import { BasePlugin } from "./BasePlugin";
 
 class SeededPRNG {
   private state: number;
@@ -46,7 +46,8 @@ export class ReverbPlugin extends BasePlugin {
   private damping: number = 0.5;
   private preDelayTime: number = 0.02;
   private width: number = 1.0;
-  private currentType: 'hall' | 'room' | 'plate' | 'spring' | 'chamber' = 'hall';
+  private currentType: "hall" | "room" | "plate" | "spring" | "chamber" =
+    "hall";
 
   private impulseResponses: Map<string, AudioBuffer> = new Map();
   private prng: SeededPRNG;
@@ -68,9 +69,9 @@ export class ReverbPlugin extends BasePlugin {
     this.sideGain = context.createGain();
     this.sideInvertGain = context.createGain();
 
-    this.lowFilter.type = 'highpass';
+    this.lowFilter.type = "highpass";
     this.lowFilter.frequency.value = 100;
-    this.highFilter.type = 'lowpass';
+    this.highFilter.type = "lowpass";
     this.highFilter.frequency.value = 8000;
 
     this.preDelay.delayTime.value = this.preDelayTime;
@@ -102,12 +103,25 @@ export class ReverbPlugin extends BasePlugin {
     this.generateImpulseResponse(this.currentType);
   }
 
-  private generateImpulseResponse(type: 'hall' | 'room' | 'plate' | 'spring' | 'chamber'): void {
-    const seed = hashTypeSeed(type) ^ ((this.roomSize * 1000) | 0) ^ ((this.decay * 1000) << 10) ^ ((this.damping * 1000) << 20);
+  private generateImpulseResponse(
+    type: "hall" | "room" | "plate" | "spring" | "chamber",
+  ): void {
+    const seed =
+      hashTypeSeed(type) ^
+      ((this.roomSize * 1000) | 0) ^
+      ((this.decay * 1000) << 10) ^
+      ((this.damping * 1000) << 20);
     this.prng.reset(seed);
 
-    const length = Math.max(1, Math.floor(this.context.sampleRate * this.getReverbLength(type)));
-    const impulse = this.context.createBuffer(2, length, this.context.sampleRate);
+    const length = Math.max(
+      1,
+      Math.floor(this.context.sampleRate * this.getReverbLength(type)),
+    );
+    const impulse = this.context.createBuffer(
+      2,
+      length,
+      this.context.sampleRate,
+    );
 
     for (let channel = 0; channel < 2; channel++) {
       const channelData = impulse.getChannelData(channel);
@@ -115,16 +129,20 @@ export class ReverbPlugin extends BasePlugin {
       this.prng.reset(channelSeed);
 
       for (let i = 0; i < length; i++) {
-        let sample = this.prng.nextBipolar() * Math.pow(1 - i / length, this.decay * 2);
+        let sample =
+          this.prng.nextBipolar() * Math.pow(1 - i / length, this.decay * 2);
 
         if (i < this.context.sampleRate * 0.1) {
           const reflectionCount = this.getEarlyReflectionCount(type);
           const reflectionPrng = new SeededPRNG(channelSeed + 12345);
           for (let r = 0; r < reflectionCount; r++) {
             const reflectionTime = reflectionPrng.next() * 0.1;
-            const reflectionIndex = Math.floor(reflectionTime * this.context.sampleRate);
+            const reflectionIndex = Math.floor(
+              reflectionTime * this.context.sampleRate,
+            );
             if (i === reflectionIndex) {
-              sample += reflectionPrng.nextBipolar() * 0.5 * (1 - r / reflectionCount);
+              sample +=
+                reflectionPrng.nextBipolar() * 0.5 * (1 - r / reflectionCount);
             } else {
               reflectionPrng.nextBipolar();
             }
@@ -175,12 +193,17 @@ export class ReverbPlugin extends BasePlugin {
     return reflectionCounts[type] || 10;
   }
 
-  private applyRoomSizeModulation(channelData: Float32Array, type: string): void {
-    const modulationDepth = type === 'spring' ? 0.02 : 0.005;
+  private applyRoomSizeModulation(
+    channelData: Float32Array,
+    type: string,
+  ): void {
+    const modulationDepth = type === "spring" ? 0.02 : 0.005;
     const modulationRate = 0.5;
 
     for (let i = 0; i < channelData.length; i++) {
-      const modulation = Math.sin((2 * Math.PI * modulationRate * i) / this.context.sampleRate);
+      const modulation = Math.sin(
+        (2 * Math.PI * modulationRate * i) / this.context.sampleRate,
+      );
       channelData[i] *= 1 + modulation * modulationDepth;
     }
   }
@@ -192,7 +215,7 @@ export class ReverbPlugin extends BasePlugin {
     this.sideGain.gain.value = sideLevel;
   }
 
-  setReverbType(type: 'hall' | 'room' | 'plate' | 'spring' | 'chamber'): void {
+  setReverbType(type: "hall" | "room" | "plate" | "spring" | "chamber"): void {
     this.currentType = type;
     this.generateImpulseResponse(type);
   }
@@ -211,14 +234,17 @@ export class ReverbPlugin extends BasePlugin {
     this.damping = Math.max(0, Math.min(1, value));
     this.highFilter.frequency.setValueAtTime(
       20000 - value * 15000,
-      this.context.currentTime
+      this.context.currentTime,
     );
     this.generateImpulseResponse(this.currentType);
   }
 
   setPreDelay(value: number): void {
     this.preDelayTime = Math.max(0, Math.min(0.5, value));
-    this.preDelay.delayTime.setValueAtTime(this.preDelayTime, this.context.currentTime);
+    this.preDelay.delayTime.setValueAtTime(
+      this.preDelayTime,
+      this.context.currentTime,
+    );
   }
 
   setWidth(value: number): void {
@@ -229,19 +255,19 @@ export class ReverbPlugin extends BasePlugin {
   setLowCut(frequency: number): void {
     this.lowFilter.frequency.setValueAtTime(
       Math.max(20, Math.min(1000, frequency)),
-      this.context.currentTime
+      this.context.currentTime,
     );
   }
 
   setHighCut(frequency: number): void {
     this.highFilter.frequency.setValueAtTime(
       Math.max(1000, Math.min(20000, frequency)),
-      this.context.currentTime
+      this.context.currentTime,
     );
   }
 
   getName(): string {
-    return 'Max Booster Convolution Reverb';
+    return "Max Booster Convolution Reverb";
   }
 
   getParameters(): Record<string, any> {

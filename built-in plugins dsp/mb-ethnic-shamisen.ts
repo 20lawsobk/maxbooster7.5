@@ -1,5 +1,61 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbEthnicShamisenPlugin: PluginDefinition = { id: 'mb-ethnic-shamisen', slug: 'mb-ethnic-shamisen', name: 'MB Shamisen', category: 'instrument', type: 'ethnic' as any, version: '1.0.0', description: 'Japanese three-string lute with percussive sawari buzz', author: 'Max Booster', grade: 'A', oscillators: [{ type: 'triangle', detune: 0, gain: 0.4 }, { type: 'sawtooth', detune: 0, gain: 0.35 }, { type: 'noise', detune: 0, gain: 0.15 }, { type: 'sine', detune: 1200, gain: 0.1 }], envelope: { attack: 0.001, decay: 0.5, sustain: 0.15, release: 0.3 }, parameters: [{ id: 'sawari', name: 'Sawari Buzz', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'pluck', name: 'Pluck Strength', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'brightness', name: 'Brightness', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { sawari: 0.5, pluck: 0.6, brightness: 0.6, volume: 0.8 } };
+const MbEthnicShamisenPlugin: PluginDefinition = {
+  id: "mb-ethnic-shamisen",
+  slug: "mb-ethnic-shamisen",
+  name: "MB Shamisen",
+  category: "instrument",
+  type: "ethnic" as any,
+  version: "1.0.0",
+  description: "Japanese three-string lute with percussive sawari buzz",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "triangle", detune: 0, gain: 0.4 },
+    { type: "sawtooth", detune: 0, gain: 0.35 },
+    { type: "noise", detune: 0, gain: 0.15 },
+    { type: "sine", detune: 1200, gain: 0.1 },
+  ],
+  envelope: { attack: 0.001, decay: 0.5, sustain: 0.15, release: 0.3 },
+  parameters: [
+    {
+      id: "sawari",
+      name: "Sawari Buzz",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "pluck",
+      name: "Pluck Strength",
+      type: "float",
+      defaultValue: 0.6,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "brightness",
+      name: "Brightness",
+      type: "float",
+      defaultValue: 0.6,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { sawari: 0.5, pluck: 0.6, brightness: 0.6, volume: 0.8 },
+};
 
 export default MbEthnicShamisenPlugin;

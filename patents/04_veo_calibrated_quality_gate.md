@@ -1,7 +1,7 @@
 UNITED STATES PATENT APPLICATION
 
-APPLICANT/ASSIGNEE:  B-Lawz Music LLC
-CORRESPONDENCE ADDRESS:  B-Lawz Music LLC
+APPLICANT/ASSIGNEE: B-Lawz Music LLC
+CORRESPONDENCE ADDRESS: B-Lawz Music LLC
 
 TITLE OF INVENTION
 
@@ -43,11 +43,11 @@ II. Veo-Score Calibration
 
 The acceptance threshold is derived from the empirical quality level of Google's Veo generative video model as measured by this pipeline's multi-dimensional scoring rubric. Veo consistently scores approximately 90 to 95 on this rubric. The design requirement is that Max Booster content should achieve at least 90% of Veo's quality level:
 
-  DEFAULT_THRESHOLD = 90% × 90 = 81
+DEFAULT_THRESHOLD = 90% × 90 = 81
 
 The absolute pressure floor — the minimum score below which content will never be published regardless of deadline pressure — is:
 
-  VEO_PRESSURE_FLOOR = 73 (approximately 90% of the DEFAULT_THRESHOLD)
+VEO_PRESSURE_FLOOR = 73 (approximately 90% of the DEFAULT_THRESHOLD)
 
 These thresholds are not static: the MaxCore Score Calibrator updates them every six hours by querying the training infrastructure for current model capability signals. As the underlying model accumulates more training experience, the calibrated thresholds may rise above the static defaults.
 
@@ -60,28 +60,30 @@ Round 1: The Advanced Social AI generator produces VARIANTS_PER_ROUND (default 3
 Rounds 2 through MAX_ROUNDS (default 10): The template or Python AI generator produces VARIANTS_PER_ROUND + round variants (increasing with each round) with a rotated optimization objective.
 
 The objective rotation follows a fixed sequence:
-  Round 2: viral
-  Round 3: awareness
-  Round 4: conversions
-  Round 5: engagement
-  Round 6: viral
-  (pattern repeats)
+Round 2: viral
+Round 3: awareness
+Round 4: conversions
+Round 5: engagement
+Round 6: viral
+(pattern repeats)
 
 This rotation ensures that each retry explores a fundamentally different content generation strategy, rather than regenerating semantically identical content.
 
 After each round:
-  - If the best variant in the batch scores ≥ threshold: it is the winner; the loop exits
-  - If no variant meets the threshold: all variants are added to the rejected list and the next round begins
+
+- If the best variant in the batch scores ≥ threshold: it is the winner; the loop exits
+- If no variant meets the threshold: all variants are added to the rejected list and the next round begins
 
 After exhausting all MAX_ROUNDS rounds:
-  - The best variant across all attempted variants is identified
-  - If its score ≥ VEO_PRESSURE_FLOOR: it is accepted as the best-available winner (noted in logs)
-  - If its score < VEO_PRESSURE_FLOOR: the gate returns null; the caller must skip publication
+
+- The best variant across all attempted variants is identified
+- If its score ≥ VEO_PRESSURE_FLOOR: it is accepted as the best-available winner (noted in logs)
+- If its score < VEO_PRESSURE_FLOOR: the gate returns null; the caller must skip publication
 
 IV. Variant Batch Sizing
 
 The number of variants generated per round increases with the round number:
-  Round r: n_variants = VARIANTS_PER_ROUND + r
+Round r: n_variants = VARIANTS_PER_ROUND + r
 
 This means Round 1 generates 31 variants, Round 2 generates 32 variants, ..., Round 10 generates 40 variants. The increasing batch size reflects the observation that later rounds have already failed with smaller batches, and the probability of finding a passing variant increases with batch size.
 
@@ -89,10 +91,10 @@ V. Training Infrastructure Readiness Awareness
 
 Before each gate run, the system queries the training infrastructure readiness profile, which classifies the system into one of four levels:
 
-  cold:    No MaxCore base weights synced and calibration not run
-  warming: Some weights synced or calibration pending
-  ready:   All weights synced, calibrated at defaults
-  optimal: All weights synced, training-calibrated above defaults
+cold: No MaxCore base weights synced and calibration not run
+warming: Some weights synced or calibration pending
+ready: All weights synced, calibrated at defaults
+optimal: All weights synced, training-calibrated above defaults
 
 When the system is cold or warming, calibration is triggered non-blockingly so that subsequent gate runs benefit from calibrated thresholds. Each gate failure includes a readiness hint explaining why the quality ceiling may be lower than expected and what will improve it.
 
@@ -100,16 +102,16 @@ VI. Multi-Dimensional Scoring Rubric
 
 Content variants are scored on ten dimensions:
 
-  engagement:                 predicted engagement rate (weight 0.25)
-  hookStrength:               first-sentence attention capture (weight 0.18)
-  callToActionEffectiveness:  actionability of the post's ask (weight 0.13)
-  sentiment:                  emotional resonance and positivity (weight 0.10)
-  clarity:                    readability and message clarity (weight 0.08)
-  brandAlignment:             consistency with brand voice profile (weight 0.08)
-  algorithmAlignment:         platform algorithm optimization signals (weight 0.08)
-  specificity:                concreteness of claims and data points (weight 0.05)
-  emotionalArc:               narrative arc from hook to CTA (weight 0.03)
-  narrativeAuthenticity:      domain-specific vocabulary authenticity (weight 0.02)
+engagement: predicted engagement rate (weight 0.25)
+hookStrength: first-sentence attention capture (weight 0.18)
+callToActionEffectiveness: actionability of the post's ask (weight 0.13)
+sentiment: emotional resonance and positivity (weight 0.10)
+clarity: readability and message clarity (weight 0.08)
+brandAlignment: consistency with brand voice profile (weight 0.08)
+algorithmAlignment: platform algorithm optimization signals (weight 0.08)
+specificity: concreteness of claims and data points (weight 0.05)
+emotionalArc: narrative arc from hook to CTA (weight 0.03)
+narrativeAuthenticity: domain-specific vocabulary authenticity (weight 0.02)
 
 The overall score is the weighted sum of the ten dimension scores, each in [0, 100]. Weights are calibrated by the MaxCore Score Calibrator every six hours using current model signals from the training infrastructure.
 
@@ -121,11 +123,11 @@ VIII. Pressure-Adjusted Quality Gate
 
 The content quality pipeline integrates Caffeine Mode pressure into the scoring gate:
 
-  pressureAdjustedMinScore(baseMin):
-    if pressure = 0:      return baseMin
-    if pressure > 1.5:    return max(VEO_PRESSURE_FLOOR, baseMin − 10)
-    if pressure > 0.5:    return max(VEO_PRESSURE_FLOOR, baseMin − 7)
-    else:                 return max(VEO_PRESSURE_FLOOR, baseMin − 4)
+pressureAdjustedMinScore(baseMin):
+if pressure = 0: return baseMin
+if pressure > 1.5: return max(VEO_PRESSURE_FLOOR, baseMin − 10)
+if pressure > 0.5: return max(VEO_PRESSURE_FLOOR, baseMin − 7)
+else: return max(VEO_PRESSURE_FLOOR, baseMin − 4)
 
 Simultaneously, urgency-themed content (posts that signal time-sensitivity, limited availability, or deadline relevance) receives bonus points in the engagement and hookStrength dimensions proportional to the current pressure. This means that under pressure, the gate lowers but the type of content that can clear the lowered gate is specifically urgency-themed content — maintaining the quality-of-type constraint even while relaxing the quality-of-score constraint.
 
@@ -139,18 +141,18 @@ Tier 2 (Database fallback): The user's configured threshold from the autopilot p
 
 After each published post's engagement outcome is observed, the threshold is adapted:
 
-  if engagementRate ≥ platform_high_benchmark: threshold ← min(95, threshold + 1)
-  if engagementRate < platform_low_benchmark:  threshold ← max(VEO_PRESSURE_FLOOR, threshold − 1)
+if engagementRate ≥ platform_high_benchmark: threshold ← min(95, threshold + 1)
+if engagementRate < platform_low_benchmark: threshold ← max(VEO_PRESSURE_FLOOR, threshold − 1)
 
 Platform-specific engagement benchmarks:
 
-  Twitter/X:   high=2.0%, low=0.5%
-  Instagram:   high=5.0%, low=1.0%
-  TikTok:      high=8.0%, low=3.0%
-  LinkedIn:    high=4.0%, low=1.0%
-  Facebook:    high=2.0%, low=0.5%
-  Threads:     high=3.0%, low=1.0%
-  YouTube:     high=4.0%, low=1.0%
+Twitter/X: high=2.0%, low=0.5%
+Instagram: high=5.0%, low=1.0%
+TikTok: high=8.0%, low=3.0%
+LinkedIn: high=4.0%, low=1.0%
+Facebook: high=2.0%, low=0.5%
+Threads: high=3.0%, low=1.0%
+YouTube: high=4.0%, low=1.0%
 
 X. Trained Model Fast Path
 
@@ -197,13 +199,13 @@ CLAIMS
 13. The system of claim 1, further comprising a pressure adjustment mechanism that reduces the acceptance threshold by an amount proportional to a real-time schedule pressure score, subject to a minimum bound of the absolute pressure floor, and simultaneously increases the score contribution of urgency-themed content signals proportional to the same pressure score.
 
 14. A method of generating and quality-gating content for autonomous social media publication, the method comprising:
-   establishing an acceptance threshold for a user calibrated to a fixed percentage of a reference model's quality on a multi-dimensional rubric;
-   generating a first batch of content variants using a primary generation strategy;
-   scoring each variant and accepting the best-scoring variant if its score meets the acceptance threshold;
-   if no variant meets the threshold, generating successive batches with rotated optimization objectives and increasing batch sizes until either a variant meets the threshold or a maximum retry count is reached;
-   if the maximum retry count is reached, accepting the best variant found if it meets an absolute pressure floor, else rejecting the run;
-   publishing the accepted variant; and
-   observing the published content's real-world engagement rate and adapting the user's acceptance threshold upward if engagement exceeds a platform-specific high benchmark or downward if engagement falls below a platform-specific low benchmark.
+    establishing an acceptance threshold for a user calibrated to a fixed percentage of a reference model's quality on a multi-dimensional rubric;
+    generating a first batch of content variants using a primary generation strategy;
+    scoring each variant and accepting the best-scoring variant if its score meets the acceptance threshold;
+    if no variant meets the threshold, generating successive batches with rotated optimization objectives and increasing batch sizes until either a variant meets the threshold or a maximum retry count is reached;
+    if the maximum retry count is reached, accepting the best variant found if it meets an absolute pressure floor, else rejecting the run;
+    publishing the accepted variant; and
+    observing the published content's real-world engagement rate and adapting the user's acceptance threshold upward if engagement exceeds a platform-specific high benchmark or downward if engagement falls below a platform-specific low benchmark.
 
 15. The method of claim 14, wherein adapting the threshold is bounded below by the absolute pressure floor and bounded above by a maximum threshold value.
 
@@ -212,12 +214,12 @@ CLAIMS
 17. The method of claim 14, further comprising pushing a structured training feedback signal to a connected training infrastructure after each engagement observation, the signal including the platform, content type, engagement rate, and a curriculum hint identifying whether the signal represents a case for reinforcing a winning pattern or improving a weak pattern.
 
 18. A non-transitory computer-readable medium storing instructions that, when executed by a processor, implement:
-   a variant batch generator configured to produce a configurable number of content variants per retry round and increase the batch size with each successive round;
-   a multi-dimensional scorer configured to evaluate each variant on a plurality of weighted dimensions and compute an overall score as a weighted sum;
-   an objective rotator configured to supply a different optimization objective string on each retry round from a fixed rotation sequence;
-   a threshold manager configured to retrieve a per-user acceptance threshold from a persistent cache, fall back to a database preference, and persist updated thresholds after engagement observations;
-   a readiness profiler configured to classify the training infrastructure into a plurality of readiness levels and expose a readiness hint with each gate outcome; and
-   a session archiver configured to record the complete outcome of each gate run, including winner and rejected variant metadata, to a persistent storage namespace.
+    a variant batch generator configured to produce a configurable number of content variants per retry round and increase the batch size with each successive round;
+    a multi-dimensional scorer configured to evaluate each variant on a plurality of weighted dimensions and compute an overall score as a weighted sum;
+    an objective rotator configured to supply a different optimization objective string on each retry round from a fixed rotation sequence;
+    a threshold manager configured to retrieve a per-user acceptance threshold from a persistent cache, fall back to a database preference, and persist updated thresholds after engagement observations;
+    a readiness profiler configured to classify the training infrastructure into a plurality of readiness levels and expose a readiness hint with each gate outcome; and
+    a session archiver configured to record the complete outcome of each gate run, including winner and rejected variant metadata, to a persistent storage namespace.
 
 19. The computer-readable medium of claim 18, further storing instructions that implement a scored-and-gate method that accepts an externally generated content string, scores it directly, and returns it immediately if it passes the threshold without generating any new variants.
 

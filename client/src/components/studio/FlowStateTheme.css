@@ -13,15 +13,32 @@
   --flow-bg-surface: #1a1b24;
   --flow-bg-elevated: #22232e;
   --flow-bg-floating: #2a2b38;
-  
+
   /* Gradient Backgrounds */
-  --flow-gradient-void: radial-gradient(ellipse at 50% 0%, #0f1015 0%, #050508 100%);
-  --flow-gradient-nebula: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                          radial-gradient(ellipse at 70% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
-                          var(--flow-bg-deep);
-  --flow-gradient-panel: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+  --flow-gradient-void: radial-gradient(
+    ellipse at 50% 0%,
+    #0f1015 0%,
+    #050508 100%
+  );
+  --flow-gradient-nebula:
+    radial-gradient(
+      ellipse at 30% 20%,
+      rgba(99, 102, 241, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 70% 80%,
+      rgba(139, 92, 246, 0.05) 0%,
+      transparent 50%
+    ),
+    var(--flow-bg-deep);
+  --flow-gradient-panel: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 100%
+  );
   --flow-gradient-toolbar: linear-gradient(180deg, #1a1b24 0%, #14151c 100%);
-  
+
   /* Accent Colors - Neon Spectrum */
   --flow-accent-primary: #6366f1;
   --flow-accent-secondary: #8b5cf6;
@@ -31,26 +48,26 @@
   --flow-accent-amber: #f59e0b;
   --flow-accent-rose: #f43f5e;
   --flow-accent-blue: #3b82f6;
-  
+
   /* Text Hierarchy */
   --flow-text-primary: #f8fafc;
   --flow-text-secondary: #cbd5e1;
   --flow-text-muted: #64748b;
   --flow-text-subtle: #475569;
   --flow-text-accent: var(--flow-accent-cyan);
-  
+
   /* Borders & Dividers */
   --flow-border-subtle: rgba(255, 255, 255, 0.06);
   --flow-border-default: rgba(255, 255, 255, 0.1);
   --flow-border-strong: rgba(255, 255, 255, 0.15);
   --flow-border-accent: rgba(99, 102, 241, 0.5);
-  
+
   /* Glass Morphism */
   --flow-glass-bg: rgba(20, 21, 28, 0.85);
   --flow-glass-border: rgba(255, 255, 255, 0.08);
   --flow-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   --flow-glass-blur: blur(20px);
-  
+
   /* Shadows & Depth */
   --flow-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --flow-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -59,13 +76,13 @@
   --flow-shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
   --flow-shadow-glow-cyan: 0 0 20px rgba(34, 211, 238, 0.3);
   --flow-shadow-glow-record: 0 0 24px rgba(239, 68, 68, 0.5);
-  
+
   /* Animation Timings */
   --flow-transition-fast: 100ms ease-out;
   --flow-transition-normal: 200ms ease-out;
   --flow-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --flow-transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  
+
   /* Track Colors - Vibrant & Distinct */
   --flow-track-1: #f43f5e;
   --flow-track-2: #f97316;
@@ -77,7 +94,7 @@
   --flow-track-8: #6366f1;
   --flow-track-9: #8b5cf6;
   --flow-track-10: #d946ef;
-  
+
   /* Frequency Visualization Colors */
   --flow-freq-sub: #6366f1;
   --flow-freq-bass: #8b5cf6;
@@ -86,7 +103,7 @@
   --flow-freq-high-mid: #eab308;
   --flow-freq-high: #f97316;
   --flow-freq-air: #f43f5e;
-  
+
   /* Meter Colors */
   --flow-meter-green: #22c55e;
   --flow-meter-yellow: #eab308;
@@ -103,7 +120,11 @@
   background: var(--flow-gradient-nebula);
   min-height: 100vh;
   color: var(--flow-text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   overflow: hidden;
 }
 
@@ -176,7 +197,11 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .flow-transport {
-  background: linear-gradient(180deg, var(--flow-bg-elevated) 0%, var(--flow-bg-surface) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--flow-bg-elevated) 0%,
+    var(--flow-bg-surface) 100%
+  );
   border-bottom: 1px solid var(--flow-border-subtle);
   padding: 8px 16px;
   display: flex;
@@ -225,8 +250,13 @@
 }
 
 @keyframes recordPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(244, 63, 94, 0);
+  }
 }
 
 /* Time Display */
@@ -235,7 +265,7 @@
   border: 1px solid var(--flow-border-subtle);
   border-radius: 8px;
   padding: 8px 16px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-family: "JetBrains Mono", "SF Mono", monospace;
   font-size: 24px;
   font-weight: 500;
   color: var(--flow-accent-cyan);
@@ -255,7 +285,7 @@
 }
 
 .flow-bpm-value {
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-family: "JetBrains Mono", "SF Mono", monospace;
   font-size: 18px;
   font-weight: 600;
   color: var(--flow-accent-emerald);
@@ -461,7 +491,7 @@
 }
 
 .flow-playhead::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -6px;
@@ -491,7 +521,11 @@
 
 .flow-ai-sidebar {
   width: 320px;
-  background: linear-gradient(180deg, var(--flow-bg-surface) 0%, var(--flow-bg-nebula) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--flow-bg-surface) 0%,
+    var(--flow-bg-nebula) 100%
+  );
   border-left: 1px solid var(--flow-border-subtle);
   display: flex;
   flex-direction: column;
@@ -509,7 +543,11 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--flow-accent-primary), var(--flow-accent-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--flow-accent-primary),
+    var(--flow-accent-secondary)
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -532,7 +570,7 @@
 }
 
 .flow-ai-status::before {
-  content: '';
+  content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -541,8 +579,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* AI Suggestions */
@@ -601,7 +644,11 @@
   position: relative;
   width: 100%;
   height: 200px;
-  background: radial-gradient(ellipse at center, var(--flow-bg-nebula) 0%, var(--flow-bg-void) 100%);
+  background: radial-gradient(
+    ellipse at center,
+    var(--flow-bg-nebula) 0%,
+    var(--flow-bg-void) 100%
+  );
   border-radius: 12px;
   overflow: hidden;
   perspective: 1000px;
@@ -610,7 +657,7 @@
 .flow-spatial-grid {
   position: absolute;
   inset: 0;
-  background-image: 
+  background-image:
     linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
   background-size: 40px 40px;
@@ -626,8 +673,13 @@
 }
 
 @keyframes orbFloat {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-10px) scale(1.1); }
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.1);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -638,7 +690,11 @@
   display: flex;
   flex-direction: column;
   width: 80px;
-  background: linear-gradient(180deg, var(--flow-bg-elevated) 0%, var(--flow-bg-surface) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--flow-bg-elevated) 0%,
+    var(--flow-bg-surface) 100%
+  );
   border-right: 1px solid var(--flow-border-subtle);
   padding: 8px;
   gap: 8px;
@@ -676,7 +732,11 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(180deg, var(--flow-accent-primary), var(--flow-accent-secondary));
+  background: linear-gradient(
+    180deg,
+    var(--flow-accent-primary),
+    var(--flow-accent-secondary)
+  );
   border-radius: 4px;
   transition: height 50ms linear;
 }
@@ -749,7 +809,11 @@
 }
 
 .flow-btn-primary {
-  background: linear-gradient(135deg, var(--flow-accent-primary), var(--flow-accent-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--flow-accent-primary),
+    var(--flow-accent-secondary)
+  );
   border-color: transparent;
   color: white;
 }
@@ -804,7 +868,11 @@
   position: absolute;
   inset: 8px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--flow-bg-floating), var(--flow-bg-elevated));
+  background: linear-gradient(
+    135deg,
+    var(--flow-bg-floating),
+    var(--flow-bg-elevated)
+  );
   border: 1px solid var(--flow-border-default);
   display: flex;
   align-items: center;
@@ -812,7 +880,7 @@
 }
 
 .flow-knob-indicator::after {
-  content: '';
+  content: "";
   width: 2px;
   height: 10px;
   background: var(--flow-text-primary);
@@ -852,7 +920,7 @@
   .flow-ai-sidebar {
     width: 280px;
   }
-  
+
   .flow-track-header {
     width: 160px;
   }
@@ -868,7 +936,7 @@
     transition: transform var(--flow-transition-smooth);
     z-index: 200;
   }
-  
+
   .flow-ai-sidebar.open {
     transform: translateX(0);
   }

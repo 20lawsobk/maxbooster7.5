@@ -1,8 +1,8 @@
-import { logger } from '../logger.js';
-import { randomBytes } from 'crypto';
-import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
+import { logger } from "../logger.js";
+import { randomBytes } from "crypto";
+import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 
 export interface AudioFingerprint {
   id: string;
@@ -12,7 +12,7 @@ export interface AudioFingerprint {
   duration: number;
   sampleRate: number;
   channels: number;
-  algorithm: 'chromaprint' | 'acoustid' | 'maxbooster';
+  algorithm: "chromaprint" | "acoustid" | "maxbooster";
   createdAt: Date;
   metadata?: {
     title?: string;
@@ -25,7 +25,7 @@ export interface SimilarityResult {
   trackId: string;
   releaseId: string;
   score: number;
-  matchType: 'exact' | 'near_duplicate' | 'similar' | 'partial' | 'no_match';
+  matchType: "exact" | "near_duplicate" | "similar" | "partial" | "no_match";
   matchedSegments?: {
     sourceStart: number;
     sourceEnd: number;
@@ -50,8 +50,13 @@ export interface DuplicateCheckResult {
 
 export interface PlagiarismWarning {
   id: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  type: 'exact_match' | 'substantial_similarity' | 'melodic_similarity' | 'structural_similarity' | 'sample_detected';
+  severity: "low" | "medium" | "high" | "critical";
+  type:
+    | "exact_match"
+    | "substantial_similarity"
+    | "melodic_similarity"
+    | "structural_similarity"
+    | "sample_detected";
   message: string;
   matchedTrack?: {
     trackId: string;
@@ -68,7 +73,7 @@ export interface PlagiarismWarning {
 }
 
 export interface FingerprintOptions {
-  algorithm?: 'chromaprint' | 'acoustid' | 'maxbooster';
+  algorithm?: "chromaprint" | "acoustid" | "maxbooster";
   segmentLength?: number;
   overlapRatio?: number;
   frequencyBands?: number;
@@ -76,16 +81,16 @@ export interface FingerprintOptions {
 
 const SIMILARITY_THRESHOLDS = {
   exact: 0.98,
-  nearDuplicate: 0.90,
+  nearDuplicate: 0.9,
   similar: 0.75,
-  partial: 0.50
+  partial: 0.5,
 };
 
 const PLAGIARISM_THRESHOLDS = {
   critical: 0.95,
   high: 0.85,
-  medium: 0.70,
-  low: 0.55
+  medium: 0.7,
+  low: 0.55,
 };
 
 export class AudioFingerprintService {
@@ -101,19 +106,19 @@ export class AudioFingerprintService {
     audioPath: string,
     trackId: string,
     releaseId: string,
-    options: FingerprintOptions = {}
+    options: FingerprintOptions = {},
   ): Promise<AudioFingerprint> {
     try {
       await fs.promises.access(audioPath).catch(() => {
         throw new Error(`Audio file not found: ${audioPath}`);
       });
 
-      const algorithm = options.algorithm || 'maxbooster';
-      
+      const algorithm = options.algorithm || "maxbooster";
+
       const fingerprintData = await this.computeFingerprint(audioPath, options);
-      
+
       const fingerprint: AudioFingerprint = {
-        id: `fp_${randomBytes(8).toString('hex')}`,
+        id: `fp_${randomBytes(8).toString("hex")}`,
         releaseId,
         trackId,
         fingerprint: fingerprintData.hash,
@@ -122,23 +127,25 @@ export class AudioFingerprintService {
         channels: fingerprintData.channels,
         algorithm,
         createdAt: new Date(),
-        metadata: fingerprintData.metadata
+        metadata: fingerprintData.metadata,
       };
 
       this.storeFingerprint(fingerprint);
-      
-      logger.info(`Generated fingerprint ${fingerprint.id} for track ${trackId}`);
-      
+
+      logger.info(
+        `Generated fingerprint ${fingerprint.id} for track ${trackId}`,
+      );
+
       return fingerprint;
     } catch (error) {
-      logger.warn({ err: error }, 'Error generating audio fingerprint:');
-      throw new Error('Failed to generate audio fingerprint');
+      logger.warn({ err: error }, "Error generating audio fingerprint:");
+      throw new Error("Failed to generate audio fingerprint");
     }
   }
 
   private async computeFingerprint(
     audioPath: string,
-    options: FingerprintOptions
+    options: FingerprintOptions,
   ): Promise<{
     hash: string;
     duration: number;
@@ -147,56 +154,74 @@ export class AudioFingerprintService {
     metadata?: Record<string, unknown>;
   }> {
     const fileBuffer = await fs.promises.readFile(audioPath);
-    const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    
+    const fileHash = crypto
+      .createHash("sha256")
+      .update(fileBuffer)
+      .digest("hex");
+
     const segmentHashes: string[] = [];
     const segmentSize = 4096;
-    
+
     for (let i = 0; i < fileBuffer.length; i += segmentSize) {
-      const segment = fileBuffer.slice(i, Math.min(i + segmentSize, fileBuffer.length));
-      const segmentHash = crypto.createHash('md5').update(segment).digest('hex').substring(0, 8);
+      const segment = fileBuffer.slice(
+        i,
+        Math.min(i + segmentSize, fileBuffer.length),
+      );
+      const segmentHash = crypto
+        .createHash("md5")
+        .update(segment)
+        .digest("hex")
+        .substring(0, 8);
       segmentHashes.push(segmentHash);
     }
-    
-    const combinedFingerprint = segmentHashes.join('');
-    const finalHash = crypto.createHash('sha256').update(combinedFingerprint).digest('hex');
-    
+
+    const combinedFingerprint = segmentHashes.join("");
+    const finalHash = crypto
+      .createHash("sha256")
+      .update(combinedFingerprint)
+      .digest("hex");
+
     const stats = await fs.promises.stat(audioPath);
     const estimatedDuration = Math.round(stats.size / 176400);
-    
+
     return {
       hash: finalHash,
       duration: estimatedDuration,
       sampleRate: 44100,
       channels: 2,
-      metadata: {}
+      metadata: {},
     };
   }
 
   private storeFingerprint(fingerprint: AudioFingerprint): void {
     // Evict oldest entry when the store hits its cap (LRU-lite: Map preserves insertion order).
-    if (this.fingerprintStore.size >= AudioFingerprintService.MAX_FINGERPRINTS) {
+    if (
+      this.fingerprintStore.size >= AudioFingerprintService.MAX_FINGERPRINTS
+    ) {
       const oldestId = this.fingerprintStore.keys().next().value;
       if (oldestId) {
         const oldest = this.fingerprintStore.get(oldestId)!;
         this.fingerprintStore.delete(oldestId);
         // Clean up secondary indexes for evicted entry.
-        const rIds = this.releaseIndex.get(oldest.releaseId)?.filter(id => id !== oldestId);
+        const rIds = this.releaseIndex
+          .get(oldest.releaseId)
+          ?.filter((id) => id !== oldestId);
         if (rIds?.length) this.releaseIndex.set(oldest.releaseId, rIds);
         else this.releaseIndex.delete(oldest.releaseId);
         const hKey = oldest.fingerprint.substring(0, 16);
-        const hIds = this.hashIndex.get(hKey)?.filter(id => id !== oldestId);
+        const hIds = this.hashIndex.get(hKey)?.filter((id) => id !== oldestId);
         if (hIds?.length) this.hashIndex.set(hKey, hIds);
         else this.hashIndex.delete(hKey);
       }
     }
 
     this.fingerprintStore.set(fingerprint.id, fingerprint);
-    
-    const releaseFingerprints = this.releaseIndex.get(fingerprint.releaseId) || [];
+
+    const releaseFingerprints =
+      this.releaseIndex.get(fingerprint.releaseId) || [];
     releaseFingerprints.push(fingerprint.id);
     this.releaseIndex.set(fingerprint.releaseId, releaseFingerprints);
-    
+
     const hashShort = fingerprint.fingerprint.substring(0, 16);
     const hashMatches = this.hashIndex.get(hashShort) || [];
     hashMatches.push(fingerprint.id);
@@ -211,11 +236,15 @@ export class AudioFingerprintService {
       threshold?: number;
       maxResults?: number;
       excludeOwn?: boolean;
-    } = {}
+    } = {},
   ): Promise<DuplicateCheckResult> {
     try {
-      const fingerprint = await this.generateFingerprint(audioPath, trackId, releaseId);
-      
+      const fingerprint = await this.generateFingerprint(
+        audioPath,
+        trackId,
+        releaseId,
+      );
+
       const threshold = options.threshold ?? SIMILARITY_THRESHOLDS.partial;
       const maxResults = options.maxResults ?? 10;
       const excludeOwn = options.excludeOwn ?? true;
@@ -227,17 +256,20 @@ export class AudioFingerprintService {
         if (id === fingerprint.id) continue;
         if (excludeOwn && storedFp.releaseId === releaseId) continue;
 
-        const similarity = this.calculateSimilarity(fingerprint.fingerprint, storedFp.fingerprint);
-        
+        const similarity = this.calculateSimilarity(
+          fingerprint.fingerprint,
+          storedFp.fingerprint,
+        );
+
         if (similarity >= threshold) {
           const matchType = this.determineMatchType(similarity);
-          
+
           matches.push({
             trackId: storedFp.trackId,
             releaseId: storedFp.releaseId,
             score: similarity,
             matchType,
-            metadata: storedFp.metadata
+            metadata: storedFp.metadata,
           });
 
           const warning = this.generatePlagiarismWarning(similarity, storedFp);
@@ -250,7 +282,9 @@ export class AudioFingerprintService {
       matches.sort((a, b) => b.score - a.score);
       const topMatches = matches.slice(0, maxResults);
 
-      const isDuplicate = topMatches.some(m => m.matchType === 'exact' || m.matchType === 'near_duplicate');
+      const isDuplicate = topMatches.some(
+        (m) => m.matchType === "exact" || m.matchType === "near_duplicate",
+      );
       const confidence = topMatches.length > 0 ? topMatches[0].score : 0;
 
       return {
@@ -261,41 +295,42 @@ export class AudioFingerprintService {
           const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
           return severityOrder[a.severity] - severityOrder[b.severity];
         }),
-        checkedAt: new Date()
+        checkedAt: new Date(),
       };
     } catch (error) {
-      logger.warn({ err: error }, 'Error checking duplicates:');
-      throw new Error('Failed to check for duplicates');
+      logger.warn({ err: error }, "Error checking duplicates:");
+      throw new Error("Failed to check for duplicates");
     }
   }
 
   private calculateSimilarity(hash1: string, hash2: string): number {
     if (hash1 === hash2) return 1.0;
-    
+
     let matchingChars = 0;
     const minLength = Math.min(hash1.length, hash2.length);
-    
+
     for (let i = 0; i < minLength; i++) {
       if (hash1[i] === hash2[i]) {
         matchingChars++;
       }
     }
-    
+
     const baseSimilarity = matchingChars / minLength;
-    
+
     const blocks1 = this.splitIntoBlocks(hash1, 8);
     const blocks2 = this.splitIntoBlocks(hash2, 8);
-    
+
     let matchingBlocks = 0;
     for (const block of blocks1) {
       if (blocks2.includes(block)) {
         matchingBlocks++;
       }
     }
-    
-    const blockSimilarity = matchingBlocks / Math.max(blocks1.length, blocks2.length);
-    
-    return (baseSimilarity * 0.4 + blockSimilarity * 0.6);
+
+    const blockSimilarity =
+      matchingBlocks / Math.max(blocks1.length, blocks2.length);
+
+    return baseSimilarity * 0.4 + blockSimilarity * 0.6;
   }
 
   private splitIntoBlocks(str: string, blockSize: number): string[] {
@@ -306,61 +341,68 @@ export class AudioFingerprintService {
     return blocks;
   }
 
-  private determineMatchType(similarity: number): SimilarityResult['matchType'] {
-    if (similarity >= SIMILARITY_THRESHOLDS.exact) return 'exact';
-    if (similarity >= SIMILARITY_THRESHOLDS.nearDuplicate) return 'near_duplicate';
-    if (similarity >= SIMILARITY_THRESHOLDS.similar) return 'similar';
-    if (similarity >= SIMILARITY_THRESHOLDS.partial) return 'partial';
-    return 'no_match';
+  private determineMatchType(
+    similarity: number,
+  ): SimilarityResult["matchType"] {
+    if (similarity >= SIMILARITY_THRESHOLDS.exact) return "exact";
+    if (similarity >= SIMILARITY_THRESHOLDS.nearDuplicate)
+      return "near_duplicate";
+    if (similarity >= SIMILARITY_THRESHOLDS.similar) return "similar";
+    if (similarity >= SIMILARITY_THRESHOLDS.partial) return "partial";
+    return "no_match";
   }
 
   private generatePlagiarismWarning(
     similarity: number,
-    matchedFingerprint: AudioFingerprint
+    matchedFingerprint: AudioFingerprint,
   ): PlagiarismWarning | null {
     if (similarity < PLAGIARISM_THRESHOLDS.low) return null;
 
-    let severity: PlagiarismWarning['severity'];
-    let type: PlagiarismWarning['type'];
+    let severity: PlagiarismWarning["severity"];
+    let type: PlagiarismWarning["type"];
     let recommendation: string;
 
     if (similarity >= PLAGIARISM_THRESHOLDS.critical) {
-      severity = 'critical';
-      type = 'exact_match';
-      recommendation = 'This appears to be an exact or near-exact copy. Do not proceed with distribution without verifying rights.';
+      severity = "critical";
+      type = "exact_match";
+      recommendation =
+        "This appears to be an exact or near-exact copy. Do not proceed with distribution without verifying rights.";
     } else if (similarity >= PLAGIARISM_THRESHOLDS.high) {
-      severity = 'high';
-      type = 'substantial_similarity';
-      recommendation = 'Substantial similarity detected. Review the content for potential copyright issues.';
+      severity = "high";
+      type = "substantial_similarity";
+      recommendation =
+        "Substantial similarity detected. Review the content for potential copyright issues.";
     } else if (similarity >= PLAGIARISM_THRESHOLDS.medium) {
-      severity = 'medium';
-      type = 'melodic_similarity';
-      recommendation = 'Notable similarity found. Consider reviewing for unintentional similarities.';
+      severity = "medium";
+      type = "melodic_similarity";
+      recommendation =
+        "Notable similarity found. Consider reviewing for unintentional similarities.";
     } else {
-      severity = 'low';
-      type = 'structural_similarity';
-      recommendation = 'Minor similarity detected. This may be coincidental but worth noting.';
+      severity = "low";
+      type = "structural_similarity";
+      recommendation =
+        "Minor similarity detected. This may be coincidental but worth noting.";
     }
 
     return {
-      id: `warn_${randomBytes(8).toString('hex')}`,
+      id: `warn_${randomBytes(8).toString("hex")}`,
       severity,
       type,
       message: `${Math.round(similarity * 100)}% similarity detected with existing content`,
       matchedTrack: {
         trackId: matchedFingerprint.trackId,
-        title: matchedFingerprint.metadata?.title || 'Unknown',
-        artist: matchedFingerprint.metadata?.artist || 'Unknown',
-        isrc: matchedFingerprint.metadata?.isrc
+        title: matchedFingerprint.metadata?.title || "Unknown",
+        artist: matchedFingerprint.metadata?.artist || "Unknown",
+        isrc: matchedFingerprint.metadata?.isrc,
       },
       confidence: similarity,
-      recommendation
+      recommendation,
     };
   }
 
   async compareTracks(
     trackId1: string,
-    trackId2: string
+    trackId2: string,
   ): Promise<SimilarityResult | null> {
     let fp1: AudioFingerprint | undefined;
     let fp2: AudioFingerprint | undefined;
@@ -374,14 +416,17 @@ export class AudioFingerprintService {
       return null;
     }
 
-    const similarity = this.calculateSimilarity(fp1.fingerprint, fp2.fingerprint);
+    const similarity = this.calculateSimilarity(
+      fp1.fingerprint,
+      fp2.fingerprint,
+    );
 
     return {
       trackId: trackId2,
       releaseId: fp2.releaseId,
       score: similarity,
       matchType: this.determineMatchType(similarity),
-      metadata: fp2.metadata
+      metadata: fp2.metadata,
     };
   }
 
@@ -390,7 +435,7 @@ export class AudioFingerprintService {
     options: {
       threshold?: number;
       maxResults?: number;
-    } = {}
+    } = {},
   ): Promise<SimilarityResult[]> {
     const threshold = options.threshold ?? SIMILARITY_THRESHOLDS.partial;
     const maxResults = options.maxResults ?? 10;
@@ -412,22 +457,23 @@ export class AudioFingerprintService {
     for (const fp of this.fingerprintStore.values()) {
       if (fp.trackId === trackId) continue;
 
-      const similarity = this.calculateSimilarity(sourceFingerprint.fingerprint, fp.fingerprint);
-      
+      const similarity = this.calculateSimilarity(
+        sourceFingerprint.fingerprint,
+        fp.fingerprint,
+      );
+
       if (similarity >= threshold) {
         matches.push({
           trackId: fp.trackId,
           releaseId: fp.releaseId,
           score: similarity,
           matchType: this.determineMatchType(similarity),
-          metadata: fp.metadata
+          metadata: fp.metadata,
         });
       }
     }
 
-    return matches
-      .sort((a, b) => b.score - a.score)
-      .slice(0, maxResults);
+    return matches.sort((a, b) => b.score - a.score).slice(0, maxResults);
   }
 
   getFingerprint(fingerprintId: string): AudioFingerprint | undefined {
@@ -446,7 +492,7 @@ export class AudioFingerprintService {
   getFingerprintsByRelease(releaseId: string): AudioFingerprint[] {
     const fingerprintIds = this.releaseIndex.get(releaseId) || [];
     return fingerprintIds
-      .map(id => this.fingerprintStore.get(id))
+      .map((id) => this.fingerprintStore.get(id))
       .filter((fp): fp is AudioFingerprint => fp !== undefined);
   }
 
@@ -490,8 +536,10 @@ export class AudioFingerprintService {
     }
 
     this.releaseIndex.delete(releaseId);
-    
-    logger.info(`Deleted ${deletedCount} fingerprints for release ${releaseId}`);
+
+    logger.info(
+      `Deleted ${deletedCount} fingerprints for release ${releaseId}`,
+    );
     return deletedCount;
   }
 
@@ -510,7 +558,7 @@ export class AudioFingerprintService {
       totalFingerprints: this.fingerprintStore.size,
       totalReleases: this.releaseIndex.size,
       storageSize,
-      indexSize: this.hashIndex.size
+      indexSize: this.hashIndex.size,
     };
   }
 
@@ -523,14 +571,14 @@ export class AudioFingerprintService {
 
   importFingerprints(fingerprints: AudioFingerprint[]): number {
     let importedCount = 0;
-    
+
     for (const fp of fingerprints) {
       if (!this.fingerprintStore.has(fp.id)) {
         this.storeFingerprint(fp);
         importedCount++;
       }
     }
-    
+
     logger.info(`Imported ${importedCount} fingerprints`);
     return importedCount;
   }

@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { announcePolite } from '@/lib/a11y/screenReader';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+import React, { useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { announcePolite } from "@/lib/a11y/screenReader";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 export interface SkipToContentProps {
   mainContentId?: string;
@@ -10,43 +10,43 @@ export interface SkipToContentProps {
 }
 
 export function SkipToContent({
-  mainContentId = 'main-content',
-  label = 'Skip to main content',
-  className = '',
+  mainContentId = "main-content",
+  label = "Skip to main content",
+  className = "",
 }: SkipToContentProps) {
   const { prefersReducedMotion } = useReducedMotion();
 
   const handleClick = useCallback(() => {
     const mainContent = document.getElementById(mainContentId);
     if (mainContent) {
-      mainContent.setAttribute('tabindex', '-1');
+      mainContent.setAttribute("tabindex", "-1");
       mainContent.focus();
       mainContent.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'start',
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "start",
       });
-      announcePolite('Skipped to main content');
+      announcePolite("Skipped to main content");
 
       const handleBlur = () => {
-        if (!mainContent.hasAttribute('data-original-tabindex')) {
-          mainContent.removeAttribute('tabindex');
+        if (!mainContent.hasAttribute("data-original-tabindex")) {
+          mainContent.removeAttribute("tabindex");
         }
-        mainContent.removeEventListener('blur', handleBlur);
+        mainContent.removeEventListener("blur", handleBlur);
       };
-      mainContent.addEventListener('blur', handleBlur);
+      mainContent.addEventListener("blur", handleBlur);
     } else {
-      announcePolite('Main content not found');
+      announcePolite("Main content not found");
     }
   }, [mainContentId, prefersReducedMotion]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      if (event.key === 'Enter' || event.key === ' ') {
+      if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         handleClick();
       }
     },
-    [handleClick]
+    [handleClick],
   );
 
   return (
@@ -81,20 +81,20 @@ export function SkipLink({
   targetId,
   label,
   shortcut,
-  className = '',
+  className = "",
 }: SkipLinkProps) {
   const { prefersReducedMotion } = useReducedMotion();
 
   const handleClick = useCallback(() => {
     const target = document.getElementById(targetId);
     if (target) {
-      target.setAttribute('tabindex', '-1');
+      target.setAttribute("tabindex", "-1");
       target.focus();
       target.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'start',
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "start",
       });
-      announcePolite(`Navigated to ${label.replace('Skip to ', '')}`);
+      announcePolite(`Navigated to ${label.replace("Skip to ", "")}`);
     }
   }, [targetId, label, prefersReducedMotion]);
 

@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MousePointer2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MousePointer2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface CursorPosition {
   x: number;
@@ -28,9 +28,9 @@ export interface RemoteCursor {
 }
 
 export type CursorOutcomeType =
-  | 'cursor_position_updated'
-  | 'selection_highlighted'
-  | 'typing_indicator_shown';
+  | "cursor_position_updated"
+  | "selection_highlighted"
+  | "typing_indicator_shown";
 
 interface UserCursorOverlayProps {
   cursors: RemoteCursor[];
@@ -59,37 +59,46 @@ export function UserCursorOverlay({
   useEffect(() => {
     const now = new Date();
     const filtered = cursors
-      .filter(cursor => cursor.userId !== currentUserId)
-      .filter(cursor => {
+      .filter((cursor) => cursor.userId !== currentUserId)
+      .filter((cursor) => {
         const timeSinceUpdate = now.getTime() - cursor.lastUpdate.getTime();
         return timeSinceUpdate < fadeTimeout;
       });
-    
+
     setVisibleCursors(filtered);
   }, [cursors, currentUserId, fadeTimeout]);
 
-  const getOpacity = useCallback((cursor: RemoteCursor) => {
-    const now = new Date();
-    const timeSinceUpdate = now.getTime() - cursor.lastUpdate.getTime();
-    const fadeStart = fadeTimeout * 0.7;
-    
-    if (timeSinceUpdate < fadeStart) return 1;
-    
-    const fadeProgress = (timeSinceUpdate - fadeStart) / (fadeTimeout - fadeStart);
-    return Math.max(0, 1 - fadeProgress);
-  }, [fadeTimeout]);
+  const getOpacity = useCallback(
+    (cursor: RemoteCursor) => {
+      const now = new Date();
+      const timeSinceUpdate = now.getTime() - cursor.lastUpdate.getTime();
+      const fadeStart = fadeTimeout * 0.7;
+
+      if (timeSinceUpdate < fadeStart) return 1;
+
+      const fadeProgress =
+        (timeSinceUpdate - fadeStart) / (fadeTimeout - fadeStart);
+      return Math.max(0, 1 - fadeProgress);
+    },
+    [fadeTimeout],
+  );
 
   return (
-    <div className={cn("absolute inset-0 pointer-events-none overflow-hidden", className)}>
+    <div
+      className={cn(
+        "absolute inset-0 pointer-events-none overflow-hidden",
+        className,
+      )}
+    >
       <AnimatePresence>
         {visibleCursors.map((cursor) => {
           const opacity = getOpacity(cursor);
-          
+
           return (
             <motion.div
               key={cursor.userId}
               initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ 
+              animate={{
                 opacity,
                 scale: 1,
                 x: cursor.position.x,
@@ -97,7 +106,7 @@ export function UserCursorOverlay({
               }}
               exit={{ opacity: 0, scale: 0.5 }}
               transition={{
-                type: 'spring',
+                type: "spring",
                 damping: 30,
                 stiffness: 400,
                 mass: 0.5,
@@ -110,7 +119,7 @@ export function UserCursorOverlay({
               <div className="relative">
                 <MousePointer2
                   className="w-5 h-5 -rotate-12 drop-shadow-lg"
-                  style={{ 
+                  style={{
                     color: cursor.color,
                     fill: cursor.color,
                   }}
@@ -119,7 +128,7 @@ export function UserCursorOverlay({
                 {showNames && (
                   <motion.div
                     initial={{ opacity: 0, y: 5 }}
-                    animate={{ 
+                    animate={{
                       opacity: hoveredCursor === cursor.userId ? 1 : 0.9,
                       y: 0,
                     }}
@@ -161,26 +170,27 @@ export function UserCursorOverlay({
         })}
       </AnimatePresence>
 
-      {showSelection && visibleCursors.map((cursor) => {
-        if (!cursor.selection) return null;
-        
-        return (
-          <motion.div
-            key={`selection-${cursor.userId}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.2 }}
-            exit={{ opacity: 0 }}
-            className="absolute rounded"
-            style={{
-              backgroundColor: cursor.color,
-              left: cursor.selection.start,
-              width: cursor.selection.end - cursor.selection.start,
-              top: cursor.position.y - 10,
-              height: 20,
-            }}
-          />
-        );
-      })}
+      {showSelection &&
+        visibleCursors.map((cursor) => {
+          if (!cursor.selection) return null;
+
+          return (
+            <motion.div
+              key={`selection-${cursor.userId}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.2 }}
+              exit={{ opacity: 0 }}
+              className="absolute rounded"
+              style={{
+                backgroundColor: cursor.color,
+                left: cursor.selection.start,
+                width: cursor.selection.end - cursor.selection.start,
+                top: cursor.position.y - 10,
+                height: 20,
+              }}
+            />
+          );
+        })}
     </div>
   );
 }
@@ -201,19 +211,25 @@ export function useRemoteCursors({
   updateInterval = 50,
 }: UseRemoteCursorsOptions) {
   const [cursors, setCursors] = useState<RemoteCursor[]>([]);
-  const [localPosition, setLocalPosition] = useState<CursorPosition>({ x: 0, y: 0 });
+  const [localPosition, setLocalPosition] = useState<CursorPosition>({
+    x: 0,
+    y: 0,
+  });
   const [localSelection, setLocalSelection] = useState<Selection | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const lastUpdateRef = useRef<number>(0);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const updatePosition = useCallback((position: CursorPosition) => {
-    const now = Date.now();
-    if (now - lastUpdateRef.current < updateInterval) return;
-    
-    lastUpdateRef.current = now;
-    setLocalPosition(position);
-  }, [updateInterval]);
+  const updatePosition = useCallback(
+    (position: CursorPosition) => {
+      const now = Date.now();
+      if (now - lastUpdateRef.current < updateInterval) return;
+
+      lastUpdateRef.current = now;
+      setLocalPosition(position);
+    },
+    [updateInterval],
+  );
 
   const updateSelection = useCallback((selection: Selection | null) => {
     setLocalSelection(selection);
@@ -221,31 +237,37 @@ export function useRemoteCursors({
 
   const startTyping = useCallback(() => {
     setIsTyping(true);
-    
+
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
+
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
     }, 2000);
   }, []);
 
-  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    updatePosition({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    });
-  }, [updatePosition]);
+  const handleMouseMove = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      updatePosition({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+    },
+    [updatePosition],
+  );
 
-  const handleSelectionChange = useCallback((start: number, end: number, elementId?: string) => {
-    if (start === end) {
-      updateSelection(null);
-    } else {
-      updateSelection({ start, end, elementId });
-    }
-  }, [updateSelection]);
+  const handleSelectionChange = useCallback(
+    (start: number, end: number, elementId?: string) => {
+      if (start === end) {
+        updateSelection(null);
+      } else {
+        updateSelection({ start, end, elementId });
+      }
+    },
+    [updateSelection],
+  );
 
   useEffect(() => {
     return () => {

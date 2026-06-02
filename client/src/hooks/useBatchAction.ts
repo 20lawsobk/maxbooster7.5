@@ -1,29 +1,29 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from './use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { useState, useCallback, useRef, useMemo } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "./use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export type BatchActionType =
-  | 'delete'
-  | 'update'
-  | 'export'
-  | 'submit'
-  | 'withdraw'
-  | 'takedown'
-  | 'schedule'
-  | 'move'
-  | 'download'
-  | 'compare'
-  | 'process';
+  | "delete"
+  | "update"
+  | "export"
+  | "submit"
+  | "withdraw"
+  | "takedown"
+  | "schedule"
+  | "move"
+  | "download"
+  | "compare"
+  | "process";
 
 export type BatchActionStatus =
-  | 'idle'
-  | 'confirming'
-  | 'processing'
-  | 'completed'
-  | 'failed'
-  | 'partial'
-  | 'cancelled';
+  | "idle"
+  | "confirming"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "partial"
+  | "cancelled";
 
 export interface BatchProgress {
   current: number;
@@ -84,16 +84,20 @@ const defaultProgress: BatchProgress = {
   percentage: 0,
 };
 
-export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchActionReturn {
+export function useBatchAction(
+  options: UseBatchActionOptions = {},
+): UseBatchActionReturn {
   const { onSuccess, onError, onProgress, simulateProgress = true } = options;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [status, setStatus] = useState<BatchActionStatus>('idle');
+  const [status, setStatus] = useState<BatchActionStatus>("idle");
   const [progress, setProgress] = useState<BatchProgress>(defaultProgress);
   const [result, setResult] = useState<BatchResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [pendingConfig, setPendingConfig] = useState<BatchActionConfig | null>(null);
+  const [pendingConfig, setPendingConfig] = useState<BatchActionConfig | null>(
+    null,
+  );
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -102,12 +106,13 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
     (update: Partial<BatchProgress>) => {
       setProgress((prev) => {
         const next = { ...prev, ...update };
-        next.percentage = next.total > 0 ? Math.round((next.current / next.total) * 100) : 0;
+        next.percentage =
+          next.total > 0 ? Math.round((next.current / next.total) * 100) : 0;
         onProgress?.(next);
         return next;
       });
     },
-    [onProgress]
+    [onProgress],
   );
 
   const startProgressSimulation = useCallback(
@@ -123,7 +128,7 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
         updateProgress({ current, total });
       }, intervalMs);
     },
-    [simulateProgress, updateProgress]
+    [simulateProgress, updateProgress],
   );
 
   const stopProgressSimulation = useCallback(() => {
@@ -133,31 +138,51 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
     }
   }, []);
 
-  const getEndpoint = useCallback((resource: string, action: BatchActionType): { method: string; url: string } => {
-    const endpoints: Record<BatchActionType, { method: string; suffix: string }> = {
-      delete: { method: 'POST', suffix: 'delete' },
-      update: { method: 'PUT', suffix: 'update' },
-      export: { method: 'POST', suffix: 'export' },
-      submit: { method: 'POST', suffix: 'submit' },
-      withdraw: { method: 'POST', suffix: 'withdraw' },
-      takedown: { method: 'POST', suffix: 'takedown' },
-      schedule: { method: 'POST', suffix: 'schedule' },
-      move: { method: 'POST', suffix: 'move' },
-      download: { method: 'POST', suffix: 'download' },
-      compare: { method: 'POST', suffix: 'compare' },
-      process: { method: 'POST', suffix: 'process' },
-    };
+  const getEndpoint = useCallback(
+    (
+      resource: string,
+      action: BatchActionType,
+    ): { method: string; url: string } => {
+      const endpoints: Record<
+        BatchActionType,
+        { method: string; suffix: string }
+      > = {
+        delete: { method: "POST", suffix: "delete" },
+        update: { method: "PUT", suffix: "update" },
+        export: { method: "POST", suffix: "export" },
+        submit: { method: "POST", suffix: "submit" },
+        withdraw: { method: "POST", suffix: "withdraw" },
+        takedown: { method: "POST", suffix: "takedown" },
+        schedule: { method: "POST", suffix: "schedule" },
+        move: { method: "POST", suffix: "move" },
+        download: { method: "POST", suffix: "download" },
+        compare: { method: "POST", suffix: "compare" },
+        process: { method: "POST", suffix: "process" },
+      };
 
-    const { method, suffix } = endpoints[action] || { method: 'POST', suffix: action };
-    return { method, url: `/api/batch/${resource}/${suffix}` };
-  }, []);
+      const { method, suffix } = endpoints[action] || {
+        method: "POST",
+        suffix: action,
+      };
+      return { method, url: `/api/batch/${resource}/${suffix}` };
+    },
+    [],
+  );
 
   const execute = useCallback(
     async (config: BatchActionConfig): Promise<BatchResult> => {
-      const { resource, action, ids, data, successMessage, errorMessage, invalidateQueries } = config;
+      const {
+        resource,
+        action,
+        ids,
+        data,
+        successMessage,
+        errorMessage,
+        invalidateQueries,
+      } = config;
 
       abortControllerRef.current = new AbortController();
-      setStatus('processing');
+      setStatus("processing");
       setError(null);
       setResult(null);
       updateProgress({ current: 0, total: ids.length, currentItem: undefined });
@@ -186,26 +211,26 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
         setResult(actionResult);
 
         if (actionResult.totalFailed === 0) {
-          setStatus('completed');
+          setStatus("completed");
           toast({
-            title: successMessage || 'Operation completed',
+            title: successMessage || "Operation completed",
             description: `Successfully processed ${actionResult.totalSucceeded} item(s)`,
           });
           onSuccess?.(actionResult);
         } else if (actionResult.totalSucceeded > 0) {
-          setStatus('partial');
+          setStatus("partial");
           toast({
-            title: 'Operation partially completed',
+            title: "Operation partially completed",
             description: `${actionResult.totalSucceeded} succeeded, ${actionResult.totalFailed} failed`,
-            variant: 'destructive',
+            variant: "destructive",
           });
           onSuccess?.(actionResult);
         } else {
-          setStatus('failed');
+          setStatus("failed");
           toast({
-            title: errorMessage || 'Operation failed',
+            title: errorMessage || "Operation failed",
             description: `All ${actionResult.totalFailed} item(s) failed`,
-            variant: 'destructive',
+            variant: "destructive",
           });
         }
 
@@ -219,14 +244,14 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
         return actionResult;
       } catch (err) {
         stopProgressSimulation();
-        const error = err instanceof Error ? err : new Error('Unknown error');
+        const error = err instanceof Error ? err : new Error("Unknown error");
         setError(error);
-        setStatus('failed');
+        setStatus("failed");
 
         toast({
-          title: errorMessage || 'Operation failed',
+          title: errorMessage || "Operation failed",
           description: error.message,
-          variant: 'destructive',
+          variant: "destructive",
         });
 
         onError?.(error);
@@ -235,12 +260,21 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
         abortControllerRef.current = null;
       }
     },
-    [toast, queryClient, onSuccess, onError, updateProgress, getEndpoint, startProgressSimulation, stopProgressSimulation]
+    [
+      toast,
+      queryClient,
+      onSuccess,
+      onError,
+      updateProgress,
+      getEndpoint,
+      startProgressSimulation,
+      stopProgressSimulation,
+    ],
   );
 
   const confirm = useCallback((config: BatchActionConfig) => {
     setPendingConfig(config);
-    setStatus('confirming');
+    setStatus("confirming");
   }, []);
 
   const cancel = useCallback(() => {
@@ -249,12 +283,12 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
     }
     stopProgressSimulation();
     setPendingConfig(null);
-    setStatus('cancelled');
+    setStatus("cancelled");
   }, [stopProgressSimulation]);
 
   const reset = useCallback(() => {
     stopProgressSimulation();
-    setStatus('idle');
+    setStatus("idle");
     setProgress(defaultProgress);
     setResult(null);
     setError(null);
@@ -268,15 +302,18 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
     const retryConfig = {
       ...pendingConfig,
       ids: failedIds,
-      successMessage: 'Retry completed',
-      errorMessage: 'Retry failed',
+      successMessage: "Retry completed",
+      errorMessage: "Retry failed",
     };
 
     return execute(retryConfig);
   }, [pendingConfig, result, execute]);
 
-  const isProcessing = useMemo(() => status === 'processing', [status]);
-  const isComplete = useMemo(() => status === 'completed' || status === 'partial' || status === 'failed', [status]);
+  const isProcessing = useMemo(() => status === "processing", [status]);
+  const isComplete = useMemo(
+    () => status === "completed" || status === "partial" || status === "failed",
+    [status],
+  );
 
   return {
     status,
@@ -294,65 +331,67 @@ export function useBatchAction(options: UseBatchActionOptions = {}): UseBatchAct
   };
 }
 
-export function useDistributionBatchActions(options: UseBatchActionOptions = {}) {
+export function useDistributionBatchActions(
+  options: UseBatchActionOptions = {},
+) {
   const batchAction = useBatchAction(options);
 
   const submitReleases = useCallback(
     async (ids: string[], data?: Record<string, any>) => {
       return batchAction.execute({
-        resource: 'releases',
-        action: 'submit',
+        resource: "releases",
+        action: "submit",
         ids,
         data,
-        successMessage: 'Releases submitted successfully',
-        errorMessage: 'Failed to submit releases',
-        invalidateQueries: ['/api/releases', '/api/distribution'],
+        successMessage: "Releases submitted successfully",
+        errorMessage: "Failed to submit releases",
+        invalidateQueries: ["/api/releases", "/api/distribution"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const takedownReleases = useCallback(
     async (ids: string[]) => {
       return batchAction.execute({
-        resource: 'releases',
-        action: 'takedown',
+        resource: "releases",
+        action: "takedown",
         ids,
-        successMessage: 'Releases taken down successfully',
-        errorMessage: 'Failed to takedown releases',
-        invalidateQueries: ['/api/releases', '/api/distribution'],
+        successMessage: "Releases taken down successfully",
+        errorMessage: "Failed to takedown releases",
+        invalidateQueries: ["/api/releases", "/api/distribution"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const updateReleases = useCallback(
     async (ids: string[], data: Record<string, any>) => {
       return batchAction.execute({
-        resource: 'releases',
-        action: 'update',
+        resource: "releases",
+        action: "update",
         ids,
         data,
-        successMessage: 'Releases updated successfully',
-        errorMessage: 'Failed to update releases',
-        invalidateQueries: ['/api/releases', '/api/distribution'],
+        successMessage: "Releases updated successfully",
+        errorMessage: "Failed to update releases",
+        invalidateQueries: ["/api/releases", "/api/distribution"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const deleteReleases = useCallback(
     async (ids: string[]) => {
       return batchAction.execute({
-        resource: 'releases',
-        action: 'delete',
+        resource: "releases",
+        action: "delete",
         ids,
-        successMessage: 'Releases deleted successfully',
-        errorMessage: 'Failed to delete releases',
-        invalidateQueries: ['/api/releases', '/api/distribution'],
+        successMessage: "Releases deleted successfully",
+        errorMessage: "Failed to delete releases",
+        invalidateQueries: ["/api/releases", "/api/distribution"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   return {
@@ -370,45 +409,45 @@ export function useSocialBatchActions(options: UseBatchActionOptions = {}) {
   const schedulePosts = useCallback(
     async (ids: string[], scheduledTime: string) => {
       return batchAction.execute({
-        resource: 'posts',
-        action: 'schedule',
+        resource: "posts",
+        action: "schedule",
         ids,
         data: { scheduledTime },
-        successMessage: 'Posts scheduled successfully',
-        errorMessage: 'Failed to schedule posts',
-        invalidateQueries: ['/api/social/posts', '/api/social/calendar'],
+        successMessage: "Posts scheduled successfully",
+        errorMessage: "Failed to schedule posts",
+        invalidateQueries: ["/api/social/posts", "/api/social/calendar"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const deletePosts = useCallback(
     async (ids: string[]) => {
       return batchAction.execute({
-        resource: 'posts',
-        action: 'delete',
+        resource: "posts",
+        action: "delete",
         ids,
-        successMessage: 'Posts deleted successfully',
-        errorMessage: 'Failed to delete posts',
-        invalidateQueries: ['/api/social/posts', '/api/social/calendar'],
+        successMessage: "Posts deleted successfully",
+        errorMessage: "Failed to delete posts",
+        invalidateQueries: ["/api/social/posts", "/api/social/calendar"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const updatePosts = useCallback(
     async (ids: string[], data: Record<string, any>) => {
       return batchAction.execute({
-        resource: 'posts',
-        action: 'update',
+        resource: "posts",
+        action: "update",
         ids,
         data,
-        successMessage: 'Posts updated successfully',
-        errorMessage: 'Failed to update posts',
-        invalidateQueries: ['/api/social/posts'],
+        successMessage: "Posts updated successfully",
+        errorMessage: "Failed to update posts",
+        invalidateQueries: ["/api/social/posts"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   return {
@@ -419,66 +458,80 @@ export function useSocialBatchActions(options: UseBatchActionOptions = {}) {
   };
 }
 
-export function useMarketplaceBatchActions(options: UseBatchActionOptions = {}) {
+export function useMarketplaceBatchActions(
+  options: UseBatchActionOptions = {},
+) {
   const batchAction = useBatchAction(options);
 
   const updateListings = useCallback(
     async (ids: string[], data: Record<string, any>) => {
       return batchAction.execute({
-        resource: 'marketplace',
-        action: 'update',
+        resource: "marketplace",
+        action: "update",
         ids,
         data,
-        successMessage: 'Listings updated successfully',
-        errorMessage: 'Failed to update listings',
-        invalidateQueries: ['/api/marketplace/beats', '/api/marketplace/my-beats'],
+        successMessage: "Listings updated successfully",
+        errorMessage: "Failed to update listings",
+        invalidateQueries: [
+          "/api/marketplace/beats",
+          "/api/marketplace/my-beats",
+        ],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const deleteListings = useCallback(
     async (ids: string[]) => {
       return batchAction.execute({
-        resource: 'marketplace',
-        action: 'delete',
+        resource: "marketplace",
+        action: "delete",
         ids,
-        successMessage: 'Listings deleted successfully',
-        errorMessage: 'Failed to delete listings',
-        invalidateQueries: ['/api/marketplace/beats', '/api/marketplace/my-beats'],
+        successMessage: "Listings deleted successfully",
+        errorMessage: "Failed to delete listings",
+        invalidateQueries: [
+          "/api/marketplace/beats",
+          "/api/marketplace/my-beats",
+        ],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const updatePrices = useCallback(
     async (ids: string[], price: number) => {
       return batchAction.execute({
-        resource: 'marketplace',
-        action: 'update',
+        resource: "marketplace",
+        action: "update",
         ids,
         data: { price },
-        successMessage: 'Prices updated successfully',
-        errorMessage: 'Failed to update prices',
-        invalidateQueries: ['/api/marketplace/beats', '/api/marketplace/my-beats'],
+        successMessage: "Prices updated successfully",
+        errorMessage: "Failed to update prices",
+        invalidateQueries: [
+          "/api/marketplace/beats",
+          "/api/marketplace/my-beats",
+        ],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const updateLicenses = useCallback(
     async (ids: string[], licenseType: string) => {
       return batchAction.execute({
-        resource: 'marketplace',
-        action: 'update',
+        resource: "marketplace",
+        action: "update",
         ids,
         data: { licenseType },
-        successMessage: 'Licenses updated successfully',
-        errorMessage: 'Failed to update licenses',
-        invalidateQueries: ['/api/marketplace/beats', '/api/marketplace/my-beats'],
+        successMessage: "Licenses updated successfully",
+        errorMessage: "Failed to update licenses",
+        invalidateQueries: [
+          "/api/marketplace/beats",
+          "/api/marketplace/my-beats",
+        ],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   return {
@@ -496,58 +549,58 @@ export function useFileBatchActions(options: UseBatchActionOptions = {}) {
   const deleteFiles = useCallback(
     async (ids: string[]) => {
       return batchAction.execute({
-        resource: 'files',
-        action: 'delete',
+        resource: "files",
+        action: "delete",
         ids,
-        successMessage: 'Files deleted successfully',
-        errorMessage: 'Failed to delete files',
-        invalidateQueries: ['/api/files', '/api/storage'],
+        successMessage: "Files deleted successfully",
+        errorMessage: "Failed to delete files",
+        invalidateQueries: ["/api/files", "/api/storage"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const moveFiles = useCallback(
     async (ids: string[], folder: string) => {
       return batchAction.execute({
-        resource: 'files',
-        action: 'move',
+        resource: "files",
+        action: "move",
         ids,
         data: { folder },
-        successMessage: 'Files moved successfully',
-        errorMessage: 'Failed to move files',
-        invalidateQueries: ['/api/files', '/api/storage'],
+        successMessage: "Files moved successfully",
+        errorMessage: "Failed to move files",
+        invalidateQueries: ["/api/files", "/api/storage"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const downloadFiles = useCallback(
     async (ids: string[]) => {
       return batchAction.execute({
-        resource: 'files',
-        action: 'download',
+        resource: "files",
+        action: "download",
         ids,
-        successMessage: 'Download prepared',
-        errorMessage: 'Failed to prepare download',
+        successMessage: "Download prepared",
+        errorMessage: "Failed to prepare download",
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const updateFiles = useCallback(
     async (ids: string[], data: Record<string, any>) => {
       return batchAction.execute({
-        resource: 'files',
-        action: 'update',
+        resource: "files",
+        action: "update",
         ids,
         data,
-        successMessage: 'Files updated successfully',
-        errorMessage: 'Failed to update files',
-        invalidateQueries: ['/api/files'],
+        successMessage: "Files updated successfully",
+        errorMessage: "Failed to update files",
+        invalidateQueries: ["/api/files"],
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   return {
@@ -563,30 +616,30 @@ export function useAnalyticsBatchActions(options: UseBatchActionOptions = {}) {
   const batchAction = useBatchAction(options);
 
   const exportAnalytics = useCallback(
-    async (ids: string[], format: string = 'csv', dateRange?: string) => {
+    async (ids: string[], format: string = "csv", dateRange?: string) => {
       return batchAction.execute({
-        resource: 'analytics',
-        action: 'export',
+        resource: "analytics",
+        action: "export",
         ids,
         data: { format, dateRange },
-        successMessage: 'Export started',
-        errorMessage: 'Failed to export analytics',
+        successMessage: "Export started",
+        errorMessage: "Failed to export analytics",
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   const compareAnalytics = useCallback(
     async (ids: string[]) => {
       return batchAction.execute({
-        resource: 'analytics',
-        action: 'compare',
+        resource: "analytics",
+        action: "compare",
         ids,
-        successMessage: 'Comparison generated',
-        errorMessage: 'Failed to generate comparison',
+        successMessage: "Comparison generated",
+        errorMessage: "Failed to generate comparison",
       });
     },
-    [batchAction]
+    [batchAction],
   );
 
   return {

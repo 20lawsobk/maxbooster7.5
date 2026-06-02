@@ -8,32 +8,32 @@
 
 ## Summary
 
-| Metric | Value |
-|--------|-------|
-| Total Tests | 12 |
-| Passed | 9 ✅ |
-| Failed | 3 ❌ |
-| Pass Rate | 75.0% |
-| Avg Response Time | 6ms |
+| Metric            | Value |
+| ----------------- | ----- |
+| Total Tests       | 12    |
+| Passed            | 9 ✅  |
+| Failed            | 3 ❌  |
+| Pass Rate         | 75.0% |
+| Avg Response Time | 6ms   |
 
 ---
 
 ## Test Results
 
-| ID | Test Name | Endpoint | Status | Response Time |
-|----|-----------|----------|--------|---------------|
-| P0-01 | App Health Check | `GET /api/health` | ✅ PASS | 17ms |
-| P0-02 | System Status | `GET /api/system/status` | ✅ PASS | 2ms |
-| P0-03 | Circuit Breakers Health | `GET /api/health/circuits` | ✅ PASS | 3ms |
-| P0-04 | Distribution Platforms | `GET /api/distribution/platforms` | ❌ FAIL | 2ms |
-| P0-05 | Contract Templates | `GET /api/contracts/templates` | ❌ FAIL | 2ms |
-| P0-06 | Auth Login (Invalid Credentials) | `POST /api/auth/login` | ❌ FAIL | 11ms |
-| P0-07 | Frontend Loads | `GET /` | ✅ PASS | 14ms |
-| P0-08 | Billing Subscription Endpoint | `GET /api/billing/subscription` | ✅ PASS | 2ms |
-| P0-09 | Social Approvals Endpoint | `GET /api/social/approvals/pending` | ✅ PASS | 12ms |
-| P0-10 | Executive Dashboard | `GET /api/executive/dashboard` | ✅ PASS | 4ms |
-| P0-11 | Security Metrics | `GET /api/security/metrics` | ✅ PASS | 1ms |
-| P0-12 | Studio AI Presets Endpoint | `GET /api/studio/ai-music/presets` | ✅ PASS | 3ms |
+| ID    | Test Name                        | Endpoint                            | Status  | Response Time |
+| ----- | -------------------------------- | ----------------------------------- | ------- | ------------- |
+| P0-01 | App Health Check                 | `GET /api/health`                   | ✅ PASS | 17ms          |
+| P0-02 | System Status                    | `GET /api/system/status`            | ✅ PASS | 2ms           |
+| P0-03 | Circuit Breakers Health          | `GET /api/health/circuits`          | ✅ PASS | 3ms           |
+| P0-04 | Distribution Platforms           | `GET /api/distribution/platforms`   | ❌ FAIL | 2ms           |
+| P0-05 | Contract Templates               | `GET /api/contracts/templates`      | ❌ FAIL | 2ms           |
+| P0-06 | Auth Login (Invalid Credentials) | `POST /api/auth/login`              | ❌ FAIL | 11ms          |
+| P0-07 | Frontend Loads                   | `GET /`                             | ✅ PASS | 14ms          |
+| P0-08 | Billing Subscription Endpoint    | `GET /api/billing/subscription`     | ✅ PASS | 2ms           |
+| P0-09 | Social Approvals Endpoint        | `GET /api/social/approvals/pending` | ✅ PASS | 12ms          |
+| P0-10 | Executive Dashboard              | `GET /api/executive/dashboard`      | ✅ PASS | 4ms           |
+| P0-11 | Security Metrics                 | `GET /api/security/metrics`         | ✅ PASS | 1ms           |
+| P0-12 | Studio AI Presets Endpoint       | `GET /api/studio/ai-music/presets`  | ✅ PASS | 3ms           |
 
 ---
 

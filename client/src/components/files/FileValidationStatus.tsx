@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   CheckCircle2,
   XCircle,
@@ -28,21 +28,27 @@ import {
   Zap,
   RefreshCw,
   Info,
-} from 'lucide-react';
+} from "lucide-react";
 
-export type ValidationStatus = 'pending' | 'validating' | 'pass' | 'fail' | 'warning' | 'skipped';
+export type ValidationStatus =
+  | "pending"
+  | "validating"
+  | "pass"
+  | "fail"
+  | "warning"
+  | "skipped";
 
-export type ValidationOutcome = 
-  | 'audio_valid'
-  | 'audio_corrupted'
-  | 'unsupported_codec'
-  | 'metadata_success'
-  | 'metadata_failed'
-  | 'waveform_complete'
-  | 'waveform_failed'
-  | 'validation_passed'
-  | 'validation_failed'
-  | 'validation_warnings';
+export type ValidationOutcome =
+  | "audio_valid"
+  | "audio_corrupted"
+  | "unsupported_codec"
+  | "metadata_success"
+  | "metadata_failed"
+  | "waveform_complete"
+  | "waveform_failed"
+  | "validation_passed"
+  | "validation_failed"
+  | "validation_warnings";
 
 export interface ValidationCheck {
   id: string;
@@ -90,80 +96,83 @@ const STATUS_ICONS: Record<ValidationStatus, React.ReactNode> = {
 };
 
 const CHECK_ICONS: Record<string, React.ReactNode> = {
-  'File Size': <HardDrive className="h-4 w-4" />,
-  'File Type': <FileType className="h-4 w-4" />,
-  'Audio Format': <FileAudio className="h-4 w-4" />,
-  'Audio Integrity': <Shield className="h-4 w-4" />,
-  'Metadata': <Database className="h-4 w-4" />,
-  'Waveform': <AudioWaveform className="h-4 w-4" />,
-  'Storage Quota': <HardDrive className="h-4 w-4" />,
-  'Audio Playable': <Music className="h-4 w-4" />,
+  "File Size": <HardDrive className="h-4 w-4" />,
+  "File Type": <FileType className="h-4 w-4" />,
+  "Audio Format": <FileAudio className="h-4 w-4" />,
+  "Audio Integrity": <Shield className="h-4 w-4" />,
+  Metadata: <Database className="h-4 w-4" />,
+  Waveform: <AudioWaveform className="h-4 w-4" />,
+  "Storage Quota": <HardDrive className="h-4 w-4" />,
+  "Audio Playable": <Music className="h-4 w-4" />,
 };
 
-const OUTCOME_CONFIG: Record<ValidationOutcome, {
-  label: string;
-  description: string;
-  color: string;
-  icon: React.ReactNode;
-}> = {
+const OUTCOME_CONFIG: Record<
+  ValidationOutcome,
+  {
+    label: string;
+    description: string;
+    color: string;
+    icon: React.ReactNode;
+  }
+> = {
   audio_valid: {
-    label: 'Audio Valid',
-    description: 'Audio file passed all validation checks',
-    color: 'text-green-500',
+    label: "Audio Valid",
+    description: "Audio file passed all validation checks",
+    color: "text-green-500",
     icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
   },
   audio_corrupted: {
-    label: 'Audio Corrupted',
-    description: 'The audio file appears to be corrupted or damaged',
-    color: 'text-destructive',
+    label: "Audio Corrupted",
+    description: "The audio file appears to be corrupted or damaged",
+    color: "text-destructive",
     icon: <XCircle className="h-5 w-5 text-destructive" />,
   },
   unsupported_codec: {
-    label: 'Unsupported Codec',
-    description: 'The audio codec or format is not supported',
-    color: 'text-destructive',
+    label: "Unsupported Codec",
+    description: "The audio codec or format is not supported",
+    color: "text-destructive",
     icon: <XCircle className="h-5 w-5 text-destructive" />,
   },
   metadata_success: {
-    label: 'Metadata Extracted',
-    description: 'Audio metadata was successfully extracted',
-    color: 'text-green-500',
+    label: "Metadata Extracted",
+    description: "Audio metadata was successfully extracted",
+    color: "text-green-500",
     icon: <Database className="h-5 w-5 text-green-500" />,
   },
   metadata_failed: {
-    label: 'Metadata Failed',
-    description: 'Could not extract audio metadata',
-    color: 'text-amber-500',
+    label: "Metadata Failed",
+    description: "Could not extract audio metadata",
+    color: "text-amber-500",
     icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
   },
   waveform_complete: {
-    label: 'Waveform Generated',
-    description: 'Audio waveform was successfully generated',
-    color: 'text-green-500',
+    label: "Waveform Generated",
+    description: "Audio waveform was successfully generated",
+    color: "text-green-500",
     icon: <AudioWaveform className="h-5 w-5 text-green-500" />,
   },
   waveform_failed: {
-    label: 'Waveform Failed',
-    description: 'Could not generate audio waveform',
-    color: 'text-amber-500',
+    label: "Waveform Failed",
+    description: "Could not generate audio waveform",
+    color: "text-amber-500",
     icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
   },
   validation_passed: {
-    label: 'Validation Passed',
-    description: 'All validation checks passed successfully',
-    color: 'text-green-500',
+    label: "Validation Passed",
+    description: "All validation checks passed successfully",
+    color: "text-green-500",
     icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
   },
   validation_failed: {
-    label: 'Validation Failed',
-    description: 'One or more validation checks failed',
-    color: 'text-destructive',
+    label: "Validation Failed",
+    description: "One or more validation checks failed",
+    color: "text-destructive",
     icon: <XCircle className="h-5 w-5 text-destructive" />,
   },
   validation_warnings: {
-    label: 'Validation Warnings',
-    description: 'Validation passed with some warnings',
-    color: 'text-amber-500',
+    label: "Validation Warnings",
+    description: "Validation passed with some warnings",
+    color: "text-amber-500",
     icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
   },
 };
@@ -182,20 +191,20 @@ export function FileValidationStatus({
   const validateMutation = useMutation({
     mutationFn: async (fileToValidate: File) => {
       const formData = new FormData();
-      formData.append('file', fileToValidate);
-      
+      formData.append("file", fileToValidate);
+
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch('/api/files/validate', {
-        method: 'POST',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      const response = await fetch("/api/files/validate", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
         body: formData,
       });
-      
+
       if (!response.ok) {
-        throw new Error('Validation failed');
+        throw new Error("Validation failed");
       }
-      
+
       return response.json();
     },
   });
@@ -209,30 +218,44 @@ export function FileValidationStatus({
 
   const activeResult = result || validateMutation.data;
   const isValidating = validateMutation.isPending;
-  const outcomeConfig = activeResult ? OUTCOME_CONFIG[activeResult.outcome] : null;
+  const outcomeConfig = activeResult
+    ? OUTCOME_CONFIG[activeResult.outcome]
+    : null;
 
   if (compact && activeResult) {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
+      <div className={cn("flex items-center gap-2", className)}>
         {activeResult.valid ? (
-          <Badge variant="outline" className="text-green-600 border-green-600 gap-1">
+          <Badge
+            variant="outline"
+            className="text-green-600 border-green-600 gap-1"
+          >
             <CheckCircle2 className="h-3 w-3" />
             Valid
           </Badge>
         ) : (
           <Badge variant="destructive" className="gap-1">
             <XCircle className="h-3 w-3" />
-            {activeResult.summary.failed} issue{activeResult.summary.failed > 1 ? 's' : ''}
+            {activeResult.summary.failed} issue
+            {activeResult.summary.failed > 1 ? "s" : ""}
           </Badge>
         )}
         {activeResult.summary.warnings > 0 && (
-          <Badge variant="outline" className="text-amber-600 border-amber-600 gap-1">
+          <Badge
+            variant="outline"
+            className="text-amber-600 border-amber-600 gap-1"
+          >
             <AlertTriangle className="h-3 w-3" />
             {activeResult.summary.warnings}
           </Badge>
         )}
         {showDetails && (
-          <Button variant="ghost" size="sm" onClick={() => setShowFullDetails(true)} className="h-7">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFullDetails(true)}
+            className="h-7"
+          >
             <Info className="h-3 w-3" />
           </Button>
         )}
@@ -250,9 +273,9 @@ export function FileValidationStatus({
               <CardTitle className="text-base">File Validation</CardTitle>
             </div>
             {activeResult && outcomeConfig && (
-              <Badge 
-                variant="outline" 
-                className={cn('gap-1', outcomeConfig.color)}
+              <Badge
+                variant="outline"
+                className={cn("gap-1", outcomeConfig.color)}
               >
                 {outcomeConfig.icon}
                 {outcomeConfig.label}
@@ -276,7 +299,9 @@ export function FileValidationStatus({
           {isValidating && (
             <div className="flex flex-col items-center gap-3 py-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Validating file...</p>
+              <p className="text-sm text-muted-foreground">
+                Validating file...
+              </p>
             </div>
           )}
 
@@ -285,7 +310,9 @@ export function FileValidationStatus({
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <FileAudio className="h-8 w-8 text-primary" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{activeResult.file.name}</p>
+                  <p className="text-sm font-medium truncate">
+                    {activeResult.file.name}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {activeResult.file.sizeFormatted} · {activeResult.file.type}
                   </p>
@@ -294,14 +321,20 @@ export function FileValidationStatus({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Validation Progress</span>
+                  <span className="text-muted-foreground">
+                    Validation Progress
+                  </span>
                   <span className="font-medium">
-                    {activeResult.summary.passed}/{activeResult.checks.length} passed
+                    {activeResult.summary.passed}/{activeResult.checks.length}{" "}
+                    passed
                   </span>
                 </div>
-                <Progress 
-                  value={(activeResult.summary.passed / activeResult.checks.length) * 100} 
-                  className="h-2" 
+                <Progress
+                  value={
+                    (activeResult.summary.passed / activeResult.checks.length) *
+                    100
+                  }
+                  className="h-2"
                 />
               </div>
 
@@ -311,26 +344,34 @@ export function FileValidationStatus({
                     <div
                       key={check.id}
                       className={cn(
-                        'flex items-start gap-3 p-2 rounded-lg',
-                        check.status === 'fail' && 'bg-destructive/5',
-                        check.status === 'warning' && 'bg-amber-500/5',
-                        check.status === 'pass' && 'bg-green-500/5'
+                        "flex items-start gap-3 p-2 rounded-lg",
+                        check.status === "fail" && "bg-destructive/5",
+                        check.status === "warning" && "bg-amber-500/5",
+                        check.status === "pass" && "bg-green-500/5",
                       )}
                     >
                       <div className="flex-shrink-0 mt-0.5 text-muted-foreground">
-                        {CHECK_ICONS[check.name] || <Shield className="h-4 w-4" />}
+                        {CHECK_ICONS[check.name] || (
+                          <Shield className="h-4 w-4" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium">{check.name}</span>
+                          <span className="text-sm font-medium">
+                            {check.name}
+                          </span>
                           {STATUS_ICONS[check.status]}
                         </div>
-                        <p className={cn(
-                          'text-xs',
-                          check.status === 'fail' ? 'text-destructive' :
-                          check.status === 'warning' ? 'text-amber-600' :
-                          'text-muted-foreground'
-                        )}>
+                        <p
+                          className={cn(
+                            "text-xs",
+                            check.status === "fail"
+                              ? "text-destructive"
+                              : check.status === "warning"
+                                ? "text-amber-600"
+                                : "text-muted-foreground",
+                          )}
+                        >
                           {check.message}
                         </p>
                         {check.value && (
@@ -353,7 +394,8 @@ export function FileValidationStatus({
                         Validation Failed
                       </p>
                       <p className="text-xs text-destructive/80 mt-0.5">
-                        {activeResult.summary.failed} check{activeResult.summary.failed > 1 ? 's' : ''} failed. 
+                        {activeResult.summary.failed} check
+                        {activeResult.summary.failed > 1 ? "s" : ""} failed.
                         Please fix the issues before uploading.
                       </p>
                     </div>
@@ -361,21 +403,23 @@ export function FileValidationStatus({
                 </div>
               )}
 
-              {activeResult.summary.warnings > 0 && activeResult.summary.failed === 0 && (
-                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-amber-600">
-                        Validation Passed with Warnings
-                      </p>
-                      <p className="text-xs text-amber-600/80 mt-0.5">
-                        The file can be uploaded, but some features may be limited.
-                      </p>
+              {activeResult.summary.warnings > 0 &&
+                activeResult.summary.failed === 0 && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-600">
+                          Validation Passed with Warnings
+                        </p>
+                        <p className="text-xs text-amber-600/80 mt-0.5">
+                          The file can be uploaded, but some features may be
+                          limited.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {activeResult.valid && activeResult.summary.warnings === 0 && (
                 <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
@@ -416,26 +460,37 @@ export function FileValidationStatus({
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="p-2 rounded-lg bg-green-500/10">
-                  <p className="text-2xl font-bold text-green-500">{activeResult.summary.passed}</p>
+                  <p className="text-2xl font-bold text-green-500">
+                    {activeResult.summary.passed}
+                  </p>
                   <p className="text-xs text-muted-foreground">Passed</p>
                 </div>
                 <div className="p-2 rounded-lg bg-amber-500/10">
-                  <p className="text-2xl font-bold text-amber-500">{activeResult.summary.warnings}</p>
+                  <p className="text-2xl font-bold text-amber-500">
+                    {activeResult.summary.warnings}
+                  </p>
                   <p className="text-xs text-muted-foreground">Warnings</p>
                 </div>
                 <div className="p-2 rounded-lg bg-destructive/10">
-                  <p className="text-2xl font-bold text-destructive">{activeResult.summary.failed}</p>
+                  <p className="text-2xl font-bold text-destructive">
+                    {activeResult.summary.failed}
+                  </p>
                   <p className="text-xs text-muted-foreground">Failed</p>
                 </div>
               </div>
 
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {activeResult.checks.map((check) => (
-                  <div key={check.id} className="flex items-center gap-3 p-2 rounded border">
+                  <div
+                    key={check.id}
+                    className="flex items-center gap-3 p-2 rounded border"
+                  >
                     {STATUS_ICONS[check.status]}
                     <div className="flex-1">
                       <p className="text-sm font-medium">{check.name}</p>
-                      <p className="text-xs text-muted-foreground">{check.message}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {check.message}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -448,10 +503,14 @@ export function FileValidationStatus({
   );
 }
 
-export function ValidationOutcomeBadge({ outcome }: { outcome: ValidationOutcome }) {
+export function ValidationOutcomeBadge({
+  outcome,
+}: {
+  outcome: ValidationOutcome;
+}) {
   const config = OUTCOME_CONFIG[outcome];
   return (
-    <Badge variant="outline" className={cn('gap-1', config.color)}>
+    <Badge variant="outline" className={cn("gap-1", config.color)}>
       {config.icon}
       {config.label}
     </Badge>

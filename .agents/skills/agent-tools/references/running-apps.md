@@ -135,11 +135,11 @@ Example output:
 
 ## Error Handling
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "invalid input" | Schema mismatch | Check `infsh app get` for required fields |
-| "app not found" | Wrong app name | Check `infsh app list --search` |
-| "quota exceeded" | Out of credits | Check account balance |
+| Error            | Cause           | Solution                                  |
+| ---------------- | --------------- | ----------------------------------------- |
+| "invalid input"  | Schema mismatch | Check `infsh app get` for required fields |
+| "app not found"  | Wrong app name  | Check `infsh app list --search`           |
+| "quota exceeded" | Out of credits  | Check account balance                     |
 
 ## Documentation
 

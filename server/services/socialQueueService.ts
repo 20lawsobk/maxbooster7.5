@@ -1,11 +1,11 @@
-import { getBoosterStateClient } from '../lib/boosterStateClient.js';
-import { config } from '../config/defaults.js';
-import { db } from '../db';
-import { posts, scheduledPostBatches, socialAccounts } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import { BoosterQueue } from './queueService.js';
+import { getBoosterStateClient } from "../lib/boosterStateClient.js";
+import { config } from "../config/defaults.js";
+import { db } from "../db";
+import { posts, scheduledPostBatches, socialAccounts } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
+import { sql } from "drizzle-orm";
+import { logger } from "../logger.js";
+import { BoosterQueue } from "./queueService.js";
 
 export interface SocialPostJobData {
   postId: string;
@@ -33,14 +33,54 @@ export interface BatchJobData {
 }
 
 const PLATFORM_RATE_LIMITS = {
-  twitter: { postsPerHour: 300, postsPerDay: 2400, delayMs: 12000, baseBackoffMs: 60000 },
-  facebook: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 120000 },
-  instagram: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 120000 },
-  linkedin: { postsPerHour: 100, postsPerDay: 1000, delayMs: 36000, baseBackoffMs: 60000 },
-  tiktok: { postsPerHour: 50, postsPerDay: 100, delayMs: 72000, baseBackoffMs: 180000 },
-  youtube: { postsPerHour: 30, postsPerDay: 100, delayMs: 120000, baseBackoffMs: 300000 },
-  threads: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 120000 },
-  default: { postsPerHour: 60, postsPerDay: 200, delayMs: 60000, baseBackoffMs: 60000 },
+  twitter: {
+    postsPerHour: 300,
+    postsPerDay: 2400,
+    delayMs: 12000,
+    baseBackoffMs: 60000,
+  },
+  facebook: {
+    postsPerHour: 60,
+    postsPerDay: 200,
+    delayMs: 60000,
+    baseBackoffMs: 120000,
+  },
+  instagram: {
+    postsPerHour: 60,
+    postsPerDay: 200,
+    delayMs: 60000,
+    baseBackoffMs: 120000,
+  },
+  linkedin: {
+    postsPerHour: 100,
+    postsPerDay: 1000,
+    delayMs: 36000,
+    baseBackoffMs: 60000,
+  },
+  tiktok: {
+    postsPerHour: 50,
+    postsPerDay: 100,
+    delayMs: 72000,
+    baseBackoffMs: 180000,
+  },
+  youtube: {
+    postsPerHour: 30,
+    postsPerDay: 100,
+    delayMs: 120000,
+    baseBackoffMs: 300000,
+  },
+  threads: {
+    postsPerHour: 60,
+    postsPerDay: 200,
+    delayMs: 60000,
+    baseBackoffMs: 120000,
+  },
+  default: {
+    postsPerHour: 60,
+    postsPerDay: 200,
+    delayMs: 60000,
+    baseBackoffMs: 60000,
+  },
 };
 
 interface RateLimitBackoffState {
@@ -56,28 +96,30 @@ class SocialQueueService {
   public batchQueue: BoosterQueue<BatchJobData, void>;
 
   constructor() {
-    this.socialQueue = new BoosterQueue('social-posts');
-    this.batchQueue = new BoosterQueue('social-batches');
+    this.socialQueue = new BoosterQueue("social-posts");
+    this.batchQueue = new BoosterQueue("social-batches");
 
-    logger.info('📱 Social media queues initialized (boosterstate-backed)');
+    logger.info("📱 Social media queues initialized (boosterstate-backed)");
   }
 
-  async addBatchJob(data: BatchJobData): Promise<{ id: string; name: string; data: BatchJobData }> {
-    return await this.batchQueue.add('process-batch', data, {
+  async addBatchJob(
+    data: BatchJobData,
+  ): Promise<{ id: string; name: string; data: BatchJobData }> {
+    return await this.batchQueue.add("process-batch", data, {
       priority: 1,
     });
   }
 
   async addSocialPostJob(
     data: SocialPostJobData,
-    delay?: number
+    delay?: number,
   ): Promise<{ id: string; name: string; data: SocialPostJobData }> {
     const platform = data.platform.toLowerCase();
     const rateLimits =
       PLATFORM_RATE_LIMITS[platform as keyof typeof PLATFORM_RATE_LIMITS] ||
       PLATFORM_RATE_LIMITS.default;
 
-    return await this.socialQueue.add('publish-post', data, {
+    return await this.socialQueue.add("publish-post", data, {
       priority: data.scheduledAt ? 2 : 1,
       jobId: data.postId,
     });
@@ -89,13 +131,16 @@ class SocialQueueService {
 
       const backoffStatus = await this.isInBackoff(platform, accountId);
       if (backoffStatus.inBackoff) {
-        logger.info(`⏳ Rate limit check: ${platform}/${accountId} in backoff for ${(backoffStatus.remainingMs! / 1000).toFixed(0)}s more`);
+        logger.info(
+          `⏳ Rate limit check: ${platform}/${accountId} in backoff for ${(backoffStatus.remainingMs! / 1000).toFixed(0)}s more`,
+        );
         return false;
       }
 
       const rateLimits =
-        PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS] ||
-        PLATFORM_RATE_LIMITS.default;
+        PLATFORM_RATE_LIMITS[
+          platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS
+        ] || PLATFORM_RATE_LIMITS.default;
 
       const hourKey = `rate:${platform}:${accountId}:hour`;
       const dayKey = `rate:${platform}:${accountId}:day`;
@@ -105,12 +150,15 @@ class SocialQueueService {
         client.get(dayKey),
       ]);
 
-      const currentHourCount = parseInt(hourCount || '0');
-      const currentDayCount = parseInt(dayCount || '0');
+      const currentHourCount = parseInt(hourCount || "0");
+      const currentDayCount = parseInt(dayCount || "0");
 
-      return currentHourCount < rateLimits.postsPerHour && currentDayCount < rateLimits.postsPerDay;
+      return (
+        currentHourCount < rateLimits.postsPerHour &&
+        currentDayCount < rateLimits.postsPerDay
+      );
     } catch (error) {
-      logger.warn({ err: error }, 'Error checking rate limit:');
+      logger.warn({ err: error }, "Error checking rate limit:");
       return true;
     }
   }
@@ -126,17 +174,19 @@ class SocialQueueService {
       await client.expire(hourKey, 3600);
       await client.expire(dayKey, 86400);
     } catch (error) {
-      logger.warn({ err: error }, 'Error incrementing rate limit:');
+      logger.warn({ err: error }, "Error incrementing rate limit:");
     }
   }
 
   async handle429Response(
     platform: string,
     accountId: string,
-    retryAfterSeconds?: number
+    retryAfterSeconds?: number,
   ): Promise<{ backoffMs: number; shouldRetry: boolean }> {
-    const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS]
-      || PLATFORM_RATE_LIMITS.default;
+    const platformConfig =
+      PLATFORM_RATE_LIMITS[
+        platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS
+      ] || PLATFORM_RATE_LIMITS.default;
 
     try {
       const client = await getBoosterStateClient();
@@ -146,7 +196,13 @@ class SocialQueueService {
       const stateJson = await client.get(backoffKey);
       let state: RateLimitBackoffState = stateJson
         ? JSON.parse(stateJson)
-        : { platform, accountId, backoffUntil: 0, consecutiveHits: 0, lastHit: 0 };
+        : {
+            platform,
+            accountId,
+            backoffUntil: 0,
+            consecutiveHits: 0,
+            lastHit: 0,
+          };
 
       const now = Date.now();
       const timeSinceLastHit = now - state.lastHit;
@@ -162,9 +218,14 @@ class SocialQueueService {
       if (retryAfterSeconds) {
         backoffMs = retryAfterSeconds * 1000;
       } else {
-        const exponentialFactor = Math.min(Math.pow(2, state.consecutiveHits - 1), 32);
+        const exponentialFactor = Math.min(
+          Math.pow(2, state.consecutiveHits - 1),
+          32,
+        );
         const jitter = Math.random() * 0.2 + 0.9;
-        backoffMs = Math.round(platformConfig.baseBackoffMs * exponentialFactor * jitter);
+        backoffMs = Math.round(
+          platformConfig.baseBackoffMs * exponentialFactor * jitter,
+        );
       }
 
       backoffMs = Math.min(backoffMs, 3600000);
@@ -177,19 +238,22 @@ class SocialQueueService {
 
       logger.warn(
         `🚦 429 Rate Limited: ${platform}/${accountId} - ` +
-        `Consecutive hits: ${state.consecutiveHits}, ` +
-        `Backoff: ${(backoffMs / 1000).toFixed(0)}s, ` +
-        `Will retry: ${shouldRetry}`
+          `Consecutive hits: ${state.consecutiveHits}, ` +
+          `Backoff: ${(backoffMs / 1000).toFixed(0)}s, ` +
+          `Will retry: ${shouldRetry}`,
       );
 
       return { backoffMs, shouldRetry };
     } catch (error) {
-      logger.warn({ err: error }, 'Error handling 429 response:');
+      logger.warn({ err: error }, "Error handling 429 response:");
       return { backoffMs: platformConfig.baseBackoffMs, shouldRetry: true };
     }
   }
 
-  async isInBackoff(platform: string, accountId: string): Promise<{ inBackoff: boolean; remainingMs?: number }> {
+  async isInBackoff(
+    platform: string,
+    accountId: string,
+  ): Promise<{ inBackoff: boolean; remainingMs?: number }> {
     try {
       const client = await getBoosterStateClient();
 
@@ -211,7 +275,7 @@ class SocialQueueService {
 
       return { inBackoff: false };
     } catch (error) {
-      logger.warn({ err: error }, 'Error checking backoff state:');
+      logger.warn({ err: error }, "Error checking backoff state:");
       return { inBackoff: false };
     }
   }
@@ -224,11 +288,14 @@ class SocialQueueService {
       await client.del(backoffKey);
       logger.info(`✅ Cleared backoff for ${platform}/${accountId}`);
     } catch (error) {
-      logger.warn({ err: error }, 'Error clearing backoff:');
+      logger.warn({ err: error }, "Error clearing backoff:");
     }
   }
 
-  async getRateLimitStatus(platform: string, accountId: string): Promise<{
+  async getRateLimitStatus(
+    platform: string,
+    accountId: string,
+  ): Promise<{
     withinLimits: boolean;
     hourlyUsed: number;
     hourlyLimit: number;
@@ -237,8 +304,10 @@ class SocialQueueService {
     inBackoff: boolean;
     backoffRemainingMs?: number;
   }> {
-    const platformConfig = PLATFORM_RATE_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS]
-      || PLATFORM_RATE_LIMITS.default;
+    const platformConfig =
+      PLATFORM_RATE_LIMITS[
+        platform.toLowerCase() as keyof typeof PLATFORM_RATE_LIMITS
+      ] || PLATFORM_RATE_LIMITS.default;
 
     try {
       const client = await getBoosterStateClient();
@@ -252,8 +321,8 @@ class SocialQueueService {
         this.isInBackoff(platform, accountId),
       ]);
 
-      const hourlyUsed = parseInt(hourCount || '0');
-      const dailyUsed = parseInt(dayCount || '0');
+      const hourlyUsed = parseInt(hourCount || "0");
+      const dailyUsed = parseInt(dayCount || "0");
 
       const withinLimits =
         hourlyUsed < platformConfig.postsPerHour &&
@@ -270,7 +339,7 @@ class SocialQueueService {
         backoffRemainingMs: backoffStatus.remainingMs,
       };
     } catch (error) {
-      logger.warn({ err: error }, 'Error getting rate limit status:');
+      logger.warn({ err: error }, "Error getting rate limit status:");
       return {
         withinLimits: true,
         hourlyUsed: 0,
@@ -308,14 +377,14 @@ class SocialQueueService {
 
   async updateBatchProgress(
     batchId: string,
-    increment: 'processed' | 'successful' | 'failed'
+    increment: "processed" | "successful" | "failed",
   ): Promise<void> {
     const incrementField =
-      increment === 'processed'
-        ? 'processedPosts'
-        : increment === 'successful'
-          ? 'successfulPosts'
-          : 'failedPosts';
+      increment === "processed"
+        ? "processedPosts"
+        : increment === "successful"
+          ? "successfulPosts"
+          : "failedPosts";
 
     await db
       .update(scheduledPostBatches)
@@ -333,7 +402,7 @@ class SocialQueueService {
       await db
         .update(scheduledPostBatches)
         .set({
-          status: 'completed',
+          status: "completed",
           completedAt: new Date(),
         })
         .where(eq(scheduledPostBatches.id, batchId));
@@ -342,7 +411,10 @@ class SocialQueueService {
 
   async cancelBatch(batchId: string, userId: string): Promise<boolean> {
     const batch = await db.query.scheduledPostBatches.findFirst({
-      where: and(eq(scheduledPostBatches.id, batchId), eq(scheduledPostBatches.userId, userId)),
+      where: and(
+        eq(scheduledPostBatches.id, batchId),
+        eq(scheduledPostBatches.userId, userId),
+      ),
     });
 
     if (!batch) {
@@ -352,7 +424,7 @@ class SocialQueueService {
     await db
       .update(scheduledPostBatches)
       .set({
-        status: 'cancelled',
+        status: "cancelled",
         updatedAt: new Date(),
       })
       .where(eq(scheduledPostBatches.id, batchId));
@@ -360,9 +432,9 @@ class SocialQueueService {
     await db
       .update(posts)
       .set({
-        status: 'cancelled',
+        status: "cancelled",
       })
-      .where(and(eq(posts.batchId, batchId), eq(posts.status, 'scheduled')));
+      .where(and(eq(posts.batchId, batchId), eq(posts.status, "scheduled")));
 
     return true;
   }
@@ -389,7 +461,7 @@ class SocialQueueService {
 
   async close(): Promise<void> {
     await Promise.all([this.socialQueue.close(), this.batchQueue.close()]);
-    logger.info('📱 Social media queues closed');
+    logger.info("📱 Social media queues closed");
   }
 }
 

@@ -1,34 +1,48 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { AlertCircle, CheckCircle2, Edit, Loader2, AlertTriangle, Minus } from 'lucide-react';
+} from "@/components/ui/tooltip";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Edit,
+  Loader2,
+  AlertTriangle,
+  Minus,
+} from "lucide-react";
 
-const MULTIPLE_VALUES_PLACEHOLDER = '< Multiple Values >';
+const MULTIPLE_VALUES_PLACEHOLDER = "< Multiple Values >";
 
 export interface BulkEditField {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'textarea' | 'checkbox' | 'date' | 'tags';
+  type:
+    | "text"
+    | "number"
+    | "select"
+    | "textarea"
+    | "checkbox"
+    | "date"
+    | "tags";
   options?: Array<{ value: string; label: string }>;
   placeholder?: string;
   description?: string;
@@ -61,10 +75,12 @@ export function BulkEditForm<T extends Record<string, any>>({
   onSubmit,
   isLoading = false,
   className,
-  title = 'Bulk Edit',
-  submitLabel = 'Apply Changes',
+  title = "Bulk Edit",
+  submitLabel = "Apply Changes",
 }: BulkEditFormProps<T>) {
-  const [fieldValues, setFieldValues] = useState<Record<string, FieldValue>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, FieldValue>>(
+    {},
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -72,9 +88,13 @@ export function BulkEditForm<T extends Record<string, any>>({
 
     for (const field of fields) {
       const values = items.map((item) => item[field.key]);
-      const uniqueValues = [...new Set(values.map((v) => JSON.stringify(v)))].map((v) => JSON.parse(v));
+      const uniqueValues = [
+        ...new Set(values.map((v) => JSON.stringify(v))),
+      ].map((v) => JSON.parse(v));
       const hasMultipleValues = uniqueValues.length > 1;
-      const commonValue = hasMultipleValues ? getDefaultValue(field) : uniqueValues[0];
+      const commonValue = hasMultipleValues
+        ? getDefaultValue(field)
+        : uniqueValues[0];
 
       initialValues[field.key] = {
         enabled: false,
@@ -89,7 +109,7 @@ export function BulkEditForm<T extends Record<string, any>>({
 
   const enabledChangesCount = useMemo(
     () => Object.values(fieldValues).filter((f) => f.enabled).length,
-    [fieldValues]
+    [fieldValues],
   );
 
   const toggleField = useCallback((key: string) => {
@@ -124,16 +144,19 @@ export function BulkEditForm<T extends Record<string, any>>({
         });
       }
     },
-    [fields]
+    [fields],
   );
 
   const handleSubmit = useCallback(async () => {
     const enabledChanges = Object.entries(fieldValues)
       .filter(([_, fieldValue]) => fieldValue.enabled)
-      .reduce((acc, [key, fieldValue]) => {
-        acc[key] = fieldValue.value;
-        return acc;
-      }, {} as Record<string, any>);
+      .reduce(
+        (acc, [key, fieldValue]) => {
+          acc[key] = fieldValue.value;
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
 
     if (Object.keys(enabledChanges).length === 0) return;
 
@@ -159,9 +182,13 @@ export function BulkEditForm<T extends Record<string, any>>({
 
     for (const field of fields) {
       const values = items.map((item) => item[field.key]);
-      const uniqueValues = [...new Set(values.map((v) => JSON.stringify(v)))].map((v) => JSON.parse(v));
+      const uniqueValues = [
+        ...new Set(values.map((v) => JSON.stringify(v))),
+      ].map((v) => JSON.parse(v));
       const hasMultipleValues = uniqueValues.length > 1;
-      const commonValue = hasMultipleValues ? getDefaultValue(field) : uniqueValues[0];
+      const commonValue = hasMultipleValues
+        ? getDefaultValue(field)
+        : uniqueValues[0];
 
       resetValues[field.key] = {
         enabled: false,
@@ -177,14 +204,19 @@ export function BulkEditForm<T extends Record<string, any>>({
 
   return (
     <TooltipProvider>
-      <div className={cn('space-y-4', className)}>
+      <div className={cn("space-y-4", className)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Edit className="h-5 w-5" />
             <h3 className="font-semibold">{title}</h3>
             <Badge variant="secondary">{items.length} items</Badge>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleReset} disabled={isLoading}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            disabled={isLoading}
+          >
             Reset
           </Button>
         </div>
@@ -208,8 +240,8 @@ export function BulkEditForm<T extends Record<string, any>>({
                     <Label
                       htmlFor={`enable-${field.key}`}
                       className={cn(
-                        'cursor-pointer font-medium flex items-center gap-2',
-                        !fieldValue.enabled && 'text-muted-foreground'
+                        "cursor-pointer font-medium flex items-center gap-2",
+                        !fieldValue.enabled && "text-muted-foreground",
                       )}
                     >
                       {field.label}
@@ -224,11 +256,17 @@ export function BulkEditForm<T extends Record<string, any>>({
                           <TooltipContent>
                             <p>Selected items have different values:</p>
                             <ul className="mt-1 text-xs">
-                              {fieldValue.originalValues?.slice(0, 5).map((v, i) => (
-                                <li key={i}>{formatValue(v, field.type)}</li>
-                              ))}
+                              {fieldValue.originalValues
+                                ?.slice(0, 5)
+                                .map((v, i) => (
+                                  <li key={i}>{formatValue(v, field.type)}</li>
+                                ))}
                               {(fieldValue.originalValues?.length || 0) > 5 && (
-                                <li>...and {(fieldValue.originalValues?.length || 0) - 5} more</li>
+                                <li>
+                                  ...and{" "}
+                                  {(fieldValue.originalValues?.length || 0) - 5}{" "}
+                                  more
+                                </li>
                               )}
                             </ul>
                           </TooltipContent>
@@ -245,10 +283,14 @@ export function BulkEditForm<T extends Record<string, any>>({
                   {fieldValue.enabled && (
                     <div className="ml-7 space-y-2">
                       {field.description && (
-                        <p className="text-sm text-muted-foreground">{field.description}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {field.description}
+                        </p>
                       )}
 
-                      {renderFieldInput(field, fieldValue, (value) => updateValue(field.key, value))}
+                      {renderFieldInput(field, fieldValue, (value) =>
+                        updateValue(field.key, value),
+                      )}
 
                       {error && (
                         <p className="text-sm text-destructive flex items-center gap-1">
@@ -268,12 +310,17 @@ export function BulkEditForm<T extends Record<string, any>>({
 
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            {enabledChangesCount} field{enabledChangesCount !== 1 ? 's' : ''} will be updated on{' '}
-            {items.length} item{items.length !== 1 ? 's' : ''}
+            {enabledChangesCount} field{enabledChangesCount !== 1 ? "s" : ""}{" "}
+            will be updated on {items.length} item
+            {items.length !== 1 ? "s" : ""}
           </div>
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || enabledChangesCount === 0 || Object.keys(errors).length > 0}
+            disabled={
+              isLoading ||
+              enabledChangesCount === 0 ||
+              Object.keys(errors).length > 0
+            }
           >
             {isLoading ? (
               <>
@@ -295,43 +342,44 @@ export function BulkEditForm<T extends Record<string, any>>({
 
 function getDefaultValue(field: BulkEditField): unknown {
   switch (field.type) {
-    case 'checkbox':
+    case "checkbox":
       return false;
-    case 'number':
+    case "number":
       return field.min ?? 0;
-    case 'select':
-      return field.options?.[0]?.value || '';
-    case 'tags':
+    case "select":
+      return field.options?.[0]?.value || "";
+    case "tags":
       return [];
     default:
-      return '';
+      return "";
   }
 }
 
 function formatValue(value: Record<string, unknown>, type: string): string {
-  if (value === null || value === undefined) return '(empty)';
-  if (type === 'checkbox') return value ? 'Yes' : 'No';
-  if (Array.isArray(value)) return value.join(', ') || '(empty)';
+  if (value === null || value === undefined) return "(empty)";
+  if (type === "checkbox") return value ? "Yes" : "No";
+  if (Array.isArray(value)) return value.join(", ") || "(empty)";
   return String(value);
 }
 
 function renderFieldInput(
   field: BulkEditField,
   fieldValue: FieldValue,
-  onChange: (value: Record<string, unknown>) => void
+  onChange: (value: Record<string, unknown>) => void,
 ) {
   const { value, hasMultipleValues } = fieldValue;
 
   switch (field.type) {
-    case 'select':
+    case "select":
       return (
-        <Select
-          value={hasMultipleValues ? '' : value}
-          onValueChange={onChange}
-        >
+        <Select value={hasMultipleValues ? "" : value} onValueChange={onChange}>
           <SelectTrigger>
             <SelectValue
-              placeholder={hasMultipleValues ? MULTIPLE_VALUES_PLACEHOLDER : field.placeholder || 'Select...'}
+              placeholder={
+                hasMultipleValues
+                  ? MULTIPLE_VALUES_PLACEHOLDER
+                  : field.placeholder || "Select..."
+              }
             />
           </SelectTrigger>
           <SelectContent>
@@ -344,17 +392,19 @@ function renderFieldInput(
         </Select>
       );
 
-    case 'textarea':
+    case "textarea":
       return (
         <Textarea
-          value={hasMultipleValues ? '' : value}
+          value={hasMultipleValues ? "" : value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={hasMultipleValues ? MULTIPLE_VALUES_PLACEHOLDER : field.placeholder}
+          placeholder={
+            hasMultipleValues ? MULTIPLE_VALUES_PLACEHOLDER : field.placeholder
+          }
           rows={3}
         />
       );
 
-    case 'checkbox':
+    case "checkbox":
       return (
         <div className="flex items-center gap-2">
           {hasMultipleValues && (
@@ -368,41 +418,57 @@ function renderFieldInput(
             onCheckedChange={onChange}
             id={`value-${field.key}`}
           />
-          <Label htmlFor={`value-${field.key}`} className="text-sm cursor-pointer">
-            {field.placeholder || 'Enabled'}
+          <Label
+            htmlFor={`value-${field.key}`}
+            className="text-sm cursor-pointer"
+          >
+            {field.placeholder || "Enabled"}
           </Label>
         </div>
       );
 
-    case 'number':
+    case "number":
       return (
         <Input
           type="number"
-          value={hasMultipleValues ? '' : value}
+          value={hasMultipleValues ? "" : value}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          placeholder={hasMultipleValues ? MULTIPLE_VALUES_PLACEHOLDER : field.placeholder}
+          placeholder={
+            hasMultipleValues ? MULTIPLE_VALUES_PLACEHOLDER : field.placeholder
+          }
           min={field.min}
           max={field.max}
           step={field.step}
         />
       );
 
-    case 'date':
+    case "date":
       return (
         <Input
           type="date"
-          value={hasMultipleValues ? '' : value}
+          value={hasMultipleValues ? "" : value}
           onChange={(e) => onChange(e.target.value)}
         />
       );
 
-    case 'tags':
+    case "tags":
       return (
         <Input
           type="text"
-          value={hasMultipleValues ? '' : (value || []).join(', ')}
-          onChange={(e) => onChange(e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean))}
-          placeholder={hasMultipleValues ? MULTIPLE_VALUES_PLACEHOLDER : field.placeholder || 'Enter tags separated by commas'}
+          value={hasMultipleValues ? "" : (value || []).join(", ")}
+          onChange={(e) =>
+            onChange(
+              e.target.value
+                .split(",")
+                .map((t: string) => t.trim())
+                .filter(Boolean),
+            )
+          }
+          placeholder={
+            hasMultipleValues
+              ? MULTIPLE_VALUES_PLACEHOLDER
+              : field.placeholder || "Enter tags separated by commas"
+          }
         />
       );
 
@@ -410,9 +476,11 @@ function renderFieldInput(
       return (
         <Input
           type="text"
-          value={hasMultipleValues ? '' : value}
+          value={hasMultipleValues ? "" : value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={hasMultipleValues ? MULTIPLE_VALUES_PLACEHOLDER : field.placeholder}
+          placeholder={
+            hasMultipleValues ? MULTIPLE_VALUES_PLACEHOLDER : field.placeholder
+          }
         />
       );
   }
@@ -420,112 +488,159 @@ function renderFieldInput(
 
 export const releaseEditFields: BulkEditField[] = [
   {
-    key: 'status',
-    label: 'Status',
-    type: 'select',
+    key: "status",
+    label: "Status",
+    type: "select",
     options: [
-      { value: 'draft', label: 'Draft' },
-      { value: 'pending', label: 'Pending Review' },
-      { value: 'live', label: 'Live' },
-      { value: 'takedown', label: 'Takedown' },
+      { value: "draft", label: "Draft" },
+      { value: "pending", label: "Pending Review" },
+      { value: "live", label: "Live" },
+      { value: "takedown", label: "Takedown" },
     ],
   },
-  { key: 'genre', label: 'Genre', type: 'select', options: [
-    { value: 'pop', label: 'Pop' },
-    { value: 'rock', label: 'Rock' },
-    { value: 'hiphop', label: 'Hip Hop' },
-    { value: 'electronic', label: 'Electronic' },
-    { value: 'rnb', label: 'R&B' },
-    { value: 'country', label: 'Country' },
-    { value: 'jazz', label: 'Jazz' },
-    { value: 'classical', label: 'Classical' },
-  ]},
-  { key: 'explicit', label: 'Explicit Content', type: 'checkbox' },
-  { key: 'label', label: 'Label Name', type: 'text', placeholder: 'Enter label name' },
-  { key: 'releaseDate', label: 'Release Date', type: 'date' },
-  { key: 'territories', label: 'Territories', type: 'text', placeholder: 'e.g., Worldwide, US, EU' },
+  {
+    key: "genre",
+    label: "Genre",
+    type: "select",
+    options: [
+      { value: "pop", label: "Pop" },
+      { value: "rock", label: "Rock" },
+      { value: "hiphop", label: "Hip Hop" },
+      { value: "electronic", label: "Electronic" },
+      { value: "rnb", label: "R&B" },
+      { value: "country", label: "Country" },
+      { value: "jazz", label: "Jazz" },
+      { value: "classical", label: "Classical" },
+    ],
+  },
+  { key: "explicit", label: "Explicit Content", type: "checkbox" },
+  {
+    key: "label",
+    label: "Label Name",
+    type: "text",
+    placeholder: "Enter label name",
+  },
+  { key: "releaseDate", label: "Release Date", type: "date" },
+  {
+    key: "territories",
+    label: "Territories",
+    type: "text",
+    placeholder: "e.g., Worldwide, US, EU",
+  },
 ];
 
 export const postEditFields: BulkEditField[] = [
   {
-    key: 'status',
-    label: 'Status',
-    type: 'select',
+    key: "status",
+    label: "Status",
+    type: "select",
     options: [
-      { value: 'draft', label: 'Draft' },
-      { value: 'scheduled', label: 'Scheduled' },
-      { value: 'published', label: 'Published' },
+      { value: "draft", label: "Draft" },
+      { value: "scheduled", label: "Scheduled" },
+      { value: "published", label: "Published" },
     ],
   },
-  { key: 'scheduledDate', label: 'Schedule Date', type: 'date' },
-  { key: 'hashtags', label: 'Hashtags', type: 'tags', placeholder: 'Enter hashtags' },
-  { key: 'platforms', label: 'Platforms', type: 'tags', placeholder: 'e.g., twitter, instagram, facebook' },
+  { key: "scheduledDate", label: "Schedule Date", type: "date" },
+  {
+    key: "hashtags",
+    label: "Hashtags",
+    type: "tags",
+    placeholder: "Enter hashtags",
+  },
+  {
+    key: "platforms",
+    label: "Platforms",
+    type: "tags",
+    placeholder: "e.g., twitter, instagram, facebook",
+  },
 ];
 
 export const beatEditFields: BulkEditField[] = [
-  { key: 'price', label: 'Price', type: 'number', placeholder: '0.00', min: 0, step: 0.01 },
   {
-    key: 'status',
-    label: 'Listing Status',
-    type: 'select',
+    key: "price",
+    label: "Price",
+    type: "number",
+    placeholder: "0.00",
+    min: 0,
+    step: 0.01,
+  },
+  {
+    key: "status",
+    label: "Listing Status",
+    type: "select",
     options: [
-      { value: 'active', label: 'Active' },
-      { value: 'paused', label: 'Paused' },
-      { value: 'sold', label: 'Sold' },
+      { value: "active", label: "Active" },
+      { value: "paused", label: "Paused" },
+      { value: "sold", label: "Sold" },
     ],
   },
   {
-    key: 'licenseType',
-    label: 'License Type',
-    type: 'select',
+    key: "licenseType",
+    label: "License Type",
+    type: "select",
     options: [
-      { value: 'basic', label: 'Basic Lease' },
-      { value: 'premium', label: 'Premium Lease' },
-      { value: 'unlimited', label: 'Unlimited' },
-      { value: 'exclusive', label: 'Exclusive' },
+      { value: "basic", label: "Basic Lease" },
+      { value: "premium", label: "Premium Lease" },
+      { value: "unlimited", label: "Unlimited" },
+      { value: "exclusive", label: "Exclusive" },
     ],
   },
-  { key: 'featured', label: 'Featured', type: 'checkbox' },
-  { key: 'genre', label: 'Genre', type: 'select', options: [
-    { value: 'hiphop', label: 'Hip Hop' },
-    { value: 'trap', label: 'Trap' },
-    { value: 'rnb', label: 'R&B' },
-    { value: 'pop', label: 'Pop' },
-    { value: 'drill', label: 'Drill' },
-    { value: 'afrobeats', label: 'Afrobeats' },
-  ]},
-  { key: 'tags', label: 'Tags', type: 'tags', placeholder: 'Enter tags' },
+  { key: "featured", label: "Featured", type: "checkbox" },
+  {
+    key: "genre",
+    label: "Genre",
+    type: "select",
+    options: [
+      { value: "hiphop", label: "Hip Hop" },
+      { value: "trap", label: "Trap" },
+      { value: "rnb", label: "R&B" },
+      { value: "pop", label: "Pop" },
+      { value: "drill", label: "Drill" },
+      { value: "afrobeats", label: "Afrobeats" },
+    ],
+  },
+  { key: "tags", label: "Tags", type: "tags", placeholder: "Enter tags" },
 ];
 
 export const fileEditFields: BulkEditField[] = [
-  { key: 'folder', label: 'Move to Folder', type: 'text', placeholder: 'Enter folder path' },
-  { key: 'tags', label: 'Tags', type: 'tags', placeholder: 'Enter tags' },
-  { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Enter description' },
+  {
+    key: "folder",
+    label: "Move to Folder",
+    type: "text",
+    placeholder: "Enter folder path",
+  },
+  { key: "tags", label: "Tags", type: "tags", placeholder: "Enter tags" },
+  {
+    key: "description",
+    label: "Description",
+    type: "textarea",
+    placeholder: "Enter description",
+  },
 ];
 
 export const analyticsExportFields: BulkEditField[] = [
   {
-    key: 'format',
-    label: 'Export Format',
-    type: 'select',
+    key: "format",
+    label: "Export Format",
+    type: "select",
     options: [
-      { value: 'csv', label: 'CSV' },
-      { value: 'xlsx', label: 'Excel (XLSX)' },
-      { value: 'json', label: 'JSON' },
-      { value: 'pdf', label: 'PDF Report' },
+      { value: "csv", label: "CSV" },
+      { value: "xlsx", label: "Excel (XLSX)" },
+      { value: "json", label: "JSON" },
+      { value: "pdf", label: "PDF Report" },
     ],
   },
   {
-    key: 'dateRange',
-    label: 'Date Range',
-    type: 'select',
+    key: "dateRange",
+    label: "Date Range",
+    type: "select",
     options: [
-      { value: '7d', label: 'Last 7 days' },
-      { value: '30d', label: 'Last 30 days' },
-      { value: '90d', label: 'Last 90 days' },
-      { value: 'year', label: 'Last year' },
-      { value: 'all', label: 'All time' },
+      { value: "7d", label: "Last 7 days" },
+      { value: "30d", label: "Last 30 days" },
+      { value: "90d", label: "Last 90 days" },
+      { value: "year", label: "Last year" },
+      { value: "all", label: "All time" },
     ],
   },
-  { key: 'includeCharts', label: 'Include Charts', type: 'checkbox' },
+  { key: "includeCharts", label: "Include Charts", type: "checkbox" },
 ];

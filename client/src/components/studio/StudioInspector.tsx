@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, ChevronRight, Volume2, Circle } from 'lucide-react';
-import { PluginRack, type PluginInstance } from './PluginRack';
+import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { ChevronLeft, ChevronRight, Volume2, Circle } from "lucide-react";
+import { PluginRack, type PluginInstance } from "./PluginRack";
 
 interface StudioTrack {
   id: string;
@@ -38,7 +38,7 @@ export function StudioInspector({
     return (
       <div
         className="h-full flex flex-col items-center py-4"
-        style={{ backgroundColor: 'var(--studio-inspector)' }}
+        style={{ backgroundColor: "var(--studio-inspector)" }}
       >
         <Button
           size="sm"
@@ -46,15 +46,15 @@ export function StudioInspector({
           className="h-8 w-8 p-0 mb-4"
           onClick={onToggleCollapse}
           data-testid="button-toggle-inspector"
-          style={{ color: 'var(--studio-text)' }}
+          style={{ color: "var(--studio-text)" }}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
         <div
           className="text-xs font-medium rotate-180 mb-auto mt-4"
           style={{
-            writingMode: 'vertical-rl',
-            color: 'var(--studio-text-muted)',
+            writingMode: "vertical-rl",
+            color: "var(--studio-text-muted)",
           }}
         >
           INSPECTOR
@@ -64,13 +64,19 @@ export function StudioInspector({
   }
 
   return (
-    <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--studio-inspector)' }}>
+    <div
+      className="h-full flex flex-col"
+      style={{ backgroundColor: "var(--studio-inspector)" }}
+    >
       {/* Header */}
       <div
         className="flex items-center justify-between p-3 border-b"
-        style={{ borderColor: 'var(--studio-border)' }}
+        style={{ borderColor: "var(--studio-border)" }}
       >
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--studio-text)' }}>
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--studio-text)" }}
+        >
           Inspector
         </h3>
         <Button
@@ -79,7 +85,7 @@ export function StudioInspector({
           className="h-6 w-6 p-0"
           onClick={onToggleCollapse}
           data-testid="button-toggle-inspector"
-          style={{ color: 'var(--studio-text)' }}
+          style={{ color: "var(--studio-text)" }}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -97,21 +103,30 @@ export function StudioInspector({
                     className="w-4 h-4 rounded"
                     style={{ backgroundColor: selectedTrack.color }}
                   />
-                  <h4 className="text-sm font-medium" style={{ color: 'var(--studio-text)' }}>
+                  <h4
+                    className="text-sm font-medium"
+                    style={{ color: "var(--studio-text)" }}
+                  >
                     {selectedTrack.name}
                   </h4>
                 </div>
               </div>
 
-              <Separator style={{ backgroundColor: 'var(--studio-border)' }} />
+              <Separator style={{ backgroundColor: "var(--studio-border)" }} />
 
               {/* Volume Control */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Volume
                   </Label>
-                  <span className="text-xs font-mono" style={{ color: 'var(--studio-text)' }}>
+                  <span
+                    className="text-xs font-mono"
+                    style={{ color: "var(--studio-text)" }}
+                  >
                     {Math.round((selectedTrack.volume || 0.8) * 100)}%
                   </span>
                 </div>
@@ -130,11 +145,21 @@ export function StudioInspector({
               {/* Pan Control */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Pan
                   </Label>
-                  <span className="text-xs font-mono" style={{ color: 'var(--studio-text)' }}>
-                    {(selectedTrack.pan || 0) > 0 ? 'R' : (selectedTrack.pan || 0) < 0 ? 'L' : 'C'}{' '}
+                  <span
+                    className="text-xs font-mono"
+                    style={{ color: "var(--studio-text)" }}
+                  >
+                    {(selectedTrack.pan || 0) > 0
+                      ? "R"
+                      : (selectedTrack.pan || 0) < 0
+                        ? "L"
+                        : "C"}{" "}
                     {Math.abs(Math.round((selectedTrack.pan || 0) * 100))}
                   </span>
                 </div>
@@ -150,31 +175,44 @@ export function StudioInspector({
                 />
               </div>
 
-              <Separator style={{ backgroundColor: 'var(--studio-border)' }} />
+              <Separator style={{ backgroundColor: "var(--studio-border)" }} />
 
               {/* Track States */}
               <div className="space-y-2">
-                <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                <Label
+                  className="text-xs"
+                  style={{ color: "var(--studio-text-muted)" }}
+                >
                   Track State
                 </Label>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    variant={selectedTrack.mute ? 'destructive' : 'outline'}
+                    variant={selectedTrack.mute ? "destructive" : "outline"}
                     className="flex-1 h-8 text-xs"
-                    onClick={() => onTrackUpdate(selectedTrack.id, { mute: !selectedTrack.mute })}
+                    onClick={() =>
+                      onTrackUpdate(selectedTrack.id, {
+                        mute: !selectedTrack.mute,
+                      })
+                    }
                     data-testid="button-track-mute"
                   >
                     M
                   </Button>
                   <Button
                     size="sm"
-                    variant={selectedTrack.solo ? 'default' : 'outline'}
+                    variant={selectedTrack.solo ? "default" : "outline"}
                     className="flex-1 h-8 text-xs"
-                    onClick={() => onTrackUpdate(selectedTrack.id, { solo: !selectedTrack.solo })}
+                    onClick={() =>
+                      onTrackUpdate(selectedTrack.id, {
+                        solo: !selectedTrack.solo,
+                      })
+                    }
                     data-testid="button-track-solo"
                     style={{
-                      backgroundColor: selectedTrack.solo ? 'var(--studio-accent)' : 'transparent',
+                      backgroundColor: selectedTrack.solo
+                        ? "var(--studio-accent)"
+                        : "transparent",
                     }}
                   >
                     S
@@ -183,24 +221,35 @@ export function StudioInspector({
               </div>
 
               {/* Plugin Rack - Built-in Effects */}
-              <Separator style={{ backgroundColor: 'var(--studio-border)' }} />
+              <Separator style={{ backgroundColor: "var(--studio-border)" }} />
               <div className="space-y-2">
-                <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                <Label
+                  className="text-xs"
+                  style={{ color: "var(--studio-text-muted)" }}
+                >
                   Plugins
                 </Label>
                 <PluginRack
                   trackId={selectedTrack.id}
                   plugins={selectedTrack.plugins || []}
-                  onPluginsChange={(plugins) => onTrackUpdate(selectedTrack.id, { plugins })}
+                  onPluginsChange={(plugins) =>
+                    onTrackUpdate(selectedTrack.id, { plugins })
+                  }
                 />
               </div>
             </>
           ) : (
             <div className="text-center py-8">
-              <p className="text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+              <p
+                className="text-sm"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
                 No track selected
               </p>
-              <p className="text-xs mt-2" style={{ color: 'var(--studio-text-muted)' }}>
+              <p
+                className="text-xs mt-2"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
                 Select a track to view and edit its properties
               </p>
             </div>

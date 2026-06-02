@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Music,
   Play,
@@ -12,7 +12,7 @@ import {
   Percent,
   Loader2,
   Headphones,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface BeatCardData {
   id: string;
@@ -31,7 +31,7 @@ export interface BeatCardData {
   discountPriceCents?: number | null;
 }
 
-export type BeatCardMode = 'buy' | 'owner';
+export type BeatCardMode = "buy" | "owner";
 
 export interface BeatCardProps {
   beat: BeatCardData;
@@ -63,14 +63,14 @@ export interface BeatCardProps {
  */
 function pickGradient(seed: string): { from: string; to: string } {
   const palettes: Array<{ from: string; to: string }> = [
-    { from: '#7c3aed', to: '#2563eb' }, // violet → blue
-    { from: '#ec4899', to: '#8b5cf6' }, // pink → violet
-    { from: '#f97316', to: '#db2777' }, // orange → pink
-    { from: '#10b981', to: '#0891b2' }, // emerald → cyan
-    { from: '#0ea5e9', to: '#6366f1' }, // sky → indigo
-    { from: '#f59e0b', to: '#ef4444' }, // amber → red
-    { from: '#06b6d4', to: '#3b82f6' }, // cyan → blue
-    { from: '#a855f7', to: '#3b82f6' }, // purple → blue
+    { from: "#7c3aed", to: "#2563eb" }, // violet → blue
+    { from: "#ec4899", to: "#8b5cf6" }, // pink → violet
+    { from: "#f97316", to: "#db2777" }, // orange → pink
+    { from: "#10b981", to: "#0891b2" }, // emerald → cyan
+    { from: "#0ea5e9", to: "#6366f1" }, // sky → indigo
+    { from: "#f59e0b", to: "#ef4444" }, // amber → red
+    { from: "#06b6d4", to: "#3b82f6" }, // cyan → blue
+    { from: "#a855f7", to: "#3b82f6" }, // purple → blue
   ];
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
@@ -87,7 +87,7 @@ function pickGradient(seed: string): { from: string; to: string } {
  */
 export function BeatCard({
   beat,
-  mode = 'buy',
+  mode = "buy",
   isPlaying = false,
   isLoadingAudio = false,
   onPlayToggle,
@@ -98,9 +98,9 @@ export function BeatCard({
   selectable = false,
   selected = false,
   onToggleSelect,
-  className = '',
+  className = "",
 }: BeatCardProps) {
-  const cover = beat.coverArt || beat.artworkUrl || '';
+  const cover = beat.coverArt || beat.artworkUrl || "";
   const tempo = beat.bpm ?? beat.tempo;
   const hasDiscount =
     beat.discountPercent != null &&
@@ -113,7 +113,7 @@ export function BeatCard({
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = cover && !imageBroken;
 
-  const gradient = pickGradient(beat.id || beat.title || 'beat');
+  const gradient = pickGradient(beat.id || beat.title || "beat");
   // Inline-style gradient is intentional: Tailwind v4 renamed
   // `bg-gradient-to-*` → `bg-linear-to-*`, and inline style guarantees
   // the fallback is always visible regardless of class-name churn.
@@ -124,7 +124,7 @@ export function BeatCard({
   return (
     <Card
       className={`group relative overflow-hidden border border-border/60 bg-card hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 ${
-        selected ? 'ring-2 ring-primary' : ''
+        selected ? "ring-2 ring-primary" : ""
       } ${className}`}
       data-testid={`card-beat-${beat.id}`}
     >
@@ -196,13 +196,13 @@ export function BeatCard({
             <Button
               size="icon"
               className={`absolute bottom-3 right-3 z-10 rounded-full w-12 h-12 bg-white text-black shadow-xl transition-all duration-200
-                ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100'}
+                ${isPlaying ? "opacity-100 scale-100" : "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100"}
                 hover:bg-white hover:scale-105`}
               onClick={(e) => {
                 e.stopPropagation();
                 onPlayToggle(beat);
               }}
-              aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
+              aria-label={isPlaying ? "Pause preview" : "Play preview"}
               data-testid={`button-play-${beat.id}`}
             >
               {isLoadingAudio ? (
@@ -233,7 +233,10 @@ export function BeatCard({
                 </span>
               ) : null}
               {beat.genre ? (
-                <Badge variant="secondary" className="text-[11px] px-2 py-0 h-5">
+                <Badge
+                  variant="secondary"
+                  className="text-[11px] px-2 py-0 h-5"
+                >
                   {beat.genre}
                 </Badge>
               ) : null}
@@ -273,15 +276,18 @@ export function BeatCard({
                 </span>
               )}
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
-                {hasDiscount ? 'Sale price' : 'Starting price'}
+                {hasDiscount ? "Sale price" : "Starting price"}
               </div>
             </div>
 
-            {mode === 'buy' && onBuy && (
+            {mode === "buy" && onBuy && (
               <Button
                 size="sm"
                 className="shrink-0 bg-linear-to-r from-violet-600 to-blue-600 text-white hover:from-violet-500 hover:to-blue-500 shadow-md font-semibold"
-                style={{ backgroundImage: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)' }}
+                style={{
+                  backgroundImage:
+                    "linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)",
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   onBuy(beat);
@@ -293,7 +299,7 @@ export function BeatCard({
               </Button>
             )}
 
-            {mode === 'owner' && (
+            {mode === "owner" && (
               <div className="flex space-x-1 shrink-0">
                 {onSetDiscount && (
                   <Button

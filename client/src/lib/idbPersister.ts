@@ -2,12 +2,12 @@
  * IndexedDB-backed async storage adapter for React Query persistence.
  * Unlike the sync localStorage persister, this never blocks the main thread.
  */
-import { openDB, type IDBPDatabase } from 'idb';
+import { openDB, type IDBPDatabase } from "idb";
 
-const DB_NAME   = 'mb-query-cache';
-const DB_VER    = 1;
-const STORE     = 'cache';
-const KEY       = 'mb-v3';
+const DB_NAME = "mb-query-cache";
+const DB_VER = 1;
+const STORE = "cache";
+const KEY = "mb-v3";
 
 let _db: IDBPDatabase | null = null;
 

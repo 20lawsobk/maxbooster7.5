@@ -1,12 +1,12 @@
-import cluster from 'cluster';
-import os from 'os';
-import path from 'path';
-import http from 'http';
-import fs from 'fs';
-import zlib from 'zlib';
-import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
-import { spawnSync, spawn } from 'child_process';
+import cluster from "cluster";
+import os from "os";
+import path from "path";
+import http from "http";
+import fs from "fs";
+import zlib from "zlib";
+import { fileURLToPath } from "url";
+import { createRequire } from "module";
+import { spawnSync, spawn } from "child_process";
 
 // ── Boosterstate sidecar startup ──────────────────────────────────────────────
 // Previously handled by start.sh. Moved here so the run command can be a plain
@@ -17,25 +17,35 @@ import { spawnSync, spawn } from 'child_process';
   // Use computed keys so esbuild's "define" substitution doesn't turn the assignments
   // into a no-op literal assignment (e.g. "production" = ...).
   const _env = process.env as Record<string, string | undefined>;
-  _env['NODE_ENV']               = _env['NODE_ENV']               || 'production';
-  _env['UV_THREADPOOL_SIZE']     = _env['UV_THREADPOOL_SIZE']     || '8';
-  _env['TF_NUM_INTEROP_THREADS'] = _env['TF_NUM_INTEROP_THREADS'] || '2';
-  _env['TF_NUM_INTRAOP_THREADS'] = _env['TF_NUM_INTRAOP_THREADS'] || '2';
+  _env["NODE_ENV"] = _env["NODE_ENV"] || "production";
+  _env["UV_THREADPOOL_SIZE"] = _env["UV_THREADPOOL_SIZE"] || "8";
+  _env["TF_NUM_INTEROP_THREADS"] = _env["TF_NUM_INTEROP_THREADS"] || "2";
+  _env["TF_NUM_INTRAOP_THREADS"] = _env["TF_NUM_INTRAOP_THREADS"] || "2";
 
   // Check portable release binary first (build artifact placed by build.sh),
   // then fall back to the dev-workspace debug binary.
   const binCandidates = [
-    path.join(process.cwd(), 'bin', 'boosterstate'),
-    path.join(process.cwd(), 'boosterstate', 'target', 'release', 'boosterstate'),
+    path.join(process.cwd(), "bin", "boosterstate"),
+    path.join(
+      process.cwd(),
+      "boosterstate",
+      "target",
+      "release",
+      "boosterstate",
+    ),
   ];
-  const bin = binCandidates.find(p => fs.existsSync(p)) ?? '';
+  const bin = binCandidates.find((p) => fs.existsSync(p)) ?? "";
   if (!bin) {
-    console.log('[Cluster] boosterstate binary not found — skipping sidecar startup');
+    console.log(
+      "[Cluster] boosterstate binary not found — skipping sidecar startup",
+    );
     return;
   }
-  const already = spawnSync('pgrep', ['-x', 'boosterstate'], { stdio: 'ignore' }).status === 0;
+  const already =
+    spawnSync("pgrep", ["-x", "boosterstate"], { stdio: "ignore" }).status ===
+    0;
   if (already) {
-    console.log('[Cluster] boosterstate already running');
+    console.log("[Cluster] boosterstate already running");
     return;
   }
 
@@ -47,17 +57,18 @@ import { spawnSync, spawn } from 'child_process';
   // blocked startup for 2 seconds.  spawnSync returns ENOENT immediately
   // (no timeout reached) when the interpreter is missing, so we can detect
   // this case cheaply and skip both the daemon spawn and the 2-second wait.
-  const probe = spawnSync(bin, ['--version'], {
-    timeout: 300,        // killed after 300 ms if binary starts (server mode)
-    stdio: 'ignore',
-    killSignal: 'SIGKILL' as Record<string, unknown>,
+  const probe = spawnSync(bin, ["--version"], {
+    timeout: 300, // killed after 300 ms if binary starts (server mode)
+    stdio: "ignore",
+    killSignal: "SIGKILL" as Record<string, unknown>,
   });
-  const isEnoent = probe.error && (probe.error as NodeJS.ErrnoException).code === 'ENOENT';
+  const isEnoent =
+    probe.error && (probe.error as NodeJS.ErrnoException).code === "ENOENT";
   if (isEnoent) {
     console.warn(
-      '[Cluster] boosterstate binary cannot execute on this host ' +
-      '(ELF interpreter not found — binary was built for a different NixOS/glibc). ' +
-      'Continuing without sidecar.'
+      "[Cluster] boosterstate binary cannot execute on this host " +
+        "(ELF interpreter not found — binary was built for a different NixOS/glibc). " +
+        "Continuing without sidecar.",
     );
     return;
   }
@@ -66,16 +77,22 @@ import { spawnSync, spawn } from 'child_process';
   // is active — clients reach boosterstate via the /api/boosterstate Express proxy.
   // The sidecar binary itself must always bind to a different internal port.
   // BOOSTERSTATE_SIDECAR_PORT (default 9877) is the binary's actual listen address.
-  const sidecarPort = process.env.BOOSTERSTATE_SIDECAR_PORT || '9877';
+  const sidecarPort = process.env.BOOSTERSTATE_SIDECAR_PORT || "9877";
   const sidecarEnv = { ...process.env, BOOSTERSTATE_PORT: sidecarPort };
-  const proc = spawn(bin, [], { detached: true, stdio: 'ignore', env: sidecarEnv });
+  const proc = spawn(bin, [], {
+    detached: true,
+    stdio: "ignore",
+    env: sidecarEnv,
+  });
   // MUST attach an 'error' listener before .unref() — without it, any spawn failure
   // throws an uncaught exception that crashes the entire cluster primary process.
-  proc.on('error', (err) => {
-    console.warn(`[Cluster] boosterstate sidecar error after start (${err.message}) — server will run without it`);
+  proc.on("error", (err) => {
+    console.warn(
+      `[Cluster] boosterstate sidecar error after start (${err.message}) — server will run without it`,
+    );
   });
   proc.unref();
-  console.log('[Cluster] boosterstate sidecar started — waiting 2 s for init');
+  console.log("[Cluster] boosterstate sidecar started — waiting 2 s for init");
   // Synchronous 2-second wait so workers don't race against boosterstate init.
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
 })();
@@ -86,49 +103,64 @@ import { spawnSync, spawn } from 'child_process';
 // Re-generate them here at VM startup so static serving stays fast.
 (function compressAssetsAtStartup() {
   const COMPRESSIBLE = /\.(js|css|svg|html|json|txt|xml|webmanifest)$/;
-  const assetsDir = path.join(process.cwd(), 'dist', 'public', 'assets');
+  const assetsDir = path.join(process.cwd(), "dist", "public", "assets");
   if (!fs.existsSync(assetsDir)) return;
 
   function compressDir(dir: string) {
     let count = 0;
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) { count += compressDir(full); continue; }
+      if (entry.isDirectory()) {
+        count += compressDir(full);
+        continue;
+      }
       if (!COMPRESSIBLE.test(entry.name)) continue;
-      if (entry.name.endsWith('.br') || entry.name.endsWith('.gz')) continue;
+      if (entry.name.endsWith(".br") || entry.name.endsWith(".gz")) continue;
       try {
         const src = fs.readFileSync(full);
-        if (!fs.existsSync(full + '.br')) {
+        if (!fs.existsSync(full + ".br")) {
           const br = zlib.brotliCompressSync(src, {
             params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 6 },
           });
-          fs.writeFileSync(full + '.br', br);
+          fs.writeFileSync(full + ".br", br);
           count++;
         }
-        if (!fs.existsSync(full + '.gz')) {
+        if (!fs.existsSync(full + ".gz")) {
           const gz = zlib.gzipSync(src, { level: 9 });
-          fs.writeFileSync(full + '.gz', gz);
+          fs.writeFileSync(full + ".gz", gz);
           count++;
         }
-      } catch { /* intentional: gzip backup is best-effort; main data file already written */ }
+      } catch {
+        /* intentional: gzip backup is best-effort; main data file already written */
+      }
     }
     return count;
   }
 
   try {
     const compressed = compressDir(assetsDir);
-    if (compressed > 0) console.log(`[Cluster] Asset pre-compression complete — ${compressed} file(s) written`);
+    if (compressed > 0)
+      console.log(
+        `[Cluster] Asset pre-compression complete — ${compressed} file(s) written`,
+      );
   } catch (err) {
-    console.warn('[Cluster] Asset pre-compression skipped:', (err as Error).message);
+    console.warn(
+      "[Cluster] Asset pre-compression skipped:",
+      (err as Error).message,
+    );
   }
 })();
 
 // CJS-safe: import.meta.url is undefined when bundled to CJS by esbuild.
 // Fall back to process.argv[1] (the entry file path) for __dirname resolution.
-const __metaUrl = (import.meta as Record<string, unknown>)?.url as string | undefined;
-const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as
+  | string
+  | undefined;
+const __filename = __metaUrl
+  ? fileURLToPath(__metaUrl)
+  : path.resolve(process.argv[1] ?? "");
 const __dirname = path.dirname(__filename);
-const require = createRequire(__metaUrl ?? ('file://' + __filename));
+const require = createRequire(__metaUrl ?? "file://" + __filename);
 
 // Clustering requires either:
 //   1. REPLIT_DEPLOYMENT is set (actual Autoscale deployment), OR
@@ -136,23 +168,22 @@ const require = createRequire(__metaUrl ?? ('file://' + __filename));
 // NODE_ENV=production alone does NOT trigger clustering — in the Replit IDE the build
 // runs with NODE_ENV=production but there is only one process and no health-check grace period.
 const ENABLE_CLUSTER =
-  !!process.env.REPLIT_DEPLOYMENT ||
-  process.env.ENABLE_CLUSTER === 'true';
+  !!process.env.REPLIT_DEPLOYMENT || process.env.ENABLE_CLUSTER === "true";
 
-const DISABLE_CLUSTER = process.env.DISABLE_CLUSTER === 'true';
+const DISABLE_CLUSTER = process.env.DISABLE_CLUSTER === "true";
 
 if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // Single-process mode: IDE dev environment, DISABLE_CLUSTER=true, or non-deployment run.
   // Use dynamic import — index.mjs is ESM and cannot be loaded with require().
-  const appEntry = path.join(__dirname, 'index.mjs');
+  const appEntry = path.join(__dirname, "index.mjs");
   import(appEntry).catch((err: unknown) => {
-    console.error('[Cluster] Failed to load server entry:', err);
+    console.error("[Cluster] Failed to load server entry:", err);
     process.exit(1);
   });
 } else {
   const numCPUs = os.cpus().length;
-  const freeMemGB = os.freemem() / (1024 ** 3);
-  const totalMemGB = os.totalmem() / (1024 ** 3);
+  const freeMemGB = os.freemem() / 1024 ** 3;
+  const totalMemGB = os.totalmem() / 1024 ** 3;
 
   // ── Worker auto-sizing — why this matters at scale ───────────────────────
   //
@@ -231,20 +262,23 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // CLUSTER_WORKERS is intentionally left unset in production so auto-sizing
   // fills every available CPU core and RAM slot on whatever VM Autoscale
   // provisions.  Only set it when deliberately constraining for debugging.
-  const envOverride = process.env.CLUSTER_WORKERS ? parseInt(process.env.CLUSTER_WORKERS, 10) : null;
+  const envOverride = process.env.CLUSTER_WORKERS
+    ? parseInt(process.env.CLUSTER_WORKERS, 10)
+    : null;
 
-  const workerCount = envOverride && envOverride > 0
-    ? (() => {
-        console.warn(
-          `[Cluster] ⚠️  CLUSTER_WORKERS override active — pinned to ${envOverride} worker(s). ` +
-          `Auto-sizing would have chosen ${Math.min(cpuLimit, memLimit)}. ` +
-          `Remove CLUSTER_WORKERS to restore full VM utilisation.`
-        );
-        return envOverride;
-      })()
-    : Math.min(cpuLimit, memLimit);
+  const workerCount =
+    envOverride && envOverride > 0
+      ? (() => {
+          console.warn(
+            `[Cluster] ⚠️  CLUSTER_WORKERS override active — pinned to ${envOverride} worker(s). ` +
+              `Auto-sizing would have chosen ${Math.min(cpuLimit, memLimit)}. ` +
+              `Remove CLUSTER_WORKERS to restore full VM utilisation.`,
+          );
+          return envOverride;
+        })()
+      : Math.min(cpuLimit, memLimit);
 
-  const workerScript = path.join(__dirname, 'index.mjs');
+  const workerScript = path.join(__dirname, "index.mjs");
 
   // Pass heap size to every worker — workers do NOT inherit the primary's CLI flag.
   // execArgv is propagated to each forked child process by Node.js cluster module.
@@ -255,10 +289,10 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
   console.log(
     `[Cluster] Primary ${process.pid} — forking ${workerCount} workers ` +
-    `(CPUs: ${numCPUs}, total RAM: ${totalMemGB.toFixed(1)} GB, free: ${freeMemGB.toFixed(1)} GB, ` +
-    `${memPerWorkerGB} GB/worker, heap/worker: ${workerHeapMB} MB, ` +
-    `cpu-limit: ${cpuLimit}, mem-limit: ${memLimit})` +
-    (isDeployment ? ` [Deployed VM — ${numCPUs} vCPU]` : '')
+      `(CPUs: ${numCPUs}, total RAM: ${totalMemGB.toFixed(1)} GB, free: ${freeMemGB.toFixed(1)} GB, ` +
+      `${memPerWorkerGB} GB/worker, heap/worker: ${workerHeapMB} MB, ` +
+      `cpu-limit: ${cpuLimit}, mem-limit: ${memLimit})` +
+      (isDeployment ? ` [Deployed VM — ${numCPUs} vCPU]` : ""),
   );
 
   // ── Option 1: Primary-owned health check server ───────────────────────────
@@ -271,28 +305,48 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   //   • Once workers come online they share port 5000 and handle real traffic.
   //   • If ALL workers crash and restart the primary's socket keeps the port
   //     alive so the health check never sees a connection-refused.
-  const primaryPort = parseInt(process.env.PORT || '5000', 10);
+  const primaryPort = parseInt(process.env.PORT || "5000", 10);
   // Health paths answered by the primary itself.
   // MUST include every path Replit's deployment health checker may use — if the
   // primary returns 503 on any health path, the deployment times out even after
   // workers come up (OS SO_REUSEPORT load-balances between primary + workers so
   // the primary always handles a fraction of incoming requests).
-  const HEALTH_PATHS = new Set(['/', '/health', '/api/health', '/api/ping']);
+  const HEALTH_PATHS = new Set(["/", "/health", "/api/health", "/api/ping"]);
   const primaryHealthServer = http.createServer((req, res) => {
-    const url = (req.url ?? '').split('?')[0]; // strip query string
+    const url = (req.url ?? "").split("?")[0]; // strip query string
     if (HEALTH_PATHS.has(url)) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok', pid: process.pid, role: 'primary', ts: Date.now() }));
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          status: "ok",
+          pid: process.pid,
+          role: "primary",
+          ts: Date.now(),
+        }),
+      );
     } else {
       // Non-health requests that land on the primary during worker startup:
       // return 503 + Retry-After so the client retries once a worker is ready.
-      res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '2' });
-      res.end(JSON.stringify({ status: 'starting', message: 'Workers initializing — retry in 2s' }));
+      res.writeHead(503, {
+        "Content-Type": "application/json",
+        "Retry-After": "2",
+      });
+      res.end(
+        JSON.stringify({
+          status: "starting",
+          message: "Workers initializing — retry in 2s",
+        }),
+      );
     }
   });
-  primaryHealthServer.listen({ port: primaryPort, host: '0.0.0.0', reusePort: true }, () => {
-    console.log(`[Cluster] Primary health server on :${primaryPort} (pid=${process.pid}) — workers starting`);
-  });
+  primaryHealthServer.listen(
+    { port: primaryPort, host: "0.0.0.0", reusePort: true },
+    () => {
+      console.log(
+        `[Cluster] Primary health server on :${primaryPort} (pid=${process.pid}) — workers starting`,
+      );
+    },
+  );
 
   // Stagger worker startup by 800 ms per worker.
   // Without a stagger all N workers immediately race to connect to PDIM
@@ -324,9 +378,11 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   const MAX_RESTARTS_PER_MINUTE = 10;
   const BACKOFF_DELAY_MS = 30_000;
 
-  cluster.on('exit', (worker, code, signal) => {
+  cluster.on("exit", (worker, code, signal) => {
     const reason = signal ? `signal=${signal}` : `code=${code}`;
-    console.error(`[Cluster] Worker ${worker.process.pid} exited (${reason}) — restarting`);
+    console.error(
+      `[Cluster] Worker ${worker.process.pid} exited (${reason}) — restarting`,
+    );
 
     // Retrieve (and remove) the env so the replacement inherits the same CLUSTER_WORKER_ID.
     const savedEnv = workerEnvMap.get(worker.id);
@@ -339,14 +395,17 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
     const now = Date.now();
     // Evict timestamps outside the 60-second window
-    while (workerRestartTimes.length > 0 && workerRestartTimes[0] < now - 60_000) {
+    while (
+      workerRestartTimes.length > 0 &&
+      workerRestartTimes[0] < now - 60_000
+    ) {
       workerRestartTimes.shift();
     }
 
     if (workerRestartTimes.length >= MAX_RESTARTS_PER_MINUTE) {
       console.error(
         `[Cluster] Crash-loop detected: ${workerRestartTimes.length} restarts in last 60s — ` +
-        `backing off ${BACKOFF_DELAY_MS / 1000}s before next fork`
+          `backing off ${BACKOFF_DELAY_MS / 1000}s before next fork`,
       );
       setTimeout(spawnReplacement, BACKOFF_DELAY_MS);
     } else {
@@ -357,7 +416,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
   let workersOnline = 0;
   let primaryPortReleased = false;
-  cluster.on('online', (worker) => {
+  cluster.on("online", (worker) => {
     console.log(`[Cluster] Worker ${worker.process.pid} online`);
     workersOnline++;
     if (workersOnline >= workerCount && !primaryPortReleased) {
@@ -367,7 +426,9 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       // requests (including API calls from the SPA) land on the primary and get
       // 503 forever, breaking the app for users even after a clean boot.
       primaryHealthServer.close(() => {
-        console.log('[Cluster] Primary port released — all traffic now served by workers');
+        console.log(
+          "[Cluster] Primary port released — all traffic now served by workers",
+        );
       });
     }
   });
@@ -377,61 +438,81 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // The primary must propagate the signal to all workers and wait for them to drain
   // before exiting. Hard-exits after 25 s (autoscale sends SIGKILL at ~30 s).
   function primaryShutdown(signal: string): void {
-    console.log(`[Cluster] Primary received ${signal} — draining ${Object.keys(cluster.workers ?? {}).length} worker(s)`);
+    console.log(
+      `[Cluster] Primary received ${signal} — draining ${Object.keys(cluster.workers ?? {}).length} worker(s)`,
+    );
 
     const hardExit = setTimeout(() => {
-      console.error('[Cluster] Primary hard timeout — forcing exit');
+      console.error("[Cluster] Primary hard timeout — forcing exit");
       process.exit(0);
     }, 25_000);
     hardExit.unref();
 
     // Forward SIGTERM to all workers so they trigger their own graceful shutdown.
-    const workers = Object.values(cluster.workers ?? {}).filter(Boolean) as import('cluster').Worker[];
+    const workers = Object.values(cluster.workers ?? {}).filter(
+      Boolean,
+    ) as import("cluster").Worker[];
     workers.forEach((w) => {
-      try { w.process.kill('SIGTERM'); } catch { /* worker may already be gone */ }
+      try {
+        w.process.kill("SIGTERM");
+      } catch {
+        /* worker may already be gone */
+      }
     });
 
     // Exit once all workers have exited.
     let remaining = workers.length;
-    if (remaining === 0) { clearTimeout(hardExit); process.exit(0); return; }
+    if (remaining === 0) {
+      clearTimeout(hardExit);
+      process.exit(0);
+      return;
+    }
 
-    cluster.on('exit', () => {
+    cluster.on("exit", () => {
       remaining--;
       if (remaining <= 0) {
-        console.log('[Cluster] All workers exited — primary shutting down');
+        console.log("[Cluster] All workers exited — primary shutting down");
         clearTimeout(hardExit);
         process.exit(0);
       }
     });
   }
 
-  process.on('SIGTERM', () => primaryShutdown('SIGTERM'));
-  process.on('SIGINT',  () => primaryShutdown('SIGINT'));
+  process.on("SIGTERM", () => primaryShutdown("SIGTERM"));
+  process.on("SIGINT", () => primaryShutdown("SIGINT"));
 
   // Rolling restart triggered by SilentDeploymentService after self-evolution files land.
   // Cycles workers one at a time: old exits → new forks and comes online → repeat.
   // Zero downtime: at least one worker is always serving traffic.
   let rollingRestartInProgress = false;
 
-  cluster.on('message', (_worker, message: unknown) => {
-    if (!message || typeof message !== 'object') return;
+  cluster.on("message", (_worker, message: unknown) => {
+    if (!message || typeof message !== "object") return;
     const msg = message as Record<string, unknown>;
-    if (msg.type !== 'SILENT_RELOAD') return;
+    if (msg.type !== "SILENT_RELOAD") return;
     if (rollingRestartInProgress) {
-      console.log('[Cluster] Rolling restart already in progress — ignoring duplicate SILENT_RELOAD');
+      console.log(
+        "[Cluster] Rolling restart already in progress — ignoring duplicate SILENT_RELOAD",
+      );
       return;
     }
 
-    const reason = msg.reason ?? 'unknown';
-    console.log(`[Cluster] SILENT_RELOAD received (reason=${reason}) — beginning rolling restart`);
+    const reason = msg.reason ?? "unknown";
+    console.log(
+      `[Cluster] SILENT_RELOAD received (reason=${reason}) — beginning rolling restart`,
+    );
     rollingRestartInProgress = true;
 
-    const workerList = Object.values(cluster.workers ?? {}).filter(Boolean) as import('cluster').Worker[];
+    const workerList = Object.values(cluster.workers ?? {}).filter(
+      Boolean,
+    ) as import("cluster").Worker[];
     let index = 0;
 
     const restartNext = () => {
       if (index >= workerList.length) {
-        console.log('[Cluster] Rolling restart complete — all workers running new code');
+        console.log(
+          "[Cluster] Rolling restart complete — all workers running new code",
+        );
         rollingRestartInProgress = false;
         return;
       }
@@ -444,12 +525,14 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
       // Fork the replacement first so traffic is never fully dropped
       const replacement = cluster.fork();
-      replacement.once('listening', () => {
-        console.log(`[Cluster] Replacement worker ${replacement.process.pid} ready — retiring old worker ${target.process.pid}`);
+      replacement.once("listening", () => {
+        console.log(
+          `[Cluster] Replacement worker ${replacement.process.pid} ready — retiring old worker ${target.process.pid}`,
+        );
         target.disconnect();
         // Give old worker 10s to finish in-flight requests then force-kill
         const forceKill = setTimeout(() => target.kill(), 10_000);
-        target.once('exit', () => {
+        target.once("exit", () => {
           clearTimeout(forceKill);
           restartNext();
         });

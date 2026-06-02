@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageSquare,
   Reply,
@@ -15,35 +15,35 @@ import {
   Edit2,
   Pin,
   Flag,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export type CommentOutcomeType =
-  | 'comment_added'
-  | 'comment_replied'
-  | 'comment_resolved'
-  | 'mention_notification_sent'
-  | 'mention_resolved'
-  | 'thread_collapsed'
-  | 'thread_expanded';
+  | "comment_added"
+  | "comment_replied"
+  | "comment_resolved"
+  | "mention_notification_sent"
+  | "mention_resolved"
+  | "thread_collapsed"
+  | "thread_expanded";
 
 export interface Comment {
   id: string;
@@ -75,7 +75,11 @@ interface CommentThreadProps {
   comments: Comment[];
   currentUserId: string;
   mentionableUsers: MentionableUser[];
-  onAddComment: (content: string, mentions: string[], parentId?: string) => Promise<void>;
+  onAddComment: (
+    content: string,
+    mentions: string[],
+    parentId?: string,
+  ) => Promise<void>;
   onResolve: (commentId: string) => Promise<void>;
   onDelete?: (commentId: string) => Promise<void>;
   onEdit?: (commentId: string, content: string) => Promise<void>;
@@ -101,138 +105,163 @@ export function CommentThread({
   className,
 }: CommentThreadProps) {
   const { toast } = useToast();
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyContent, setReplyContent] = useState('');
-  const [collapsedThreads, setCollapsedThreads] = useState<Set<string>>(new Set());
+  const [replyContent, setReplyContent] = useState("");
+  const [collapsedThreads, setCollapsedThreads] = useState<Set<string>>(
+    new Set(),
+  );
   const [showMentionPopover, setShowMentionPopover] = useState(false);
-  const [mentionFilter, setMentionFilter] = useState('');
+  const [mentionFilter, setMentionFilter] = useState("");
   const [currentMentions, setCurrentMentions] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleAddComment = useCallback(async (parentId?: string) => {
-    const content = parentId ? replyContent : newComment;
-    if (!content.trim()) return;
+  const handleAddComment = useCallback(
+    async (parentId?: string) => {
+      const content = parentId ? replyContent : newComment;
+      if (!content.trim()) return;
 
-    setIsSubmitting(true);
-    try {
-      await onAddComment(content, currentMentions, parentId);
+      setIsSubmitting(true);
+      try {
+        await onAddComment(content, currentMentions, parentId);
 
-      if (parentId) {
-        setReplyContent('');
-        setReplyingTo(null);
-        onOutcome?.('comment_replied', { parentId });
-      } else {
-        setNewComment('');
-        onOutcome?.('comment_added', { projectId, elementId });
-      }
+        if (parentId) {
+          setReplyContent("");
+          setReplyingTo(null);
+          onOutcome?.("comment_replied", { parentId });
+        } else {
+          setNewComment("");
+          onOutcome?.("comment_added", { projectId, elementId });
+        }
 
-      if (currentMentions.length > 0) {
-        onOutcome?.('mention_notification_sent', { 
-          mentions: currentMentions,
-          count: currentMentions.length,
-        });
+        if (currentMentions.length > 0) {
+          onOutcome?.("mention_notification_sent", {
+            mentions: currentMentions,
+            count: currentMentions.length,
+          });
+          toast({
+            title: "Mentions Sent",
+            description: `${currentMentions.length} user(s) have been notified`,
+          });
+        }
+
+        setCurrentMentions([]);
+      } catch (error) {
         toast({
-          title: 'Mentions Sent',
-          description: `${currentMentions.length} user(s) have been notified`,
+          title: "Failed to add comment",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      newComment,
+      replyContent,
+      currentMentions,
+      onAddComment,
+      onOutcome,
+      projectId,
+      elementId,
+      toast,
+    ],
+  );
+
+  const handleResolve = useCallback(
+    async (commentId: string) => {
+      try {
+        await onResolve(commentId);
+        toast({
+          title: "Comment Resolved",
+          description: (
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-400" />
+              <span>Comment marked as resolved</span>
+            </div>
+          ),
+        });
+        onOutcome?.("comment_resolved", { commentId });
+      } catch (error) {
+        toast({
+          title: "Failed to resolve",
+          description: "Please try again.",
+          variant: "destructive",
         });
       }
+    },
+    [onResolve, onOutcome, toast],
+  );
 
-      setCurrentMentions([]);
-    } catch (error) {
-      toast({
-        title: 'Failed to add comment',
-        description: 'Please try again.',
-        variant: 'destructive',
+  const toggleThread = useCallback(
+    (commentId: string) => {
+      setCollapsedThreads((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(commentId)) {
+          newSet.delete(commentId);
+          onOutcome?.("thread_expanded", { commentId });
+        } else {
+          newSet.add(commentId);
+          onOutcome?.("thread_collapsed", { commentId });
+        }
+        return newSet;
       });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [newComment, replyContent, currentMentions, onAddComment, onOutcome, projectId, elementId, toast]);
+    },
+    [onOutcome],
+  );
 
-  const handleResolve = useCallback(async (commentId: string) => {
-    try {
-      await onResolve(commentId);
-      toast({
-        title: 'Comment Resolved',
-        description: (
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-green-400" />
-            <span>Comment marked as resolved</span>
-          </div>
-        ),
-      });
-      onOutcome?.('comment_resolved', { commentId });
-    } catch (error) {
-      toast({
-        title: 'Failed to resolve',
-        description: 'Please try again.',
-        variant: 'destructive',
-      });
-    }
-  }, [onResolve, onOutcome, toast]);
+  const insertMention = useCallback(
+    (user: MentionableUser) => {
+      const textarea = replyingTo
+        ? replyTextareaRef.current
+        : textareaRef.current;
+      const content = replyingTo ? replyContent : newComment;
+      const setContent = replyingTo ? setReplyContent : setNewComment;
 
-  const toggleThread = useCallback((commentId: string) => {
-    setCollapsedThreads(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(commentId)) {
-        newSet.delete(commentId);
-        onOutcome?.('thread_expanded', { commentId });
-      } else {
-        newSet.add(commentId);
-        onOutcome?.('thread_collapsed', { commentId });
+      const mentionIndex = content.lastIndexOf("@");
+      if (mentionIndex !== -1) {
+        const beforeMention = content.slice(0, mentionIndex);
+        const newContent = `${beforeMention}@${user.name} `;
+        setContent(newContent);
+        setCurrentMentions((prev) => [...prev, user.id]);
       }
-      return newSet;
-    });
-  }, [onOutcome]);
 
-  const insertMention = useCallback((user: MentionableUser) => {
-    const textarea = replyingTo ? replyTextareaRef.current : textareaRef.current;
-    const content = replyingTo ? replyContent : newComment;
-    const setContent = replyingTo ? setReplyContent : setNewComment;
-
-    const mentionIndex = content.lastIndexOf('@');
-    if (mentionIndex !== -1) {
-      const beforeMention = content.slice(0, mentionIndex);
-      const newContent = `${beforeMention}@${user.name} `;
-      setContent(newContent);
-      setCurrentMentions(prev => [...prev, user.id]);
-    }
-
-    setShowMentionPopover(false);
-    setMentionFilter('');
-    textarea?.focus();
-  }, [newComment, replyContent, replyingTo]);
-
-  const handleTextChange = useCallback((
-    e: React.ChangeEvent<HTMLTextAreaElement>,
-    isReply: boolean
-  ) => {
-    const value = e.target.value;
-    if (isReply) {
-      setReplyContent(value);
-    } else {
-      setNewComment(value);
-    }
-
-    const atIndex = value.lastIndexOf('@');
-    if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === ' ')) {
-      const query = value.slice(atIndex + 1).split(' ')[0];
-      setMentionFilter(query);
-      setShowMentionPopover(true);
-    } else {
       setShowMentionPopover(false);
-    }
-  }, []);
+      setMentionFilter("");
+      textarea?.focus();
+    },
+    [newComment, replyContent, replyingTo],
+  );
+
+  const handleTextChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>, isReply: boolean) => {
+      const value = e.target.value;
+      if (isReply) {
+        setReplyContent(value);
+      } else {
+        setNewComment(value);
+      }
+
+      const atIndex = value.lastIndexOf("@");
+      if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === " ")) {
+        const query = value.slice(atIndex + 1).split(" ")[0];
+        setMentionFilter(query);
+        setShowMentionPopover(true);
+      } else {
+        setShowMentionPopover(false);
+      }
+    },
+    [],
+  );
 
   const formatTime = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
-    
-    if (minutes < 1) return 'Just now';
+
+    if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
@@ -252,14 +281,18 @@ export function CommentThread({
         animate={{ opacity: 1, y: 0 }}
         className={cn(
           "group",
-          isReply && "ml-8 border-l-2 border-zinc-800 pl-4"
+          isReply && "ml-8 border-l-2 border-zinc-800 pl-4",
         )}
       >
-        <div className={cn(
-          "p-3 rounded-lg transition-colors",
-          comment.resolved ? "bg-green-500/5 border border-green-500/20" : "bg-zinc-900",
-          comment.isPinned && "ring-1 ring-amber-500/30"
-        )}>
+        <div
+          className={cn(
+            "p-3 rounded-lg transition-colors",
+            comment.resolved
+              ? "bg-green-500/5 border border-green-500/20"
+              : "bg-zinc-900",
+            comment.isPinned && "ring-1 ring-amber-500/30",
+          )}
+        >
           <div className="flex items-start gap-3">
             <Avatar className="w-8 h-8">
               <AvatarImage src={comment.userAvatar} />
@@ -271,9 +304,13 @@ export function CommentThread({
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{comment.userName}</span>
+                  <span className="text-sm font-medium">
+                    {comment.userName}
+                  </span>
                   {isOwn && (
-                    <Badge variant="outline" className="text-[10px] px-1 py-0">You</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1 py-0">
+                      You
+                    </Badge>
                   )}
                   {comment.isPinned && (
                     <Pin className="w-3 h-3 text-amber-400" />
@@ -297,23 +334,32 @@ export function CommentThread({
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                    <DropdownMenuContent
+                      align="end"
+                      className="bg-zinc-900 border-zinc-800"
+                    >
                       {!comment.resolved && (
-                        <DropdownMenuItem onClick={() => handleResolve(comment.id)}>
+                        <DropdownMenuItem
+                          onClick={() => handleResolve(comment.id)}
+                        >
                           <Check className="w-4 h-4 mr-2" />
                           Resolve
                         </DropdownMenuItem>
                       )}
                       {!isReply && (
-                        <DropdownMenuItem onClick={() => setReplyingTo(comment.id)}>
+                        <DropdownMenuItem
+                          onClick={() => setReplyingTo(comment.id)}
+                        >
                           <Reply className="w-4 h-4 mr-2" />
                           Reply
                         </DropdownMenuItem>
                       )}
                       {onPin && (
-                        <DropdownMenuItem onClick={() => onPin(comment.id, !comment.isPinned)}>
+                        <DropdownMenuItem
+                          onClick={() => onPin(comment.id, !comment.isPinned)}
+                        >
                           <Pin className="w-4 h-4 mr-2" />
-                          {comment.isPinned ? 'Unpin' : 'Pin'}
+                          {comment.isPinned ? "Unpin" : "Pin"}
                         </DropdownMenuItem>
                       )}
                       {isOwn && onEdit && (
@@ -328,7 +374,7 @@ export function CommentThread({
                         Report
                       </DropdownMenuItem>
                       {isOwn && onDelete && (
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-red-400"
                           onClick={() => onDelete(comment.id)}
                         >
@@ -343,7 +389,7 @@ export function CommentThread({
 
               <p className="text-sm text-zinc-300 mt-1 whitespace-pre-wrap">
                 {comment.content.split(/(@\w+)/g).map((part, i) => {
-                  if (part.startsWith('@')) {
+                  if (part.startsWith("@")) {
                     return (
                       <span key={i} className="text-blue-400 font-medium">
                         {part}
@@ -357,7 +403,8 @@ export function CommentThread({
               {comment.timestamp !== undefined && (
                 <div className="flex items-center gap-1 mt-2 text-xs text-zinc-500">
                   <Clock className="w-3 h-3" />
-                  At {Math.floor(comment.timestamp / 60)}:{String(comment.timestamp % 60).padStart(2, '0')}
+                  At {Math.floor(comment.timestamp / 60)}:
+                  {String(comment.timestamp % 60).padStart(2, "0")}
                 </div>
               )}
 
@@ -398,7 +445,8 @@ export function CommentThread({
               {isCollapsed ? (
                 <>
                   <ChevronDown className="w-3 h-3 mr-1" />
-                  Show {comment.replies.length} repl{comment.replies.length > 1 ? 'ies' : 'y'}
+                  Show {comment.replies.length} repl
+                  {comment.replies.length > 1 ? "ies" : "y"}
                 </>
               ) : (
                 <>
@@ -412,11 +460,11 @@ export function CommentThread({
               {!isCollapsed && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
+                  animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-2 space-y-2"
                 >
-                  {comment.replies.map(reply => renderComment(reply, true))}
+                  {comment.replies.map((reply) => renderComment(reply, true))}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -444,7 +492,7 @@ export function CommentThread({
                   className="h-6 w-6"
                   onClick={() => {
                     setReplyingTo(null);
-                    setReplyContent('');
+                    setReplyContent("");
                   }}
                 >
                   <X className="w-4 h-4" />
@@ -465,15 +513,17 @@ export function CommentThread({
     );
   };
 
-  const filteredUsers = mentionableUsers.filter(user =>
-    user.name.toLowerCase().includes(mentionFilter.toLowerCase())
+  const filteredUsers = mentionableUsers.filter((user) =>
+    user.name.toLowerCase().includes(mentionFilter.toLowerCase()),
   );
 
-  const unresolvedCount = comments.filter(c => !c.resolved).length;
-  const resolvedCount = comments.filter(c => c.resolved).length;
+  const unresolvedCount = comments.filter((c) => !c.resolved).length;
+  const resolvedCount = comments.filter((c) => c.resolved).length;
 
   return (
-    <div className={cn("bg-zinc-950 rounded-lg border border-zinc-800", className)}>
+    <div
+      className={cn("bg-zinc-950 rounded-lg border border-zinc-800", className)}
+    >
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-violet-400" />
@@ -484,7 +534,10 @@ export function CommentThread({
             </Badge>
           )}
           {resolvedCount > 0 && (
-            <Badge variant="outline" className="text-xs text-green-400 border-green-400/30">
+            <Badge
+              variant="outline"
+              className="text-xs text-green-400 border-green-400/30"
+            >
               {resolvedCount} resolved
             </Badge>
           )}
@@ -501,8 +554,8 @@ export function CommentThread({
             </div>
           ) : (
             comments
-              .filter(c => !c.resolved)
-              .map(comment => renderComment(comment))
+              .filter((c) => !c.resolved)
+              .map((comment) => renderComment(comment))
           )}
 
           {resolvedCount > 0 && (
@@ -510,8 +563,8 @@ export function CommentThread({
               <p className="text-xs text-zinc-500 mb-2">Resolved comments</p>
               <div className="space-y-2 opacity-60">
                 {comments
-                  .filter(c => c.resolved)
-                  .map(comment => renderComment(comment))}
+                  .filter((c) => c.resolved)
+                  .map((comment) => renderComment(comment))}
               </div>
             </div>
           )}
@@ -520,7 +573,10 @@ export function CommentThread({
 
       <div className="p-3 border-t border-zinc-800">
         <div className="relative">
-          <Popover open={showMentionPopover} onOpenChange={setShowMentionPopover}>
+          <Popover
+            open={showMentionPopover}
+            onOpenChange={setShowMentionPopover}
+          >
             <PopoverTrigger asChild>
               <div className="relative">
                 <Textarea
@@ -541,7 +597,7 @@ export function CommentThread({
                         const pos = textarea.selectionStart;
                         const before = newComment.slice(0, pos);
                         const after = newComment.slice(pos);
-                        setNewComment(before + '@' + after);
+                        setNewComment(before + "@" + after);
                         setTimeout(() => {
                           textarea.focus();
                           textarea.setSelectionRange(pos + 1, pos + 1);
@@ -563,16 +619,18 @@ export function CommentThread({
                 </div>
               </div>
             </PopoverTrigger>
-            <PopoverContent 
-              align="start" 
+            <PopoverContent
+              align="start"
               className="w-64 p-0 bg-zinc-900 border-zinc-800"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
               <ScrollArea className="max-h-48">
                 {filteredUsers.length === 0 ? (
-                  <div className="p-3 text-sm text-zinc-500">No users found</div>
+                  <div className="p-3 text-sm text-zinc-500">
+                    No users found
+                  </div>
                 ) : (
-                  filteredUsers.map(user => (
+                  filteredUsers.map((user) => (
                     <button
                       key={user.id}
                       className="flex items-center gap-2 w-full p-2 hover:bg-zinc-800 transition-colors"

@@ -6,6 +6,7 @@ description: How publish context must be captured and retained so performance an
 The autopilot engine queues content, publishes it (popping the queue with `shift()`), then later runs a `performance_analysis` job that needs the published item's `type`, `topic`, and real posted timestamp.
 
 **Rules:**
+
 1. Capture publish context **before/at** the moment the item leaves the queue — never via `contentQueue.find()` after `shift()`, because the item is already gone and the lookup always misses (falling back to synthetic `social_post` / now-2h values that silently corrupt learning).
 2. Set real `type`/`topic` on the queued content object at creation time so the captured context carries true values.
 3. Store context in a durable `publishContext` Map keyed by content id, populated at publish.

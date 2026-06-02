@@ -1,20 +1,26 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { useAuth } from '@/hooks/useAuth';
+} from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 import {
   RefreshCw,
   AlertTriangle,
@@ -28,7 +34,7 @@ import {
   Loader2,
   AlertCircle,
   Settings,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -39,26 +45,26 @@ import {
   ThreadsIcon,
   GoogleIcon,
   MetaIcon,
-} from '@/components/ui/brand-icons';
+} from "@/components/ui/brand-icons";
 
 export type PlatformReconnectOutcome =
-  | 'token_valid'
-  | 'token_expired'
-  | 'token_expiring_soon'
-  | 'token_revoked'
-  | 'scope_changed'
-  | 'reauth_required'
-  | 'provider_maintenance'
-  | 'connection_lost'
-  | 'refresh_initiated'
-  | 'refresh_successful'
-  | 'refresh_failed';
+  | "token_valid"
+  | "token_expired"
+  | "token_expiring_soon"
+  | "token_revoked"
+  | "scope_changed"
+  | "reauth_required"
+  | "provider_maintenance"
+  | "connection_lost"
+  | "refresh_initiated"
+  | "refresh_successful"
+  | "refresh_failed";
 
 interface PlatformTokenStatus {
   platform: string;
   platformName: string;
-  status: 'connected' | 'expired' | 'expiring_soon' | 'disconnected';
-  action: 'refresh' | 'reauthorize' | 'connect' | null;
+  status: "connected" | "expired" | "expiring_soon" | "disconnected";
+  action: "refresh" | "reauthorize" | "connect" | null;
   tokenExpiresAt: string | null;
   expiresInSeconds: number | null;
   lastRefreshed: string | null;
@@ -87,16 +93,16 @@ const PLATFORM_ICONS: Record<string, any> = {
 };
 
 const PLATFORM_COLORS: Record<string, string> = {
-  meta: '#0081FB',
-  facebook: '#1877F2',
-  instagram: '#E4405F',
-  twitter: '#000000',
-  youtube: '#FF0000',
-  tiktok: '#000000',
-  linkedin: '#0077B5',
-  threads: '#000000',
-  googlebusiness: '#4285F4',
-  google: '#4285F4',
+  meta: "#0081FB",
+  facebook: "#1877F2",
+  instagram: "#E4405F",
+  twitter: "#000000",
+  youtube: "#FF0000",
+  tiktok: "#000000",
+  linkedin: "#0077B5",
+  threads: "#000000",
+  googlebusiness: "#4285F4",
+  google: "#4285F4",
 };
 
 interface PlatformReconnectCardProps {
@@ -117,34 +123,39 @@ export function PlatformReconnectCard({
   const [isLoading, setIsLoading] = useState(false);
 
   const PlatformIcon = PLATFORM_ICONS[platform.platform] || PLATFORM_ICONS.meta;
-  const platformColor = PLATFORM_COLORS[platform.platform] || '#0081FB';
+  const platformColor = PLATFORM_COLORS[platform.platform] || "#0081FB";
 
   const refreshMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', `/api/auth/social/${platform.platform}/refresh`);
+      const response = await apiRequest(
+        "POST",
+        `/api/auth/social/${platform.platform}/refresh`,
+      );
       return response.json();
     },
     onSuccess: (data) => {
       if (data.success) {
         toast({
-          title: 'Token Refreshed',
+          title: "Token Refreshed",
           description: `${platform.platformName} connection has been refreshed.`,
         });
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/social-token-status'] });
-      } else if (data.action === 'reauthorize') {
+        queryClient.invalidateQueries({
+          queryKey: ["/api/auth/social-token-status"],
+        });
+      } else if (data.action === "reauthorize") {
         toast({
-          title: 'Re-authorization Required',
+          title: "Re-authorization Required",
           description: `Please reconnect your ${platform.platformName} account.`,
-          variant: 'destructive',
+          variant: "destructive",
         });
         onReauthorize?.(platform.platform);
       }
     },
     onError: () => {
       toast({
-        title: 'Refresh Failed',
-        description: 'Please try reconnecting your account.',
-        variant: 'destructive',
+        title: "Refresh Failed",
+        description: "Please try reconnecting your account.",
+        variant: "destructive",
       });
     },
   });
@@ -152,9 +163,12 @@ export function PlatformReconnectCard({
   const handleAction = async () => {
     setIsLoading(true);
     try {
-      if (platform.action === 'refresh') {
+      if (platform.action === "refresh") {
         refreshMutation.mutate();
-      } else if (platform.action === 'reauthorize' || platform.action === 'connect') {
+      } else if (
+        platform.action === "reauthorize" ||
+        platform.action === "connect"
+      ) {
         onReauthorize?.(platform.platform);
       }
     } finally {
@@ -163,12 +177,12 @@ export function PlatformReconnectCard({
   };
 
   const formatTimeRemaining = (seconds: number | null): string => {
-    if (seconds === null) return 'Unknown';
-    if (seconds <= 0) return 'Expired';
-    
+    if (seconds === null) return "Unknown";
+    if (seconds <= 0) return "Expired";
+
     const hours = Math.floor(seconds / 3600);
     const days = Math.floor(hours / 24);
-    
+
     if (days > 0) return `${days}d ${hours % 24}h`;
     if (hours > 0) return `${hours}h`;
     return `${Math.floor(seconds / 60)}m`;
@@ -176,38 +190,38 @@ export function PlatformReconnectCard({
 
   const getStatusConfig = () => {
     switch (platform.status) {
-      case 'connected':
+      case "connected":
         return {
-          label: 'Connected',
+          label: "Connected",
           icon: CheckCircle,
-          color: 'text-green-500',
-          bgColor: 'bg-green-50 dark:bg-green-950',
-          borderColor: 'border-green-200 dark:border-green-900',
+          color: "text-green-500",
+          bgColor: "bg-green-50 dark:bg-green-950",
+          borderColor: "border-green-200 dark:border-green-900",
         };
-      case 'expired':
+      case "expired":
         return {
-          label: 'Expired',
+          label: "Expired",
           icon: AlertTriangle,
-          color: 'text-red-500',
-          bgColor: 'bg-red-50 dark:bg-red-950',
-          borderColor: 'border-red-200 dark:border-red-900',
+          color: "text-red-500",
+          bgColor: "bg-red-50 dark:bg-red-950",
+          borderColor: "border-red-200 dark:border-red-900",
         };
-      case 'expiring_soon':
+      case "expiring_soon":
         return {
-          label: 'Expiring Soon',
+          label: "Expiring Soon",
           icon: Clock,
-          color: 'text-orange-500',
-          bgColor: 'bg-orange-50 dark:bg-orange-950',
-          borderColor: 'border-orange-200 dark:border-orange-900',
+          color: "text-orange-500",
+          bgColor: "bg-orange-50 dark:bg-orange-950",
+          borderColor: "border-orange-200 dark:border-orange-900",
         };
-      case 'disconnected':
+      case "disconnected":
       default:
         return {
-          label: 'Disconnected',
+          label: "Disconnected",
           icon: Unlink,
-          color: 'text-gray-500',
-          bgColor: 'bg-gray-50 dark:bg-gray-900',
-          borderColor: 'border-gray-200 dark:border-gray-800',
+          color: "text-gray-500",
+          bgColor: "bg-gray-50 dark:bg-gray-900",
+          borderColor: "border-gray-200 dark:border-gray-800",
         };
     }
   };
@@ -225,8 +239,13 @@ export function PlatformReconnectCard({
               className={`relative w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 ${statusConfig.bgColor} border-2 ${statusConfig.borderColor}`}
               onClick={actionNeeded ? handleAction : undefined}
             >
-              <PlatformIcon className="w-6 h-6" style={{ color: platformColor }} />
-              <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full ${platform.status === 'connected' ? 'bg-green-500' : platform.status === 'expired' ? 'bg-red-500' : 'bg-orange-500'} border-2 border-white dark:border-gray-900 flex items-center justify-center`}>
+              <PlatformIcon
+                className="w-6 h-6"
+                style={{ color: platformColor }}
+              />
+              <div
+                className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full ${platform.status === "connected" ? "bg-green-500" : platform.status === "expired" ? "bg-red-500" : "bg-orange-500"} border-2 border-white dark:border-gray-900 flex items-center justify-center`}
+              >
                 <StatusIcon className="w-2.5 h-2.5 text-white" />
               </div>
             </div>
@@ -235,11 +254,12 @@ export function PlatformReconnectCard({
             <div className="text-sm">
               <p className="font-medium">{platform.platformName}</p>
               <p className={statusConfig.color}>{statusConfig.label}</p>
-              {platform.expiresInSeconds !== null && platform.expiresInSeconds > 0 && (
-                <p className="text-muted-foreground">
-                  Expires in {formatTimeRemaining(platform.expiresInSeconds)}
-                </p>
-              )}
+              {platform.expiresInSeconds !== null &&
+                platform.expiresInSeconds > 0 && (
+                  <p className="text-muted-foreground">
+                    Expires in {formatTimeRemaining(platform.expiresInSeconds)}
+                  </p>
+                )}
             </div>
           </TooltipContent>
         </Tooltip>
@@ -248,20 +268,28 @@ export function PlatformReconnectCard({
   }
 
   return (
-    <Card className={`${statusConfig.bgColor} ${statusConfig.borderColor} transition-all hover:shadow-md`}>
+    <Card
+      className={`${statusConfig.bgColor} ${statusConfig.borderColor} transition-all hover:shadow-md`}
+    >
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: platformColor + '20' }}
+              style={{ backgroundColor: platformColor + "20" }}
             >
-              <PlatformIcon className="w-6 h-6" style={{ color: platformColor }} />
+              <PlatformIcon
+                className="w-6 h-6"
+                style={{ color: platformColor }}
+              />
             </div>
             <div>
               <h4 className="font-semibold">{platform.platformName}</h4>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className={`${statusConfig.color} text-xs`}>
+                <Badge
+                  variant="outline"
+                  className={`${statusConfig.color} text-xs`}
+                >
                   <StatusIcon className="w-3 h-3 mr-1" />
                   {statusConfig.label}
                 </Badge>
@@ -270,7 +298,7 @@ export function PlatformReconnectCard({
           </div>
 
           <div className="flex items-center gap-2">
-            {platform.action === 'refresh' && (
+            {platform.action === "refresh" && (
               <Button
                 size="sm"
                 variant="outline"
@@ -278,7 +306,7 @@ export function PlatformReconnectCard({
                 disabled={isLoading || refreshMutation.isPending}
                 className="text-orange-500 border-orange-500 hover:bg-orange-50"
               >
-                {(isLoading || refreshMutation.isPending) ? (
+                {isLoading || refreshMutation.isPending ? (
                   <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                 ) : (
                   <RefreshCw className="w-4 h-4 mr-1" />
@@ -287,37 +315,45 @@ export function PlatformReconnectCard({
               </Button>
             )}
 
-            {(platform.action === 'reauthorize' || platform.action === 'connect') && (
+            {(platform.action === "reauthorize" ||
+              platform.action === "connect") && (
               <Button
                 size="sm"
                 onClick={handleAction}
                 disabled={isLoading}
-                className={platform.status === 'expired' ? 'bg-red-500 hover:bg-red-600' : ''}
+                className={
+                  platform.status === "expired"
+                    ? "bg-red-500 hover:bg-red-600"
+                    : ""
+                }
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                 ) : (
                   <Key className="w-4 h-4 mr-1" />
                 )}
-                {platform.action === 'connect' ? 'Connect' : 'Reconnect'}
+                {platform.action === "connect" ? "Connect" : "Reconnect"}
               </Button>
             )}
           </div>
         </div>
 
-        {platform.status !== 'disconnected' && (
+        {platform.status !== "disconnected" && (
           <div className="mt-4 pt-4 border-t border-border/50 space-y-2">
-            {platform.expiresInSeconds !== null && platform.expiresInSeconds > 0 && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 w-3" />
-                Token expires in {formatTimeRemaining(platform.expiresInSeconds)}
-              </div>
-            )}
-            
+            {platform.expiresInSeconds !== null &&
+              platform.expiresInSeconds > 0 && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 w-3" />
+                  Token expires in{" "}
+                  {formatTimeRemaining(platform.expiresInSeconds)}
+                </div>
+              )}
+
             {platform.lastRefreshed && (
               <div className="text-xs text-muted-foreground flex items-center gap-1">
                 <RefreshCw className="w-3 h-3" />
-                Last refreshed: {new Date(platform.lastRefreshed).toLocaleString()}
+                Last refreshed:{" "}
+                {new Date(platform.lastRefreshed).toLocaleString()}
               </div>
             )}
 
@@ -346,7 +382,7 @@ export function PlatformReconnectGrid({
   const { user } = useAuth();
 
   const { data: tokenStatus, isLoading } = useQuery<SocialTokenStatusResponse>({
-    queryKey: ['/api/auth/social-token-status'],
+    queryKey: ["/api/auth/social-token-status"],
     enabled: !!user,
     refetchInterval: 60000,
   });
@@ -368,8 +404,8 @@ export function PlatformReconnectGrid({
     );
   }
 
-  const platforms = showOnlyIssues 
-    ? tokenStatus.needsAttention 
+  const platforms = showOnlyIssues
+    ? tokenStatus.needsAttention
     : tokenStatus.platforms;
 
   if (showOnlyIssues && platforms.length === 0) {

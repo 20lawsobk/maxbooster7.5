@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { db } from '../db.js';
-import { eq, and, count } from 'drizzle-orm';
-import { apiKeys } from '@shared/schema';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
-import { requireAuth } from '../middleware/auth.js';
-import rateLimit from 'express-rate-limit';
+import { Router, Request, Response } from "express";
+import { db } from "../db.js";
+import { eq, and, count } from "drizzle-orm";
+import { apiKeys } from "@shared/schema";
+import { logger } from "../logger.js";
+import crypto from "crypto";
+import { requireAuth } from "../middleware/auth.js";
+import rateLimit from "express-rate-limit";
 
 const router = Router();
 
@@ -18,27 +18,28 @@ const MAX_KEYS_PER_USER = 20;
 const keyCreateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 7_200_000_000,
-  keyGenerator: (req) => `apikey-create:${(req.user as Record<string, unknown>)?.id ?? 'anon'}`,
-  message: { error: 'Too many API key operations, please try again later' },
+  keyGenerator: (req) =>
+    `apikey-create:${(req.user as Record<string, unknown>)?.id ?? "anon"}`,
+  message: { error: "Too many API key operations, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const generateApiKey = (): string => {
-  const prefix = 'mb_';
-  const key = crypto.randomBytes(32).toString('base64url');
+  const prefix = "mb_";
+  const key = crypto.randomBytes(32).toString("base64url");
   return `${prefix}${key}`;
 };
 
 const hashApiKey = (key: string): string => {
-  return crypto.createHash('sha256').update(key).digest('hex');
+  return crypto.createHash("sha256").update(key).digest("hex");
 };
 
 const getKeyPrefix = (key: string): string => {
   return `${key.substring(0, 7)}...${key.substring(key.length - 4)}`;
 };
 
-router.get('/', async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const rows = await db
@@ -47,44 +48,61 @@ router.get('/', async (req: Request, res: Response) => {
       .where(eq(apiKeys.userId, userId))
       .limit(50);
 
-    const result = rows.map(k => ({
+    const result = rows.map((k) => ({
       id: k.id,
       name: k.name,
       keyPreview: k.keyPrefix,
       createdAt: k.createdAt?.toISOString() ?? null,
       lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
       expiresAt: k.expiresAt?.toISOString() ?? null,
-      scopes: k.scopes ?? ['read'],
-      status: k.isActive ? 'active' : 'revoked',
+      scopes: k.scopes ?? ["read"],
+      status: k.isActive ? "active" : "revoked",
       rateLimit: {
         requests: k.rateLimit ?? 1000,
-        period: 'hour',
+        period: "hour",
         used: 0,
       },
     }));
 
     res.json(result);
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching API keys:');
-    res.status(500).json({ error: 'Failed to fetch API keys' });
+    logger.warn({ err: error }, "Error fetching API keys:");
+    res.status(500).json({ error: "Failed to fetch API keys" });
   }
 });
 
-router.post('/', keyCreateLimiter, async (req: Request, res: Response) => {
+router.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
-    const { name, scopes = ['read'] } = req.body;
+    const { name, scopes = ["read"] } = req.body;
 
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return res.status(400).json({ error: 'Key name is required' });
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
+      return res.status(400).json({ error: "Key name is required" });
     }
 
-    const VALID_SCOPES = new Set(['read', 'write', 'analytics', 'distribution', 'social', 'billing', 'admin']);
+    const VALID_SCOPES = new Set([
+      "read",
+      "write",
+      "analytics",
+      "distribution",
+      "social",
+      "billing",
+      "admin",
+    ]);
     const trimmedName = name.trim().substring(0, 100);
-    const requestedScopes = Array.isArray(scopes) ? scopes : ['read'];
-    const invalidScopes = requestedScopes.filter((s: Record<string, unknown>) => typeof s !== 'string' || !VALID_SCOPES.has(s));
+    const requestedScopes = Array.isArray(scopes) ? scopes : ["read"];
+    const invalidScopes = requestedScopes.filter(
+      (s: Record<string, unknown>) =>
+        typeof s !== "string" || !VALID_SCOPES.has(s),
+    );
     if (invalidScopes.length > 0) {
-      return res.status(400).json({ error: 'Invalid scopes', invalid: invalidScopes, valid: [...VALID_SCOPES] });
+      return res
+        .status(400)
+        .json({
+          error: "Invalid scopes",
+          invalid: invalidScopes,
+          valid: [...VALID_SCOPES],
+        });
     }
     const validScopes = requestedScopes as string[];
 
@@ -122,15 +140,15 @@ router.post('/', keyCreateLimiter, async (req: Request, res: Response) => {
       key: rawKey,
       keyPreview: inserted.keyPrefix,
       createdAt: inserted.createdAt?.toISOString(),
-      scopes: inserted.scopes ?? ['read'],
+      scopes: inserted.scopes ?? ["read"],
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Error creating API key:');
-    res.status(500).json({ error: 'Failed to create API key' });
+    logger.warn({ err: error }, "Error creating API key:");
+    res.status(500).json({ error: "Failed to create API key" });
   }
 });
 
-router.delete('/:keyId', async (req: Request, res: Response) => {
+router.delete("/:keyId", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const { keyId } = req.params;
@@ -142,59 +160,63 @@ router.delete('/:keyId', async (req: Request, res: Response) => {
       .returning({ id: apiKeys.id });
 
     if (!updated) {
-      return res.status(404).json({ error: 'API key not found' });
+      return res.status(404).json({ error: "API key not found" });
     }
 
-    res.json({ success: true, message: 'API key revoked successfully' });
+    res.json({ success: true, message: "API key revoked successfully" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error revoking API key:');
-    res.status(500).json({ error: 'Failed to revoke API key' });
+    logger.warn({ err: error }, "Error revoking API key:");
+    res.status(500).json({ error: "Failed to revoke API key" });
   }
 });
 
-router.post('/:keyId/regenerate', keyCreateLimiter, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user.id;
-    const { keyId } = req.params;
+router.post(
+  "/:keyId/regenerate",
+  keyCreateLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const { keyId } = req.params;
 
-    const [existing] = await db
-      .select({ id: apiKeys.id })
-      .from(apiKeys)
-      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
-      .limit(1);
+      const [existing] = await db
+        .select({ id: apiKeys.id })
+        .from(apiKeys)
+        .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
+        .limit(1);
 
-    if (!existing) {
-      return res.status(404).json({ error: 'API key not found' });
+      if (!existing) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+
+      const rawKey = generateApiKey();
+      const keyHash = hashApiKey(rawKey);
+      const keyPrefix = getKeyPrefix(rawKey);
+
+      const [updated] = await db
+        .update(apiKeys)
+        .set({
+          keyHash,
+          keyPrefix,
+          lastUsedAt: null,
+          createdAt: new Date(),
+          isActive: true,
+        })
+        .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
+        .returning();
+
+      res.json({
+        id: updated.id,
+        name: updated.name,
+        key: rawKey,
+        keyPreview: updated.keyPrefix,
+        createdAt: updated.createdAt?.toISOString(),
+        scopes: updated.scopes ?? ["read"],
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Error regenerating API key:");
+      res.status(500).json({ error: "Failed to regenerate API key" });
     }
-
-    const rawKey = generateApiKey();
-    const keyHash = hashApiKey(rawKey);
-    const keyPrefix = getKeyPrefix(rawKey);
-
-    const [updated] = await db
-      .update(apiKeys)
-      .set({
-        keyHash,
-        keyPrefix,
-        lastUsedAt: null,
-        createdAt: new Date(),
-        isActive: true,
-      })
-      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
-      .returning();
-
-    res.json({
-      id: updated.id,
-      name: updated.name,
-      key: rawKey,
-      keyPreview: updated.keyPrefix,
-      createdAt: updated.createdAt?.toISOString(),
-      scopes: updated.scopes ?? ['read'],
-    });
-  } catch (error) {
-    logger.warn({ err: error }, 'Error regenerating API key:');
-    res.status(500).json({ error: 'Failed to regenerate API key' });
-  }
-});
+  },
+);
 
 export default router;

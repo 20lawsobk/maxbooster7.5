@@ -1,8 +1,8 @@
 // Real platform API implementation with OAuth token integration
-import axios from 'axios';
-import { TwitterApi } from 'twitter-api-v2';
-import { storage } from './storage.js';
-import { logger } from './logger.js';
+import axios from "axios";
+import { TwitterApi } from "twitter-api-v2";
+import { storage } from "./storage.js";
+import { logger } from "./logger.js";
 import {
   executeSocialApiOperation,
   twitterCircuit,
@@ -11,8 +11,11 @@ import {
   linkedinCircuit,
   tiktokCircuit,
   queueForRetry,
-} from './services/externalServices.js';
-import { CircuitBreakerError, TimeoutError } from './services/circuitBreaker.js';
+} from "./services/externalServices.js";
+import {
+  CircuitBreakerError,
+  TimeoutError,
+} from "./services/circuitBreaker.js";
 
 axios.defaults.timeout = 10000;
 
@@ -48,11 +51,13 @@ export const platformAPI = {
   async publishContent(
     content: unknown,
     platforms: string[],
-    userId?: string
+    userId?: string,
   ): Promise<PublishResult[]> {
     // Backward compatibility: If no userId provided, simulate
     if (!userId) {
-      logger.warn('platformAPI.publishContent called without userId - using simulation mode');
+      logger.warn(
+        "platformAPI.publishContent called without userId - using simulation mode",
+      );
       return platforms.map((p) => ({
         platform: p,
         success: true,
@@ -68,7 +73,10 @@ export const platformAPI = {
         const normalizedPlatform = platform.toLowerCase();
 
         // Get user's OAuth token for this platform
-        const token = await storage.getUserSocialToken(userId, normalizedPlatform);
+        const token = await storage.getUserSocialToken(
+          userId,
+          normalizedPlatform,
+        );
 
         if (!token) {
           results.push({
@@ -80,41 +88,46 @@ export const platformAPI = {
         }
 
         // Extract content data
-        const text = content.body || content.text || content.message || '';
+        const text = content.body || content.text || content.message || "";
         const mediaUrl = content.mediaUrl || content.media || null;
         const hashtags = content.hashtags || [];
 
         // Add hashtags to text if provided
         const fullText =
           hashtags.length > 0
-            ? `${text} ${hashtags.map((h: string) => (h.startsWith('#') ? h : `#${h}`)).join(' ')}`
+            ? `${text} ${hashtags.map((h: string) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}`
             : text;
 
         let postId: string | undefined;
 
         // Call platform-specific API
         switch (normalizedPlatform) {
-          case 'twitter':
+          case "twitter":
             postId = await this.postToTwitter(fullText, mediaUrl, token);
             break;
 
-          case 'facebook':
+          case "facebook":
             postId = await this.postToFacebook(fullText, mediaUrl, token);
             break;
 
-          case 'instagram':
+          case "instagram":
             postId = await this.postToInstagram(fullText, mediaUrl, token);
             break;
 
-          case 'linkedin':
-            postId = await this.postToLinkedIn(fullText, mediaUrl, token, userId);
+          case "linkedin":
+            postId = await this.postToLinkedIn(
+              fullText,
+              mediaUrl,
+              token,
+              userId,
+            );
             break;
 
-          case 'tiktok':
+          case "tiktok":
             postId = await this.postToTikTok(fullText, mediaUrl, token);
             break;
 
-          case 'threads':
+          case "threads":
             postId = await this.postToThreads(fullText, mediaUrl, token);
             break;
 
@@ -140,7 +153,7 @@ export const platformAPI = {
           axiosErr?.response?.data?.error?.message ||
           axiosErr?.response?.data?.error_description ||
           (error instanceof Error ? error.message : null) ||
-          'Unknown error';
+          "Unknown error";
 
         results.push({
           platform,
@@ -152,10 +165,12 @@ export const platformAPI = {
 
         // Check if token expired
         if (
-          errorMsg.includes('token') &&
-          (errorMsg.includes('expired') || errorMsg.includes('invalid'))
+          errorMsg.includes("token") &&
+          (errorMsg.includes("expired") || errorMsg.includes("invalid"))
         ) {
-          logger.warn(`⚠️  OAuth token for ${platform} may be expired - user needs to reconnect`);
+          logger.warn(
+            `⚠️  OAuth token for ${platform} may be expired - user needs to reconnect`,
+          );
         }
       }
     }
@@ -173,12 +188,12 @@ export const platformAPI = {
   async collectEngagementData(
     postId: string,
     platform: string,
-    userId?: string
+    userId?: string,
   ): Promise<EngagementData> {
     // Backward compatibility: If no userId provided, simulate
     if (!userId) {
       logger.warn(
-        'platformAPI.collectEngagementData called without userId - using simulation mode'
+        "platformAPI.collectEngagementData called without userId - using simulation mode",
       );
       return {
         likes: 0,
@@ -195,33 +210,38 @@ export const platformAPI = {
       const normalizedPlatform = platform.toLowerCase();
 
       // Get user's OAuth token for this platform
-      const token = await storage.getUserSocialToken(userId, normalizedPlatform);
+      const token = await storage.getUserSocialToken(
+        userId,
+        normalizedPlatform,
+      );
 
       if (!token) {
-        throw new Error(`User not connected to ${platform} - OAuth token missing`);
+        throw new Error(
+          `User not connected to ${platform} - OAuth token missing`,
+        );
       }
 
       // Call platform-specific analytics API
       switch (normalizedPlatform) {
-        case 'twitter':
+        case "twitter":
           return await this.getTwitterEngagement(postId, token);
 
-        case 'facebook':
+        case "facebook":
           return await this.getFacebookEngagement(postId, token);
 
-        case 'instagram':
+        case "instagram":
           return await this.getInstagramEngagement(postId, token);
 
-        case 'linkedin':
+        case "linkedin":
           return await this.getLinkedInEngagement(postId, token);
 
-        case 'threads':
+        case "threads":
           return await this.getThreadsEngagement(postId, token);
 
-        case 'tiktok':
+        case "tiktok":
           return await this.getTikTokEngagement(postId, token);
 
-        case 'youtube':
+        case "youtube":
           return await this.getYouTubeEngagement(postId, token);
 
         default:
@@ -238,7 +258,10 @@ export const platformAPI = {
           };
       }
     } catch (error: unknown) {
-      logger.warn(`Failed to collect engagement data for ${platform}:`, error.message);
+      logger.warn(
+        `Failed to collect engagement data for ${platform}:`,
+        error.message,
+      );
 
       // Return zero metrics on error to prevent crashes
       return {
@@ -256,9 +279,13 @@ export const platformAPI = {
   // PLATFORM-SPECIFIC POSTING METHODS
   // ============================================
 
-  async postToTwitter(text: string, mediaUrl: string | null, token: string): Promise<string> {
+  async postToTwitter(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+  ): Promise<string> {
     const result = await executeSocialApiOperation(
-      'twitter',
+      "twitter",
       async () => {
         const twitterClient = new TwitterApi(token);
 
@@ -272,7 +299,10 @@ export const platformAPI = {
               media: { media_ids: [mediaId] },
             });
           } catch (mediaError: unknown) {
-            logger.warn('Twitter media upload failed, posting text only:', mediaError);
+            logger.warn(
+              "Twitter media upload failed, posting text only:",
+              mediaError,
+            );
             tweetResponse = await twitterClient.v2.tweet({ text });
           }
         } else {
@@ -284,7 +314,7 @@ export const platformAPI = {
       {
         queueOnFailure: true,
         postData: { text, mediaUrl },
-      }
+      },
     );
 
     if (result.warning) {
@@ -294,21 +324,28 @@ export const platformAPI = {
     return result.data;
   },
 
-  async postToFacebook(text: string, mediaUrl: string | null, token: string): Promise<string> {
+  async postToFacebook(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+  ): Promise<string> {
     const result = await executeSocialApiOperation(
-      'facebook',
+      "facebook",
       async () => {
-        const response = await axios.post(`https://graph.facebook.com/v18.0/me/feed`, {
-          message: text,
-          link: mediaUrl || undefined,
-          access_token: token,
-        });
+        const response = await axios.post(
+          `https://graph.facebook.com/v18.0/me/feed`,
+          {
+            message: text,
+            link: mediaUrl || undefined,
+            access_token: token,
+          },
+        );
         return response.data.id;
       },
       {
         queueOnFailure: true,
         postData: { text, mediaUrl },
-      }
+      },
     );
 
     if (result.warning) {
@@ -318,33 +355,43 @@ export const platformAPI = {
     return result.data;
   },
 
-  async postToInstagram(text: string, mediaUrl: string | null, token: string): Promise<string> {
+  async postToInstagram(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+  ): Promise<string> {
     if (!mediaUrl) {
-      throw new Error('Instagram posts require media (image or video)');
+      throw new Error("Instagram posts require media (image or video)");
     }
 
     const result = await executeSocialApiOperation(
-      'instagram',
+      "instagram",
       async () => {
-        const mediaResponse = await axios.post(`https://graph.instagram.com/me/media`, {
-          image_url: mediaUrl,
-          caption: text,
-          access_token: token,
-        });
+        const mediaResponse = await axios.post(
+          `https://graph.instagram.com/me/media`,
+          {
+            image_url: mediaUrl,
+            caption: text,
+            access_token: token,
+          },
+        );
 
         const creationId = mediaResponse.data.id;
 
-        const publishResponse = await axios.post(`https://graph.instagram.com/me/media_publish`, {
-          creation_id: creationId,
-          access_token: token,
-        });
+        const publishResponse = await axios.post(
+          `https://graph.instagram.com/me/media_publish`,
+          {
+            creation_id: creationId,
+            access_token: token,
+          },
+        );
 
         return publishResponse.data.id;
       },
       {
         queueOnFailure: true,
         postData: { text, mediaUrl },
-      }
+      },
     );
 
     if (result.warning) {
@@ -358,59 +405,66 @@ export const platformAPI = {
     text: string,
     mediaUrl: string | null,
     token: string,
-    userId: string
+    userId: string,
   ): Promise<string> {
     const result = await executeSocialApiOperation(
-      'linkedin',
+      "linkedin",
       async () => {
-        const profileResponse = await axios.get('https://api.linkedin.com/v2/me', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+        const profileResponse = await axios.get(
+          "https://api.linkedin.com/v2/me",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        });
+        );
 
         const personUrn = `urn:li:person:${profileResponse.data.id}`;
 
         const shareData: Record<string, unknown> = {
           author: personUrn,
-          lifecycleState: 'PUBLISHED',
+          lifecycleState: "PUBLISHED",
           specificContent: {
-            'com.linkedin.ugc.ShareContent': {
+            "com.linkedin.ugc.ShareContent": {
               shareCommentary: {
                 text,
               },
-              shareMediaCategory: mediaUrl ? 'IMAGE' : 'NONE',
+              shareMediaCategory: mediaUrl ? "IMAGE" : "NONE",
             },
           },
           visibility: {
-            'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
+            "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
           },
         };
 
         if (mediaUrl) {
-          shareData.specificContent['com.linkedin.ugc.ShareContent'].media = [
+          shareData.specificContent["com.linkedin.ugc.ShareContent"].media = [
             {
-              status: 'READY',
+              status: "READY",
               originalUrl: mediaUrl,
             },
           ];
         }
 
-        const response = await axios.post('https://api.linkedin.com/v2/ugcPosts', shareData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'X-Restli-Protocol-Version': '2.0.0',
+        const response = await axios.post(
+          "https://api.linkedin.com/v2/ugcPosts",
+          shareData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              "X-Restli-Protocol-Version": "2.0.0",
+            },
           },
-        });
+        );
 
         return response.data.id;
       },
       {
         queueOnFailure: true,
         postData: { text, mediaUrl, userId },
-      }
+      },
     );
 
     if (result.warning) {
@@ -420,16 +474,20 @@ export const platformAPI = {
     return result.data;
   },
 
-  async postToTikTok(text: string, videoUrl: string | null, token: string): Promise<string> {
+  async postToTikTok(
+    text: string,
+    videoUrl: string | null,
+    token: string,
+  ): Promise<string> {
     if (!videoUrl) {
-      throw new Error('TikTok posts require a video');
+      throw new Error("TikTok posts require a video");
     }
 
     const result = await executeSocialApiOperation(
-      'tiktok',
+      "tiktok",
       async () => {
         const response = await axios.post(
-          'https://open-api.tiktok.com/share/video/upload/',
+          "https://open-api.tiktok.com/share/video/upload/",
           {
             video_url: videoUrl,
             description: text,
@@ -437,9 +495,9 @@ export const platformAPI = {
           },
           {
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         return response.data.data.share_id;
@@ -447,7 +505,7 @@ export const platformAPI = {
       {
         queueOnFailure: true,
         postData: { text, videoUrl },
-      }
+      },
     );
 
     if (result.warning) {
@@ -457,25 +515,35 @@ export const platformAPI = {
     return result.data;
   },
 
-  async postToThreads(text: string, mediaUrl: string | null, token: string): Promise<string> {
+  async postToThreads(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+  ): Promise<string> {
     try {
       let creationResponse;
 
       if (mediaUrl) {
         // Create Threads post with media
-        creationResponse = await axios.post(`https://graph.threads.net/v1.0/me/threads`, {
-          media_type: 'IMAGE',
-          image_url: mediaUrl,
-          text: text,
-          access_token: token,
-        });
+        creationResponse = await axios.post(
+          `https://graph.threads.net/v1.0/me/threads`,
+          {
+            media_type: "IMAGE",
+            image_url: mediaUrl,
+            text: text,
+            access_token: token,
+          },
+        );
       } else {
         // Create text-only Threads post
-        creationResponse = await axios.post(`https://graph.threads.net/v1.0/me/threads`, {
-          media_type: 'TEXT',
-          text: text,
-          access_token: token,
-        });
+        creationResponse = await axios.post(
+          `https://graph.threads.net/v1.0/me/threads`,
+          {
+            media_type: "TEXT",
+            text: text,
+            access_token: token,
+          },
+        );
       }
 
       const creationId = creationResponse.data.id;
@@ -486,16 +554,16 @@ export const platformAPI = {
         {
           creation_id: creationId,
           access_token: token,
-        }
+        },
       );
 
       return publishResponse.data.id;
     } catch (error: unknown) {
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('Threads OAuth token expired or invalid');
+        throw new Error("Threads OAuth token expired or invalid");
       }
       if (error.response?.status === 429) {
-        throw new Error('Threads API rate limit exceeded');
+        throw new Error("Threads API rate limit exceeded");
       }
       throw error;
     }
@@ -505,12 +573,15 @@ export const platformAPI = {
   // PLATFORM-SPECIFIC ANALYTICS METHODS
   // ============================================
 
-  async getTwitterEngagement(tweetId: string, token: string): Promise<EngagementData> {
+  async getTwitterEngagement(
+    tweetId: string,
+    token: string,
+  ): Promise<EngagementData> {
     try {
       const twitterClient = new TwitterApi(token);
 
       const tweet = await twitterClient.v2.singleTweet(tweetId, {
-        'tweet.fields': ['public_metrics'],
+        "tweet.fields": ["public_metrics"],
       });
 
       const metrics = tweet.data.public_metrics;
@@ -528,47 +599,65 @@ export const platformAPI = {
           : 0,
       };
     } catch (error: unknown) {
-      const statusCode = (error as Record<string, any>)?.code ?? (error as Record<string, any>)?.status;
+      const statusCode =
+        (error as Record<string, any>)?.code ??
+        (error as Record<string, any>)?.status;
       if (statusCode === 401) {
-        throw new Error('Twitter OAuth token expired or invalid');
+        throw new Error("Twitter OAuth token expired or invalid");
       }
       throw error;
     }
   },
 
-  async getFacebookEngagement(postId: string, token: string): Promise<EngagementData> {
+  async getFacebookEngagement(
+    postId: string,
+    token: string,
+  ): Promise<EngagementData> {
     try {
-      const response = await axios.get(`https://graph.facebook.com/v18.0/${postId}`, {
-        params: {
-          fields: 'likes.summary(true),shares,comments.summary(true),reactions.summary(true)',
-          access_token: token,
+      const response = await axios.get(
+        `https://graph.facebook.com/v18.0/${postId}`,
+        {
+          params: {
+            fields:
+              "likes.summary(true),shares,comments.summary(true),reactions.summary(true)",
+            access_token: token,
+          },
         },
-      });
+      );
 
       const data = response.data;
 
       return {
-        likes: data.likes?.summary?.total_count || data.reactions?.summary?.total_count || 0,
+        likes:
+          data.likes?.summary?.total_count ||
+          data.reactions?.summary?.total_count ||
+          0,
         shares: data.shares?.count || 0,
         comments: data.comments?.summary?.total_count || 0,
         engagementRate: 0, // Facebook doesn't provide impressions in basic API
       };
     } catch (error: unknown) {
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('Facebook OAuth token expired or invalid');
+        throw new Error("Facebook OAuth token expired or invalid");
       }
       throw error;
     }
   },
 
-  async getInstagramEngagement(mediaId: string, token: string): Promise<EngagementData> {
+  async getInstagramEngagement(
+    mediaId: string,
+    token: string,
+  ): Promise<EngagementData> {
     try {
-      const response = await axios.get(`https://graph.instagram.com/${mediaId}/insights`, {
-        params: {
-          metric: 'likes,comments,shares,saved,engagement,impressions,reach',
-          access_token: token,
+      const response = await axios.get(
+        `https://graph.instagram.com/${mediaId}/insights`,
+        {
+          params: {
+            metric: "likes,comments,shares,saved,engagement,impressions,reach",
+            access_token: token,
+          },
         },
-      });
+      );
 
       const data = response.data.data;
       const getMetric = (name: string) => {
@@ -576,33 +665,39 @@ export const platformAPI = {
         return metric?.values?.[0]?.value || 0;
       };
 
-      const impressions = getMetric('impressions');
-      const engagement = getMetric('engagement');
+      const impressions = getMetric("impressions");
+      const engagement = getMetric("engagement");
 
       return {
-        likes: getMetric('likes'),
-        shares: getMetric('shares'),
-        comments: getMetric('comments'),
+        likes: getMetric("likes"),
+        shares: getMetric("shares"),
+        comments: getMetric("comments"),
         impressions,
-        reach: getMetric('reach'),
+        reach: getMetric("reach"),
         engagementRate: impressions > 0 ? engagement / impressions : 0,
       };
     } catch (error: unknown) {
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('Instagram OAuth token expired or invalid');
+        throw new Error("Instagram OAuth token expired or invalid");
       }
       throw error;
     }
   },
 
-  async getLinkedInEngagement(shareId: string, token: string): Promise<EngagementData> {
+  async getLinkedInEngagement(
+    shareId: string,
+    token: string,
+  ): Promise<EngagementData> {
     try {
-      const response = await axios.get(`https://api.linkedin.com/v2/socialActions/${shareId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const response = await axios.get(
+        `https://api.linkedin.com/v2/socialActions/${shareId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       const data = response.data;
 
@@ -614,20 +709,26 @@ export const platformAPI = {
       };
     } catch (error: unknown) {
       if (error.response?.status === 401) {
-        throw new Error('LinkedIn OAuth token expired or invalid');
+        throw new Error("LinkedIn OAuth token expired or invalid");
       }
       throw error;
     }
   },
 
-  async getThreadsEngagement(mediaId: string, token: string): Promise<EngagementData> {
+  async getThreadsEngagement(
+    mediaId: string,
+    token: string,
+  ): Promise<EngagementData> {
     try {
-      const response = await axios.get(`https://graph.threads.net/v1.0/${mediaId}/insights`, {
-        params: {
-          metric: 'likes,replies,reposts,views',
-          access_token: token,
+      const response = await axios.get(
+        `https://graph.threads.net/v1.0/${mediaId}/insights`,
+        {
+          params: {
+            metric: "likes,replies,reposts,views",
+            access_token: token,
+          },
         },
-      });
+      );
 
       const data = response.data.data;
       const getMetric = (name: string) => {
@@ -636,36 +737,39 @@ export const platformAPI = {
       };
 
       return {
-        likes: getMetric('likes'),
-        shares: getMetric('reposts'),
-        comments: getMetric('replies'),
-        views: getMetric('views'),
+        likes: getMetric("likes"),
+        shares: getMetric("reposts"),
+        comments: getMetric("replies"),
+        views: getMetric("views"),
         engagementRate: 0,
       };
     } catch (error: unknown) {
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('Threads OAuth token expired or invalid');
+        throw new Error("Threads OAuth token expired or invalid");
       }
       throw error;
     }
   },
 
-  async getTikTokEngagement(videoId: string, token: string): Promise<EngagementData> {
+  async getTikTokEngagement(
+    videoId: string,
+    token: string,
+  ): Promise<EngagementData> {
     try {
       const response = await axios.post(
-        'https://open.tiktokapis.com/v2/video/query/',
+        "https://open.tiktokapis.com/v2/video/query/",
         {
           filters: {
             video_ids: [videoId],
           },
-          fields: ['like_count', 'comment_count', 'share_count', 'view_count'],
+          fields: ["like_count", "comment_count", "share_count", "view_count"],
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const video = response.data?.data?.videos?.[0];
@@ -695,24 +799,30 @@ export const platformAPI = {
       };
     } catch (error: unknown) {
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('TikTok OAuth token expired or invalid');
+        throw new Error("TikTok OAuth token expired or invalid");
       }
       if (error.response?.status === 429) {
-        throw new Error('TikTok API rate limit exceeded');
+        throw new Error("TikTok API rate limit exceeded");
       }
       throw error;
     }
   },
 
-  async getYouTubeEngagement(videoId: string, token: string): Promise<EngagementData> {
+  async getYouTubeEngagement(
+    videoId: string,
+    token: string,
+  ): Promise<EngagementData> {
     try {
-      const response = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
-        params: {
-          part: 'statistics',
-          id: videoId,
-          access_token: token,
+      const response = await axios.get(
+        "https://www.googleapis.com/youtube/v3/videos",
+        {
+          params: {
+            part: "statistics",
+            id: videoId,
+            access_token: token,
+          },
         },
-      });
+      );
 
       const video = response.data?.items?.[0];
 
@@ -741,10 +851,10 @@ export const platformAPI = {
       };
     } catch (error: unknown) {
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('YouTube OAuth token expired or invalid');
+        throw new Error("YouTube OAuth token expired or invalid");
       }
       if (error.response?.status === 429) {
-        throw new Error('YouTube API rate limit exceeded');
+        throw new Error("YouTube API rate limit exceeded");
       }
       throw error;
     }

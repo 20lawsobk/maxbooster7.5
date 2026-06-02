@@ -1,9 +1,9 @@
-import { randomBytes } from 'crypto';
-import { db } from '../db';
-import { 
-  takeGroups, 
-  takeLanes, 
-  takeSegments, 
+import { randomBytes } from "crypto";
+import { db } from "../db";
+import {
+  takeGroups,
+  takeLanes,
+  takeSegments,
   compVersions,
   audioClips,
   projects,
@@ -15,16 +15,16 @@ import {
   type InsertTakeLane,
   type InsertTakeSegment,
   type InsertCompVersion,
-} from '@shared/schema';
-import { eq, and, desc, asc } from 'drizzle-orm';
+} from "@shared/schema";
+import { eq, and, desc, asc } from "drizzle-orm";
 
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
 export interface CompRenderResult {
   clipId: string;
   filePath: string;
   duration: number;
-  status: 'processing' | 'completed' | 'failed';
+  status: "processing" | "completed" | "failed";
 }
 
 export interface TakeGroupWithLanes extends TakeGroup {
@@ -43,12 +43,12 @@ export class CompingService {
         .insert(takeGroups)
         .values({
           ...data,
-          id: `tg_${randomBytes(8).toString('hex')}`,
+          id: `tg_${randomBytes(8).toString("hex")}`,
         })
         .returning();
-      
+
       const initialVersion = await this.createCompVersion(takeGroup.id, {
-        name: 'Version 1',
+        name: "Version 1",
         versionNumber: 1,
         createdBy: data.trackId,
       });
@@ -60,8 +60,8 @@ export class CompingService {
 
       return { ...takeGroup, activeCompVersionId: initialVersion.id };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating take group:');
-      throw new Error('Failed to create take group');
+      logger.warn({ err: error }, "Error creating take group:");
+      throw new Error("Failed to create take group");
     }
   }
 
@@ -72,8 +72,8 @@ export class CompingService {
       });
       return result;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching take group:');
-      throw new Error('Failed to fetch take group');
+      logger.warn({ err: error }, "Error fetching take group:");
+      throw new Error("Failed to fetch take group");
     }
   }
 
@@ -85,8 +85,8 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching project take groups:');
-      throw new Error('Failed to fetch project take groups');
+      logger.warn({ err: error }, "Error fetching project take groups:");
+      throw new Error("Failed to fetch project take groups");
     }
   }
 
@@ -98,12 +98,14 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching track take groups:');
-      throw new Error('Failed to fetch track take groups');
+      logger.warn({ err: error }, "Error fetching track take groups:");
+      throw new Error("Failed to fetch track take groups");
     }
   }
 
-  async getTakeGroupWithDetails(groupId: string): Promise<TakeGroupWithLanes | undefined> {
+  async getTakeGroupWithDetails(
+    groupId: string,
+  ): Promise<TakeGroupWithLanes | undefined> {
     try {
       const takeGroup = await this.getTakeGroup(groupId);
       if (!takeGroup) return undefined;
@@ -115,7 +117,7 @@ export class CompingService {
         lanes.map(async (lane) => {
           const segments = await this.getLaneSegments(lane.id);
           return { ...lane, segments };
-        })
+        }),
       );
 
       return {
@@ -124,27 +126,30 @@ export class CompingService {
         versions,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching take group with details:');
-      throw new Error('Failed to fetch take group details');
+      logger.warn({ err: error }, "Error fetching take group with details:");
+      throw new Error("Failed to fetch take group details");
     }
   }
 
-  async updateTakeGroup(groupId: string, updates: Partial<TakeGroup>): Promise<TakeGroup> {
+  async updateTakeGroup(
+    groupId: string,
+    updates: Partial<TakeGroup>,
+  ): Promise<TakeGroup> {
     try {
       const [updated] = await db
         .update(takeGroups)
         .set({ ...updates, updatedAt: new Date() })
         .where(eq(takeGroups.id, groupId))
         .returning();
-      
+
       if (!updated) {
-        throw new Error('Take group not found');
+        throw new Error("Take group not found");
       }
-      
+
       return updated;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error updating take group:');
-      throw new Error('Failed to update take group');
+      logger.warn({ err: error }, "Error updating take group:");
+      throw new Error("Failed to update take group");
     }
   }
 
@@ -152,8 +157,8 @@ export class CompingService {
     try {
       await db.delete(takeGroups).where(eq(takeGroups.id, groupId));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error deleting take group:');
-      throw new Error('Failed to delete take group');
+      logger.warn({ err: error }, "Error deleting take group:");
+      throw new Error("Failed to delete take group");
     }
   }
 
@@ -166,14 +171,14 @@ export class CompingService {
         .insert(takeLanes)
         .values({
           ...data,
-          id: `tl_${randomBytes(8).toString('hex')}`,
+          id: `tl_${randomBytes(8).toString("hex")}`,
           laneIndex: data.laneIndex ?? nextIndex,
         })
         .returning();
 
       await db
         .update(takeGroups)
-        .set({ 
+        .set({
           takeCount: existingLanes.length + 1,
           updatedAt: new Date(),
         })
@@ -181,8 +186,8 @@ export class CompingService {
 
       return takeLane;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating take lane:');
-      throw new Error('Failed to create take lane');
+      logger.warn({ err: error }, "Error creating take lane:");
+      throw new Error("Failed to create take lane");
     }
   }
 
@@ -193,8 +198,8 @@ export class CompingService {
       });
       return result;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching take lane:');
-      throw new Error('Failed to fetch take lane');
+      logger.warn({ err: error }, "Error fetching take lane:");
+      throw new Error("Failed to fetch take lane");
     }
   }
 
@@ -206,27 +211,30 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching group lanes:');
-      throw new Error('Failed to fetch group lanes');
+      logger.warn({ err: error }, "Error fetching group lanes:");
+      throw new Error("Failed to fetch group lanes");
     }
   }
 
-  async updateTakeLane(laneId: string, updates: Partial<TakeLane>): Promise<TakeLane> {
+  async updateTakeLane(
+    laneId: string,
+    updates: Partial<TakeLane>,
+  ): Promise<TakeLane> {
     try {
       const [updated] = await db
         .update(takeLanes)
         .set({ ...updates, updatedAt: new Date() })
         .where(eq(takeLanes.id, laneId))
         .returning();
-      
+
       if (!updated) {
-        throw new Error('Take lane not found');
+        throw new Error("Take lane not found");
       }
-      
+
       return updated;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error updating take lane:');
-      throw new Error('Failed to update take lane');
+      logger.warn({ err: error }, "Error updating take lane:");
+      throw new Error("Failed to update take lane");
     }
   }
 
@@ -234,7 +242,7 @@ export class CompingService {
     try {
       const lane = await this.getTakeLane(laneId);
       if (!lane) {
-        throw new Error('Take lane not found');
+        throw new Error("Take lane not found");
       }
 
       await db.delete(takeLanes).where(eq(takeLanes.id, laneId));
@@ -242,14 +250,14 @@ export class CompingService {
       const remainingLanes = await this.getGroupLanes(lane.takeGroupId);
       await db
         .update(takeGroups)
-        .set({ 
+        .set({
           takeCount: remainingLanes.length,
           updatedAt: new Date(),
         })
         .where(eq(takeGroups.id, lane.takeGroupId));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error deleting take lane:');
-      throw new Error('Failed to delete take lane');
+      logger.warn({ err: error }, "Error deleting take lane:");
+      throw new Error("Failed to delete take lane");
     }
   }
 
@@ -262,8 +270,8 @@ export class CompingService {
           .where(eq(takeLanes.id, laneIds[i]));
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error reordering lanes:');
-      throw new Error('Failed to reorder lanes');
+      logger.warn({ err: error }, "Error reordering lanes:");
+      throw new Error("Failed to reorder lanes");
     }
   }
 
@@ -276,15 +284,15 @@ export class CompingService {
         .insert(takeSegments)
         .values({
           ...data,
-          id: `ts_${randomBytes(8).toString('hex')}`,
+          id: `ts_${randomBytes(8).toString("hex")}`,
           order: data.order ?? nextOrder,
         })
         .returning();
 
       return segment;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating take segment:');
-      throw new Error('Failed to create take segment');
+      logger.warn({ err: error }, "Error creating take segment:");
+      throw new Error("Failed to create take segment");
     }
   }
 
@@ -295,8 +303,8 @@ export class CompingService {
       });
       return result;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching take segment:');
-      throw new Error('Failed to fetch take segment');
+      logger.warn({ err: error }, "Error fetching take segment:");
+      throw new Error("Failed to fetch take segment");
     }
   }
 
@@ -308,8 +316,8 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching group segments:');
-      throw new Error('Failed to fetch group segments');
+      logger.warn({ err: error }, "Error fetching group segments:");
+      throw new Error("Failed to fetch group segments");
     }
   }
 
@@ -321,27 +329,30 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching lane segments:');
-      throw new Error('Failed to fetch lane segments');
+      logger.warn({ err: error }, "Error fetching lane segments:");
+      throw new Error("Failed to fetch lane segments");
     }
   }
 
-  async updateTakeSegment(segmentId: string, updates: Partial<TakeSegment>): Promise<TakeSegment> {
+  async updateTakeSegment(
+    segmentId: string,
+    updates: Partial<TakeSegment>,
+  ): Promise<TakeSegment> {
     try {
       const [updated] = await db
         .update(takeSegments)
         .set({ ...updates, updatedAt: new Date() })
         .where(eq(takeSegments.id, segmentId))
         .returning();
-      
+
       if (!updated) {
-        throw new Error('Take segment not found');
+        throw new Error("Take segment not found");
       }
-      
+
       return updated;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error updating take segment:');
-      throw new Error('Failed to update take segment');
+      logger.warn({ err: error }, "Error updating take segment:");
+      throw new Error("Failed to update take segment");
     }
   }
 
@@ -349,8 +360,8 @@ export class CompingService {
     try {
       await db.delete(takeSegments).where(eq(takeSegments.id, segmentId));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error deleting take segment:');
-      throw new Error('Failed to delete take segment');
+      logger.warn({ err: error }, "Error deleting take segment:");
+      throw new Error("Failed to delete take segment");
     }
   }
 
@@ -359,7 +370,7 @@ export class CompingService {
     laneId: string,
     startTime: number,
     endTime: number,
-    compVersionId?: string
+    compVersionId?: string,
   ): Promise<TakeSegment> {
     try {
       await db
@@ -367,8 +378,8 @@ export class CompingService {
         .where(
           and(
             eq(takeSegments.takeGroupId, groupId),
-            eq(takeSegments.isSelected, true)
-          )
+            eq(takeSegments.isSelected, true),
+          ),
         );
 
       const segment = await this.createTakeSegment({
@@ -382,25 +393,31 @@ export class CompingService {
 
       return segment;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error selecting segment from lane:');
-      throw new Error('Failed to select segment from lane');
+      logger.warn({ err: error }, "Error selecting segment from lane:");
+      throw new Error("Failed to select segment from lane");
     }
   }
 
   async createCompVersion(
-    groupId: string, 
-    data: { name: string; versionNumber?: number; description?: string; createdBy?: string }
+    groupId: string,
+    data: {
+      name: string;
+      versionNumber?: number;
+      description?: string;
+      createdBy?: string;
+    },
   ): Promise<CompVersion> {
     try {
       const existingVersions = await this.getCompVersions(groupId);
-      const nextVersionNumber = data.versionNumber ?? (existingVersions.length + 1);
+      const nextVersionNumber =
+        data.versionNumber ?? existingVersions.length + 1;
 
       const segments = await this.getGroupSegments(groupId);
 
       const [version] = await db
         .insert(compVersions)
         .values({
-          id: `cv_${randomBytes(8).toString('hex')}`,
+          id: `cv_${randomBytes(8).toString("hex")}`,
           takeGroupId: groupId,
           name: data.name,
           versionNumber: nextVersionNumber,
@@ -413,8 +430,8 @@ export class CompingService {
 
       return version;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating comp version:');
-      throw new Error('Failed to create comp version');
+      logger.warn({ err: error }, "Error creating comp version:");
+      throw new Error("Failed to create comp version");
     }
   }
 
@@ -425,8 +442,8 @@ export class CompingService {
       });
       return result;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching comp version:');
-      throw new Error('Failed to fetch comp version');
+      logger.warn({ err: error }, "Error fetching comp version:");
+      throw new Error("Failed to fetch comp version");
     }
   }
 
@@ -438,12 +455,15 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching comp versions:');
-      throw new Error('Failed to fetch comp versions');
+      logger.warn({ err: error }, "Error fetching comp versions:");
+      throw new Error("Failed to fetch comp versions");
     }
   }
 
-  async setActiveCompVersion(groupId: string, versionId: string): Promise<void> {
+  async setActiveCompVersion(
+    groupId: string,
+    versionId: string,
+  ): Promise<void> {
     try {
       await db
         .update(compVersions)
@@ -457,7 +477,7 @@ export class CompingService {
 
       await db
         .update(takeGroups)
-        .set({ 
+        .set({
           activeCompVersionId: versionId,
           updatedAt: new Date(),
         })
@@ -465,8 +485,10 @@ export class CompingService {
 
       const version = await this.getCompVersion(versionId);
       if (version?.segmentData) {
-        await db.delete(takeSegments).where(eq(takeSegments.takeGroupId, groupId));
-        
+        await db
+          .delete(takeSegments)
+          .where(eq(takeSegments.takeGroupId, groupId));
+
         const segments = version.segmentData as TakeSegment[];
         for (const segment of segments) {
           await this.createTakeSegment({
@@ -485,8 +507,8 @@ export class CompingService {
         }
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error setting active comp version:');
-      throw new Error('Failed to set active comp version');
+      logger.warn({ err: error }, "Error setting active comp version:");
+      throw new Error("Failed to set active comp version");
     }
   }
 
@@ -494,17 +516,17 @@ export class CompingService {
     try {
       const version = await this.getCompVersion(versionId);
       if (!version) {
-        throw new Error('Comp version not found');
+        throw new Error("Comp version not found");
       }
 
       if (version.isActive) {
-        throw new Error('Cannot delete active comp version');
+        throw new Error("Cannot delete active comp version");
       }
 
       await db.delete(compVersions).where(eq(compVersions.id, versionId));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error deleting comp version:');
-      throw new Error('Failed to delete comp version');
+      logger.warn({ err: error }, "Error deleting comp version:");
+      throw new Error("Failed to delete comp version");
     }
   }
 
@@ -512,17 +534,17 @@ export class CompingService {
     try {
       const takeGroup = await this.getTakeGroup(groupId);
       if (!takeGroup) {
-        throw new Error('Take group not found');
+        throw new Error("Take group not found");
       }
 
       const segments = await this.getGroupSegments(groupId);
-      const selectedSegments = segments.filter(s => s.isSelected);
+      const selectedSegments = segments.filter((s) => s.isSelected);
 
       if (selectedSegments.length === 0) {
-        throw new Error('No segments selected for rendering');
+        throw new Error("No segments selected for rendering");
       }
 
-      const clipId = `comp_${randomBytes(8).toString('hex')}`;
+      const clipId = `comp_${randomBytes(8).toString("hex")}`;
       const filePath = `/uploads/audio/comps/${clipId}.wav`;
 
       const [newClip] = await db
@@ -536,11 +558,11 @@ export class CompingService {
           startTime: takeGroup.startTime,
           endTime: takeGroup.endTime,
           isComped: true,
-          compSourceIds: selectedSegments.map(s => s.id),
+          compSourceIds: selectedSegments.map((s) => s.id),
         })
         .returning();
 
-      await this.updateTakeGroup(groupId, { status: 'rendered' });
+      await this.updateTakeGroup(groupId, { status: "rendered" });
 
       if (takeGroup.activeCompVersionId) {
         await db
@@ -553,11 +575,11 @@ export class CompingService {
         clipId: newClip.id,
         filePath: newClip.filePath,
         duration: newClip.duration,
-        status: 'completed',
+        status: "completed",
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error rendering comp:');
-      throw new Error('Failed to render comp');
+      logger.warn({ err: error }, "Error rendering comp:");
+      throw new Error("Failed to render comp");
     }
   }
 
@@ -565,7 +587,7 @@ export class CompingService {
     try {
       const original = await this.getTakeGroupWithDetails(groupId);
       if (!original) {
-        throw new Error('Take group not found');
+        throw new Error("Take group not found");
       }
 
       const newGroup = await this.createTakeGroup({
@@ -608,8 +630,8 @@ export class CompingService {
 
       return newGroup;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error duplicating take group:');
-      throw new Error('Failed to duplicate take group');
+      logger.warn({ err: error }, "Error duplicating take group:");
+      throw new Error("Failed to duplicate take group");
     }
   }
 
@@ -620,16 +642,16 @@ export class CompingService {
   }> {
     try {
       const versions = await this.getCompVersions(groupId);
-      const activeVersion = versions.find(v => v.isActive);
-      
+      const activeVersion = versions.find((v) => v.isActive);
+
       return {
         versions,
         activeVersion,
         totalVersions: versions.length,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error getting comp history:');
-      throw new Error('Failed to get comp history');
+      logger.warn({ err: error }, "Error getting comp history:");
+      throw new Error("Failed to get comp history");
     }
   }
 }

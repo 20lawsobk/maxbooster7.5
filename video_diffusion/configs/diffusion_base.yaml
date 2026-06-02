@@ -6,8 +6,8 @@ vae:
   latent_ch: 16
   scale_factor: 8
 
-vae_ckpt: ""           # path to trained VAE checkpoint
-dit_ckpt: ""           # path to trained DiT checkpoint
+vae_ckpt: "" # path to trained VAE checkpoint
+dit_ckpt: "" # path to trained DiT checkpoint
 text_cond_ckpt: ""
 music_cond_ckpt: ""
 
@@ -22,7 +22,7 @@ dit:
   time_dim: 256
 
 text:
-  dim: 768             # CLIP ViT-L / text encoder output dim
+  dim: 768 # CLIP ViT-L / text encoder output dim
 
 diffusion:
   num_steps: 1000

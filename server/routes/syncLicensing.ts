@@ -1,10 +1,10 @@
-import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { db } from '../db';
-import { syncSubmissions } from '@shared/schema';
-import { eq, and, desc, count, sql } from 'drizzle-orm';
-import { z } from 'zod';
-import { parsePaginationParams } from '../middleware/pagination.js';
+import { Router } from "express";
+import { requireAuth } from "../middleware/auth";
+import { db } from "../db";
+import { syncSubmissions } from "@shared/schema";
+import { eq, and, desc, count, sql } from "drizzle-orm";
+import { z } from "zod";
+import { parsePaginationParams } from "../middleware/pagination.js";
 
 const router = Router();
 
@@ -24,7 +24,7 @@ const insertSyncSchema = z.object({
 });
 
 // GET /api/sync-licensing - list user's sync catalog (paginated)
-router.get('/', requireAuth, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
     const catalog = await db
@@ -36,20 +36,21 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(catalog);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch sync catalog' });
+    res.status(500).json({ error: "Failed to fetch sync catalog" });
   }
 });
 
 // GET /api/sync-licensing/stats - aggregate stats via SQL (no full-table JS scan)
-router.get('/stats', requireAuth, async (req, res) => {
+router.get("/stats", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const [stats] = await db.select({
-      totalTracks: count(),
-      licensedCount: sql<number>`count(*) filter (where status = 'licensed')`,
-      pendingCount: sql<number>`count(*) filter (where status in ('under_review', 'submitted'))`,
-      revenue: sql<number>`coalesce(sum(license_fee), 0)`,
-    })
+    const [stats] = await db
+      .select({
+        totalTracks: count(),
+        licensedCount: sql<number>`count(*) filter (where status = 'licensed')`,
+        pendingCount: sql<number>`count(*) filter (where status in ('under_review', 'submitted'))`,
+        revenue: sql<number>`coalesce(sum(license_fee), 0)`,
+      })
       .from(syncSubmissions)
       .where(eq(syncSubmissions.userId, userId));
 
@@ -60,27 +61,32 @@ router.get('/stats', requireAuth, async (req, res) => {
       revenue: Number(stats.revenue),
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch sync stats' });
+    res.status(500).json({ error: "Failed to fetch sync stats" });
   }
 });
 
 // GET /api/sync-licensing/:id - get single listing
-router.get('/:id', requireAuth, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const [item] = await db
       .select()
       .from(syncSubmissions)
-      .where(and(eq(syncSubmissions.id, req.params.id), eq(syncSubmissions.userId, req.user!.id)))
+      .where(
+        and(
+          eq(syncSubmissions.id, req.params.id),
+          eq(syncSubmissions.userId, req.user!.id),
+        ),
+      )
       .limit(1);
-    if (!item) return res.status(404).json({ error: 'Listing not found' });
+    if (!item) return res.status(404).json({ error: "Listing not found" });
     res.json(item);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch listing' });
+    res.status(500).json({ error: "Failed to fetch listing" });
   }
 });
 
 // POST /api/sync-licensing - add track to sync catalog
-router.post('/', requireAuth, async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const data = insertSyncSchema.parse(req.body);
@@ -89,20 +95,22 @@ router.post('/', requireAuth, async (req, res) => {
       .values({
         ...data,
         userId,
-        status: 'available',
+        status: "available",
       })
       .returning();
     res.status(201).json(submission);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to add to sync catalog' });
+    res.status(500).json({ error: "Failed to add to sync catalog" });
   }
 });
 
 // PUT /api/sync-licensing/:id - update listing
-router.put('/:id', requireAuth, async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
@@ -110,64 +118,84 @@ router.put('/:id', requireAuth, async (req, res) => {
     const [updated] = await db
       .update(syncSubmissions)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)))
+      .where(
+        and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)),
+      )
       .returning();
-    if (!updated) return res.status(404).json({ error: 'Listing not found' });
+    if (!updated) return res.status(404).json({ error: "Listing not found" });
     res.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to update listing' });
+    res.status(500).json({ error: "Failed to update listing" });
   }
 });
 
 // PATCH /api/sync-licensing/:id/status - update license status and optional deal terms
-router.patch('/:id/status', requireAuth, async (req, res) => {
+router.patch("/:id/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
     const statusSchema = z.object({
-      status: z.enum(['available', 'under_review', 'negotiating', 'licensed', 'rejected', 'withdrawn']),
+      status: z.enum([
+        "available",
+        "under_review",
+        "negotiating",
+        "licensed",
+        "rejected",
+        "withdrawn",
+      ]),
       licensedTo: z.string().max(200).optional(),
       licenseFee: z.number().min(0).optional(),
     });
     const { status, licensedTo, licenseFee } = statusSchema.parse(req.body);
 
-    const setFields: Record<string, unknown> = { status, updatedAt: new Date() };
+    const setFields: Record<string, unknown> = {
+      status,
+      updatedAt: new Date(),
+    };
     if (licensedTo !== undefined) setFields.licensedTo = licensedTo;
     if (licenseFee !== undefined) setFields.licenseFee = licenseFee;
-    if (status === 'licensed') setFields.licensedAt = new Date();
+    if (status === "licensed") setFields.licensedAt = new Date();
 
     const [updated] = await db
       .update(syncSubmissions)
       .set(setFields)
-      .where(and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)))
+      .where(
+        and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)),
+      )
       .returning();
 
-    if (!updated) return res.status(404).json({ error: 'Listing not found' });
+    if (!updated) return res.status(404).json({ error: "Listing not found" });
     res.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to update license status' });
+    res.status(500).json({ error: "Failed to update license status" });
   }
 });
 
 // DELETE /api/sync-licensing/:id - remove from catalog
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
     const [deleted] = await db
       .delete(syncSubmissions)
-      .where(and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)))
+      .where(
+        and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)),
+      )
       .returning();
-    if (!deleted) return res.status(404).json({ error: 'Listing not found' });
+    if (!deleted) return res.status(404).json({ error: "Listing not found" });
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to remove from catalog' });
+    res.status(500).json({ error: "Failed to remove from catalog" });
   }
 });
 

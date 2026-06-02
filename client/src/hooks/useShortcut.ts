@@ -1,6 +1,10 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { useShortcuts } from '@/contexts/ShortcutContext';
-import { ShortcutDefinition, ShortcutModifier, ShortcutContext } from '@/lib/shortcuts/types';
+import { useEffect, useCallback, useRef } from "react";
+import { useShortcuts } from "@/contexts/ShortcutContext";
+import {
+  ShortcutDefinition,
+  ShortcutModifier,
+  ShortcutContext,
+} from "@/lib/shortcuts/types";
 
 export interface UseShortcutOptions {
   key: string;
@@ -16,7 +20,7 @@ export interface UseShortcutOptions {
 export function useShortcut(
   options: UseShortcutOptions,
   handler: () => void,
-  deps: React.DependencyList = []
+  deps: React.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
   const idRef = useRef(`shortcut-${Math.random().toString(36).substr(2, 9)}`);
@@ -31,9 +35,9 @@ export function useShortcut(
       id: idRef.current,
       key: options.key,
       modifiers: options.modifiers,
-      description: options.description || 'Custom shortcut',
-      category: (options.category as Record<string, unknown>) || 'custom',
-      context: options.context || 'global',
+      description: options.description || "Custom shortcut",
+      category: (options.category as Record<string, unknown>) || "custom",
+      context: options.context || "global",
       action: () => handlerRef.current(),
       allowInInput: options.allowInInput,
       preventDefault: options.preventDefault,
@@ -46,7 +50,7 @@ export function useShortcut(
     };
   }, [
     options.key,
-    options.modifiers?.join(','),
+    options.modifiers?.join(","),
     options.enabled,
     options.context,
     registerShortcut,
@@ -59,7 +63,7 @@ export function useShortcut(
 
 export function useShortcuts_Multiple(
   shortcuts: Array<UseShortcutOptions & { handler: () => void }>,
-  deps: React.DependencyList = []
+  deps: React.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
   const idsRef = useRef<string[]>([]);
@@ -77,9 +81,10 @@ export function useShortcuts_Multiple(
         id,
         key: shortcutConfig.key,
         modifiers: shortcutConfig.modifiers,
-        description: shortcutConfig.description || 'Custom shortcut',
-        category: (shortcutConfig.category as Record<string, unknown>) || 'custom',
-        context: shortcutConfig.context || 'global',
+        description: shortcutConfig.description || "Custom shortcut",
+        category:
+          (shortcutConfig.category as Record<string, unknown>) || "custom",
+        context: shortcutConfig.context || "global",
         action: shortcutConfig.handler,
         allowInInput: shortcutConfig.allowInInput,
         preventDefault: shortcutConfig.preventDefault,
@@ -91,7 +96,7 @@ export function useShortcuts_Multiple(
     idsRef.current = newIds;
 
     return () => {
-      newIds.forEach(id => unregisterShortcut(id));
+      newIds.forEach((id) => unregisterShortcut(id));
       idsRef.current = [];
     };
   }, [shortcuts.length, registerShortcut, unregisterShortcut, ...deps]);
@@ -102,34 +107,34 @@ export function useShortcuts_Multiple(
 export function useGlobalShortcut(
   key: string,
   handler: () => void,
-  modifiers?: ShortcutModifier[]
+  modifiers?: ShortcutModifier[],
 ) {
   return useShortcut(
     {
       key,
       modifiers,
       description: `Global ${key} shortcut`,
-      context: 'global',
+      context: "global",
     },
     handler,
-    []
+    [],
   );
 }
 
 export function useStudioShortcut(
   key: string,
   handler: () => void,
-  modifiers?: ShortcutModifier[]
+  modifiers?: ShortcutModifier[],
 ) {
   return useShortcut(
     {
       key,
       modifiers,
       description: `Studio ${key} shortcut`,
-      context: 'studio',
+      context: "studio",
     },
     handler,
-    []
+    [],
   );
 }
 

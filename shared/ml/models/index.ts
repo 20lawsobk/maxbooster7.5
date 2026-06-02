@@ -3,29 +3,54 @@
  * 100% in-house AI implementation - no external APIs
  */
 
-export { BaseModel } from './BaseModel.js';
-export { TimeSeriesForecastModel } from './TimeSeriesForecastModel.js';
-export { AnomalyDetectionModel } from './AnomalyDetectionModel.js';
-export { ChurnPredictionModel } from './ChurnPredictionModel.js';
-export { GenreClassificationModel, GENRES, type Genre } from './GenreClassificationModel.js';
-export { BPMDetectionModel } from './BPMDetectionModel.js';
-export { EngagementPredictionModel } from './EngagementPredictionModel.js';
-export { ContentPatternLearner } from './ContentPatternLearner.js';
-export { IntelligentMixingModel } from './IntelligentMixingModel.js';
-export { BrandVoiceAnalyzer } from './BrandVoiceAnalyzer.js';
-export { SocialMediaAutopilotAI } from './SocialMediaAutopilotAI.js';
-export { AdvertisingAutopilotAI } from './AdvertisingAutopilotAI.js';
-export { AdvertisingAutopilotAI_v3 } from './AdvertisingAutopilotAI_v3.js';
-export { RecommendationEngine } from './RecommendationEngine.js';
-export { AdvancedTimeSeriesModel } from './AdvancedTimeSeriesModel.js';
-export { AdOptimizationEngine } from './AdOptimizationEngine.js';
-export { SocialAutopilotEngine } from './SocialAutopilotEngine.js';
+export { BaseModel } from "./BaseModel.js";
+export { TimeSeriesForecastModel } from "./TimeSeriesForecastModel.js";
+export { AnomalyDetectionModel } from "./AnomalyDetectionModel.js";
+export { ChurnPredictionModel } from "./ChurnPredictionModel.js";
+export {
+  GenreClassificationModel,
+  GENRES,
+  type Genre,
+} from "./GenreClassificationModel.js";
+export { BPMDetectionModel } from "./BPMDetectionModel.js";
+export { EngagementPredictionModel } from "./EngagementPredictionModel.js";
+export { ContentPatternLearner } from "./ContentPatternLearner.js";
+export { IntelligentMixingModel } from "./IntelligentMixingModel.js";
+export { BrandVoiceAnalyzer } from "./BrandVoiceAnalyzer.js";
+export { SocialMediaAutopilotAI } from "./SocialMediaAutopilotAI.js";
+export { AdvertisingAutopilotAI } from "./AdvertisingAutopilotAI.js";
+export { AdvertisingAutopilotAI_v3 } from "./AdvertisingAutopilotAI_v3.js";
+export { RecommendationEngine } from "./RecommendationEngine.js";
+export { AdvancedTimeSeriesModel } from "./AdvancedTimeSeriesModel.js";
+export { AdOptimizationEngine } from "./AdOptimizationEngine.js";
+export { SocialAutopilotEngine } from "./SocialAutopilotEngine.js";
 
 // ─── Creative Model Pipeline (Veo-surpassing music-synced video generation) ──
-export { CreativePlannerModel, PLATFORM_IDX, GOAL_IDX, TONE_IDX, DOMAIN_IDX, extractCreativePlannerFeatures } from './CreativePlannerModel.js';
-export { BeatSyncAlignmentModel, extractAlignmentFeatures } from './BeatSyncAlignmentModel.js';
-export { VideoCreativeScorer, extractScorerFeatures } from './VideoCreativeScorer.js';
-export { KeyframeStyleSelector, VIDEO_STYLES, STYLE_IDX, AESTHETIC_IDX, EMOTIONAL_GOAL_IDX, GENRE_ENERGY_MAP, extractStyleFeatures } from './KeyframeStyleSelector.js';
+export {
+  CreativePlannerModel,
+  PLATFORM_IDX,
+  GOAL_IDX,
+  TONE_IDX,
+  DOMAIN_IDX,
+  extractCreativePlannerFeatures,
+} from "./CreativePlannerModel.js";
+export {
+  BeatSyncAlignmentModel,
+  extractAlignmentFeatures,
+} from "./BeatSyncAlignmentModel.js";
+export {
+  VideoCreativeScorer,
+  extractScorerFeatures,
+} from "./VideoCreativeScorer.js";
+export {
+  KeyframeStyleSelector,
+  VIDEO_STYLES,
+  STYLE_IDX,
+  AESTHETIC_IDX,
+  EMOTIONAL_GOAL_IDX,
+  GENRE_ENERGY_MAP,
+  extractStyleFeatures,
+} from "./KeyframeStyleSelector.js";
 
 export type {
   Platform,
@@ -42,7 +67,7 @@ export type {
   TrendDetectionResult,
   EngagementPrediction as SocialEngagementPrediction,
   FollowerGrowthStrategy,
-} from './SocialAutopilotEngine.js';
+} from "./SocialAutopilotEngine.js";
 
 export type {
   Campaign,
@@ -60,7 +85,7 @@ export type {
   ROIForecast,
   ROIPredictionPoint,
   ABTestRecommendation,
-} from './AdOptimizationEngine.js';
+} from "./AdOptimizationEngine.js";
 
 export type {
   TimeSeriesForecast,
@@ -72,33 +97,30 @@ export type {
   VisualizationData,
   HyperParameters,
   FeatureSet,
-} from './AdvancedTimeSeriesModel.js';
+} from "./AdvancedTimeSeriesModel.js";
 
 export type {
   ChurnFeatures,
   ChurnPredictionResult,
-} from './ChurnPredictionModel.js';
+} from "./ChurnPredictionModel.js";
 
 export type {
   BPMDetectionResult,
   KeyDetectionResult,
-} from './BPMDetectionModel.js';
+} from "./BPMDetectionModel.js";
 
 export type {
   ContentFeatures,
   EngagementTargets,
-} from './EngagementPredictionModel.js';
+} from "./EngagementPredictionModel.js";
 
-export type {
-  NGram,
-  MarkovChain,
-} from './ContentPatternLearner.js';
+export type { NGram, MarkovChain } from "./ContentPatternLearner.js";
 
 export type {
   MixingParameters,
   MasteringParameters,
   AudioAnalysis,
-} from './IntelligentMixingModel.js';
+} from "./IntelligentMixingModel.js";
 
 export type {
   AudioFeatureVector,
@@ -110,4 +132,4 @@ export type {
   PlaylistConfig,
   GeneratedPlaylist,
   CollaboratorMatch,
-} from './RecommendationEngine.js';
+} from "./RecommendationEngine.js";

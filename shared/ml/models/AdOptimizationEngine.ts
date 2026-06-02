@@ -1,10 +1,10 @@
 /**
  * Ad Optimization Engine - Organic Growth AI for Max Booster
- * 
+ *
  * CORE PHILOSOPHY: Personal Ad Network
  * Replicate peak paid advertising performance through organic means,
  * eliminating the need for ad spend by leveraging connected social profiles.
- * 
+ *
  * Features:
  * 1. Personal Ad Network - Use connected profiles as organic ad distribution
  * 2. Organic Growth Optimization - Achieve paid-ad-level results organically
@@ -12,18 +12,18 @@
  * 4. Cross-Platform Amplification - Maximize reach across all connected profiles
  * 5. Creative effectiveness prediction for organic content
  * 6. Viral potential optimization
- * 
+ *
  * SECONDARY (Traditional Advertising Support):
  * - Campaign performance scoring
  * - Budget allocation optimization
  * - Audience targeting with interest clustering
  * - ROI forecasting for paid campaigns
- * 
+ *
  * 100% in-house implementation - no external APIs
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { BaseModel } from './BaseModel.js';
+import * as tf from "@tensorflow/tfjs";
+import { BaseModel } from "./BaseModel.js";
 
 export interface CampaignMetrics {
   impressions: number;
@@ -41,9 +41,21 @@ export interface CampaignMetrics {
 export interface Campaign {
   id: string;
   name: string;
-  platform: 'facebook' | 'instagram' | 'twitter' | 'tiktok' | 'youtube' | 'spotify' | 'google';
-  objective: 'awareness' | 'traffic' | 'engagement' | 'conversions' | 'app_installs';
-  status: 'active' | 'paused' | 'completed' | 'draft';
+  platform:
+    | "facebook"
+    | "instagram"
+    | "twitter"
+    | "tiktok"
+    | "youtube"
+    | "spotify"
+    | "google";
+  objective:
+    | "awareness"
+    | "traffic"
+    | "engagement"
+    | "conversions"
+    | "app_installs";
+  status: "active" | "paused" | "completed" | "draft";
   budget: number;
   dailyBudget: number;
   startDate: Date;
@@ -62,7 +74,7 @@ export interface CampaignHistoricalPoint {
 export interface AudienceTargeting {
   ageMin: number;
   ageMax: number;
-  genders: ('male' | 'female' | 'other')[];
+  genders: ("male" | "female" | "other")[];
   locations: string[];
   interests: string[];
   behaviors: string[];
@@ -73,7 +85,7 @@ export interface AudienceTargeting {
 
 export interface Creative {
   id: string;
-  type: 'image' | 'video' | 'carousel' | 'text';
+  type: "image" | "video" | "carousel" | "text";
   headline: string;
   body: string;
   callToAction: string;
@@ -125,7 +137,7 @@ export interface BudgetAllocation {
   expectedConversions: number;
   reasoning: string;
   confidence: number;
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: "low" | "medium" | "high";
 }
 
 export interface BudgetOptimizationResult {
@@ -172,7 +184,7 @@ export interface AudienceTargetingResult {
 
 export interface CreativeVariant {
   variantId: string;
-  type: 'headline' | 'body' | 'cta' | 'visual' | 'format';
+  type: "headline" | "body" | "cta" | "visual" | "format";
   originalValue: string;
   suggestedValue: string;
   predictedImprovementPct: number;
@@ -233,7 +245,7 @@ export interface ABTestRecommendation {
   expectedLift: number;
   requiredSampleSize: number;
   estimatedDuration: number;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   reasoning: string;
   implementationSteps: string[];
   confidence: number;
@@ -259,7 +271,7 @@ export interface OrganicContent {
   hashtags?: string[];
   platforms?: string[];
   hasMedia: boolean;
-  mediaType?: 'image' | 'video' | 'carousel';
+  mediaType?: "image" | "video" | "carousel";
   scheduledTime?: Date;
 }
 
@@ -386,7 +398,7 @@ export interface ScheduledOrganicPost {
   predictedReach: number;
   predictedEngagement: number;
   viralScore: number;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 interface ReinforcementState {
@@ -401,7 +413,7 @@ interface ReinforcementState {
 
 interface ActionRecord {
   campaignId: string;
-  action: 'increase_budget' | 'decrease_budget' | 'maintain' | 'reallocate';
+  action: "increase_budget" | "decrease_budget" | "maintain" | "reallocate";
   magnitude: number;
   timestamp: Date;
   reward: number;
@@ -413,12 +425,12 @@ export class AdOptimizationEngine extends BaseModel {
   private creativeModel: tf.LayersModel | null = null;
   private roiModel: tf.LayersModel | null = null;
   private clusteringModel: tf.LayersModel | null = null;
-  
+
   private reinforcementState: ReinforcementState;
   private campaignHistory: Map<string, Campaign[]> = new Map();
   private interestGraph: Map<string, Set<string>> = new Map();
   private platformBenchmarks: Map<string, CampaignMetrics> = new Map();
-  
+
   private scalers: {
     performance: { mean: number[]; std: number[] } | null;
     budget: { mean: number[]; std: number[] } | null;
@@ -428,9 +440,9 @@ export class AdOptimizationEngine extends BaseModel {
 
   constructor() {
     super({
-      name: 'AdOptimizationEngine',
-      type: 'multimodal',
-      version: '1.0.0',
+      name: "AdOptimizationEngine",
+      type: "multimodal",
+      version: "1.0.0",
       inputShape: [32],
       outputShape: [8],
     });
@@ -466,23 +478,23 @@ export class AdOptimizationEngine extends BaseModel {
       layers: [
         tf.layers.dense({
           units: 128,
-          activation: 'relu',
+          activation: "relu",
           inputShape: [24],
           kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
         }),
         tf.layers.batchNormalization(),
         tf.layers.dropout({ rate: 0.3 }),
-        tf.layers.dense({ units: 64, activation: 'relu' }),
+        tf.layers.dense({ units: 64, activation: "relu" }),
         tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({ units: 32, activation: 'relu' }),
-        tf.layers.dense({ units: 7, activation: 'sigmoid' }),
+        tf.layers.dense({ units: 32, activation: "relu" }),
+        tf.layers.dense({ units: 7, activation: "sigmoid" }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'meanSquaredError',
-      metrics: ['mae'],
+      loss: "meanSquaredError",
+      metrics: ["mae"],
     });
 
     return model;
@@ -493,22 +505,22 @@ export class AdOptimizationEngine extends BaseModel {
       layers: [
         tf.layers.dense({
           units: 96,
-          activation: 'relu',
+          activation: "relu",
           inputShape: [16],
           kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
         }),
         tf.layers.batchNormalization(),
         tf.layers.dropout({ rate: 0.25 }),
-        tf.layers.dense({ units: 48, activation: 'relu' }),
-        tf.layers.dense({ units: 24, activation: 'relu' }),
-        tf.layers.dense({ units: 3, activation: 'linear' }),
+        tf.layers.dense({ units: 48, activation: "relu" }),
+        tf.layers.dense({ units: 24, activation: "relu" }),
+        tf.layers.dense({ units: 3, activation: "linear" }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'huberLoss',
-      metrics: ['mae'],
+      loss: "huberLoss",
+      metrics: ["mae"],
     });
 
     return model;
@@ -519,20 +531,20 @@ export class AdOptimizationEngine extends BaseModel {
       layers: [
         tf.layers.dense({
           units: 64,
-          activation: 'relu',
+          activation: "relu",
           inputShape: [20],
         }),
         tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({ units: 32, activation: 'relu' }),
-        tf.layers.dense({ units: 16, activation: 'relu' }),
-        tf.layers.dense({ units: 4, activation: 'sigmoid' }),
+        tf.layers.dense({ units: 32, activation: "relu" }),
+        tf.layers.dense({ units: 16, activation: "relu" }),
+        tf.layers.dense({ units: 4, activation: "sigmoid" }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'meanSquaredError',
-      metrics: ['mae'],
+      loss: "meanSquaredError",
+      metrics: ["mae"],
     });
 
     return model;
@@ -548,15 +560,15 @@ export class AdOptimizationEngine extends BaseModel {
         }),
         tf.layers.dropout({ rate: 0.2 }),
         tf.layers.lstm({ units: 32, returnSequences: false }),
-        tf.layers.dense({ units: 16, activation: 'relu' }),
-        tf.layers.dense({ units: 3, activation: 'linear' }),
+        tf.layers.dense({ units: 16, activation: "relu" }),
+        tf.layers.dense({ units: 3, activation: "linear" }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'meanSquaredError',
-      metrics: ['mae'],
+      loss: "meanSquaredError",
+      metrics: ["mae"],
     });
 
     return model;
@@ -576,7 +588,15 @@ export class AdOptimizationEngine extends BaseModel {
       roas: 2.0,
     };
 
-    const platforms = ['facebook', 'instagram', 'twitter', 'tiktok', 'youtube', 'spotify', 'google'];
+    const platforms = [
+      "facebook",
+      "instagram",
+      "twitter",
+      "tiktok",
+      "youtube",
+      "spotify",
+      "google",
+    ];
     const multipliers: Record<string, Partial<CampaignMetrics>> = {
       facebook: { ctr: 0.018, cvr: 0.045, cpc: 0.55, roas: 1.8 },
       instagram: { ctr: 0.025, cvr: 0.052, cpc: 0.48, roas: 2.2 },
@@ -587,7 +607,7 @@ export class AdOptimizationEngine extends BaseModel {
       google: { ctr: 0.022, cvr: 0.055, cpc: 0.65, roas: 2.1 },
     };
 
-    platforms.forEach(platform => {
+    platforms.forEach((platform) => {
       this.platformBenchmarks.set(platform, {
         ...defaultBenchmark,
         ...multipliers[platform],
@@ -610,7 +630,7 @@ export class AdOptimizationEngine extends BaseModel {
     accuracy: Record<string, number>;
   }> {
     if (campaigns.length < 20) {
-      throw new Error('Need at least 20 campaigns for training');
+      throw new Error("Need at least 20 campaigns for training");
     }
 
     const accuracy: Record<string, number> = {};
@@ -621,10 +641,10 @@ export class AdOptimizationEngine extends BaseModel {
       this.campaignHistory.set(campaign.platform, existing);
     }
 
-    accuracy['performance'] = await this.trainPerformanceModel(campaigns);
-    accuracy['budget'] = await this.trainBudgetModel(campaigns);
-    accuracy['creative'] = await this.trainCreativeModel(campaigns);
-    accuracy['roi'] = await this.trainROIModel(campaigns);
+    accuracy["performance"] = await this.trainPerformanceModel(campaigns);
+    accuracy["budget"] = await this.trainBudgetModel(campaigns);
+    accuracy["creative"] = await this.trainCreativeModel(campaigns);
+    accuracy["roi"] = await this.trainROIModel(campaigns);
 
     this.buildInterestGraph(campaigns);
     this.updateReinforcementState(campaigns);
@@ -634,7 +654,7 @@ export class AdOptimizationEngine extends BaseModel {
 
     return {
       success: true,
-      modelsTraied: ['performance', 'budget', 'creative', 'roi'],
+      modelsTraied: ["performance", "budget", "creative", "roi"],
       accuracy,
     };
   }
@@ -673,7 +693,8 @@ export class AdOptimizationEngine extends BaseModel {
         verbose: 0,
       });
 
-      const finalLoss = history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
+      const finalLoss =
+        history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
       return Math.max(0.5, 1 - Math.min(finalLoss as number, 0.5));
     } finally {
       xTrain.dispose();
@@ -696,7 +717,10 @@ export class AdOptimizationEngine extends BaseModel {
         this.encodePlatform(campaign.platform),
         this.encodeObjective(campaign.objective),
         campaign.targeting.interests.length / 20,
-        this.getCompetitionLevel(campaign.platform, campaign.targeting.interests),
+        this.getCompetitionLevel(
+          campaign.platform,
+          campaign.targeting.interests,
+        ),
         this.getSeasonalityFactor(new Date()),
         this.getDaysRemaining(campaign),
         campaign.metrics.impressions / 100000,
@@ -726,7 +750,8 @@ export class AdOptimizationEngine extends BaseModel {
         verbose: 0,
       });
 
-      const finalLoss = history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
+      const finalLoss =
+        history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
       return Math.max(0.5, 1 - Math.min(finalLoss as number, 0.5));
     } finally {
       xTrain.dispose();
@@ -792,7 +817,8 @@ export class AdOptimizationEngine extends BaseModel {
         verbose: 0,
       });
 
-      const finalLoss = history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
+      const finalLoss =
+        history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
       return Math.max(0.5, 1 - Math.min(finalLoss as number, 0.5));
     } finally {
       xTrain.dispose();
@@ -805,7 +831,8 @@ export class AdOptimizationEngine extends BaseModel {
     const labels: number[][] = [];
 
     for (const campaign of campaigns) {
-      if (!campaign.historicalData || campaign.historicalData.length < 14) continue;
+      if (!campaign.historicalData || campaign.historicalData.length < 14)
+        continue;
 
       const sequence: number[][] = [];
       for (let i = 0; i < 14; i++) {
@@ -823,7 +850,8 @@ export class AdOptimizationEngine extends BaseModel {
       }
       sequences.push(sequence);
 
-      const lastMetrics = campaign.historicalData[campaign.historicalData.length - 1].metrics;
+      const lastMetrics =
+        campaign.historicalData[campaign.historicalData.length - 1].metrics;
       labels.push([
         lastMetrics.roas,
         lastMetrics.revenue / 1000,
@@ -846,7 +874,8 @@ export class AdOptimizationEngine extends BaseModel {
         verbose: 0,
       });
 
-      const finalLoss = history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
+      const finalLoss =
+        history.history.val_loss?.[history.history.val_loss.length - 1] || 0.3;
       return Math.max(0.5, 1 - Math.min(finalLoss as number, 0.5));
     } finally {
       xTrain.dispose();
@@ -855,39 +884,64 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   public async scoreCampaign(campaign: Campaign): Promise<CampaignScore> {
-    const benchmark = this.platformBenchmarks.get(campaign.platform) || this.platformBenchmarks.get('instagram')!;
-    const metrics = campaign.metrics || { ctr: 0.02, cvr: 0.05, roas: 1.5, spend: 0, revenue: 0, impressions: 0, clicks: 0, conversions: 0, cpc: 0.5, cpa: 10 };
+    const benchmark =
+      this.platformBenchmarks.get(campaign.platform) ||
+      this.platformBenchmarks.get("instagram")!;
+    const metrics = campaign.metrics || {
+      ctr: 0.02,
+      cvr: 0.05,
+      roas: 1.5,
+      spend: 0,
+      revenue: 0,
+      impressions: 0,
+      clicks: 0,
+      conversions: 0,
+      cpc: 0.5,
+      cpa: 10,
+    };
     campaign.metrics = metrics;
-    campaign.targeting = campaign.targeting || { ageMin: 18, ageMax: 65, interests: [], locations: [], gender: 'all', customAudiences: [], lookalikes: [], excludedAudiences: [] };
+    campaign.targeting = campaign.targeting || {
+      ageMin: 18,
+      ageMax: 65,
+      interests: [],
+      locations: [],
+      gender: "all",
+      customAudiences: [],
+      lookalikes: [],
+      excludedAudiences: [],
+    };
     campaign.creatives = campaign.creatives || [];
     campaign.budget = campaign.budget || 100;
     campaign.historicalData = campaign.historicalData || [];
-    
+
     const ctrFactor = Math.min(metrics.ctr / benchmark.ctr, 2);
     const cvrFactor = Math.min(campaign.metrics.cvr / benchmark.cvr, 2);
     const roasFactor = Math.min(campaign.metrics.roas / benchmark.roas, 2);
-    const budgetUtilization = Math.min(campaign.metrics.spend / campaign.budget, 1);
+    const budgetUtilization = Math.min(
+      campaign.metrics.spend / campaign.budget,
+      1,
+    );
     const audienceQuality = this.calculateAudienceQuality(campaign.targeting);
     const creativeQuality = this.calculateCreativeQuality(campaign.creatives);
     const trendDirection = this.calculateTrend(campaign);
 
-    const performanceScore = (ctrFactor * 0.25 + cvrFactor * 0.35 + roasFactor * 0.4) * 50;
+    const performanceScore =
+      (ctrFactor * 0.25 + cvrFactor * 0.35 + roasFactor * 0.4) * 50;
     const efficiencyScore = (1 - Math.abs(budgetUtilization - 0.85)) * 100;
     const audienceScore = audienceQuality * 100;
     const creativeScore = creativeQuality * 100;
     const momentumScore = ((trendDirection + 1) / 2) * 100;
-    
-    const riskFactors = this.assessRiskFactors(campaign);
-    const riskScore = 100 - (riskFactors.length * 15);
 
-    const overallScore = (
-      performanceScore * 0.30 +
+    const riskFactors = this.assessRiskFactors(campaign);
+    const riskScore = 100 - riskFactors.length * 15;
+
+    const overallScore =
+      performanceScore * 0.3 +
       efficiencyScore * 0.15 +
       audienceScore * 0.15 +
       creativeScore * 0.15 +
       momentumScore * 0.15 +
-      riskScore * 0.10
-    );
+      riskScore * 0.1;
 
     const recommendations = this.generateCampaignRecommendations(campaign, {
       ctrFactor,
@@ -924,21 +978,21 @@ export class AdOptimizationEngine extends BaseModel {
   public async optimizeBudget(
     campaigns: Campaign[],
     totalBudget: number,
-    constraints?: { minPerCampaign?: number; maxPerCampaign?: number }
+    constraints?: { minPerCampaign?: number; maxPerCampaign?: number },
   ): Promise<BudgetOptimizationResult> {
     const minBudget = constraints?.minPerCampaign || 10;
     const maxBudget = constraints?.maxPerCampaign || totalBudget * 0.5;
 
-    let allocations: BudgetAllocation[] = campaigns.map(campaign => ({
+    let allocations: BudgetAllocation[] = campaigns.map((campaign) => ({
       campaignId: campaign.id,
       currentBudget: campaign.budget,
       recommendedBudget: campaign.budget,
       allocationChange: 0,
       expectedROI: campaign.metrics.roas,
       expectedConversions: campaign.metrics.conversions,
-      reasoning: '',
+      reasoning: "",
       confidence: 0.5,
-      riskLevel: 'medium' as const,
+      riskLevel: "medium" as const,
     }));
 
     const learningRate = 0.1;
@@ -952,43 +1006,62 @@ export class AdOptimizationEngine extends BaseModel {
     for (let i = 0; i < maxIterations; i++) {
       iterations++;
 
-      const gradients = await this.calculateBudgetGradients(campaigns, allocations);
-      
+      const gradients = await this.calculateBudgetGradients(
+        campaigns,
+        allocations,
+      );
+
       let budgetSum = 0;
       for (let j = 0; j < allocations.length; j++) {
         const gradient = gradients[j];
-        let newBudget = allocations[j].recommendedBudget + learningRate * gradient;
+        let newBudget =
+          allocations[j].recommendedBudget + learningRate * gradient;
         newBudget = Math.max(minBudget, Math.min(maxBudget, newBudget));
         allocations[j].recommendedBudget = newBudget;
         budgetSum += newBudget;
       }
 
       const scaleFactor = totalBudget / budgetSum;
-      allocations.forEach(a => {
+      allocations.forEach((a) => {
         a.recommendedBudget *= scaleFactor;
-        a.recommendedBudget = Math.max(minBudget, Math.min(maxBudget, a.recommendedBudget));
+        a.recommendedBudget = Math.max(
+          minBudget,
+          Math.min(maxBudget, a.recommendedBudget),
+        );
       });
 
-      const currentTotalROI = allocations.reduce((sum, a) => sum + a.expectedROI * a.recommendedBudget, 0);
-      
-      if (Math.abs(currentTotalROI - prevTotalROI) < convergenceThreshold * totalBudget) {
+      const currentTotalROI = allocations.reduce(
+        (sum, a) => sum + a.expectedROI * a.recommendedBudget,
+        0,
+      );
+
+      if (
+        Math.abs(currentTotalROI - prevTotalROI) <
+        convergenceThreshold * totalBudget
+      ) {
         converged = true;
         break;
       }
-      
+
       prevTotalROI = currentTotalROI;
     }
 
     for (let i = 0; i < allocations.length; i++) {
       const campaign = campaigns[i];
       const allocation = allocations[i];
-      
-      allocation.allocationChange = ((allocation.recommendedBudget - allocation.currentBudget) / allocation.currentBudget) * 100;
-      
-      const budgetRatio = allocation.recommendedBudget / allocation.currentBudget;
-      allocation.expectedROI = campaign.metrics.roas * (0.8 + 0.2 * Math.min(budgetRatio, 1.5));
-      allocation.expectedConversions = campaign.metrics.conversions * budgetRatio * 0.9;
-      
+
+      allocation.allocationChange =
+        ((allocation.recommendedBudget - allocation.currentBudget) /
+          allocation.currentBudget) *
+        100;
+
+      const budgetRatio =
+        allocation.recommendedBudget / allocation.currentBudget;
+      allocation.expectedROI =
+        campaign.metrics.roas * (0.8 + 0.2 * Math.min(budgetRatio, 1.5));
+      allocation.expectedConversions =
+        campaign.metrics.conversions * budgetRatio * 0.9;
+
       allocation.reasoning = this.generateBudgetReasoning(campaign, allocation);
       allocation.confidence = this.isTrained ? 0.8 : 0.6;
       allocation.riskLevel = this.assessBudgetRisk(allocation);
@@ -996,8 +1069,15 @@ export class AdOptimizationEngine extends BaseModel {
       this.updateQTable(campaign.id, allocation);
     }
 
-    const expectedTotalROI = allocations.reduce((sum, a) => sum + a.expectedROI * a.recommendedBudget, 0) / totalBudget;
-    const expectedTotalConversions = allocations.reduce((sum, a) => sum + a.expectedConversions, 0);
+    const expectedTotalROI =
+      allocations.reduce(
+        (sum, a) => sum + a.expectedROI * a.recommendedBudget,
+        0,
+      ) / totalBudget;
+    const expectedTotalConversions = allocations.reduce(
+      (sum, a) => sum + a.expectedConversions,
+      0,
+    );
 
     return {
       totalBudget,
@@ -1010,7 +1090,10 @@ export class AdOptimizationEngine extends BaseModel {
     };
   }
 
-  private async calculateBudgetGradients(campaigns: Campaign[], allocations: BudgetAllocation[]): Promise<number[]> {
+  private async calculateBudgetGradients(
+    campaigns: Campaign[],
+    allocations: BudgetAllocation[],
+  ): Promise<number[]> {
     const gradients: number[] = [];
     const epsilon = 0.01;
 
@@ -1018,14 +1101,21 @@ export class AdOptimizationEngine extends BaseModel {
       const campaign = campaigns[i];
       const allocation = allocations[i];
 
-      const currentROI = this.estimateROI(campaign, allocation.recommendedBudget);
-      const perturbedROI = this.estimateROI(campaign, allocation.recommendedBudget * (1 + epsilon));
-      
-      const gradient = (perturbedROI - currentROI) / (epsilon * allocation.recommendedBudget);
-      
-      const qValue = this.getQValue(campaign.id, 'optimize');
+      const currentROI = this.estimateROI(
+        campaign,
+        allocation.recommendedBudget,
+      );
+      const perturbedROI = this.estimateROI(
+        campaign,
+        allocation.recommendedBudget * (1 + epsilon),
+      );
+
+      const gradient =
+        (perturbedROI - currentROI) / (epsilon * allocation.recommendedBudget);
+
+      const qValue = this.getQValue(campaign.id, "optimize");
       const adjustedGradient = gradient * (1 + qValue * 0.1);
-      
+
       gradients.push(adjustedGradient);
     }
 
@@ -1039,11 +1129,11 @@ export class AdOptimizationEngine extends BaseModel {
 
   public async targetAudience(
     campaign: Campaign,
-    availableAudiences: AudienceTargeting[]
+    availableAudiences: AudienceTargeting[],
   ): Promise<AudienceTargetingResult> {
     const clusters = this.clusterAudiences(campaign, availableAudiences);
-    
-    const scoredClusters = clusters.map(cluster => ({
+
+    const scoredClusters = clusters.map((cluster) => ({
       ...cluster,
       score: this.scoreCluster(cluster, campaign),
     }));
@@ -1053,9 +1143,15 @@ export class AdOptimizationEngine extends BaseModel {
     const primaryClusters = scoredClusters.slice(0, 3);
     const secondaryClusters = scoredClusters.slice(3, 6);
 
-    const interestExpansions = this.findInterestExpansions(campaign.targeting.interests);
-    const excludeRecommendations = this.findExcludeRecommendations(campaign, scoredClusters);
-    const lookalikeRecommendations = this.generateLookalikeRecommendations(primaryClusters);
+    const interestExpansions = this.findInterestExpansions(
+      campaign.targeting.interests,
+    );
+    const excludeRecommendations = this.findExcludeRecommendations(
+      campaign,
+      scoredClusters,
+    );
+    const lookalikeRecommendations =
+      this.generateLookalikeRecommendations(primaryClusters);
 
     const estimatedReach = primaryClusters.reduce((sum, c) => sum + c.size, 0);
     const estimatedCPM = this.estimateCPM(campaign.platform, primaryClusters);
@@ -1072,7 +1168,10 @@ export class AdOptimizationEngine extends BaseModel {
     };
   }
 
-  private clusterAudiences(campaign: Campaign, audiences: AudienceTargeting[]): AudienceCluster[] {
+  private clusterAudiences(
+    campaign: Campaign,
+    audiences: AudienceTargeting[],
+  ): AudienceCluster[] {
     const clusters: AudienceCluster[] = [];
     const interestGroups = new Map<string, AudienceTargeting[]>();
 
@@ -1088,13 +1187,19 @@ export class AdOptimizationEngine extends BaseModel {
     for (const [interest, group] of interestGroups) {
       if (group.length < 2) continue;
 
-      const avgAge = group.reduce((sum, a) => sum + (a.ageMin + a.ageMax) / 2, 0) / group.length;
-      
-      const genderDist: Record<string, number> = { male: 0, female: 0, other: 0 };
-      group.forEach(a => a.genders.forEach(g => genderDist[g]++));
-      
+      const avgAge =
+        group.reduce((sum, a) => sum + (a.ageMin + a.ageMax) / 2, 0) /
+        group.length;
+
+      const genderDist: Record<string, number> = {
+        male: 0,
+        female: 0,
+        other: 0,
+      };
+      group.forEach((a) => a.genders.forEach((g) => genderDist[g]++));
+
       const locations = new Set<string>();
-      group.forEach(a => a.locations.forEach(l => locations.add(l)));
+      group.forEach((a) => a.locations.forEach((l) => locations.add(l)));
 
       clusters.push({
         clusterId: `cluster_${clusterId++}`,
@@ -1122,15 +1227,14 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private scoreCluster(cluster: AudienceCluster, campaign: Campaign): number {
-    const performanceScore = (
+    const performanceScore =
       cluster.performance.avgCTR * 10 +
       cluster.performance.avgCVR * 20 +
-      cluster.performance.avgROAS * 0.5
-    );
+      cluster.performance.avgROAS * 0.5;
 
-    const relevanceScore = campaign.targeting.interests.filter(
-      i => cluster.interests.includes(i)
-    ).length / Math.max(campaign.targeting.interests.length, 1);
+    const relevanceScore =
+      campaign.targeting.interests.filter((i) => cluster.interests.includes(i))
+        .length / Math.max(campaign.targeting.interests.length, 1);
 
     const sizeScore = Math.log(cluster.size + 1) / 15;
     const affinityScore = cluster.affinityScore;
@@ -1145,9 +1249,12 @@ export class AdOptimizationEngine extends BaseModel {
     );
   }
 
-  public async suggestCreativeVariants(creative: Creative, campaign: Campaign): Promise<CreativePrediction> {
+  public async suggestCreativeVariants(
+    creative: Creative,
+    campaign: Campaign,
+  ): Promise<CreativePrediction> {
     const features = this.extractCreativeFeatures(creative, campaign);
-    
+
     let predictedMetrics = {
       ctr: 0.02,
       cvr: 0.05,
@@ -1156,18 +1263,21 @@ export class AdOptimizationEngine extends BaseModel {
     };
 
     if (this.isTrained && this.creativeModel) {
-      const scaledFeatures = this.scaleFeatures([features], this.scalers.creative!);
+      const scaledFeatures = this.scaleFeatures(
+        [features],
+        this.scalers.creative!,
+      );
       const input = tf.tensor2d(scaledFeatures);
       const prediction = this.creativeModel.predict(input) as tf.Tensor;
       const values = await prediction.data();
-      
+
       predictedMetrics = {
         ctr: values[0],
         cvr: values[1],
         engagement: values[2],
         viralPotential: values[3],
       };
-      
+
       input.dispose();
       prediction.dispose();
     }
@@ -1189,57 +1299,63 @@ export class AdOptimizationEngine extends BaseModel {
     };
   }
 
-  private generateCreativeVariants(creative: Creative, weaknesses: string[]): CreativeVariant[] {
+  private generateCreativeVariants(
+    creative: Creative,
+    weaknesses: string[],
+  ): CreativeVariant[] {
     const variants: CreativeVariant[] = [];
     let priority = 1;
 
-    if (weaknesses.includes('headline_too_long') || weaknesses.includes('headline_too_short')) {
+    if (
+      weaknesses.includes("headline_too_long") ||
+      weaknesses.includes("headline_too_short")
+    ) {
       variants.push({
         variantId: `v_headline_${Date.now()}`,
-        type: 'headline',
+        type: "headline",
         originalValue: creative.headline,
         suggestedValue: this.optimizeHeadline(creative.headline),
         predictedImprovementPct: 15 + Math.random() * 10,
-        reasoning: 'Optimized headline length and emotional impact',
+        reasoning: "Optimized headline length and emotional impact",
         testPriority: priority++,
         confidence: 0.7,
       });
     }
 
-    if (weaknesses.includes('weak_cta')) {
+    if (weaknesses.includes("weak_cta")) {
       variants.push({
         variantId: `v_cta_${Date.now()}`,
-        type: 'cta',
+        type: "cta",
         originalValue: creative.callToAction,
         suggestedValue: this.optimizeCTA(creative.callToAction),
         predictedImprovementPct: 20 + Math.random() * 15,
-        reasoning: 'Stronger call-to-action with urgency',
+        reasoning: "Stronger call-to-action with urgency",
         testPriority: priority++,
         confidence: 0.75,
       });
     }
 
-    if (weaknesses.includes('low_emotional_appeal')) {
+    if (weaknesses.includes("low_emotional_appeal")) {
       variants.push({
         variantId: `v_body_${Date.now()}`,
-        type: 'body',
+        type: "body",
         originalValue: creative.body,
         suggestedValue: this.optimizeBody(creative.body),
         predictedImprovementPct: 12 + Math.random() * 8,
-        reasoning: 'Enhanced emotional resonance and value proposition',
+        reasoning: "Enhanced emotional resonance and value proposition",
         testPriority: priority++,
         confidence: 0.65,
       });
     }
 
-    if (creative.type === 'image' || creative.type === 'carousel') {
+    if (creative.type === "image" || creative.type === "carousel") {
       variants.push({
         variantId: `v_format_${Date.now()}`,
-        type: 'format',
+        type: "format",
         originalValue: creative.type,
-        suggestedValue: 'video',
+        suggestedValue: "video",
         predictedImprovementPct: 25 + Math.random() * 20,
-        reasoning: 'Video format typically outperforms static images',
+        reasoning: "Video format typically outperforms static images",
         testPriority: priority++,
         confidence: 0.6,
       });
@@ -1248,7 +1364,10 @@ export class AdOptimizationEngine extends BaseModel {
     return variants;
   }
 
-  public async predictROI(campaign: Campaign, forecastDays: number = 30): Promise<ROIForecast> {
+  public async predictROI(
+    campaign: Campaign,
+    forecastDays: number = 30,
+  ): Promise<ROIForecast> {
     const predictions: ROIPredictionPoint[] = [];
     let cumulativeSpend = campaign.metrics.spend;
     let cumulativeRevenue = campaign.metrics.revenue;
@@ -1257,17 +1376,20 @@ export class AdOptimizationEngine extends BaseModel {
     const dailySpendRate = campaign.dailyBudget || campaign.budget / 30;
     const baseROAS = campaign.metrics.roas || 1.5;
     const baseCVR = campaign.metrics.cvr || 0.05;
-    const avgOrderValue = campaign.metrics.revenue / Math.max(campaign.metrics.conversions, 1);
+    const avgOrderValue =
+      campaign.metrics.revenue / Math.max(campaign.metrics.conversions, 1);
 
     for (let day = 1; day <= forecastDays; day++) {
-      const seasonality = 1 + 0.1 * Math.sin(2 * Math.PI * day / 7);
+      const seasonality = 1 + 0.1 * Math.sin((2 * Math.PI * day) / 7);
       const fatigue = Math.max(0.7, 1 - 0.005 * day);
       const learningBoost = 1 + 0.1 * Math.log(day + 1);
 
       const dailySpend = dailySpendRate * seasonality;
-      const dailyROAS = baseROAS * fatigue * learningBoost * (0.9 + Math.random() * 0.2);
+      const dailyROAS =
+        baseROAS * fatigue * learningBoost * (0.9 + Math.random() * 0.2);
       const dailyRevenue = dailySpend * dailyROAS;
-      const dailyConversions = (dailySpend / avgOrderValue) * baseCVR * fatigue * learningBoost;
+      const dailyConversions =
+        (dailySpend / avgOrderValue) * baseCVR * fatigue * learningBoost;
 
       cumulativeSpend += dailySpend;
       cumulativeRevenue += dailyRevenue;
@@ -1288,9 +1410,12 @@ export class AdOptimizationEngine extends BaseModel {
       });
     }
 
-    const breakEvenDay = predictions.findIndex(p => p.cumulativeROI >= 1);
+    const breakEvenDay = predictions.findIndex((p) => p.cumulativeROI >= 1);
     const expectedTotalROI = predictions[predictions.length - 1].cumulativeROI;
-    const profitabilityProbability = expectedTotalROI > 1 ? 0.7 + 0.3 * Math.min(expectedTotalROI - 1, 1) : 0.3;
+    const profitabilityProbability =
+      expectedTotalROI > 1
+        ? 0.7 + 0.3 * Math.min(expectedTotalROI - 1, 1)
+        : 0.3;
 
     return {
       campaignId: campaign.id,
@@ -1316,58 +1441,61 @@ export class AdOptimizationEngine extends BaseModel {
     };
   }
 
-  public generateABTestRecommendations(campaign: Campaign): ABTestRecommendation[] {
+  public generateABTestRecommendations(
+    campaign: Campaign,
+  ): ABTestRecommendation[] {
     const recommendations: ABTestRecommendation[] = [];
     let testId = 0;
 
     if (campaign.creatives.length > 0) {
       const creative = campaign.creatives[0];
-      
+
       recommendations.push({
         testId: `test_${testId++}`,
-        testName: 'Headline Optimization Test',
-        hypothesis: 'Shorter, more emotional headlines will increase CTR',
+        testName: "Headline Optimization Test",
+        hypothesis: "Shorter, more emotional headlines will increase CTR",
         controlVariant: creative.headline,
         testVariants: [
           this.shortenHeadline(creative.headline),
           this.addEmotionToHeadline(creative.headline),
         ],
-        metric: 'CTR',
+        metric: "CTR",
         expectedLift: 0.15,
         requiredSampleSize: this.calculateSampleSize(0.02, 0.15),
         estimatedDuration: 7,
-        priority: 'high',
-        reasoning: 'Headline is the first element users see and has high impact on CTR',
+        priority: "high",
+        reasoning:
+          "Headline is the first element users see and has high impact on CTR",
         implementationSteps: [
-          'Create variant creatives with new headlines',
-          'Split traffic 50/25/25 between control and variants',
-          'Monitor for 7 days minimum',
-          'Analyze statistical significance before declaring winner',
+          "Create variant creatives with new headlines",
+          "Split traffic 50/25/25 between control and variants",
+          "Monitor for 7 days minimum",
+          "Analyze statistical significance before declaring winner",
         ],
         confidence: 0.8,
       });
 
       recommendations.push({
         testId: `test_${testId++}`,
-        testName: 'CTA Button Test',
-        hypothesis: 'Action-oriented CTAs with urgency will improve CVR',
+        testName: "CTA Button Test",
+        hypothesis: "Action-oriented CTAs with urgency will improve CVR",
         controlVariant: creative.callToAction,
         testVariants: [
-          'Listen Now - Limited Time',
-          'Get Exclusive Access',
-          'Stream Free Today',
+          "Listen Now - Limited Time",
+          "Get Exclusive Access",
+          "Stream Free Today",
         ],
-        metric: 'CVR',
+        metric: "CVR",
         expectedLift: 0.2,
         requiredSampleSize: this.calculateSampleSize(0.05, 0.2),
         estimatedDuration: 10,
-        priority: 'high',
-        reasoning: 'CTA directly influences conversion decision',
+        priority: "high",
+        reasoning: "CTA directly influences conversion decision",
         implementationSteps: [
-          'Create button variants with different copy',
-          'Ensure visual design remains consistent',
-          'Track click-through and conversion separately',
-          'Run for minimum 2 weeks for statistical significance',
+          "Create button variants with different copy",
+          "Ensure visual design remains consistent",
+          "Track click-through and conversion separately",
+          "Run for minimum 2 weeks for statistical significance",
         ],
         confidence: 0.75,
       });
@@ -1376,24 +1504,24 @@ export class AdOptimizationEngine extends BaseModel {
     if (campaign.targeting.interests.length > 3) {
       recommendations.push({
         testId: `test_${testId++}`,
-        testName: 'Interest Targeting Refinement',
-        hypothesis: 'Narrower interest targeting will improve ROAS',
-        controlVariant: campaign.targeting.interests.join(', '),
+        testName: "Interest Targeting Refinement",
+        hypothesis: "Narrower interest targeting will improve ROAS",
+        controlVariant: campaign.targeting.interests.join(", "),
         testVariants: [
-          campaign.targeting.interests.slice(0, 3).join(', '),
-          campaign.targeting.interests.slice(3, 6).join(', '),
+          campaign.targeting.interests.slice(0, 3).join(", "),
+          campaign.targeting.interests.slice(3, 6).join(", "),
         ],
-        metric: 'ROAS',
+        metric: "ROAS",
         expectedLift: 0.25,
         requiredSampleSize: this.calculateSampleSize(2.0, 0.25),
         estimatedDuration: 14,
-        priority: 'medium',
-        reasoning: 'Focused targeting often yields better quality traffic',
+        priority: "medium",
+        reasoning: "Focused targeting often yields better quality traffic",
         implementationSteps: [
-          'Create separate ad sets with different interest combinations',
-          'Maintain same budget allocation initially',
-          'Monitor CPM and frequency differences',
-          'Adjust budget toward winning audience after significance',
+          "Create separate ad sets with different interest combinations",
+          "Maintain same budget allocation initially",
+          "Monitor CPM and frequency differences",
+          "Adjust budget toward winning audience after significance",
         ],
         confidence: 0.7,
       });
@@ -1401,21 +1529,21 @@ export class AdOptimizationEngine extends BaseModel {
 
     recommendations.push({
       testId: `test_${testId++}`,
-      testName: 'Creative Format Test',
-      hypothesis: 'Video content will outperform static images',
-      controlVariant: 'Static Image',
-      testVariants: ['Short Video (15s)', 'Carousel (5 cards)'],
-      metric: 'Engagement Rate',
+      testName: "Creative Format Test",
+      hypothesis: "Video content will outperform static images",
+      controlVariant: "Static Image",
+      testVariants: ["Short Video (15s)", "Carousel (5 cards)"],
+      metric: "Engagement Rate",
       expectedLift: 0.35,
       requiredSampleSize: this.calculateSampleSize(0.03, 0.35),
       estimatedDuration: 14,
-      priority: 'medium',
-      reasoning: 'Format significantly impacts engagement and reach',
+      priority: "medium",
+      reasoning: "Format significantly impacts engagement and reach",
       implementationSteps: [
-        'Produce video and carousel versions of top creative',
-        'Maintain consistent messaging across formats',
-        'Track view-through and engagement metrics',
-        'Consider platform-specific format preferences',
+        "Produce video and carousel versions of top creative",
+        "Maintain consistent messaging across formats",
+        "Track view-through and engagement metrics",
+        "Consider platform-specific format preferences",
       ],
       confidence: 0.7,
     });
@@ -1426,9 +1554,12 @@ export class AdOptimizationEngine extends BaseModel {
     });
   }
 
-  public async updateRealTime(campaignId: string, newMetrics: Partial<CampaignMetrics>): Promise<void> {
+  public async updateRealTime(
+    campaignId: string,
+    newMetrics: Partial<CampaignMetrics>,
+  ): Promise<void> {
     const state = this.reinforcementState.campaignStates.get(campaignId) || [];
-    
+
     const newState = [
       newMetrics.ctr || 0,
       newMetrics.cvr || 0,
@@ -1436,12 +1567,15 @@ export class AdOptimizationEngine extends BaseModel {
       newMetrics.spend || 0,
       Date.now() / 1000000000,
     ];
-    
+
     state.push(...newState);
     this.reinforcementState.campaignStates.set(campaignId, state.slice(-50));
 
     if (this.reinforcementState.actionHistory.length > 0) {
-      const lastAction = this.reinforcementState.actionHistory[this.reinforcementState.actionHistory.length - 1];
+      const lastAction =
+        this.reinforcementState.actionHistory[
+          this.reinforcementState.actionHistory.length - 1
+        ];
       if (lastAction.campaignId === campaignId) {
         const reward = this.calculateReward(newMetrics);
         this.updateQTableWithReward(campaignId, lastAction.action, reward);
@@ -1453,18 +1587,26 @@ export class AdOptimizationEngine extends BaseModel {
     const roasReward = (metrics.roas || 1) - 1;
     const ctrReward = ((metrics.ctr || 0.02) - 0.02) * 10;
     const cvrReward = ((metrics.cvr || 0.05) - 0.05) * 5;
-    
+
     return roasReward * 0.5 + ctrReward * 0.3 + cvrReward * 0.2;
   }
 
-  private updateQTableWithReward(campaignId: string, action: string, reward: number): void {
-    const campaignQ = this.reinforcementState.qTable.get(campaignId) || new Map();
+  private updateQTableWithReward(
+    campaignId: string,
+    action: string,
+    reward: number,
+  ): void {
+    const campaignQ =
+      this.reinforcementState.qTable.get(campaignId) || new Map();
     const currentQ = campaignQ.get(action) || 0;
-    
-    const newQ = currentQ + this.reinforcementState.learningRate * (
-      reward + this.reinforcementState.discountFactor * this.getMaxQ(campaignId) - currentQ
-    );
-    
+
+    const newQ =
+      currentQ +
+      this.reinforcementState.learningRate *
+        (reward +
+          this.reinforcementState.discountFactor * this.getMaxQ(campaignId) -
+          currentQ);
+
     campaignQ.set(action, newQ);
     this.reinforcementState.qTable.set(campaignId, campaignQ);
   }
@@ -1472,7 +1614,7 @@ export class AdOptimizationEngine extends BaseModel {
   private getMaxQ(campaignId: string): number {
     const campaignQ = this.reinforcementState.qTable.get(campaignId);
     if (!campaignQ || campaignQ.size === 0) return 0;
-    
+
     return Math.max(...Array.from(campaignQ.values()));
   }
 
@@ -1483,15 +1625,20 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private updateQTable(campaignId: string, allocation: BudgetAllocation): void {
-    const action = allocation.allocationChange > 10 ? 'increase_budget' :
-                   allocation.allocationChange < -10 ? 'decrease_budget' : 'maintain';
-    
-    const campaignQ = this.reinforcementState.qTable.get(campaignId) || new Map();
+    const action =
+      allocation.allocationChange > 10
+        ? "increase_budget"
+        : allocation.allocationChange < -10
+          ? "decrease_budget"
+          : "maintain";
+
+    const campaignQ =
+      this.reinforcementState.qTable.get(campaignId) || new Map();
     const currentQ = campaignQ.get(action) || 0;
-    
+
     const estimatedReward = (allocation.expectedROI - 1) * 0.5;
     campaignQ.set(action, currentQ + 0.1 * estimatedReward);
-    
+
     this.reinforcementState.qTable.set(campaignId, campaignQ);
   }
 
@@ -1515,7 +1662,7 @@ export class AdOptimizationEngine extends BaseModel {
       campaign.targeting.locations.length / 10,
       (campaign.targeting.ageMax - campaign.targeting.ageMin) / 50,
       campaign.creatives.length / 10,
-      campaign.status === 'active' ? 1 : 0,
+      campaign.status === "active" ? 1 : 0,
       this.getDaysActive(campaign) / 30,
       this.calculateMomentum(campaign),
       this.calculateAudienceQuality(campaign.targeting),
@@ -1524,7 +1671,10 @@ export class AdOptimizationEngine extends BaseModel {
     ];
   }
 
-  private extractCreativeFeatures(creative: Creative, campaign: Campaign): number[] {
+  private extractCreativeFeatures(
+    creative: Creative,
+    campaign: Campaign,
+  ): number[] {
     return [
       this.encodeCreativeType(creative.type),
       creative.headline.length / 100,
@@ -1549,7 +1699,10 @@ export class AdOptimizationEngine extends BaseModel {
     ];
   }
 
-  private calculateScaler(features: number[][]): { mean: number[]; std: number[] } {
+  private calculateScaler(features: number[][]): {
+    mean: number[];
+    std: number[];
+  } {
     const numFeatures = features[0].length;
     const mean = new Array(numFeatures).fill(0);
     const std = new Array(numFeatures).fill(0);
@@ -1559,121 +1712,153 @@ export class AdOptimizationEngine extends BaseModel {
         mean[i] += row[i];
       }
     }
-    mean.forEach((_, i) => mean[i] /= features.length);
+    mean.forEach((_, i) => (mean[i] /= features.length));
 
     for (const row of features) {
       for (let i = 0; i < numFeatures; i++) {
         std[i] += Math.pow(row[i] - mean[i], 2);
       }
     }
-    std.forEach((_, i) => std[i] = Math.sqrt(std[i] / features.length) || 1);
+    std.forEach((_, i) => (std[i] = Math.sqrt(std[i] / features.length) || 1));
 
     return { mean, std };
   }
 
-  private scaleFeatures(features: number[][], scaler: { mean: number[]; std: number[] }): number[][] {
-    return features.map(row =>
-      row.map((val, i) => (val - scaler.mean[i]) / scaler.std[i])
+  private scaleFeatures(
+    features: number[][],
+    scaler: { mean: number[]; std: number[] },
+  ): number[][] {
+    return features.map((row) =>
+      row.map((val, i) => (val - scaler.mean[i]) / scaler.std[i]),
     );
   }
 
   private encodePlatform(platform: string): number {
     const platforms: Record<string, number> = {
-      facebook: 0.1, instagram: 0.2, twitter: 0.3, tiktok: 0.4,
-      youtube: 0.5, spotify: 0.6, google: 0.7,
+      facebook: 0.1,
+      instagram: 0.2,
+      twitter: 0.3,
+      tiktok: 0.4,
+      youtube: 0.5,
+      spotify: 0.6,
+      google: 0.7,
     };
     return platforms[platform] || 0.5;
   }
 
   private encodeObjective(objective: string): number {
     const objectives: Record<string, number> = {
-      awareness: 0.2, traffic: 0.4, engagement: 0.6, conversions: 0.8, app_installs: 1.0,
+      awareness: 0.2,
+      traffic: 0.4,
+      engagement: 0.6,
+      conversions: 0.8,
+      app_installs: 1.0,
     };
     return objectives[objective] || 0.5;
   }
 
   private encodeCreativeType(type: string): number {
     const types: Record<string, number> = {
-      text: 0.25, image: 0.5, carousel: 0.75, video: 1.0,
+      text: 0.25,
+      image: 0.5,
+      carousel: 0.75,
+      video: 1.0,
     };
     return types[type] || 0.5;
   }
 
   private calculateAudienceQuality(targeting: AudienceTargeting): number {
     let quality = 0.5;
-    
-    if (targeting.interests.length >= 3 && targeting.interests.length <= 10) quality += 0.1;
+
+    if (targeting.interests.length >= 3 && targeting.interests.length <= 10)
+      quality += 0.1;
     if (targeting.ageMax - targeting.ageMin <= 20) quality += 0.1;
     if (targeting.customAudiences.length > 0) quality += 0.15;
     if (targeting.lookalikes.length > 0) quality += 0.1;
     if (targeting.excludedAudiences.length > 0) quality += 0.05;
-    
+
     return Math.min(1, quality);
   }
 
   private calculateCreativeQuality(creatives: Creative[]): number {
     if (creatives.length === 0) return 0.3;
-    
+
     let quality = 0.5;
-    
-    const hasVideo = creatives.some(c => c.type === 'video');
+
+    const hasVideo = creatives.some((c) => c.type === "video");
     if (hasVideo) quality += 0.2;
-    
+
     if (creatives.length >= 3 && creatives.length <= 6) quality += 0.1;
-    
-    const avgHeadlineLength = creatives.reduce((sum, c) => sum + c.headline.length, 0) / creatives.length;
+
+    const avgHeadlineLength =
+      creatives.reduce((sum, c) => sum + c.headline.length, 0) /
+      creatives.length;
     if (avgHeadlineLength >= 20 && avgHeadlineLength <= 60) quality += 0.1;
-    
+
     return Math.min(1, quality);
   }
 
   private calculateTrend(campaign: Campaign): number {
-    if (!campaign.historicalData || campaign.historicalData.length < 7) return 0;
-    
+    if (!campaign.historicalData || campaign.historicalData.length < 7)
+      return 0;
+
     const recent = campaign.historicalData.slice(-7);
     const older = campaign.historicalData.slice(-14, -7);
-    
+
     if (older.length === 0) return 0;
-    
-    const recentAvgROAS = recent.reduce((sum, p) => sum + p.metrics.roas, 0) / recent.length;
-    const olderAvgROAS = older.reduce((sum, p) => sum + p.metrics.roas, 0) / older.length;
-    
-    return Math.tanh((recentAvgROAS - olderAvgROAS) / Math.max(olderAvgROAS, 0.1));
+
+    const recentAvgROAS =
+      recent.reduce((sum, p) => sum + p.metrics.roas, 0) / recent.length;
+    const olderAvgROAS =
+      older.reduce((sum, p) => sum + p.metrics.roas, 0) / older.length;
+
+    return Math.tanh(
+      (recentAvgROAS - olderAvgROAS) / Math.max(olderAvgROAS, 0.1),
+    );
   }
 
   private calculateMomentum(campaign: Campaign): number {
-    if (!campaign.historicalData || campaign.historicalData.length < 3) return 0.5;
-    
+    if (!campaign.historicalData || campaign.historicalData.length < 3)
+      return 0.5;
+
     const recent = campaign.historicalData.slice(-3);
     const changes = [];
-    
+
     for (let i = 1; i < recent.length; i++) {
       const prev = recent[i - 1].metrics.roas;
       const curr = recent[i].metrics.roas;
       changes.push((curr - prev) / Math.max(prev, 0.1));
     }
-    
+
     const avgChange = changes.reduce((sum, c) => sum + c, 0) / changes.length;
     return 0.5 + Math.tanh(avgChange) * 0.5;
   }
 
   private getCompetitionLevel(platform: string, interests: string[]): number {
     const baseCompetition: Record<string, number> = {
-      facebook: 0.7, instagram: 0.75, twitter: 0.5, tiktok: 0.6,
-      youtube: 0.65, spotify: 0.4, google: 0.8,
+      facebook: 0.7,
+      instagram: 0.75,
+      twitter: 0.5,
+      tiktok: 0.6,
+      youtube: 0.65,
+      spotify: 0.4,
+      google: 0.8,
     };
     return baseCompetition[platform] || 0.5;
   }
 
   private getSeasonalityFactor(date: Date): number {
     const month = date.getMonth();
-    const seasonality = [0.8, 0.75, 0.85, 0.9, 0.95, 0.85, 0.8, 0.85, 0.9, 1.0, 1.1, 1.2];
+    const seasonality = [
+      0.8, 0.75, 0.85, 0.9, 0.95, 0.85, 0.8, 0.85, 0.9, 1.0, 1.1, 1.2,
+    ];
     return seasonality[month];
   }
 
   private getDaysRemaining(campaign: Campaign): number {
     if (!campaign.endDate) return 30;
-    const remaining = (campaign.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    const remaining =
+      (campaign.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
     return Math.max(0, remaining);
   }
 
@@ -1683,12 +1868,12 @@ export class AdOptimizationEngine extends BaseModel {
 
   private calculateRiskFactor(campaign: Campaign): number {
     let risk = 0;
-    
+
     if (campaign.metrics.roas < 1) risk += 0.3;
     if (campaign.metrics.ctr < 0.01) risk += 0.2;
     if (campaign.metrics.spend / campaign.budget > 0.9) risk += 0.2;
     if (this.calculateTrend(campaign) < -0.2) risk += 0.2;
-    
+
     return Math.min(1, risk);
   }
 
@@ -1703,45 +1888,69 @@ export class AdOptimizationEngine extends BaseModel {
 
   private assessRiskFactors(campaign: Campaign): string[] {
     const risks: string[] = [];
-    
-    if (campaign.metrics.roas < 1) risks.push('ROAS below breakeven');
-    if (campaign.metrics.ctr < 0.01) risks.push('Low CTR indicates poor targeting or creative');
-    if (campaign.metrics.spend / campaign.budget > 0.95) risks.push('Near budget exhaustion');
-    if (this.calculateTrend(campaign) < -0.3) risks.push('Declining performance trend');
-    if (campaign.targeting.interests.length > 15) risks.push('Overly broad targeting');
-    
+
+    if (campaign.metrics.roas < 1) risks.push("ROAS below breakeven");
+    if (campaign.metrics.ctr < 0.01)
+      risks.push("Low CTR indicates poor targeting or creative");
+    if (campaign.metrics.spend / campaign.budget > 0.95)
+      risks.push("Near budget exhaustion");
+    if (this.calculateTrend(campaign) < -0.3)
+      risks.push("Declining performance trend");
+    if (campaign.targeting.interests.length > 15)
+      risks.push("Overly broad targeting");
+
     return risks;
   }
 
-  private generateCampaignRecommendations(campaign: Campaign, breakdown: ScoreBreakdown): string[] {
+  private generateCampaignRecommendations(
+    campaign: Campaign,
+    breakdown: ScoreBreakdown,
+  ): string[] {
     const recommendations: string[] = [];
-    
+
     if (breakdown.ctrFactor < 0.8) {
-      recommendations.push('Improve creative assets - current CTR is below benchmark');
+      recommendations.push(
+        "Improve creative assets - current CTR is below benchmark",
+      );
     }
     if (breakdown.cvrFactor < 0.8) {
-      recommendations.push('Optimize landing page or targeting - conversion rate needs improvement');
+      recommendations.push(
+        "Optimize landing page or targeting - conversion rate needs improvement",
+      );
     }
     if (breakdown.budgetUtilization < 0.7) {
-      recommendations.push('Increase bids or expand targeting to utilize full budget');
+      recommendations.push(
+        "Increase bids or expand targeting to utilize full budget",
+      );
     }
     if (breakdown.budgetUtilization > 0.95) {
-      recommendations.push('Consider increasing budget to capture more opportunity');
+      recommendations.push(
+        "Consider increasing budget to capture more opportunity",
+      );
     }
     if (breakdown.audienceQuality < 0.6) {
-      recommendations.push('Refine audience targeting with lookalikes or custom audiences');
+      recommendations.push(
+        "Refine audience targeting with lookalikes or custom audiences",
+      );
     }
     if (breakdown.creativeQuality < 0.6) {
-      recommendations.push('Test video creative and add more creative variations');
+      recommendations.push(
+        "Test video creative and add more creative variations",
+      );
     }
     if (breakdown.trendDirection < -0.2) {
-      recommendations.push('Campaign showing decline - refresh creatives or adjust strategy');
+      recommendations.push(
+        "Campaign showing decline - refresh creatives or adjust strategy",
+      );
     }
-    
+
     return recommendations;
   }
 
-  private generateBudgetReasoning(campaign: Campaign, allocation: BudgetAllocation): string {
+  private generateBudgetReasoning(
+    campaign: Campaign,
+    allocation: BudgetAllocation,
+  ): string {
     if (allocation.allocationChange > 20) {
       return `Strong ROAS of ${campaign.metrics.roas.toFixed(2)} and positive momentum justify increased investment`;
     } else if (allocation.allocationChange > 5) {
@@ -1754,173 +1963,218 @@ export class AdOptimizationEngine extends BaseModel {
     return `Stable performance supports maintaining current budget level`;
   }
 
-  private assessBudgetRisk(allocation: BudgetAllocation): 'low' | 'medium' | 'high' {
-    if (allocation.expectedROI > 1.5 && allocation.allocationChange <= 30) return 'low';
-    if (allocation.expectedROI < 0.8 || allocation.allocationChange > 50) return 'high';
-    return 'medium';
+  private assessBudgetRisk(
+    allocation: BudgetAllocation,
+  ): "low" | "medium" | "high" {
+    if (allocation.expectedROI > 1.5 && allocation.allocationChange <= 30)
+      return "low";
+    if (allocation.expectedROI < 0.8 || allocation.allocationChange > 50)
+      return "high";
+    return "medium";
   }
 
-  private generateBudgetRecommendations(allocations: BudgetAllocation[]): string[] {
+  private generateBudgetRecommendations(
+    allocations: BudgetAllocation[],
+  ): string[] {
     const recommendations: string[] = [];
-    
-    const highPerformers = allocations.filter(a => a.expectedROI > 1.5);
-    const lowPerformers = allocations.filter(a => a.expectedROI < 0.8);
-    
+
+    const highPerformers = allocations.filter((a) => a.expectedROI > 1.5);
+    const lowPerformers = allocations.filter((a) => a.expectedROI < 0.8);
+
     if (highPerformers.length > 0) {
-      recommendations.push(`${highPerformers.length} campaigns showing strong ROI - prioritize budget allocation`);
+      recommendations.push(
+        `${highPerformers.length} campaigns showing strong ROI - prioritize budget allocation`,
+      );
     }
     if (lowPerformers.length > 0) {
-      recommendations.push(`${lowPerformers.length} campaigns underperforming - consider pausing or restructuring`);
+      recommendations.push(
+        `${lowPerformers.length} campaigns underperforming - consider pausing or restructuring`,
+      );
     }
-    
-    const totalIncrease = allocations.filter(a => a.allocationChange > 0).length;
-    const totalDecrease = allocations.filter(a => a.allocationChange < 0).length;
-    
-    recommendations.push(`Optimization suggests increasing budget for ${totalIncrease} campaigns and decreasing for ${totalDecrease}`);
-    
+
+    const totalIncrease = allocations.filter(
+      (a) => a.allocationChange > 0,
+    ).length;
+    const totalDecrease = allocations.filter(
+      (a) => a.allocationChange < 0,
+    ).length;
+
+    recommendations.push(
+      `Optimization suggests increasing budget for ${totalIncrease} campaigns and decreasing for ${totalDecrease}`,
+    );
+
     return recommendations;
   }
 
   private findInterestExpansions(interests: string[]): string[] {
     const expansions: string[] = [];
-    
+
     for (const interest of interests) {
       const related = this.getRelatedInterests(interest);
-      expansions.push(...related.filter(r => !interests.includes(r)));
+      expansions.push(...related.filter((r) => !interests.includes(r)));
     }
-    
+
     return [...new Set(expansions)].slice(0, 10);
   }
 
   private getRelatedInterests(interest: string): string[] {
     const related = this.interestGraph.get(interest);
     if (related) return Array.from(related);
-    
+
     const commonRelations: Record<string, string[]> = {
-      'music': ['concerts', 'streaming', 'instruments', 'festivals'],
-      'hip-hop': ['rap', 'urban music', 'beats', 'DJs'],
-      'electronic': ['EDM', 'house music', 'techno', 'festivals'],
-      'indie': ['alternative', 'underground music', 'vinyl', 'music blogs'],
+      music: ["concerts", "streaming", "instruments", "festivals"],
+      "hip-hop": ["rap", "urban music", "beats", "DJs"],
+      electronic: ["EDM", "house music", "techno", "festivals"],
+      indie: ["alternative", "underground music", "vinyl", "music blogs"],
     };
-    
+
     return commonRelations[interest.toLowerCase()] || [];
   }
 
-  private findExcludeRecommendations(campaign: Campaign, clusters: (AudienceCluster & { score: number })[]): string[] {
+  private findExcludeRecommendations(
+    campaign: Campaign,
+    clusters: (AudienceCluster & { score: number })[],
+  ): string[] {
     const lowPerformers = clusters
-      .filter(c => c.performance.avgROAS < 0.8)
-      .map(c => c.name);
-    
+      .filter((c) => c.performance.avgROAS < 0.8)
+      .map((c) => c.name);
+
     return lowPerformers.slice(0, 5);
   }
 
-  private generateLookalikeRecommendations(clusters: AudienceCluster[]): string[] {
+  private generateLookalikeRecommendations(
+    clusters: AudienceCluster[],
+  ): string[] {
     return clusters
-      .filter(c => c.performance.avgROAS > 1.5)
-      .map(c => `Lookalike based on ${c.name} (high ROAS segment)`)
+      .filter((c) => c.performance.avgROAS > 1.5)
+      .map((c) => `Lookalike based on ${c.name} (high ROAS segment)`)
       .slice(0, 3);
   }
 
   private estimateCPM(platform: string, clusters: AudienceCluster[]): number {
     const baseCPM: Record<string, number> = {
-      facebook: 8, instagram: 10, twitter: 6, tiktok: 5,
-      youtube: 12, spotify: 15, google: 10,
+      facebook: 8,
+      instagram: 10,
+      twitter: 6,
+      tiktok: 5,
+      youtube: 12,
+      spotify: 15,
+      google: 10,
     };
-    
+
     const base = baseCPM[platform] || 8;
-    const competitionFactor = 1 + clusters.reduce((sum, c) => sum + c.affinityScore, 0) / clusters.length * 0.3;
-    
+    const competitionFactor =
+      1 +
+      (clusters.reduce((sum, c) => sum + c.affinityScore, 0) /
+        clusters.length) *
+        0.3;
+
     return base * competitionFactor;
   }
 
   private analyzeCreativeStrengths(creative: Creative): string[] {
     const strengths: string[] = [];
-    
+
     if (creative.headline.length >= 20 && creative.headline.length <= 60) {
-      strengths.push('Optimal headline length');
+      strengths.push("Optimal headline length");
     }
     if (this.hasQuestion(creative.headline)) {
-      strengths.push('Engaging question format');
+      strengths.push("Engaging question format");
     }
-    if (this.countEmojis(creative.headline) > 0 && this.countEmojis(creative.headline) <= 2) {
-      strengths.push('Appropriate emoji usage');
+    if (
+      this.countEmojis(creative.headline) > 0 &&
+      this.countEmojis(creative.headline) <= 2
+    ) {
+      strengths.push("Appropriate emoji usage");
     }
-    if (creative.type === 'video') {
-      strengths.push('Video format has higher engagement potential');
+    if (creative.type === "video") {
+      strengths.push("Video format has higher engagement potential");
     }
     if (this.hasCTA(creative.callToAction)) {
-      strengths.push('Clear call-to-action');
+      strengths.push("Clear call-to-action");
     }
-    
+
     return strengths;
   }
 
   private analyzeCreativeWeaknesses(creative: Creative): string[] {
     const weaknesses: string[] = [];
-    
-    if (creative.headline.length < 15) weaknesses.push('headline_too_short');
-    if (creative.headline.length > 80) weaknesses.push('headline_too_long');
-    if (!this.hasCTA(creative.callToAction)) weaknesses.push('weak_cta');
-    if (this.calculateEmotionalScore(creative.headline) < 0.3) weaknesses.push('low_emotional_appeal');
-    if (creative.body.length > 300) weaknesses.push('body_too_long');
-    if (this.countHashtags(creative.body) > 5) weaknesses.push('too_many_hashtags');
-    
+
+    if (creative.headline.length < 15) weaknesses.push("headline_too_short");
+    if (creative.headline.length > 80) weaknesses.push("headline_too_long");
+    if (!this.hasCTA(creative.callToAction)) weaknesses.push("weak_cta");
+    if (this.calculateEmotionalScore(creative.headline) < 0.3)
+      weaknesses.push("low_emotional_appeal");
+    if (creative.body.length > 300) weaknesses.push("body_too_long");
+    if (this.countHashtags(creative.body) > 5)
+      weaknesses.push("too_many_hashtags");
+
     return weaknesses;
   }
 
   private optimizeHeadline(headline: string): string {
     let optimized = headline;
     if (optimized.length > 60) {
-      optimized = optimized.substring(0, 57) + '...';
+      optimized = optimized.substring(0, 57) + "...";
     }
-    if (!optimized.includes('?') && !optimized.includes('!')) {
-      optimized = optimized + ' 🎵';
+    if (!optimized.includes("?") && !optimized.includes("!")) {
+      optimized = optimized + " 🎵";
     }
     return optimized;
   }
 
   private optimizeCTA(cta: string): string {
-    const strongCTAs = ['Listen Now', 'Get Access', 'Start Free', 'Join Today', 'Discover More'];
-    if (strongCTAs.some(s => cta.toLowerCase().includes(s.toLowerCase()))) {
-      return cta + ' →';
+    const strongCTAs = [
+      "Listen Now",
+      "Get Access",
+      "Start Free",
+      "Join Today",
+      "Discover More",
+    ];
+    if (strongCTAs.some((s) => cta.toLowerCase().includes(s.toLowerCase()))) {
+      return cta + " →";
     }
-    return 'Listen Now - Free';
+    return "Listen Now - Free";
   }
 
   private optimizeBody(body: string): string {
     if (body.length > 200) {
-      return body.substring(0, 197) + '...';
+      return body.substring(0, 197) + "...";
     }
     return body;
   }
 
   private shortenHeadline(headline: string): string {
-    const words = headline.split(' ');
+    const words = headline.split(" ");
     if (words.length > 8) {
-      return words.slice(0, 6).join(' ') + '...';
+      return words.slice(0, 6).join(" ") + "...";
     }
     return headline;
   }
 
   private addEmotionToHeadline(headline: string): string {
-    const emotionalWords = ['Amazing', 'Incredible', 'Must-hear', 'Epic'];
-    const randomWord = emotionalWords[Math.floor(Math.random() * emotionalWords.length)];
+    const emotionalWords = ["Amazing", "Incredible", "Must-hear", "Epic"];
+    const randomWord =
+      emotionalWords[Math.floor(Math.random() * emotionalWords.length)];
     return `${randomWord}: ${headline}`;
   }
 
-  private identifyROIRisks(campaign: Campaign, predictions: ROIPredictionPoint[]): string[] {
+  private identifyROIRisks(
+    campaign: Campaign,
+    predictions: ROIPredictionPoint[],
+  ): string[] {
     const risks: string[] = [];
-    
-    if (predictions.some(p => p.cumulativeROI < 0.8)) {
-      risks.push('ROI may dip below profitability threshold');
+
+    if (predictions.some((p) => p.cumulativeROI < 0.8)) {
+      risks.push("ROI may dip below profitability threshold");
     }
     if (campaign.metrics.ctr < 0.015) {
-      risks.push('Low engagement may limit reach growth');
+      risks.push("Low engagement may limit reach growth");
     }
     if (this.calculateTrend(campaign) < 0) {
-      risks.push('Declining performance trend could accelerate');
+      risks.push("Declining performance trend could accelerate");
     }
-    
+
     return risks;
   }
 
@@ -1929,12 +2183,14 @@ export class AdOptimizationEngine extends BaseModel {
     const power = 0.8;
     const zAlpha = 1.96;
     const zBeta = 0.84;
-    
+
     const p1 = baseRate;
     const p2 = baseRate * (1 + expectedLift);
     const pBar = (p1 + p2) / 2;
-    
-    const n = 2 * pBar * (1 - pBar) * Math.pow(zAlpha + zBeta, 2) / Math.pow(p2 - p1, 2);
+
+    const n =
+      (2 * pBar * (1 - pBar) * Math.pow(zAlpha + zBeta, 2)) /
+      Math.pow(p2 - p1, 2);
     return Math.ceil(n);
   }
 
@@ -1968,12 +2224,13 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private countEmojis(text: string): number {
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu;
+    const emojiRegex =
+      /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu;
     return (text.match(emojiRegex) || []).length;
   }
 
   private hasQuestion(text: string): boolean {
-    return text.includes('?');
+    return text.includes("?");
   }
 
   private hasNumbers(text: string): boolean {
@@ -1981,18 +2238,37 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private hasCTA(text: string): boolean {
-    const ctaWords = ['now', 'today', 'free', 'start', 'get', 'try', 'join', 'discover', 'listen', 'watch'];
-    return ctaWords.some(word => text.toLowerCase().includes(word));
+    const ctaWords = [
+      "now",
+      "today",
+      "free",
+      "start",
+      "get",
+      "try",
+      "join",
+      "discover",
+      "listen",
+      "watch",
+    ];
+    return ctaWords.some((word) => text.toLowerCase().includes(word));
   }
 
   private calculateSentimentScore(text: string): number {
-    const positiveWords = ['amazing', 'great', 'love', 'best', 'awesome', 'incredible', 'fantastic'];
-    const negativeWords = ['bad', 'worst', 'hate', 'terrible', 'awful'];
-    
+    const positiveWords = [
+      "amazing",
+      "great",
+      "love",
+      "best",
+      "awesome",
+      "incredible",
+      "fantastic",
+    ];
+    const negativeWords = ["bad", "worst", "hate", "terrible", "awful"];
+
     const lower = text.toLowerCase();
-    const positive = positiveWords.filter(w => lower.includes(w)).length;
-    const negative = negativeWords.filter(w => lower.includes(w)).length;
-    
+    const positive = positiveWords.filter((w) => lower.includes(w)).length;
+    const negative = negativeWords.filter((w) => lower.includes(w)).length;
+
     return 0.5 + (positive - negative) * 0.1;
   }
 
@@ -2000,7 +2276,7 @@ export class AdOptimizationEngine extends BaseModel {
     const words = text.split(/\s+/).length;
     const sentences = (text.match(/[.!?]/g) || []).length || 1;
     const avgWordsPerSentence = words / sentences;
-    
+
     if (avgWordsPerSentence <= 15) return 0.9;
     if (avgWordsPerSentence <= 20) return 0.7;
     if (avgWordsPerSentence <= 25) return 0.5;
@@ -2008,16 +2284,33 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private calculateUrgencyScore(text: string): number {
-    const urgencyWords = ['now', 'today', 'limited', 'hurry', 'last chance', 'only', 'exclusive'];
+    const urgencyWords = [
+      "now",
+      "today",
+      "limited",
+      "hurry",
+      "last chance",
+      "only",
+      "exclusive",
+    ];
     const lower = text.toLowerCase();
-    const matches = urgencyWords.filter(w => lower.includes(w)).length;
+    const matches = urgencyWords.filter((w) => lower.includes(w)).length;
     return Math.min(1, matches * 0.25);
   }
 
   private calculateEmotionalScore(text: string): number {
-    const emotionalWords = ['love', 'amazing', 'incredible', 'exciting', 'passionate', 'dream', 'feel', 'heart'];
+    const emotionalWords = [
+      "love",
+      "amazing",
+      "incredible",
+      "exciting",
+      "passionate",
+      "dream",
+      "feel",
+      "heart",
+    ];
     const lower = text.toLowerCase();
-    const matches = emotionalWords.filter(w => lower.includes(w)).length;
+    const matches = emotionalWords.filter((w) => lower.includes(w)).length;
     return Math.min(1, 0.3 + matches * 0.2);
   }
 
@@ -2030,7 +2323,7 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private getWordCount(text: string): number {
-    return text.split(/\s+/).filter(w => w.length > 0).length;
+    return text.split(/\s+/).filter((w) => w.length > 0).length;
   }
 
   private calculateUniqueness(text: string): number {
@@ -2055,14 +2348,22 @@ export class AdOptimizationEngine extends BaseModel {
   public async optimizePersonalAdNetwork(
     profiles: SocialProfile[],
     content: OrganicContent,
-    goals: OrganicGoals
+    goals: OrganicGoals,
   ): Promise<PersonalAdNetworkResult> {
     const startTime = Date.now();
 
     const networkAnalysis = this.analyzeNetworkReach(profiles);
     const contentScore = this.scoreOrganicContent(content);
-    const distributionStrategy = this.generateDistributionStrategy(profiles, content, goals);
-    const projectedResults = this.projectOrganicResults(profiles, content, goals);
+    const distributionStrategy = this.generateDistributionStrategy(
+      profiles,
+      content,
+      goals,
+    );
+    const projectedResults = this.projectOrganicResults(
+      profiles,
+      content,
+      goals,
+    );
     const equivalentAdValue = this.calculateEquivalentAdValue(projectedResults);
 
     return {
@@ -2071,7 +2372,11 @@ export class AdOptimizationEngine extends BaseModel {
       distributionStrategy,
       projectedResults,
       equivalentAdValue,
-      recommendations: this.generateOrganicRecommendations(networkAnalysis, contentScore, goals),
+      recommendations: this.generateOrganicRecommendations(
+        networkAnalysis,
+        contentScore,
+        goals,
+      ),
       processingTimeMs: Date.now() - startTime,
     };
   }
@@ -2082,23 +2387,23 @@ export class AdOptimizationEngine extends BaseModel {
    */
   public calculateOrganicROI(results: OrganicResults): OrganicROIAnalysis {
     const cpmByPlatform: Record<string, number> = {
-      instagram: 7.50,
-      facebook: 5.50,
-      twitter: 6.00,
-      tiktok: 10.00,
-      youtube: 15.00,
-      linkedin: 25.00,
-      threads: 4.00,
+      instagram: 7.5,
+      facebook: 5.5,
+      twitter: 6.0,
+      tiktok: 10.0,
+      youtube: 15.0,
+      linkedin: 25.0,
+      threads: 4.0,
     };
 
     const cpcByPlatform: Record<string, number> = {
-      instagram: 0.80,
-      facebook: 0.50,
-      twitter: 0.40,
-      tiktok: 1.00,
-      youtube: 2.00,
-      linkedin: 5.00,
-      threads: 0.30,
+      instagram: 0.8,
+      facebook: 0.5,
+      twitter: 0.4,
+      tiktok: 1.0,
+      youtube: 2.0,
+      linkedin: 5.0,
+      threads: 0.3,
     };
 
     let totalEquivalentSpend = 0;
@@ -2108,8 +2413,8 @@ export class AdOptimizationEngine extends BaseModel {
 
     for (const platform of Object.keys(results.platformResults)) {
       const platformData = results.platformResults[platform];
-      const cpm = cpmByPlatform[platform] || 5.00;
-      const cpc = cpcByPlatform[platform] || 0.50;
+      const cpm = cpmByPlatform[platform] || 5.0;
+      const cpc = cpcByPlatform[platform] || 0.5;
 
       const impressionValue = (platformData.impressions / 1000) * cpm;
       const engagementValue = platformData.engagements * cpc;
@@ -2140,9 +2445,11 @@ export class AdOptimizationEngine extends BaseModel {
       savingsVsPaidAds: totalEquivalentSpend,
       monthlyProjectedSavings: monthlyProjection,
       yearlyProjectedSavings: yearlyProjection,
-      effectiveROAS: totalEngagements > 0 ? (totalEquivalentSpend / totalEngagements) : 0,
-      message: `Your organic reach is equivalent to $${totalEquivalentSpend.toFixed(2)} in paid advertising. ` +
-               `Over a year, this saves approximately $${yearlyProjection.toFixed(2)} in ad spend.`,
+      effectiveROAS:
+        totalEngagements > 0 ? totalEquivalentSpend / totalEngagements : 0,
+      message:
+        `Your organic reach is equivalent to $${totalEquivalentSpend.toFixed(2)} in paid advertising. ` +
+        `Over a year, this saves approximately $${yearlyProjection.toFixed(2)} in ad spend.`,
     };
   }
 
@@ -2153,19 +2460,24 @@ export class AdOptimizationEngine extends BaseModel {
   public generateOrganicSchedule(
     profiles: SocialProfile[],
     contentQueue: OrganicContent[],
-    goals: OrganicGoals
+    goals: OrganicGoals,
   ): OrganicSchedule {
     const schedule: ScheduledOrganicPost[] = [];
     const platformOptimalTimes = this.getOptimalPostingTimes();
 
     for (const content of contentQueue) {
-      const targetPlatforms = content.platforms || profiles.map(p => p.platform);
-      
+      const targetPlatforms =
+        content.platforms || profiles.map((p) => p.platform);
+
       for (const platform of targetPlatforms) {
-        const profile = profiles.find(p => p.platform === platform);
+        const profile = profiles.find((p) => p.platform === platform);
         if (!profile) continue;
 
-        const optimalTime = this.findBestSlot(platform, platformOptimalTimes, schedule);
+        const optimalTime = this.findBestSlot(
+          platform,
+          platformOptimalTimes,
+          schedule,
+        );
         const viralScore = this.predictViralPotential(content, platform);
         const reachEstimate = this.estimateOrganicReach(profile, content);
 
@@ -2177,7 +2489,8 @@ export class AdOptimizationEngine extends BaseModel {
           predictedReach: reachEstimate,
           predictedEngagement: reachEstimate * 0.05, // 5% engagement rate estimate
           viralScore,
-          priority: viralScore > 0.7 ? 'high' : viralScore > 0.4 ? 'medium' : 'low',
+          priority:
+            viralScore > 0.7 ? "high" : viralScore > 0.4 ? "medium" : "low",
         });
       }
     }
@@ -2185,20 +2498,29 @@ export class AdOptimizationEngine extends BaseModel {
     // Sort by optimal timing and viral potential
     schedule.sort((a, b) => {
       if (a.priority !== b.priority) {
-        return a.priority === 'high' ? -1 : b.priority === 'high' ? 1 : 0;
+        return a.priority === "high" ? -1 : b.priority === "high" ? 1 : 0;
       }
       return a.scheduledTime.getTime() - b.scheduledTime.getTime();
     });
 
-    const totalProjectedReach = schedule.reduce((sum, s) => sum + s.predictedReach, 0);
-    const equivalentAdSpend = (totalProjectedReach / 1000) * 7.50; // Average CPM
+    const totalProjectedReach = schedule.reduce(
+      (sum, s) => sum + s.predictedReach,
+      0,
+    );
+    const equivalentAdSpend = (totalProjectedReach / 1000) * 7.5; // Average CPM
 
     return {
       posts: schedule,
       totalProjectedReach,
-      totalProjectedEngagement: schedule.reduce((sum, s) => sum + s.predictedEngagement, 0),
+      totalProjectedEngagement: schedule.reduce(
+        (sum, s) => sum + s.predictedEngagement,
+        0,
+      ),
       equivalentAdSpend,
-      optimizationScore: Math.min(1, totalProjectedReach / (goals.targetReach || 10000)),
+      optimizationScore: Math.min(
+        1,
+        totalProjectedReach / (goals.targetReach || 10000),
+      ),
     };
   }
 
@@ -2213,18 +2535,21 @@ export class AdOptimizationEngine extends BaseModel {
 
     for (const profile of profiles) {
       const reachMultiplier = this.getPlatformReachMultiplier(profile.platform);
-      const estimatedReach = profile.followers * reachMultiplier * (profile.engagementRate || 0.05);
-      
+      const estimatedReach =
+        profile.followers * reachMultiplier * (profile.engagementRate || 0.05);
+
       totalFollowers += profile.followers;
       totalReach += estimatedReach;
-      platformReach[profile.platform] = (platformReach[profile.platform] || 0) + estimatedReach;
-      
+      platformReach[profile.platform] =
+        (platformReach[profile.platform] || 0) + estimatedReach;
+
       if (profile.isActive) {
         activeProfiles.push(profile.id);
       }
     }
 
-    const networkStrength = Math.min(1, profiles.length / 5) * Math.min(1, totalFollowers / 100000);
+    const networkStrength =
+      Math.min(1, profiles.length / 5) * Math.min(1, totalFollowers / 100000);
 
     return {
       totalFollowers,
@@ -2233,7 +2558,7 @@ export class AdOptimizationEngine extends BaseModel {
       activeProfiles: activeProfiles.length,
       networkStrength,
       reachPotential: totalReach * 30, // Monthly potential
-      equivalentMonthlyAdBudget: (totalReach / 1000) * 7.50 * 30,
+      equivalentMonthlyAdBudget: (totalReach / 1000) * 7.5 * 30,
     };
   }
 
@@ -2241,10 +2566,16 @@ export class AdOptimizationEngine extends BaseModel {
     const textScore = this.analyzeContentText(content.text);
     const hashtagScore = this.scoreHashtags(content.hashtags || []);
     const mediaScore = content.hasMedia ? 0.8 : 0.4;
-    const timingScore = content.scheduledTime ? this.scorePostingTime(content.scheduledTime) : 0.5;
+    const timingScore = content.scheduledTime
+      ? this.scorePostingTime(content.scheduledTime)
+      : 0.5;
     const viralFactors = this.identifyViralFactors(content);
 
-    const overallScore = (textScore * 0.3 + hashtagScore * 0.2 + mediaScore * 0.25 + timingScore * 0.25);
+    const overallScore =
+      textScore * 0.3 +
+      hashtagScore * 0.2 +
+      mediaScore * 0.25 +
+      timingScore * 0.25;
 
     return {
       overall: overallScore,
@@ -2260,7 +2591,7 @@ export class AdOptimizationEngine extends BaseModel {
   private generateDistributionStrategy(
     profiles: SocialProfile[],
     content: OrganicContent,
-    goals: OrganicGoals
+    goals: OrganicGoals,
   ): DistributionStrategy {
     const primaryPlatforms: string[] = [];
     const secondaryPlatforms: string[] = [];
@@ -2268,7 +2599,7 @@ export class AdOptimizationEngine extends BaseModel {
 
     // Rank platforms by their potential contribution to goals
     const rankedProfiles = profiles
-      .map(p => ({
+      .map((p) => ({
         profile: p,
         score: this.calculateProfileGoalAlignment(p, goals),
       }))
@@ -2289,7 +2620,10 @@ export class AdOptimizationEngine extends BaseModel {
       secondaryPlatforms,
       crossPostOrder,
       postingCadence: this.recommendPostingCadence(goals),
-      amplificationTactics: this.generateAmplificationTactics(profiles, content),
+      amplificationTactics: this.generateAmplificationTactics(
+        profiles,
+        content,
+      ),
       engagementStrategy: this.generateEngagementStrategy(goals),
     };
   }
@@ -2297,13 +2631,13 @@ export class AdOptimizationEngine extends BaseModel {
   private projectOrganicResults(
     profiles: SocialProfile[],
     content: OrganicContent,
-    goals: OrganicGoals
+    goals: OrganicGoals,
   ): ProjectedOrganicResults {
     const networkAnalysis = this.analyzeNetworkReach(profiles);
     const contentScore = this.scoreOrganicContent(content);
 
     const baseReach = networkAnalysis.estimatedReach;
-    const viralMultiplier = 1 + (contentScore.viralFactors.length * 0.2);
+    const viralMultiplier = 1 + contentScore.viralFactors.length * 0.2;
     const projectedReach = baseReach * viralMultiplier * contentScore.overall;
 
     const engagementRate = 0.05 * contentScore.overall;
@@ -2317,15 +2651,17 @@ export class AdOptimizationEngine extends BaseModel {
       projectedEngagements: Math.round(projectedEngagements),
       projectedConversions: Math.round(projectedConversions),
       confidence: contentScore.overall,
-      timeframe: '7 days',
+      timeframe: "7 days",
       viralProbability: Math.min(0.95, contentScore.viralFactors.length * 0.15),
     };
   }
 
-  private calculateEquivalentAdValue(results: ProjectedOrganicResults): EquivalentAdValue {
-    const avgCPM = 7.50;
+  private calculateEquivalentAdValue(
+    results: ProjectedOrganicResults,
+  ): EquivalentAdValue {
+    const avgCPM = 7.5;
     const avgCPC = 0.65;
-    const avgCPA = 15.00;
+    const avgCPA = 15.0;
 
     const impressionValue = (results.projectedReach / 1000) * avgCPM;
     const engagementValue = results.projectedEngagements * avgCPC;
@@ -2347,36 +2683,53 @@ export class AdOptimizationEngine extends BaseModel {
   private generateOrganicRecommendations(
     network: NetworkAnalysis,
     content: OrganicContentScore,
-    goals: OrganicGoals
+    goals: OrganicGoals,
   ): string[] {
     const recommendations: string[] = [];
 
     if (network.activeProfiles < 3) {
-      recommendations.push('Connect more social profiles to expand your Personal Ad Network reach');
+      recommendations.push(
+        "Connect more social profiles to expand your Personal Ad Network reach",
+      );
     }
 
     if (network.networkStrength < 0.5) {
-      recommendations.push('Focus on growing your follower base across connected platforms');
+      recommendations.push(
+        "Focus on growing your follower base across connected platforms",
+      );
     }
 
     if (content.hashtagEffectiveness < 0.6) {
-      recommendations.push('Use more trending and niche-specific hashtags to boost discoverability');
+      recommendations.push(
+        "Use more trending and niche-specific hashtags to boost discoverability",
+      );
     }
 
     if (content.mediaImpact < 0.7) {
-      recommendations.push('Include high-quality visual content to increase engagement rates');
+      recommendations.push(
+        "Include high-quality visual content to increase engagement rates",
+      );
     }
 
     if (content.viralFactors.length < 2) {
-      recommendations.push('Add viral elements like questions, controversy, or emotional hooks');
+      recommendations.push(
+        "Add viral elements like questions, controversy, or emotional hooks",
+      );
     }
 
-    if (goals.targetEngagement && network.estimatedReach * 0.05 < goals.targetEngagement) {
-      recommendations.push('Increase posting frequency or improve content quality to hit engagement goals');
+    if (
+      goals.targetEngagement &&
+      network.estimatedReach * 0.05 < goals.targetEngagement
+    ) {
+      recommendations.push(
+        "Increase posting frequency or improve content quality to hit engagement goals",
+      );
     }
 
     if (recommendations.length === 0) {
-      recommendations.push('Your organic strategy is well-optimized! Continue current approach.');
+      recommendations.push(
+        "Your organic strategy is well-optimized! Continue current approach.",
+      );
     }
 
     return recommendations;
@@ -2388,17 +2741,17 @@ export class AdOptimizationEngine extends BaseModel {
       facebook: 0.08,
       twitter: 0.12,
       tiktok: 0.25,
-      youtube: 0.10,
-      linkedin: 0.20,
+      youtube: 0.1,
+      linkedin: 0.2,
       threads: 0.18,
     };
-    return multipliers[platform] || 0.10;
+    return multipliers[platform] || 0.1;
   }
 
   private getOptimalPostingTimes(): Record<string, Date[]> {
     const now = new Date();
     const times: Record<string, Date[]> = {};
-    
+
     const optimalHours: Record<string, number[]> = {
       instagram: [9, 12, 17, 20],
       facebook: [9, 13, 16, 19],
@@ -2410,7 +2763,7 @@ export class AdOptimizationEngine extends BaseModel {
     };
 
     for (const [platform, hours] of Object.entries(optimalHours)) {
-      times[platform] = hours.map(hour => {
+      times[platform] = hours.map((hour) => {
         const date = new Date(now);
         date.setHours(hour, 0, 0, 0);
         if (date < now) {
@@ -2426,16 +2779,16 @@ export class AdOptimizationEngine extends BaseModel {
   private findBestSlot(
     platform: string,
     optimalTimes: Record<string, Date[]>,
-    existingSchedule: ScheduledOrganicPost[]
+    existingSchedule: ScheduledOrganicPost[],
   ): Date {
     const platformTimes = optimalTimes[platform] || [];
     const scheduledTimes = existingSchedule
-      .filter(s => s.platform === platform)
-      .map(s => s.scheduledTime.getTime());
+      .filter((s) => s.platform === platform)
+      .map((s) => s.scheduledTime.getTime());
 
     for (const time of platformTimes) {
       const isConflict = scheduledTimes.some(
-        scheduled => Math.abs(scheduled - time.getTime()) < 3600000 // 1 hour buffer
+        (scheduled) => Math.abs(scheduled - time.getTime()) < 3600000, // 1 hour buffer
       );
       if (!isConflict) {
         return time;
@@ -2447,15 +2800,26 @@ export class AdOptimizationEngine extends BaseModel {
     return new Date(lastScheduled + 3600000);
   }
 
-  private predictViralPotential(content: OrganicContent, platform: string): number {
+  private predictViralPotential(
+    content: OrganicContent,
+    platform: string,
+  ): number {
     let score = 0.3;
 
     if (content.hasMedia) score += 0.15;
-    if ((content.hashtags?.length || 0) >= 3 && (content.hashtags?.length || 0) <= 10) score += 0.1;
-    if (content.text.includes('?')) score += 0.1;
+    if (
+      (content.hashtags?.length || 0) >= 3 &&
+      (content.hashtags?.length || 0) <= 10
+    )
+      score += 0.1;
+    if (content.text.includes("?")) score += 0.1;
     if (this.hasCTA(content.text)) score += 0.1;
-    if (this.countEmojis(content.text) > 0 && this.countEmojis(content.text) <= 5) score += 0.05;
-    
+    if (
+      this.countEmojis(content.text) > 0 &&
+      this.countEmojis(content.text) <= 5
+    )
+      score += 0.05;
+
     const platformBonus: Record<string, number> = {
       tiktok: 0.15,
       instagram: 0.1,
@@ -2466,24 +2830,28 @@ export class AdOptimizationEngine extends BaseModel {
     return Math.min(1, score);
   }
 
-  private estimateOrganicReach(profile: SocialProfile, content: OrganicContent): number {
-    const baseReach = profile.followers * this.getPlatformReachMultiplier(profile.platform);
+  private estimateOrganicReach(
+    profile: SocialProfile,
+    content: OrganicContent,
+  ): number {
+    const baseReach =
+      profile.followers * this.getPlatformReachMultiplier(profile.platform);
     const contentMultiplier = content.hasMedia ? 1.5 : 1.0;
     const engagementBonus = (profile.engagementRate || 0.05) * 2;
-    
+
     return Math.round(baseReach * contentMultiplier * (1 + engagementBonus));
   }
 
   private analyzeContentText(text: string): number {
     let score = 0.5;
-    
+
     const wordCount = this.getWordCount(text);
     if (wordCount >= 10 && wordCount <= 150) score += 0.1;
     if (this.hasQuestion(text)) score += 0.1;
     if (this.hasCTA(text)) score += 0.1;
     if (this.calculateEmotionalScore(text) > 0.5) score += 0.1;
     if (this.calculateReadabilityScore(text) > 0.7) score += 0.1;
-    
+
     return Math.min(1, score);
   }
 
@@ -2503,71 +2871,89 @@ export class AdOptimizationEngine extends BaseModel {
 
   private identifyViralFactors(content: OrganicContent): string[] {
     const factors: string[] = [];
-    
-    if (content.hasMedia) factors.push('visual_content');
-    if (content.text.includes('?')) factors.push('question_hook');
-    if (this.hasCTA(content.text)) factors.push('call_to_action');
-    if (this.calculateEmotionalScore(content.text) > 0.6) factors.push('emotional_resonance');
-    if (this.calculateUrgencyScore(content.text) > 0.5) factors.push('urgency_trigger');
-    if ((content.hashtags?.length || 0) >= 3) factors.push('hashtag_discoverability');
-    
+
+    if (content.hasMedia) factors.push("visual_content");
+    if (content.text.includes("?")) factors.push("question_hook");
+    if (this.hasCTA(content.text)) factors.push("call_to_action");
+    if (this.calculateEmotionalScore(content.text) > 0.6)
+      factors.push("emotional_resonance");
+    if (this.calculateUrgencyScore(content.text) > 0.5)
+      factors.push("urgency_trigger");
+    if ((content.hashtags?.length || 0) >= 3)
+      factors.push("hashtag_discoverability");
+
     return factors;
   }
 
-  private suggestContentImprovements(content: OrganicContent, currentScore: number): string[] {
+  private suggestContentImprovements(
+    content: OrganicContent,
+    currentScore: number,
+  ): string[] {
     const improvements: string[] = [];
-    
-    if (!content.hasMedia) improvements.push('Add visual content (image or video)');
-    if (!content.text.includes('?')) improvements.push('Add an engaging question');
-    if (!this.hasCTA(content.text)) improvements.push('Include a clear call-to-action');
-    if ((content.hashtags?.length || 0) < 3) improvements.push('Use 3-10 relevant hashtags');
-    if (this.countEmojis(content.text) === 0) improvements.push('Add 2-3 relevant emojis');
-    
+
+    if (!content.hasMedia)
+      improvements.push("Add visual content (image or video)");
+    if (!content.text.includes("?"))
+      improvements.push("Add an engaging question");
+    if (!this.hasCTA(content.text))
+      improvements.push("Include a clear call-to-action");
+    if ((content.hashtags?.length || 0) < 3)
+      improvements.push("Use 3-10 relevant hashtags");
+    if (this.countEmojis(content.text) === 0)
+      improvements.push("Add 2-3 relevant emojis");
+
     return improvements;
   }
 
-  private calculateProfileGoalAlignment(profile: SocialProfile, goals: OrganicGoals): number {
+  private calculateProfileGoalAlignment(
+    profile: SocialProfile,
+    goals: OrganicGoals,
+  ): number {
     let score = 0.5;
-    
+
     if (goals.targetPlatforms?.includes(profile.platform)) score += 0.3;
     if (profile.followers > 10000) score += 0.2;
     if ((profile.engagementRate || 0) > 0.05) score += 0.2;
     if (profile.isActive) score += 0.1;
-    
+
     return Math.min(1, score);
   }
 
   private recommendPostingCadence(goals: OrganicGoals): PostingCadence {
-    const baseFrequency = goals.targetReach && goals.targetReach > 50000 ? 3 : 2;
-    
+    const baseFrequency =
+      goals.targetReach && goals.targetReach > 50000 ? 3 : 2;
+
     return {
       postsPerDay: baseFrequency,
-      bestDays: ['tuesday', 'wednesday', 'thursday'],
-      restDays: ['sunday'],
+      bestDays: ["tuesday", "wednesday", "thursday"],
+      restDays: ["sunday"],
       peakHours: [9, 12, 17, 20],
     };
   }
 
-  private generateAmplificationTactics(profiles: SocialProfile[], content: OrganicContent): string[] {
+  private generateAmplificationTactics(
+    profiles: SocialProfile[],
+    content: OrganicContent,
+  ): string[] {
     const tactics: string[] = [
-      'Cross-post content across all connected platforms with platform-specific formatting',
-      'Engage with comments within the first hour of posting',
-      'Use Stories/Reels to drive traffic to main posts',
+      "Cross-post content across all connected platforms with platform-specific formatting",
+      "Engage with comments within the first hour of posting",
+      "Use Stories/Reels to drive traffic to main posts",
     ];
-    
+
     if (profiles.length >= 3) {
-      tactics.push('Stagger posts across platforms to maintain momentum');
+      tactics.push("Stagger posts across platforms to maintain momentum");
     }
-    
+
     return tactics;
   }
 
   private generateEngagementStrategy(goals: OrganicGoals): EngagementStrategy {
     return {
-      responseTimeTarget: '30 minutes',
-      engagementActions: ['reply_to_comments', 'like_mentions', 'share_ugc'],
-      communityBuilding: ['ask_questions', 'run_polls', 'feature_fans'],
-      collaborationOpportunities: ['duets', 'stitches', 'features'],
+      responseTimeTarget: "30 minutes",
+      engagementActions: ["reply_to_comments", "like_mentions", "share_ugc"],
+      communityBuilding: ["ask_questions", "run_polls", "feature_fans"],
+      collaborationOpportunities: ["duets", "stitches", "features"],
     };
   }
 

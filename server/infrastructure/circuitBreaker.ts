@@ -1,9 +1,9 @@
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
 enum CircuitState {
-  CLOSED = 'CLOSED',
-  OPEN = 'OPEN',
-  HALF_OPEN = 'HALF_OPEN',
+  CLOSED = "CLOSED",
+  OPEN = "OPEN",
+  HALF_OPEN = "HALF_OPEN",
 }
 
 interface CircuitBreakerConfig {
@@ -49,7 +49,10 @@ export class CircuitBreaker {
     };
   }
 
-  async execute<T>(fn: () => Promise<T>, fallback?: () => Promise<T>): Promise<T> {
+  async execute<T>(
+    fn: () => Promise<T>,
+    fallback?: () => Promise<T>,
+  ): Promise<T> {
     this.totalRequests++;
 
     if (this.state === CircuitState.OPEN) {
@@ -105,7 +108,9 @@ export class CircuitBreaker {
       if (this.successes >= this.config.successThreshold) {
         this.state = CircuitState.CLOSED;
         this.successes = 0;
-        logger.info(`Circuit breaker ${this.name} CLOSED after successful recovery`);
+        logger.info(
+          `Circuit breaker ${this.name} CLOSED after successful recovery`,
+        );
       }
     }
   }
@@ -123,7 +128,9 @@ export class CircuitBreaker {
     } else if (this.failures >= this.config.failureThreshold) {
       this.state = CircuitState.OPEN;
       this.nextAttempt = Date.now() + this.config.resetTimeout;
-      logger.warn(`Circuit breaker ${this.name} OPEN after ${this.failures} failures`);
+      logger.warn(
+        `Circuit breaker ${this.name} OPEN after ${this.failures} failures`,
+      );
     }
   }
 
@@ -154,7 +161,8 @@ export class CircuitBreaker {
 
   isAvailable(): boolean {
     if (this.state === CircuitState.CLOSED) return true;
-    if (this.state === CircuitState.OPEN && Date.now() >= this.nextAttempt) return true;
+    if (this.state === CircuitState.OPEN && Date.now() >= this.nextAttempt)
+      return true;
     if (this.state === CircuitState.HALF_OPEN) return true;
     return false;
   }

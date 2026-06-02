@@ -1,16 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  CheckCircle, 
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  CheckCircle,
   Clock,
   BarChart3,
   Zap,
@@ -22,14 +28,14 @@ import {
   Eye,
   Share2,
   Heart,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface PlatformHealth {
   platform: string;
   overallScore: number;
-  status: 'healthy' | 'warning' | 'critical' | 'shadowbanned';
+  status: "healthy" | "warning" | "critical" | "shadowbanned";
   metrics: {
-    reachTrend: 'increasing' | 'stable' | 'declining';
+    reachTrend: "increasing" | "stable" | "declining";
     engagementRate: number;
     impressionRatio: number;
     followerGrowth: number;
@@ -38,7 +44,7 @@ interface PlatformHealth {
   alerts: Array<{
     id: string;
     type: string;
-    severity: 'low' | 'medium' | 'high' | 'critical';
+    severity: "low" | "medium" | "high" | "critical";
     message: string;
     suggestedAction: string;
   }>;
@@ -49,14 +55,17 @@ interface DashboardData {
   overallHealth: number;
   reachMultiplier: number;
   platformHealth: Record<string, PlatformHealth>;
-  optimalTiming: Record<string, {
-    bestTimes: Array<{
-      dayOfWeek: number;
-      hour: number;
-      score: number;
-    }>;
-    nextOptimalSlot: string;
-  }>;
+  optimalTiming: Record<
+    string,
+    {
+      bestTimes: Array<{
+        dayOfWeek: number;
+        hour: number;
+        score: number;
+      }>;
+      nextOptimalSlot: string;
+    }
+  >;
   alerts: Array<{
     id: string;
     type: string;
@@ -86,39 +95,39 @@ interface DashboardData {
 }
 
 const platformIcons: Record<string, string> = {
-  tiktok: '📱',
-  instagram: '📸',
-  youtube: '🎬',
-  twitter: '🐦',
-  facebook: '👥',
-  linkedin: '💼',
+  tiktok: "📱",
+  instagram: "📸",
+  youtube: "🎬",
+  twitter: "🐦",
+  facebook: "👥",
+  linkedin: "💼",
 };
 
-const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function OrganicReachDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
 
   const fetchDashboardData = async () => {
     try {
       setRefreshing(true);
-      const response = await fetch('/api/growth/dashboard', {
-        credentials: 'include',
+      const response = await fetch("/api/growth/dashboard", {
+        credentials: "include",
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data');
+        throw new Error("Failed to fetch dashboard data");
       }
-      
+
       const result = await response.json();
       setData(result.dashboard);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -133,38 +142,53 @@ export function OrganicReachDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy': return 'bg-green-500';
-      case 'warning': return 'bg-yellow-500';
-      case 'critical': return 'bg-red-500';
-      case 'shadowbanned': return 'bg-purple-500';
-      default: return 'bg-gray-500';
+      case "healthy":
+        return "bg-green-500";
+      case "warning":
+        return "bg-yellow-500";
+      case "critical":
+        return "bg-red-500";
+      case "shadowbanned":
+        return "bg-purple-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      healthy: 'default',
-      warning: 'secondary',
-      critical: 'destructive',
-      shadowbanned: 'destructive',
+    const variants: Record<
+      string,
+      "default" | "secondary" | "destructive" | "outline"
+    > = {
+      healthy: "default",
+      warning: "secondary",
+      critical: "destructive",
+      shadowbanned: "destructive",
     };
-    return variants[status] || 'default';
+    return variants[status] || "default";
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'increasing': return <TrendingUp className="w-4 h-4 text-green-500" />;
-      case 'declining': return <TrendingDown className="w-4 h-4 text-red-500" />;
-      default: return <Activity className="w-4 h-4 text-gray-500" />;
+      case "increasing":
+        return <TrendingUp className="w-4 h-4 text-green-500" />;
+      case "declining":
+        return <TrendingDown className="w-4 h-4 text-red-500" />;
+      default:
+        return <Activity className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'critical': return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      case 'high': return <AlertTriangle className="w-4 h-4 text-orange-500" />;
-      case 'medium': return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
-      default: return <CheckCircle className="w-4 h-4 text-blue-500" />;
+      case "critical":
+        return <AlertTriangle className="w-4 h-4 text-red-500" />;
+      case "high":
+        return <AlertTriangle className="w-4 h-4 text-orange-500" />;
+      case "medium":
+        return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+      default:
+        return <CheckCircle className="w-4 h-4 text-blue-500" />;
     }
   };
 
@@ -214,13 +238,15 @@ export function OrganicReachDashboard() {
             AI-powered reach optimization across all platforms
           </p>
         </div>
-        <Button 
-          onClick={fetchDashboardData} 
-          variant="outline" 
+        <Button
+          onClick={fetchDashboardData}
+          variant="outline"
           size="sm"
           disabled={refreshing}
         >
-          <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </div>
@@ -233,14 +259,24 @@ export function OrganicReachDashboard() {
                 <p className="text-sm text-muted-foreground">Overall Health</p>
                 <p className="text-3xl font-bold">{data.overallHealth}/100</p>
               </div>
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                data.overallHealth >= 70 ? 'bg-green-100' : 
-                data.overallHealth >= 50 ? 'bg-yellow-100' : 'bg-red-100'
-              }`}>
-                <Activity className={`w-6 h-6 ${
-                  data.overallHealth >= 70 ? 'text-green-600' : 
-                  data.overallHealth >= 50 ? 'text-yellow-600' : 'text-red-600'
-                }`} />
+              <div
+                className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  data.overallHealth >= 70
+                    ? "bg-green-100"
+                    : data.overallHealth >= 50
+                      ? "bg-yellow-100"
+                      : "bg-red-100"
+                }`}
+              >
+                <Activity
+                  className={`w-6 h-6 ${
+                    data.overallHealth >= 70
+                      ? "text-green-600"
+                      : data.overallHealth >= 50
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                  }`}
+                />
               </div>
             </div>
             <Progress value={data.overallHealth} className="mt-4" />
@@ -251,7 +287,9 @@ export function OrganicReachDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Reach Multiplier</p>
+                <p className="text-sm text-muted-foreground">
+                  Reach Multiplier
+                </p>
                 <p className="text-3xl font-bold">{data.reachMultiplier}x</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -259,8 +297,11 @@ export function OrganicReachDashboard() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              {data.reachMultiplier >= 1.2 ? 'Above average performance' : 
-               data.reachMultiplier >= 1 ? 'Average performance' : 'Below baseline'}
+              {data.reachMultiplier >= 1.2
+                ? "Above average performance"
+                : data.reachMultiplier >= 1
+                  ? "Average performance"
+                  : "Below baseline"}
             </p>
           </CardContent>
         </Card>
@@ -272,16 +313,27 @@ export function OrganicReachDashboard() {
                 <p className="text-sm text-muted-foreground">Active Alerts</p>
                 <p className="text-3xl font-bold">{data.alerts.length}</p>
               </div>
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                data.alerts.length === 0 ? 'bg-green-100' : 'bg-yellow-100'
-              }`}>
-                <AlertTriangle className={`w-6 h-6 ${
-                  data.alerts.length === 0 ? 'text-green-600' : 'text-yellow-600'
-                }`} />
+              <div
+                className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  data.alerts.length === 0 ? "bg-green-100" : "bg-yellow-100"
+                }`}
+              >
+                <AlertTriangle
+                  className={`w-6 h-6 ${
+                    data.alerts.length === 0
+                      ? "text-green-600"
+                      : "text-yellow-600"
+                  }`}
+                />
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              {data.alerts.filter(a => a.severity === 'high' || a.severity === 'critical').length} require attention
+              {
+                data.alerts.filter(
+                  (a) => a.severity === "high" || a.severity === "critical",
+                ).length
+              }{" "}
+              require attention
             </p>
           </CardContent>
         </Card>
@@ -290,15 +342,25 @@ export function OrganicReachDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">30-Day Projection</p>
-                <p className="text-3xl font-bold">+{data.growthProjection.projected30Days - data.growthProjection.current}%</p>
+                <p className="text-sm text-muted-foreground">
+                  30-Day Projection
+                </p>
+                <p className="text-3xl font-bold">
+                  +
+                  {data.growthProjection.projected30Days -
+                    data.growthProjection.current}
+                  %
+                </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-purple-600" />
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              90-day: +{data.growthProjection.projected90Days - data.growthProjection.current}%
+              90-day: +
+              {data.growthProjection.projected90Days -
+                data.growthProjection.current}
+              %
             </p>
           </CardContent>
         </Card>
@@ -319,7 +381,9 @@ export function OrganicReachDashboard() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{platformIcons[platform]}</span>
+                      <span className="text-2xl">
+                        {platformIcons[platform]}
+                      </span>
                       <CardTitle className="capitalize">{platform}</CardTitle>
                     </div>
                     <Badge variant={getStatusBadge(health.status)}>
@@ -330,11 +394,15 @@ export function OrganicReachDashboard() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Health Score</span>
-                      <span className="font-semibold">{health.overallScore}/100</span>
+                      <span className="text-sm text-muted-foreground">
+                        Health Score
+                      </span>
+                      <span className="font-semibold">
+                        {health.overallScore}/100
+                      </span>
                     </div>
                     <Progress value={health.overallScore} />
-                    
+
                     <div className="space-y-2 mt-4">
                       <div className="flex items-center justify-between text-sm">
                         <span className="flex items-center gap-1">
@@ -355,8 +423,15 @@ export function OrganicReachDashboard() {
                         <span className="flex items-center gap-1">
                           <TrendingUp className="w-3 h-3" /> Growth
                         </span>
-                        <span className={health.metrics.followerGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {health.metrics.followerGrowth >= 0 ? '+' : ''}{health.metrics.followerGrowth}%
+                        <span
+                          className={
+                            health.metrics.followerGrowth >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {health.metrics.followerGrowth >= 0 ? "+" : ""}
+                          {health.metrics.followerGrowth}%
                         </span>
                       </div>
                     </div>
@@ -383,39 +458,49 @@ export function OrganicReachDashboard() {
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{platformIcons[platform]}</span>
-                    <CardTitle className="capitalize">{platform} Best Times</CardTitle>
+                    <CardTitle className="capitalize">
+                      {platform} Best Times
+                    </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-4 h-4" />
-                      <span>Next optimal: {new Date(timing.nextOptimalSlot).toLocaleString()}</span>
+                      <span>
+                        Next optimal:{" "}
+                        {new Date(timing.nextOptimalSlot).toLocaleString()}
+                      </span>
                     </div>
-                    
+
                     <div className="grid grid-cols-7 gap-1">
                       {dayNames.map((day, i) => (
-                        <div key={day} className="text-center text-xs text-muted-foreground">
+                        <div
+                          key={day}
+                          className="text-center text-xs text-muted-foreground"
+                        >
                           {day}
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="space-y-1">
                       {timing.bestTimes.slice(0, 5).map((slot, i) => (
-                        <div 
-                          key={i} 
+                        <div
+                          key={i}
                           className="flex items-center justify-between p-2 rounded bg-muted/50"
                         >
                           <span className="text-sm">
                             {dayNames[slot.dayOfWeek]} at {slot.hour}:00
                           </span>
                           <div className="flex items-center gap-2">
-                            <div 
+                            <div
                               className="h-2 rounded-full bg-green-500"
                               style={{ width: `${slot.score}px` }}
                             />
-                            <span className="text-sm font-medium">{slot.score}</span>
+                            <span className="text-sm font-medium">
+                              {slot.score}
+                            </span>
                           </div>
                         </div>
                       ))}
@@ -433,28 +518,47 @@ export function OrganicReachDashboard() {
               <Card key={highlight.platform}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">{platformIcons[highlight.platform]}</span>
-                    <CardTitle className="capitalize">{highlight.platform}</CardTitle>
+                    <span className="text-2xl">
+                      {platformIcons[highlight.platform]}
+                    </span>
+                    <CardTitle className="capitalize">
+                      {highlight.platform}
+                    </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-muted-foreground">Viral Potential</span>
-                        <span className="font-bold text-lg">{highlight.viralPotential}%</span>
+                        <span className="text-sm text-muted-foreground">
+                          Viral Potential
+                        </span>
+                        <span className="font-bold text-lg">
+                          {highlight.viralPotential}%
+                        </span>
                       </div>
-                      <Progress value={highlight.viralPotential} className="h-3" />
+                      <Progress
+                        value={highlight.viralPotential}
+                        className="h-3"
+                      />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center p-2 rounded bg-muted/50">
-                        <p className="text-2xl font-bold">{highlight.topScore}</p>
-                        <p className="text-xs text-muted-foreground">Top Score</p>
+                        <p className="text-2xl font-bold">
+                          {highlight.topScore}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Top Score
+                        </p>
                       </div>
                       <div className="text-center p-2 rounded bg-muted/50">
-                        <p className="text-2xl font-bold">{highlight.avgScore}</p>
-                        <p className="text-xs text-muted-foreground">Avg Score</p>
+                        <p className="text-2xl font-bold">
+                          {highlight.avgScore}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Avg Score
+                        </p>
                       </div>
                     </div>
 
@@ -483,19 +587,25 @@ export function OrganicReachDashboard() {
                 <div className="grid grid-cols-8 gap-1 min-w-[500px]">
                   <div></div>
                   {dayNames.map((day) => (
-                    <div key={day} className="text-center text-xs font-medium p-2">
+                    <div
+                      key={day}
+                      className="text-center text-xs font-medium p-2"
+                    >
                       {day}
                     </div>
                   ))}
-                  
+
                   {[6, 9, 12, 15, 18, 21].map((hour) => (
                     <>
-                      <div key={`label-${hour}`} className="text-xs text-muted-foreground text-right pr-2 py-2">
+                      <div
+                        key={`label-${hour}`}
+                        className="text-xs text-muted-foreground text-right pr-2 py-2"
+                      >
                         {hour}:00
                       </div>
                       {dayNames.map((_, dayIndex) => {
                         const entry = data.heatmapData.find(
-                          d => d.dayOfWeek === dayIndex && d.hour === hour
+                          (d) => d.dayOfWeek === dayIndex && d.hour === hour,
                         );
                         const value = entry?.value || 0;
                         return (
@@ -504,7 +614,7 @@ export function OrganicReachDashboard() {
                             className="aspect-square rounded flex items-center justify-center text-xs font-medium"
                             style={{
                               backgroundColor: `rgba(34, 197, 94, ${value / 100})`,
-                              color: value > 60 ? 'white' : 'inherit',
+                              color: value > 60 ? "white" : "inherit",
                             }}
                           >
                             {value}
@@ -534,8 +644,8 @@ export function OrganicReachDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {data.recommendations.map((rec, i) => (
-                    <div 
-                      key={i} 
+                    <div
+                      key={i}
                       className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -567,14 +677,21 @@ export function OrganicReachDashboard() {
                 ) : (
                   <div className="space-y-3">
                     {data.alerts.map((alert) => (
-                      <Alert 
-                        key={alert.id} 
-                        variant={alert.severity === 'critical' || alert.severity === 'high' ? 'destructive' : 'default'}
+                      <Alert
+                        key={alert.id}
+                        variant={
+                          alert.severity === "critical" ||
+                          alert.severity === "high"
+                            ? "destructive"
+                            : "default"
+                        }
                       >
                         <div className="flex items-start gap-2">
                           {getSeverityIcon(alert.severity)}
                           <div className="flex-1">
-                            <AlertTitle className="text-sm">{alert.message}</AlertTitle>
+                            <AlertTitle className="text-sm">
+                              {alert.message}
+                            </AlertTitle>
                             <AlertDescription className="text-xs mt-1">
                               {alert.suggestedAction}
                             </AlertDescription>
@@ -602,7 +719,9 @@ export function OrganicReachDashboard() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-4 rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground mb-1">Current</p>
-                  <p className="text-3xl font-bold">{data.growthProjection.current}%</p>
+                  <p className="text-3xl font-bold">
+                    {data.growthProjection.current}%
+                  </p>
                   <p className="text-xs text-muted-foreground">Baseline</p>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950">
@@ -611,8 +730,10 @@ export function OrganicReachDashboard() {
                     {data.growthProjection.projected30Days}%
                   </p>
                   <p className="text-xs text-green-600 flex items-center justify-center gap-1">
-                    <ArrowUpRight className="w-3 h-3" />
-                    +{data.growthProjection.projected30Days - data.growthProjection.current}%
+                    <ArrowUpRight className="w-3 h-3" />+
+                    {data.growthProjection.projected30Days -
+                      data.growthProjection.current}
+                    %
                   </p>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-purple-50 dark:bg-purple-950">
@@ -621,8 +742,10 @@ export function OrganicReachDashboard() {
                     {data.growthProjection.projected90Days}%
                   </p>
                   <p className="text-xs text-purple-600 flex items-center justify-center gap-1">
-                    <ArrowUpRight className="w-3 h-3" />
-                    +{data.growthProjection.projected90Days - data.growthProjection.current}%
+                    <ArrowUpRight className="w-3 h-3" />+
+                    {data.growthProjection.projected90Days -
+                      data.growthProjection.current}
+                    %
                   </p>
                 </div>
               </div>

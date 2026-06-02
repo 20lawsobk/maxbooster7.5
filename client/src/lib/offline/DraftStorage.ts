@@ -1,5 +1,5 @@
-import { logger } from '../logger';
-import { openDB, IDBPDatabase, DBSchema } from 'idb';
+import { logger } from "../logger";
+import { openDB, IDBPDatabase, DBSchema } from "idb";
 
 export interface Draft<T = unknown> {
   id: string;
@@ -25,18 +25,23 @@ interface DraftStorageDB extends DBSchema {
     key: string;
     value: Draft;
     indexes: {
-      'by-form': string;
-      'by-updated': number;
-      'by-expires': number;
+      "by-form": string;
+      "by-updated": number;
+      "by-expires": number;
     };
   };
 }
 
-const DB_NAME = 'max-booster-drafts';
+const DB_NAME = "max-booster-drafts";
 const DB_VERSION = 1;
 const DEFAULT_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;
 
-type DraftEventType = 'draft-saved' | 'draft-loaded' | 'draft-deleted' | 'draft-expired' | 'conflict-detected';
+type DraftEventType =
+  | "draft-saved"
+  | "draft-loaded"
+  | "draft-deleted"
+  | "draft-expired"
+  | "conflict-detected";
 
 interface DraftEvent<T = unknown> {
   type: DraftEventType;
@@ -52,7 +57,7 @@ function calculateChecksum(data: unknown): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash;
   }
   return Math.abs(hash).toString(36);
@@ -71,11 +76,11 @@ class DraftStorage {
     try {
       this.db = await openDB<DraftStorageDB>(DB_NAME, DB_VERSION, {
         upgrade(db) {
-          if (!db.objectStoreNames.contains('drafts')) {
-            const store = db.createObjectStore('drafts', { keyPath: 'id' });
-            store.createIndex('by-form', 'formId');
-            store.createIndex('by-updated', 'updatedAt');
-            store.createIndex('by-expires', 'expiresAt');
+          if (!db.objectStoreNames.contains("drafts")) {
+            const store = db.createObjectStore("drafts", { keyPath: "id" });
+            store.createIndex("by-form", "formId");
+            store.createIndex("by-updated", "updatedAt");
+            store.createIndex("by-expires", "expiresAt");
           }
         },
       });
@@ -83,7 +88,10 @@ class DraftStorage {
       this.isInitialized = true;
       this.startCleanupTimer();
     } catch (error) {
-      logger.info('[DraftStorage] IndexedDB unavailable — drafts will not persist across reloads', error);
+      logger.info(
+        "[DraftStorage] IndexedDB unavailable — drafts will not persist across reloads",
+        error,
+      );
       throw error;
     }
   }
@@ -98,17 +106,20 @@ class DraftStorage {
   private emit<T = unknown>(event: DraftEvent<T>): void {
     const listeners = this.listeners.get(event.type);
     if (listeners) {
-      listeners.forEach(listener => {
+      listeners.forEach((listener) => {
         try {
           (listener as DraftEventListener<T>)(event);
         } catch (error) {
-          logger.error('[DraftStorage] Event listener error:', error);
+          logger.error("[DraftStorage] Event listener error:", error);
         }
       });
     }
   }
 
-  on<T = unknown>(eventType: DraftEventType, listener: DraftEventListener<T>): () => void {
+  on<T = unknown>(
+    eventType: DraftEventType,
+    listener: DraftEventListener<T>,
+  ): () => void {
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, new Set());
     }
@@ -119,7 +130,10 @@ class DraftStorage {
     };
   }
 
-  off<T = unknown>(eventType: DraftEventType, listener: DraftEventListener<T>): void {
+  off<T = unknown>(
+    eventType: DraftEventType,
+    listener: DraftEventListener<T>,
+  ): void {
     this.listeners.get(eventType)?.delete(listener as DraftEventListener);
   }
 
@@ -129,7 +143,7 @@ class DraftStorage {
     options: {
       expirationMs?: number;
       metadata?: Record<string, unknown>;
-    } = {}
+    } = {},
   ): Promise<Draft<T>> {
     const db = await this.ensureDb();
     const now = Date.now();
@@ -150,25 +164,25 @@ class DraftStorage {
       metadata: options.metadata,
     };
 
-    await db.put('drafts', draft as Draft);
+    await db.put("drafts", draft as Draft);
 
-    this.emit({ type: 'draft-saved', draft: draft as Draft, formId });
+    this.emit({ type: "draft-saved", draft: draft as Draft, formId });
 
     return draft;
   }
 
   async getDraft<T = unknown>(formId: string): Promise<Draft<T> | undefined> {
     const db = await this.ensureDb();
-    const draft = await db.get('drafts', `draft-${formId}`);
+    const draft = await db.get("drafts", `draft-${formId}`);
 
     if (draft && draft.expiresAt < Date.now()) {
       await this.deleteDraft(formId);
-      this.emit({ type: 'draft-expired', formId });
+      this.emit({ type: "draft-expired", formId });
       return undefined;
     }
 
     if (draft) {
-      this.emit({ type: 'draft-loaded', draft: draft as Draft<T>, formId });
+      this.emit({ type: "draft-loaded", draft: draft as Draft<T>, formId });
     }
 
     return draft as Draft<T> | undefined;
@@ -176,14 +190,14 @@ class DraftStorage {
 
   async getAllDrafts(): Promise<Draft[]> {
     const db = await this.ensureDb();
-    const allDrafts = await db.getAll('drafts');
+    const allDrafts = await db.getAll("drafts");
     const now = Date.now();
 
     const validDrafts: Draft[] = [];
     for (const draft of allDrafts) {
       if (draft.expiresAt < now) {
-        await db.delete('drafts', draft.id);
-        this.emit({ type: 'draft-expired', formId: draft.formId });
+        await db.delete("drafts", draft.id);
+        this.emit({ type: "draft-expired", formId: draft.formId });
       } else {
         validDrafts.push(draft);
       }
@@ -194,13 +208,13 @@ class DraftStorage {
 
   async getDraftsForForm(formId: string): Promise<Draft[]> {
     const db = await this.ensureDb();
-    return db.getAllFromIndex('drafts', 'by-form', formId);
+    return db.getAllFromIndex("drafts", "by-form", formId);
   }
 
   async deleteDraft(formId: string): Promise<void> {
     const db = await this.ensureDb();
-    await db.delete('drafts', `draft-${formId}`);
-    this.emit({ type: 'draft-deleted', formId });
+    await db.delete("drafts", `draft-${formId}`);
+    this.emit({ type: "draft-deleted", formId });
   }
 
   async hasDraft(formId: string): Promise<boolean> {
@@ -211,7 +225,7 @@ class DraftStorage {
   async detectConflict<T = unknown>(
     formId: string,
     serverData: T,
-    serverVersion: number
+    serverVersion: number,
   ): Promise<DraftConflict<T> | null> {
     const localDraft = await this.getDraft<T>(formId);
 
@@ -219,7 +233,10 @@ class DraftStorage {
 
     const serverChecksum = calculateChecksum(serverData);
 
-    if (localDraft.checksum !== serverChecksum && localDraft.version < serverVersion) {
+    if (
+      localDraft.checksum !== serverChecksum &&
+      localDraft.version < serverVersion
+    ) {
       const serverDraft: Draft<T> = {
         id: `server-${formId}`,
         formId,
@@ -239,7 +256,7 @@ class DraftStorage {
       };
 
       this.emit({
-        type: 'conflict-detected',
+        type: "conflict-detected",
         conflict: conflict as DraftConflict,
         formId,
       });
@@ -257,7 +274,7 @@ class DraftStorage {
       intervalMs?: number;
       onSave?: (draft: Draft<T>) => void;
       onError?: (error: Error) => void;
-    } = {}
+    } = {},
   ): () => void {
     const { intervalMs = 5000, onSave, onError } = options;
 
@@ -273,7 +290,7 @@ class DraftStorage {
           onSave?.(draft);
         }
       } catch (error) {
-        logger.error('[DraftStorage] Auto-save error:', error);
+        logger.error("[DraftStorage] Auto-save error:", error);
         onError?.(error as Error);
       }
     }, intervalMs);
@@ -296,7 +313,7 @@ class DraftStorage {
 
   async recoverDraft<T = unknown>(
     formId: string,
-    onRecover: (data: T) => void
+    onRecover: (data: T) => void,
   ): Promise<boolean> {
     const draft = await this.getDraft<T>(formId);
 
@@ -311,13 +328,13 @@ class DraftStorage {
   async cleanupExpired(): Promise<number> {
     const db = await this.ensureDb();
     const now = Date.now();
-    const allDrafts = await db.getAll('drafts');
+    const allDrafts = await db.getAll("drafts");
     let removedCount = 0;
 
     for (const draft of allDrafts) {
       if (draft.expiresAt < now) {
-        await db.delete('drafts', draft.id);
-        this.emit({ type: 'draft-expired', formId: draft.formId });
+        await db.delete("drafts", draft.id);
+        this.emit({ type: "draft-expired", formId: draft.formId });
         removedCount++;
       }
     }
@@ -326,14 +343,17 @@ class DraftStorage {
   }
 
   private startCleanupTimer(): void {
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupExpired();
-    }, 60 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupExpired();
+      },
+      60 * 60 * 1000,
+    );
   }
 
   async clearAll(): Promise<void> {
     const db = await this.ensureDb();
-    await db.clear('drafts');
+    await db.clear("drafts");
   }
 
   async getDraftStats(): Promise<{
@@ -352,7 +372,7 @@ class DraftStorage {
       return sum + JSON.stringify(draft.data).length;
     }, 0);
 
-    const dates = drafts.map(d => d.updatedAt);
+    const dates = drafts.map((d) => d.updatedAt);
 
     return {
       total: drafts.length,

@@ -1,12 +1,12 @@
-import React, { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { apiRequest } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
+import React, { useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import {
   ArrowRight,
   Clock,
@@ -28,12 +28,22 @@ import {
   Calendar,
   MessageSquare,
   Award,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export type CareerStage = 'emerging' | 'developing' | 'established' | 'professional';
-export type ActionPriority = 'high' | 'medium' | 'low';
-export type ActionType = 'setup' | 'growth' | 'engagement' | 'monetization' | 'content' | 'learning';
+export type CareerStage =
+  | "emerging"
+  | "developing"
+  | "established"
+  | "professional";
+export type ActionPriority = "high" | "medium" | "low";
+export type ActionType =
+  | "setup"
+  | "growth"
+  | "engagement"
+  | "monetization"
+  | "content"
+  | "learning";
 
 export interface NextAction {
   id: string;
@@ -57,7 +67,7 @@ interface NextActionCardProps {
   onDismiss?: (actionId: string) => void;
   onComplete?: (actionId: string) => void;
   showProgress?: boolean;
-  variant?: 'default' | 'compact' | 'featured';
+  variant?: "default" | "compact" | "featured";
   className?: string;
 }
 
@@ -79,25 +89,27 @@ const typeIcons: Record<ActionType, React.ElementType> = {
 };
 
 const typeColors: Record<ActionType, string> = {
-  setup: 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400',
-  growth: 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400',
-  engagement: 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400',
-  monetization: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400',
-  content: 'bg-pink-100 text-pink-600 dark:bg-pink-900 dark:text-pink-400',
-  learning: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900 dark:text-cyan-400',
+  setup: "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400",
+  growth: "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400",
+  engagement:
+    "bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400",
+  monetization:
+    "bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400",
+  content: "bg-pink-100 text-pink-600 dark:bg-pink-900 dark:text-pink-400",
+  learning: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900 dark:text-cyan-400",
 };
 
 const priorityColors: Record<ActionPriority, string> = {
-  high: 'bg-red-500',
-  medium: 'bg-yellow-500',
-  low: 'bg-green-500',
+  high: "bg-red-500",
+  medium: "bg-yellow-500",
+  low: "bg-green-500",
 };
 
 const careerStageLabels: Record<CareerStage, string> = {
-  emerging: 'Emerging Artist',
-  developing: 'Developing Artist',
-  established: 'Established Artist',
-  professional: 'Professional Artist',
+  emerging: "Emerging Artist",
+  developing: "Developing Artist",
+  established: "Established Artist",
+  professional: "Professional Artist",
 };
 
 export function NextActionCard({
@@ -106,38 +118,52 @@ export function NextActionCard({
   onDismiss,
   onComplete,
   showProgress = false,
-  variant = 'default',
+  variant = "default",
   className,
 }: NextActionCardProps) {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
 
   const { data: nextAction, isLoading } = useQuery<NextAction>({
-    queryKey: ['/api/personalization/next-action'],
+    queryKey: ["/api/personalization/next-action"],
     enabled: !action,
     staleTime: 5 * 60 * 1000,
   });
 
   const completeActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
-      const response = await apiRequest('POST', `/api/personalization/complete-action/${actionId}`);
+      const response = await apiRequest(
+        "POST",
+        `/api/personalization/complete-action/${actionId}`,
+      );
       return response.json();
     },
     onSuccess: (_, actionId) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/next-action'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/recommendations'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/next-action"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/recommendations"],
+      });
       onComplete?.(actionId);
     },
   });
 
   const dismissActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
-      const response = await apiRequest('POST', `/api/personalization/dismiss-action/${actionId}`);
+      const response = await apiRequest(
+        "POST",
+        `/api/personalization/dismiss-action/${actionId}`,
+      );
       return response.json();
     },
     onSuccess: (_, actionId) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/next-action'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/recommendations'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/next-action"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/recommendations"],
+      });
       onDismiss?.(actionId);
     },
   });
@@ -163,7 +189,12 @@ export function NextActionCard({
 
   if (!displayAction) {
     return (
-      <Card className={cn('bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30', className)}>
+      <Card
+        className={cn(
+          "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30",
+          className,
+        )}
+      >
         <CardContent className="flex flex-col items-center justify-center py-8">
           <CheckCircle className="h-12 w-12 text-green-500 mb-3" />
           <h3 className="font-semibold text-lg">You're All Caught Up!</h3>
@@ -186,27 +217,35 @@ export function NextActionCard({
     }
   };
 
-  if (variant === 'compact') {
+  if (variant === "compact") {
     return (
       <div
         className={cn(
-          'flex items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer hover:bg-accent/50 transition-colors',
-          displayAction.priority === 'high' && 'border-red-200 dark:border-red-800',
-          className
+          "flex items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer hover:bg-accent/50 transition-colors",
+          displayAction.priority === "high" &&
+            "border-red-200 dark:border-red-800",
+          className,
         )}
         onClick={handleAction}
       >
-        <div className={cn('p-2 rounded-lg', iconColorClass)}>
+        <div className={cn("p-2 rounded-lg", iconColorClass)}>
           <Icon className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-sm truncate">{displayAction.title}</h4>
+          <h4 className="font-medium text-sm truncate">
+            {displayAction.title}
+          </h4>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {displayAction.estimatedTime}
             </span>
-            <div className={cn('h-2 w-2 rounded-full', priorityColors[displayAction.priority])} />
+            <div
+              className={cn(
+                "h-2 w-2 rounded-full",
+                priorityColors[displayAction.priority],
+              )}
+            />
           </div>
         </div>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -214,13 +253,16 @@ export function NextActionCard({
     );
   }
 
-  if (variant === 'featured') {
+  if (variant === "featured") {
     return (
-      <Card className={cn(
-        'border-2 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30',
-        displayAction.priority === 'high' && 'border-red-300 dark:border-red-700',
-        className
-      )}>
+      <Card
+        className={cn(
+          "border-2 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30",
+          displayAction.priority === "high" &&
+            "border-red-300 dark:border-red-700",
+          className,
+        )}
+      >
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -234,7 +276,7 @@ export function NextActionCard({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start gap-3">
-            <div className={cn('p-3 rounded-lg', iconColorClass)}>
+            <div className={cn("p-3 rounded-lg", iconColorClass)}>
               <Icon className="h-6 w-6" />
             </div>
             <div className="flex-1">
@@ -295,24 +337,32 @@ export function NextActionCard({
   }
 
   return (
-    <Card className={cn(
-      'cursor-pointer hover:shadow-md transition-all',
-      displayAction.priority === 'high' && 'border-red-200 dark:border-red-800',
-      displayAction.isContextual && 'ring-1 ring-purple-200 dark:ring-purple-800',
-      className
-    )}
-    onClick={handleAction}
+    <Card
+      className={cn(
+        "cursor-pointer hover:shadow-md transition-all",
+        displayAction.priority === "high" &&
+          "border-red-200 dark:border-red-800",
+        displayAction.isContextual &&
+          "ring-1 ring-purple-200 dark:ring-purple-800",
+        className,
+      )}
+      onClick={handleAction}
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <div className={cn('p-2 rounded-lg', iconColorClass)}>
+          <div className={cn("p-2 rounded-lg", iconColorClass)}>
             <Icon className="h-5 w-5" />
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h4 className="font-medium">{displayAction.title}</h4>
-              <div className={cn('h-2 w-2 rounded-full', priorityColors[displayAction.priority])} />
+              <div
+                className={cn(
+                  "h-2 w-2 rounded-full",
+                  priorityColors[displayAction.priority],
+                )}
+              />
               {displayAction.isContextual && (
                 <Badge variant="secondary" className="text-xs">
                   <Sparkles className="h-3 w-3 mr-1" />
@@ -338,7 +388,10 @@ export function NextActionCard({
 
             {showProgress && displayAction.progressPercent !== undefined && (
               <div className="mt-3">
-                <Progress value={displayAction.progressPercent} className="h-1.5" />
+                <Progress
+                  value={displayAction.progressPercent}
+                  className="h-1.5"
+                />
               </div>
             )}
           </div>
@@ -383,18 +436,20 @@ export function NextActionsList({
   onActionClick,
 }: NextActionsListProps) {
   const { data: actions = [], isLoading } = useQuery<NextAction[]>({
-    queryKey: ['/api/personalization/recommendations'],
+    queryKey: ["/api/personalization/recommendations"],
     staleTime: 5 * 60 * 1000,
   });
 
   const filteredActions = useMemo(() => {
     return actions
-      .filter(action => !careerStage || action.careerStages.includes(careerStage))
+      .filter(
+        (action) => !careerStage || action.careerStages.includes(careerStage),
+      )
       .slice(0, limit);
   }, [actions, careerStage, limit]);
 
-  const contextualActions = filteredActions.filter(a => a.isContextual);
-  const generalActions = filteredActions.filter(a => !a.isContextual);
+  const contextualActions = filteredActions.filter((a) => a.isContextual);
+  const generalActions = filteredActions.filter((a) => !a.isContextual);
 
   if (isLoading) {
     return (
@@ -462,11 +517,11 @@ export function NextActionsList({
                 <Sparkles className="h-3 w-3 text-purple-500" />
                 Personalized for you
               </div>
-              {contextualActions.map(action => (
+              {contextualActions.map((action) => (
                 <NextActionCard
                   key={action.id}
                   action={action}
-                  variant={compact ? 'compact' : 'default'}
+                  variant={compact ? "compact" : "default"}
                   onAction={onActionClick}
                   className="mb-2"
                 />
@@ -474,11 +529,11 @@ export function NextActionsList({
             </div>
           )}
 
-          {generalActions.map(action => (
+          {generalActions.map((action) => (
             <NextActionCard
               key={action.id}
               action={action}
-              variant={compact ? 'compact' : 'default'}
+              variant={compact ? "compact" : "default"}
               onAction={onActionClick}
             />
           ))}

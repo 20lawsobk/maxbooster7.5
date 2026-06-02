@@ -1,13 +1,42 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Crown, MoreVertical, UserMinus, Shield, Mail, Clock, Eye } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Crown,
+  MoreVertical,
+  UserMinus,
+  Shield,
+  Mail,
+  Clock,
+  Eye,
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 export interface WorkspaceMemberDetails {
   id: string;
@@ -15,16 +44,16 @@ export interface WorkspaceMemberDetails {
   name: string;
   email: string;
   avatar?: string;
-  role: 'owner' | 'admin' | 'manager' | 'member' | 'viewer';
+  role: "owner" | "admin" | "manager" | "member" | "viewer";
   joinedAt: string;
   lastActiveAt?: string;
-  status?: 'active' | 'inactive' | 'pending';
+  status?: "active" | "inactive" | "pending";
   isOnline?: boolean;
 }
 
 interface MemberManagementCardProps {
   member: WorkspaceMemberDetails;
-  currentUserRole: 'owner' | 'admin' | 'manager' | 'member' | 'viewer';
+  currentUserRole: "owner" | "admin" | "manager" | "member" | "viewer";
   onRoleChange?: (memberId: string, newRole: string) => void;
   onRemove?: (memberId: string) => void;
   onResendInvite?: (memberId: string) => void;
@@ -32,11 +61,11 @@ interface MemberManagementCardProps {
 }
 
 const roleConfig = {
-  owner: { label: 'Owner', color: 'bg-yellow-500', icon: Crown },
-  admin: { label: 'Admin', color: 'bg-purple-500', icon: Shield },
-  manager: { label: 'Manager', color: 'bg-blue-500', icon: Shield },
-  member: { label: 'Member', color: 'bg-green-500', icon: null },
-  viewer: { label: 'Viewer', color: 'bg-gray-500', icon: Eye },
+  owner: { label: "Owner", color: "bg-yellow-500", icon: Crown },
+  admin: { label: "Admin", color: "bg-purple-500", icon: Shield },
+  manager: { label: "Manager", color: "bg-blue-500", icon: Shield },
+  member: { label: "Member", color: "bg-green-500", icon: null },
+  viewer: { label: "Viewer", color: "bg-gray-500", icon: Eye },
 };
 
 export function MemberManagementCard({
@@ -50,10 +79,11 @@ export function MemberManagementCard({
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState(member.role);
 
-  const canManageMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
-  const canChangeRole = canManageMembers && member.role !== 'owner';
-  const canRemove = canManageMembers && member.role !== 'owner';
-  const isOwner = member.role === 'owner';
+  const canManageMembers =
+    currentUserRole === "owner" || currentUserRole === "admin";
+  const canChangeRole = canManageMembers && member.role !== "owner";
+  const canRemove = canManageMembers && member.role !== "owner";
+  const isOwner = member.role === "owner";
 
   const handleRoleChange = (newRole: string) => {
     setSelectedRole(newRole as typeof member.role);
@@ -101,17 +131,25 @@ export function MemberManagementCard({
                     {roleInfo.label}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {member.email}
+                </p>
                 <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   <span>
-                    Joined {formatDistanceToNow(new Date(member.joinedAt), { addSuffix: true })}
+                    Joined{" "}
+                    {formatDistanceToNow(new Date(member.joinedAt), {
+                      addSuffix: true,
+                    })}
                   </span>
                   {member.lastActiveAt && (
                     <>
                       <span className="text-muted-foreground/50">•</span>
                       <span>
-                        Active {formatDistanceToNow(new Date(member.lastActiveAt), { addSuffix: true })}
+                        Active{" "}
+                        {formatDistanceToNow(new Date(member.lastActiveAt), {
+                          addSuffix: true,
+                        })}
                       </span>
                     </>
                   )}
@@ -146,8 +184,10 @@ export function MemberManagementCard({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {member.status === 'pending' && onResendInvite && (
-                      <DropdownMenuItem onClick={() => onResendInvite(member.id)}>
+                    {member.status === "pending" && onResendInvite && (
+                      <DropdownMenuItem
+                        onClick={() => onResendInvite(member.id)}
+                      >
                         <Mail className="h-4 w-4 mr-2" />
                         Resend Invitation
                       </DropdownMenuItem>
@@ -177,8 +217,9 @@ export function MemberManagementCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Member</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove <strong>{member.name}</strong> from this workspace?
-              They will lose access to all workspace resources.
+              Are you sure you want to remove <strong>{member.name}</strong>{" "}
+              from this workspace? They will lose access to all workspace
+              resources.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

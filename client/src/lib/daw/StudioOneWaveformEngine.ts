@@ -1,7 +1,21 @@
-import { PeakCacheEngine, peakCacheEngine, PeakData } from './PeakCacheEngine';
-import { NonDestructiveRenderer, nonDestructiveRenderer, DataZoomState } from './NonDestructiveRenderer';
-import { TimelineRenderer, TimelineRenderConfig, ClipRenderData, PlayheadState } from './TimelineRenderer';
-import { TransformRenderer, transformRenderer, ProcessingChain, TransformEvent } from './TransformRenderer';
+import { PeakCacheEngine, peakCacheEngine, PeakData } from "./PeakCacheEngine";
+import {
+  NonDestructiveRenderer,
+  nonDestructiveRenderer,
+  DataZoomState,
+} from "./NonDestructiveRenderer";
+import {
+  TimelineRenderer,
+  TimelineRenderConfig,
+  ClipRenderData,
+  PlayheadState,
+} from "./TimelineRenderer";
+import {
+  TransformRenderer,
+  transformRenderer,
+  ProcessingChain,
+  TransformEvent,
+} from "./TransformRenderer";
 
 export interface StudioOneEngineConfig {
   sampleRate: number;
@@ -77,7 +91,7 @@ export class StudioOneWaveformEngine {
     sourceId: string,
     audioData: Float32Array,
     sampleRate?: number,
-    channels?: number
+    channels?: number,
   ): void {
     const sr = sampleRate || this.config.sampleRate;
     this.peakCache.generatePeakCache(sourceId, audioData, sr, channels || 1);
@@ -89,7 +103,7 @@ export class StudioOneWaveformEngine {
       sourceId,
       channelData,
       buffer.sampleRate,
-      buffer.numberOfChannels
+      buffer.numberOfChannels,
     );
   }
 
@@ -104,7 +118,7 @@ export class StudioOneWaveformEngine {
   }
 
   removeClip(clipId: string): void {
-    const currentClips = this.getClips().filter(c => c.id !== clipId);
+    const currentClips = this.getClips().filter((c) => c.id !== clipId);
     this.timeline.setClips(currentClips);
   }
 
@@ -138,12 +152,14 @@ export class StudioOneWaveformEngine {
   }
 
   zoomIn(factor: number = 1.5, atPixelX?: number): void {
-    const x = atPixelX ?? (this.canvas?.getBoundingClientRect().width ?? 500) / 2;
+    const x =
+      atPixelX ?? (this.canvas?.getBoundingClientRect().width ?? 500) / 2;
     this.timeline.zoomAtPoint(factor, x);
   }
 
   zoomOut(factor: number = 1.5, atPixelX?: number): void {
-    const x = atPixelX ?? (this.canvas?.getBoundingClientRect().width ?? 500) / 2;
+    const x =
+      atPixelX ?? (this.canvas?.getBoundingClientRect().width ?? 500) / 2;
     this.timeline.zoomAtPoint(1 / factor, x);
   }
 
@@ -171,7 +187,10 @@ export class StudioOneWaveformEngine {
     this.transform.registerSource(sourceId, chain);
   }
 
-  async renderToAudio(sourceId: string, audioContext?: AudioContext): Promise<Float32Array | null> {
+  async renderToAudio(
+    sourceId: string,
+    audioContext?: AudioContext,
+  ): Promise<Float32Array | null> {
     return this.transform.renderTransform(sourceId, audioContext);
   }
 
@@ -183,13 +202,21 @@ export class StudioOneWaveformEngine {
     sourceId: string,
     startSample: number,
     endSample: number,
-    targetWidth: number
+    targetWidth: number,
   ): PeakData[] | null {
-    const result = this.peakCache.getPeaksForView(sourceId, startSample, endSample, targetWidth);
+    const result = this.peakCache.getPeaksForView(
+      sourceId,
+      startSample,
+      endSample,
+      targetWidth,
+    );
     return result?.peaks ?? null;
   }
 
-  detectTransients(sourceId: string, threshold?: number): { position: number; strength: number }[] {
+  detectTransients(
+    sourceId: string,
+    threshold?: number,
+  ): { position: number; strength: number }[] {
     return this.peakCache.detectTransients(sourceId, threshold);
   }
 

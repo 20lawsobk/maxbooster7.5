@@ -1,13 +1,17 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { Link } from 'wouter';
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 import {
   CheckCircle,
   Circle,
@@ -19,7 +23,7 @@ import {
   Target,
   Lock,
   Sparkles,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface OnboardingTask {
   id: string;
@@ -50,27 +54,47 @@ interface OnboardingProgressData {
 }
 
 interface OnboardingProgressProps {
-  variant?: 'compact' | 'detailed' | 'minimal';
+  variant?: "compact" | "detailed" | "minimal";
   showRecommendation?: boolean;
   showStreak?: boolean;
   className?: string;
 }
 
 const MILESTONES = [
-  { percentage: 25, label: 'Getting Started', icon: Star, color: 'text-blue-500' },
-  { percentage: 50, label: 'Halfway There', icon: Zap, color: 'text-purple-500' },
-  { percentage: 75, label: 'Almost Done', icon: Target, color: 'text-orange-500' },
-  { percentage: 100, label: 'Completed!', icon: Trophy, color: 'text-yellow-500' },
+  {
+    percentage: 25,
+    label: "Getting Started",
+    icon: Star,
+    color: "text-blue-500",
+  },
+  {
+    percentage: 50,
+    label: "Halfway There",
+    icon: Zap,
+    color: "text-purple-500",
+  },
+  {
+    percentage: 75,
+    label: "Almost Done",
+    icon: Target,
+    color: "text-orange-500",
+  },
+  {
+    percentage: 100,
+    label: "Completed!",
+    icon: Trophy,
+    color: "text-yellow-500",
+  },
 ];
 
 export default function OnboardingProgress({
-  variant = 'compact',
+  variant = "compact",
   showRecommendation = true,
   showStreak = true,
   className,
 }: OnboardingProgressProps) {
   const { data: progress, isLoading } = useQuery<OnboardingProgressData>({
-    queryKey: ['/api/onboarding/progress'],
+    queryKey: ["/api/onboarding/progress"],
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
@@ -78,7 +102,10 @@ export default function OnboardingProgress({
   const currentMilestone = useMemo(() => {
     if (!progress) return null;
     const percentage = progress.completionPercentage;
-    return MILESTONES.find((m) => percentage <= m.percentage) || MILESTONES[MILESTONES.length - 1];
+    return (
+      MILESTONES.find((m) => percentage <= m.percentage) ||
+      MILESTONES[MILESTONES.length - 1]
+    );
   }, [progress]);
 
   const nextMilestone = useMemo(() => {
@@ -89,7 +116,7 @@ export default function OnboardingProgress({
 
   if (isLoading) {
     return (
-      <div className={cn('animate-pulse', className)}>
+      <div className={cn("animate-pulse", className)}>
         <div className="h-2 bg-muted rounded-full" />
       </div>
     );
@@ -99,10 +126,13 @@ export default function OnboardingProgress({
     return null;
   }
 
-  if (variant === 'minimal') {
+  if (variant === "minimal") {
     return (
-      <div className={cn('flex items-center gap-3', className)}>
-        <Progress value={progress.completionPercentage} className="h-2 flex-1" />
+      <div className={cn("flex items-center gap-3", className)}>
+        <Progress
+          value={progress.completionPercentage}
+          className="h-2 flex-1"
+        />
         <span className="text-sm font-medium text-muted-foreground">
           {progress.completionPercentage}%
         </span>
@@ -110,12 +140,19 @@ export default function OnboardingProgress({
     );
   }
 
-  if (variant === 'compact') {
+  if (variant === "compact") {
     return (
-      <div className={cn('flex items-center gap-4 p-3 bg-muted/50 rounded-lg', className)}>
+      <div
+        className={cn(
+          "flex items-center gap-4 p-3 bg-muted/50 rounded-lg",
+          className,
+        )}
+      >
         <div className="relative">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">{progress.completionPercentage}%</span>
+            <span className="text-white font-bold text-sm">
+              {progress.completionPercentage}%
+            </span>
           </div>
           {showStreak && progress.dayStreak > 0 && (
             <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -135,7 +172,7 @@ export default function OnboardingProgress({
         </div>
 
         {showRecommendation && progress.recommendedNextStep && (
-          <Link href={progress.recommendedNextStep.actionUrl || '#'}>
+          <Link href={progress.recommendedNextStep.actionUrl || "#"}>
             <Button size="sm" variant="outline" className="shrink-0">
               <ArrowRight className="w-4 h-4 mr-1" />
               Next Step
@@ -147,7 +184,7 @@ export default function OnboardingProgress({
   }
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white pb-12">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -171,7 +208,7 @@ export default function OnboardingProgress({
                 className="relative w-16 h-16"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: 'spring', delay: 0.2 }}
+                transition={{ type: "spring", delay: 0.2 }}
               >
                 <svg className="w-16 h-16 -rotate-90">
                   <circle
@@ -195,25 +232,34 @@ export default function OnboardingProgress({
                     className="transition-all duration-500"
                   />
                   <defs>
-                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <linearGradient
+                      id="progressGradient"
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="0%"
+                    >
                       <stop offset="0%" stopColor="#3B82F6" />
                       <stop offset="100%" stopColor="#8B5CF6" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold">{progress.completionPercentage}%</span>
+                  <span className="text-lg font-bold">
+                    {progress.completionPercentage}%
+                  </span>
                 </div>
               </motion.div>
 
               <div>
                 <p className="font-semibold">
-                  {progress.currentStep} of {progress.totalSteps} steps completed
+                  {progress.currentStep} of {progress.totalSteps} steps
+                  completed
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {nextMilestone
                     ? `${nextMilestone.percentage - progress.completionPercentage}% to ${nextMilestone.label}`
-                    : 'All milestones reached!'}
+                    : "All milestones reached!"}
                 </p>
               </div>
             </div>
@@ -230,9 +276,11 @@ export default function OnboardingProgress({
           <div className="flex justify-between mb-2">
             {MILESTONES.map((milestone, index) => {
               const MilestoneIcon = milestone.icon;
-              const isCompleted = progress.completionPercentage >= milestone.percentage;
+              const isCompleted =
+                progress.completionPercentage >= milestone.percentage;
               const isCurrent =
-                progress.completionPercentage >= (MILESTONES[index - 1]?.percentage || 0) &&
+                progress.completionPercentage >=
+                  (MILESTONES[index - 1]?.percentage || 0) &&
                 progress.completionPercentage < milestone.percentage;
 
               return (
@@ -240,26 +288,30 @@ export default function OnboardingProgress({
                   <TooltipTrigger>
                     <div
                       className={cn(
-                        'flex flex-col items-center gap-1 transition-all',
-                        isCompleted ? 'opacity-100' : 'opacity-50'
+                        "flex flex-col items-center gap-1 transition-all",
+                        isCompleted ? "opacity-100" : "opacity-50",
                       )}
                     >
                       <div
                         className={cn(
-                          'w-8 h-8 rounded-full flex items-center justify-center transition-all',
+                          "w-8 h-8 rounded-full flex items-center justify-center transition-all",
                           isCompleted
-                            ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
-                            : 'bg-muted',
-                          isCurrent && 'ring-2 ring-blue-500 ring-offset-2'
+                            ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
+                            : "bg-muted",
+                          isCurrent && "ring-2 ring-blue-500 ring-offset-2",
                         )}
                       >
                         {isCompleted ? (
                           <CheckCircle className="w-4 h-4" />
                         ) : (
-                          <MilestoneIcon className={cn('w-4 h-4', milestone.color)} />
+                          <MilestoneIcon
+                            className={cn("w-4 h-4", milestone.color)}
+                          />
                         )}
                       </div>
-                      <span className="text-xs text-muted-foreground">{milestone.percentage}%</span>
+                      <span className="text-xs text-muted-foreground">
+                        {milestone.percentage}%
+                      </span>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -286,7 +338,7 @@ export default function OnboardingProgress({
                   </p>
                 </div>
               </div>
-              <Link href={progress.recommendedNextStep.actionUrl || '#'}>
+              <Link href={progress.recommendedNextStep.actionUrl || "#"}>
                 <Button size="sm">
                   Start
                   <ArrowRight className="w-4 h-4 ml-1" />
@@ -295,8 +347,8 @@ export default function OnboardingProgress({
             </div>
             {progress.recommendedNextStep.points > 0 && (
               <Badge className="mt-2" variant="secondary">
-                <Star className="w-3 h-3 mr-1" />
-                +{progress.recommendedNextStep.points} XP
+                <Star className="w-3 h-3 mr-1" />+
+                {progress.recommendedNextStep.points} XP
               </Badge>
             )}
           </div>
@@ -309,8 +361,8 @@ export default function OnboardingProgress({
               <div
                 key={task.id}
                 className={cn(
-                  'flex items-center gap-2 p-2 rounded-lg transition-colors',
-                  task.completed ? 'bg-green-500/10' : 'hover:bg-muted/50'
+                  "flex items-center gap-2 p-2 rounded-lg transition-colors",
+                  task.completed ? "bg-green-500/10" : "hover:bg-muted/50",
                 )}
               >
                 {task.completed ? (
@@ -320,8 +372,8 @@ export default function OnboardingProgress({
                 )}
                 <span
                   className={cn(
-                    'text-sm flex-1',
-                    task.completed && 'text-muted-foreground line-through'
+                    "text-sm flex-1",
+                    task.completed && "text-muted-foreground line-through",
                   )}
                 >
                   {task.name}
@@ -332,7 +384,9 @@ export default function OnboardingProgress({
                   </Badge>
                 )}
                 {!task.completed && task.points > 0 && (
-                  <span className="text-xs text-muted-foreground">+{task.points} XP</span>
+                  <span className="text-xs text-muted-foreground">
+                    +{task.points} XP
+                  </span>
                 )}
               </div>
             ))}
@@ -367,7 +421,10 @@ export function OnboardingProgressRing({
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className={cn('relative', className)} style={{ width: size, height: size }}>
+    <div
+      className={cn("relative", className)}
+      style={{ width: size, height: size }}
+    >
       <svg className="w-full h-full -rotate-90">
         <circle
           cx={size / 2}

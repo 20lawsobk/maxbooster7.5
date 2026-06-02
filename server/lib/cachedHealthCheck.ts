@@ -9,8 +9,8 @@
  * - Reduces slow query warnings from frequent health checks
  */
 
-import { db, pool } from '../db.js';
-import { queryCache, createCacheKey } from './queryCache.js';
+import { db, pool } from "../db.js";
+import { queryCache, createCacheKey } from "./queryCache.js";
 
 interface HealthCheckResult {
   database: {
@@ -36,8 +36,10 @@ interface HealthCheckResult {
 /**
  * Perform comprehensive health check with caching
  */
-export async function getCachedHealthCheck(ttlSeconds: number = 30): Promise<HealthCheckResult> {
-  const cacheKey = createCacheKey('health', 'system');
+export async function getCachedHealthCheck(
+  ttlSeconds: number = 30,
+): Promise<HealthCheckResult> {
+  const cacheKey = createCacheKey("health", "system");
 
   return await queryCache.getOrCompute(
     cacheKey,
@@ -55,7 +57,7 @@ export async function getCachedHealthCheck(ttlSeconds: number = 30): Promise<Hea
         timestamp: Date.now(),
       };
     },
-    ttlSeconds
+    ttlSeconds,
   );
 }
 
@@ -115,7 +117,7 @@ async function checkProcessHealth() {
  */
 export function getLivenessProbe() {
   return {
-    status: 'alive',
+    status: "alive",
     uptime: process.uptime(),
     timestamp: Date.now(),
   };
@@ -124,14 +126,17 @@ export function getLivenessProbe() {
 /**
  * Readiness probe with minimal caching (10s)
  */
-export async function getReadinessProbe(): Promise<{ ready: boolean; checks: Record<string, unknown> }> {
+export async function getReadinessProbe(): Promise<{
+  ready: boolean;
+  checks: Record<string, unknown>;
+}> {
   const health = await getCachedHealthCheck(10); // 10 second cache
 
   return {
     ready: health.database.connected && health.memory.heapUsed < 1500, // < 1.5GB
     checks: {
-      database: health.database.connected ? 'ok' : 'failed',
-      memory: health.memory.heapUsed < 1500 ? 'ok' : 'high',
+      database: health.database.connected ? "ok" : "failed",
+      memory: health.memory.heapUsed < 1500 ? "ok" : "high",
     },
   };
 }

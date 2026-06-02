@@ -1,8 +1,14 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -10,26 +16,26 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { 
-  Shield, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  Shield,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertTriangle,
   FileText,
   Calendar,
   ChevronRight,
   Loader2,
   Upload,
-  MessageSquare
-} from 'lucide-react';
+  MessageSquare,
+} from "lucide-react";
 
 interface Dispute {
   id: string;
@@ -52,31 +58,31 @@ interface DisputeTrackerProps {
 }
 
 const disputeReasonLabels: Record<string, string> = {
-  bank_cannot_process: 'Bank Cannot Process',
-  credit_not_processed: 'Credit Not Processed',
-  customer_initiated: 'Customer Initiated',
-  debit_not_authorized: 'Debit Not Authorized',
-  duplicate: 'Duplicate Transaction',
-  fraudulent: 'Fraudulent',
-  general: 'General',
-  incorrect_account_details: 'Incorrect Account Details',
-  insufficient_funds: 'Insufficient Funds',
-  product_not_received: 'Product Not Received',
-  product_unacceptable: 'Product Unacceptable',
-  subscription_canceled: 'Subscription Canceled',
-  unrecognized: 'Unrecognized',
+  bank_cannot_process: "Bank Cannot Process",
+  credit_not_processed: "Credit Not Processed",
+  customer_initiated: "Customer Initiated",
+  debit_not_authorized: "Debit Not Authorized",
+  duplicate: "Duplicate Transaction",
+  fraudulent: "Fraudulent",
+  general: "General",
+  incorrect_account_details: "Incorrect Account Details",
+  insufficient_funds: "Insufficient Funds",
+  product_not_received: "Product Not Received",
+  product_unacceptable: "Product Unacceptable",
+  subscription_canceled: "Subscription Canceled",
+  unrecognized: "Unrecognized",
 };
 
 const getStatusIcon = (status: string) => {
   switch (status) {
-    case 'won':
+    case "won":
       return <CheckCircle className="h-5 w-5 text-green-500" />;
-    case 'lost':
+    case "lost":
       return <XCircle className="h-5 w-5 text-red-500" />;
-    case 'needs_response':
-    case 'warning_needs_response':
+    case "needs_response":
+    case "warning_needs_response":
       return <AlertTriangle className="h-5 w-5 text-orange-500" />;
-    case 'under_review':
+    case "under_review":
       return <Clock className="h-5 w-5 text-blue-500" />;
     default:
       return <Shield className="h-5 w-5 text-gray-500" />;
@@ -85,16 +91,16 @@ const getStatusIcon = (status: string) => {
 
 const getStatusBadgeVariant = (color: string) => {
   switch (color) {
-    case 'green':
-      return 'default';
-    case 'red':
-      return 'destructive';
-    case 'orange':
-      return 'secondary';
-    case 'blue':
-      return 'outline';
+    case "green":
+      return "default";
+    case "red":
+      return "destructive";
+    case "orange":
+      return "secondary";
+    case "blue":
+      return "outline";
     default:
-      return 'outline';
+      return "outline";
   }
 };
 
@@ -104,17 +110,17 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
   const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [evidenceForm, setEvidenceForm] = useState({
-    productDescription: '',
-    customerName: '',
-    customerEmail: '',
-    additionalInfo: '',
+    productDescription: "",
+    customerName: "",
+    customerEmail: "",
+    additionalInfo: "",
     submit: false,
   });
 
   const { data, isLoading, error } = useQuery<{ disputes: Dispute[] }>({
-    queryKey: ['/api/billing/disputes'],
+    queryKey: ["/api/billing/disputes"],
   });
 
   const disputes = data?.disputes || [];
@@ -122,10 +128,10 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
   const handleOpenEvidence = (dispute: Dispute) => {
     setSelectedDispute(dispute);
     setEvidenceForm({
-      productDescription: '',
-      customerName: '',
-      customerEmail: '',
-      additionalInfo: '',
+      productDescription: "",
+      customerName: "",
+      customerEmail: "",
+      additionalInfo: "",
       submit: false,
     });
     setEvidenceDialogOpen(true);
@@ -136,27 +142,31 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
 
     setSubmitting(true);
     try {
-      const response = await apiRequest('POST', '/api/billing/dispute/evidence', {
-        disputeId: selectedDispute.id,
-        evidence: {
-          product_description: evidenceForm.productDescription || undefined,
-          customer_name: evidenceForm.customerName || undefined,
-          customer_email_address: evidenceForm.customerEmail || undefined,
-          uncategorized_text: evidenceForm.additionalInfo || undefined,
-          submit: submitFinal,
+      const response = await apiRequest(
+        "POST",
+        "/api/billing/dispute/evidence",
+        {
+          disputeId: selectedDispute.id,
+          evidence: {
+            product_description: evidenceForm.productDescription || undefined,
+            customer_name: evidenceForm.customerName || undefined,
+            customer_email_address: evidenceForm.customerEmail || undefined,
+            uncategorized_text: evidenceForm.additionalInfo || undefined,
+            submit: submitFinal,
+          },
         },
-      });
+      );
 
       const data = await response.json();
 
       if (data.success) {
-        queryClient.invalidateQueries({ queryKey: ['/api/billing/disputes'] });
-        
+        queryClient.invalidateQueries({ queryKey: ["/api/billing/disputes"] });
+
         toast({
-          title: submitFinal ? 'Evidence Submitted' : 'Evidence Saved',
-          description: submitFinal 
-            ? 'Your evidence has been submitted for review.'
-            : 'Your evidence has been saved as a draft.',
+          title: submitFinal ? "Evidence Submitted" : "Evidence Saved",
+          description: submitFinal
+            ? "Your evidence has been submitted for review."
+            : "Your evidence has been saved as a draft.",
         });
 
         if (submitFinal) {
@@ -168,9 +178,9 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
     } catch (err) {
       const errorData = err.body || err;
       toast({
-        title: 'Submission Failed',
-        description: errorData.message || 'Please try again.',
-        variant: 'destructive',
+        title: "Submission Failed",
+        description: errorData.message || "Please try again.",
+        variant: "destructive",
       });
     } finally {
       setSubmitting(false);
@@ -178,10 +188,10 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -209,7 +219,9 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
             <Shield className="h-5 w-5" />
             Disputes
           </CardTitle>
-          <CardDescription>Track and respond to payment disputes</CardDescription>
+          <CardDescription>
+            Track and respond to payment disputes
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
@@ -232,21 +244,26 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
             <Shield className="h-5 w-5" />
             Disputes
           </CardTitle>
-          <CardDescription>Track and respond to payment disputes</CardDescription>
+          <CardDescription>
+            Track and respond to payment disputes
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {disputes.map((dispute) => {
-            const daysUntilDue = dispute.evidenceDueBy 
-              ? getDaysUntilDue(dispute.evidenceDueBy) 
+            const daysUntilDue = dispute.evidenceDueBy
+              ? getDaysUntilDue(dispute.evidenceDueBy)
               : null;
-            const isUrgent = daysUntilDue !== null && daysUntilDue <= 3 && daysUntilDue > 0;
+            const isUrgent =
+              daysUntilDue !== null && daysUntilDue <= 3 && daysUntilDue > 0;
             const isExpired = daysUntilDue !== null && daysUntilDue <= 0;
 
             return (
               <div
                 key={dispute.id}
                 className={`border rounded-lg p-4 space-y-3 ${
-                  isUrgent ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : ''
+                  isUrgent
+                    ? "border-orange-500 bg-orange-50/50 dark:bg-orange-950/20"
+                    : ""
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -255,7 +272,8 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
                     <div>
                       <p className="font-medium">{dispute.description}</p>
                       <p className="text-sm text-muted-foreground">
-                        ${dispute.amount.toFixed(2)} • {disputeReasonLabels[dispute.reason] || dispute.reason}
+                        ${dispute.amount.toFixed(2)} •{" "}
+                        {disputeReasonLabels[dispute.reason] || dispute.reason}
                       </p>
                     </div>
                   </div>
@@ -270,11 +288,14 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
                     <span>Opened {formatDate(dispute.created)}</span>
                   </div>
                   {dispute.evidenceDueBy && !isExpired && (
-                    <div className={`flex items-center gap-1 ${isUrgent ? 'text-orange-600 font-medium' : ''}`}>
+                    <div
+                      className={`flex items-center gap-1 ${isUrgent ? "text-orange-600 font-medium" : ""}`}
+                    >
                       <Clock className="h-4 w-4" />
                       <span>
                         Evidence due {formatDate(dispute.evidenceDueBy)}
-                        {isUrgent && ` (${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''} left)`}
+                        {isUrgent &&
+                          ` (${daysUntilDue} day${daysUntilDue !== 1 ? "s" : ""} left)`}
                       </span>
                     </div>
                   )}
@@ -286,20 +307,25 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
                   )}
                 </div>
 
-                {(dispute.status === 'needs_response' || dispute.status === 'warning_needs_response') && (
-                  <Alert className={isUrgent ? 'border-orange-500' : ''}>
+                {(dispute.status === "needs_response" ||
+                  dispute.status === "warning_needs_response") && (
+                  <Alert className={isUrgent ? "border-orange-500" : ""}>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
                       {isUrgent
-                        ? `Urgent: You have ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''} to respond to this dispute.`
-                        : 'Action required: Please submit evidence to respond to this dispute.'}
+                        ? `Urgent: You have ${daysUntilDue} day${daysUntilDue !== 1 ? "s" : ""} to respond to this dispute.`
+                        : "Action required: Please submit evidence to respond to this dispute."}
                     </AlertDescription>
                   </Alert>
                 )}
 
                 <div className="flex gap-2">
-                  {(dispute.status === 'needs_response' || dispute.status === 'warning_needs_response') && (
-                    <Button size="sm" onClick={() => handleOpenEvidence(dispute)}>
+                  {(dispute.status === "needs_response" ||
+                    dispute.status === "warning_needs_response") && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenEvidence(dispute)}
+                    >
                       <MessageSquare className="h-4 w-4 mr-1" />
                       Submit Evidence
                     </Button>
@@ -320,7 +346,8 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
           <DialogHeader>
             <DialogTitle>Submit Dispute Evidence</DialogTitle>
             <DialogDescription>
-              Provide evidence to support your case. Be thorough and include all relevant details.
+              Provide evidence to support your case. Be thorough and include all
+              relevant details.
             </DialogDescription>
           </DialogHeader>
 
@@ -329,19 +356,25 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
               <Alert>
                 <Clock className="h-4 w-4" />
                 <AlertDescription>
-                  Evidence must be submitted by {formatDate(selectedDispute.evidenceDueBy)}
+                  Evidence must be submitted by{" "}
+                  {formatDate(selectedDispute.evidenceDueBy)}
                 </AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="productDescription">Product/Service Description</Label>
+              <Label htmlFor="productDescription">
+                Product/Service Description
+              </Label>
               <Textarea
                 id="productDescription"
                 placeholder="Describe the product or service that was purchased..."
                 value={evidenceForm.productDescription}
-                onChange={(e) => 
-                  setEvidenceForm(prev => ({ ...prev, productDescription: e.target.value }))
+                onChange={(e) =>
+                  setEvidenceForm((prev) => ({
+                    ...prev,
+                    productDescription: e.target.value,
+                  }))
                 }
                 rows={3}
               />
@@ -354,8 +387,11 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
                   id="customerName"
                   placeholder="Full name"
                   value={evidenceForm.customerName}
-                  onChange={(e) => 
-                    setEvidenceForm(prev => ({ ...prev, customerName: e.target.value }))
+                  onChange={(e) =>
+                    setEvidenceForm((prev) => ({
+                      ...prev,
+                      customerName: e.target.value,
+                    }))
                   }
                 />
               </div>
@@ -366,8 +402,11 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
                   type="email"
                   placeholder="email@example.com"
                   value={evidenceForm.customerEmail}
-                  onChange={(e) => 
-                    setEvidenceForm(prev => ({ ...prev, customerEmail: e.target.value }))
+                  onChange={(e) =>
+                    setEvidenceForm((prev) => ({
+                      ...prev,
+                      customerEmail: e.target.value,
+                    }))
                   }
                 />
               </div>
@@ -379,8 +418,11 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
                 id="additionalInfo"
                 placeholder="Include any other relevant details, such as communication history, delivery confirmation, etc..."
                 value={evidenceForm.additionalInfo}
-                onChange={(e) => 
-                  setEvidenceForm(prev => ({ ...prev, additionalInfo: e.target.value }))
+                onChange={(e) =>
+                  setEvidenceForm((prev) => ({
+                    ...prev,
+                    additionalInfo: e.target.value,
+                  }))
                 }
                 rows={4}
               />
@@ -393,14 +435,18 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
               onClick={() => handleSubmitEvidence(false)}
               disabled={submitting}
             >
-              {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              {submitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
               Save Draft
             </Button>
             <Button
               onClick={() => handleSubmitEvidence(true)}
               disabled={submitting}
             >
-              {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              {submitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
               Submit Evidence
             </Button>
           </DialogFooter>

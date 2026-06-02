@@ -1,6 +1,6 @@
-import type { AudioAnalysisData } from '../AudioAnalyzer';
+import type { AudioAnalysisData } from "../AudioAnalyzer";
 
-export type WaveformMode = 'line' | 'filled' | 'mirrored' | 'bars' | 'dots';
+export type WaveformMode = "line" | "filled" | "mirrored" | "bars" | "dots";
 
 export interface WaveformVisualizerOptions {
   mode: WaveformMode;
@@ -10,7 +10,7 @@ export interface WaveformVisualizerOptions {
   secondaryColor: string;
   gradientColors: string[];
   useGradient: boolean;
-  gradientDirection: 'horizontal' | 'vertical';
+  gradientDirection: "horizontal" | "vertical";
   fillOpacity: number;
   mirror: boolean;
   glow: boolean;
@@ -35,18 +35,18 @@ export class WaveformVisualizer {
   private beatScale: number = 1;
 
   static readonly defaultOptions: WaveformVisualizerOptions = {
-    mode: 'line',
+    mode: "line",
     sampleCount: 128,
     lineWidth: 3,
-    color: '#00ffff',
-    secondaryColor: '#ff00ff',
-    gradientColors: ['#ff0080', '#8000ff', '#00ffff'],
+    color: "#00ffff",
+    secondaryColor: "#ff00ff",
+    gradientColors: ["#ff0080", "#8000ff", "#00ffff"],
     useGradient: true,
-    gradientDirection: 'horizontal',
+    gradientDirection: "horizontal",
     fillOpacity: 0.3,
     mirror: false,
     glow: true,
-    glowColor: '#00ffff',
+    glowColor: "#00ffff",
     glowIntensity: 0.7,
     glowBlur: 12,
     smoothing: 0.5,
@@ -73,7 +73,7 @@ export class WaveformVisualizer {
   updateOptions(options: Partial<WaveformVisualizerOptions>): void {
     const prevSampleCount = this.options.sampleCount;
     this.options = { ...this.options, ...options };
-    
+
     if (options.sampleCount && options.sampleCount !== prevSampleCount) {
       this.initializeData();
     }
@@ -84,11 +84,11 @@ export class WaveformVisualizer {
     audioData: AudioAnalysisData,
     width: number,
     height: number,
-    time: number
+    time: number,
   ): void {
     const waveformData = this.getWaveformData(audioData);
     this.updateSmoothedData(waveformData);
-    
+
     if (this.options.beatReactive && audioData.beatDetected) {
       this.beatScale = this.options.beatAmplitudeMultiplier;
     } else {
@@ -103,21 +103,21 @@ export class WaveformVisualizer {
     }
 
     const centerY = height / 2 + this.options.yOffset;
-    
+
     switch (this.options.mode) {
-      case 'filled':
+      case "filled":
         this.renderFilled(ctx, width, height, centerY);
         break;
-      case 'mirrored':
+      case "mirrored":
         this.renderMirrored(ctx, width, height, centerY);
         break;
-      case 'bars':
+      case "bars":
         this.renderBars(ctx, width, height, centerY);
         break;
-      case 'dots':
+      case "dots":
         this.renderDots(ctx, width, height, centerY);
         break;
-      case 'line':
+      case "line":
       default:
         this.renderLine(ctx, width, height, centerY);
         break;
@@ -141,10 +141,11 @@ export class WaveformVisualizer {
 
   private updateSmoothedData(newData: number[]): void {
     const smoothFactor = this.options.smoothing;
-    
+
     for (let i = 0; i < this.options.sampleCount; i++) {
       this.previousData[i] = this.smoothedData[i];
-      this.smoothedData[i] = this.smoothedData[i] * smoothFactor + newData[i] * (1 - smoothFactor);
+      this.smoothedData[i] =
+        this.smoothedData[i] * smoothFactor + newData[i] * (1 - smoothFactor);
     }
   }
 
@@ -152,19 +153,19 @@ export class WaveformVisualizer {
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
-    centerY: number
+    centerY: number,
   ): void {
     const amplitude = (height / 2) * this.options.amplitude * this.beatScale;
-    
+
     ctx.strokeStyle = this.createGradient(ctx, width, height, false);
     ctx.lineWidth = this.options.lineWidth;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     ctx.beginPath();
-    
+
     const points = this.getPoints(width, amplitude, centerY);
-    
+
     if (this.options.tension > 0) {
       this.drawSmoothCurve(ctx, points);
     } else {
@@ -178,20 +179,20 @@ export class WaveformVisualizer {
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
-    centerY: number
+    centerY: number,
   ): void {
     const amplitude = (height / 2) * this.options.amplitude * this.beatScale;
     const points = this.getPoints(width, amplitude, centerY);
 
     ctx.beginPath();
     ctx.moveTo(0, centerY);
-    
+
     if (this.options.tension > 0) {
       this.drawSmoothCurve(ctx, points, true);
     } else {
       this.drawLinearPath(ctx, points, true);
     }
-    
+
     ctx.lineTo(width, centerY);
     ctx.closePath();
 
@@ -203,7 +204,7 @@ export class WaveformVisualizer {
 
     ctx.strokeStyle = this.createGradient(ctx, width, height, false);
     ctx.lineWidth = this.options.lineWidth;
-    
+
     ctx.beginPath();
     if (this.options.tension > 0) {
       this.drawSmoothCurve(ctx, points);
@@ -217,24 +218,27 @@ export class WaveformVisualizer {
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
-    centerY: number
+    centerY: number,
   ): void {
     const amplitude = (height / 4) * this.options.amplitude * this.beatScale;
     const points = this.getPoints(width, amplitude, centerY);
-    const mirroredPoints = points.map(p => ({ x: p.x, y: centerY + (centerY - p.y) }));
+    const mirroredPoints = points.map((p) => ({
+      x: p.x,
+      y: centerY + (centerY - p.y),
+    }));
 
     ctx.beginPath();
-    
+
     if (this.options.tension > 0) {
       this.drawSmoothCurve(ctx, points, true);
     } else {
       this.drawLinearPath(ctx, points, true);
     }
-    
+
     for (let i = mirroredPoints.length - 1; i >= 0; i--) {
       ctx.lineTo(mirroredPoints[i].x, mirroredPoints[i].y);
     }
-    
+
     ctx.closePath();
 
     const gradient = this.createGradient(ctx, width, height, true);
@@ -245,7 +249,7 @@ export class WaveformVisualizer {
 
     ctx.strokeStyle = this.createGradient(ctx, width, height, false);
     ctx.lineWidth = this.options.lineWidth;
-    
+
     ctx.beginPath();
     if (this.options.tension > 0) {
       this.drawSmoothCurve(ctx, points);
@@ -253,7 +257,7 @@ export class WaveformVisualizer {
       this.drawLinearPath(ctx, points);
     }
     ctx.stroke();
-    
+
     ctx.beginPath();
     if (this.options.tension > 0) {
       this.drawSmoothCurve(ctx, mirroredPoints);
@@ -267,20 +271,22 @@ export class WaveformVisualizer {
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
-    centerY: number
+    centerY: number,
   ): void {
     const amplitude = (height / 2) * this.options.amplitude * this.beatScale;
     const barWidth = this.options.barWidth;
-    const gap = (width - this.options.sampleCount * barWidth) / (this.options.sampleCount - 1);
+    const gap =
+      (width - this.options.sampleCount * barWidth) /
+      (this.options.sampleCount - 1);
 
     ctx.fillStyle = this.createGradient(ctx, width, height, true);
 
     for (let i = 0; i < this.options.sampleCount; i++) {
       const x = i * (barWidth + gap);
       const value = (this.smoothedData[i] - 0.5) * 2 * amplitude;
-      
+
       ctx.fillRect(x, centerY, barWidth, -value);
-      
+
       if (this.options.mirror) {
         ctx.globalAlpha = 0.4;
         ctx.fillRect(x, centerY, barWidth, value * 0.5);
@@ -293,7 +299,7 @@ export class WaveformVisualizer {
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
-    centerY: number
+    centerY: number,
   ): void {
     const amplitude = (height / 2) * this.options.amplitude * this.beatScale;
     const points = this.getPoints(width, amplitude, centerY);
@@ -309,7 +315,7 @@ export class WaveformVisualizer {
     if (this.options.lineWidth > 0) {
       ctx.strokeStyle = this.createGradient(ctx, width, height, false);
       ctx.lineWidth = this.options.lineWidth / 2;
-      
+
       ctx.beginPath();
       if (this.options.tension > 0) {
         this.drawSmoothCurve(ctx, points);
@@ -320,7 +326,11 @@ export class WaveformVisualizer {
     }
   }
 
-  private getPoints(width: number, amplitude: number, centerY: number): { x: number; y: number }[] {
+  private getPoints(
+    width: number,
+    amplitude: number,
+    centerY: number,
+  ): { x: number; y: number }[] {
     const points: { x: number; y: number }[] = [];
     const step = width / (this.options.sampleCount - 1);
 
@@ -336,16 +346,16 @@ export class WaveformVisualizer {
   private drawLinearPath(
     ctx: CanvasRenderingContext2D,
     points: { x: number; y: number }[],
-    startFromFirst: boolean = false
+    startFromFirst: boolean = false,
   ): void {
     if (points.length === 0) return;
-    
+
     if (startFromFirst) {
       ctx.moveTo(points[0].x, points[0].y);
     } else {
       ctx.moveTo(points[0].x, points[0].y);
     }
-    
+
     for (let i = 1; i < points.length; i++) {
       ctx.lineTo(points[i].x, points[i].y);
     }
@@ -354,12 +364,12 @@ export class WaveformVisualizer {
   private drawSmoothCurve(
     ctx: CanvasRenderingContext2D,
     points: { x: number; y: number }[],
-    startFromFirst: boolean = false
+    startFromFirst: boolean = false,
   ): void {
     if (points.length < 2) return;
 
     const tension = this.options.tension;
-    
+
     if (startFromFirst) {
       ctx.moveTo(points[0].x, points[0].y);
     } else {
@@ -372,10 +382,10 @@ export class WaveformVisualizer {
       const p2 = points[i + 1];
       const p3 = points[Math.min(points.length - 1, i + 2)];
 
-      const cp1x = p1.x + (p2.x - p0.x) * tension / 6;
-      const cp1y = p1.y + (p2.y - p0.y) * tension / 6;
-      const cp2x = p2.x - (p3.x - p1.x) * tension / 6;
-      const cp2y = p2.y - (p3.y - p1.y) * tension / 6;
+      const cp1x = p1.x + ((p2.x - p0.x) * tension) / 6;
+      const cp1y = p1.y + ((p2.y - p0.y) * tension) / 6;
+      const cp2x = p2.x - ((p3.x - p1.x) * tension) / 6;
+      const cp2y = p2.y - ((p3.y - p1.y) * tension) / 6;
 
       ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
     }
@@ -385,19 +395,20 @@ export class WaveformVisualizer {
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
-    forFill: boolean
+    forFill: boolean,
   ): string | CanvasGradient {
     if (!this.options.useGradient) {
       return forFill ? this.options.color : this.options.color;
     }
 
-    const colors = this.options.gradientColors.length > 0 
-      ? this.options.gradientColors 
-      : [this.options.color, this.options.secondaryColor];
+    const colors =
+      this.options.gradientColors.length > 0
+        ? this.options.gradientColors
+        : [this.options.color, this.options.secondaryColor];
 
     let gradient: CanvasGradient;
-    
-    if (this.options.gradientDirection === 'horizontal') {
+
+    if (this.options.gradientDirection === "horizontal") {
       gradient = ctx.createLinearGradient(0, 0, width, 0);
     } else {
       gradient = ctx.createLinearGradient(0, 0, 0, height);

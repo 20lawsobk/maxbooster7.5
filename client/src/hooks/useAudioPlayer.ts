@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import AudioEngine from '@/lib/audioEngine';
-import type { TrackConfig, AudioClip } from '@/lib/audioEngine';
-import { logger } from '@/lib/logger';
+import { useState, useRef, useCallback, useEffect } from "react";
+import AudioEngine from "@/lib/audioEngine";
+import type { TrackConfig, AudioClip } from "@/lib/audioEngine";
+import { logger } from "@/lib/logger";
 
 export interface Track {
   id: string;
@@ -22,7 +22,7 @@ export interface Track {
 
 export interface AudioEffect {
   id: string;
-  type: 'eq' | 'compressor' | 'reverb' | 'delay' | 'distortion' | 'filter';
+  type: "eq" | "compressor" | "reverb" | "delay" | "distortion" | "filter";
   enabled: boolean;
   bypass: boolean;
   parameters: Record<string, any>;
@@ -76,7 +76,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
       try {
         await engineRef.current.initialize();
       } catch (error: unknown) {
-        logger.error('Failed to initialize AudioEngine:', error);
+        logger.error("Failed to initialize AudioEngine:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
@@ -142,12 +142,14 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
 
         setState((prev) => ({
           ...prev,
-          tracks: prev.tracks.map((t) => (t.id === track.id ? updatedTrack : t)),
+          tracks: prev.tracks.map((t) =>
+            t.id === track.id ? updatedTrack : t,
+          ),
           duration: Math.max(prev.duration, buffer.duration),
           isLoading: false,
         }));
       } catch (error: unknown) {
-        logger.error('Error loading track:', error);
+        logger.error("Error loading track:", error);
         setState((prev) => ({ ...prev, isLoading: false }));
         if (options.onError) {
           options.onError(error as Error);
@@ -155,7 +157,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         throw error;
       }
     },
-    [options.onError]
+    [options.onError],
   );
 
   const addTrack = useCallback(
@@ -174,7 +176,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
           pan: track.pan,
           isMuted: track.isMuted,
           isSolo: track.isSolo,
-          bus: 'master',
+          bus: "master",
           clips: [
             {
               id: track.id,
@@ -191,14 +193,14 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         // Load the track buffer
         await loadTrack(track);
       } catch (error: unknown) {
-        logger.error('Error adding track:', error);
+        logger.error("Error adding track:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
         throw error;
       }
     },
-    [loadTrack, options.onError]
+    [loadTrack, options.onError],
   );
 
   const removeTrack = useCallback(
@@ -210,13 +212,13 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
           tracks: prev.tracks.filter((t) => t.id !== trackId),
         }));
       } catch (error: unknown) {
-        logger.error('Error removing track:', error);
+        logger.error("Error removing track:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
       }
     },
-    [options.onError]
+    [options.onError],
   );
 
   const play = useCallback(
@@ -235,14 +237,14 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         // Start time updates
         animationFrameRef.current = requestAnimationFrame(updateCurrentTime);
       } catch (error: unknown) {
-        logger.error('Error starting playback:', error);
+        logger.error("Error starting playback:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
         throw error;
       }
     },
-    [updateCurrentTime, options.onError]
+    [updateCurrentTime, options.onError],
   );
 
   const pause = useCallback(() => {
@@ -260,7 +262,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         currentTime: engineRef.current.getCurrentTime(),
       }));
     } catch (error: unknown) {
-      logger.error('Error pausing playback:', error);
+      logger.error("Error pausing playback:", error);
       if (options.onError) {
         options.onError(error as Error);
       }
@@ -282,7 +284,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         currentTime: 0,
       }));
     } catch (error: unknown) {
-      logger.error('Error stopping playback:', error);
+      logger.error("Error stopping playback:", error);
       if (options.onError) {
         options.onError(error as Error);
       }
@@ -303,7 +305,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         await play(time);
       }
     },
-    [state.isPlaying, pause, play]
+    [state.isPlaying, pause, play],
   );
 
   const updateTrackGain = useCallback(
@@ -312,16 +314,18 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         engineRef.current.updateTrackGain(trackId, gain);
         setState((prev) => ({
           ...prev,
-          tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, gain } : t)),
+          tracks: prev.tracks.map((t) =>
+            t.id === trackId ? { ...t, gain } : t,
+          ),
         }));
       } catch (error: unknown) {
-        logger.error('Error updating track gain:', error);
+        logger.error("Error updating track gain:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
       }
     },
-    [options.onError]
+    [options.onError],
   );
 
   const updateTrackPan = useCallback(
@@ -330,16 +334,18 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         engineRef.current.updateTrackPan(trackId, pan);
         setState((prev) => ({
           ...prev,
-          tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, pan } : t)),
+          tracks: prev.tracks.map((t) =>
+            t.id === trackId ? { ...t, pan } : t,
+          ),
         }));
       } catch (error: unknown) {
-        logger.error('Error updating track pan:', error);
+        logger.error("Error updating track pan:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
       }
     },
-    [options.onError]
+    [options.onError],
   );
 
   const muteTrack = useCallback(
@@ -353,16 +359,18 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         engineRef.current.updateTrackMute(trackId, newMuteState);
         setState((prev) => ({
           ...prev,
-          tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, isMuted: newMuteState } : t)),
+          tracks: prev.tracks.map((t) =>
+            t.id === trackId ? { ...t, isMuted: newMuteState } : t,
+          ),
         }));
       } catch (error: unknown) {
-        logger.error('Error muting track:', error);
+        logger.error("Error muting track:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
       }
     },
-    [state.tracks, options.onError]
+    [state.tracks, options.onError],
   );
 
   const soloTrack = useCallback(
@@ -376,16 +384,18 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         engineRef.current.updateTrackSolo(trackId, newSoloState);
         setState((prev) => ({
           ...prev,
-          tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, isSolo: newSoloState } : t)),
+          tracks: prev.tracks.map((t) =>
+            t.id === trackId ? { ...t, isSolo: newSoloState } : t,
+          ),
         }));
       } catch (error: unknown) {
-        logger.error('Error soloing track:', error);
+        logger.error("Error soloing track:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
       }
     },
-    [state.tracks, options.onError]
+    [state.tracks, options.onError],
   );
 
   const setMasterVolume = useCallback(
@@ -394,26 +404,29 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         engineRef.current.setMasterVolume(volume);
         setState((prev) => ({ ...prev, masterVolume: volume }));
       } catch (error: unknown) {
-        logger.error('Error setting master volume:', error);
+        logger.error("Error setting master volume:", error);
         if (options.onError) {
           options.onError(error as Error);
         }
       }
     },
-    [options.onError]
+    [options.onError],
   );
 
   const setPlaybackRate = useCallback((rate: number) => {
     setState((prev) => ({ ...prev, playbackRate: rate }));
   }, []);
 
-  const getTrackPeakLevel = useCallback((trackId: string): { peak: number; rms: number } => {
-    try {
-      return engineRef.current.getTrackPeakLevel(trackId);
-    } catch (error: unknown) {
-      return { peak: -60, rms: -60 };
-    }
-  }, []);
+  const getTrackPeakLevel = useCallback(
+    (trackId: string): { peak: number; rms: number } => {
+      try {
+        return engineRef.current.getTrackPeakLevel(trackId);
+      } catch (error: unknown) {
+        return { peak: -60, rms: -60 };
+      }
+    },
+    [],
+  );
 
   const getMasterPeakLevel = useCallback((): { peak: number; rms: number } => {
     try {
@@ -434,14 +447,15 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
       // Use AudioContext's baseLatency and outputLatency for CPU estimation
       // Higher latency typically indicates higher CPU load
       const baseLatency = (context as Record<string, unknown>).baseLatency || 0;
-      const outputLatency = (context as Record<string, unknown>).outputLatency || 0;
+      const outputLatency =
+        (context as Record<string, unknown>).outputLatency || 0;
       const totalLatency = baseLatency + outputLatency;
-      
+
       // Estimate CPU usage based on latency and active track count
-      const activeTrackCount = state.tracks.filter(t => !t.isMuted).length;
+      const activeTrackCount = state.tracks.filter((t) => !t.isMuted).length;
       const baseUsage = Math.min(totalLatency * 1000, 30); // Latency contribution
       const trackUsage = activeTrackCount * 5; // ~5% per active track
-      
+
       return Math.min(baseUsage + trackUsage, 100);
     } catch {
       return 0;
@@ -449,7 +463,9 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
   }, [state.tracks]);
 
   // Get audio context state
-  const isSupported = !!window.AudioContext || !!(window as Record<string, unknown>).webkitAudioContext;
+  const isSupported =
+    !!window.AudioContext ||
+    !!(window as Record<string, unknown>).webkitAudioContext;
 
   return {
     ...state,
@@ -479,13 +495,15 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
 export function getCPUUsage(): number {
   try {
     // Use Performance API to estimate CPU load
-    const entries = performance.getEntriesByType('resource');
+    const entries = performance.getEntriesByType("resource");
     const recentEntries = entries.slice(-10);
-    
+
     if (recentEntries.length === 0) return 0;
-    
+
     // Calculate average processing time as CPU indicator
-    const avgDuration = recentEntries.reduce((sum, e) => sum + e.duration, 0) / recentEntries.length;
+    const avgDuration =
+      recentEntries.reduce((sum, e) => sum + e.duration, 0) /
+      recentEntries.length;
     return Math.min(avgDuration / 10, 100); // Normalize to 0-100%
   } catch {
     return 0;

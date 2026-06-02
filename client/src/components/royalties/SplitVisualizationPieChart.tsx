@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { PieChart, Users, AlertCircle, CheckCircle } from 'lucide-react';
+import { useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PieChart, Users, AlertCircle, CheckCircle } from "lucide-react";
 
 interface SplitParticipant {
   id: string;
@@ -10,7 +10,7 @@ interface SplitParticipant {
   email?: string;
   percentage: number;
   avatar?: string;
-  status?: 'pending' | 'accepted' | 'declined';
+  status?: "pending" | "accepted" | "declined";
 }
 
 interface SplitVisualizationPieChartProps {
@@ -23,22 +23,22 @@ interface SplitVisualizationPieChartProps {
 }
 
 const COLORS = [
-  '#8b5cf6',
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#ec4899',
-  '#6366f1',
-  '#14b8a6',
-  '#f97316',
-  '#84cc16',
+  "#8b5cf6",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#ec4899",
+  "#6366f1",
+  "#14b8a6",
+  "#f97316",
+  "#84cc16",
 ];
 
 export function SplitVisualizationPieChart({
   participants,
   totalAmount = 0,
-  currency = 'USD',
+  currency = "USD",
   showLegend = true,
   showValidation = true,
   onParticipantClick,
@@ -84,20 +84,30 @@ export function SplitVisualizationPieChart({
 
   const formatAmount = (percentage: number) => {
     const amount = (totalAmount * percentage) / 100;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency,
     }).format(amount);
   };
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
-      case 'accepted':
-        return <Badge className="bg-green-500/20 text-green-500 text-xs">Accepted</Badge>;
-      case 'declined':
-        return <Badge className="bg-red-500/20 text-red-500 text-xs">Declined</Badge>;
-      case 'pending':
-        return <Badge className="bg-amber-500/20 text-amber-500 text-xs">Pending</Badge>;
+      case "accepted":
+        return (
+          <Badge className="bg-green-500/20 text-green-500 text-xs">
+            Accepted
+          </Badge>
+        );
+      case "declined":
+        return (
+          <Badge className="bg-red-500/20 text-red-500 text-xs">Declined</Badge>
+        );
+      case "pending":
+        return (
+          <Badge className="bg-amber-500/20 text-amber-500 text-xs">
+            Pending
+          </Badge>
+        );
       default:
         return null;
     }
@@ -132,7 +142,9 @@ export function SplitVisualizationPieChart({
             Royalty Split
           </CardTitle>
           {showValidation && (
-            <div className={`flex items-center gap-2 text-sm ${isValid ? 'text-green-500' : 'text-red-500'}`}>
+            <div
+              className={`flex items-center gap-2 text-sm ${isValid ? "text-green-500" : "text-red-500"}`}
+            >
               {isValid ? (
                 <>
                   <CheckCircle className="w-4 h-4" />
@@ -216,14 +228,20 @@ export function SplitVisualizationPieChart({
                     />
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{segment.participant.name}</p>
+                        <p className="font-medium">
+                          {segment.participant.name}
+                        </p>
                         {getStatusBadge(segment.participant.status)}
                       </div>
-                      <p className="text-xs text-muted-foreground">{segment.participant.role}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {segment.participant.role}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{segment.percentage.toFixed(2)}%</p>
+                    <p className="font-semibold">
+                      {segment.percentage.toFixed(2)}%
+                    </p>
                     {totalAmount > 0 && (
                       <p className="text-xs text-muted-foreground">
                         {formatAmount(segment.percentage)}
@@ -237,8 +255,8 @@ export function SplitVisualizationPieChart({
                 <div className="pt-3 border-t flex items-center justify-between">
                   <span className="font-medium">Total</span>
                   <span className="font-semibold">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
                       currency,
                     }).format(totalAmount)}
                   </span>

@@ -1,11 +1,15 @@
-import { db } from '../../../db.js';
-import { fabricPockets } from '@shared/schema';
-import { eq } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import type { FabricPocket, PocketId, PocketPolicy } from '../types.js';
+import { db } from "../../../db.js";
+import { fabricPockets } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
+import type { FabricPocket, PocketId, PocketPolicy } from "../types.js";
 
 export class PocketRegistry {
-  async createPocket(ownerId: string, name: string, policy: PocketPolicy): Promise<FabricPocket> {
+  async createPocket(
+    ownerId: string,
+    name: string,
+    policy: PocketPolicy,
+  ): Promise<FabricPocket> {
     const id = randomUUID();
     const now = new Date();
     await db.insert(fabricPockets).values({
@@ -20,17 +24,26 @@ export class PocketRegistry {
   }
 
   async getPocket(id: PocketId): Promise<FabricPocket | null> {
-    const rows = await db.select().from(fabricPockets).where(eq(fabricPockets.id, id));
+    const rows = await db
+      .select()
+      .from(fabricPockets)
+      .where(eq(fabricPockets.id, id));
     return rows[0] ? this.rowToPocket(rows[0]) : null;
   }
 
   async listPockets(ownerId: string): Promise<FabricPocket[]> {
-    const rows = await db.select().from(fabricPockets).where(eq(fabricPockets.ownerId, ownerId));
+    const rows = await db
+      .select()
+      .from(fabricPockets)
+      .where(eq(fabricPockets.ownerId, ownerId));
     return rows.map(this.rowToPocket);
   }
 
   async updatePolicy(id: PocketId, policy: PocketPolicy): Promise<void> {
-    await db.update(fabricPockets).set({ policy: policy as Record<string, unknown>, updatedAt: new Date() }).where(eq(fabricPockets.id, id));
+    await db
+      .update(fabricPockets)
+      .set({ policy: policy as Record<string, unknown>, updatedAt: new Date() })
+      .where(eq(fabricPockets.id, id));
   }
 
   async deletePocket(id: PocketId): Promise<void> {

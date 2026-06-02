@@ -2,85 +2,101 @@
  * Integration tests for security hardening: CSRF, auth guards, input validation.
  * Requires running server at localhost:5000.
  */
-import { describe, it, expect, vi } from 'vitest';
-import type { SlidingWindowRedis } from '../server/middleware/scalableRateLimiter.js';
+import { describe, it, expect, vi } from "vitest";
+import type { SlidingWindowRedis } from "../server/middleware/scalableRateLimiter.js";
 
-const BASE = process.env.TEST_BASE_URL || 'http://localhost:5000';
+const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 
-async function req(method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
+async function req(
+  method: string,
+  path: string,
+  body?: unknown,
+  headers: Record<string, string> = {},
+) {
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { "Content-Type": "application/json", ...headers },
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(8000),
-    redirect: 'manual',
+    redirect: "manual",
   });
   const text = await res.text();
   let json: unknown;
-  try { json = JSON.parse(text); } catch { json = text; }
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = text;
+  }
   return { status: res.status, json, headers: res.headers };
 }
 
-describe('Authentication Guards', () => {
+describe("Authentication Guards", () => {
   const protectedRoutes = [
     // /api/auth/me is intentionally public — returns null for unauthenticated users
-    ['GET', '/api/auth/notifications'],
-    ['GET', '/api/auth/preferences'],
-    ['GET', '/api/auth/sessions'],
-    ['GET', '/api/auth/login-history'],
-    ['GET', '/api/marketplace/my-beats'],
-    ['GET', '/api/distribution/releases'],
-    ['GET', '/api/analytics/overview'],
-    ['GET', '/api/admin/users'],
+    ["GET", "/api/auth/notifications"],
+    ["GET", "/api/auth/preferences"],
+    ["GET", "/api/auth/sessions"],
+    ["GET", "/api/auth/login-history"],
+    ["GET", "/api/marketplace/my-beats"],
+    ["GET", "/api/distribution/releases"],
+    ["GET", "/api/analytics/overview"],
+    ["GET", "/api/admin/users"],
   ];
 
-  it.each(protectedRoutes)('%s %s requires authentication (401)', async (method, path) => {
-    const r = await req(method, path);
-    expect([401, 403]).toContain(r.status);
-  });
+  it.each(protectedRoutes)(
+    "%s %s requires authentication (401)",
+    async (method, path) => {
+      const r = await req(method, path);
+      expect([401, 403]).toContain(r.status);
+    },
+  );
 });
 
-describe('Input Validation — Auth Endpoints', () => {
-  it('register rejects missing email', async () => {
-    const r = await req('POST', '/api/auth/register', { password: 'ValidPass123!' });
-    expect(r.status).toBe(400);
-  });
-
-  it('register rejects missing password', async () => {
-    const r = await req('POST', '/api/auth/register', { email: 'test@example.com' });
-    expect(r.status).toBe(400);
-  });
-
-  it('register rejects malformed email', async () => {
-    const r = await req('POST', '/api/auth/register', {
-      email: 'not-an-email',
-      password: 'ValidPass123!',
+describe("Input Validation — Auth Endpoints", () => {
+  it("register rejects missing email", async () => {
+    const r = await req("POST", "/api/auth/register", {
+      password: "ValidPass123!",
     });
     expect(r.status).toBe(400);
   });
 
-  it('login rejects empty credentials', async () => {
-    const r = await req('POST', '/api/auth/login', {});
+  it("register rejects missing password", async () => {
+    const r = await req("POST", "/api/auth/register", {
+      email: "test@example.com",
+    });
     expect(r.status).toBe(400);
   });
 
-  it('login returns 401 for wrong password', async () => {
-    const r = await req('POST', '/api/auth/login', {
-      email: 'nonexistent@nobody.invalid',
-      password: 'WrongPassword!',
+  it("register rejects malformed email", async () => {
+    const r = await req("POST", "/api/auth/register", {
+      email: "not-an-email",
+      password: "ValidPass123!",
+    });
+    expect(r.status).toBe(400);
+  });
+
+  it("login rejects empty credentials", async () => {
+    const r = await req("POST", "/api/auth/login", {});
+    expect(r.status).toBe(400);
+  });
+
+  it("login returns 401 for wrong password", async () => {
+    const r = await req("POST", "/api/auth/login", {
+      email: "nonexistent@nobody.invalid",
+      password: "WrongPassword!",
     });
     expect([401, 400]).toContain(r.status);
   });
 
-  it('does not expose password in user object after register', async () => {
+  it("does not expose password in user object after register", async () => {
     const email = `sec_test_${Date.now()}@maxbooster-test.invalid`;
-    const r = await req('POST', '/api/auth/register', {
+    const r = await req("POST", "/api/auth/register", {
       email,
-      password: 'SecurePass123!',
-      firstName: 'Test',
-      lastName: 'User',
+      password: "SecurePass123!",
+      firstName: "Test",
+      lastName: "User",
     });
-    if (r.status === 200 && typeof r.json === 'object' && r.json !== null) {
+    if (r.status === 200 && typeof r.json === "object" && r.json !== null) {
       const obj = r.json as Record<string, unknown>;
       expect(obj.password).toBeUndefined();
       expect(obj.twoFactorSecret).toBeUndefined();
@@ -88,32 +104,38 @@ describe('Input Validation — Auth Endpoints', () => {
   });
 });
 
-describe('CSRF Protection', () => {
-  it('state-changing POST without CSRF cookie is accepted for auth endpoints (cookie SameSite handles it)', async () => {
+describe("CSRF Protection", () => {
+  it("state-changing POST without CSRF cookie is accepted for auth endpoints (cookie SameSite handles it)", async () => {
     // Our CSRF implementation uses double-submit cookie.
     // Login and register are CSRF-exempt (they're auth initiation flows).
     // This test verifies the endpoints respond (not blocked at the network level).
-    const r = await req('POST', '/api/auth/login', { email: 'x@x.com', password: 'x' });
+    const r = await req("POST", "/api/auth/login", {
+      email: "x@x.com",
+      password: "x",
+    });
     // Must get a real app response (not a CSRF middleware 403)
     expect(r.status).not.toBe(403);
   });
 
-  it('health endpoints are not blocked by CSRF', async () => {
-    const r = await req('GET', '/api/health');
+  it("health endpoints are not blocked by CSRF", async () => {
+    const r = await req("GET", "/api/health");
     expect(r.status).toBe(200);
   });
 });
 
-describe('Rate Limiting', () => {
+describe("Rate Limiting", () => {
   // We test that the rate limiter EXISTS (not that it actually blocks — that
   // would require many rapid requests which could disrupt the dev environment).
-  it('login endpoint has rate limit headers on response', async () => {
-    const r = await req('POST', '/api/auth/login', { email: 'ratelimit@test.com', password: 'test' });
+  it("login endpoint has rate limit headers on response", async () => {
+    const r = await req("POST", "/api/auth/login", {
+      email: "ratelimit@test.com",
+      password: "test",
+    });
     // Express-rate-limit adds RateLimit-* or X-RateLimit-* headers
     const hasRateHeader =
-      r.headers.get('ratelimit-limit') !== null ||
-      r.headers.get('x-ratelimit-limit') !== null ||
-      r.headers.get('retry-after') !== null;
+      r.headers.get("ratelimit-limit") !== null ||
+      r.headers.get("x-ratelimit-limit") !== null ||
+      r.headers.get("retry-after") !== null;
     // Rate limit headers are present when the limiter fires
     // (may or may not be present depending on whether limit is reached)
     // This is a smoke test — just verify the endpoint responds
@@ -142,48 +164,68 @@ function createMockZsetRedis(): SlidingWindowRedis {
   return {
     // eval() throws to exercise the sequential ZREMRANGEBYSCORE + ZCARD + ZADD fallback path.
     async eval(): Promise<unknown> {
-      throw new Error('eval() not supported in mock — testing fallback path');
+      throw new Error("eval() not supported in mock — testing fallback path");
     },
-    async zremrangebyscore(key: string, min: string | number, max: string | number): Promise<number> {
+    async zremrangebyscore(
+      key: string,
+      min: string | number,
+      max: string | number,
+    ): Promise<number> {
       const zset = store.get(key);
       if (!zset) return 0;
-      const lo = min === '-inf' ? -Infinity : Number(min);
-      const hi = max === '+inf' ? Infinity  : Number(max);
+      const lo = min === "-inf" ? -Infinity : Number(min);
+      const hi = max === "+inf" ? Infinity : Number(max);
       let removed = 0;
       for (const [member, score] of zset) {
-        if (score >= lo && score <= hi) { zset.delete(member); removed++; }
+        if (score >= lo && score <= hi) {
+          zset.delete(member);
+          removed++;
+        }
       }
       return removed;
     },
     async zcard(key: string): Promise<number> {
       return store.get(key)?.size ?? 0;
     },
-    async zcount(key: string, min: string | number, _max: string | number): Promise<number> {
+    async zcount(
+      key: string,
+      min: string | number,
+      _max: string | number,
+    ): Promise<number> {
       const zset = store.get(key);
       if (!zset) return 0;
       const lo = Number(min);
       let n = 0;
-      for (const score of zset.values()) { if (score >= lo) n++; }
+      for (const score of zset.values()) {
+        if (score >= lo) n++;
+      }
       return n;
     },
     async zadd(key: string, ...args: unknown[]): Promise<number> {
       // ioredis zadd signature: zadd(key, score, member)
-      const score  = Number(args[0]);
+      const score = Number(args[0]);
       const member = String(args[1]);
       if (!store.has(key)) store.set(key, new Map());
       store.get(key)!.set(member, score);
       return 1;
     },
-    async expire(): Promise<number> { return 1; },
+    async expire(): Promise<number> {
+      return 1;
+    },
   };
 }
 
-describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', () => {
-  it('allows exactly `limit` requests and blocks the (limit+1)th immediately', async () => {
-    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+describe("Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)", () => {
+  it("allows exactly `limit` requests and blocks the (limit+1)th immediately", async () => {
+    const { DistributedRateLimiter } = await import(
+      "../server/middleware/scalableRateLimiter.js"
+    );
     const redis = createMockZsetRedis();
     const LIMIT = 5;
-    const limiter = new DistributedRateLimiter({ windowMs: 5000, maxRequests: LIMIT }, redis);
+    const limiter = new DistributedRateLimiter(
+      { windowMs: 5000, maxRequests: LIMIT },
+      redis,
+    );
     const key = `test:basic:${Date.now()}`;
 
     for (let i = 0; i < LIMIT; i++) {
@@ -195,15 +237,20 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
     expect(blocked.remaining).toBe(0);
   });
 
-  it('boundary-burst: filling the window then firing immediately blocks ALL extra requests', async () => {
+  it("boundary-burst: filling the window then firing immediately blocks ALL extra requests", async () => {
     // This is the core boundary-burst scenario.
     // With INCR+EXPIRE a key-reset would allow a second full burst at the boundary;
     // the ZSET sliding window blocks it because entries survive until their score
     // falls outside [now - windowMs, now].
-    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+    const { DistributedRateLimiter } = await import(
+      "../server/middleware/scalableRateLimiter.js"
+    );
     const redis = createMockZsetRedis();
     const LIMIT = 5;
-    const limiter = new DistributedRateLimiter({ windowMs: 500, maxRequests: LIMIT }, redis);
+    const limiter = new DistributedRateLimiter(
+      { windowMs: 500, maxRequests: LIMIT },
+      redis,
+    );
     const key = `test:burst:${Date.now()}`;
 
     // Phase 1 — fill the window
@@ -224,23 +271,28 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
     expect(blocked).toBe(LIMIT);
   });
 
-  it('allows requests again after the sliding window has fully elapsed', async () => {
-    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+  it("allows requests again after the sliding window has fully elapsed", async () => {
+    const { DistributedRateLimiter } = await import(
+      "../server/middleware/scalableRateLimiter.js"
+    );
     const redis = createMockZsetRedis();
     const LIMIT = 3;
     const WINDOW_MS = 200;
-    const limiter = new DistributedRateLimiter({ windowMs: WINDOW_MS, maxRequests: LIMIT }, redis);
+    const limiter = new DistributedRateLimiter(
+      { windowMs: WINDOW_MS, maxRequests: LIMIT },
+      redis,
+    );
     const key = `test:expire:${Date.now()}`;
 
     for (let i = 0; i < LIMIT; i++) await limiter.isRateLimited(key);
     expect((await limiter.isRateLimited(key)).limited).toBe(true);
 
-    await new Promise(resolve => setTimeout(resolve, WINDOW_MS + 50));
+    await new Promise((resolve) => setTimeout(resolve, WINDOW_MS + 50));
 
     expect((await limiter.isRateLimited(key)).limited).toBe(false);
   });
 
-  it('boundary-burst at exact window boundary: limit at end of window A, limit at start of window B → all blocked', async () => {
+  it("boundary-burst at exact window boundary: limit at end of window A, limit at start of window B → all blocked", async () => {
     // This is the canonical boundary-burst scenario — tested with controlled (fake) time
     // so the window boundary is hit exactly and PDIM round-trip jitter does not interfere.
     //
@@ -250,7 +302,9 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
     //
     // Note: fake timers must be active BEFORE phase 1 so that all entry scores
     // are set under fake-clock timestamps and the ZCOUNT min-bound matches exactly.
-    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+    const { DistributedRateLimiter } = await import(
+      "../server/middleware/scalableRateLimiter.js"
+    );
     const redis = createMockZsetRedis();
     const LIMIT = 3;
     const WINDOW_MS = 1000;
@@ -260,7 +314,10 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
     vi.setSystemTime(T_BASE);
 
     try {
-      const limiter = new DistributedRateLimiter({ windowMs: WINDOW_MS, maxRequests: LIMIT }, redis);
+      const limiter = new DistributedRateLimiter(
+        { windowMs: WINDOW_MS, maxRequests: LIMIT },
+        redis,
+      );
       const key = `test:exact-boundary:${T_BASE}`;
 
       // Phase 1 — fill the window at T=T_BASE (all entries get score=T_BASE)
@@ -293,11 +350,16 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
     }
   });
 
-  it('remaining count decrements accurately as requests consume the budget', async () => {
-    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+  it("remaining count decrements accurately as requests consume the budget", async () => {
+    const { DistributedRateLimiter } = await import(
+      "../server/middleware/scalableRateLimiter.js"
+    );
     const redis = createMockZsetRedis();
     const LIMIT = 4;
-    const limiter = new DistributedRateLimiter({ windowMs: 5000, maxRequests: LIMIT }, redis);
+    const limiter = new DistributedRateLimiter(
+      { windowMs: 5000, maxRequests: LIMIT },
+      redis,
+    );
     const key = `test:remaining:${Date.now()}`;
 
     const remainings: number[] = [];
@@ -323,15 +385,18 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
 //      (Fixed-window INCR+EXPIRE resets at this boundary → 2×limit passes;
 //       sliding-window ZCOUNT keeps phase-1 scores alive → 0 pass.)
 
-const _pdimConfigured =
-  !!(process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL);
+const _pdimConfigured = !!(
+  process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL
+);
 
-describe('Sliding-Window — Real PDIM Integration', () => {
+describe("Sliding-Window — Real PDIM Integration", () => {
   it.skipIf(!_pdimConfigured)(
-    'allows limit requests, blocks limit+1th, recovers after window expires',
+    "allows limit requests, blocks limit+1th, recovers after window expires",
     async () => {
-      const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
-      const { getRedisClient } = await import('../server/lib/redisClient.js');
+      const { DistributedRateLimiter } = await import(
+        "../server/middleware/scalableRateLimiter.js"
+      );
+      const { getRedisClient } = await import("../server/lib/redisClient.js");
       const redis = getRedisClient();
 
       const LIMIT = 3;
@@ -351,7 +416,9 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       // Phase 1: all `limit` requests must pass
       for (let i = 0; i < LIMIT; i++) {
         const r = await limiter.isRateLimited(key);
-        expect(r.limited, `request ${i + 1} of ${LIMIT} should pass`).toBe(false);
+        expect(r.limited, `request ${i + 1} of ${LIMIT} should pass`).toBe(
+          false,
+        );
       }
 
       // Phase 2: the very next request is the (limit+1)th — must be blocked
@@ -362,7 +429,7 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       // Phase 3: wait for the window to expire, then one more must pass.
       // 1000ms margin > coalesceMaxAgeMs (=min(1000, WINDOW/2)=1000) so the
       // sticky-limited cache has also expired and we'll resync against PDIM.
-      await new Promise(resolve => setTimeout(resolve, WINDOW_MS + 1_000));
+      await new Promise((resolve) => setTimeout(resolve, WINDOW_MS + 1_000));
       const recovered = await limiter.isRateLimited(key);
       expect(recovered.limited).toBe(false);
     },
@@ -370,7 +437,7 @@ describe('Sliding-Window — Real PDIM Integration', () => {
   );
 
   it.skipIf(!_pdimConfigured)(
-    'boundary-burst: burst fired before window expiry is blocked; request after expiry passes',
+    "boundary-burst: burst fired before window expiry is blocked; request after expiry passes",
     async () => {
       // Anchors all timing to t0 so the test stays correct regardless of how long
       // each PDIM round-trip takes.  PDIM's fallback path uses ZREMRANGEBYSCORE +
@@ -383,11 +450,13 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       //   T=t0           phase 1 fires — fills window (LIMIT requests pass)
       //   T=t0+BURST_AT  phase 2 fires — entries are still within window → all blocked
       //   T=t0+WINDOW_MS+MARGIN  phase 3 fires — oldest entry has expired → passes
-      const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
-      const { getRedisClient } = await import('../server/lib/redisClient.js');
+      const { DistributedRateLimiter } = await import(
+        "../server/middleware/scalableRateLimiter.js"
+      );
+      const { getRedisClient } = await import("../server/lib/redisClient.js");
       const redis = getRedisClient();
 
-      const LIMIT     = 3;
+      const LIMIT = 3;
       // WINDOW_MS must be ≫ phase-1 duration (≈ LIMIT × PDIM RTT ≈ 900ms)
       // plus phase-2 duration (≈ LIMIT × PDIM RTT ≈ 900ms when sticky cache
       // misses) so the oldest phase-1 entry stays in window throughout phase 2.
@@ -395,7 +464,7 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       // BURST_AT must be ≥ phase-1 duration; setting it lower just causes the
       // `Math.max(0, …)` wait to be 0.  With WINDOW=5s, 1.5s gives sliding
       // window room without affecting correctness.
-      const BURST_AT  = 1_500;
+      const BURST_AT = 1_500;
 
       const limiter = new DistributedRateLimiter(
         { windowMs: WINDOW_MS, maxRequests: LIMIT },
@@ -414,7 +483,7 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       // This is a near-boundary burst: entries from phase 1 are well inside the
       // window at this point (oldest entry score ≈ t0, windowStart ≈ t0-1300ms).
       const toWaitForBurst = Math.max(0, BURST_AT - (Date.now() - t0));
-      await new Promise(resolve => setTimeout(resolve, toWaitForBurst));
+      await new Promise((resolve) => setTimeout(resolve, toWaitForBurst));
 
       // Phase 2: burst — all must be blocked (window still full)
       let nearBoundaryBlocked = 0;
@@ -427,13 +496,15 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       // Phase 3: wait until t0 + WINDOW_MS + 1500ms (all phase-1 entries have
       // aged out, AND the sticky limited-verdict cache has expired —
       // coalesceMaxAgeMs = min(1000, WINDOW_MS/2) = 1000ms, so 1500ms is safe).
-      const toWaitForExpiry = Math.max(0, WINDOW_MS + 1_500 - (Date.now() - t0));
-      await new Promise(resolve => setTimeout(resolve, toWaitForExpiry));
+      const toWaitForExpiry = Math.max(
+        0,
+        WINDOW_MS + 1_500 - (Date.now() - t0),
+      );
+      await new Promise((resolve) => setTimeout(resolve, toWaitForExpiry));
 
       const afterExpiry = await limiter.isRateLimited(key);
       expect(afterExpiry.limited).toBe(false);
     },
     20_000,
   );
-
 });

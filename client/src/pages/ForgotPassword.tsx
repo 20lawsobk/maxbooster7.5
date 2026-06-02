@@ -1,24 +1,32 @@
-import { useState } from 'react';
-import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Logo } from '@/components/ui/Logo';
-import { Mail, ArrowLeft, CheckCircle, AlertCircle, Clock, RefreshCw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/ui/Logo";
+import {
+  Mail,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  RefreshCw,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const { toast } = useToast();
 
   const validateEmail = (value: string): string | undefined => {
-    if (!value.trim()) return 'Email is required';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
+    if (!value.trim()) return "Email is required";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+      return "Please enter a valid email address";
     return undefined;
   };
 
@@ -26,19 +34,19 @@ export default function ForgotPassword() {
     setEmail(value);
     if (emailError) {
       const error = validateEmail(value);
-      setEmailError(error || '');
+      setEmailError(error || "");
     }
   };
 
   const handleEmailBlur = () => {
     const error = validateEmail(email);
-    setEmailError(error || '');
+    setEmailError(error || "");
   };
 
   const startResendCooldown = () => {
     setResendCooldown(60);
     const interval = setInterval(() => {
-      setResendCooldown(prev => {
+      setResendCooldown((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
           return 0;
@@ -50,20 +58,20 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const error = validateEmail(email);
     if (error) {
       setEmailError(error);
       return;
     }
-    
+
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
       });
@@ -72,28 +80,30 @@ export default function ForgotPassword() {
 
       if (response.status === 429) {
         toast({
-          title: 'Too Many Requests',
-          description: 'You have made too many password reset requests. Please wait a few minutes before trying again.',
-          variant: 'destructive',
+          title: "Too Many Requests",
+          description:
+            "You have made too many password reset requests. Please wait a few minutes before trying again.",
+          variant: "destructive",
         });
         setLoading(false);
         return;
       }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send reset link');
+        throw new Error(data.message || "Failed to send reset link");
       }
 
       setSubmitted(true);
       startResendCooldown();
       toast({
-        title: 'Reset Link Sent',
-        description: 'Check your email for password reset instructions.',
+        title: "Reset Link Sent",
+        description: "Check your email for password reset instructions.",
       });
     } catch (error: unknown) {
       toast({
-        title: 'Request Sent',
-        description: 'If an account exists with this email, you will receive a password reset link.',
+        title: "Request Sent",
+        description:
+          "If an account exists with this email, you will receive a password reset link.",
       });
       setSubmitted(true);
       startResendCooldown();
@@ -105,32 +115,32 @@ export default function ForgotPassword() {
   const handleResend = async () => {
     if (resendCooldown > 0) return;
     setLoading(true);
-    
+
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
 
       if (response.status === 429) {
         toast({
-          title: 'Too Many Requests',
-          description: 'Please wait before requesting another reset link.',
-          variant: 'destructive',
+          title: "Too Many Requests",
+          description: "Please wait before requesting another reset link.",
+          variant: "destructive",
         });
       } else {
         startResendCooldown();
         toast({
-          title: 'Email Resent',
-          description: 'A new password reset link has been sent to your email.',
+          title: "Email Resent",
+          description: "A new password reset link has been sent to your email.",
         });
       }
     } catch (error) {
       toast({
-        title: 'Resend Failed',
-        description: 'Could not resend the reset link. Please try again.',
-        variant: 'destructive',
+        title: "Resend Failed",
+        description: "Could not resend the reset link. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -156,7 +166,7 @@ export default function ForgotPassword() {
               <Mail className="h-6 w-6 text-blue-600" />
             </div>
             <CardTitle className="text-2xl dark:text-white">
-              {!submitted ? 'Forgot Password?' : 'Check Your Email'}
+              {!submitted ? "Forgot Password?" : "Check Your Email"}
             </CardTitle>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               {!submitted
@@ -180,12 +190,15 @@ export default function ForgotPassword() {
                     disabled={loading}
                     autoComplete="email"
                     data-testid="input-forgot-password-email"
-                    className={emailError ? 'border-destructive' : ''}
+                    className={emailError ? "border-destructive" : ""}
                     aria-invalid={!!emailError}
-                    aria-describedby={emailError ? 'email-error' : undefined}
+                    aria-describedby={emailError ? "email-error" : undefined}
                   />
                   {emailError && (
-                    <p id="email-error" className="text-sm text-destructive flex items-center gap-1">
+                    <p
+                      id="email-error"
+                      className="text-sm text-destructive flex items-center gap-1"
+                    >
                       <AlertCircle className="h-3 w-3" />
                       {emailError}
                     </p>
@@ -197,11 +210,15 @@ export default function ForgotPassword() {
                   disabled={loading || !!emailError}
                   data-testid="button-send-reset-link"
                 >
-                  {loading ? 'Sending...' : 'Send Reset Link'}
+                  {loading ? "Sending..." : "Send Reset Link"}
                 </Button>
                 <div className="text-center">
                   <Link href="/login">
-                    <Button variant="link" className="text-sm" data-testid="link-back-to-login">
+                    <Button
+                      variant="link"
+                      className="text-sm"
+                      data-testid="link-back-to-login"
+                    >
                       <ArrowLeft className="h-4 w-4 mr-1" />
                       Back to Login
                     </Button>
@@ -212,15 +229,22 @@ export default function ForgotPassword() {
               <div className="text-center space-y-6">
                 <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
                 <div>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">We've sent a password reset link to:</p>
-                  <p className="font-medium text-gray-900 dark:text-white mb-6">{email}</p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    We've sent a password reset link to:
+                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white mb-6">
+                    {email}
+                  </p>
                   <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-left">
                     <div className="flex items-start gap-2">
                       <Clock className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                       <div className="text-sm">
-                        <p className="font-medium text-amber-800 dark:text-amber-300">Link expires in 1 hour</p>
+                        <p className="font-medium text-amber-800 dark:text-amber-300">
+                          Link expires in 1 hour
+                        </p>
                         <p className="text-amber-700 dark:text-amber-400 mt-1">
-                          Can't find it? Check your spam folder or request a new link below.
+                          Can't find it? Check your spam folder or request a new
+                          link below.
                         </p>
                       </div>
                     </div>
@@ -228,7 +252,10 @@ export default function ForgotPassword() {
                 </div>
                 <div className="space-y-2">
                   <Link href="/login">
-                    <Button className="w-full" data-testid="button-back-to-login">
+                    <Button
+                      className="w-full"
+                      data-testid="button-back-to-login"
+                    >
                       Back to Login
                     </Button>
                   </Link>
@@ -257,8 +284,8 @@ export default function ForgotPassword() {
                     className="w-full text-muted-foreground"
                     onClick={() => {
                       setSubmitted(false);
-                      setEmail('');
-                      setEmailError('');
+                      setEmail("");
+                      setEmailError("");
                     }}
                     data-testid="button-try-different-email"
                   >

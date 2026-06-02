@@ -1,13 +1,16 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { X, CheckSquare, Square } from 'lucide-react';
-import { useBatchSelectContext, useOptionalBatchSelectContext } from './BatchSelectProvider';
+import React from "react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { X, CheckSquare, Square } from "lucide-react";
+import {
+  useBatchSelectContext,
+  useOptionalBatchSelectContext,
+} from "./BatchSelectProvider";
 
 export interface SelectionCounterProps {
   className?: string;
-  variant?: 'badge' | 'text' | 'compact' | 'full';
+  variant?: "badge" | "text" | "compact" | "full";
   showClearButton?: boolean;
   showSelectAllButton?: boolean;
   totalLabel?: string;
@@ -17,11 +20,11 @@ export interface SelectionCounterProps {
 
 export function SelectionCounter({
   className,
-  variant = 'badge',
+  variant = "badge",
   showClearButton = true,
   showSelectAllButton = false,
-  totalLabel = 'items',
-  selectedLabel = 'selected',
+  totalLabel = "items",
+  selectedLabel = "selected",
   allIds,
 }: SelectionCounterProps) {
   const context = useOptionalBatchSelectContext();
@@ -30,7 +33,13 @@ export function SelectionCounter({
     return null;
   }
 
-  const { selectedCount, clearSelection, selectAll, allIds: contextAllIds, isAllSelected } = context;
+  const {
+    selectedCount,
+    clearSelection,
+    selectAll,
+    allIds: contextAllIds,
+    isAllSelected,
+  } = context;
   const targetIds = allIds || contextAllIds;
   const totalCount = targetIds.length;
   const allSelected = isAllSelected(targetIds);
@@ -48,9 +57,9 @@ export function SelectionCounter({
   };
 
   switch (variant) {
-    case 'badge':
+    case "badge":
       return (
-        <div className={cn('flex items-center gap-2', className)}>
+        <div className={cn("flex items-center gap-2", className)}>
           <Badge variant="secondary" className="font-medium">
             {selectedCount} {selectedLabel}
           </Badge>
@@ -68,14 +77,16 @@ export function SelectionCounter({
         </div>
       );
 
-    case 'text':
+    case "text":
       return (
-        <div className={cn('flex items-center gap-2 text-sm', className)}>
+        <div className={cn("flex items-center gap-2 text-sm", className)}>
           <span className="text-muted-foreground">
             <span className="font-medium text-foreground">{selectedCount}</span>
-            {' of '}
-            <span className="font-medium text-foreground">{totalCount}</span>
-            {' '}{totalLabel} {selectedLabel}
+            {" of "}
+            <span className="font-medium text-foreground">
+              {totalCount}
+            </span>{" "}
+            {totalLabel} {selectedLabel}
           </span>
           {showClearButton && (
             <Button
@@ -90,38 +101,40 @@ export function SelectionCounter({
         </div>
       );
 
-    case 'compact':
+    case "compact":
       return (
-        <span className={cn('text-sm text-muted-foreground', className)}>
+        <span className={cn("text-sm text-muted-foreground", className)}>
           {selectedCount}/{totalCount}
         </span>
       );
 
-    case 'full':
+    case "full":
       return (
-        <div className={cn('flex items-center gap-3', className)}>
+        <div className={cn("flex items-center gap-3", className)}>
           <div className="flex items-center gap-2">
             <CheckSquare className="h-4 w-4 text-primary" />
             <span className="text-sm">
               <span className="font-semibold">{selectedCount}</span>
-              {' of '}
-              <span className="font-semibold">{totalCount}</span>
-              {' '}{totalLabel} {selectedLabel}
+              {" of "}
+              <span className="font-semibold">{totalCount}</span> {totalLabel}{" "}
+              {selectedLabel}
             </span>
           </div>
-          
+
           <div className="flex items-center gap-1">
-            {showSelectAllButton && !allSelected && totalCount > selectedCount && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleSelectAll}
-              >
-                <Square className="h-3 w-3 mr-1" />
-                Select all
-              </Button>
-            )}
+            {showSelectAllButton &&
+              !allSelected &&
+              totalCount > selectedCount && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={handleSelectAll}
+                >
+                  <Square className="h-3 w-3 mr-1" />
+                  Select all
+                </Button>
+              )}
             {showClearButton && (
               <Button
                 variant="ghost"
@@ -148,18 +161,18 @@ export function StandaloneSelectionCounter({
   onClear,
   onSelectAll,
   className,
-  variant = 'badge',
+  variant = "badge",
   showClearButton = true,
   showSelectAllButton = false,
-  totalLabel = 'items',
-  selectedLabel = 'selected',
+  totalLabel = "items",
+  selectedLabel = "selected",
 }: {
   selectedCount: number;
   totalCount: number;
   onClear?: () => void;
   onSelectAll?: () => void;
   className?: string;
-  variant?: 'badge' | 'text' | 'compact' | 'full';
+  variant?: "badge" | "text" | "compact" | "full";
   showClearButton?: boolean;
   showSelectAllButton?: boolean;
   totalLabel?: string;
@@ -172,9 +185,9 @@ export function StandaloneSelectionCounter({
   const allSelected = selectedCount >= totalCount;
 
   switch (variant) {
-    case 'badge':
+    case "badge":
       return (
-        <div className={cn('flex items-center gap-2', className)}>
+        <div className={cn("flex items-center gap-2", className)}>
           <Badge variant="secondary" className="font-medium">
             {selectedCount} {selectedLabel}
           </Badge>
@@ -192,14 +205,16 @@ export function StandaloneSelectionCounter({
         </div>
       );
 
-    case 'text':
+    case "text":
       return (
-        <div className={cn('flex items-center gap-2 text-sm', className)}>
+        <div className={cn("flex items-center gap-2 text-sm", className)}>
           <span className="text-muted-foreground">
             <span className="font-medium text-foreground">{selectedCount}</span>
-            {' of '}
-            <span className="font-medium text-foreground">{totalCount}</span>
-            {' '}{totalLabel} {selectedLabel}
+            {" of "}
+            <span className="font-medium text-foreground">
+              {totalCount}
+            </span>{" "}
+            {totalLabel} {selectedLabel}
           </span>
           {showClearButton && onClear && (
             <Button
@@ -214,26 +229,26 @@ export function StandaloneSelectionCounter({
         </div>
       );
 
-    case 'compact':
+    case "compact":
       return (
-        <span className={cn('text-sm text-muted-foreground', className)}>
+        <span className={cn("text-sm text-muted-foreground", className)}>
           {selectedCount}/{totalCount}
         </span>
       );
 
-    case 'full':
+    case "full":
       return (
-        <div className={cn('flex items-center gap-3', className)}>
+        <div className={cn("flex items-center gap-3", className)}>
           <div className="flex items-center gap-2">
             <CheckSquare className="h-4 w-4 text-primary" />
             <span className="text-sm">
               <span className="font-semibold">{selectedCount}</span>
-              {' of '}
-              <span className="font-semibold">{totalCount}</span>
-              {' '}{totalLabel} {selectedLabel}
+              {" of "}
+              <span className="font-semibold">{totalCount}</span> {totalLabel}{" "}
+              {selectedLabel}
             </span>
           </div>
-          
+
           <div className="flex items-center gap-1">
             {showSelectAllButton && !allSelected && onSelectAll && (
               <Button

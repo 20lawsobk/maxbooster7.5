@@ -1,19 +1,33 @@
-import { logger } from '@/lib/logger';
-import { useState } from 'react';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Music, Share2, TrendingUp, Sparkles, ArrowRight, X } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { logger } from "@/lib/logger";
+import { useState } from "react";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import {
+  CheckCircle2,
+  Music,
+  Share2,
+  TrendingUp,
+  Sparkles,
+  ArrowRight,
+  X,
+} from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
 interface QuickStartWizardProps {
   onComplete: () => void;
   onSkip: () => void;
 }
 
-type WizardStep = 'welcome' | 'choose-path' | 'complete';
+type WizardStep = "welcome" | "choose-path" | "complete";
 
 interface QuickStartPath {
   id: string;
@@ -27,63 +41,69 @@ interface QuickStartPath {
 
 const QUICK_START_PATHS: QuickStartPath[] = [
   {
-    id: 'distribute',
-    title: 'Distribute Your First Track',
-    description: 'Get your music on Spotify, Apple Music, and 150+ platforms in under 5 minutes',
+    id: "distribute",
+    title: "Distribute Your First Track",
+    description:
+      "Get your music on Spotify, Apple Music, and 150+ platforms in under 5 minutes",
     icon: Music,
-    route: '/distribution',
+    route: "/distribution",
     benefits: [
-      'Reach millions of listeners worldwide',
-      'Keep 100% of your royalties',
-      'Professional metadata & artwork',
-      'Automated delivery to all DSPs',
+      "Reach millions of listeners worldwide",
+      "Keep 100% of your royalties",
+      "Professional metadata & artwork",
+      "Automated delivery to all DSPs",
     ],
-    estimatedTime: '5 minutes',
+    estimatedTime: "5 minutes",
   },
   {
-    id: 'social',
-    title: 'Schedule Your First Social Post',
-    description: 'Let AI optimize and schedule your content across all platforms',
+    id: "social",
+    title: "Schedule Your First Social Post",
+    description:
+      "Let AI optimize and schedule your content across all platforms",
     icon: Share2,
-    route: '/social-media',
+    route: "/social-media",
     benefits: [
-      'AI-powered optimal posting times',
-      'Multi-platform scheduling',
-      'Engagement predictions',
-      'Automatic content optimization',
+      "AI-powered optimal posting times",
+      "Multi-platform scheduling",
+      "Engagement predictions",
+      "Automatic content optimization",
     ],
-    estimatedTime: '3 minutes',
+    estimatedTime: "3 minutes",
   },
   {
-    id: 'advertising',
-    title: 'Launch Zero-Cost Ad Campaign',
-    description: 'Create viral organic content that outperforms paid ads - completely free',
+    id: "advertising",
+    title: "Launch Zero-Cost Ad Campaign",
+    description:
+      "Create viral organic content that outperforms paid ads - completely free",
     icon: TrendingUp,
-    route: '/advertising',
+    route: "/advertising",
     benefits: [
-      'Save $60,000+/year vs paid ads',
-      '50-100% better results than paid',
-      'AI-powered viral predictions',
-      'Organic reach amplification',
+      "Save $60,000+/year vs paid ads",
+      "50-100% better results than paid",
+      "AI-powered viral predictions",
+      "Organic reach amplification",
     ],
-    estimatedTime: '4 minutes',
+    estimatedTime: "4 minutes",
   },
 ];
 
-export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) {
-  const [step, setStep] = useState<WizardStep>('welcome');
+export function QuickStartWizard({
+  onComplete,
+  onSkip,
+}: QuickStartWizardProps) {
+  const [step, setStep] = useState<WizardStep>("welcome");
   const [selectedPath, setSelectedPath] = useState<QuickStartPath | null>(null);
   const [, setLocation] = useLocation();
 
   const completeOnboardingMutation = useMutation({
     mutationFn: async () => {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch('/api/users/complete-onboarding', {
-        method: 'POST',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      const response = await fetch("/api/users/complete-onboarding", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       });
-      if (!response.ok) throw new Error('Failed to complete onboarding');
+      if (!response.ok) throw new Error("Failed to complete onboarding");
       return response.json();
     },
     onSuccess: () => {
@@ -96,26 +116,26 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
 
   const handleSkip = async () => {
     // Always close the onboarding and set localStorage, even if API fails
-    localStorage.setItem('onboardingSkipped', 'true');
+    localStorage.setItem("onboardingSkipped", "true");
     try {
       await completeOnboardingMutation.mutateAsync();
     } catch (error) {
       // Silently fail - user should still be able to skip
-      logger.warn('Failed to mark onboarding complete, but proceeding anyway');
+      logger.warn("Failed to mark onboarding complete, but proceeding anyway");
     }
     onSkip();
   };
 
   const handlePathSelect = (path: QuickStartPath) => {
     setSelectedPath(path);
-    setStep('complete');
+    setStep("complete");
   };
 
   const handleStartPath = () => {
     completeOnboardingMutation.mutate();
   };
 
-  const progress = step === 'welcome' ? 33 : step === 'choose-path' ? 66 : 100;
+  const progress = step === "welcome" ? 33 : step === "choose-path" ? 66 : 100;
 
   return (
     <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
@@ -131,21 +151,24 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
           </Button>
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="h-6 w-6 text-primary" />
-            <CardTitle className="text-2xl">Welcome to Max Booster! 🎉</CardTitle>
+            <CardTitle className="text-2xl">
+              Welcome to Max Booster! 🎉
+            </CardTitle>
           </div>
           <Progress value={progress} className="h-2" />
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {step === 'welcome' && (
+          {step === "welcome" && (
             <div className="space-y-6 py-4">
               <div className="text-center space-y-4">
                 <h3 className="text-xl font-semibold">
                   Let's Get Your First Win in 5 Minutes or Less
                 </h3>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Max Booster gives you 8 powerful tools for your music career. Instead of overwhelming
-                  you with everything at once, let's start with one quick win to show you the value.
+                  Max Booster gives you 8 powerful tools for your music career.
+                  Instead of overwhelming you with everything at once, let's
+                  start with one quick win to show you the value.
                 </p>
               </div>
 
@@ -180,19 +203,22 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
               </div>
 
               <div className="flex justify-center pt-4">
-                <Button size="lg" onClick={() => setStep('choose-path')}>
+                <Button size="lg" onClick={() => setStep("choose-path")}>
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>
           )}
 
-          {step === 'choose-path' && (
+          {step === "choose-path" && (
             <div className="space-y-6 py-4">
               <div className="text-center space-y-2">
-                <h3 className="text-xl font-semibold">Choose Your First Quick Win</h3>
+                <h3 className="text-xl font-semibold">
+                  Choose Your First Quick Win
+                </h3>
                 <p className="text-muted-foreground">
-                  Pick the path that's most valuable to you right now. You can explore the other tools anytime.
+                  Pick the path that's most valuable to you right now. You can
+                  explore the other tools anytime.
                 </p>
               </div>
 
@@ -212,15 +238,22 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-lg">{path.title}</h4>
+                              <h4 className="font-semibold text-lg">
+                                {path.title}
+                              </h4>
                               <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
                                 {path.estimatedTime}
                               </span>
                             </div>
-                            <p className="text-muted-foreground mb-4">{path.description}</p>
+                            <p className="text-muted-foreground mb-4">
+                              {path.description}
+                            </p>
                             <div className="grid grid-cols-2 gap-2">
                               {path.benefits.map((benefit, idx) => (
-                                <div key={idx} className="flex items-start gap-2">
+                                <div
+                                  key={idx}
+                                  className="flex items-start gap-2"
+                                >
                                   <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                                   <span className="text-sm">{benefit}</span>
                                 </div>
@@ -237,7 +270,7 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
             </div>
           )}
 
-          {step === 'complete' && selectedPath && (
+          {step === "complete" && selectedPath && (
             <div className="space-y-6 py-8 text-center">
               <div className="flex justify-center">
                 <div className="p-4 rounded-full bg-primary/10">
@@ -248,8 +281,10 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
               <div className="space-y-2">
                 <h3 className="text-2xl font-semibold">Perfect Choice!</h3>
                 <p className="text-muted-foreground max-w-xl mx-auto">
-                  You're about to {selectedPath.title.toLowerCase()}. This will take approximately{' '}
-                  <strong>{selectedPath.estimatedTime}</strong> and give you immediate results.
+                  You're about to {selectedPath.title.toLowerCase()}. This will
+                  take approximately{" "}
+                  <strong>{selectedPath.estimatedTime}</strong> and give you
+                  immediate results.
                 </p>
               </div>
 
@@ -258,7 +293,9 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
                 <div className="space-y-2 text-left">
                   <div className="flex items-start gap-2">
                     <span className="font-semibold text-primary">1.</span>
-                    <span className="text-sm">We'll guide you through the process step-by-step</span>
+                    <span className="text-sm">
+                      We'll guide you through the process step-by-step
+                    </span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="font-semibold text-primary">2.</span>
@@ -282,7 +319,10 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
               </div>
 
               <div className="flex justify-center gap-4 pt-4">
-                <Button variant="outline" onClick={() => setStep('choose-path')}>
+                <Button
+                  variant="outline"
+                  onClick={() => setStep("choose-path")}
+                >
                   Choose Different Path
                 </Button>
                 <Button
@@ -291,7 +331,7 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
                   disabled={completeOnboardingMutation.isPending}
                 >
                   {completeOnboardingMutation.isPending ? (
-                    'Starting...'
+                    "Starting..."
                   ) : (
                     <>
                       Let's Go! <ArrowRight className="ml-2 h-4 w-4" />
@@ -303,7 +343,7 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
           )}
         </CardContent>
 
-        {step !== 'complete' && (
+        {step !== "complete" && (
           <div className="px-6 pb-6">
             <Button variant="ghost" className="w-full" onClick={handleSkip}>
               Skip and explore on my own

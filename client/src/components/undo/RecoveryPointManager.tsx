@@ -1,5 +1,5 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect, useCallback } from 'react';
+import { logger } from "@/lib/logger";
+import { useState, useEffect, useCallback } from "react";
 import {
   Flag,
   GitBranch,
@@ -11,13 +11,13 @@ import {
   CheckCircle2,
   Settings,
   RefreshCw,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +36,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,10 +44,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
 
 export interface RecoveryPoint {
   id: string;
@@ -65,7 +65,7 @@ function formatTimestamp(timestamp: number): string {
   const diff = now.getTime() - timestamp;
 
   if (diff < 60000) {
-    return 'Just now';
+    return "Just now";
   } else if (diff < 3600000) {
     const minutes = Math.floor(diff / 60000);
     return `${minutes}m ago`;
@@ -73,9 +73,18 @@ function formatTimestamp(timestamp: number): string {
     const hours = Math.floor(diff / 3600000);
     return `${hours}h ago`;
   } else if (diff < 604800000) {
-    return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString([], {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 interface RecoveryPointCardProps {
@@ -85,23 +94,34 @@ interface RecoveryPointCardProps {
   disabled?: boolean;
 }
 
-function RecoveryPointCard({ point, onRestore, onDelete, disabled }: RecoveryPointCardProps) {
+function RecoveryPointCard({
+  point,
+  onRestore,
+  onDelete,
+  disabled,
+}: RecoveryPointCardProps) {
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-3 rounded-lg border transition-colors',
-        'hover:bg-muted/50',
-        disabled && 'opacity-50 pointer-events-none'
+        "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+        "hover:bg-muted/50",
+        disabled && "opacity-50 pointer-events-none",
       )}
     >
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            'w-8 h-8 rounded-full flex items-center justify-center',
-            point.isAutomatic ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'
+            "w-8 h-8 rounded-full flex items-center justify-center",
+            point.isAutomatic
+              ? "bg-blue-500/10 text-blue-500"
+              : "bg-amber-500/10 text-amber-500",
           )}
         >
-          {point.isAutomatic ? <RefreshCw className="w-4 h-4" /> : <Flag className="w-4 h-4" />}
+          {point.isAutomatic ? (
+            <RefreshCw className="w-4 h-4" />
+          ) : (
+            <Flag className="w-4 h-4" />
+          )}
         </div>
       </div>
       <div className="flex-1 min-w-0">
@@ -167,19 +187,21 @@ export function RecoveryPointManager({
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [selectedPoint, setSelectedPoint] = useState<RecoveryPoint | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<RecoveryPoint | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [recoveryPoints, setRecoveryPoints] = useState<RecoveryPoint[]>([]);
   const [autoRecovery, setAutoRecovery] = useState(autoRecoveryEnabled);
 
-  const [newPointName, setNewPointName] = useState('');
-  const [newPointDescription, setNewPointDescription] = useState('');
+  const [newPointName, setNewPointName] = useState("");
+  const [newPointDescription, setNewPointDescription] = useState("");
 
   const loadRecoveryPoints = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiRequest('GET', '/api/undo/restore-points');
+      const response = await apiRequest("GET", "/api/undo/restore-points");
       const data = await response.json();
       if (data.success && data.restorePoints) {
         setRecoveryPoints(
@@ -189,12 +211,12 @@ export function RecoveryPointManager({
             description: rp.description,
             createdAt: new Date(rp.createdAt).getTime(),
             actionId: rp.actionId,
-            isAutomatic: rp.name?.toLowerCase().includes('auto'),
-          }))
+            isAutomatic: rp.name?.toLowerCase().includes("auto"),
+          })),
         );
       }
     } catch (error) {
-      logger.error('Failed to load recovery points:', error);
+      logger.error("Failed to load recovery points:", error);
     } finally {
       setIsLoading(false);
     }
@@ -211,10 +233,14 @@ export function RecoveryPointManager({
 
     setIsLoading(true);
     try {
-      const response = await apiRequest('POST', '/api/undo/create-restore-point', {
-        name: newPointName.trim(),
-        description: newPointDescription.trim() || undefined,
-      });
+      const response = await apiRequest(
+        "POST",
+        "/api/undo/create-restore-point",
+        {
+          name: newPointName.trim(),
+          description: newPointDescription.trim() || undefined,
+        },
+      );
       const data = await response.json();
 
       if (data.success) {
@@ -223,15 +249,15 @@ export function RecoveryPointManager({
           name: newPointName.trim(),
           description: newPointDescription.trim() || undefined,
           createdAt: Date.now(),
-          actionId: '',
+          actionId: "",
         };
         setRecoveryPoints((prev) => [newPoint, ...prev].slice(0, maxPoints));
-        setNewPointName('');
-        setNewPointDescription('');
+        setNewPointName("");
+        setNewPointDescription("");
         setIsCreateOpen(false);
       }
     } catch (error) {
-      logger.error('Failed to create recovery point:', error);
+      logger.error("Failed to create recovery point:", error);
     } finally {
       setIsLoading(false);
     }
@@ -242,15 +268,18 @@ export function RecoveryPointManager({
 
     setIsRestoring(true);
     try {
-      const response = await apiRequest('POST', `/api/undo/restore/${selectedPoint.id}`);
+      const response = await apiRequest(
+        "POST",
+        `/api/undo/restore/${selectedPoint.id}`,
+      );
       const data = await response.json();
-      
+
       if (data.success) {
         setConfirmRestoreOpen(false);
         setSelectedPoint(null);
       }
     } catch (error) {
-      logger.error('Failed to restore to point:', error);
+      logger.error("Failed to restore to point:", error);
     } finally {
       setIsRestoring(false);
     }
@@ -261,12 +290,17 @@ export function RecoveryPointManager({
 
     setIsLoading(true);
     try {
-      await apiRequest('DELETE', `/api/undo/restore-points/${selectedPoint.id}`);
-      setRecoveryPoints((prev) => prev.filter((p) => p.id !== selectedPoint.id));
+      await apiRequest(
+        "DELETE",
+        `/api/undo/restore-points/${selectedPoint.id}`,
+      );
+      setRecoveryPoints((prev) =>
+        prev.filter((p) => p.id !== selectedPoint.id),
+      );
       setConfirmDeleteOpen(false);
       setSelectedPoint(null);
     } catch (error) {
-      logger.error('Failed to delete recovery point:', error);
+      logger.error("Failed to delete recovery point:", error);
     } finally {
       setIsLoading(false);
     }
@@ -292,7 +326,11 @@ export function RecoveryPointManager({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           {trigger || (
-            <Button variant="outline" size="sm" className={cn('gap-2', className)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn("gap-2", className)}
+            >
               <GitBranch className="w-4 h-4" />
               Recovery Points
               {recoveryPoints.length > 0 && (
@@ -333,14 +371,16 @@ export function RecoveryPointManager({
               </DropdownMenu>
             </div>
             <DialogDescription>
-              Create recovery points to save your progress. Restore to any point at any time.
+              Create recovery points to save your progress. Restore to any point
+              at any time.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm text-muted-foreground">
-                {recoveryPoints.length} recovery point{recoveryPoints.length !== 1 ? 's' : ''}
+                {recoveryPoints.length} recovery point
+                {recoveryPoints.length !== 1 ? "s" : ""}
               </span>
               <Button
                 variant="outline"
@@ -422,7 +462,9 @@ export function RecoveryPointManager({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="recovery-point-description">Description (optional)</Label>
+              <Label htmlFor="recovery-point-description">
+                Description (optional)
+              </Label>
               <Textarea
                 id="recovery-point-description"
                 placeholder="Add notes about this recovery point..."
@@ -460,7 +502,10 @@ export function RecoveryPointManager({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
+      <AlertDialog
+        open={confirmRestoreOpen}
+        onOpenChange={setConfirmRestoreOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -471,10 +516,13 @@ export function RecoveryPointManager({
               {selectedPoint && (
                 <>
                   <p className="mb-3">
-                    Are you sure you want to restore to this point? Actions after this point will be undone.
+                    Are you sure you want to restore to this point? Actions
+                    after this point will be undone.
                   </p>
                   <div className="p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">{selectedPoint.name}</div>
+                    <div className="font-medium text-foreground">
+                      {selectedPoint.name}
+                    </div>
                     <div className="text-xs mt-1 text-muted-foreground">
                       Created {formatTimestamp(selectedPoint.createdAt)}
                     </div>
@@ -515,10 +563,13 @@ export function RecoveryPointManager({
               {selectedPoint && (
                 <>
                   <p className="mb-3">
-                    Are you sure you want to delete this recovery point? This action cannot be undone.
+                    Are you sure you want to delete this recovery point? This
+                    action cannot be undone.
                   </p>
                   <div className="p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">{selectedPoint.name}</div>
+                    <div className="font-medium text-foreground">
+                      {selectedPoint.name}
+                    </div>
                     <div className="text-xs mt-1 text-muted-foreground">
                       Created {formatTimestamp(selectedPoint.createdAt)}
                     </div>

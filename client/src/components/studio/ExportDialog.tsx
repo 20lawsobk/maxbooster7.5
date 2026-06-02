@@ -1,26 +1,42 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Download, Folder, Clock, Zap, Monitor, Settings2, FileAudio, Music2, Volume2 } from 'lucide-react';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Download,
+  Folder,
+  Clock,
+  Zap,
+  Monitor,
+  Settings2,
+  FileAudio,
+  Music2,
+  Volume2,
+} from "lucide-react";
 
 export interface ExtendedExportOptions {
   formats: string[];
   fileName: string;
-  exportRange: 'song' | 'loop' | 'selection';
-  processingMode: 'automatic' | 'offline' | 'realtime';
-  speakerFormat: 'original' | 'mono' | 'stereo' | 'split-mono';
+  exportRange: "song" | "loop" | "selection";
+  processingMode: "automatic" | "offline" | "realtime";
+  speakerFormat: "original" | "mono" | "stereo" | "split-mono";
   bypassMasterEffects: boolean;
   writeTempoToFile: boolean;
   importToTrack: boolean;
@@ -76,18 +92,26 @@ export function ExportDialog({
   onExport,
   onExtendedExport,
   isExporting,
-  projectName = 'Untitled',
+  projectName = "Untitled",
   projectDuration = 0,
 }: ExportDialogProps) {
   const [fileName, setFileName] = useState(projectName);
-  const [exportRange, setExportRange] = useState<'song' | 'loop' | 'selection'>('song');
-  const [processingMode, setProcessingMode] = useState<'automatic' | 'offline' | 'realtime'>('automatic');
-  const [speakerFormat, setSpeakerFormat] = useState<'original' | 'mono' | 'stereo' | 'split-mono'>('stereo');
+  const [exportRange, setExportRange] = useState<"song" | "loop" | "selection">(
+    "song",
+  );
+  const [processingMode, setProcessingMode] = useState<
+    "automatic" | "offline" | "realtime"
+  >("automatic");
+  const [speakerFormat, setSpeakerFormat] = useState<
+    "original" | "mono" | "stereo" | "split-mono"
+  >("stereo");
   const [bypassMasterEffects, setBypassMasterEffects] = useState(false);
   const [writeTempoToFile, setWriteTempoToFile] = useState(true);
   const [importToTrack, setImportToTrack] = useState(false);
   const [closeAfterExport, setCloseAfterExport] = useState(true);
-  const [selectedFormats, setSelectedFormats] = useState<string[]>([exportFormat]);
+  const [selectedFormats, setSelectedFormats] = useState<string[]>([
+    exportFormat,
+  ]);
 
   const handleExtendedExport = () => {
     if (onExtendedExport) {
@@ -115,13 +139,13 @@ export function ExportDialog({
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const toggleFormat = (format: string) => {
     if (selectedFormats.includes(format)) {
       if (selectedFormats.length > 1) {
-        setSelectedFormats(selectedFormats.filter(f => f !== format));
+        setSelectedFormats(selectedFormats.filter((f) => f !== format));
       }
     } else {
       setSelectedFormats([...selectedFormats, format]);
@@ -138,7 +162,9 @@ export function ExportDialog({
               <Download className="h-5 w-5 text-blue-400" />
             </div>
             Export Mixdown
-            <Badge variant="outline" className="ml-2 text-xs border-gray-600">Studio One Style</Badge>
+            <Badge variant="outline" className="ml-2 text-xs border-gray-600">
+              Studio One Style
+            </Badge>
           </DialogTitle>
           <DialogDescription className="text-gray-400">
             Export your project with professional-grade settings
@@ -162,7 +188,12 @@ export function ExportDialog({
               <Label className="text-xs text-gray-400 flex items-center gap-1">
                 <Clock className="h-3 w-3" /> Export Range
               </Label>
-              <Select value={exportRange} onValueChange={(v: 'song' | 'loop' | 'selection') => setExportRange(v)}>
+              <Select
+                value={exportRange}
+                onValueChange={(v: "song" | "loop" | "selection") =>
+                  setExportRange(v)
+                }
+              >
                 <SelectTrigger className="bg-[#1a1a1a] border-gray-600 h-9">
                   <SelectValue />
                 </SelectTrigger>
@@ -188,21 +219,23 @@ export function ExportDialog({
                 Format Selection
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {['wav', 'mp3', 'flac', 'ogg', 'aiff', 'aac'].map((format) => (
+                {["wav", "mp3", "flac", "ogg", "aiff", "aac"].map((format) => (
                   <button
                     key={format}
                     onClick={() => toggleFormat(format)}
                     className={`p-2 rounded-lg border text-xs font-medium transition-all ${
                       selectedFormats.includes(format)
-                        ? 'bg-blue-600/30 border-blue-500 text-blue-300'
-                        : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'
+                        ? "bg-blue-600/30 border-blue-500 text-blue-300"
+                        : "bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500"
                     }`}
                   >
                     {format.toUpperCase()}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-gray-500">Select multiple formats for batch export</p>
+              <p className="text-xs text-gray-500">
+                Select multiple formats for batch export
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -231,9 +264,13 @@ export function ExportDialog({
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-gray-400">
-                    {selectedFormats.includes('wav') || selectedFormats.includes('flac') ? 'Bit Depth' : 'Bitrate'}
+                    {selectedFormats.includes("wav") ||
+                    selectedFormats.includes("flac")
+                      ? "Bit Depth"
+                      : "Bitrate"}
                   </Label>
-                  {selectedFormats.includes('wav') || selectedFormats.includes('flac') ? (
+                  {selectedFormats.includes("wav") ||
+                  selectedFormats.includes("flac") ? (
                     <Select
                       value={exportBitDepth.toString()}
                       onValueChange={(v) => setExportBitDepth(parseInt(v))}
@@ -284,15 +321,28 @@ export function ExportDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-[#252525] border-gray-700">
-                      <SelectItem value="mixdown">Mixdown (Stereo Master)</SelectItem>
-                      <SelectItem value="stems">Stems (Individual Tracks)</SelectItem>
-                      <SelectItem value="tracks">Selected Tracks Only</SelectItem>
+                      <SelectItem value="mixdown">
+                        Mixdown (Stereo Master)
+                      </SelectItem>
+                      <SelectItem value="stems">
+                        Stems (Individual Tracks)
+                      </SelectItem>
+                      <SelectItem value="tracks">
+                        Selected Tracks Only
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-400">Speaker Format</Label>
-                  <Select value={speakerFormat} onValueChange={(v: 'original' | 'mono' | 'stereo' | 'split-mono') => setSpeakerFormat(v)}>
+                  <Label className="text-xs text-gray-400">
+                    Speaker Format
+                  </Label>
+                  <Select
+                    value={speakerFormat}
+                    onValueChange={(
+                      v: "original" | "mono" | "stereo" | "split-mono",
+                    ) => setSpeakerFormat(v)}
+                  >
                     <SelectTrigger className="bg-[#1a1a1a] border-gray-600 h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
@@ -314,21 +364,31 @@ export function ExportDialog({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-gray-400">Processing Mode</Label>
-                <Select value={processingMode} onValueChange={(v: 'automatic' | 'offline' | 'realtime') => setProcessingMode(v)}>
+                <Select
+                  value={processingMode}
+                  onValueChange={(v: "automatic" | "offline" | "realtime") =>
+                    setProcessingMode(v)
+                  }
+                >
                   <SelectTrigger className="bg-[#1a1a1a] border-gray-600 h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[#252525] border-gray-700">
                     <SelectItem value="automatic">Automatic</SelectItem>
                     <SelectItem value="offline">Offline (Faster)</SelectItem>
-                    <SelectItem value="realtime">Realtime (For External Gear)</SelectItem>
+                    <SelectItem value="realtime">
+                      Realtime (For External Gear)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <p className="text-xs text-gray-500">
-                {processingMode === 'automatic' && 'Automatically selects best mode based on signal path'}
-                {processingMode === 'offline' && 'Faster than realtime, no external gear support'}
-                {processingMode === 'realtime' && 'Required for external instruments/hardware'}
+                {processingMode === "automatic" &&
+                  "Automatically selects best mode based on signal path"}
+                {processingMode === "offline" &&
+                  "Faster than realtime, no external gear support"}
+                {processingMode === "realtime" &&
+                  "Required for external instruments/hardware"}
               </p>
             </div>
           </div>
@@ -414,7 +474,10 @@ export function ExportDialog({
               ) : (
                 <>
                   <Download className="h-4 w-4 mr-2" />
-                  Export {selectedFormats.length > 1 ? `${selectedFormats.length} Formats` : selectedFormats[0]?.toUpperCase()}
+                  Export{" "}
+                  {selectedFormats.length > 1
+                    ? `${selectedFormats.length} Formats`
+                    : selectedFormats[0]?.toUpperCase()}
                 </>
               )}
             </Button>

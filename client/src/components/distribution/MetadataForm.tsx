@@ -1,89 +1,95 @@
-import { useState } from 'react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useState } from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Music, Info } from 'lucide-react';
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Music, Info } from "lucide-react";
 
 const GENRES = [
-  'Pop',
-  'Rock',
-  'Hip-Hop',
-  'R&B',
-  'Country',
-  'Electronic',
-  'Jazz',
-  'Classical',
-  'Blues',
-  'Reggae',
-  'Folk',
-  'Alternative',
-  'Indie',
-  'Punk',
-  'Metal',
-  'Funk',
-  'Soul',
-  'Gospel',
-  'World',
-  'Latin',
-  'Ambient',
-  'Experimental',
-  'Lo-Fi',
+  "Pop",
+  "Rock",
+  "Hip-Hop",
+  "R&B",
+  "Country",
+  "Electronic",
+  "Jazz",
+  "Classical",
+  "Blues",
+  "Reggae",
+  "Folk",
+  "Alternative",
+  "Indie",
+  "Punk",
+  "Metal",
+  "Funk",
+  "Soul",
+  "Gospel",
+  "World",
+  "Latin",
+  "Ambient",
+  "Experimental",
+  "Lo-Fi",
 ];
 
 const LANGUAGES = [
-  'English',
-  'Spanish',
-  'French',
-  'German',
-  'Italian',
-  'Portuguese',
-  'Japanese',
-  'Korean',
-  'Mandarin',
-  'Arabic',
-  'Russian',
-  'Hindi',
-  'Other',
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Italian",
+  "Portuguese",
+  "Japanese",
+  "Korean",
+  "Mandarin",
+  "Arabic",
+  "Russian",
+  "Hindi",
+  "Other",
 ];
 
 const RELEASE_TYPES = [
-  { value: 'single', label: 'Single' },
-  { value: 'EP', label: 'EP (4-6 tracks)' },
-  { value: 'album', label: 'Album (7+ tracks)' },
+  { value: "single", label: "Single" },
+  { value: "EP", label: "EP (4-6 tracks)" },
+  { value: "album", label: "Album (7+ tracks)" },
 ];
 
 const MOOD_TAGS = [
-  'Energetic',
-  'Relaxed',
-  'Happy',
-  'Sad',
-  'Angry',
-  'Romantic',
-  'Dark',
-  'Uplifting',
-  'Melancholic',
-  'Aggressive',
-  'Peaceful',
-  'Mysterious',
-  'Epic',
-  'Dreamy',
-  'Party',
+  "Energetic",
+  "Relaxed",
+  "Happy",
+  "Sad",
+  "Angry",
+  "Romantic",
+  "Dark",
+  "Uplifting",
+  "Melancholic",
+  "Aggressive",
+  "Peaceful",
+  "Mysterious",
+  "Epic",
+  "Dreamy",
+  "Party",
 ];
 
 interface MetadataFormProps {
   data: {
     title: string;
     artistName: string;
-    releaseType: 'single' | 'EP' | 'album';
+    releaseType: "single" | "EP" | "album";
     primaryGenre: string;
     secondaryGenre: string;
     language: string;
@@ -94,12 +100,18 @@ interface MetadataFormProps {
     isExplicit: boolean;
     moodTags: string[];
   };
-  onChange: (updates: Partial<MetadataFormProps['data']>) => void;
+  onChange: (updates: Partial<MetadataFormProps["data"]>) => void;
   errors?: Record<string, string>;
 }
 
-export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps) {
-  const [selectedMoods, setSelectedMoods] = useState<string[]>(data.moodTags || []);
+export function MetadataForm({
+  data,
+  onChange,
+  errors = {},
+}: MetadataFormProps) {
+  const [selectedMoods, setSelectedMoods] = useState<string[]>(
+    data.moodTags || [],
+  );
 
   const toggleMood = (mood: string) => {
     const newMoods = selectedMoods.includes(mood)
@@ -131,9 +143,11 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
             placeholder="Enter release title"
             value={data.title}
             onChange={(e) => onChange({ title: e.target.value })}
-            className={errors.title ? 'border-destructive' : ''}
+            className={errors.title ? "border-destructive" : ""}
           />
-          {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+          {errors.title && (
+            <p className="text-sm text-destructive">{errors.title}</p>
+          )}
         </div>
 
         {/* Artist Name */}
@@ -146,9 +160,11 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
             placeholder="Enter primary artist name"
             value={data.artistName}
             onChange={(e) => onChange({ artistName: e.target.value })}
-            className={errors.artistName ? 'border-destructive' : ''}
+            className={errors.artistName ? "border-destructive" : ""}
           />
-          {errors.artistName && <p className="text-sm text-destructive">{errors.artistName}</p>}
+          {errors.artistName && (
+            <p className="text-sm text-destructive">{errors.artistName}</p>
+          )}
         </div>
 
         {/* Release Type */}
@@ -158,7 +174,9 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
           </Label>
           <Select
             value={data.releaseType}
-            onValueChange={(value: 'single' | 'EP' | 'album') => onChange({ releaseType: value })}
+            onValueChange={(value: "single" | "EP" | "album") =>
+              onChange({ releaseType: value })
+            }
           >
             <SelectTrigger id="releaseType">
               <SelectValue placeholder="Select release type" />
@@ -171,7 +189,9 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
               ))}
             </SelectContent>
           </Select>
-          {errors.releaseType && <p className="text-sm text-destructive">{errors.releaseType}</p>}
+          {errors.releaseType && (
+            <p className="text-sm text-destructive">{errors.releaseType}</p>
+          )}
         </div>
 
         {/* Genres */}
@@ -203,8 +223,10 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
           <div className="space-y-2">
             <Label htmlFor="secondaryGenre">Secondary Genre (Optional)</Label>
             <Select
-              value={data.secondaryGenre || '__none__'}
-              onValueChange={(value) => onChange({ secondaryGenre: value === '__none__' ? '' : value })}
+              value={data.secondaryGenre || "__none__"}
+              onValueChange={(value) =>
+                onChange({ secondaryGenre: value === "__none__" ? "" : value })
+              }
             >
               <SelectTrigger id="secondaryGenre">
                 <SelectValue placeholder="Select secondary genre" />
@@ -226,7 +248,10 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
           <Label htmlFor="language">
             Language <span className="text-destructive">*</span>
           </Label>
-          <Select value={data.language} onValueChange={(value) => onChange({ language: value })}>
+          <Select
+            value={data.language}
+            onValueChange={(value) => onChange({ language: value })}
+          >
             <SelectTrigger id="language">
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
@@ -250,10 +275,12 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
             {MOOD_TAGS.map((mood) => (
               <Badge
                 key={mood}
-                variant={selectedMoods.includes(mood) ? 'default' : 'outline'}
+                variant={selectedMoods.includes(mood) ? "default" : "outline"}
                 className="cursor-pointer hover:bg-primary/80"
                 onClick={() =>
-                  selectedMoods.length < 5 || selectedMoods.includes(mood) ? toggleMood(mood) : null
+                  selectedMoods.length < 5 || selectedMoods.includes(mood)
+                    ? toggleMood(mood)
+                    : null
                 }
               >
                 {mood}
@@ -280,7 +307,9 @@ export function MetadataForm({ data, onChange, errors = {} }: MetadataFormProps)
                 min={1900}
                 max={new Date().getFullYear() + 1}
                 value={data.copyrightYear}
-                onChange={(e) => onChange({ copyrightYear: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  onChange({ copyrightYear: parseInt(e.target.value) })
+                }
               />
             </div>
 

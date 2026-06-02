@@ -1,15 +1,24 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import { useEffect, useRef, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const INACTIVITY_MS = 30 * 60 * 1000;
 const WARNING_MS = 5 * 60 * 1000;
 const HEARTBEAT_MIN_INTERVAL_MS = 2 * 60 * 1000;
-const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'] as const;
+const ACTIVITY_EVENTS = [
+  "mousemove",
+  "mousedown",
+  "keydown",
+  "touchstart",
+  "scroll",
+  "click",
+] as const;
 
 function dispatchAutosave() {
-  window.dispatchEvent(new CustomEvent('maxbooster:autosave', { bubbles: false }));
+  window.dispatchEvent(
+    new CustomEvent("maxbooster:autosave", { bubbles: false }),
+  );
 }
 
 export function InactivityManager() {
@@ -19,9 +28,15 @@ export function InactivityManager() {
   const logoutRef = useRef(logout);
   const toastRef = useRef(toast);
   const dismissRef = useRef(dismiss);
-  useEffect(() => { logoutRef.current = logout; }, [logout]);
-  useEffect(() => { toastRef.current = toast; }, [toast]);
-  useEffect(() => { dismissRef.current = dismiss; }, [dismiss]);
+  useEffect(() => {
+    logoutRef.current = logout;
+  }, [logout]);
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
+  useEffect(() => {
+    dismissRef.current = dismiss;
+  }, [dismiss]);
 
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,13 +46,15 @@ export function InactivityManager() {
   const sendHeartbeat = useCallback(async () => {
     try {
       const csrfToken = getCsrfTokenFromCookie();
-      await fetch('/api/auth/heartbeat', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
+      await fetch("/api/auth/heartbeat", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
       });
-    } catch {
-    }
+    } catch {}
   }, []);
 
   const clearTimers = useCallback(() => {
@@ -61,8 +78,9 @@ export function InactivityManager() {
     warningTimerRef.current = setTimeout(() => {
       dispatchAutosave();
       const { id } = toastRef.current({
-        title: 'Still there?',
-        description: 'Your progress has been saved. You\'ll be signed out in 5 minutes due to inactivity — move your mouse or press any key to stay signed in.',
+        title: "Still there?",
+        description:
+          "Your progress has been saved. You'll be signed out in 5 minutes due to inactivity — move your mouse or press any key to stay signed in.",
         duration: WARNING_MS,
       });
       warningToastIdRef.current = id;
@@ -70,7 +88,7 @@ export function InactivityManager() {
 
     inactivityTimerRef.current = setTimeout(async () => {
       dispatchAutosave();
-      await new Promise<void>(r => setTimeout(r, 800));
+      await new Promise<void>((r) => setTimeout(r, 800));
       await logoutRef.current();
     }, INACTIVITY_MS);
   }, [clearTimers]);
@@ -100,14 +118,14 @@ export function InactivityManager() {
     sendHeartbeat();
     startTimers();
 
-    ACTIVITY_EVENTS.forEach(event =>
-      window.addEventListener(event, onActivity, { passive: true })
+    ACTIVITY_EVENTS.forEach((event) =>
+      window.addEventListener(event, onActivity, { passive: true }),
     );
 
     return () => {
       clearTimers();
-      ACTIVITY_EVENTS.forEach(event =>
-        window.removeEventListener(event, onActivity)
+      ACTIVITY_EVENTS.forEach((event) =>
+        window.removeEventListener(event, onActivity),
       );
     };
   }, [user, onActivity, startTimers, clearTimers, sendHeartbeat]);

@@ -1,9 +1,14 @@
-import { useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Mic, Volume2, Radio, X, CheckCircle2 } from 'lucide-react';
+import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Mic, Volume2, Radio, X, CheckCircle2 } from "lucide-react";
 
 interface RoutingConnection {
   from: string;
@@ -15,7 +20,7 @@ interface Track {
   id: string;
   name: string;
   color: string;
-  type: 'audio' | 'midi' | 'instrument';
+  type: "audio" | "midi" | "instrument";
 }
 
 interface Bus {
@@ -31,16 +36,16 @@ interface RoutingMatrixProps {
 }
 
 const DEFAULT_TRACKS: Track[] = [
-  { id: 'track-1', name: 'Vocals', color: '#4ade80', type: 'audio' },
-  { id: 'track-2', name: 'Guitar', color: '#60a5fa', type: 'audio' },
-  { id: 'track-3', name: 'Bass', color: '#f87171', type: 'audio' },
-  { id: 'track-4', name: 'Drums', color: '#fbbf24', type: 'audio' },
+  { id: "track-1", name: "Vocals", color: "#4ade80", type: "audio" },
+  { id: "track-2", name: "Guitar", color: "#60a5fa", type: "audio" },
+  { id: "track-3", name: "Bass", color: "#f87171", type: "audio" },
+  { id: "track-4", name: "Drums", color: "#fbbf24", type: "audio" },
 ];
 
 const DEFAULT_BUSES: Bus[] = [
-  { id: 'bus-1', name: 'Reverb', color: '#a78bfa' },
-  { id: 'bus-2', name: 'Delay', color: '#fb923c' },
-  { id: 'master', name: 'Master', color: '#ec4899' },
+  { id: "bus-1", name: "Reverb", color: "#a78bfa" },
+  { id: "bus-2", name: "Delay", color: "#fb923c" },
+  { id: "master", name: "Master", color: "#ec4899" },
 ];
 
 export function RoutingMatrix({
@@ -50,7 +55,7 @@ export function RoutingMatrix({
 }: RoutingMatrixProps) {
   const [connections, setConnections] = useState<RoutingConnection[]>([
     // Default: all tracks to master
-    ...tracks.map((track) => ({ from: track.id, to: 'master', enabled: true })),
+    ...tracks.map((track) => ({ from: track.id, to: "master", enabled: true })),
   ]);
 
   const toggleConnection = (from: string, to: string) => {
@@ -58,7 +63,7 @@ export function RoutingMatrix({
       const existing = prev.find((c) => c.from === from && c.to === to);
       if (existing) {
         return prev.map((c) =>
-          c.from === from && c.to === to ? { ...c, enabled: !c.enabled } : c
+          c.from === from && c.to === to ? { ...c, enabled: !c.enabled } : c,
         );
       } else {
         return [...prev, { from, to, enabled: true }];
@@ -79,33 +84,44 @@ export function RoutingMatrix({
       <div
         className="w-[90vw] max-w-6xl h-[80vh] rounded-lg shadow-2xl flex flex-col"
         style={{
-          background: 'var(--studio-bg-medium)',
-          border: '1px solid var(--studio-border)',
+          background: "var(--studio-bg-medium)",
+          border: "1px solid var(--studio-border)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           className="h-14 px-6 flex items-center justify-between border-b"
-          style={{ borderColor: 'var(--studio-border)' }}
+          style={{ borderColor: "var(--studio-border)" }}
         >
           <div className="flex items-center gap-3">
-            <Radio className="h-5 w-5" style={{ color: 'var(--studio-accent)' }} />
-            <h2 className="text-lg font-bold tracking-wide" style={{ color: 'var(--studio-text)' }}>
+            <Radio
+              className="h-5 w-5"
+              style={{ color: "var(--studio-accent)" }}
+            />
+            <h2
+              className="text-lg font-bold tracking-wide"
+              style={{ color: "var(--studio-text)" }}
+            >
               ROUTING MATRIX
             </h2>
             <Badge
               variant="outline"
               className="text-xs"
               style={{
-                borderColor: 'var(--studio-accent)',
-                color: 'var(--studio-accent)',
+                borderColor: "var(--studio-accent)",
+                color: "var(--studio-accent)",
               }}
             >
               Signal Flow
             </Badge>
           </div>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={onClose}
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -114,9 +130,9 @@ export function RoutingMatrix({
         <div
           className="px-6 py-3 flex items-center gap-6 border-b text-xs"
           style={{
-            background: 'var(--studio-bg-deep)',
-            borderColor: 'var(--studio-border)',
-            color: 'var(--studio-text-muted)',
+            background: "var(--studio-bg-deep)",
+            borderColor: "var(--studio-border)",
+            color: "var(--studio-text-muted)",
           }}
         >
           <div className="flex items-center gap-2">
@@ -133,18 +149,21 @@ export function RoutingMatrix({
               <div
                 className="h-6 w-6 rounded border-2 flex items-center justify-center"
                 style={{
-                  borderColor: 'var(--studio-accent)',
-                  background: 'var(--studio-accent)' + '30',
+                  borderColor: "var(--studio-accent)",
+                  background: "var(--studio-accent)" + "30",
                 }}
               >
-                <CheckCircle2 className="h-3.5 w-3.5" style={{ color: 'var(--studio-accent)' }} />
+                <CheckCircle2
+                  className="h-3.5 w-3.5"
+                  style={{ color: "var(--studio-accent)" }}
+                />
               </div>
               <span>Connected</span>
             </div>
             <div className="flex items-center gap-2">
               <div
                 className="h-6 w-6 rounded border-2"
-                style={{ borderColor: 'var(--studio-border)' }}
+                style={{ borderColor: "var(--studio-border)" }}
               />
               <span>Disconnected</span>
             </div>
@@ -164,10 +183,13 @@ export function RoutingMatrix({
                       key={bus.id}
                       className="w-20 flex flex-col items-center justify-center gap-1"
                     >
-                      <div className="h-2 w-12 rounded-full" style={{ background: bus.color }} />
+                      <div
+                        className="h-2 w-12 rounded-full"
+                        style={{ background: bus.color }}
+                      />
                       <span
                         className="text-xs font-medium truncate w-full text-center"
-                        style={{ color: 'var(--studio-text)' }}
+                        style={{ color: "var(--studio-text)" }}
                       >
                         {bus.name}
                       </span>
@@ -183,10 +205,13 @@ export function RoutingMatrix({
                   >
                     {/* Row Header */}
                     <div className="w-40 flex items-center gap-2 px-3 py-2">
-                      <div className="h-2 w-2 rounded-full" style={{ background: track.color }} />
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: track.color }}
+                      />
                       <span
                         className="text-sm font-medium truncate"
-                        style={{ color: 'var(--studio-text)' }}
+                        style={{ color: "var(--studio-text)" }}
                       >
                         {track.name}
                       </span>
@@ -204,19 +229,28 @@ export function RoutingMatrix({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <button
-                                onClick={() => toggleConnection(track.id, bus.id)}
+                                onClick={() =>
+                                  toggleConnection(track.id, bus.id)
+                                }
                                 className={`h-10 w-10 rounded border-2 flex items-center justify-center transition-all hover:scale-110 ${
-                                  connected ? 'hover:opacity-80' : 'hover:border-white/40'
+                                  connected
+                                    ? "hover:opacity-80"
+                                    : "hover:border-white/40"
                                 }`}
                                 style={{
-                                  borderColor: connected ? bus.color : 'var(--studio-border)',
+                                  borderColor: connected
+                                    ? bus.color
+                                    : "var(--studio-border)",
                                   background: connected
-                                    ? bus.color + '30'
-                                    : 'var(--studio-bg-deep)',
+                                    ? bus.color + "30"
+                                    : "var(--studio-bg-deep)",
                                 }}
                               >
                                 {connected && (
-                                  <CheckCircle2 className="h-5 w-5" style={{ color: bus.color }} />
+                                  <CheckCircle2
+                                    className="h-5 w-5"
+                                    style={{ color: bus.color }}
+                                  />
                                 )}
                               </button>
                             </TooltipTrigger>
@@ -235,40 +269,54 @@ export function RoutingMatrix({
                 {/* Signal Flow Visualization */}
                 <div
                   className="mt-8 p-4 rounded-lg"
-                  style={{ background: 'var(--studio-bg-deep)' }}
+                  style={{ background: "var(--studio-bg-deep)" }}
                 >
-                  <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--studio-text)' }}>
+                  <h3
+                    className="text-sm font-bold mb-3"
+                    style={{ color: "var(--studio-text)" }}
+                  >
                     Active Signal Flow
                   </h3>
                   <div className="space-y-2">
                     {connections
                       .filter((c) => c.enabled)
                       .map((connection, i) => {
-                        const track = tracks.find((t) => t.id === connection.from);
+                        const track = tracks.find(
+                          (t) => t.id === connection.from,
+                        );
                         const bus = buses.find((b) => b.id === connection.to);
                         if (!track || !bus) return null;
 
                         return (
-                          <div key={i} className="flex items-center gap-3 text-sm">
+                          <div
+                            key={i}
+                            className="flex items-center gap-3 text-sm"
+                          >
                             <div className="flex items-center gap-2">
                               <div
                                 className="h-2 w-2 rounded-full"
                                 style={{ background: track.color }}
                               />
-                              <span style={{ color: 'var(--studio-text-muted)' }}>
+                              <span
+                                style={{ color: "var(--studio-text-muted)" }}
+                              >
                                 {track.name}
                               </span>
                             </div>
                             <ArrowRight
                               className="h-3.5 w-3.5"
-                              style={{ color: 'var(--studio-text-subtle)' }}
+                              style={{ color: "var(--studio-text-subtle)" }}
                             />
                             <div className="flex items-center gap-2">
                               <div
                                 className="h-2 w-2 rounded-full"
                                 style={{ background: bus.color }}
                               />
-                              <span style={{ color: 'var(--studio-text-muted)' }}>{bus.name}</span>
+                              <span
+                                style={{ color: "var(--studio-text-muted)" }}
+                              >
+                                {bus.name}
+                              </span>
                             </div>
                           </div>
                         );
@@ -283,13 +331,20 @@ export function RoutingMatrix({
         {/* Footer */}
         <div
           className="h-14 px-6 flex items-center justify-between border-t"
-          style={{ borderColor: 'var(--studio-border)' }}
+          style={{ borderColor: "var(--studio-border)" }}
         >
-          <div className="text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+          <div
+            className="text-sm"
+            style={{ color: "var(--studio-text-muted)" }}
+          >
             {connections.filter((c) => c.enabled).length} active connections
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setConnections([])}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConnections([])}
+            >
               Clear All
             </Button>
             <Button
@@ -297,8 +352,8 @@ export function RoutingMatrix({
               size="sm"
               onClick={onClose}
               style={{
-                background: 'var(--studio-accent)',
-                color: 'white',
+                background: "var(--studio-accent)",
+                color: "white",
               }}
             >
               Done

@@ -1,5 +1,63 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbCreativeSaturationPlugin: PluginDefinition = { id: 'mb-creative-saturation', slug: 'mb-creative-saturation', name: 'MB Saturation', category: 'effect', type: 'distortion' as any, version: '1.0.0', description: 'Multi-mode saturation with analog modeling', author: 'Max Booster', grade: 'A', parameters: [{ id: 'drive', name: 'Drive', type: 'float', defaultValue: 0.3, minValue: 0, maxValue: 1, automatable: true }, { id: 'mode', name: 'Mode', type: 'float', defaultValue: 0, minValue: 0, maxValue: 3, automatable: false }, { id: 'tone', name: 'Tone', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'output', name: 'Output', type: 'float', defaultValue: 0, minValue: -12, maxValue: 12, automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 1, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { drive: 0.3, mode: 0, tone: 0.5, output: 0, mix: 1 } };
+const MbCreativeSaturationPlugin: PluginDefinition = {
+  id: "mb-creative-saturation",
+  slug: "mb-creative-saturation",
+  name: "MB Saturation",
+  category: "effect",
+  type: "distortion" as any,
+  version: "1.0.0",
+  description: "Multi-mode saturation with analog modeling",
+  author: "Max Booster",
+  grade: "A",
+  parameters: [
+    {
+      id: "drive",
+      name: "Drive",
+      type: "float",
+      defaultValue: 0.3,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "mode",
+      name: "Mode",
+      type: "float",
+      defaultValue: 0,
+      minValue: 0,
+      maxValue: 3,
+      automatable: false,
+    },
+    {
+      id: "tone",
+      name: "Tone",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "output",
+      name: "Output",
+      type: "float",
+      defaultValue: 0,
+      minValue: -12,
+      maxValue: 12,
+      automatable: true,
+    },
+    {
+      id: "mix",
+      name: "Mix",
+      type: "float",
+      defaultValue: 1,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { drive: 0.3, mode: 0, tone: 0.5, output: 0, mix: 1 },
+};
 
 export default MbCreativeSaturationPlugin;

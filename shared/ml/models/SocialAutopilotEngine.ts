@@ -1,6 +1,6 @@
 /**
  * Social Autopilot Engine - Enhanced AI for Social Media Optimization
- * 
+ *
  * Features:
  * - Optimal posting time prediction per platform
  * - Content type recommendation (video, image, text, story)
@@ -9,17 +9,38 @@
  * - Cross-platform content adaptation
  * - Engagement prediction with confidence scores
  * - Follower growth optimization
- * 
+ *
  * 100% custom implementation - no external APIs
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { BaseModel } from './BaseModel.js';
-import { PLATFORM_LIMITS } from '../coordination/SocialMediaRuleEngine.js';
+import * as tf from "@tensorflow/tfjs";
+import { BaseModel } from "./BaseModel.js";
+import { PLATFORM_LIMITS } from "../coordination/SocialMediaRuleEngine.js";
 
-export type Platform = 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin';
-export type ContentType = 'video' | 'image' | 'text' | 'story' | 'carousel' | 'reel' | 'short' | 'live';
-export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+export type Platform =
+  | "twitter"
+  | "instagram"
+  | "tiktok"
+  | "youtube"
+  | "facebook"
+  | "linkedin";
+export type ContentType =
+  | "video"
+  | "image"
+  | "text"
+  | "story"
+  | "carousel"
+  | "reel"
+  | "short"
+  | "live";
+export type DayOfWeek =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
 
 export interface HistoricalPost {
   postId: string;
@@ -135,7 +156,7 @@ export interface ScheduleOptimization {
     dayOfWeek: DayOfWeek;
     time: string;
     contentType: ContentType;
-    priority: 'high' | 'medium' | 'low';
+    priority: "high" | "medium" | "low";
     expectedEngagement: number;
   }>;
   postsPerDay: number;
@@ -152,11 +173,11 @@ export interface TrendDetectionResult {
   decliningTopics: string[];
   recommendedActions: Array<{
     action: string;
-    urgency: 'immediate' | 'soon' | 'optional';
+    urgency: "immediate" | "soon" | "optional";
     potentialImpact: number;
     reasoning: string;
   }>;
-  marketSentiment: 'positive' | 'neutral' | 'negative';
+  marketSentiment: "positive" | "neutral" | "negative";
   confidence: number;
 }
 
@@ -187,7 +208,7 @@ export interface FollowerGrowthStrategy {
   strategies: Array<{
     strategy: string;
     expectedImpact: number;
-    effort: 'low' | 'medium' | 'high';
+    effort: "low" | "medium" | "high";
     timeToResults: string;
     priority: number;
   }>;
@@ -200,41 +221,112 @@ export interface FollowerGrowthStrategy {
 
 // 2024-calibrated peak engagement windows (source: aggregated platform analytics studies)
 const PLATFORM_PEAK_HOURS: Record<Platform, number[]> = {
-  twitter:   [8, 9, 12, 15, 17, 18, 21],       // commute + lunch + early evening
-  instagram: [6, 7, 11, 12, 17, 19, 20, 21],   // morning scroll + lunch + prime time
-  tiktok:    [6, 7, 11, 14, 15, 18, 19, 20, 22, 23], // broadest; Gen Z late sessions
-  youtube:   [12, 14, 17, 18, 20, 21, 22],      // afterschool + evening viewing
-  facebook:  [8, 9, 13, 14, 17, 20],            // skews older, prime time + lunch
-  linkedin:  [7, 8, 10, 12, 17, 18],            // professional hours only
+  twitter: [8, 9, 12, 15, 17, 18, 21], // commute + lunch + early evening
+  instagram: [6, 7, 11, 12, 17, 19, 20, 21], // morning scroll + lunch + prime time
+  tiktok: [6, 7, 11, 14, 15, 18, 19, 20, 22, 23], // broadest; Gen Z late sessions
+  youtube: [12, 14, 17, 18, 20, 21, 22], // afterschool + evening viewing
+  facebook: [8, 9, 13, 14, 17, 20], // skews older, prime time + lunch
+  linkedin: [7, 8, 10, 12, 17, 18], // professional hours only
 };
 
 // 2024-calibrated peak engagement days (day-of-week index)
 const PLATFORM_PEAK_DAYS: Record<Platform, DayOfWeek[]> = {
-  twitter:   ['tuesday', 'wednesday', 'thursday', 'friday'],
-  instagram: ['monday', 'tuesday', 'wednesday', 'thursday'],
-  tiktok:    ['tuesday', 'thursday', 'friday', 'saturday'],
-  youtube:   ['friday', 'saturday', 'sunday'],           // weekend viewing spike
-  facebook:  ['wednesday', 'thursday', 'friday'],
-  linkedin:  ['tuesday', 'wednesday', 'thursday'],
+  twitter: ["tuesday", "wednesday", "thursday", "friday"],
+  instagram: ["monday", "tuesday", "wednesday", "thursday"],
+  tiktok: ["tuesday", "thursday", "friday", "saturday"],
+  youtube: ["friday", "saturday", "sunday"], // weekend viewing spike
+  facebook: ["wednesday", "thursday", "friday"],
+  linkedin: ["tuesday", "wednesday", "thursday"],
 };
 
 // 2024-calibrated content-type performance multipliers
 // Reflects algorithm shifts: TikTok/IG Reels dominance, LinkedIn video surge,
 // YouTube Shorts adoption, Facebook Live engagement spike
-const CONTENT_TYPE_PERFORMANCE: Record<Platform, Record<ContentType, number>> = {
-  twitter:   { text: 0.72, image: 0.83, video: 0.91, story: 0.48, carousel: 0.65, reel: 0.55, short: 0.58, live: 0.62 },
-  instagram: { text: 0.28, image: 0.68, video: 0.87, story: 0.79, carousel: 0.86, reel: 0.97, short: 0.92, live: 0.74 },
-  tiktok:    { text: 0.18, image: 0.38, video: 0.97, story: 0.55, carousel: 0.52, reel: 0.96, short: 0.98, live: 0.85 },
-  youtube:   { text: 0.18, image: 0.25, video: 0.97, story: 0.48, carousel: 0.28, reel: 0.72, short: 0.90, live: 0.80 },
-  facebook:  { text: 0.52, image: 0.72, video: 0.88, story: 0.68, carousel: 0.78, reel: 0.87, short: 0.82, live: 0.93 },
-  linkedin:  { text: 0.76, image: 0.78, video: 0.90, story: 0.48, carousel: 0.88, reel: 0.65, short: 0.72, live: 0.82 },
+const CONTENT_TYPE_PERFORMANCE: Record<
+  Platform,
+  Record<ContentType, number>
+> = {
+  twitter: {
+    text: 0.72,
+    image: 0.83,
+    video: 0.91,
+    story: 0.48,
+    carousel: 0.65,
+    reel: 0.55,
+    short: 0.58,
+    live: 0.62,
+  },
+  instagram: {
+    text: 0.28,
+    image: 0.68,
+    video: 0.87,
+    story: 0.79,
+    carousel: 0.86,
+    reel: 0.97,
+    short: 0.92,
+    live: 0.74,
+  },
+  tiktok: {
+    text: 0.18,
+    image: 0.38,
+    video: 0.97,
+    story: 0.55,
+    carousel: 0.52,
+    reel: 0.96,
+    short: 0.98,
+    live: 0.85,
+  },
+  youtube: {
+    text: 0.18,
+    image: 0.25,
+    video: 0.97,
+    story: 0.48,
+    carousel: 0.28,
+    reel: 0.72,
+    short: 0.9,
+    live: 0.8,
+  },
+  facebook: {
+    text: 0.52,
+    image: 0.72,
+    video: 0.88,
+    story: 0.68,
+    carousel: 0.78,
+    reel: 0.87,
+    short: 0.82,
+    live: 0.93,
+  },
+  linkedin: {
+    text: 0.76,
+    image: 0.78,
+    video: 0.9,
+    story: 0.48,
+    carousel: 0.88,
+    reel: 0.65,
+    short: 0.72,
+    live: 0.82,
+  },
 };
 
 const DAY_INDEX: Record<DayOfWeek, number> = {
-  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
 };
 
-const DAY_NAMES: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+const DAY_NAMES: DayOfWeek[] = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+];
 
 export class SocialAutopilotEngine extends BaseModel {
   private engagementModel: tf.LayersModel | null = null;
@@ -242,13 +334,14 @@ export class SocialAutopilotEngine extends BaseModel {
   private timingModel: tf.LayersModel | null = null;
   private historicalData: Map<Platform, HistoricalPost[]> = new Map();
   private audienceInsights: Map<Platform, AudienceInsights> = new Map();
-  private platformScalers: Map<Platform, { mean: number[]; std: number[] }> = new Map();
+  private platformScalers: Map<Platform, { mean: number[]; std: number[] }> =
+    new Map();
 
   constructor() {
     super({
-      name: 'SocialAutopilotEngine',
-      type: 'regression',
-      version: '1.0.0',
+      name: "SocialAutopilotEngine",
+      type: "regression",
+      version: "1.0.0",
       inputShape: [32],
       outputShape: [6],
     });
@@ -259,7 +352,7 @@ export class SocialAutopilotEngine extends BaseModel {
       layers: [
         tf.layers.dense({
           units: 128,
-          activation: 'relu',
+          activation: "relu",
           inputShape: [32],
           kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
         }),
@@ -267,24 +360,24 @@ export class SocialAutopilotEngine extends BaseModel {
         tf.layers.dropout({ rate: 0.3 }),
         tf.layers.dense({
           units: 64,
-          activation: 'relu',
+          activation: "relu",
         }),
         tf.layers.dropout({ rate: 0.2 }),
         tf.layers.dense({
           units: 32,
-          activation: 'relu',
+          activation: "relu",
         }),
         tf.layers.dense({
           units: 6,
-          activation: 'linear',
+          activation: "linear",
         }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'meanSquaredError',
-      metrics: ['mae'],
+      loss: "meanSquaredError",
+      metrics: ["mae"],
     });
 
     return model;
@@ -293,18 +386,18 @@ export class SocialAutopilotEngine extends BaseModel {
   private buildViralityModel(): tf.LayersModel {
     const model = tf.sequential({
       layers: [
-        tf.layers.dense({ units: 64, activation: 'relu', inputShape: [16] }),
+        tf.layers.dense({ units: 64, activation: "relu", inputShape: [16] }),
         tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({ units: 32, activation: 'relu' }),
-        tf.layers.dense({ units: 16, activation: 'relu' }),
-        tf.layers.dense({ units: 1, activation: 'sigmoid' }),
+        tf.layers.dense({ units: 32, activation: "relu" }),
+        tf.layers.dense({ units: 16, activation: "relu" }),
+        tf.layers.dense({ units: 1, activation: "sigmoid" }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'binaryCrossentropy',
-      metrics: ['accuracy'],
+      loss: "binaryCrossentropy",
+      metrics: ["accuracy"],
     });
 
     return model;
@@ -313,17 +406,17 @@ export class SocialAutopilotEngine extends BaseModel {
   private buildTimingModel(): tf.LayersModel {
     const model = tf.sequential({
       layers: [
-        tf.layers.dense({ units: 48, activation: 'relu', inputShape: [12] }),
+        tf.layers.dense({ units: 48, activation: "relu", inputShape: [12] }),
         tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({ units: 24, activation: 'relu' }),
-        tf.layers.dense({ units: 24, activation: 'softmax' }),
+        tf.layers.dense({ units: 24, activation: "relu" }),
+        tf.layers.dense({ units: 24, activation: "softmax" }),
       ],
     });
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: 'categoricalCrossentropy',
-      metrics: ['accuracy'],
+      loss: "categoricalCrossentropy",
+      metrics: ["accuracy"],
     });
 
     return model;
@@ -368,18 +461,27 @@ export class SocialAutopilotEngine extends BaseModel {
     }
   }
 
-  public predictBestTime(platform: Platform, contentType: ContentType): BestTimeResult {
+  public predictBestTime(
+    platform: Platform,
+    contentType: ContentType,
+  ): BestTimeResult {
     const historicalPosts = this.historicalData.get(platform) || [];
     const audience = this.audienceInsights.get(platform);
     const now = new Date();
 
-    const hourPerformance: Record<number, { total: number; count: number }> = {};
+    const hourPerformance: Record<number, { total: number; count: number }> =
+      {};
     for (let h = 0; h < 24; h++) {
       hourPerformance[h] = { total: 0, count: 0 };
     }
 
     for (const post of historicalPosts) {
-      if (!post.postedAt || !(post.postedAt instanceof Date) || isNaN(post.postedAt.getTime())) continue;
+      if (
+        !post.postedAt ||
+        !(post.postedAt instanceof Date) ||
+        isNaN(post.postedAt.getTime())
+      )
+        continue;
       const hour = post.postedAt.getHours();
       hourPerformance[hour].total += post.engagementRate;
       hourPerformance[hour].count += 1;
@@ -395,11 +497,11 @@ export class SocialAutopilotEngine extends BaseModel {
       } else if (PLATFORM_PEAK_HOURS[platform].includes(h)) {
         score = 0.5;
       }
-      
+
       if (audience?.peakActivityHours.includes(h)) {
         score *= 1.3;
       }
-      
+
       if (score > bestScore) {
         bestScore = score;
         bestHour = h;
@@ -408,26 +510,42 @@ export class SocialAutopilotEngine extends BaseModel {
 
     const bestDays = audience?.peakActivityDays || PLATFORM_PEAK_DAYS[platform];
     const optimalDay = bestDays[0];
-    
-    const optimalTime = this.getNextOccurrence(optimalDay, bestHour, now);
-    const alternativeTimes = this.getAlternativeTimes(platform, bestHour, now, 3);
 
-    const dataPointsUsed = historicalPosts.filter(p => 
-      p.contentType === contentType
+    const optimalTime = this.getNextOccurrence(optimalDay, bestHour, now);
+    const alternativeTimes = this.getAlternativeTimes(
+      platform,
+      bestHour,
+      now,
+      3,
+    );
+
+    const dataPointsUsed = historicalPosts.filter(
+      (p) => p.contentType === contentType,
     ).length;
 
     const confidence = Math.min(0.95, 0.5 + (dataPointsUsed / 100) * 0.45);
-    const expectedEngagement = this.estimateEngagement(platform, contentType, bestHour);
-    const expectedReach = this.estimateReach(platform, audience?.totalFollowers || 1000);
-    const audienceOnlinePercentage = audience?.peakActivityHours.includes(bestHour) ? 0.35 : 0.15;
+    const expectedEngagement = this.estimateEngagement(
+      platform,
+      contentType,
+      bestHour,
+    );
+    const expectedReach = this.estimateReach(
+      platform,
+      audience?.totalFollowers || 1000,
+    );
+    const audienceOnlinePercentage = audience?.peakActivityHours.includes(
+      bestHour,
+    )
+      ? 0.35
+      : 0.15;
 
     const reasoning = this.generateTimingReasoning(
-      platform, 
-      contentType, 
-      bestHour, 
-      optimalDay, 
+      platform,
+      contentType,
+      bestHour,
+      optimalDay,
       dataPointsUsed,
-      audience
+      audience,
     );
 
     return {
@@ -446,10 +564,22 @@ export class SocialAutopilotEngine extends BaseModel {
   public recommendContentType(platform: Platform): ContentTypeRecommendation {
     const historicalPosts = this.historicalData.get(platform) || [];
     const performance = CONTENT_TYPE_PERFORMANCE[platform];
-    
-    const typePerformance: Record<ContentType, { avgEngagement: number; count: number }> = {} as any;
-    const contentTypes: ContentType[] = ['video', 'image', 'text', 'story', 'carousel', 'reel', 'short', 'live'];
-    
+
+    const typePerformance: Record<
+      ContentType,
+      { avgEngagement: number; count: number }
+    > = {} as any;
+    const contentTypes: ContentType[] = [
+      "video",
+      "image",
+      "text",
+      "story",
+      "carousel",
+      "reel",
+      "short",
+      "live",
+    ];
+
     for (const type of contentTypes) {
       typePerformance[type] = { avgEngagement: 0, count: 0 };
     }
@@ -461,37 +591,42 @@ export class SocialAutopilotEngine extends BaseModel {
       }
     }
 
-    const scores: Array<{ type: ContentType; score: number; reason: string }> = [];
-    
+    const scores: Array<{ type: ContentType; score: number; reason: string }> =
+      [];
+
     for (const type of contentTypes) {
       let score = performance[type] || 0.5;
-      
+
       if (typePerformance[type].count > 0) {
-        const historical = typePerformance[type].avgEngagement / typePerformance[type].count;
+        const historical =
+          typePerformance[type].avgEngagement / typePerformance[type].count;
         score = (score + historical) / 2;
       }
-      
+
       const trendBonus = this.getContentTypeTrendBonus(platform, type);
-      score *= (1 + trendBonus);
-      
+      score *= 1 + trendBonus;
+
       const reason = this.getContentTypeReason(platform, type, score);
       scores.push({ type, score, reason });
     }
 
     scores.sort((a, b) => b.score - a.score);
-    
+
     const recommendedType = scores[0].type;
     const alternatives = scores.slice(1, 4);
-    
-    const confidence = Math.min(0.95, 0.6 + (historicalPosts.length / 200) * 0.35);
+
+    const confidence = Math.min(
+      0.95,
+      0.6 + (historicalPosts.length / 200) * 0.35,
+    );
     const expectedEngagementBoost = (scores[0].score - 0.5) * 100;
 
     const platformTrends = this.getPlatformTrends(platform);
     const reasoning = this.generateContentTypeReasoning(
-      platform, 
-      recommendedType, 
-      scores[0].score, 
-      historicalPosts.length
+      platform,
+      recommendedType,
+      scores[0].score,
+      historicalPosts.length,
     );
 
     return {
@@ -509,14 +644,17 @@ export class SocialAutopilotEngine extends BaseModel {
     const trends: TrendingTopic[] = [];
     const emergingTopics: string[] = [];
     const decliningTopics: string[] = [];
-    const recommendedActions: TrendDetectionResult['recommendedActions'] = [];
+    const recommendedActions: TrendDetectionResult["recommendedActions"] = [];
 
     const simulatedTrends = this.generateSimulatedTrends(platforms);
     trends.push(...simulatedTrends);
 
     for (const platform of platforms) {
       const posts = this.historicalData.get(platform) || [];
-      const topicFrequency: Record<string, { count: number; avgEngagement: number }> = {};
+      const topicFrequency: Record<
+        string,
+        { count: number; avgEngagement: number }
+      > = {};
 
       for (const post of posts) {
         for (const topic of post.topics) {
@@ -528,16 +666,18 @@ export class SocialAutopilotEngine extends BaseModel {
         }
       }
 
-      const recentPosts = posts.filter(p => {
+      const recentPosts = posts.filter((p) => {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         return p.postedAt >= weekAgo;
       });
 
       for (const [topic, data] of Object.entries(topicFrequency)) {
-        const recentCount = recentPosts.filter(p => p.topics.includes(topic)).length;
+        const recentCount = recentPosts.filter((p) =>
+          p.topics.includes(topic),
+        ).length;
         const velocity = data.count > 0 ? recentCount / data.count : 0;
-        
+
         if (velocity > 0.5) {
           emergingTopics.push(topic);
         } else if (velocity < 0.1 && data.count > 5) {
@@ -548,27 +688,31 @@ export class SocialAutopilotEngine extends BaseModel {
 
     if (emergingTopics.length > 0) {
       recommendedActions.push({
-        action: `Create content around trending topics: ${emergingTopics.slice(0, 3).join(', ')}`,
-        urgency: 'immediate',
+        action: `Create content around trending topics: ${emergingTopics.slice(0, 3).join(", ")}`,
+        urgency: "immediate",
         potentialImpact: 0.8,
-        reasoning: 'These topics are gaining momentum and early adoption can maximize visibility.',
+        reasoning:
+          "These topics are gaining momentum and early adoption can maximize visibility.",
       });
     }
 
     if (decliningTopics.length > 0) {
       recommendedActions.push({
-        action: `Pivot away from declining topics: ${decliningTopics.slice(0, 3).join(', ')}`,
-        urgency: 'soon',
+        action: `Pivot away from declining topics: ${decliningTopics.slice(0, 3).join(", ")}`,
+        urgency: "soon",
         potentialImpact: 0.5,
-        reasoning: 'These topics are losing audience interest and may reduce engagement.',
+        reasoning:
+          "These topics are losing audience interest and may reduce engagement.",
       });
     }
 
     recommendedActions.push({
-      action: 'Maintain consistent posting schedule with trending content types',
-      urgency: 'optional',
+      action:
+        "Maintain consistent posting schedule with trending content types",
+      urgency: "optional",
       potentialImpact: 0.6,
-      reasoning: 'Consistency combined with trend awareness maximizes long-term growth.',
+      reasoning:
+        "Consistency combined with trend awareness maximizes long-term growth.",
     });
 
     const confidence = Math.min(0.9, 0.5 + (trends.length / 20) * 0.4);
@@ -592,14 +736,25 @@ export class SocialAutopilotEngine extends BaseModel {
       topics: string[];
       hasEmoji: boolean;
       scheduledTime?: Date;
-    }
+    },
   ): ViralPotentialScore {
-    const shareability = this.calculateShareability(content.text, content.contentType, platform);
+    const shareability = this.calculateShareability(
+      content.text,
+      content.contentType,
+      platform,
+    );
     const emotionalResonance = this.calculateEmotionalResonance(content.text);
-    const trendAlignment = this.calculateTrendAlignment(content.topics, content.hashtags, platform);
+    const trendAlignment = this.calculateTrendAlignment(
+      content.topics,
+      content.hashtags,
+      platform,
+    );
     const noveltyScore = this.calculateNoveltyScore(content.text, platform);
-    const audienceRelevance = this.calculateAudienceRelevance(content.topics, platform);
-    const timingScore = content.scheduledTime 
+    const audienceRelevance = this.calculateAudienceRelevance(
+      content.topics,
+      platform,
+    );
+    const timingScore = content.scheduledTime
       ? this.calculateTimingScore(content.scheduledTime, platform)
       : 0.5;
 
@@ -607,21 +762,21 @@ export class SocialAutopilotEngine extends BaseModel {
     // Emotional resonance is the strongest driver of organic sharing; novelty alone
     // rarely achieves lift without audience fit.  Timing is secondary to content quality.
     const weights = {
-      shareability:       0.22,
-      emotionalResonance: 0.27,   // ↑ primary driver of shares
-      trendAlignment:     0.20,
-      noveltyScore:       0.07,   // ↓ novelty is table-stakes, not differentiator
-      audienceRelevance:  0.18,   // ↑ right audience matters more than broad reach
-      timingScore:        0.06,   // ↓ timing helps but content quality dominates
+      shareability: 0.22,
+      emotionalResonance: 0.27, // ↑ primary driver of shares
+      trendAlignment: 0.2,
+      noveltyScore: 0.07, // ↓ novelty is table-stakes, not differentiator
+      audienceRelevance: 0.18, // ↑ right audience matters more than broad reach
+      timingScore: 0.06, // ↓ timing helps but content quality dominates
     };
 
     const overallScore =
-      shareability       * weights.shareability +
+      shareability * weights.shareability +
       emotionalResonance * weights.emotionalResonance +
-      trendAlignment     * weights.trendAlignment +
-      noveltyScore       * weights.noveltyScore +
-      audienceRelevance  * weights.audienceRelevance +
-      timingScore        * weights.timingScore;
+      trendAlignment * weights.trendAlignment +
+      noveltyScore * weights.noveltyScore +
+      audienceRelevance * weights.audienceRelevance +
+      timingScore * weights.timingScore;
 
     const topFactors = this.identifyTopViralFactors({
       shareability,
@@ -632,11 +787,15 @@ export class SocialAutopilotEngine extends BaseModel {
       timingScore,
     });
 
-    const viralProbability = this.calculateViralProbability(overallScore, platform);
+    const viralProbability = this.calculateViralProbability(
+      overallScore,
+      platform,
+    );
 
     // Viral reach follows a power-law distribution; use sublinear scaling to
     // prevent over-optimistic estimates while preserving ranking fidelity.
-    const estimatedReachMultiplier = 1 + Math.pow(Math.max(0, overallScore), 0.65) * 5;
+    const estimatedReachMultiplier =
+      1 + Math.pow(Math.max(0, overallScore), 0.65) * 5;
 
     const historicalN = this.historicalData.get(platform)?.length || 0;
     // Bayesian confidence: prior=0.55, converges to 0.92 with 300+ data points
@@ -646,7 +805,7 @@ export class SocialAutopilotEngine extends BaseModel {
       overallScore,
       topFactors,
       platform,
-      content.contentType
+      content.contentType,
     );
 
     return {
@@ -668,7 +827,7 @@ export class SocialAutopilotEngine extends BaseModel {
   public adaptContent(
     content: { text: string; hashtags: string[]; mentions: string[] },
     originalPlatform: Platform,
-    targetPlatform: Platform
+    targetPlatform: Platform,
   ): ContentAdaptation {
     const targetLimits = PLATFORM_LIMITS[targetPlatform];
     const characterLimit = targetLimits?.maxCharacters || 280;
@@ -676,7 +835,7 @@ export class SocialAutopilotEngine extends BaseModel {
     const maxMentions = targetLimits?.maxMentions || 5;
 
     let adaptedText = content.text;
-    
+
     if (adaptedText.length > characterLimit) {
       adaptedText = this.truncateText(adaptedText, characterLimit);
     }
@@ -684,20 +843,24 @@ export class SocialAutopilotEngine extends BaseModel {
     adaptedText = this.adjustToneForPlatform(adaptedText, targetPlatform);
 
     const adaptedHashtags = this.adaptHashtags(
-      content.hashtags, 
-      targetPlatform, 
-      maxHashtags
+      content.hashtags,
+      targetPlatform,
+      maxHashtags,
     );
 
     const adaptedMentions = content.mentions.slice(0, maxMentions);
 
     const recommendedContentType = this.getOptimalContentType(targetPlatform);
-    const mediaAdjustments = this.getMediaAdjustments(originalPlatform, targetPlatform);
+    const mediaAdjustments = this.getMediaAdjustments(
+      originalPlatform,
+      targetPlatform,
+    );
     const optimizations = this.getOptimizations(targetPlatform);
 
     const audience = this.audienceInsights.get(targetPlatform);
     const expectedPerformance = {
-      engagementRate: (audience?.engagementPatterns.avgEngagementRate || 0.03) * 1.1,
+      engagementRate:
+        (audience?.engagementPatterns.avgEngagementRate || 0.03) * 1.1,
       reach: (audience?.activeFollowers || 1000) * 0.2,
       confidence: 0.7,
     };
@@ -706,7 +869,7 @@ export class SocialAutopilotEngine extends BaseModel {
       originalPlatform,
       targetPlatform,
       content.text.length,
-      characterLimit
+      characterLimit,
     );
 
     return {
@@ -726,7 +889,10 @@ export class SocialAutopilotEngine extends BaseModel {
     };
   }
 
-  public optimizeSchedule(platform: Platform, postsPerWeek: number): ScheduleOptimization {
+  public optimizeSchedule(
+    platform: Platform,
+    postsPerWeek: number,
+  ): ScheduleOptimization {
     const audience = this.audienceInsights.get(platform);
     const historicalPosts = this.historicalData.get(platform) || [];
     const limits = PLATFORM_LIMITS[platform];
@@ -734,15 +900,13 @@ export class SocialAutopilotEngine extends BaseModel {
     const maxDailyPosts = limits?.maxDailyPosts || 5;
     const minGapMinutes = limits?.minPostGapMinutes || 60;
 
-    const postsPerDay = Math.min(
-      Math.ceil(postsPerWeek / 7),
-      maxDailyPosts
-    );
+    const postsPerDay = Math.min(Math.ceil(postsPerWeek / 7), maxDailyPosts);
 
-    const peakHours = audience?.peakActivityHours || PLATFORM_PEAK_HOURS[platform];
+    const peakHours =
+      audience?.peakActivityHours || PLATFORM_PEAK_HOURS[platform];
     const peakDays = audience?.peakActivityDays || PLATFORM_PEAK_DAYS[platform];
 
-    const schedule: ScheduleOptimization['suggestedSchedule'] = [];
+    const schedule: ScheduleOptimization["suggestedSchedule"] = [];
     const contentTypeRec = this.recommendContentType(platform);
 
     for (const day of peakDays.slice(0, Math.min(postsPerWeek, 7))) {
@@ -750,11 +914,18 @@ export class SocialAutopilotEngine extends BaseModel {
         const hour = peakHours[i];
         schedule.push({
           dayOfWeek: day,
-          time: `${hour.toString().padStart(2, '0')}:00`,
-          contentType: i === 0 ? contentTypeRec.recommendedType : 
-            (contentTypeRec.alternatives[i - 1]?.type || contentTypeRec.recommendedType),
-          priority: i === 0 ? 'high' : (i === 1 ? 'medium' : 'low'),
-          expectedEngagement: this.estimateEngagement(platform, contentTypeRec.recommendedType, hour),
+          time: `${hour.toString().padStart(2, "0")}:00`,
+          contentType:
+            i === 0
+              ? contentTypeRec.recommendedType
+              : contentTypeRec.alternatives[i - 1]?.type ||
+                contentTypeRec.recommendedType,
+          priority: i === 0 ? "high" : i === 1 ? "medium" : "low",
+          expectedEngagement: this.estimateEngagement(
+            platform,
+            contentTypeRec.recommendedType,
+            hour,
+          ),
         });
 
         if (schedule.length >= postsPerWeek) break;
@@ -762,15 +933,18 @@ export class SocialAutopilotEngine extends BaseModel {
       if (schedule.length >= postsPerWeek) break;
     }
 
-    const restDays = DAY_NAMES.filter(d => !peakDays.includes(d)).slice(0, 2);
-    const audienceFatigueRisk = this.calculateFatigueRisk(postsPerWeek, platform);
+    const restDays = DAY_NAMES.filter((d) => !peakDays.includes(d)).slice(0, 2);
+    const audienceFatigueRisk = this.calculateFatigueRisk(
+      postsPerWeek,
+      platform,
+    );
     const growthPotential = this.calculateGrowthPotential(schedule, platform);
 
     const reasoning = this.generateScheduleReasoning(
       platform,
       postsPerWeek,
       peakDays,
-      audienceFatigueRisk
+      audienceFatigueRisk,
     );
 
     return {
@@ -789,35 +963,45 @@ export class SocialAutopilotEngine extends BaseModel {
     platform: Platform,
     contentType: ContentType,
     scheduledTime: Date,
-    content: { text: string; hashtags: string[]; hasMedia: boolean }
+    content: { text: string; hashtags: string[]; hasMedia: boolean },
   ): EngagementPrediction {
     const audience = this.audienceInsights.get(platform);
     const historicalPosts = this.historicalData.get(platform) || [];
 
-    const baseEngagement = audience?.engagementPatterns.avgEngagementRate || 0.03;
+    const baseEngagement =
+      audience?.engagementPatterns.avgEngagementRate || 0.03;
     const followers = audience?.totalFollowers || 1000;
 
-    const contentTypeMultiplier = CONTENT_TYPE_PERFORMANCE[platform][contentType] || 0.5;
+    const contentTypeMultiplier =
+      CONTENT_TYPE_PERFORMANCE[platform][contentType] || 0.5;
     const hour = scheduledTime.getHours();
-    const timingMultiplier = PLATFORM_PEAK_HOURS[platform].includes(hour) ? 1.3 : 0.8;
+    const timingMultiplier = PLATFORM_PEAK_HOURS[platform].includes(hour)
+      ? 1.3
+      : 0.8;
     const day = DAY_NAMES[scheduledTime.getDay()];
-    const dayMultiplier = PLATFORM_PEAK_DAYS[platform].includes(day) ? 1.2 : 0.9;
+    const dayMultiplier = PLATFORM_PEAK_DAYS[platform].includes(day)
+      ? 1.2
+      : 0.9;
 
     const hashtagBonus = Math.min(content.hashtags.length * 0.02, 0.15);
     const mediaBonus = content.hasMedia ? 0.2 : 0;
-    const lengthBonus = content.text.length > 50 && content.text.length < 200 ? 0.1 : 0;
+    const lengthBonus =
+      content.text.length > 50 && content.text.length < 200 ? 0.1 : 0;
 
-    const adjustedEngagement = baseEngagement * 
-      contentTypeMultiplier * 
-      timingMultiplier * 
-      dayMultiplier * 
+    const adjustedEngagement =
+      baseEngagement *
+      contentTypeMultiplier *
+      timingMultiplier *
+      dayMultiplier *
       (1 + hashtagBonus + mediaBonus + lengthBonus);
 
     const engagementRate = Math.min(adjustedEngagement, 0.25);
     const predictedReach = Math.round(followers * (0.15 + engagementRate * 2));
     const predictedImpressions = Math.round(predictedReach * 1.5);
     const predictedLikes = Math.round(predictedReach * engagementRate * 0.7);
-    const predictedComments = Math.round(predictedReach * engagementRate * 0.15);
+    const predictedComments = Math.round(
+      predictedReach * engagementRate * 0.15,
+    );
     const predictedShares = Math.round(predictedReach * engagementRate * 0.1);
     const predictedSaves = Math.round(predictedReach * engagementRate * 0.05);
 
@@ -825,19 +1009,20 @@ export class SocialAutopilotEngine extends BaseModel {
     const variance = engagementRate * 0.3;
 
     const factors = [
-      { factor: 'Content Type', impact: contentTypeMultiplier - 0.5 },
-      { factor: 'Timing', impact: timingMultiplier - 1 },
-      { factor: 'Day of Week', impact: dayMultiplier - 1 },
-      { factor: 'Hashtags', impact: hashtagBonus },
-      { factor: 'Media', impact: mediaBonus },
-    ].filter(f => Math.abs(f.impact) > 0.05)
-     .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+      { factor: "Content Type", impact: contentTypeMultiplier - 0.5 },
+      { factor: "Timing", impact: timingMultiplier - 1 },
+      { factor: "Day of Week", impact: dayMultiplier - 1 },
+      { factor: "Hashtags", impact: hashtagBonus },
+      { factor: "Media", impact: mediaBonus },
+    ]
+      .filter((f) => Math.abs(f.impact) > 0.05)
+      .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
 
     const reasoning = this.generateEngagementReasoning(
       platform,
       contentType,
       engagementRate,
-      factors
+      factors,
     );
 
     return {
@@ -860,54 +1045,57 @@ export class SocialAutopilotEngine extends BaseModel {
     };
   }
 
-  public generateFollowerGrowthStrategy(platform: Platform): FollowerGrowthStrategy {
+  public generateFollowerGrowthStrategy(
+    platform: Platform,
+  ): FollowerGrowthStrategy {
     const audience = this.audienceInsights.get(platform);
     const historicalPosts = this.historicalData.get(platform) || [];
-    
-    const currentFollowers = audience?.totalFollowers || 1000;
-    const avgEngagement = audience?.engagementPatterns.avgEngagementRate || 0.03;
 
-    const dailyGrowthRate = 0.002 + (avgEngagement * 0.1);
+    const currentFollowers = audience?.totalFollowers || 1000;
+    const avgEngagement =
+      audience?.engagementPatterns.avgEngagementRate || 0.03;
+
+    const dailyGrowthRate = 0.002 + avgEngagement * 0.1;
     const projectedGrowth = {
       daily: Math.round(currentFollowers * dailyGrowthRate),
       weekly: Math.round(currentFollowers * dailyGrowthRate * 7),
       monthly: Math.round(currentFollowers * dailyGrowthRate * 30),
     };
 
-    const strategies: FollowerGrowthStrategy['strategies'] = [
+    const strategies: FollowerGrowthStrategy["strategies"] = [
       {
-        strategy: 'Increase posting consistency with optimal timing',
+        strategy: "Increase posting consistency with optimal timing",
         expectedImpact: 0.25,
-        effort: 'medium',
-        timeToResults: '2-4 weeks',
+        effort: "medium",
+        timeToResults: "2-4 weeks",
         priority: 1,
       },
       {
-        strategy: 'Engage with trending topics and hashtags',
+        strategy: "Engage with trending topics and hashtags",
         expectedImpact: 0.3,
-        effort: 'low',
-        timeToResults: '1-2 weeks',
+        effort: "low",
+        timeToResults: "1-2 weeks",
         priority: 2,
       },
       {
-        strategy: 'Cross-promote content across platforms',
+        strategy: "Cross-promote content across platforms",
         expectedImpact: 0.2,
-        effort: 'medium',
-        timeToResults: '2-3 weeks',
+        effort: "medium",
+        timeToResults: "2-3 weeks",
         priority: 3,
       },
       {
-        strategy: 'Collaborate with similar-sized creators',
+        strategy: "Collaborate with similar-sized creators",
         expectedImpact: 0.35,
-        effort: 'high',
-        timeToResults: '1-2 months',
+        effort: "high",
+        timeToResults: "1-2 months",
         priority: 4,
       },
       {
-        strategy: 'Respond to all comments within 1 hour',
+        strategy: "Respond to all comments within 1 hour",
         expectedImpact: 0.15,
-        effort: 'high',
-        timeToResults: '3-4 weeks',
+        effort: "high",
+        timeToResults: "3-4 weeks",
         priority: 5,
       },
     ];
@@ -915,35 +1103,36 @@ export class SocialAutopilotEngine extends BaseModel {
     const contentRec = this.recommendContentType(platform);
     const contentRecommendations = [
       `Focus on ${contentRec.recommendedType} content for maximum engagement`,
-      'Create series or recurring content themes for audience retention',
-      'Share behind-the-scenes content to build authenticity',
-      'Use storytelling to create emotional connections',
+      "Create series or recurring content themes for audience retention",
+      "Share behind-the-scenes content to build authenticity",
+      "Use storytelling to create emotional connections",
     ];
 
     const collaborationSuggestions = [
-      'Partner with creators in complementary niches',
-      'Host joint live sessions or takeovers',
-      'Create duets or response content',
-      'Feature guest appearances in your content',
+      "Partner with creators in complementary niches",
+      "Host joint live sessions or takeovers",
+      "Create duets or response content",
+      "Feature guest appearances in your content",
     ];
 
     const trendResult = this.detectTrends([platform]);
     const hashtagStrategy = [
-      'Mix 3-5 popular hashtags with 2-3 niche-specific ones',
-      `Consider trending: ${trendResult.emergingTopics.slice(0, 3).join(', ') || 'music, artist, newrelease'}`,
-      'Create a branded hashtag for community building',
-      'Research competitor hashtags for inspiration',
+      "Mix 3-5 popular hashtags with 2-3 niche-specific ones",
+      `Consider trending: ${trendResult.emergingTopics.slice(0, 3).join(", ") || "music, artist, newrelease"}`,
+      "Create a branded hashtag for community building",
+      "Research competitor hashtags for inspiration",
     ];
 
     const scheduleOpt = this.optimizeSchedule(platform, 14);
     const postingOptimizations = [
-      `Post during peak hours: ${PLATFORM_PEAK_HOURS[platform].slice(0, 3).join(', ')}:00`,
-      `Best days: ${PLATFORM_PEAK_DAYS[platform].slice(0, 3).join(', ')}`,
+      `Post during peak hours: ${PLATFORM_PEAK_HOURS[platform].slice(0, 3).join(", ")}:00`,
+      `Best days: ${PLATFORM_PEAK_DAYS[platform].slice(0, 3).join(", ")}`,
       `Aim for ${scheduleOpt.postsPerDay} posts per day maximum`,
-      'Maintain at least 1-2 rest days per week to avoid fatigue',
+      "Maintain at least 1-2 rest days per week to avoid fatigue",
     ];
 
-    const reasoning = `Based on your current ${currentFollowers} followers and ${(avgEngagement * 100).toFixed(1)}% engagement rate on ${platform}, ` +
+    const reasoning =
+      `Based on your current ${currentFollowers} followers and ${(avgEngagement * 100).toFixed(1)}% engagement rate on ${platform}, ` +
       `implementing these strategies could increase your follower count by approximately ${projectedGrowth.monthly} per month. ` +
       `Focus on ${contentRec.recommendedType} content and posting during ${PLATFORM_PEAK_DAYS[platform][0]} at ${PLATFORM_PEAK_HOURS[platform][0]}:00 for optimal results.`;
 
@@ -964,34 +1153,48 @@ export class SocialAutopilotEngine extends BaseModel {
     const result = new Date(from);
     const targetDay = DAY_INDEX[day];
     const currentDay = result.getDay();
-    
+
     let daysToAdd = targetDay - currentDay;
     if (daysToAdd < 0) daysToAdd += 7;
     if (daysToAdd === 0 && result.getHours() >= hour) daysToAdd = 7;
-    
+
     result.setDate(result.getDate() + daysToAdd);
     result.setHours(hour, 0, 0, 0);
-    
+
     return result;
   }
 
-  private getAlternativeTimes(platform: Platform, bestHour: number, from: Date, count: number): Date[] {
+  private getAlternativeTimes(
+    platform: Platform,
+    bestHour: number,
+    from: Date,
+    count: number,
+  ): Date[] {
     const alternatives: Date[] = [];
-    const peakHours = PLATFORM_PEAK_HOURS[platform].filter(h => h !== bestHour);
+    const peakHours = PLATFORM_PEAK_HOURS[platform].filter(
+      (h) => h !== bestHour,
+    );
     const peakDays = PLATFORM_PEAK_DAYS[platform];
-    
+
     for (let i = 0; i < Math.min(count, peakHours.length); i++) {
       const day = peakDays[i % peakDays.length];
       alternatives.push(this.getNextOccurrence(day, peakHours[i], from));
     }
-    
+
     return alternatives;
   }
 
-  private estimateEngagement(platform: Platform, contentType: ContentType, hour: number): number {
+  private estimateEngagement(
+    platform: Platform,
+    contentType: ContentType,
+    hour: number,
+  ): number {
     const base = 0.03;
-    const typeMultiplier = CONTENT_TYPE_PERFORMANCE[platform][contentType] || 0.5;
-    const timeMultiplier = PLATFORM_PEAK_HOURS[platform].includes(hour) ? 1.3 : 0.8;
+    const typeMultiplier =
+      CONTENT_TYPE_PERFORMANCE[platform][contentType] || 0.5;
+    const timeMultiplier = PLATFORM_PEAK_HOURS[platform].includes(hour)
+      ? 1.3
+      : 0.8;
     return base * typeMultiplier * timeMultiplier;
   }
 
@@ -1013,34 +1216,45 @@ export class SocialAutopilotEngine extends BaseModel {
     bestHour: number,
     optimalDay: DayOfWeek,
     dataPointsUsed: number,
-    audience?: AudienceInsights
+    audience?: AudienceInsights,
   ): string {
-    const dataSource = dataPointsUsed > 10 
-      ? `Based on ${dataPointsUsed} historical posts` 
-      : 'Based on platform-wide best practices';
-    
-    const audienceNote = audience 
-      ? ` and your audience's peak activity patterns` 
-      : '';
-    
-    return `${dataSource}${audienceNote}, posting ${contentType} content on ${optimalDay}s at ${bestHour}:00 ` +
+    const dataSource =
+      dataPointsUsed > 10
+        ? `Based on ${dataPointsUsed} historical posts`
+        : "Based on platform-wide best practices";
+
+    const audienceNote = audience
+      ? ` and your audience's peak activity patterns`
+      : "";
+
+    return (
+      `${dataSource}${audienceNote}, posting ${contentType} content on ${optimalDay}s at ${bestHour}:00 ` +
       `is optimal for ${platform}. This timing aligns with when your audience is most active and engaged. ` +
-      `Consider A/B testing with the alternative times to further optimize your schedule.`;
+      `Consider A/B testing with the alternative times to further optimize your schedule.`
+    );
   }
 
-  private getContentTypeTrendBonus(platform: Platform, type: ContentType): number {
+  private getContentTypeTrendBonus(
+    platform: Platform,
+    type: ContentType,
+  ): number {
     const trendingTypes: Partial<Record<Platform, ContentType[]>> = {
-      instagram: ['reel', 'carousel'],
-      tiktok: ['short', 'video'],
-      youtube: ['short', 'live'],
-      linkedin: ['carousel', 'video'],
+      instagram: ["reel", "carousel"],
+      tiktok: ["short", "video"],
+      youtube: ["short", "live"],
+      linkedin: ["carousel", "video"],
     };
-    
+
     return trendingTypes[platform]?.includes(type) ? 0.15 : 0;
   }
 
-  private getContentTypeReason(platform: Platform, type: ContentType, score: number): string {
-    if (score > 0.8) return `Top performer on ${platform} with high engagement rates`;
+  private getContentTypeReason(
+    platform: Platform,
+    type: ContentType,
+    score: number,
+  ): string {
+    if (score > 0.8)
+      return `Top performer on ${platform} with high engagement rates`;
     if (score > 0.6) return `Strong performance, good for regular posting`;
     if (score > 0.4) return `Moderate performance, use strategically`;
     return `Lower engagement, consider alternatives`;
@@ -1048,12 +1262,20 @@ export class SocialAutopilotEngine extends BaseModel {
 
   private getPlatformTrends(platform: Platform): string[] {
     const trends: Record<Platform, string[]> = {
-      twitter: ['Short-form video clips', 'Thread storytelling', 'Poll engagement'],
-      instagram: ['Reels dominating feed', 'Carousel posts for education', 'Story engagement'],
-      tiktok: ['Trending sounds', 'Duets and stitches', 'Educational content'],
-      youtube: ['Shorts growth', 'Community posts', 'Live streaming'],
-      facebook: ['Video content priority', 'Group engagement', 'Live events'],
-      linkedin: ['Carousel documents', 'Personal stories', 'Industry insights'],
+      twitter: [
+        "Short-form video clips",
+        "Thread storytelling",
+        "Poll engagement",
+      ],
+      instagram: [
+        "Reels dominating feed",
+        "Carousel posts for education",
+        "Story engagement",
+      ],
+      tiktok: ["Trending sounds", "Duets and stitches", "Educational content"],
+      youtube: ["Shorts growth", "Community posts", "Live streaming"],
+      facebook: ["Video content priority", "Group engagement", "Live events"],
+      linkedin: ["Carousel documents", "Personal stories", "Industry insights"],
     };
     return trends[platform] || [];
   }
@@ -1062,26 +1284,29 @@ export class SocialAutopilotEngine extends BaseModel {
     platform: Platform,
     recommendedType: ContentType,
     score: number,
-    dataPoints: number
+    dataPoints: number,
   ): string {
-    const confidence = dataPoints > 50 ? 'high confidence' : 'moderate confidence';
-    return `With ${confidence}, ${recommendedType} content is recommended for ${platform} based on ` +
+    const confidence =
+      dataPoints > 50 ? "high confidence" : "moderate confidence";
+    return (
+      `With ${confidence}, ${recommendedType} content is recommended for ${platform} based on ` +
       `a performance score of ${(score * 100).toFixed(0)}%. ` +
       `This content type currently aligns with platform algorithm preferences and audience expectations. ` +
-      `Consider mixing with alternative content types to maintain variety.`;
+      `Consider mixing with alternative content types to maintain variety.`
+    );
   }
 
   private generateSimulatedTrends(platforms: Platform[]): TrendingTopic[] {
     const commonTrends = [
-      { topic: 'New Music Friday', relevance: 0.9 },
-      { topic: 'Behind The Scenes', relevance: 0.8 },
-      { topic: 'Artist Journey', relevance: 0.75 },
-      { topic: 'Music Production', relevance: 0.7 },
-      { topic: 'Collaboration Announcement', relevance: 0.85 },
+      { topic: "New Music Friday", relevance: 0.9 },
+      { topic: "Behind The Scenes", relevance: 0.8 },
+      { topic: "Artist Journey", relevance: 0.75 },
+      { topic: "Music Production", relevance: 0.7 },
+      { topic: "Collaboration Announcement", relevance: 0.85 },
     ];
-    
+
     const trends: TrendingTopic[] = [];
-    
+
     for (const platform of platforms) {
       for (const trend of commonTrends.slice(0, 3)) {
         trends.push({
@@ -1096,38 +1321,58 @@ export class SocialAutopilotEngine extends BaseModel {
         });
       }
     }
-    
+
     return trends;
   }
 
-  private calculateMarketSentiment(trends: TrendingTopic[]): 'positive' | 'neutral' | 'negative' {
-    const avgScore = trends.reduce((sum, t) => sum + t.trendScore, 0) / (trends.length || 1);
-    if (avgScore > 0.7) return 'positive';
-    if (avgScore > 0.4) return 'neutral';
-    return 'negative';
+  private calculateMarketSentiment(
+    trends: TrendingTopic[],
+  ): "positive" | "neutral" | "negative" {
+    const avgScore =
+      trends.reduce((sum, t) => sum + t.trendScore, 0) / (trends.length || 1);
+    if (avgScore > 0.7) return "positive";
+    if (avgScore > 0.4) return "neutral";
+    return "negative";
   }
 
-  private calculateShareability(text: string | undefined, contentType: ContentType, platform: Platform): number {
+  private calculateShareability(
+    text: string | undefined,
+    contentType: ContentType,
+    platform: Platform,
+  ): number {
     let score = 0.5;
-    
-    if (contentType === 'video' || contentType === 'reel') score += 0.2;
-    if (text && text.includes('?')) score += 0.1;
+
+    if (contentType === "video" || contentType === "reel") score += 0.2;
+    if (text && text.includes("?")) score += 0.1;
     if (text && text.length > 50 && text.length < 150) score += 0.1;
     if (text && /\b(share|retweet|tag|comment)\b/i.test(text)) score += 0.1;
-    
+
     return Math.min(1, score);
   }
 
   private calculateEmotionalResonance(text: string): number {
-    const emotionalWords = /\b(love|amazing|incredible|excited|proud|grateful|inspired|happy|blessed|journey|dream|passion)\b/gi;
+    const emotionalWords =
+      /\b(love|amazing|incredible|excited|proud|grateful|inspired|happy|blessed|journey|dream|passion)\b/gi;
     const matches = text.match(emotionalWords) || [];
     return Math.min(1, 0.3 + matches.length * 0.1);
   }
 
-  private calculateTrendAlignment(topics: string[], hashtags: string[], platform: Platform): number {
-    const trendingTopics = ['newmusic', 'music', 'artist', 'producer', 'song', 'album', 'release'];
-    const alignedCount = [...topics, ...hashtags].filter(t => 
-      trendingTopics.some(trend => t.toLowerCase().includes(trend))
+  private calculateTrendAlignment(
+    topics: string[],
+    hashtags: string[],
+    platform: Platform,
+  ): number {
+    const trendingTopics = [
+      "newmusic",
+      "music",
+      "artist",
+      "producer",
+      "song",
+      "album",
+      "release",
+    ];
+    const alignedCount = [...topics, ...hashtags].filter((t) =>
+      trendingTopics.some((trend) => t.toLowerCase().includes(trend)),
     ).length;
     return Math.min(1, 0.3 + alignedCount * 0.15);
   }
@@ -1138,44 +1383,56 @@ export class SocialAutopilotEngine extends BaseModel {
     return 0.5 + Math.random() * 0.3;
   }
 
-  private calculateAudienceRelevance(topics: string[], platform: Platform): number {
+  private calculateAudienceRelevance(
+    topics: string[],
+    platform: Platform,
+  ): number {
     const audience = this.audienceInsights.get(platform);
     if (!audience) return 0.5;
-    
+
     const interests = audience.demographicBreakdown.interests || [];
-    const matchCount = topics.filter(t => 
-      interests.some(i => i.toLowerCase().includes(t.toLowerCase()))
+    const matchCount = topics.filter((t) =>
+      interests.some((i) => i.toLowerCase().includes(t.toLowerCase())),
     ).length;
-    
+
     return Math.min(1, 0.4 + matchCount * 0.2);
   }
 
-  private calculateTimingScore(scheduledTime: Date, platform: Platform): number {
+  private calculateTimingScore(
+    scheduledTime: Date,
+    platform: Platform,
+  ): number {
     const hour = scheduledTime.getHours();
     const day = DAY_NAMES[scheduledTime.getDay()];
-    
+
     const hourScore = PLATFORM_PEAK_HOURS[platform].includes(hour) ? 0.8 : 0.4;
     const dayScore = PLATFORM_PEAK_DAYS[platform].includes(day) ? 0.9 : 0.5;
-    
+
     return (hourScore + dayScore) / 2;
   }
 
-  private identifyTopViralFactors(scores: Record<string, number>): ViralPotentialScore['topFactors'] {
+  private identifyTopViralFactors(
+    scores: Record<string, number>,
+  ): ViralPotentialScore["topFactors"] {
     return Object.entries(scores)
       .map(([factor, score]) => ({
-        factor: factor.replace(/([A-Z])/g, ' $1').trim(),
+        factor: factor.replace(/([A-Z])/g, " $1").trim(),
         impact: score,
-        recommendation: score > 0.7 
-          ? 'Strong factor - maintain this approach' 
-          : score > 0.4 
-            ? 'Moderate - room for improvement'
-            : 'Weak - focus on improving this area',
+        recommendation:
+          score > 0.7
+            ? "Strong factor - maintain this approach"
+            : score > 0.4
+              ? "Moderate - room for improvement"
+              : "Weak - focus on improving this area",
       }))
       .sort((a, b) => b.impact - a.impact)
       .slice(0, 5);
   }
 
-  private calculateViralProbability(overallScore: number, platform: Platform): number {
+  private calculateViralProbability(
+    overallScore: number,
+    platform: Platform,
+  ): number {
     const baseProbability: Record<Platform, number> = {
       tiktok: 0.05,
       twitter: 0.02,
@@ -1184,100 +1441,136 @@ export class SocialAutopilotEngine extends BaseModel {
       facebook: 0.02,
       linkedin: 0.01,
     };
-    return Math.min(0.5, (baseProbability[platform] || 0.02) * (1 + overallScore * 5));
+    return Math.min(
+      0.5,
+      (baseProbability[platform] || 0.02) * (1 + overallScore * 5),
+    );
   }
 
   private generateViralReasoning(
     score: number,
-    topFactors: ViralPotentialScore['topFactors'],
+    topFactors: ViralPotentialScore["topFactors"],
     platform: Platform,
-    contentType: ContentType
+    contentType: ContentType,
   ): string {
-    const scoreLabel = score > 0.7 ? 'high' : score > 0.4 ? 'moderate' : 'low';
-    const topFactor = topFactors[0]?.factor || 'overall quality';
-    
-    return `This ${contentType} content has ${scoreLabel} viral potential (${(score * 100).toFixed(0)}%) on ${platform}. ` +
+    const scoreLabel = score > 0.7 ? "high" : score > 0.4 ? "moderate" : "low";
+    const topFactor = topFactors[0]?.factor || "overall quality";
+
+    return (
+      `This ${contentType} content has ${scoreLabel} viral potential (${(score * 100).toFixed(0)}%) on ${platform}. ` +
       `The strongest factor is ${topFactor}. ` +
-      `To improve viral chances, focus on ${topFactors[topFactors.length - 1]?.factor || 'engagement hooks'} ` +
-      `and post during peak audience activity times.`;
+      `To improve viral chances, focus on ${topFactors[topFactors.length - 1]?.factor || "engagement hooks"} ` +
+      `and post during peak audience activity times.`
+    );
   }
 
   private truncateText(text: string, limit: number): string {
     if (text.length <= limit) return text;
-    return text.slice(0, limit - 3).trim() + '...';
+    return text.slice(0, limit - 3).trim() + "...";
   }
 
   private adjustToneForPlatform(text: string, platform: Platform): string {
-    if (platform === 'linkedin') {
-      return text.replace(/!+/g, '.').replace(/\b(lol|omg|tbh)\b/gi, '');
+    if (platform === "linkedin") {
+      return text.replace(/!+/g, ".").replace(/\b(lol|omg|tbh)\b/gi, "");
     }
-    if (platform === 'tiktok') {
-      return text.toLowerCase().replace(/\.$/, '');
+    if (platform === "tiktok") {
+      return text.toLowerCase().replace(/\.$/, "");
     }
     return text;
   }
 
-  private adaptHashtags(hashtags: string[], platform: Platform, limit: number): string[] {
+  private adaptHashtags(
+    hashtags: string[],
+    platform: Platform,
+    limit: number,
+  ): string[] {
     const platformSpecific: Partial<Record<Platform, string[]>> = {
-      instagram: ['music', 'newmusic', 'artist', 'musician', 'instagood'],
-      tiktok: ['fyp', 'foryou', 'viral', 'music', 'artist'],
-      twitter: ['music', 'newrelease', 'artist'],
-      linkedin: ['musicindustry', 'artist', 'creative'],
+      instagram: ["music", "newmusic", "artist", "musician", "instagood"],
+      tiktok: ["fyp", "foryou", "viral", "music", "artist"],
+      twitter: ["music", "newrelease", "artist"],
+      linkedin: ["musicindustry", "artist", "creative"],
     };
-    
+
     const base = hashtags.slice(0, Math.floor(limit * 0.6));
-    const platformTags = (platformSpecific[platform] || []).slice(0, limit - base.length);
-    
+    const platformTags = (platformSpecific[platform] || []).slice(
+      0,
+      limit - base.length,
+    );
+
     return Array.from(new Set([...base, ...platformTags])).slice(0, limit);
   }
 
   private getOptimalContentType(platform: Platform): ContentType {
     const optimal: Record<Platform, ContentType> = {
-      twitter: 'image',
-      instagram: 'reel',
-      tiktok: 'video',
-      youtube: 'video',
-      facebook: 'video',
-      linkedin: 'carousel',
+      twitter: "image",
+      instagram: "reel",
+      tiktok: "video",
+      youtube: "video",
+      facebook: "video",
+      linkedin: "carousel",
     };
-    return optimal[platform] || 'image';
+    return optimal[platform] || "image";
   }
 
   private getMediaAdjustments(from: Platform, to: Platform): string[] {
     const adjustments: string[] = [];
-    
-    if (to === 'tiktok' && from !== 'tiktok') {
-      adjustments.push('Convert to vertical 9:16 format');
-      adjustments.push('Add trending sound or music');
-      adjustments.push('Keep under 60 seconds for optimal reach');
+
+    if (to === "tiktok" && from !== "tiktok") {
+      adjustments.push("Convert to vertical 9:16 format");
+      adjustments.push("Add trending sound or music");
+      adjustments.push("Keep under 60 seconds for optimal reach");
     }
-    
-    if (to === 'instagram' && from !== 'instagram') {
-      adjustments.push('Optimize for 1:1 or 4:5 ratio');
-      adjustments.push('Ensure high resolution (1080x1080 minimum)');
+
+    if (to === "instagram" && from !== "instagram") {
+      adjustments.push("Optimize for 1:1 or 4:5 ratio");
+      adjustments.push("Ensure high resolution (1080x1080 minimum)");
     }
-    
-    if (to === 'youtube') {
-      adjustments.push('Consider creating Shorts version (under 60s)');
-      adjustments.push('Use 16:9 aspect ratio for standard videos');
+
+    if (to === "youtube") {
+      adjustments.push("Consider creating Shorts version (under 60s)");
+      adjustments.push("Use 16:9 aspect ratio for standard videos");
     }
-    
-    if (to === 'linkedin') {
-      adjustments.push('Keep professional tone');
-      adjustments.push('Add subtitles for video content');
+
+    if (to === "linkedin") {
+      adjustments.push("Keep professional tone");
+      adjustments.push("Add subtitles for video content");
     }
-    
-    return adjustments.length > 0 ? adjustments : ['No major adjustments needed'];
+
+    return adjustments.length > 0
+      ? adjustments
+      : ["No major adjustments needed"];
   }
 
   private getOptimizations(platform: Platform): string[] {
     const opts: Record<Platform, string[]> = {
-      twitter: ['Use thread format for longer content', 'Include relevant mentions'],
-      instagram: ['Use all 30 hashtags strategically', 'Add alt text for accessibility'],
-      tiktok: ['Use trending sounds', 'Add text overlays', 'Hook in first 3 seconds'],
-      youtube: ['Optimize thumbnail', 'Include keywords in description', 'Add end screen'],
-      facebook: ['Encourage shares', 'Use native video upload', 'Tag relevant pages'],
-      linkedin: ['Use document/carousel format', 'Ask thoughtful questions', 'Tag industry leaders'],
+      twitter: [
+        "Use thread format for longer content",
+        "Include relevant mentions",
+      ],
+      instagram: [
+        "Use all 30 hashtags strategically",
+        "Add alt text for accessibility",
+      ],
+      tiktok: [
+        "Use trending sounds",
+        "Add text overlays",
+        "Hook in first 3 seconds",
+      ],
+      youtube: [
+        "Optimize thumbnail",
+        "Include keywords in description",
+        "Add end screen",
+      ],
+      facebook: [
+        "Encourage shares",
+        "Use native video upload",
+        "Tag relevant pages",
+      ],
+      linkedin: [
+        "Use document/carousel format",
+        "Ask thoughtful questions",
+        "Tag industry leaders",
+      ],
     };
     return opts[platform] || [];
   }
@@ -1286,26 +1579,35 @@ export class SocialAutopilotEngine extends BaseModel {
     from: Platform,
     to: Platform,
     originalLength: number,
-    targetLimit: number
+    targetLimit: number,
   ): string {
     const truncated = originalLength > targetLimit;
-    return `Content adapted from ${from} to ${to}. ` +
-      (truncated ? `Text truncated from ${originalLength} to ${targetLimit} characters. ` : '') +
+    return (
+      `Content adapted from ${from} to ${to}. ` +
+      (truncated
+        ? `Text truncated from ${originalLength} to ${targetLimit} characters. `
+        : "") +
       `Hashtags and tone adjusted for ${to} audience expectations. ` +
-      `Media format recommendations provided for optimal platform performance.`;
+      `Media format recommendations provided for optimal platform performance.`
+    );
   }
 
-  private calculateFatigueRisk(postsPerWeek: number, platform: Platform): number {
+  private calculateFatigueRisk(
+    postsPerWeek: number,
+    platform: Platform,
+  ): number {
     const limits = PLATFORM_LIMITS[platform];
     const maxSafe = (limits?.maxDailyPosts || 5) * 5;
     return Math.min(1, postsPerWeek / maxSafe);
   }
 
   private calculateGrowthPotential(
-    schedule: ScheduleOptimization['suggestedSchedule'],
-    platform: Platform
+    schedule: ScheduleOptimization["suggestedSchedule"],
+    platform: Platform,
   ): number {
-    const highPriorityCount = schedule.filter(s => s.priority === 'high').length;
+    const highPriorityCount = schedule.filter(
+      (s) => s.priority === "high",
+    ).length;
     return Math.min(1, 0.5 + (highPriorityCount / schedule.length) * 0.5);
   }
 
@@ -1313,34 +1615,37 @@ export class SocialAutopilotEngine extends BaseModel {
     platform: Platform,
     postsPerWeek: number,
     peakDays: DayOfWeek[],
-    fatigueRisk: number
+    fatigueRisk: number,
   ): string {
-    const riskLevel = fatigueRisk > 0.7 ? 'high' : fatigueRisk > 0.4 ? 'moderate' : 'low';
-    return `Optimized schedule for ${platform} with ${postsPerWeek} posts per week. ` +
-      `Focus on ${peakDays.slice(0, 3).join(', ')} for maximum engagement. ` +
+    const riskLevel =
+      fatigueRisk > 0.7 ? "high" : fatigueRisk > 0.4 ? "moderate" : "low";
+    return (
+      `Optimized schedule for ${platform} with ${postsPerWeek} posts per week. ` +
+      `Focus on ${peakDays.slice(0, 3).join(", ")} for maximum engagement. ` +
       `Audience fatigue risk is ${riskLevel}. ` +
-      `Include rest days to maintain audience interest and avoid algorithm penalties.`;
+      `Include rest days to maintain audience interest and avoid algorithm penalties.`
+    );
   }
 
   private generateEngagementReasoning(
     platform: Platform,
     contentType: ContentType,
     engagementRate: number,
-    factors: Array<{ factor: string; impact: number }>
+    factors: Array<{ factor: string; impact: number }>,
   ): string {
     const ratePercentage = (engagementRate * 100).toFixed(2);
-    const topPositive = factors.find(f => f.impact > 0);
-    const topNegative = factors.find(f => f.impact < 0);
-    
+    const topPositive = factors.find((f) => f.impact > 0);
+    const topNegative = factors.find((f) => f.impact < 0);
+
     let reasoning = `Predicted ${ratePercentage}% engagement rate for ${contentType} on ${platform}. `;
-    
+
     if (topPositive) {
       reasoning += `${topPositive.factor} is boosting performance. `;
     }
     if (topNegative) {
       reasoning += `Consider improving ${topNegative.factor} for better results. `;
     }
-    
+
     return reasoning;
   }
 }

@@ -16,22 +16,22 @@
  * 100 entries) so they can be inspected and re-queued.
  */
 
-import { Queue, Worker, Job } from 'bullmq';
-import { getRedisClient, newBullMQRedisConnection } from './redisClient.js';
-import { logger } from '../logger.js';
-import { customerHealthScoreService } from '../services/customerHealthScoreService.js';
-import { dunningService } from '../services/dunningService.js';
-import { reEngagementService } from '../services/reEngagementService.js';
-import { flushFeatureEvents } from '../services/featureEventBuffer.js';
+import { Queue, Worker, Job } from "bullmq";
+import { getRedisClient, newBullMQRedisConnection } from "./redisClient.js";
+import { logger } from "../logger.js";
+import { customerHealthScoreService } from "../services/customerHealthScoreService.js";
+import { dunningService } from "../services/dunningService.js";
+import { reEngagementService } from "../services/reEngagementService.js";
+import { flushFeatureEvents } from "../services/featureEventBuffer.js";
 
-export const RETENTION_QUEUE = 'retention-jobs';
+export const RETENTION_QUEUE = "retention-jobs";
 
 /**
  * How many jobs the worker runs in parallel.
  * Capped to 3 to prevent DB connection storms during queue drain.
  * Override with BULLMQ_CONCURRENCY env var.
  */
-const WORKER_CONCURRENCY = parseInt(process.env.BULLMQ_CONCURRENCY ?? '3', 10);
+const WORKER_CONCURRENCY = parseInt(process.env.BULLMQ_CONCURRENCY ?? "3", 10);
 
 /**
  * Job persistence + retry policy.
@@ -41,7 +41,7 @@ const JOB_DEFAULTS = {
   removeOnComplete: true,
   removeOnFail: { count: 10 },
   attempts: 2,
-  backoff: { type: 'exponential' as const, delay: 10_000 },
+  backoff: { type: "exponential" as const, delay: 10_000 },
 };
 
 let _queue: Queue | null = null;
@@ -91,8 +91,10 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
     // Safety: at t=5 s the new worker has not yet processed any jobs, so no
     // legitimately-running active jobs exist to be accidentally removed.
     try {
-      await queue.clean(0, 500, 'active');
-      logger.info('[Worker] Stale active-state jobs from prior session cleaned (single bulk Lua call)');
+      await queue.clean(0, 500, "active");
+      logger.info(
+        "[Worker] Stale active-state jobs from prior session cleaned (single bulk Lua call)",
+      );
     } catch {
       // non-fatal — processor handles any stragglers that slip through
     }
@@ -101,18 +103,24 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
     // Use queue.drain() for large batches (single Lua call) to avoid
     // saturating the PDIM AIMD chain with N individual job.remove() calls.
     try {
-      const waiting = await queue.getJobs(['waiting'], 0, 500);
-      const stale   = waiting.filter(j => !j.name && !(j.data as Record<string, unknown>)?.type);
+      const waiting = await queue.getJobs(["waiting"], 0, 500);
+      const stale = waiting.filter(
+        (j) => !j.name && !(j.data as Record<string, unknown>)?.type,
+      );
       if (stale.length > 10) {
         // Bulk drain: removes ALL waiting jobs in a single Lua EVALSHA.
         // Legitimate named jobs are re-added by the scheduler on its next tick
         // (cron is typically seconds away at startup, so no jobs are lost).
         await queue.drain();
-        logger.info(`[Worker] Bulk-drained ${stale.length} stale orphan waiting job(s) from prior session (single Lua call — avoids PDIM saturation)`);
+        logger.info(
+          `[Worker] Bulk-drained ${stale.length} stale orphan waiting job(s) from prior session (single Lua call — avoids PDIM saturation)`,
+        );
       } else if (stale.length > 0) {
         // Small count — individual removes are fine
-        await Promise.allSettled(stale.map(j => j.remove()));
-        logger.info(`[Worker] Purged ${stale.length} stale orphan waiting job(s) from prior session`);
+        await Promise.allSettled(stale.map((j) => j.remove()));
+        logger.info(
+          `[Worker] Purged ${stale.length} stale orphan waiting job(s) from prior session`,
+        );
       }
     } catch {
       // getJobs can timeout under LuaExecutor pressure; processor handles stragglers
@@ -120,17 +128,32 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
 
     // Step 3 — clean completed/failed tombstones older than 1 hour.
     // Use separate try blocks so a timeout on one state doesn't skip the other.
-    try { await queue.clean(3_600_000, 100, 'completed'); } catch { /* non-fatal */ }
-    try { await queue.clean(3_600_000, 100, 'failed'); } catch { /* non-fatal */ }
+    try {
+      await queue.clean(3_600_000, 100, "completed");
+    } catch {
+      /* non-fatal */
+    }
+    try {
+      await queue.clean(3_600_000, 100, "failed");
+    } catch {
+      /* non-fatal */
+    }
 
-    logger.info('[Worker] Startup job cleanup complete');
+    logger.info("[Worker] Startup job cleanup complete");
   } catch (err) {
     if (attempt < MAX_ATTEMPTS) {
       const delay = attempt * 30_000; // 30 s, 60 s, 90 s, 120 s (faster retry)
-      logger.warn(`[Worker] Job cleanup attempt ${attempt} failed — retrying in ${delay / 1000}s: ${(err as Error).message}`);
-      setTimeout(() => cleanStalledJobs(attempt + 1).catch(() => {}), delay).unref();
+      logger.warn(
+        `[Worker] Job cleanup attempt ${attempt} failed — retrying in ${delay / 1000}s: ${(err as Error).message}`,
+      );
+      setTimeout(
+        () => cleanStalledJobs(attempt + 1).catch(() => {}),
+        delay,
+      ).unref();
     } else {
-      logger.warn(`[Worker] Job cleanup permanently skipped after ${MAX_ATTEMPTS} attempts — processor will handle individual stale jobs`);
+      logger.warn(
+        `[Worker] Job cleanup permanently skipped after ${MAX_ATTEMPTS} attempts — processor will handle individual stale jobs`,
+      );
     }
   }
 }
@@ -152,39 +175,53 @@ export function startRetentionWorker(): Worker {
     async (job: Job) => {
       const jobName = job.name ?? (job.data?.type as string | undefined);
       if (!jobName) {
-        logger.info(`[Worker] Removing stale/unnamed job id=${job.id} — leftover from prior session`);
+        logger.info(
+          `[Worker] Removing stale/unnamed job id=${job.id} — leftover from prior session`,
+        );
         // Remove the job outright so BullMQ never tries moveToFinished on it.
         // A bare `return` would still call moveToFinished, which fails when the
         // LuaExecutor lock has expired and produces a noisy "Missing lock" error.
-        try { await job.remove(); } catch { /* job already gone — ignore */ }
+        try {
+          await job.remove();
+        } catch {
+          /* job already gone — ignore */
+        }
         return;
       }
       logger.info(`[Worker] Processing job ${jobName} id=${job.id}`);
 
       try {
         switch (jobName) {
-          case 'health-score-batch': {
+          case "health-score-batch": {
             const { cursor = 0, batchSize = 100 } = job.data;
-            const nextCursor = await customerHealthScoreService.batchComputePaged(cursor, batchSize);
+            const nextCursor =
+              await customerHealthScoreService.batchComputePaged(
+                cursor,
+                batchSize,
+              );
             if (nextCursor !== null) {
-              await getRetentionQueue().add('health-score-batch', { cursor: nextCursor, batchSize });
+              await getRetentionQueue().add("health-score-batch", {
+                cursor: nextCursor,
+                batchSize,
+              });
             }
             break;
           }
 
-          case 'dunning-process': {
+          case "dunning-process": {
             const { limit = 50 } = job.data;
-            const processed = await dunningService.processPendingStepsPaged(limit);
+            const processed =
+              await dunningService.processPendingStepsPaged(limit);
             logger.info(`[Worker] Dunning processed ${processed} records`);
             break;
           }
 
-          case 're-engagement-batch': {
+          case "re-engagement-batch": {
             await reEngagementService.runDailyCheck();
             break;
           }
 
-          case 'feature-event-flush': {
+          case "feature-event-flush": {
             const MAX_FLUSH_ITERATIONS = 20;
             let totalFlushed = 0;
             let batch: number;
@@ -195,10 +232,14 @@ export function startRetentionWorker(): Worker {
               iterations++;
             } while (batch > 0 && iterations < MAX_FLUSH_ITERATIONS);
             if (batch > 0) {
-              await getRetentionQueue().add('feature-event-flush', {});
-              logger.info(`[Worker] Feature event buffer still has items — re-queued next flush`);
+              await getRetentionQueue().add("feature-event-flush", {});
+              logger.info(
+                `[Worker] Feature event buffer still has items — re-queued next flush`,
+              );
             }
-            logger.info(`[Worker] Feature events flushed to DB: ${totalFlushed} in ${iterations} batches`);
+            logger.info(
+              `[Worker] Feature events flushed to DB: ${totalFlushed} in ${iterations} batches`,
+            );
             break;
           }
 
@@ -227,39 +268,41 @@ export function startRetentionWorker(): Worker {
         max: WORKER_CONCURRENCY,
         duration: 5_000,
       },
-    }
+    },
   );
 
   setImmediate(() => {
-    worker.run().catch(err => {
-      logger.warn({ err: err }, '[Worker] Failed to start run loop:');
+    worker.run().catch((err) => {
+      logger.warn({ err: err }, "[Worker] Failed to start run loop:");
     });
   });
 
-  worker.on('completed', job => {
+  worker.on("completed", (job) => {
     // Stale jobs are removed inside the processor — their name is undefined.
     // Suppress the completed log for those (already logged as WARN above).
     if (job.name) logger.info(`[Worker] ✅ ${job.id} (${job.name}) done`);
   });
 
-  worker.on('failed', (job, err) => {
-    const msg = err.message ?? '';
+  worker.on("failed", (job, err) => {
+    const msg = err.message ?? "";
     // PDIM 429 during stale-job cleanup is transient and self-healing — BullMQ
     // retries automatically.  Stale jobs have no name (undefined), so this is
     // always a post-restart cleanup race, never a real job failure.
-    if (msg.includes('PDIM HTTP 429') || msg.includes('ERR PDIM')) {
-      logger.warn(`[Worker] ⚠️ ${job?.id} (${job?.name ?? 'stale'}) PDIM rate-limit — self-healing: ${msg}`);
+    if (msg.includes("PDIM HTTP 429") || msg.includes("ERR PDIM")) {
+      logger.warn(
+        `[Worker] ⚠️ ${job?.id} (${job?.name ?? "stale"}) PDIM rate-limit — self-healing: ${msg}`,
+      );
     } else {
       logger.warn(`[Worker] ❌ ${job?.id} (${job?.name}) failed: ${msg}`);
     }
   });
 
-  worker.on('error', err => {
-    const full = err.message ?? '';
+  worker.on("error", (err) => {
+    const full = err.message ?? "";
     // Strip Lua/Node.js stack traces: only keep the first line of the message
     // so logs stay single-line during PDIM cold-starts (the remainder is
     // always the Lua "stack traceback:" block plus Node.js call frames).
-    const msg = full.split('\n')[0] ?? full;
+    const msg = full.split("\n")[0] ?? full;
     // "Missing lock for job X. moveToFinished" is a BullMQ-internal race that
     // fires when a slow LuaExecutor round-trip causes the job lock to expire
     // before the Lua moveToFinished script runs.  It is fully self-healing —
@@ -269,19 +312,19 @@ export function startRetentionWorker(): Worker {
     if (
       // Circuit-open rejections are expected during PDIM outages — completely
       // silent: the circuit breaker already logs the open/probe events.
-      msg.includes('PDIM circuit OPEN') ||
-      msg.includes('Circuit OPEN') ||
+      msg.includes("PDIM circuit OPEN") ||
+      msg.includes("Circuit OPEN") ||
       // PDIM 500/502 during cold-start: circuit breaker slow-lane already
       // handles these; no additional log needed.
-      msg.includes('PDIM HTTP 500') ||
-      msg.includes('PDIM HTTP 502')
+      msg.includes("PDIM HTTP 500") ||
+      msg.includes("PDIM HTTP 502")
     ) {
       // intentionally silent
     } else if (
-      msg.includes('Missing lock for job') ||
-      msg.includes('moveToFinished') ||
-      msg.includes('PDIM HTTP 429') ||
-      msg.includes('ERR PDIM')
+      msg.includes("Missing lock for job") ||
+      msg.includes("moveToFinished") ||
+      msg.includes("PDIM HTTP 429") ||
+      msg.includes("ERR PDIM")
     ) {
       logger.warn(`[Worker] Recoverable (self-healing): ${msg}`);
     } else if (
@@ -290,21 +333,21 @@ export function startRetentionWorker(): Worker {
       // and job registration.  The semaphore releases when a running script completes
       // or is hard-killed.  Demoted to INFO: this is always self-healing and is
       // already acknowledged by the autonomousJobScheduler registration handler.
-      msg.includes('Timeout waiting for worker slot')
+      msg.includes("Timeout waiting for worker slot")
     ) {
       logger.info(`[Worker] LuaExecutor slot busy (self-healing): ${msg}`);
     } else if (
       // BullMQ lock extension errors — fired when a job processor takes longer
       // than the job's lockDuration (default 30s).  BullMQ re-queues the job
       // automatically; no action needed.
-      msg.includes('Maximum lock renew count reached') ||
-      msg.includes('lock is lost') ||
-      msg.includes('Lock renewal failed') ||
-      msg.includes('lock expired') ||
+      msg.includes("Maximum lock renew count reached") ||
+      msg.includes("lock is lost") ||
+      msg.includes("Lock renewal failed") ||
+      msg.includes("lock expired") ||
       // Stalled-job checker race during normal shutdown / restart
-      msg.includes('StalledJobsError') ||
+      msg.includes("StalledJobsError") ||
       // Worker thread hard-killed by LuaExecutor timeout — already logged at ERROR
-      msg.includes('worker hard-killed')
+      msg.includes("worker hard-killed")
     ) {
       logger.warn(`[Worker] BullMQ lock / stall (self-healing): ${msg}`);
     } else {

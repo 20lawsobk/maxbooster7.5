@@ -1,21 +1,21 @@
-import { randomUUID } from 'crypto';
-import path from 'path';
-import fs from 'fs';
-import fsPromises from 'fs/promises';
-import os from 'os';
-import { storageService } from './storageService.js';
-import { queueService } from './queueService.js';
+import { randomUUID } from "crypto";
+import path from "path";
+import fs from "fs";
+import fsPromises from "fs/promises";
+import os from "os";
+import { storageService } from "./storageService.js";
+import { queueService } from "./queueService.js";
 import type {
   WarpJobPayload,
   WarpPreviewPayload,
   TransientDetectionPayload,
   WarpJobResult,
   TransientDetectionResult,
-} from './queueService.js';
-import { logger } from '../logger.js';
-import { db } from '../db.js';
-import { warpMarkers, audioClips } from '@shared/schema';
-import { eq, asc } from 'drizzle-orm';
+} from "./queueService.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
+import { warpMarkers, audioClips } from "@shared/schema";
+import { eq, asc } from "drizzle-orm";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -23,28 +23,31 @@ let ffmpegAvailable = false;
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
-    const fluentFfmpeg = await import('fluent-ffmpeg');
+    const fluentFfmpeg = await import("fluent-ffmpeg");
     ffmpeg = fluentFfmpeg.default;
     try {
-      const ffmpegStatic = await import('ffmpeg-static');
+      const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic.default) {
         ffmpeg.setFfmpegPath(ffmpegStatic.default);
       }
     } catch {
-      logger.warn('ffmpeg-static not available, using system ffmpeg');
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn({ err: error }, 'FFmpeg not available - time stretch features will be limited:');
+    logger.warn(
+      { err: error },
+      "FFmpeg not available - time stretch features will be limited:",
+    );
     return false;
   }
 }
 
 export interface WarpAlgorithm {
-  name: 'rubberband' | 'phase_vocoder' | 'wsola';
+  name: "rubberband" | "phase_vocoder" | "wsola";
   preserveFormants: boolean;
-  quality: 'fast' | 'normal' | 'high';
+  quality: "fast" | "normal" | "high";
 }
 
 export interface WarpMarkerData {
@@ -59,8 +62,8 @@ export interface WarpParameters {
   markers: WarpMarkerData[];
   pitchShift?: number;
   preserveFormants?: boolean;
-  algorithm?: WarpAlgorithm['name'];
-  quality?: WarpAlgorithm['quality'];
+  algorithm?: WarpAlgorithm["name"];
+  quality?: WarpAlgorithm["quality"];
 }
 
 export interface TransientData {
@@ -83,23 +86,23 @@ interface AudioMetadata {
   format: string;
 }
 
-const RUBBERBAND_QUALITY_MAP: Record<WarpAlgorithm['quality'], string> = {
-  fast: '-c2',
-  normal: '-c4',
-  high: '-c6',
+const RUBBERBAND_QUALITY_MAP: Record<WarpAlgorithm["quality"], string> = {
+  fast: "-c2",
+  normal: "-c4",
+  high: "-c6",
 };
 
 const RUBBERBAND_FLAGS = {
-  preserveFormants: '--formant',
-  smooth: '--smooth',
-  highQuality: '--realtime',
+  preserveFormants: "--formant",
+  smooth: "--smooth",
+  highQuality: "--realtime",
 };
 
 export class TimeStretchService {
   private tempDir: string;
 
   constructor() {
-    this.tempDir = path.join(os.tmpdir(), 'max-booster-warp');
+    this.tempDir = path.join(os.tmpdir(), "max-booster-warp");
     this.ensureTempDir();
   }
 
@@ -107,14 +110,19 @@ export class TimeStretchService {
     try {
       await fsPromises.mkdir(this.tempDir, { recursive: true });
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to create temp directory for warp processing');
+      logger.warn(
+        { err: error },
+        "Failed to create temp directory for warp processing",
+      );
     }
   }
 
   private async getAudioMetadata(filePath: string): Promise<AudioMetadata> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Time stretch features are disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Time stretch features are disabled in this deployment.",
+      );
     }
     return new Promise((resolve, reject) => {
       ffmpeg.ffprobe(filePath, (err, metadata) => {
@@ -122,16 +130,20 @@ export class TimeStretchService {
           reject(new Error(`Failed to probe audio file: ${err.message}`));
           return;
         }
-        const audioStream = metadata.streams.find((s) => s.codec_type === 'audio');
+        const audioStream = metadata.streams.find(
+          (s) => s.codec_type === "audio",
+        );
         if (!audioStream) {
-          reject(new Error('No audio stream found in file'));
+          reject(new Error("No audio stream found in file"));
           return;
         }
         resolve({
-          duration: parseFloat(metadata.format.duration || '0'),
-          sampleRate: audioStream.sample_rate ? parseInt(audioStream.sample_rate) : 44100,
+          duration: parseFloat(metadata.format.duration || "0"),
+          sampleRate: audioStream.sample_rate
+            ? parseInt(audioStream.sample_rate)
+            : 44100,
           channels: audioStream.channels || 2,
-          format: audioStream.codec_name || 'unknown',
+          format: audioStream.codec_name || "unknown",
         });
       });
     });
@@ -144,28 +156,35 @@ export class TimeStretchService {
     options: {
       pitchShift?: number;
       preserveFormants?: boolean;
-      algorithm?: WarpAlgorithm['name'];
-      quality?: WarpAlgorithm['quality'];
-    } = {}
+      algorithm?: WarpAlgorithm["name"];
+      quality?: WarpAlgorithm["quality"];
+    } = {},
   ): Promise<void> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Time stretch features are disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Time stretch features are disabled in this deployment.",
+      );
     }
-    const { pitchShift = 0, preserveFormants = true, algorithm = 'phase_vocoder', quality = 'normal' } = options;
+    const {
+      pitchShift = 0,
+      preserveFormants = true,
+      algorithm = "phase_vocoder",
+      quality = "normal",
+    } = options;
 
     return new Promise((resolve, reject) => {
       let command = ffmpeg(inputPath);
       const filters: string[] = [];
 
-      if (algorithm === 'rubberband') {
+      if (algorithm === "rubberband") {
         const pitchFactor = Math.pow(2, pitchShift / 12);
         let rubberBandFilter = `rubberband=tempo=${stretchRatio}:pitch=${pitchFactor}`;
         if (preserveFormants) {
-          rubberBandFilter += ':formant=preserved';
+          rubberBandFilter += ":formant=preserved";
         }
         filters.push(rubberBandFilter);
-      } else if (algorithm === 'wsola') {
+      } else if (algorithm === "wsola") {
         const tempoValue = 1 / stretchRatio;
         filters.push(`atempo=${Math.min(Math.max(tempoValue, 0.5), 2.0)}`);
         if (pitchShift !== 0) {
@@ -180,7 +199,7 @@ export class TimeStretchService {
         } else if (speed < 0.5) {
           let remaining = speed;
           while (remaining < 0.5) {
-            filters.push('atempo=0.5');
+            filters.push("atempo=0.5");
             remaining *= 2;
           }
           if (remaining !== 1.0) {
@@ -189,7 +208,7 @@ export class TimeStretchService {
         } else {
           let remaining = speed;
           while (remaining > 2.0) {
-            filters.push('atempo=2.0');
+            filters.push("atempo=2.0");
             remaining /= 2;
           }
           if (remaining !== 1.0) {
@@ -202,7 +221,7 @@ export class TimeStretchService {
           filters.push(`asetrate=44100*${pitchFactor}`);
           filters.push(`aresample=44100`);
           if (preserveFormants) {
-            filters.push('aecho=0.8:0.88:60:0.4');
+            filters.push("aecho=0.8:0.88:60:0.4");
           }
         }
       }
@@ -212,10 +231,12 @@ export class TimeStretchService {
       }
 
       command
-        .outputOptions(['-y', '-acodec', 'pcm_s24le'])
+        .outputOptions(["-y", "-acodec", "pcm_s24le"])
         .output(outputPath)
-        .on('end', () => resolve())
-        .on('error', (err) => reject(new Error(`Time stretch failed: ${err.message}`)))
+        .on("end", () => resolve())
+        .on("error", (err) =>
+          reject(new Error(`Time stretch failed: ${err.message}`)),
+        )
         .run();
     });
   }
@@ -227,16 +248,18 @@ export class TimeStretchService {
     options: {
       pitchShift?: number;
       preserveFormants?: boolean;
-      algorithm?: WarpAlgorithm['name'];
-      quality?: WarpAlgorithm['quality'];
-    } = {}
+      algorithm?: WarpAlgorithm["name"];
+      quality?: WarpAlgorithm["quality"];
+    } = {},
   ): Promise<void> {
     if (markers.length === 0) {
       await fsPromises.copyFile(inputPath, outputPath);
       return;
     }
 
-    const sortedMarkers = [...markers].sort((a, b) => a.sourceTime - b.sourceTime);
+    const sortedMarkers = [...markers].sort(
+      (a, b) => a.sourceTime - b.sourceTime,
+    );
     const metadata = await this.getAudioMetadata(inputPath);
     const segments: string[] = [];
     const tempFiles: string[] = [];
@@ -248,8 +271,14 @@ export class TimeStretchService {
       for (let i = 0; i < sortedMarkers.length; i++) {
         const marker = sortedMarkers[i];
         const segmentId = randomUUID();
-        const segmentInput = path.join(this.tempDir, `segment_${segmentId}_in.wav`);
-        const segmentOutput = path.join(this.tempDir, `segment_${segmentId}_out.wav`);
+        const segmentInput = path.join(
+          this.tempDir,
+          `segment_${segmentId}_in.wav`,
+        );
+        const segmentOutput = path.join(
+          this.tempDir,
+          `segment_${segmentId}_out.wav`,
+        );
 
         tempFiles.push(segmentInput, segmentOutput);
 
@@ -257,11 +286,24 @@ export class TimeStretchService {
         const targetDuration = marker.targetTime - lastTargetTime;
 
         if (segmentDuration > 0.001) {
-          await this.extractAudioSegment(inputPath, segmentInput, lastSourceTime, segmentDuration);
+          await this.extractAudioSegment(
+            inputPath,
+            segmentInput,
+            lastSourceTime,
+            segmentDuration,
+          );
 
           const stretchRatio = targetDuration / segmentDuration;
-          if (Math.abs(stretchRatio - 1.0) > 0.001 || (options.pitchShift && options.pitchShift !== 0)) {
-            await this.timeStretch(segmentInput, segmentOutput, stretchRatio, options);
+          if (
+            Math.abs(stretchRatio - 1.0) > 0.001 ||
+            (options.pitchShift && options.pitchShift !== 0)
+          ) {
+            await this.timeStretch(
+              segmentInput,
+              segmentOutput,
+              stretchRatio,
+              options,
+            );
           } else {
             await fsPromises.copyFile(segmentInput, segmentOutput);
           }
@@ -273,17 +315,27 @@ export class TimeStretchService {
         lastTargetTime = marker.targetTime;
       }
 
-      const finalSourceTime = sortedMarkers[sortedMarkers.length - 1].sourceTime;
-      const finalTargetTime = sortedMarkers[sortedMarkers.length - 1].targetTime;
+      const finalSourceTime =
+        sortedMarkers[sortedMarkers.length - 1].sourceTime;
+      const finalTargetTime =
+        sortedMarkers[sortedMarkers.length - 1].targetTime;
       const remainingDuration = metadata.duration - finalSourceTime;
 
       if (remainingDuration > 0.001) {
         const finalId = randomUUID();
         const finalInput = path.join(this.tempDir, `segment_${finalId}_in.wav`);
-        const finalOutput = path.join(this.tempDir, `segment_${finalId}_out.wav`);
+        const finalOutput = path.join(
+          this.tempDir,
+          `segment_${finalId}_out.wav`,
+        );
         tempFiles.push(finalInput, finalOutput);
 
-        await this.extractAudioSegment(inputPath, finalInput, finalSourceTime, remainingDuration);
+        await this.extractAudioSegment(
+          inputPath,
+          finalInput,
+          finalSourceTime,
+          remainingDuration,
+        );
 
         if (options.pitchShift && options.pitchShift !== 0) {
           await this.timeStretch(finalInput, finalOutput, 1.0, options);
@@ -303,8 +355,7 @@ export class TimeStretchService {
           if (fs.existsSync(tempFile)) {
             await fsPromises.unlink(tempFile);
           }
-        } catch {
-        }
+        } catch {}
       }
     }
   }
@@ -313,27 +364,34 @@ export class TimeStretchService {
     inputPath: string,
     outputPath: string,
     startTime: number,
-    duration: number
+    duration: number,
   ): Promise<void> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Audio segment extraction is disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Audio segment extraction is disabled in this deployment.",
+      );
     }
     return new Promise((resolve, reject) => {
       ffmpeg(inputPath)
         .setStartTime(startTime)
         .setDuration(duration)
-        .outputOptions(['-y', '-acodec', 'pcm_s24le'])
+        .outputOptions(["-y", "-acodec", "pcm_s24le"])
         .output(outputPath)
-        .on('end', () => resolve())
-        .on('error', (err) => reject(new Error(`Extract segment failed: ${err.message}`)))
+        .on("end", () => resolve())
+        .on("error", (err) =>
+          reject(new Error(`Extract segment failed: ${err.message}`)),
+        )
         .run();
     });
   }
 
-  private async concatenateSegments(segments: string[], outputPath: string): Promise<void> {
+  private async concatenateSegments(
+    segments: string[],
+    outputPath: string,
+  ): Promise<void> {
     if (segments.length === 0) {
-      throw new Error('No segments to concatenate');
+      throw new Error("No segments to concatenate");
     }
 
     if (segments.length === 1) {
@@ -343,29 +401,32 @@ export class TimeStretchService {
 
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Audio concatenation is disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Audio concatenation is disabled in this deployment.",
+      );
     }
 
     const listFile = path.join(this.tempDir, `concat_${randomUUID()}.txt`);
-    const listContent = segments.map((s) => `file '${s}'`).join('\n');
+    const listContent = segments.map((s) => `file '${s}'`).join("\n");
     await fsPromises.writeFile(listFile, listContent);
 
     try {
       await new Promise<void>((resolve, reject) => {
         ffmpeg()
           .input(listFile)
-          .inputOptions(['-f', 'concat', '-safe', '0'])
-          .outputOptions(['-y', '-acodec', 'pcm_s24le'])
+          .inputOptions(["-f", "concat", "-safe", "0"])
+          .outputOptions(["-y", "-acodec", "pcm_s24le"])
           .output(outputPath)
-          .on('end', () => resolve())
-          .on('error', (err) => reject(new Error(`Concatenation failed: ${err.message}`)))
+          .on("end", () => resolve())
+          .on("error", (err) =>
+            reject(new Error(`Concatenation failed: ${err.message}`)),
+          )
           .run();
       });
     } finally {
       try {
         await fsPromises.unlink(listFile);
-      } catch {
-      }
+      } catch {}
     }
   }
 
@@ -375,9 +436,13 @@ export class TimeStretchService {
       sensitivity?: number;
       minTransientGap?: number;
       detectBeats?: boolean;
-    } = {}
+    } = {},
   ): Promise<TransientDetectionResult> {
-    const { sensitivity = 0.5, minTransientGap = 0.05, detectBeats = true } = options;
+    const {
+      sensitivity = 0.5,
+      minTransientGap = 0.05,
+      detectBeats = true,
+    } = options;
     const metadata = await this.getAudioMetadata(inputPath);
     const transients: TransientData[] = [];
 
@@ -417,7 +482,8 @@ export class TimeStretchService {
         intervals.push(transients[i].time - transients[i - 1].time);
       }
 
-      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+      const avgInterval =
+        intervals.reduce((a, b) => a + b, 0) / intervals.length;
       if (avgInterval > 0) {
         const rawBpm = 60 / avgInterval;
         const bpmCandidates = [rawBpm, rawBpm / 2, rawBpm * 2];
@@ -446,7 +512,7 @@ export class TimeStretchService {
   private async extractPeakEnvelope(inputPath: string): Promise<number[]> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      logger.warn('FFmpeg not available - using synthetic peak data');
+      logger.warn("FFmpeg not available - using synthetic peak data");
       return this.generateSyntheticPeaks(inputPath);
     }
     const windowMs = 10;
@@ -456,14 +522,14 @@ export class TimeStretchService {
       await new Promise<void>((resolve, reject) => {
         ffmpeg(inputPath)
           .audioFilters([
-            'aformat=channel_layouts=mono',
-            'asplit[a][b]',
-            '[a]showwavespic=s=1000x1:colors=white[wave]',
+            "aformat=channel_layouts=mono",
+            "asplit[a][b]",
+            "[a]showwavespic=s=1000x1:colors=white[wave]",
           ])
-          .outputOptions(['-f', 'rawvideo', '-pix_fmt', 'gray', '-y'])
+          .outputOptions(["-f", "rawvideo", "-pix_fmt", "gray", "-y"])
           .output(outputFile)
-          .on('end', () => resolve())
-          .on('error', () => {
+          .on("end", () => resolve())
+          .on("error", () => {
             resolve();
           })
           .run();
@@ -473,10 +539,11 @@ export class TimeStretchService {
         const data = await fsPromises.readFile(outputFile);
         const peaks = Array.from(data).map((v) => v / 255);
         await fsPromises.unlink(outputFile);
-        return peaks.length > 0 ? peaks : this.generateSyntheticPeaks(inputPath);
+        return peaks.length > 0
+          ? peaks
+          : this.generateSyntheticPeaks(inputPath);
       }
-    } catch {
-    }
+    } catch {}
 
     return this.generateSyntheticPeaks(inputPath);
   }
@@ -494,7 +561,10 @@ export class TimeStretchService {
     return peaks;
   }
 
-  private calculateAdaptiveThreshold(peakData: number[], sensitivity: number): number {
+  private calculateAdaptiveThreshold(
+    peakData: number[],
+    sensitivity: number,
+  ): number {
     const sorted = [...peakData].sort((a, b) => b - a);
     const percentile = Math.floor(sorted.length * (1 - sensitivity * 0.3));
     return sorted[Math.min(percentile, sorted.length - 1)] * 0.8;
@@ -509,17 +579,27 @@ export class TimeStretchService {
     options: {
       pitchShift?: number;
       preserveFormants?: boolean;
-      algorithm?: WarpAlgorithm['name'];
-      quality?: WarpAlgorithm['quality'];
-    } = {}
+      algorithm?: WarpAlgorithm["name"];
+      quality?: WarpAlgorithm["quality"];
+    } = {},
   ): Promise<void> {
-    const relevantMarkers = markers.filter((m) => m.sourceTime >= startTime && m.sourceTime <= endTime);
+    const relevantMarkers = markers.filter(
+      (m) => m.sourceTime >= startTime && m.sourceTime <= endTime,
+    );
 
-    const segmentInput = path.join(this.tempDir, `preview_${randomUUID()}_in.wav`);
+    const segmentInput = path.join(
+      this.tempDir,
+      `preview_${randomUUID()}_in.wav`,
+    );
     const segmentDuration = endTime - startTime;
 
     try {
-      await this.extractAudioSegment(inputPath, segmentInput, startTime, segmentDuration);
+      await this.extractAudioSegment(
+        inputPath,
+        segmentInput,
+        startTime,
+        segmentDuration,
+      );
 
       const adjustedMarkers = relevantMarkers.map((m) => ({
         ...m,
@@ -528,7 +608,12 @@ export class TimeStretchService {
       }));
 
       if (adjustedMarkers.length > 0) {
-        await this.processWarpMarkers(segmentInput, outputPath, adjustedMarkers, options);
+        await this.processWarpMarkers(
+          segmentInput,
+          outputPath,
+          adjustedMarkers,
+          options,
+        );
       } else {
         await fsPromises.copyFile(segmentInput, outputPath);
       }
@@ -537,21 +622,20 @@ export class TimeStretchService {
         if (fs.existsSync(segmentInput)) {
           await fsPromises.unlink(segmentInput);
         }
-      } catch {
-      }
+      } catch {}
     }
   }
 
   async commitWarp(
     clipId: string,
-    userId: string
+    userId: string,
   ): Promise<{ storageKey: string; duration: number }> {
     const clip = await db.query.audioClips.findFirst({
       where: eq(audioClips.id, clipId),
     });
 
     if (!clip) {
-      throw new Error('Audio clip not found');
+      throw new Error("Audio clip not found");
     }
 
     const markers = await db.query.warpMarkers.findMany({
@@ -560,7 +644,7 @@ export class TimeStretchService {
     });
 
     if (markers.length === 0) {
-      throw new Error('No warp markers found for clip');
+      throw new Error("No warp markers found for clip");
     }
 
     const jobId = randomUUID();
@@ -575,11 +659,11 @@ export class TimeStretchService {
       })),
       pitchShift: clip.pitchShift ?? undefined,
       preserveFormants: clip.preserveFormants ?? true,
-      algorithm: 'phase_vocoder',
-      quality: 'high',
+      algorithm: "phase_vocoder",
+      quality: "high",
     };
 
-    await queueService.addJob('audio-warp', `warp-${jobId}`, payload, {
+    await queueService.addJob("audio-warp", `warp-${jobId}`, payload, {
       priority: 1,
       attempts: 3,
     });
@@ -592,7 +676,10 @@ export class TimeStretchService {
 
   async processWarpJob(payload: WarpJobPayload): Promise<WarpJobResult> {
     const tempInput = path.join(this.tempDir, `warp_input_${randomUUID()}.wav`);
-    const tempOutput = path.join(this.tempDir, `warp_output_${randomUUID()}.wav`);
+    const tempOutput = path.join(
+      this.tempDir,
+      `warp_output_${randomUUID()}.wav`,
+    );
 
     try {
       const inputBuffer = await storageService.downloadFile(payload.storageKey);
@@ -614,7 +701,7 @@ export class TimeStretchService {
       return {
         storageKey: newStorageKey,
         duration: metadata.duration,
-        format: 'wav',
+        format: "wav",
         markers: payload.markers.map((m) => ({
           sourceTime: m.sourceTime,
           targetTime: m.targetTime,
@@ -624,13 +711,17 @@ export class TimeStretchService {
       try {
         if (fs.existsSync(tempInput)) await fsPromises.unlink(tempInput);
         if (fs.existsSync(tempOutput)) await fsPromises.unlink(tempOutput);
-      } catch {
-      }
+      } catch {}
     }
   }
 
-  async processTransientDetectionJob(payload: TransientDetectionPayload): Promise<TransientDetectionResult> {
-    const tempInput = path.join(this.tempDir, `transient_input_${randomUUID()}.wav`);
+  async processTransientDetectionJob(
+    payload: TransientDetectionPayload,
+  ): Promise<TransientDetectionResult> {
+    const tempInput = path.join(
+      this.tempDir,
+      `transient_input_${randomUUID()}.wav`,
+    );
 
     try {
       const inputBuffer = await storageService.downloadFile(payload.storageKey);
@@ -644,15 +735,14 @@ export class TimeStretchService {
     } finally {
       try {
         if (fs.existsSync(tempInput)) await fsPromises.unlink(tempInput);
-      } catch {
-      }
+      } catch {}
     }
   }
 
   calculateTempoMapping(
     sourceBpm: number,
     targetBpm: number,
-    duration: number
+    duration: number,
   ): TempoMapping {
     const sourceBeatInterval = 60 / sourceBpm;
     const targetBeatInterval = 60 / targetBpm;
@@ -681,7 +771,7 @@ export class TimeStretchService {
     outputPath: string,
     transients: TransientData[],
     beatGrid: number[],
-    strength: number = 1.0
+    strength: number = 1.0,
   ): Promise<WarpMarkerData[]> {
     const markers: WarpMarkerData[] = [];
 

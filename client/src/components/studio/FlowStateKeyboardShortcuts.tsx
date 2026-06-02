@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Keyboard } from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Keyboard } from "lucide-react";
 
 interface ShortcutCategory {
   name: string;
@@ -8,79 +8,79 @@ interface ShortcutCategory {
 
 const SHORTCUTS: ShortcutCategory[] = [
   {
-    name: 'Transport',
+    name: "Transport",
     shortcuts: [
-      { keys: ['Space'], description: 'Play / Pause' },
-      { keys: ['Enter'], description: 'Stop and return to start' },
-      { keys: ['R'], description: 'Start / Stop recording' },
-      { keys: ['L'], description: 'Toggle loop' },
-      { keys: [','], description: 'Previous marker / bar' },
-      { keys: ['.'], description: 'Next marker / bar' },
+      { keys: ["Space"], description: "Play / Pause" },
+      { keys: ["Enter"], description: "Stop and return to start" },
+      { keys: ["R"], description: "Start / Stop recording" },
+      { keys: ["L"], description: "Toggle loop" },
+      { keys: [","], description: "Previous marker / bar" },
+      { keys: ["."], description: "Next marker / bar" },
     ],
   },
   {
-    name: 'Editing',
+    name: "Editing",
     shortcuts: [
-      { keys: ['⌘', 'Z'], description: 'Undo' },
-      { keys: ['⌘', 'Shift', 'Z'], description: 'Redo' },
-      { keys: ['⌘', 'C'], description: 'Copy' },
-      { keys: ['⌘', 'V'], description: 'Paste' },
-      { keys: ['⌘', 'X'], description: 'Cut' },
-      { keys: ['⌘', 'A'], description: 'Select all' },
-      { keys: ['Delete'], description: 'Delete selected' },
-      { keys: ['⌘', 'D'], description: 'Duplicate' },
+      { keys: ["⌘", "Z"], description: "Undo" },
+      { keys: ["⌘", "Shift", "Z"], description: "Redo" },
+      { keys: ["⌘", "C"], description: "Copy" },
+      { keys: ["⌘", "V"], description: "Paste" },
+      { keys: ["⌘", "X"], description: "Cut" },
+      { keys: ["⌘", "A"], description: "Select all" },
+      { keys: ["Delete"], description: "Delete selected" },
+      { keys: ["⌘", "D"], description: "Duplicate" },
     ],
   },
   {
-    name: 'Tools',
+    name: "Tools",
     shortcuts: [
-      { keys: ['V'], description: 'Select tool' },
-      { keys: ['B'], description: 'Range tool' },
-      { keys: ['P'], description: 'Draw / Pencil tool' },
-      { keys: ['S'], description: 'Split / Scissors tool' },
-      { keys: ['E'], description: 'Erase tool' },
+      { keys: ["V"], description: "Select tool" },
+      { keys: ["B"], description: "Range tool" },
+      { keys: ["P"], description: "Draw / Pencil tool" },
+      { keys: ["S"], description: "Split / Scissors tool" },
+      { keys: ["E"], description: "Erase tool" },
     ],
   },
   {
-    name: 'Modes',
+    name: "Modes",
     shortcuts: [
-      { keys: ['1'], description: 'Create mode' },
-      { keys: ['2'], description: 'Record mode' },
-      { keys: ['3'], description: 'Mix mode' },
-      { keys: ['4'], description: 'Master mode' },
-      { keys: ['5'], description: 'Perform mode' },
+      { keys: ["1"], description: "Create mode" },
+      { keys: ["2"], description: "Record mode" },
+      { keys: ["3"], description: "Mix mode" },
+      { keys: ["4"], description: "Master mode" },
+      { keys: ["5"], description: "Perform mode" },
     ],
   },
   {
-    name: 'View',
+    name: "View",
     shortcuts: [
-      { keys: ['Tab'], description: 'Toggle Zero-Chrome mode' },
-      { keys: ['M'], description: 'Toggle mixer' },
-      { keys: ['⌘', '+'], description: 'Zoom in' },
-      { keys: ['⌘', '-'], description: 'Zoom out' },
-      { keys: ['⌘', '0'], description: 'Fit to window' },
-      { keys: ['F'], description: 'Toggle fullscreen' },
+      { keys: ["Tab"], description: "Toggle Zero-Chrome mode" },
+      { keys: ["M"], description: "Toggle mixer" },
+      { keys: ["⌘", "+"], description: "Zoom in" },
+      { keys: ["⌘", "-"], description: "Zoom out" },
+      { keys: ["⌘", "0"], description: "Fit to window" },
+      { keys: ["F"], description: "Toggle fullscreen" },
     ],
   },
   {
-    name: 'Tracks',
+    name: "Tracks",
     shortcuts: [
-      { keys: ['⌘', 'N'], description: 'New track' },
-      { keys: ['⌘', 'T'], description: 'Add audio track' },
-      { keys: ['⌘', 'I'], description: 'Add instrument track' },
-      { keys: ['↑', '↓'], description: 'Select previous / next track' },
-      { keys: ['Shift', 'M'], description: 'Mute selected track' },
-      { keys: ['Shift', 'S'], description: 'Solo selected track' },
+      { keys: ["⌘", "N"], description: "New track" },
+      { keys: ["⌘", "T"], description: "Add audio track" },
+      { keys: ["⌘", "I"], description: "Add instrument track" },
+      { keys: ["↑", "↓"], description: "Select previous / next track" },
+      { keys: ["Shift", "M"], description: "Mute selected track" },
+      { keys: ["Shift", "S"], description: "Solo selected track" },
     ],
   },
   {
-    name: 'Project',
+    name: "Project",
     shortcuts: [
-      { keys: ['⌘', 'S'], description: 'Save project' },
-      { keys: ['⌘', 'E'], description: 'Export audio' },
-      { keys: ['⌘', 'O'], description: 'Open project' },
-      { keys: ['⇧', 'P'], description: 'Open plugin browser' },
-      { keys: ['?'], description: 'Show keyboard shortcuts' },
+      { keys: ["⌘", "S"], description: "Save project" },
+      { keys: ["⌘", "E"], description: "Export audio" },
+      { keys: ["⌘", "O"], description: "Open project" },
+      { keys: ["⇧", "P"], description: "Open plugin browser" },
+      { keys: ["?"], description: "Show keyboard shortcuts" },
     ],
   },
 ];
@@ -90,7 +90,10 @@ interface FlowStateKeyboardShortcutsProps {
   onClose: () => void;
 }
 
-export function FlowStateKeyboardShortcuts({ isOpen, onClose }: FlowStateKeyboardShortcutsProps) {
+export function FlowStateKeyboardShortcuts({
+  isOpen,
+  onClose,
+}: FlowStateKeyboardShortcutsProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -114,8 +117,12 @@ export function FlowStateKeyboardShortcuts({ isOpen, onClose }: FlowStateKeyboar
                   <Keyboard className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-white">Keyboard Shortcuts</h2>
-                  <p className="text-xs text-white/50">Master FlowState with these shortcuts</p>
+                  <h2 className="text-lg font-semibold text-white">
+                    Keyboard Shortcuts
+                  </h2>
+                  <p className="text-xs text-white/50">
+                    Master FlowState with these shortcuts
+                  </p>
                 </div>
               </div>
               <motion.button
@@ -132,14 +139,18 @@ export function FlowStateKeyboardShortcuts({ isOpen, onClose }: FlowStateKeyboar
               <div className="grid grid-cols-2 gap-6">
                 {SHORTCUTS.map((category) => (
                   <div key={category.name} className="space-y-2">
-                    <h3 className="text-sm font-semibold text-white/80 mb-3">{category.name}</h3>
+                    <h3 className="text-sm font-semibold text-white/80 mb-3">
+                      {category.name}
+                    </h3>
                     <div className="space-y-1.5">
                       {category.shortcuts.map((shortcut, i) => (
                         <div
                           key={i}
                           className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-white/5"
                         >
-                          <span className="text-xs text-white/60">{shortcut.description}</span>
+                          <span className="text-xs text-white/60">
+                            {shortcut.description}
+                          </span>
                           <div className="flex items-center gap-1">
                             {shortcut.keys.map((key, j) => (
                               <span key={j}>
@@ -147,7 +158,9 @@ export function FlowStateKeyboardShortcuts({ isOpen, onClose }: FlowStateKeyboar
                                   {key}
                                 </kbd>
                                 {j < shortcut.keys.length - 1 && (
-                                  <span className="text-white/30 mx-0.5">+</span>
+                                  <span className="text-white/30 mx-0.5">
+                                    +
+                                  </span>
                                 )}
                               </span>
                             ))}
@@ -162,7 +175,15 @@ export function FlowStateKeyboardShortcuts({ isOpen, onClose }: FlowStateKeyboar
 
             <div className="p-4 border-t border-white/5 flex-shrink-0">
               <p className="text-xs text-white/40 text-center">
-                Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">Esc</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">?</kbd> to close
+                Press{" "}
+                <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">
+                  Esc
+                </kbd>{" "}
+                or{" "}
+                <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">
+                  ?
+                </kbd>{" "}
+                to close
               </p>
             </div>
           </motion.div>

@@ -1,9 +1,21 @@
 import {
-  AudioBuffer, DSPContext, createBuffer,
-  BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter,
-  LFO, Oscillator, ADSR, EnvelopeFollower,
-  msToSamples, dbToLinear, clamp, softClip, hardClip
-} from '../core';
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  AllPassFilter,
+  LFO,
+  Oscillator,
+  ADSR,
+  EnvelopeFollower,
+  msToSamples,
+  dbToLinear,
+  clamp,
+  softClip,
+  hardClip,
+} from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -23,7 +35,10 @@ class Wavetable {
     this.numTables = 0;
   }
 
-  addTable(generator: (phase: number, harmonics: number) => number, harmonics: number = 64): void {
+  addTable(
+    generator: (phase: number, harmonics: number) => number,
+    harmonics: number = 64,
+  ): void {
     const table = new Float32Array(this.tableSize);
     for (let i = 0; i < this.tableSize; i++) {
       const phase = i / this.tableSize;
@@ -39,7 +54,7 @@ class Wavetable {
       for (let k = 1; k <= h; k++) {
         value += Math.sin(2 * Math.PI * k * phase) / k;
       }
-      return value * 2 / Math.PI;
+      return (value * 2) / Math.PI;
     }, harmonics);
   }
 
@@ -49,7 +64,7 @@ class Wavetable {
       for (let k = 1; k <= h; k += 2) {
         value += Math.sin(2 * Math.PI * k * phase) / k;
       }
-      return value * 4 / Math.PI;
+      return (value * 4) / Math.PI;
     }, harmonics);
   }
 
@@ -58,9 +73,9 @@ class Wavetable {
       let value = 0;
       for (let k = 1; k <= h; k += 2) {
         const sign = ((k - 1) / 2) % 2 === 0 ? 1 : -1;
-        value += sign * Math.sin(2 * Math.PI * k * phase) / (k * k);
+        value += (sign * Math.sin(2 * Math.PI * k * phase)) / (k * k);
       }
-      return value * 8 / (Math.PI * Math.PI);
+      return (value * 8) / (Math.PI * Math.PI);
     }, harmonics);
   }
 
@@ -69,7 +84,7 @@ class Wavetable {
   }
 
   generatePWM(width: number): void {
-    this.addTable((phase) => phase < width ? 1 : -1, 64);
+    this.addTable((phase) => (phase < width ? 1 : -1), 64);
   }
 
   generateFormant(formantFreq: number): void {
@@ -83,7 +98,9 @@ class Wavetable {
   generateDigital(): void {
     this.addTable((phase) => {
       const bits = 8;
-      const quantized = Math.floor(Math.sin(2 * Math.PI * phase) * (1 << (bits - 1))) / (1 << (bits - 1));
+      const quantized =
+        Math.floor(Math.sin(2 * Math.PI * phase) * (1 << (bits - 1))) /
+        (1 << (bits - 1));
       return quantized;
     }, 32);
   }
@@ -92,7 +109,8 @@ class Wavetable {
     this.addTable((phase) => {
       let value = 0;
       for (let k = 0; k < harmonicAmplitudes.length; k++) {
-        value += Math.sin(2 * Math.PI * (k + 1) * phase) * harmonicAmplitudes[k];
+        value +=
+          Math.sin(2 * Math.PI * (k + 1) * phase) * harmonicAmplitudes[k];
       }
       return value;
     }, harmonicAmplitudes.length);
@@ -100,20 +118,24 @@ class Wavetable {
 
   sample(phase: number, tablePosition: number): number {
     if (this.numTables === 0) return 0;
-    
+
     const tableIdx = clamp(tablePosition, 0, 1) * (this.numTables - 1);
     const table1Idx = Math.floor(tableIdx);
     const table2Idx = Math.min(table1Idx + 1, this.numTables - 1);
     const tableFrac = tableIdx - table1Idx;
-    
+
     const sampleIdx = (phase * this.tableSize) % this.tableSize;
     const idx1 = Math.floor(sampleIdx);
     const idx2 = (idx1 + 1) % this.tableSize;
     const frac = sampleIdx - idx1;
-    
-    const sample1 = this.tables[table1Idx][idx1] * (1 - frac) + this.tables[table1Idx][idx2] * frac;
-    const sample2 = this.tables[table2Idx][idx1] * (1 - frac) + this.tables[table2Idx][idx2] * frac;
-    
+
+    const sample1 =
+      this.tables[table1Idx][idx1] * (1 - frac) +
+      this.tables[table1Idx][idx2] * frac;
+    const sample2 =
+      this.tables[table2Idx][idx1] * (1 - frac) +
+      this.tables[table2Idx][idx2] * frac;
+
     return sample1 * (1 - tableFrac) + sample2 * tableFrac;
   }
 
@@ -174,7 +196,7 @@ export class SerumSynth implements SynthesizerEngine {
     this.wavetable1.generateSquare();
     this.wavetable1.generateTriangle();
     this.wavetable1.generateSine();
-    
+
     this.wavetable2 = new Wavetable();
     this.wavetable2.generateSine();
     this.wavetable2.generatePWM(0.3);
@@ -184,7 +206,7 @@ export class SerumSynth implements SynthesizerEngine {
     this.osc1 = new WavetableOscillator(this.wavetable1);
     this.osc2 = new WavetableOscillator(this.wavetable2);
     this.subOsc = new Oscillator();
-    
+
     this.envelope = new ADSR(0.01, 0.2, 0.7, 0.3, 44100);
     this.filterEnvelope = new ADSR(0.02, 0.3, 0.5, 0.25, 44100);
     this.lpFilter = new BiquadFilter();
@@ -225,7 +247,7 @@ export class SerumSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      
+
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
       const filterMod = this.filterLFO.sine();
 
@@ -238,8 +260,13 @@ export class SerumSynth implements SynthesizerEngine {
 
       let sample = osc1Out + osc2Out + subOut;
 
-      const filterFreq = 1000 + filterEnvValue * 5000 + filterMod * 500 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 12000), 2 + filterEnvValue * 2, this.sampleRate);
+      const filterFreq =
+        1000 + filterEnvValue * 5000 + filterMod * 500 + this.velocity * 2000;
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 12000),
+        2 + filterEnvValue * 2,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -289,7 +316,7 @@ export class MassiveSynth implements SynthesizerEngine {
       this.wavetables.push(wt);
       this.oscillators.push(new WavetableOscillator(wt));
     }
-    
+
     this.envelope = new ADSR(0.005, 0.25, 0.65, 0.2, 44100);
     this.filterEnvelope = new ADSR(0.01, 0.2, 0.4, 0.15, 44100);
     this.lpFilter = new BiquadFilter();
@@ -305,7 +332,10 @@ export class MassiveSynth implements SynthesizerEngine {
 
     const detuneAmounts = [-0.02, 0, 0.02];
     for (let i = 0; i < 3; i++) {
-      this.oscillators[i].setFrequency(frequency * (1 + detuneAmounts[i] * 0.01), context.sampleRate);
+      this.oscillators[i].setFrequency(
+        frequency * (1 + detuneAmounts[i] * 0.01),
+        context.sampleRate,
+      );
       this.oscillators[i].setTablePosition(0.3);
     }
 
@@ -344,7 +374,11 @@ export class MassiveSynth implements SynthesizerEngine {
       sample /= 3;
 
       const filterFreq = 300 + filterEnvValue * 3000 + this.velocity * 1500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 100, 8000), 3.5 + filterEnvValue * 2, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 100, 8000),
+        3.5 + filterEnvValue * 2,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -364,7 +398,7 @@ export class MassiveSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.lfo.reset();
     this.lpFilter.clear();
     this.saturationFilter.clear();
@@ -395,7 +429,7 @@ export class SynthwaveSynth implements SynthesizerEngine {
     this.wavetable1.generateSaw();
     this.wavetable1.generatePWM(0.5);
     this.wavetable1.generateSquare();
-    
+
     this.wavetable2 = new Wavetable();
     this.wavetable2.generateTriangle();
     this.wavetable2.generateSine();
@@ -403,7 +437,7 @@ export class SynthwaveSynth implements SynthesizerEngine {
     this.osc1 = new WavetableOscillator(this.wavetable1);
     this.osc2 = new WavetableOscillator(this.wavetable2);
     this.arpOsc = new Oscillator();
-    
+
     this.envelope = new ADSR(0.02, 0.3, 0.75, 0.4, 44100);
     this.filterEnvelope = new ADSR(0.03, 0.4, 0.5, 0.35, 44100);
     this.lpFilter = new BiquadFilter();
@@ -449,7 +483,7 @@ export class SynthwaveSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      
+
       const chorusMod = this.chorusLFO.sine();
       const filterMod = this.filterLFO.sine();
 
@@ -459,18 +493,23 @@ export class SynthwaveSynth implements SynthesizerEngine {
 
       let sample = osc1Out + osc2Out + arpOut;
 
-      const filterFreq = 1500 + filterEnvValue * 4000 + filterMod * 800 + this.velocity * 1500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 300, 10000), 1.8 + filterEnvValue * 1.5, this.sampleRate);
+      const filterFreq =
+        1500 + filterEnvValue * 4000 + filterMod * 800 + this.velocity * 1500;
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 300, 10000),
+        1.8 + filterEnvValue * 1.5,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
 
       this.chorusDelay1.write(sample);
       this.chorusDelay2.write(sample);
-      
+
       const delayTime1 = 400 + chorusMod * 150;
       const delayTime2 = 450 - chorusMod * 150;
-      
+
       const chorus1 = this.chorusDelay1.readInterpolated(delayTime1) * 0.25;
       const chorus2 = this.chorusDelay2.readInterpolated(delayTime2) * 0.25;
 
@@ -525,11 +564,11 @@ export class VocalWavetableSynth implements SynthesizerEngine {
     for (let i = 0; i < 4; i++) {
       this.oscillators.push(new WavetableOscillator(this.wavetable));
     }
-    
+
     for (let i = 0; i < 5; i++) {
       this.formantFilters.push(new BiquadFilter());
     }
-    
+
     this.envelope = new ADSR(0.1, 0.3, 0.8, 0.5, 44100);
     this.lpFilter = new BiquadFilter();
     this.hpFilter = new BiquadFilter();
@@ -544,7 +583,10 @@ export class VocalWavetableSynth implements SynthesizerEngine {
 
     const detuneAmounts = [-0.05, -0.02, 0.02, 0.05];
     for (let i = 0; i < 4; i++) {
-      this.oscillators[i].setFrequency(frequency * (1 + detuneAmounts[i] * 0.01), context.sampleRate);
+      this.oscillators[i].setFrequency(
+        frequency * (1 + detuneAmounts[i] * 0.01),
+        context.sampleRate,
+      );
       this.oscillators[i].setTablePosition(0.2);
     }
 
@@ -552,7 +594,12 @@ export class VocalWavetableSynth implements SynthesizerEngine {
     const formantQs = [8, 6, 5, 4, 3];
     const formantGains = [4, 3, 2, 1.5, 1];
     for (let i = 0; i < 5; i++) {
-      this.formantFilters[i].setPeaking(formantFreqs[i], formantQs[i], formantGains[i], context.sampleRate);
+      this.formantFilters[i].setPeaking(
+        formantFreqs[i],
+        formantQs[i],
+        formantGains[i],
+        context.sampleRate,
+      );
     }
 
     this.morphLFO.setFrequency(0.15, context.sampleRate);
@@ -617,8 +664,8 @@ export class VocalWavetableSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
-    this.formantFilters.forEach(f => f.clear());
+    this.oscillators.forEach((o) => o.reset());
+    this.formantFilters.forEach((f) => f.clear());
     this.morphLFO.reset();
     this.vibratoLFO.reset();
     this.lpFilter.clear();
@@ -650,7 +697,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
     for (let i = 0; i < 6; i++) {
       this.oscillators.push(new WavetableOscillator(this.wavetable));
     }
-    
+
     this.envelope = new ADSR(0.15, 0.4, 0.85, 0.6, 44100);
     this.breathEnvelope = new ADSR(0.2, 0.3, 0.4, 0.5, 44100);
     this.lpFilter = new BiquadFilter();
@@ -667,7 +714,10 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
 
     const detuneAmounts = [-0.08, -0.04, -0.01, 0.01, 0.04, 0.08];
     for (let i = 0; i < 6; i++) {
-      this.oscillators[i].setFrequency(frequency * (1 + detuneAmounts[i] * 0.01), context.sampleRate);
+      this.oscillators[i].setFrequency(
+        frequency * (1 + detuneAmounts[i] * 0.01),
+        context.sampleRate,
+      );
       this.oscillators[i].setTablePosition(0.2);
     }
 
@@ -695,7 +745,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const breathEnvValue = this.breathEnvelope.process();
-      
+
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
       const breathMod = this.breathLFO.sine() * 0.1 * breathEnvValue;
 
@@ -740,7 +790,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.morphLFO.reset();
     this.breathLFO.reset();
     this.lpFilter.clear();
@@ -772,7 +822,7 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
     for (let i = 0; i < 3; i++) {
       this.oscillators.push(new WavetableOscillator(this.wavetable));
     }
-    
+
     this.envelope = new ADSR(0.005, 0.15, 0.6, 0.2, 44100);
     this.filterEnvelope = new ADSR(0.01, 0.2, 0.4, 0.15, 44100);
     this.lpFilter = new BiquadFilter();
@@ -788,7 +838,10 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
 
     const detuneAmounts = [-0.01, 0, 0.01];
     for (let i = 0; i < 3; i++) {
-      this.oscillators[i].setFrequency(frequency * (1 + detuneAmounts[i] * 0.01), context.sampleRate);
+      this.oscillators[i].setFrequency(
+        frequency * (1 + detuneAmounts[i] * 0.01),
+        context.sampleRate,
+      );
       this.oscillators[i].setTablePosition(0);
     }
 
@@ -828,11 +881,16 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
       sample /= 3;
 
       const bits = 6;
-      const quantized = Math.floor(sample * (1 << (bits - 1))) / (1 << (bits - 1));
+      const quantized =
+        Math.floor(sample * (1 << (bits - 1))) / (1 << (bits - 1));
       sample = sample * 0.7 + quantized * 0.3;
 
       const filterFreq = 1500 + filterEnvValue * 5000 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 300, 12000), 2 + filterEnvValue * 2, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 300, 12000),
+        2 + filterEnvValue * 2,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -851,7 +909,7 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.morphLFO.reset();
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -885,7 +943,7 @@ export class PPGSynth implements SynthesizerEngine {
     for (let i = 0; i < 2; i++) {
       this.oscillators.push(new WavetableOscillator(this.wavetable));
     }
-    
+
     this.envelope = new ADSR(0.02, 0.25, 0.7, 0.35, 44100);
     this.filterEnvelope = new ADSR(0.03, 0.3, 0.5, 0.3, 44100);
     this.lpFilter = new BiquadFilter();
@@ -901,7 +959,7 @@ export class PPGSynth implements SynthesizerEngine {
 
     this.oscillators[0].setFrequency(frequency, context.sampleRate);
     this.oscillators[1].setFrequency(frequency * 1.005, context.sampleRate);
-    
+
     this.oscillators[0].setTablePosition(0);
     this.oscillators[1].setTablePosition(0.2);
 
@@ -928,19 +986,25 @@ export class PPGSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      
+
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
       const pwmValue = this.pwmLFO.sine() * 0.1;
 
       this.oscillators[0].setTablePosition(morphValue);
-      this.oscillators[1].setTablePosition(clamp(morphValue + 0.2 + pwmValue, 0, 1));
+      this.oscillators[1].setTablePosition(
+        clamp(morphValue + 0.2 + pwmValue, 0, 1),
+      );
 
       const osc1 = this.oscillators[0].process() * 0.5;
       const osc2 = this.oscillators[1].process() * 0.5;
       let sample = osc1 + osc2;
 
       const filterFreq = 1200 + filterEnvValue * 4000 + this.velocity * 1500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 10000), 1.8 + filterEnvValue * 1.5, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 10000),
+        1.8 + filterEnvValue * 1.5,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -958,7 +1022,7 @@ export class PPGSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.morphLFO.reset();
     this.pwmLFO.reset();
     this.lpFilter.clear();
@@ -989,9 +1053,9 @@ export class MicrotonalSynth implements SynthesizerEngine {
     for (let i = 0; i < 5; i++) {
       this.oscillators.push(new WavetableOscillator(this.wavetable));
     }
-    
+
     this.microtonalRatios = [1, 1.059463, 1.122462, 1.189207, 1.259921];
-    
+
     this.envelope = new ADSR(0.08, 0.35, 0.8, 0.45, 44100);
     this.filterEnvelope = new ADSR(0.1, 0.4, 0.6, 0.4, 44100);
     this.lpFilter = new BiquadFilter();
@@ -1006,7 +1070,10 @@ export class MicrotonalSynth implements SynthesizerEngine {
     this.sampleRate = context.sampleRate;
 
     for (let i = 0; i < 5; i++) {
-      this.oscillators[i].setFrequency(frequency * this.microtonalRatios[i], context.sampleRate);
+      this.oscillators[i].setFrequency(
+        frequency * this.microtonalRatios[i],
+        context.sampleRate,
+      );
       this.oscillators[i].setTablePosition(0.3);
     }
 
@@ -1033,13 +1100,16 @@ export class MicrotonalSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      
+
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
       const microtonalShift = this.microtonalLFO.sine() * 0.01;
 
       for (let o = 0; o < 5; o++) {
         this.oscillators[o].setTablePosition(morphValue);
-        const shiftedFreq = this.frequency * this.microtonalRatios[o] * (1 + microtonalShift * (o % 2 === 0 ? 1 : -1));
+        const shiftedFreq =
+          this.frequency *
+          this.microtonalRatios[o] *
+          (1 + microtonalShift * (o % 2 === 0 ? 1 : -1));
         this.oscillators[o].setFrequency(shiftedFreq, this.sampleRate);
       }
 
@@ -1054,7 +1124,11 @@ export class MicrotonalSynth implements SynthesizerEngine {
       }
 
       const filterFreq = 1500 + filterEnvValue * 3000 + this.velocity * 1500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 8000), 1.2, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 8000),
+        1.2,
+        this.sampleRate,
+      );
 
       sampleL = this.hpFilter.process(sampleL);
       sampleR = this.hpFilter.process(sampleR);
@@ -1076,7 +1150,7 @@ export class MicrotonalSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.morphLFO.reset();
     this.microtonalLFO.reset();
     this.lpFilter.clear();
@@ -1112,7 +1186,7 @@ export class HybridSynth implements SynthesizerEngine {
     }
     this.subOsc = new Oscillator();
     this.noiseOsc = new Oscillator();
-    
+
     this.envelope = new ADSR(0.01, 0.2, 0.7, 0.25, 44100);
     this.filterEnvelope = new ADSR(0.02, 0.25, 0.5, 0.2, 44100);
     this.lpFilter = new BiquadFilter();
@@ -1158,7 +1232,7 @@ export class HybridSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      
+
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
       const filterMod = this.filterLFO.sine();
 
@@ -1172,9 +1246,18 @@ export class HybridSynth implements SynthesizerEngine {
 
       let sample = wt1 + wt2 + sub + noise;
 
-      const filterFreq = 1000 + filterEnvValue * 4500 + filterMod * 500 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 12000), 2 + filterEnvValue * 2, this.sampleRate);
-      this.bpFilter.setBandpass(clamp(filterFreq * 0.6, 200, 6000), 1.5, this.sampleRate);
+      const filterFreq =
+        1000 + filterEnvValue * 4500 + filterMod * 500 + this.velocity * 2000;
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 12000),
+        2 + filterEnvValue * 2,
+        this.sampleRate,
+      );
+      this.bpFilter.setBandpass(
+        clamp(filterFreq * 0.6, 200, 6000),
+        1.5,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       const lpOut = this.lpFilter.process(sample);
@@ -1195,7 +1278,7 @@ export class HybridSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.wtOscillators.forEach(o => o.reset());
+    this.wtOscillators.forEach((o) => o.reset());
     this.subOsc.reset();
     this.noiseOsc.reset();
     this.morphLFO.reset();
@@ -1208,7 +1291,12 @@ export class HybridSynth implements SynthesizerEngine {
 
 export class GranularWavetableSynth implements SynthesizerEngine {
   private wavetable: Wavetable;
-  private grains: { osc: WavetableOscillator, phase: number, amp: number, pan: number }[] = [];
+  private grains: {
+    osc: WavetableOscillator;
+    phase: number;
+    amp: number;
+    pan: number;
+  }[] = [];
   private envelope: ADSR;
   private filterEnvelope: ADSR;
   private lpFilter: BiquadFilter;
@@ -1235,10 +1323,10 @@ export class GranularWavetableSynth implements SynthesizerEngine {
         osc: new WavetableOscillator(this.wavetable),
         phase: 0,
         amp: 0,
-        pan: (Math.random() * 2 - 1) * 0.5
+        pan: (Math.random() * 2 - 1) * 0.5,
       });
     }
-    
+
     this.envelope = new ADSR(0.2, 0.4, 0.8, 0.6, 44100);
     this.filterEnvelope = new ADSR(0.3, 0.5, 0.6, 0.5, 44100);
     this.lpFilter = new BiquadFilter();
@@ -1286,20 +1374,22 @@ export class GranularWavetableSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      
+
       const positionMod = (this.positionLFO.sine() + 1) * 0.5;
       const grainMod = this.grainLFO.sine();
 
       this.grainCounter++;
       const triggerInterval = Math.floor(this.grainSize / this.grainDensity);
-      
+
       if (this.grainCounter >= triggerInterval) {
         this.grainCounter = 0;
         for (const grain of this.grains) {
           if (grain.amp <= 0.01) {
             grain.phase = 0;
             grain.amp = 0.8 + Math.random() * 0.2;
-            grain.osc.setTablePosition(positionMod + (Math.random() - 0.5) * 0.2);
+            grain.osc.setTablePosition(
+              positionMod + (Math.random() - 0.5) * 0.2,
+            );
             grain.pan = (Math.random() * 2 - 1) * 0.5;
             break;
           }
@@ -1313,10 +1403,10 @@ export class GranularWavetableSynth implements SynthesizerEngine {
         if (grain.amp > 0.001) {
           const grainEnv = Math.sin(grain.phase * Math.PI);
           const grainSample = grain.osc.process() * grain.amp * grainEnv;
-          
+
           sampleL += grainSample * (1 - grain.pan * 0.5);
           sampleR += grainSample * (1 + grain.pan * 0.5);
-          
+
           grain.phase += 1 / this.grainSize;
           if (grain.phase >= 1) {
             grain.amp = 0;
@@ -1329,7 +1419,11 @@ export class GranularWavetableSynth implements SynthesizerEngine {
       sampleR /= 4;
 
       const filterFreq = 1500 + filterEnvValue * 3500 + grainMod * 500;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 10000), 1.0, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 10000),
+        1.0,
+        this.sampleRate,
+      );
 
       sampleL = this.hpFilter.process(sampleL);
       sampleR = this.hpFilter.process(sampleR);
@@ -1351,7 +1445,7 @@ export class GranularWavetableSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.grains.forEach(g => {
+    this.grains.forEach((g) => {
       g.osc.reset();
       g.phase = 0;
       g.amp = 0;
@@ -1364,15 +1458,18 @@ export class GranularWavetableSynth implements SynthesizerEngine {
   }
 }
 
-export const WAVETABLE_SYNTH_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
-  'serum': SerumSynth,
-  'massive': MassiveSynth,
-  'synthwave': SynthwaveSynth,
-  'vocal-wavetable': VocalWavetableSynth,
-  'organic-wavetable': OrganicWavetableSynth,
-  'digital-wavetable': DigitalWavetableSynth,
-  'ppg': PPGSynth,
-  'microtonal': MicrotonalSynth,
-  'hybrid': HybridSynth,
-  'granular-wavetable': GranularWavetableSynth,
+export const WAVETABLE_SYNTH_SYNTHESIZERS: Record<
+  string,
+  new () => SynthesizerEngine
+> = {
+  serum: SerumSynth,
+  massive: MassiveSynth,
+  synthwave: SynthwaveSynth,
+  "vocal-wavetable": VocalWavetableSynth,
+  "organic-wavetable": OrganicWavetableSynth,
+  "digital-wavetable": DigitalWavetableSynth,
+  ppg: PPGSynth,
+  microtonal: MicrotonalSynth,
+  hybrid: HybridSynth,
+  "granular-wavetable": GranularWavetableSynth,
 };

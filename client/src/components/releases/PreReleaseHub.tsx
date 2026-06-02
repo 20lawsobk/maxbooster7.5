@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -69,7 +75,9 @@ interface CountdownDetail extends Countdown {
 }
 
 export function PreReleaseHub() {
-  const [selectedCountdownId, setSelectedCountdownId] = useState<string | null>(null);
+  const [selectedCountdownId, setSelectedCountdownId] = useState<string | null>(
+    null,
+  );
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newCountdown, setNewCountdown] = useState({
     title: "",
@@ -103,11 +111,17 @@ export function PreReleaseHub() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/countdowns"] });
       setCreateDialogOpen(false);
-      setNewCountdown({ title: "", releaseDate: "", artworkUrl: "", presaveUrl: "" });
+      setNewCountdown({
+        title: "",
+        releaseDate: "",
+        artworkUrl: "",
+        presaveUrl: "",
+      });
       setSelectedCountdownId(data.data.countdown.id);
       toast({
         title: "Countdown Created",
-        description: "Your release countdown has been created with a pre-release checklist.",
+        description:
+          "Your release countdown has been created with a pre-release checklist.",
       });
     },
     onError: () => {
@@ -122,7 +136,9 @@ export function PreReleaseHub() {
   const countdowns = countdownsData?.data || [];
   const detail = countdownDetail?.data;
 
-  const activeCountdowns = countdowns.filter((c) => !c.timeRemaining.isReleased);
+  const activeCountdowns = countdowns.filter(
+    (c) => !c.timeRemaining.isReleased,
+  );
   const pastCountdowns = countdowns.filter((c) => c.timeRemaining.isReleased);
 
   const handleCreateCountdown = (e: React.FormEvent) => {
@@ -168,7 +184,9 @@ export function PreReleaseHub() {
                   id="title"
                   placeholder="My New Album"
                   value={newCountdown.title}
-                  onChange={(e) => setNewCountdown({ ...newCountdown, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewCountdown({ ...newCountdown, title: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -178,7 +196,12 @@ export function PreReleaseHub() {
                   id="releaseDate"
                   type="datetime-local"
                   value={newCountdown.releaseDate}
-                  onChange={(e) => setNewCountdown({ ...newCountdown, releaseDate: e.target.value })}
+                  onChange={(e) =>
+                    setNewCountdown({
+                      ...newCountdown,
+                      releaseDate: e.target.value,
+                    })
+                  }
                   required
                 />
               </div>
@@ -188,7 +211,12 @@ export function PreReleaseHub() {
                   id="artworkUrl"
                   placeholder="https://..."
                   value={newCountdown.artworkUrl}
-                  onChange={(e) => setNewCountdown({ ...newCountdown, artworkUrl: e.target.value })}
+                  onChange={(e) =>
+                    setNewCountdown({
+                      ...newCountdown,
+                      artworkUrl: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -197,15 +225,29 @@ export function PreReleaseHub() {
                   id="presaveUrl"
                   placeholder="https://..."
                   value={newCountdown.presaveUrl}
-                  onChange={(e) => setNewCountdown({ ...newCountdown, presaveUrl: e.target.value })}
+                  onChange={(e) =>
+                    setNewCountdown({
+                      ...newCountdown,
+                      presaveUrl: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCreateDialogOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createCountdownMutation.isPending}>
-                  {createCountdownMutation.isPending ? "Creating..." : "Create Countdown"}
+                <Button
+                  type="submit"
+                  disabled={createCountdownMutation.isPending}
+                >
+                  {createCountdownMutation.isPending
+                    ? "Creating..."
+                    : "Create Countdown"}
                 </Button>
               </div>
             </form>
@@ -228,10 +270,12 @@ export function PreReleaseHub() {
       ) : countdowns.length === 0 ? (
         <Card className="p-12 text-center">
           <Sparkles className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">No Release Countdowns Yet</h3>
+          <h3 className="text-xl font-semibold mb-2">
+            No Release Countdowns Yet
+          </h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Create your first countdown to start building excitement for your upcoming release with
-            a complete pre-release checklist.
+            Create your first countdown to start building excitement for your
+            upcoming release with a complete pre-release checklist.
           </p>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -277,9 +321,12 @@ export function PreReleaseHub() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{countdown.title}</p>
+                          <p className="font-medium truncate">
+                            {countdown.title}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {countdown.timeRemaining.days}d {countdown.timeRemaining.hours}h left
+                            {countdown.timeRemaining.days}d{" "}
+                            {countdown.timeRemaining.hours}h left
                           </p>
                         </div>
                       </div>
@@ -321,7 +368,9 @@ export function PreReleaseHub() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{countdown.title}</p>
+                          <p className="font-medium truncate">
+                            {countdown.title}
+                          </p>
                           <p className="text-xs text-green-500">Released</p>
                         </div>
                       </div>
@@ -371,7 +420,9 @@ export function PreReleaseHub() {
             ) : (
               <Card className="p-12 text-center">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Select a Countdown</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Select a Countdown
+                </h3>
                 <p className="text-muted-foreground">
                   Choose a countdown from the list to view details
                 </p>

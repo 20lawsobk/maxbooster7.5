@@ -1,9 +1,15 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +17,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,9 +27,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Shield,
   Key,
@@ -36,7 +42,7 @@ import {
   Eye,
   EyeOff,
   Printer,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface RecoveryCodesStatus {
   enabled: boolean;
@@ -61,47 +67,49 @@ export function RecoveryCodes() {
   const [copied, setCopied] = useState(false);
 
   const { data: status, isLoading } = useQuery<RecoveryCodesStatus>({
-    queryKey: ['/api/auth/recovery-codes/status'],
+    queryKey: ["/api/auth/recovery-codes/status"],
   });
 
   const generateCodesMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/auth/recovery-codes/generate');
+      const res = await apiRequest("POST", "/api/auth/recovery-codes/generate");
       return res.json();
     },
     onSuccess: (data: RecoveryCodesResponse) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/recovery-codes/status'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/auth/recovery-codes/status"],
+      });
       setCodes(data.codes);
       setViewCodesOpen(true);
       setRegenerateOpen(false);
       toast({
-        title: 'Recovery Codes Generated',
-        description: 'New backup codes have been generated. Store them safely.',
+        title: "Recovery Codes Generated",
+        description: "New backup codes have been generated. Store them safely.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to generate recovery codes. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to generate recovery codes. Please try again.",
+        variant: "destructive",
       });
     },
   });
 
   const copyCodes = async () => {
     try {
-      await navigator.clipboard.writeText(codes.join('\n'));
+      await navigator.clipboard.writeText(codes.join("\n"));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       toast({
-        title: 'Copied',
-        description: 'Recovery codes copied to clipboard.',
+        title: "Copied",
+        description: "Recovery codes copied to clipboard.",
       });
     } catch {
       toast({
-        title: 'Copy Failed',
-        description: 'Could not copy to clipboard.',
-        variant: 'destructive',
+        title: "Copy Failed",
+        description: "Could not copy to clipboard.",
+        variant: "destructive",
       });
     }
   };
@@ -113,29 +121,29 @@ Generated: ${new Date().toLocaleString()}
 These are your backup codes. Store them in a safe place.
 Each code can only be used once.
 
-${codes.map((code, i) => `${i + 1}. ${code}`).join('\n')}
+${codes.map((code, i) => `${i + 1}. ${code}`).join("\n")}
 
 Keep these codes secret and secure.
 `;
-    
-    const blob = new Blob([content], { type: 'text/plain' });
+
+    const blob = new Blob([content], { type: "text/plain" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'maxbooster-recovery-codes.txt';
+    a.download = "maxbooster-recovery-codes.txt";
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    
+
     toast({
-      title: 'Downloaded',
-      description: 'Recovery codes saved to file.',
+      title: "Downloaded",
+      description: "Recovery codes saved to file.",
     });
   };
 
   const printCodes = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(`
         <html>
@@ -153,7 +161,7 @@ Keep these codes secret and secure.
             <p>Generated: ${new Date().toLocaleString()}</p>
             <p>Each code can only be used once.</p>
             <div style="margin: 20px 0;">
-              ${codes.map((code, i) => `<div class="code">${i + 1}. ${code}</div>`).join('')}
+              ${codes.map((code, i) => `<div class="code">${i + 1}. ${code}</div>`).join("")}
             </div>
             <p class="warning">⚠️ Keep these codes secret and secure.</p>
           </body>
@@ -190,18 +198,22 @@ Keep these codes secret and secure.
             Recovery Codes
           </CardTitle>
           <CardDescription>
-            Backup codes for account recovery if you lose access to your 2FA device
+            Backup codes for account recovery if you lose access to your 2FA
+            device
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {!status?.enabled ? (
             <div className="text-center py-8 bg-muted/10 rounded-lg border border-dashed">
               <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Recovery Codes Not Set Up</h3>
+              <h3 className="text-lg font-medium mb-2">
+                Recovery Codes Not Set Up
+              </h3>
               <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                Generate recovery codes as a backup method to access your account if you lose your 2FA device.
+                Generate recovery codes as a backup method to access your
+                account if you lose your 2FA device.
               </p>
-              <Button 
+              <Button
                 onClick={() => generateCodesMutation.mutate()}
                 disabled={generateCodesMutation.isPending}
               >
@@ -225,7 +237,8 @@ Keep these codes secret and secure.
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>No Recovery Codes Left</AlertTitle>
                   <AlertDescription>
-                    All your recovery codes have been used. Generate new codes immediately to maintain account access.
+                    All your recovery codes have been used. Generate new codes
+                    immediately to maintain account access.
                   </AlertDescription>
                 </Alert>
               )}
@@ -235,33 +248,54 @@ Keep these codes secret and secure.
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Running Low on Codes</AlertTitle>
                   <AlertDescription>
-                    You only have {status.codesRemaining} recovery code{status.codesRemaining > 1 ? 's' : ''} remaining. Consider generating new codes.
+                    You only have {status.codesRemaining} recovery code
+                    {status.codesRemaining > 1 ? "s" : ""} remaining. Consider
+                    generating new codes.
                   </AlertDescription>
                 </Alert>
               )}
 
               <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/10">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-full ${codesExhausted ? 'bg-destructive/10' : codesLow ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
-                    <Key className={`h-6 w-6 ${codesExhausted ? 'text-destructive' : codesLow ? 'text-yellow-600' : 'text-green-600'}`} />
+                  <div
+                    className={`p-3 rounded-full ${codesExhausted ? "bg-destructive/10" : codesLow ? "bg-yellow-100 dark:bg-yellow-900/30" : "bg-green-100 dark:bg-green-900/30"}`}
+                  >
+                    <Key
+                      className={`h-6 w-6 ${codesExhausted ? "text-destructive" : codesLow ? "text-yellow-600" : "text-green-600"}`}
+                    />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">
-                        {status.codesRemaining} of {status.totalCodes} codes remaining
+                        {status.codesRemaining} of {status.totalCodes} codes
+                        remaining
                       </p>
-                      <Badge variant={codesExhausted ? 'destructive' : codesLow ? 'secondary' : 'default'}>
-                        {codesExhausted ? 'Exhausted' : codesLow ? 'Low' : 'Active'}
+                      <Badge
+                        variant={
+                          codesExhausted
+                            ? "destructive"
+                            : codesLow
+                              ? "secondary"
+                              : "default"
+                        }
+                      >
+                        {codesExhausted
+                          ? "Exhausted"
+                          : codesLow
+                            ? "Low"
+                            : "Active"}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {status.lastGeneratedAt && `Generated ${new Date(status.lastGeneratedAt).toLocaleDateString()}`}
-                      {status.lastUsedAt && ` • Last used ${new Date(status.lastUsedAt).toLocaleDateString()}`}
+                      {status.lastGeneratedAt &&
+                        `Generated ${new Date(status.lastGeneratedAt).toLocaleDateString()}`}
+                      {status.lastUsedAt &&
+                        ` • Last used ${new Date(status.lastUsedAt).toLocaleDateString()}`}
                     </p>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setRegenerateOpen(true)}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
@@ -273,10 +307,12 @@ Keep these codes secret and secure.
                 <div className="flex items-start gap-3">
                   <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
                   <div>
-                    <p className="font-medium text-blue-800 dark:text-blue-400">Keep Your Codes Safe</p>
+                    <p className="font-medium text-blue-800 dark:text-blue-400">
+                      Keep Your Codes Safe
+                    </p>
                     <p className="text-sm text-blue-700 dark:text-blue-500 mt-1">
-                      Store your recovery codes in a secure password manager or printed in a safe location. 
-                      Never share them with anyone.
+                      Store your recovery codes in a secure password manager or
+                      printed in a safe location. Never share them with anyone.
                     </p>
                   </div>
                 </div>
@@ -294,7 +330,8 @@ Keep these codes secret and secure.
               Your Recovery Codes
             </DialogTitle>
             <DialogDescription>
-              Save these codes in a secure location. Each code can only be used once.
+              Save these codes in a secure location. Each code can only be used
+              once.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -327,10 +364,12 @@ Keep these codes secret and secure.
                   )}
                 </Button>
               </div>
-              
-              <div className={`grid grid-cols-2 gap-2 p-4 rounded-lg bg-muted ${showCodes ? '' : 'blur-sm select-none'}`}>
+
+              <div
+                className={`grid grid-cols-2 gap-2 p-4 rounded-lg bg-muted ${showCodes ? "" : "blur-sm select-none"}`}
+              >
                 {codes.map((code, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="font-mono text-sm px-3 py-2 bg-background rounded border"
                   >
@@ -341,13 +380,17 @@ Keep these codes secret and secure.
             </div>
 
             <div className="flex items-center gap-2 mt-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={copyCodes}
-                className={copied ? 'bg-green-600 text-white' : ''}
+                className={copied ? "bg-green-600 text-white" : ""}
               >
-                {copied ? <CheckCircle className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                {copied ? (
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                ) : (
+                  <Copy className="h-4 w-4 mr-1" />
+                )}
                 Copy
               </Button>
               <Button variant="outline" size="sm" onClick={downloadCodes}>
@@ -361,11 +404,13 @@ Keep these codes secret and secure.
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => {
-              setViewCodesOpen(false);
-              setCodes([]);
-              setShowCodes(false);
-            }}>
+            <Button
+              onClick={() => {
+                setViewCodesOpen(false);
+                setCodes([]);
+                setShowCodes(false);
+              }}
+            >
               I've Saved My Codes
             </Button>
           </DialogFooter>
@@ -377,8 +422,8 @@ Keep these codes secret and secure.
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate Recovery Codes?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will invalidate all your existing recovery codes and generate new ones. 
-              Make sure to save the new codes securely.
+              This will invalidate all your existing recovery codes and generate
+              new ones. Make sure to save the new codes securely.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

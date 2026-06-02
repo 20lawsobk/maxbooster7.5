@@ -1,23 +1,49 @@
-import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useStudioStore, type AutoscrollMode } from '@/lib/studioStore';
-import { AlignHorizontalJustifyCenter, AlignLeft, BookOpen, ArrowRight, Pause } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useStudioStore, type AutoscrollMode } from "@/lib/studioStore";
+import {
+  AlignHorizontalJustifyCenter,
+  AlignLeft,
+  BookOpen,
+  ArrowRight,
+  Pause,
+} from "lucide-react";
 
-const AUTOSCROLL_MODES: { mode: AutoscrollMode; label: string; description: string }[] = [
-  { mode: 'off', label: 'Off', description: 'Autoscroll disabled' },
-  { mode: 'turnover', label: 'Turn Over', description: 'Classic - view jumps when cursor reaches edge' },
-  { mode: 'continuous-centered', label: 'Continuous Centered', description: 'Cursor stays centered, timeline moves' },
-  { mode: 'continuous-left', label: 'Continuous Left', description: 'Cursor stays left, timeline moves' },
+const AUTOSCROLL_MODES: {
+  mode: AutoscrollMode;
+  label: string;
+  description: string;
+}[] = [
+  { mode: "off", label: "Off", description: "Autoscroll disabled" },
+  {
+    mode: "turnover",
+    label: "Turn Over",
+    description: "Classic - view jumps when cursor reaches edge",
+  },
+  {
+    mode: "continuous-centered",
+    label: "Continuous Centered",
+    description: "Cursor stays centered, timeline moves",
+  },
+  {
+    mode: "continuous-left",
+    label: "Continuous Left",
+    description: "Cursor stays left, timeline moves",
+  },
 ];
 
 function getAutoscrollIcon(mode: AutoscrollMode) {
   switch (mode) {
-    case 'turnover':
+    case "turnover":
       return BookOpen;
-    case 'continuous-centered':
+    case "continuous-centered":
       return AlignHorizontalJustifyCenter;
-    case 'continuous-left':
+    case "continuous-left":
       return AlignLeft;
     default:
       return ArrowRight;
@@ -25,12 +51,12 @@ function getAutoscrollIcon(mode: AutoscrollMode) {
 }
 
 export function AutoscrollButton() {
-  const { 
-    autoscrollMode, 
-    setAutoscrollMode, 
-    cycleAutoscrollMode, 
+  const {
+    autoscrollMode,
+    setAutoscrollMode,
+    cycleAutoscrollMode,
     autoscrollPaused,
-    resumeAutoscroll 
+    resumeAutoscroll,
   } = useStudioStore();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -38,18 +64,22 @@ export function AutoscrollButton() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
-          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
         setShowMenu(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleClick = () => {
     // If autoscroll is paused due to manual scroll, resume it
-    if (autoscrollPaused && autoscrollMode !== 'off') {
+    if (autoscrollPaused && autoscrollMode !== "off") {
       resumeAutoscroll();
     } else {
       cycleAutoscrollMode();
@@ -68,10 +98,15 @@ export function AutoscrollButton() {
   };
 
   // Show Pause icon when paused, otherwise show mode icon
-  const Icon = autoscrollPaused && autoscrollMode !== 'off' ? Pause : getAutoscrollIcon(autoscrollMode);
-  const isActive = autoscrollMode !== 'off';
-  const isPaused = autoscrollPaused && autoscrollMode !== 'off';
-  const currentModeInfo = AUTOSCROLL_MODES.find(m => m.mode === autoscrollMode);
+  const Icon =
+    autoscrollPaused && autoscrollMode !== "off"
+      ? Pause
+      : getAutoscrollIcon(autoscrollMode);
+  const isActive = autoscrollMode !== "off";
+  const isPaused = autoscrollPaused && autoscrollMode !== "off";
+  const currentModeInfo = AUTOSCROLL_MODES.find(
+    (m) => m.mode === autoscrollMode,
+  );
 
   return (
     <div className="relative">
@@ -85,27 +120,31 @@ export function AutoscrollButton() {
             onContextMenu={handleContextMenu}
             className={`h-7 px-2 gap-1 ${
               isPaused
-                ? 'bg-amber-600/30 text-amber-400 hover:bg-amber-600/40'
-                : isActive 
-                  ? 'bg-blue-600/30 text-blue-400 hover:bg-blue-600/40' 
-                  : 'text-zinc-400 hover:text-zinc-200'
+                ? "bg-amber-600/30 text-amber-400 hover:bg-amber-600/40"
+                : isActive
+                  ? "bg-blue-600/30 text-blue-400 hover:bg-blue-600/40"
+                  : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             <Icon className="h-4 w-4" />
             <span className="text-[10px] font-medium uppercase tracking-wide">
-              {isPaused ? 'Paused' : autoscrollMode === 'off' ? 'Auto' : autoscrollMode.replace('continuous-', '').slice(0, 3)}
+              {isPaused
+                ? "Paused"
+                : autoscrollMode === "off"
+                  ? "Auto"
+                  : autoscrollMode.replace("continuous-", "").slice(0, 3)}
             </span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs">
           <div className="font-medium">
             Autoscroll: {currentModeInfo?.label}
-            {isPaused && ' (Paused)'}
+            {isPaused && " (Paused)"}
           </div>
           <div className="text-zinc-400 text-[10px]">
-            {isPaused 
-              ? 'Click or press F to resume'
-              : 'Click to cycle • Right-click for options • Press F'}
+            {isPaused
+              ? "Click or press F to resume"
+              : "Click to cycle • Right-click for options • Press F"}
           </div>
         </TooltipContent>
       </Tooltip>
@@ -126,10 +165,12 @@ export function AutoscrollButton() {
                 key={mode}
                 onClick={() => handleModeSelect(mode)}
                 className={`w-full px-3 py-2 flex items-start gap-3 hover:bg-zinc-800 transition-colors ${
-                  isSelected ? 'bg-blue-600/20 text-blue-400' : 'text-zinc-300'
+                  isSelected ? "bg-blue-600/20 text-blue-400" : "text-zinc-300"
                 }`}
               >
-                <ModeIcon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${isSelected ? 'text-blue-400' : 'text-zinc-500'}`} />
+                <ModeIcon
+                  className={`h-4 w-4 mt-0.5 flex-shrink-0 ${isSelected ? "text-blue-400" : "text-zinc-500"}`}
+                />
                 <div className="text-left">
                   <div className="text-sm font-medium">{label}</div>
                   <div className="text-[10px] text-zinc-500">{description}</div>

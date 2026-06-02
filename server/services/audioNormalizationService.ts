@@ -1,4 +1,4 @@
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
 export interface LUFSAnalysis {
   integratedLoudness: number;
@@ -55,7 +55,11 @@ export class AudioNormalizationService {
     return AudioNormalizationService.instance;
   }
 
-  analyzeLUFS(samples: Float32Array, sampleRate: number, channels: number = 2): LUFSAnalysis {
+  analyzeLUFS(
+    samples: Float32Array,
+    sampleRate: number,
+    channels: number = 2,
+  ): LUFSAnalysis {
     const blockSize = Math.floor(sampleRate * 0.4);
     const hopSize = Math.floor(sampleRate * 0.1);
     const samplesPerChannel = Math.floor(samples.length / channels);
@@ -65,7 +69,8 @@ export class AudioNormalizationService {
 
     for (let i = 0; i < samplesPerChannel; i++) {
       leftChannel[i] = samples[i * channels];
-      rightChannel[i] = channels > 1 ? samples[i * channels + 1] : samples[i * channels];
+      rightChannel[i] =
+        channels > 1 ? samples[i * channels + 1] : samples[i * channels];
     }
 
     const leftFiltered = this.applyKWeighting(leftChannel, sampleRate);
@@ -88,7 +93,11 @@ export class AudioNormalizationService {
     const shortTermBlockSize = Math.floor(sampleRate * 3);
     const shortTermHopSize = Math.floor(sampleRate);
 
-    for (let i = 0; i + shortTermBlockSize <= samplesPerChannel; i += shortTermHopSize) {
+    for (
+      let i = 0;
+      i + shortTermBlockSize <= samplesPerChannel;
+      i += shortTermHopSize
+    ) {
       const leftBlock = leftFiltered.slice(i, i + shortTermBlockSize);
       const rightBlock = rightFiltered.slice(i, i + shortTermBlockSize);
 
@@ -101,10 +110,9 @@ export class AudioNormalizationService {
 
     const gatedBlocks = this.gatingPass(momentaryLoudness, -70);
     const relativeThreshold = this.calculateMean(gatedBlocks) - 10;
-    const finalBlocks = gatedBlocks.filter(l => l > relativeThreshold);
-    const integratedLoudness = finalBlocks.length > 0
-      ? this.calculateMean(finalBlocks)
-      : -70;
+    const finalBlocks = gatedBlocks.filter((l) => l > relativeThreshold);
+    const integratedLoudness =
+      finalBlocks.length > 0 ? this.calculateMean(finalBlocks) : -70;
 
     const loudnessRange = this.calculateLoudnessRange(shortTermLoudness);
 
@@ -119,8 +127,10 @@ export class AudioNormalizationService {
       integratedLoudness,
       loudnessRange,
       truePeak: 20 * Math.log10(truePeak),
-      shortTermMax: shortTermLoudness.length > 0 ? Math.max(...shortTermLoudness) : -70,
-      momentaryMax: momentaryLoudness.length > 0 ? Math.max(...momentaryLoudness) : -70,
+      shortTermMax:
+        shortTermLoudness.length > 0 ? Math.max(...shortTermLoudness) : -70,
+      momentaryMax:
+        momentaryLoudness.length > 0 ? Math.max(...momentaryLoudness) : -70,
       samplePeakLeft: 20 * Math.log10(samplePeakLeft),
       samplePeakRight: 20 * Math.log10(samplePeakRight),
     };
@@ -131,7 +141,7 @@ export class AudioNormalizationService {
     sampleRate: number,
     channels: number,
     targetLUFS: number,
-    preventClipping: boolean = true
+    preventClipping: boolean = true,
   ): { samples: Float32Array; result: NormalizationResult } {
     const analysis = this.analyzeLUFS(samples, sampleRate, channels);
     const gainDb = targetLUFS - analysis.integratedLoudness;
@@ -146,7 +156,7 @@ export class AudioNormalizationService {
       const clampedGainDb = Math.min(gainDb, availableHeadroom);
       gainLinear = Math.pow(10, clampedGainDb / 20);
       clippingPrevented = true;
-      logger.info('Clipping prevention applied', {
+      logger.info("Clipping prevention applied", {
         originalGainDb: gainDb,
         clampedGainDb,
         truePeakBefore: truePeakDb,
@@ -159,7 +169,11 @@ export class AudioNormalizationService {
       normalizedSamples[i] = samples[i] * gainLinear;
     }
 
-    const normalizedAnalysis = this.analyzeLUFS(normalizedSamples, sampleRate, channels);
+    const normalizedAnalysis = this.analyzeLUFS(
+      normalizedSamples,
+      sampleRate,
+      channels,
+    );
 
     return {
       samples: normalizedSamples,
@@ -183,15 +197,22 @@ export class AudioNormalizationService {
     return LOUDNESS_TARGETS.BROADCAST[standard];
   }
 
-  isCompliant(analysis: LUFSAnalysis, targetLUFS: number, tolerance: number = 1): boolean {
+  isCompliant(
+    analysis: LUFSAnalysis,
+    targetLUFS: number,
+    tolerance: number = 1,
+  ): boolean {
     return Math.abs(analysis.integratedLoudness - targetLUFS) <= tolerance;
   }
 
-  private applyKWeighting(samples: Float32Array, sampleRate: number): Float32Array {
+  private applyKWeighting(
+    samples: Float32Array,
+    sampleRate: number,
+  ): Float32Array {
     const result = new Float32Array(samples.length);
     const fc = 1500;
     const Q = 0.707;
-    const K = Math.tan(Math.PI * fc / sampleRate);
+    const K = Math.tan((Math.PI * fc) / sampleRate);
     const norm = 1 / (1 + K / Q + K * K);
     const a0 = K * K * norm;
     const a1 = 2 * a0;
@@ -199,7 +220,10 @@ export class AudioNormalizationService {
     const b1 = 2 * (K * K - 1) * norm;
     const b2 = (1 - K / Q + K * K) * norm;
 
-    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    let x1 = 0,
+      x2 = 0,
+      y1 = 0,
+      y2 = 0;
     for (let i = 0; i < samples.length; i++) {
       const x = samples[i];
       const y = a0 * x + a1 * x1 + a2 * x2 - b1 * y1 - b2 * y2;
@@ -222,7 +246,7 @@ export class AudioNormalizationService {
   }
 
   private gatingPass(loudnessValues: number[], threshold: number): number[] {
-    return loudnessValues.filter(l => l > threshold);
+    return loudnessValues.filter((l) => l > threshold);
   }
 
   private calculateMean(values: number[]): number {
@@ -234,7 +258,9 @@ export class AudioNormalizationService {
     if (shortTermValues.length < 2) return 0;
 
     const sorted = [...shortTermValues].sort((a, b) => a - b);
-    const gated = sorted.filter(v => v > sorted[Math.floor(sorted.length * 0.1)]);
+    const gated = sorted.filter(
+      (v) => v > sorted[Math.floor(sorted.length * 0.1)],
+    );
 
     if (gated.length < 2) return 0;
 
@@ -254,7 +280,9 @@ export class AudioNormalizationService {
 
       for (let j = 1; j < oversamplingFactor; j++) {
         const t = j / oversamplingFactor;
-        const interpolated = Math.abs(samples[i] * (1 - t) + samples[i + 1] * t);
+        const interpolated = Math.abs(
+          samples[i] * (1 - t) + samples[i + 1] * t,
+        );
         if (interpolated > maxPeak) maxPeak = interpolated;
       }
     }
@@ -272,4 +300,5 @@ export class AudioNormalizationService {
   }
 }
 
-export const audioNormalizationService = AudioNormalizationService.getInstance();
+export const audioNormalizationService =
+  AudioNormalizationService.getInstance();

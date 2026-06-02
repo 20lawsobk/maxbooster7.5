@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from "react";
 import {
   History,
   Undo2,
@@ -21,18 +21,18 @@ import {
   Users,
   Calendar,
   Folder,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -40,17 +40,26 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
+} from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
-import { useUndoHistory, useUndoActions, useUndo } from '@/contexts/UndoContext';
-import { UndoableAction, getActionLabel, ActionType, ActionCategory } from '@/lib/undo/types';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import {
+  useUndoHistory,
+  useUndoActions,
+  useUndo,
+} from "@/contexts/UndoContext";
+import {
+  UndoableAction,
+  getActionLabel,
+  ActionType,
+  ActionCategory,
+} from "@/lib/undo/types";
+import { cn } from "@/lib/utils";
 
 export interface ActionHistoryPanelProps {
   className?: string;
@@ -66,7 +75,7 @@ function formatTimestamp(timestamp: number): string {
   const diff = now - timestamp;
 
   if (diff < 60000) {
-    return 'Just now';
+    return "Just now";
   } else if (diff < 3600000) {
     const minutes = Math.floor(diff / 60000);
     return `${minutes}m ago`;
@@ -76,40 +85,40 @@ function formatTimestamp(timestamp: number): string {
   } else {
     const date = new Date(timestamp);
     return date.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }
 }
 
 function getActionTypeIcon(type: ActionType) {
   switch (type) {
-    case 'create':
-    case 'post_create':
+    case "create":
+    case "post_create":
       return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
-    case 'delete':
-    case 'file_delete':
-    case 'post_delete':
-    case 'track_remove':
-    case 'collaboration_remove':
+    case "delete":
+    case "file_delete":
+    case "post_delete":
+    case "track_remove":
+    case "collaboration_remove":
       return <Trash2 className="w-3.5 h-3.5 text-red-500" />;
-    case 'update':
-    case 'settings_change':
-    case 'track_edit':
-    case 'release_edit':
+    case "update":
+    case "settings_change":
+    case "track_edit":
+    case "release_edit":
       return <RefreshCw className="w-3.5 h-3.5 text-blue-500" />;
-    case 'move':
-    case 'copy':
+    case "move":
+    case "copy":
       return <ChevronRight className="w-3.5 h-3.5 text-purple-500" />;
-    case 'file_upload':
+    case "file_upload":
       return <FileText className="w-3.5 h-3.5 text-emerald-500" />;
-    case 'post_schedule':
+    case "post_schedule":
       return <Calendar className="w-3.5 h-3.5 text-orange-500" />;
-    case 'collaboration_invite':
+    case "collaboration_invite":
       return <Users className="w-3.5 h-3.5 text-pink-500" />;
-    case 'batch':
+    case "batch":
       return <Folder className="w-3.5 h-3.5 text-amber-500" />;
     default:
       return <Clock className="w-3.5 h-3.5 text-muted-foreground" />;
@@ -118,17 +127,17 @@ function getActionTypeIcon(type: ActionType) {
 
 function getCategoryIcon(category: ActionCategory) {
   switch (category) {
-    case 'file':
+    case "file":
       return <FileText className="w-3 h-3" />;
-    case 'track':
+    case "track":
       return <Music className="w-3 h-3" />;
-    case 'social':
+    case "social":
       return <Image className="w-3 h-3" />;
-    case 'settings':
+    case "settings":
       return <Settings className="w-3 h-3" />;
-    case 'collaboration':
+    case "collaboration":
       return <Users className="w-3 h-3" />;
-    case 'release':
+    case "release":
       return <Calendar className="w-3 h-3" />;
     default:
       return null;
@@ -144,23 +153,30 @@ interface TimelineItemProps {
   compact?: boolean;
 }
 
-function TimelineItem({ action, isActive, isLast, onJumpTo, onUndo, compact }: TimelineItemProps) {
+function TimelineItem({
+  action,
+  isActive,
+  isLast,
+  onJumpTo,
+  onUndo,
+  compact,
+}: TimelineItemProps) {
   const label = getActionLabel(action);
   const { module, category, isDestructive, timestamp } = action.metadata;
 
   return (
     <div
       className={cn(
-        'relative flex items-start gap-3 py-2.5 px-3 cursor-pointer rounded-md transition-all',
-        'hover:bg-muted/50',
-        isActive && 'bg-primary/5 border-l-2 border-primary',
-        action.isUndone && 'opacity-50'
+        "relative flex items-start gap-3 py-2.5 px-3 cursor-pointer rounded-md transition-all",
+        "hover:bg-muted/50",
+        isActive && "bg-primary/5 border-l-2 border-primary",
+        action.isUndone && "opacity-50",
       )}
       onClick={onJumpTo}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onJumpTo();
         }
@@ -169,14 +185,14 @@ function TimelineItem({ action, isActive, isLast, onJumpTo, onUndo, compact }: T
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            'w-6 h-6 rounded-full border-2 flex items-center justify-center bg-background',
+            "w-6 h-6 rounded-full border-2 flex items-center justify-center bg-background",
             isActive
-              ? 'border-primary'
+              ? "border-primary"
               : action.isUndone
-              ? 'border-muted-foreground/50'
-              : isDestructive
-              ? 'border-destructive/50'
-              : 'border-primary/50'
+                ? "border-muted-foreground/50"
+                : isDestructive
+                  ? "border-destructive/50"
+                  : "border-primary/50",
           )}
         >
           {getActionTypeIcon(action.type)}
@@ -190,8 +206,8 @@ function TimelineItem({ action, isActive, isLast, onJumpTo, onUndo, compact }: T
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              'text-sm font-medium truncate',
-              action.isUndone && 'line-through text-muted-foreground'
+              "text-sm font-medium truncate",
+              action.isUndone && "line-through text-muted-foreground",
             )}
           >
             {label}
@@ -260,18 +276,18 @@ function TimelineItem({ action, isActive, isLast, onJumpTo, onUndo, compact }: T
 }
 
 function HistoryPanelContent({
-  maxHeight = '400px',
+  maxHeight = "400px",
   showFilters = true,
   showTimeline = true,
   compact = false,
-}: Omit<ActionHistoryPanelProps, 'className' | 'asSheet'>) {
+}: Omit<ActionHistoryPanelProps, "className" | "asSheet">) {
   const { history, redoStack } = useUndoHistory();
   const { undo, redo, canUndo, canRedo, clearHistory } = useUndoActions();
   const { getActionById } = useUndo();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [moduleFilter, setModuleFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [moduleFilter, setModuleFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [isExpanded, setIsExpanded] = useState(true);
 
   const modules = useMemo(() => {
@@ -288,15 +304,15 @@ function HistoryPanelContent({
         (a) =>
           getActionLabel(a).toLowerCase().includes(term) ||
           a.metadata.module.toLowerCase().includes(term) ||
-          a.type.toLowerCase().includes(term)
+          a.type.toLowerCase().includes(term),
       );
     }
 
-    if (moduleFilter !== 'all') {
+    if (moduleFilter !== "all") {
       filtered = filtered.filter((a) => a.metadata.module === moduleFilter);
     }
 
-    if (typeFilter !== 'all') {
+    if (typeFilter !== "all") {
       filtered = filtered.filter((a) => a.type === typeFilter);
     }
 
@@ -406,14 +422,14 @@ function HistoryPanelContent({
               ))}
             </SelectContent>
           </Select>
-          {(searchTerm || moduleFilter !== 'all') && (
+          {(searchTerm || moduleFilter !== "all") && (
             <Button
               variant="ghost"
               size="icon"
               className="h-7 w-7"
               onClick={() => {
-                setSearchTerm('');
-                setModuleFilter('all');
+                setSearchTerm("");
+                setModuleFilter("all");
               }}
             >
               <X className="w-3.5 h-3.5" />
@@ -478,7 +494,9 @@ function HistoryPanelContent({
                 isLast={index === filteredHistory.length - 1}
                 compact={compact}
                 onJumpTo={() => handleJumpToAction(action.id)}
-                onUndo={index === 0 && !action.isUndone ? () => undo() : undefined}
+                onUndo={
+                  index === 0 && !action.isUndone ? () => undo() : undefined
+                }
               />
             ))}
           </div>
@@ -488,7 +506,7 @@ function HistoryPanelContent({
       {history.length > 0 && (
         <div className="px-4 py-2 border-t bg-muted/30 text-xs text-muted-foreground">
           <span>
-            {history.filter((a) => !a.isUndone).length} active •{' '}
+            {history.filter((a) => !a.isUndone).length} active •{" "}
             {redoStack.length} undone
           </span>
         </div>
@@ -508,7 +526,11 @@ export function ActionHistoryPanel({
     return (
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className={cn('gap-2', className)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn("gap-2", className)}
+          >
             <History className="w-4 h-4" />
             History
             {history.length > 0 && (
@@ -526,7 +548,9 @@ export function ActionHistoryPanel({
   }
 
   return (
-    <div className={cn('flex flex-col bg-background border rounded-lg', className)}>
+    <div
+      className={cn("flex flex-col bg-background border rounded-lg", className)}
+    >
       <HistoryPanelContent {...props} />
     </div>
   );

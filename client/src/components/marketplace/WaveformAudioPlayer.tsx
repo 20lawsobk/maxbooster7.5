@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { logger } from '@/lib/logger';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { useState, useRef, useEffect, useCallback } from "react";
+import { logger } from "@/lib/logger";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Play,
   Pause,
@@ -18,7 +18,7 @@ import {
   Download,
   MoreHorizontal,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface WaveformAudioPlayerProps {
   audioUrl: string;
@@ -66,7 +66,7 @@ export function WaveformAudioPlayer({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationRef = useRef<number>(0);
-  
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -80,7 +80,7 @@ export function WaveformAudioPlayer({
     if (!waveformData || waveformData.length === 0) {
       // Seeded waveform: same audioUrl always produces the same waveform shape.
       // Uses FNV-1a hash to derive a deterministic PRNG seed from the URL.
-      const seed = audioUrl || title || 'default';
+      const seed = audioUrl || title || "default";
       let hash = 2166136261;
       for (let i = 0; i < seed.length; i++) {
         hash ^= seed.charCodeAt(i);
@@ -103,18 +103,19 @@ export function WaveformAudioPlayer({
     }
   }, [waveformData, audioUrl, title]);
 
-  const waveform = waveformData && waveformData.length > 0 ? waveformData : generatedWaveform;
+  const waveform =
+    waveformData && waveformData.length > 0 ? waveformData : generatedWaveform;
 
   const drawWaveform = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || waveform.length === 0) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    
+
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
@@ -133,14 +134,14 @@ export function WaveformAudioPlayer({
       const y = (height - barHeight) / 2;
 
       const isPast = x < progressX;
-      
+
       if (isPast) {
         const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
-        gradient.addColorStop(0, '#8b5cf6');
-        gradient.addColorStop(1, '#6366f1');
+        gradient.addColorStop(0, "#8b5cf6");
+        gradient.addColorStop(1, "#6366f1");
         ctx.fillStyle = gradient;
       } else {
-        ctx.fillStyle = 'rgba(148, 163, 184, 0.4)';
+        ctx.fillStyle = "rgba(148, 163, 184, 0.4)";
       }
 
       ctx.beginPath();
@@ -149,7 +150,7 @@ export function WaveformAudioPlayer({
     });
 
     if (progressRatio > 0 && progressRatio < 1) {
-      ctx.fillStyle = '#8b5cf6';
+      ctx.fillStyle = "#8b5cf6";
       ctx.fillRect(progressX - 1, 0, 2, height);
     }
   }, [waveform, currentTime, duration]);
@@ -162,16 +163,16 @@ export function WaveformAudioPlayer({
     const audio = new Audio(audioUrl);
     audioRef.current = audio;
 
-    audio.addEventListener('loadstart', () => setIsLoading(true));
-    audio.addEventListener('canplay', () => setIsLoading(false));
-    audio.addEventListener('loadedmetadata', () => {
+    audio.addEventListener("loadstart", () => setIsLoading(true));
+    audio.addEventListener("canplay", () => setIsLoading(false));
+    audio.addEventListener("loadedmetadata", () => {
       setDuration(audio.duration);
     });
-    audio.addEventListener('timeupdate', () => {
+    audio.addEventListener("timeupdate", () => {
       setCurrentTime(audio.currentTime);
       onTimeUpdate?.(audio.currentTime);
     });
-    audio.addEventListener('ended', () => {
+    audio.addEventListener("ended", () => {
       setIsPlaying(false);
       if (isRepeat) {
         audio.currentTime = 0;
@@ -181,7 +182,7 @@ export function WaveformAudioPlayer({
         onEnded?.();
       }
     });
-    audio.addEventListener('error', () => {
+    audio.addEventListener("error", () => {
       setIsLoading(false);
       setIsPlaying(false);
     });
@@ -190,7 +191,7 @@ export function WaveformAudioPlayer({
 
     return () => {
       audio.pause();
-      audio.src = '';
+      audio.src = "";
     };
   }, [audioUrl, isRepeat]);
 
@@ -211,7 +212,7 @@ export function WaveformAudioPlayer({
         onPlay?.();
       } catch (error) {
         setIsLoading(false);
-        logger.error('Playback failed:', error);
+        logger.error("Playback failed:", error);
       }
     }
   };
@@ -219,7 +220,7 @@ export function WaveformAudioPlayer({
   const handleSeek = (value: number[]) => {
     const audio = audioRef.current;
     if (!audio) return;
-    
+
     const newTime = (value[0] / 100) * duration;
     audio.currentTime = newTime;
     setCurrentTime(newTime);
@@ -234,7 +235,7 @@ export function WaveformAudioPlayer({
     const clickX = e.clientX - rect.left;
     const ratio = clickX / rect.width;
     const newTime = ratio * duration;
-    
+
     audio.currentTime = newTime;
     setCurrentTime(newTime);
   };
@@ -258,7 +259,7 @@ export function WaveformAudioPlayer({
   const formatTime = (time: number): string => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
   const skipBackward = () => {
@@ -277,7 +278,12 @@ export function WaveformAudioPlayer({
 
   if (compact) {
     return (
-      <div className={cn('flex items-center gap-3 p-3 bg-card border rounded-lg', className)}>
+      <div
+        className={cn(
+          "flex items-center gap-3 p-3 bg-card border rounded-lg",
+          className,
+        )}
+      >
         <Button
           size="sm"
           variant="ghost"
@@ -293,7 +299,7 @@ export function WaveformAudioPlayer({
             <Play className="h-5 w-5 ml-0.5" />
           )}
         </Button>
-        
+
         <div className="flex-1 min-w-0">
           <canvas
             ref={canvasRef}
@@ -310,7 +316,7 @@ export function WaveformAudioPlayer({
   }
 
   return (
-    <div className={cn('bg-card border rounded-xl overflow-hidden', className)}>
+    <div className={cn("bg-card border rounded-xl overflow-hidden", className)}>
       <div className="flex flex-col md:flex-row">
         {coverArt && (
           <div className="relative w-full md:w-48 h-48 flex-shrink-0">
@@ -334,15 +340,13 @@ export function WaveformAudioPlayer({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-lg">{title}</h3>
-                {artist && <p className="text-sm text-muted-foreground">{artist}</p>}
+                {artist && (
+                  <p className="text-sm text-muted-foreground">{artist}</p>
+                )}
               </div>
               <div className="flex gap-2">
-                {bpm && (
-                  <Badge variant="secondary">{bpm} BPM</Badge>
-                )}
-                {musicalKey && (
-                  <Badge variant="outline">{musicalKey}</Badge>
-                )}
+                {bpm && <Badge variant="secondary">{bpm} BPM</Badge>}
+                {musicalKey && <Badge variant="outline">{musicalKey}</Badge>}
               </div>
             </div>
           )}
@@ -375,8 +379,8 @@ export function WaveformAudioPlayer({
                 <Button
                   size="icon"
                   className={cn(
-                    'h-12 w-12 rounded-full',
-                    'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'
+                    "h-12 w-12 rounded-full",
+                    "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700",
                   )}
                   onClick={togglePlay}
                   disabled={isLoading}
@@ -402,7 +406,7 @@ export function WaveformAudioPlayer({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className={cn('h-8 w-8', isRepeat && 'text-purple-600')}
+                  className={cn("h-8 w-8", isRepeat && "text-purple-600")}
                   onClick={() => setIsRepeat(!isRepeat)}
                 >
                   <Repeat className="h-4 w-4" />
@@ -442,8 +446,8 @@ export function WaveformAudioPlayer({
                     >
                       <Heart
                         className={cn(
-                          'h-4 w-4',
-                          isLiked && 'fill-pink-500 text-pink-500'
+                          "h-4 w-4",
+                          isLiked && "fill-pink-500 text-pink-500",
                         )}
                       />
                     </Button>

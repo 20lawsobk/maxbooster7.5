@@ -1,14 +1,19 @@
 import { randomUUID } from "crypto";
-import path from 'path';
-import fs from 'fs';
-import fsPromises from 'fs/promises';
-import wavefilePkg from 'wavefile';
-const WaveFile = (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
-import { storageService } from './storageService.js';
-import os from 'os';
-import { queueService } from './queueService.js';
-import type { AudioConvertJobData, AudioMixJobData, AudioJobResult } from './queueService.js';
-import { logger } from '../logger.js';
+import path from "path";
+import fs from "fs";
+import fsPromises from "fs/promises";
+import wavefilePkg from "wavefile";
+const WaveFile =
+  (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
+import { storageService } from "./storageService.js";
+import os from "os";
+import { queueService } from "./queueService.js";
+import type {
+  AudioConvertJobData,
+  AudioMixJobData,
+  AudioJobResult,
+} from "./queueService.js";
+import { logger } from "../logger.js";
 import {
   AUDIO_FORMATS,
   SAMPLE_RATES,
@@ -21,7 +26,7 @@ import {
   type AudioFormat,
   type SampleRate,
   type BitDepth,
-} from '../../shared/audioConstants.js';
+} from "../../shared/audioConstants.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -29,20 +34,23 @@ let ffmpegAvailable = false;
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
-    const fluentFfmpeg = await import('fluent-ffmpeg');
+    const fluentFfmpeg = await import("fluent-ffmpeg");
     ffmpeg = fluentFfmpeg.default;
     try {
-      const ffmpegStatic = await import('ffmpeg-static');
+      const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic.default) {
         ffmpeg.setFfmpegPath(ffmpegStatic.default);
       }
     } catch {
-      logger.warn('ffmpeg-static not available, using system ffmpeg');
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn({ err: error }, 'FFmpeg not available - audio processing features will be limited:');
+    logger.warn(
+      { err: error },
+      "FFmpeg not available - audio processing features will be limited:",
+    );
     return false;
   }
 }
@@ -97,7 +105,11 @@ export class AudioService {
     }
   }
 
-  async generateUploadUrl(userId: string, fileName: string, fileType: string): Promise<{
+  async generateUploadUrl(
+    userId: string,
+    fileName: string,
+    fileType: string,
+  ): Promise<{
     fileId: string;
     uploadUrl: string | null;
     key: string;
@@ -107,16 +119,29 @@ export class AudioService {
     expiresAt: string;
   }> {
     try {
-      const allowedTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/flac', 'audio/aac', 'audio/ogg'];
+      const allowedTypes = [
+        "audio/wav",
+        "audio/mpeg",
+        "audio/mp3",
+        "audio/flac",
+        "audio/aac",
+        "audio/ogg",
+      ];
       if (!allowedTypes.includes(fileType)) {
-        throw new Error(`File type ${fileType} is not allowed. Accepted types: ${allowedTypes.join(', ')}`);
+        throw new Error(
+          `File type ${fileType} is not allowed. Accepted types: ${allowedTypes.join(", ")}`,
+        );
       }
 
       const fileId = randomUUID();
-      const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
       const storageKey = `audio/${userId}/${fileId}_${sanitizedFileName}`;
-      const uploadUrl = await storageService.getUploadUrl(storageKey, fileType, 3600);
+      const uploadUrl = await storageService.getUploadUrl(
+        storageKey,
+        fileType,
+        3600,
+      );
 
       return {
         fileId,
@@ -128,26 +153,31 @@ export class AudioService {
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating upload URL:');
-      throw error instanceof Error ? error : new Error('Failed to generate upload URL');
+      logger.warn({ err: error }, "Error generating upload URL:");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to generate upload URL");
     }
   }
 
-  async processAudioFile(filePath: string, userId: string): Promise<AudioAnalysis> {
+  async processAudioFile(
+    filePath: string,
+    userId: string,
+  ): Promise<AudioAnalysis> {
     try {
       if (!fs.existsSync(filePath)) {
-        throw new Error('Audio file not found');
+        throw new Error("Audio file not found");
       }
 
       // Get file metadata using ffmpeg
       const metadata = await this.getAudioMetadata(filePath);
-      
+
       // Generate waveform and analysis data
       const waveformData = await this.generateWaveformFromFile(filePath);
       const peaks = this.extractPeaks(waveformData);
       const rms = this.calculateRMS(waveformData);
       const peakLevel = this.calculatePeakLevel(waveformData);
-      
+
       // Detect BPM and key (basic implementation)
       const bpm = await this.detectBPM(waveformData, metadata.sampleRate);
       const key = await this.detectKey(waveformData, metadata.sampleRate);
@@ -168,15 +198,17 @@ export class AudioService {
 
       return analysis;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error processing audio file:');
-      throw new Error('Failed to process audio file');
+      logger.warn({ err: error }, "Error processing audio file:");
+      throw new Error("Failed to process audio file");
     }
   }
 
   private async getAudioMetadata(filePath: string): Promise<unknown> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Audio processing features are disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Audio processing features are disabled in this deployment.",
+      );
     }
     return new Promise((resolve, reject) => {
       ffmpeg.ffprobe(filePath, (err, metadata) => {
@@ -184,17 +216,19 @@ export class AudioService {
           reject(err);
           return;
         }
-        
-        const audioStream = metadata.streams.find(s => s.codec_type === 'audio');
+
+        const audioStream = metadata.streams.find(
+          (s) => s.codec_type === "audio",
+        );
         if (!audioStream) {
-          reject(new Error('No audio stream found'));
+          reject(new Error("No audio stream found"));
           return;
         }
-        
+
         resolve({
-          duration: parseFloat(metadata.format.duration || '0'),
-          sampleRate: parseInt(audioStream.sample_rate || '44100'),
-          bitRate: parseInt(metadata.format.bit_rate || '320000'),
+          duration: parseFloat(metadata.format.duration || "0"),
+          sampleRate: parseInt(audioStream.sample_rate || "44100"),
+          bitRate: parseInt(metadata.format.bit_rate || "320000"),
           channels: audioStream.channels || 2,
           format: path.extname(filePath).slice(1),
         });
@@ -205,35 +239,38 @@ export class AudioService {
   private async generateWaveformFromFile(filePath: string): Promise<number[]> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      logger.warn('FFmpeg not available - using fallback waveform data');
+      logger.warn("FFmpeg not available - using fallback waveform data");
       return this.generateFallbackWaveform();
     }
     const tempWavPath = path.join(os.tmpdir(), `waveform_${randomUUID()}.wav`);
-    
+
     try {
       // Convert to WAV for processing
       await new Promise<void>((resolve, reject) => {
         ffmpeg(filePath)
-          .toFormat('wav')
+          .toFormat("wav")
           .audioChannels(1) // Mono for waveform
           .audioFrequency(8000) // Lower sample rate for performance
-          .on('end', () => resolve())
-          .on('error', reject)
+          .on("end", () => resolve())
+          .on("error", reject)
           .save(tempWavPath);
       });
-      
+
       // Read WAV file and extract samples
       const wavBuffer = await fsPromises.readFile(tempWavPath);
       const wav = new WaveFile.WaveFile(wavBuffer);
-      
+
       // Get samples and downsample for visualization
       const samplesData = wav.getSamples(true) as Record<string, unknown>;
-      const samples = samplesData instanceof Int16Array ? samplesData : new Int16Array(samplesData);
+      const samples =
+        samplesData instanceof Int16Array
+          ? samplesData
+          : new Int16Array(samplesData);
       const downsampledData = this.downsampleAudio(samples, 2000); // 2000 points for waveform
-      
+
       return downsampledData;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating waveform:');
+      logger.warn({ err: error }, "Error generating waveform:");
       return this.generateFallbackWaveform();
     } finally {
       // Clean up temp file
@@ -253,30 +290,30 @@ export class AudioService {
   private downsampleAudio(samples: Int16Array, targetLength: number): number[] {
     const step = samples.length / targetLength;
     const downsampled: number[] = [];
-    
+
     for (let i = 0; i < targetLength; i++) {
       const start = Math.floor(i * step);
       const end = Math.floor((i + 1) * step);
-      
+
       let sum = 0;
       let count = 0;
-      
+
       for (let j = start; j < end && j < samples.length; j++) {
         sum += Math.abs(samples[j]);
         count++;
       }
-      
+
       const average = count > 0 ? sum / count : 0;
       downsampled.push(average / 32768); // Normalize to -1 to 1 range
     }
-    
+
     return downsampled;
   }
 
   private extractPeaks(waveformData: number[]): number[] {
     const peaks: number[] = [];
     const windowSize = Math.floor(waveformData.length / 200); // 200 peak points
-    
+
     for (let i = 0; i < waveformData.length; i += windowSize) {
       let maxPeak = 0;
       for (let j = i; j < Math.min(i + windowSize, waveformData.length); j++) {
@@ -284,7 +321,7 @@ export class AudioService {
       }
       peaks.push(maxPeak);
     }
-    
+
     return peaks;
   }
 
@@ -300,147 +337,171 @@ export class AudioService {
     return Math.max(...waveformData.map(Math.abs));
   }
 
-  async convertAudioFormat(inputPath: string, outputFormat: string, userId: string, options: {
-    sampleRate?: number;
-    bitDepth?: number;
-    bitrate?: string;
-    channels?: number;
-  } = {}): Promise<JobResponse> {
-    const job = await queueService.addAudioJob('convert', {
+  async convertAudioFormat(
+    inputPath: string,
+    outputFormat: string,
+    userId: string,
+    options: {
+      sampleRate?: number;
+      bitDepth?: number;
+      bitrate?: string;
+      channels?: number;
+    } = {},
+  ): Promise<JobResponse> {
+    const job = await queueService.addAudioJob("convert", {
       userId,
       filePath: inputPath,
       format: outputFormat as Record<string, unknown>,
-      quality: options.bitrate === '320k' ? 'high' : 'medium',
+      quality: options.bitrate === "320k" ? "high" : "medium",
     });
-    
+
     return {
       jobId: job.id!,
-      status: 'processing',
-      statusUrl: `/api/jobs/audio/${job.id}`
+      status: "processing",
+      statusUrl: `/api/jobs/audio/${job.id}`,
     };
   }
 
-  async processAudioConversion(data: AudioConvertJobData & { 
-    sampleRate?: SampleRate; 
-    bitDepth?: BitDepth; 
-    audioFormat?: AudioFormat;
-  }): Promise<AudioJobResult> {
+  async processAudioConversion(
+    data: AudioConvertJobData & {
+      sampleRate?: SampleRate;
+      bitDepth?: BitDepth;
+      audioFormat?: AudioFormat;
+    },
+  ): Promise<AudioJobResult> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Audio conversion features are disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Audio conversion features are disabled in this deployment.",
+      );
     }
-    const { 
-      filePath: inputPath, 
-      format: outputFormat, 
-      quality = 'high',
+    const {
+      filePath: inputPath,
+      format: outputFormat,
+      quality = "high",
       sampleRate = SAMPLE_RATES.SR_48000,
       bitDepth = BIT_DEPTHS.BD_24,
-      audioFormat = AUDIO_FORMATS.PCM24
+      audioFormat = AUDIO_FORMATS.PCM24,
     } = data;
-    
-    const tempOutputPath = path.join(os.tmpdir(), `converted_${randomUUID()}.${outputFormat}`);
-    
+
+    const tempOutputPath = path.join(
+      os.tmpdir(),
+      `converted_${randomUUID()}.${outputFormat}`,
+    );
+
     try {
-      logger.info(`Converting ${inputPath} to ${outputFormat} format (${audioFormat}, ${sampleRate}Hz, ${bitDepth}-bit)`);
-      
+      logger.info(
+        `Converting ${inputPath} to ${outputFormat} format (${audioFormat}, ${sampleRate}Hz, ${bitDepth}-bit)`,
+      );
+
       // Validate audio configuration
-      const validation = this.validateAudioQuality({ sampleRate, bitDepth, audioFormat });
+      const validation = this.validateAudioQuality({
+        sampleRate,
+        bitDepth,
+        audioFormat,
+      });
       if (!validation.valid) {
-        throw new Error(`Invalid audio configuration: ${validation.errors.join(', ')}`);
+        throw new Error(
+          `Invalid audio configuration: ${validation.errors.join(", ")}`,
+        );
       }
-      
+
       const options = {
         sampleRate,
         bitDepth,
         audioFormat,
-        bitrate: quality === 'high' ? '320k' : quality === 'medium' ? '192k' : '128k',
-        channels: 2
+        bitrate:
+          quality === "high" ? "320k" : quality === "medium" ? "192k" : "128k",
+        channels: 2,
       };
-      
+
       await new Promise<void>((resolve, reject) => {
         let command = ffmpeg(inputPath);
-        
+
         // Apply format-specific settings with professional audio quality
         switch (outputFormat.toLowerCase()) {
-          case 'wav':
+          case "wav":
             // WAV supports PCM16, PCM24, and Float32
-            const wavCodec = this.getFFmpegCodec(audioFormat as AudioFormat, bitDepth);
+            const wavCodec = this.getFFmpegCodec(
+              audioFormat as AudioFormat,
+              bitDepth,
+            );
             command = command
               .audioCodec(wavCodec)
               .audioFrequency(options.sampleRate)
               .audioChannels(options.channels);
             logger.info(`  WAV export: ${wavCodec} @ ${options.sampleRate}Hz`);
             break;
-          case 'mp3':
+          case "mp3":
             command = command
-              .audioCodec('libmp3lame')
+              .audioCodec("libmp3lame")
               .audioBitrate(options.bitrate)
               .audioFrequency(options.sampleRate)
               .audioChannels(options.channels);
             break;
-          case 'flac':
+          case "flac":
             command = command
-              .audioCodec('flac')
+              .audioCodec("flac")
               .audioFrequency(options.sampleRate)
               .audioChannels(options.channels);
             break;
-          case 'ogg':
+          case "ogg":
             command = command
-              .audioCodec('libvorbis')
+              .audioCodec("libvorbis")
               .audioBitrate(options.bitrate)
               .audioFrequency(options.sampleRate)
               .audioChannels(options.channels);
             break;
-          case 'aac':
-          case 'm4a':
+          case "aac":
+          case "m4a":
             command = command
-              .audioCodec('aac')
+              .audioCodec("aac")
               .audioBitrate(options.bitrate)
               .audioFrequency(options.sampleRate)
               .audioChannels(options.channels);
             break;
-          case 'aiff':
+          case "aiff":
             command = command
-              .audioCodec('pcm_s16be')
+              .audioCodec("pcm_s16be")
               .audioFrequency(options.sampleRate)
               .audioChannels(options.channels);
             break;
           default:
             throw new Error(`Unsupported format: ${outputFormat}`);
         }
-        
+
         command
-          .on('end', () => resolve())
-          .on('error', reject)
+          .on("end", () => resolve())
+          .on("error", reject)
           .save(tempOutputPath);
       });
-      
+
       // Upload converted file to storageService
       const fileBuffer = await fsPromises.readFile(tempOutputPath);
       const filename = `converted_${Date.now()}.${outputFormat}`;
       const key = await storageService.uploadFile(
         fileBuffer,
-        'temp',
+        "temp",
         filename,
-        `audio/${outputFormat}`
+        `audio/${outputFormat}`,
       );
-      
+
       // Schedule cleanup after 24 hours
       await storageService.deleteWithTTL(key, 86400000);
-      
+
       // Get duration from metadata
       const metadata = await this.getAudioMetadata(tempOutputPath);
-      
+
       logger.info(`✅ Successfully converted to ${outputFormat}`);
-      
+
       return {
         storageKey: key,
         duration: metadata.duration,
-        format: outputFormat
+        format: outputFormat,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error converting audio format:');
-      throw new Error('Failed to convert audio format');
+      logger.warn({ err: error }, "Error converting audio format:");
+      throw new Error("Failed to convert audio format");
     } finally {
       // Clean up temp file
       try {
@@ -451,29 +512,34 @@ export class AudioService {
     }
   }
 
-  async generateWaveform(filePath: string, userId: string): Promise<JobResponse> {
-    const job = await queueService.addAudioJob('waveform', {
+  async generateWaveform(
+    filePath: string,
+    userId: string,
+  ): Promise<JobResponse> {
+    const job = await queueService.addAudioJob("waveform", {
       userId,
       filePath,
-      format: 'wav',
+      format: "wav",
     } as AudioConvertJobData);
-    
+
     return {
       jobId: job.id!,
-      status: 'processing',
-      statusUrl: `/api/jobs/audio/${job.id}`
+      status: "processing",
+      statusUrl: `/api/jobs/audio/${job.id}`,
     };
   }
 
-  async processWaveformGeneration(data: AudioConvertJobData): Promise<AudioJobResult> {
+  async processWaveformGeneration(
+    data: AudioConvertJobData,
+  ): Promise<AudioJobResult> {
     const { filePath } = data;
-    
+
     try {
       logger.info(`Generating waveform for ${filePath}`);
-      
+
       const waveformData = await this.generateWaveformFromFile(filePath);
       const metadata = await this.getAudioMetadata(filePath);
-      
+
       // Store waveform data in storage as JSON
       const waveformJson = JSON.stringify({
         waveformData,
@@ -481,99 +547,111 @@ export class AudioService {
         rms: this.calculateRMS(waveformData),
         peakLevel: this.calculatePeakLevel(waveformData),
         duration: metadata.duration,
-        sampleRate: metadata.sampleRate
+        sampleRate: metadata.sampleRate,
       });
-      
-      const buffer = Buffer.from(waveformJson, 'utf-8');
+
+      const buffer = Buffer.from(waveformJson, "utf-8");
       const filename = `waveform_${Date.now()}.json`;
       const key = await storageService.uploadFile(
         buffer,
-        'temp',
+        "temp",
         filename,
-        'application/json'
+        "application/json",
       );
-      
+
       // Schedule cleanup after 24 hours
       await storageService.deleteWithTTL(key, 86400000);
-      
+
       logger.info(`✅ Successfully generated waveform`);
-      
+
       return {
         storageKey: key,
         duration: metadata.duration,
-        format: 'json'
+        format: "json",
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating waveform:');
-      throw new Error('Failed to generate waveform');
+      logger.warn({ err: error }, "Error generating waveform:");
+      throw new Error("Failed to generate waveform");
     }
   }
 
-  async generateAudioPreview(filePath: string, startTime: number = 0, duration: number = 30): Promise<string> {
+  async generateAudioPreview(
+    filePath: string,
+    startTime: number = 0,
+    duration: number = 30,
+  ): Promise<string> {
     try {
       const available = await initializeFfmpeg();
       if (!available || !ffmpeg) {
-        throw new Error('FFmpeg not available for audio preview generation');
+        throw new Error("FFmpeg not available for audio preview generation");
       }
 
-      const previewPath = filePath.replace(/\.[^/.]+$/, '_preview.mp3');
-      
-      logger.info(`Generating preview for ${filePath} from ${startTime}s for ${duration}s`);
+      const previewPath = filePath.replace(/\.[^/.]+$/, "_preview.mp3");
+
+      logger.info(
+        `Generating preview for ${filePath} from ${startTime}s for ${duration}s`,
+      );
 
       await new Promise<void>((resolve, reject) => {
         ffmpeg(filePath)
           .setStartTime(startTime)
           .setDuration(duration)
-          .audioCodec('libmp3lame')
-          .audioBitrate('128k')
+          .audioCodec("libmp3lame")
+          .audioBitrate("128k")
           .audioChannels(2)
           .audioFrequency(44100)
           .output(previewPath)
-          .on('end', () => {
+          .on("end", () => {
             logger.info(`✅ Generated preview at ${previewPath}`);
             resolve();
           })
-          .on('error', (err: Error) => {
-            logger.warn({ err: err }, 'FFmpeg preview error:');
+          .on("error", (err: Error) => {
+            logger.warn({ err: err }, "FFmpeg preview error:");
             reject(err);
           })
           .run();
       });
-      
+
       return previewPath;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating audio preview:');
-      throw new Error('Failed to generate audio preview');
+      logger.warn({ err: error }, "Error generating audio preview:");
+      throw new Error("Failed to generate audio preview");
     }
   }
 
-  private async detectBPM(waveformData: number[], sampleRate: number): Promise<number> {
+  private async detectBPM(
+    waveformData: number[],
+    sampleRate: number,
+  ): Promise<number> {
     try {
       // Simple onset detection algorithm
       const onsets = this.detectOnsets(waveformData, sampleRate);
       if (onsets.length < 2) {
         return 120; // Default BPM
       }
-      
+
       // Calculate intervals between onsets
       const intervals: number[] = [];
       for (let i = 1; i < onsets.length; i++) {
         intervals.push(onsets[i] - onsets[i - 1]);
       }
-      
+
       // Find most common interval (simplified)
       const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
       const bpm = Math.round(60 / avgInterval);
-      
+
       // Constrain to reasonable BPM range
       return Math.max(60, Math.min(200, bpm));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error detecting BPM:');
+      logger.warn({ err: error }, "Error detecting BPM:");
       return 120;
     }
   }
 
-  private async detectKey(waveformData: number[], sampleRate: number): Promise<string> {
+  private async detectKey(
+    waveformData: number[],
+    sampleRate: number,
+  ): Promise<string> {
     try {
       // Krumhansl-Schmuckler key-finding algorithm using a chroma-based approach.
       // 1. Build a 12-bin chromagram by folding energy across octaves.
@@ -588,12 +666,16 @@ export class AudioService {
       const A4 = 440;
       const A4_MIDI = 69;
 
-      for (let start = 0; start + frameSize <= waveformData.length; start += hopSize) {
+      for (
+        let start = 0;
+        start + frameSize <= waveformData.length;
+        start += hopSize
+      ) {
         // Count zero crossings in the frame to estimate frequency
         let zcr = 0;
         let rms = 0;
         for (let i = start + 1; i < start + frameSize; i++) {
-          if ((waveformData[i] >= 0) !== (waveformData[i - 1] >= 0)) zcr++;
+          if (waveformData[i] >= 0 !== waveformData[i - 1] >= 0) zcr++;
           rms += waveformData[i] * waveformData[i];
         }
         rms = Math.sqrt(rms / frameSize);
@@ -616,42 +698,74 @@ export class AudioService {
       }
 
       // 2. Krumhansl-Kessler key profiles
-      const majorProfile = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
-      const minorProfile = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
-      const keyNames   = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+      const majorProfile = [
+        6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88,
+      ];
+      const minorProfile = [
+        6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17,
+      ];
+      const keyNames = [
+        "C",
+        "C#",
+        "D",
+        "D#",
+        "E",
+        "F",
+        "F#",
+        "G",
+        "G#",
+        "A",
+        "A#",
+        "B",
+      ];
 
       // Pearson correlation helper
       const pearson = (a: number[] | Float64Array, b: number[]): number => {
         const n = a.length;
-        let sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
+        let sumA = 0,
+          sumB = 0,
+          sumAB = 0,
+          sumA2 = 0,
+          sumB2 = 0;
         for (let i = 0; i < n; i++) {
-          sumA += a[i]; sumB += b[i];
+          sumA += a[i];
+          sumB += b[i];
           sumAB += a[i] * b[i];
           sumA2 += a[i] * a[i];
           sumB2 += b[i] * b[i];
         }
         const num = n * sumAB - sumA * sumB;
-        const den = Math.sqrt((n * sumA2 - sumA * sumA) * (n * sumB2 - sumB * sumB));
+        const den = Math.sqrt(
+          (n * sumA2 - sumA * sumA) * (n * sumB2 - sumB * sumB),
+        );
         return den === 0 ? 0 : num / den;
       };
 
       // 3. Test all 24 keys (12 major + 12 minor) via rotation
-      let bestKey = 'C';
-      let bestMode = 'Major';
+      let bestKey = "C";
+      let bestMode = "Major";
       let bestCorr = -Infinity;
 
       for (let i = 0; i < 12; i++) {
         const rotated = [...chroma.slice(i), ...chroma.slice(0, i)];
         const majCorr = pearson(rotated, majorProfile);
         const minCorr = pearson(rotated, minorProfile);
-        if (majCorr > bestCorr) { bestCorr = majCorr; bestKey = keyNames[i]; bestMode = 'Major'; }
-        if (minCorr > bestCorr) { bestCorr = minCorr; bestKey = keyNames[i]; bestMode = 'Minor'; }
+        if (majCorr > bestCorr) {
+          bestCorr = majCorr;
+          bestKey = keyNames[i];
+          bestMode = "Major";
+        }
+        if (minCorr > bestCorr) {
+          bestCorr = minCorr;
+          bestKey = keyNames[i];
+          bestMode = "Minor";
+        }
       }
 
       return `${bestKey} ${bestMode}`;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error detecting key:');
-      return 'C Major';
+      logger.warn({ err: error }, "Error detecting key:");
+      return "C Major";
     }
   }
 
@@ -659,109 +773,153 @@ export class AudioService {
     const onsets: number[] = [];
     const windowSize = Math.floor(sampleRate * 0.02); // 20ms window
     const threshold = 0.1;
-    
+
     for (let i = windowSize; i < waveformData.length - windowSize; i++) {
       const current = Math.abs(waveformData[i]);
       const previous = Math.abs(waveformData[i - windowSize]);
-      
+
       if (current > previous + threshold) {
         const timeInSeconds = i / sampleRate;
         onsets.push(timeInSeconds);
-        
+
         // Skip ahead to avoid multiple detections of the same onset
         i += windowSize;
       }
     }
-    
+
     return onsets;
   }
 
-  async analyzeAudioTempo(filePath: string): Promise<{ bpm: number, confidence: number }> {
+  async analyzeAudioTempo(
+    filePath: string,
+  ): Promise<{ bpm: number; confidence: number }> {
     try {
       const waveformData = await this.generateWaveformFromFile(filePath);
       const metadata = await this.getAudioMetadata(filePath);
       const bpm = await this.detectBPM(waveformData, metadata.sampleRate);
-      
+
       logger.info(`Analyzed tempo for ${filePath}: ${bpm} BPM`);
-      
+
       return { bpm, confidence: 0.85 };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error analyzing audio tempo:');
+      logger.warn({ err: error }, "Error analyzing audio tempo:");
       return { bpm: 120, confidence: 0.5 };
     }
   }
 
-  async detectAudioKey(filePath: string): Promise<{ key: string, scale: string, confidence: number }> {
+  async detectAudioKey(
+    filePath: string,
+  ): Promise<{ key: string; scale: string; confidence: number }> {
     try {
       const waveformData = await this.generateWaveformFromFile(filePath);
       const metadata = await this.getAudioMetadata(filePath);
-      
-      const chroma = this.computeChromaFeatures(waveformData, metadata.sampleRate);
-      
+
+      const chroma = this.computeChromaFeatures(
+        waveformData,
+        metadata.sampleRate,
+      );
+
       const keyProfiles = {
-        major: [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88],
-        minor: [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+        major: [
+          6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29,
+          2.88,
+        ],
+        minor: [
+          6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17,
+        ],
       };
-      
-      const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-      let bestKey = 'C';
-      let bestScale = 'Major';
+
+      const keys = [
+        "C",
+        "C#",
+        "D",
+        "D#",
+        "E",
+        "F",
+        "F#",
+        "G",
+        "G#",
+        "A",
+        "A#",
+        "B",
+      ];
+      let bestKey = "C";
+      let bestScale = "Major";
       let bestCorrelation = -Infinity;
-      
+
       for (let i = 0; i < 12; i++) {
         const rotatedChroma = [...chroma.slice(i), ...chroma.slice(0, i)];
-        
-        const majorCorr = this.pearsonCorrelation(rotatedChroma, keyProfiles.major);
-        const minorCorr = this.pearsonCorrelation(rotatedChroma, keyProfiles.minor);
-        
+
+        const majorCorr = this.pearsonCorrelation(
+          rotatedChroma,
+          keyProfiles.major,
+        );
+        const minorCorr = this.pearsonCorrelation(
+          rotatedChroma,
+          keyProfiles.minor,
+        );
+
         if (majorCorr > bestCorrelation) {
           bestCorrelation = majorCorr;
           bestKey = keys[i];
-          bestScale = 'Major';
+          bestScale = "Major";
         }
         if (minorCorr > bestCorrelation) {
           bestCorrelation = minorCorr;
           bestKey = keys[i];
-          bestScale = 'Minor';
+          bestScale = "Minor";
         }
       }
-      
-      const confidence = Math.min(0.95, Math.max(0.5, (bestCorrelation + 1) / 2));
-      
-      logger.info(`Detected key for ${filePath}: ${bestKey} ${bestScale} (${Math.round(confidence * 100)}% confidence)`);
-      
+
+      const confidence = Math.min(
+        0.95,
+        Math.max(0.5, (bestCorrelation + 1) / 2),
+      );
+
+      logger.info(
+        `Detected key for ${filePath}: ${bestKey} ${bestScale} (${Math.round(confidence * 100)}% confidence)`,
+      );
+
       return { key: bestKey, scale: bestScale, confidence };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error detecting audio key:');
-      return { key: 'C', scale: 'Major', confidence: 0.5 };
+      logger.warn({ err: error }, "Error detecting audio key:");
+      return { key: "C", scale: "Major", confidence: 0.5 };
     }
   }
 
-  private computeChromaFeatures(waveformData: number[], sampleRate: number): number[] {
+  private computeChromaFeatures(
+    waveformData: number[],
+    sampleRate: number,
+  ): number[] {
     const chroma = new Array(12).fill(0);
     const windowSize = 4096;
     const hopSize = 2048;
-    
+
     for (let i = 0; i < waveformData.length - windowSize; i += hopSize) {
       const window = waveformData.slice(i, i + windowSize);
-      const magnitude = window.reduce((sum, val) => sum + Math.abs(val), 0) / windowSize;
-      
+      const magnitude =
+        window.reduce((sum, val) => sum + Math.abs(val), 0) / windowSize;
+
       for (let note = 0; note < 12; note++) {
         const freq = 440 * Math.pow(2, (note - 9) / 12);
         const period = sampleRate / freq;
         let correlation = 0;
-        
-        for (let j = 0; j < Math.min(window.length, Math.floor(period * 4)); j++) {
+
+        for (
+          let j = 0;
+          j < Math.min(window.length, Math.floor(period * 4));
+          j++
+        ) {
           const phase = (2 * Math.PI * j) / period;
           correlation += window[j] * Math.sin(phase);
         }
-        
+
         chroma[note] += Math.abs(correlation) * magnitude;
       }
     }
-    
+
     const sum = chroma.reduce((a, b) => a + b, 0);
-    return sum > 0 ? chroma.map(c => c / sum) : chroma;
+    return sum > 0 ? chroma.map((c) => c / sum) : chroma;
   }
 
   private pearsonCorrelation(x: number[], y: number[]): number {
@@ -771,70 +929,83 @@ export class AudioService {
     const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
     const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
     const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
-    
+
     const numerator = n * sumXY - sumX * sumY;
-    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
-    
+    const denominator = Math.sqrt(
+      (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY),
+    );
+
     return denominator === 0 ? 0 : numerator / denominator;
   }
 
-  async applyAudioEffects(filePath: string, effects: unknown[]): Promise<string> {
+  async applyAudioEffects(
+    filePath: string,
+    effects: unknown[],
+  ): Promise<string> {
     try {
       const available = await initializeFfmpeg();
       if (!available || !ffmpeg) {
-        throw new Error('FFmpeg not available for audio effects');
+        throw new Error("FFmpeg not available for audio effects");
       }
 
-      const processedPath = filePath.replace(/\.[^/.]+$/, '_processed.wav');
-      
+      const processedPath = filePath.replace(/\.[^/.]+$/, "_processed.wav");
+
       logger.info(`Applying ${effects.length} effects to ${filePath}`);
 
       let audioFilters: string[] = [];
 
       for (const effect of effects) {
         switch (effect.type) {
-          case 'eq':
-          case 'equalizer':
+          case "eq":
+          case "equalizer":
             if (effect.settings?.bands) {
               for (const band of effect.settings.bands) {
-                audioFilters.push(`equalizer=f=${band.frequency}:width_type=o:width=1:g=${band.gain}`);
+                audioFilters.push(
+                  `equalizer=f=${band.frequency}:width_type=o:width=1:g=${band.gain}`,
+                );
               }
             }
             break;
-          case 'compressor':
+          case "compressor":
             const threshold = effect.settings?.threshold || -20;
             const ratio = effect.settings?.ratio || 4;
             const attack = effect.settings?.attack || 20;
             const release = effect.settings?.release || 250;
-            audioFilters.push(`acompressor=threshold=${threshold}dB:ratio=${ratio}:attack=${attack}:release=${release}`);
+            audioFilters.push(
+              `acompressor=threshold=${threshold}dB:ratio=${ratio}:attack=${attack}:release=${release}`,
+            );
             break;
-          case 'reverb':
+          case "reverb":
             const roomSize = effect.settings?.roomSize || 0.5;
             const damping = effect.settings?.damping || 0.5;
             const wetLevel = effect.settings?.wetLevel || 0.3;
-            audioFilters.push(`aecho=0.8:${wetLevel}:${Math.floor(roomSize * 100)}:${damping}`);
+            audioFilters.push(
+              `aecho=0.8:${wetLevel}:${Math.floor(roomSize * 100)}:${damping}`,
+            );
             break;
-          case 'delay':
+          case "delay":
             const delayTime = effect.settings?.time || 500;
             const feedback = effect.settings?.feedback || 0.3;
-            audioFilters.push(`adelay=${delayTime}|${delayTime},aecho=0.8:${feedback}:${delayTime}:0.5`);
+            audioFilters.push(
+              `adelay=${delayTime}|${delayTime},aecho=0.8:${feedback}:${delayTime}:0.5`,
+            );
             break;
-          case 'normalize':
-            audioFilters.push('loudnorm=I=-14:TP=-1:LRA=11');
+          case "normalize":
+            audioFilters.push("loudnorm=I=-14:TP=-1:LRA=11");
             break;
-          case 'limiter':
+          case "limiter":
             const limit = effect.settings?.limit || -1;
             audioFilters.push(`alimiter=limit=${limit}dB:attack=5:release=50`);
             break;
-          case 'highpass':
+          case "highpass":
             const hpFreq = effect.settings?.frequency || 80;
             audioFilters.push(`highpass=f=${hpFreq}`);
             break;
-          case 'lowpass':
+          case "lowpass":
             const lpFreq = effect.settings?.frequency || 15000;
             audioFilters.push(`lowpass=f=${lpFreq}`);
             break;
-          case 'gain':
+          case "gain":
             const gainDb = effect.settings?.gain || 0;
             audioFilters.push(`volume=${gainDb}dB`);
             break;
@@ -851,16 +1022,16 @@ export class AudioService {
       await new Promise<void>((resolve, reject) => {
         ffmpeg(filePath)
           .audioFilters(audioFilters)
-          .audioCodec('pcm_s24le')
+          .audioCodec("pcm_s24le")
           .audioChannels(2)
           .audioFrequency(48000)
           .output(processedPath)
-          .on('end', () => {
+          .on("end", () => {
             logger.info(`✅ Applied ${effects.length} effects successfully`);
             resolve();
           })
-          .on('error', (err: Error) => {
-            logger.warn({ err: err }, 'FFmpeg effects error:');
+          .on("error", (err: Error) => {
+            logger.warn({ err: err }, "FFmpeg effects error:");
             reject(err);
           })
           .run();
@@ -868,58 +1039,70 @@ export class AudioService {
 
       return processedPath;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error applying audio effects:');
-      throw new Error('Failed to apply audio effects');
+      logger.warn({ err: error }, "Error applying audio effects:");
+      throw new Error("Failed to apply audio effects");
     }
   }
 
-  async mixAudioTracks(tracks: unknown[], userId: string, outputPath?: string): Promise<JobResponse> {
-    const tracksData = tracks.map(track => ({
+  async mixAudioTracks(
+    tracks: unknown[],
+    userId: string,
+    outputPath?: string,
+  ): Promise<JobResponse> {
+    const tracksData = tracks.map((track) => ({
       storageKey: track.filePath || track.storageKey,
-      volume: track.volume || 1.0
+      volume: track.volume || 1.0,
     }));
 
-    const job = await queueService.addAudioJob('mix', {
+    const job = await queueService.addAudioJob("mix", {
       userId,
       tracks: tracksData,
-      outputFormat: 'wav'
+      outputFormat: "wav",
     } as AudioMixJobData);
-    
+
     return {
       jobId: job.id!,
-      status: 'processing',
-      statusUrl: `/api/jobs/audio/${job.id}`
+      status: "processing",
+      statusUrl: `/api/jobs/audio/${job.id}`,
     };
   }
 
   async processAudioMix(data: AudioMixJobData): Promise<AudioJobResult> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Audio mixing features are disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Audio mixing features are disabled in this deployment.",
+      );
     }
     const { tracks, outputFormat } = data;
-    const tempMixPath = path.join(os.tmpdir(), `mix_${randomUUID()}.${outputFormat}`);
-    
+    const tempMixPath = path.join(
+      os.tmpdir(),
+      `mix_${randomUUID()}.${outputFormat}`,
+    );
+
     try {
       logger.info(`Mixing ${tracks.length} tracks`);
-      
+
       if (tracks.length === 0) {
-        throw new Error('No tracks to mix');
+        throw new Error("No tracks to mix");
       }
-      
+
       // Download tracks from storage to temp files
       const tempTracks: Array<{ filePath: string; volume: number }> = [];
-      
+
       for (const track of tracks) {
         const trackBuffer = await storageService.downloadFile(track.storageKey);
-        const tempTrackPath = path.join(os.tmpdir(), `track_${randomUUID()}.wav`);
+        const tempTrackPath = path.join(
+          os.tmpdir(),
+          `track_${randomUUID()}.wav`,
+        );
         await fsPromises.writeFile(tempTrackPath, trackBuffer);
         tempTracks.push({
           filePath: tempTrackPath,
-          volume: track.volume
+          volume: track.volume,
         });
       }
-      
+
       try {
         // If only one track, just convert it
         if (tempTracks.length === 1) {
@@ -927,75 +1110,78 @@ export class AudioService {
           const filename = `mix_${Date.now()}.${outputFormat}`;
           const key = await storageService.uploadFile(
             fileBuffer,
-            'temp',
+            "temp",
             filename,
-            `audio/${outputFormat}`
+            `audio/${outputFormat}`,
           );
-          
+
           await storageService.deleteWithTTL(key, 86400000);
-          
+
           const metadata = await this.getAudioMetadata(tempTracks[0].filePath);
-          
+
           return {
             storageKey: key,
             duration: metadata.duration,
-            format: outputFormat
+            format: outputFormat,
           };
         }
-        
+
         await new Promise<void>((resolve, reject) => {
           const command = ffmpeg();
-          
+
           // Add all tracks as inputs with volume control
           tempTracks.forEach((track, index) => {
             command.input(track.filePath);
-            
+
             // Apply volume/gain if specified (track.volume should be 0-1, convert to dB)
             if (track.volume !== undefined && track.volume !== 1.0) {
               const gainDb = 20 * Math.log10(track.volume);
               command.complexFilter([
-                `[${index}:a]volume=${gainDb}dB[a${index}]`
+                `[${index}:a]volume=${gainDb}dB[a${index}]`,
               ]);
             }
           });
-          
+
           // Mix all audio streams together
-          const filterChains = tempTracks.map((_, i) => `[a${i}]`).join('');
-          command.complexFilter([
-            `${filterChains}amix=inputs=${tempTracks.length}:duration=longest[out]`
-          ], 'out');
-          
+          const filterChains = tempTracks.map((_, i) => `[a${i}]`).join("");
+          command.complexFilter(
+            [
+              `${filterChains}amix=inputs=${tempTracks.length}:duration=longest[out]`,
+            ],
+            "out",
+          );
+
           command
-            .audioCodec('pcm_s16le')
+            .audioCodec("pcm_s16le")
             .audioFrequency(48000)
             .audioChannels(2)
-            .on('end', () => resolve())
-            .on('error', reject)
+            .on("end", () => resolve())
+            .on("error", reject)
             .save(tempMixPath);
         });
-        
+
         // Upload mixed file to storageService
         const fileBuffer = await fsPromises.readFile(tempMixPath);
         const filename = `mix_${Date.now()}.${outputFormat}`;
         const key = await storageService.uploadFile(
           fileBuffer,
-          'temp',
+          "temp",
           filename,
-          `audio/${outputFormat}`
+          `audio/${outputFormat}`,
         );
-        
+
         // Schedule cleanup after 24 hours
         await storageService.deleteWithTTL(key, 86400000);
-        
+
         // Get duration from metadata
         const metadata = await this.getAudioMetadata(tempMixPath);
-        
+
         logger.info(`✅ Successfully mixed ${tempTracks.length} tracks`);
-        
+
         return {
           storageKey: key,
           duration: metadata.duration,
-          format: outputFormat
+          format: outputFormat,
         };
       } finally {
         // Clean up temp track files
@@ -1008,8 +1194,8 @@ export class AudioService {
         }
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error mixing audio tracks:');
-      throw new Error('Failed to mix audio tracks');
+      logger.warn({ err: error }, "Error mixing audio tracks:");
+      throw new Error("Failed to mix audio tracks");
     } finally {
       // Clean up temp mix file
       try {
@@ -1020,15 +1206,18 @@ export class AudioService {
     }
   }
 
-  async masterAudio(filePath: string, masteringSettings: Record<string, unknown>): Promise<string> {
+  async masterAudio(
+    filePath: string,
+    masteringSettings: Record<string, unknown>,
+  ): Promise<string> {
     try {
       const available = await initializeFfmpeg();
       if (!available || !ffmpeg) {
-        throw new Error('FFmpeg not available for audio mastering');
+        throw new Error("FFmpeg not available for audio mastering");
       }
 
-      const masteredPath = filePath.replace(/\.[^/.]+$/, '_mastered.wav');
-      
+      const masteredPath = filePath.replace(/\.[^/.]+$/, "_mastered.wav");
+
       logger.info(`Mastering ${filePath} with settings:`, masteringSettings);
 
       const targetLoudness = masteringSettings?.targetLoudness || -14;
@@ -1040,38 +1229,44 @@ export class AudioService {
       const audioFilters: string[] = [];
 
       if (addEQ) {
-        audioFilters.push('highpass=f=30');
-        audioFilters.push('equalizer=f=60:width_type=o:width=1:g=1');
-        audioFilters.push('equalizer=f=10000:width_type=o:width=2:g=2');
-        audioFilters.push('equalizer=f=150:width_type=o:width=2:g=-1');
+        audioFilters.push("highpass=f=30");
+        audioFilters.push("equalizer=f=60:width_type=o:width=1:g=1");
+        audioFilters.push("equalizer=f=10000:width_type=o:width=2:g=2");
+        audioFilters.push("equalizer=f=150:width_type=o:width=2:g=-1");
       }
 
-      audioFilters.push('acompressor=threshold=-24dB:ratio=3:attack=10:release=100:makeup=2');
+      audioFilters.push(
+        "acompressor=threshold=-24dB:ratio=3:attack=10:release=100:makeup=2",
+      );
 
       if (masteringSettings?.stereoWidth) {
         const width = masteringSettings.stereoWidth || 1.0;
         audioFilters.push(`stereotools=mlev=${width}:slev=${width}`);
       }
 
-      audioFilters.push(`loudnorm=I=${targetLoudness}:TP=${truePeak}:LRA=${loudnessRange}:print_format=summary`);
+      audioFilters.push(
+        `loudnorm=I=${targetLoudness}:TP=${truePeak}:LRA=${loudnessRange}:print_format=summary`,
+      );
 
       if (addLimiter) {
-        audioFilters.push(`alimiter=limit=${truePeak}dB:attack=5:release=50:level=disabled`);
+        audioFilters.push(
+          `alimiter=limit=${truePeak}dB:attack=5:release=50:level=disabled`,
+        );
       }
 
       await new Promise<void>((resolve, reject) => {
         ffmpeg(filePath)
           .audioFilters(audioFilters)
-          .audioCodec('pcm_s24le')
+          .audioCodec("pcm_s24le")
           .audioChannels(2)
           .audioFrequency(48000)
           .output(masteredPath)
-          .on('end', () => {
+          .on("end", () => {
             logger.info(`✅ Mastered audio saved to ${masteredPath}`);
             resolve();
           })
-          .on('error', (err: Error) => {
-            logger.warn({ err: err }, 'FFmpeg mastering error:');
+          .on("error", (err: Error) => {
+            logger.warn({ err: err }, "FFmpeg mastering error:");
             reject(err);
           })
           .run();
@@ -1079,86 +1274,105 @@ export class AudioService {
 
       return masteredPath;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error mastering audio:');
-      throw new Error('Failed to master audio');
+      logger.warn({ err: error }, "Error mastering audio:");
+      throw new Error("Failed to master audio");
     }
   }
 
-  async exportStems(tracks: unknown[], outputDir: string, format: string = 'wav'): Promise<{ stems: string[], zip?: string }> {
+  async exportStems(
+    tracks: unknown[],
+    outputDir: string,
+    format: string = "wav",
+  ): Promise<{ stems: string[]; zip?: string }> {
     try {
       logger.info(`Exporting ${tracks.length} stems as ${format}`);
-      
+
       const stems: string[] = [];
-      
+
       // Export each track as individual stem
       for (const track of tracks) {
         if (!track.filePath || !fs.existsSync(track.filePath)) {
-          logger.warn(`Skipping track ${track.name}: file not found at ${track.filePath}`);
+          logger.warn(
+            `Skipping track ${track.name}: file not found at ${track.filePath}`,
+          );
           continue;
         }
-        
+
         const stemName = `${track.name || `track_${track.trackNumber}`}_stem.${format}`;
-        
+
         // Convert to requested format (returns storage key)
-        const convertedKey = await this.convertAudioFormat(track.filePath, format);
-        
+        const convertedKey = await this.convertAudioFormat(
+          track.filePath,
+          format,
+        );
+
         // Download the converted file to upload it as a stem
         const convertedBuffer = await storageService.downloadFile(convertedKey);
-        
+
         // Upload as a stem with proper naming
         const stemKey = await storageService.uploadFile(
           convertedBuffer,
-          'exports',
+          "exports",
           stemName,
-          `audio/${format}`
+          `audio/${format}`,
         );
-        
+
         stems.push(stemKey);
-        
+
         // The converted file will be auto-cleaned by TTL
       }
-      
+
       logger.info(`✅ Exported ${stems.length} stems successfully`);
-      
+
       return { stems };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error exporting stems:');
-      throw new Error('Failed to export stems');
+      logger.warn({ err: error }, "Error exporting stems:");
+      throw new Error("Failed to export stems");
     }
   }
 
-  async exportProjectAudio(projectId: string, tracks: unknown[], format: string, exportType: 'mixdown' | 'stems'): Promise<unknown> {
+  async exportProjectAudio(
+    projectId: string,
+    tracks: unknown[],
+    format: string,
+    exportType: "mixdown" | "stems",
+  ): Promise<unknown> {
     try {
-      if (exportType === 'stems') {
+      if (exportType === "stems") {
         // Export individual stems
-        return await this.exportStems(tracks, '', format);
+        return await this.exportStems(tracks, "", format);
       } else {
         // Export mixed down audio
         // First mix all tracks (returns storage key for temp file)
         const mixedKey = await this.mixAudioTracks(tracks);
-        
+
         // Download the mixed file to convert it
         const mixedBuffer = await storageService.downloadFile(mixedKey);
         const tempMixPath = path.join(os.tmpdir(), `mix_${randomUUID()}.wav`);
         await fsPromises.writeFile(tempMixPath, mixedBuffer);
-        
+
         try {
           // Convert to requested format (returns storage key)
-          const convertedKey = await this.convertAudioFormat(tempMixPath, format, {
-            sampleRate: 48000,
-            bitrate: '320k'
-          });
-          
+          const convertedKey = await this.convertAudioFormat(
+            tempMixPath,
+            format,
+            {
+              sampleRate: 48000,
+              bitrate: "320k",
+            },
+          );
+
           // Download and re-upload as final export with proper naming
-          const convertedBuffer = await storageService.downloadFile(convertedKey);
+          const convertedBuffer =
+            await storageService.downloadFile(convertedKey);
           const exportFilename = `${projectId}_mixdown_${Date.now()}.${format}`;
           const exportKey = await storageService.uploadFile(
             convertedBuffer,
-            'exports',
+            "exports",
             exportFilename,
-            `audio/${format}`
+            `audio/${format}`,
           );
-          
+
           return { mixdown: exportKey };
         } finally {
           // Clean up temp mix file
@@ -1170,8 +1384,8 @@ export class AudioService {
         }
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error exporting project audio:');
-      throw new Error('Failed to export project audio');
+      logger.warn({ err: error }, "Error exporting project audio:");
+      throw new Error("Failed to export project audio");
     }
   }
 }

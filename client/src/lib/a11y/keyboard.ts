@@ -1,4 +1,4 @@
-import { getFocusableElements } from '@/lib/accessibility';
+import { getFocusableElements } from "@/lib/accessibility";
 
 export interface FocusTrapOptions {
   initialFocus?: HTMLElement | string;
@@ -17,7 +17,7 @@ export interface FocusTrapInstance {
 
 export function createFocusTrap(
   container: HTMLElement,
-  options: FocusTrapOptions = {}
+  options: FocusTrapOptions = {},
 ): FocusTrapInstance {
   const {
     initialFocus,
@@ -34,9 +34,9 @@ export function createFocusTrap(
   const handleKeyDown = (event: KeyboardEvent) => {
     if (!active || paused) return;
 
-    if (event.key === 'Tab') {
+    if (event.key === "Tab") {
       handleTabKey(event);
-    } else if (event.key === 'Escape' && escapeDeactivates) {
+    } else if (event.key === "Escape" && escapeDeactivates) {
       event.preventDefault();
       onEscape?.();
     }
@@ -76,14 +76,15 @@ export function createFocusTrap(
   const focusFirstElement = () => {
     const focusableElements = getFocusableElements(container);
     if (initialFocus) {
-      const element = typeof initialFocus === 'string'
-        ? container.querySelector<HTMLElement>(initialFocus)
-        : initialFocus;
+      const element =
+        typeof initialFocus === "string"
+          ? container.querySelector<HTMLElement>(initialFocus)
+          : initialFocus;
       element?.focus();
     } else if (focusableElements.length > 0) {
       focusableElements[0].focus();
     } else {
-      container.setAttribute('tabindex', '-1');
+      container.setAttribute("tabindex", "-1");
       container.focus();
     }
   };
@@ -94,8 +95,8 @@ export function createFocusTrap(
     previouslyFocused = document.activeElement as HTMLElement;
     active = true;
 
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('click', handleClick, true);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("click", handleClick, true);
 
     requestAnimationFrame(() => {
       focusFirstElement();
@@ -106,8 +107,8 @@ export function createFocusTrap(
     if (!active) return;
 
     active = false;
-    document.removeEventListener('keydown', handleKeyDown);
-    document.removeEventListener('click', handleClick, true);
+    document.removeEventListener("keydown", handleKeyDown);
+    document.removeEventListener("click", handleClick, true);
 
     if (returnFocusOnDeactivate && previouslyFocused) {
       previouslyFocused.focus();
@@ -125,7 +126,7 @@ export function createFocusTrap(
   return { activate, deactivate, pause, unpause };
 }
 
-export type RovingOrientation = 'horizontal' | 'vertical' | 'both' | 'grid';
+export type RovingOrientation = "horizontal" | "vertical" | "both" | "grid";
 
 export interface RovingTabIndexOptions {
   orientation?: RovingOrientation;
@@ -137,9 +138,14 @@ export interface RovingTabIndexOptions {
 export function createRovingTabIndex(
   container: HTMLElement,
   selector: string,
-  options: RovingTabIndexOptions = {}
+  options: RovingTabIndexOptions = {},
 ): () => void {
-  const { orientation = 'vertical', loop = true, columns = 1, onFocusChange } = options;
+  const {
+    orientation = "vertical",
+    loop = true,
+    columns = 1,
+    onFocusChange,
+  } = options;
 
   const getItems = (): HTMLElement[] => {
     return Array.from(container.querySelectorAll<HTMLElement>(selector));
@@ -147,7 +153,7 @@ export function createRovingTabIndex(
 
   const updateTabIndex = (items: HTMLElement[], focusedIndex: number) => {
     items.forEach((item, index) => {
-      item.setAttribute('tabindex', index === focusedIndex ? '0' : '-1');
+      item.setAttribute("tabindex", index === focusedIndex ? "0" : "-1");
     });
   };
 
@@ -165,9 +171,13 @@ export function createRovingTabIndex(
     let handled = false;
 
     switch (event.key) {
-      case 'ArrowUp':
-        if (orientation === 'vertical' || orientation === 'both' || orientation === 'grid') {
-          if (orientation === 'grid') {
+      case "ArrowUp":
+        if (
+          orientation === "vertical" ||
+          orientation === "both" ||
+          orientation === "grid"
+        ) {
+          if (orientation === "grid") {
             nextIndex = currentIdx - columns;
           } else {
             nextIndex = currentIdx - 1;
@@ -176,9 +186,13 @@ export function createRovingTabIndex(
         }
         break;
 
-      case 'ArrowDown':
-        if (orientation === 'vertical' || orientation === 'both' || orientation === 'grid') {
-          if (orientation === 'grid') {
+      case "ArrowDown":
+        if (
+          orientation === "vertical" ||
+          orientation === "both" ||
+          orientation === "grid"
+        ) {
+          if (orientation === "grid") {
             nextIndex = currentIdx + columns;
           } else {
             nextIndex = currentIdx + 1;
@@ -187,26 +201,34 @@ export function createRovingTabIndex(
         }
         break;
 
-      case 'ArrowLeft':
-        if (orientation === 'horizontal' || orientation === 'both' || orientation === 'grid') {
+      case "ArrowLeft":
+        if (
+          orientation === "horizontal" ||
+          orientation === "both" ||
+          orientation === "grid"
+        ) {
           nextIndex = currentIdx - 1;
           handled = true;
         }
         break;
 
-      case 'ArrowRight':
-        if (orientation === 'horizontal' || orientation === 'both' || orientation === 'grid') {
+      case "ArrowRight":
+        if (
+          orientation === "horizontal" ||
+          orientation === "both" ||
+          orientation === "grid"
+        ) {
           nextIndex = currentIdx + 1;
           handled = true;
         }
         break;
 
-      case 'Home':
+      case "Home":
         nextIndex = 0;
         handled = true;
         break;
 
-      case 'End':
+      case "End":
         nextIndex = items.length - 1;
         handled = true;
         break;
@@ -234,10 +256,10 @@ export function createRovingTabIndex(
   const items = getItems();
   updateTabIndex(items, currentIndex);
 
-  container.addEventListener('keydown', handleKeyDown);
+  container.addEventListener("keydown", handleKeyDown);
 
   return () => {
-    container.removeEventListener('keydown', handleKeyDown);
+    container.removeEventListener("keydown", handleKeyDown);
   };
 }
 
@@ -250,7 +272,7 @@ export function createEscapeHandler(options: EscapeHandlerOptions): () => void {
   const { onEscape, stopPropagation = true } = options;
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+    if (event.key === "Escape") {
       if (stopPropagation) {
         event.stopPropagation();
       }
@@ -259,47 +281,58 @@ export function createEscapeHandler(options: EscapeHandlerOptions): () => void {
     }
   };
 
-  document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener("keydown", handleKeyDown);
 
   return () => {
-    document.removeEventListener('keydown', handleKeyDown);
+    document.removeEventListener("keydown", handleKeyDown);
   };
 }
 
 export interface ArrowNavigationOptions {
   selector: string;
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
   loop?: boolean;
   onNavigate?: (element: HTMLElement, index: number) => void;
 }
 
 export function setupArrowNavigation(
   container: HTMLElement,
-  options: ArrowNavigationOptions
+  options: ArrowNavigationOptions,
 ): () => void {
-  const { selector, orientation = 'vertical', loop = true, onNavigate } = options;
+  const {
+    selector,
+    orientation = "vertical",
+    loop = true,
+    onNavigate,
+  } = options;
 
   const handleKeyDown = (event: KeyboardEvent) => {
     const items = Array.from(container.querySelectorAll<HTMLElement>(selector));
-    const currentIndex = items.findIndex((item) => item === document.activeElement);
-    
+    const currentIndex = items.findIndex(
+      (item) => item === document.activeElement,
+    );
+
     if (currentIndex === -1) return;
 
     let nextIndex = currentIndex;
-    const isNext = 
-      (orientation === 'horizontal' && event.key === 'ArrowRight') ||
-      (orientation === 'vertical' && event.key === 'ArrowDown');
+    const isNext =
+      (orientation === "horizontal" && event.key === "ArrowRight") ||
+      (orientation === "vertical" && event.key === "ArrowDown");
     const isPrev =
-      (orientation === 'horizontal' && event.key === 'ArrowLeft') ||
-      (orientation === 'vertical' && event.key === 'ArrowUp');
+      (orientation === "horizontal" && event.key === "ArrowLeft") ||
+      (orientation === "vertical" && event.key === "ArrowUp");
 
     if (isNext) {
-      nextIndex = loop ? (currentIndex + 1) % items.length : Math.min(currentIndex + 1, items.length - 1);
+      nextIndex = loop
+        ? (currentIndex + 1) % items.length
+        : Math.min(currentIndex + 1, items.length - 1);
     } else if (isPrev) {
-      nextIndex = loop ? (currentIndex - 1 + items.length) % items.length : Math.max(currentIndex - 1, 0);
-    } else if (event.key === 'Home') {
+      nextIndex = loop
+        ? (currentIndex - 1 + items.length) % items.length
+        : Math.max(currentIndex - 1, 0);
+    } else if (event.key === "Home") {
       nextIndex = 0;
-    } else if (event.key === 'End') {
+    } else if (event.key === "End") {
       nextIndex = items.length - 1;
     } else {
       return;
@@ -313,28 +346,28 @@ export function setupArrowNavigation(
     }
   };
 
-  container.addEventListener('keydown', handleKeyDown);
-  return () => container.removeEventListener('keydown', handleKeyDown);
+  container.addEventListener("keydown", handleKeyDown);
+  return () => container.removeEventListener("keydown", handleKeyDown);
 }
 
 export function handleTypeahead(
   items: HTMLElement[],
   getLabel: (item: HTMLElement) => string,
-  timeout = 500
+  timeout = 500,
 ): (char: string) => HTMLElement | null {
-  let buffer = '';
+  let buffer = "";
   let clearTimer: ReturnType<typeof setTimeout> | null = null;
 
   return (char: string): HTMLElement | null => {
     if (clearTimer) clearTimeout(clearTimer);
-    
+
     buffer += char.toLowerCase();
     clearTimer = setTimeout(() => {
-      buffer = '';
+      buffer = "";
     }, timeout);
 
     const match = items.find((item) =>
-      getLabel(item).toLowerCase().startsWith(buffer)
+      getLabel(item).toLowerCase().startsWith(buffer),
     );
 
     return match || null;

@@ -1,14 +1,14 @@
-import { Router, Request, Response } from 'express';
-import { apiKeyService } from '../services/apiKeyService';
-import { z } from 'zod';
-import { logger } from '../logger.js';
+import { Router, Request, Response } from "express";
+import { apiKeyService } from "../services/apiKeyService";
+import { z } from "zod";
+import { logger } from "../logger.js";
 
 const router = Router();
 
 // Schema for API key creation
 const createApiKeySchema = z.object({
   keyName: z.string().min(1).max(255),
-  tier: z.enum(['free', 'pro', 'enterprise']).optional().default('free'),
+  tier: z.enum(["free", "pro", "enterprise"]).optional().default("free"),
 });
 
 // Schema for query parameters
@@ -23,13 +23,13 @@ const usageQuerySchema = z.object({
  * POST /api/developer/keys/create
  * Generate a new API key for the authenticated user
  */
-router.post('/keys/create', async (req: Request, res: Response) => {
+router.post("/keys/create", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'You must be logged in to create API keys',
+        error: "Unauthorized",
+        message: "You must be logged in to create API keys",
       });
     }
 
@@ -37,8 +37,8 @@ router.post('/keys/create', async (req: Request, res: Response) => {
     const validation = createApiKeySchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid request body',
+        error: "Bad Request",
+        message: "Invalid request body",
         details: validation.error.errors,
       });
     }
@@ -48,20 +48,20 @@ router.post('/keys/create', async (req: Request, res: Response) => {
 
     // Check subscription tier for premium API keys
     if (
-      tier === 'pro' &&
-      req.user.subscriptionTier !== 'premium' &&
-      req.user.subscriptionTier !== 'pro'
+      tier === "pro" &&
+      req.user.subscriptionTier !== "premium" &&
+      req.user.subscriptionTier !== "pro"
     ) {
       return res.status(403).json({
-        error: 'Forbidden',
-        message: 'Pro API keys require a Premium or Pro subscription',
+        error: "Forbidden",
+        message: "Pro API keys require a Premium or Pro subscription",
       });
     }
 
-    if (tier === 'enterprise' && req.user.subscriptionTier !== 'enterprise') {
+    if (tier === "enterprise" && req.user.subscriptionTier !== "enterprise") {
       return res.status(403).json({
-        error: 'Forbidden',
-        message: 'Enterprise API keys require an Enterprise subscription',
+        error: "Forbidden",
+        message: "Enterprise API keys require an Enterprise subscription",
       });
     }
 
@@ -70,7 +70,7 @@ router.post('/keys/create', async (req: Request, res: Response) => {
 
     return res.status(201).json({
       success: true,
-      message: 'API key created successfully',
+      message: "API key created successfully",
       apiKey: {
         id: apiKey.id,
         keyName: apiKey.keyName,
@@ -79,13 +79,14 @@ router.post('/keys/create', async (req: Request, res: Response) => {
         rateLimit: apiKey.rateLimit,
         createdAt: apiKey.createdAt,
       },
-      warning: 'Save this API key securely. You will not be able to view it again.',
+      warning:
+        "Save this API key securely. You will not be able to view it again.",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error creating API key:');
+    logger.warn({ err: error }, "Error creating API key:");
     return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to create API key',
+      error: "Internal Server Error",
+      message: "Failed to create API key",
     });
   }
 });
@@ -94,13 +95,13 @@ router.post('/keys/create', async (req: Request, res: Response) => {
  * GET /api/developer/keys
  * List all API keys for the authenticated user
  */
-router.get('/keys', async (req: Request, res: Response) => {
+router.get("/keys", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'You must be logged in to view API keys',
+        error: "Unauthorized",
+        message: "You must be logged in to view API keys",
       });
     }
 
@@ -125,10 +126,10 @@ router.get('/keys', async (req: Request, res: Response) => {
       })),
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error listing API keys:');
+    logger.warn({ err: error }, "Error listing API keys:");
     return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to list API keys',
+      error: "Internal Server Error",
+      message: "Failed to list API keys",
     });
   }
 });
@@ -137,13 +138,13 @@ router.get('/keys', async (req: Request, res: Response) => {
  * DELETE /api/developer/keys/:keyId
  * Revoke an API key
  */
-router.delete('/keys/:keyId', async (req: Request, res: Response) => {
+router.delete("/keys/:keyId", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'You must be logged in to revoke API keys',
+        error: "Unauthorized",
+        message: "You must be logged in to revoke API keys",
       });
     }
 
@@ -152,8 +153,8 @@ router.delete('/keys/:keyId', async (req: Request, res: Response) => {
 
     if (!keyId) {
       return res.status(400).json({
-        error: 'Bad Request',
-        message: 'API key ID is required',
+        error: "Bad Request",
+        message: "API key ID is required",
       });
     }
 
@@ -162,21 +163,21 @@ router.delete('/keys/:keyId', async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      message: 'API key revoked successfully',
+      message: "API key revoked successfully",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error revoking API key:');
+    logger.warn({ err: error }, "Error revoking API key:");
 
-    if (error.message === 'API key not found or unauthorized') {
+    if (error.message === "API key not found or unauthorized") {
       return res.status(404).json({
-        error: 'Not Found',
-        message: 'API key not found or you do not have permission to revoke it',
+        error: "Not Found",
+        message: "API key not found or you do not have permission to revoke it",
       });
     }
 
     return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to revoke API key',
+      error: "Internal Server Error",
+      message: "Failed to revoke API key",
     });
   }
 });
@@ -185,13 +186,13 @@ router.delete('/keys/:keyId', async (req: Request, res: Response) => {
  * GET /api/developer/usage
  * Get usage statistics for all user's API keys
  */
-router.get('/usage', async (req: Request, res: Response) => {
+router.get("/usage", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'You must be logged in to view API usage',
+        error: "Unauthorized",
+        message: "You must be logged in to view API usage",
       });
     }
 
@@ -201,8 +202,8 @@ router.get('/usage', async (req: Request, res: Response) => {
     const validation = usageQuerySchema.safeParse(req.query);
     if (!validation.success) {
       return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid query parameters',
+        error: "Bad Request",
+        message: "Invalid query parameters",
         details: validation.error.errors,
       });
     }
@@ -217,7 +218,7 @@ router.get('/usage', async (req: Request, res: Response) => {
       (acc, key) => ({
         totalRequests: acc.totalRequests + (key.totalRequests || 0),
       }),
-      { totalRequests: 0 }
+      { totalRequests: 0 },
     );
 
     return res.json({
@@ -231,10 +232,10 @@ router.get('/usage', async (req: Request, res: Response) => {
       byApiKey: usageStats,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching API usage:');
+    logger.warn({ err: error }, "Error fetching API usage:");
     return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to fetch API usage statistics',
+      error: "Internal Server Error",
+      message: "Failed to fetch API usage statistics",
     });
   }
 });
@@ -243,13 +244,13 @@ router.get('/usage', async (req: Request, res: Response) => {
  * GET /api/developer/usage/:keyId
  * Get detailed usage statistics for a specific API key
  */
-router.get('/usage/:keyId', async (req: Request, res: Response) => {
+router.get("/usage/:keyId", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'You must be logged in to view API usage',
+        error: "Unauthorized",
+        message: "You must be logged in to view API usage",
       });
     }
 
@@ -260,8 +261,8 @@ router.get('/usage/:keyId', async (req: Request, res: Response) => {
     const validation = usageQuerySchema.safeParse(req.query);
     if (!validation.success) {
       return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid query parameters',
+        error: "Bad Request",
+        message: "Invalid query parameters",
         details: validation.error.errors,
       });
     }
@@ -272,8 +273,8 @@ router.get('/usage/:keyId', async (req: Request, res: Response) => {
     const apiKey = await apiKeyService.getApiKeyById(keyId);
     if (!apiKey || apiKey.userId !== userId) {
       return res.status(404).json({
-        error: 'Not Found',
-        message: 'API key not found or you do not have permission to view it',
+        error: "Not Found",
+        message: "API key not found or you do not have permission to view it",
       });
     }
 
@@ -296,10 +297,10 @@ router.get('/usage/:keyId', async (req: Request, res: Response) => {
       usage: usageStats,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching API key usage:');
+    logger.warn({ err: error }, "Error fetching API key usage:");
     return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to fetch API key usage statistics',
+      error: "Internal Server Error",
+      message: "Failed to fetch API key usage statistics",
     });
   }
 });
@@ -308,84 +309,85 @@ router.get('/usage/:keyId', async (req: Request, res: Response) => {
  * GET /api/developer/docs
  * Get API documentation metadata
  */
-router.get('/docs', async (req: Request, res: Response) => {
+router.get("/docs", async (req: Request, res: Response) => {
   try {
     return res.json({
-    success: true,
-    version: '1.0.0',
-    baseUrl: '/api/v1',
-    authentication: {
-      type: 'Bearer Token',
-      header: 'Authorization',
-      format: 'Bearer <api_key>',
-    },
-    rateLimits: {
-      free: {
-        limit: 100,
-        per: 'second',
+      success: true,
+      version: "1.0.0",
+      baseUrl: "/api/v1",
+      authentication: {
+        type: "Bearer Token",
+        header: "Authorization",
+        format: "Bearer <api_key>",
       },
-      pro: {
-        limit: 1000,
-        per: 'second',
-      },
-      enterprise: {
-        limit: 5000,
-        per: 'second',
-      },
-    },
-    endpoints: [
-      {
-        path: '/analytics/platforms',
-        method: 'GET',
-        description: 'List connected platforms',
-      },
-      {
-        path: '/analytics/streams{/:artistId}',
-        method: 'GET',
-        description: 'Get streaming statistics',
-        params: {
-          artistId: 'Optional - Artist/User ID (defaults to authenticated user)',
+      rateLimits: {
+        free: {
+          limit: 100,
+          per: "second",
         },
-        query: {
-          startDate: 'Optional - Start date (ISO 8601)',
-          endDate: 'Optional - End date (ISO 8601)',
-          platform: 'Optional - Filter by platform',
-          timeRange: 'Optional - Time range (e.g., 30d, 7d)',
+        pro: {
+          limit: 1000,
+          per: "second",
+        },
+        enterprise: {
+          limit: 5000,
+          per: "second",
         },
       },
-      {
-        path: '/analytics/engagement{/:artistId}',
-        method: 'GET',
-        description: 'Get engagement metrics',
-      },
-      {
-        path: '/analytics/demographics{/:artistId}',
-        method: 'GET',
-        description: 'Get audience demographics',
-      },
-      {
-        path: '/analytics/playlists{/:artistId}',
-        method: 'GET',
-        description: 'Get playlist placements',
-      },
-      {
-        path: '/analytics/tracks{/:artistId}',
-        method: 'GET',
-        description: 'Get track performance data',
-        query: {
-          limit: 'Optional - Number of tracks to return (default: 50)',
-          sortBy: 'Optional - Sort by streams or revenue (default: streams)',
+      endpoints: [
+        {
+          path: "/analytics/platforms",
+          method: "GET",
+          description: "List connected platforms",
         },
-      },
-      {
-        path: '/analytics/summary{/:artistId}',
-        method: 'GET',
-        description: 'Get complete analytics summary',
-      },
-    ],
-    examples: {
-      curl: `curl -H "Authorization: Bearer mb_live_..." https://your-domain.com/api/v1/analytics/streams`,
-      javascript: `
+        {
+          path: "/analytics/streams{/:artistId}",
+          method: "GET",
+          description: "Get streaming statistics",
+          params: {
+            artistId:
+              "Optional - Artist/User ID (defaults to authenticated user)",
+          },
+          query: {
+            startDate: "Optional - Start date (ISO 8601)",
+            endDate: "Optional - End date (ISO 8601)",
+            platform: "Optional - Filter by platform",
+            timeRange: "Optional - Time range (e.g., 30d, 7d)",
+          },
+        },
+        {
+          path: "/analytics/engagement{/:artistId}",
+          method: "GET",
+          description: "Get engagement metrics",
+        },
+        {
+          path: "/analytics/demographics{/:artistId}",
+          method: "GET",
+          description: "Get audience demographics",
+        },
+        {
+          path: "/analytics/playlists{/:artistId}",
+          method: "GET",
+          description: "Get playlist placements",
+        },
+        {
+          path: "/analytics/tracks{/:artistId}",
+          method: "GET",
+          description: "Get track performance data",
+          query: {
+            limit: "Optional - Number of tracks to return (default: 50)",
+            sortBy: "Optional - Sort by streams or revenue (default: streams)",
+          },
+        },
+        {
+          path: "/analytics/summary{/:artistId}",
+          method: "GET",
+          description: "Get complete analytics summary",
+        },
+      ],
+      examples: {
+        curl: `curl -H "Authorization: Bearer mb_live_..." https://your-domain.com/api/v1/analytics/streams`,
+        javascript: `
 fetch('https://your-domain.com/api/v1/analytics/streams', {
   headers: {
     'Authorization': 'Bearer mb_live_...'
@@ -395,7 +397,7 @@ fetch('https://your-domain.com/api/v1/analytics/streams', {
 .then(data => { /* process data */ })
 .catch(error => console.error('Error:', error));
       `.trim(),
-      python: `
+        python: `
 import requests
 
 headers = {
@@ -406,11 +408,11 @@ response = requests.get('https://your-domain.com/api/v1/analytics/streams', head
 data = response.json()
 print(data)
       `.trim(),
-    },
-  });
+      },
+    });
   } catch (error) {
-    logger.warn('Error in developer docs:', error?.message);
-    res.status(500).json({ error: 'Failed to process request' });
+    logger.warn("Error in developer docs:", error?.message);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 

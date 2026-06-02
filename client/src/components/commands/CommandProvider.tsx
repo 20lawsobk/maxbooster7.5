@@ -1,16 +1,20 @@
-import React from 'react';
-import { ShortcutProvider, ShortcutProviderProps } from '@/contexts/ShortcutContext';
-import { CommandPalette } from './CommandPalette';
+import React from "react";
+import {
+  ShortcutProvider,
+  ShortcutProviderProps,
+} from "@/contexts/ShortcutContext";
+import { CommandPalette } from "./CommandPalette";
 
-export interface CommandProviderProps extends Omit<ShortcutProviderProps, 'children'> {
+export interface CommandProviderProps
+  extends Omit<ShortcutProviderProps, "children"> {
   children: React.ReactNode;
   showCommandPalette?: boolean;
 }
 
-export function CommandProvider({ 
-  children, 
+export function CommandProvider({
+  children,
   showCommandPalette = true,
-  ...props 
+  ...props
 }: CommandProviderProps) {
   return (
     <ShortcutProvider {...props}>
@@ -20,13 +24,13 @@ export function CommandProvider({
   );
 }
 
-export { ShortcutProvider } from '@/contexts/ShortcutContext';
-export { 
-  useShortcuts, 
+export { ShortcutProvider } from "@/contexts/ShortcutContext";
+export {
+  useShortcuts,
   useShortcut,
-  useCommandPalette, 
+  useCommandPalette,
   useShortcutGuide,
-  useShortcutContext 
-} from '@/contexts/ShortcutContext';
+  useShortcutContext,
+} from "@/contexts/ShortcutContext";
 
 export default CommandProvider;

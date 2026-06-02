@@ -23,7 +23,7 @@ spec:
                   name: dns-os-db
                   key: url
             - name: DNS_PORT
-              value: "1053"    # Non-privileged; LB fronts port 53 → 1053
+              value: "1053" # Non-privileged; LB fronts port 53 → 1053
             - name: ZONE_REFRESH_INTERVAL
               value: "5s"
           ports:
@@ -35,7 +35,12 @@ spec:
               protocol: TCP
           readinessProbe:
             exec:
-              command: [/bin/sh, -c, "echo status | nc -u -w1 127.0.0.1 1053 || exit 0"]
+              command:
+                [
+                  /bin/sh,
+                  -c,
+                  "echo status | nc -u -w1 127.0.0.1 1053 || exit 0",
+                ]
             initialDelaySeconds: 3
             periodSeconds: 10
           resources:

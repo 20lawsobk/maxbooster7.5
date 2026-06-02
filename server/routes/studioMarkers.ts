@@ -1,10 +1,10 @@
-import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
-import { db } from '../db';
-import { projects, markers } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
-import { z } from 'zod';
-import { logger } from '../logger.js';
+import { Router } from "express";
+import { requireAuth } from "../middleware/auth.js";
+import { db } from "../db";
+import { projects, markers } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
+import { z } from "zod";
+import { logger } from "../logger.js";
 
 const router = Router();
 
@@ -14,11 +14,11 @@ const markerSchema = z.object({
   time: z.number().min(0),
   position: z.number().min(0),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
-  type: z.string().optional().default('marker'),
+  type: z.string().optional().default("marker"),
 });
 
 // Get all markers for a project
-router.get('/projects/:projectId/markers', requireAuth, async (req, res) => {
+router.get("/projects/:projectId/markers", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const userId = req.user!.id;
@@ -29,7 +29,7 @@ router.get('/projects/:projectId/markers', requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+      return res.status(404).json({ error: "Project not found" });
     }
 
     const projectMarkers = await db.query.markers.findMany({
@@ -39,13 +39,13 @@ router.get('/projects/:projectId/markers', requireAuth, async (req, res) => {
 
     res.json({ markers: projectMarkers });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching markers:');
-    res.status(500).json({ error: 'Failed to fetch markers' });
+    logger.warn({ err: error }, "Error fetching markers:");
+    res.status(500).json({ error: "Failed to fetch markers" });
   }
 });
 
 // Create a marker
-router.post('/projects/:projectId/markers', requireAuth, async (req, res) => {
+router.post("/projects/:projectId/markers", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const userId = req.user!.id;
@@ -59,7 +59,7 @@ router.post('/projects/:projectId/markers', requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+      return res.status(404).json({ error: "Project not found" });
     }
 
     const [newMarker] = await db
@@ -72,16 +72,18 @@ router.post('/projects/:projectId/markers', requireAuth, async (req, res) => {
 
     res.status(201).json(newMarker);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error creating marker:');
-    if (error.name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid marker data', details: error.errors });
+    logger.warn({ err: error }, "Error creating marker:");
+    if (error.name === "ZodError") {
+      return res
+        .status(400)
+        .json({ error: "Invalid marker data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to create marker' });
+    res.status(500).json({ error: "Failed to create marker" });
   }
 });
 
 // Update a marker
-router.patch('/markers/:markerId', requireAuth, async (req, res) => {
+router.patch("/markers/:markerId", requireAuth, async (req, res) => {
   try {
     const { markerId } = req.params;
     const userId = req.user!.id;
@@ -95,16 +97,19 @@ router.patch('/markers/:markerId', requireAuth, async (req, res) => {
     });
 
     if (!marker) {
-      return res.status(404).json({ error: 'Marker not found' });
+      return res.status(404).json({ error: "Marker not found" });
     }
 
     // Verify project ownership
     const project = await db.query.projects.findFirst({
-      where: and(eq(projects.id, marker.projectId), eq(projects.userId, userId)),
+      where: and(
+        eq(projects.id, marker.projectId),
+        eq(projects.userId, userId),
+      ),
     });
 
     if (!project) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     const [updatedMarker] = await db
@@ -115,16 +120,18 @@ router.patch('/markers/:markerId', requireAuth, async (req, res) => {
 
     res.json(updatedMarker);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error updating marker:');
-    if (error.name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid marker data', details: error.errors });
+    logger.warn({ err: error }, "Error updating marker:");
+    if (error.name === "ZodError") {
+      return res
+        .status(400)
+        .json({ error: "Invalid marker data", details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to update marker' });
+    res.status(500).json({ error: "Failed to update marker" });
   }
 });
 
 // Delete a marker
-router.delete('/markers/:markerId', requireAuth, async (req, res) => {
+router.delete("/markers/:markerId", requireAuth, async (req, res) => {
   try {
     const { markerId } = req.params;
     const userId = req.user!.id;
@@ -135,24 +142,27 @@ router.delete('/markers/:markerId', requireAuth, async (req, res) => {
     });
 
     if (!marker) {
-      return res.status(404).json({ error: 'Marker not found' });
+      return res.status(404).json({ error: "Marker not found" });
     }
 
     // Verify project ownership
     const project = await db.query.projects.findFirst({
-      where: and(eq(projects.id, marker.projectId), eq(projects.userId, userId)),
+      where: and(
+        eq(projects.id, marker.projectId),
+        eq(projects.userId, userId),
+      ),
     });
 
     if (!project) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     await db.delete(markers).where(eq(markers.id, markerId));
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error deleting marker:');
-    res.status(500).json({ error: 'Failed to delete marker' });
+    logger.warn({ err: error }, "Error deleting marker:");
+    res.status(500).json({ error: "Failed to delete marker" });
   }
 });
 

@@ -22,11 +22,11 @@
  * the sole authoritative server for all claimed domains.
  */
 
-import dns2 from 'dns2';
-import { eq, and } from 'drizzle-orm';
-import { db } from '../db.js';
-import { storefrontDomains, dnsZoneRecords, dnsZones } from '@shared/schema';
-import { logger } from '../logger.js';
+import dns2 from "dns2";
+import { eq, and } from "drizzle-orm";
+import { db } from "../db.js";
+import { storefrontDomains, dnsZoneRecords, dnsZones } from "@shared/schema";
+import { logger } from "../logger.js";
 import {
   getOrCreateKeys,
   makeDS,
@@ -39,46 +39,62 @@ import {
   nsec3Rdata,
   nsec3ParamRdata,
   NSEC3_ITERATIONS,
-  RRTYPE_A, RRTYPE_NS, RRTYPE_SOA, RRTYPE_MX, RRTYPE_TXT,
-  RRTYPE_AAAA, RRTYPE_DNSKEY, RRTYPE_DS, RRTYPE_RRSIG,
-  RRTYPE_NSEC3, RRTYPE_NSEC3PAR, RRTYPE_CAA,
-} from './dnssec.js';
-import { resolveGeoIP, getGeoDnsStatus } from './geoDns.js';
-import { resolveRecursive, rrToA, TYPE_A as REC_TYPE_A } from './recursiveResolver.js';
+  RRTYPE_A,
+  RRTYPE_NS,
+  RRTYPE_SOA,
+  RRTYPE_MX,
+  RRTYPE_TXT,
+  RRTYPE_AAAA,
+  RRTYPE_DNSKEY,
+  RRTYPE_DS,
+  RRTYPE_RRSIG,
+  RRTYPE_NSEC3,
+  RRTYPE_NSEC3PAR,
+  RRTYPE_CAA,
+} from "./dnssec.js";
+import { resolveGeoIP, getGeoDnsStatus } from "./geoDns.js";
+import {
+  resolveRecursive,
+  rrToA,
+  TYPE_A as REC_TYPE_A,
+} from "./recursiveResolver.js";
 
 // ── Feature flags ─────────────────────────────────────────────────────────────
-const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === 'true';
+const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === "true";
 
 // ── Eager GeoDNS warm-up at module load ───────────────────────────────────────
 // Decoupled from startDNSServer so it runs even when port 53 is unavailable.
-if (process.env.GEODNS_ENABLED === 'true') {
+if (process.env.GEODNS_ENABLED === "true") {
   (async () => {
     try {
-      const { lookupGeo } = await import('./geoDns.js');
-      const geo = await lookupGeo('8.8.8.8');
+      const { lookupGeo } = await import("./geoDns.js");
+      const geo = await lookupGeo("8.8.8.8");
       if (geo?.continent || geo?.country) {
-        const { logger: _log } = await import('../logger.js');
-        _log.info(`[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent ?? '?'}/${geo.country ?? '?'}`);
+        const { logger: _log } = await import("../logger.js");
+        _log.info(
+          `[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent ?? "?"}/${geo.country ?? "?"}`,
+        );
       }
-    } catch { /* mmdb may not exist yet — silently ignored */ }
+    } catch {
+      /* mmdb may not exist yet — silently ignored */
+    }
   })();
 }
 
-const {
-  Packet,
-  createServer,
-  UDPClient,
-} = dns2 as Record<string, unknown>;
+const { Packet, createServer, UDPClient } = dns2 as Record<string, unknown>;
 
-const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'max-booster.com').toLowerCase();
-const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
-const DNS_PORT = parseInt(process.env.DNS_PORT || '53', 10);
-const UPSTREAM_DNS = process.env.UPSTREAM_DNS || '8.8.8.8';
+const BASE_DOMAIN = (
+  process.env.BASE_DOMAIN || "max-booster.com"
+).toLowerCase();
+const DNS_SERVER_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
+const DNS_PORT = parseInt(process.env.DNS_PORT || "53", 10);
+const UPSTREAM_DNS = process.env.UPSTREAM_DNS || "8.8.8.8";
 
 // DoH upstream used when outbound UDP port 53 is blocked (e.g. in sandboxed envs)
 // Cloudflare DoH: https://cloudflare-dns.com/dns-query
 // Google DoH:     https://dns.google/dns-query
-const DOH_UPSTREAM = process.env.DOH_UPSTREAM || 'https://cloudflare-dns.com/dns-query';
+const DOH_UPSTREAM =
+  process.env.DOH_UPSTREAM || "https://cloudflare-dns.com/dns-query";
 
 /**
  * DNS-over-HTTPS fallback resolver.
@@ -88,18 +104,23 @@ const DOH_UPSTREAM = process.env.DOH_UPSTREAM || 'https://cloudflare-dns.com/dns
  */
 async function dohFallback(queryBuf: Buffer): Promise<any | null> {
   try {
-    const { default: fetch } = await import('node-fetch').catch(() => ({ default: null as typeof import('node-fetch').default | null }));
+    const { default: fetch } = await import("node-fetch").catch(() => ({
+      default: null as typeof import("node-fetch").default | null,
+    }));
     const fetchFn = fetch ?? (globalThis as Record<string, unknown>).fetch;
     if (!fetchFn) return null;
 
     const resp = await fetchFn(DOH_UPSTREAM, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/dns-message', 'Accept': 'application/dns-message' },
-      body:    queryBuf,
-      signal:  AbortSignal.timeout(8_000),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/dns-message",
+        Accept: "application/dns-message",
+      },
+      body: queryBuf,
+      signal: AbortSignal.timeout(8_000),
     });
     if (!resp.ok) return null;
-    const buf  = Buffer.from(await resp.arrayBuffer());
+    const buf = Buffer.from(await resp.arrayBuffer());
     return Packet.parse(buf);
   } catch {
     return null;
@@ -107,12 +128,15 @@ async function dohFallback(queryBuf: Buffer): Promise<any | null> {
 }
 
 // ─── TTL values — match Cloudflare's defaults (RFC 1912 §2.2) ────────────────
-const TTL_A   = 300;      // 5 min A records — fast propagation on IP changes
-const TTL_NS  = 86400;    // 24 h  NS records  (standard across all providers)
-const TTL_SOA = 3600;     // 1 h   SOA record
+const TTL_A = 300; // 5 min A records — fast propagation on IP changes
+const TTL_NS = 86400; // 24 h  NS records  (standard across all providers)
+const TTL_SOA = 3600; // 1 h   SOA record
 
 // SOA serial — updated on each server start so secondaries detect changes
-const SERIAL = parseInt(new Date().toISOString().slice(0, 10).replace(/-/g, '') + '01', 10);
+const SERIAL = parseInt(
+  new Date().toISOString().slice(0, 10).replace(/-/g, "") + "01",
+  10,
+);
 
 // ─── In-memory cache for claimed custom domains (refreshed every 60 s) ───────
 let customDomainCache = new Set<string>();
@@ -128,17 +152,17 @@ async function refreshCustomDomainCache(): Promise<void> {
     const rows = await db
       .select({ domain: storefrontDomains.domain })
       .from(storefrontDomains)
-      .where(eq(storefrontDomains.status, 'active'));
-    customDomainCache = new Set(rows.map(r => r.domain.toLowerCase()));
+      .where(eq(storefrontDomains.status, "active"));
+    customDomainCache = new Set(rows.map((r) => r.domain.toLowerCase()));
     cacheLastRefreshed = Date.now();
   } catch (err) {
-    logger.warn({ err: err }, '[DNS] Could not refresh custom domain cache:');
+    logger.warn({ err: err }, "[DNS] Could not refresh custom domain cache:");
   }
 }
 
 /** Returns true if the queried name is in a zone we are authoritative for. */
 async function isAuthoritative(name: string): Promise<boolean> {
-  const n = name.toLowerCase().replace(/\.$/, '');
+  const n = name.toLowerCase().replace(/\.$/, "");
 
   // Always authoritative for our base domain and all its subdomains
   if (n === BASE_DOMAIN || n.endsWith(`.${BASE_DOMAIN}`)) return true;
@@ -168,17 +192,20 @@ async function isAuthoritative(name: string): Promise<boolean> {
 async function resolveFromZoneRecords(
   qname: string,
   qtype: string,
-): Promise<Array<{ name: string; value: string; ttl: number; priority?: number }>> {
+): Promise<
+  Array<{ name: string; value: string; ttl: number; priority?: number }>
+> {
   try {
     // Determine the zone domain and relative name
     const rootDomain = extractZoneDomain(qname);
-    const namePart = qname === rootDomain ? '@' : qname.slice(0, -(rootDomain.length + 1));
+    const namePart =
+      qname === rootDomain ? "@" : qname.slice(0, -(rootDomain.length + 1));
 
     const rows = await db
       .select({
-        name:     dnsZoneRecords.name,
-        value:    dnsZoneRecords.value,
-        ttl:      dnsZoneRecords.ttl,
+        name: dnsZoneRecords.name,
+        value: dnsZoneRecords.value,
+        ttl: dnsZoneRecords.ttl,
         priority: dnsZoneRecords.priority,
       })
       .from(dnsZoneRecords)
@@ -191,14 +218,14 @@ async function resolveFromZoneRecords(
         ),
       );
 
-    return rows.map(r => ({
-      name:     qname,
-      value:    r.value,
-      ttl:      r.ttl ?? 300,
+    return rows.map((r) => ({
+      name: qname,
+      value: r.value,
+      ttl: r.ttl ?? 300,
       priority: r.priority ?? undefined,
     }));
   } catch (err) {
-    logger.warn({ err, qname, qtype }, '[DNS] resolveFromZoneRecords error');
+    logger.warn({ err, qname, qtype }, "[DNS] resolveFromZoneRecords error");
     return [];
   }
 }
@@ -210,67 +237,91 @@ async function resolveFromZoneRecords(
  * For custom domains we return the root domain (last two labels).
  */
 function extractZoneDomain(name: string): string {
-  if (name === BASE_DOMAIN || name.endsWith(`.${BASE_DOMAIN}`)) return BASE_DOMAIN;
+  if (name === BASE_DOMAIN || name.endsWith(`.${BASE_DOMAIN}`))
+    return BASE_DOMAIN;
   // For custom domains: extract root domain (last two labels, e.g. example.com)
-  const parts = name.split('.');
-  if (parts.length >= 2) return parts.slice(-2).join('.');
+  const parts = name.split(".");
+  if (parts.length >= 2) return parts.slice(-2).join(".");
   return name;
 }
 
 // ─── DNS record builders ──────────────────────────────────────────────────────
 
-const PLATFORM_NS  = process.env.PLATFORM_NS  || `ns1.${BASE_DOMAIN}`;
+const PLATFORM_NS = process.env.PLATFORM_NS || `ns1.${BASE_DOMAIN}`;
 const PLATFORM_NS2 = process.env.PLATFORM_NS2 || `ns2.${BASE_DOMAIN}`;
 
 /** SOA record — authoritative for all Max Booster zones */
 function makeSOA(zone: string) {
   return {
-    name:       zone,
-    type:       Packet.TYPE.SOA,
-    class:      Packet.CLASS.IN,
-    ttl:        TTL_SOA,
-    primary:    PLATFORM_NS,
-    admin:      `hostmaster.${BASE_DOMAIN}`,
-    serial:     SERIAL,
-    refresh:    10800,   // 3 h
-    retry:      3600,    // 1 h
-    expiration: 604800,  // 7 days
-    minimum:    3600,    // negative-cache TTL (RFC 2308)
+    name: zone,
+    type: Packet.TYPE.SOA,
+    class: Packet.CLASS.IN,
+    ttl: TTL_SOA,
+    primary: PLATFORM_NS,
+    admin: `hostmaster.${BASE_DOMAIN}`,
+    serial: SERIAL,
+    refresh: 10800, // 3 h
+    retry: 3600, // 1 h
+    expiration: 604800, // 7 days
+    minimum: 3600, // negative-cache TTL (RFC 2308)
   };
 }
 
 /** NS records — both ns1 and ns2 (RFC requires ≥ 2 NS per zone) */
 function makeNSRecords(zone: string) {
   return [
-    { name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN, ttl: TTL_NS, ns: PLATFORM_NS  },
-    { name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN, ttl: TTL_NS, ns: PLATFORM_NS2 },
+    {
+      name: zone,
+      type: Packet.TYPE.NS,
+      class: Packet.CLASS.IN,
+      ttl: TTL_NS,
+      ns: PLATFORM_NS,
+    },
+    {
+      name: zone,
+      type: Packet.TYPE.NS,
+      class: Packet.CLASS.IN,
+      ttl: TTL_NS,
+      ns: PLATFORM_NS2,
+    },
   ];
 }
 
 function makeA(name: string, ip: string) {
   return {
-    name, type: Packet.TYPE.A, class: Packet.CLASS.IN, ttl: TTL_A, address: ip,
+    name,
+    type: Packet.TYPE.A,
+    class: Packet.CLASS.IN,
+    ttl: TTL_A,
+    address: ip,
   };
 }
 
 // ─── Request handler ──────────────────────────────────────────────────────────
 
-async function handleRequest(request: Record<string, unknown>, send: (response: Record<string, unknown>) => void): Promise<void> {
+async function handleRequest(
+  request: Record<string, unknown>,
+  send: (response: Record<string, unknown>) => void,
+): Promise<void> {
   queryCount++;
   const response = Packet.createResponseFromRequest(request);
   response.header.aa = 0; // default: not authoritative
 
   const questions: Record<string, unknown>[] = request.questions || [];
-  if (questions.length === 0) { send(response); return; }
+  if (questions.length === 0) {
+    send(response);
+    return;
+  }
 
   const question = questions[0];
-  const name  = (question.name || '').toLowerCase().replace(/\.$/, '');
+  const name = (question.name || "").toLowerCase().replace(/\.$/, "");
   const qtype: number = question.type;
 
   // Determine the zone root for SOA/NS records
   // For *.maxbooster.replit.app → zone is BASE_DOMAIN
   // For a claimed custom domain (e.g. mybeats.com) → zone is the domain itself
-  const isBaseDomainZone = name === BASE_DOMAIN || name.endsWith(`.${BASE_DOMAIN}`);
+  const isBaseDomainZone =
+    name === BASE_DOMAIN || name.endsWith(`.${BASE_DOMAIN}`);
   const auth = await isAuthoritative(name);
 
   if (!auth) {
@@ -278,14 +329,16 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
     //   Tier 1: Iterative recursive resolution from 13 IANA root servers (UDP)
     //   Tier 2: DNS-over-HTTPS to Cloudflare (works even when UDP port 53 is firewalled)
     //   Tier 3: UDP forwarding to configured upstream (8.8.8.8 default)
-    const rawBuf: Buffer | undefined = (request as Record<string, unknown>)._rawBuffer;
+    const rawBuf: Buffer | undefined = (request as Record<string, unknown>)
+      ._rawBuffer;
 
     // ── Tier 1: Recursive resolver (2 s cap — UDP may be firewalled) ────────
     try {
       const result = await Promise.race([
         resolveRecursive(name, qtype),
         new Promise<never>((_, rej) =>
-          setTimeout(() => rej(new Error('Tier1 timeout')), 2_000)),
+          setTimeout(() => rej(new Error("Tier1 timeout")), 2_000),
+        ),
       ]);
 
       if (result.rcode === 3) {
@@ -300,11 +353,11 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
         for (const rr of result.answers) {
           if (rr.type === REC_TYPE_A && rr.rdata.length === 4) {
             response.answers.push({
-              name:    rr.name,
-              type:    Packet.TYPE.A,
-              class:   Packet.CLASS.IN,
-              ttl:     rr.ttl,
-              address: rrToA(rr) ?? '0.0.0.0',
+              name: rr.name,
+              type: Packet.TYPE.A,
+              class: Packet.CLASS.IN,
+              ttl: rr.ttl,
+              address: rrToA(rr) ?? "0.0.0.0",
             });
           } else {
             fallThrough = true;
@@ -318,7 +371,9 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
         // Non-A type — continue to DoH tier below
       }
       // SERVFAIL / empty — fall through to Tier 2
-    } catch { /* UDP blocked or timeout — fall through to Tier 2 */ }
+    } catch {
+      /* UDP blocked or timeout — fall through to Tier 2 */
+    }
 
     // ── Tier 2: DNS-over-HTTPS fallback (Cloudflare) ────────────────────────
     if (rawBuf) {
@@ -328,12 +383,14 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
           send(dohPacket);
           return;
         }
-      } catch { /* DoH failed — fall through to Tier 3 */ }
+      } catch {
+        /* DoH failed — fall through to Tier 3 */
+      }
     }
 
     // ── Tier 3: UDP upstream (8.8.8.8) ──────────────────────────────────────
     try {
-      const resolve  = UDPClient({ dns: UPSTREAM_DNS });
+      const resolve = UDPClient({ dns: UPSTREAM_DNS });
       const upstream = await resolve(question.name, qtype);
       send(upstream);
     } catch {
@@ -361,14 +418,14 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
       break;
 
     case Packet.TYPE.NS:
-      makeNSRecords(zone).forEach(r => response.answers.push(r));
+      makeNSRecords(zone).forEach((r) => response.answers.push(r));
       // RFC 1034 §4.3.2 — glue A records in ADDITIONAL to prevent circular lookups
-      response.additionals.push(makeA(PLATFORM_NS,  DNS_SERVER_IP));
+      response.additionals.push(makeA(PLATFORM_NS, DNS_SERVER_IP));
       response.additionals.push(makeA(PLATFORM_NS2, DNS_SERVER_IP));
       break;
 
     case Packet.TYPE.TXT: {
-      const txtRecords = await resolveFromZoneRecords(name, 'TXT');
+      const txtRecords = await resolveFromZoneRecords(name, "TXT");
       if (txtRecords.length > 0) {
         for (const r of txtRecords) {
           response.answers.push({
@@ -386,7 +443,7 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
     }
 
     case Packet.TYPE.MX: {
-      const mxRecords = await resolveFromZoneRecords(name, 'MX');
+      const mxRecords = await resolveFromZoneRecords(name, "MX");
       if (mxRecords.length > 0) {
         for (const r of mxRecords) {
           response.answers.push({
@@ -405,7 +462,7 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
     }
 
     case Packet.TYPE.CNAME: {
-      const cnameRecords = await resolveFromZoneRecords(name, 'CNAME');
+      const cnameRecords = await resolveFromZoneRecords(name, "CNAME");
       if (cnameRecords.length > 0) {
         response.answers.push({
           name: cnameRecords[0].name,
@@ -421,7 +478,7 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
     }
 
     case Packet.TYPE.AAAA: {
-      const aaaaRecords = await resolveFromZoneRecords(name, 'AAAA');
+      const aaaaRecords = await resolveFromZoneRecords(name, "AAAA");
       if (aaaaRecords.length > 0) {
         for (const r of aaaaRecords) {
           response.answers.push({
@@ -439,7 +496,7 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
     }
 
     case 257: /* CAA */ {
-      const caaRecords = await resolveFromZoneRecords(name, 'CAA');
+      const caaRecords = await resolveFromZoneRecords(name, "CAA");
       if (caaRecords.length > 0) {
         for (const r of caaRecords) {
           // CAA wire format: flags(1) + tag_length(1) + tag + value
@@ -468,11 +525,11 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
       // Major resolvers (Cloudflare, Google) follow this approach.
       response.answers.push({
         name,
-        type:  13,           // HINFO
+        type: 13, // HINFO
         class: Packet.CLASS.IN,
-        ttl:   TTL_A,
-        cpu:   'ANY obsoleted per RFC 8482',
-        os:    '',
+        ttl: TTL_A,
+        cpu: "ANY obsoleted per RFC 8482",
+        os: "",
       });
       break;
 
@@ -480,7 +537,7 @@ async function handleRequest(request: Record<string, unknown>, send: (response: 
     case 43: /* DS */
     case 46: /* RRSIG */
     case 50: /* NSEC3 */
-    case 51: /* NSEC3PARAM */
+    case 51 /* NSEC3PARAM */:
       // These are handled in processQuery via dns-packet when DNSSEC is enabled.
       // For UDP/TCP server, return SOA in authority (validator will use DoH).
       response.authorities.push(makeSOA(zone));
@@ -511,7 +568,9 @@ export async function startDNSServer(): Promise<void> {
   // Pre-check: can we bind this port at all?
   const portAvailable = await checkPortAvailable(DNS_PORT);
   if (!portAvailable) {
-    logger.info(`[DNS] Port ${DNS_PORT} unavailable (EACCES or already in use) — DNS server not started. In dev: set DNS_PORT=5353.`);
+    logger.info(
+      `[DNS] Port ${DNS_PORT} unavailable (EACCES or already in use) — DNS server not started. In dev: set DNS_PORT=5353.`,
+    );
     return;
   }
 
@@ -528,10 +587,10 @@ export async function startDNSServer(): Promise<void> {
         if (settled) return;
         settled = true;
         // Remove all error listeners to prevent unhandled-event crashes
-        server.removeAllListeners('error');
+        server.removeAllListeners("error");
         if (!ok) {
           // DNS not starting is expected in Replit (no CAP_NET_BIND_SERVICE) — log at INFO.
-          if (msg) logger.info(msg.replace('⚠️  ', ''));
+          if (msg) logger.info(msg.replace("⚠️  ", ""));
           dnsServer = null;
           running = false;
         }
@@ -539,35 +598,51 @@ export async function startDNSServer(): Promise<void> {
       };
 
       // Single aggregated error handler — fires for UDP or TCP sub-server errors
-      server.on('error', (err: Error, proto?: string) => {
-        const code: string = err?.code || '';
-        if (code === 'EACCES') {
-          settle(false, `[DNS] ⚠️  Port ${DNS_PORT} requires elevated privileges (${proto || 'unknown'}). DNS server not started.`);
-        } else if (code === 'EADDRINUSE') {
-          settle(false, `[DNS] ⚠️  Port ${DNS_PORT} already in use (${proto || 'unknown'}). DNS server not started.`);
+      server.on("error", (err: Error, proto?: string) => {
+        const code: string = err?.code || "";
+        if (code === "EACCES") {
+          settle(
+            false,
+            `[DNS] ⚠️  Port ${DNS_PORT} requires elevated privileges (${proto || "unknown"}). DNS server not started.`,
+          );
+        } else if (code === "EADDRINUSE") {
+          settle(
+            false,
+            `[DNS] ⚠️  Port ${DNS_PORT} already in use (${proto || "unknown"}). DNS server not started.`,
+          );
         } else {
-          settle(false, `[DNS] ⚠️  DNS server error (${proto || 'unknown'}): ${err?.message}`);
+          settle(
+            false,
+            `[DNS] ⚠️  DNS server error (${proto || "unknown"}): ${err?.message}`,
+          );
         }
       });
 
-      server.listen({
-        udp: { port: DNS_PORT, address: '0.0.0.0' },
-        tcp: { port: DNS_PORT, address: '0.0.0.0' },
-      }).then(async () => {
-        dnsServer = server;
-        running = true;
-        logger.info(
-          `[DNS] ✅ Authoritative nameserver online — ${BASE_DOMAIN} → ${DNS_SERVER_IP} (UDP+TCP :${DNS_PORT})`
-        );
-        logger.info(`[DNS] 📋 NS records: ${PLATFORM_NS} + ${PLATFORM_NS2} → ${DNS_SERVER_IP}`);
-        // Prime cache so first query hits DB immediately, not on first request
-        await warmCache();
-        settle(true);
-      }).catch((err) => {
-        settle(false, `[DNS] ⚠️  listen() rejected: ${err?.message}`);
-      });
+      server
+        .listen({
+          udp: { port: DNS_PORT, address: "0.0.0.0" },
+          tcp: { port: DNS_PORT, address: "0.0.0.0" },
+        })
+        .then(async () => {
+          dnsServer = server;
+          running = true;
+          logger.info(
+            `[DNS] ✅ Authoritative nameserver online — ${BASE_DOMAIN} → ${DNS_SERVER_IP} (UDP+TCP :${DNS_PORT})`,
+          );
+          logger.info(
+            `[DNS] 📋 NS records: ${PLATFORM_NS} + ${PLATFORM_NS2} → ${DNS_SERVER_IP}`,
+          );
+          // Prime cache so first query hits DB immediately, not on first request
+          await warmCache();
+          settle(true);
+        })
+        .catch((err) => {
+          settle(false, `[DNS] ⚠️  listen() rejected: ${err?.message}`);
+        });
     } catch (err) {
-      logger.warn(`[DNS] ⚠️  Could not instantiate DNS server: ${err?.message}`);
+      logger.warn(
+        `[DNS] ⚠️  Could not instantiate DNS server: ${err?.message}`,
+      );
       resolve();
     }
   });
@@ -578,14 +653,14 @@ export async function startDNSServer(): Promise<void> {
  * Uses a raw net.Server so we can test without starting the real DNS server.
  */
 async function checkPortAvailable(port: number): Promise<boolean> {
-  const { createServer: tcpCreate } = await import('net');
+  const { createServer: tcpCreate } = await import("net");
   return new Promise<boolean>((resolve) => {
     const probe = tcpCreate();
-    probe.once('error', () => {
+    probe.once("error", () => {
       probe.removeAllListeners();
       resolve(false);
     });
-    probe.listen(port, '0.0.0.0', () => {
+    probe.listen(port, "0.0.0.0", () => {
       probe.close(() => resolve(true));
     });
   });
@@ -596,9 +671,9 @@ export async function stopDNSServer(): Promise<void> {
   try {
     dnsServer.close();
     running = false;
-    logger.info('[DNS] Nameserver stopped.');
+    logger.info("[DNS] Nameserver stopped.");
   } catch (err) {
-    logger.warn('[DNS] Error stopping DNS server:', err?.message);
+    logger.warn("[DNS] Error stopping DNS server:", err?.message);
   }
 }
 
@@ -609,21 +684,23 @@ export function isDNSRunning(): boolean {
 export function getDNSInfo() {
   return {
     running,
-    baseDomain:  BASE_DOMAIN,
-    serverIp:    DNS_SERVER_IP,
-    port:        DNS_PORT,
-    upstream:    UPSTREAM_DNS,
+    baseDomain: BASE_DOMAIN,
+    serverIp: DNS_SERVER_IP,
+    port: DNS_PORT,
+    upstream: UPSTREAM_DNS,
     nameservers: [`ns1.${BASE_DOMAIN}`, `ns2.${BASE_DOMAIN}`],
-    dnssec:      { enabled: DNSSEC_ENABLED },
-    geodns:      getGeoDnsStatus(),
+    dnssec: { enabled: DNSSEC_ENABLED },
+    geodns: getGeoDnsStatus(),
     customDomainSetup: {
-      step1: 'Log into your domain registrar (GoDaddy, Namecheap, Google Domains, etc.)',
+      step1:
+        "Log into your domain registrar (GoDaddy, Namecheap, Google Domains, etc.)",
       step2: 'Find "Nameservers" or "DNS Settings" for your domain.',
       step3: 'Change nameserver type to "Custom" and enter:',
-      ns1:   `ns1.${BASE_DOMAIN}`,
-      ns2:   `ns2.${BASE_DOMAIN}`,
-      step4: 'Save. DNS propagation takes up to 48 hours (usually under 30 minutes).',
-      note:  'Once propagated, your domain will automatically point to your Max Booster store.',
+      ns1: `ns1.${BASE_DOMAIN}`,
+      ns2: `ns2.${BASE_DOMAIN}`,
+      step4:
+        "Save. DNS propagation takes up to 48 hours (usually under 30 minutes).",
+      note: "Once propagated, your domain will automatically point to your Max Booster store.",
     },
   };
 }
@@ -631,16 +708,24 @@ export function getDNSInfo() {
 /** Warm up the custom-domain cache immediately (called from startDNSServer). */
 async function warmCache(): Promise<void> {
   await refreshCustomDomainCache();
-  logger.info(`[DNS] Custom domain cache warmed — ${customDomainCache.size} active domain(s) loaded.`);
+  logger.info(
+    `[DNS] Custom domain cache warmed — ${customDomainCache.size} active domain(s) loaded.`,
+  );
 
   // Eagerly load GeoDNS database so the first real query doesn't pay the I/O cost
-  if (process.env.GEODNS_ENABLED === 'true') {
-    const { lookupGeo } = await import('./geoDns.js');
-    lookupGeo('8.8.8.8').then(geo => {
-      if (geo?.continent || geo?.country) {
-        logger.info(`[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent ?? '?'}/${geo.country ?? '?'}`);
-      }
-    }).catch(() => { /* DB may not be present yet — ignored */ });
+  if (process.env.GEODNS_ENABLED === "true") {
+    const { lookupGeo } = await import("./geoDns.js");
+    lookupGeo("8.8.8.8")
+      .then((geo) => {
+        if (geo?.continent || geo?.country) {
+          logger.info(
+            `[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent ?? "?"}/${geo.country ?? "?"}`,
+          );
+        }
+      })
+      .catch(() => {
+        /* DB may not be present yet — ignored */
+      });
   }
 }
 
@@ -655,11 +740,11 @@ async function warmCache(): Promise<void> {
  */
 export interface DohQueryResult {
   /** Raw DNS wire-format response buffer */
-  buffer:  Buffer;
+  buffer: Buffer;
   /** Minimum TTL across all RRs in answers + authorities (0 if no RRs) */
-  minTtl:  number;
+  minTtl: number;
   /** DNS RCODE from the response header (0=NOERROR, 2=SERVFAIL, 3=NXDOMAIN) */
-  rcode:   number;
+  rcode: number;
 }
 
 // ── DNS wire-format helpers ───────────────────────────────────────────────────
@@ -672,7 +757,10 @@ function parseQueryType(buf: Buffer): number {
   while (offset < buf.length) {
     const len = buf[offset++];
     if (len === 0) break;
-    if ((len & 0xC0) === 0xC0) { offset++; break; }
+    if ((len & 0xc0) === 0xc0) {
+      offset++;
+      break;
+    }
     offset += len;
   }
   if (offset + 2 > buf.length) return 0;
@@ -686,17 +774,22 @@ function parseTxId(buf: Buffer): number {
 
 /** Parse query name from wire buffer (returns lowercase FQDN). */
 function parseQueryName(buf: Buffer): string {
-  if (buf.length < 12) return '';
+  if (buf.length < 12) return "";
   let offset = 12;
   const labels: string[] = [];
   while (offset < buf.length) {
     const len = buf[offset++];
     if (len === 0) break;
-    if ((len & 0xC0) === 0xC0) break; // pointer — skip
-    labels.push(buf.slice(offset, offset + len).toString('ascii').toLowerCase());
+    if ((len & 0xc0) === 0xc0) break; // pointer — skip
+    labels.push(
+      buf
+        .slice(offset, offset + len)
+        .toString("ascii")
+        .toLowerCase(),
+    );
     offset += len;
   }
-  return labels.join('.');
+  return labels.join(".");
 }
 
 /** Check whether the DO (DNSSEC OK) bit is set in an OPT record. */
@@ -716,7 +809,10 @@ function parseDOBit(buf: Buffer): boolean {
     while (offset < buf.length) {
       const len = buf[offset++];
       if (len === 0) break;
-      if ((len & 0xC0) === 0xC0) { offset++; break; }
+      if ((len & 0xc0) === 0xc0) {
+        offset++;
+        break;
+      }
       offset += len;
     }
     offset += 4;
@@ -751,7 +847,7 @@ function skipNameOffset(buf: Buffer, offset: number): number {
   while (offset < buf.length) {
     const len = buf[offset];
     if (len === 0) return offset + 1;
-    if ((len & 0xC0) === 0xC0) return offset + 2;
+    if ((len & 0xc0) === 0xc0) return offset + 2;
     offset += 1 + len;
   }
   return -1;
@@ -761,41 +857,51 @@ function skipNameOffset(buf: Buffer, offset: number): number {
 function recordToRdata(rr: Record<string, unknown>): Buffer | null {
   try {
     switch (rr.type) {
-      case 1: { // A
-        const parts = (rr.address as string).split('.').map(Number);
+      case 1: {
+        // A
+        const parts = (rr.address as string).split(".").map(Number);
         return Buffer.from(parts);
       }
-      case 28: { // AAAA
-        const addr = (rr.address as string);
+      case 28: {
+        // AAAA
+        const addr = rr.address as string;
         const groups = expandIPv6Full(addr);
         const buf = Buffer.alloc(16);
         for (let i = 0; i < 8; i++) buf.writeUInt16BE(groups[i], i * 2);
         return buf;
       }
-      case 2: { // NS
+      case 2: {
+        // NS
         return encodeNameWire(rr.ns);
       }
-      case 5: { // CNAME
+      case 5: {
+        // CNAME
         return encodeNameWire(rr.domain);
       }
-      case 6: { // SOA
+      case 6: {
+        // SOA
         const mname = encodeNameWire(rr.primary);
         const rname = encodeNameWire(rr.admin);
-        const rest  = Buffer.alloc(20);
-        rest.writeUInt32BE(rr.serial,     0);
-        rest.writeUInt32BE(rr.refresh,    4);
-        rest.writeUInt32BE(rr.retry,      8);
+        const rest = Buffer.alloc(20);
+        rest.writeUInt32BE(rr.serial, 0);
+        rest.writeUInt32BE(rr.refresh, 4);
+        rest.writeUInt32BE(rr.retry, 8);
         rest.writeUInt32BE(rr.expiration, 12);
-        rest.writeUInt32BE(rr.minimum,    16);
+        rest.writeUInt32BE(rr.minimum, 16);
         return Buffer.concat([mname, rname, rest]);
       }
-      case 15: { // MX
+      case 15: {
+        // MX
         const prio = Buffer.alloc(2);
         prio.writeUInt16BE(rr.priority ?? 10, 0);
-        return Buffer.concat([prio, encodeNameWire(rr.exchange ?? rr.value ?? '')]);
+        return Buffer.concat([
+          prio,
+          encodeNameWire(rr.exchange ?? rr.value ?? ""),
+        ]);
       }
-      case 16: { // TXT
-        const str = Buffer.from(rr.data ?? rr.value ?? '');
+      case 16: {
+        // TXT
+        const str = Buffer.from(rr.data ?? rr.value ?? "");
         const len = Buffer.alloc(1);
         len[0] = str.length;
         return Buffer.concat([len, str]);
@@ -809,27 +915,38 @@ function recordToRdata(rr: Record<string, unknown>): Buffer | null {
 }
 
 function expandIPv6Full(addr: string): number[] {
-  if (addr.includes('::')) {
-    const [left, right] = addr.split('::');
-    const l = left  ? left.split(':')  : [];
-    const r = right ? right.split(':') : [];
+  if (addr.includes("::")) {
+    const [left, right] = addr.split("::");
+    const l = left ? left.split(":") : [];
+    const r = right ? right.split(":") : [];
     const missing = 8 - l.length - r.length;
-    const middle = Array(missing).fill('0');
-    return [...l, ...middle, ...r].map(g => parseInt(g || '0', 16));
+    const middle = Array(missing).fill("0");
+    return [...l, ...middle, ...r].map((g) => parseInt(g || "0", 16));
   }
-  return addr.split(':').map(g => parseInt(g, 16));
+  return addr.split(":").map((g) => parseInt(g, 16));
 }
 
 // Type name map for RRSIG typeCovered field
 const TYPE_NAMES: Record<number, string> = {
-  1: 'A', 2: 'NS', 5: 'CNAME', 6: 'SOA', 15: 'MX', 16: 'TXT',
-  28: 'AAAA', 43: 'DS', 46: 'RRSIG', 47: 'NSEC', 48: 'DNSKEY',
-  50: 'NSEC3', 51: 'NSEC3PARAM', 257: 'CAA',
+  1: "A",
+  2: "NS",
+  5: "CNAME",
+  6: "SOA",
+  15: "MX",
+  16: "TXT",
+  28: "AAAA",
+  43: "DS",
+  46: "RRSIG",
+  47: "NSEC",
+  48: "DNSKEY",
+  50: "NSEC3",
+  51: "NSEC3PARAM",
+  257: "CAA",
 };
 
 // Reverse map: string type name → numeric type code (dns-packet uses strings)
 const TYPE_NUMS: Record<string, number> = Object.fromEntries(
-  Object.entries(TYPE_NAMES).map(([n, s]) => [s, Number(n)])
+  Object.entries(TYPE_NAMES).map(([n, s]) => [s, Number(n)]),
 );
 
 // ── DNSSEC response builder (dns-packet based) ────────────────────────────────
@@ -839,9 +956,9 @@ const TYPE_NUMS: Record<string, number> = Object.fromEntries(
  */
 async function buildDnskeyResponse(
   queryBuf: Buffer,
-  zone:     string,
+  zone: string,
 ): Promise<DohQueryResult> {
-  const dnsPacket = (await import('dns-packet')).default;
+  const dnsPacket = (await import("dns-packet")).default;
   const txId = parseTxId(queryBuf);
   const qname = parseQueryName(queryBuf);
 
@@ -849,9 +966,10 @@ async function buildDnskeyResponse(
   const isAuth = await isAuthoritative(qname);
   if (!isAuth) {
     const buf = dnsPacket.encode({
-      type: 'response', id: txId,
+      type: "response",
+      id: txId,
       flags: dnsPacket.AUTHORITATIVE_ANSWER,
-      questions: [{ type: 'DNSKEY', name: qname, class: 'IN' }],
+      questions: [{ type: "DNSKEY", name: qname, class: "IN" }],
       authorities: [buildSoaForDnsPacket(zone)],
     });
     return { buffer: buf, minTtl: TTL_SOA, rcode: 0 };
@@ -873,20 +991,27 @@ async function buildDnskeyResponse(
 
   // Sign DNSKEY RRset with KSK (per RFC 4035 §2.2)
   const rrsig = signRRset(
-    'DNSKEY', RRTYPE_DNSKEY, zone, TTL_NS,
-    dnskeyRdatas, ksk.privateKeyPem, ksk.keyTag, zone,
+    "DNSKEY",
+    RRTYPE_DNSKEY,
+    zone,
+    TTL_NS,
+    dnskeyRdatas,
+    ksk.privateKeyPem,
+    ksk.keyTag,
+    zone,
   );
 
   const answers: Record<string, unknown>[] = [
-    { type: 'DNSKEY', name: zone, ttl: TTL_NS, data: kskData },
-    { type: 'DNSKEY', name: zone, ttl: TTL_NS, data: zskData },
-    { type: 'RRSIG',  name: zone, ttl: TTL_NS, data: rrsig   },
+    { type: "DNSKEY", name: zone, ttl: TTL_NS, data: kskData },
+    { type: "DNSKEY", name: zone, ttl: TTL_NS, data: zskData },
+    { type: "RRSIG", name: zone, ttl: TTL_NS, data: rrsig },
   ];
 
   const buf = dnsPacket.encode({
-    type: 'response', id: txId,
+    type: "response",
+    id: txId,
     flags: dnsPacket.AUTHORITATIVE_ANSWER | dnsPacket.AUTHENTIC_DATA,
-    questions: [{ type: 'DNSKEY', name: zone, class: 'IN' }],
+    questions: [{ type: "DNSKEY", name: zone, class: "IN" }],
     answers,
   });
 
@@ -897,8 +1022,8 @@ async function buildDnskeyResponse(
 function buildDnskeyRdata(flags: number, publicKeyRaw: Buffer): Buffer {
   const buf = Buffer.alloc(4 + publicKeyRaw.length);
   buf.writeUInt16BE(flags, 0);
-  buf.writeUInt8(3, 2);          // protocol = 3 (DNSSEC)
-  buf.writeUInt8(13, 3);         // algorithm = ECDSAP256SHA256
+  buf.writeUInt8(3, 2); // protocol = 3 (DNSSEC)
+  buf.writeUInt8(13, 3); // algorithm = ECDSAP256SHA256
   publicKeyRaw.copy(buf, 4);
   return buf;
 }
@@ -908,18 +1033,19 @@ function buildDnskeyRdata(flags: number, publicKeyRaw: Buffer): Buffer {
  */
 async function buildDSResponse(
   queryBuf: Buffer,
-  zone:     string,
+  zone: string,
 ): Promise<DohQueryResult> {
-  const dnsPacket = (await import('dns-packet')).default;
-  const txId  = parseTxId(queryBuf);
+  const dnsPacket = (await import("dns-packet")).default;
+  const txId = parseTxId(queryBuf);
   const qname = parseQueryName(queryBuf);
   const isAuth = await isAuthoritative(qname);
 
   if (!isAuth) {
     const buf = dnsPacket.encode({
-      type: 'response', id: txId,
+      type: "response",
+      id: txId,
       flags: dnsPacket.AUTHORITATIVE_ANSWER,
-      questions: [{ type: 'DS', name: qname, class: 'IN' }],
+      questions: [{ type: "DS", name: qname, class: "IN" }],
       authorities: [buildSoaForDnsPacket(zone)],
     });
     return { buffer: buf, minTtl: TTL_SOA, rcode: 0 };
@@ -935,17 +1061,24 @@ async function buildDSResponse(
   // Sign DS record with ZSK (DS is a regular zone record, signed by ZSK)
   const dsRdata = buildDSRdata(dsData);
   const rrsig = signRRset(
-    'DS', RRTYPE_DS, zone, TTL_NS,
-    [dsRdata], keys.zsk.privateKeyPem, keys.zsk.keyTag, zone,
+    "DS",
+    RRTYPE_DS,
+    zone,
+    TTL_NS,
+    [dsRdata],
+    keys.zsk.privateKeyPem,
+    keys.zsk.keyTag,
+    zone,
   );
 
   const buf = dnsPacket.encode({
-    type: 'response', id: txId,
+    type: "response",
+    id: txId,
     flags: dnsPacket.AUTHORITATIVE_ANSWER | dnsPacket.AUTHENTIC_DATA,
-    questions: [{ type: 'DS', name: zone, class: 'IN' }],
+    questions: [{ type: "DS", name: zone, class: "IN" }],
     answers: [
-      { type: 'DS',    name: zone, ttl: TTL_NS, data: dsData },
-      { type: 'RRSIG', name: zone, ttl: TTL_NS, data: rrsig  },
+      { type: "DS", name: zone, ttl: TTL_NS, data: dsData },
+      { type: "RRSIG", name: zone, ttl: TTL_NS, data: rrsig },
     ],
   });
 
@@ -953,7 +1086,12 @@ async function buildDSResponse(
 }
 
 /** Build DS RDATA: keyTag(2) + algorithm(1) + digestType(1) + digest(32) */
-function buildDSRdata(ds: { keyTag: number; algorithm: number; digestType: number; digest: Buffer }): Buffer {
+function buildDSRdata(ds: {
+  keyTag: number;
+  algorithm: number;
+  digestType: number;
+  digest: Buffer;
+}): Buffer {
   const buf = Buffer.alloc(4 + ds.digest.length);
   buf.writeUInt16BE(ds.keyTag, 0);
   buf.writeUInt8(ds.algorithm, 2);
@@ -967,37 +1105,49 @@ function buildDSRdata(ds: { keyTag: number; algorithm: number; digestType: numbe
  */
 async function buildNsec3ParamResponse(
   queryBuf: Buffer,
-  zone:     string,
+  zone: string,
 ): Promise<DohQueryResult> {
-  const dnsPacket = (await import('dns-packet')).default;
+  const dnsPacket = (await import("dns-packet")).default;
   const txId = parseTxId(queryBuf);
   const salt = zoneSalt(zone);
 
   const rdata = nsec3ParamRdata(salt, NSEC3_ITERATIONS);
   const keys = await getOrCreateKeys(zone);
 
-  const answers: Record<string, unknown>[] = [{
-    type: 'UNKNOWN_51', name: zone, ttl: TTL_SOA,
-    data: { type: 51, data: rdata },
-  }];
+  const answers: Record<string, unknown>[] = [
+    {
+      type: "UNKNOWN_51",
+      name: zone,
+      ttl: TTL_SOA,
+      data: { type: 51, data: rdata },
+    },
+  ];
 
   // For now return as raw — dns-packet may not support NSEC3PARAM natively
   // So we build the wire format manually
-  const buf = buildRawResponse(txId, zone, 51 /* NSEC3PARAM */, rdata, 0x8400 /* QR+AA */);
+  const buf = buildRawResponse(
+    txId,
+    zone,
+    51 /* NSEC3PARAM */,
+    rdata,
+    0x8400 /* QR+AA */,
+  );
   return { buffer: buf, minTtl: TTL_SOA, rcode: 0 };
 }
 
 /** Minimal SOA record for dns-packet format. */
 function buildSoaForDnsPacket(zone: string): Record<string, unknown> {
   return {
-    type: 'SOA', name: zone, ttl: TTL_SOA,
+    type: "SOA",
+    name: zone,
+    ttl: TTL_SOA,
     data: {
-      mname:   PLATFORM_NS,
-      rname:   `hostmaster.${BASE_DOMAIN}`,
-      serial:  SERIAL,
+      mname: PLATFORM_NS,
+      rname: `hostmaster.${BASE_DOMAIN}`,
+      serial: SERIAL,
       refresh: 10800,
-      retry:   3600,
-      expire:  604800,
+      retry: 3600,
+      expire: 604800,
       minimum: 3600,
     },
   };
@@ -1014,21 +1164,27 @@ function buildServfailResponse(txId: number): DohQueryResult {
 /**
  * Build a minimal raw DNS wire response for record types dns-packet doesn't support natively.
  */
-function buildRawResponse(txId: number, ownerName: string, rrType: number, rdata: Buffer, flags: number): Buffer {
+function buildRawResponse(
+  txId: number,
+  ownerName: string,
+  rrType: number,
+  rdata: Buffer,
+  flags: number,
+): Buffer {
   const ownerWire = encodeNameWire(ownerName);
   const rrHeader = Buffer.alloc(10);
   rrHeader.writeUInt16BE(rrType, 0);
-  rrHeader.writeUInt16BE(1, 2);           // CLASS IN
-  rrHeader.writeUInt32BE(TTL_SOA, 4);     // TTL
+  rrHeader.writeUInt16BE(1, 2); // CLASS IN
+  rrHeader.writeUInt32BE(TTL_SOA, 4); // TTL
   rrHeader.writeUInt16BE(rdata.length, 8);
 
   const dnsHeader = Buffer.alloc(12);
   dnsHeader.writeUInt16BE(txId, 0);
   dnsHeader.writeUInt16BE(flags, 2);
-  dnsHeader.writeUInt16BE(0, 4);   // QDCOUNT=0
-  dnsHeader.writeUInt16BE(1, 6);   // ANCOUNT=1
-  dnsHeader.writeUInt16BE(0, 8);   // NSCOUNT=0
-  dnsHeader.writeUInt16BE(0, 10);  // ARCOUNT=0
+  dnsHeader.writeUInt16BE(0, 4); // QDCOUNT=0
+  dnsHeader.writeUInt16BE(1, 6); // ANCOUNT=1
+  dnsHeader.writeUInt16BE(0, 8); // NSCOUNT=0
+  dnsHeader.writeUInt16BE(0, 10); // ARCOUNT=0
 
   return Buffer.concat([dnsHeader, ownerWire, rrHeader, rdata]);
 }
@@ -1039,10 +1195,10 @@ function buildRawResponse(txId: number, ownerName: string, rrType: number, rdata
  */
 async function addDNSSECSignatures(
   wireResponse: Buffer,
-  zone:         string,
-  qname:        string,
+  zone: string,
+  qname: string,
 ): Promise<Buffer> {
-  const dnsPacket = await import('dns-packet');
+  const dnsPacket = await import("dns-packet");
   let parsed: Record<string, unknown>;
   try {
     parsed = dnsPacket.decode(wireResponse);
@@ -1059,23 +1215,25 @@ async function addDNSSECSignatures(
   // Group answers by numeric type code
   // dns-packet returns rr.type as a string (e.g. 'A', 'MX') not a number
   const byType = new Map<number, any[]>();
-  for (const rr of (parsed.answers ?? [])) {
+  for (const rr of parsed.answers ?? []) {
     const raw = rr.type;
-    const rrTypeNum = typeof raw === 'number'
-      ? raw
-      : (TYPE_NUMS[String(raw).toUpperCase()] ?? parseInt(raw, 10));
+    const rrTypeNum =
+      typeof raw === "number"
+        ? raw
+        : (TYPE_NUMS[String(raw).toUpperCase()] ?? parseInt(raw, 10));
     if (!isFinite(rrTypeNum) || rrTypeNum <= 0) continue;
     if (!byType.has(rrTypeNum)) byType.set(rrTypeNum, []);
     byType.get(rrTypeNum)!.push(rr);
   }
 
   for (const [rrTypeNum, rrs] of byType) {
-
-    const rdatas = rrs.map((rr: Record<string, unknown>) => {
-      // dns-packet decoded records have a 'data' field
-      // We need to convert back to rdata buffer for signing
-      return rrdataFromDnsPacket(rrTypeNum, rr.data ?? rr);
-    }).filter((r: Buffer | null) => r !== null) as Buffer[];
+    const rdatas = rrs
+      .map((rr: Record<string, unknown>) => {
+        // dns-packet decoded records have a 'data' field
+        // We need to convert back to rdata buffer for signing
+        return rrdataFromDnsPacket(rrTypeNum, rr.data ?? rr);
+      })
+      .filter((r: Buffer | null) => r !== null) as Buffer[];
 
     if (rdatas.length === 0) continue;
 
@@ -1085,12 +1243,21 @@ async function addDNSSECSignatures(
 
     try {
       const rrsig = signRRset(
-        typeName, rrTypeNum, ownerName, ttl,
-        rdatas, zsk.privateKeyPem, zsk.keyTag, zone,
+        typeName,
+        rrTypeNum,
+        ownerName,
+        ttl,
+        rdatas,
+        zsk.privateKeyPem,
+        zsk.keyTag,
+        zone,
       );
-      rrsigs.push({ type: 'RRSIG', name: ownerName, ttl, data: rrsig });
+      rrsigs.push({ type: "RRSIG", name: ownerName, ttl, data: rrsig });
     } catch (err) {
-      logger.warn({ err: err.message, typeName }, '[DNSSEC] Failed to sign RRset');
+      logger.warn(
+        { err: err.message, typeName },
+        "[DNSSEC] Failed to sign RRset",
+      );
     }
   }
 
@@ -1110,43 +1277,56 @@ async function addDNSSECSignatures(
 }
 
 /** Convert a dns-packet decoded record's data to RDATA buffer for signing. */
-function rrdataFromDnsPacket(rrType: number, data: Record<string, unknown>): Buffer | null {
+function rrdataFromDnsPacket(
+  rrType: number,
+  data: Record<string, unknown>,
+): Buffer | null {
   try {
     switch (rrType) {
-      case 1: { // A
-        const addr = typeof data === 'string' ? data : data.address;
-        return Buffer.from(addr.split('.').map(Number));
+      case 1: {
+        // A
+        const addr = typeof data === "string" ? data : data.address;
+        return Buffer.from(addr.split(".").map(Number));
       }
-      case 28: { // AAAA
-        const addr = typeof data === 'string' ? data : data.address;
+      case 28: {
+        // AAAA
+        const addr = typeof data === "string" ? data : data.address;
         const groups = expandIPv6Full(addr);
         const buf = Buffer.alloc(16);
         for (let i = 0; i < 8; i++) buf.writeUInt16BE(groups[i], i * 2);
         return buf;
       }
-      case 2: case 5: { // NS, CNAME
-        const name = typeof data === 'string' ? data : (data.ns ?? data.value ?? '');
+      case 2:
+      case 5: {
+        // NS, CNAME
+        const name =
+          typeof data === "string" ? data : (data.ns ?? data.value ?? "");
         return encodeNameWire(name);
       }
-      case 6: { // SOA
-        const mname = encodeNameWire(data.mname ?? data.primary ?? '');
-        const rname = encodeNameWire(data.rname ?? data.admin ?? '');
-        const rest  = Buffer.alloc(20);
-        rest.writeUInt32BE(data.serial ?? 0,     0);
-        rest.writeUInt32BE(data.refresh ?? 0,    4);
-        rest.writeUInt32BE(data.retry ?? 0,      8);
-        rest.writeUInt32BE(data.expire ?? 0,    12);
-        rest.writeUInt32BE(data.minimum ?? 0,   16);
+      case 6: {
+        // SOA
+        const mname = encodeNameWire(data.mname ?? data.primary ?? "");
+        const rname = encodeNameWire(data.rname ?? data.admin ?? "");
+        const rest = Buffer.alloc(20);
+        rest.writeUInt32BE(data.serial ?? 0, 0);
+        rest.writeUInt32BE(data.refresh ?? 0, 4);
+        rest.writeUInt32BE(data.retry ?? 0, 8);
+        rest.writeUInt32BE(data.expire ?? 0, 12);
+        rest.writeUInt32BE(data.minimum ?? 0, 16);
         return Buffer.concat([mname, rname, rest]);
       }
-      case 15: { // MX
+      case 15: {
+        // MX
         const prio = Buffer.alloc(2);
         prio.writeUInt16BE(data.preference ?? data.priority ?? 10, 0);
-        const xchg = encodeNameWire(data.exchange ?? data.value ?? '');
+        const xchg = encodeNameWire(data.exchange ?? data.value ?? "");
         return Buffer.concat([prio, xchg]);
       }
-      case 16: { // TXT
-        const str = Buffer.from(typeof data === 'string' ? data : (data.data ?? data.value ?? ''));
+      case 16: {
+        // TXT
+        const str = Buffer.from(
+          typeof data === "string" ? data : (data.data ?? data.value ?? ""),
+        );
         const len = Buffer.alloc(1);
         len[0] = Math.min(str.length, 255);
         return Buffer.concat([len, str.slice(0, 255)]);
@@ -1179,7 +1359,10 @@ function rrdataFromDnsPacket(rrType: number, data: Record<string, unknown>): Buf
  *   POST https://max-booster.com/api/dns/query
  *   Content-Type: application/dns-message
  */
-export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise<DohQueryResult> {
+export async function processQuery(
+  queryBuffer: Buffer,
+  srcIp?: string,
+): Promise<DohQueryResult> {
   let request: Record<string, unknown>;
   try {
     request = Packet.parse(queryBuffer);
@@ -1193,20 +1376,20 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
 
   // Attach raw buffer + source IP to request for GeoDNS use in handleRequest
   (request as Record<string, unknown>)._rawBuffer = queryBuffer;
-  (request as Record<string, unknown>)._srcIp    = srcIp;
+  (request as Record<string, unknown>)._srcIp = srcIp;
 
   // ── DNSSEC special query types (served directly, bypass dns2) ──────────────
   if (DNSSEC_ENABLED) {
-    const qtype  = parseQueryType(queryBuffer);
-    const qname  = parseQueryName(queryBuffer);
+    const qtype = parseQueryType(queryBuffer);
+    const qname = parseQueryName(queryBuffer);
     const isBase = qname === BASE_DOMAIN || qname.endsWith(`.${BASE_DOMAIN}`);
-    const zone   = isBase ? BASE_DOMAIN : qname.split('.').slice(-2).join('.');
+    const zone = isBase ? BASE_DOMAIN : qname.split(".").slice(-2).join(".");
 
     if (qtype === 48 /* DNSKEY */) {
       try {
         return await buildDnskeyResponse(queryBuffer, zone);
       } catch (err) {
-        logger.warn({ err: err.message }, '[DNSSEC] DNSKEY response failed');
+        logger.warn({ err: err.message }, "[DNSSEC] DNSKEY response failed");
         return buildServfailResponse(parseTxId(queryBuffer));
       }
     }
@@ -1215,7 +1398,7 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
       try {
         return await buildDSResponse(queryBuffer, zone);
       } catch (err) {
-        logger.warn({ err: err.message }, '[DNSSEC] DS response failed');
+        logger.warn({ err: err.message }, "[DNSSEC] DS response failed");
         return buildServfailResponse(parseTxId(queryBuffer));
       }
     }
@@ -1224,7 +1407,10 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
       try {
         return await buildNsec3ParamResponse(queryBuffer, zone);
       } catch (err) {
-        logger.warn({ err: err.message }, '[DNSSEC] NSEC3PARAM response failed');
+        logger.warn(
+          { err: err.message },
+          "[DNSSEC] NSEC3PARAM response failed",
+        );
         return buildServfailResponse(parseTxId(queryBuffer));
       }
     }
@@ -1235,7 +1421,7 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
 
   return new Promise<DohQueryResult>((resolve, reject) => {
     const timeout = setTimeout(
-      () => reject(new Error('DNS query timed out after 15 s')),
+      () => reject(new Error("DNS query timed out after 15 s")),
       15_000,
     );
 
@@ -1244,15 +1430,15 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
       try {
         // Serialize dns2 response to wire format
         let buffer: Buffer;
-        if (typeof response.toBuffer === 'function') {
+        if (typeof response.toBuffer === "function") {
           buffer = Buffer.from(response.toBuffer());
         } else {
           const wrapper = Packet.createResponseFromRequest(request);
-          wrapper.header.rcode   = response.header?.rcode ?? 0;
-          wrapper.header.aa      = response.header?.aa ?? 0;
-          wrapper.answers        = response.answers    || [];
-          wrapper.authorities    = response.authorities || [];
-          wrapper.additionals    = response.additionals || [];
+          wrapper.header.rcode = response.header?.rcode ?? 0;
+          wrapper.header.aa = response.header?.aa ?? 0;
+          wrapper.answers = response.answers || [];
+          wrapper.authorities = response.authorities || [];
+          wrapper.additionals = response.additionals || [];
           buffer = Buffer.from(wrapper.toBuffer());
           response = wrapper;
         }
@@ -1260,22 +1446,30 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
         // ── Add DNSSEC RRSIG records when DO bit is set ───────────────────
         if (dobit) {
           try {
-            const qname  = parseQueryName(queryBuffer);
-            const isBase = qname === BASE_DOMAIN || qname.endsWith(`.${BASE_DOMAIN}`);
-            const zone   = isBase ? BASE_DOMAIN : qname.split('.').slice(-2).join('.');
+            const qname = parseQueryName(queryBuffer);
+            const isBase =
+              qname === BASE_DOMAIN || qname.endsWith(`.${BASE_DOMAIN}`);
+            const zone = isBase
+              ? BASE_DOMAIN
+              : qname.split(".").slice(-2).join(".");
             buffer = await addDNSSECSignatures(buffer, zone, qname);
           } catch (err) {
-            logger.warn({ err: err.message }, '[DNSSEC] Signature addition failed (continuing without RRSIG)');
+            logger.warn(
+              { err: err.message },
+              "[DNSSEC] Signature addition failed (continuing without RRSIG)",
+            );
           }
         }
 
         // ── Compute Cache-Control TTL (RFC 8484 §5.1) ────────────────────
         const allRRs: Record<string, unknown>[] = [
-          ...(response.answers     || []),
+          ...(response.answers || []),
           ...(response.authorities || []),
         ];
         const positiveTtls = allRRs
-          .map((rr: Record<string, unknown>) => (typeof rr.ttl === 'number' ? rr.ttl : 0))
+          .map((rr: Record<string, unknown>) =>
+            typeof rr.ttl === "number" ? rr.ttl : 0,
+          )
           .filter((t: number) => t > 0);
         const minTtl = positiveTtls.length > 0 ? Math.min(...positiveTtls) : 0;
 

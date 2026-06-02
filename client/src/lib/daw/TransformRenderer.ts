@@ -1,5 +1,5 @@
-import { peakCacheEngine, PeakData } from './PeakCacheEngine';
-import { nonDestructiveRenderer } from './NonDestructiveRenderer';
+import { peakCacheEngine, PeakData } from "./PeakCacheEngine";
+import { nonDestructiveRenderer } from "./NonDestructiveRenderer";
 
 export interface ProcessingChain {
   id: string;
@@ -10,7 +10,16 @@ export interface ProcessingChain {
 export interface ProcessingPlugin {
   id: string;
   name: string;
-  type: 'eq' | 'compressor' | 'limiter' | 'reverb' | 'delay' | 'saturation' | 'gate' | 'chorus' | 'custom';
+  type:
+    | "eq"
+    | "compressor"
+    | "limiter"
+    | "reverb"
+    | "delay"
+    | "saturation"
+    | "gate"
+    | "chorus"
+    | "custom";
   enabled: boolean;
   parameters: Record<string, number>;
 }
@@ -27,7 +36,12 @@ export interface TransformState {
   isDirty: boolean;
 }
 
-export type TransformEventType = 'render-start' | 'render-progress' | 'render-complete' | 'render-error' | 'chain-changed';
+export type TransformEventType =
+  | "render-start"
+  | "render-progress"
+  | "render-complete"
+  | "render-error"
+  | "chain-changed";
 
 export interface TransformEvent {
   type: TransformEventType;
@@ -66,18 +80,22 @@ export class TransformRenderer {
     state.chain = chain;
     state.isDirty = true;
 
-    this.emit({ type: 'chain-changed', sourceId });
+    this.emit({ type: "chain-changed", sourceId });
   }
 
-  updatePlugin(sourceId: string, pluginId: string, params: Record<string, number>): void {
+  updatePlugin(
+    sourceId: string,
+    pluginId: string,
+    params: Record<string, number>,
+  ): void {
     const state = this.transforms.get(sourceId);
     if (!state) return;
 
-    const plugin = state.chain.plugins.find(p => p.id === pluginId);
+    const plugin = state.chain.plugins.find((p) => p.id === pluginId);
     if (plugin) {
       plugin.parameters = { ...plugin.parameters, ...params };
       state.isDirty = true;
-      this.emit({ type: 'chain-changed', sourceId });
+      this.emit({ type: "chain-changed", sourceId });
     }
   }
 
@@ -85,17 +103,17 @@ export class TransformRenderer {
     const state = this.transforms.get(sourceId);
     if (!state) return;
 
-    const plugin = state.chain.plugins.find(p => p.id === pluginId);
+    const plugin = state.chain.plugins.find((p) => p.id === pluginId);
     if (plugin) {
       plugin.enabled = enabled;
       state.isDirty = true;
-      this.emit({ type: 'chain-changed', sourceId });
+      this.emit({ type: "chain-changed", sourceId });
     }
   }
 
   async renderTransform(
     sourceId: string,
-    audioContext?: AudioContext
+    audioContext?: AudioContext,
   ): Promise<Float32Array | null> {
     const state = this.transforms.get(sourceId);
     if (!state) return null;
@@ -104,7 +122,7 @@ export class TransformRenderer {
 
     state.isRendering = true;
     state.renderProgress = 0;
-    this.emit({ type: 'render-start', sourceId });
+    this.emit({ type: "render-start", sourceId });
 
     try {
       const originalData = this.getSourceData(sourceId);
@@ -118,8 +136,8 @@ export class TransformRenderer {
         audioContext,
         (progress) => {
           state.renderProgress = progress;
-          this.emit({ type: 'render-progress', sourceId, data: { progress } });
-        }
+          this.emit({ type: "render-progress", sourceId, data: { progress } });
+        },
       );
 
       state.renderedData = processedData;
@@ -134,11 +152,11 @@ export class TransformRenderer {
         state.sourceId,
         processedData,
         sampleRate,
-        1
+        1,
       );
 
       this.emit({
-        type: 'render-complete',
+        type: "render-complete",
         sourceId,
         data: {
           renderedSourceId: state.sourceId,
@@ -151,7 +169,7 @@ export class TransformRenderer {
     } catch (error) {
       state.isRendering = false;
       state.renderProgress = 0;
-      this.emit({ type: 'render-error', sourceId, data: { error } });
+      this.emit({ type: "render-error", sourceId, data: { error } });
       return null;
     }
   }
@@ -160,13 +178,13 @@ export class TransformRenderer {
     inputData: Float32Array,
     chain: ProcessingChain,
     audioContext?: AudioContext,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
   ): Promise<Float32Array> {
     if (chain.bypass || chain.plugins.length === 0) {
       return new Float32Array(inputData);
     }
 
-    const activePlugins = chain.plugins.filter(p => p.enabled);
+    const activePlugins = chain.plugins.filter((p) => p.enabled);
     if (activePlugins.length === 0) {
       return new Float32Array(inputData);
     }
@@ -181,28 +199,31 @@ export class TransformRenderer {
         onProgress((i + 1) / activePlugins.length);
       }
 
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
     return currentData;
   }
 
-  private applyPlugin(data: Float32Array, plugin: ProcessingPlugin): Float32Array {
+  private applyPlugin(
+    data: Float32Array,
+    plugin: ProcessingPlugin,
+  ): Float32Array {
     const output = new Float32Array(data.length);
 
     switch (plugin.type) {
-      case 'compressor':
+      case "compressor":
         return this.applyCompressor(data, output, plugin.parameters);
-      case 'limiter':
+      case "limiter":
         return this.applyLimiter(data, output, plugin.parameters);
-      case 'eq':
+      case "eq":
         return this.applyEQ(data, output, plugin.parameters);
-      case 'saturation':
+      case "saturation":
         return this.applySaturation(data, output, plugin.parameters);
-      case 'gate':
+      case "gate":
         return this.applyGate(data, output, plugin.parameters);
       default:
-        data.forEach((v, i) => output[i] = v);
+        data.forEach((v, i) => (output[i] = v));
         return output;
     }
   }
@@ -210,7 +231,7 @@ export class TransformRenderer {
   private applyCompressor(
     input: Float32Array,
     output: Float32Array,
-    params: Record<string, number>
+    params: Record<string, number>,
   ): Float32Array {
     const threshold = params.threshold ?? -20;
     const ratio = params.ratio ?? 4;
@@ -250,7 +271,7 @@ export class TransformRenderer {
   private applyLimiter(
     input: Float32Array,
     output: Float32Array,
-    params: Record<string, number>
+    params: Record<string, number>,
   ): Float32Array {
     const ceiling = params.ceiling ?? -0.3;
     const ceilingLinear = Math.pow(10, ceiling / 20);
@@ -269,7 +290,7 @@ export class TransformRenderer {
   private applyEQ(
     input: Float32Array,
     output: Float32Array,
-    params: Record<string, number>
+    params: Record<string, number>,
   ): Float32Array {
     const lowGain = Math.pow(10, (params.lowGain ?? 0) / 20);
     const midGain = Math.pow(10, (params.midGain ?? 0) / 20);
@@ -285,7 +306,7 @@ export class TransformRenderer {
   private applySaturation(
     input: Float32Array,
     output: Float32Array,
-    params: Record<string, number>
+    params: Record<string, number>,
   ): Float32Array {
     const drive = params.drive ?? 1;
     const mix = params.mix ?? 0.5;
@@ -301,14 +322,14 @@ export class TransformRenderer {
   private applyGate(
     input: Float32Array,
     output: Float32Array,
-    params: Record<string, number>
+    params: Record<string, number>,
   ): Float32Array {
     const threshold = params.threshold ?? -40;
     const thresholdLinear = Math.pow(10, threshold / 20);
     const attackMs = params.attack ?? 0.5;
     const releaseMs = params.release ?? 50;
-    const attackCoeff = Math.exp(-1 / (attackMs / 1000 * 44100));
-    const releaseCoeff = Math.exp(-1 / (releaseMs / 1000 * 44100));
+    const attackCoeff = Math.exp(-1 / ((attackMs / 1000) * 44100));
+    const releaseCoeff = Math.exp(-1 / ((releaseMs / 1000) * 44100));
 
     let gateGain = 0;
 
@@ -331,7 +352,12 @@ export class TransformRenderer {
     const cacheStats = peakCacheEngine.getCacheStats();
     if (cacheStats.entries === 0) return null;
 
-    const peakResult = peakCacheEngine.getPeaksForView(sourceId, 0, 44100 * 300, 44100 * 300);
+    const peakResult = peakCacheEngine.getPeaksForView(
+      sourceId,
+      0,
+      44100 * 300,
+      44100 * 300,
+    );
     if (!peakResult) return null;
 
     const data = new Float32Array(peakResult.peaks.length);
@@ -381,7 +407,7 @@ export class TransformRenderer {
   addEventListener(listener: TransformListener): () => void {
     this.listeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
+      this.listeners = this.listeners.filter((l) => l !== listener);
     };
   }
 

@@ -9,8 +9,12 @@
  * into the socialBulk POST /schedule endpoint or the autopilot publisher.
  */
 
-import { logger } from '../../logger.js';
-import { PLATFORM_SPECS, type SupportedPlatform, type ContentSlot } from './platformFormatters.js';
+import { logger } from "../../logger.js";
+import {
+  PLATFORM_SPECS,
+  type SupportedPlatform,
+  type ContentSlot,
+} from "./platformFormatters.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,7 +25,7 @@ export interface ScheduleManifestEntry {
   utcHour: number;
   dayOfWeek: string;
   timezone: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   rationale: string;
   retryWindow: { retryAfterMinutes: number; maxRetries: number };
 }
@@ -38,7 +42,7 @@ export interface ScheduleManifest {
 
 export interface SchedulingOptions {
   platforms: SupportedPlatform[];
-  campaignGoal: 'awareness' | 'engagement' | 'conversion' | 'growth';
+  campaignGoal: "awareness" | "engagement" | "conversion" | "growth";
   startDate?: Date;
   durationDays?: number;
   postsPerPlatformPerWeek?: number;
@@ -48,7 +52,15 @@ export interface SchedulingOptions {
 
 // ─── Day-of-week helpers ──────────────────────────────────────────────────────
 
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 function nextOccurrenceOf(dayName: string, from: Date): Date {
   const target = DAY_NAMES.indexOf(dayName);
@@ -80,7 +92,7 @@ interface OptimalWindow {
  */
 function getOptimalWindows(
   platform: SupportedPlatform,
-  goal: SchedulingOptions['campaignGoal'],
+  goal: SchedulingOptions["campaignGoal"],
 ): OptimalWindow[] {
   const spec = PLATFORM_SPECS[platform];
   const windows: OptimalWindow[] = [];
@@ -90,16 +102,17 @@ function getOptimalWindows(
       let multiplier = 1.0;
 
       // Goal-specific scoring adjustments
-      if (goal === 'engagement') {
+      if (goal === "engagement") {
         // Evening hours have higher engagement for entertainment content
         if (hour >= 18 && hour <= 22) multiplier += 0.3;
-      } else if (goal === 'awareness') {
+      } else if (goal === "awareness") {
         // Morning commute hours for discovery
         if (hour >= 7 && hour <= 10) multiplier += 0.2;
-      } else if (goal === 'conversion') {
+      } else if (goal === "conversion") {
         // Lunch and end-of-workday peak purchase intent
-        if ((hour >= 11 && hour <= 13) || (hour >= 17 && hour <= 19)) multiplier += 0.25;
-      } else if (goal === 'growth') {
+        if ((hour >= 11 && hour <= 13) || (hour >= 17 && hour <= 19))
+          multiplier += 0.25;
+      } else if (goal === "growth") {
         // Peak algorithm hours — highest content velocity
         if (hour >= 9 && hour <= 12) multiplier += 0.15;
         if (hour >= 19 && hour <= 21) multiplier += 0.2;
@@ -110,7 +123,9 @@ function getOptimalWindows(
   }
 
   // Sort by engagement multiplier descending
-  return windows.sort((a, b) => b.engagementMultiplier - a.engagementMultiplier);
+  return windows.sort(
+    (a, b) => b.engagementMultiplier - a.engagementMultiplier,
+  );
 }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
@@ -127,7 +142,7 @@ export function buildScheduleManifest(
     startDate = new Date(),
     durationDays = 14,
     postsPerPlatformPerWeek = 3,
-    timezone = 'UTC',
+    timezone = "UTC",
     priorityPlatforms = [],
   } = options;
 
@@ -182,10 +197,14 @@ export function buildScheduleManifest(
           utcHour: win.utcHour,
           dayOfWeek: win.day,
           timezone,
-          priority: isPriority ? 'high' : win.engagementMultiplier >= 1.2 ? 'high' : 'medium',
+          priority: isPriority
+            ? "high"
+            : win.engagementMultiplier >= 1.2
+              ? "high"
+              : "medium",
           rationale: `Peak ${campaignGoal} window for ${platform} — ${win.day} at ${win.utcHour}:00 UTC (${(win.engagementMultiplier * 100).toFixed(0)}% engagement multiplier)`,
           retryWindow: {
-            retryAfterMinutes: platform === 'tiktok' ? 30 : 60,
+            retryAfterMinutes: platform === "tiktok" ? 30 : 60,
             maxRetries: 3,
           },
         });
@@ -200,7 +219,9 @@ export function buildScheduleManifest(
   // Sort by scheduledAt ascending
   entries.sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
-  logger.info(`[SchedulingMetadataBuilder] Built ${entries.length} schedule entries for ${byPlatform.size} platforms`);
+  logger.info(
+    `[SchedulingMetadataBuilder] Built ${entries.length} schedule entries for ${byPlatform.size} platforms`,
+  );
 
   return {
     generatedAt: new Date(),
@@ -222,8 +243,8 @@ export function manifestToBulkSchedulePayload(
   contentMap: Map<string, { content: string; platform: SupportedPlatform }>,
 ): Array<{ platform: string; content: string; scheduledAt: string }> {
   return manifest.entries
-    .filter(entry => contentMap.has(`${entry.platform}:${entry.slot}`))
-    .map(entry => {
+    .filter((entry) => contentMap.has(`${entry.platform}:${entry.slot}`))
+    .map((entry) => {
       const key = `${entry.platform}:${entry.slot}`;
       const item = contentMap.get(key)!;
       return {

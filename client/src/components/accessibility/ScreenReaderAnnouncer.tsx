@@ -1,7 +1,18 @@
-import React, { createContext, useContext, useEffect, useRef, useCallback, type ReactNode } from 'react';
-import { announcePolite, announceAssertive, ScreenReaderAnnouncer as SRAnnouncer } from '@/lib/a11y/screenReader';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useCallback,
+  type ReactNode,
+} from "react";
+import {
+  announcePolite,
+  announceAssertive,
+  ScreenReaderAnnouncer as SRAnnouncer,
+} from "@/lib/a11y/screenReader";
 
-export type AnnouncementPriority = 'polite' | 'assertive';
+export type AnnouncementPriority = "polite" | "assertive";
 
 export interface ScreenReaderAnnouncerContextValue {
   announce: (message: string, priority?: AnnouncementPriority) => void;
@@ -10,15 +21,17 @@ export interface ScreenReaderAnnouncerContextValue {
   clear: () => void;
 }
 
-const ScreenReaderAnnouncerContext = createContext<ScreenReaderAnnouncerContextValue | undefined>(
-  undefined
-);
+const ScreenReaderAnnouncerContext = createContext<
+  ScreenReaderAnnouncerContextValue | undefined
+>(undefined);
 
 export interface ScreenReaderAnnouncerProviderProps {
   children: ReactNode;
 }
 
-export function ScreenReaderAnnouncerProvider({ children }: ScreenReaderAnnouncerProviderProps) {
+export function ScreenReaderAnnouncerProvider({
+  children,
+}: ScreenReaderAnnouncerProviderProps) {
   useEffect(() => {
     const announcer = SRAnnouncer.getInstance();
     return () => {
@@ -26,15 +39,18 @@ export function ScreenReaderAnnouncerProvider({ children }: ScreenReaderAnnounce
     };
   }, []);
 
-  const announce = useCallback((message: string, priority: AnnouncementPriority = 'polite') => {
-    if (!message.trim()) return;
+  const announce = useCallback(
+    (message: string, priority: AnnouncementPriority = "polite") => {
+      if (!message.trim()) return;
 
-    if (priority === 'assertive') {
-      announceAssertive(message);
-    } else {
-      announcePolite(message);
-    }
-  }, []);
+      if (priority === "assertive") {
+        announceAssertive(message);
+      } else {
+        announcePolite(message);
+      }
+    },
+    [],
+  );
 
   const announcePoliteWrapper = useCallback((message: string) => {
     announcePolite(message);
@@ -67,7 +83,7 @@ export function useScreenReaderAnnouncerContext(): ScreenReaderAnnouncerContextV
   const context = useContext(ScreenReaderAnnouncerContext);
   if (context === undefined) {
     throw new Error(
-      'useScreenReaderAnnouncerContext must be used within a ScreenReaderAnnouncerProvider'
+      "useScreenReaderAnnouncerContext must be used within a ScreenReaderAnnouncerProvider",
     );
   }
   return context;
@@ -81,14 +97,14 @@ export interface ScreenReaderAnnouncerProps {
 
 export function ScreenReaderAnnouncer({
   message,
-  priority = 'polite',
+  priority = "polite",
   clearOnUnmount = false,
 }: ScreenReaderAnnouncerProps) {
-  const previousMessageRef = useRef<string>('');
+  const previousMessageRef = useRef<string>("");
 
   useEffect(() => {
     if (message && message !== previousMessageRef.current) {
-      if (priority === 'assertive') {
+      if (priority === "assertive") {
         announceAssertive(message);
       } else {
         announcePolite(message);
@@ -113,16 +129,16 @@ export interface LiveRegionProps {
   children?: ReactNode;
   priority?: AnnouncementPriority;
   atomic?: boolean;
-  relevant?: 'additions' | 'removals' | 'text' | 'all';
-  role?: 'status' | 'alert' | 'log';
+  relevant?: "additions" | "removals" | "text" | "all";
+  role?: "status" | "alert" | "log";
 }
 
 export function LiveRegion({
   children,
-  priority = 'polite',
+  priority = "polite",
   atomic = true,
-  relevant = 'additions',
-  role = 'status',
+  relevant = "additions",
+  role = "status",
 }: LiveRegionProps) {
   return (
     <div
@@ -142,7 +158,10 @@ export interface RouteAnnouncerProps {
   prefix?: string;
 }
 
-export function RouteAnnouncer({ pageName, prefix = 'Navigated to' }: RouteAnnouncerProps) {
+export function RouteAnnouncer({
+  pageName,
+  prefix = "Navigated to",
+}: RouteAnnouncerProps) {
   useEffect(() => {
     const message = `${prefix} ${pageName}`;
     announcePolite(message);
@@ -159,8 +178,8 @@ export interface LoadingAnnouncerProps {
 
 export function LoadingAnnouncer({
   isLoading,
-  loadingMessage = 'Loading, please wait',
-  completeMessage = 'Loading complete',
+  loadingMessage = "Loading, please wait",
+  completeMessage = "Loading complete",
 }: LoadingAnnouncerProps) {
   const wasLoadingRef = useRef(false);
 

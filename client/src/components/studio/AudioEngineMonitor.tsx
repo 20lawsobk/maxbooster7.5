@@ -1,19 +1,19 @@
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useAudioContext } from '@/hooks/useAudioContext';
-import { Activity, Cpu, Clock, Zap, AlertCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useAudioContext } from "@/hooks/useAudioContext";
+import { Activity, Cpu, Clock, Zap, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface AudioEngineMonitorProps {
   latencyMs?: number;
@@ -47,16 +47,16 @@ export function AudioEngineMonitor({
   }, [context, bufferSize, sampleRate]);
 
   const getLatencyStatus = (latency: number) => {
-    if (latency < 10) return { color: 'text-green-500', label: 'Excellent' };
-    if (latency < 20) return { color: 'text-blue-500', label: 'Good' };
-    if (latency < 40) return { color: 'text-yellow-500', label: 'Acceptable' };
-    return { color: 'text-red-500', label: 'High' };
+    if (latency < 10) return { color: "text-green-500", label: "Excellent" };
+    if (latency < 20) return { color: "text-blue-500", label: "Good" };
+    if (latency < 40) return { color: "text-yellow-500", label: "Acceptable" };
+    return { color: "text-red-500", label: "High" };
   };
 
   const getCPUStatus = (cpu: number) => {
-    if (cpu < 50) return { color: 'text-green-500', label: 'Good' };
-    if (cpu < 75) return { color: 'text-yellow-500', label: 'Moderate' };
-    return { color: 'text-red-500', label: 'High' };
+    if (cpu < 50) return { color: "text-green-500", label: "Good" };
+    if (cpu < 75) return { color: "text-yellow-500", label: "Moderate" };
+    return { color: "text-red-500", label: "High" };
   };
 
   const latencyStatus = getLatencyStatus(latencyMs || calculatedLatency);
@@ -95,8 +95,11 @@ export function AudioEngineMonitor({
           <Activity className="h-4 w-4 text-indigo-500" />
           <h3 className="text-sm font-semibold">Audio Engine</h3>
         </div>
-        <Badge variant={context ? 'default' : 'destructive'} className="text-xs">
-          {context ? 'Active' : 'Inactive'}
+        <Badge
+          variant={context ? "default" : "destructive"}
+          className="text-xs"
+        >
+          {context ? "Active" : "Inactive"}
         </Badge>
       </div>
 
@@ -106,7 +109,10 @@ export function AudioEngineMonitor({
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <Label className="text-xs text-gray-400">Latency</Label>
-            <Badge variant="outline" className={`text-xs ${latencyStatus.color}`}>
+            <Badge
+              variant="outline"
+              className={`text-xs ${latencyStatus.color}`}
+            >
               {latencyStatus.label}
             </Badge>
           </div>
@@ -133,7 +139,9 @@ export function AudioEngineMonitor({
           </div>
           <div className="flex items-center gap-2">
             <Cpu className="h-4 w-4 text-gray-500" />
-            <span className={`text-2xl font-mono ${cpuStatus.color}`}>{cpuUsage.toFixed(0)}</span>
+            <span className={`text-2xl font-mono ${cpuStatus.color}`}>
+              {cpuUsage.toFixed(0)}
+            </span>
             <span className="text-xs text-gray-500">%</span>
           </div>
           <Progress value={cpuUsage} className="h-1" />
@@ -147,24 +155,36 @@ export function AudioEngineMonitor({
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex justify-between">
               <span className="text-gray-500">State:</span>
-              <span className={context.state === 'running' ? 'text-green-500' : 'text-yellow-500'}>
+              <span
+                className={
+                  context.state === "running"
+                    ? "text-green-500"
+                    : "text-yellow-500"
+                }
+              >
                 {context.state}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Sample Rate:</span>
-              <span className="font-mono">{(sampleRate / 1000).toFixed(1)} kHz</span>
+              <span className="font-mono">
+                {(sampleRate / 1000).toFixed(1)} kHz
+              </span>
             </div>
             {context.baseLatency !== undefined && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Base Latency:</span>
-                <span className="font-mono">{(context.baseLatency * 1000).toFixed(1)} ms</span>
+                <span className="font-mono">
+                  {(context.baseLatency * 1000).toFixed(1)} ms
+                </span>
               </div>
             )}
             {context.outputLatency !== undefined && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Output Latency:</span>
-                <span className="font-mono">{(context.outputLatency * 1000).toFixed(1)} ms</span>
+                <span className="font-mono">
+                  {(context.outputLatency * 1000).toFixed(1)} ms
+                </span>
               </div>
             )}
           </div>
@@ -192,10 +212,10 @@ export function AudioEngineMonitor({
               const latency = (size / sampleRate) * 1000;
               const recommendation =
                 size <= 128
-                  ? '(Low latency, high CPU)'
+                  ? "(Low latency, high CPU)"
                   : size <= 512
-                    ? '(Balanced)'
-                    : '(High latency, low CPU)';
+                    ? "(Balanced)"
+                    : "(High latency, low CPU)";
 
               return (
                 <SelectItem key={size} value={size.toString()}>
@@ -214,8 +234,8 @@ export function AudioEngineMonitor({
         <div className="text-xs text-gray-500 flex items-start gap-2">
           <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
           <div>
-            Smaller buffer = lower latency but higher CPU usage. Use 64-256 for recording, 512-1024
-            for mixing.
+            Smaller buffer = lower latency but higher CPU usage. Use 64-256 for
+            recording, 512-1024 for mixing.
           </div>
         </div>
       </div>
@@ -227,7 +247,7 @@ export function AudioEngineMonitor({
         onClick={() => setShowAdvanced(!showAdvanced)}
         className="w-full text-xs"
       >
-        {showAdvanced ? 'Hide' : 'Show'} Advanced Info
+        {showAdvanced ? "Hide" : "Show"} Advanced Info
       </Button>
 
       {showAdvanced && context && (

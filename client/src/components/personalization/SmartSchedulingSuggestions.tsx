@@ -1,23 +1,33 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useSmartScheduling, DayOfWeek, ScheduleSuggestion } from '@/hooks/useSmartScheduling';
+} from "@/components/ui/tooltip";
+import {
+  useSmartScheduling,
+  DayOfWeek,
+  ScheduleSuggestion,
+} from "@/hooks/useSmartScheduling";
 import {
   Clock,
   Calendar,
@@ -32,8 +42,8 @@ import {
   Info,
   Zap,
   ThumbsUp,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SmartSchedulingSuggestionsProps {
   platform?: string;
@@ -46,23 +56,23 @@ interface SmartSchedulingSuggestionsProps {
 }
 
 const dayLabels: Record<DayOfWeek, string> = {
-  monday: 'Mon',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-  thursday: 'Thu',
-  friday: 'Fri',
-  saturday: 'Sat',
-  sunday: 'Sun',
+  monday: "Mon",
+  tuesday: "Tue",
+  wednesday: "Wed",
+  thursday: "Thu",
+  friday: "Fri",
+  saturday: "Sat",
+  sunday: "Sun",
 };
 
 const fullDayLabels: Record<DayOfWeek, string> = {
-  monday: 'Monday',
-  tuesday: 'Tuesday',
-  wednesday: 'Wednesday',
-  thursday: 'Thursday',
-  friday: 'Friday',
-  saturday: 'Saturday',
-  sunday: 'Sunday',
+  monday: "Monday",
+  tuesday: "Tuesday",
+  wednesday: "Wednesday",
+  thursday: "Thursday",
+  friday: "Friday",
+  saturday: "Saturday",
+  sunday: "Sunday",
 };
 
 const timeSlotIcons = {
@@ -72,11 +82,19 @@ const timeSlotIcons = {
   night: Moon,
 };
 
-const daysOfWeek: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const daysOfWeek: DayOfWeek[] = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
 
 export function SmartSchedulingSuggestions({
-  platform: initialPlatform = 'all',
-  contentType = 'post',
+  platform: initialPlatform = "all",
+  contentType = "post",
   onSelectTime,
   showAnalytics = true,
   compact = false,
@@ -188,7 +206,10 @@ export function SmartSchedulingSuggestions({
                   {bestTime.reasoning}
                 </p>
               </div>
-              <Button onClick={() => handleSelectTime(bestTime)} disabled={isApplying}>
+              <Button
+                onClick={() => handleSelectTime(bestTime)}
+                disabled={isApplying}
+              >
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule
               </Button>
@@ -199,7 +220,9 @@ export function SmartSchedulingSuggestions({
         {showHeatmap && !compact && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium">Weekly Engagement Heatmap</span>
+              <span className="text-sm font-medium">
+                Weekly Engagement Heatmap
+              </span>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
@@ -214,8 +237,10 @@ export function SmartSchedulingSuggestions({
             <div className="grid grid-cols-7 gap-2">
               {daysOfWeek.map((day) => {
                 const activity = weeklyHeatmap[day] || 0;
-                const opacity = 0.2 + (activity * 0.8);
-                const suggestion = scheduleData.suggestions.find(s => s.dayOfWeek === day);
+                const opacity = 0.2 + activity * 0.8;
+                const suggestion = scheduleData.suggestions.find(
+                  (s) => s.dayOfWeek === day,
+                );
 
                 return (
                   <TooltipProvider key={day}>
@@ -223,15 +248,17 @@ export function SmartSchedulingSuggestions({
                       <TooltipTrigger asChild>
                         <div
                           className={cn(
-                            'flex flex-col items-center p-3 rounded-lg border cursor-pointer transition-all',
-                            hoveredDay === day && 'ring-2 ring-primary'
+                            "flex flex-col items-center p-3 rounded-lg border cursor-pointer transition-all",
+                            hoveredDay === day && "ring-2 ring-primary",
                           )}
                           style={{
                             backgroundColor: `rgba(124, 58, 237, ${opacity})`,
                           }}
                           onMouseEnter={() => setHoveredDay(day)}
                           onMouseLeave={() => setHoveredDay(null)}
-                          onClick={() => suggestion && handleSelectTime(suggestion)}
+                          onClick={() =>
+                            suggestion && handleSelectTime(suggestion)
+                          }
                         >
                           <span className="text-xs font-medium text-white">
                             {dayLabels[day]}
@@ -252,7 +279,9 @@ export function SmartSchedulingSuggestions({
                           {Math.round(activity * 100)}% audience activity
                         </p>
                         {suggestion && (
-                          <p className="text-xs">Best time: {suggestion.specificTime}</p>
+                          <p className="text-xs">
+                            Best time: {suggestion.specificTime}
+                          </p>
                         )}
                       </TooltipContent>
                     </Tooltip>
@@ -278,24 +307,28 @@ export function SmartSchedulingSuggestions({
                 <div
                   key={suggestion.id}
                   className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:bg-accent/50',
-                    index === 0 && 'border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20'
+                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:bg-accent/50",
+                    index === 0 &&
+                      "border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20",
                   )}
                   onClick={() => handleSelectTime(suggestion)}
                 >
-                  <div className={cn(
-                    'p-2 rounded-lg',
-                    index === 0
-                      ? 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400'
-                      : 'bg-muted'
-                  )}>
+                  <div
+                    className={cn(
+                      "p-2 rounded-lg",
+                      index === 0
+                        ? "bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400"
+                        : "bg-muted",
+                    )}
+                  >
                     <TimeIcon className="h-4 w-4" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">
-                        {fullDayLabels[suggestion.dayOfWeek]} at {suggestion.specificTime}
+                        {fullDayLabels[suggestion.dayOfWeek]} at{" "}
+                        {suggestion.specificTime}
                       </span>
                       {index === 0 && (
                         <Badge variant="secondary" className="text-xs">
@@ -312,7 +345,8 @@ export function SmartSchedulingSuggestions({
                         <div className="flex items-center gap-3 mt-2">
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Target className="h-3 w-3" />
-                            {Math.round(suggestion.confidence * 100)}% confidence
+                            {Math.round(suggestion.confidence * 100)}%
+                            confidence
                           </span>
                         </div>
                       </>
@@ -357,7 +391,10 @@ export function SmartSchedulingSuggestions({
 
         <div className="pt-4 border-t text-xs text-muted-foreground flex items-center gap-2">
           <Clock className="h-3 w-3" />
-          Last updated: {scheduleData.lastUpdated ? new Date(scheduleData.lastUpdated).toLocaleDateString() : 'Recently'}
+          Last updated:{" "}
+          {scheduleData.lastUpdated
+            ? new Date(scheduleData.lastUpdated).toLocaleDateString()
+            : "Recently"}
         </div>
       </CardContent>
     </Card>

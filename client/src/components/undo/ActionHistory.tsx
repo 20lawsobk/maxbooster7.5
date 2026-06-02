@@ -1,7 +1,15 @@
-import { useState } from 'react';
-import { History, Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState } from "react";
+import {
+  History,
+  Undo2,
+  Redo2,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -9,11 +17,11 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
-import { useUndoHistory, useUndoActions } from '@/contexts/UndoContext';
-import { UndoableAction, getActionLabel } from '@/lib/undo/types';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { useUndoHistory, useUndoActions } from "@/contexts/UndoContext";
+import { UndoableAction, getActionLabel } from "@/lib/undo/types";
+import { cn } from "@/lib/utils";
 
 export interface ActionHistoryProps {
   className?: string;
@@ -23,9 +31,9 @@ export interface ActionHistoryProps {
 function formatTimestamp(timestamp: number): string {
   const now = Date.now();
   const diff = now - timestamp;
-  
+
   if (diff < 60000) {
-    return 'Just now';
+    return "Just now";
   } else if (diff < 3600000) {
     const minutes = Math.floor(diff / 60000);
     return `${minutes}m ago`;
@@ -52,22 +60,27 @@ function ActionItem({
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-3 rounded-lg transition-colors',
-        action.isUndone ? 'opacity-50 bg-muted/30' : 'hover:bg-muted/50',
-        isDestructive && !action.isUndone && 'border-l-2 border-destructive'
+        "flex items-start gap-3 p-3 rounded-lg transition-colors",
+        action.isUndone ? "opacity-50 bg-muted/30" : "hover:bg-muted/50",
+        isDestructive && !action.isUndone && "border-l-2 border-destructive",
       )}
     >
       <div className="flex-shrink-0 mt-0.5">
         <div
           className={cn(
-            'w-2 h-2 rounded-full',
-            action.isUndone ? 'bg-muted-foreground' : 'bg-primary'
+            "w-2 h-2 rounded-full",
+            action.isUndone ? "bg-muted-foreground" : "bg-primary",
           )}
         />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={cn('text-sm font-medium', action.isUndone && 'line-through')}>
+          <span
+            className={cn(
+              "text-sm font-medium",
+              action.isUndone && "line-through",
+            )}
+          >
             {label}
           </span>
           {action.isUndone && (
@@ -101,7 +114,10 @@ function ActionItem({
   );
 }
 
-export function ActionHistory({ className, maxVisible = 50 }: ActionHistoryProps) {
+export function ActionHistory({
+  className,
+  maxVisible = 50,
+}: ActionHistoryProps) {
   const { history, redoStack } = useUndoHistory();
   const { undo, redo, canUndo, canRedo, clearHistory } = useUndoActions();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -112,7 +128,7 @@ export function ActionHistory({ className, maxVisible = 50 }: ActionHistoryProps
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className={cn('gap-2', className)}>
+        <Button variant="outline" size="sm" className={cn("gap-2", className)}>
           <History className="w-4 h-4" />
           History
           {history.length > 0 && (
@@ -129,7 +145,8 @@ export function ActionHistory({ className, maxVisible = 50 }: ActionHistoryProps
             Action History
           </SheetTitle>
           <SheetDescription>
-            View and manage your recent actions. Use undo/redo to revert changes.
+            View and manage your recent actions. Use undo/redo to revert
+            changes.
           </SheetDescription>
         </SheetHeader>
 
@@ -172,7 +189,9 @@ export function ActionHistory({ className, maxVisible = 50 }: ActionHistoryProps
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <History className="w-12 h-12 mb-4 opacity-50" />
               <p className="text-sm">No actions recorded yet</p>
-              <p className="text-xs mt-1">Your action history will appear here</p>
+              <p className="text-xs mt-1">
+                Your action history will appear here
+              </p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -182,14 +201,17 @@ export function ActionHistory({ className, maxVisible = 50 }: ActionHistoryProps
                     <Redo2 className="w-3 h-3" />
                     <span>Can redo ({redoStack.length})</span>
                   </div>
-                  {redoStack.slice().reverse().map((action, index) => (
-                    <div
-                      key={action.id}
-                      className="text-xs text-muted-foreground pl-5"
-                    >
-                      {getActionLabel(action)}
-                    </div>
-                  ))}
+                  {redoStack
+                    .slice()
+                    .reverse()
+                    .map((action, index) => (
+                      <div
+                        key={action.id}
+                        className="text-xs text-muted-foreground pl-5"
+                      >
+                        {getActionLabel(action)}
+                      </div>
+                    ))}
                 </div>
               )}
 

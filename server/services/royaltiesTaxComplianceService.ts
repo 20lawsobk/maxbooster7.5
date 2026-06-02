@@ -1,4 +1,4 @@
-import { storage } from '../storage.js';
+import { storage } from "../storage.js";
 
 const TAX_THRESHOLD = 600;
 
@@ -12,22 +12,25 @@ export class RoyaltiesTaxComplianceService {
     const earnings = await this.aggregateAnnualEarnings(userId, year);
 
     if (!earnings || earnings.totalEarnings < TAX_THRESHOLD) {
-      return { eligible: false, reason: `Earnings below $${TAX_THRESHOLD} threshold` };
+      return {
+        eligible: false,
+        reason: `Earnings below $${TAX_THRESHOLD} threshold`,
+      };
     }
 
     const taxProfile = await storage.getTaxProfile(userId);
 
     if (!taxProfile || !taxProfile.w9OnFile) {
-      return { eligible: false, reason: 'W9 form not on file' };
+      return { eligible: false, reason: "W9 form not on file" };
     }
 
     return {
       eligible: true,
       taxYear: year,
       payer: {
-        name: 'Max Booster Music LLC',
-        ein: '00-0000000',
-        address: '123 Music Lane, Nashville, TN 37201',
+        name: "Max Booster Music LLC",
+        ein: "00-0000000",
+        address: "123 Music Lane, Nashville, TN 37201",
       },
       recipient: {
         name: taxProfile.legalName,
@@ -44,19 +47,21 @@ export class RoyaltiesTaxComplianceService {
     };
   }
 
-  async validateTaxProfile(userId: string): Promise<{ valid: boolean; errors: string[] }> {
+  async validateTaxProfile(
+    userId: string,
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const profile = await storage.getTaxProfile(userId);
     const errors: string[] = [];
 
     if (!profile) {
-      errors.push('Tax profile not found');
+      errors.push("Tax profile not found");
       return { valid: false, errors };
     }
 
-    if (!profile.w9OnFile) errors.push('W9 form not on file');
-    if (!profile.taxId) errors.push('Tax ID missing');
-    if (!profile.legalName) errors.push('Legal name missing');
-    if (!profile.address) errors.push('Address missing');
+    if (!profile.w9OnFile) errors.push("W9 form not on file");
+    if (!profile.taxId) errors.push("Tax ID missing");
+    if (!profile.legalName) errors.push("Legal name missing");
+    if (!profile.address) errors.push("Address missing");
 
     return { valid: errors.length === 0, errors };
   }
@@ -65,11 +70,12 @@ export class RoyaltiesTaxComplianceService {
     const doc = await this.generate1099MISC(userId, year);
 
     return {
-      format: 'json',
+      format: "json",
       data: doc,
       filename: `1099-MISC-${year}-${userId}.json`,
     };
   }
 }
 
-export const royaltiesTaxComplianceService = new RoyaltiesTaxComplianceService();
+export const royaltiesTaxComplianceService =
+  new RoyaltiesTaxComplianceService();

@@ -1,9 +1,22 @@
-import { useState, useRef, useCallback } from 'react';
-import { Plus, GripVertical, Trash2, Edit2, Copy, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { studioOneTheme } from '@/lib/studioOneTheme';
+import { useState, useRef, useCallback } from "react";
+import {
+  Plus,
+  GripVertical,
+  Trash2,
+  Edit2,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { studioOneTheme } from "@/lib/studioOneTheme";
 
 interface ArrangerSection {
   id: string;
@@ -19,7 +32,7 @@ interface ArrangerTrackProps {
   timeSignature: [number, number];
   pixelsPerBar: number;
   scrollOffset: number;
-  onSectionAdd: (section: Omit<ArrangerSection, 'id'>) => void;
+  onSectionAdd: (section: Omit<ArrangerSection, "id">) => void;
   onSectionUpdate: (id: string, updates: Partial<ArrangerSection>) => void;
   onSectionDelete: (id: string) => void;
   onSectionDuplicate: (id: string) => void;
@@ -30,13 +43,29 @@ interface ArrangerTrackProps {
 }
 
 const SECTION_COLORS = [
-  '#4ade80', '#60a5fa', '#f87171', '#fbbf24', '#a78bfa',
-  '#fb923c', '#ec4899', '#14b8a6', '#8b5cf6', '#06b6d4',
+  "#4ade80",
+  "#60a5fa",
+  "#f87171",
+  "#fbbf24",
+  "#a78bfa",
+  "#fb923c",
+  "#ec4899",
+  "#14b8a6",
+  "#8b5cf6",
+  "#06b6d4",
 ];
 
 const DEFAULT_SECTION_NAMES = [
-  'Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 
-  'Breakdown', 'Drop', 'Outro', 'Hook', 'Interlude'
+  "Intro",
+  "Verse",
+  "Pre-Chorus",
+  "Chorus",
+  "Bridge",
+  "Breakdown",
+  "Drop",
+  "Outro",
+  "Hook",
+  "Interlude",
 ];
 
 export function ArrangerTrack({
@@ -55,7 +84,7 @@ export function ArrangerTrack({
   onToggleVisibility,
 }: ArrangerTrackProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
+  const [editingName, setEditingName] = useState("");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [resizingId, setResizingId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,11 +94,13 @@ export function ArrangerTrack({
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left + scrollOffset;
     const bar = Math.floor(x / pixelsPerBar);
-    
-    const usedNames = new Set(sections.map(s => s.name));
-    const availableName = DEFAULT_SECTION_NAMES.find(n => !usedNames.has(n)) || `Section ${sections.length + 1}`;
+
+    const usedNames = new Set(sections.map((s) => s.name));
+    const availableName =
+      DEFAULT_SECTION_NAMES.find((n) => !usedNames.has(n)) ||
+      `Section ${sections.length + 1}`;
     const color = SECTION_COLORS[sections.length % SECTION_COLORS.length];
-    
+
     onSectionAdd({
       name: availableName,
       color,
@@ -98,7 +129,7 @@ export function ArrangerTrack({
       onSectionUpdate(editingId, { name: editingName.trim() });
     }
     setEditingId(null);
-    setEditingName('');
+    setEditingName("");
   };
 
   if (!visible) {
@@ -111,8 +142,14 @@ export function ArrangerTrack({
         }}
         onClick={onToggleVisibility}
       >
-        <ChevronDown className="h-3 w-3 mr-2" style={{ color: studioOneTheme.colors.text.muted }} />
-        <span className="text-[10px] font-medium" style={{ color: studioOneTheme.colors.text.muted }}>
+        <ChevronDown
+          className="h-3 w-3 mr-2"
+          style={{ color: studioOneTheme.colors.text.muted }}
+        />
+        <span
+          className="text-[10px] font-medium"
+          style={{ color: studioOneTheme.colors.text.muted }}
+        >
           Arranger Track (click to expand)
         </span>
       </div>
@@ -128,7 +165,7 @@ export function ArrangerTrack({
       }}
     >
       {/* Header */}
-      <div 
+      <div
         className="h-6 flex items-center px-2 border-b"
         style={{ borderColor: studioOneTheme.colors.border.subtle }}
       >
@@ -136,8 +173,14 @@ export function ArrangerTrack({
           onClick={onToggleVisibility}
           className="flex items-center gap-1 hover:bg-white/5 rounded px-1"
         >
-          <ChevronUp className="h-3 w-3" style={{ color: studioOneTheme.colors.text.muted }} />
-          <span className="text-[10px] font-medium" style={{ color: studioOneTheme.colors.text.secondary }}>
+          <ChevronUp
+            className="h-3 w-3"
+            style={{ color: studioOneTheme.colors.text.muted }}
+          />
+          <span
+            className="text-[10px] font-medium"
+            style={{ color: studioOneTheme.colors.text.secondary }}
+          >
             Arranger
           </span>
         </button>
@@ -154,10 +197,13 @@ export function ArrangerTrack({
                 key={name}
                 onClick={() => {
                   const lastSection = sections[sections.length - 1];
-                  const startBar = lastSection ? lastSection.startBar + lastSection.lengthBars : 0;
+                  const startBar = lastSection
+                    ? lastSection.startBar + lastSection.lengthBars
+                    : 0;
                   onSectionAdd({
                     name,
-                    color: SECTION_COLORS[sections.length % SECTION_COLORS.length],
+                    color:
+                      SECTION_COLORS[sections.length % SECTION_COLORS.length],
                     startBar,
                     lengthBars: 8,
                   });
@@ -194,7 +240,10 @@ export function ArrangerTrack({
           >
             {/* Drag handle */}
             <div className="px-1 opacity-50 group-hover:opacity-100">
-              <GripVertical className="h-3 w-3" style={{ color: section.color }} />
+              <GripVertical
+                className="h-3 w-3"
+                style={{ color: section.color }}
+              />
             </div>
 
             {/* Section name */}
@@ -203,7 +252,7 @@ export function ArrangerTrack({
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
                 onBlur={handleSaveEdit}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+                onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
                 className="h-5 text-[10px] bg-transparent border-none px-1 w-full"
                 autoFocus
               />
@@ -227,17 +276,22 @@ export function ArrangerTrack({
                   className="px-1 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <ChevronDown className="h-3 w-3" style={{ color: section.color }} />
+                  <ChevronDown
+                    className="h-3 w-3"
+                    style={{ color: section.color }}
+                  />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => handleStartEdit(section)}>
                   <Edit2 className="h-3 w-3 mr-2" /> Rename
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onSectionDuplicate(section.id)}>
+                <DropdownMenuItem
+                  onClick={() => onSectionDuplicate(section.id)}
+                >
                   <Copy className="h-3 w-3 mr-2" /> Duplicate
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => onSectionDelete(section.id)}
                   className="text-red-500"
                 >

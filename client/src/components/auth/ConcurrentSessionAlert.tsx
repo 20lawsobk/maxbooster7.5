@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { useAuth } from '@/hooks/useAuth';
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Monitor,
   Users,
@@ -22,13 +22,13 @@ import {
   LogOut,
   Shield,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
 export type ConcurrentSessionOutcome =
-  | 'concurrent_session_detected'
-  | 'max_sessions_exceeded'
-  | 'sessions_managed'
-  | 'alert_dismissed';
+  | "concurrent_session_detected"
+  | "max_sessions_exceeded"
+  | "sessions_managed"
+  | "alert_dismissed";
 
 interface SessionStatus {
   valid: boolean;
@@ -44,7 +44,7 @@ interface ConcurrentSessionAlertProps {
   onManageSessions?: () => void;
   onLogoutOther?: () => Promise<void>;
   dismissible?: boolean;
-  position?: 'top' | 'bottom' | 'floating';
+  position?: "top" | "bottom" | "floating";
 }
 
 export function ConcurrentSessionAlert({
@@ -53,7 +53,7 @@ export function ConcurrentSessionAlert({
   onManageSessions,
   onLogoutOther,
   dismissible = true,
-  position = 'top',
+  position = "top",
 }: ConcurrentSessionAlertProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -62,7 +62,7 @@ export function ConcurrentSessionAlert({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const { data: sessionStatus, refetch } = useQuery<SessionStatus>({
-    queryKey: ['/api/auth/session-status'],
+    queryKey: ["/api/auth/session-status"],
     enabled: !!user,
     refetchInterval: 60000,
   });
@@ -77,11 +77,11 @@ export function ConcurrentSessionAlert({
       if (onLogoutOther) {
         await onLogoutOther();
       } else {
-        const response = await apiRequest('DELETE', '/api/auth/sessions/other');
+        const response = await apiRequest("DELETE", "/api/auth/sessions/other");
         const data = await response.json();
         if (data.success) {
           toast({
-            title: 'Sessions Logged Out',
+            title: "Sessions Logged Out",
             description: `${data.terminatedCount} other session(s) have been terminated.`,
           });
           refetch();
@@ -90,9 +90,9 @@ export function ConcurrentSessionAlert({
       setShowDetails(false);
     } catch (error) {
       toast({
-        title: 'Failed to Logout Sessions',
-        description: 'Please try again.',
-        variant: 'destructive',
+        title: "Failed to Logout Sessions",
+        description: "Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoggingOut(false);
@@ -112,17 +112,17 @@ export function ConcurrentSessionAlert({
   if (!user || !showWarning) return null;
 
   const positionClasses = {
-    top: 'fixed top-0 left-0 right-0 z-50',
-    bottom: 'fixed bottom-0 left-0 right-0 z-50',
-    floating: 'fixed top-4 right-4 z-50 max-w-md',
+    top: "fixed top-0 left-0 right-0 z-50",
+    bottom: "fixed bottom-0 left-0 right-0 z-50",
+    floating: "fixed top-4 right-4 z-50 max-w-md",
   };
 
   return (
     <>
       <div className={positionClasses[position]}>
-        <Alert 
-          variant={isAtMax ? 'destructive' : 'default'}
-          className={`rounded-none border-x-0 ${position === 'floating' ? 'rounded-lg border shadow-lg' : ''} ${isAtMax ? 'bg-red-50 dark:bg-red-950' : 'bg-orange-50 dark:bg-orange-950'}`}
+        <Alert
+          variant={isAtMax ? "destructive" : "default"}
+          className={`rounded-none border-x-0 ${position === "floating" ? "rounded-lg border shadow-lg" : ""} ${isAtMax ? "bg-red-50 dark:bg-red-950" : "bg-orange-50 dark:bg-orange-950"}`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -133,13 +133,21 @@ export function ConcurrentSessionAlert({
               )}
               <div>
                 <AlertTitle className="text-sm font-medium">
-                  {isAtMax ? 'Maximum Sessions Reached' : 'Multiple Sessions Detected'}
+                  {isAtMax
+                    ? "Maximum Sessions Reached"
+                    : "Multiple Sessions Detected"}
                 </AlertTitle>
                 <AlertDescription className="text-sm">
                   {isAtMax ? (
-                    <>You have {sessionCount} active sessions. You&apos;ve reached the maximum of {maxSessions}.</>
+                    <>
+                      You have {sessionCount} active sessions. You&apos;ve
+                      reached the maximum of {maxSessions}.
+                    </>
                   ) : (
-                    <>Your account is currently logged in on {sessionCount} devices.</>
+                    <>
+                      Your account is currently logged in on {sessionCount}{" "}
+                      devices.
+                    </>
                   )}
                 </AlertDescription>
               </div>
@@ -184,23 +192,28 @@ export function ConcurrentSessionAlert({
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className={`p-4 rounded-lg ${isAtMax ? 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900' : 'bg-muted'}`}>
+            <div
+              className={`p-4 rounded-lg ${isAtMax ? "bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900" : "bg-muted"}`}
+            >
               <div className="flex items-center justify-between">
                 <span className="font-medium">Active Sessions</span>
-                <Badge variant={isAtMax ? 'destructive' : 'secondary'}>
+                <Badge variant={isAtMax ? "destructive" : "secondary"}>
                   {sessionCount} / {maxSessions}
                 </Badge>
               </div>
               {isAtMax && (
                 <p className="text-sm text-red-600 dark:text-red-400 mt-2">
-                  You&apos;ve reached the maximum number of concurrent sessions. 
+                  You&apos;ve reached the maximum number of concurrent sessions.
                   Log out other devices to continue.
                 </p>
               )}
             </div>
 
             <div className="text-sm text-muted-foreground">
-              <p>For security, we recommend logging out of devices you&apos;re not actively using.</p>
+              <p>
+                For security, we recommend logging out of devices you&apos;re
+                not actively using.
+              </p>
             </div>
           </div>
 
@@ -238,7 +251,7 @@ export function useConcurrentSessions() {
   const { user } = useAuth();
 
   const { data, refetch } = useQuery<SessionStatus>({
-    queryKey: ['/api/auth/session-status'],
+    queryKey: ["/api/auth/session-status"],
     enabled: !!user,
   });
 

@@ -1,20 +1,24 @@
-import { db } from '../db.js';
-import { 
-  royaltyStatements, 
+import { db } from "../db.js";
+import {
+  royaltyStatements,
   recoupmentAccounts,
   splitContracts,
   users,
   releases,
   type RoyaltyStatement,
-} from '@shared/schema';
-import { eq, and, gte, lte, desc } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import { royaltiesTaxComplianceService } from './royaltiesTaxComplianceService.js';
-import { royaltyEngine, type PeriodStatement, type SplitBreakdown } from './royaltyEngine.js';
+} from "@shared/schema";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { logger } from "../logger.js";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { royaltiesTaxComplianceService } from "./royaltiesTaxComplianceService.js";
+import {
+  royaltyEngine,
+  type PeriodStatement,
+  type SplitBreakdown,
+} from "./royaltyEngine.js";
 
-declare module 'jspdf' {
+declare module "jspdf" {
   interface jsPDF {
     autoTable: (options: unknown) => jsPDF;
     lastAutoTable: {
@@ -24,7 +28,7 @@ declare module 'jspdf' {
 }
 
 export interface ExportOptions {
-  format: 'csv' | 'excel' | 'pdf' | 'json';
+  format: "csv" | "excel" | "pdf" | "json";
   includeLineItems?: boolean;
   includeTerritoryBreakdown?: boolean;
   includeDspBreakdown?: boolean;
@@ -47,7 +51,7 @@ export interface AuditExportOptions {
 export interface TaxExportOptions {
   userId: string;
   taxYear: number;
-  format: 'json' | 'pdf' | 'irs_1099';
+  format: "json" | "pdf" | "irs_1099";
 }
 
 export interface YearlySummaryOptions {
@@ -62,13 +66,13 @@ export interface TerritoryReportOptions {
   userId: string;
   startDate: Date;
   endDate: Date;
-  format: 'csv' | 'excel' | 'pdf' | 'json';
+  format: "csv" | "excel" | "pdf" | "json";
 }
 
 export class RoyaltyExportsService {
   async exportStatement(
     statementId: string,
-    options: ExportOptions
+    options: ExportOptions,
   ): Promise<{ data: string | Buffer; filename: string; mimeType: string }> {
     const statement = await royaltyEngine.getStatement(statementId);
     if (!statement) {
@@ -76,11 +80,11 @@ export class RoyaltyExportsService {
     }
 
     switch (options.format) {
-      case 'csv':
+      case "csv":
         return this.exportToCSV(statement, options);
-      case 'pdf':
+      case "pdf":
         return this.exportToPDF(statement, options);
-      case 'json':
+      case "json":
         return this.exportToJSON(statement, options);
       default:
         throw new Error(`Unsupported export format: ${options.format}`);
@@ -89,23 +93,24 @@ export class RoyaltyExportsService {
 
   async exportUserStatements(
     userId: string,
-    options: ExportOptions
+    options: ExportOptions,
   ): Promise<{ data: string | Buffer; filename: string; mimeType: string }> {
     let statements = await royaltyEngine.getUserStatements(userId);
 
     if (options.dateRange) {
-      statements = statements.filter(s => 
-        s.periodStart >= options.dateRange!.start &&
-        s.periodEnd <= options.dateRange!.end
+      statements = statements.filter(
+        (s) =>
+          s.periodStart >= options.dateRange!.start &&
+          s.periodEnd <= options.dateRange!.end,
       );
     }
 
     switch (options.format) {
-      case 'csv':
+      case "csv":
         return this.exportMultipleToCSV(statements, options);
-      case 'pdf':
+      case "pdf":
         return this.exportMultipleToPDF(statements, options);
-      case 'json':
+      case "json":
         return this.exportMultipleToJSON(statements, options);
       default:
         throw new Error(`Unsupported export format: ${options.format}`);
@@ -113,7 +118,7 @@ export class RoyaltyExportsService {
   }
 
   async exportAuditLog(
-    options: AuditExportOptions
+    options: AuditExportOptions,
   ): Promise<{ data: string; filename: string; mimeType: string }> {
     const statements = await db
       .select()
@@ -122,8 +127,8 @@ export class RoyaltyExportsService {
         and(
           eq(royaltyStatements.userId, options.userId),
           gte(royaltyStatements.periodStart, options.startDate),
-          lte(royaltyStatements.periodEnd, options.endDate)
-        )
+          lte(royaltyStatements.periodEnd, options.endDate),
+        ),
       )
       .orderBy(desc(royaltyStatements.periodStart));
 
@@ -139,7 +144,7 @@ export class RoyaltyExportsService {
         start: options.startDate.toISOString(),
         end: options.endDate.toISOString(),
       },
-      statements: statements.map(s => ({
+      statements: statements.map((s) => ({
         id: s.id,
         period: s.statementPeriod,
         grossRevenue: s.grossRevenue,
@@ -150,7 +155,7 @@ export class RoyaltyExportsService {
         paidAt: s.paidAt,
         auditTrail: s.auditTrail,
       })),
-      recoupmentAccounts: recoupments.map(r => ({
+      recoupmentAccounts: recoupments.map((r) => ({
         id: r.id,
         accountName: r.accountName,
         advanceAmount: r.advanceAmount,
@@ -165,54 +170,54 @@ export class RoyaltyExportsService {
     return {
       data: JSON.stringify(auditData, null, 2),
       filename,
-      mimeType: 'application/json',
+      mimeType: "application/json",
     };
   }
 
-  async export1099(options: TaxExportOptions): Promise<{ 
-    data: string | Buffer; 
-    filename: string; 
+  async export1099(options: TaxExportOptions): Promise<{
+    data: string | Buffer;
+    filename: string;
     mimeType: string;
     eligible: boolean;
     reason?: string;
   }> {
     const taxDoc = await royaltiesTaxComplianceService.generate1099MISC(
       options.userId,
-      options.taxYear
+      options.taxYear,
     );
 
     if (!taxDoc.eligible) {
       return {
         data: JSON.stringify(taxDoc, null, 2),
         filename: `1099_ineligible_${options.taxYear}_${options.userId}.json`,
-        mimeType: 'application/json',
+        mimeType: "application/json",
         eligible: false,
         reason: taxDoc.reason,
       };
     }
 
     switch (options.format) {
-      case 'json':
+      case "json":
         return {
           data: JSON.stringify(taxDoc, null, 2),
           filename: `1099-MISC_${options.taxYear}_${options.userId}.json`,
-          mimeType: 'application/json',
+          mimeType: "application/json",
           eligible: true,
         };
-      case 'pdf':
+      case "pdf":
         const pdfBuffer = await this.generate1099PDF(taxDoc);
         return {
           data: pdfBuffer,
           filename: `1099-MISC_${options.taxYear}_${options.userId}.pdf`,
-          mimeType: 'application/pdf',
+          mimeType: "application/pdf",
           eligible: true,
         };
-      case 'irs_1099':
+      case "irs_1099":
         const irsFormat = this.formatFor1099Submission(taxDoc);
         return {
           data: irsFormat,
           filename: `1099-MISC_IRS_${options.taxYear}_${options.userId}.txt`,
-          mimeType: 'text/plain',
+          mimeType: "text/plain",
           eligible: true,
         };
       default:
@@ -222,33 +227,45 @@ export class RoyaltyExportsService {
 
   private exportToCSV(
     statement: RoyaltyStatement,
-    options: ExportOptions
+    options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const rows: string[][] = [];
 
-    rows.push(['Royalty Statement Export']);
-    rows.push(['Period', statement.statementPeriod]);
-    rows.push(['Period Start', statement.periodStart.toISOString()]);
-    rows.push(['Period End', statement.periodEnd.toISOString()]);
-    rows.push(['Status', statement.status]);
+    rows.push(["Royalty Statement Export"]);
+    rows.push(["Period", statement.statementPeriod]);
+    rows.push(["Period Start", statement.periodStart.toISOString()]);
+    rows.push(["Period End", statement.periodEnd.toISOString()]);
+    rows.push(["Status", statement.status]);
     rows.push([]);
 
-    rows.push(['Summary']);
-    rows.push(['Gross Revenue', String(statement.grossRevenue)]);
-    rows.push(['Platform Fees', String(statement.platformFees)]);
-    rows.push(['Distribution Fees', String(statement.distributionFees)]);
-    rows.push(['Recoupment Deductions', String(statement.recoupmentDeductions)]);
-    rows.push(['Net Revenue', String(statement.netRevenue)]);
-    rows.push(['Payable Amount', String(statement.payableAmount)]);
-    rows.push(['Currency', statement.currency]);
-    rows.push(['Total Streams', String(statement.totalStreams)]);
-    rows.push(['Total Downloads', String(statement.totalDownloads)]);
+    rows.push(["Summary"]);
+    rows.push(["Gross Revenue", String(statement.grossRevenue)]);
+    rows.push(["Platform Fees", String(statement.platformFees)]);
+    rows.push(["Distribution Fees", String(statement.distributionFees)]);
+    rows.push([
+      "Recoupment Deductions",
+      String(statement.recoupmentDeductions),
+    ]);
+    rows.push(["Net Revenue", String(statement.netRevenue)]);
+    rows.push(["Payable Amount", String(statement.payableAmount)]);
+    rows.push(["Currency", statement.currency]);
+    rows.push(["Total Streams", String(statement.totalStreams)]);
+    rows.push(["Total Downloads", String(statement.totalDownloads)]);
     rows.push([]);
 
     if (options.includeLineItems && statement.lineItems) {
-      rows.push(['Line Items']);
-      rows.push(['DSP', 'Territory', 'Streams', 'Downloads', 'Gross Revenue', 'Effective Rate', 'Currency', 'Exchange Rate']);
-      
+      rows.push(["Line Items"]);
+      rows.push([
+        "DSP",
+        "Territory",
+        "Streams",
+        "Downloads",
+        "Gross Revenue",
+        "Effective Rate",
+        "Currency",
+        "Exchange Rate",
+      ]);
+
       const lineItems = statement.lineItems as Array<{
         dsp: string;
         territory: string;
@@ -276,9 +293,9 @@ export class RoyaltyExportsService {
     }
 
     if (options.includeTerritoryBreakdown && statement.territoryBreakdown) {
-      rows.push(['Territory Breakdown']);
-      rows.push(['Territory', 'Streams', 'Revenue', 'Percentage']);
-      
+      rows.push(["Territory Breakdown"]);
+      rows.push(["Territory", "Streams", "Revenue", "Percentage"]);
+
       const territories = statement.territoryBreakdown as Array<{
         territory: string;
         streams: number;
@@ -298,9 +315,9 @@ export class RoyaltyExportsService {
     }
 
     if (options.includeDspBreakdown && statement.dspBreakdown) {
-      rows.push(['DSP Breakdown']);
-      rows.push(['DSP', 'Streams', 'Revenue', 'Average Rate']);
-      
+      rows.push(["DSP Breakdown"]);
+      rows.push(["DSP", "Streams", "Revenue", "Average Rate"]);
+
       const dsps = statement.dspBreakdown as Array<{
         dsp: string;
         streams: number;
@@ -318,67 +335,79 @@ export class RoyaltyExportsService {
       }
     }
 
-    const csv = rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const csv = rows
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .join("\n");
 
     return {
       data: csv,
       filename: `royalty_statement_${statement.statementPeriod}_${statement.id}.csv`,
-      mimeType: 'text/csv',
+      mimeType: "text/csv",
     };
   }
 
   private exportToPDF(
     statement: RoyaltyStatement,
-    options: ExportOptions
+    options: ExportOptions,
   ): { data: Buffer; filename: string; mimeType: string } {
     const doc = new jsPDF();
 
     doc.setFontSize(20);
-    doc.text('Royalty Statement', 105, 20, { align: 'center' });
+    doc.text("Royalty Statement", 105, 20, { align: "center" });
 
     doc.setFontSize(12);
     doc.text(`Period: ${statement.statementPeriod}`, 20, 35);
     doc.text(`Status: ${statement.status}`, 20, 42);
-    doc.text(`Generated: ${statement.generatedAt?.toISOString().split('T')[0] || 'N/A'}`, 20, 49);
+    doc.text(
+      `Generated: ${statement.generatedAt?.toISOString().split("T")[0] || "N/A"}`,
+      20,
+      49,
+    );
 
     doc.setFontSize(14);
-    doc.text('Summary', 20, 65);
+    doc.text("Summary", 20, 65);
 
     doc.autoTable({
       startY: 70,
-      head: [['Description', 'Amount']],
+      head: [["Description", "Amount"]],
       body: [
-        ['Gross Revenue', `$${Number(statement.grossRevenue).toFixed(2)}`],
-        ['Platform Fees', `-$${Number(statement.platformFees).toFixed(2)}`],
-        ['Distribution Fees', `-$${Number(statement.distributionFees).toFixed(2)}`],
-        ['Recoupment Deductions', `-$${Number(statement.recoupmentDeductions).toFixed(2)}`],
-        ['Net Revenue', `$${Number(statement.netRevenue).toFixed(2)}`],
-        ['Payable Amount', `$${Number(statement.payableAmount).toFixed(2)}`],
+        ["Gross Revenue", `$${Number(statement.grossRevenue).toFixed(2)}`],
+        ["Platform Fees", `-$${Number(statement.platformFees).toFixed(2)}`],
+        [
+          "Distribution Fees",
+          `-$${Number(statement.distributionFees).toFixed(2)}`,
+        ],
+        [
+          "Recoupment Deductions",
+          `-$${Number(statement.recoupmentDeductions).toFixed(2)}`,
+        ],
+        ["Net Revenue", `$${Number(statement.netRevenue).toFixed(2)}`],
+        ["Payable Amount", `$${Number(statement.payableAmount).toFixed(2)}`],
       ],
-      theme: 'striped',
+      theme: "striped",
       headStyles: { fillColor: [41, 128, 185] },
     });
 
     let currentY = doc.lastAutoTable.finalY + 15;
 
-    doc.text('Streaming Statistics', 20, currentY);
+    doc.text("Streaming Statistics", 20, currentY);
     currentY += 5;
 
     doc.autoTable({
       startY: currentY,
-      head: [['Metric', 'Value']],
+      head: [["Metric", "Value"]],
       body: [
-        ['Total Streams', String(statement.totalStreams || 0)],
-        ['Total Downloads', String(statement.totalDownloads || 0)],
-        ['Currency', statement.currency],
+        ["Total Streams", String(statement.totalStreams || 0)],
+        ["Total Downloads", String(statement.totalDownloads || 0)],
+        ["Currency", statement.currency],
       ],
-      theme: 'striped',
+      theme: "striped",
       headStyles: { fillColor: [46, 204, 113] },
     });
 
     if (options.includeTerritoryBreakdown && statement.territoryBreakdown) {
       currentY = doc.lastAutoTable.finalY + 15;
-      
+
       const territories = statement.territoryBreakdown as Array<{
         territory: string;
         streams: number;
@@ -391,26 +420,26 @@ export class RoyaltyExportsService {
         currentY = 20;
       }
 
-      doc.text('Territory Breakdown', 20, currentY);
+      doc.text("Territory Breakdown", 20, currentY);
       currentY += 5;
 
       doc.autoTable({
         startY: currentY,
-        head: [['Territory', 'Streams', 'Revenue', 'Share']],
-        body: territories.map(t => [
+        head: [["Territory", "Streams", "Revenue", "Share"]],
+        body: territories.map((t) => [
           t.territory,
           String(t.streams),
           `$${t.revenue.toFixed(2)}`,
           `${t.percentage.toFixed(1)}%`,
         ]),
-        theme: 'striped',
+        theme: "striped",
         headStyles: { fillColor: [155, 89, 182] },
       });
     }
 
     if (options.includeDspBreakdown && statement.dspBreakdown) {
       currentY = doc.lastAutoTable.finalY + 15;
-      
+
       const dsps = statement.dspBreakdown as Array<{
         dsp: string;
         streams: number;
@@ -423,19 +452,19 @@ export class RoyaltyExportsService {
         currentY = 20;
       }
 
-      doc.text('Platform Breakdown', 20, currentY);
+      doc.text("Platform Breakdown", 20, currentY);
       currentY += 5;
 
       doc.autoTable({
         startY: currentY,
-        head: [['Platform', 'Streams', 'Revenue', 'Avg Rate']],
-        body: dsps.map(d => [
+        head: [["Platform", "Streams", "Revenue", "Avg Rate"]],
+        body: dsps.map((d) => [
           d.dsp,
           String(d.streams),
           `$${d.revenue.toFixed(2)}`,
           `$${d.averageRate.toFixed(6)}`,
         ]),
-        theme: 'striped',
+        theme: "striped",
         headStyles: { fillColor: [230, 126, 34] },
       });
     }
@@ -448,20 +477,20 @@ export class RoyaltyExportsService {
         `Page ${i} of ${pageCount} | Generated by Max Booster | ${new Date().toISOString()}`,
         105,
         doc.internal.pageSize.height - 10,
-        { align: 'center' }
+        { align: "center" },
       );
     }
 
     return {
-      data: Buffer.from(doc.output('arraybuffer')),
+      data: Buffer.from(doc.output("arraybuffer")),
       filename: `royalty_statement_${statement.statementPeriod}_${statement.id}.pdf`,
-      mimeType: 'application/pdf',
+      mimeType: "application/pdf",
     };
   }
 
   private exportToJSON(
     statement: RoyaltyStatement,
-    options: ExportOptions
+    options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const exportData: Record<string, unknown> = {
       id: statement.id,
@@ -507,32 +536,32 @@ export class RoyaltyExportsService {
     return {
       data: JSON.stringify(exportData, null, 2),
       filename: `royalty_statement_${statement.statementPeriod}_${statement.id}.json`,
-      mimeType: 'application/json',
+      mimeType: "application/json",
     };
   }
 
   private exportMultipleToCSV(
     statements: RoyaltyStatement[],
-    options: ExportOptions
+    options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const headers = [
-      'Statement ID',
-      'Period',
-      'Period Start',
-      'Period End',
-      'Gross Revenue',
-      'Platform Fees',
-      'Distribution Fees',
-      'Recoupment',
-      'Net Revenue',
-      'Payable Amount',
-      'Currency',
-      'Streams',
-      'Downloads',
-      'Status',
+      "Statement ID",
+      "Period",
+      "Period Start",
+      "Period End",
+      "Gross Revenue",
+      "Platform Fees",
+      "Distribution Fees",
+      "Recoupment",
+      "Net Revenue",
+      "Payable Amount",
+      "Currency",
+      "Streams",
+      "Downloads",
+      "Status",
     ];
 
-    const rows = statements.map(s => [
+    const rows = statements.map((s) => [
       s.id,
       s.statementPeriod,
       s.periodStart.toISOString(),
@@ -549,36 +578,47 @@ export class RoyaltyExportsService {
       s.status,
     ]);
 
-    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .join("\n");
 
     return {
       data: csv,
       filename: `royalty_statements_export_${this.formatDateForFilename(new Date())}.csv`,
-      mimeType: 'text/csv',
+      mimeType: "text/csv",
     };
   }
 
   private exportMultipleToPDF(
     statements: RoyaltyStatement[],
-    options: ExportOptions
+    options: ExportOptions,
   ): { data: Buffer; filename: string; mimeType: string } {
     const doc = new jsPDF();
 
     doc.setFontSize(20);
-    doc.text('Royalty Statements Summary', 105, 20, { align: 'center' });
+    doc.text("Royalty Statements Summary", 105, 20, { align: "center" });
 
     doc.setFontSize(12);
     doc.text(`Total Statements: ${statements.length}`, 20, 35);
-    doc.text(`Generated: ${new Date().toISOString().split('T')[0]}`, 20, 42);
+    doc.text(`Generated: ${new Date().toISOString().split("T")[0]}`, 20, 42);
 
-    const totalGross = statements.reduce((sum, s) => sum + Number(s.grossRevenue), 0);
-    const totalNet = statements.reduce((sum, s) => sum + Number(s.netRevenue), 0);
-    const totalPayable = statements.reduce((sum, s) => sum + Number(s.payableAmount), 0);
+    const totalGross = statements.reduce(
+      (sum, s) => sum + Number(s.grossRevenue),
+      0,
+    );
+    const totalNet = statements.reduce(
+      (sum, s) => sum + Number(s.netRevenue),
+      0,
+    );
+    const totalPayable = statements.reduce(
+      (sum, s) => sum + Number(s.payableAmount),
+      0,
+    );
 
     doc.autoTable({
       startY: 55,
-      head: [['Period', 'Gross', 'Net', 'Payable', 'Streams', 'Status']],
-      body: statements.map(s => [
+      head: [["Period", "Gross", "Net", "Payable", "Streams", "Status"]],
+      body: statements.map((s) => [
         s.statementPeriod,
         `$${Number(s.grossRevenue).toFixed(2)}`,
         `$${Number(s.netRevenue).toFixed(2)}`,
@@ -586,44 +626,70 @@ export class RoyaltyExportsService {
         String(s.totalStreams || 0),
         s.status,
       ]),
-      foot: [[
-        'TOTAL',
-        `$${totalGross.toFixed(2)}`,
-        `$${totalNet.toFixed(2)}`,
-        `$${totalPayable.toFixed(2)}`,
-        '',
-        '',
-      ]],
-      theme: 'striped',
+      foot: [
+        [
+          "TOTAL",
+          `$${totalGross.toFixed(2)}`,
+          `$${totalNet.toFixed(2)}`,
+          `$${totalPayable.toFixed(2)}`,
+          "",
+          "",
+        ],
+      ],
+      theme: "striped",
       headStyles: { fillColor: [41, 128, 185] },
-      footStyles: { fillColor: [52, 73, 94], fontStyle: 'bold' },
+      footStyles: { fillColor: [52, 73, 94], fontStyle: "bold" },
     });
 
     return {
-      data: Buffer.from(doc.output('arraybuffer')),
+      data: Buffer.from(doc.output("arraybuffer")),
       filename: `royalty_statements_summary_${this.formatDateForFilename(new Date())}.pdf`,
-      mimeType: 'application/pdf',
+      mimeType: "application/pdf",
     };
   }
 
   private exportMultipleToJSON(
     statements: RoyaltyStatement[],
-    options: ExportOptions
+    options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const exportData = {
       exportDate: new Date().toISOString(),
       count: statements.length,
       totals: {
-        grossRevenue: statements.reduce((sum, s) => sum + Number(s.grossRevenue), 0),
-        platformFees: statements.reduce((sum, s) => sum + Number(s.platformFees), 0),
-        distributionFees: statements.reduce((sum, s) => sum + Number(s.distributionFees), 0),
-        recoupmentDeductions: statements.reduce((sum, s) => sum + Number(s.recoupmentDeductions), 0),
-        netRevenue: statements.reduce((sum, s) => sum + Number(s.netRevenue), 0),
-        payableAmount: statements.reduce((sum, s) => sum + Number(s.payableAmount), 0),
-        totalStreams: statements.reduce((sum, s) => sum + (s.totalStreams || 0), 0),
-        totalDownloads: statements.reduce((sum, s) => sum + (s.totalDownloads || 0), 0),
+        grossRevenue: statements.reduce(
+          (sum, s) => sum + Number(s.grossRevenue),
+          0,
+        ),
+        platformFees: statements.reduce(
+          (sum, s) => sum + Number(s.platformFees),
+          0,
+        ),
+        distributionFees: statements.reduce(
+          (sum, s) => sum + Number(s.distributionFees),
+          0,
+        ),
+        recoupmentDeductions: statements.reduce(
+          (sum, s) => sum + Number(s.recoupmentDeductions),
+          0,
+        ),
+        netRevenue: statements.reduce(
+          (sum, s) => sum + Number(s.netRevenue),
+          0,
+        ),
+        payableAmount: statements.reduce(
+          (sum, s) => sum + Number(s.payableAmount),
+          0,
+        ),
+        totalStreams: statements.reduce(
+          (sum, s) => sum + (s.totalStreams || 0),
+          0,
+        ),
+        totalDownloads: statements.reduce(
+          (sum, s) => sum + (s.totalDownloads || 0),
+          0,
+        ),
       },
-      statements: statements.map(s => ({
+      statements: statements.map((s) => ({
         id: s.id,
         period: s.statementPeriod,
         grossRevenue: s.grossRevenue,
@@ -636,7 +702,7 @@ export class RoyaltyExportsService {
     return {
       data: JSON.stringify(exportData, null, 2),
       filename: `royalty_statements_export_${this.formatDateForFilename(new Date())}.json`,
-      mimeType: 'application/json',
+      mimeType: "application/json",
     };
   }
 
@@ -644,42 +710,68 @@ export class RoyaltyExportsService {
     const doc = new jsPDF();
 
     doc.setFontSize(16);
-    doc.text('Form 1099-MISC', 105, 20, { align: 'center' });
+    doc.text("Form 1099-MISC", 105, 20, { align: "center" });
     doc.setFontSize(12);
-    doc.text('Miscellaneous Income', 105, 28, { align: 'center' });
-    doc.text(`Tax Year: ${(taxDoc as Record<string, unknown>).taxYear}`, 105, 36, { align: 'center' });
+    doc.text("Miscellaneous Income", 105, 28, { align: "center" });
+    doc.text(
+      `Tax Year: ${(taxDoc as Record<string, unknown>).taxYear}`,
+      105,
+      36,
+      { align: "center" },
+    );
 
     doc.setFontSize(10);
-    doc.text('PAYER\'S Information:', 20, 50);
+    doc.text("PAYER'S Information:", 20, 50);
     doc.text((taxDoc as Record<string, unknown>).payer.name, 20, 58);
     doc.text(`EIN: ${(taxDoc as Record<string, unknown>).payer.ein}`, 20, 66);
     doc.text((taxDoc as Record<string, unknown>).payer.address, 20, 74);
 
-    doc.text('RECIPIENT\'S Information:', 110, 50);
+    doc.text("RECIPIENT'S Information:", 110, 50);
     doc.text((taxDoc as Record<string, unknown>).recipient.name, 110, 58);
-    doc.text(`TIN: ${(taxDoc as Record<string, unknown>).recipient.taxId}`, 110, 66);
+    doc.text(
+      `TIN: ${(taxDoc as Record<string, unknown>).recipient.taxId}`,
+      110,
+      66,
+    );
     doc.text((taxDoc as Record<string, unknown>).recipient.address, 110, 74);
 
     doc.autoTable({
       startY: 90,
-      head: [['Box', 'Description', 'Amount']],
+      head: [["Box", "Description", "Amount"]],
       body: [
-        ['1', 'Rents', `$${(taxDoc as Record<string, unknown>).amounts.box1_rents.toFixed(2)}`],
-        ['2', 'Royalties', `$${(taxDoc as Record<string, unknown>).amounts.box2_royalties.toFixed(2)}`],
-        ['3', 'Other Income', `$${(taxDoc as Record<string, unknown>).amounts.box3_otherIncome.toFixed(2)}`],
+        [
+          "1",
+          "Rents",
+          `$${(taxDoc as Record<string, unknown>).amounts.box1_rents.toFixed(2)}`,
+        ],
+        [
+          "2",
+          "Royalties",
+          `$${(taxDoc as Record<string, unknown>).amounts.box2_royalties.toFixed(2)}`,
+        ],
+        [
+          "3",
+          "Other Income",
+          `$${(taxDoc as Record<string, unknown>).amounts.box3_otherIncome.toFixed(2)}`,
+        ],
       ],
-      theme: 'grid',
+      theme: "grid",
     });
 
     doc.setFontSize(8);
-    doc.text('This is a tax document. Please retain for your records.', 105, 280, { align: 'center' });
+    doc.text(
+      "This is a tax document. Please retain for your records.",
+      105,
+      280,
+      { align: "center" },
+    );
 
-    return Buffer.from(doc.output('arraybuffer'));
+    return Buffer.from(doc.output("arraybuffer"));
   }
 
   private formatFor1099Submission(taxDoc: unknown): string {
     return [
-      'IRS 1099-MISC SUBMISSION FORMAT',
+      "IRS 1099-MISC SUBMISSION FORMAT",
       `TAX_YEAR:${(taxDoc as Record<string, unknown>).taxYear}`,
       `PAYER_NAME:${(taxDoc as Record<string, unknown>).payer.name}`,
       `PAYER_EIN:${(taxDoc as Record<string, unknown>).payer.ein}`,
@@ -687,29 +779,39 @@ export class RoyaltyExportsService {
       `RECIPIENT_TIN:${(taxDoc as Record<string, unknown>).recipient.taxId}`,
       `BOX2_ROYALTIES:${(taxDoc as Record<string, unknown>).amounts.box2_royalties}`,
       `GENERATED:${new Date().toISOString()}`,
-    ].join('\n');
+    ].join("\n");
   }
 
   private formatDateForFilename(date: Date): string {
-    return date.toISOString().split('T')[0].replace(/-/g, '');
+    return date.toISOString().split("T")[0].replace(/-/g, "");
   }
 
   async exportToExcel(
     statements: RoyaltyStatement[],
-    options: ExportOptions
+    options: ExportOptions,
   ): Promise<{ data: string; filename: string; mimeType: string }> {
     const worksheets: Record<string, string[][]> = {};
 
-    worksheets['Summary'] = [
-      ['Royalty Statements Export', '', '', '', '', '', '', ''],
-      ['Generated', new Date().toISOString(), '', '', '', '', '', ''],
-      ['Total Statements', String(statements.length), '', '', '', '', '', ''],
+    worksheets["Summary"] = [
+      ["Royalty Statements Export", "", "", "", "", "", "", ""],
+      ["Generated", new Date().toISOString(), "", "", "", "", "", ""],
+      ["Total Statements", String(statements.length), "", "", "", "", "", ""],
       [],
-      ['Statement ID', 'Period', 'Gross Revenue', 'Platform Fees', 'Distribution Fees', 'Recoupment', 'Net Revenue', 'Payable', 'Status'],
+      [
+        "Statement ID",
+        "Period",
+        "Gross Revenue",
+        "Platform Fees",
+        "Distribution Fees",
+        "Recoupment",
+        "Net Revenue",
+        "Payable",
+        "Status",
+      ],
     ];
 
     for (const s of statements) {
-      worksheets['Summary'].push([
+      worksheets["Summary"].push([
         s.id,
         s.statementPeriod,
         `$${Number(s.grossRevenue).toFixed(2)}`,
@@ -722,26 +824,45 @@ export class RoyaltyExportsService {
       ]);
     }
 
-    const totalGross = statements.reduce((sum, s) => sum + Number(s.grossRevenue), 0);
-    const totalNet = statements.reduce((sum, s) => sum + Number(s.netRevenue), 0);
-    const totalPayable = statements.reduce((sum, s) => sum + Number(s.payableAmount), 0);
+    const totalGross = statements.reduce(
+      (sum, s) => sum + Number(s.grossRevenue),
+      0,
+    );
+    const totalNet = statements.reduce(
+      (sum, s) => sum + Number(s.netRevenue),
+      0,
+    );
+    const totalPayable = statements.reduce(
+      (sum, s) => sum + Number(s.payableAmount),
+      0,
+    );
 
-    worksheets['Summary'].push([]);
-    worksheets['Summary'].push([
-      'TOTALS',
-      '',
+    worksheets["Summary"].push([]);
+    worksheets["Summary"].push([
+      "TOTALS",
+      "",
       `$${totalGross.toFixed(2)}`,
-      '',
-      '',
-      '',
+      "",
+      "",
+      "",
       `$${totalNet.toFixed(2)}`,
       `$${totalPayable.toFixed(2)}`,
-      '',
+      "",
     ]);
 
     if (options.includeLineItems) {
-      worksheets['Line Items'] = [
-        ['Statement ID', 'DSP', 'Territory', 'Streams', 'Downloads', 'Gross Revenue', 'Effective Rate', 'Currency', 'Exchange Rate'],
+      worksheets["Line Items"] = [
+        [
+          "Statement ID",
+          "DSP",
+          "Territory",
+          "Streams",
+          "Downloads",
+          "Gross Revenue",
+          "Effective Rate",
+          "Currency",
+          "Exchange Rate",
+        ],
       ];
 
       for (const s of statements) {
@@ -757,7 +878,7 @@ export class RoyaltyExportsService {
         }>;
 
         for (const item of lineItems) {
-          worksheets['Line Items'].push([
+          worksheets["Line Items"].push([
             s.id,
             item.dsp,
             item.territory,
@@ -773,8 +894,8 @@ export class RoyaltyExportsService {
     }
 
     if (options.includeTerritoryBreakdown) {
-      worksheets['Territory Breakdown'] = [
-        ['Statement ID', 'Territory', 'Streams', 'Revenue', 'Percentage'],
+      worksheets["Territory Breakdown"] = [
+        ["Statement ID", "Territory", "Streams", "Revenue", "Percentage"],
       ];
 
       for (const s of statements) {
@@ -786,7 +907,7 @@ export class RoyaltyExportsService {
         }>;
 
         for (const t of territories) {
-          worksheets['Territory Breakdown'].push([
+          worksheets["Territory Breakdown"].push([
             s.id,
             t.territory,
             String(t.streams),
@@ -798,8 +919,8 @@ export class RoyaltyExportsService {
     }
 
     if (options.includeDspBreakdown) {
-      worksheets['DSP Breakdown'] = [
-        ['Statement ID', 'Platform', 'Streams', 'Revenue', 'Average Rate'],
+      worksheets["DSP Breakdown"] = [
+        ["Statement ID", "Platform", "Streams", "Revenue", "Average Rate"],
       ];
 
       for (const s of statements) {
@@ -811,7 +932,7 @@ export class RoyaltyExportsService {
         }>;
 
         for (const d of dsps) {
-          worksheets['DSP Breakdown'].push([
+          worksheets["DSP Breakdown"].push([
             s.id,
             d.dsp,
             String(d.streams),
@@ -827,24 +948,27 @@ export class RoyaltyExportsService {
     return {
       data: xlsxContent,
       filename: `royalty_statements_${this.formatDateForFilename(new Date())}.xlsx`,
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };
   }
 
   private generateXLSXFormat(worksheets: Record<string, string[][]>): string {
-    let csvOutput = '';
+    let csvOutput = "";
     for (const [sheetName, rows] of Object.entries(worksheets)) {
       csvOutput += `=== ${sheetName} ===\n`;
       for (const row of rows) {
-        csvOutput += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+        csvOutput +=
+          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",") +
+          "\n";
       }
-      csvOutput += '\n';
+      csvOutput += "\n";
     }
     return csvOutput;
   }
 
   async exportYearlySummary(
-    options: YearlySummaryOptions
+    options: YearlySummaryOptions,
   ): Promise<{ data: string; filename: string; mimeType: string }> {
     const yearStart = new Date(options.year, 0, 1);
     const yearEnd = new Date(options.year, 11, 31, 23, 59, 59);
@@ -856,19 +980,25 @@ export class RoyaltyExportsService {
         and(
           eq(royaltyStatements.userId, options.userId),
           gte(royaltyStatements.periodStart, yearStart),
-          lte(royaltyStatements.periodEnd, yearEnd)
-        )
+          lte(royaltyStatements.periodEnd, yearEnd),
+        ),
       )
       .orderBy(desc(royaltyStatements.periodStart));
 
-    const monthlyTotals: Record<string, { 
-      gross: number; 
-      net: number; 
-      payable: number; 
-      streams: number 
-    }> = {};
+    const monthlyTotals: Record<
+      string,
+      {
+        gross: number;
+        net: number;
+        payable: number;
+        streams: number;
+      }
+    > = {};
 
-    const territoryTotals: Record<string, { streams: number; revenue: number }> = {};
+    const territoryTotals: Record<
+      string,
+      { streams: number; revenue: number }
+    > = {};
     const dspTotals: Record<string, { streams: number; revenue: number }> = {};
 
     let totalGross = 0;
@@ -877,8 +1007,9 @@ export class RoyaltyExportsService {
     let totalStreams = 0;
 
     for (const s of statements) {
-      const month = s.statementPeriod || new Date(s.periodStart).toISOString().slice(0, 7);
-      
+      const month =
+        s.statementPeriod || new Date(s.periodStart).toISOString().slice(0, 7);
+
       if (!monthlyTotals[month]) {
         monthlyTotals[month] = { gross: 0, net: 0, payable: 0, streams: 0 };
       }
@@ -937,32 +1068,40 @@ export class RoyaltyExportsService {
         totalStreams,
         statementCount: statements.length,
       },
-      monthlyBreakdown: options.includeMonthlyBreakdown ? monthlyTotals : undefined,
-      territoryBreakdown: options.includeTerritoryBreakdown ? Object.entries(territoryTotals)
-        .map(([territory, data]) => ({
-          territory,
-          ...data,
-          percentage: totalStreams > 0 ? (data.streams / totalStreams) * 100 : 0,
-        }))
-        .sort((a, b) => b.revenue - a.revenue) : undefined,
-      dspBreakdown: options.includeDspBreakdown ? Object.entries(dspTotals)
-        .map(([dsp, data]) => ({
-          dsp,
-          ...data,
-          percentage: totalStreams > 0 ? (data.streams / totalStreams) * 100 : 0,
-        }))
-        .sort((a, b) => b.revenue - a.revenue) : undefined,
+      monthlyBreakdown: options.includeMonthlyBreakdown
+        ? monthlyTotals
+        : undefined,
+      territoryBreakdown: options.includeTerritoryBreakdown
+        ? Object.entries(territoryTotals)
+            .map(([territory, data]) => ({
+              territory,
+              ...data,
+              percentage:
+                totalStreams > 0 ? (data.streams / totalStreams) * 100 : 0,
+            }))
+            .sort((a, b) => b.revenue - a.revenue)
+        : undefined,
+      dspBreakdown: options.includeDspBreakdown
+        ? Object.entries(dspTotals)
+            .map(([dsp, data]) => ({
+              dsp,
+              ...data,
+              percentage:
+                totalStreams > 0 ? (data.streams / totalStreams) * 100 : 0,
+            }))
+            .sort((a, b) => b.revenue - a.revenue)
+        : undefined,
     };
 
     return {
       data: JSON.stringify(summaryData, null, 2),
       filename: `yearly_summary_${options.year}_${options.userId}.json`,
-      mimeType: 'application/json',
+      mimeType: "application/json",
     };
   }
 
   async exportTerritoryReport(
-    options: TerritoryReportOptions
+    options: TerritoryReportOptions,
   ): Promise<{ data: string | Buffer; filename: string; mimeType: string }> {
     const statements = await db
       .select()
@@ -971,16 +1110,19 @@ export class RoyaltyExportsService {
         and(
           eq(royaltyStatements.userId, options.userId),
           gte(royaltyStatements.periodStart, options.startDate),
-          lte(royaltyStatements.periodEnd, options.endDate)
-        )
+          lte(royaltyStatements.periodEnd, options.endDate),
+        ),
       );
 
-    const territoryData: Record<string, {
-      streams: number;
-      revenue: number;
-      downloads: number;
-      periods: string[];
-    }> = {};
+    const territoryData: Record<
+      string,
+      {
+        streams: number;
+        revenue: number;
+        downloads: number;
+        periods: string[];
+      }
+    > = {};
 
     for (const s of statements) {
       const territories = (s.territoryBreakdown || []) as Array<{
@@ -991,7 +1133,12 @@ export class RoyaltyExportsService {
 
       for (const t of territories) {
         if (!territoryData[t.territory]) {
-          territoryData[t.territory] = { streams: 0, revenue: 0, downloads: 0, periods: [] };
+          territoryData[t.territory] = {
+            streams: 0,
+            revenue: 0,
+            downloads: 0,
+            periods: [],
+          };
         }
         territoryData[t.territory].streams += t.streams;
         territoryData[t.territory].revenue += t.revenue;
@@ -1010,35 +1157,47 @@ export class RoyaltyExportsService {
       .sort((a, b) => b.revenue - a.revenue);
 
     switch (options.format) {
-      case 'csv': {
-        const headers = ['Territory', 'Streams', 'Revenue', 'Avg Revenue/Stream', 'Periods'];
-        const rows = reportData.map(r => [
+      case "csv": {
+        const headers = [
+          "Territory",
+          "Streams",
+          "Revenue",
+          "Avg Revenue/Stream",
+          "Periods",
+        ];
+        const rows = reportData.map((r) => [
           r.territory,
           String(r.streams),
           `$${r.revenue.toFixed(2)}`,
           `$${r.avgRevenuePerStream.toFixed(6)}`,
-          r.periods.join('; '),
+          r.periods.join("; "),
         ]);
-        const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+        const csv = [headers, ...rows]
+          .map((row) => row.map((cell) => `"${cell}"`).join(","))
+          .join("\n");
         return {
           data: csv,
           filename: `territory_report_${this.formatDateForFilename(options.startDate)}_${this.formatDateForFilename(options.endDate)}.csv`,
-          mimeType: 'text/csv',
+          mimeType: "text/csv",
         };
       }
-      case 'json':
+      case "json":
       default:
         return {
-          data: JSON.stringify({
-            dateRange: {
-              start: options.startDate.toISOString(),
-              end: options.endDate.toISOString(),
+          data: JSON.stringify(
+            {
+              dateRange: {
+                start: options.startDate.toISOString(),
+                end: options.endDate.toISOString(),
+              },
+              generatedAt: new Date().toISOString(),
+              territories: reportData,
             },
-            generatedAt: new Date().toISOString(),
-            territories: reportData,
-          }, null, 2),
+            null,
+            2,
+          ),
           filename: `territory_report_${this.formatDateForFilename(options.startDate)}_${this.formatDateForFilename(options.endDate)}.json`,
-          mimeType: 'application/json',
+          mimeType: "application/json",
         };
     }
   }

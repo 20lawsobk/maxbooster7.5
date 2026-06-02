@@ -1,9 +1,21 @@
 import {
-  AudioBuffer, DSPContext, createBuffer,
-  BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter,
-  LFO, Oscillator, ADSR, EnvelopeFollower,
-  msToSamples, dbToLinear, clamp, softClip, hardClip
-} from '../core';
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  AllPassFilter,
+  LFO,
+  Oscillator,
+  ADSR,
+  EnvelopeFollower,
+  msToSamples,
+  dbToLinear,
+  clamp,
+  softClip,
+  hardClip,
+} from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -35,7 +47,10 @@ class SampleBuffer {
     this.generate((phase, sr) => {
       let value = 0;
       for (let h = 0; h < harmonics.length; h++) {
-        value += Math.sin(2 * Math.PI * frequency * (h + 1) * phase * this.length / sr) * harmonics[h];
+        value +=
+          Math.sin(
+            (2 * Math.PI * frequency * (h + 1) * phase * this.length) / sr,
+          ) * harmonics[h];
       }
       return value;
     });
@@ -55,7 +70,7 @@ class SampleBuffer {
       let value = 0;
       for (let h = 1; h <= 8; h++) {
         const harmEnv = Math.exp(-t * decay * h * 0.5);
-        value += Math.sin(2 * Math.PI * frequency * h * t) * harmEnv / h;
+        value += (Math.sin(2 * Math.PI * frequency * h * t) * harmEnv) / h;
       }
       this.buffer[i] = value * env;
     }
@@ -199,7 +214,7 @@ export class BasicSamplerSynth implements SynthesizerEngine {
     this.sample = new SampleBuffer(44100 * 2, 44100);
     this.sample.generatePiano(440);
     this.player = new SamplePlayer(this.sample);
-    
+
     this.envelope = new ADSR(0.005, 0.3, 0.7, 0.4, 44100);
     this.lpFilter = new BiquadFilter();
     this.hpFilter = new BiquadFilter();
@@ -215,7 +230,11 @@ export class BasicSamplerSynth implements SynthesizerEngine {
     this.player.trigger(playbackRate);
 
     this.hpFilter.setHighpass(40, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(5000 + this.velocity * 5000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      5000 + this.velocity * 5000,
+      0.8,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.003, 0.28, 0.68, 0.38, context.sampleRate);
     this.envelope.trigger();
@@ -255,7 +274,13 @@ export class BasicSamplerSynth implements SynthesizerEngine {
 }
 
 export class MultisampleSynth implements SynthesizerEngine {
-  private samples: { sample: SampleBuffer, player: SamplePlayer, baseFreq: number, minVel: number, maxVel: number }[] = [];
+  private samples: {
+    sample: SampleBuffer;
+    player: SamplePlayer;
+    baseFreq: number;
+    minVel: number;
+    maxVel: number;
+  }[] = [];
   private activePlayer: SamplePlayer | null = null;
   private envelope: ADSR;
   private lpFilter: BiquadFilter;
@@ -268,7 +293,7 @@ export class MultisampleSynth implements SynthesizerEngine {
     const velocityLayers = [
       { minVel: 0, maxVel: 0.33, decay: 6, brightness: 0.5 },
       { minVel: 0.33, maxVel: 0.66, decay: 4, brightness: 0.7 },
-      { minVel: 0.66, maxVel: 1.0, decay: 2, brightness: 1.0 }
+      { minVel: 0.66, maxVel: 1.0, decay: 2, brightness: 1.0 },
     ];
 
     const frequencies = [220, 440, 880];
@@ -283,17 +308,17 @@ export class MultisampleSynth implements SynthesizerEngine {
           const numHarmonics = Math.floor(8 * layer.brightness);
           for (let h = 1; h <= numHarmonics; h++) {
             const harmEnv = Math.exp(-t * layer.decay * h * 0.4);
-            value += Math.sin(2 * Math.PI * freq * h * t) * harmEnv / h;
+            value += (Math.sin(2 * Math.PI * freq * h * t) * harmEnv) / h;
           }
           (sample as Record<string, unknown>).buffer[i] = value * env;
         }
-        
+
         this.samples.push({
           sample,
           player: new SamplePlayer(sample),
           baseFreq: freq,
           minVel: layer.minVel,
-          maxVel: layer.maxVel
+          maxVel: layer.maxVel,
         });
       }
     }
@@ -326,7 +351,11 @@ export class MultisampleSynth implements SynthesizerEngine {
     this.activePlayer = bestSample.player;
 
     this.hpFilter.setHighpass(40, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(4000 + this.velocity * 6000, 0.9, context.sampleRate);
+    this.lpFilter.setLowpass(
+      4000 + this.velocity * 6000,
+      0.9,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.003, 0.38, 0.58, 0.48, context.sampleRate);
     this.envelope.trigger();
@@ -359,7 +388,7 @@ export class MultisampleSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.samples.forEach(s => s.player.stop());
+    this.samples.forEach((s) => s.player.stop());
     this.activePlayer = null;
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -368,7 +397,13 @@ export class MultisampleSynth implements SynthesizerEngine {
 
 export class GranularSamplerSynth implements SynthesizerEngine {
   private sample: SampleBuffer;
-  private grains: { position: number, phase: number, amp: number, rate: number, pan: number }[] = [];
+  private grains: {
+    position: number;
+    phase: number;
+    amp: number;
+    rate: number;
+    pan: number;
+  }[] = [];
   private envelope: ADSR;
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
@@ -390,7 +425,7 @@ export class GranularSamplerSynth implements SynthesizerEngine {
       let value = 0;
       for (let h = 1; h <= 16; h++) {
         const env = Math.exp(-t * 0.5 * h * 0.3);
-        value += Math.sin(2 * Math.PI * 440 * h * t) * env / h;
+        value += (Math.sin(2 * Math.PI * 440 * h * t) * env) / h;
       }
       (this.sample as Record<string, unknown>).buffer[i] = value * 0.5;
     }
@@ -428,7 +463,11 @@ export class GranularSamplerSynth implements SynthesizerEngine {
     this.densityLFO.setFrequency(0.12, context.sampleRate);
 
     this.hpFilter.setHighpass(60, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(5000 + this.velocity * 4000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      5000 + this.velocity * 4000,
+      0.8,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.09, 0.38, 0.78, 0.58, context.sampleRate);
     this.envelope.trigger();
@@ -452,13 +491,16 @@ export class GranularSamplerSynth implements SynthesizerEngine {
       }
 
       this.grainCounter++;
-      const triggerInterval = Math.floor(this.grainSize / (this.grainDensity * densityMod));
+      const triggerInterval = Math.floor(
+        this.grainSize / (this.grainDensity * densityMod),
+      );
 
       if (this.grainCounter >= triggerInterval) {
         this.grainCounter = 0;
         for (const grain of this.grains) {
           if (grain.amp <= 0.01) {
-            grain.position = this.scanPosition + positionMod * this.sample.getLength() * 0.3;
+            grain.position =
+              this.scanPosition + positionMod * this.sample.getLength() * 0.3;
             grain.position = grain.position % this.sample.getLength();
             grain.phase = 0;
             grain.amp = 0.7 + Math.random() * 0.3;
@@ -474,7 +516,8 @@ export class GranularSamplerSynth implements SynthesizerEngine {
       for (const grain of this.grains) {
         if (grain.amp > 0.001) {
           const grainEnv = Math.sin(grain.phase * Math.PI);
-          const sampleValue = this.sample.readInterpolated(grain.position) * grain.amp * grainEnv;
+          const sampleValue =
+            this.sample.readInterpolated(grain.position) * grain.amp * grainEnv;
 
           sampleL += sampleValue * (1 - grain.pan * 0.5);
           sampleR += sampleValue * (1 + grain.pan * 0.5);
@@ -515,7 +558,7 @@ export class GranularSamplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.grains.forEach(g => {
+    this.grains.forEach((g) => {
       g.position = 0;
       g.phase = 0;
       g.amp = 0;
@@ -531,7 +574,7 @@ export class GranularSamplerSynth implements SynthesizerEngine {
 
 export class StretchSamplerSynth implements SynthesizerEngine {
   private sample: SampleBuffer;
-  private grains: { position: number, phase: number }[] = [];
+  private grains: { position: number; phase: number }[] = [];
   private envelope: ADSR;
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
@@ -576,7 +619,11 @@ export class StretchSamplerSynth implements SynthesizerEngine {
     }
 
     this.hpFilter.setHighpass(50, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(6000 + this.velocity * 4000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      6000 + this.velocity * 4000,
+      0.8,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.018, 0.28, 0.78, 0.48, context.sampleRate);
     this.envelope.trigger();
@@ -653,11 +700,11 @@ export class SlicerSynth implements SynthesizerEngine {
 
   constructor() {
     const sliceLength = Math.floor(44100 * 0.25);
-    
+
     for (let s = 0; s < this.numSlices; s++) {
       const sample = new SampleBuffer(sliceLength, 44100);
       const freq = 100 + s * 50;
-      
+
       for (let i = 0; i < sliceLength; i++) {
         const t = i / 44100;
         const env = Math.exp(-t * 8);
@@ -694,7 +741,11 @@ export class SlicerSynth implements SynthesizerEngine {
     this.player.trigger(clamp(playbackRate, 0.5, 2));
 
     this.hpFilter.setHighpass(30, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(8000 + this.velocity * 4000, 1.2, context.sampleRate);
+    this.lpFilter.setLowpass(
+      8000 + this.velocity * 4000,
+      1.2,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.001, 0.13, 0.48, 0.08, context.sampleRate);
     this.envelope.trigger();
@@ -734,7 +785,12 @@ export class SlicerSynth implements SynthesizerEngine {
 }
 
 export class ROMplerSynth implements SynthesizerEngine {
-  private samples: { sample: SampleBuffer, player: SamplePlayer, name: string, baseFreq: number }[] = [];
+  private samples: {
+    sample: SampleBuffer;
+    player: SamplePlayer;
+    name: string;
+    baseFreq: number;
+  }[] = [];
   private activePlayer: SamplePlayer | null = null;
   private envelope: ADSR;
   private lpFilter: BiquadFilter;
@@ -747,39 +803,45 @@ export class ROMplerSynth implements SynthesizerEngine {
 
   constructor() {
     const sampleConfigs = [
-      { name: 'piano', freq: 440, type: 'piano' },
-      { name: 'strings', freq: 440, type: 'strings' },
-      { name: 'brass', freq: 220, type: 'brass' },
-      { name: 'choir', freq: 440, type: 'choir' }
+      { name: "piano", freq: 440, type: "piano" },
+      { name: "strings", freq: 440, type: "strings" },
+      { name: "brass", freq: 220, type: "brass" },
+      { name: "choir", freq: 440, type: "choir" },
     ];
 
     for (const config of sampleConfigs) {
       const sample = new SampleBuffer(44100 * 3, 44100);
-      
+
       for (let i = 0; i < sample.getLength(); i++) {
         const t = i / 44100;
         let value = 0;
-        
+
         switch (config.type) {
-          case 'piano':
+          case "piano":
             const pianoEnv = Math.exp(-t * 3);
             for (let h = 1; h <= 10; h++) {
-              value += Math.sin(2 * Math.PI * config.freq * h * t) * Math.exp(-t * h * 0.5) / h;
+              value +=
+                (Math.sin(2 * Math.PI * config.freq * h * t) *
+                  Math.exp(-t * h * 0.5)) /
+                h;
             }
             value *= pianoEnv;
             break;
-            
-          case 'strings':
-            const stringsEnv = Math.min(t * 3, 1) * Math.exp(-Math.max(0, t - 2) * 0.5);
+
+          case "strings":
+            const stringsEnv =
+              Math.min(t * 3, 1) * Math.exp(-Math.max(0, t - 2) * 0.5);
             for (let h = 1; h <= 8; h++) {
               const vibrato = Math.sin(2 * Math.PI * 5.5 * t) * 0.003;
-              value += Math.sin(2 * Math.PI * config.freq * h * (1 + vibrato) * t) / h;
+              value +=
+                Math.sin(2 * Math.PI * config.freq * h * (1 + vibrato) * t) / h;
             }
             value *= stringsEnv * 0.5;
             break;
-            
-          case 'brass':
-            const brassEnv = Math.min(t * 10, 1) * Math.exp(-Math.max(0, t - 1.5) * 0.8);
+
+          case "brass":
+            const brassEnv =
+              Math.min(t * 10, 1) * Math.exp(-Math.max(0, t - 1.5) * 0.8);
             const brassFilter = 0.5 + 0.5 * Math.min(t * 4, 1);
             for (let h = 1; h <= 12; h++) {
               const hAmp = brassFilter > h * 0.1 ? 1 / h : 0;
@@ -787,18 +849,21 @@ export class ROMplerSynth implements SynthesizerEngine {
             }
             value *= brassEnv * 0.4;
             break;
-            
-          case 'choir':
-            const choirEnv = Math.min(t * 2, 1) * Math.exp(-Math.max(0, t - 2) * 0.3);
+
+          case "choir":
+            const choirEnv =
+              Math.min(t * 2, 1) * Math.exp(-Math.max(0, t - 2) * 0.3);
             const formants = [800, 1200, 2500];
             for (let f = 0; f < formants.length; f++) {
-              value += Math.sin(2 * Math.PI * config.freq * t) * 
-                       Math.sin(2 * Math.PI * formants[f] * t) * 0.3;
+              value +=
+                Math.sin(2 * Math.PI * config.freq * t) *
+                Math.sin(2 * Math.PI * formants[f] * t) *
+                0.3;
             }
             value *= choirEnv;
             break;
         }
-        
+
         (sample as Record<string, unknown>).buffer[i] = value;
       }
 
@@ -806,7 +871,7 @@ export class ROMplerSynth implements SynthesizerEngine {
         sample,
         player: new SamplePlayer(sample),
         name: config.name,
-        baseFreq: config.freq
+        baseFreq: config.freq,
       });
     }
 
@@ -829,7 +894,11 @@ export class ROMplerSynth implements SynthesizerEngine {
 
     this.chorusLFO.setFrequency(0.5, context.sampleRate);
     this.hpFilter.setHighpass(50, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(5000 + this.velocity * 4000, 0.9, context.sampleRate);
+    this.lpFilter.setLowpass(
+      5000 + this.velocity * 4000,
+      0.9,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.018, 0.28, 0.73, 0.38, context.sampleRate);
     this.envelope.trigger();
@@ -845,7 +914,7 @@ export class ROMplerSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const chorusMod = this.chorusLFO.sine();
-      
+
       let sample = this.activePlayer ? this.activePlayer.process() : 0;
 
       sample = this.hpFilter.process(sample);
@@ -870,7 +939,7 @@ export class ROMplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.samples.forEach(s => s.player.stop());
+    this.samples.forEach((s) => s.player.stop());
     this.activePlayer = null;
     this.chorusDelay.clear();
     this.chorusLFO.reset();
@@ -895,22 +964,22 @@ export class LooperSynth implements SynthesizerEngine {
   constructor() {
     this.loopLength = 44100 * 2;
     this.loopBuffer = new SampleBuffer(this.loopLength, 44100);
-    
+
     for (let i = 0; i < this.loopLength; i++) {
       const t = i / 44100;
       const loopPhase = (i / this.loopLength) * 2 * Math.PI;
       let value = 0;
-      
+
       value += Math.sin(2 * Math.PI * 440 * t) * 0.3;
       value += Math.sin(2 * Math.PI * 880 * t) * 0.15 * Math.sin(loopPhase * 2);
       value += Math.sin(2 * Math.PI * 660 * t) * 0.1 * Math.sin(loopPhase * 3);
-      
+
       (this.loopBuffer as Record<string, unknown>).buffer[i] = value;
     }
 
     this.player = new SamplePlayer(this.loopBuffer);
     this.player.setLoopPoints(0, this.loopLength);
-    
+
     this.envelope = new ADSR(0.1, 0.2, 0.9, 0.5, 44100);
     this.lpFilter = new BiquadFilter();
     this.hpFilter = new BiquadFilter();
@@ -927,7 +996,11 @@ export class LooperSynth implements SynthesizerEngine {
     this.player.trigger(playbackRate);
 
     this.hpFilter.setHighpass(40, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(6000 + this.velocity * 4000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      6000 + this.velocity * 4000,
+      0.8,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.09, 0.18, 0.88, 0.48, context.sampleRate);
     this.envelope.trigger();
@@ -989,7 +1062,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
   constructor() {
     for (let t = 0; t < 4; t++) {
       const sample = new SampleBuffer(44100 * 4, 44100);
-      
+
       for (let i = 0; i < sample.getLength(); i++) {
         const rand1 = Math.random() * 2 - 1;
         const rand2 = Math.random() * 2 - 1;
@@ -997,7 +1070,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
         const shaped = Math.tanh(filtered * 2) * 0.5;
         (sample as Record<string, unknown>).buffer[i] = shaped;
       }
-      
+
       this.samples.push(sample);
       const player = new SamplePlayer(sample);
       player.setLoopPoints(1000, sample.getLength() - 1000);
@@ -1027,7 +1100,11 @@ export class TextureSamplerSynth implements SynthesizerEngine {
     this.textureLFO.setFrequency(0.05, context.sampleRate);
 
     this.hpFilter.setHighpass(100, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(3000 + this.velocity * 2000, 0.6, context.sampleRate);
+    this.lpFilter.setLowpass(
+      3000 + this.velocity * 2000,
+      0.6,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.48, 0.78, 0.83, 0.98, context.sampleRate);
     this.envelope.trigger();
@@ -1052,7 +1129,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
         const textureSample = this.players[p].process();
         const pan = (p - 1.5) / 2 + panMod * 0.2;
         const amp = 0.5 + textureMod * 0.3 * (p % 2 === 0 ? 1 : -1);
-        
+
         sampleL += textureSample * (1 - pan * 0.4) * amp;
         sampleR += textureSample * (1 + pan * 0.4) * amp;
       }
@@ -1062,10 +1139,10 @@ export class TextureSamplerSynth implements SynthesizerEngine {
 
       this.reverbDelay1.write(sampleL);
       this.reverbDelay2.write(sampleR);
-      
+
       const reverb1 = this.reverbDelay1.readInterpolated(15000) * 0.3;
       const reverb2 = this.reverbDelay2.readInterpolated(17000) * 0.3;
-      
+
       sampleL += reverb1 + reverb2 * 0.5;
       sampleR += reverb2 + reverb1 * 0.5;
 
@@ -1089,7 +1166,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.players.forEach(p => p.stop());
+    this.players.forEach((p) => p.stop());
     this.reverbDelay1.clear();
     this.reverbDelay2.clear();
     this.panLFO.reset();
@@ -1132,7 +1209,8 @@ export class ResynthesisSynth implements SynthesizerEngine {
 
     for (let i = 0; i < this.numHarmonics; i++) {
       this.harmonicPhases[i] = 0;
-      this.harmonicAmplitudes[i] = Math.pow(0.8, i) * (1 + Math.sin(i * 0.5) * 0.3);
+      this.harmonicAmplitudes[i] =
+        Math.pow(0.8, i) * (1 + Math.sin(i * 0.5) * 0.3);
     }
 
     this.spectralLFO.setFrequency(0.2, context.sampleRate);
@@ -1166,10 +1244,11 @@ export class ResynthesisSynth implements SynthesizerEngine {
 
         const ampMod = 1 + spectralMod * 0.2 * Math.sin(h * 0.3);
         const amp = this.harmonicAmplitudes[h] * ampMod;
-        
+
         sample += Math.sin(this.harmonicPhases[h]) * amp;
-        
-        this.harmonicPhases[h] += (2 * Math.PI * harmonicFreq) / this.sampleRate;
+
+        this.harmonicPhases[h] +=
+          (2 * Math.PI * harmonicFreq) / this.sampleRate;
         if (this.harmonicPhases[h] > 2 * Math.PI) {
           this.harmonicPhases[h] -= 2 * Math.PI;
         }
@@ -1178,7 +1257,11 @@ export class ResynthesisSynth implements SynthesizerEngine {
       sample /= 4;
 
       const filterFreq = 1500 + filterEnvValue * 4000 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 12000), 1.2, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 12000),
+        1.2,
+        this.sampleRate,
+      );
 
       sample = this.hpFilter.process(sample);
       sample = this.lpFilter.process(sample);
@@ -1249,14 +1332,23 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
     const formantQs = [8, 6, 5, 4, 3];
     const formantGains = [5, 3, 2, 1.5, 1];
     for (let i = 0; i < 5; i++) {
-      this.formantFilters[i].setPeaking(formantFreqs[i], formantQs[i], formantGains[i], context.sampleRate);
+      this.formantFilters[i].setPeaking(
+        formantFreqs[i],
+        formantQs[i],
+        formantGains[i],
+        context.sampleRate,
+      );
     }
 
     this.vibratoLFO.setFrequency(5.5, context.sampleRate);
     this.formantLFO.setFrequency(0.15, context.sampleRate);
 
     this.hpFilter.setHighpass(100, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(6000 + this.velocity * 4000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      6000 + this.velocity * 4000,
+      0.8,
+      context.sampleRate,
+    );
 
     this.envelope = new ADSR(0.09, 0.28, 0.78, 0.48, context.sampleRate);
     this.envelope.trigger();
@@ -1274,7 +1366,8 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
       const vibrato = this.vibratoLFO.sine() * 0.003 * envValue;
       const formantMod = this.formantLFO.sine() * 0.1;
 
-      const playbackRate = (this.frequency / this.baseFrequency) * (1 + vibrato);
+      const playbackRate =
+        (this.frequency / this.baseFrequency) * (1 + vibrato);
       this.player.setPlaybackRate(playbackRate);
 
       let sample = this.player.process();
@@ -1300,7 +1393,7 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
 
   reset(): void {
     this.player.stop();
-    this.formantFilters.forEach(f => f.clear());
+    this.formantFilters.forEach((f) => f.clear());
     this.vibratoLFO.reset();
     this.formantLFO.reset();
     this.lpFilter.clear();
@@ -1308,15 +1401,16 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
   }
 }
 
-export const SAMPLER_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
-  'basic-sampler': BasicSamplerSynth,
-  'multisample': MultisampleSynth,
-  'granular-sampler': GranularSamplerSynth,
-  'stretch-sampler': StretchSamplerSynth,
-  'slicer': SlicerSynth,
-  'rompler': ROMplerSynth,
-  'looper': LooperSynth,
-  'texture-sampler': TextureSamplerSynth,
-  'resynthesis': ResynthesisSynth,
-  'voice-sampler': VoiceSamplerSynth,
-};
+export const SAMPLER_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> =
+  {
+    "basic-sampler": BasicSamplerSynth,
+    multisample: MultisampleSynth,
+    "granular-sampler": GranularSamplerSynth,
+    "stretch-sampler": StretchSamplerSynth,
+    slicer: SlicerSynth,
+    rompler: ROMplerSynth,
+    looper: LooperSynth,
+    "texture-sampler": TextureSamplerSynth,
+    resynthesis: ResynthesisSynth,
+    "voice-sampler": VoiceSamplerSynth,
+  };

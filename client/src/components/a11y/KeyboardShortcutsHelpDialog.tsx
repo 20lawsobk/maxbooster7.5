@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,12 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Keyboard, Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { useAccessibility } from './AccessibilityProvider';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Keyboard, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useAccessibility } from "./AccessibilityProvider";
 
 export interface ShortcutCategory {
   name: string;
@@ -26,59 +26,65 @@ export interface Shortcut {
 
 const defaultShortcuts: ShortcutCategory[] = [
   {
-    name: 'Navigation',
+    name: "Navigation",
     shortcuts: [
-      { keys: ['Alt', '1'], description: 'Skip to main content' },
-      { keys: ['Alt', '2'], description: 'Skip to navigation' },
-      { keys: ['Alt', '3'], description: 'Skip to search' },
-      { keys: ['Alt', '4'], description: 'Skip to sidebar' },
-      { keys: ['Alt', '5'], description: 'Skip to footer' },
-      { keys: ['Tab'], description: 'Move to next focusable element' },
-      { keys: ['Shift', 'Tab'], description: 'Move to previous focusable element' },
-      { keys: ['Home'], description: 'Go to first item in list' },
-      { keys: ['End'], description: 'Go to last item in list' },
+      { keys: ["Alt", "1"], description: "Skip to main content" },
+      { keys: ["Alt", "2"], description: "Skip to navigation" },
+      { keys: ["Alt", "3"], description: "Skip to search" },
+      { keys: ["Alt", "4"], description: "Skip to sidebar" },
+      { keys: ["Alt", "5"], description: "Skip to footer" },
+      { keys: ["Tab"], description: "Move to next focusable element" },
+      {
+        keys: ["Shift", "Tab"],
+        description: "Move to previous focusable element",
+      },
+      { keys: ["Home"], description: "Go to first item in list" },
+      { keys: ["End"], description: "Go to last item in list" },
     ],
   },
   {
-    name: 'General',
+    name: "General",
     shortcuts: [
-      { keys: ['?'], description: 'Show keyboard shortcuts help' },
-      { keys: ['Escape'], description: 'Close dialog or cancel action' },
-      { keys: ['Ctrl', 'K'], description: 'Open command palette' },
-      { keys: ['Ctrl', 'S'], description: 'Save current project' },
-      { keys: ['Ctrl', 'Z'], description: 'Undo last action' },
-      { keys: ['Ctrl', 'Shift', 'Z'], description: 'Redo last action' },
+      { keys: ["?"], description: "Show keyboard shortcuts help" },
+      { keys: ["Escape"], description: "Close dialog or cancel action" },
+      { keys: ["Ctrl", "K"], description: "Open command palette" },
+      { keys: ["Ctrl", "S"], description: "Save current project" },
+      { keys: ["Ctrl", "Z"], description: "Undo last action" },
+      { keys: ["Ctrl", "Shift", "Z"], description: "Redo last action" },
     ],
   },
   {
-    name: 'Accessibility',
+    name: "Accessibility",
     shortcuts: [
-      { keys: ['Ctrl', 'Alt', 'A'], description: 'Open accessibility settings' },
-      { keys: ['Ctrl', '+'], description: 'Increase text size' },
-      { keys: ['Ctrl', '-'], description: 'Decrease text size' },
-      { keys: ['Ctrl', '0'], description: 'Reset text size' },
+      {
+        keys: ["Ctrl", "Alt", "A"],
+        description: "Open accessibility settings",
+      },
+      { keys: ["Ctrl", "+"], description: "Increase text size" },
+      { keys: ["Ctrl", "-"], description: "Decrease text size" },
+      { keys: ["Ctrl", "0"], description: "Reset text size" },
     ],
   },
   {
-    name: 'Lists & Menus',
+    name: "Lists & Menus",
     shortcuts: [
-      { keys: ['↑'], description: 'Move up in list/menu' },
-      { keys: ['↓'], description: 'Move down in list/menu' },
-      { keys: ['←'], description: 'Move left in horizontal list' },
-      { keys: ['→'], description: 'Move right in horizontal list' },
-      { keys: ['Enter'], description: 'Select/activate item' },
-      { keys: ['Space'], description: 'Toggle selection' },
+      { keys: ["↑"], description: "Move up in list/menu" },
+      { keys: ["↓"], description: "Move down in list/menu" },
+      { keys: ["←"], description: "Move left in horizontal list" },
+      { keys: ["→"], description: "Move right in horizontal list" },
+      { keys: ["Enter"], description: "Select/activate item" },
+      { keys: ["Space"], description: "Toggle selection" },
     ],
   },
   {
-    name: 'Studio',
+    name: "Studio",
     shortcuts: [
-      { keys: ['Space'], description: 'Play/Pause transport' },
-      { keys: ['R'], description: 'Toggle record' },
-      { keys: ['L'], description: 'Toggle loop' },
-      { keys: ['M'], description: 'Toggle metronome' },
-      { keys: ['Ctrl', 'T'], description: 'Add new track' },
-      { keys: ['Delete'], description: 'Delete selected item' },
+      { keys: ["Space"], description: "Play/Pause transport" },
+      { keys: ["R"], description: "Toggle record" },
+      { keys: ["L"], description: "Toggle loop" },
+      { keys: ["M"], description: "Toggle metronome" },
+      { keys: ["Ctrl", "T"], description: "Add new track" },
+      { keys: ["Delete"], description: "Delete selected item" },
     ],
   },
 ];
@@ -102,14 +108,14 @@ function KeyBadge({ keyName }: { keyName: string }) {
 
 export function KeyboardShortcutsHelpDialog({
   shortcuts = defaultShortcuts,
-  triggerLabel = 'Keyboard Shortcuts',
+  triggerLabel = "Keyboard Shortcuts",
   showTrigger = true,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
-  className = '',
+  className = "",
 }: KeyboardShortcutsHelpDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const { announce } = useAccessibility();
 
   const isControlled = controlledOpen !== undefined;
@@ -118,38 +124,59 @@ export function KeyboardShortcutsHelpDialog({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === '?' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      if (
+        event.key === "?" &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.metaKey
+      ) {
         const target = event.target as HTMLElement;
-        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+        const isInput =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
         if (!isInput) {
           event.preventDefault();
           onOpenChange?.(true);
-          announce('Keyboard shortcuts dialog opened');
+          announce("Keyboard shortcuts dialog opened");
         }
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onOpenChange, announce]);
 
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    onOpenChange?.(newOpen);
-    if (!newOpen) {
-      setSearchQuery('');
-      announce('Keyboard shortcuts dialog closed');
-    }
-  }, [onOpenChange, announce]);
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      onOpenChange?.(newOpen);
+      if (!newOpen) {
+        setSearchQuery("");
+        announce("Keyboard shortcuts dialog closed");
+      }
+    },
+    [onOpenChange, announce],
+  );
 
-  const filteredShortcuts = shortcuts.map(category => ({
-    ...category,
-    shortcuts: category.shortcuts.filter(shortcut =>
-      shortcut.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shortcut.keys.some(key => key.toLowerCase().includes(searchQuery.toLowerCase()))
-    ),
-  })).filter(category => category.shortcuts.length > 0);
+  const filteredShortcuts = shortcuts
+    .map((category) => ({
+      ...category,
+      shortcuts: category.shortcuts.filter(
+        (shortcut) =>
+          shortcut.description
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          shortcut.keys.some((key) =>
+            key.toLowerCase().includes(searchQuery.toLowerCase()),
+          ),
+      ),
+    }))
+    .filter((category) => category.shortcuts.length > 0);
 
-  const totalShortcuts = filteredShortcuts.reduce((sum, cat) => sum + cat.shortcuts.length, 0);
+  const totalShortcuts = filteredShortcuts.reduce(
+    (sum, cat) => sum + cat.shortcuts.length,
+    0,
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -176,13 +203,18 @@ export function KeyboardShortcutsHelpDialog({
             Keyboard Shortcuts
           </DialogTitle>
           <DialogDescription id="keyboard-shortcuts-description">
-            Use these keyboard shortcuts to navigate and interact with the application more efficiently.
-            Press <kbd className="px-1 py-0.5 text-xs bg-muted rounded">?</kbd> anywhere to open this dialog.
+            Use these keyboard shortcuts to navigate and interact with the
+            application more efficiently. Press{" "}
+            <kbd className="px-1 py-0.5 text-xs bg-muted rounded">?</kbd>{" "}
+            anywhere to open this dialog.
           </DialogDescription>
         </DialogHeader>
 
         <div className="relative mt-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+            aria-hidden="true"
+          />
           <Input
             type="search"
             placeholder="Search shortcuts..."
@@ -196,7 +228,7 @@ export function KeyboardShortcutsHelpDialog({
               variant="ghost"
               size="sm"
               className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-              onClick={() => setSearchQuery('')}
+              onClick={() => setSearchQuery("")}
               aria-label="Clear search"
             >
               <X className="h-4 w-4" />
@@ -204,11 +236,7 @@ export function KeyboardShortcutsHelpDialog({
           )}
         </div>
 
-        <div
-          role="status"
-          aria-live="polite"
-          className="sr-only"
-        >
+        <div role="status" aria-live="polite" className="sr-only">
           {searchQuery && `${totalShortcuts} shortcuts found`}
         </div>
 
@@ -220,7 +248,10 @@ export function KeyboardShortcutsHelpDialog({
           ) : (
             <div className="space-y-6">
               {filteredShortcuts.map((category) => (
-                <section key={category.name} aria-labelledby={`category-${category.name}`}>
+                <section
+                  key={category.name}
+                  aria-labelledby={`category-${category.name}`}
+                >
                   <h3
                     id={`category-${category.name}`}
                     className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider"
@@ -234,10 +265,17 @@ export function KeyboardShortcutsHelpDialog({
                         className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <span className="text-sm">{shortcut.description}</span>
-                        <div className="flex items-center gap-1" aria-label={shortcut.keys.join(' plus ')}>
+                        <div
+                          className="flex items-center gap-1"
+                          aria-label={shortcut.keys.join(" plus ")}
+                        >
                           {shortcut.keys.map((key, keyIndex) => (
                             <React.Fragment key={keyIndex}>
-                              {keyIndex > 0 && <span className="text-muted-foreground text-xs">+</span>}
+                              {keyIndex > 0 && (
+                                <span className="text-muted-foreground text-xs">
+                                  +
+                                </span>
+                              )}
                               <KeyBadge keyName={key} />
                             </React.Fragment>
                           ))}
@@ -253,7 +291,7 @@ export function KeyboardShortcutsHelpDialog({
 
         <div className="mt-4 pt-4 border-t text-center text-sm text-muted-foreground">
           <p>
-            Tip: Many shortcuts can be customized in{' '}
+            Tip: Many shortcuts can be customized in{" "}
             <Button
               variant="link"
               className="p-0 h-auto text-sm"

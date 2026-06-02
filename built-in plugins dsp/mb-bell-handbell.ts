@@ -1,5 +1,60 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbBellHandbellPlugin: PluginDefinition = { id: 'mb-bell-handbell', slug: 'mb-bell-handbell', name: 'MB Handbell', category: 'instrument', type: 'bell' as any, version: '1.0.0', description: 'Bright handbell choir with clear ring', author: 'Max Booster', grade: 'A', oscillators: [{ type: 'sine', detune: 0, gain: 0.5 }, { type: 'sine', detune: 2400, gain: 0.3 }, { type: 'sine', detune: 3600, gain: 0.2 }], envelope: { attack: 0.001, decay: 2.0, sustain: 0.05, release: 1.5 }, parameters: [{ id: 'brightness', name: 'Brightness', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }, { id: 'ring', name: 'Ring Time', type: 'float', defaultValue: 0.7, minValue: 0, maxValue: 1, automatable: true }, { id: 'damper', name: 'Damper', type: 'float', defaultValue: 0.2, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { brightness: 0.8, ring: 0.7, damper: 0.2, volume: 0.8 } };
+const MbBellHandbellPlugin: PluginDefinition = {
+  id: "mb-bell-handbell",
+  slug: "mb-bell-handbell",
+  name: "MB Handbell",
+  category: "instrument",
+  type: "bell" as any,
+  version: "1.0.0",
+  description: "Bright handbell choir with clear ring",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sine", detune: 0, gain: 0.5 },
+    { type: "sine", detune: 2400, gain: 0.3 },
+    { type: "sine", detune: 3600, gain: 0.2 },
+  ],
+  envelope: { attack: 0.001, decay: 2.0, sustain: 0.05, release: 1.5 },
+  parameters: [
+    {
+      id: "brightness",
+      name: "Brightness",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "ring",
+      name: "Ring Time",
+      type: "float",
+      defaultValue: 0.7,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "damper",
+      name: "Damper",
+      type: "float",
+      defaultValue: 0.2,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { brightness: 0.8, ring: 0.7, damper: 0.2, volume: 0.8 },
+};
 
 export default MbBellHandbellPlugin;

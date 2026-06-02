@@ -1,10 +1,13 @@
-import { logger } from '../lib/logger';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect } from 'react';
-import { useAccessibility } from '@/components/a11y/AccessibilityProvider';
-import { apiRequest } from '@/lib/queryClient';
-import type { FontSize, ColorBlindMode } from '@/components/a11y/AccessibilityProvider';
-import type { ContrastMode } from '@/hooks/useHighContrast';
+import { logger } from "../lib/logger";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect } from "react";
+import { useAccessibility } from "@/components/a11y/AccessibilityProvider";
+import { apiRequest } from "@/lib/queryClient";
+import type {
+  FontSize,
+  ColorBlindMode,
+} from "@/components/a11y/AccessibilityProvider";
+import type { ContrastMode } from "@/hooks/useHighContrast";
 
 export interface AccessibilityPreferences {
   reducedMotion: boolean | null;
@@ -19,8 +22,8 @@ export interface AccessibilityPreferences {
 const defaultPreferences: AccessibilityPreferences = {
   reducedMotion: null,
   contrastMode: null,
-  fontSize: 'medium',
-  colorBlindMode: 'none',
+  fontSize: "medium",
+  colorBlindMode: "none",
   focusIndicatorWidth: 2,
   screenReaderOptimized: false,
   keyboardNavigationEnabled: true,
@@ -39,19 +42,29 @@ export function useAccessibilityPreferences() {
     resetAllPreferences,
   } = useAccessibility();
 
-  const { data: serverPreferences, isLoading, error } = useQuery<AccessibilityPreferences>({
-    queryKey: ['/api/user/accessibility-preferences'],
+  const {
+    data: serverPreferences,
+    isLoading,
+    error,
+  } = useQuery<AccessibilityPreferences>({
+    queryKey: ["/api/user/accessibility-preferences"],
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<AccessibilityPreferences>) => {
-      const response = await apiRequest('PUT', '/api/user/accessibility-preferences', updates);
+      const response = await apiRequest(
+        "PUT",
+        "/api/user/accessibility-preferences",
+        updates,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user/accessibility-preferences'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/user/accessibility-preferences"],
+      });
     },
   });
 
@@ -70,7 +83,13 @@ export function useAccessibilityPreferences() {
     if (serverPreferences.colorBlindMode) {
       setColorBlindMode(serverPreferences.colorBlindMode);
     }
-  }, [serverPreferences, reducedMotion, highContrast, setFontSize, setColorBlindMode]);
+  }, [
+    serverPreferences,
+    reducedMotion,
+    highContrast,
+    setFontSize,
+    setColorBlindMode,
+  ]);
 
   const saveToServer = useCallback(async () => {
     const preferences: Partial<AccessibilityPreferences> = {
@@ -83,28 +102,35 @@ export function useAccessibilityPreferences() {
 
     try {
       await updateMutation.mutateAsync(preferences);
-      announce('Accessibility preferences saved to your profile');
+      announce("Accessibility preferences saved to your profile");
     } catch (error) {
-      logger.error('Failed to save accessibility preferences:', error);
+      logger.error("Failed to save accessibility preferences:", error);
     }
-  }, [reducedMotion, highContrast, fontSize, colorBlindMode, updateMutation, announce]);
+  }, [
+    reducedMotion,
+    highContrast,
+    fontSize,
+    colorBlindMode,
+    updateMutation,
+    announce,
+  ]);
 
   const updatePreference = useCallback(
     async <K extends keyof AccessibilityPreferences>(
       key: K,
-      value: AccessibilityPreferences[K]
+      value: AccessibilityPreferences[K],
     ) => {
       switch (key) {
-        case 'reducedMotion':
+        case "reducedMotion":
           reducedMotion.setReducedMotion(value as boolean | null);
           break;
-        case 'contrastMode':
+        case "contrastMode":
           highContrast.setContrastMode(value as ContrastMode | null);
           break;
-        case 'fontSize':
+        case "fontSize":
           setFontSize(value as FontSize);
           break;
-        case 'colorBlindMode':
+        case "colorBlindMode":
           setColorBlindMode(value as ColorBlindMode);
           break;
       }
@@ -115,17 +141,25 @@ export function useAccessibilityPreferences() {
         logger.error(`Failed to update ${key}:`, error);
       }
     },
-    [reducedMotion, highContrast, setFontSize, setColorBlindMode, updateMutation]
+    [
+      reducedMotion,
+      highContrast,
+      setFontSize,
+      setColorBlindMode,
+      updateMutation,
+    ],
   );
 
   const resetPreferences = useCallback(async () => {
     resetAllPreferences();
     try {
-      await apiRequest('DELETE', '/api/user/accessibility-preferences');
-      queryClient.invalidateQueries({ queryKey: ['/api/user/accessibility-preferences'] });
-      announce('Accessibility preferences reset to defaults');
+      await apiRequest("DELETE", "/api/user/accessibility-preferences");
+      queryClient.invalidateQueries({
+        queryKey: ["/api/user/accessibility-preferences"],
+      });
+      announce("Accessibility preferences reset to defaults");
     } catch (error) {
-      logger.error('Failed to reset accessibility preferences:', error);
+      logger.error("Failed to reset accessibility preferences:", error);
     }
   }, [resetAllPreferences, queryClient, announce]);
 
@@ -136,7 +170,8 @@ export function useAccessibilityPreferences() {
     colorBlindMode,
     focusIndicatorWidth: highContrast.getFocusIndicatorWidth(),
     screenReaderOptimized: serverPreferences?.screenReaderOptimized || false,
-    keyboardNavigationEnabled: serverPreferences?.keyboardNavigationEnabled ?? true,
+    keyboardNavigationEnabled:
+      serverPreferences?.keyboardNavigationEnabled ?? true,
   };
 
   return {
@@ -152,27 +187,30 @@ export function useAccessibilityPreferences() {
     reducedMotion: {
       enabled: reducedMotion.prefersReducedMotion,
       isSystemPreference: reducedMotion.isSystemPreference,
-      setEnabled: (value: boolean | null) => updatePreference('reducedMotion', value),
+      setEnabled: (value: boolean | null) =>
+        updatePreference("reducedMotion", value),
     },
     highContrast: {
       mode: highContrast.contrastMode,
       isHighContrast: highContrast.isHighContrast,
       isSystemPreference: highContrast.isSystemPreference,
-      setMode: (value: ContrastMode | null) => updatePreference('contrastMode', value),
+      setMode: (value: ContrastMode | null) =>
+        updatePreference("contrastMode", value),
     },
     fontSize: {
       current: fontSize,
-      set: (value: FontSize) => updatePreference('fontSize', value),
+      set: (value: FontSize) => updatePreference("fontSize", value),
     },
     colorBlindMode: {
       current: colorBlindMode,
-      set: (value: ColorBlindMode) => updatePreference('colorBlindMode', value),
+      set: (value: ColorBlindMode) => updatePreference("colorBlindMode", value),
     },
   };
 }
 
 export function useAutoSyncAccessibilityPreferences(enabled: boolean = true) {
-  const { syncFromServer, serverPreferences, isLoading } = useAccessibilityPreferences();
+  const { syncFromServer, serverPreferences, isLoading } =
+    useAccessibilityPreferences();
 
   useEffect(() => {
     if (enabled && !isLoading && serverPreferences) {

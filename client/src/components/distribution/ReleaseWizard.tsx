@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/lib/logger';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 import {
   ChevronLeft,
   ChevronRight,
@@ -29,49 +29,74 @@ import {
   Sparkles,
   Copy,
   ExternalLink,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MetadataForm } from './MetadataForm';
-import { TrackUploader } from './TrackUploader';
-import { ArtworkUploader } from './ArtworkUploader';
-import { LyricsEditor } from './LyricsEditor';
-import { TerritorySelector } from './TerritorySelector';
-import { DSPSelector } from './DSPSelector';
-import { ReleaseDateScheduler } from './ReleaseDateScheduler';
-import { RoyaltySplitManager } from './RoyaltySplitManager';
+import { MetadataForm } from "./MetadataForm";
+import { TrackUploader } from "./TrackUploader";
+import { ArtworkUploader } from "./ArtworkUploader";
+import { LyricsEditor } from "./LyricsEditor";
+import { TerritorySelector } from "./TerritorySelector";
+import { DSPSelector } from "./DSPSelector";
+import { ReleaseDateScheduler } from "./ReleaseDateScheduler";
+import { RoyaltySplitManager } from "./RoyaltySplitManager";
 
 // Step configuration
 const STEPS = [
-  { id: 1, title: 'Metadata', icon: Music, description: 'Basic release information' },
-  { id: 2, title: 'Tracks & Artwork', icon: FileAudio, description: 'Upload audio and cover art' },
-  { id: 3, title: 'Lyrics', icon: FileText, description: 'Add lyrics and credits' },
-  { id: 4, title: 'Territory & DSPs', icon: Globe, description: 'Distribution settings' },
-  { id: 5, title: 'Schedule & Splits', icon: Calendar, description: 'Release date and royalties' },
-  { id: 6, title: 'Review & Submit', icon: Eye, description: 'Final review' },
+  {
+    id: 1,
+    title: "Metadata",
+    icon: Music,
+    description: "Basic release information",
+  },
+  {
+    id: 2,
+    title: "Tracks & Artwork",
+    icon: FileAudio,
+    description: "Upload audio and cover art",
+  },
+  {
+    id: 3,
+    title: "Lyrics",
+    icon: FileText,
+    description: "Add lyrics and credits",
+  },
+  {
+    id: 4,
+    title: "Territory & DSPs",
+    icon: Globe,
+    description: "Distribution settings",
+  },
+  {
+    id: 5,
+    title: "Schedule & Splits",
+    icon: Calendar,
+    description: "Release date and royalties",
+  },
+  { id: 6, title: "Review & Submit", icon: Eye, description: "Final review" },
 ];
 
 // Validation schemas for each step
 const metadataSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  artistName: z.string().min(1, 'Artist name is required'),
-  releaseType: z.enum(['single', 'EP', 'album']),
-  primaryGenre: z.string().min(1, 'Primary genre is required'),
+  title: z.string().min(1, "Title is required"),
+  artistName: z.string().min(1, "Artist name is required"),
+  releaseType: z.enum(["single", "EP", "album"]),
+  primaryGenre: z.string().min(1, "Primary genre is required"),
   secondaryGenre: z.string().optional(),
-  language: z.string().min(1, 'Language is required'),
+  language: z.string().min(1, "Language is required"),
   labelName: z.string().optional(),
   copyrightYear: z
     .number()
     .int()
     .min(1900)
     .max(new Date().getFullYear() + 1),
-  copyrightOwner: z.string().min(1, 'Copyright owner is required'),
+  copyrightOwner: z.string().min(1, "Copyright owner is required"),
   publishingRights: z.string().optional(),
   isExplicit: z.boolean(),
   moodTags: z.array(z.string()).optional(),
 });
 
 const tracksSchema = z.object({
-  audioFiles: z.array(z.any()).min(1, 'At least one track is required'),
+  audioFiles: z.array(z.any()).min(1, "At least one track is required"),
   artwork: z.any().nullable(),
 });
 
@@ -81,25 +106,31 @@ interface ReleaseWizardProps {
   onCancel?: () => void;
 }
 
-export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizardProps) {
+export function ReleaseWizard({
+  releaseId,
+  onComplete,
+  onCancel,
+}: ReleaseWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [metadataErrors, setMetadataErrors] = useState<Record<string, string>>({});
+  const [metadataErrors, setMetadataErrors] = useState<Record<string, string>>(
+    {},
+  );
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Form state for all steps
   const [metadataData, setMetadataData] = useState({
-    title: '',
-    artistName: '',
-    releaseType: 'single' as 'single' | 'EP' | 'album',
-    primaryGenre: '',
-    secondaryGenre: '',
-    language: 'English',
-    labelName: '',
+    title: "",
+    artistName: "",
+    releaseType: "single" as "single" | "EP" | "album",
+    primaryGenre: "",
+    secondaryGenre: "",
+    language: "English",
+    labelName: "",
     copyrightYear: new Date().getFullYear(),
-    copyrightOwner: '',
-    publishingRights: '',
+    copyrightOwner: "",
+    publishingRights: "",
     isExplicit: false,
     moodTags: [] as string[],
   });
@@ -108,62 +139,68 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
   const [artwork, setArtwork] = useState<File | null>(null);
   const [lyrics, setLyrics] = useState<Record<string, string>>({});
   const [selectedTerritories, setSelectedTerritories] = useState<string[]>([]);
-  const [territoryMode, setTerritoryMode] = useState<'worldwide' | 'include' | 'exclude'>(
-    'worldwide'
-  );
+  const [territoryMode, setTerritoryMode] = useState<
+    "worldwide" | "include" | "exclude"
+  >("worldwide");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([
-    'spotify',
-    'apple-music',
-    'youtube-music',
+    "spotify",
+    "apple-music",
+    "youtube-music",
   ]);
   const [releaseDate, setReleaseDate] = useState<Date | null>(null);
   const [royaltySplits, setRoyaltySplits] = useState<any[]>([]);
   const [createPreSave, setCreatePreSave] = useState(true);
-  const [preSaveSlug, setPreSaveSlug] = useState('');
+  const [preSaveSlug, setPreSaveSlug] = useState("");
 
   // Save as draft mutation
   const saveDraftMutation = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
-      formData.append('title', metadataData.title);
-      formData.append('artistName', metadataData.artistName);
-      formData.append('releaseType', metadataData.releaseType);
-      formData.append('primaryGenre', metadataData.primaryGenre);
-      formData.append('language', metadataData.language);
-      formData.append('copyrightYear', metadataData.copyrightYear.toString());
-      formData.append('copyrightOwner', metadataData.copyrightOwner);
-      formData.append('isExplicit', metadataData.isExplicit.toString());
+      formData.append("title", metadataData.title);
+      formData.append("artistName", metadataData.artistName);
+      formData.append("releaseType", metadataData.releaseType);
+      formData.append("primaryGenre", metadataData.primaryGenre);
+      formData.append("language", metadataData.language);
+      formData.append("copyrightYear", metadataData.copyrightYear.toString());
+      formData.append("copyrightOwner", metadataData.copyrightOwner);
+      formData.append("isExplicit", metadataData.isExplicit.toString());
 
       if (releaseDate) {
-        formData.append('releaseDate', releaseDate.toISOString());
+        formData.append("releaseDate", releaseDate.toISOString());
       }
 
       formData.append(
-        'metadata',
+        "metadata",
         JSON.stringify({
           ...metadataData,
           territoryMode,
           territories: selectedTerritories,
           selectedPlatforms,
           royaltySplits,
-        })
+        }),
       );
 
-      const response = await apiRequest('POST', '/api/distribution/releases', formData);
+      const response = await apiRequest(
+        "POST",
+        "/api/distribution/releases",
+        formData,
+      );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Draft saved',
-        description: 'Your release has been saved as a draft.',
+        title: "Draft saved",
+        description: "Your release has been saved as a draft.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/releases"],
+      });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to save draft. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to save draft. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -172,7 +209,7 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (audioFiles.length === 0) {
-        throw new Error('Please upload at least one track');
+        throw new Error("Please upload at least one track");
       }
 
       // Step 1: Create the release with JSON metadata (no files)
@@ -186,7 +223,11 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
         royaltySplits,
       };
 
-      const response = await apiRequest('POST', '/api/distribution/releases', releasePayload);
+      const response = await apiRequest(
+        "POST",
+        "/api/distribution/releases",
+        releasePayload,
+      );
       const releaseData = await response.json();
 
       // Step 2: Upload each track individually to the tracks endpoint
@@ -194,47 +235,69 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
         await Promise.all(
           audioFiles.map(async (audioFile) => {
             const trackFormData = new FormData();
-            trackFormData.append('audio', audioFile.file);
+            trackFormData.append("audio", audioFile.file);
             trackFormData.append(
-              'metadata',
+              "metadata",
               JSON.stringify({
                 title: audioFile.name || audioFile.file.name,
                 isExplicit: metadataData.isExplicit,
                 lyrics: lyrics,
-              })
+              }),
             );
-            await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/tracks`, trackFormData);
-          })
+            await apiRequest(
+              "POST",
+              `/api/distribution/releases/${releaseData.id}/tracks`,
+              trackFormData,
+            );
+          }),
         );
       }
 
       // Step 3: Upload artwork if provided
       if (releaseData.id && artwork) {
         const artworkFormData = new FormData();
-        artworkFormData.append('artwork', artwork);
-        await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/artwork`, artworkFormData).catch((artworkErr: unknown) => {
-          logger.warn('Artwork upload failed (non-fatal):', artworkErr);
-          toast({ title: 'Artwork upload failed', description: 'Your release was saved but the artwork could not be uploaded. You can re-upload it from the release editor.', variant: 'destructive' });
+        artworkFormData.append("artwork", artwork);
+        await apiRequest(
+          "POST",
+          `/api/distribution/releases/${releaseData.id}/artwork`,
+          artworkFormData,
+        ).catch((artworkErr: unknown) => {
+          logger.warn("Artwork upload failed (non-fatal):", artworkErr);
+          toast({
+            title: "Artwork upload failed",
+            description:
+              "Your release was saved but the artwork could not be uploaded. You can re-upload it from the release editor.",
+            variant: "destructive",
+          });
         });
       }
 
       // Step 4: Submit to LabelGrid for actual distribution.
       // The server endpoint validates UPC/ISRC/platform selection and creates dispatch records.
       // ISRCs are auto-generated during track upload; UPC during release create.
-      let submissionStatus: 'submitted' | 'saved-as-draft' = 'saved-as-draft';
+      let submissionStatus: "submitted" | "saved-as-draft" = "saved-as-draft";
       let submissionError: string | undefined;
       if (releaseData.id) {
         try {
-          await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/submit`, {});
-          submissionStatus = 'submitted';
+          await apiRequest(
+            "POST",
+            `/api/distribution/releases/${releaseData.id}/submit`,
+            {},
+          );
+          submissionStatus = "submitted";
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           submissionError = message;
-          logger.warn('Distribution submit deferred (release saved as draft):', err);
+          logger.warn(
+            "Distribution submit deferred (release saved as draft):",
+            err,
+          );
         }
       }
-      (releaseData as Record<string, unknown>).submissionStatus = submissionStatus;
-      (releaseData as Record<string, unknown>).submissionError = submissionError;
+      (releaseData as Record<string, unknown>).submissionStatus =
+        submissionStatus;
+      (releaseData as Record<string, unknown>).submissionError =
+        submissionError;
 
       // Create HyperFollow campaign if enabled
       if (createPreSave && releaseData.id) {
@@ -242,17 +305,17 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
           preSaveSlug ||
           metadataData.title
             .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, '')
-            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
             .substring(0, 50);
 
         const hyperFollowData = new FormData();
         if (artwork) {
-          hyperFollowData.append('headerImage', artwork);
+          hyperFollowData.append("headerImage", artwork);
         }
 
         hyperFollowData.append(
-          'data',
+          "data",
           JSON.stringify({
             title: metadataData.title,
             artistName: metadataData.artistName,
@@ -261,24 +324,30 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
             collectEmails: true,
             platforms: selectedPlatforms.map((platformId) => ({
               id: platformId,
-              name: platformId.charAt(0).toUpperCase() + platformId.slice(1).replace('-', ' '),
+              name:
+                platformId.charAt(0).toUpperCase() +
+                platformId.slice(1).replace("-", " "),
               enabled: true,
-              url: '',
+              url: "",
             })),
             socialLinks: [],
             theme: {
-              primaryColor: '#8B5CF6',
-              backgroundColor: '#0F0F0F',
-              textColor: '#FFFFFF',
-              buttonStyle: 'rounded' as const,
+              primaryColor: "#8B5CF6",
+              backgroundColor: "#0F0F0F",
+              textColor: "#FFFFFF",
+              buttonStyle: "rounded" as const,
             },
-          })
+          }),
         );
 
         try {
-          await apiRequest('POST', '/api/distribution/hyperfollow', hyperFollowData);
+          await apiRequest(
+            "POST",
+            "/api/distribution/hyperfollow",
+            hyperFollowData,
+          );
         } catch (error: unknown) {
-          logger.error('Failed to create HyperFollow campaign:', error);
+          logger.error("Failed to create HyperFollow campaign:", error);
         }
       }
 
@@ -286,32 +355,38 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
     },
     onSuccess: (releaseData: Record<string, unknown>) => {
       const status = releaseData?.submissionStatus as string | undefined;
-      const submissionError = releaseData?.submissionError as string | undefined;
-      if (status === 'submitted') {
+      const submissionError = releaseData?.submissionError as
+        | string
+        | undefined;
+      if (status === "submitted") {
         toast({
-          title: 'Release submitted!',
+          title: "Release submitted!",
           description: createPreSave
-            ? 'Your release is queued for distribution and the pre-save campaign is live.'
-            : 'Your release is queued for distribution to the selected platforms.',
+            ? "Your release is queued for distribution and the pre-save campaign is live."
+            : "Your release is queued for distribution to the selected platforms.",
         });
       } else {
         toast({
-          title: 'Release saved as draft',
+          title: "Release saved as draft",
           description: submissionError
             ? `Saved, but distribution submission failed: ${submissionError}. Open the release to resolve and resubmit.`
-            : 'Saved successfully. Open the release to submit for distribution.',
-          variant: 'destructive',
+            : "Saved successfully. Open the release to submit for distribution.",
+          variant: "destructive",
         });
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/hyperfollow'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/releases"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/hyperfollow"],
+      });
       onComplete?.();
     },
     onError: (error: Error) => {
       toast({
-        title: 'Submission failed',
-        description: error.message || 'Please try again.',
-        variant: 'destructive',
+        title: "Submission failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -327,11 +402,13 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
             if (field) fieldErrors[field] = e.message;
           });
           setMetadataErrors(fieldErrors);
-          const firstMessage = result.error.errors[0]?.message || 'Please fill in all required fields.';
+          const firstMessage =
+            result.error.errors[0]?.message ||
+            "Please fill in all required fields.";
           toast({
-            title: 'Missing required fields',
+            title: "Missing required fields",
             description: firstMessage,
-            variant: 'destructive',
+            variant: "destructive",
           });
           return false;
         }
@@ -341,11 +418,13 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
       case 2: {
         const result = tracksSchema.safeParse({ audioFiles, artwork });
         if (!result.success) {
-          const firstMessage = result.error.errors[0]?.message || 'Please upload at least one track.';
+          const firstMessage =
+            result.error.errors[0]?.message ||
+            "Please upload at least one track.";
           toast({
-            title: 'Validation error',
+            title: "Validation error",
             description: firstMessage,
-            variant: 'destructive',
+            variant: "destructive",
           });
           return false;
         }
@@ -356,9 +435,9 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
       case 4:
         if (selectedPlatforms.length === 0) {
           toast({
-            title: 'Validation error',
-            description: 'Please select at least one distribution platform.',
-            variant: 'destructive',
+            title: "Validation error",
+            description: "Please select at least one distribution platform.",
+            variant: "destructive",
           });
           return false;
         }
@@ -366,9 +445,9 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
       case 5:
         if (!releaseDate) {
           toast({
-            title: 'Validation error',
-            description: 'Please select a release date.',
-            variant: 'destructive',
+            title: "Validation error",
+            description: "Please select a release date.",
+            variant: "destructive",
           });
           return false;
         }
@@ -411,7 +490,8 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
           <div>
             <h2 className="text-2xl font-bold">Create New Release</h2>
             <p className="text-muted-foreground">
-              Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].title}
+              Step {currentStep} of {STEPS.length}:{" "}
+              {STEPS[currentStep - 1].title}
             </p>
           </div>
           <Button
@@ -438,16 +518,20 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
                     isActive
-                      ? 'bg-primary text-primary-foreground'
+                      ? "bg-primary text-primary-foreground"
                       : isCompleted
-                        ? 'bg-green-500 text-white'
-                        : 'bg-muted text-muted-foreground'
+                        ? "bg-green-500 text-white"
+                        : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {isCompleted ? <CheckCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                  {isCompleted ? (
+                    <CheckCircle className="h-5 w-5" />
+                  ) : (
+                    <Icon className="h-5 w-5" />
+                  )}
                 </div>
                 <span
-                  className={`text-xs text-center hidden md:block ${isActive ? 'font-medium' : ''}`}
+                  className={`text-xs text-center hidden md:block ${isActive ? "font-medium" : ""}`}
                 >
                   {step.title}
                 </span>
@@ -485,7 +569,7 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
             <LyricsEditor
               tracks={audioFiles.map((f, i) => ({
                 id: f.id,
-                title: f.file.name.replace(/\.[^/.]+$/, ''),
+                title: f.file.name.replace(/\.[^/.]+$/, ""),
                 trackNumber: i + 1,
               }))}
               lyrics={lyrics}
@@ -501,13 +585,19 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
                 onModeChange={setTerritoryMode}
                 onTerritoriesChange={setSelectedTerritories}
               />
-              <DSPSelector selectedPlatforms={selectedPlatforms} onChange={setSelectedPlatforms} />
+              <DSPSelector
+                selectedPlatforms={selectedPlatforms}
+                onChange={setSelectedPlatforms}
+              />
             </div>
           )}
 
           {currentStep === 5 && (
             <div className="space-y-6">
-              <ReleaseDateScheduler releaseDate={releaseDate} onChange={setReleaseDate} />
+              <ReleaseDateScheduler
+                releaseDate={releaseDate}
+                onChange={setReleaseDate}
+              />
 
               {/* HyperFollow Pre-Save Campaign */}
               <Card className="border-primary/20">
@@ -518,11 +608,15 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
                         <Sparkles className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <Label htmlFor="create-presave" className="text-base font-semibold">
+                        <Label
+                          htmlFor="create-presave"
+                          className="text-base font-semibold"
+                        >
                           Create Pre-Save Campaign
                         </Label>
                         <p className="text-sm text-muted-foreground">
-                          Build hype with a shareable landing page before release
+                          Build hype with a shareable landing page before
+                          release
                         </p>
                       </div>
                     </div>
@@ -543,7 +637,9 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
                           </span>
                           <Input
                             id="presave-slug"
-                            placeholder={metadataData.title.toLowerCase().replace(/\s+/g, '-')}
+                            placeholder={metadataData.title
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}
                             value={preSaveSlug}
                             onChange={(e) => setPreSaveSlug(e.target.value)}
                             className="flex-1"
@@ -556,9 +652,9 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
 
                       <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                         <p className="text-sm text-blue-500">
-                          <strong>What's included:</strong> Customizable landing page with platform
-                          pre-save buttons, email capture, social sharing, and real-time analytics
-                          tracking.
+                          <strong>What's included:</strong> Customizable landing
+                          page with platform pre-save buttons, email capture,
+                          social sharing, and real-time analytics tracking.
                         </p>
                       </div>
                     </div>
@@ -566,7 +662,10 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
                 </CardContent>
               </Card>
 
-              <RoyaltySplitManager splits={royaltySplits} onChange={setRoyaltySplits} />
+              <RoyaltySplitManager
+                splits={royaltySplits}
+                onChange={setRoyaltySplits}
+              />
             </div>
           )}
 
@@ -591,15 +690,19 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
 
                 <div className="p-4 bg-muted rounded-lg">
                   <h4 className="font-medium mb-2">Tracks</h4>
-                  <p className="text-sm">{audioFiles.length} track(s) uploaded</p>
+                  <p className="text-sm">
+                    {audioFiles.length} track(s) uploaded
+                  </p>
                 </div>
 
                 <div className="p-4 bg-muted rounded-lg">
                   <h4 className="font-medium mb-2">Distribution</h4>
-                  <p className="text-sm">{selectedPlatforms.length} platform(s) selected</p>
+                  <p className="text-sm">
+                    {selectedPlatforms.length} platform(s) selected
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {territoryMode === 'worldwide'
-                      ? 'Worldwide distribution'
+                    {territoryMode === "worldwide"
+                      ? "Worldwide distribution"
                       : `${selectedTerritories.length} territories`}
                   </p>
                 </div>
@@ -607,7 +710,7 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
                 <div className="p-4 bg-muted rounded-lg">
                   <h4 className="font-medium mb-2">Release Date</h4>
                   <p className="text-sm">
-                    {releaseDate ? releaseDate.toLocaleDateString() : 'Not set'}
+                    {releaseDate ? releaseDate.toLocaleDateString() : "Not set"}
                   </p>
                 </div>
 
@@ -619,20 +722,22 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Campaign URL:</span>
+                        <span className="text-muted-foreground">
+                          Campaign URL:
+                        </span>
                         <code className="bg-background px-2 py-1 rounded text-xs">
                           maxbooster.com/pre-save/
                           {preSaveSlug ||
                             metadataData.title
                               .toLowerCase()
-                              .replace(/[^a-z0-9\s-]/g, '')
-                              .replace(/\s+/g, '-')
+                              .replace(/[^a-z0-9\s-]/g, "")
+                              .replace(/\s+/g, "-")
                               .substring(0, 50)}
                         </code>
                       </div>
                       <p className="text-muted-foreground">
-                        Your pre-save landing page will be created automatically with your release
-                        artwork and platform links.
+                        Your pre-save landing page will be created automatically
+                        with your release artwork and platform links.
                       </p>
                     </div>
                   </div>
@@ -641,9 +746,10 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
 
               <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                 <p className="text-sm">
-                  <strong>Important:</strong> Once submitted, your release will be processed and
-                  sent to the selected platforms. This process typically takes 2-5 business days.
-                  Make sure all information is correct before submitting.
+                  <strong>Important:</strong> Once submitted, your release will
+                  be processed and sent to the selected platforms. This process
+                  typically takes 2-5 business days. Make sure all information
+                  is correct before submitting.
                 </p>
               </div>
             </div>
@@ -659,7 +765,7 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
           disabled={submitMutation.isPending}
         >
           <ChevronLeft className="h-4 w-4 mr-2" />
-          {currentStep === 1 ? 'Cancel' : 'Back'}
+          {currentStep === 1 ? "Cancel" : "Back"}
         </Button>
 
         {currentStep < 6 ? (
@@ -670,7 +776,9 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
         ) : (
           <Button onClick={handleSubmit} disabled={submitMutation.isPending}>
             <Send className="h-4 w-4 mr-2" />
-            {submitMutation.isPending ? 'Submitting...' : 'Submit for Distribution'}
+            {submitMutation.isPending
+              ? "Submitting..."
+              : "Submit for Distribution"}
           </Button>
         )}
       </div>

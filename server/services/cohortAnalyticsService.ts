@@ -1,15 +1,28 @@
-import { db } from '../db';
+import { db } from "../db";
 import {
   listenerCohorts,
   analytics,
   InsertListenerCohort,
   ListenerCohort,
-} from '@shared/schema';
-import { eq, and, gte, lte, desc, sql, asc, lt } from 'drizzle-orm';
-import { logger } from '../logger.js';
+} from "@shared/schema";
+import { eq, and, gte, lte, desc, sql, asc, lt } from "drizzle-orm";
+import { logger } from "../logger.js";
 
-export type DSPPlatform = 'spotify' | 'apple' | 'youtube' | 'amazon' | 'tidal' | 'deezer' | 'soundcloud' | 'pandora';
-export type LoyaltyTier = 'casual' | 'engaged' | 'fan' | 'superfan' | 'advocate';
+export type DSPPlatform =
+  | "spotify"
+  | "apple"
+  | "youtube"
+  | "amazon"
+  | "tidal"
+  | "deezer"
+  | "soundcloud"
+  | "pandora";
+export type LoyaltyTier =
+  | "casual"
+  | "engaged"
+  | "fan"
+  | "superfan"
+  | "advocate";
 
 export interface RetentionData {
   day1: number;
@@ -26,7 +39,11 @@ export interface CohortAnalysis {
   avgStreamsPerUser: number;
   ltv: number;
   predictedChurn: number;
-  loyaltyDistribution: { tier: LoyaltyTier; count: number; percentage: number }[];
+  loyaltyDistribution: {
+    tier: LoyaltyTier;
+    count: number;
+    percentage: number;
+  }[];
 }
 
 interface RetentionCurve {
@@ -38,7 +55,7 @@ interface RetentionCurve {
 interface ChurnPrediction {
   userId: string;
   churnProbability: number;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
   daysSinceLastStream: number;
   historicalEngagement: number;
   recommendedAction: string;
@@ -54,13 +71,17 @@ interface LTVCalculation {
 }
 
 class CohortAnalyticsService {
-  async createCohort(cohortData: InsertListenerCohort): Promise<ListenerCohort> {
+  async createCohort(
+    cohortData: InsertListenerCohort,
+  ): Promise<ListenerCohort> {
     const [cohort] = await db
       .insert(listenerCohorts)
       .values(cohortData)
       .returning();
 
-    logger.info(`Created cohort for ${cohortData.cohortDate} with ${cohortData.initialSize} listeners`);
+    logger.info(
+      `Created cohort for ${cohortData.cohortDate} with ${cohortData.initialSize} listeners`,
+    );
     return cohort;
   }
 
@@ -71,7 +92,7 @@ class CohortAnalyticsService {
       day7Retained: number;
       day30Retained: number;
       day90Retained: number;
-    }>
+    }>,
   ): Promise<void> {
     await db
       .update(listenerCohorts)
@@ -89,7 +110,7 @@ class CohortAnalyticsService {
       startDate?: Date;
       endDate?: Date;
       limit?: number;
-    } = {}
+    } = {},
   ): Promise<ListenerCohort[]> {
     const conditions = [eq(listenerCohorts.userId, userId)];
 
@@ -111,15 +132,18 @@ class CohortAnalyticsService {
       .limit(options.limit || 100);
   }
 
-  async getCohortAnalysis(userId: string, cohortDate: Date): Promise<CohortAnalysis | null> {
+  async getCohortAnalysis(
+    userId: string,
+    cohortDate: Date,
+  ): Promise<CohortAnalysis | null> {
     const [cohort] = await db
       .select()
       .from(listenerCohorts)
       .where(
         and(
           eq(listenerCohorts.userId, userId),
-          eq(listenerCohorts.cohortDate, cohortDate)
-        )
+          eq(listenerCohorts.cohortDate, cohortDate),
+        ),
       )
       .limit(1);
 
@@ -135,7 +159,7 @@ class CohortAnalyticsService {
 
     const loyaltyDistribution = this.calculateLoyaltyDistribution(
       initialSize,
-      retention
+      retention,
     );
 
     return {
@@ -155,7 +179,7 @@ class CohortAnalyticsService {
     options: {
       platform?: DSPPlatform;
       numCohorts?: number;
-    } = {}
+    } = {},
   ): Promise<{
     cohorts: { cohortDate: Date; label: string; curve: RetentionCurve[] }[];
     averageCurve: RetentionCurve[];
@@ -166,22 +190,40 @@ class CohortAnalyticsService {
       limit: options.numCohorts || 12,
     });
 
-    const cohortsWithCurves = cohorts.map(cohort => {
+    const cohortsWithCurves = cohorts.map((cohort) => {
       const initialSize = cohort.initialSize || 1;
       return {
         cohortDate: cohort.cohortDate,
         label: this.formatCohortLabel(cohort.cohortDate),
         curve: [
           { day: 0, retained: initialSize, percentage: 100 },
-          { day: 1, retained: cohort.day1Retained || 0, percentage: ((cohort.day1Retained || 0) / initialSize) * 100 },
-          { day: 7, retained: cohort.day7Retained || 0, percentage: ((cohort.day7Retained || 0) / initialSize) * 100 },
-          { day: 30, retained: cohort.day30Retained || 0, percentage: ((cohort.day30Retained || 0) / initialSize) * 100 },
-          { day: 90, retained: cohort.day90Retained || 0, percentage: ((cohort.day90Retained || 0) / initialSize) * 100 },
+          {
+            day: 1,
+            retained: cohort.day1Retained || 0,
+            percentage: ((cohort.day1Retained || 0) / initialSize) * 100,
+          },
+          {
+            day: 7,
+            retained: cohort.day7Retained || 0,
+            percentage: ((cohort.day7Retained || 0) / initialSize) * 100,
+          },
+          {
+            day: 30,
+            retained: cohort.day30Retained || 0,
+            percentage: ((cohort.day30Retained || 0) / initialSize) * 100,
+          },
+          {
+            day: 90,
+            retained: cohort.day90Retained || 0,
+            percentage: ((cohort.day90Retained || 0) / initialSize) * 100,
+          },
         ],
       };
     });
 
-    const averageCurve = this.calculateAverageRetentionCurve(cohortsWithCurves.map(c => c.curve));
+    const averageCurve = this.calculateAverageRetentionCurve(
+      cohortsWithCurves.map((c) => c.curve),
+    );
     const benchmarks = this.getIndustryBenchmarks();
 
     return {
@@ -196,23 +238,24 @@ class CohortAnalyticsService {
     options: {
       platform?: DSPPlatform;
       timeframeDays?: number;
-    } = {}
+    } = {},
   ): Promise<LTVCalculation[]> {
     const cohorts = await this.getCohorts(userId, {
       platform: options.platform,
       limit: 12,
     });
 
-    return cohorts.map(cohort => {
+    return cohorts.map((cohort) => {
       const totalRevenue = Number(cohort.totalRevenue || 0);
       const avgStreamsPerUser = cohort.avgStreamsPerUser || 1;
       const initialSize = cohort.initialSize || 1;
       const retention90 = ((cohort.day90Retained || 0) / initialSize) * 100;
-      
+
       const avgMonthlyRevenue = totalRevenue / 3;
       const avgLifespanMonths = this.estimateLifespan(retention90);
       const ltv = avgMonthlyRevenue * avgLifespanMonths;
-      const ltvPerStream = totalRevenue / (avgStreamsPerUser * initialSize) || 0;
+      const ltvPerStream =
+        totalRevenue / (avgStreamsPerUser * initialSize) || 0;
 
       return {
         cohortDate: cohort.cohortDate,
@@ -220,14 +263,14 @@ class CohortAnalyticsService {
         avgLifespanMonths,
         ltv,
         ltvPerStream,
-        confidenceLevel: Math.min(95, 50 + (initialSize / 100)),
+        confidenceLevel: Math.min(95, 50 + initialSize / 100),
       };
     });
   }
 
   async predictChurn(
     userId: string,
-    options: { threshold?: number } = {}
+    options: { threshold?: number } = {},
   ): Promise<{
     atRiskListeners: number;
     churnRate: number;
@@ -235,25 +278,40 @@ class CohortAnalyticsService {
     recommendations: string[];
   }> {
     const cohorts = await this.getCohorts(userId, { limit: 6 });
-    
-    const avgChurn = cohorts.reduce((sum, c) => sum + (c.predictedChurn || 0), 0) / cohorts.length || 0;
-    const totalListeners = cohorts.reduce((sum, c) => sum + (c.initialSize || 0), 0);
+
+    const avgChurn =
+      cohorts.reduce((sum, c) => sum + (c.predictedChurn || 0), 0) /
+        cohorts.length || 0;
+    const totalListeners = cohorts.reduce(
+      (sum, c) => sum + (c.initialSize || 0),
+      0,
+    );
     const atRiskListeners = Math.floor(totalListeners * avgChurn);
 
     // Derive risk predictions from actual cohort retention curves (no random fabrication)
-    const predictions: ChurnPrediction[] = cohorts.map(c => {
-      const churnProb = Math.min(0.99, Math.max(0.01, c.predictedChurn || avgChurn));
-      const riskLevel: 'low' | 'medium' | 'high' | 'critical' =
-        churnProb < 0.2 ? 'low' : churnProb < 0.4 ? 'medium' : churnProb < 0.7 ? 'high' : 'critical';
+    const predictions: ChurnPrediction[] = cohorts.map((c) => {
+      const churnProb = Math.min(
+        0.99,
+        Math.max(0.01, c.predictedChurn || avgChurn),
+      );
+      const riskLevel: "low" | "medium" | "high" | "critical" =
+        churnProb < 0.2
+          ? "low"
+          : churnProb < 0.4
+            ? "medium"
+            : churnProb < 0.7
+              ? "high"
+              : "critical";
       // Estimate inactivity from day30 vs day7 retention drop
       const day7 = c.day7Retained ?? c.initialSize;
       const day30 = c.day30Retained ?? c.initialSize;
-      const retentionDrop = day7 > 0 ? 1 - (day30 / day7) : 0;
+      const retentionDrop = day7 > 0 ? 1 - day30 / day7 : 0;
       const daysSinceLastStream = Math.round(retentionDrop * 45); // 0–45 days
       const totalStreams = c.totalStreams ?? 0;
-      const historicalEngagement = c.initialSize > 0
-        ? Math.round((totalStreams / c.initialSize) * 10) / 10
-        : 0;
+      const historicalEngagement =
+        c.initialSize > 0
+          ? Math.round((totalStreams / c.initialSize) * 10) / 10
+          : 0;
       return {
         userId: c.cohortMonth || `cohort_${c.id}`,
         churnProbability: Math.round(churnProb * 100) / 100,
@@ -265,24 +323,26 @@ class CohortAnalyticsService {
     });
 
     const recommendations = [
-      'Send personalized re-engagement emails to high-risk listeners',
-      'Create exclusive content for loyal fans to increase retention',
-      'Analyze drop-off points in listener journey',
-      'Implement loyalty rewards program',
-      'Schedule regular content releases to maintain engagement',
+      "Send personalized re-engagement emails to high-risk listeners",
+      "Create exclusive content for loyal fans to increase retention",
+      "Analyze drop-off points in listener journey",
+      "Implement loyalty rewards program",
+      "Schedule regular content releases to maintain engagement",
     ];
 
     return {
       atRiskListeners,
       churnRate: avgChurn * 100,
-      predictions: predictions.sort((a, b) => b.churnProbability - a.churnProbability),
+      predictions: predictions.sort(
+        (a, b) => b.churnProbability - a.churnProbability,
+      ),
       recommendations,
     };
   }
 
   async getFanLoyaltyTiers(
     userId: string,
-    options: { platform?: DSPPlatform } = {}
+    options: { platform?: DSPPlatform } = {},
   ): Promise<{
     tiers: {
       tier: LoyaltyTier;
@@ -296,13 +356,20 @@ class CohortAnalyticsService {
     topPerformingTier: LoyaltyTier;
     recommendations: string[];
   }> {
-    const cohorts = await this.getCohorts(userId, { platform: options.platform, limit: 12 });
-    
-    const totalListeners = cohorts.reduce((sum, c) => sum + (c.initialSize || 0), 0);
-    const avgRetention90 = cohorts.reduce((sum, c) => {
-      const init = c.initialSize || 1;
-      return sum + ((c.day90Retained || 0) / init) * 100;
-    }, 0) / cohorts.length || 0;
+    const cohorts = await this.getCohorts(userId, {
+      platform: options.platform,
+      limit: 12,
+    });
+
+    const totalListeners = cohorts.reduce(
+      (sum, c) => sum + (c.initialSize || 0),
+      0,
+    );
+    const avgRetention90 =
+      cohorts.reduce((sum, c) => {
+        const init = c.initialSize || 1;
+        return sum + ((c.day90Retained || 0) / init) * 100;
+      }, 0) / cohorts.length || 0;
 
     const tiers: {
       tier: LoyaltyTier;
@@ -313,48 +380,74 @@ class CohortAnalyticsService {
       characteristics: string[];
     }[] = [
       {
-        tier: 'casual',
+        tier: "casual",
         count: Math.floor(totalListeners * 0.4),
         percentage: 40,
         avgStreams: 2,
         avgRevenue: 0.008,
-        characteristics: ['1-3 streams per month', 'Playlist-discovered', 'Low engagement'],
+        characteristics: [
+          "1-3 streams per month",
+          "Playlist-discovered",
+          "Low engagement",
+        ],
       },
       {
-        tier: 'engaged',
+        tier: "engaged",
         count: Math.floor(totalListeners * 0.3),
         percentage: 30,
         avgStreams: 8,
         avgRevenue: 0.032,
-        characteristics: ['4-10 streams per month', 'Regular listeners', 'Some saves'],
+        characteristics: [
+          "4-10 streams per month",
+          "Regular listeners",
+          "Some saves",
+        ],
       },
       {
-        tier: 'fan',
+        tier: "fan",
         count: Math.floor(totalListeners * 0.18),
         percentage: 18,
         avgStreams: 25,
         avgRevenue: 0.1,
-        characteristics: ['11-30 streams per month', 'Library adds', 'Playlist creation'],
+        characteristics: [
+          "11-30 streams per month",
+          "Library adds",
+          "Playlist creation",
+        ],
       },
       {
-        tier: 'superfan',
+        tier: "superfan",
         count: Math.floor(totalListeners * 0.09),
         percentage: 9,
         avgStreams: 60,
         avgRevenue: 0.24,
-        characteristics: ['30+ streams per month', 'High engagement', 'Social sharing'],
+        characteristics: [
+          "30+ streams per month",
+          "High engagement",
+          "Social sharing",
+        ],
       },
       {
-        tier: 'advocate',
+        tier: "advocate",
         count: Math.floor(totalListeners * 0.03),
         percentage: 3,
         avgStreams: 150,
         avgRevenue: 0.6,
-        characteristics: ['Daily listening', 'Merch buyers', 'Concert attendees', 'Brand ambassadors'],
+        characteristics: [
+          "Daily listening",
+          "Merch buyers",
+          "Concert attendees",
+          "Brand ambassadors",
+        ],
       },
     ];
 
-    const topPerformingTier: LoyaltyTier = avgRetention90 > 50 ? 'superfan' : avgRetention90 > 30 ? 'fan' : 'engaged';
+    const topPerformingTier: LoyaltyTier =
+      avgRetention90 > 50
+        ? "superfan"
+        : avgRetention90 > 30
+          ? "fan"
+          : "engaged";
 
     return {
       tiers,
@@ -362,9 +455,9 @@ class CohortAnalyticsService {
       topPerformingTier,
       recommendations: [
         'Focus marketing spend on converting "engaged" to "fan" tier',
-        'Create exclusive experiences for superfans and advocates',
-        'Implement referral programs leveraging advocate tier',
-        'Use personalized content to reduce casual listener churn',
+        "Create exclusive experiences for superfans and advocates",
+        "Implement referral programs leveraging advocate tier",
+        "Use personalized content to reduce casual listener churn",
       ],
     };
   }
@@ -375,7 +468,7 @@ class CohortAnalyticsService {
       platform?: DSPPlatform;
       startDate?: Date;
       endDate?: Date;
-    } = {}
+    } = {},
   ): Promise<{
     summary: {
       totalCohorts: number;
@@ -412,7 +505,10 @@ class CohortAnalyticsService {
         summary.overallChurnRate += analysis.predictedChurn;
 
         const monthLabel = this.formatMonthLabel(cohort.cohortDate);
-        retentionTrend.push({ month: monthLabel, retention30: analysis.retention.day30 });
+        retentionTrend.push({
+          month: monthLabel,
+          retention30: analysis.retention.day30,
+        });
         ltvTrend.push({ month: monthLabel, ltv: analysis.ltv });
       }
     }
@@ -433,7 +529,7 @@ class CohortAnalyticsService {
 
   async syncCohortData(
     userId: string,
-    platform: DSPPlatform
+    platform: DSPPlatform,
   ): Promise<ListenerCohort[]> {
     const results: ListenerCohort[] = [];
     const now = new Date();
@@ -457,31 +553,45 @@ class CohortAnalyticsService {
           and(
             eq(analytics.userId, userId),
             gte(analytics.date, cohortDate),
-            lt(analytics.date, cohortEnd)
-          )
+            lt(analytics.date, cohortEnd),
+          ),
         );
 
       const initialSize = Math.max(1, Number(monthData?.totalListeners ?? 0));
       const totalStreams = Number(monthData?.totalStreams ?? 0);
       const totalRevenue = Number(monthData?.totalRevenue ?? 0);
-      const avgStreamsPerUser = initialSize > 0 ? totalStreams / initialSize : 0;
+      const avgStreamsPerUser =
+        initialSize > 0 ? totalStreams / initialSize : 0;
 
       // Derive retention using industry-standard drop-off curves if no listener-level data
       // Day1: ~70%, Day7: ~50%, Day30: ~35%, Day90: ~20% (Spotify-published benchmarks)
-      const baseRetention = 0.70;
+      const baseRetention = 0.7;
       const predictedChurn = 1 - baseRetention * 0.5; // ~65% 90-day churn (industry avg)
-      const ltv = totalRevenue > 0 && initialSize > 0
-        ? totalRevenue / initialSize
-        : avgStreamsPerUser * 0.004; // $0.004/stream est
+      const ltv =
+        totalRevenue > 0 && initialSize > 0
+          ? totalRevenue / initialSize
+          : avgStreamsPerUser * 0.004; // $0.004/stream est
 
-      const loyaltyTier = avgStreamsPerUser > 20 ? 'fan' : avgStreamsPerUser > 8 ? 'engaged' : 'casual';
-      const sourceChannel = i === 0 ? 'social' : i === 1 ? 'playlist' : i === 2 ? 'search' : 'radio';
+      const loyaltyTier =
+        avgStreamsPerUser > 20
+          ? "fan"
+          : avgStreamsPerUser > 8
+            ? "engaged"
+            : "casual";
+      const sourceChannel =
+        i === 0
+          ? "social"
+          : i === 1
+            ? "playlist"
+            : i === 2
+              ? "search"
+              : "radio";
 
       const cohortData: InsertListenerCohort = {
         userId,
         cohortDate,
         cohortWeek: this.getWeekNumber(cohortDate),
-        cohortMonth: `${cohortDate.getFullYear()}-${String(cohortDate.getMonth() + 1).padStart(2, '0')}`,
+        cohortMonth: `${cohortDate.getFullYear()}-${String(cohortDate.getMonth() + 1).padStart(2, "0")}`,
         platform,
         initialSize,
         day1Retained: Math.floor(initialSize * baseRetention),
@@ -501,36 +611,64 @@ class CohortAnalyticsService {
       results.push(cohort);
     }
 
-    logger.info(`Synced ${results.length} cohorts for user ${userId} on ${platform}`);
+    logger.info(
+      `Synced ${results.length} cohorts for user ${userId} on ${platform}`,
+    );
     return results;
   }
 
   private calculateLoyaltyDistribution(
     initialSize: number,
-    retention: RetentionData
+    retention: RetentionData,
   ): { tier: LoyaltyTier; count: number; percentage: number }[] {
     const advocatePercent = retention.day90 * 0.03;
     const superfanPercent = retention.day90 * 0.09;
     const fanPercent = retention.day30 * 0.18;
     const engagedPercent = retention.day7 * 0.3;
-    const casualPercent = 100 - advocatePercent - superfanPercent - fanPercent - engagedPercent;
+    const casualPercent =
+      100 - advocatePercent - superfanPercent - fanPercent - engagedPercent;
 
     return [
-      { tier: 'casual', count: Math.floor(initialSize * casualPercent / 100), percentage: casualPercent },
-      { tier: 'engaged', count: Math.floor(initialSize * engagedPercent / 100), percentage: engagedPercent },
-      { tier: 'fan', count: Math.floor(initialSize * fanPercent / 100), percentage: fanPercent },
-      { tier: 'superfan', count: Math.floor(initialSize * superfanPercent / 100), percentage: superfanPercent },
-      { tier: 'advocate', count: Math.floor(initialSize * advocatePercent / 100), percentage: advocatePercent },
+      {
+        tier: "casual",
+        count: Math.floor((initialSize * casualPercent) / 100),
+        percentage: casualPercent,
+      },
+      {
+        tier: "engaged",
+        count: Math.floor((initialSize * engagedPercent) / 100),
+        percentage: engagedPercent,
+      },
+      {
+        tier: "fan",
+        count: Math.floor((initialSize * fanPercent) / 100),
+        percentage: fanPercent,
+      },
+      {
+        tier: "superfan",
+        count: Math.floor((initialSize * superfanPercent) / 100),
+        percentage: superfanPercent,
+      },
+      {
+        tier: "advocate",
+        count: Math.floor((initialSize * advocatePercent) / 100),
+        percentage: advocatePercent,
+      },
     ];
   }
 
-  private calculateAverageRetentionCurve(curves: RetentionCurve[][]): RetentionCurve[] {
+  private calculateAverageRetentionCurve(
+    curves: RetentionCurve[][],
+  ): RetentionCurve[] {
     if (curves.length === 0) return this.getIndustryBenchmarks();
 
     const days = [0, 1, 7, 30, 90];
-    return days.map(day => {
-      const dayData = curves.map(curve => curve.find(c => c.day === day)?.percentage || 0);
-      const avgPercentage = dayData.reduce((sum, p) => sum + p, 0) / dayData.length;
+    return days.map((day) => {
+      const dayData = curves.map(
+        (curve) => curve.find((c) => c.day === day)?.percentage || 0,
+      );
+      const avgPercentage =
+        dayData.reduce((sum, p) => sum + p, 0) / dayData.length;
       return { day, retained: 0, percentage: avgPercentage };
     });
   }
@@ -552,29 +690,39 @@ class CohortAnalyticsService {
     return 3;
   }
 
-  private getChurnRecommendation(riskLevel: 'low' | 'medium' | 'high' | 'critical'): string {
+  private getChurnRecommendation(
+    riskLevel: "low" | "medium" | "high" | "critical",
+  ): string {
     const recommendations: Record<string, string> = {
-      low: 'Continue current engagement strategy',
-      medium: 'Send personalized content recommendations',
-      high: 'Trigger re-engagement campaign with exclusive content',
-      critical: 'Offer special incentive or exclusive access',
+      low: "Continue current engagement strategy",
+      medium: "Send personalized content recommendations",
+      high: "Trigger re-engagement campaign with exclusive content",
+      critical: "Offer special incentive or exclusive access",
     };
     return recommendations[riskLevel];
   }
 
   private formatCohortLabel(date: Date): string {
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+    });
   }
 
   private formatMonthLabel(date: Date): string {
-    return date.toLocaleDateString('en-US', { year: '2-digit', month: 'short' });
+    return date.toLocaleDateString("en-US", {
+      year: "2-digit",
+      month: "short",
+    });
   }
 
   private getWeekNumber(date: Date): string {
     const startOfYear = new Date(date.getFullYear(), 0, 1);
-    const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+    const days = Math.floor(
+      (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000),
+    );
     const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
-    return `${date.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
+    return `${date.getFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
   }
 }
 

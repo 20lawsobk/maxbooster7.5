@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Volume2,
   VolumeX,
@@ -14,25 +14,25 @@ import {
   ArrowRight,
   Power,
   Layers,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Slider } from '@/components/ui/slider';
+} from "@/components/ui/dropdown-menu";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface Send {
   id: string;
@@ -52,7 +52,7 @@ interface InsertSlot {
 interface MixerChannel {
   id: string;
   name: string;
-  type: 'audio' | 'instrument' | 'bus' | 'master';
+  type: "audio" | "instrument" | "bus" | "master";
   color: string;
   volume: number;
   pan: number;
@@ -160,14 +160,14 @@ export function FlowStateMixerPro({
             onClick={() => setNarrowMode(!narrowMode)}
             className="h-7 text-xs"
           >
-            {narrowMode ? 'Wide' : 'Narrow'}
+            {narrowMode ? "Wide" : "Narrow"}
           </Button>
         </div>
       </div>
 
       <div className="flex-1 flex overflow-x-auto">
         <div className="flex py-2 px-1 gap-0.5">
-          {channels.map(channel => (
+          {channels.map((channel) => (
             <ChannelStrip
               key={channel.id}
               channel={channel}
@@ -185,7 +185,7 @@ export function FlowStateMixerPro({
 
           <div className="w-px bg-slate-700 mx-1" />
 
-          {buses.map(bus => (
+          {buses.map((bus) => (
             <BusStrip
               key={bus.id}
               bus={bus}
@@ -254,29 +254,31 @@ function ChannelStrip({
     const handleMouseMove = (e: MouseEvent) => {
       if (!faderRef.current) return;
       const rect = faderRef.current.getBoundingClientRect();
-      const y = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      const y =
+        1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
       onChange({ volume: y });
     };
 
     const handleMouseUp = () => setIsDraggingFader(false);
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDraggingFader, onChange]);
 
-  const dbValue = channel.volume > 0 ? 20 * Math.log10(channel.volume) : -Infinity;
-  const dbDisplay = dbValue === -Infinity ? '-∞' : dbValue.toFixed(1);
+  const dbValue =
+    channel.volume > 0 ? 20 * Math.log10(channel.volume) : -Infinity;
+  const dbDisplay = dbValue === -Infinity ? "-∞" : dbValue.toFixed(1);
 
   return (
     <motion.div
       className={cn(
         "flex flex-col bg-black/40 rounded-lg border overflow-hidden transition-all",
-        isSelected ? "border-blue-500" : "border-white/5"
+        isSelected ? "border-blue-500" : "border-white/5",
       )}
       style={{ width }}
       onClick={onSelect}
@@ -300,14 +302,14 @@ function ChannelStrip({
                   ? insert.enabled
                     ? "bg-blue-500/20 text-blue-400"
                     : "bg-slate-700 text-white/40"
-                  : "bg-white/5 text-white/20"
+                  : "bg-white/5 text-white/20",
               )}
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenPlugin(i);
               }}
             >
-              {insert.pluginName || '—'}
+              {insert.pluginName || "—"}
             </button>
           ))}
         </div>
@@ -320,7 +322,9 @@ function ChannelStrip({
             <button
               className={cn(
                 "w-4 h-4 rounded flex items-center justify-center",
-                channel.eqEnabled ? "bg-green-500/20 text-green-500" : "bg-white/5 text-white/20"
+                channel.eqEnabled
+                  ? "bg-green-500/20 text-green-500"
+                  : "bg-white/5 text-white/20",
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -330,8 +334,8 @@ function ChannelStrip({
               <Power className="h-2.5 w-2.5" />
             </button>
           </div>
-          {['Low', 'Mid', 'High'].map((band, i) => {
-            const key = `eq${band}` as 'eqLow' | 'eqMid' | 'eqHigh';
+          {["Low", "Mid", "High"].map((band, i) => {
+            const key = `eq${band}` as "eqLow" | "eqMid" | "eqHigh";
             return (
               <div key={band} className="flex items-center gap-1">
                 <span className="text-[7px] text-white/40 w-4">{band[0]}</span>
@@ -366,8 +370,16 @@ function ChannelStrip({
       </div>
 
       <div className="flex gap-0.5 mx-1">
-        <MeterBar level={channel.meterLevel[0]} peak={channel.peakLevel[0]} color={channel.color} />
-        <MeterBar level={channel.meterLevel[1]} peak={channel.peakLevel[1]} color={channel.color} />
+        <MeterBar
+          level={channel.meterLevel[0]}
+          peak={channel.peakLevel[0]}
+          color={channel.color}
+        />
+        <MeterBar
+          level={channel.meterLevel[1]}
+          peak={channel.peakLevel[1]}
+          color={channel.color}
+        />
       </div>
 
       <div
@@ -380,7 +392,7 @@ function ChannelStrip({
         }}
       >
         <div className="absolute inset-x-0.5 inset-y-0.5 bg-gradient-to-t from-slate-800 to-slate-700 rounded overflow-hidden">
-          {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(i => (
+          {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((i) => (
             <div
               key={i}
               className="absolute w-full h-px bg-white/10"
@@ -394,7 +406,7 @@ function ChannelStrip({
           style={{
             background: `linear-gradient(to bottom, ${channel.color}, ${channel.color}aa)`,
             bottom: `${channel.volume * 100}%`,
-            transform: 'translateY(50%)',
+            transform: "translateY(50%)",
           }}
           whileHover={{ scale: 1.05 }}
         />
@@ -407,13 +419,15 @@ function ChannelStrip({
       {showSends && (
         <div className="p-1 space-y-0.5 border-t border-white/5">
           {channel.sends.map((send, i) => {
-            const targetBus = buses.find(b => b.id === send.targetBusId);
+            const targetBus = buses.find((b) => b.id === send.targetBusId);
             return (
               <div key={send.id} className="flex items-center gap-0.5">
                 <button
                   className={cn(
                     "w-3 h-3 rounded flex items-center justify-center",
-                    send.enabled ? "bg-green-500/20 text-green-500" : "bg-white/5 text-white/20"
+                    send.enabled
+                      ? "bg-green-500/20 text-green-500"
+                      : "bg-white/5 text-white/20",
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -454,7 +468,9 @@ function ChannelStrip({
           }}
           className={cn(
             "flex-1 h-5 rounded text-[9px] font-bold flex items-center justify-center",
-            channel.mute ? "bg-red-500 text-white" : "bg-white/10 text-white/60"
+            channel.mute
+              ? "bg-red-500 text-white"
+              : "bg-white/10 text-white/60",
           )}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -469,7 +485,9 @@ function ChannelStrip({
           }}
           className={cn(
             "flex-1 h-5 rounded text-[9px] font-bold flex items-center justify-center",
-            channel.solo ? "bg-yellow-500 text-black" : "bg-white/10 text-white/60"
+            channel.solo
+              ? "bg-yellow-500 text-black"
+              : "bg-white/10 text-white/60",
           )}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -481,7 +499,9 @@ function ChannelStrip({
       <motion.button
         className={cn(
           "mx-1 mb-1 h-4 rounded text-[8px] flex items-center justify-center",
-          channel.armed ? "bg-red-600 text-white animate-pulse" : "bg-white/5 text-white/30"
+          channel.armed
+            ? "bg-red-600 text-white animate-pulse"
+            : "bg-white/5 text-white/30",
         )}
         onClick={(e) => {
           e.stopPropagation();
@@ -512,23 +532,24 @@ function BusStrip({ bus, width, showInserts, onChange }: BusStripProps) {
     const handleMouseMove = (e: MouseEvent) => {
       if (!faderRef.current) return;
       const rect = faderRef.current.getBoundingClientRect();
-      const y = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      const y =
+        1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
       onChange({ volume: y });
     };
 
     const handleMouseUp = () => setIsDraggingFader(false);
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDraggingFader, onChange]);
 
   const dbValue = bus.volume > 0 ? 20 * Math.log10(bus.volume) : -Infinity;
-  const dbDisplay = dbValue === -Infinity ? '-∞' : dbValue.toFixed(1);
+  const dbDisplay = dbValue === -Infinity ? "-∞" : dbValue.toFixed(1);
 
   return (
     <div
@@ -550,10 +571,10 @@ function BusStrip({ bus, width, showInserts, onChange }: BusStripProps) {
                   ? insert.enabled
                     ? "bg-orange-500/20 text-orange-400"
                     : "bg-slate-700 text-white/40"
-                  : "bg-white/5 text-white/20"
+                  : "bg-white/5 text-white/20",
               )}
             >
-              {insert.pluginName || '—'}
+              {insert.pluginName || "—"}
             </div>
           ))}
         </div>
@@ -575,7 +596,7 @@ function BusStrip({ bus, width, showInserts, onChange }: BusStripProps) {
           className="absolute left-0.5 right-0.5 h-4 rounded-sm bg-gradient-to-b from-orange-400 to-orange-500 shadow-lg"
           style={{
             bottom: `${bus.volume * 100}%`,
-            transform: 'translateY(50%)',
+            transform: "translateY(50%)",
           }}
         />
       </div>
@@ -589,7 +610,7 @@ function BusStrip({ bus, width, showInserts, onChange }: BusStripProps) {
           onClick={() => onChange({ mute: !bus.mute })}
           className={cn(
             "flex-1 h-5 rounded text-[9px] font-bold flex items-center justify-center",
-            bus.mute ? "bg-red-500 text-white" : "bg-white/10 text-white/60"
+            bus.mute ? "bg-red-500 text-white" : "bg-white/10 text-white/60",
           )}
           whileTap={{ scale: 0.95 }}
         >
@@ -600,7 +621,7 @@ function BusStrip({ bus, width, showInserts, onChange }: BusStripProps) {
           onClick={() => onChange({ solo: !bus.solo })}
           className={cn(
             "flex-1 h-5 rounded text-[9px] font-bold flex items-center justify-center",
-            bus.solo ? "bg-yellow-500 text-black" : "bg-white/10 text-white/60"
+            bus.solo ? "bg-yellow-500 text-black" : "bg-white/10 text-white/60",
           )}
           whileTap={{ scale: 0.95 }}
         >
@@ -618,7 +639,12 @@ interface MasterStripProps {
   onChange: (updates: Partial<MixerChannel>) => void;
 }
 
-function MasterStrip({ channel, width, showInserts, onChange }: MasterStripProps) {
+function MasterStrip({
+  channel,
+  width,
+  showInserts,
+  onChange,
+}: MasterStripProps) {
   const [isDraggingFader, setIsDraggingFader] = useState(false);
   const faderRef = useRef<HTMLDivElement>(null);
 
@@ -628,23 +654,25 @@ function MasterStrip({ channel, width, showInserts, onChange }: MasterStripProps
     const handleMouseMove = (e: MouseEvent) => {
       if (!faderRef.current) return;
       const rect = faderRef.current.getBoundingClientRect();
-      const y = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      const y =
+        1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
       onChange({ volume: y });
     };
 
     const handleMouseUp = () => setIsDraggingFader(false);
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDraggingFader, onChange]);
 
-  const dbValue = channel.volume > 0 ? 20 * Math.log10(channel.volume) : -Infinity;
-  const dbDisplay = dbValue === -Infinity ? '-∞' : dbValue.toFixed(1);
+  const dbValue =
+    channel.volume > 0 ? 20 * Math.log10(channel.volume) : -Infinity;
+  const dbDisplay = dbValue === -Infinity ? "-∞" : dbValue.toFixed(1);
 
   return (
     <div
@@ -666,18 +694,28 @@ function MasterStrip({ channel, width, showInserts, onChange }: MasterStripProps
                   ? insert.enabled
                     ? "bg-indigo-500/20 text-indigo-400"
                     : "bg-slate-700 text-white/40"
-                  : "bg-white/5 text-white/20"
+                  : "bg-white/5 text-white/20",
               )}
             >
-              {insert.pluginName || '—'}
+              {insert.pluginName || "—"}
             </div>
           ))}
         </div>
       )}
 
       <div className="flex gap-1 mx-1 my-2">
-        <MeterBar level={channel.meterLevel[0]} peak={channel.peakLevel[0]} color="#818cf8" height={24} />
-        <MeterBar level={channel.meterLevel[1]} peak={channel.peakLevel[1]} color="#818cf8" height={24} />
+        <MeterBar
+          level={channel.meterLevel[0]}
+          peak={channel.peakLevel[0]}
+          color="#818cf8"
+          height={24}
+        />
+        <MeterBar
+          level={channel.meterLevel[1]}
+          peak={channel.peakLevel[1]}
+          color="#818cf8"
+          height={24}
+        />
       </div>
 
       <div
@@ -687,7 +725,7 @@ function MasterStrip({ channel, width, showInserts, onChange }: MasterStripProps
         onMouseDown={() => setIsDraggingFader(true)}
       >
         <div className="absolute inset-x-0.5 inset-y-0.5 bg-gradient-to-t from-slate-800 to-slate-700 rounded overflow-hidden">
-          {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(i => (
+          {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((i) => (
             <div
               key={i}
               className="absolute w-full h-px bg-white/10"
@@ -699,7 +737,7 @@ function MasterStrip({ channel, width, showInserts, onChange }: MasterStripProps
           className="absolute left-0.5 right-0.5 h-5 rounded-sm bg-gradient-to-b from-indigo-400 to-indigo-500 shadow-lg"
           style={{
             bottom: `${channel.volume * 100}%`,
-            transform: 'translateY(50%)',
+            transform: "translateY(50%)",
           }}
         />
       </div>
@@ -713,7 +751,9 @@ function MasterStrip({ channel, width, showInserts, onChange }: MasterStripProps
           onClick={() => onChange({ mute: !channel.mute })}
           className={cn(
             "flex-1 h-6 rounded text-[10px] font-bold flex items-center justify-center",
-            channel.mute ? "bg-red-500 text-white" : "bg-white/10 text-white/60"
+            channel.mute
+              ? "bg-red-500 text-white"
+              : "bg-white/10 text-white/60",
           )}
           whileTap={{ scale: 0.95 }}
         >
@@ -724,15 +764,15 @@ function MasterStrip({ channel, width, showInserts, onChange }: MasterStripProps
   );
 }
 
-function MeterBar({ 
-  level, 
-  peak, 
-  color, 
-  height = 16 
-}: { 
-  level: number; 
-  peak?: number; 
-  color: string; 
+function MeterBar({
+  level,
+  peak,
+  color,
+  height = 16,
+}: {
+  level: number;
+  peak?: number;
+  color: string;
   height?: number;
 }) {
   const segments = 20;
@@ -740,7 +780,7 @@ function MeterBar({
   const peakSegment = peak ? Math.floor(peak * segments) : -1;
 
   return (
-    <div 
+    <div
       className="flex-1 flex flex-col-reverse gap-px bg-black/40 rounded p-0.5"
       style={{ height: `${height * 4}px` }}
     >
@@ -751,17 +791,18 @@ function MeterBar({
         const isWarn = i >= segments - 5 && i < segments - 2;
 
         let segmentColor = color;
-        if (isPeak) segmentColor = '#ef4444';
-        else if (isWarn) segmentColor = '#eab308';
+        if (isPeak) segmentColor = "#ef4444";
+        else if (isWarn) segmentColor = "#eab308";
 
         return (
           <motion.div
             key={i}
             className="flex-1 rounded-sm"
             style={{
-              backgroundColor: isActive || isPeakHold
-                ? segmentColor
-                : 'rgba(255,255,255,0.05)',
+              backgroundColor:
+                isActive || isPeakHold
+                  ? segmentColor
+                  : "rgba(255,255,255,0.05)",
               opacity: isActive ? 1 : isPeakHold ? 0.8 : 0.3,
             }}
             animate={{

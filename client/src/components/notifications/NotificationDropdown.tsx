@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useLocation } from 'wouter';
+import { useState } from "react";
+import { useLocation } from "wouter";
 import {
   Bell,
   CheckCheck,
@@ -7,20 +7,20 @@ import {
   Trash2,
   Filter,
   Loader2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { NotificationItem } from './NotificationItem';
-import { useNotifications } from './useNotifications';
-import type { Notification, NotificationType } from './types';
+} from "@/components/ui/dropdown-menu";
+import { NotificationItem } from "./NotificationItem";
+import { useNotifications } from "./useNotifications";
+import type { Notification, NotificationType } from "./types";
 
 interface NotificationDropdownProps {
   notifications: Notification[];
@@ -28,40 +28,48 @@ interface NotificationDropdownProps {
   onClose: () => void;
 }
 
-type FilterType = 'all' | 'unread' | 'collaboration' | 'payment' | 'release' | 'social' | 'system' | 'security';
+type FilterType =
+  | "all"
+  | "unread"
+  | "collaboration"
+  | "payment"
+  | "release"
+  | "social"
+  | "system"
+  | "security";
 
 const filterLabels: Record<FilterType, string> = {
-  all: 'All',
-  unread: 'Unread',
-  collaboration: 'Collaboration',
-  payment: 'Payments',
-  release: 'Releases',
-  social: 'Social',
-  system: 'System',
-  security: 'Security',
+  all: "All",
+  unread: "Unread",
+  collaboration: "Collaboration",
+  payment: "Payments",
+  release: "Releases",
+  social: "Social",
+  system: "System",
+  security: "Security",
 };
 
 const typeToCategory: Record<string, FilterType> = {
-  collaboration_invite: 'collaboration',
-  collaboration_accepted: 'collaboration',
-  collaboration_declined: 'collaboration',
-  payment_received: 'payment',
-  payout_completed: 'payment',
-  payout_failed: 'payment',
-  release_milestone: 'release',
-  release_live: 'release',
-  release_rejected: 'release',
-  social_like: 'social',
-  social_comment: 'social',
-  social_share: 'social',
-  social_follow: 'social',
-  system_announcement: 'system',
-  system_maintenance: 'system',
-  system_update: 'system',
-  security_new_login: 'security',
-  security_password_changed: 'security',
-  security_2fa_enabled: 'security',
-  security_suspicious_activity: 'security',
+  collaboration_invite: "collaboration",
+  collaboration_accepted: "collaboration",
+  collaboration_declined: "collaboration",
+  payment_received: "payment",
+  payout_completed: "payment",
+  payout_failed: "payment",
+  release_milestone: "release",
+  release_live: "release",
+  release_rejected: "release",
+  social_like: "social",
+  social_comment: "social",
+  social_share: "social",
+  social_follow: "social",
+  system_announcement: "system",
+  system_maintenance: "system",
+  system_update: "system",
+  security_new_login: "security",
+  security_password_changed: "security",
+  security_2fa_enabled: "security",
+  security_suspicious_activity: "security",
 };
 
 export function NotificationDropdown({
@@ -70,7 +78,7 @@ export function NotificationDropdown({
   onClose,
 }: NotificationDropdownProps) {
   const [, navigate] = useLocation();
-  const [filter, setFilter] = useState<FilterType>('all');
+  const [filter, setFilter] = useState<FilterType>("all");
   const {
     markAsRead,
     markAllAsRead,
@@ -81,9 +89,9 @@ export function NotificationDropdown({
   } = useNotifications();
 
   const filteredNotifications = notifications.filter((notification) => {
-    if (filter === 'all') return true;
-    if (filter === 'unread') return !notification.isRead;
-    const category = typeToCategory[notification.type] || 'system';
+    if (filter === "all") return true;
+    if (filter === "unread") return !notification.isRead;
+    const category = typeToCategory[notification.type] || "system";
     return category === filter;
   });
 
@@ -96,7 +104,7 @@ export function NotificationDropdown({
 
   const handleOpenPreferences = () => {
     onClose();
-    navigate('/settings?tab=notifications');
+    navigate("/settings?tab=notifications");
   };
 
   return (
@@ -122,7 +130,7 @@ export function NotificationDropdown({
                 <DropdownMenuItem
                   key={key}
                   onClick={() => setFilter(key as FilterType)}
-                  className={filter === key ? 'bg-accent' : ''}
+                  className={filter === key ? "bg-accent" : ""}
                 >
                   {label}
                 </DropdownMenuItem>
@@ -169,11 +177,11 @@ export function NotificationDropdown({
             </div>
             <h4 className="font-medium mb-1">No notifications</h4>
             <p className="text-sm text-muted-foreground max-w-[200px]">
-              {filter === 'unread'
+              {filter === "unread"
                 ? "You're all caught up! No unread notifications."
-                : filter === 'all'
-                ? "You don't have any notifications yet. We'll notify you when something happens."
-                : `No ${filterLabels[filter].toLowerCase()} notifications.`}
+                : filter === "all"
+                  ? "You don't have any notifications yet. We'll notify you when something happens."
+                  : `No ${filterLabels[filter].toLowerCase()} notifications.`}
             </p>
           </div>
         ) : (
@@ -201,7 +209,7 @@ export function NotificationDropdown({
               className="text-xs text-muted-foreground"
               onClick={() => {
                 onClose();
-                navigate('/notifications');
+                navigate("/notifications");
               }}
             >
               View all notifications

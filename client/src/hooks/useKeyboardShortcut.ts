@@ -1,5 +1,9 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
-import { ShortcutModifier, getPlatformModifiers, matchesShortcut } from '@/lib/shortcuts/types';
+import { useEffect, useCallback, useRef, useState } from "react";
+import {
+  ShortcutModifier,
+  getPlatformModifiers,
+  matchesShortcut,
+} from "@/lib/shortcuts/types";
 
 export interface KeyboardShortcutConfig {
   key: string;
@@ -19,44 +23,48 @@ export function useKeyboardShortcut(
     enabled?: boolean;
     allowInInput?: boolean;
     preventDefault?: boolean;
-  } = {}
+  } = {},
 ) {
-  const { 
-    modifiers = [], 
-    enabled = true, 
+  const {
+    modifiers = [],
+    enabled = true,
     allowInInput = false,
-    preventDefault = true 
+    preventDefault = true,
   } = options;
-  
+
   const handlerRef = useRef(handler);
   handlerRef.current = handler;
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!enabled) return;
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled) return;
 
-    const target = event.target as HTMLElement;
-    if (!allowInInput && (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.contentEditable === 'true'
-    )) {
-      return;
-    }
-
-    if (matchesShortcut(event, key, modifiers)) {
-      if (preventDefault) {
-        event.preventDefault();
-        event.stopPropagation();
+      const target = event.target as HTMLElement;
+      if (
+        !allowInInput &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.contentEditable === "true")
+      ) {
+        return;
       }
-      handlerRef.current();
-    }
-  }, [key, modifiers, enabled, allowInInput, preventDefault]);
+
+      if (matchesShortcut(event, key, modifiers)) {
+        if (preventDefault) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        handlerRef.current();
+      }
+    },
+    [key, modifiers, enabled, allowInInput, preventDefault],
+  );
 
   useEffect(() => {
     if (!enabled) return;
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown, enabled]);
 }
 
@@ -66,9 +74,10 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcutConfig[]) {
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     const target = event.target as HTMLElement;
-    const isInput = target.tagName === 'INPUT' || 
-                    target.tagName === 'TEXTAREA' || 
-                    target.contentEditable === 'true';
+    const isInput =
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.contentEditable === "true";
 
     for (const shortcut of shortcutsRef.current) {
       if (shortcut.enabled === false) continue;
@@ -86,27 +95,26 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcutConfig[]) {
   }, []);
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 }
 
-export function useHotkey(
-  combo: string,
-  handler: () => void,
-  enabled = true
-) {
-  const parts = combo.toLowerCase().split('+').map(p => p.trim());
+export function useHotkey(combo: string, handler: () => void, enabled = true) {
+  const parts = combo
+    .toLowerCase()
+    .split("+")
+    .map((p) => p.trim());
   const key = parts[parts.length - 1];
   const modifiers: ShortcutModifier[] = [];
 
-  parts.slice(0, -1).forEach(mod => {
-    if (mod === 'cmd' || mod === 'ctrl' || mod === 'mod' || mod === 'meta') {
-      modifiers.push('cmd');
-    } else if (mod === 'shift') {
-      modifiers.push('shift');
-    } else if (mod === 'alt' || mod === 'option') {
-      modifiers.push('alt');
+  parts.slice(0, -1).forEach((mod) => {
+    if (mod === "cmd" || mod === "ctrl" || mod === "mod" || mod === "meta") {
+      modifiers.push("cmd");
+    } else if (mod === "shift") {
+      modifiers.push("shift");
+    } else if (mod === "alt" || mod === "option") {
+      modifiers.push("alt");
     }
   });
 
@@ -114,61 +122,67 @@ export function useHotkey(
 }
 
 export function useEscapeKey(handler: () => void, enabled = true) {
-  useKeyboardShortcut('Escape', handler, { enabled, allowInInput: true });
+  useKeyboardShortcut("Escape", handler, { enabled, allowInInput: true });
 }
 
-export function useArrowKeys(handlers: {
-  up?: () => void;
-  down?: () => void;
-  left?: () => void;
-  right?: () => void;
-}, enabled = true) {
+export function useArrowKeys(
+  handlers: {
+    up?: () => void;
+    down?: () => void;
+    left?: () => void;
+    right?: () => void;
+  },
+  enabled = true,
+) {
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!enabled) return;
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled) return;
 
-    const target = event.target as HTMLElement;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.contentEditable === 'true'
-    ) {
-      return;
-    }
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.contentEditable === "true"
+      ) {
+        return;
+      }
 
-    switch (event.key) {
-      case 'ArrowUp':
-        if (handlersRef.current.up) {
-          event.preventDefault();
-          handlersRef.current.up();
-        }
-        break;
-      case 'ArrowDown':
-        if (handlersRef.current.down) {
-          event.preventDefault();
-          handlersRef.current.down();
-        }
-        break;
-      case 'ArrowLeft':
-        if (handlersRef.current.left) {
-          event.preventDefault();
-          handlersRef.current.left();
-        }
-        break;
-      case 'ArrowRight':
-        if (handlersRef.current.right) {
-          event.preventDefault();
-          handlersRef.current.right();
-        }
-        break;
-    }
-  }, [enabled]);
+      switch (event.key) {
+        case "ArrowUp":
+          if (handlersRef.current.up) {
+            event.preventDefault();
+            handlersRef.current.up();
+          }
+          break;
+        case "ArrowDown":
+          if (handlersRef.current.down) {
+            event.preventDefault();
+            handlersRef.current.down();
+          }
+          break;
+        case "ArrowLeft":
+          if (handlersRef.current.left) {
+            event.preventDefault();
+            handlersRef.current.left();
+          }
+          break;
+        case "ArrowRight":
+          if (handlersRef.current.right) {
+            event.preventDefault();
+            handlersRef.current.right();
+          }
+          break;
+      }
+    },
+    [enabled],
+  );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 }
 
@@ -188,12 +202,12 @@ export function useKeyPress(targetKey: string) {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, [targetKey]);
 
@@ -227,12 +241,12 @@ export function useModifierKeys() {
       });
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
 

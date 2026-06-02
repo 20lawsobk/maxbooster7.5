@@ -1,7 +1,14 @@
-import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from 'react';
-import { 
-  announcePolite, 
-  announceAssertive, 
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
+import {
+  announcePolite,
+  announceAssertive,
   clearAnnouncements,
   announcePageTransition,
   announceToast,
@@ -13,41 +20,54 @@ import {
   announceListUpdate,
   announceFormErrors,
   announceFormValidation,
-} from '@/lib/a11y/screenReader';
+} from "@/lib/a11y/screenReader";
 
-export type AnnouncementPriority = 'polite' | 'assertive';
+export type AnnouncementPriority = "polite" | "assertive";
 
 export interface ScreenReaderAnnouncerContextValue {
   announce: (message: string, priority?: AnnouncementPriority) => void;
   announcePolite: (message: string) => void;
   announceAssertive: (message: string) => void;
   announcePageTransition: (pageName: string) => void;
-  announceToast: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
+  announceToast: (
+    message: string,
+    type?: "success" | "error" | "warning" | "info",
+  ) => void;
   announceLoadingStart: (context?: string) => void;
   announceLoadingComplete: (context?: string) => void;
   announceDialogOpen: (dialogName: string) => void;
   announceDialogClose: (dialogName: string) => void;
   announceSelection: (itemName: string, isSelected: boolean) => void;
-  announceListUpdate: (action: 'added' | 'removed', itemName: string) => void;
+  announceListUpdate: (action: "added" | "removed", itemName: string) => void;
   announceFormErrors: (errors: Record<string, string>) => void;
-  announceFormValidation: (fieldName: string, isValid: boolean, errorMessage?: string) => void;
+  announceFormValidation: (
+    fieldName: string,
+    isValid: boolean,
+    errorMessage?: string,
+  ) => void;
   clear: () => void;
 }
 
-const ScreenReaderAnnouncerContext = createContext<ScreenReaderAnnouncerContextValue | null>(null);
+const ScreenReaderAnnouncerContext =
+  createContext<ScreenReaderAnnouncerContextValue | null>(null);
 
 export interface ScreenReaderAnnouncerProviderProps {
   children: React.ReactNode;
 }
 
-export function ScreenReaderAnnouncerProvider({ children }: ScreenReaderAnnouncerProviderProps) {
-  const announce = useCallback((message: string, priority: AnnouncementPriority = 'polite') => {
-    if (priority === 'assertive') {
-      announceAssertive(message);
-    } else {
-      announcePolite(message);
-    }
-  }, []);
+export function ScreenReaderAnnouncerProvider({
+  children,
+}: ScreenReaderAnnouncerProviderProps) {
+  const announce = useCallback(
+    (message: string, priority: AnnouncementPriority = "polite") => {
+      if (priority === "assertive") {
+        announceAssertive(message);
+      } else {
+        announcePolite(message);
+      }
+    },
+    [],
+  );
 
   const value: ScreenReaderAnnouncerContextValue = {
     announce,
@@ -102,17 +122,17 @@ export interface ScreenReaderAnnouncerProps {
   clearAfter?: number;
 }
 
-export function ScreenReaderAnnouncer({ 
-  message, 
-  priority = 'polite',
+export function ScreenReaderAnnouncer({
+  message,
+  priority = "polite",
   clearAfter,
 }: ScreenReaderAnnouncerProps) {
-  const [content, setContent] = useState<string>('');
+  const [content, setContent] = useState<string>("");
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (message) {
-      setContent('');
+      setContent("");
       requestAnimationFrame(() => {
         setContent(message);
       });
@@ -122,7 +142,7 @@ export function ScreenReaderAnnouncer({
           clearTimeout(timeoutRef.current);
         }
         timeoutRef.current = setTimeout(() => {
-          setContent('');
+          setContent("");
         }, clearAfter);
       }
     }
@@ -136,7 +156,7 @@ export function ScreenReaderAnnouncer({
 
   return (
     <div
-      role={priority === 'assertive' ? 'alert' : 'status'}
+      role={priority === "assertive" ? "alert" : "status"}
       aria-live={priority}
       aria-atomic="true"
       className="sr-only"
@@ -174,8 +194,8 @@ export interface LoadingAnnouncerProps {
   completeMessage?: string;
 }
 
-export function LoadingAnnouncer({ 
-  isLoading, 
+export function LoadingAnnouncer({
+  isLoading,
   context,
   loadingMessage,
   completeMessage,
@@ -184,10 +204,12 @@ export function LoadingAnnouncer({
 
   useEffect(() => {
     if (isLoading && !previousLoading.current) {
-      const message = loadingMessage || (context ? `Loading ${context}` : 'Loading');
+      const message =
+        loadingMessage || (context ? `Loading ${context}` : "Loading");
       announcePolite(message);
     } else if (!isLoading && previousLoading.current) {
-      const message = completeMessage || (context ? `${context} loaded` : 'Content loaded');
+      const message =
+        completeMessage || (context ? `${context} loaded` : "Content loaded");
       announcePolite(message);
     }
     previousLoading.current = isLoading;

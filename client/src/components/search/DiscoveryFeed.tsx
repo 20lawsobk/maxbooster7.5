@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sparkles,
   TrendingUp,
@@ -20,8 +20,8 @@ import {
   Zap,
   User,
   Disc,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DiscoverySection {
   title: string;
@@ -42,13 +42,20 @@ export function DiscoveryFeed({
   showPersonalized = true,
   className,
 }: DiscoveryFeedProps) {
-  const [activeTab, setActiveTab] = useState('for-you');
+  const [activeTab, setActiveTab] = useState("for-you");
 
-  const { data: discoveryData, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['/api/search/discover'],
+  const {
+    data: discoveryData,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ["/api/search/discover"],
     queryFn: async () => {
-      const res = await fetch('/api/search/discover', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch discovery feed');
+      const res = await fetch("/api/search/discover", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch discovery feed");
       return res.json();
     },
     staleTime: 120000,
@@ -58,19 +65,23 @@ export function DiscoveryFeed({
     return <DiscoveryFeedSkeleton />;
   }
 
-  const { newReleases, trending, personalized, curatedCollections, featuredGenres } = discoveryData || {};
+  const {
+    newReleases,
+    trending,
+    personalized,
+    curatedCollections,
+    featuredGenres,
+  } = discoveryData || {};
 
   return (
-    <div className={cn('space-y-8', className)}>
+    <div className={cn("space-y-8", className)}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-purple-400" />
             Discover
           </h1>
-          <p className="text-slate-400 mt-1">
-            Find your next favorite beat
-          </p>
+          <p className="text-slate-400 mt-1">Find your next favorite beat</p>
         </div>
         <Button
           variant="outline"
@@ -79,52 +90,68 @@ export function DiscoveryFeed({
           disabled={isRefetching}
           className="border-slate-600"
         >
-          <RefreshCw className={cn('h-4 w-4 mr-2', isRefetching && 'animate-spin')} />
+          <RefreshCw
+            className={cn("h-4 w-4 mr-2", isRefetching && "animate-spin")}
+          />
           Refresh
         </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-slate-800/50">
-          <TabsTrigger value="for-you" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="for-you"
+            className="data-[state=active]:bg-purple-600"
+          >
             <Sparkles className="h-4 w-4 mr-2" />
             For You
           </TabsTrigger>
-          <TabsTrigger value="trending" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="trending"
+            className="data-[state=active]:bg-purple-600"
+          >
             <TrendingUp className="h-4 w-4 mr-2" />
             Trending
           </TabsTrigger>
-          <TabsTrigger value="new" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="new"
+            className="data-[state=active]:bg-purple-600"
+          >
             <Clock className="h-4 w-4 mr-2" />
             New Releases
           </TabsTrigger>
-          <TabsTrigger value="genres" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger
+            value="genres"
+            className="data-[state=active]:bg-purple-600"
+          >
             <Music className="h-4 w-4 mr-2" />
             Genres
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="for-you" className="mt-6 space-y-8">
-          {showPersonalized && personalized && personalized.items?.length > 0 && (
-            <DiscoverSection
-              title={personalized.title}
-              description={personalized.description}
-              icon={<Sparkles className="h-5 w-5 text-purple-400" />}
-              items={personalized.items}
-              onItemClick={(item) => onItemClick?.(item, 'beat')}
-              onSeeAll={() => onSeeAll?.('personalized')}
-              highlight
-            />
-          )}
-          
+          {showPersonalized &&
+            personalized &&
+            personalized.items?.length > 0 && (
+              <DiscoverSection
+                title={personalized.title}
+                description={personalized.description}
+                icon={<Sparkles className="h-5 w-5 text-purple-400" />}
+                items={personalized.items}
+                onItemClick={(item) => onItemClick?.(item, "beat")}
+                onSeeAll={() => onSeeAll?.("personalized")}
+                highlight
+              />
+            )}
+
           {trending && (
             <DiscoverSection
               title={trending.title}
               description={trending.description}
               icon={<Flame className="h-5 w-5 text-orange-400" />}
               items={trending.items}
-              onItemClick={(item) => onItemClick?.(item, 'beat')}
-              onSeeAll={() => onSeeAll?.('trending')}
+              onItemClick={(item) => onItemClick?.(item, "beat")}
+              onSeeAll={() => onSeeAll?.("trending")}
             />
           )}
 
@@ -134,8 +161,8 @@ export function DiscoveryFeed({
               description={newReleases.description}
               icon={<Clock className="h-5 w-5 text-green-400" />}
               items={newReleases.items}
-              onItemClick={(item) => onItemClick?.(item, 'beat')}
-              onSeeAll={() => onSeeAll?.('new-releases')}
+              onItemClick={(item) => onItemClick?.(item, "beat")}
+              onSeeAll={() => onSeeAll?.("new-releases")}
             />
           )}
         </TabsContent>
@@ -143,14 +170,16 @@ export function DiscoveryFeed({
         <TabsContent value="trending" className="mt-6">
           {trending && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {trending.items?.map((item: Record<string, unknown>, index: number) => (
-                <BeatCard
-                  key={item.id}
-                  beat={item}
-                  rank={index + 1}
-                  onClick={() => onItemClick?.(item, 'beat')}
-                />
-              ))}
+              {trending.items?.map(
+                (item: Record<string, unknown>, index: number) => (
+                  <BeatCard
+                    key={item.id}
+                    beat={item}
+                    rank={index + 1}
+                    onClick={() => onItemClick?.(item, "beat")}
+                  />
+                ),
+              )}
             </div>
           )}
         </TabsContent>
@@ -163,7 +192,7 @@ export function DiscoveryFeed({
                   key={item.id}
                   beat={item}
                   isNew
-                  onClick={() => onItemClick?.(item, 'beat')}
+                  onClick={() => onItemClick?.(item, "beat")}
                 />
               ))}
             </div>
@@ -187,33 +216,37 @@ export function DiscoveryFeed({
             </div>
           )}
 
-          {curatedCollections?.map((collection: DiscoverySection, index: number) => (
-            <DiscoverSection
-              key={index}
-              title={collection.title}
-              description={collection.description}
-              icon={<Disc className="h-5 w-5 text-blue-400" />}
-              items={collection.items}
-              onItemClick={(item) => onItemClick?.(item, 'beat')}
-              onSeeAll={() => onSeeAll?.(collection.title)}
-            />
-          ))}
+          {curatedCollections?.map(
+            (collection: DiscoverySection, index: number) => (
+              <DiscoverSection
+                key={index}
+                title={collection.title}
+                description={collection.description}
+                icon={<Disc className="h-5 w-5 text-blue-400" />}
+                items={collection.items}
+                onItemClick={(item) => onItemClick?.(item, "beat")}
+                onSeeAll={() => onSeeAll?.(collection.title)}
+              />
+            ),
+          )}
         </TabsContent>
       </Tabs>
 
-      {curatedCollections?.length > 0 && activeTab === 'for-you' && (
+      {curatedCollections?.length > 0 && activeTab === "for-you" && (
         <div className="space-y-8">
-          {curatedCollections.slice(0, 3).map((collection: DiscoverySection, index: number) => (
-            <DiscoverSection
-              key={index}
-              title={collection.title}
-              description={collection.description}
-              icon={<Star className="h-5 w-5 text-yellow-400" />}
-              items={collection.items}
-              onItemClick={(item) => onItemClick?.(item, 'beat')}
-              onSeeAll={() => onSeeAll?.(collection.title)}
-            />
-          ))}
+          {curatedCollections
+            .slice(0, 3)
+            .map((collection: DiscoverySection, index: number) => (
+              <DiscoverSection
+                key={index}
+                title={collection.title}
+                description={collection.description}
+                icon={<Star className="h-5 w-5 text-yellow-400" />}
+                items={collection.items}
+                onItemClick={(item) => onItemClick?.(item, "beat")}
+                onSeeAll={() => onSeeAll?.(collection.title)}
+              />
+            ))}
         </div>
       )}
     </div>
@@ -240,10 +273,12 @@ function DiscoverSection({
   if (!items || items.length === 0) return null;
 
   return (
-    <Card className={cn(
-      'bg-slate-800/30 border-slate-700',
-      highlight && 'border-purple-500/30 bg-purple-500/5'
-    )}>
+    <Card
+      className={cn(
+        "bg-slate-800/30 border-slate-700",
+        highlight && "border-purple-500/30 bg-purple-500/5",
+      )}
+    >
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
@@ -269,13 +304,15 @@ function DiscoverSection({
       <CardContent>
         <ScrollArea className="w-full whitespace-nowrap">
           <div className="flex gap-4">
-            {items.slice(0, 8).map((item: Record<string, unknown>, index: number) => (
-              <BeatCardCompact
-                key={item.id}
-                beat={item}
-                onClick={() => onItemClick(item)}
-              />
-            ))}
+            {items
+              .slice(0, 8)
+              .map((item: Record<string, unknown>, index: number) => (
+                <BeatCardCompact
+                  key={item.id}
+                  beat={item}
+                  onClick={() => onItemClick(item)}
+                />
+              ))}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -313,26 +350,29 @@ function BeatCard({
               <Music className="h-12 w-12 text-slate-600" />
             </div>
           )}
-          
+
           {rank && (
             <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-black/70 flex items-center justify-center">
               <span className="text-sm font-bold text-white">#{rank}</span>
             </div>
           )}
-          
+
           {isNew && (
             <Badge className="absolute top-2 right-2 bg-green-500 text-white">
               NEW
             </Badge>
           )}
-          
+
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Button size="icon" className="bg-purple-600 hover:bg-purple-700 rounded-full">
+            <Button
+              size="icon"
+              className="bg-purple-600 hover:bg-purple-700 rounded-full"
+            >
               <Play className="h-5 w-5" />
             </Button>
           </div>
         </div>
-        
+
         <div className="space-y-1">
           <h3 className="font-medium text-white truncate">{beat.title}</h3>
           {beat.genre && (
@@ -346,9 +386,7 @@ function BeatCard({
               {(beat.plays || 0).toLocaleString()}
             </span>
             {beat.price && (
-              <span className="text-green-400 font-medium">
-                ${beat.price}
-              </span>
+              <span className="text-green-400 font-medium">${beat.price}</span>
             )}
           </div>
         </div>
@@ -365,10 +403,7 @@ function BeatCardCompact({
   onClick: () => void;
 }) {
   return (
-    <div
-      className="flex-shrink-0 w-40 cursor-pointer group"
-      onClick={onClick}
-    >
+    <div className="flex-shrink-0 w-40 cursor-pointer group" onClick={onClick}>
       <div className="relative aspect-square rounded-lg bg-slate-700/50 mb-2 overflow-hidden">
         {beat.artworkUrl ? (
           <img
@@ -386,9 +421,7 @@ function BeatCardCompact({
         </div>
       </div>
       <h4 className="font-medium text-sm text-white truncate">{beat.title}</h4>
-      <p className="text-xs text-slate-400 truncate">
-        {beat.genre || 'Beat'}
-      </p>
+      <p className="text-xs text-slate-400 truncate">{beat.genre || "Beat"}</p>
     </div>
   );
 }
@@ -403,9 +436,9 @@ function DiscoveryFeedSkeleton() {
         </div>
         <Skeleton className="h-9 w-24 bg-slate-700" />
       </div>
-      
+
       <Skeleton className="h-10 w-full max-w-md bg-slate-700" />
-      
+
       {[1, 2, 3].map((section) => (
         <Card key={section} className="bg-slate-800/30 border-slate-700">
           <CardHeader className="pb-4">
@@ -437,12 +470,12 @@ export function SimilarBeatsSection({
   onItemClick?: (item: Record<string, unknown>) => void;
 }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['/api/search/similar', beatId],
+    queryKey: ["/api/search/similar", beatId],
     queryFn: async () => {
       const res = await fetch(`/api/search/similar/${beatId}?limit=6`, {
-        credentials: 'include',
+        credentials: "include",
       });
-      if (!res.ok) throw new Error('Failed to fetch similar beats');
+      if (!res.ok) throw new Error("Failed to fetch similar beats");
       return res.json();
     },
     enabled: !!beatId,
@@ -474,8 +507,13 @@ export function SimilarBeatsSection({
           Similar to "{data.sourceBeat?.title}"
         </CardTitle>
         <p className="text-sm text-slate-400">
-          Beats with similar {data.matchCriteria?.genre ? `genre (${data.matchCriteria.genre})` : ''} 
-          {data.matchCriteria?.bpmRange ? ` and BPM (${data.matchCriteria.bpmRange})` : ''}
+          Beats with similar{" "}
+          {data.matchCriteria?.genre
+            ? `genre (${data.matchCriteria.genre})`
+            : ""}
+          {data.matchCriteria?.bpmRange
+            ? ` and BPM (${data.matchCriteria.bpmRange})`
+            : ""}
         </p>
       </CardHeader>
       <CardContent>

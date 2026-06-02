@@ -6,12 +6,13 @@
 const _origEmit = process.emit.bind(process);
 // @ts-ignore — override to filter 'warning' events
 process.emit = function (event: string, ...args: unknown[]): boolean {
-  if (event === 'warning') {
+  if (event === "warning") {
     const w = args[0] as NodeJS.ErrnoException;
-    const msg = w?.message ?? '';
+    const msg = w?.message ?? "";
     // pg SSL-mode alias advisory: 'prefer'/'require'/'verify-ca' → 'verify-full'
     // This is expected behaviour in Replit's managed PG environment.
-    if (msg.includes('SECURITY WARNING') && msg.includes('SSL modes')) return false;
+    if (msg.includes("SECURITY WARNING") && msg.includes("SSL modes"))
+      return false;
   }
   return _origEmit(event, ...args);
 };
@@ -28,15 +29,18 @@ process.emit = function (event: string, ...args: unknown[]): boolean {
 //
 // A partial-line buffer handles the case where a single logical error is split
 // across multiple write() calls.
-let _stderrPartial = '';
+let _stderrPartial = "";
 
-const _origStderrWrite = (process.stderr.write as Function).bind(process.stderr);
+const _origStderrWrite = (process.stderr.write as Function).bind(
+  process.stderr,
+);
 (process.stderr as NodeJS.WriteStream).write = function (
   chunk: Uint8Array | string,
   encodingOrCb?: BufferEncoding | ((err?: Error | null) => void),
   cb?: (err?: Error | null) => void,
 ): boolean {
-  const s = typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString('utf8');
+  const s =
+    typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
   const combined = _stderrPartial + s;
 
   // Fast-path: if the chunk (or buffered context) is clearly a PDIM cold-start
@@ -44,31 +48,30 @@ const _origStderrWrite = (process.stderr.write as Function).bind(process.stderr)
   //   • Starts with "Error: " and contains "PDIM HTTP 5"
   //   • Contains "stack traceback:" (Lua stack, always from PDIM scripts)
   //   • Contains the luaExecutor source path (confirms it's our Worker error)
-  const isColdStartNoise = (
+  const isColdStartNoise =
     /PDIM HTTP 5\d\d/.test(combined) ||
-    combined.includes('stack traceback:') ||
-    combined.includes('luaExecutor.ts') ||
+    combined.includes("stack traceback:") ||
+    combined.includes("luaExecutor.ts") ||
     // Production bundle path — esbuild compiles luaExecutor into dist/index.mjs
-    combined.includes('dist/index.mjs')
-  );
+    combined.includes("dist/index.mjs");
   if (isColdStartNoise) {
-    _stderrPartial = '';
-    const done = typeof encodingOrCb === 'function' ? encodingOrCb : cb;
+    _stderrPartial = "";
+    const done = typeof encodingOrCb === "function" ? encodingOrCb : cb;
     if (done) done();
     return true;
   }
 
   // If the chunk ends mid-line (no trailing newline), buffer it so the next
   // write can be checked in context.
-  if (!s.endsWith('\n')) {
+  if (!s.endsWith("\n")) {
     _stderrPartial = combined;
-    const done = typeof encodingOrCb === 'function' ? encodingOrCb : cb;
+    const done = typeof encodingOrCb === "function" ? encodingOrCb : cb;
     if (done) done();
     return true;
   }
 
-  _stderrPartial = '';
-  return typeof encodingOrCb === 'function'
+  _stderrPartial = "";
+  return typeof encodingOrCb === "function"
     ? _origStderrWrite(chunk, encodingOrCb)
     : _origStderrWrite(chunk, encodingOrCb, cb);
 };
@@ -79,25 +82,28 @@ const originalConsoleError = console.error;
 // Filter for localhost Redis errors (these are non-critical when main Redis is working)
 console.error = (...args: unknown[]) => {
   // Convert args to string for pattern matching
-  const argsStr = args.map(a => {
-    if (a instanceof Error) return a.message + ' ' + a.stack;
-    if (typeof a === 'object') return JSON.stringify(a);
-    return String(a);
-  }).join(' ');
-  
+  const argsStr = args
+    .map((a) => {
+      if (a instanceof Error) return a.message + " " + a.stack;
+      if (typeof a === "object") return JSON.stringify(a);
+      return String(a);
+    })
+    .join(" ");
+
   // Suppress PDIM cold-start noise (same patterns as stderr interceptor above)
   if (
     /PDIM HTTP 5\d\d/.test(argsStr) ||
-    argsStr.includes('stack traceback:') ||
-    argsStr.includes('luaExecutor.ts') ||
-    argsStr.includes('dist/index.mjs')
-  ) return;
+    argsStr.includes("stack traceback:") ||
+    argsStr.includes("luaExecutor.ts") ||
+    argsStr.includes("dist/index.mjs")
+  )
+    return;
 
   // Check for localhost Redis connection errors (127.0.0.1:6379)
-  const isLocalhostRedisError = 
-    argsStr.includes('127.0.0.1:6379') ||
-    argsStr.includes('localhost:6379') ||
-    (argsStr.includes('ECONNREFUSED') && argsStr.includes('6379'));
+  const isLocalhostRedisError =
+    argsStr.includes("127.0.0.1:6379") ||
+    argsStr.includes("localhost:6379") ||
+    (argsStr.includes("ECONNREFUSED") && argsStr.includes("6379"));
 
   // Only suppress localhost Redis errors, not remote Redis errors
   if (!isLocalhostRedisError) {
@@ -105,6 +111,6 @@ console.error = (...args: unknown[]) => {
   }
 };
 
-if (process.env.NODE_ENV === 'development') {
-  console.log('✅ Localhost Redis error filter installed');
+if (process.env.NODE_ENV === "development") {
+  console.log("✅ Localhost Redis error filter installed");
 }

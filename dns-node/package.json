@@ -7,9 +7,9 @@
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "start": "node dist/index.js",
-    "dev":   "tsx src/index.ts",
-    "ns1":   "DNS_PORT=5353 DNS_SERVER_ROLE=ns1 HEALTH_PORT=5380 tsx src/index.ts",
-    "ns2":   "DNS_PORT=5354 DNS_SERVER_ROLE=ns2 HEALTH_PORT=5381 tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "ns1": "DNS_PORT=5353 DNS_SERVER_ROLE=ns1 HEALTH_PORT=5380 tsx src/index.ts",
+    "ns2": "DNS_PORT=5354 DNS_SERVER_ROLE=ns2 HEALTH_PORT=5381 tsx src/index.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5"
@@ -19,6 +19,12 @@
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   },
-  "keywords": ["dns", "nameserver", "authoritative", "dnssec", "geodns"],
+  "keywords": [
+    "dns",
+    "nameserver",
+    "authoritative",
+    "dnssec",
+    "geodns"
+  ],
   "license": "MIT"
 }

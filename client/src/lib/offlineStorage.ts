@@ -1,4 +1,4 @@
-import { logger } from '@/lib/logger';
+import { logger } from "@/lib/logger";
 export {
   offlineQueue,
   initOfflineQueue,
@@ -9,7 +9,7 @@ export {
   offlineCache,
   initOfflineCache,
   initOfflineSystem,
-} from './offline';
+} from "./offline";
 
 export type {
   QueuedAction,
@@ -28,10 +28,16 @@ export type {
   CacheEntry,
   CacheCategory,
   CacheOptions,
-} from './offline';
+} from "./offline";
 
-import { offlineQueue, draftStorage, offlineCache, initOfflineSystem, syncManager } from './offline';
-import type { CacheCategory } from './offline';
+import {
+  offlineQueue,
+  draftStorage,
+  offlineCache,
+  initOfflineSystem,
+  syncManager,
+} from "./offline";
+import type { CacheCategory } from "./offline";
 
 export interface OfflineStorageAPI {
   queue: {
@@ -177,11 +183,11 @@ export async function queueOfflineAction<T = unknown>(
   type: string,
   payload: T,
   options?: {
-    priority?: 'critical' | 'high' | 'normal' | 'low';
-    conflictStrategy?: 'local-wins' | 'server-wins' | 'merge' | 'manual';
+    priority?: "critical" | "high" | "normal" | "low";
+    conflictStrategy?: "local-wins" | "server-wins" | "merge" | "manual";
     maxRetries?: number;
     metadata?: Record<string, unknown>;
-  }
+  },
 ) {
   return offlineQueue.enqueue(type, payload, options);
 }
@@ -192,7 +198,7 @@ export async function saveDraft<T = unknown>(
   options?: {
     expirationMs?: number;
     metadata?: Record<string, unknown>;
-  }
+  },
 ) {
   return draftStorage.saveDraft(formId, data, options);
 }
@@ -213,7 +219,7 @@ export async function cacheData<T = unknown>(
     ttlMs?: number;
     version?: number;
     etag?: string;
-  }
+  },
 ) {
   return offlineCache.set(key, data, options);
 }
@@ -229,22 +235,26 @@ export async function fetchWithCache<T = unknown>(
     category?: CacheCategory;
     ttlMs?: number;
     staleWhileRevalidate?: boolean;
-  }
+  },
 ): Promise<T> {
   const cached = await offlineCache.get<T>(key);
-  
+
   if (cached !== null) {
     if (options?.staleWhileRevalidate) {
-      fetcher().then(data => {
-        offlineCache.set(key, data, {
-          category: options?.category,
-          ttlMs: options?.ttlMs,
-        });
-      }).catch((err: unknown) => logger.error('Offline cache fetch failed:', err));
+      fetcher()
+        .then((data) => {
+          offlineCache.set(key, data, {
+            category: options?.category,
+            ttlMs: options?.ttlMs,
+          });
+        })
+        .catch((err: unknown) =>
+          logger.error("Offline cache fetch failed:", err),
+        );
     }
     return cached;
   }
-  
+
   try {
     const data = await fetcher();
     await offlineCache.set(key, data, {

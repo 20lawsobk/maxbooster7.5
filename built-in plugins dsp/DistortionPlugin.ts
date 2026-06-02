@@ -1,4 +1,4 @@
-import { BasePlugin } from './BasePlugin';
+import { BasePlugin } from "./BasePlugin";
 
 /**
  * Professional Distortion Plugin
@@ -15,7 +15,8 @@ export class DistortionPlugin extends BasePlugin {
   private drive: number = 0.5;
   private tone: number = 0.5;
   private level: number = 0.5;
-  private distortionType: 'overdrive' | 'fuzz' | 'tube' | 'bitcrusher' = 'overdrive';
+  private distortionType: "overdrive" | "fuzz" | "tube" | "bitcrusher" =
+    "overdrive";
   private bitDepth: number = 16;
   private sampleRateReduction: number = 1;
 
@@ -30,10 +31,10 @@ export class DistortionPlugin extends BasePlugin {
     this.cabinetFilter = context.createBiquadFilter();
 
     // Configure filters
-    this.toneFilter.type = 'highshelf';
+    this.toneFilter.type = "highshelf";
     this.toneFilter.frequency.value = 3000;
 
-    this.cabinetFilter.type = 'bandpass';
+    this.cabinetFilter.type = "bandpass";
     this.cabinetFilter.frequency.value = 800;
     this.cabinetFilter.Q.value = 1.5;
 
@@ -47,7 +48,7 @@ export class DistortionPlugin extends BasePlugin {
     this.wetGain.connect(this.output);
 
     // Set default curve
-    this.setDistortionType('overdrive');
+    this.setDistortionType("overdrive");
     this.setDrive(0.5);
   }
 
@@ -60,16 +61,17 @@ export class DistortionPlugin extends BasePlugin {
     const deg = Math.PI / 180;
 
     switch (type) {
-      case 'overdrive':
+      case "overdrive":
         // Soft clipping with smooth saturation
         for (let i = 0; i < samples; i++) {
           const x = (i * 2) / samples - 1;
           const drive = amount * 100;
-          curve[i] = ((3 + drive) * x * 20 * deg) / (Math.PI + drive * Math.abs(x));
+          curve[i] =
+            ((3 + drive) * x * 20 * deg) / (Math.PI + drive * Math.abs(x));
         }
         break;
 
-      case 'fuzz':
+      case "fuzz":
         // Hard clipping with asymmetric distortion
         for (let i = 0; i < samples; i++) {
           const x = (i * 2) / samples - 1;
@@ -86,7 +88,7 @@ export class DistortionPlugin extends BasePlugin {
         }
         break;
 
-      case 'tube':
+      case "tube":
         // Warm tube saturation with even harmonics
         for (let i = 0; i < samples; i++) {
           const x = (i * 2) / samples - 1;
@@ -98,9 +100,14 @@ export class DistortionPlugin extends BasePlugin {
             y = x;
           } else if (Math.abs(x) < 1) {
             if (x > 0) {
-              y = drive + (x - drive) / (1 + Math.pow((x - drive) / (1 - drive), 2));
+              y =
+                drive +
+                (x - drive) / (1 + Math.pow((x - drive) / (1 - drive), 2));
             } else {
-              y = -(drive + (-x - drive) / (1 + Math.pow((-x - drive) / (1 - drive), 2)));
+              y = -(
+                drive +
+                (-x - drive) / (1 + Math.pow((-x - drive) / (1 - drive), 2))
+              );
             }
           } else {
             y = (Math.sign(x) * (drive + 1)) / 2;
@@ -114,9 +121,12 @@ export class DistortionPlugin extends BasePlugin {
         }
         break;
 
-      case 'bitcrusher':
+      case "bitcrusher":
         // Digital distortion with bit reduction
-        const bits = Math.max(1, Math.floor(this.bitDepth * (1 - amount * 0.9)));
+        const bits = Math.max(
+          1,
+          Math.floor(this.bitDepth * (1 - amount * 0.9)),
+        );
         const step = 2 / Math.pow(2, bits);
 
         for (let i = 0; i < samples; i++) {
@@ -125,7 +135,9 @@ export class DistortionPlugin extends BasePlugin {
           curve[i] = Math.round(x / step) * step;
           // Add aliasing artifacts
           if (this.sampleRateReduction > 1) {
-            const reduced = Math.floor(i / this.sampleRateReduction) * this.sampleRateReduction;
+            const reduced =
+              Math.floor(i / this.sampleRateReduction) *
+              this.sampleRateReduction;
             curve[i] = curve[reduced] || 0;
           }
         }
@@ -144,25 +156,25 @@ export class DistortionPlugin extends BasePlugin {
   /**
    * Set distortion type
    */
-  setDistortionType(type: 'overdrive' | 'fuzz' | 'tube' | 'bitcrusher'): void {
+  setDistortionType(type: "overdrive" | "fuzz" | "tube" | "bitcrusher"): void {
     this.distortionType = type;
     this.waveShaper.curve = this.generateCurve(type, this.drive);
 
     // Adjust filters based on type
     switch (type) {
-      case 'overdrive':
+      case "overdrive":
         this.cabinetFilter.frequency.value = 800;
         this.cabinetFilter.Q.value = 1.5;
         break;
-      case 'fuzz':
+      case "fuzz":
         this.cabinetFilter.frequency.value = 1200;
         this.cabinetFilter.Q.value = 2;
         break;
-      case 'tube':
+      case "tube":
         this.cabinetFilter.frequency.value = 600;
         this.cabinetFilter.Q.value = 1;
         break;
-      case 'bitcrusher':
+      case "bitcrusher":
         this.cabinetFilter.frequency.value = 2000;
         this.cabinetFilter.Q.value = 0.7;
         break;
@@ -176,13 +188,19 @@ export class DistortionPlugin extends BasePlugin {
     this.drive = Math.max(0, Math.min(1, value));
 
     // Update pre-gain based on drive
-    this.preGain.gain.setValueAtTime(1 + this.drive * 10, this.context.currentTime);
+    this.preGain.gain.setValueAtTime(
+      1 + this.drive * 10,
+      this.context.currentTime,
+    );
 
     // Regenerate curve
     this.waveShaper.curve = this.generateCurve(this.distortionType, this.drive);
 
     // Compensate output level
-    this.postGain.gain.setValueAtTime(0.5 / (1 + this.drive * 0.5), this.context.currentTime);
+    this.postGain.gain.setValueAtTime(
+      0.5 / (1 + this.drive * 0.5),
+      this.context.currentTime,
+    );
   }
 
   /**
@@ -194,13 +212,13 @@ export class DistortionPlugin extends BasePlugin {
     // Adjust high frequency content
     this.toneFilter.gain.setValueAtTime(
       (this.tone - 0.5) * 20, // -10 to +10 dB
-      this.context.currentTime
+      this.context.currentTime,
     );
 
     // Adjust filter frequency
     this.toneFilter.frequency.setValueAtTime(
       1000 + this.tone * 4000, // 1kHz to 5kHz
-      this.context.currentTime
+      this.context.currentTime,
     );
   }
 
@@ -217,8 +235,8 @@ export class DistortionPlugin extends BasePlugin {
    */
   setBitDepth(value: number): void {
     this.bitDepth = Math.max(1, Math.min(16, value));
-    if (this.distortionType === 'bitcrusher') {
-      this.waveShaper.curve = this.generateCurve('bitcrusher', this.drive);
+    if (this.distortionType === "bitcrusher") {
+      this.waveShaper.curve = this.generateCurve("bitcrusher", this.drive);
     }
   }
 
@@ -227,8 +245,8 @@ export class DistortionPlugin extends BasePlugin {
    */
   setSampleRateReduction(value: number): void {
     this.sampleRateReduction = Math.max(1, Math.min(10, value));
-    if (this.distortionType === 'bitcrusher') {
-      this.waveShaper.curve = this.generateCurve('bitcrusher', this.drive);
+    if (this.distortionType === "bitcrusher") {
+      this.waveShaper.curve = this.generateCurve("bitcrusher", this.drive);
     }
   }
 
@@ -244,7 +262,7 @@ export class DistortionPlugin extends BasePlugin {
   }
 
   getName(): string {
-    return 'Max Booster Distortion';
+    return "Max Booster Distortion";
   }
 
   getParameters(): Record<string, any> {

@@ -1,7 +1,7 @@
 /**
  * ML Model Registry Service
  * Comprehensive model management for Max Booster's custom AI infrastructure
- * 
+ *
  * Features:
  * - Model registration and versioning
  * - Model metadata storage with file persistence
@@ -10,24 +10,32 @@
  * - Model lifecycle management
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { randomBytes } from 'crypto';
-import { logger } from '../logger.js';
-import type { ModelMetadata, EvaluationMetrics } from '../../shared/ml/types.js';
-import type { BaseModel } from '../../shared/ml/models/BaseModel.js';
+import * as fs from "fs";
+import * as path from "path";
+import { randomBytes } from "crypto";
+import { logger } from "../logger.js";
+import type {
+  ModelMetadata,
+  EvaluationMetrics,
+} from "../../shared/ml/types.js";
+import type { BaseModel } from "../../shared/ml/models/BaseModel.js";
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
-export type ModelStatus = 'active' | 'deprecated' | 'archived' | 'testing' | 'pending';
+export type ModelStatus =
+  | "active"
+  | "deprecated"
+  | "archived"
+  | "testing"
+  | "pending";
 
 export interface RegisteredModel {
   id: string;
   name: string;
   version: string;
-  type: ModelMetadata['type'];
+  type: ModelMetadata["type"];
   status: ModelStatus;
   inputShape: number[];
   outputShape: number[];
@@ -82,7 +90,7 @@ export interface ABTestConfig {
   variants: ModelVariant[];
   startDate: Date;
   endDate?: Date;
-  status: 'running' | 'paused' | 'completed' | 'cancelled';
+  status: "running" | "paused" | "completed" | "cancelled";
   minSampleSize: number;
   confidenceLevel: number;
 }
@@ -118,7 +126,7 @@ export interface ModelPerformance {
 export interface ModelRegistrationOptions {
   name: string;
   version: string;
-  type: ModelMetadata['type'];
+  type: ModelMetadata["type"];
   inputShape: number[];
   outputShape: number[];
   parameters?: ModelParameters;
@@ -131,7 +139,7 @@ export interface ModelRegistrationOptions {
 
 export interface ModelFilter {
   status?: ModelStatus;
-  type?: ModelMetadata['type'];
+  type?: ModelMetadata["type"];
   tags?: string[];
   name?: string;
   minAccuracy?: number;
@@ -154,8 +162,8 @@ export class MLModelRegistry {
   private readonly MAX_PREDICTIONS_PER_MODEL = 10000;
 
   private constructor() {
-    this.storageDir = path.join(process.cwd(), 'uploads', 'models');
-    this.metadataFile = path.join(this.storageDir, 'registry.json');
+    this.storageDir = path.join(process.cwd(), "uploads", "models");
+    this.metadataFile = path.join(this.storageDir, "registry.json");
   }
 
   public static getInstance(): MLModelRegistry {
@@ -175,12 +183,12 @@ export class MLModelRegistry {
       await this.ensureStorageDirectory();
       await this.loadPersistedData();
       this.initialized = true;
-      logger.info('ML Model Registry initialized successfully', {
+      logger.info("ML Model Registry initialized successfully", {
         modelsLoaded: this.models.size,
-        storageDir: this.storageDir
+        storageDir: this.storageDir,
       });
     } catch (error) {
-      logger.warn('Failed to initialize ML Model Registry', error as Error);
+      logger.warn("Failed to initialize ML Model Registry", error as Error);
       throw error;
     }
   }
@@ -189,7 +197,7 @@ export class MLModelRegistry {
     try {
       await fs.promises.mkdir(this.storageDir, { recursive: true });
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
         throw error;
       }
     }
@@ -199,11 +207,11 @@ export class MLModelRegistry {
     try {
       const exists = fs.existsSync(this.metadataFile);
       if (!exists) {
-        logger.info('No existing registry found, starting fresh');
+        logger.info("No existing registry found, starting fresh");
         return;
       }
 
-      const data = await fs.promises.readFile(this.metadataFile, 'utf-8');
+      const data = await fs.promises.readFile(this.metadataFile, "utf-8");
       const parsed = JSON.parse(data);
 
       if (parsed.models) {
@@ -217,10 +225,12 @@ export class MLModelRegistry {
 
       if (parsed.variants) {
         for (const [modelId, variantList] of Object.entries(parsed.variants)) {
-          const processedVariants = (variantList as ModelVariant[]).map(v => ({
-            ...v,
-            createdAt: new Date(v.createdAt)
-          }));
+          const processedVariants = (variantList as ModelVariant[]).map(
+            (v) => ({
+              ...v,
+              createdAt: new Date(v.createdAt),
+            }),
+          );
           this.variants.set(modelId, processedVariants);
         }
       }
@@ -232,21 +242,21 @@ export class MLModelRegistry {
           if (processedConfig.endDate) {
             processedConfig.endDate = new Date(processedConfig.endDate);
           }
-          processedConfig.variants = processedConfig.variants.map(v => ({
+          processedConfig.variants = processedConfig.variants.map((v) => ({
             ...v,
-            createdAt: new Date(v.createdAt)
+            createdAt: new Date(v.createdAt),
           }));
           this.abTests.set(experimentId, processedConfig);
         }
       }
 
-      logger.info('Registry data loaded from disk', {
+      logger.info("Registry data loaded from disk", {
         models: this.models.size,
         variants: this.variants.size,
-        abTests: this.abTests.size
+        abTests: this.abTests.size,
       });
     } catch (error) {
-      logger.warn('Error loading persisted registry data', error as Error);
+      logger.warn("Error loading persisted registry data", error as Error);
     }
   }
 
@@ -256,16 +266,16 @@ export class MLModelRegistry {
         models: Array.from(this.models.values()),
         variants: Object.fromEntries(this.variants.entries()),
         abTests: Object.fromEntries(this.abTests.entries()),
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       };
 
       await fs.promises.writeFile(
         this.metadataFile,
         JSON.stringify(data, null, 2),
-        'utf-8'
+        "utf-8",
       );
     } catch (error) {
-      logger.warn('Failed to persist registry data', error as Error);
+      logger.warn("Failed to persist registry data", error as Error);
       throw error;
     }
   }
@@ -277,13 +287,17 @@ export class MLModelRegistry {
   /**
    * Register a new model in the registry
    */
-  public async registerModel(options: ModelRegistrationOptions): Promise<RegisteredModel> {
+  public async registerModel(
+    options: ModelRegistrationOptions,
+  ): Promise<RegisteredModel> {
     await this.ensureInitialized();
 
     const id = this.generateModelId(options.name, options.version);
-    
+
     if (this.models.has(id)) {
-      throw new Error(`Model with id ${id} already exists. Use a different version.`);
+      throw new Error(
+        `Model with id ${id} already exists. Use a different version.`,
+      );
     }
 
     const now = new Date();
@@ -292,7 +306,7 @@ export class MLModelRegistry {
       name: options.name,
       version: options.version,
       type: options.type,
-      status: 'pending',
+      status: "pending",
       inputShape: options.inputShape,
       outputShape: options.outputShape,
       createdAt: now,
@@ -303,17 +317,17 @@ export class MLModelRegistry {
       metrics: options.metrics || {},
       parameters: options.parameters || {},
       tags: options.tags || [],
-      description: options.description
+      description: options.description,
     };
 
     this.models.set(id, model);
     this.predictions.set(id, []);
     await this.persistData();
 
-    logger.info('Model registered successfully', { 
-      modelId: id, 
-      name: options.name, 
-      version: options.version 
+    logger.info("Model registered successfully", {
+      modelId: id,
+      name: options.name,
+      version: options.version,
     });
 
     return model;
@@ -324,21 +338,24 @@ export class MLModelRegistry {
    */
   public async registerModelInstance(
     options: ModelRegistrationOptions,
-    instance: BaseModel
+    instance: BaseModel,
   ): Promise<RegisteredModel> {
     const model = await this.registerModel(options);
     this.modelInstances.set(model.id, instance);
-    
+
     const modelPath = path.join(this.storageDir, model.id);
     model.filePath = modelPath;
-    
+
     try {
       await instance.save(`file://${modelPath}`);
-      model.status = 'active';
+      model.status = "active";
       await this.persistData();
-      logger.info('Model instance saved to disk', { modelId: model.id, path: modelPath });
+      logger.info("Model instance saved to disk", {
+        modelId: model.id,
+        path: modelPath,
+      });
     } catch (error) {
-      logger.warn('Failed to save model instance', error as Error);
+      logger.warn("Failed to save model instance", error as Error);
     }
 
     return model;
@@ -369,32 +386,30 @@ export class MLModelRegistry {
 
     if (filter) {
       if (filter.status) {
-        models = models.filter(m => m.status === filter.status);
+        models = models.filter((m) => m.status === filter.status);
       }
       if (filter.type) {
-        models = models.filter(m => m.type === filter.type);
+        models = models.filter((m) => m.type === filter.type);
       }
       if (filter.tags && filter.tags.length > 0) {
-        models = models.filter(m => 
-          filter.tags!.some(tag => m.tags.includes(tag))
+        models = models.filter((m) =>
+          filter.tags!.some((tag) => m.tags.includes(tag)),
         );
       }
       if (filter.name) {
         const searchName = filter.name.toLowerCase();
-        models = models.filter(m => 
-          m.name.toLowerCase().includes(searchName)
+        models = models.filter((m) =>
+          m.name.toLowerCase().includes(searchName),
         );
       }
       if (filter.minAccuracy !== undefined) {
-        models = models.filter(m => 
-          m.accuracy !== undefined && m.accuracy >= filter.minAccuracy!
+        models = models.filter(
+          (m) => m.accuracy !== undefined && m.accuracy >= filter.minAccuracy!,
         );
       }
     }
 
-    return models.sort((a, b) => 
-      b.updatedAt.getTime() - a.updatedAt.getTime()
-    );
+    return models.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
 
   /**
@@ -402,16 +417,18 @@ export class MLModelRegistry {
    */
   public async getModelVersions(modelName: string): Promise<RegisteredModel[]> {
     await this.ensureInitialized();
-    
+
     return Array.from(this.models.values())
-      .filter(m => m.name === modelName)
+      .filter((m) => m.name === modelName)
       .sort((a, b) => this.compareVersions(b.version, a.version));
   }
 
   /**
    * Get the latest version of a model by name
    */
-  public async getLatestModel(modelName: string): Promise<RegisteredModel | null> {
+  public async getLatestModel(
+    modelName: string,
+  ): Promise<RegisteredModel | null> {
     const versions = await this.getModelVersions(modelName);
     return versions[0] || null;
   }
@@ -424,8 +441,8 @@ export class MLModelRegistry {
    * Update model status
    */
   public async updateModelStatus(
-    modelId: string, 
-    status: ModelStatus
+    modelId: string,
+    status: ModelStatus,
   ): Promise<RegisteredModel> {
     await this.ensureInitialized();
 
@@ -440,10 +457,10 @@ export class MLModelRegistry {
 
     await this.persistData();
 
-    logger.info('Model status updated', { 
-      modelId, 
-      previousStatus, 
-      newStatus: status 
+    logger.info("Model status updated", {
+      modelId,
+      previousStatus,
+      newStatus: status,
     });
 
     return model;
@@ -454,9 +471,12 @@ export class MLModelRegistry {
    */
   public async updateModelMetadata(
     modelId: string,
-    updates: Partial<Pick<RegisteredModel, 
-      'accuracy' | 'loss' | 'metrics' | 'parameters' | 'tags' | 'description'
-    >>
+    updates: Partial<
+      Pick<
+        RegisteredModel,
+        "accuracy" | "loss" | "metrics" | "parameters" | "tags" | "description"
+      >
+    >,
   ): Promise<RegisteredModel> {
     await this.ensureInitialized();
 
@@ -467,16 +487,22 @@ export class MLModelRegistry {
 
     if (updates.accuracy !== undefined) model.accuracy = updates.accuracy;
     if (updates.loss !== undefined) model.loss = updates.loss;
-    if (updates.metrics) model.metrics = { ...model.metrics, ...updates.metrics };
-    if (updates.parameters) model.parameters = { ...model.parameters, ...updates.parameters };
+    if (updates.metrics)
+      model.metrics = { ...model.metrics, ...updates.metrics };
+    if (updates.parameters)
+      model.parameters = { ...model.parameters, ...updates.parameters };
     if (updates.tags) model.tags = updates.tags;
-    if (updates.description !== undefined) model.description = updates.description;
-    
+    if (updates.description !== undefined)
+      model.description = updates.description;
+
     model.updatedAt = new Date();
 
     await this.persistData();
 
-    logger.info('Model metadata updated', { modelId, updates: Object.keys(updates) });
+    logger.info("Model metadata updated", {
+      modelId,
+      updates: Object.keys(updates),
+    });
 
     return model;
   }
@@ -486,7 +512,7 @@ export class MLModelRegistry {
    */
   public async markModelTrained(
     modelId: string,
-    metrics: EvaluationMetrics
+    metrics: EvaluationMetrics,
   ): Promise<RegisteredModel> {
     await this.ensureInitialized();
 
@@ -505,16 +531,19 @@ export class MLModelRegistry {
       recall: metrics.recall || 0,
       f1Score: metrics.f1Score || 0,
       mae: metrics.mae || 0,
-      r2Score: metrics.r2Score || 0
+      r2Score: metrics.r2Score || 0,
     };
 
-    if (model.status === 'pending') {
-      model.status = 'active';
+    if (model.status === "pending") {
+      model.status = "active";
     }
 
     await this.persistData();
 
-    logger.info('Model marked as trained', { modelId, accuracy: metrics.accuracy });
+    logger.info("Model marked as trained", {
+      modelId,
+      accuracy: metrics.accuracy,
+    });
 
     return model;
   }
@@ -540,7 +569,7 @@ export class MLModelRegistry {
       try {
         await fs.promises.rm(model.filePath, { recursive: true, force: true });
       } catch (error) {
-        logger.warn('Failed to delete model files', { modelId, error });
+        logger.warn("Failed to delete model files", { modelId, error });
       }
     }
 
@@ -550,7 +579,7 @@ export class MLModelRegistry {
 
     await this.persistData();
 
-    logger.info('Model deleted', { modelId });
+    logger.info("Model deleted", { modelId });
   }
 
   // ============================================================================
@@ -571,7 +600,7 @@ export class MLModelRegistry {
       minSampleSize?: number;
       confidenceLevel?: number;
       endDate?: Date;
-    }
+    },
   ): Promise<ABTestConfig> {
     await this.ensureInitialized();
 
@@ -580,14 +609,17 @@ export class MLModelRegistry {
       throw new Error(`Model ${modelId} not found`);
     }
 
-    const totalWeight = variantConfigs.reduce((sum, v) => sum + v.trafficWeight, 0);
+    const totalWeight = variantConfigs.reduce(
+      (sum, v) => sum + v.trafficWeight,
+      0,
+    );
     if (Math.abs(totalWeight - 1) > 0.01) {
-      throw new Error('Traffic weights must sum to 1');
+      throw new Error("Traffic weights must sum to 1");
     }
 
-    const controlCount = variantConfigs.filter(v => v.isControl).length;
+    const controlCount = variantConfigs.filter((v) => v.isControl).length;
     if (controlCount !== 1) {
-      throw new Error('Exactly one variant must be marked as control');
+      throw new Error("Exactly one variant must be marked as control");
     }
 
     const experimentId = `exp_${modelId}_${Date.now()}`;
@@ -599,15 +631,15 @@ export class MLModelRegistry {
       variantName: config.variantName,
       trafficWeight: config.trafficWeight,
       isControl: config.isControl,
-      status: 'active',
+      status: "active",
       createdAt: now,
       metrics: {
         totalPredictions: 0,
         successfulPredictions: 0,
         averageLatency: 0,
         averageConfidence: 0,
-        errorRate: 0
-      }
+        errorRate: 0,
+      },
     }));
 
     const abTest: ABTestConfig = {
@@ -616,19 +648,19 @@ export class MLModelRegistry {
       variants,
       startDate: now,
       endDate: options?.endDate,
-      status: 'running',
+      status: "running",
       minSampleSize: options?.minSampleSize || 1000,
-      confidenceLevel: options?.confidenceLevel || 0.95
+      confidenceLevel: options?.confidenceLevel || 0.95,
     };
 
     this.abTests.set(experimentId, abTest);
     this.variants.set(modelId, variants);
     await this.persistData();
 
-    logger.info('A/B test created', { 
-      experimentId, 
-      modelId, 
-      variantCount: variants.length 
+    logger.info("A/B test created", {
+      experimentId,
+      modelId,
+      variantCount: variants.length,
     });
 
     return abTest;
@@ -641,7 +673,7 @@ export class MLModelRegistry {
     const variants = this.variants.get(modelId);
     if (!variants || variants.length === 0) return null;
 
-    const activeVariants = variants.filter(v => v.status === 'active');
+    const activeVariants = variants.filter((v) => v.status === "active");
     if (activeVariants.length === 0) return null;
 
     const random = Math.random();
@@ -677,23 +709,29 @@ export class MLModelRegistry {
       throw new Error(`Experiment ${experimentId} not found`);
     }
 
-    const control = experiment.variants.find(v => v.isControl);
+    const control = experiment.variants.find((v) => v.isControl);
     if (!control) {
-      throw new Error('No control variant found');
+      throw new Error("No control variant found");
     }
 
-    const variantComparison = experiment.variants.map(variant => {
+    const variantComparison = experiment.variants.map((variant) => {
       let improvement: number | undefined;
-      
+
       if (!variant.isControl && control.metrics.totalPredictions > 0) {
-        const controlSuccessRate = control.metrics.successfulPredictions / control.metrics.totalPredictions;
-        const variantSuccessRate = variant.metrics.totalPredictions > 0
-          ? variant.metrics.successfulPredictions / variant.metrics.totalPredictions
-          : 0;
-        
-        improvement = controlSuccessRate > 0
-          ? ((variantSuccessRate - controlSuccessRate) / controlSuccessRate) * 100
-          : 0;
+        const controlSuccessRate =
+          control.metrics.successfulPredictions /
+          control.metrics.totalPredictions;
+        const variantSuccessRate =
+          variant.metrics.totalPredictions > 0
+            ? variant.metrics.successfulPredictions /
+              variant.metrics.totalPredictions
+            : 0;
+
+        improvement =
+          controlSuccessRate > 0
+            ? ((variantSuccessRate - controlSuccessRate) / controlSuccessRate) *
+              100
+            : 0;
       }
 
       return {
@@ -701,25 +739,28 @@ export class MLModelRegistry {
         variantName: variant.variantName,
         isControl: variant.isControl,
         metrics: variant.metrics,
-        improvement
+        improvement,
       };
     });
 
     const totalPredictions = experiment.variants.reduce(
-      (sum, v) => sum + v.metrics.totalPredictions, 
-      0
+      (sum, v) => sum + v.metrics.totalPredictions,
+      0,
     );
     const significanceAchieved = totalPredictions >= experiment.minSampleSize;
 
     let winner: string | undefined;
     if (significanceAchieved) {
       const bestVariant = variantComparison.reduce((best, current) => {
-        const currentRate = current.metrics.totalPredictions > 0
-          ? current.metrics.successfulPredictions / current.metrics.totalPredictions
-          : 0;
-        const bestRate = best.metrics.totalPredictions > 0
-          ? best.metrics.successfulPredictions / best.metrics.totalPredictions
-          : 0;
+        const currentRate =
+          current.metrics.totalPredictions > 0
+            ? current.metrics.successfulPredictions /
+              current.metrics.totalPredictions
+            : 0;
+        const bestRate =
+          best.metrics.totalPredictions > 0
+            ? best.metrics.successfulPredictions / best.metrics.totalPredictions
+            : 0;
         return currentRate > bestRate ? current : best;
       });
       winner = bestVariant.variantId;
@@ -729,7 +770,7 @@ export class MLModelRegistry {
       experiment,
       winner,
       significanceAchieved,
-      variantComparison
+      variantComparison,
     };
   }
 
@@ -737,8 +778,8 @@ export class MLModelRegistry {
    * End an A/B test
    */
   public async endABTest(
-    experimentId: string, 
-    status: 'completed' | 'cancelled'
+    experimentId: string,
+    status: "completed" | "cancelled",
   ): Promise<ABTestConfig> {
     const experiment = this.abTests.get(experimentId);
     if (!experiment) {
@@ -749,12 +790,12 @@ export class MLModelRegistry {
     experiment.endDate = new Date();
 
     for (const variant of experiment.variants) {
-      variant.status = 'archived';
+      variant.status = "archived";
     }
 
     await this.persistData();
 
-    logger.info('A/B test ended', { experimentId, status });
+    logger.info("A/B test ended", { experimentId, status });
 
     return experiment;
   }
@@ -768,20 +809,20 @@ export class MLModelRegistry {
    */
   public async trackPrediction(
     modelId: string,
-    record: Omit<PredictionRecord, 'id' | 'timestamp'>
+    record: Omit<PredictionRecord, "id" | "timestamp">,
   ): Promise<void> {
     await this.ensureInitialized();
 
     const model = this.models.get(modelId);
     if (!model) {
-      logger.warn('Tracking prediction for unknown model', { modelId });
+      logger.warn("Tracking prediction for unknown model", { modelId });
       return;
     }
 
     const prediction: PredictionRecord = {
-      id: `pred_${Date.now()}_${randomBytes(6).toString('hex')}`,
+      id: `pred_${Date.now()}_${randomBytes(6).toString("hex")}`,
       timestamp: new Date(),
-      ...record
+      ...record,
     };
 
     let modelPredictions = this.predictions.get(modelId);
@@ -802,30 +843,35 @@ export class MLModelRegistry {
   }
 
   private updateVariantMetrics(
-    modelId: string, 
-    variantId: string, 
-    prediction: PredictionRecord
+    modelId: string,
+    variantId: string,
+    prediction: PredictionRecord,
   ): void {
     const variants = this.variants.get(modelId);
     if (!variants) return;
 
-    const variant = variants.find(v => v.id === variantId);
+    const variant = variants.find((v) => v.id === variantId);
     if (!variant) return;
 
     const metrics = variant.metrics;
     metrics.totalPredictions++;
-    
+
     if (prediction.success) {
       metrics.successfulPredictions++;
     }
 
     const n = metrics.totalPredictions;
-    metrics.averageLatency = ((metrics.averageLatency * (n - 1)) + prediction.latencyMs) / n;
-    
-    const avgConfidence = prediction.confidence.reduce((a, b) => a + b, 0) / prediction.confidence.length;
-    metrics.averageConfidence = ((metrics.averageConfidence * (n - 1)) + avgConfidence) / n;
-    
-    metrics.errorRate = 1 - (metrics.successfulPredictions / metrics.totalPredictions);
+    metrics.averageLatency =
+      (metrics.averageLatency * (n - 1) + prediction.latencyMs) / n;
+
+    const avgConfidence =
+      prediction.confidence.reduce((a, b) => a + b, 0) /
+      prediction.confidence.length;
+    metrics.averageConfidence =
+      (metrics.averageConfidence * (n - 1) + avgConfidence) / n;
+
+    metrics.errorRate =
+      1 - metrics.successfulPredictions / metrics.totalPredictions;
   }
 
   /**
@@ -840,7 +886,7 @@ export class MLModelRegistry {
     }
 
     const predictions = this.predictions.get(modelId) || [];
-    
+
     if (predictions.length === 0) {
       return {
         modelId,
@@ -853,17 +899,17 @@ export class MLModelRegistry {
         p95Latency: 0,
         p99Latency: 0,
         predictionsByDay: {},
-        recentPredictions: []
+        recentPredictions: [],
       };
     }
 
-    const successfulPredictions = predictions.filter(p => p.success).length;
-    const latencies = predictions.map(p => p.latencyMs).sort((a, b) => a - b);
-    const confidences = predictions.flatMap(p => p.confidence);
+    const successfulPredictions = predictions.filter((p) => p.success).length;
+    const latencies = predictions.map((p) => p.latencyMs).sort((a, b) => a - b);
+    const confidences = predictions.flatMap((p) => p.confidence);
 
     const predictionsByDay: Record<string, number> = {};
     for (const pred of predictions) {
-      const day = pred.timestamp.toISOString().split('T')[0];
+      const day = pred.timestamp.toISOString().split("T")[0];
       predictionsByDay[day] = (predictionsByDay[day] || 0) + 1;
     }
 
@@ -872,15 +918,16 @@ export class MLModelRegistry {
       totalPredictions: predictions.length,
       successRate: successfulPredictions / predictions.length,
       averageLatency: latencies.reduce((a, b) => a + b, 0) / latencies.length,
-      averageConfidence: confidences.length > 0 
-        ? confidences.reduce((a, b) => a + b, 0) / confidences.length 
-        : 0,
-      errorRate: 1 - (successfulPredictions / predictions.length),
+      averageConfidence:
+        confidences.length > 0
+          ? confidences.reduce((a, b) => a + b, 0) / confidences.length
+          : 0,
+      errorRate: 1 - successfulPredictions / predictions.length,
       p50Latency: this.percentile(latencies, 50),
       p95Latency: this.percentile(latencies, 95),
       p99Latency: this.percentile(latencies, 99),
       predictionsByDay,
-      recentPredictions: predictions.slice(-100)
+      recentPredictions: predictions.slice(-100),
     };
   }
 
@@ -898,14 +945,14 @@ export class MLModelRegistry {
     await this.ensureInitialized();
 
     const models = Array.from(this.models.values());
-    const activeModels = models.filter(m => m.status === 'active');
+    const activeModels = models.filter((m) => m.status === "active");
 
     const modelsByStatus: Record<ModelStatus, number> = {
       active: 0,
       deprecated: 0,
       archived: 0,
       testing: 0,
-      pending: 0
+      pending: 0,
     };
 
     const modelsByType: Record<string, number> = {};
@@ -933,9 +980,10 @@ export class MLModelRegistry {
       totalModels: models.length,
       activeModels: activeModels.length,
       totalPredictions,
-      averageAccuracy: modelsWithAccuracy > 0 ? totalAccuracy / modelsWithAccuracy : 0,
+      averageAccuracy:
+        modelsWithAccuracy > 0 ? totalAccuracy / modelsWithAccuracy : 0,
       modelsByStatus,
-      modelsByType
+      modelsByType,
     };
   }
 
@@ -958,14 +1006,14 @@ export class MLModelRegistry {
     await fs.promises.mkdir(modelPath, { recursive: true });
 
     await model.save(`file://${modelPath}`);
-    
+
     registeredModel.filePath = modelPath;
     registeredModel.updatedAt = new Date();
-    
+
     this.modelInstances.set(modelId, model);
     await this.persistData();
 
-    logger.info('Model saved to file system', { modelId, path: modelPath });
+    logger.info("Model saved to file system", { modelId, path: modelPath });
 
     return modelPath;
   }
@@ -973,7 +1021,10 @@ export class MLModelRegistry {
   /**
    * Load a model from the file system
    */
-  public async loadModel(modelId: string, modelInstance: BaseModel): Promise<void> {
+  public async loadModel(
+    modelId: string,
+    modelInstance: BaseModel,
+  ): Promise<void> {
     await this.ensureInitialized();
 
     const registeredModel = this.models.get(modelId);
@@ -988,7 +1039,10 @@ export class MLModelRegistry {
     await modelInstance.load(`file://${registeredModel.filePath}/model.json`);
     this.modelInstances.set(modelId, modelInstance);
 
-    logger.info('Model loaded from file system', { modelId, path: registeredModel.filePath });
+    logger.info("Model loaded from file system", {
+      modelId,
+      path: registeredModel.filePath,
+    });
   }
 
   /**
@@ -1003,17 +1057,21 @@ export class MLModelRegistry {
     const performance = await this.getModelPerformance(modelId);
     const variants = this.variants.get(modelId) || [];
 
-    return JSON.stringify({
-      model,
-      performance: {
-        totalPredictions: performance.totalPredictions,
-        successRate: performance.successRate,
-        averageLatency: performance.averageLatency,
-        errorRate: performance.errorRate
+    return JSON.stringify(
+      {
+        model,
+        performance: {
+          totalPredictions: performance.totalPredictions,
+          successRate: performance.successRate,
+          averageLatency: performance.averageLatency,
+          errorRate: performance.errorRate,
+        },
+        variants: variants.length,
+        exportedAt: new Date().toISOString(),
       },
-      variants: variants.length,
-      exportedAt: new Date().toISOString()
-    }, null, 2);
+      null,
+      2,
+    );
   }
 
   // ============================================================================
@@ -1027,15 +1085,15 @@ export class MLModelRegistry {
   }
 
   private generateModelId(name: string, version: string): string {
-    const sanitizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const sanitizedVersion = version.replace(/\./g, '_');
+    const sanitizedName = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    const sanitizedVersion = version.replace(/\./g, "_");
     return `${sanitizedName}_v${sanitizedVersion}`;
   }
 
   private compareVersions(a: string, b: string): number {
-    const partsA = a.split('.').map(Number);
-    const partsB = b.split('.').map(Number);
-    
+    const partsA = a.split(".").map(Number);
+    const partsB = b.split(".").map(Number);
+
     for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
       const numA = partsA[i] || 0;
       const numB = partsB[i] || 0;
@@ -1055,7 +1113,7 @@ export class MLModelRegistry {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return Math.abs(hash).toString(36);
@@ -1075,14 +1133,15 @@ export class MLModelRegistry {
       trackedPredictions += predictions.length;
     }
 
-    const activeExperiments = Array.from(this.abTests.values())
-      .filter(exp => exp.status === 'running').length;
+    const activeExperiments = Array.from(this.abTests.values()).filter(
+      (exp) => exp.status === "running",
+    ).length;
 
     return {
       totalModels: this.models.size,
       loadedInstances: this.modelInstances.size,
       activeExperiments,
-      trackedPredictions
+      trackedPredictions,
     };
   }
 
@@ -1094,8 +1153,8 @@ export class MLModelRegistry {
       instance.dispose();
     }
     this.modelInstances.clear();
-    
-    logger.info('ML Model Registry disposed');
+
+    logger.info("ML Model Registry disposed");
   }
 }
 

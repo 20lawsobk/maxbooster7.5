@@ -1,22 +1,27 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Plus, Trash2, Clock, AlignLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { LyricSection, LyricLine, SectionType, makeDefaultSections } from './LyricsPanel';
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { X, Plus, Trash2, Clock, AlignLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  LyricSection,
+  LyricLine,
+  SectionType,
+  makeDefaultSections,
+} from "./LyricsPanel";
 
 const SECTION_COLORS: Record<SectionType, string> = {
-  verse: 'bg-blue-600 text-white',
-  chorus: 'bg-pink-600 text-white',
-  bridge: 'bg-amber-600 text-white',
-  intro: 'bg-indigo-600 text-white',
-  'pre-chorus': 'bg-purple-600 text-white',
-  outro: 'bg-gray-600 text-white',
-  custom: 'bg-emerald-600 text-white',
+  verse: "bg-blue-600 text-white",
+  chorus: "bg-pink-600 text-white",
+  bridge: "bg-amber-600 text-white",
+  intro: "bg-indigo-600 text-white",
+  "pre-chorus": "bg-purple-600 text-white",
+  outro: "bg-gray-600 text-white",
+  custom: "bg-emerald-600 text-white",
 };
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
 function genId() {
@@ -46,8 +51,9 @@ export default function MobileLyricsPanel({
   onSeek,
   isPlaying = false,
 }: MobileLyricsPanelProps) {
-  const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg'>('base');
-  const activeSection = sections.find((s) => s.id === activeSectionId) ?? sections[0] ?? null;
+  const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
+  const activeSection =
+    sections.find((s) => s.id === activeSectionId) ?? sections[0] ?? null;
 
   useEffect(() => {
     if (open && sections.length === 0) {
@@ -63,11 +69,16 @@ export default function MobileLyricsPanel({
         sections.map((s) =>
           s.id !== sectionId
             ? s
-            : { ...s, lines: s.lines.map((l) => (l.id === lineId ? { ...l, text } : l)) }
-        )
+            : {
+                ...s,
+                lines: s.lines.map((l) =>
+                  l.id === lineId ? { ...l, text } : l,
+                ),
+              },
+        ),
       );
     },
-    [sections, onSectionsChange]
+    [sections, onSectionsChange],
   );
 
   const addLine = useCallback(
@@ -76,14 +87,14 @@ export default function MobileLyricsPanel({
         sections.map((s) => {
           if (s.id !== sectionId) return s;
           const idx = s.lines.findIndex((l) => l.id === afterLineId);
-          const newLine: LyricLine = { id: genId(), text: '', timestamp: 0 };
+          const newLine: LyricLine = { id: genId(), text: "", timestamp: 0 };
           const lines = [...s.lines];
           lines.splice(idx + 1, 0, newLine);
           return { ...s, lines };
-        })
+        }),
       );
     },
-    [sections, onSectionsChange]
+    [sections, onSectionsChange],
   );
 
   const deleteLine = useCallback(
@@ -92,11 +103,17 @@ export default function MobileLyricsPanel({
         sections.map((s) => {
           if (s.id !== sectionId) return s;
           const lines = s.lines.filter((l) => l.id !== lineId);
-          return { ...s, lines: lines.length === 0 ? [{ id: genId(), text: '', timestamp: 0 }] : lines };
-        })
+          return {
+            ...s,
+            lines:
+              lines.length === 0
+                ? [{ id: genId(), text: "", timestamp: 0 }]
+                : lines,
+          };
+        }),
       );
     },
-    [sections, onSectionsChange]
+    [sections, onSectionsChange],
   );
 
   const stampTimestamp = useCallback(
@@ -105,21 +122,26 @@ export default function MobileLyricsPanel({
         sections.map((s) =>
           s.id !== sectionId
             ? s
-            : { ...s, lines: s.lines.map((l) => (l.id === lineId ? { ...l, timestamp: currentTime } : l)) }
-        )
+            : {
+                ...s,
+                lines: s.lines.map((l) =>
+                  l.id === lineId ? { ...l, timestamp: currentTime } : l,
+                ),
+              },
+        ),
       );
     },
-    [sections, currentTime, onSectionsChange]
+    [sections, currentTime, onSectionsChange],
   );
 
   const addSection = useCallback(() => {
-    const num = sections.filter((s) => s.type === 'verse').length + 1;
+    const num = sections.filter((s) => s.type === "verse").length + 1;
     const newSection: LyricSection = {
       id: genId(),
-      type: 'verse',
+      type: "verse",
       label: `Verse ${num}`,
       number: num,
-      lines: [{ id: genId(), text: '', timestamp: 0 }],
+      lines: [{ id: genId(), text: "", timestamp: 0 }],
     };
     onSectionsChange([...sections, newSection]);
     onActiveSectionChange(newSection.id);
@@ -127,11 +149,17 @@ export default function MobileLyricsPanel({
 
   const wordCount = sections.reduce(
     (total, s) =>
-      total + s.lines.reduce((t, l) => t + (l.text.trim() ? l.text.trim().split(/\s+/).length : 0), 0),
-    0
+      total +
+      s.lines.reduce(
+        (t, l) => t + (l.text.trim() ? l.text.trim().split(/\s+/).length : 0),
+        0,
+      ),
+    0,
   );
 
-  const fontClass = { sm: 'text-sm', base: 'text-base', lg: 'text-lg' }[fontSize];
+  const fontClass = { sm: "text-sm", base: "text-base", lg: "text-lg" }[
+    fontSize
+  ];
 
   if (!open) return null;
 
@@ -145,16 +173,18 @@ export default function MobileLyricsPanel({
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-white/5 rounded-md overflow-hidden">
-            {(['sm', 'base', 'lg'] as const).map((sz) => (
+            {(["sm", "base", "lg"] as const).map((sz) => (
               <button
                 key={sz}
                 onClick={() => setFontSize(sz)}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium transition-colors',
-                  fontSize === sz ? 'bg-emerald-600 text-white' : 'text-white/50 hover:text-white'
+                  "px-2.5 py-1 text-xs font-medium transition-colors",
+                  fontSize === sz
+                    ? "bg-emerald-600 text-white"
+                    : "text-white/50 hover:text-white",
                 )}
               >
-                {sz === 'sm' ? 'S' : sz === 'base' ? 'M' : 'L'}
+                {sz === "sm" ? "S" : sz === "base" ? "M" : "L"}
               </button>
             ))}
           </div>
@@ -173,8 +203,10 @@ export default function MobileLyricsPanel({
             key={s.id}
             onClick={() => onActiveSectionChange(s.id)}
             className={cn(
-              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-              activeSectionId === s.id ? SECTION_COLORS[s.type] : 'bg-white/5 text-white/50'
+              "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+              activeSectionId === s.id
+                ? SECTION_COLORS[s.type]
+                : "bg-white/5 text-white/50",
             )}
           >
             {s.label}
@@ -197,21 +229,23 @@ export default function MobileLyricsPanel({
               </span>
               <textarea
                 value={line.text}
-                onChange={(e) => updateLine(activeSection.id, line.id, e.target.value)}
+                onChange={(e) =>
+                  updateLine(activeSection.id, line.id, e.target.value)
+                }
                 placeholder="Type lyrics…"
                 rows={1}
                 className={cn(
-                  'flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/20 resize-none outline-none focus:border-emerald-500/50 transition-colors min-h-[44px]',
-                  fontClass
+                  "flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/20 resize-none outline-none focus:border-emerald-500/50 transition-colors min-h-[44px]",
+                  fontClass,
                 )}
                 style={{ lineHeight: 1.5 }}
                 onInput={(e) => {
                   const ta = e.currentTarget;
-                  ta.style.height = 'auto';
-                  ta.style.height = ta.scrollHeight + 'px';
+                  ta.style.height = "auto";
+                  ta.style.height = ta.scrollHeight + "px";
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     addLine(activeSection.id, line.id);
                   }
@@ -220,12 +254,14 @@ export default function MobileLyricsPanel({
               <div className="flex flex-col gap-1 pt-1 opacity-0 group-focus-within:opacity-100 transition-opacity">
                 <button
                   onClick={() => stampTimestamp(activeSection.id, line.id)}
-                  title={line.timestamp > 0 ? fmt(line.timestamp) : 'Stamp time'}
+                  title={
+                    line.timestamp > 0 ? fmt(line.timestamp) : "Stamp time"
+                  }
                   className={cn(
-                    'h-8 w-8 flex items-center justify-center rounded text-xs transition-colors',
+                    "h-8 w-8 flex items-center justify-center rounded text-xs transition-colors",
                     line.timestamp > 0
-                      ? 'bg-emerald-600/20 text-emerald-400'
-                      : 'bg-white/5 text-white/40 hover:text-white'
+                      ? "bg-emerald-600/20 text-emerald-400"
+                      : "bg-white/5 text-white/40 hover:text-white",
                   )}
                 >
                   <Clock className="h-3.5 w-3.5" />

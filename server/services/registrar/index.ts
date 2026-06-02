@@ -12,10 +12,10 @@
  *   "epp"                  — External EPP registrar (Verisign OT&E, etc.)
  */
 
-import { MaxBoosterRegistrarProvider } from './MaxBoosterRegistrarProvider.js';
-import { EppRegistrarProvider }        from './EppRegistrarProvider.js';
-import type { RegistrarProvider }      from './types.js';
-import { logger }                      from '../../logger.js';
+import { MaxBoosterRegistrarProvider } from "./MaxBoosterRegistrarProvider.js";
+import { EppRegistrarProvider } from "./EppRegistrarProvider.js";
+import type { RegistrarProvider } from "./types.js";
+import { logger } from "../../logger.js";
 
 export type { RegistrarProvider };
 export type {
@@ -30,10 +30,10 @@ export type {
   DomainPrice,
   DomainLifecycleState,
   DomainEventType,
-} from './types.js';
+} from "./types.js";
 
-export { MaxBoosterRegistrarProvider } from './MaxBoosterRegistrarProvider.js';
-export { buildRdapResponse }           from './MaxBoosterRegistrarProvider.js';
+export { MaxBoosterRegistrarProvider } from "./MaxBoosterRegistrarProvider.js";
+export { buildRdapResponse } from "./MaxBoosterRegistrarProvider.js";
 
 // ── Singleton ──────────────────────────────────────────────────────────────
 
@@ -42,19 +42,23 @@ let _provider: RegistrarProvider | null = null;
 export function getRegistrarProvider(): RegistrarProvider {
   if (_provider) return _provider;
 
-  const requested = (process.env.REGISTRAR_PROVIDER ?? 'maxbooster').toLowerCase();
+  const requested = (
+    process.env.REGISTRAR_PROVIDER ?? "maxbooster"
+  ).toLowerCase();
 
   switch (requested) {
-    case 'epp':
+    case "epp":
       _provider = new EppRegistrarProvider();
-      logger.info('[RegistrarFactory] Using EPP provider (external registrar)');
+      logger.info("[RegistrarFactory] Using EPP provider (external registrar)");
       break;
 
-    case 'maxbooster':
-    case 'internal':
+    case "maxbooster":
+    case "internal":
     default:
       _provider = new MaxBoosterRegistrarProvider();
-      logger.info('[RegistrarFactory] Using Max Booster registrar (built-in DNS + DB)');
+      logger.info(
+        "[RegistrarFactory] Using Max Booster registrar (built-in DNS + DB)",
+      );
       break;
   }
 
@@ -64,5 +68,8 @@ export function getRegistrarProvider(): RegistrarProvider {
 /** Replace the provider at runtime (useful for tests or hot-swapping). */
 export function setRegistrarProvider(provider: RegistrarProvider): void {
   _provider = provider;
-  logger.info({ provider: provider.name }, '[RegistrarFactory] Provider overridden');
+  logger.info(
+    { provider: provider.name },
+    "[RegistrarFactory] Provider overridden",
+  );
 }

@@ -1,12 +1,12 @@
-import { ReactNode, useEffect, useCallback, useRef } from 'react';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { studioOneTheme } from '@/lib/studioOneTheme';
+import { ReactNode, useEffect, useCallback, useRef } from "react";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { studioOneTheme } from "@/lib/studioOneTheme";
 
 interface StudioDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  position: 'left' | 'right' | 'bottom';
+  position: "left" | "right" | "bottom";
   size?: number;
   title?: string;
   children: ReactNode;
@@ -47,11 +47,11 @@ export function StudioDrawer({
     const deltaY = currentTouchRef.current.y - startTouchRef.current.y;
     const threshold = 80;
 
-    if (position === 'left' && deltaX < -threshold) {
+    if (position === "left" && deltaX < -threshold) {
       onClose();
-    } else if (position === 'right' && deltaX > threshold) {
+    } else if (position === "right" && deltaX > threshold) {
       onClose();
-    } else if (position === 'bottom' && deltaY > threshold) {
+    } else if (position === "bottom" && deltaY > threshold) {
       onClose();
     }
 
@@ -63,68 +63,68 @@ export function StudioDrawer({
     const drawer = drawerRef.current;
     if (!drawer || !isOpen) return;
 
-    drawer.addEventListener('touchstart', handleTouchStart, { passive: true });
-    drawer.addEventListener('touchmove', handleTouchMove, { passive: true });
-    drawer.addEventListener('touchend', handleTouchEnd, { passive: true });
+    drawer.addEventListener("touchstart", handleTouchStart, { passive: true });
+    drawer.addEventListener("touchmove", handleTouchMove, { passive: true });
+    drawer.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
-      drawer.removeEventListener('touchstart', handleTouchStart);
-      drawer.removeEventListener('touchmove', handleTouchMove);
-      drawer.removeEventListener('touchend', handleTouchEnd);
+      drawer.removeEventListener("touchstart", handleTouchStart);
+      drawer.removeEventListener("touchmove", handleTouchMove);
+      drawer.removeEventListener("touchend", handleTouchEnd);
     };
   }, [isOpen, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
   const getDrawerStyles = () => {
-    const defaultSize = position === 'bottom' ? 320 : 280;
+    const defaultSize = position === "bottom" ? 320 : 280;
     const actualSize = size || defaultSize;
-    
+
     const base = {
       background: studioOneTheme.colors.bg.panel,
       borderColor: studioOneTheme.colors.border.primary,
-      transition: 'transform 0.3s ease-out',
+      transition: "transform 0.3s ease-out",
     };
 
     switch (position) {
-      case 'left':
+      case "left":
         return {
           ...base,
           top: 0,
           left: 0,
           bottom: 0,
           width: actualSize,
-          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transform: isOpen ? "translateX(0)" : "translateX(-100%)",
           borderRightWidth: 1,
         };
-      case 'right':
+      case "right":
         return {
           ...base,
           top: 0,
           right: 0,
           bottom: 0,
           width: actualSize,
-          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          transform: isOpen ? "translateX(0)" : "translateX(100%)",
           borderLeftWidth: 1,
         };
-      case 'bottom':
+      case "bottom":
         return {
           ...base,
           left: 0,
           right: 0,
           bottom: 0,
           height: actualSize,
-          maxHeight: '80vh',
-          transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
+          maxHeight: "80vh",
+          transform: isOpen ? "translateY(0)" : "translateY(100%)",
           borderTopWidth: 1,
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
@@ -138,16 +138,13 @@ export function StudioDrawer({
         <div
           className="fixed inset-0 bg-black/60 z-40 touch-none"
           onClick={onClose}
-          style={{ backdropFilter: 'blur(2px)' }}
+          style={{ backdropFilter: "blur(2px)" }}
         />
       )}
-      
+
       <div
         ref={drawerRef}
-        className={cn(
-          'fixed z-50 flex flex-col overflow-hidden',
-          className
-        )}
+        className={cn("fixed z-50 flex flex-col overflow-hidden", className)}
         style={getDrawerStyles()}
       >
         {title && (
@@ -174,8 +171,8 @@ export function StudioDrawer({
             </button>
           </div>
         )}
-        
-        {position === 'bottom' && !title && (
+
+        {position === "bottom" && !title && (
           <div
             className="flex justify-center py-2 shrink-0"
             style={{ background: studioOneTheme.colors.bg.secondary }}
@@ -186,10 +183,8 @@ export function StudioDrawer({
             />
           </div>
         )}
-        
-        <div className="flex-1 overflow-auto">
-          {children}
-        </div>
+
+        <div className="flex-1 overflow-auto">{children}</div>
       </div>
     </>
   );
@@ -214,14 +209,16 @@ export function DrawerTriggerButton({
     <button
       onClick={onClick}
       className={cn(
-        'flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg transition-all touch-manipulation',
-        active ? 'bg-blue-500/20' : 'hover:bg-white/10 active:bg-white/20',
-        className
+        "flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg transition-all touch-manipulation",
+        active ? "bg-blue-500/20" : "hover:bg-white/10 active:bg-white/20",
+        className,
       )}
       style={{
         minWidth: 44,
         minHeight: 44,
-        color: active ? studioOneTheme.colors.accent.blue : studioOneTheme.colors.text.secondary,
+        color: active
+          ? studioOneTheme.colors.accent.blue
+          : studioOneTheme.colors.text.secondary,
       }}
     >
       {icon}

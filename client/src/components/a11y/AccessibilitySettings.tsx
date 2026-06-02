@@ -1,71 +1,84 @@
-import React, { useState } from 'react';
-import { useAccessibility, type FontSize, type ColorBlindMode } from './AccessibilityProvider';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import React, { useState } from "react";
+import {
+  useAccessibility,
+  type FontSize,
+  type ColorBlindMode,
+} from "./AccessibilityProvider";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Eye, Move, Focus, RotateCcw, Type, Palette, Keyboard, Volume2 } from 'lucide-react';
-import type { ContrastMode } from '@/hooks/useHighContrast';
-import { KeyboardShortcutsHelpDialog } from './KeyboardShortcutsHelpDialog';
+} from "@/components/ui/accordion";
+import {
+  Eye,
+  Move,
+  Focus,
+  RotateCcw,
+  Type,
+  Palette,
+  Keyboard,
+  Volume2,
+} from "lucide-react";
+import type { ContrastMode } from "@/hooks/useHighContrast";
+import { KeyboardShortcutsHelpDialog } from "./KeyboardShortcutsHelpDialog";
 
 export interface AccessibilitySettingsProps {
   className?: string;
   showResetButton?: boolean;
-  variant?: 'full' | 'compact';
+  variant?: "full" | "compact";
 }
 
 const fontSizeLabels: Record<FontSize, string> = {
-  small: 'Small (87.5%)',
-  medium: 'Medium (100%)',
-  large: 'Large (112.5%)',
-  'x-large': 'Extra Large (125%)',
-  '150': 'Very Large (150%)',
-  '175': 'Huge (175%)',
-  '200': 'Maximum (200%)',
+  small: "Small (87.5%)",
+  medium: "Medium (100%)",
+  large: "Large (112.5%)",
+  "x-large": "Extra Large (125%)",
+  "150": "Very Large (150%)",
+  "175": "Huge (175%)",
+  "200": "Maximum (200%)",
 };
 
 const colorBlindModeLabels: Record<ColorBlindMode, string> = {
-  none: 'None (Normal)',
-  protanopia: 'Protanopia (Red-Blind)',
-  deuteranopia: 'Deuteranopia (Green-Blind)',
-  tritanopia: 'Tritanopia (Blue-Blind)',
-  achromatopsia: 'Achromatopsia (Monochrome)',
+  none: "None (Normal)",
+  protanopia: "Protanopia (Red-Blind)",
+  deuteranopia: "Deuteranopia (Green-Blind)",
+  tritanopia: "Tritanopia (Blue-Blind)",
+  achromatopsia: "Achromatopsia (Monochrome)",
 };
 
 const contrastModeLabels: Record<ContrastMode, string> = {
-  normal: 'Normal',
-  high: 'High Contrast',
-  more: 'Maximum Contrast',
+  normal: "Normal",
+  high: "High Contrast",
+  more: "Maximum Contrast",
 };
 
 export function AccessibilitySettings({
-  className = '',
+  className = "",
   showResetButton = true,
-  variant = 'full',
+  variant = "full",
 }: AccessibilitySettingsProps) {
-  const { 
-    reducedMotion, 
-    highContrast, 
+  const {
+    reducedMotion,
+    highContrast,
     fontSize,
     setFontSize,
     colorBlindMode,
@@ -78,7 +91,7 @@ export function AccessibilitySettings({
 
   const handleReducedMotionChange = (checked: boolean) => {
     reducedMotion.setReducedMotion(checked);
-    announce(`Reduced motion ${checked ? 'enabled' : 'disabled'}`);
+    announce(`Reduced motion ${checked ? "enabled" : "disabled"}`);
   };
 
   const handleContrastModeChange = (value: string) => {
@@ -99,11 +112,13 @@ export function AccessibilitySettings({
     resetAllPreferences();
   };
 
-  if (variant === 'compact') {
+  if (variant === "compact") {
     return (
       <div className={`space-y-4 ${className}`}>
         <div className="flex items-center justify-between">
-          <Label htmlFor="reduced-motion-compact" className="text-sm">Reduce Motion</Label>
+          <Label htmlFor="reduced-motion-compact" className="text-sm">
+            Reduce Motion
+          </Label>
           <Switch
             id="reduced-motion-compact"
             checked={reducedMotion.prefersReducedMotion}
@@ -111,30 +126,41 @@ export function AccessibilitySettings({
           />
         </div>
         <div className="flex items-center justify-between">
-          <Label htmlFor="high-contrast-compact" className="text-sm">High Contrast</Label>
+          <Label htmlFor="high-contrast-compact" className="text-sm">
+            High Contrast
+          </Label>
           <Switch
             id="high-contrast-compact"
             checked={highContrast.isHighContrast}
-            onCheckedChange={(checked) => 
-              highContrast.setContrastMode(checked ? 'high' : 'normal')
+            onCheckedChange={(checked) =>
+              highContrast.setContrastMode(checked ? "high" : "normal")
             }
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="font-size-compact" className="text-sm">Text Size</Label>
+          <Label htmlFor="font-size-compact" className="text-sm">
+            Text Size
+          </Label>
           <Select value={fontSize} onValueChange={handleFontSizeChange}>
             <SelectTrigger id="font-size-compact" className="h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(fontSizeLabels).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         {showResetButton && (
-          <Button variant="ghost" size="sm" onClick={handleReset} className="w-full">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="w-full"
+          >
             <RotateCcw className="h-3 w-3 mr-1" aria-hidden="true" />
             Reset
           </Button>
@@ -151,11 +177,16 @@ export function AccessibilitySettings({
           Accessibility Settings
         </CardTitle>
         <CardDescription>
-          Customize your experience to improve accessibility. All preferences are saved automatically.
+          Customize your experience to improve accessibility. All preferences
+          are saved automatically.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Accordion type="multiple" defaultValue={['motion', 'visual', 'typography']} className="w-full">
+        <Accordion
+          type="multiple"
+          defaultValue={["motion", "visual", "typography"]}
+          className="w-full"
+        >
           <AccordionItem value="motion">
             <AccordionTrigger className="text-base">
               <span className="flex items-center gap-2">
@@ -169,10 +200,16 @@ export function AccessibilitySettings({
                   <Label htmlFor="reduced-motion" className="font-normal">
                     Reduce Motion
                   </Label>
-                  <p id="reduced-motion-description" className="text-sm text-muted-foreground">
-                    Minimize animations and transitions. Reduces motion sickness for sensitive users.
+                  <p
+                    id="reduced-motion-description"
+                    className="text-sm text-muted-foreground"
+                  >
+                    Minimize animations and transitions. Reduces motion sickness
+                    for sensitive users.
                     {reducedMotion.isSystemPreference && (
-                      <span className="ml-1 text-xs font-medium">(using system setting)</span>
+                      <span className="ml-1 text-xs font-medium">
+                        (using system setting)
+                      </span>
                     )}
                   </p>
                 </div>
@@ -198,10 +235,15 @@ export function AccessibilitySettings({
                 <Label htmlFor="contrast-mode" className="font-medium">
                   Contrast Mode
                 </Label>
-                <p id="contrast-mode-description" className="text-sm text-muted-foreground">
+                <p
+                  id="contrast-mode-description"
+                  className="text-sm text-muted-foreground"
+                >
                   Adjust color contrast for better visibility
                   {highContrast.isSystemPreference && (
-                    <span className="ml-1 text-xs font-medium">(using system setting)</span>
+                    <span className="ml-1 text-xs font-medium">
+                      (using system setting)
+                    </span>
                   )}
                 </p>
                 <Select
@@ -216,19 +258,29 @@ export function AccessibilitySettings({
                     <SelectValue placeholder="Select contrast mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(contrastModeLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
+                    {Object.entries(contrastModeLabels).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="color-blind-mode" className="flex items-center gap-2 font-medium">
+                <Label
+                  htmlFor="color-blind-mode"
+                  className="flex items-center gap-2 font-medium"
+                >
                   <Palette className="h-4 w-4" aria-hidden="true" />
                   Color Blind Mode
                 </Label>
-                <p id="color-blind-description" className="text-sm text-muted-foreground">
+                <p
+                  id="color-blind-description"
+                  className="text-sm text-muted-foreground"
+                >
                   Adjust colors for different types of color vision deficiency
                 </p>
                 <Select
@@ -243,9 +295,13 @@ export function AccessibilitySettings({
                     <SelectValue placeholder="Select color blind mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(colorBlindModeLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
+                    {Object.entries(colorBlindModeLabels).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -261,14 +317,17 @@ export function AccessibilitySettings({
             </AccordionTrigger>
             <AccordionContent className="space-y-4 pt-2">
               <div className="space-y-2">
-                <Label htmlFor="font-size" className="font-medium">Text Size</Label>
-                <p id="font-size-description" className="text-sm text-muted-foreground">
-                  Scale text up to 200% for better readability. WCAG recommends supporting at least 200% zoom.
-                </p>
-                <Select
-                  value={fontSize}
-                  onValueChange={handleFontSizeChange}
+                <Label htmlFor="font-size" className="font-medium">
+                  Text Size
+                </Label>
+                <p
+                  id="font-size-description"
+                  className="text-sm text-muted-foreground"
                 >
+                  Scale text up to 200% for better readability. WCAG recommends
+                  supporting at least 200% zoom.
+                </p>
+                <Select value={fontSize} onValueChange={handleFontSizeChange}>
                   <SelectTrigger
                     id="font-size"
                     className="w-full"
@@ -278,15 +337,17 @@ export function AccessibilitySettings({
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(fontSizeLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="p-4 rounded-lg border bg-muted/50">
-                <p 
-                  className="text-center" 
+                <p
+                  className="text-center"
                   style={{ fontSize: `var(--a11y-font-size, 16px)` }}
                   aria-label="Text size preview"
                 >
@@ -309,11 +370,15 @@ export function AccessibilitySettings({
                 <ul className="text-sm space-y-2 text-muted-foreground">
                   <li className="flex items-center justify-between">
                     <span>Skip to main content</span>
-                    <kbd className="px-2 py-1 bg-muted rounded text-xs">Alt+1</kbd>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                      Alt+1
+                    </kbd>
                   </li>
                   <li className="flex items-center justify-between">
                     <span>Skip to navigation</span>
-                    <kbd className="px-2 py-1 bg-muted rounded text-xs">Alt+2</kbd>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                      Alt+2
+                    </kbd>
                   </li>
                   <li className="flex items-center justify-between">
                     <span>Show all shortcuts</span>
@@ -321,19 +386,25 @@ export function AccessibilitySettings({
                   </li>
                   <li className="flex items-center justify-between">
                     <span>Navigate forward</span>
-                    <kbd className="px-2 py-1 bg-muted rounded text-xs">Tab</kbd>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                      Tab
+                    </kbd>
                   </li>
                   <li className="flex items-center justify-between">
                     <span>Navigate backward</span>
-                    <kbd className="px-2 py-1 bg-muted rounded text-xs">Shift+Tab</kbd>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                      Shift+Tab
+                    </kbd>
                   </li>
                   <li className="flex items-center justify-between">
                     <span>Close dialogs</span>
-                    <kbd className="px-2 py-1 bg-muted rounded text-xs">Escape</kbd>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                      Escape
+                    </kbd>
                   </li>
                 </ul>
               </div>
-              
+
               <KeyboardShortcutsHelpDialog
                 open={showKeyboardShortcuts}
                 onOpenChange={setShowKeyboardShortcuts}
@@ -350,11 +421,14 @@ export function AccessibilitySettings({
             <Focus className="h-4 w-4" aria-hidden="true" />
             Current Settings Summary
           </h4>
-          <ul className="text-sm text-muted-foreground space-y-1" aria-label="Current accessibility settings">
+          <ul
+            className="text-sm text-muted-foreground space-y-1"
+            aria-label="Current accessibility settings"
+          >
             <li className="flex justify-between">
               <span>Reduced Motion:</span>
               <span className="font-medium">
-                {reducedMotion.prefersReducedMotion ? 'On' : 'Off'}
+                {reducedMotion.prefersReducedMotion ? "On" : "Off"}
               </span>
             </li>
             <li className="flex justify-between">
@@ -365,12 +439,14 @@ export function AccessibilitySettings({
             </li>
             <li className="flex justify-between">
               <span>Text Size:</span>
-              <span className="font-medium capitalize">{fontSizeLabels[fontSize]}</span>
+              <span className="font-medium capitalize">
+                {fontSizeLabels[fontSize]}
+              </span>
             </li>
             <li className="flex justify-between">
               <span>Color Blind Mode:</span>
               <span className="font-medium capitalize">
-                {colorBlindMode === 'none' ? 'None' : colorBlindMode}
+                {colorBlindMode === "none" ? "None" : colorBlindMode}
               </span>
             </li>
             <li className="flex justify-between">

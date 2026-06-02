@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   ZoomIn,
   ZoomOut,
@@ -9,55 +9,55 @@ import {
   Clock,
   Music2,
   Waves,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useStudioStore } from '@/lib/studioStore';
+} from "@/components/ui/tooltip";
+import { useStudioStore } from "@/lib/studioStore";
 
 const ZOOM_PRESETS = [
-  { value: 0.25, label: '25%', description: 'Full project view' },
-  { value: 0.5, label: '50%', description: 'Overview' },
-  { value: 1, label: '100%', description: 'Normal' },
-  { value: 2, label: '200%', description: 'Detail' },
-  { value: 4, label: '400%', description: 'Fine edit' },
-  { value: 8, label: '800%', description: 'Sample-level' },
+  { value: 0.25, label: "25%", description: "Full project view" },
+  { value: 0.5, label: "50%", description: "Overview" },
+  { value: 1, label: "100%", description: "Normal" },
+  { value: 2, label: "200%", description: "Detail" },
+  { value: 4, label: "400%", description: "Fine edit" },
+  { value: 8, label: "800%", description: "Sample-level" },
 ];
 
 const SNAP_RESOLUTIONS = [
-  { value: 0.03125, label: '1/32', icon: '𝅘𝅥𝅯𝅯' },
-  { value: 0.0625, label: '1/16', icon: '𝅘𝅥𝅯' },
-  { value: 0.125, label: '1/8', icon: '𝅘𝅥𝅮' },
-  { value: 0.25, label: '1/4', icon: '𝅘𝅥' },
-  { value: 0.5, label: '1/2', icon: '𝅗𝅥' },
-  { value: 1, label: '1 Bar', icon: '𝅝' },
-  { value: 2, label: '2 Bars', icon: '' },
-  { value: 4, label: '4 Bars', icon: '' },
+  { value: 0.03125, label: "1/32", icon: "𝅘𝅥𝅯𝅯" },
+  { value: 0.0625, label: "1/16", icon: "𝅘𝅥𝅯" },
+  { value: 0.125, label: "1/8", icon: "𝅘𝅥𝅮" },
+  { value: 0.25, label: "1/4", icon: "𝅘𝅥" },
+  { value: 0.5, label: "1/2", icon: "𝅗𝅥" },
+  { value: 1, label: "1 Bar", icon: "𝅝" },
+  { value: 2, label: "2 Bars", icon: "" },
+  { value: 4, label: "4 Bars", icon: "" },
 ];
 
 const GRID_TYPES = [
-  { id: 'bars', label: 'Bars', icon: <Music2 className="h-3 w-3" /> },
-  { id: 'seconds', label: 'Seconds', icon: <Clock className="h-3 w-3" /> },
-  { id: 'samples', label: 'Samples', icon: <Waves className="h-3 w-3" /> },
+  { id: "bars", label: "Bars", icon: <Music2 className="h-3 w-3" /> },
+  { id: "seconds", label: "Seconds", icon: <Clock className="h-3 w-3" /> },
+  { id: "samples", label: "Samples", icon: <Waves className="h-3 w-3" /> },
 ];
 
 interface EnhancedZoomControlsProps {
@@ -80,7 +80,9 @@ export function EnhancedZoomControls({
     setSnapResolution,
   } = useStudioStore();
 
-  const [gridType, setGridType] = useState<'bars' | 'seconds' | 'samples'>('bars');
+  const [gridType, setGridType] = useState<"bars" | "seconds" | "samples">(
+    "bars",
+  );
   const [showTriplets, setShowTriplets] = useState(false);
 
   const handleZoomIn = () => setZoom(Math.min(zoom * 1.25, 16));
@@ -93,17 +95,16 @@ export function EnhancedZoomControls({
 
   const getZoomPercentage = () => Math.round(zoom * 100);
 
-  const currentSnapLabel = SNAP_RESOLUTIONS.find(
-    (r) => r.value === snapResolution
-  )?.label || '1/4';
+  const currentSnapLabel =
+    SNAP_RESOLUTIONS.find((r) => r.value === snapResolution)?.label || "1/4";
 
   return (
     <TooltipProvider>
       <div
         className="h-10 flex items-center gap-1 sm:gap-2 px-2 sm:px-3 border-b overflow-x-auto"
         style={{
-          background: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          background: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
       >
         <div className="flex items-center gap-1">
@@ -175,7 +176,10 @@ export function EnhancedZoomControls({
               ))}
               <DropdownMenuSeparator />
               {onZoomToSelection && (
-                <DropdownMenuItem onClick={onZoomToSelection} className="text-xs">
+                <DropdownMenuItem
+                  onClick={onZoomToSelection}
+                  className="text-xs"
+                >
                   Zoom to Selection
                 </DropdownMenuItem>
               )}
@@ -207,7 +211,7 @@ export function EnhancedZoomControls({
 
         <div
           className="h-5 w-px mx-1 sm:mx-2 hidden sm:block"
-          style={{ background: 'var(--studio-border)' }}
+          style={{ background: "var(--studio-border)" }}
         />
 
         <div className="flex items-center gap-1">
@@ -217,7 +221,7 @@ export function EnhancedZoomControls({
                 variant="ghost"
                 size="sm"
                 className={`h-10 sm:h-11 px-3 sm:px-4 text-xs font-medium touch-manipulation ${
-                  snapEnabled ? 'bg-blue-500/20 text-blue-400' : ''
+                  snapEnabled ? "bg-blue-500/20 text-blue-400" : ""
                 }`}
                 onClick={toggleSnap}
                 aria-label="Toggle snap to grid"
@@ -233,7 +237,7 @@ export function EnhancedZoomControls({
           {snapEnabled && (
             <motion.div
               initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
+              animate={{ opacity: 1, width: "auto" }}
               exit={{ opacity: 0, width: 0 }}
               className="flex items-center gap-1"
             >
@@ -254,7 +258,9 @@ export function EnhancedZoomControls({
                       <span className="flex items-center gap-2">
                         <span className="font-mono">{res.label}</span>
                         {res.icon && (
-                          <span className="text-lg leading-none">{res.icon}</span>
+                          <span className="text-lg leading-none">
+                            {res.icon}
+                          </span>
                         )}
                       </span>
                     </SelectItem>
@@ -268,16 +274,16 @@ export function EnhancedZoomControls({
                     variant="ghost"
                     size="sm"
                     className={`h-10 w-10 sm:h-11 sm:w-11 p-0 text-xs font-bold hidden md:flex items-center justify-center touch-manipulation ${
-                      showTriplets ? 'bg-purple-500/20 text-purple-400' : ''
+                      showTriplets ? "bg-purple-500/20 text-purple-400" : ""
                     }`}
                     onClick={() => {
                       const newTripletState = !showTriplets;
                       setShowTriplets(newTripletState);
                       if (newTripletState) {
-                        const tripletResolution = snapResolution * (2/3);
+                        const tripletResolution = snapResolution * (2 / 3);
                         setSnapResolution(tripletResolution);
                       } else {
-                        const normalResolution = snapResolution * (3/2);
+                        const normalResolution = snapResolution * (3 / 2);
                         setSnapResolution(normalResolution);
                       }
                     }}
@@ -295,7 +301,7 @@ export function EnhancedZoomControls({
 
         <div
           className="h-5 w-px mx-1 sm:mx-2 hidden md:block"
-          style={{ background: 'var(--studio-border)' }}
+          style={{ background: "var(--studio-border)" }}
         />
 
         <div className="hidden md:flex items-center gap-1">
@@ -306,7 +312,9 @@ export function EnhancedZoomControls({
                   variant="ghost"
                   size="sm"
                   className={`h-7 w-7 p-0 ${
-                    gridType === type.id ? 'bg-accent text-accent-foreground' : ''
+                    gridType === type.id
+                      ? "bg-accent text-accent-foreground"
+                      : ""
                   }`}
                   onClick={() => setGridType(type.id as typeof gridType)}
                 >
@@ -322,11 +330,12 @@ export function EnhancedZoomControls({
 
         <div
           className="hidden lg:flex items-center gap-2 text-[10px] font-mono"
-          style={{ color: 'var(--studio-text-muted)' }}
+          style={{ color: "var(--studio-text-muted)" }}
         >
           <span>Duration:</span>
-          <span style={{ color: 'var(--studio-text)' }}>
-            {Math.floor(duration / 60)}:{String(Math.floor(duration % 60)).padStart(2, '0')}
+          <span style={{ color: "var(--studio-text)" }}>
+            {Math.floor(duration / 60)}:
+            {String(Math.floor(duration % 60)).padStart(2, "0")}
           </span>
         </div>
       </div>

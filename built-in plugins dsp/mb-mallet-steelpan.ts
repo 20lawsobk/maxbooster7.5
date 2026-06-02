@@ -1,5 +1,60 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbMalletSteelpanPlugin: PluginDefinition = { id: 'mb-mallet-steelpan', slug: 'mb-mallet-steelpan', name: 'MB Steelpan', category: 'instrument', type: 'mallet' as any, version: '1.0.0', description: 'Trinidad steelpan with tropical metallic ring', author: 'Max Booster', grade: 'A', oscillators: [{ type: 'sine', detune: 0, gain: 0.5 }, { type: 'sine', detune: 2400, gain: 0.25 }, { type: 'triangle', detune: 0, gain: 0.25 }], envelope: { attack: 0.001, decay: 0.9, sustain: 0.1, release: 0.5 }, parameters: [{ id: 'brightness', name: 'Brightness', type: 'float', defaultValue: 0.65, minValue: 0, maxValue: 1, automatable: true }, { id: 'resonance', name: 'Resonance', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'mallet', name: 'Mallet', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { brightness: 0.65, resonance: 0.5, mallet: 0.5, volume: 0.8 } };
+const MbMalletSteelpanPlugin: PluginDefinition = {
+  id: "mb-mallet-steelpan",
+  slug: "mb-mallet-steelpan",
+  name: "MB Steelpan",
+  category: "instrument",
+  type: "mallet" as any,
+  version: "1.0.0",
+  description: "Trinidad steelpan with tropical metallic ring",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sine", detune: 0, gain: 0.5 },
+    { type: "sine", detune: 2400, gain: 0.25 },
+    { type: "triangle", detune: 0, gain: 0.25 },
+  ],
+  envelope: { attack: 0.001, decay: 0.9, sustain: 0.1, release: 0.5 },
+  parameters: [
+    {
+      id: "brightness",
+      name: "Brightness",
+      type: "float",
+      defaultValue: 0.65,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "resonance",
+      name: "Resonance",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "mallet",
+      name: "Mallet",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { brightness: 0.65, resonance: 0.5, mallet: 0.5, volume: 0.8 },
+};
 
 export default MbMalletSteelpanPlugin;

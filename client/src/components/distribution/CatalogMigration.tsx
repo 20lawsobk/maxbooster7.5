@@ -1,12 +1,18 @@
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Download,
   Loader2,
@@ -22,9 +28,9 @@ import {
   AlertTriangle,
   GitBranch,
   ExternalLink,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 // ── Types (mirror server/services/catalogMigrationService.ts) ─────────────────
 
@@ -36,7 +42,7 @@ interface IsrcConflict {
 }
 
 interface PlatformValidation {
-  platform: 'deezer' | 'apple_music';
+  platform: "deezer" | "apple_music";
   found: boolean;
   platformReleaseId: string | null;
   titleMatch: boolean;
@@ -62,7 +68,7 @@ interface MigrationTrack {
 interface MigrationRelease {
   title: string;
   artist: string;
-  releaseType: 'album' | 'EP' | 'single';
+  releaseType: "album" | "EP" | "single";
   releaseDate: string | null;
   upc: string | null;
   artwork: string | null;
@@ -70,7 +76,7 @@ interface MigrationRelease {
   label: null;
   copyrightYear: number | null;
   copyrightOwner: null;
-  territoryMode: 'worldwide';
+  territoryMode: "worldwide";
   territories: [];
   platforms: string[];
   tracks: MigrationTrack[];
@@ -97,42 +103,45 @@ interface MigrationPayload {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatDuration(seconds: number | null): string {
-  if (!seconds) return '—';
+  if (!seconds) return "—";
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 const PLATFORM_LABEL: Record<string, string> = {
-  spotify: 'Spotify',
-  apple_music: 'Apple Music',
-  'apple-music': 'Apple Music',
-  itunes: 'iTunes',
-  'amazon-music': 'Amazon Music',
-  amazon_music: 'Amazon Music',
-  tidal: 'Tidal',
-  deezer: 'Deezer',
-  'youtube-music': 'YouTube Music',
-  youtube_music: 'YouTube Music',
-  pandora: 'Pandora',
-  iheartradio: 'iHeartRadio',
-  napster: 'Napster',
-  soundcloud: 'SoundCloud',
-  tiktok: 'TikTok',
-  boomplay: 'Boomplay',
-  anghami: 'Anghami',
-  kkbox: 'KKBOX',
-  beatport: 'Beatport',
-  bandcamp: 'Bandcamp',
+  spotify: "Spotify",
+  apple_music: "Apple Music",
+  "apple-music": "Apple Music",
+  itunes: "iTunes",
+  "amazon-music": "Amazon Music",
+  amazon_music: "Amazon Music",
+  tidal: "Tidal",
+  deezer: "Deezer",
+  "youtube-music": "YouTube Music",
+  youtube_music: "YouTube Music",
+  pandora: "Pandora",
+  iheartradio: "iHeartRadio",
+  napster: "Napster",
+  soundcloud: "SoundCloud",
+  tiktok: "TikTok",
+  boomplay: "Boomplay",
+  anghami: "Anghami",
+  kkbox: "KKBOX",
+  beatport: "Beatport",
+  bandcamp: "Bandcamp",
 };
 
 /** Summarise a platform presence list for display. */
 function formatPlatformPresence(platforms: string[]): string {
-  if (platforms.length === 0) return '';
+  if (platforms.length === 0) return "";
   if (platforms.length <= 4) {
-    return platforms.map(p => PLATFORM_LABEL[p] ?? p).join(', ');
+    return platforms.map((p) => PLATFORM_LABEL[p] ?? p).join(", ");
   }
-  const first = platforms.slice(0, 3).map(p => PLATFORM_LABEL[p] ?? p).join(', ');
+  const first = platforms
+    .slice(0, 3)
+    .map((p) => PLATFORM_LABEL[p] ?? p)
+    .join(", ");
   return `${first} + ${platforms.length - 3} more`;
 }
 
@@ -155,7 +164,8 @@ function ValidationBadge({ v }: { v: PlatformValidation }) {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-amber-500">
         <AlertTriangle className="w-3 h-3" />
-        {label}: {v.discrepancies.length + v.isrcConflicts.length} issue{v.discrepancies.length + v.isrcConflicts.length !== 1 ? 's' : ''}
+        {label}: {v.discrepancies.length + v.isrcConflicts.length} issue
+        {v.discrepancies.length + v.isrcConflicts.length !== 1 ? "s" : ""}
       </span>
     );
   }
@@ -172,11 +182,19 @@ function ValidationBadge({ v }: { v: PlatformValidation }) {
 
 function ReleaseRow({ release }: { release: MigrationRelease }) {
   const [open, setOpen] = useState(false);
-  const { isrcsCovered, totalTracks, validation, platformPresence, missingFields } = release._meta;
+  const {
+    isrcsCovered,
+    totalTracks,
+    validation,
+    platformPresence,
+    missingFields,
+  } = release._meta;
 
-  const allDiscrepancies = validation.flatMap(v => v.discrepancies);
-  const allConflicts = validation.flatMap(v => v.isrcConflicts);
-  const allAlternates = [...new Set(validation.flatMap(v => v.alternateVersions))];
+  const allDiscrepancies = validation.flatMap((v) => v.discrepancies);
+  const allConflicts = validation.flatMap((v) => v.isrcConflicts);
+  const allAlternates = [
+    ...new Set(validation.flatMap((v) => v.alternateVersions)),
+  ];
   const hasWarnings = allDiscrepancies.length > 0 || allConflicts.length > 0;
 
   return (
@@ -184,7 +202,7 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
       {/* ── Header row ── */}
       <button
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen((o) => !o)}
       >
         <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden relative">
           {release.artwork && (
@@ -192,7 +210,9 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
               src={release.artwork}
               alt={release.title}
               className="absolute inset-0 w-full h-full object-cover"
-              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
             />
           )}
           <Music className="w-5 h-5 text-muted-foreground" />
@@ -202,9 +222,11 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
           <p className="font-medium text-sm truncate">{release.title}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
             <span className="text-xs text-muted-foreground">
-              {release.releaseDate?.slice(0, 4) ?? '—'} · {totalTracks} track{totalTracks !== 1 ? 's' : ''} · {release.genre ?? 'Unknown genre'}
+              {release.releaseDate?.slice(0, 4) ?? "—"} · {totalTracks} track
+              {totalTracks !== 1 ? "s" : ""} ·{" "}
+              {release.genre ?? "Unknown genre"}
             </span>
-            {validation.map(v => (
+            {validation.map((v) => (
               <ValidationBadge key={v.platform} v={v} />
             ))}
           </div>
@@ -212,15 +234,27 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
 
         <div className="flex items-center gap-2 flex-shrink-0">
           {hasWarnings && (
-            <Badge variant="outline" className="text-xs text-amber-500 border-amber-400">
-              {allDiscrepancies.length + allConflicts.length} flag{allDiscrepancies.length + allConflicts.length !== 1 ? 's' : ''}
+            <Badge
+              variant="outline"
+              className="text-xs text-amber-500 border-amber-400"
+            >
+              {allDiscrepancies.length + allConflicts.length} flag
+              {allDiscrepancies.length + allConflicts.length !== 1 ? "s" : ""}
             </Badge>
           )}
           {release.upc && (
-            <Badge variant="secondary" className="text-xs font-mono">UPC</Badge>
+            <Badge variant="secondary" className="text-xs font-mono">
+              UPC
+            </Badge>
           )}
           <Badge
-            variant={isrcsCovered === totalTracks ? 'default' : isrcsCovered > 0 ? 'secondary' : 'outline'}
+            variant={
+              isrcsCovered === totalTracks
+                ? "default"
+                : isrcsCovered > 0
+                  ? "secondary"
+                  : "outline"
+            }
             className="text-xs"
           >
             {isrcsCovered}/{totalTracks} ISRC
@@ -230,34 +264,46 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
               href={release.platformUrl}
               target="_blank"
               rel="noreferrer"
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               className="text-muted-foreground hover:text-foreground transition-colors"
               title="View on platform"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
           )}
-          {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          {open ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          )}
         </div>
       </button>
 
       {/* ── Expanded detail ── */}
       {open && (
         <div className="border-t border-border bg-muted/20 divide-y divide-border/50">
-
           {/* Metadata summary */}
           <div className="px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-            {release.upc && <span>UPC: <span className="font-mono text-foreground">{release.upc}</span></span>}
-            {release.releaseDate && <span>Released: {release.releaseDate}</span>}
+            {release.upc && (
+              <span>
+                UPC:{" "}
+                <span className="font-mono text-foreground">{release.upc}</span>
+              </span>
+            )}
+            {release.releaseDate && (
+              <span>Released: {release.releaseDate}</span>
+            )}
             {platformPresence.length > 0 && (
               <span>
-                LabelGrid confirmed:{' '}
-                <span className="text-foreground">{formatPlatformPresence(platformPresence)}</span>
+                LabelGrid confirmed:{" "}
+                <span className="text-foreground">
+                  {formatPlatformPresence(platformPresence)}
+                </span>
               </span>
             )}
             {release.platforms.length > 0 && (
               <span>
-                Distribution targets:{' '}
+                Distribution targets:{" "}
                 <span className="text-foreground">
                   {release.platforms.length > 6
                     ? `All ${release.platforms.length} registered platforms`
@@ -266,7 +312,7 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
               </span>
             )}
             {release._meta.sources.length > 0 && (
-              <span>Sources: {release._meta.sources.join(', ')}</span>
+              <span>Sources: {release._meta.sources.join(", ")}</span>
             )}
           </div>
 
@@ -279,7 +325,9 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
               </p>
               <ul className="space-y-0.5">
                 {allAlternates.map((v, i) => (
-                  <li key={i} className="text-xs text-muted-foreground pl-4">{v}</li>
+                  <li key={i} className="text-xs text-muted-foreground pl-4">
+                    {v}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -294,11 +342,17 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
               </p>
               <ul className="space-y-0.5">
                 {allDiscrepancies.map((d, i) => (
-                  <li key={i} className="text-xs text-muted-foreground pl-4">{d}</li>
+                  <li key={i} className="text-xs text-muted-foreground pl-4">
+                    {d}
+                  </li>
                 ))}
                 {allConflicts.map((c, i) => (
-                  <li key={`conflict-${i}`} className="text-xs text-amber-600 pl-4">
-                    ISRC conflict on "{c.trackTitle}": LabelGrid={c.labelgridIsrc} vs Platform={c.platformIsrc}
+                  <li
+                    key={`conflict-${i}`}
+                    className="text-xs text-amber-600 pl-4"
+                  >
+                    ISRC conflict on "{c.trackTitle}": LabelGrid=
+                    {c.labelgridIsrc} vs Platform={c.platformIsrc}
                   </li>
                 ))}
               </ul>
@@ -318,13 +372,23 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
               </thead>
               <tbody>
                 {release.tracks.map((track) => (
-                  <tr key={track.trackNumber} className="border-b border-border/50 last:border-0">
-                    <td className="py-1 text-muted-foreground">{track.trackNumber}</td>
+                  <tr
+                    key={track.trackNumber}
+                    className="border-b border-border/50 last:border-0"
+                  >
+                    <td className="py-1 text-muted-foreground">
+                      {track.trackNumber}
+                    </td>
                     <td className="py-1 pr-2 truncate max-w-0 w-full">
                       <span className="flex items-center gap-1">
                         {track.title}
                         {track.explicit && (
-                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">E</Badge>
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] px-1 py-0 h-4"
+                          >
+                            E
+                          </Badge>
                         )}
                       </span>
                     </td>
@@ -355,37 +419,52 @@ interface CatalogMigrationProps {
   defaultArtistName?: string;
 }
 
-export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigrationProps) {
+export default function CatalogMigration({
+  defaultArtistName = "",
+}: CatalogMigrationProps) {
   const [artistName, setArtistName] = useState(defaultArtistName);
   const [result, setResult] = useState<MigrationPayload | null>(null);
   const { toast } = useToast();
 
   const exportMutation = useMutation({
     mutationFn: async (name: string) => {
-      const resp = await apiRequest('POST', '/api/distribution/catalog-export', { artistName: name });
+      const resp = await apiRequest(
+        "POST",
+        "/api/distribution/catalog-export",
+        { artistName: name },
+      );
       return resp.json() as Promise<MigrationPayload>;
     },
     onSuccess: (data) => {
       setResult(data);
       if (data.totalReleases === 0) {
         toast({
-          title: 'No releases found',
+          title: "No releases found",
           description: `Could not find any releases for "${data.artistName}".`,
-          variant: 'destructive',
+          variant: "destructive",
         });
       } else {
         const warnings = data.releases.reduce(
-          (acc, r) => acc + r._meta.validation.reduce((a, v) => a + v.discrepancies.length + v.isrcConflicts.length, 0),
-          0
+          (acc, r) =>
+            acc +
+            r._meta.validation.reduce(
+              (a, v) => a + v.discrepancies.length + v.isrcConflicts.length,
+              0,
+            ),
+          0,
         );
         toast({
-          title: 'Catalog parsed',
-          description: `${data.totalReleases} release(s), ${data.isrcCoverage} ISRC coverage${warnings > 0 ? `, ${warnings} discrepancy flag(s) detected` : ''}.`,
+          title: "Catalog parsed",
+          description: `${data.totalReleases} release(s), ${data.isrcCoverage} ISRC coverage${warnings > 0 ? `, ${warnings} discrepancy flag(s) detected` : ""}.`,
         });
       }
     },
     onError: () => {
-      toast({ title: 'Export failed', description: 'Could not parse catalog. Please try again.', variant: 'destructive' });
+      toast({
+        title: "Export failed",
+        description: "Could not parse catalog. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -397,11 +476,13 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
 
   function downloadJson() {
     if (!result) return;
-    const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(result, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `${result.artistName.replace(/\s+/g, '_')}_labelgrid_import.json`;
+    a.download = `${result.artistName.replace(/\s+/g, "_")}_labelgrid_import.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -410,10 +491,16 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
 
   const isLoading = exportMutation.isPending;
 
-  const totalWarnings = result?.releases.reduce(
-    (acc, r) => acc + r._meta.validation.reduce((a, v) => a + v.discrepancies.length + v.isrcConflicts.length, 0),
-    0
-  ) ?? 0;
+  const totalWarnings =
+    result?.releases.reduce(
+      (acc, r) =>
+        acc +
+        r._meta.validation.reduce(
+          (a, v) => a + v.discrepancies.length + v.isrcConflicts.length,
+          0,
+        ),
+      0,
+    ) ?? 0;
 
   return (
     <div className="space-y-6">
@@ -425,11 +512,12 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
             Migrate Catalog to LabelGrid
           </CardTitle>
           <CardDescription>
-            Pulls your complete catalog from LabelGrid as the authoritative source, then
-            cross-checks every release against Deezer and Apple Music — verifying ISRCs,
-            UPCs, release dates, track counts, and artwork. Any discrepancies or alternate
-            versions found on public platforms are flagged in the output. Outputs a clean
-            JSON file ready for LabelGrid import.
+            Pulls your complete catalog from LabelGrid as the authoritative
+            source, then cross-checks every release against Deezer and Apple
+            Music — verifying ISRCs, UPCs, release dates, track counts, and
+            artwork. Any discrepancies or alternate versions found on public
+            platforms are flagged in the output. Outputs a clean JSON file ready
+            for LabelGrid import.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -440,11 +528,16 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
                 id="artist-name"
                 placeholder="e.g. B-Lawz"
                 value={artistName}
-                onChange={e => setArtistName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !isLoading && handleExport()}
+                onChange={(e) => setArtistName(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !isLoading && handleExport()
+                }
                 disabled={isLoading}
               />
-              <Button onClick={handleExport} disabled={isLoading || !artistName.trim()}>
+              <Button
+                onClick={handleExport}
+                disabled={isLoading || !artistName.trim()}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -459,9 +552,9 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Uses LabelGrid as the primary source. Streaming platforms (Deezer, Apple Music)
-              are queried in parallel for validation and enrichment only. Typically takes 1–3
-              minutes for a full catalog.
+              Uses LabelGrid as the primary source. Streaming platforms (Deezer,
+              Apple Music) are queried in parallel for validation and enrichment
+              only. Typically takes 1–3 minutes for a full catalog.
             </p>
           </div>
 
@@ -469,9 +562,11 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
             <Alert>
               <Loader2 className="w-4 h-4 animate-spin" />
               <AlertDescription className="ml-2">
-                Step 1: Fetching catalog from LabelGrid…<br />
-                Step 2: Cross-checking every release against Deezer and Apple Music — verifying
-                ISRCs, UPCs, dates, track counts, and detecting alternate versions…
+                Step 1: Fetching catalog from LabelGrid…
+                <br />
+                Step 2: Cross-checking every release against Deezer and Apple
+                Music — verifying ISRCs, UPCs, dates, track counts, and
+                detecting alternate versions…
               </AlertDescription>
             </Alert>
           )}
@@ -495,14 +590,21 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
               <div>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  {result.totalReleases} Release{result.totalReleases !== 1 ? 's' : ''} Extracted &amp; Validated
+                  {result.totalReleases} Release
+                  {result.totalReleases !== 1 ? "s" : ""} Extracted &amp;
+                  Validated
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  {result.totalTracks} tracks · {result.isrcCoverage} ISRC coverage
+                  {result.totalTracks} tracks · {result.isrcCoverage} ISRC
+                  coverage
                   {totalWarnings > 0 && (
-                    <span className="text-amber-500"> · {totalWarnings} discrepancy flag{totalWarnings !== 1 ? 's' : ''}</span>
+                    <span className="text-amber-500">
+                      {" "}
+                      · {totalWarnings} discrepancy flag
+                      {totalWarnings !== 1 ? "s" : ""}
+                    </span>
                   )}
-                  {' · '}Exported {new Date(result.exportedAt).toLocaleString()}
+                  {" · "}Exported {new Date(result.exportedAt).toLocaleString()}
                 </CardDescription>
               </div>
               <Button onClick={downloadJson} className="flex-shrink-0">
@@ -520,9 +622,13 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
               <Badge variant="secondary">Deezer (validation)</Badge>
               <Badge variant="secondary">Apple Music (validation)</Badge>
               {totalWarnings > 0 && (
-                <Badge variant="outline" className="text-amber-500 border-amber-400 gap-1">
+                <Badge
+                  variant="outline"
+                  className="text-amber-500 border-amber-400 gap-1"
+                >
                   <AlertTriangle className="w-3 h-3" />
-                  {totalWarnings} flag{totalWarnings !== 1 ? 's' : ''} — review before importing
+                  {totalWarnings} flag{totalWarnings !== 1 ? "s" : ""} — review
+                  before importing
                 </Badge>
               )}
             </div>
@@ -544,8 +650,9 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
         <Alert>
           <AlertCircle className="w-4 h-4" />
           <AlertDescription className="ml-2">
-            No releases found for <strong>{result.artistName}</strong>. Ensure the artist name
-            matches exactly how it appears on Apple Music and that your LabelGrid account is connected.
+            No releases found for <strong>{result.artistName}</strong>. Ensure
+            the artist name matches exactly how it appears on Apple Music and
+            that your LabelGrid account is connected.
           </AlertDescription>
         </Alert>
       )}

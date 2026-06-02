@@ -1,22 +1,25 @@
-import { useState } from 'react';
-import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Logo } from '@/components/ui/Logo';
-import { Calendar, Clock, ArrowRight, User } from 'lucide-react';
-import { blogPosts } from '@/data/blogPosts';
+import { useState } from "react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/ui/Logo";
+import { Calendar, Clock, ArrowRight, User } from "lucide-react";
+import { blogPosts } from "@/data/blogPosts";
 
-const ALL_CATEGORIES = ['All', ...Array.from(new Set(blogPosts.map((p) => p.category)))];
+const ALL_CATEGORIES = [
+  "All",
+  ...Array.from(new Set(blogPosts.map((p) => p.category))),
+];
 
 export default function Blog() {
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState("All");
 
   const featured = blogPosts.find((p) => p.featured) ?? blogPosts[0];
   const regular = blogPosts.filter((p) => !p.featured);
 
   const filtered =
-    activeCategory === 'All'
+    activeCategory === "All"
       ? regular
       : regular.filter((p) => p.category === activeCategory);
 
@@ -54,7 +57,8 @@ export default function Blog() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Tips, tutorials, and industry insights to help you grow your music career
+            Tips, tutorials, and industry insights to help you grow your music
+            career
           </p>
         </div>
       </section>
@@ -68,7 +72,9 @@ export default function Blog() {
                   className={`bg-gradient-to-br ${featured.coverGradient} p-12 flex items-center justify-center min-h-[220px]`}
                 >
                   <div className="text-white text-center">
-                    <Badge className="bg-white/20 text-white border-white/30 mb-4">Featured Post</Badge>
+                    <Badge className="bg-white/20 text-white border-white/30 mb-4">
+                      Featured Post
+                    </Badge>
                     <h2 className="text-2xl sm:text-3xl font-bold mb-4 leading-snug">
                       {featured.title}
                     </h2>
@@ -79,7 +85,9 @@ export default function Blog() {
                   </div>
                 </div>
                 <div className="p-8 flex flex-col justify-center">
-                  <Badge variant="secondary" className="w-fit mb-3">{featured.category}</Badge>
+                  <Badge variant="secondary" className="w-fit mb-3">
+                    {featured.category}
+                  </Badge>
                   <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
@@ -93,7 +101,9 @@ export default function Blog() {
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
                     {featured.excerpt}
                   </p>
-                  <Button className={`w-fit bg-gradient-to-r ${featured.coverGradient} text-white border-0`}>
+                  <Button
+                    className={`w-fit bg-gradient-to-r ${featured.coverGradient} text-white border-0`}
+                  >
                     Read Article
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -107,12 +117,14 @@ export default function Blog() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Latest Articles</h2>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Latest Articles
+            </h2>
             <div className="flex flex-wrap gap-2">
               {ALL_CATEGORIES.map((cat) => (
                 <Button
                   key={cat}
-                  variant={activeCategory === cat ? 'default' : 'ghost'}
+                  variant={activeCategory === cat ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setActiveCategory(cat)}
                 >
@@ -131,7 +143,9 @@ export default function Blog() {
               {filtered.map((post) => (
                 <Link key={post.id} href={`/blog/${post.slug}`}>
                   <Card className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer dark:bg-gray-900 dark:border-gray-700 h-full">
-                    <div className={`h-36 bg-gradient-to-br ${post.coverGradient} rounded-t-lg flex items-end p-4`}>
+                    <div
+                      className={`h-36 bg-gradient-to-br ${post.coverGradient} rounded-t-lg flex items-end p-4`}
+                    >
                       <Badge className="bg-white/20 text-white border-white/30 text-xs">
                         {post.category}
                       </Badge>
@@ -171,7 +185,8 @@ export default function Blog() {
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-4">Stay Updated</h2>
           <p className="text-xl text-white/90 mb-8">
-            Get the latest tips, tutorials, and industry insights delivered to your inbox
+            Get the latest tips, tutorials, and industry insights delivered to
+            your inbox
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
             <input

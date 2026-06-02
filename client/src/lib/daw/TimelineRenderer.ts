@@ -1,5 +1,10 @@
-import { PeakData } from './PeakCacheEngine';
-import { NonDestructiveRenderer, RenderViewport, WaveformRenderResult, FadeOverlay } from './NonDestructiveRenderer';
+import { PeakData } from "./PeakCacheEngine";
+import {
+  NonDestructiveRenderer,
+  RenderViewport,
+  WaveformRenderResult,
+  FadeOverlay,
+} from "./NonDestructiveRenderer";
 
 export interface TimelineRenderConfig {
   backgroundColor: string;
@@ -64,17 +69,17 @@ interface ScrollState {
 }
 
 const DEFAULT_CONFIG: TimelineRenderConfig = {
-  backgroundColor: '#1a1a2e',
-  waveformColor: '#4ade80',
-  waveformFillColor: 'rgba(74, 222, 128, 0.25)',
-  rmsColor: 'rgba(74, 222, 128, 0.6)',
-  playheadColor: '#ef4444',
-  gridColor: 'rgba(255, 255, 255, 0.08)',
-  transientColor: '#f59e0b',
-  selectionColor: 'rgba(59, 130, 246, 0.2)',
-  fadeColor: 'rgba(255, 255, 255, 0.15)',
-  clipBorderColor: 'rgba(255, 255, 255, 0.15)',
-  clipSelectedBorderColor: '#3b82f6',
+  backgroundColor: "#1a1a2e",
+  waveformColor: "#4ade80",
+  waveformFillColor: "rgba(74, 222, 128, 0.25)",
+  rmsColor: "rgba(74, 222, 128, 0.6)",
+  playheadColor: "#ef4444",
+  gridColor: "rgba(255, 255, 255, 0.08)",
+  transientColor: "#f59e0b",
+  selectionColor: "rgba(59, 130, 246, 0.2)",
+  fadeColor: "rgba(255, 255, 255, 0.15)",
+  clipBorderColor: "rgba(255, 255, 255, 0.15)",
+  clipSelectedBorderColor: "#3b82f6",
   antiAlias: true,
   showRMS: true,
   showTransients: true,
@@ -82,7 +87,8 @@ const DEFAULT_CONFIG: TimelineRenderConfig = {
   showFades: true,
   lineWidth: 1,
   rmsLineWidth: 2,
-  devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+  devicePixelRatio:
+    typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
 };
 
 export class TimelineRenderer {
@@ -131,14 +137,14 @@ export class TimelineRenderer {
 
   attach(canvas: HTMLCanvasElement): void {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d', { alpha: false });
+    this.ctx = canvas.getContext("2d", { alpha: false });
 
-    this.offscreenCanvas = document.createElement('canvas');
-    this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: false });
+    this.offscreenCanvas = document.createElement("canvas");
+    this.offscreenCtx = this.offscreenCanvas.getContext("2d", { alpha: false });
 
     this.resizeCanvas();
 
-    if (typeof ResizeObserver !== 'undefined') {
+    if (typeof ResizeObserver !== "undefined") {
       const observer = new ResizeObserver(() => this.resizeCanvas());
       observer.observe(canvas);
     }
@@ -186,7 +192,8 @@ export class TimelineRenderer {
   private renderFrame = (timestamp: number): void => {
     if (!this.isRunning) return;
 
-    this.frameTiming.deltaTime = (timestamp - this.frameTiming.lastFrameTime) / 1000;
+    this.frameTiming.deltaTime =
+      (timestamp - this.frameTiming.lastFrameTime) / 1000;
     this.frameTiming.lastFrameTime = timestamp;
     this.frameTiming.frameCount++;
 
@@ -222,7 +229,7 @@ export class TimelineRenderer {
       this.viewDuration,
       this.containerWidth,
       this.scroll.currentOffset,
-      this.ndRenderer.getDataZoom().horizontalZoom
+      this.ndRenderer.getDataZoom().horizontalZoom,
     );
 
     const visibleDuration = viewInfo.endTime - viewInfo.startTime;
@@ -247,7 +254,7 @@ export class TimelineRenderer {
       this.viewDuration,
       w,
       this.scroll.currentOffset,
-      this.ndRenderer.getDataZoom().horizontalZoom
+      this.ndRenderer.getDataZoom().horizontalZoom,
     );
 
     if (this.config.showGrid) {
@@ -269,7 +276,7 @@ export class TimelineRenderer {
     ctx: CanvasRenderingContext2D,
     viewInfo: { startTime: number; endTime: number; pixelsPerSecond: number },
     width: number,
-    height: number
+    height: number,
   ): void {
     const { bpm, timeSignature } = this.playhead;
     const secondsPerBeat = 60 / bpm;
@@ -296,7 +303,8 @@ export class TimelineRenderer {
       ctx.globalAlpha = 0.1;
       for (let beat = 1; beat < timeSignature[0]; beat++) {
         const beatTime = barTime + beat * secondsPerBeat;
-        const beatX = (beatTime - viewInfo.startTime) * viewInfo.pixelsPerSecond;
+        const beatX =
+          (beatTime - viewInfo.startTime) * viewInfo.pixelsPerSecond;
         if (beatX < 0 || beatX > width) continue;
 
         ctx.beginPath();
@@ -313,12 +321,14 @@ export class TimelineRenderer {
     ctx: CanvasRenderingContext2D,
     clip: ClipRenderData,
     viewInfo: { startTime: number; endTime: number; pixelsPerSecond: number },
-    height: number
+    height: number,
   ): void {
     const clipEndTime = clip.startTime + clip.duration;
-    if (clipEndTime < viewInfo.startTime || clip.startTime > viewInfo.endTime) return;
+    if (clipEndTime < viewInfo.startTime || clip.startTime > viewInfo.endTime)
+      return;
 
-    const clipX = (clip.startTime - viewInfo.startTime) * viewInfo.pixelsPerSecond;
+    const clipX =
+      (clip.startTime - viewInfo.startTime) * viewInfo.pixelsPerSecond;
     const clipW = clip.duration * viewInfo.pixelsPerSecond;
     const clipH = height;
     const centerY = clipH / 2;
@@ -328,7 +338,7 @@ export class TimelineRenderer {
     ctx.roundRect(clipX, 1, clipW, clipH - 2, 3);
     ctx.clip();
 
-    ctx.fillStyle = clip.muted ? 'rgba(60, 60, 70, 0.6)' : `${clip.color}10`;
+    ctx.fillStyle = clip.muted ? "rgba(60, 60, 70, 0.6)" : `${clip.color}10`;
     ctx.fill();
 
     const viewport: RenderViewport = {
@@ -342,7 +352,11 @@ export class TimelineRenderer {
       verticalScale: this.ndRenderer.getDataZoom().verticalScale * clip.gain,
     };
 
-    const result = this.ndRenderer.renderWaveform(clip.sourceId, this.sampleRate, viewport);
+    const result = this.ndRenderer.renderWaveform(
+      clip.sourceId,
+      this.sampleRate,
+      viewport,
+    );
 
     if (result && result.path.length > 0) {
       this.drawWaveformPath(ctx, result, clip, centerY, clipH);
@@ -357,14 +371,16 @@ export class TimelineRenderer {
       this.drawTransients(ctx, clip.transients, viewInfo, clip, clipH);
     }
 
-    ctx.strokeStyle = clip.selected ? this.config.clipSelectedBorderColor : this.config.clipBorderColor;
+    ctx.strokeStyle = clip.selected
+      ? this.config.clipSelectedBorderColor
+      : this.config.clipBorderColor;
     ctx.lineWidth = clip.selected ? 2 : 1;
     ctx.beginPath();
     ctx.roundRect(clipX, 1, clipW, clipH - 2, 3);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.font = "10px Inter, system-ui, sans-serif";
     ctx.fillText(clip.name, clipX + 5, 14);
 
     ctx.restore();
@@ -375,12 +391,12 @@ export class TimelineRenderer {
     result: WaveformRenderResult,
     clip: ClipRenderData,
     centerY: number,
-    clipH: number
+    clipH: number,
   ): void {
     const path = result.path;
-    const waveColor = clip.muted ? '#555' : clip.color;
+    const waveColor = clip.muted ? "#555" : clip.color;
 
-    ctx.fillStyle = clip.muted ? 'rgba(85, 85, 85, 0.2)' : `${clip.color}30`;
+    ctx.fillStyle = clip.muted ? "rgba(85, 85, 85, 0.2)" : `${clip.color}30`;
     ctx.beginPath();
     ctx.moveTo(path[0].x, path[0].yMax);
     for (let i = 1; i < path.length; i++) {
@@ -393,7 +409,7 @@ export class TimelineRenderer {
     ctx.fill();
 
     if (this.config.showRMS) {
-      ctx.fillStyle = clip.muted ? 'rgba(85, 85, 85, 0.4)' : `${clip.color}55`;
+      ctx.fillStyle = clip.muted ? "rgba(85, 85, 85, 0.4)" : `${clip.color}55`;
       ctx.beginPath();
       ctx.moveTo(path[0].x, centerY - path[0].rms * (clipH / 2));
       for (let i = 1; i < path.length; i++) {
@@ -428,7 +444,7 @@ export class TimelineRenderer {
     ctx: CanvasRenderingContext2D,
     fade: FadeOverlay,
     height: number,
-    centerY: number
+    centerY: number,
   ): void {
     const fadePath = this.ndRenderer.computeFadePath(fade, height, centerY);
 
@@ -444,7 +460,7 @@ export class TimelineRenderer {
     ctx.closePath();
     ctx.fill();
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -461,7 +477,7 @@ export class TimelineRenderer {
     transients: { position: number; strength: number }[],
     viewInfo: { startTime: number; pixelsPerSecond: number },
     clip: ClipRenderData,
-    height: number
+    height: number,
   ): void {
     ctx.strokeStyle = this.config.transientColor;
     ctx.lineWidth = 1;
@@ -491,11 +507,16 @@ export class TimelineRenderer {
     ctx: CanvasRenderingContext2D,
     viewInfo: { startTime: number; endTime: number; pixelsPerSecond: number },
     width: number,
-    height: number
+    height: number,
   ): void {
-    if (this.playhead.position < viewInfo.startTime || this.playhead.position > viewInfo.endTime) return;
+    if (
+      this.playhead.position < viewInfo.startTime ||
+      this.playhead.position > viewInfo.endTime
+    )
+      return;
 
-    const x = (this.playhead.position - viewInfo.startTime) * viewInfo.pixelsPerSecond;
+    const x =
+      (this.playhead.position - viewInfo.startTime) * viewInfo.pixelsPerSecond;
 
     ctx.strokeStyle = this.config.playheadColor;
     ctx.lineWidth = 2;
@@ -542,10 +563,12 @@ export class TimelineRenderer {
       this.viewDuration,
       this.containerWidth,
       this.scroll.currentOffset,
-      this.ndRenderer.getDataZoom().horizontalZoom
+      this.ndRenderer.getDataZoom().horizontalZoom,
     );
 
-    const timeAtCursor = viewInfo.startTime + (pixelX / this.containerWidth) * (viewInfo.endTime - viewInfo.startTime);
+    const timeAtCursor =
+      viewInfo.startTime +
+      (pixelX / this.containerWidth) * (viewInfo.endTime - viewInfo.startTime);
 
     const currentZoom = this.ndRenderer.getDataZoom().horizontalZoom;
     const newZoom = Math.max(0.01, Math.min(1000, currentZoom * factor));

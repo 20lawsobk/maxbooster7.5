@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events';
-import { logger } from '../logger.js';
+import { EventEmitter } from "events";
+import { logger } from "../logger.js";
 
 interface ProcessHealth {
   pid: number;
@@ -9,12 +9,12 @@ interface ProcessHealth {
   activeConnections: number;
   restartCount: number;
   lastRestart?: Date;
-  status: 'healthy' | 'warning' | 'critical';
+  status: "healthy" | "warning" | "critical";
 }
 
 interface ProcessAlert {
-  type: 'memory' | 'cpu' | 'connections' | 'uptime' | 'restart';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type: "memory" | "cpu" | "connections" | "uptime" | "restart";
+  severity: "low" | "medium" | "high" | "critical";
   message: string;
   timestamp: Date;
   metrics?: Record<string, unknown>;
@@ -54,14 +54,14 @@ class ProcessMonitor extends EventEmitter {
       cpuUsage: process.cpuUsage(),
       activeConnections: 0,
       restartCount: 0,
-      status: 'healthy',
+      status: "healthy",
     };
 
     this.setupProcessHandlers();
   }
 
   start(intervalMs: number = 30000): void {
-    logger.info('🔍 Starting 24/7 Process Monitor...');
+    logger.info("🔍 Starting 24/7 Process Monitor...");
 
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
@@ -75,7 +75,7 @@ class ProcessMonitor extends EventEmitter {
 
     // Initial health check
     this.collectMetrics();
-    logger.info('✅ Process monitoring started - 24/7 reliability enabled');
+    logger.info("✅ Process monitoring started - 24/7 reliability enabled");
   }
 
   stop(): void {
@@ -83,57 +83,62 @@ class ProcessMonitor extends EventEmitter {
       clearInterval(this.monitoringInterval);
       this.monitoringInterval = null;
     }
-    logger.info('🛑 Process monitoring stopped');
+    logger.info("🛑 Process monitoring stopped");
   }
 
   private setupProcessHandlers(): void {
     // Track process restarts
-    process.on('SIGTERM', () => {
+    process.on("SIGTERM", () => {
       this.health.restartCount++;
       this.health.lastRestart = new Date();
       this.addAlert({
-        type: 'restart',
-        severity: 'medium',
-        message: 'Process received SIGTERM - graceful shutdown initiated',
+        type: "restart",
+        severity: "medium",
+        message: "Process received SIGTERM - graceful shutdown initiated",
         timestamp: new Date(),
       });
     });
 
-    process.on('SIGINT', () => {
+    process.on("SIGINT", () => {
       this.health.restartCount++;
       this.health.lastRestart = new Date();
       this.addAlert({
-        type: 'restart',
-        severity: 'medium',
-        message: 'Process received SIGINT - manual restart initiated',
+        type: "restart",
+        severity: "medium",
+        message: "Process received SIGINT - manual restart initiated",
         timestamp: new Date(),
       });
     });
 
     // Track uncaught exceptions (should be rare with our error handling)
-    process.on('uncaughtException', (error) => {
+    process.on("uncaughtException", (error) => {
       // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
       const code = (error as NodeJS.ErrnoException).code;
-      if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
+      if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED")
+        return;
       this.addAlert({
-        type: 'restart',
-        severity: 'critical',
+        type: "restart",
+        severity: "critical",
         message: `Uncaught exception: ${error instanceof Error ? error.message : String(error)}`,
         timestamp: new Date(),
         metrics: { stack: error instanceof Error ? error.stack : undefined },
       });
     });
 
-    process.on('unhandledRejection', (reason: Record<string, unknown>) => {
+    process.on("unhandledRejection", (reason: Record<string, unknown>) => {
       const msg = reason?.message || String(reason);
       // Filter out all known transient / expected rejections so they don't clutter
       // the alert list with false-positive critical entries.
-      if (/ECONNREFUSED|ECONNRESET|ECONNABORTED|EPIPE|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout/i.test(msg)) {
+      if (
+        /ECONNREFUSED|ECONNRESET|ECONNABORTED|EPIPE|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout/i.test(
+          msg,
+        )
+      ) {
         return;
       }
       this.addAlert({
-        type: 'restart',
-        severity: 'high',
+        type: "restart",
+        severity: "high",
         message: `Unhandled rejection: ${msg}`,
         timestamp: new Date(),
       });
@@ -152,32 +157,36 @@ class ProcessMonitor extends EventEmitter {
 
     // Update connection count from active sockets (if available)
     if ((global as Record<string, unknown>).activeConnections !== undefined) {
-      this.health.activeConnections = (global as Record<string, unknown>).activeConnections;
+      this.health.activeConnections = (
+        global as Record<string, unknown>
+      ).activeConnections;
     }
   }
 
   private analyzeHealth(): void {
     const issues: string[] = [];
-    let severity: 'healthy' | 'warning' | 'critical' = 'healthy';
+    let severity: "healthy" | "warning" | "critical" = "healthy";
 
     // Memory analysis
     const memUsage = this.health.memoryUsage.heapUsed;
     if (memUsage > this.thresholds.memory.critical) {
-      issues.push(`Critical memory usage: ${Math.round(memUsage / 1024 / 1024)}MB`);
-      severity = 'critical';
+      issues.push(
+        `Critical memory usage: ${Math.round(memUsage / 1024 / 1024)}MB`,
+      );
+      severity = "critical";
       this.addAlert({
-        type: 'memory',
-        severity: 'critical',
+        type: "memory",
+        severity: "critical",
         message: `Critical memory usage: ${Math.round(memUsage / 1024 / 1024)}MB`,
         timestamp: new Date(),
         metrics: this.health.memoryUsage,
       });
     } else if (memUsage > this.thresholds.memory.warning) {
       issues.push(`High memory usage: ${Math.round(memUsage / 1024 / 1024)}MB`);
-      if (severity === 'healthy') severity = 'warning';
+      if (severity === "healthy") severity = "warning";
       this.addAlert({
-        type: 'memory',
-        severity: 'medium',
+        type: "memory",
+        severity: "medium",
         message: `High memory usage: ${Math.round(memUsage / 1024 / 1024)}MB`,
         timestamp: new Date(),
         metrics: this.health.memoryUsage,
@@ -186,42 +195,46 @@ class ProcessMonitor extends EventEmitter {
 
     // Connection analysis
     if (this.health.activeConnections > this.thresholds.connections.critical) {
-      issues.push(`Critical connection count: ${this.health.activeConnections}`);
-      severity = 'critical';
+      issues.push(
+        `Critical connection count: ${this.health.activeConnections}`,
+      );
+      severity = "critical";
       this.addAlert({
-        type: 'connections',
-        severity: 'critical',
+        type: "connections",
+        severity: "critical",
         message: `Critical connection count: ${this.health.activeConnections}`,
         timestamp: new Date(),
       });
-    } else if (this.health.activeConnections > this.thresholds.connections.warning) {
+    } else if (
+      this.health.activeConnections > this.thresholds.connections.warning
+    ) {
       issues.push(`High connection count: ${this.health.activeConnections}`);
-      if (severity === 'healthy') severity = 'warning';
+      if (severity === "healthy") severity = "warning";
     }
 
     // Uptime analysis (recent restart detection)
     if (this.health.uptime < this.thresholds.uptime.minimumHealthy) {
       issues.push(`Recent restart detected: ${this.health.uptime}ms uptime`);
-      if (severity === 'healthy') severity = 'warning';
+      if (severity === "healthy") severity = "warning";
     }
 
     this.health.status = severity;
 
     // Log health status periodically
     if (issues.length > 0) {
-      logger.warn(`⚠️  Process Health Issues: ${issues.join(', ')}`);
+      logger.warn(`⚠️  Process Health Issues: ${issues.join(", ")}`);
     } else {
       logger.info(
-        `✅ Process Health: OK (${Math.round(this.health.uptime / 1000)}s uptime, ${Math.round(memUsage / 1024 / 1024)}MB memory)`
+        `✅ Process Health: OK (${Math.round(this.health.uptime / 1000)}s uptime, ${Math.round(memUsage / 1024 / 1024)}MB memory)`,
       );
     }
   }
 
   private emitHealthStatus(): void {
-    this.emit('health-update', this.health);
+    this.emit("health-update", this.health);
 
-    if (this.health.status === 'critical') {
-      this.emit('critical-alert', this.health);
+    if (this.health.status === "critical") {
+      this.emit("critical-alert", this.health);
     }
   }
 
@@ -234,10 +247,10 @@ class ProcessMonitor extends EventEmitter {
     }
 
     // Emit alert event
-    this.emit('alert', alert);
+    this.emit("alert", alert);
 
     // Log critical alerts immediately
-    if (alert.severity === 'critical') {
+    if (alert.severity === "critical") {
       logger.warn(`🚨 CRITICAL ALERT [${alert.type}]: ${alert.message}`);
     }
   }
@@ -252,44 +265,46 @@ class ProcessMonitor extends EventEmitter {
   }
 
   getCriticalAlerts(): ProcessAlert[] {
-    return this.alerts.filter((alert) => alert.severity === 'critical');
+    return this.alerts.filter((alert) => alert.severity === "critical");
   }
 
   getHealthSummary(): Record<string, unknown> {
     const recentAlerts = this.alerts.filter(
-      (alert) => Date.now() - alert.timestamp.getTime() < 24 * 60 * 60 * 1000 // Last 24 hours
+      (alert) => Date.now() - alert.timestamp.getTime() < 24 * 60 * 60 * 1000, // Last 24 hours
     );
 
     return {
       status: this.health.status,
       uptime: this.health.uptime,
-      uptimeHours: Math.round((this.health.uptime / (1000 * 60 * 60)) * 100) / 100,
+      uptimeHours:
+        Math.round((this.health.uptime / (1000 * 60 * 60)) * 100) / 100,
       memoryUsageMB: Math.round(this.health.memoryUsage.heapUsed / 1024 / 1024),
       activeConnections: this.health.activeConnections,
       restartCount: this.health.restartCount,
       lastRestart: this.health.lastRestart,
       recentAlerts: recentAlerts.length,
-      criticalAlerts: recentAlerts.filter((a) => a.severity === 'critical').length,
+      criticalAlerts: recentAlerts.filter((a) => a.severity === "critical")
+        .length,
     };
   }
 
   // Cleanup method for graceful shutdown
   async gracefulShutdown(): Promise<void> {
-    logger.info('🔄 Process monitor initiating graceful shutdown...');
+    logger.info("🔄 Process monitor initiating graceful shutdown...");
 
     this.addAlert({
-      type: 'restart',
-      severity: 'low',
-      message: 'Graceful shutdown initiated',
+      type: "restart",
+      severity: "low",
+      message: "Graceful shutdown initiated",
       timestamp: new Date(),
     });
 
     this.stop();
 
     // Emit final health status
-    this.emit('shutdown', this.getHealthSummary());
+    this.emit("shutdown", this.getHealthSummary());
 
-    logger.info('✅ Process monitor shutdown complete');
+    logger.info("✅ Process monitor shutdown complete");
   }
 }
 

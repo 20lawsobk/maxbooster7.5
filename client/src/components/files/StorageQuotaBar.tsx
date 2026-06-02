@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   HardDrive,
   AlertTriangle,
@@ -26,7 +26,7 @@ import {
   Crown,
   Zap,
   Info,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface StorageCategory {
   name: string;
@@ -55,18 +55,38 @@ interface StorageQuotaBarProps {
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
+  if (bytes === 0) return "0 B";
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
 const DEFAULT_CATEGORIES: StorageCategory[] = [
-  { name: 'Audio', used: 0, icon: <FileAudio className="h-4 w-4" />, color: 'bg-blue-500' },
-  { name: 'Images', used: 0, icon: <FileImage className="h-4 w-4" />, color: 'bg-green-500' },
-  { name: 'Videos', used: 0, icon: <FileVideo className="h-4 w-4" />, color: 'bg-purple-500' },
-  { name: 'Other', used: 0, icon: <File className="h-4 w-4" />, color: 'bg-gray-500' },
+  {
+    name: "Audio",
+    used: 0,
+    icon: <FileAudio className="h-4 w-4" />,
+    color: "bg-blue-500",
+  },
+  {
+    name: "Images",
+    used: 0,
+    icon: <FileImage className="h-4 w-4" />,
+    color: "bg-green-500",
+  },
+  {
+    name: "Videos",
+    used: 0,
+    icon: <FileVideo className="h-4 w-4" />,
+    color: "bg-purple-500",
+  },
+  {
+    name: "Other",
+    used: 0,
+    icon: <File className="h-4 w-4" />,
+    color: "bg-gray-500",
+  },
 ];
 
 export function StorageQuotaBar({
@@ -84,25 +104,27 @@ export function StorageQuotaBar({
   const [showDetails, setShowDetails] = useState(false);
 
   const { data: quotaData } = useQuery<StorageQuota>({
-    queryKey: ['/api/storage/quota'],
+    queryKey: ["/api/storage/quota"],
     enabled: propUsed === undefined || propLimit === undefined,
     staleTime: 60000,
   });
 
   const used = propUsed ?? quotaData?.used ?? 0;
   const limit = propLimit ?? quotaData?.limit ?? 5 * 1024 * 1024 * 1024;
-  const categories = propCategories ?? quotaData?.categories ?? DEFAULT_CATEGORIES;
+  const categories =
+    propCategories ?? quotaData?.categories ?? DEFAULT_CATEGORIES;
 
   const usedPercentage = Math.min((used / limit) * 100, 100);
   const available = Math.max(limit - used, 0);
-  const isWarning = usedPercentage >= warningThreshold && usedPercentage < criticalThreshold;
+  const isWarning =
+    usedPercentage >= warningThreshold && usedPercentage < criticalThreshold;
   const isCritical = usedPercentage >= criticalThreshold;
   const isExceeded = used >= limit;
 
   const getProgressColor = () => {
-    if (isCritical || isExceeded) return 'bg-destructive';
-    if (isWarning) return 'bg-amber-500';
-    return 'bg-primary';
+    if (isCritical || isExceeded) return "bg-destructive";
+    if (isWarning) return "bg-amber-500";
+    return "bg-primary";
   };
 
   const getStatusBadge = () => {
@@ -124,7 +146,10 @@ export function StorageQuotaBar({
     }
     if (isWarning) {
       return (
-        <Badge variant="outline" className="gap-1 border-amber-500 text-amber-600">
+        <Badge
+          variant="outline"
+          className="gap-1 border-amber-500 text-amber-600"
+        >
           <AlertTriangle className="h-3 w-3" />
           Running Low
         </Badge>
@@ -135,22 +160,35 @@ export function StorageQuotaBar({
 
   if (compact) {
     return (
-      <div className={cn('flex items-center gap-3', className)}>
+      <div className={cn("flex items-center gap-3", className)}>
         <div className="flex items-center gap-2">
-          <HardDrive className={cn(
-            'h-4 w-4',
-            isExceeded || isCritical ? 'text-destructive' : isWarning ? 'text-amber-500' : 'text-muted-foreground'
-          )} />
+          <HardDrive
+            className={cn(
+              "h-4 w-4",
+              isExceeded || isCritical
+                ? "text-destructive"
+                : isWarning
+                  ? "text-amber-500"
+                  : "text-muted-foreground",
+            )}
+          />
           <span className="text-sm font-medium">{formatBytes(used)}</span>
-          <span className="text-xs text-muted-foreground">/ {formatBytes(limit)}</span>
+          <span className="text-xs text-muted-foreground">
+            / {formatBytes(limit)}
+          </span>
         </div>
-        <Progress 
-          value={usedPercentage} 
-          className={cn('h-2 w-24', getProgressColor())} 
+        <Progress
+          value={usedPercentage}
+          className={cn("h-2 w-24", getProgressColor())}
         />
         {getStatusBadge()}
         {(isWarning || isCritical || isExceeded) && onUpgrade && (
-          <Button variant="outline" size="sm" onClick={onUpgrade} className="h-7 text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onUpgrade}
+            className="h-7 text-xs"
+          >
             <Crown className="h-3 w-3 mr-1" />
             Upgrade
           </Button>
@@ -164,10 +202,16 @@ export function StorageQuotaBar({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <HardDrive className={cn(
-              'h-5 w-5',
-              isExceeded || isCritical ? 'text-destructive' : isWarning ? 'text-amber-500' : 'text-primary'
-            )} />
+            <HardDrive
+              className={cn(
+                "h-5 w-5",
+                isExceeded || isCritical
+                  ? "text-destructive"
+                  : isWarning
+                    ? "text-amber-500"
+                    : "text-primary",
+              )}
+            />
             <CardTitle className="text-base">Storage</CardTitle>
           </div>
           <div className="flex items-center gap-2">
@@ -204,17 +248,26 @@ export function StorageQuotaBar({
             <span className="text-muted-foreground">
               {formatBytes(used)} of {formatBytes(limit)} used
             </span>
-            <span className={cn(
-              'font-medium tabular-nums',
-              isExceeded || isCritical ? 'text-destructive' : isWarning ? 'text-amber-600' : ''
-            )}>
+            <span
+              className={cn(
+                "font-medium tabular-nums",
+                isExceeded || isCritical
+                  ? "text-destructive"
+                  : isWarning
+                    ? "text-amber-600"
+                    : "",
+              )}
+            >
               {usedPercentage.toFixed(1)}%
             </span>
           </div>
           <div className="relative">
             <Progress value={usedPercentage} className="h-3" />
-            <div 
-              className={cn('absolute inset-0 rounded-full', getProgressColor())}
+            <div
+              className={cn(
+                "absolute inset-0 rounded-full",
+                getProgressColor(),
+              )}
               style={{ width: `${usedPercentage}%` }}
             />
           </div>
@@ -229,23 +282,36 @@ export function StorageQuotaBar({
               Usage Breakdown
             </p>
             <div className="h-2 rounded-full overflow-hidden bg-muted flex">
-              {categories.filter(c => c.used > 0).map((category, index) => (
-                <div
-                  key={category.name}
-                  className={cn('h-full', category.color)}
-                  style={{ width: `${(category.used / limit) * 100}%` }}
-                  title={`${category.name}: ${formatBytes(category.used)}`}
-                />
-              ))}
+              {categories
+                .filter((c) => c.used > 0)
+                .map((category, index) => (
+                  <div
+                    key={category.name}
+                    className={cn("h-full", category.color)}
+                    style={{ width: `${(category.used / limit) * 100}%` }}
+                    title={`${category.name}: ${formatBytes(category.used)}`}
+                  />
+                ))}
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              {categories.filter(c => c.used > 0).map(category => (
-                <div key={category.name} className="flex items-center gap-1.5 text-xs">
-                  <div className={cn('w-2 h-2 rounded-full', category.color)} />
-                  <span className="text-muted-foreground">{category.name}</span>
-                  <span className="font-medium">{formatBytes(category.used)}</span>
-                </div>
-              ))}
+              {categories
+                .filter((c) => c.used > 0)
+                .map((category) => (
+                  <div
+                    key={category.name}
+                    className="flex items-center gap-1.5 text-xs"
+                  >
+                    <div
+                      className={cn("w-2 h-2 rounded-full", category.color)}
+                    />
+                    <span className="text-muted-foreground">
+                      {category.name}
+                    </span>
+                    <span className="font-medium">
+                      {formatBytes(category.used)}
+                    </span>
+                  </div>
+                ))}
             </div>
           </div>
         )}
@@ -255,9 +321,12 @@ export function StorageQuotaBar({
             <div className="flex items-start gap-2">
               <XCircle className="h-4 w-4 text-destructive mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-destructive">Storage Quota Exceeded</p>
+                <p className="text-sm font-medium text-destructive">
+                  Storage Quota Exceeded
+                </p>
                 <p className="text-xs text-destructive/80 mt-0.5">
-                  You cannot upload new files until you free up space or upgrade your plan.
+                  You cannot upload new files until you free up space or upgrade
+                  your plan.
                 </p>
               </div>
             </div>
@@ -269,7 +338,9 @@ export function StorageQuotaBar({
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-amber-600">Storage Running Low</p>
+                <p className="text-sm font-medium text-amber-600">
+                  Storage Running Low
+                </p>
                 <p className="text-xs text-amber-600/80 mt-0.5">
                   Consider upgrading your plan or removing unused files.
                 </p>
@@ -283,9 +354,12 @@ export function StorageQuotaBar({
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-destructive">Storage Almost Full</p>
+                <p className="text-sm font-medium text-destructive">
+                  Storage Almost Full
+                </p>
                 <p className="text-xs text-destructive/80 mt-0.5">
-                  Only {formatBytes(available)} remaining. Upgrade soon to avoid interruptions.
+                  Only {formatBytes(available)} remaining. Upgrade soon to avoid
+                  interruptions.
                 </p>
               </div>
             </div>
@@ -294,15 +368,22 @@ export function StorageQuotaBar({
 
         <div className="flex items-center gap-2 pt-1">
           {(isWarning || isCritical || isExceeded) && onUpgrade && (
-            <Button variant="default" size="sm" onClick={onUpgrade} className="flex-1">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onUpgrade}
+              className="flex-1"
+            >
               <Crown className="h-4 w-4 mr-1" />
               Upgrade Storage
             </Button>
           )}
           {onManageStorage && (
-            <Button 
-              variant={isWarning || isCritical || isExceeded ? 'outline' : 'default'} 
-              size="sm" 
+            <Button
+              variant={
+                isWarning || isCritical || isExceeded ? "outline" : "default"
+              }
+              size="sm"
               onClick={onManageStorage}
               className="flex-1"
             >
@@ -323,7 +404,12 @@ interface StorageBreakdownProps {
   onManageStorage?: () => void;
 }
 
-function StorageBreakdown({ categories, total, limit, onManageStorage }: StorageBreakdownProps) {
+function StorageBreakdown({
+  categories,
+  total,
+  limit,
+  onManageStorage,
+}: StorageBreakdownProps) {
   const sortedCategories = [...categories].sort((a, b) => b.used - a.used);
 
   return (
@@ -335,15 +421,22 @@ function StorageBreakdown({ categories, total, limit, onManageStorage }: Storage
         </div>
         <Progress value={(total / limit) * 100} className="h-2" />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{((total / limit) * 100).toFixed(1)}% of {formatBytes(limit)}</span>
+          <span>
+            {((total / limit) * 100).toFixed(1)}% of {formatBytes(limit)}
+          </span>
           <span>{formatBytes(limit - total)} available</span>
         </div>
       </div>
 
       <div className="space-y-3">
-        {sortedCategories.map(category => (
+        {sortedCategories.map((category) => (
           <div key={category.name} className="flex items-center gap-3">
-            <div className={cn('p-2 rounded-lg', category.color.replace('bg-', 'bg-') + '/10')}>
+            <div
+              className={cn(
+                "p-2 rounded-lg",
+                category.color.replace("bg-", "bg-") + "/10",
+              )}
+            >
               {category.icon}
             </div>
             <div className="flex-1">
@@ -352,9 +445,9 @@ function StorageBreakdown({ categories, total, limit, onManageStorage }: Storage
                 <span className="text-sm">{formatBytes(category.used)}</span>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <Progress 
-                  value={total > 0 ? (category.used / total) * 100 : 0} 
-                  className="h-1.5 flex-1" 
+                <Progress
+                  value={total > 0 ? (category.used / total) * 100 : 0}
+                  className="h-1.5 flex-1"
                 />
                 <span className="text-xs text-muted-foreground w-10 text-right">
                   {total > 0 ? ((category.used / total) * 100).toFixed(0) : 0}%
@@ -384,12 +477,16 @@ interface UpgradePromptProps {
 }
 
 export function UpgradePrompt({
-  currentPlan = 'Free',
+  currentPlan = "Free",
   currentStorage,
   plans = [
-    { name: 'Pro', storage: 50 * 1024 * 1024 * 1024, price: '$9.99/mo' },
-    { name: 'Studio', storage: 200 * 1024 * 1024 * 1024, price: '$24.99/mo' },
-    { name: 'Enterprise', storage: 1024 * 1024 * 1024 * 1024, price: 'Contact us' },
+    { name: "Pro", storage: 50 * 1024 * 1024 * 1024, price: "$9.99/mo" },
+    { name: "Studio", storage: 200 * 1024 * 1024 * 1024, price: "$24.99/mo" },
+    {
+      name: "Enterprise",
+      storage: 1024 * 1024 * 1024 * 1024,
+      price: "Contact us",
+    },
   ],
   onUpgrade,
   className,
@@ -410,7 +507,7 @@ export function UpgradePrompt({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {plans.map(plan => (
+        {plans.map((plan) => (
           <div
             key={plan.name}
             className="flex items-center justify-between p-3 rounded-lg border hover:border-primary/50 transition-colors"
@@ -421,12 +518,19 @@ export function UpgradePrompt({
               </div>
               <div>
                 <p className="font-medium">{plan.name}</p>
-                <p className="text-sm text-muted-foreground">{formatBytes(plan.storage)} storage</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatBytes(plan.storage)} storage
+                </p>
               </div>
             </div>
             <div className="text-right">
               <p className="font-medium">{plan.price}</p>
-              <Button variant="outline" size="sm" onClick={() => onUpgrade(plan.name)} className="mt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onUpgrade(plan.name)}
+                className="mt-1"
+              >
                 Upgrade
               </Button>
             </div>

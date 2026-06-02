@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   Check,
   X,
@@ -21,29 +27,29 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronUp,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from "@/components/ui/collapsible";
 
 interface LicenseType {
   id: string;
   name: string;
-  type: 'non-exclusive' | 'exclusive' | 'unlimited' | 'custom';
+  type: "non-exclusive" | "exclusive" | "unlimited" | "custom";
   price: number;
-  streams: number | 'unlimited';
-  copies: number | 'unlimited';
-  radioStations: number | 'unlimited';
-  musicVideos: number | 'unlimited';
+  streams: number | "unlimited";
+  copies: number | "unlimited";
+  radioStations: number | "unlimited";
+  musicVideos: number | "unlimited";
   duration: string;
   allowsBroadcast: boolean;
   allowsProfit: boolean;
@@ -66,29 +72,29 @@ interface LicenseComparisonCardProps {
 
 const defaultLicenses: LicenseType[] = [
   {
-    id: 'basic',
-    name: 'Basic Lease',
-    type: 'non-exclusive',
+    id: "basic",
+    name: "Basic Lease",
+    type: "non-exclusive",
     price: 29.99,
     streams: 100000,
     copies: 5000,
     radioStations: 2,
     musicVideos: 1,
-    duration: '1 year',
+    duration: "1 year",
     allowsBroadcast: false,
     allowsProfit: true,
     allowsSync: false,
   },
   {
-    id: 'premium',
-    name: 'Premium Lease',
-    type: 'non-exclusive',
+    id: "premium",
+    name: "Premium Lease",
+    type: "non-exclusive",
     price: 99.99,
     streams: 500000,
     copies: 25000,
     radioStations: 10,
     musicVideos: 3,
-    duration: '2 years',
+    duration: "2 years",
     allowsBroadcast: true,
     allowsProfit: true,
     allowsSync: true,
@@ -96,30 +102,30 @@ const defaultLicenses: LicenseType[] = [
     savings: 30,
   },
   {
-    id: 'unlimited',
-    name: 'Unlimited Lease',
-    type: 'unlimited',
+    id: "unlimited",
+    name: "Unlimited Lease",
+    type: "unlimited",
     price: 199.99,
-    streams: 'unlimited',
-    copies: 'unlimited',
-    radioStations: 'unlimited',
-    musicVideos: 'unlimited',
-    duration: 'Lifetime',
+    streams: "unlimited",
+    copies: "unlimited",
+    radioStations: "unlimited",
+    musicVideos: "unlimited",
+    duration: "Lifetime",
     allowsBroadcast: true,
     allowsProfit: true,
     allowsSync: true,
     stemAccess: true,
   },
   {
-    id: 'exclusive',
-    name: 'Exclusive Rights',
-    type: 'exclusive',
+    id: "exclusive",
+    name: "Exclusive Rights",
+    type: "exclusive",
     price: 999.99,
-    streams: 'unlimited',
-    copies: 'unlimited',
-    radioStations: 'unlimited',
-    musicVideos: 'unlimited',
-    duration: 'Lifetime (Full Ownership)',
+    streams: "unlimited",
+    copies: "unlimited",
+    radioStations: "unlimited",
+    musicVideos: "unlimited",
+    duration: "Lifetime (Full Ownership)",
     allowsBroadcast: true,
     allowsProfit: true,
     allowsSync: true,
@@ -127,8 +133,8 @@ const defaultLicenses: LicenseType[] = [
   },
 ];
 
-const formatNumber = (value: number | 'unlimited'): string => {
-  if (value === 'unlimited') return 'Unlimited';
+const formatNumber = (value: number | "unlimited"): string => {
+  if (value === "unlimited") return "Unlimited";
   if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
   return value.toString();
@@ -144,14 +150,14 @@ function FeatureRow({
   tooltip?: string;
 }) {
   const displayValue = () => {
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       return value ? (
         <Check className="w-4 h-4 text-green-500" />
       ) : (
         <X className="w-4 h-4 text-muted-foreground" />
       );
     }
-    if (value === 'unlimited') {
+    if (value === "unlimited") {
       return <InfinityIcon className="w-4 h-4 text-purple-500" />;
     }
     return <span className="font-medium">{formatNumber(value as number)}</span>;
@@ -193,11 +199,11 @@ export function LicenseComparisonCard({
 
   const getLicenseIcon = (type: string) => {
     switch (type) {
-      case 'exclusive':
+      case "exclusive":
         return Crown;
-      case 'unlimited':
+      case "unlimited":
         return InfinityIcon;
-      case 'non-exclusive':
+      case "non-exclusive":
         return Music;
       default:
         return Shield;
@@ -206,12 +212,12 @@ export function LicenseComparisonCard({
 
   const getLicenseBadgeColor = (type: string) => {
     switch (type) {
-      case 'exclusive':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'unlimited':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case "exclusive":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+      case "unlimited":
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
       default:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
     }
   };
 
@@ -220,9 +226,7 @@ export function LicenseComparisonCard({
       <Card className={className}>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Choose Your License</CardTitle>
-          {beatTitle && (
-            <CardDescription>For "{beatTitle}"</CardDescription>
-          )}
+          {beatTitle && <CardDescription>For "{beatTitle}"</CardDescription>}
         </CardHeader>
         <CardContent>
           <RadioGroup
@@ -236,10 +240,10 @@ export function LicenseComparisonCard({
                 <div
                   key={license.id}
                   className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all',
+                    "flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
                     selectedLicense === license.id
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
-                      : 'border-transparent bg-muted/50 hover:bg-muted'
+                      ? "border-purple-500 bg-purple-50 dark:bg-purple-950/20"
+                      : "border-transparent bg-muted/50 hover:bg-muted",
                   )}
                   onClick={() => onSelectLicense(license.id)}
                 >
@@ -247,21 +251,33 @@ export function LicenseComparisonCard({
                   <Icon className="w-5 h-5 text-muted-foreground" />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor={license.id} className="font-medium cursor-pointer">
+                      <Label
+                        htmlFor={license.id}
+                        className="font-medium cursor-pointer"
+                      >
                         {license.name}
                       </Label>
                       {license.highlighted && (
-                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-green-100 text-green-800"
+                        >
                           Popular
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">{license.duration}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {license.duration}
+                    </p>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold">${license.price.toFixed(2)}</span>
+                    <span className="font-bold">
+                      ${license.price.toFixed(2)}
+                    </span>
                     {license.savings && (
-                      <p className="text-xs text-green-600">Save {license.savings}%</p>
+                      <p className="text-xs text-green-600">
+                        Save {license.savings}%
+                      </p>
                     )}
                   </div>
                 </div>
@@ -286,7 +302,7 @@ export function LicenseComparisonCard({
   }
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       {beatTitle && (
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold">Choose Your License</h2>
@@ -304,11 +320,12 @@ export function LicenseComparisonCard({
             <Card
               key={license.id}
               className={cn(
-                'relative overflow-hidden transition-all cursor-pointer',
+                "relative overflow-hidden transition-all cursor-pointer",
                 isSelected
-                  ? 'ring-2 ring-purple-500 shadow-lg'
-                  : 'hover:shadow-md',
-                license.highlighted && 'border-purple-300 dark:border-purple-700'
+                  ? "ring-2 ring-purple-500 shadow-lg"
+                  : "hover:shadow-md",
+                license.highlighted &&
+                  "border-purple-300 dark:border-purple-700",
               )}
               onClick={() => onSelectLicense(license.id)}
             >
@@ -324,20 +341,29 @@ export function LicenseComparisonCard({
 
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={cn('p-2 rounded-lg', getLicenseBadgeColor(license.type))}>
+                  <div
+                    className={cn(
+                      "p-2 rounded-lg",
+                      getLicenseBadgeColor(license.type),
+                    )}
+                  >
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">{license.name}</CardTitle>
                     <Badge variant="outline" className="text-xs mt-1">
-                      {license.type.replace('-', ' ')}
+                      {license.type.replace("-", " ")}
                     </Badge>
                   </div>
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">${license.price.toFixed(0)}</span>
-                  <span className="text-muted-foreground">.{(license.price % 1).toFixed(2).slice(2)}</span>
+                  <span className="text-3xl font-bold">
+                    ${license.price.toFixed(0)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    .{(license.price % 1).toFixed(2).slice(2)}
+                  </span>
                 </div>
               </CardHeader>
 
@@ -372,7 +398,12 @@ export function LicenseComparisonCard({
                   />
                 </div>
 
-                <Collapsible open={isExpanded} onOpenChange={() => setExpandedLicense(isExpanded ? null : license.id)}>
+                <Collapsible
+                  open={isExpanded}
+                  onOpenChange={() =>
+                    setExpandedLicense(isExpanded ? null : license.id)
+                  }
+                >
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
@@ -380,7 +411,7 @@ export function LicenseComparisonCard({
                       className="w-full"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {isExpanded ? 'Show Less' : 'More Details'}
+                      {isExpanded ? "Show Less" : "More Details"}
                       {isExpanded ? (
                         <ChevronUp className="w-4 h-4 ml-2" />
                       ) : (
@@ -416,19 +447,19 @@ export function LicenseComparisonCard({
 
                 <Button
                   className={cn(
-                    'w-full mt-2',
+                    "w-full mt-2",
                     isSelected
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600'
-                      : 'bg-muted hover:bg-muted/80'
+                      ? "bg-gradient-to-r from-purple-600 to-indigo-600"
+                      : "bg-muted hover:bg-muted/80",
                   )}
-                  variant={isSelected ? 'default' : 'secondary'}
+                  variant={isSelected ? "default" : "secondary"}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectLicense(license.id);
                     if (onPurchase) onPurchase(license);
                   }}
                 >
-                  {isSelected ? 'Selected' : 'Select License'}
+                  {isSelected ? "Selected" : "Select License"}
                 </Button>
               </CardContent>
             </Card>

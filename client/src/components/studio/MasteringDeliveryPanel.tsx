@@ -1,16 +1,27 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useCallback, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Volume2,
   FileAudio,
@@ -31,7 +42,7 @@ import {
   Loader2,
   Plus,
   Trash2,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface MasteringDeliveryPanelProps {
   isOpen: boolean;
@@ -47,7 +58,7 @@ interface MasteringDeliveryPanelProps {
 }
 
 interface ExportSettings {
-  format: 'wav' | 'mp3' | 'flac' | 'aiff' | 'ogg';
+  format: "wav" | "mp3" | "flac" | "aiff" | "ogg";
   sampleRate: number;
   bitDepth: number;
   normalize: boolean;
@@ -60,7 +71,7 @@ interface ExportJob {
   id: string;
   filename: string;
   format: string;
-  status: 'queued' | 'processing' | 'completed' | 'failed';
+  status: "queued" | "processing" | "completed" | "failed";
   progress: number;
   createdAt: Date;
 }
@@ -71,39 +82,148 @@ interface ChecklistItem {
   description: string;
   checked: boolean;
   required: boolean;
-  category: 'audio' | 'metadata' | 'legal';
+  category: "audio" | "metadata" | "legal";
 }
 
 const EXPORT_FORMATS = [
-  { id: 'wav', name: 'WAV', description: 'Uncompressed, highest quality', extension: '.wav' },
-  { id: 'flac', name: 'FLAC', description: 'Lossless compression', extension: '.flac' },
-  { id: 'aiff', name: 'AIFF', description: 'Apple lossless format', extension: '.aiff' },
-  { id: 'mp3', name: 'MP3', description: 'Compressed, compatible', extension: '.mp3' },
-  { id: 'ogg', name: 'OGG Vorbis', description: 'Open source lossy', extension: '.ogg' },
+  {
+    id: "wav",
+    name: "WAV",
+    description: "Uncompressed, highest quality",
+    extension: ".wav",
+  },
+  {
+    id: "flac",
+    name: "FLAC",
+    description: "Lossless compression",
+    extension: ".flac",
+  },
+  {
+    id: "aiff",
+    name: "AIFF",
+    description: "Apple lossless format",
+    extension: ".aiff",
+  },
+  {
+    id: "mp3",
+    name: "MP3",
+    description: "Compressed, compatible",
+    extension: ".mp3",
+  },
+  {
+    id: "ogg",
+    name: "OGG Vorbis",
+    description: "Open source lossy",
+    extension: ".ogg",
+  },
 ];
 
 const SAMPLE_RATES = [44100, 48000, 88200, 96000];
 const BIT_DEPTHS = [16, 24, 32];
 const LOUDNESS_TARGETS = [
-  { value: -14, label: '-14 LUFS (Spotify, YouTube)' },
-  { value: -16, label: '-16 LUFS (Apple Music)' },
-  { value: -9, label: '-9 LUFS (SoundCloud)' },
-  { value: -24, label: '-24 LUFS (Broadcast)' },
+  { value: -14, label: "-14 LUFS (Spotify, YouTube)" },
+  { value: -16, label: "-16 LUFS (Apple Music)" },
+  { value: -9, label: "-9 LUFS (SoundCloud)" },
+  { value: -24, label: "-24 LUFS (Broadcast)" },
 ];
 
 const INITIAL_CHECKLIST: ChecklistItem[] = [
-  { id: 'peak-levels', label: 'Peak Levels', description: 'True peaks below -1 dBTP', checked: false, required: true, category: 'audio' },
-  { id: 'loudness', label: 'Loudness Normalized', description: 'Integrated loudness matches target', checked: false, required: true, category: 'audio' },
-  { id: 'clipping', label: 'No Clipping', description: 'No digital clipping or distortion', checked: false, required: true, category: 'audio' },
-  { id: 'silence', label: 'Proper Silence', description: 'Appropriate silence at start/end', checked: false, required: false, category: 'audio' },
-  { id: 'title', label: 'Track Title', description: 'Song title finalized', checked: false, required: true, category: 'metadata' },
-  { id: 'artist', label: 'Artist Name', description: 'Primary artist confirmed', checked: false, required: true, category: 'metadata' },
-  { id: 'isrc', label: 'ISRC Code', description: 'International Standard Recording Code', checked: false, required: true, category: 'metadata' },
-  { id: 'genre', label: 'Genre Tagged', description: 'Primary and secondary genres set', checked: false, required: false, category: 'metadata' },
-  { id: 'artwork', label: 'Cover Artwork', description: '3000x3000px minimum', checked: false, required: true, category: 'metadata' },
-  { id: 'splits', label: 'Publishing Splits', description: 'All collaborator splits confirmed', checked: false, required: true, category: 'legal' },
-  { id: 'samples', label: 'Sample Clearance', description: 'All samples cleared or royalty-free', checked: false, required: true, category: 'legal' },
-  { id: 'rights', label: 'Rights Ownership', description: 'Copyright ownership established', checked: false, required: true, category: 'legal' },
+  {
+    id: "peak-levels",
+    label: "Peak Levels",
+    description: "True peaks below -1 dBTP",
+    checked: false,
+    required: true,
+    category: "audio",
+  },
+  {
+    id: "loudness",
+    label: "Loudness Normalized",
+    description: "Integrated loudness matches target",
+    checked: false,
+    required: true,
+    category: "audio",
+  },
+  {
+    id: "clipping",
+    label: "No Clipping",
+    description: "No digital clipping or distortion",
+    checked: false,
+    required: true,
+    category: "audio",
+  },
+  {
+    id: "silence",
+    label: "Proper Silence",
+    description: "Appropriate silence at start/end",
+    checked: false,
+    required: false,
+    category: "audio",
+  },
+  {
+    id: "title",
+    label: "Track Title",
+    description: "Song title finalized",
+    checked: false,
+    required: true,
+    category: "metadata",
+  },
+  {
+    id: "artist",
+    label: "Artist Name",
+    description: "Primary artist confirmed",
+    checked: false,
+    required: true,
+    category: "metadata",
+  },
+  {
+    id: "isrc",
+    label: "ISRC Code",
+    description: "International Standard Recording Code",
+    checked: false,
+    required: true,
+    category: "metadata",
+  },
+  {
+    id: "genre",
+    label: "Genre Tagged",
+    description: "Primary and secondary genres set",
+    checked: false,
+    required: false,
+    category: "metadata",
+  },
+  {
+    id: "artwork",
+    label: "Cover Artwork",
+    description: "3000x3000px minimum",
+    checked: false,
+    required: true,
+    category: "metadata",
+  },
+  {
+    id: "splits",
+    label: "Publishing Splits",
+    description: "All collaborator splits confirmed",
+    checked: false,
+    required: true,
+    category: "legal",
+  },
+  {
+    id: "samples",
+    label: "Sample Clearance",
+    description: "All samples cleared or royalty-free",
+    checked: false,
+    required: true,
+    category: "legal",
+  },
+  {
+    id: "rights",
+    label: "Rights Ownership",
+    description: "Copyright ownership established",
+    checked: false,
+    required: true,
+    category: "legal",
+  },
 ];
 
 export function MasteringDeliveryPanel({
@@ -113,63 +233,66 @@ export function MasteringDeliveryPanel({
   onExport,
   onDistribute,
 }: MasteringDeliveryPanelProps) {
-  const [activeTab, setActiveTab] = useState('export');
+  const [activeTab, setActiveTab] = useState("export");
   const [exportSettings, setExportSettings] = useState<ExportSettings>({
-    format: 'wav',
+    format: "wav",
     sampleRate: 48000,
     bitDepth: 24,
     normalize: true,
     dither: true,
     loudness: -14,
-    filename: project?.title || 'Master',
+    filename: project?.title || "Master",
   });
   const [exportQueue, setExportQueue] = useState<ExportJob[]>([]);
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(INITIAL_CHECKLIST);
+  const [checklist, setChecklist] =
+    useState<ChecklistItem[]>(INITIAL_CHECKLIST);
 
   useEffect(() => {
     if (isOpen && project) {
       setExportSettings({
-        format: 'wav',
+        format: "wav",
         sampleRate: 48000,
         bitDepth: 24,
         normalize: true,
         dither: true,
         loudness: -14,
-        filename: project.title || 'Master',
+        filename: project.title || "Master",
       });
       setExportQueue([]);
       setChecklist(INITIAL_CHECKLIST);
     }
   }, [isOpen, project?.id]);
 
-  const updateExportSetting = useCallback(<K extends keyof ExportSettings>(
-    key: K,
-    value: ExportSettings[K]
-  ) => {
-    setExportSettings(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const updateExportSetting = useCallback(
+    <K extends keyof ExportSettings>(key: K, value: ExportSettings[K]) => {
+      setExportSettings((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
   const addToQueue = useCallback(() => {
-    const format = EXPORT_FORMATS.find(f => f.id === exportSettings.format);
+    const format = EXPORT_FORMATS.find((f) => f.id === exportSettings.format);
     const newJob: ExportJob = {
       id: `export-${Date.now()}`,
-      filename: `${exportSettings.filename}${format?.extension || '.wav'}`,
+      filename: `${exportSettings.filename}${format?.extension || ".wav"}`,
       format: exportSettings.format.toUpperCase(),
-      status: 'queued',
+      status: "queued",
       progress: 0,
       createdAt: new Date(),
     };
-    setExportQueue(prev => [...prev, newJob]);
+    setExportQueue((prev) => [...prev, newJob]);
 
     onExport?.(exportSettings);
 
     setTimeout(() => {
-      setExportQueue(prev =>
-        prev.map(job =>
-          job.id === newJob.id ? { ...job, status: 'processing', progress: 0 } : job
-        )
+      setExportQueue((prev) =>
+        prev.map((job) =>
+          job.id === newJob.id
+            ? { ...job, status: "processing", progress: 0 }
+            : job,
+        ),
       );
-      
+
       let progress = 0;
       // Progress advances at a fixed rate — no random jumps.
       // At 5 % per 200 ms the bar completes in exactly 4 seconds, which is a
@@ -179,16 +302,18 @@ export function MasteringDeliveryPanel({
         progress = Math.min(progress + TICK_RATE, 100);
         if (progress >= 100) {
           clearInterval(interval);
-          setExportQueue(prev =>
-            prev.map(job =>
-              job.id === newJob.id ? { ...job, status: 'completed', progress: 100 } : job
-            )
+          setExportQueue((prev) =>
+            prev.map((job) =>
+              job.id === newJob.id
+                ? { ...job, status: "completed", progress: 100 }
+                : job,
+            ),
           );
         } else {
-          setExportQueue(prev =>
-            prev.map(job =>
-              job.id === newJob.id ? { ...job, progress } : job
-            )
+          setExportQueue((prev) =>
+            prev.map((job) =>
+              job.id === newJob.id ? { ...job, progress } : job,
+            ),
           );
         }
       }, 200);
@@ -196,29 +321,35 @@ export function MasteringDeliveryPanel({
   }, [exportSettings, onExport]);
 
   const removeFromQueue = useCallback((id: string) => {
-    setExportQueue(prev => prev.filter(job => job.id !== id));
+    setExportQueue((prev) => prev.filter((job) => job.id !== id));
   }, []);
 
   const toggleChecklistItem = useCallback((id: string) => {
-    setChecklist(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
+    setChecklist((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item,
+      ),
     );
   }, []);
 
   const checklistProgress = {
     total: checklist.length,
-    completed: checklist.filter(item => item.checked).length,
-    requiredTotal: checklist.filter(item => item.required).length,
-    requiredCompleted: checklist.filter(item => item.required && item.checked).length,
+    completed: checklist.filter((item) => item.checked).length,
+    requiredTotal: checklist.filter((item) => item.required).length,
+    requiredCompleted: checklist.filter((item) => item.required && item.checked)
+      .length,
   };
 
-  const isReadyForDistribution = checklistProgress.requiredCompleted === checklistProgress.requiredTotal;
+  const isReadyForDistribution =
+    checklistProgress.requiredCompleted === checklistProgress.requiredTotal;
 
-  const renderChecklistCategory = (category: 'audio' | 'metadata' | 'legal', title: string, icon: React.ReactNode) => {
-    const items = checklist.filter(item => item.category === category);
-    const completed = items.filter(item => item.checked).length;
+  const renderChecklistCategory = (
+    category: "audio" | "metadata" | "legal",
+    title: string,
+    icon: React.ReactNode,
+  ) => {
+    const items = checklist.filter((item) => item.category === category);
+    const completed = items.filter((item) => item.checked).length;
 
     return (
       <div className="space-y-3">
@@ -227,12 +358,12 @@ export function MasteringDeliveryPanel({
             {icon}
             <span className="font-medium">{title}</span>
           </div>
-          <Badge variant={completed === items.length ? 'default' : 'secondary'}>
+          <Badge variant={completed === items.length ? "default" : "secondary"}>
             {completed}/{items.length}
           </Badge>
         </div>
         <div className="space-y-2 pl-6">
-          {items.map(item => (
+          {items.map((item) => (
             <div
               key={item.id}
               className="flex items-start gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
@@ -244,16 +375,23 @@ export function MasteringDeliveryPanel({
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm ${item.checked ? 'line-through text-muted-foreground' : ''}`}>
+                  <span
+                    className={`text-sm ${item.checked ? "line-through text-muted-foreground" : ""}`}
+                  >
                     {item.label}
                   </span>
                   {item.required && !item.checked && (
-                    <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                    <Badge
+                      variant="destructive"
+                      className="text-[10px] px-1 py-0"
+                    >
                       Required
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">{item.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
             </div>
           ))}
@@ -287,12 +425,18 @@ export function MasteringDeliveryPanel({
               <Clock className="h-4 w-4" />
               Queue
               {exportQueue.length > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center">
+                <Badge
+                  variant="secondary"
+                  className="ml-1 h-5 w-5 p-0 flex items-center justify-center"
+                >
                   {exportQueue.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="distribution" className="flex items-center gap-2">
+            <TabsTrigger
+              value="distribution"
+              className="flex items-center gap-2"
+            >
               <Globe className="h-4 w-4" />
               Distribution
             </TabsTrigger>
@@ -309,7 +453,9 @@ export function MasteringDeliveryPanel({
                     </Label>
                     <Input
                       value={exportSettings.filename}
-                      onChange={(e) => updateExportSetting('filename', e.target.value)}
+                      onChange={(e) =>
+                        updateExportSetting("filename", e.target.value)
+                      }
                       placeholder="Master"
                     />
                   </div>
@@ -320,15 +466,20 @@ export function MasteringDeliveryPanel({
                       Format
                     </Label>
                     <div className="grid grid-cols-2 gap-2">
-                      {EXPORT_FORMATS.map(format => (
+                      {EXPORT_FORMATS.map((format) => (
                         <Card
                           key={format.id}
                           className={`cursor-pointer transition-colors ${
                             exportSettings.format === format.id
-                              ? 'border-primary bg-primary/5'
-                              : 'hover:border-primary/50'
+                              ? "border-primary bg-primary/5"
+                              : "hover:border-primary/50"
                           }`}
-                          onClick={() => updateExportSetting('format', format.id as ExportSettings['format'])}
+                          onClick={() =>
+                            updateExportSetting(
+                              "format",
+                              format.id as ExportSettings["format"],
+                            )
+                          }
                         >
                           <CardContent className="p-3">
                             <div className="flex items-center justify-between">
@@ -353,13 +504,15 @@ export function MasteringDeliveryPanel({
                       <Label className="mb-2 block">Sample Rate</Label>
                       <Select
                         value={exportSettings.sampleRate.toString()}
-                        onValueChange={(v) => updateExportSetting('sampleRate', parseInt(v))}
+                        onValueChange={(v) =>
+                          updateExportSetting("sampleRate", parseInt(v))
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {SAMPLE_RATES.map(rate => (
+                          {SAMPLE_RATES.map((rate) => (
                             <SelectItem key={rate} value={rate.toString()}>
                               {(rate / 1000).toFixed(1)} kHz
                             </SelectItem>
@@ -372,13 +525,15 @@ export function MasteringDeliveryPanel({
                       <Label className="mb-2 block">Bit Depth</Label>
                       <Select
                         value={exportSettings.bitDepth.toString()}
-                        onValueChange={(v) => updateExportSetting('bitDepth', parseInt(v))}
+                        onValueChange={(v) =>
+                          updateExportSetting("bitDepth", parseInt(v))
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {BIT_DEPTHS.map(depth => (
+                          {BIT_DEPTHS.map((depth) => (
                             <SelectItem key={depth} value={depth.toString()}>
                               {depth}-bit
                             </SelectItem>
@@ -395,14 +550,19 @@ export function MasteringDeliveryPanel({
                     </Label>
                     <Select
                       value={exportSettings.loudness.toString()}
-                      onValueChange={(v) => updateExportSetting('loudness', parseInt(v))}
+                      onValueChange={(v) =>
+                        updateExportSetting("loudness", parseInt(v))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {LOUDNESS_TARGETS.map(target => (
-                          <SelectItem key={target.value} value={target.value.toString()}>
+                        {LOUDNESS_TARGETS.map((target) => (
+                          <SelectItem
+                            key={target.value}
+                            value={target.value.toString()}
+                          >
                             {target.label}
                           </SelectItem>
                         ))}
@@ -423,7 +583,7 @@ export function MasteringDeliveryPanel({
                       <Checkbox
                         checked={exportSettings.normalize}
                         onCheckedChange={(checked) =>
-                          updateExportSetting('normalize', checked as boolean)
+                          updateExportSetting("normalize", checked as boolean)
                         }
                       />
                     </div>
@@ -438,7 +598,7 @@ export function MasteringDeliveryPanel({
                       <Checkbox
                         checked={exportSettings.dither}
                         onCheckedChange={(checked) =>
-                          updateExportSetting('dither', checked as boolean)
+                          updateExportSetting("dither", checked as boolean)
                         }
                       />
                     </div>
@@ -461,14 +621,16 @@ export function MasteringDeliveryPanel({
               {exportQueue.length === 0 ? (
                 <div className="text-center py-12">
                   <Clock className="h-12 w-12 mx-auto text-muted-foreground/50" />
-                  <p className="text-muted-foreground mt-4">No exports in queue</p>
+                  <p className="text-muted-foreground mt-4">
+                    No exports in queue
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Add exports from the Export tab
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {exportQueue.map(job => (
+                  {exportQueue.map((job) => (
                     <Card key={job.id}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-2">
@@ -482,31 +644,31 @@ export function MasteringDeliveryPanel({
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {job.status === 'queued' && (
+                            {job.status === "queued" && (
                               <Badge variant="secondary">
                                 <Clock className="h-3 w-3 mr-1" />
                                 Queued
                               </Badge>
                             )}
-                            {job.status === 'processing' && (
+                            {job.status === "processing" && (
                               <Badge variant="default">
                                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                                 Processing
                               </Badge>
                             )}
-                            {job.status === 'completed' && (
+                            {job.status === "completed" && (
                               <Badge variant="default" className="bg-green-600">
                                 <Check className="h-3 w-3 mr-1" />
                                 Completed
                               </Badge>
                             )}
-                            {job.status === 'failed' && (
+                            {job.status === "failed" && (
                               <Badge variant="destructive">
                                 <X className="h-3 w-3 mr-1" />
                                 Failed
                               </Badge>
                             )}
-                            {job.status === 'completed' && (
+                            {job.status === "completed" && (
                               <Button size="icon" variant="ghost">
                                 <Download className="h-4 w-4" />
                               </Button>
@@ -520,7 +682,8 @@ export function MasteringDeliveryPanel({
                             </Button>
                           </div>
                         </div>
-                        {(job.status === 'processing' || job.status === 'queued') && (
+                        {(job.status === "processing" ||
+                          job.status === "queued") && (
                           <Progress value={job.progress} className="h-2" />
                         )}
                       </CardContent>
@@ -539,10 +702,15 @@ export function MasteringDeliveryPanel({
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-sm text-muted-foreground">
-                      {checklistProgress.completed}/{checklistProgress.total} complete
+                      {checklistProgress.completed}/{checklistProgress.total}{" "}
+                      complete
                     </div>
                     <Progress
-                      value={(checklistProgress.completed / checklistProgress.total) * 100}
+                      value={
+                        (checklistProgress.completed /
+                          checklistProgress.total) *
+                        100
+                      }
                       className="w-24 h-2"
                     />
                   </div>
@@ -552,7 +720,9 @@ export function MasteringDeliveryPanel({
                   <div className="flex items-center gap-2 p-3 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-4">
                     <AlertTriangle className="h-4 w-4" />
                     <span className="text-sm">
-                      {checklistProgress.requiredTotal - checklistProgress.requiredCompleted} required items remaining
+                      {checklistProgress.requiredTotal -
+                        checklistProgress.requiredCompleted}{" "}
+                      required items remaining
                     </span>
                   </div>
                 )}
@@ -566,11 +736,23 @@ export function MasteringDeliveryPanel({
               </div>
 
               <div className="space-y-6">
-                {renderChecklistCategory('audio', 'Audio Quality', <Volume2 className="h-4 w-4" />)}
+                {renderChecklistCategory(
+                  "audio",
+                  "Audio Quality",
+                  <Volume2 className="h-4 w-4" />,
+                )}
                 <Separator />
-                {renderChecklistCategory('metadata', 'Metadata', <FileCheck className="h-4 w-4" />)}
+                {renderChecklistCategory(
+                  "metadata",
+                  "Metadata",
+                  <FileCheck className="h-4 w-4" />,
+                )}
                 <Separator />
-                {renderChecklistCategory('legal', 'Legal & Rights', <ListChecks className="h-4 w-4" />)}
+                {renderChecklistCategory(
+                  "legal",
+                  "Legal & Rights",
+                  <ListChecks className="h-4 w-4" />,
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4">

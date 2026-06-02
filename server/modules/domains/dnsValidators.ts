@@ -1,7 +1,9 @@
 const LABEL_REGEX = /^[a-z0-9-]+$/;
 const DOMAIN_LABEL_REGEX = /^[a-z0-9-]+$/;
 
-export function validateDnsLabel(raw: string): { ok: false; error: string } | { ok: true; normalized: string } {
+export function validateDnsLabel(
+  raw: string,
+): { ok: false; error: string } | { ok: true; normalized: string } {
   const label = raw.trim().toLowerCase();
 
   if (!label) return { ok: false, error: "Label cannot be empty." };
@@ -24,12 +26,14 @@ export function stripDomainInput(raw: string): string {
   return raw
     .trim()
     .toLowerCase()
-    .replace(/^https?:\/\//i, '')   // strip http:// or https://
-    .replace(/\/.*$/, '')           // strip trailing slash and any path
-    .replace(/\.$/, '');            // strip trailing dot (FQDN notation)
+    .replace(/^https?:\/\//i, "") // strip http:// or https://
+    .replace(/\/.*$/, "") // strip trailing slash and any path
+    .replace(/\.$/, ""); // strip trailing dot (FQDN notation)
 }
 
-export function validateDomain(raw: string): { ok: false; error: string } | { ok: true; normalized: string } {
+export function validateDomain(
+  raw: string,
+): { ok: false; error: string } | { ok: true; normalized: string } {
   const domain = stripDomainInput(raw);
 
   if (!domain) return { ok: false, error: "Domain cannot be empty." };
@@ -44,7 +48,10 @@ export function validateDomain(raw: string): { ok: false; error: string } | { ok
     if (!label.length || label.length > 63)
       return { ok: false, error: "Each label must be 1–63 chars." };
     if (!DOMAIN_LABEL_REGEX.test(label))
-      return { ok: false, error: "Only letters, numbers, and hyphens allowed." };
+      return {
+        ok: false,
+        error: "Only letters, numbers, and hyphens allowed.",
+      };
     if (label.startsWith("-") || label.endsWith("-"))
       return { ok: false, error: "Labels cannot start/end with hyphen." };
   }

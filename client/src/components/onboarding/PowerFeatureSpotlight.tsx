@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { X, Sparkles, Wand2, Zap, Bot, Music, ArrowRight } from 'lucide-react';
-import { Link } from 'wouter';
-import { motion, AnimatePresence } from 'framer-motion';
-import { apiRequest } from '@/lib/queryClient';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { X, Sparkles, Wand2, Zap, Bot, Music, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
+import { apiRequest } from "@/lib/queryClient";
 
-type UserPersona = 'artist' | 'producer' | 'label' | 'manager' | null;
+type UserPersona = "artist" | "producer" | "label" | "manager" | null;
 
 interface PowerFeature {
   id: string;
@@ -25,51 +25,55 @@ interface PowerFeature {
 
 const POWER_FEATURES: PowerFeature[] = [
   {
-    id: 'ai-melody-generator',
-    title: 'AI Music Generator',
-    subtitle: 'Create custom melodies instantly',
-    description: 'Describe what you want or upload audio — get unique drums, bass, synths, and full beats in seconds. No samples, 100% yours.',
+    id: "ai-melody-generator",
+    title: "AI Music Generator",
+    subtitle: "Create custom melodies instantly",
+    description:
+      "Describe what you want or upload audio — get unique drums, bass, synths, and full beats in seconds. No samples, 100% yours.",
     icon: Wand2,
-    actionLabel: 'Try It Now',
-    actionUrl: '/studio',
-    gradient: 'from-purple-500 to-pink-500',
-    personas: ['artist', 'producer', null],
+    actionLabel: "Try It Now",
+    actionUrl: "/studio",
+    gradient: "from-purple-500 to-pink-500",
+    personas: ["artist", "producer", null],
     priority: 1,
   },
   {
-    id: 'social-autopilot',
-    title: 'Social Media Autopilot',
-    subtitle: 'AI trained on viral strategies',
-    description: 'Our AI knows the best posting times, hashtags, and content formats for musicians. Turn it on and watch your engagement grow.',
+    id: "social-autopilot",
+    title: "Social Media Autopilot",
+    subtitle: "AI trained on viral strategies",
+    description:
+      "Our AI knows the best posting times, hashtags, and content formats for musicians. Turn it on and watch your engagement grow.",
     icon: Bot,
-    actionLabel: 'Activate Autopilot',
-    actionUrl: '/social-media',
-    gradient: 'from-blue-500 to-cyan-500',
-    personas: ['artist', 'label', 'manager', null],
+    actionLabel: "Activate Autopilot",
+    actionUrl: "/social-media",
+    gradient: "from-blue-500 to-cyan-500",
+    personas: ["artist", "label", "manager", null],
     priority: 2,
   },
   {
-    id: 'organic-advertising',
-    title: 'Zero-Cost Advertising',
-    subtitle: 'Outperform paid ads for free',
-    description: 'Our AI creates viral organic content that gets 50-100% better results than paid advertising — using your connected social accounts.',
+    id: "organic-advertising",
+    title: "Zero-Cost Advertising",
+    subtitle: "Outperform paid ads for free",
+    description:
+      "Our AI creates viral organic content that gets 50-100% better results than paid advertising — using your connected social accounts.",
     icon: Zap,
-    actionLabel: 'See How It Works',
-    actionUrl: '/advertising',
-    gradient: 'from-orange-500 to-red-500',
-    personas: ['artist', 'label', 'manager', null],
+    actionLabel: "See How It Works",
+    actionUrl: "/advertising",
+    gradient: "from-orange-500 to-red-500",
+    personas: ["artist", "label", "manager", null],
     priority: 3,
   },
   {
-    id: 'desktop-app',
-    title: 'Desktop App Available',
-    subtitle: 'Native experience on any OS',
-    description: 'Download Max Booster for Windows, Mac, or Linux. Get native file access, system notifications, and a dedicated app experience.',
+    id: "desktop-app",
+    title: "Desktop App Available",
+    subtitle: "Native experience on any OS",
+    description:
+      "Download Max Booster for Windows, Mac, or Linux. Get native file access, system notifications, and a dedicated app experience.",
     icon: Music,
-    actionLabel: 'Learn More',
-    actionUrl: '/settings',
-    gradient: 'from-green-500 to-emerald-500',
-    personas: ['artist', 'producer', 'label', 'manager', null],
+    actionLabel: "Learn More",
+    actionUrl: "/settings",
+    gradient: "from-green-500 to-emerald-500",
+    personas: ["artist", "producer", "label", "manager", null],
     priority: 4,
   },
 ];
@@ -80,47 +84,62 @@ interface PowerFeatureSpotlightProps {
   compact?: boolean;
 }
 
-export default function PowerFeatureSpotlight({ 
-  userPersona = null, 
+export default function PowerFeatureSpotlight({
+  userPersona = null,
   dismissable = true,
-  compact = false 
+  compact = false,
 }: PowerFeatureSpotlightProps) {
   const queryClient = useQueryClient();
   const [dismissed, setDismissed] = useState(false);
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
 
   const { data: seenFeaturesData } = useQuery<{ seenFeatures: string[] }>({
-    queryKey: ['/api/users/seen-features'],
+    queryKey: ["/api/users/seen-features"],
     staleTime: 60000,
   });
   const seenFeatures = seenFeaturesData?.seenFeatures || [];
 
   const markSeenMutation = useMutation({
     mutationFn: async (featureId: string) => {
-      const response = await apiRequest('POST', '/api/users/mark-feature-seen', { featureId });
+      const response = await apiRequest(
+        "POST",
+        "/api/users/mark-feature-seen",
+        { featureId },
+      );
       return response.json();
     },
     onMutate: async (featureId: string) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/users/seen-features'] });
-      const previousData = queryClient.getQueryData<{ seenFeatures: string[] }>(['/api/users/seen-features']);
-      queryClient.setQueryData<{ seenFeatures: string[] }>(['/api/users/seen-features'], (old) => ({
-        seenFeatures: [...(old?.seenFeatures || []), featureId],
-      }));
+      await queryClient.cancelQueries({
+        queryKey: ["/api/users/seen-features"],
+      });
+      const previousData = queryClient.getQueryData<{ seenFeatures: string[] }>(
+        ["/api/users/seen-features"],
+      );
+      queryClient.setQueryData<{ seenFeatures: string[] }>(
+        ["/api/users/seen-features"],
+        (old) => ({
+          seenFeatures: [...(old?.seenFeatures || []), featureId],
+        }),
+      );
       return { previousData };
     },
     onError: (err, featureId, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(['/api/users/seen-features'], context.previousData);
+        queryClient.setQueryData(
+          ["/api/users/seen-features"],
+          context.previousData,
+        );
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users/seen-features'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/seen-features"] });
     },
   });
 
-  const relevantFeatures = POWER_FEATURES
-    .filter(f => f.personas.includes(userPersona) || f.personas.includes(null))
-    .filter(f => !seenFeatures?.includes(f.id))
+  const relevantFeatures = POWER_FEATURES.filter(
+    (f) => f.personas.includes(userPersona) || f.personas.includes(null),
+  )
+    .filter((f) => !seenFeatures?.includes(f.id))
     .sort((a, b) => a.priority - b.priority);
 
   const currentFeature = relevantFeatures[0];
@@ -158,17 +177,27 @@ export default function PowerFeatureSpotlight({
           className="mb-4"
         >
           <Card className="border-0 overflow-hidden">
-            <div className={`bg-gradient-to-r ${currentFeature.gradient} p-0.5`}>
+            <div
+              className={`bg-gradient-to-r ${currentFeature.gradient} p-0.5`}
+            >
               <CardContent className="bg-background p-3 flex items-center gap-3">
-                <div className={`p-2 rounded-lg bg-gradient-to-r ${currentFeature.gradient} text-white`}>
+                <div
+                  className={`p-2 rounded-lg bg-gradient-to-r ${currentFeature.gradient} text-white`}
+                >
                   <IconComponent className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{currentFeature.title}</span>
-                    <Badge variant="secondary" className="text-xs">New</Badge>
+                    <span className="font-medium text-sm truncate">
+                      {currentFeature.title}
+                    </span>
+                    <Badge variant="secondary" className="text-xs">
+                      New
+                    </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{currentFeature.subtitle}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {currentFeature.subtitle}
+                  </p>
                 </div>
                 <Link href={currentFeature.actionUrl} onClick={handleAction}>
                   <Button size="sm" variant="ghost" className="shrink-0">
@@ -176,7 +205,12 @@ export default function PowerFeatureSpotlight({
                   </Button>
                 </Link>
                 {dismissable && (
-                  <Button size="sm" variant="ghost" onClick={handleDismiss} className="shrink-0">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleDismiss}
+                    className="shrink-0"
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 )}
@@ -206,14 +240,23 @@ export default function PowerFeatureSpotlight({
                 <div className="flex-1 text-white">
                   <div className="flex items-center gap-2 mb-1">
                     <Sparkles className="h-4 w-4" />
-                    <span className="text-sm font-medium opacity-90">Discover</span>
+                    <span className="text-sm font-medium opacity-90">
+                      Discover
+                    </span>
                   </div>
-                  <h3 className="text-xl font-bold mb-1">{currentFeature.title}</h3>
-                  <p className="text-white/80 text-sm mb-3">{currentFeature.description}</p>
+                  <h3 className="text-xl font-bold mb-1">
+                    {currentFeature.title}
+                  </h3>
+                  <p className="text-white/80 text-sm mb-3">
+                    {currentFeature.description}
+                  </p>
                   <div className="flex items-center gap-3">
-                    <Link href={currentFeature.actionUrl} onClick={handleAction}>
-                      <Button 
-                        variant="secondary" 
+                    <Link
+                      href={currentFeature.actionUrl}
+                      onClick={handleAction}
+                    >
+                      <Button
+                        variant="secondary"
                         className="bg-white/20 hover:bg-white/30 text-white border-0"
                       >
                         {currentFeature.actionLabel}
@@ -221,8 +264,8 @@ export default function PowerFeatureSpotlight({
                       </Button>
                     </Link>
                     {dismissable && (
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={handleDismiss}
                         className="text-white/70 hover:text-white hover:bg-white/10"
@@ -233,8 +276,8 @@ export default function PowerFeatureSpotlight({
                   </div>
                 </div>
                 {dismissable && (
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     onClick={handleDismiss}
                     className="text-white/50 hover:text-white hover:bg-white/10 shrink-0"
@@ -246,10 +289,10 @@ export default function PowerFeatureSpotlight({
               {relevantFeatures.length > 1 && (
                 <div className="flex items-center justify-center gap-1 mt-4">
                   {relevantFeatures.slice(0, 4).map((_, i) => (
-                    <div 
-                      key={i} 
+                    <div
+                      key={i}
                       className={`h-1.5 rounded-full transition-all ${
-                        i === 0 ? 'w-6 bg-white' : 'w-1.5 bg-white/40'
+                        i === 0 ? "w-6 bg-white" : "w-1.5 bg-white/40"
                       }`}
                     />
                   ))}

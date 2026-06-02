@@ -1,6 +1,6 @@
-import { EventEmitter } from 'events';
-import { config } from '../config/defaults.js';
-import { logger } from '../logger.js';
+import { EventEmitter } from "events";
+import { config } from "../config/defaults.js";
+import { logger } from "../logger.js";
 
 interface MemoryMetrics {
   heapUsed: number;
@@ -46,8 +46,8 @@ class MemoryManager extends EventEmitter {
 
     // Use absolute thresholds to avoid false positives in development
     // In production, these can be adjusted via environment variables
-    const nodeEnv = process.env.NODE_ENV || 'development';
-    const isProduction = nodeEnv === 'production';
+    const nodeEnv = process.env.NODE_ENV || "development";
+    const isProduction = nodeEnv === "production";
 
     // Set sensible absolute minimums (MB converted to bytes)
     const absoluteWarningMB = isProduction ? 768 : 1024; // 768MB prod, 1GB dev
@@ -63,14 +63,14 @@ class MemoryManager extends EventEmitter {
     };
 
     logger.info(
-      `🧠 Memory thresholds: Warning=${absoluteWarningMB}MB, Critical=${absoluteCriticalMB}MB (${nodeEnv})`
+      `🧠 Memory thresholds: Warning=${absoluteWarningMB}MB, Critical=${absoluteCriticalMB}MB (${nodeEnv})`,
     );
 
     this.collectInitialMetrics();
   }
 
   start(intervalMs: number = 60000): void {
-    logger.info('🧠 Starting 24/7 Memory Manager...');
+    logger.info("🧠 Starting 24/7 Memory Manager...");
 
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
@@ -93,10 +93,10 @@ class MemoryManager extends EventEmitter {
       () => {
         this.scheduleGarbageCollection();
       },
-      5 * 60 * 1000
+      5 * 60 * 1000,
     );
 
-    logger.info('✅ Memory manager started - continuous monitoring enabled');
+    logger.info("✅ Memory manager started - continuous monitoring enabled");
   }
 
   stop(): void {
@@ -110,7 +110,7 @@ class MemoryManager extends EventEmitter {
       this.gcInterval = null;
     }
 
-    logger.info('🛑 Memory manager stopped');
+    logger.info("🛑 Memory manager stopped");
   }
 
   private collectInitialMetrics(): void {
@@ -149,7 +149,7 @@ class MemoryManager extends EventEmitter {
       if (this.leakDetection.samples.length > this.leakDetection.sampleSize) {
         this.leakDetection.samples = this.leakDetection.samples.slice(
           0,
-          this.leakDetection.sampleSize
+          this.leakDetection.sampleSize,
         );
       }
     }
@@ -164,8 +164,10 @@ class MemoryManager extends EventEmitter {
 
     // Check thresholds
     if (current.heapUsed > this.thresholds.critical) {
-      logger.warn(`🚨 CRITICAL: Memory usage ${heapUsedMB}MB exceeds critical threshold`);
-      this.emit('memory-critical', {
+      logger.warn(
+        `🚨 CRITICAL: Memory usage ${heapUsedMB}MB exceeds critical threshold`,
+      );
+      this.emit("memory-critical", {
         heapUsedMB,
         rssMB,
         threshold: Math.round(this.thresholds.critical / 1024 / 1024),
@@ -176,7 +178,7 @@ class MemoryManager extends EventEmitter {
       this.performEmergencyCleanup();
     } else if (current.heapUsed > this.thresholds.warning) {
       logger.warn(`⚠️  Memory usage ${heapUsedMB}MB exceeds warning threshold`);
-      this.emit('memory-warning', {
+      this.emit("memory-warning", {
         heapUsedMB,
         rssMB,
         threshold: Math.round(this.thresholds.warning / 1024 / 1024),
@@ -210,8 +212,10 @@ class MemoryManager extends EventEmitter {
       const growthRate = memoryGrowthMB / timeDiffMinutes;
 
       if (growthRate > this.leakDetection.growthThreshold) {
-        logger.warn(`🚨 MEMORY LEAK DETECTED: ${growthRate.toFixed(2)}MB/min growth rate`);
-        this.emit('memory-leak-detected', {
+        logger.warn(
+          `🚨 MEMORY LEAK DETECTED: ${growthRate.toFixed(2)}MB/min growth rate`,
+        );
+        this.emit("memory-leak-detected", {
           growthRate: growthRate.toFixed(2),
           threshold: this.leakDetection.growthThreshold,
           timespan: timeDiffMinutes.toFixed(1),
@@ -228,28 +232,34 @@ class MemoryManager extends EventEmitter {
     if ((global as Record<string, unknown>).gc) {
       const beforeMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
 
-      logger.info('🧹 Scheduling garbage collection...');
+      logger.info("🧹 Scheduling garbage collection...");
       (global as Record<string, unknown>).gc();
 
       const afterMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
       const freedMB = beforeMB - afterMB;
 
       if (freedMB > 0) {
-        logger.info(`✅ Garbage collection freed ${freedMB}MB (${beforeMB}MB → ${afterMB}MB)`);
+        logger.info(
+          `✅ Garbage collection freed ${freedMB}MB (${beforeMB}MB → ${afterMB}MB)`,
+        );
       }
 
-      this.emit('garbage-collection', {
+      this.emit("garbage-collection", {
         beforeMB,
         afterMB,
         freedMB,
       });
     } else {
-      logger.warn('⚠️  Garbage collection not available (start with --expose-gc)');
+      logger.warn(
+        "⚠️  Garbage collection not available (start with --expose-gc)",
+      );
     }
   }
 
   private forceGarbageCollection(): void {
-    logger.info('🚨 FORCING immediate garbage collection due to critical memory usage');
+    logger.info(
+      "🚨 FORCING immediate garbage collection due to critical memory usage",
+    );
     this.scheduleGarbageCollection();
   }
 
@@ -270,12 +280,12 @@ class MemoryManager extends EventEmitter {
   }
 
   private performEmergencyCleanup(): void {
-    logger.info('🚨 Performing emergency memory cleanup...');
+    logger.info("🚨 Performing emergency memory cleanup...");
 
     // Clear caches that might be holding memory
     if ((global as Record<string, unknown>).memoryCache) {
       (global as Record<string, unknown>).memoryCache.clear();
-      logger.info('🧹 Cleared global memory cache');
+      logger.info("🧹 Cleared global memory cache");
     }
 
     // Force multiple GC cycles
@@ -283,7 +293,7 @@ class MemoryManager extends EventEmitter {
       setTimeout(() => this.scheduleGarbageCollection(), i * 1000);
     }
 
-    this.emit('emergency-cleanup');
+    this.emit("emergency-cleanup");
   }
 
   // Public API methods
@@ -309,7 +319,8 @@ class MemoryManager extends EventEmitter {
     const current = this.getCurrentUsage();
     const history = this.getUsageHistory(60);
 
-    const avgHeapUsed = history.reduce((sum, m) => sum + m.heapUsed, 0) / history.length;
+    const avgHeapUsed =
+      history.reduce((sum, m) => sum + m.heapUsed, 0) / history.length;
     const maxHeapUsed = Math.max(...history.map((m) => m.heapUsed));
 
     return {
@@ -341,7 +352,7 @@ class MemoryManager extends EventEmitter {
   // Configuration methods
   setThresholds(thresholds: Partial<MemoryThresholds>): void {
     this.thresholds = { ...this.thresholds, ...thresholds };
-    logger.info('🔧 Memory thresholds updated:', {
+    logger.info("🔧 Memory thresholds updated:", {
       warningMB: Math.round(this.thresholds.warning / 1024 / 1024),
       criticalMB: Math.round(this.thresholds.critical / 1024 / 1024),
     });
@@ -349,11 +360,11 @@ class MemoryManager extends EventEmitter {
 
   enableLeakDetection(enabled: boolean): void {
     this.leakDetection.enabled = enabled;
-    logger.info(`🔧 Memory leak detection ${enabled ? 'enabled' : 'disabled'}`);
+    logger.info(`🔧 Memory leak detection ${enabled ? "enabled" : "disabled"}`);
   }
 
   async gracefulShutdown(): Promise<void> {
-    logger.info('🔄 Memory manager shutting down...');
+    logger.info("🔄 Memory manager shutting down...");
 
     this.stop();
 
@@ -361,7 +372,7 @@ class MemoryManager extends EventEmitter {
     this.performCleanup();
     this.scheduleGarbageCollection();
 
-    logger.info('✅ Memory manager shutdown complete');
+    logger.info("✅ Memory manager shutdown complete");
   }
 }
 

@@ -1,10 +1,10 @@
-import { Router } from 'express';
-import { logger } from '../logger.js';
-import { queueMonitor } from '../monitoring/queueMonitor.js';
-import { aiModelManager } from '../services/aiModelManager.js';
-import { metricsCollector } from '../monitoring/metricsCollector.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { Router } from "express";
+import { logger } from "../logger.js";
+import { queueMonitor } from "../monitoring/queueMonitor.js";
+import { aiModelManager } from "../services/aiModelManager.js";
+import { metricsCollector } from "../monitoring/metricsCollector.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.use(requireAdmin);
  * Requires admin authentication (enforced by router.use(requireAdmin))
  */
 router.get(
-  '/dashboard',
+  "/dashboard",
   asyncHandler(async (req, res) => {
     try {
       const [queueHealth, aiMetrics, dashboard] = await Promise.all([
@@ -25,72 +25,101 @@ router.get(
         metricsCollector.getDashboardData(),
       ]);
 
-      const systemStatus = queueHealth.healthy ? 'OPERATIONAL' : 'DEGRADED';
+      const systemStatus = queueHealth.healthy ? "OPERATIONAL" : "DEGRADED";
       const queueMetrics = queueHealth.queues.values().next().value?.metrics;
 
       const executiveDashboard = {
         timestamp: new Date(),
-        
+
         overallStatus: {
           status: systemStatus,
-          health: queueHealth.healthy ? 'Healthy' : 'Needs Attention',
+          health: queueHealth.healthy ? "Healthy" : "Needs Attention",
           uptime: `${(process.uptime() / 3600).toFixed(1)} hours`,
           lastChecked: new Date(),
         },
 
         businessMetrics: {
           autoPosting: {
-            status: queueHealth.healthy ? 'Active' : 'Degraded',
+            status: queueHealth.healthy ? "Active" : "Degraded",
             postsScheduled: queueMetrics?.waiting || 0,
             postsProcessing: queueMetrics?.active || 0,
             postsCompleted: queueMetrics?.completed || 0,
             postsFailed: queueMetrics?.failed || 0,
             successRate: queueMetrics
-              ? ((queueMetrics.completed / (queueMetrics.completed + queueMetrics.failed || 1)) * 100).toFixed(1) + '%'
-              : '100%',
+              ? (
+                  (queueMetrics.completed /
+                    (queueMetrics.completed + queueMetrics.failed || 1)) *
+                  100
+                ).toFixed(1) + "%"
+              : "100%",
           },
 
           aiSystems: {
-            status: 'Operational',
+            status: "Operational",
             socialMediaAI: {
               active: aiMetrics.socialAutopilot.currentSize > 0,
-              utilizationLevel: parseFloat(
-                ((aiMetrics.socialAutopilot.currentSize / aiMetrics.socialAutopilot.maxSize) * 100).toFixed(1)
-              ) < 50 ? 'Low' : 'Normal',
+              utilizationLevel:
+                parseFloat(
+                  (
+                    (aiMetrics.socialAutopilot.currentSize /
+                      aiMetrics.socialAutopilot.maxSize) *
+                    100
+                  ).toFixed(1),
+                ) < 50
+                  ? "Low"
+                  : "Normal",
             },
             advertisingAI: {
               active: aiMetrics.advertisingAutopilot.currentSize > 0,
-              utilizationLevel: parseFloat(
-                ((aiMetrics.advertisingAutopilot.currentSize / aiMetrics.advertisingAutopilot.maxSize) * 100).toFixed(1)
-              ) < 50 ? 'Low' : 'Normal',
+              utilizationLevel:
+                parseFloat(
+                  (
+                    (aiMetrics.advertisingAutopilot.currentSize /
+                      aiMetrics.advertisingAutopilot.maxSize) *
+                    100
+                  ).toFixed(1),
+                ) < 50
+                  ? "Low"
+                  : "Normal",
             },
           },
 
           performance: {
             responseTime: `${dashboard.summary.queue.avgLatency.toFixed(0)}ms`,
-            responseQuality: dashboard.summary.queue.avgLatency < 50 ? 'Excellent' : 
-                             dashboard.summary.queue.avgLatency < 100 ? 'Good' : 'Needs Improvement',
+            responseQuality:
+              dashboard.summary.queue.avgLatency < 50
+                ? "Excellent"
+                : dashboard.summary.queue.avgLatency < 100
+                  ? "Good"
+                  : "Needs Improvement",
             memoryUsage: `${dashboard.summary.system.avgMemoryMB.toFixed(0)}MB`,
             memoryTrend: dashboard.trends.memory,
           },
         },
 
         keyIndicators: {
-          platformAvailability: queueHealth.healthy ? '99.9%' : '98.0%',
+          platformAvailability: queueHealth.healthy ? "99.9%" : "98.0%",
           avgProcessingTime: `${dashboard.summary.queue.avgLatency.toFixed(0)}ms`,
-          activeUsers: 'N/A',
-          postsToday: (queueMetrics?.completed || 0),
+          activeUsers: "N/A",
+          postsToday: queueMetrics?.completed || 0,
         },
 
         trends: {
-          performance: dashboard.trends.redisLatency === 'stable' ? 'Stable ✅' : 'Attention Needed ⚠️',
-          capacity: dashboard.trends.memory === 'stable' ? 'Stable ✅' : 'Growing ⚠️',
-          reliability: dashboard.summary.queue.totalFailed === 0 ? 'Excellent ✅' : 'Monitor 👀',
+          performance:
+            dashboard.trends.redisLatency === "stable"
+              ? "Stable ✅"
+              : "Attention Needed ⚠️",
+          capacity:
+            dashboard.trends.memory === "stable" ? "Stable ✅" : "Growing ⚠️",
+          reliability:
+            dashboard.summary.queue.totalFailed === 0
+              ? "Excellent ✅"
+              : "Monitor 👀",
         },
 
         alerts: {
           critical: 0,
-          warnings: dashboard.trends.memory === 'increasing' ? 1 : 0,
+          warnings: dashboard.trends.memory === "increasing" ? 1 : 0,
           info: 0,
         },
 
@@ -102,10 +131,10 @@ router.get(
         dashboard: executiveDashboard,
       });
     } catch (error) {
-      logger.warn('Error fetching executive dashboard:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error fetching executive dashboard:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
 /**
@@ -114,47 +143,54 @@ router.get(
  * Requires admin authentication (enforced by router.use(requireAdmin))
  */
 router.get(
-  '/health-summary',
+  "/health-summary",
   asyncHandler(async (req, res) => {
     try {
       const queueHealth = await queueMonitor.getHealthStatus();
 
       res.json({
         success: true,
-        status: queueHealth.healthy ? 'HEALTHY' : 'DEGRADED',
+        status: queueHealth.healthy ? "HEALTHY" : "DEGRADED",
         message: queueHealth.healthy
-          ? 'All systems operational'
-          : 'Some systems require attention',
+          ? "All systems operational"
+          : "Some systems require attention",
         timestamp: new Date(),
       });
     } catch (error) {
-      logger.warn('Error fetching health summary:', error?.message);
-      res.status(500).json({ error: 'Failed to process request' });
+      logger.warn("Error fetching health summary:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
-  })
+  }),
 );
 
-function getRecommendedActions(dashboard: Record<string, unknown>, queueHealth: Record<string, unknown>): string[] {
+function getRecommendedActions(
+  dashboard: Record<string, unknown>,
+  queueHealth: Record<string, unknown>,
+): string[] {
   const actions: string[] = [];
 
-  if (dashboard.trends.memory === 'increasing') {
-    actions.push('Monitor memory usage - consider optimization if trend continues');
+  if (dashboard.trends.memory === "increasing") {
+    actions.push(
+      "Monitor memory usage - consider optimization if trend continues",
+    );
   }
 
   if (dashboard.summary.queue.totalFailed > 10) {
-    actions.push('Review failed jobs - multiple failures detected');
+    actions.push("Review failed jobs - multiple failures detected");
   }
 
   if (!queueHealth.healthy) {
-    actions.push('System health degraded - technical team notified');
+    actions.push("System health degraded - technical team notified");
   }
 
   if (dashboard.summary.queue.avgLatency > 100) {
-    actions.push('Performance optimization recommended - response times elevated');
+    actions.push(
+      "Performance optimization recommended - response times elevated",
+    );
   }
 
   if (actions.length === 0) {
-    actions.push('No action required - all systems performing optimally');
+    actions.push("No action required - all systems performing optimally");
   }
 
   return actions;

@@ -1,18 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { Shield, Copy, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Shield, Copy, CheckCircle, AlertCircle, Clock } from "lucide-react";
 
 interface TwoFactorSetupDialogProps {
   open: boolean;
@@ -20,19 +20,23 @@ interface TwoFactorSetupDialogProps {
   onSuccess?: () => void;
 }
 
-export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: TwoFactorSetupDialogProps) {
+export default function TwoFactorSetupDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: TwoFactorSetupDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'setup' | 'verify'>('setup');
-  const [qrCode, setQrCode] = useState('');
-  const [secret, setSecret] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [codeError, setCodeError] = useState('');
+  const [step, setStep] = useState<"setup" | "verify">("setup");
+  const [qrCode, setQrCode] = useState("");
+  const [secret, setSecret] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeError, setCodeError] = useState("");
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (step === 'verify' && inputRef.current) {
+    if (step === "verify" && inputRef.current) {
       inputRef.current.focus();
     }
   }, [step]);
@@ -40,21 +44,24 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
   const handleSetup = async () => {
     setLoading(true);
     try {
-      const response = await apiRequest('POST', '/api/auth/2fa/setup');
+      const response = await apiRequest("POST", "/api/auth/2fa/setup");
       const data = await response.json();
 
       if (!data.secret || !data.qrCode) {
-        throw new Error('Server did not return a valid 2FA secret. Please try again.');
+        throw new Error(
+          "Server did not return a valid 2FA secret. Please try again.",
+        );
       }
       setQrCode(data.qrCode);
       setSecret(data.secret);
-      setStep('verify');
+      setStep("verify");
     } catch (error: unknown) {
       const errorObj = error as { message?: string; status?: number };
       toast({
-        title: '2FA Setup Failed',
-        description: errorObj?.message || 'Failed to setup 2FA. Please try again.',
-        variant: 'destructive',
+        title: "2FA Setup Failed",
+        description:
+          errorObj?.message || "Failed to setup 2FA. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -62,59 +69,67 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
   };
 
   const handleCodeChange = (value: string) => {
-    const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 6);
     setVerificationCode(digitsOnly);
-    if (codeError) setCodeError('');
+    if (codeError) setCodeError("");
   };
 
   const handleVerify = async () => {
     if (verificationCode.length !== 6) {
-      setCodeError('Please enter a 6-digit verification code');
+      setCodeError("Please enter a 6-digit verification code");
       return;
     }
 
     if (!/^\d{6}$/.test(verificationCode)) {
-      setCodeError('Code must contain only numbers');
+      setCodeError("Code must contain only numbers");
       return;
     }
 
     setLoading(true);
-    setCodeError('');
-    
+    setCodeError("");
+
     try {
-      await apiRequest('POST', '/api/auth/2fa/verify', {
+      await apiRequest("POST", "/api/auth/2fa/verify", {
         code: verificationCode,
       });
 
       toast({
-        title: '2FA Enabled',
-        description: 'Two-factor authentication has been enabled successfully. Your account is now more secure.',
+        title: "2FA Enabled",
+        description:
+          "Two-factor authentication has been enabled successfully. Your account is now more secure.",
       });
 
       onOpenChange(false);
-      setStep('setup');
-      setVerificationCode('');
-      setQrCode('');
-      setSecret('');
+      setStep("setup");
+      setVerificationCode("");
+      setQrCode("");
+      setSecret("");
       onSuccess?.();
     } catch (error: unknown) {
       const errorObj = error as { message?: string; status?: number };
-      const message = errorObj?.message?.toLowerCase() || '';
-      
-      if (message.includes('rate') || message.includes('too many')) {
-        setCodeError('Too many attempts. Please wait a moment before trying again.');
+      const message = errorObj?.message?.toLowerCase() || "";
+
+      if (message.includes("rate") || message.includes("too many")) {
+        setCodeError(
+          "Too many attempts. Please wait a moment before trying again.",
+        );
         toast({
-          title: 'Rate Limited',
-          description: 'Too many verification attempts. Please wait before trying again.',
-          variant: 'destructive',
+          title: "Rate Limited",
+          description:
+            "Too many verification attempts. Please wait before trying again.",
+          variant: "destructive",
         });
-      } else if (message.includes('invalid') || message.includes('incorrect')) {
-        setCodeError('Invalid code. Please check your authenticator app and try again.');
+      } else if (message.includes("invalid") || message.includes("incorrect")) {
+        setCodeError(
+          "Invalid code. Please check your authenticator app and try again.",
+        );
       } else {
-        setCodeError('Verification failed. Make sure your device time is synchronized.');
+        setCodeError(
+          "Verification failed. Make sure your device time is synchronized.",
+        );
       }
-      
-      setVerificationCode('');
+
+      setVerificationCode("");
       inputRef.current?.focus();
     } finally {
       setLoading(false);
@@ -126,15 +141,17 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
       await navigator.clipboard.writeText(secret);
       setCopied(true);
       toast({
-        title: 'Secret Key Copied',
-        description: 'You can paste this into your authenticator app for manual entry.',
+        title: "Secret Key Copied",
+        description:
+          "You can paste this into your authenticator app for manual entry.",
       });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast({
-        title: 'Copy Failed',
-        description: 'Could not copy to clipboard. Please manually select and copy the key.',
-        variant: 'destructive',
+        title: "Copy Failed",
+        description:
+          "Could not copy to clipboard. Please manually select and copy the key.",
+        variant: "destructive",
       });
     }
   };
@@ -142,11 +159,11 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(() => {
-      setStep('setup');
-      setVerificationCode('');
-      setCodeError('');
-      setQrCode('');
-      setSecret('');
+      setStep("setup");
+      setVerificationCode("");
+      setCodeError("");
+      setQrCode("");
+      setSecret("");
       setCopied(false);
     }, 200);
   };
@@ -162,18 +179,21 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
             </div>
           </DialogTitle>
           <DialogDescription>
-            {step === 'setup'
-              ? 'Enhance your account security by enabling two-factor authentication'
-              : 'Scan the QR code with your authenticator app or enter the secret key manually'}
+            {step === "setup"
+              ? "Enhance your account security by enabling two-factor authentication"
+              : "Scan the QR code with your authenticator app or enter the secret key manually"}
           </DialogDescription>
         </DialogHeader>
 
-        {step === 'setup' ? (
+        {step === "setup" ? (
           <div className="space-y-4">
             <div className="bg-muted/50 p-4 rounded-lg space-y-2">
               <h4 className="font-medium">How it works:</h4>
               <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-                <li>Install an authenticator app (Google Authenticator, Authy, etc.)</li>
+                <li>
+                  Install an authenticator app (Google Authenticator, Authy,
+                  etc.)
+                </li>
                 <li>Scan the QR code or enter the secret key</li>
                 <li>Enter the 6-digit code to verify setup</li>
                 <li>Use the app to generate codes when logging in</li>
@@ -188,8 +208,12 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
               >
                 Cancel
               </Button>
-              <Button onClick={handleSetup} disabled={loading} data-testid="button-start-2fa-setup">
-                {loading ? 'Setting up...' : 'Start Setup'}
+              <Button
+                onClick={handleSetup}
+                disabled={loading}
+                data-testid="button-start-2fa-setup"
+              >
+                {loading ? "Setting up..." : "Start Setup"}
               </Button>
             </div>
           </div>
@@ -217,12 +241,16 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
                 />
                 <Button
                   size="sm"
-                  variant={copied ? 'default' : 'outline'}
+                  variant={copied ? "default" : "outline"}
                   onClick={copySecret}
                   data-testid="button-copy-secret"
-                  className={copied ? 'bg-green-600 hover:bg-green-600' : ''}
+                  className={copied ? "bg-green-600 hover:bg-green-600" : ""}
                 >
-                  {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? (
+                    <CheckCircle className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -238,7 +266,7 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
                 value={verificationCode}
                 onChange={(e) => handleCodeChange(e.target.value)}
                 maxLength={6}
-                className={`text-center text-2xl tracking-widest font-mono ${codeError ? 'border-destructive' : ''}`}
+                className={`text-center text-2xl tracking-widest font-mono ${codeError ? "border-destructive" : ""}`}
                 data-testid="input-verification-code"
               />
               {codeError && (
@@ -248,7 +276,8 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
-                Enter the 6-digit code from your authenticator app. Make sure your device time is synchronized.
+                Enter the 6-digit code from your authenticator app. Make sure
+                your device time is synchronized.
               </p>
             </div>
 
@@ -266,7 +295,7 @@ export default function TwoFactorSetupDialog({ open, onOpenChange, onSuccess }: 
                 disabled={loading || verificationCode.length !== 6}
                 data-testid="button-verify-2fa"
               >
-                {loading ? 'Verifying...' : 'Verify & Enable'}
+                {loading ? "Verifying..." : "Verify & Enable"}
               </Button>
             </div>
           </div>
