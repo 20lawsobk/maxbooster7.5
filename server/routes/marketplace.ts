@@ -568,7 +568,7 @@ router.post(
     try {
       const parsed = licenseTemplateSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0].message });
+        return res.status(400).json({ error: parsed.error.issues[0].message });
       }
       const {
         name,
@@ -757,7 +757,7 @@ router.post("/interaction", async (req: Request, res: Response) => {
 
     const parsed = interactionSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const {
       beatId,
@@ -1005,7 +1005,7 @@ router.post("/purchase", async (req: Request, res: Response) => {
 
     const parsed = purchaseSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { beatId, licenseType } = parsed.data;
 
@@ -2101,7 +2101,7 @@ router.post("/affiliates", async (req: Request, res: Response) => {
 
     const parsed = affiliateSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { name, email, commissionRate } = parsed.data;
 
@@ -2158,7 +2158,7 @@ router.post("/contracts", async (req: Request, res: Response) => {
     const userId = (req.user as Record<string, unknown>).id;
     const parsed = contractSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { name, description, content, category, variables } = parsed.data;
 
@@ -2186,7 +2186,7 @@ router.post("/collaborations", async (req: Request, res: Response) => {
 
     const parsed = collaborationSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { toUserId, beatId, type, terms, splitPercentage, budget, message } =
       parsed.data;

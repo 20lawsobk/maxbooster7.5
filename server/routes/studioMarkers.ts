@@ -73,10 +73,10 @@ router.post("/projects/:projectId/markers", requireAuth, async (req, res) => {
     res.status(201).json(newMarker);
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error creating marker:");
-    if (error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid marker data", details: error.errors });
+        .json({ error: "Invalid marker data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to create marker" });
   }
@@ -121,10 +121,10 @@ router.patch("/markers/:markerId", requireAuth, async (req, res) => {
     res.json(updatedMarker);
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error updating marker:");
-    if (error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid marker data", details: error.errors });
+        .json({ error: "Invalid marker data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to update marker" });
   }

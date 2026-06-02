@@ -142,7 +142,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to create take group" });
     }
@@ -216,7 +216,7 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to update take group" });
     }
@@ -286,7 +286,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to create take lane" });
     }
@@ -335,7 +335,7 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to update take lane" });
     }
@@ -384,7 +384,7 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to reorder lanes" });
     }
@@ -412,7 +412,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to create take segment" });
     }
@@ -464,7 +464,7 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to update take segment" });
     }
@@ -516,7 +516,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to create comp version" });
     }

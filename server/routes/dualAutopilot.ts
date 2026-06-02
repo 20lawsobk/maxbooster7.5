@@ -151,7 +151,7 @@ router.post(
           .json({
             success: false,
             error: "Validation error",
-            details: error.errors,
+            details: error.issues,
           });
       }
       logger.warn({ err: error }, "Error in daily social loop:");
@@ -212,7 +212,7 @@ router.post("/fanbase/segments", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error creating fan segment:");
@@ -277,7 +277,7 @@ router.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error updating fan segment:");
@@ -371,7 +371,7 @@ router.post("/fanbase/content", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error creating autopilot content:");
@@ -411,7 +411,7 @@ router.put(
           .json({
             success: false,
             error: "Validation error",
-            details: error.errors,
+            details: error.issues,
           });
       }
       logger.warn({ err: error }, "Error updating content performance:");
@@ -525,7 +525,7 @@ router.post(
           .json({
             success: false,
             error: "Validation error",
-            details: error.errors,
+            details: error.issues,
           });
       }
       logger.warn({ err: error }, "Error in weekly organic loop:");
@@ -557,7 +557,7 @@ router.post("/organic/assets", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error creating organic asset:");
@@ -610,7 +610,7 @@ router.put("/organic/assets/:id/performance", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error updating asset performance:");
@@ -663,7 +663,7 @@ router.post("/organic/channels", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error creating organic channel:");
@@ -721,7 +721,7 @@ router.put(
           .json({
             success: false,
             error: "Validation error",
-            details: error.errors,
+            details: error.issues,
           });
       }
       logger.warn({ err: error }, "Error updating channel efficiency:");
@@ -913,7 +913,7 @@ router.post(
           .json({
             success: false,
             error: "Validation error",
-            details: error.errors,
+            details: error.issues,
           });
       }
       logger.warn({ err: error }, "Error applying insights to organic:");
@@ -952,7 +952,7 @@ router.post(
           .json({
             success: false,
             error: "Validation error",
-            details: error.errors,
+            details: error.issues,
           });
       }
       logger.warn({ err: error }, "Error applying insights to social:");

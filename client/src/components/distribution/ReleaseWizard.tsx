@@ -378,13 +378,13 @@ export function ReleaseWizard({
         const result = metadataSchema.safeParse(metadataData);
         if (!result.success) {
           const fieldErrors: Record<string, string> = {};
-          result.error.errors.forEach((e) => {
+          result.error.issues.forEach((e) => {
             const field = e.path[0] as string;
             if (field) fieldErrors[field] = e.message;
           });
           setMetadataErrors(fieldErrors);
           const firstMessage =
-            result.error.errors[0]?.message ||
+            result.error.issues[0]?.message ||
             "Please fill in all required fields.";
           toast({
             title: "Missing required fields",
@@ -400,7 +400,7 @@ export function ReleaseWizard({
         const result = tracksSchema.safeParse({ audioFiles, artwork });
         if (!result.success) {
           const firstMessage =
-            result.error.errors[0]?.message ||
+            result.error.issues[0]?.message ||
             "Please upload at least one track.";
           toast({
             title: "Validation error",

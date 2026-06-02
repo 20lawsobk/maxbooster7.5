@@ -1049,7 +1049,7 @@ router.patch(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to update project" });
     }
@@ -1551,7 +1551,7 @@ router.post("/tracks", requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid data", details: error.errors });
+        .json({ error: "Invalid data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to create track" });
   }
@@ -1771,7 +1771,7 @@ router.patch(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to update track" });
     }
@@ -1955,7 +1955,7 @@ router.patch(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error.errors });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to update clip" });
     }
@@ -5700,7 +5700,7 @@ router.post(
           .status(400)
           .json({
             error: "Invalid mix settings",
-            details: validation.error.errors,
+            details: validation.error.issues,
           });
       }
 
@@ -5762,7 +5762,7 @@ router.post(
           .status(400)
           .json({
             error: "Invalid master settings",
-            details: validation.error.errors,
+            details: validation.error.issues,
           });
       }
 

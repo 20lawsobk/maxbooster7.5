@@ -39,7 +39,7 @@ router.post("/keys/create", async (req: Request, res: Response) => {
       return res.status(400).json({
         error: "Bad Request",
         message: "Invalid request body",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
     }
 
@@ -204,7 +204,7 @@ router.get("/usage", async (req: Request, res: Response) => {
       return res.status(400).json({
         error: "Bad Request",
         message: "Invalid query parameters",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
     }
 
@@ -263,7 +263,7 @@ router.get("/usage/:keyId", async (req: Request, res: Response) => {
       return res.status(400).json({
         error: "Bad Request",
         message: "Invalid query parameters",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
     }
 

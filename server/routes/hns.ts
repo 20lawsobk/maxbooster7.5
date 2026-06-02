@@ -132,7 +132,7 @@ const openSchema = z
 router.post("/auctions", authRequired, async (req, res) => {
   const parsed = openSchema.safeParse(req.body);
   if (!parsed.success)
-    return res.status(400).json({ error: parsed.error.errors });
+    return res.status(400).json({ error: parsed.error.issues });
 
   try {
     const userId = (req.user as Record<string, unknown>).id;
@@ -184,7 +184,7 @@ const registerSchema = z.object({
 router.post("/auctions/:id/register", authRequired, async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success)
-    return res.status(400).json({ error: parsed.error.errors });
+    return res.status(400).json({ error: parsed.error.issues });
 
   try {
     const userId = (req.user as Record<string, unknown>).id;

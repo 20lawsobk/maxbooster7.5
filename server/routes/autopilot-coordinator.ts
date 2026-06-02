@@ -110,7 +110,7 @@ router.get("/schedule", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error getting coordinated schedule:");
@@ -170,7 +170,7 @@ router.post("/register", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error registering post:");
@@ -207,7 +207,7 @@ router.put("/posts/:postId", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error updating post:");
@@ -290,7 +290,7 @@ router.post("/insights", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error sharing insight:");
@@ -323,7 +323,7 @@ router.get("/insights", requireAuth, async (req, res) => {
         .json({
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         });
     }
     logger.warn({ err: error }, "Error getting insights:");

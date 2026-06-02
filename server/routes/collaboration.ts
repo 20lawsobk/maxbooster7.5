@@ -198,7 +198,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Resolve conflict error:");
       res.status(500).json({ error: "Failed to resolve conflict" });
@@ -378,7 +378,7 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Update presence error:");
       res.status(500).json({ error: "Failed to update presence" });
@@ -493,7 +493,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Create version error:");
       res.status(500).json({ error: "Failed to create version" });
@@ -716,7 +716,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Submit access request error:");
       res.status(500).json({ error: "Failed to submit access request" });
@@ -832,7 +832,7 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Update access error:");
       res.status(500).json({ error: "Failed to update access" });
@@ -894,7 +894,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Add comment error:");
       res.status(500).json({ error: "Failed to add comment" });

@@ -979,7 +979,7 @@ router.post(
       if (err instanceof z.ZodError)
         return res
           .status(400)
-          .json({ error: "Invalid release data", details: err.errors });
+          .json({ error: "Invalid release data", details: err.issues });
       logger.warn(
         { err },
         "[ArtistProfiles] POST /:id/distribute-release error:",

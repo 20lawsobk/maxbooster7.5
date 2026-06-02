@@ -204,7 +204,7 @@ router.post("/generate", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to generate MIDI" });
   }
@@ -281,7 +281,7 @@ router.post("/transform", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to transform MIDI" });
   }
@@ -314,7 +314,7 @@ router.post("/arpeggiate", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to create arpeggio" });
   }
@@ -345,7 +345,7 @@ router.post("/chords", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to generate chord progression" });
   }
@@ -371,7 +371,7 @@ router.post("/ornament", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to add ornament" });
   }
@@ -397,7 +397,7 @@ router.post("/strum", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to apply strum pattern" });
   }
@@ -422,7 +422,7 @@ router.post("/fit-to-scale", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to fit notes to scale" });
   }
@@ -530,7 +530,7 @@ router.post("/scale-sync", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to set scale sync" });
   }
