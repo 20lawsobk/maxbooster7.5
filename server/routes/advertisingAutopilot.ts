@@ -276,7 +276,7 @@ router.post("/configure", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       res
         .status(400)
-        .json({ error: "Invalid configuration", details: error.errors });
+        .json({ error: "Invalid configuration", details: error.issues });
       return;
     }
     logger.warn({ err: error }, "Failed to configure advertising autopilot:");

@@ -125,10 +125,10 @@ router.post("/clips/:clipId/warp/markers", requireAuth, async (req, res) => {
     res.status(201).json(newMarker);
   } catch (error) {
     logger.warn({ err: error }, "Error creating warp marker:");
-    if (error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid marker data", details: error.errors });
+        .json({ error: "Invalid marker data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to create warp marker" });
   }
@@ -174,10 +174,10 @@ router.put(
       res.json(updatedMarker);
     } catch (error) {
       logger.warn({ err: error }, "Error updating warp marker:");
-      if (error.name === "ZodError") {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid marker data", details: error.errors });
+          .json({ error: "Invalid marker data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to update warp marker" });
     }
@@ -273,10 +273,10 @@ router.post("/clips/:clipId/warp/preview", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error creating warp preview:");
-    if (error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid preview options", details: error.errors });
+        .json({ error: "Invalid preview options", details: error.issues });
     }
     res.status(500).json({ error: "Failed to create warp preview" });
   }
@@ -342,10 +342,10 @@ router.post("/clips/:clipId/warp/commit", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error committing warp:");
-    if (error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid commit options", details: error.errors });
+        .json({ error: "Invalid commit options", details: error.issues });
     }
     res.status(500).json({ error: "Failed to commit warp" });
   }
@@ -391,10 +391,10 @@ router.get("/clips/:clipId/warp/transients", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error detecting transients:");
-    if (error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid detection options", details: error.errors });
+        .json({ error: "Invalid detection options", details: error.issues });
     }
     res.status(500).json({ error: "Failed to detect transients" });
   }
@@ -443,10 +443,10 @@ router.post("/clips/:clipId/warp/quantize", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error quantizing to grid:");
-    if (error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid quantize options", details: error.errors });
+        .json({ error: "Invalid quantize options", details: error.issues });
     }
     res.status(500).json({ error: "Failed to start quantization" });
   }

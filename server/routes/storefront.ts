@@ -303,7 +303,7 @@ router.post("/create", async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
 
     res.status(500).json({ error: errMsg || "Failed to create storefront" });
@@ -358,7 +358,7 @@ router.put("/:id/customize", async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
 
     logger.warn({ err: error }, "Error updating storefront:");
@@ -512,7 +512,7 @@ router.post("/:storefrontId/membership-tiers", async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
 
     logger.warn({ err: error }, "Error creating membership tier:");
@@ -556,7 +556,7 @@ router.put("/membership-tiers/:tierId", async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
 
     logger.warn({ err: error }, "Error updating membership tier:");

@@ -98,7 +98,7 @@ router.post("/cache", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to cache project" });
   }
@@ -242,7 +242,7 @@ router.put("/settings", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to update offline settings" });
   }

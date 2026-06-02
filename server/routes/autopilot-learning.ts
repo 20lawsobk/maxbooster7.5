@@ -275,7 +275,7 @@ router.post("/record", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ error: "Invalid data", details: error.errors });
+      res.status(400).json({ error: "Invalid data", details: error.issues });
       return;
     }
     logger.warn({ err: error }, "Failed to record performance:");

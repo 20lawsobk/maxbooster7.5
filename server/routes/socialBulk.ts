@@ -147,7 +147,7 @@ router.post("/validate", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation failed", details: error.errors });
+        .json({ error: "Validation failed", details: error.issues });
     }
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -330,7 +330,7 @@ router.post("/schedule", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation failed", details: error.errors });
+        .json({ error: "Validation failed", details: error.issues });
     }
     return res.status(500).json({ error: "Internal server error" });
   }

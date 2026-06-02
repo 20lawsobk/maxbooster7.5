@@ -122,9 +122,9 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const parsed = preferencesSchema.safeParse(req.body);
     if (!parsed.success) {
-      const msg = parsed.error.errors[0]?.message || "Invalid input";
+      const msg = parsed.error.issues[0]?.message || "Invalid input";
       logger.warn(
-        { validationErrors: parsed.error.errors },
+        { validationErrors: parsed.error.issues },
         "Autopilot preferences validation failed",
       );
       return res.status(400).json({ error: msg });
@@ -169,7 +169,7 @@ router.patch("/", async (req: Request, res: Response) => {
     if (!parsed.success) {
       return res
         .status(400)
-        .json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+        .json({ error: parsed.error.issues[0]?.message || "Invalid input" });
     }
 
     const [existing] = await db

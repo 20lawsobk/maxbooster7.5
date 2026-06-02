@@ -122,7 +122,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Create workspace error:");
       res.status(500).json({ error: "Failed to create workspace" });
@@ -259,7 +259,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Invite member error:");
       res.status(500).json({ error: "Failed to send invitation" });
@@ -365,7 +365,7 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Update member role error:");
       res.status(500).json({ error: "Failed to update member role" });
@@ -469,7 +469,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Create role error:");
       res.status(500).json({ error: "Failed to create role" });
@@ -627,7 +627,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Create workflow error:");
       res.status(500).json({ error: "Failed to create workflow" });
@@ -773,7 +773,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Process approval decision error:");
       res.status(500).json({ error: "Failed to process decision" });
@@ -920,7 +920,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Share project error:");
       res.status(500).json({ error: "Failed to share project" });
@@ -1025,7 +1025,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Create share link error:");
       res.status(500).json({ error: "Failed to create share link" });
@@ -1211,7 +1211,7 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error.errors });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger.warn({ err: error }, "Configure SSO error:");
       res.status(500).json({ error: "Failed to configure SSO" });

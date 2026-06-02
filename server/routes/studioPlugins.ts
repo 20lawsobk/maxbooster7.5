@@ -136,7 +136,7 @@ router.post("/instantiate/:id", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to instantiate plugin" });
   }
@@ -277,7 +277,7 @@ router.put("/instances/:instanceId", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to update plugin instance" });
   }
@@ -367,7 +367,7 @@ router.post("/instances/:instanceId/render", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to render audio" });
   }
@@ -482,7 +482,7 @@ router.post("/presets", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to save preset" });
   }
@@ -689,7 +689,7 @@ router.post("/device/ab-compare", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to set A/B compare" });
   }
@@ -845,7 +845,7 @@ router.post("/bounce", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to bounce track" });
   }
@@ -996,7 +996,7 @@ router.post("/modulation-matrix", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to update modulation matrix" });
   }

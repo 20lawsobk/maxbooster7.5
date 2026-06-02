@@ -92,7 +92,7 @@ router.post("/:postId/submit", async (req: AuthenticatedRequest, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: "Validation failed",
-        details: error.errors,
+        details: error.issues,
       });
     }
 
@@ -144,7 +144,7 @@ router.post("/:postId/approve", async (req: AuthenticatedRequest, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: "Validation failed",
-        details: error.errors,
+        details: error.issues,
       });
     }
 
@@ -197,7 +197,7 @@ router.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: "Validation failed",
-        details: error.errors,
+        details: error.issues,
       });
     }
 

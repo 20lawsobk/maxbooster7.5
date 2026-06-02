@@ -194,7 +194,7 @@ router.post("/subscribe", async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: "Invalid request data",
-        details: error.errors,
+        details: error.issues,
       });
     }
 
@@ -268,7 +268,7 @@ router.post("/admin/services", async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: "Invalid request data",
-        details: error.errors,
+        details: error.issues,
       });
     }
 
@@ -378,7 +378,7 @@ router.post("/admin/incidents", async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: "Invalid request data",
-        details: error.errors,
+        details: error.issues,
       });
     }
 
@@ -413,7 +413,7 @@ router.put("/admin/incidents/:incidentId", async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: "Invalid request data",
-        details: error.errors,
+        details: error.issues,
       });
     }
 

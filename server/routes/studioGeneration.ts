@@ -228,7 +228,7 @@ router.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid request parameters",
-        errors: error.errors,
+        errors: error.issues,
       });
     }
 
@@ -306,7 +306,7 @@ router.post(
         return res.status(400).json({
           success: false,
           message: "Invalid request parameters",
-          errors: error.errors,
+          errors: error.issues,
         });
       }
 

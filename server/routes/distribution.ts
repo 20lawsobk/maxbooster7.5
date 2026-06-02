@@ -265,7 +265,7 @@ router.post("/releases", requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error creating release:");
     res.status(500).json({ error: "Failed to create release" });
@@ -325,7 +325,7 @@ router.patch(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error updating release:");
       res.status(500).json({ error: "Failed to update release" });
@@ -432,7 +432,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error uploading track:");
       res.status(500).json({ error: "Failed to upload track" });
@@ -471,7 +471,7 @@ router.patch(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error updating track:");
       res.status(500).json({ error: "Failed to update track" });
@@ -563,7 +563,7 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error generating ISRC:");
     res.status(500).json({ error: "Failed to generate ISRC" });
@@ -621,7 +621,7 @@ router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error generating UPC:");
     res.status(500).json({ error: "Failed to generate UPC" });
@@ -653,7 +653,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error validating code:");
       res.status(500).json({ error: "Failed to validate code" });
@@ -790,7 +790,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error scheduling release:");
       res.status(500).json({ error: "Failed to schedule release" });
@@ -965,7 +965,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error creating HyperFollow campaign:");
       res.status(500).json({ error: "Failed to create campaign" });
@@ -1109,7 +1109,7 @@ router.patch(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error updating HyperFollow campaign:");
       res.status(500).json({ error: "Failed to update campaign" });
@@ -1201,7 +1201,7 @@ router.post("/hyperfollow/:slug/track", async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error tracking HyperFollow event:");
     res.status(500).json({ error: "Failed to track event" });
@@ -1839,7 +1839,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error requesting takedown:");
       res.status(500).json({ error: "Failed to request takedown" });
@@ -2285,7 +2285,7 @@ router.post("/validate", requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error validating release:");
     res.status(500).json({ error: "Failed to validate release" });
@@ -2339,7 +2339,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error generating codes:");
       res.status(500).json({ error: "Failed to generate codes" });
@@ -2386,7 +2386,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error validating code:");
       res.status(500).json({ error: "Failed to validate code" });
@@ -2451,7 +2451,7 @@ router.post("/lint", requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error linting release:");
     res.status(500).json({ error: "Failed to lint release" });
@@ -2551,7 +2551,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error requesting takedown:");
       res.status(500).json({ error: "Failed to request takedown" });
@@ -2594,7 +2594,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error requesting update:");
       res.status(500).json({ error: "Failed to request update" });
@@ -2723,7 +2723,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error checking duplicates:");
       res.status(500).json({ error: "Failed to check for duplicates" });
@@ -2882,7 +2882,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error registering codes:");
       res.status(500).json({ error: "Failed to register codes" });
@@ -3095,7 +3095,7 @@ router.post("/schedule", requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error scheduling release:");
     res.status(500).json({ error: "Failed to schedule release" });
@@ -3186,7 +3186,7 @@ router.post("/schedule/validate", async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error validating schedule:");
     res.status(500).json({ error: "Failed to validate schedule" });
@@ -3244,7 +3244,7 @@ router.post("/presave", requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     logger.warn({ err: error }, "Error creating pre-save campaign:");
     res.status(500).json({ error: "Failed to create pre-save campaign" });
@@ -3287,7 +3287,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error validating UPC:");
       res.status(500).json({ error: "Failed to validate UPC" });
@@ -3321,7 +3321,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error generating ISRC:");
       res.status(500).json({ error: "Failed to generate ISRC" });
@@ -3341,7 +3341,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error validating ISRC:");
       res.status(500).json({ error: "Failed to validate ISRC" });
@@ -3375,7 +3375,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error reserving ISRC batch:");
       res.status(500).json({ error: "Failed to reserve ISRC batch" });
@@ -3444,7 +3444,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ error: "Validation error", details: error.issues });
       }
       logger.warn({ err: error }, "Error transitioning release:");
       res.status(500).json({ error: "Failed to transition release" });

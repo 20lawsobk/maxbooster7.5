@@ -115,10 +115,10 @@ router.post(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error starting stem export:");
-      if (error.name === "ZodError") {
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: "Invalid export options",
-          details: error.errors,
+          details: error.issues,
         });
       }
       res.status(500).json({ error: "Failed to start stem export" });
@@ -224,10 +224,10 @@ router.get("/projects/:projectId/stems/list", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error listing exports:");
-    if (error.name === "ZodError") {
+    if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: "Invalid query parameters",
-        details: error.errors,
+        details: error.issues,
       });
     }
     res.status(500).json({ error: "Failed to list exports" });

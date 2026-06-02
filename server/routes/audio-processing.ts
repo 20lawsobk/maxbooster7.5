@@ -212,7 +212,7 @@ router.post("/analyze", requireAuth, async (req: Request, res: Response) => {
     if (!validation.success) {
       return res
         .status(400)
-        .json({ error: "Invalid input", details: validation.error.errors });
+        .json({ error: "Invalid input", details: validation.error.issues });
     }
 
     const { sampleRate, channels, samples, leftChannel, rightChannel } =
@@ -282,7 +282,7 @@ router.post("/process", requireAuth, async (req: Request, res: Response) => {
     if (!validation.success) {
       return res
         .status(400)
-        .json({ error: "Invalid input", details: validation.error.errors });
+        .json({ error: "Invalid input", details: validation.error.issues });
     }
 
     const {

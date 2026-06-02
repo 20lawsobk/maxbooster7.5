@@ -92,7 +92,7 @@ router.post("/connect-desktop", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to connect desktop app" });
   }
@@ -125,7 +125,7 @@ router.post("/scan", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to scan VST plugins" });
   }
@@ -199,7 +199,7 @@ router.post("/instances", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to create VST instance" });
   }
@@ -265,7 +265,7 @@ router.put("/instances/:id/parameters", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to update VST parameters" });
   }
@@ -308,7 +308,7 @@ router.post("/instances/:id/program", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error.errors });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res.status(500).json({ error: "Failed to load VST program" });
   }

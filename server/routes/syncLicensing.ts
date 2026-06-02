@@ -103,7 +103,7 @@ router.post("/", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     res.status(500).json({ error: "Failed to add to sync catalog" });
   }
@@ -128,7 +128,7 @@ router.put("/:id", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     res.status(500).json({ error: "Failed to update listing" });
   }
@@ -175,7 +175,7 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.errors });
+        .json({ error: "Validation error", details: error.issues });
     }
     res.status(500).json({ error: "Failed to update license status" });
   }
