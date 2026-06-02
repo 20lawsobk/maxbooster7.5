@@ -1,4 +1,3 @@
-import { PeakData } from "./PeakCacheEngine";
 import {
   NonDestructiveRenderer,
   RenderViewport,

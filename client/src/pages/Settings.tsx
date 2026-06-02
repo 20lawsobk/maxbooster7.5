@@ -46,7 +46,6 @@ import { PrivacySettings } from "@/components/settings/PrivacySettings";
 import { ApiKeyManagement } from "@/components/settings/ApiKeyManagement";
 import { RecoveryCodes } from "@/components/settings/RecoveryCodes";
 import { ConnectedAccountsManager } from "@/components/settings/ConnectedAccountsManager";
-import { useSettingsOutcomes } from "@/components/settings/SettingsOutcomeHandler";
 import CrossPlatformSync from "@/components/settings/CrossPlatformSync";
 import {
   AlertDialog,

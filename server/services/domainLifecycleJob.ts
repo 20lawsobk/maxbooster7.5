@@ -20,7 +20,6 @@
  */
 
 import { pool } from "../db.js";
-import { claimedDomains } from "@shared/schema";
 import { logger } from "../logger.js";
 import { getRegistrarProvider } from "./registrar/index.js";
 import { emitDomainEvent } from "./domainPolicyEngine.js";

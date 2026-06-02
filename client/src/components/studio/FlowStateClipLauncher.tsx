@@ -2,9 +2,7 @@ import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Play, Pause, Square, Circle, Plus, Volume2, VolumeX, Headphones, Music, Drum, Piano, Layers, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import {
   Select,

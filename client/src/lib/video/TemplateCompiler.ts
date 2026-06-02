@@ -11,7 +11,6 @@ import type {
   ParticleConfig,
 } from "../../../../shared/video/VideoRendererEngine";
 import { DEFAULT_TRANSFORM } from "../../../../shared/video/VideoRendererEngine";
-import type { EasingName } from "./SceneGraph";
 import { type PromoTemplateOptions, type ReleaseAnnouncementOptions, type TourEventOptions, type BehindTheScenesOptions, type QuoteLyricOptions, type CountdownTimerOptions, type SplitScreenOptions, type SocialTeaserOptions, type CompiledTemplate, type TemplateLayer, type AspectRatio, type ColorPalette, type BackgroundConfig, ASPECT_RATIOS, compileReleaseAnnouncement, compileTourEvent, compileBehindTheScenes, compileQuoteLyric, compileCountdownTimer, compileSplitScreen, compileSocialTeaser } from "./templates/PromoTemplates";
 
 export interface CompilerOptions {

@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
 import { errorService, ErrorCategory } from "@/lib/errorService";
 import { toast } from "@/hooks/use-toast";
 

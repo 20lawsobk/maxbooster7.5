@@ -4,7 +4,6 @@ import { X, Volume2, VolumeX, Headphones, Mic, Settings2, ChevronRight, Trash2, 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,

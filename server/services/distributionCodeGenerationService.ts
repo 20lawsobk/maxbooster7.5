@@ -1,5 +1,4 @@
 import { storage } from "../storage";
-import * as crypto from "crypto";
 
 export async function generateISRC(
   userId: string,

@@ -57,8 +57,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import {
   audioAnalysisService,
@@ -68,7 +66,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest, uploadWithProgress } from "@/lib/queryClient";
-import { StemsManager } from "@/components/StemsManager";
 import { PayoutDashboard } from "@/components/marketplace/PayoutDashboard";
 import StorefrontBuilder from "@/components/marketplace/StorefrontBuilder";
 import { BeatCard } from "@/components/marketplace/BeatCard";

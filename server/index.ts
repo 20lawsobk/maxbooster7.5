@@ -17,7 +17,6 @@ import {
   buildTrustProxyValue,
 } from "./middleware/cloudflare.js";
 import path from "path";
-import crypto from "crypto";
 import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
 
@@ -25,7 +24,6 @@ import { isProductionEnv } from "./lib/envHelpers.js";
 import { initializeSafetySystems, applyMandatoryMiddleware, globalErrorHandler as safetyErrorHandler, sanitizationMiddleware, killSwitch } from "./safety/index.js";
 
 import { securityMiddleware } from "./middleware/security.js";
-import helmet from "helmet";
 
 // Dynamic imports for monitoring services (optional)
 let metricsCollector: { collect?: () => void; [k: string]: unknown } | null =

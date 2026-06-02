@@ -6,8 +6,6 @@
  */
 
 import { Express, Request, Response, NextFunction } from "express";
-import rateLimit from "express-rate-limit";
-import helmet from "helmet";
 import cors from "cors";
 import { logger } from "../logger.js";
 import { randomUUID } from "crypto";

@@ -4,7 +4,6 @@ import { requireAuth } from "../middleware/auth.js";
 import { storage } from "../storage.js";
 import { logger } from "../logger.js";
 import { aiModelManager } from "../services/aiModelManager.js";
-import { MaxCoreAIClient } from "../services/unifiedAIController.js";
 import { db } from "../db";
 import { adCampaigns } from "@shared/schema";
 import { eq, count, gt, desc, and, isNotNull } from "drizzle-orm";

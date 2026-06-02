@@ -2,7 +2,6 @@ import { logger } from "../logger.js";
 import { db } from "../db";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { aiService } from "./aiService";
 import { advancedSocialAIService, type AdvancedContentRequest } from "./advancedSocialAIService.js";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
 import { platformAlgorithmOptimizer } from "./platformAlgorithmOptimizer.js";

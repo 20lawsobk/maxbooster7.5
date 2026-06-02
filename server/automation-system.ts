@@ -3,7 +3,6 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { randomUUID } from "crypto";
 import cron from "node-cron";
-import { apiRequest } from "../shared/api-client";
 import { logger } from "./logger.js";
 
 promisify(exec);

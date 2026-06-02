@@ -1,8 +1,5 @@
 import { promisify } from "util";
 import { exec } from "child_process";
-import fs from "fs/promises";
-import path from "path";
-import crypto from "crypto";
 import { logger } from "./logger.js";
 
 promisify(exec);

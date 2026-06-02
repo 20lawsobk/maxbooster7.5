@@ -1,9 +1,6 @@
 import { randomBytes } from "crypto";
-import { aiService } from "./aiService";
-import { studioService } from "./studioService";
 import { storage } from "../storage";
 
-import * as fs from "fs";
 import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { parseFile } from "music-metadata";
@@ -1918,37 +1915,6 @@ export class AIMusicService {
 
 
 
-  private getFilterAttenuation(
-    index: number,
-    totalLength: number,
-    stemType: string,
-  ): number {
-    const normalizedFreq = index / totalLength;
-
-    switch (stemType) {
-      case "bass":
-        return normalizedFreq < 0.05
-          ? 1.0
-          : Math.exp(-10 * (normalizedFreq - 0.05));
-
-      case "drums":
-        const transientBoost =
-          Math.sin(normalizedFreq * Math.PI * 8) > 0.7 ? 1.2 : 0.6;
-        return (normalizedFreq < 0.4 ? 0.8 : 0.3) * transientBoost;
-
-      case "vocals":
-        return normalizedFreq > 0.1 && normalizedFreq < 0.5 ? 1.0 : 0.4;
-
-      case "melody":
-        return normalizedFreq > 0.05 && normalizedFreq < 0.6 ? 0.9 : 0.3;
-
-      case "harmony":
-        return normalizedFreq > 0.2 && normalizedFreq < 0.8 ? 0.8 : 0.2;
-
-      default:
-        return 0.5;
-    }
-  }
 
   private calculateStemConfidence(
     filteredAudio: Float32Array,

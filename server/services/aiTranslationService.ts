@@ -1,5 +1,4 @@
 import { logger } from "../logger.js";
-import { aiService } from "./aiService";
 
 export interface TranslatedContent {
   language: string;

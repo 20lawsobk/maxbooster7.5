@@ -11,7 +11,6 @@
  */
 
 import { EventEmitter } from "events";
-import { logger } from "../logger.js";
 
 // Industry-specific constants based on real music industry data (2024-2025)
 export const INDUSTRY_BENCHMARKS = {

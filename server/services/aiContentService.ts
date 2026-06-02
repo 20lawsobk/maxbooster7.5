@@ -1,5 +1,4 @@
 import { randomBytes } from "crypto";
-import { aiService } from "./aiService";
 import { unifiedAIController } from "./unifiedAIController.js";
 import { renderVideo as renderAdvancedVideo } from "./advancedVideoRendererService.js";
 import { db } from "../db";
@@ -28,7 +27,6 @@ import { sharpImageService } from "./sharpImageService.js";
 
 import { synthesizeToWAV, generateChordProgression, generateMelody } from "./musicGenerationService.js";
 
-import { aiTranslationService } from "./aiTranslationService";
 import { dynamicTrendsService } from "./dynamicTrendsService";
 
 // Sharp image service is automatically initialized on import

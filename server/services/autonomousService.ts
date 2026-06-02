@@ -7,8 +7,6 @@ import { viralScoringService } from "./viralScoring";
 import { timingOptimizerService as timingOptimizer } from "./timingOptimizer";
 import { contentVariantGeneratorService as contentVariantGenerator } from "./contentVariantGenerator";
 import { algorithmIntelligenceService as algorithmIntelligence } from "./algorithmIntelligence";
-import { aiContentService } from "./aiContentService";
-import { aiAnalyticsService } from "./aiAnalyticsService";
 import { notificationService } from "./notificationService.js";
 import type { SocialPost, AdCampaign, Release } from "@shared/schema";
 import { logger } from "../logger.js";

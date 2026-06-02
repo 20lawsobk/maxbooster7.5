@@ -6,7 +6,6 @@
 
 import * as tf from "@tensorflow/tfjs";
 import { BaseModel } from "./BaseModel.js";
-import type { PredictionResult } from "../types.js";
 
 export interface ChurnFeatures {
   daysSinceLastLogin: number;

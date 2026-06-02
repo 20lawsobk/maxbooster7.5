@@ -2,7 +2,6 @@ import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { listings, storefronts } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
-import { getBaseUrl } from "../config/defaults.js";
 import { logger } from "../logger.js";
 
 const router = Router();

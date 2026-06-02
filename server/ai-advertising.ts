@@ -1,6 +1,4 @@
-import axios from "axios";
 import { z } from "zod";
-import { withRetry } from "./lib/retry.js";
 import { logger } from "./logger.js";
 
 // ---- Zod schemas for boundary validation -------------------------------

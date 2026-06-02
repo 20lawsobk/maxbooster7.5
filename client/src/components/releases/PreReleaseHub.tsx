@@ -17,7 +17,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CountdownTimer } from "./CountdownTimer";
 import { ReleaseChecklist } from "./ReleaseChecklist";
-import { CountdownCard } from "./CountdownCard";
 import { PresaveTracker } from "./PresaveTracker";
 import { Plus, Rocket, Calendar, ListTodo, BarChart3, Sparkles, Music } from "lucide-react";
 

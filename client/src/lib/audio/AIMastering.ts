@@ -1,6 +1,5 @@
 import { AIAnalyzer } from "./AIAnalyzer";
 import { EQPlugin } from "./plugins/EQPlugin";
-import { CompressorPlugin } from "./plugins/CompressorPlugin";
 import { logger } from "@/lib/logger";
 
 /**

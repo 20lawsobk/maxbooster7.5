@@ -1,4 +1,3 @@
-import { db } from "../db";
 import { randomBytes } from "crypto";
 
 export interface FAQItem {

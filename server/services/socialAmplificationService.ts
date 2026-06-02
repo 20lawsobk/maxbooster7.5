@@ -1,9 +1,7 @@
 import { randomBytes } from "crypto";
 import { AIAdvertisingEngine } from "../ai-advertising.js";
 import { AutonomousAutopilot } from "../autonomous-autopilot.js";
-import { customAI } from "../custom-ai-engine.js";
 import { storage } from "../storage.js";
-import { config } from "../config/defaults.js";
 import { logger } from "../logger.js";
 import { randomBytes } from "crypto";
 

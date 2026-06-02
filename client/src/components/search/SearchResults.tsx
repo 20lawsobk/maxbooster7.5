@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Music, User, Folder, Disc, ChevronLeft, ChevronRight, Grid, List, Play, Heart, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";

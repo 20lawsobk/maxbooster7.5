@@ -7,7 +7,6 @@
 
 import { HnsClient, HnsConfig } from "./HnsClient.js";
 import { HnsAuctionManager } from "./HnsAuction.js";
-import { logger } from "../../logger.js";
 
 const cfg: HnsConfig = {
   host: process.env.HNS_HOST || "127.0.0.1",

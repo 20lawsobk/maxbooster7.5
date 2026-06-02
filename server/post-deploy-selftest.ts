@@ -16,7 +16,6 @@
  */
 
 import { existsSync } from "fs";
-import { join } from "path";
 import { db } from "./db.js";
 import { sql } from "drizzle-orm";
 import { logger } from "./logger.js";

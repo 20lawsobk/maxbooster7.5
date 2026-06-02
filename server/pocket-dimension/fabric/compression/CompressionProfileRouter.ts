@@ -1,5 +1,4 @@
 import { createHash } from "crypto";
-import { cdcChunker } from "./ContentDefinedChunker.js";
 import { zstdEngine } from "./ZstdEngine.js";
 import { deltaEngine } from "./DeltaEngine.js";
 import { mediaTranscoder, classifyContentType } from "./MediaTranscoder.js";

@@ -1,4 +1,3 @@
-import { createHash } from "crypto";
 import type { DeltaOp } from "./types.js";
 
 const WINDOW = 32;

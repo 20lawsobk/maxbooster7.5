@@ -1,5 +1,4 @@
 import { getBoosterStateClient } from "../lib/boosterStateClient.js";
-import { config } from "../config/defaults.js";
 import { db } from "../db";
 import { posts, scheduledPostBatches } from "@shared/schema";
 import { eq, and } from "drizzle-orm";

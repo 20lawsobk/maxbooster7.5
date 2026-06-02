@@ -3,11 +3,9 @@ import { db } from "../../db.js";
 import { users, projects, releases, analytics, posts, systemSettings, artistProfiles } from "../../../shared/schema.js";
 import { eq, desc, like, or, sql, count, sum, and, gte } from "drizzle-orm";
 import { logger } from "../../logger.js";
-import bcrypt from "bcrypt";
 import os from "os";
 import { notificationService } from "../../services/notificationService.js";
 import { distributedCache } from "../../infrastructure/distributedCache.js";
-import { artistProfileService } from "../../services/artistProfileService.js";
 import { require2FA } from "../../middleware/auth.js";
 
 const router = Router();

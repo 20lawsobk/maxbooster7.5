@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -19,11 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MUSICAL_KEYS, type MusicalKey, type KeyMode } from "@/lib/studioStore";
-import { AIMixer } from "@/lib/audio/AIMixer";
-import { AIMastering } from "@/lib/audio/AIMastering";
-import { useToast } from "@/hooks/use-toast";
 import { AutoscrollButton } from "./AutoscrollButton";
-import AudioEngine from "@/lib/audioEngine";
 
 interface TransportBarProps {
   armedTracksCount?: number;

@@ -1,5 +1,4 @@
 import { EventEmitter } from "events";
-import { config } from "../config/defaults.js";
 import { logger } from "../logger.js";
 
 interface MemoryMetrics {

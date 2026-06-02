@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
 
 // Cloudflare's published IPv4 CIDR ranges (https://www.cloudflare.com/ips-v4)
 // Last updated: 2024. Cloudflare rarely changes these.

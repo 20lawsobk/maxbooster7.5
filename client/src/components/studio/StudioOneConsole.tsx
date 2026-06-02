@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { StudioOneChannelStrip } from "./StudioOneChannelStrip";
 import { ConsoleNavColumn } from "./ConsoleNavColumn";

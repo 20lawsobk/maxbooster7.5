@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import { MousePointer2, PenLine, Spline, Edit3, Trash2, Undo2, Redo2, Eye, EyeOff, ChevronDown, Lock, Unlock, Magnet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

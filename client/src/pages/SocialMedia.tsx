@@ -23,7 +23,6 @@ import {
   SimpleAreaChart,
   PlatformBreakdown,
 } from "@/components/ui/chart-card";
-import { ContentCard } from "@/components/ui/content-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,7 +66,6 @@ import { ContentAnalyzer } from "@/components/content/ContentAnalyzer";
 import { UnifiedInbox } from "@/components/social/UnifiedInbox";
 import { SocialListening } from "@/components/social/SocialListening";
 import { CompetitorBenchmarking } from "@/components/social/CompetitorBenchmarking";
-import { UnifiedCalendar } from "@/components/social/UnifiedCalendar";
 import { ServerVideoGenerator } from "@/components/content/ServerVideoGenerator";
 import {
   AIImageGenerator,

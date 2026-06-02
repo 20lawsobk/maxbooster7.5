@@ -21,8 +21,6 @@ import { pocketManager, PocketDimension } from "./index.js";
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import { pipeline } from "stream/promises";
-import { Readable } from "stream";
 
 // Capsule metadata structure
 export interface CapsuleMetadata {

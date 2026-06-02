@@ -1,7 +1,5 @@
 import { Router, Request, Response } from "express";
 import { randomBytes } from "crypto";
-import { db } from "../db";
-import { sql } from "drizzle-orm";
 import { logger } from "../logger";
 
 const router = Router();

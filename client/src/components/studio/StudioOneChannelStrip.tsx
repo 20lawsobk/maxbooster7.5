@@ -1,16 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { studioOneTheme } from "@/lib/studioOneTheme";
 import { useStudioLayoutStore } from "@/lib/studioLayoutStore";
 import { valueToDb, dbToValue } from "./ProfessionalFader";

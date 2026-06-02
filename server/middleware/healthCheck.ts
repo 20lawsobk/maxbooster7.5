@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-import { neon } from "@neondatabase/serverless";
 import os from "os";
-import { env } from "../config/env.js";
 import {
   getCachedHealthCheck,
   getLivenessProbe,
