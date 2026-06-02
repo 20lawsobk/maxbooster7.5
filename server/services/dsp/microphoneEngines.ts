@@ -583,7 +583,6 @@ export class SM58ModelerProcessor implements DSPProcessor {
     const presence = (params.presence as number) ?? 4;
     const body = (params.body as number) ?? 2;
     const grillColor = (params.grillColor as number) ?? 30;
-    const feedback = (params.feedback as number) ?? 0;
     const outputGain = (params.output as number) ?? 0;
     const mix = (params.mix as number) ?? 1;
 

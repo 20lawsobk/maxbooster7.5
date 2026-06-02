@@ -1393,7 +1393,6 @@ export default function Distribution() {
 
   const {
     data: comprehensiveAnalytics,
-    isLoading: analyticsLoading,
   } = useQuery<ComprehensiveAnalytics>({
     queryKey: ["/api/analytics/dashboard"],
     enabled: !!user,

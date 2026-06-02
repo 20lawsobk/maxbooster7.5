@@ -675,25 +675,6 @@ export class AutonomousAutopilot extends EventEmitter {
 
 
 
-  private isStopWord(word: string): boolean {
-    const stopWords = [
-      "this",
-      "that",
-      "with",
-      "have",
-      "will",
-      "from",
-      "they",
-      "been",
-      "said",
-      "each",
-      "which",
-      "their",
-      "time",
-      "people",
-    ];
-    return stopWords.includes(word);
-  }
 
   // Autonomous Performance Analysis
   private schedulePerformanceAnalysis(): void {

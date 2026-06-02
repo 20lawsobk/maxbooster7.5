@@ -23,8 +23,6 @@ import {
   teardownRepeatableJobs,
 } from "./autonomousJobScheduler.js";
 
-const MAX_PROCESSING_QUEUE = 1000;
-const MAX_LEARNING_DATA = 500;
 const METRICS_CACHE_KEY = "autonomous:metrics";
 let _lastPersistWarnAt = 0; // rate-limits persist-failure log to once per 60 s
 let _lastLoadWarnAt = 0; // rate-limits load-failure log to once per 60 s
@@ -104,18 +102,6 @@ export class AutonomousService extends EventEmitter {
     this.loadMetricsFromCache();
   }
 
-  private boundedMapSet(
-    map: Map<string, any>,
-    key: string,
-    value: Record<string, unknown>,
-    maxSize: number,
-  ): void {
-    if (map.size >= maxSize && !map.has(key)) {
-      const firstKey = map.keys().next().value;
-      if (firstKey !== undefined) map.delete(firstKey);
-    }
-    map.set(key, value);
-  }
 
 
 

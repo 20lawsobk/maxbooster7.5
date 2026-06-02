@@ -518,7 +518,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     domain: string,
     userId: string,
     isActive: boolean,
-    registryId: string | null,
+    _registryId: string | null,
   ): Promise<void> {
     try {
       const existing = await pool.query(

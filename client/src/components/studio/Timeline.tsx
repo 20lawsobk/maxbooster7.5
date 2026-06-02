@@ -618,7 +618,7 @@ export function Timeline({
     (e: React.MouseEvent, clipId: string, trackId: string, clip: AudioClip) => {
       if (currentTool === "split" && onClipSplit) {
         e.stopPropagation();
-        const rect = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.getBoundingClientRect();
         const parentRect = timelineRef.current?.getBoundingClientRect();
         if (parentRect) {
           const absoluteX = e.clientX - parentRect.left;

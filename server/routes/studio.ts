@@ -2540,7 +2540,7 @@ router.post(
 router.get(
   "/ai-music/suggestions",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       res.json({
         suggestions: [
@@ -2626,7 +2626,7 @@ router.post(
 router.post(
   "/ai-music/analyze-loudness",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       res.json({
         integrated: -14.2,
@@ -2646,7 +2646,7 @@ router.post(
 router.post(
   "/ai-music/match-reference",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       res.json({
         success: true,
@@ -3027,7 +3027,7 @@ router.post(
 router.get(
   "/projects/:projectId/markers",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       res.json({ markers: [] });
     } catch (error: unknown) {

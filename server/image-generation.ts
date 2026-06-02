@@ -451,24 +451,6 @@ export class SocialMediaContentGenerator {
     return genreColors[genre as keyof typeof genreColors] || genreColors.pop;
   }
 
-  private async addVisualElements(
-    musicData: unknown,
-    targetAudience: unknown,
-  ): Promise<void> {
-    // Add AI-generated visual elements based on music data
-
-    // Add waveform visualization
-    this.addWaveformVisualization(musicData);
-
-    // Add genre-specific icons
-    this.addGenreIcons(musicData.genre);
-
-    // Add trending elements
-    this.addTrendingElements(targetAudience);
-
-    // Add AI-generated patterns
-    this.addAIPatterns(musicData, targetAudience);
-  }
 
   private addWaveformVisualization(musicData: unknown): void {
     const { width, height } = this.canvas;
@@ -576,40 +558,6 @@ export class SocialMediaContentGenerator {
     }
   }
 
-  private addOptimizedText(
-    musicData: unknown,
-    platform: string,
-    targetAudience: unknown,
-  ): void {
-    const { width, height } = this.canvas;
-
-    // AI-optimized text placement and styling
-    const textConfig = this.getOptimizedTextConfig(platform, targetAudience);
-
-    // Add main title
-    this.ctx.fillStyle = textConfig.titleColor;
-    this.ctx.font = textConfig.titleFont;
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(
-      musicData.title || "New Release",
-      width / 2,
-      height * 0.3,
-    );
-
-    // Add artist name
-    this.ctx.fillStyle = textConfig.subtitleColor;
-    this.ctx.font = textConfig.subtitleFont;
-    this.ctx.fillText(
-      musicData.artist || "Artist Name",
-      width / 2,
-      height * 0.4,
-    );
-
-    // Add call-to-action
-    this.ctx.fillStyle = textConfig.ctaColor;
-    this.ctx.font = textConfig.ctaFont;
-    this.ctx.fillText("Stream Now", width / 2, height * 0.7);
-  }
 
   private getOptimizedTextConfig(
     platform: string,
@@ -646,32 +594,7 @@ export class SocialMediaContentGenerator {
     return configs[platform as keyof typeof configs] || configs.facebook;
   }
 
-  private addBrandingElements(platform: string): void {
-    const { width, height } = this.canvas;
 
-    // Add Max Booster branding
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    this.ctx.font = "20px Arial";
-    this.ctx.textAlign = "left";
-    this.ctx.fillText("Max Booster", 20, height - 20);
-
-    // Add platform-specific branding
-    this.ctx.textAlign = "right";
-    this.ctx.fillText(`via ${platform}`, width - 20, height - 20);
-  }
-
-  private applyAIFilters(_platform: string, _targetAudience: unknown): void {
-    // Apply AI-optimized filters and effects based on platform and audience
-    const { width, height } = this.canvas;
-
-    // Add subtle overlay for better text readability
-    const overlay = this.ctx.createLinearGradient(0, 0, 0, height);
-    overlay.addColorStop(0, "rgba(0, 0, 0, 0.1)");
-    overlay.addColorStop(1, "rgba(0, 0, 0, 0.3)");
-
-    this.ctx.fillStyle = overlay;
-    this.ctx.fillRect(0, 0, width, height);
-  }
 
   // Get platform-specific video dimensions
   private getPlatformVideoDimensions(platform: string): {
@@ -696,62 +619,6 @@ export class SocialMediaContentGenerator {
   }
 
   // Create AI-powered video content
-  private async createAIVideoContent(
-    platform: string,
-    musicData: unknown,
-    targetAudience: unknown,
-    dimensions: unknown,
-  ): Promise<Buffer> {
-    const data = (musicData as Record<string, unknown>) || {};
-    const dims = dimensions as {
-      width: number;
-      height: number;
-      duration: number;
-    };
-    const title = data.title || data.name || "New Release";
-    const artist = data.artist || data.artistName || "B-Lawz Music";
-
-    ({
-      style: this.getAIVideoStyle(musicData, targetAudience),
-      effects: this.getAIVideoEffects(platform, musicData),
-      transitions: this.getAIVideoTransitions(platform),
-      textOverlay: this.getAIVideoTextOverlay(musicData, platform),
-      colorScheme: this.generateAIColorScheme(musicData, targetAudience),
-    });
-
-    const brandGold = "#FFD700";
-    const brandPurple = "#9B59B6";
-    const brandDark = "#1A1A2E";
-
-    const frameSvg = `
-      <svg width="${dims.width}" height="${dims.height}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:${brandDark}"/>
-            <stop offset="50%" style="stop-color:#2D1F4F"/>
-            <stop offset="100%" style="stop-color:${brandDark}"/>
-          </linearGradient>
-          <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:${brandGold}"/>
-            <stop offset="100%" style="stop-color:${brandPurple}"/>
-          </linearGradient>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#bgGrad)"/>
-        <circle cx="${dims.width / 2}" cy="${dims.height / 3}" r="${Math.min(dims.width, dims.height) / 4}" fill="url(#accentGrad)" opacity="0.3"/>
-        <text x="${dims.width / 2}" y="${dims.height / 2}" font-family="Arial, sans-serif" font-size="${dims.width / 15}" fill="${brandGold}" text-anchor="middle" font-weight="bold">${this.escapeXml(title)}</text>
-        <text x="${dims.width / 2}" y="${dims.height / 2 + dims.width / 12}" font-family="Arial, sans-serif" font-size="${dims.width / 25}" fill="white" text-anchor="middle">${this.escapeXml(artist)}</text>
-        <text x="${dims.width / 2}" y="${dims.height - 50}" font-family="Arial, sans-serif" font-size="${dims.width / 40}" fill="${brandGold}" text-anchor="middle" opacity="0.8">Stream Now</text>
-        <rect x="${dims.width / 4}" y="${dims.height - 120}" width="${dims.width / 2}" height="4" fill="url(#accentGrad)" rx="2"/>
-        <circle cx="${dims.width / 2 - dims.width / 8}" cy="${dims.height - 118}" r="8" fill="${brandGold}"/>
-      </svg>
-    `;
-
-    const frameBuffer = await sharp(Buffer.from(frameSvg))
-      .png({ quality: 90 })
-      .toBuffer();
-
-    return frameBuffer;
-  }
 
   // Create AI-powered audio content using in-house AIAudioGenerator
   private async createAIAudioContent(

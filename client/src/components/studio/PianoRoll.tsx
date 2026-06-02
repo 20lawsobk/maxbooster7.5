@@ -485,7 +485,7 @@ export function PianoRoll({
           const pitchOffset = getPitchBendOffset(note, t);
           const y = baseY + NOTE_HEIGHT / 2 - pitchOffset;
 
-          const pressure = getPressureValue(note, t);
+          getPressureValue(note, t);
 
           if (i === 0) {
             ctx.moveTo(x, y);

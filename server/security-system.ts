@@ -29,60 +29,9 @@ interface SecurityBehaviorProfile {
   createdAt?: Date;
 }
 
-interface SecurityAnomaly {
-  id: string;
-  userId: string;
-  sessionId?: string;
-  actionType: string;
-  features: Record<string, unknown>;
-  anomalyScore: number;
-  anomalyType: string;
-  explanation?: string;
-  featureImportance: Record<string, number>;
-  autoBlocked: boolean;
-  modelVersion: string;
-  detectedAt: Date;
-  createdAt?: Date;
-}
 
-interface SecurityZeroDayAlert {
-  id: string;
-  payload: unknown;
-  source: string;
-  threatLevel: string;
-  threatSignatures: string[];
-  heuristicAnalysis: Record<string, unknown>;
-  obfuscationDetected: boolean;
-  responseRecommendation: string;
-  autoResponse: string;
-  patternMatchScore: number;
-  modelVersion: string;
-  createdAt?: Date;
-}
 
-interface SecurityPenTestResult {
-  id: string;
-  testId: string;
-  targetEndpoint?: string;
-  testType: string;
-  payload: string;
-  vulnerable: boolean;
-  severity: string;
-  remediation: string;
-  executedAt: Date;
-  createdAt?: Date;
-}
 
-interface SecurityComplianceReport {
-  id: string;
-  framework: string;
-  overallScore: number;
-  controls: Record<string, unknown>;
-  gaps: unknown[];
-  remediationPlan: string;
-  auditedAt: Date;
-  createdAt?: Date;
-}
 
 // Local storage for security data (in-memory until schema tables are added)
 new Map<

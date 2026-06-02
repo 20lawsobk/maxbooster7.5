@@ -304,9 +304,6 @@ router.post(
         chunkIndex,
         totalChunks,
         fileId,
-        
-        
-        mimeType,
       } = req.body;
 
       if (!req.file) {

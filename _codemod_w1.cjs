@@ -182,6 +182,25 @@ for (const [file, errs] of errsByFile) {
       edits.push({ start: s, end: en, text: '', tag: ts.isMethodDeclaration(mem) ? 'method_remove' : 'property_remove', ctx:_ctx });
       continue;
     }
+    // ---------- unused parameter (TS6133) -> prefix name with _ (behavior-preserving) ----------
+    if (e.code === '6133') {
+      const param = (function up(x){ while(x){ if(ts.isParameter(x)) return x; if(ts.isFunctionLike(x)) break; x=x.parent;} return null; })(n);
+      if (param && ts.isIdentifier(param.name) && param.name.getStart(sf) === pos) {
+        // skip parameter properties (constructor private/public/readonly) and decorated params
+        if (param.modifiers && param.modifiers.length) { bump('skip_param_property'); continue; }
+        if (hasDecorators(param)) { bump('skip_param_decorated'); continue; }
+        const pname = param.name.getText(sf);
+        if (pname.startsWith('_')) { bump('skip_param_already_underscore'); continue; }
+        const newName = '_' + pname;
+        // collision guard: ensure newName not already a param name in this function
+        const fnNode = param.parent;
+        const escN = newName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const paramText = fnNode.parameters.map((p) => p.name.getText(sf)).join(',');
+        if (new RegExp('\\b' + escN + '\\b').test(paramText)) { bump('skip_param_collision'); continue; }
+        edits.push({ start: param.name.getStart(sf), end: param.name.getEnd(), text: newName, tag: 'param_underscore' });
+        continue;
+      }
+    }
     bump('skip_unhandled_' + e.code);
   }
 

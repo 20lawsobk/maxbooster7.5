@@ -66,7 +66,6 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const {
     trackProfileComplete,
-    trackSocialAccountConnected,
   } = useOnboardingProgress();
   const [location, navigate] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);

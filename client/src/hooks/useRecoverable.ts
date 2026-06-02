@@ -297,7 +297,7 @@ export function useRecoverableSettingsChange<T extends Record<string, unknown>>(
   );
 }
 
-export function useRecoverableBatch(module: string) {
+export function useRecoverableBatch(_module: string) {
   const { startGroup, endGroup, undoGroup } = useUndo();
 
   const startBatch = useCallback(

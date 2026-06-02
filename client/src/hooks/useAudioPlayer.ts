@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import AudioEngine from "@/lib/audioEngine";
-import type { TrackConfig, AudioClip } from "@/lib/audioEngine";
+import type { TrackConfig } from "@/lib/audioEngine";
 import { logger } from "@/lib/logger";
 
 export interface Track {

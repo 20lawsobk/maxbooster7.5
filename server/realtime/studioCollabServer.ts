@@ -5,7 +5,7 @@ import { parse as parseUrl } from "url";
 import { parse as parseCookie } from "cookie";
 import * as Y from "yjs";
 import { yjsService } from "../services/yjsService.js";
-import { presenceManager, type CursorPosition, type SelectionState, type CollaboratorInfo } from "./presenceManager.js";
+import { presenceManager, type CursorPosition, type SelectionState } from "./presenceManager.js";
 import { jwtAuthService } from "../services/jwtAuthService.js";
 import { storage } from "../storage.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";

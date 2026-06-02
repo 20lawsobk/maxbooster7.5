@@ -98,15 +98,6 @@ interface CodeUpgrade {
   notAppliedReason?: string;
 }
 
-interface CompetitorFeature {
-  competitor: string;
-  featureName: string;
-  description: string;
-  detectedAt: Date;
-  hasMaxBoosterEquivalent: boolean;
-  priorityToImplement: number; // 1-10
-  estimatedUserDemand: number; // 0-100
-}
 
 interface PlatformStandard {
   platform: string; // Spotify, Apple Music, YouTube, etc.

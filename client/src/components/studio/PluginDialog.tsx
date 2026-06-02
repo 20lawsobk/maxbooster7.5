@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Power, RotateCcw, ChevronDown, Save, Folder, Activity, Waves, Music, Sliders as SlidersIcon } from "lucide-react";
 

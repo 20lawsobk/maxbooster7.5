@@ -150,7 +150,7 @@ const _churnPredictCache: {
 router.get(
   "/ai/predict-churn",
   requireAdmin,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
 
       if (

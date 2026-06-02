@@ -4865,7 +4865,7 @@ export async function registerRoutes(
               return res.status(400).json({ message: "No file provided" });
             }
 
-            const { name, assetType, description } = req.body;
+            const { name, assetType } = req.body;
             const userId = req.user!.id;
 
             const storedFile = await storeUploadedFile(file, userId, "audio");
