@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/Logo";
 import { Check, ArrowLeft, Sparkles, Shield, Menu } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,

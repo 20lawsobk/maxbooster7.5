@@ -1,4 +1,3 @@
-import { db } from "../db.js";
 import { logger } from "../logger.js";
 import { storageService } from "./storageService.js";
 import wavefilePkg from "wavefile";

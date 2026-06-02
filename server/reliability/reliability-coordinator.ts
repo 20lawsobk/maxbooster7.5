@@ -2,7 +2,6 @@ import { EventEmitter } from "events";
 import { processMonitor } from "./process-monitor";
 import { databaseResilience } from "./database-resilience";
 import { memoryManager } from "./memory-manager";
-import { healthCheck } from "../middleware/healthCheck";
 import { logger } from "../logger.js";
 
 interface SystemHealth {

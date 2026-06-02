@@ -2,7 +2,6 @@ import { logger } from "../logger.js";
 import { randomBytes } from "crypto";
 import crypto from "crypto";
 import fs from "fs";
-import path from "path";
 
 export interface AudioFingerprint {
   id: string;

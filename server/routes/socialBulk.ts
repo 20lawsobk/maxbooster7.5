@@ -10,7 +10,6 @@ import {
 import { bulkSchedulePostSchema, bulkValidatePostSchema } from "@shared/schema";
 import { socialQueueService } from "../services/socialQueueService";
 import { eq, and, desc, inArray } from "drizzle-orm";
-import { randomBytes } from "crypto";
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 

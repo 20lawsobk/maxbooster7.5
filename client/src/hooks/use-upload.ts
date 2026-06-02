@@ -1,4 +1,3 @@
-import { logger } from "../lib/logger";
 import { useState, useCallback } from "react";
 import type { UppyFile } from "@uppy/core";
 

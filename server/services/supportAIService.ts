@@ -1,4 +1,3 @@
-import { aiService } from "./aiService";
 import { knowledgeBaseService } from "./knowledgeBaseService";
 import { supportTicketService } from "./supportTicketService";
 import { logger } from "../logger.js";

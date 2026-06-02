@@ -19,7 +19,6 @@ import {
 import { notificationService } from "../services/notificationService.js";
 import { eq, and, or, desc, inArray, sql as drizzleSql, ilike, arrayOverlaps, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { studioService } from "../services/studioService";
 import { logger } from "../logger.js";
 import { randomBytes } from "crypto";
 import {

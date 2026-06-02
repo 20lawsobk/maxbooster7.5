@@ -1,4 +1,3 @@
-import React from "react";
 import { useHighContrast, type ContrastMode } from "@/hooks/useHighContrast";
 import { Button } from "@/components/ui/button";
 import { Contrast, Eye, EyeOff } from "lucide-react";

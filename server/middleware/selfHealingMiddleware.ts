@@ -7,7 +7,6 @@
 
 import { Request, Response, NextFunction } from "express";
 import { selfHealingEngine } from "../services/selfHealingSecurityEngine.js";
-import { logger } from "../logger.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
 
 const WHITELISTED_IPS = new Set([

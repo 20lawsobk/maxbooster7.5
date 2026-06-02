@@ -5,7 +5,6 @@ import { StudioOneConsole } from './StudioOneConsole';
 import { StudioOneBrowser } from './StudioOneBrowser';
 import { ArrangerTrack } from './ArrangerTrack';
 import { LauncherGrid } from './LauncherGrid';
-import { ConsoleNavColumn } from './ConsoleNavColumn';
 import { StudioOneLayout } from './StudioOneLayout';
 
 interface StudioTrack {

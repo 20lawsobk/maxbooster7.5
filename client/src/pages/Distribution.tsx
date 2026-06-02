@@ -46,7 +46,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
@@ -110,10 +109,8 @@ import { ReleaseWizard } from "@/components/distribution/ReleaseWizard";
 import { AutomatedQC } from "@/components/distribution/AutomatedQC";
 import { ISRCManager } from "@/components/distribution/ISRCManager";
 import { TakedownManager } from "@/components/distribution/TakedownManager";
-import { EarningsReconciliation } from "@/components/distribution/EarningsReconciliation";
 import { DataTransferWizard } from "@/components/distribution/DataTransferWizard";
 import { RoyaltySplitManager } from "@/components/distribution/RoyaltySplitManager";
-import { HyperFollowBuilder } from "@/components/distribution/HyperFollowBuilder";
 import { SubmissionStatusTracker } from "@/components/distribution/SubmissionStatusTracker";
 import { ContentIDManager } from "@/components/distribution/ContentIDManager";
 import ArtistProfileManager from "@/components/distribution/ArtistProfileManager";

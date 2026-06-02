@@ -1,4 +1,3 @@
-import { db } from "../db";
 import { getRedisClient } from "../lib/redisConnectionFactory";
 import { logger } from "../logger";
 import {

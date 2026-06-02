@@ -92,7 +92,13 @@ for (const [file, errs] of errsByFile) {
     const imp = (function up(x){ while(x){ if(ts.isImportDeclaration(x)) return x; x=x.parent;} return null; })(n);
     if (imp) {
       if (!importGroups.has(imp)) importGroups.set(imp, new Set());
-      importGroups.get(imp).add(node.getText(sf));
+      // The diagnostic may be reported at the `import` keyword (col 1) for a
+      // whole-line single import, so findNodeAtPos returns the ImportDeclaration
+      // and node.getText() would be the entire statement instead of the symbol.
+      // Extract the unused local name from the message ('X' is declared ...),
+      // which is reliable; fall back to node text only if the shape is unexpected.
+      const nameMatch = e.msg.match(/^'([^']+)'/);
+      importGroups.get(imp).add(nameMatch ? nameMatch[1] : node.getText(sf));
       bump('import_name');
       continue;
     }

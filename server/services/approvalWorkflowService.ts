@@ -3,7 +3,6 @@ import { approvalWorkflows, approvalRequests, approvalSteps, workspaceAuditLog, 
 import { eq, and, desc, sql, or, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { notificationService } from "./notificationService";
-import { rbacService } from "./rbacService";
 
 export type ApprovalTrigger =
   | "release"

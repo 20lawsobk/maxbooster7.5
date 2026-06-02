@@ -1,6 +1,5 @@
 import type { AdCreative } from "@shared/schema";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
-import { logger } from "../logger.js";
 
 /**
  * Advertisement Content Normalization Service

@@ -5,7 +5,6 @@ import "jspdf-autotable";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { generatedContracts } from "@shared/schema";
-import { eq } from "drizzle-orm";
 
 export type ContractType =
   | "non_exclusive_license"

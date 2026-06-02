@@ -5,7 +5,6 @@ import { storage } from "../storage.js";
 import { logger } from "../logger.js";
 import { aiModelManager } from "../services/aiModelManager.js";
 import { promotionalToolsService } from "../services/promotionalToolsService.js";
-import { MaxCoreAIClient } from "../services/unifiedAIController.js";
 import { db } from "../db";
 import { socialAutopilotContent } from "@shared/schema";
 import { eq, count, lt, gte, gt, min, desc, and, isNotNull } from "drizzle-orm";

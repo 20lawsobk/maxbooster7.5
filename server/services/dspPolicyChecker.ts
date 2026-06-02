@@ -1,5 +1,4 @@
 import { logger } from "../logger.js";
-import path from "path";
 import fs from "fs";
 
 // Optional sharp support with graceful fallback

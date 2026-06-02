@@ -17,8 +17,6 @@ logger.info("✅ Sharp-based image generation loaded for social media content");
 // AI-powered social media content generation (images, videos, audio)
 // Uses 100% in-house AI services from shared/ml
 export class SocialMediaContentGenerator {
-  private canvas: OffscreenCanvas | null = null;
-  private ctx: OffscreenCanvasRenderingContext2D | null = null;
   private readonly contentDir = join(__dirname, "../public/generated-content");
   private readonly imageDir = join(this.contentDir, "images");
   private readonly videoDir = join(this.contentDir, "videos");
@@ -426,173 +424,13 @@ export class SocialMediaContentGenerator {
   }
 
 
-  private generateAIColorScheme(
-    musicData: unknown,
-    _targetAudience: unknown,
-  ): Record<string, unknown> {
-    // AI algorithm to determine optimal colors based on:
-    // - Music genre
-    // - Target audience demographics
-    // - Platform preferences
-    // - Current trends
-
-    const genreColors = {
-      trap: { primary: "#667eea", secondary: "#764ba2" },
-      "hip-hop": { primary: "#f093fb", secondary: "#f5576c" },
-      pop: { primary: "#4facfe", secondary: "#00f2fe" },
-      rock: { primary: "#fa709a", secondary: "#fee140" },
-      electronic: { primary: "#a8edea", secondary: "#fed6e3" },
-      "r&b": { primary: "#ff9a9e", secondary: "#fecfef" },
-      country: { primary: "#ffecd2", secondary: "#fcb69f" },
-      jazz: { primary: "#a18cd1", secondary: "#fbc2eb" },
-    };
-
-    const genre = musicData.genre?.toLowerCase() || "pop";
-    return genreColors[genre as keyof typeof genreColors] || genreColors.pop;
-  }
 
 
-  private addWaveformVisualization(musicData: unknown): void {
-    const { width, height } = this.canvas;
-    const centerY = height / 2;
-    const barWidth = 4;
-    const barSpacing = 2;
-    const maxBarHeight = height * 0.3;
-
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-
-    const seedStr =
-      typeof musicData === "object" && musicData !== null
-        ? ((musicData as Record<string, unknown>).artist || "") +
-          ":" +
-          ((musicData as Record<string, unknown>).title || "")
-        : String(musicData ?? "waveform");
-
-    const fnv = (s: string) => {
-      let h = 0x811c9dc5;
-      for (let i = 0; i < s.length; i++) {
-        h ^= s.charCodeAt(i);
-        h = (h * 0x01000193) >>> 0;
-      }
-      return h;
-    };
-
-    let barIndex = 0;
-    for (let x = 0; x < width; x += barWidth + barSpacing) {
-      const h = fnv(`${seedStr}:waveform:${barIndex++}`);
-      const barHeight = (h / 0xffffffff) * maxBarHeight;
-      const y = centerY - barHeight / 2;
-      this.ctx.fillRect(x, y, barWidth, barHeight);
-    }
-  }
-
-  private addGenreIcons(genre: string): void {
-    // Add genre-specific visual elements
-    const { width } = this.canvas;
-
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-    this.ctx.font = "48px Arial";
-    this.ctx.textAlign = "center";
-
-    const genreIcons = {
-      trap: "🎵",
-      "hip-hop": "🎤",
-      pop: "⭐",
-      rock: "🎸",
-      electronic: "🎛️",
-      "r&b": "🎶",
-      country: "🤠",
-      jazz: "🎷",
-    };
-
-    const icon =
-      genreIcons[genre?.toLowerCase() as keyof typeof genreIcons] || "🎵";
-    this.ctx.fillText(icon, width - 60, 60);
-  }
-
-  private addTrendingElements(_targetAudience: unknown): void {
-    // Add trending visual elements based on target audience
-    const { width, height } = this.canvas;
-
-    // Add trending hashtag visualization
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-    this.ctx.font = "24px Arial";
-    this.ctx.textAlign = "right";
-    this.ctx.fillText("#Trending", width - 20, height - 20);
-  }
-
-  private addAIPatterns(musicData: unknown, _targetAudience: unknown): void {
-    // Add AI-generated patterns based on music and audience data
-    const { width, height } = this.canvas;
-
-    // Create geometric patterns
-    this.ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-    this.ctx.lineWidth = 2;
-
-    const seedStr =
-      typeof musicData === "object" && musicData !== null
-        ? ((musicData as Record<string, unknown>).artist || "") +
-          ":" +
-          ((musicData as Record<string, unknown>).title || "")
-        : String(musicData ?? "pattern");
-
-    const fnv = (s: string) => {
-      let h = 0x811c9dc5;
-      for (let i = 0; i < s.length; i++) {
-        h ^= s.charCodeAt(i);
-        h = (h * 0x01000193) >>> 0;
-      }
-      return h;
-    };
-
-    for (let i = 0; i < 20; i++) {
-      const x1 = (fnv(`${seedStr}:pattern:${i}:x1`) / 0xffffffff) * width;
-      const y1 = (fnv(`${seedStr}:pattern:${i}:y1`) / 0xffffffff) * height;
-      const x2 = (fnv(`${seedStr}:pattern:${i}:x2`) / 0xffffffff) * width;
-      const y2 = (fnv(`${seedStr}:pattern:${i}:y2`) / 0xffffffff) * height;
-
-      this.ctx.beginPath();
-      this.ctx.moveTo(x1, y1);
-      this.ctx.lineTo(x2, y2);
-      this.ctx.stroke();
-    }
-  }
 
 
-  private getOptimizedTextConfig(
-    platform: string,
-    _targetAudience: unknown,
-  ): Record<string, unknown> {
-    // AI-optimized text configuration based on platform and audience
-    const configs = {
-      facebook: {
-        titleFont: "bold 48px Arial",
-        subtitleFont: "32px Arial",
-        ctaFont: "24px Arial",
-        titleColor: "#ffffff",
-        subtitleColor: "rgba(255, 255, 255, 0.9)",
-        ctaColor: "#ffd700",
-      },
-      instagram: {
-        titleFont: "bold 56px Arial",
-        subtitleFont: "36px Arial",
-        ctaFont: "28px Arial",
-        titleColor: "#ffffff",
-        subtitleColor: "rgba(255, 255, 255, 0.9)",
-        ctaColor: "#ff6b6b",
-      },
-      twitter: {
-        titleFont: "bold 44px Arial",
-        subtitleFont: "28px Arial",
-        ctaFont: "22px Arial",
-        titleColor: "#ffffff",
-        subtitleColor: "rgba(255, 255, 255, 0.9)",
-        ctaColor: "#1da1f2",
-      },
-    };
 
-    return configs[platform as keyof typeof configs] || configs.facebook;
-  }
+
+
 
 
 
@@ -870,52 +708,12 @@ export class SocialMediaContentGenerator {
   }
 
   // AI video style generation
-  private getAIVideoStyle(
-    _musicData: unknown,
-    _targetAudience: unknown,
-  ): Record<string, unknown> {
-    return {
-      animation: "dynamic",
-      speed: "medium",
-      transitions: "smooth",
-      effects: "modern",
-    };
-  }
 
   // AI video effects generation
-  private getAIVideoEffects(
-    _platform: string,
-    _musicData: unknown,
-  ): Record<string, unknown> {
-    return {
-      filters: ["vintage", "neon"],
-      overlays: ["waveform", "lyrics"],
-      animations: ["bounce", "fade"],
-    };
-  }
 
   // AI video transitions
-  private getAIVideoTransitions(_platform: string): Record<string, unknown> {
-    return {
-      type: "smooth",
-      duration: 0.5,
-      style: "modern",
-    };
-  }
 
   // AI video text overlay
-  private getAIVideoTextOverlay(
-    musicData: unknown,
-    _platform: string,
-  ): Record<string, unknown> {
-    return {
-      title: musicData.title || "New Release",
-      artist: musicData.artist || "Artist Name",
-      style: "bold",
-      color: "#ffffff",
-      position: "center",
-    };
-  }
 
   // AI audio style generation
   private getAIAudioStyle(

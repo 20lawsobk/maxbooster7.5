@@ -9,7 +9,6 @@
 
 import * as http from "http";
 import * as https from "https";
-import { logger } from "../../logger.js";
 
 export interface HnsConfig {
   host: string; // e.g. '127.0.0.1'

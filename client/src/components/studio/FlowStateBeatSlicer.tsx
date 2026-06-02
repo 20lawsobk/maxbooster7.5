@@ -1,12 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Scissors, Play, Pause, Square, RotateCcw, Grid, Wand2, Download, Trash2, Volume2, Lock, Unlock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,

@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { apiRequest } from "@/lib/queryClient";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { TrendingUp, Users, AlertTriangle, DollarSign, Activity, Brain, Zap, Target, ArrowUpRight, ArrowDownRight, Loader2, Sparkles, AlertCircle, CheckCircle2, XCircle, Clock, Shield } from "lucide-react";
 

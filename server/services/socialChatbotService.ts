@@ -1,7 +1,6 @@
 import { randomBytes } from "crypto";
 
 import { logger } from "../logger";
-import { db } from "../db";
 
 export interface ChatbotMessage {
   id: string;

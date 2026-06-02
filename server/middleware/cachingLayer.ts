@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
-import { logger } from "../logger.js";
 
 interface CacheEntry {
   data: Record<string, unknown>;

@@ -8,7 +8,6 @@ import {
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
 } from "@/components/ui/breadcrumb";
-import { Home } from "lucide-react";
 
 // Mapping of route segments to human-readable labels
 const ROUTE_LABELS: Record<string, string> = {

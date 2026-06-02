@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Mail, Globe, Instagram, Twitter, Youtube, Facebook, Music, Download, ExternalLink, User, AlertCircle } from "lucide-react";
 

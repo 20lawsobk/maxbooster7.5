@@ -8,7 +8,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useStudioStore } from "@/lib/studioStore";
 
 type TimeDisplayMode = "smpte" | "musical" | "samples" | "dual";
 

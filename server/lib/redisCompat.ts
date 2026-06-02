@@ -1,4 +1,3 @@
-import { logger } from "../logger.js";
 
 /**
  * Applies node-redis v4 camelCase method aliases onto an ioredis client.

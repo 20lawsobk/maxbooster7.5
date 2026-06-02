@@ -1,5 +1,4 @@
 import { peakCacheEngine, PeakData } from "./PeakCacheEngine";
-import { nonDestructiveRenderer } from "./NonDestructiveRenderer";
 
 export interface ProcessingChain {
   id: string;

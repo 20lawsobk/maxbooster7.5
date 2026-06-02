@@ -1,4 +1,3 @@
-import { randomBytes } from "crypto";
 import { db } from "../db";
 import { pluginCatalog, pluginInstances, pluginPresets } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";

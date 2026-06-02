@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { subscribeWithSelector, persist, devtools } from "zustand/middleware";
-import { immer } from "zustand/middleware/immer";
 import type { WaveformPeakCache } from "../lib/daw/AudioWorkletEngine";
 
 export type TrackType =

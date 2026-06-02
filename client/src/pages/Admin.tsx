@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
-import { AppLayout } from "@/components/layout/AppLayout";
 import {
   Card,
   CardContent,

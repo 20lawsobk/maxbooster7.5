@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Square, Circle, SkipBack, Repeat, Wand2, Sparkles, Brain, Music, Mic, Scissors, Undo, Redo, Save, Download, Grid3X3, Box, Sliders, Activity, Gauge, Radio, MousePointer, Move, Pencil, Eraser, Plus, Library, Piano, LayoutGrid, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import {
   Tooltip,
   TooltipContent,
@@ -20,15 +19,10 @@ import {
 import { useUnifiedStore } from "@/stores/unifiedStoreAdapter";
 import { FlowState3DWorkspace } from "./FlowState3DWorkspace";
 import { FlowStateAIPanel } from "./FlowStateAIPanel";
-import { FlowStateSmartToolbar } from "./FlowStateSmartToolbar";
 import { FlowStateMixer } from "./FlowStateMixer";
 import { FlowStateSpectralVisualizer } from "./FlowStateSpectralVisualizer";
-import { FlowStatePluginChain } from "./FlowStatePluginChain";
 import { FlowStateAddTrack } from "./FlowStateAddTrack";
 import { FlowStateKeyboardShortcuts } from "./FlowStateKeyboardShortcuts";
-import { FlowStatePluginBrowser } from "./FlowStatePluginBrowser";
-import { FlowStateInstrumentDialog } from "./FlowStateInstrumentDialog";
-import { PluginControlDialog } from "./PluginControlDialog";
 import { PluginBrowser } from "./PluginBrowser";
 import { AIMusicGenerator } from "./AIMusicGenerator";
 import { LyricDisplay, type LyricLine } from "./LyricDisplay";

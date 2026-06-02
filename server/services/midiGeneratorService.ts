@@ -1,4 +1,3 @@
-import { logger } from "../logger.js";
 
 export interface MidiNote {
   note: number;

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, AlertCircle, Upload, Download, Music, Shield, Star, Heart, ThumbsUp, Users, TrendingUp, Clock, RefreshCw, ExternalLink, Copy, FileAudio, Sparkles, Store, BarChart3, Wallet, FileText } from "lucide-react";

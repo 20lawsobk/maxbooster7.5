@@ -2,7 +2,6 @@ import { storage } from "../storage";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as crypto from "crypto";
-import type { InsertUploadSession } from "@shared/schema";
 import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
 

@@ -1,10 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
-import bcrypt from "bcrypt";
 import { db } from "../db";
 import { apiKeys, apiUsage } from "@shared/schema";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
-import { config } from "../config/defaults";
 import { logger } from "../logger.js";
 
 // Extended Express Request with API key info

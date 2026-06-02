@@ -1,6 +1,5 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db.js";
-import { storage } from "../storage.js";
 import { eq, ilike, or, and, desc, count, gte, lte, asc, sum, inArray } from "drizzle-orm";
 import { users, projects, beats, releases, analytics, socialCampaigns, searchHistory, filterPresets } from "../../shared/schema.js";
 import { logger } from "../logger.js";

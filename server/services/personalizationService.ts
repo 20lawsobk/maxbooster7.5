@@ -1,4 +1,3 @@
-import { db } from "../db";
 import { storage } from "../storage";
 
 export type ArtistType =

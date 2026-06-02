@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SkeletonLoader } from "@/components/ui/skeleton-loader";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +27,6 @@ import { DollarSign, Download, TrendingUp, Clock, CheckCircle, AlertCircle, User
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   SplitVisualizationPieChart,

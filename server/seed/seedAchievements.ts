@@ -204,7 +204,6 @@ export async function seedAchievements() {
   }
 }
 
-import { fileURLToPath } from "url";
 
 const isMainModule =
   process.argv[1] &&

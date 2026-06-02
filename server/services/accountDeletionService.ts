@@ -1,5 +1,4 @@
 import cron from "node-cron";
-import { storage } from "../storage.js";
 import { db } from "../db.js";
 import { users, deletionAuditLogs } from "@shared/schema";
 import { eq, lte, and } from "drizzle-orm";
