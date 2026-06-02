@@ -297,14 +297,14 @@ export function useRecoverableSettingsChange<T extends Record<string, unknown>>(
   );
 }
 
-export function useRecoverableBatch(_module: string) {
+export function useRecoverableBatch(module: string) {
   const { startGroup, endGroup, undoGroup } = useUndo();
 
   const startBatch = useCallback(
     (name: string): string => {
-      return startGroup(name);
+      return startGroup(`${module}: ${name}`);
     },
-    [startGroup],
+    [startGroup, module],
   );
 
   const endBatch = useCallback(

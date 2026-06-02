@@ -7,6 +7,43 @@ import "jspdf-autotable";
 import { royaltiesTaxComplianceService } from "./royaltiesTaxComplianceService.js";
 import { royaltyEngine } from "./royaltyEngine.js";
 
+/**
+ * Export-facing view of a royalty statement.
+ *
+ * TODO(royalty-model): Temporary compatibility layer. Remove once the royalty
+ * statement model is materialized (schema migration + writer updates), then drop
+ * the boundary assertions that cast into this type. Keep isolated to export code.
+ *
+ * NOTE: The `royalty_statements` table currently persists only a base column
+ * set (see `RoyaltyStatement`). The richer revenue-breakdown / audit fields
+ * below are read by the export formatters but are NOT yet materialized in the
+ * database, so at runtime they resolve to `undefined`. This type documents the
+ * intended shape the exporters were written against without altering runtime
+ * behavior or emitting SQL for non-existent columns. Until the underlying
+ * statement model is built out, those fields produce empty/undefined output.
+ */
+type ExportableStatement = RoyaltyStatement & {
+  statementPeriod: string;
+  grossRevenue: number;
+  platformFees: number;
+  distributionFees: number;
+  recoupmentDeductions: number;
+  netRevenue: number;
+  payableAmount: number;
+  currency: string;
+  exchangeRate: number;
+  usdEquivalent: number;
+  totalStreams: number;
+  totalDownloads: number;
+  lineItems: unknown[];
+  territoryBreakdown: unknown[];
+  dspBreakdown: unknown[];
+  generatedAt: Date | null;
+  finalizedAt: Date | null;
+  paidAt: Date | null;
+  auditTrail: unknown;
+};
+
 declare module "jspdf" {
   interface jsPDF {
     autoTable: (options: unknown) => jsPDF;
@@ -63,7 +100,9 @@ export class RoyaltyExportsService {
     statementId: string,
     options: ExportOptions,
   ): Promise<{ data: string | Buffer; filename: string; mimeType: string }> {
-    const statement = await royaltyEngine.getStatement(statementId);
+    const statement = (await royaltyEngine.getStatement(
+      statementId,
+    )) as ExportableStatement | null;
     if (!statement) {
       throw new Error(`Statement ${statementId} not found`);
     }
@@ -84,7 +123,9 @@ export class RoyaltyExportsService {
     userId: string,
     options: ExportOptions,
   ): Promise<{ data: string | Buffer; filename: string; mimeType: string }> {
-    let statements = await royaltyEngine.getUserStatements(userId);
+    let statements = (await royaltyEngine.getUserStatements(
+      userId,
+    )) as ExportableStatement[];
 
     if (options.dateRange) {
       statements = statements.filter(
@@ -109,7 +150,7 @@ export class RoyaltyExportsService {
   async exportAuditLog(
     options: AuditExportOptions,
   ): Promise<{ data: string; filename: string; mimeType: string }> {
-    const statements = await db
+    const statements = (await db
       .select()
       .from(royaltyStatements)
       .where(
@@ -119,7 +160,7 @@ export class RoyaltyExportsService {
           lte(royaltyStatements.periodEnd, options.endDate),
         ),
       )
-      .orderBy(desc(royaltyStatements.periodStart));
+      .orderBy(desc(royaltyStatements.periodStart))) as ExportableStatement[];
 
     const recoupments = await db
       .select()
@@ -215,7 +256,7 @@ export class RoyaltyExportsService {
   }
 
   private exportToCSV(
-    statement: RoyaltyStatement,
+    statement: ExportableStatement,
     options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const rows: string[][] = [];
@@ -336,7 +377,7 @@ export class RoyaltyExportsService {
   }
 
   private exportToPDF(
-    statement: RoyaltyStatement,
+    statement: ExportableStatement,
     options: ExportOptions,
   ): { data: Buffer; filename: string; mimeType: string } {
     const doc = new jsPDF();
@@ -478,7 +519,7 @@ export class RoyaltyExportsService {
   }
 
   private exportToJSON(
-    statement: RoyaltyStatement,
+    statement: ExportableStatement,
     options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const exportData: Record<string, unknown> = {
@@ -530,7 +571,7 @@ export class RoyaltyExportsService {
   }
 
   private exportMultipleToCSV(
-    statements: RoyaltyStatement[],
+    statements: ExportableStatement[],
     _options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const headers = [
@@ -579,7 +620,7 @@ export class RoyaltyExportsService {
   }
 
   private exportMultipleToPDF(
-    statements: RoyaltyStatement[],
+    statements: ExportableStatement[],
     _options: ExportOptions,
   ): { data: Buffer; filename: string; mimeType: string } {
     const doc = new jsPDF();
@@ -638,7 +679,7 @@ export class RoyaltyExportsService {
   }
 
   private exportMultipleToJSON(
-    statements: RoyaltyStatement[],
+    statements: ExportableStatement[],
     _options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const exportData = {
@@ -776,7 +817,7 @@ export class RoyaltyExportsService {
   }
 
   async exportToExcel(
-    statements: RoyaltyStatement[],
+    statements: ExportableStatement[],
     options: ExportOptions,
   ): Promise<{ data: string; filename: string; mimeType: string }> {
     const worksheets: Record<string, string[][]> = {};
@@ -962,7 +1003,7 @@ export class RoyaltyExportsService {
     const yearStart = new Date(options.year, 0, 1);
     const yearEnd = new Date(options.year, 11, 31, 23, 59, 59);
 
-    const statements = await db
+    const statements = (await db
       .select()
       .from(royaltyStatements)
       .where(
@@ -972,7 +1013,7 @@ export class RoyaltyExportsService {
           lte(royaltyStatements.periodEnd, yearEnd),
         ),
       )
-      .orderBy(desc(royaltyStatements.periodStart));
+      .orderBy(desc(royaltyStatements.periodStart))) as ExportableStatement[];
 
     const monthlyTotals: Record<
       string,
@@ -1092,7 +1133,7 @@ export class RoyaltyExportsService {
   async exportTerritoryReport(
     options: TerritoryReportOptions,
   ): Promise<{ data: string | Buffer; filename: string; mimeType: string }> {
-    const statements = await db
+    const statements = (await db
       .select()
       .from(royaltyStatements)
       .where(
@@ -1101,7 +1142,7 @@ export class RoyaltyExportsService {
           gte(royaltyStatements.periodStart, options.startDate),
           lte(royaltyStatements.periodEnd, options.endDate),
         ),
-      );
+      )) as ExportableStatement[];
 
     const territoryData: Record<
       string,
