@@ -70,6 +70,7 @@ import { ServerVideoGenerator } from "@/components/content/ServerVideoGenerator"
 import {
   AIImageGenerator,
   type ImagePlatform as AIImagePlatform,
+  type ImageTone,
 } from "@/components/content/AIImageGenerator";
 import { SocialOutcomeHandler, useOutcomeHandler } from "@/components/social";
 
@@ -77,7 +78,7 @@ import { SocialOutcomeHandler, useOutcomeHandler } from "@/components/social";
 interface SocialPlatform {
   id: string;
   name: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   isConnected: boolean;
   followers: number;
@@ -140,6 +141,53 @@ interface GeneratedContent {
   videoResolution?: string;
   requiresHook?: boolean;
   extractedTitle?: string;
+  artist_name?: string;
+  video_hook?: string;
+  video_body?: string;
+  video_cta?: string;
+  genre?: string;
+  bg_color?: string;
+  accent_color?: string;
+}
+
+interface AssetMetadata {
+  caption?: string;
+  hook?: string;
+  body?: string;
+  cta?: string;
+  hashtags?: string[];
+  optimalPostTime?: string;
+  charCount?: number;
+  charLimit?: number;
+  platformRules?: { maxCharCount?: number };
+  wordCount?: number;
+  emojiCount?: number;
+  engagementScore?: number;
+  sentimentLabel?: "positive" | "neutral" | "negative";
+  suggestions?: string[];
+  prompt?: string;
+  imagePrompt?: string;
+  aspectRatio?: string;
+  bpm?: number;
+  audioBpm?: number;
+  key?: string;
+  audioKey?: string;
+  durationSec?: number;
+  audioDurationSec?: number;
+  maxDurationSec?: number;
+  videoDurationSec?: number;
+  resolution?: string;
+  videoResolution?: string;
+  requiresHook?: boolean;
+  title?: string;
+  extractedTitle?: string;
+}
+
+interface MultimodalAsset {
+  modality?: string;
+  metadata?: AssetMetadata;
+  payload?: string;
+  platform?: string;
 }
 
 interface PlatformPerformance {
@@ -157,6 +205,7 @@ interface FollowersGrowth {
   monthlyChange?: number;
   rate?: number;
   projected?: number;
+  percentChange?: number;
 }
 
 interface PlatformGrowthData {
@@ -176,6 +225,7 @@ interface EngagementBreakdown {
   commentsChange?: number;
   shares?: number;
   sharesChange?: number;
+  byPlatform?: { platform: string; rate: number }[];
 }
 
 interface TrendingTopic {
@@ -382,6 +432,8 @@ const SOCIAL_PLATFORMS: SocialPlatform[] = [
 
 export default function SocialMedia() {
   const { user, isLoading } = useRequireSubscription();
+  const userDisplayName = (user as { displayName?: string } | null)
+    ?.displayName;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { invalidateOnSocialChange } = useAnalyticsInvalidation();
@@ -419,7 +471,7 @@ export default function SocialMedia() {
   const [isGeneratingFromUrl, setIsGeneratingFromUrl] = useState(false);
   const [contentFormat, setContentFormat] = useState("text");
   const [regularContentFormat, setRegularContentFormat] = useState("text");
-  const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [, setEditingPost] = useState<string | null>(null);
   const [uploadedMedia, setUploadedMedia] = useState<File | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
@@ -432,7 +484,7 @@ export default function SocialMedia() {
 
   // Calendar state
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [, setSelectedDate] = useState<Date | null>(null);
   const [editingCalendarPost, setEditingCalendarPost] =
     useState<CalendarPost | null>(null);
   const [selectedCalendarPostIds, setSelectedCalendarPostIds] = useState<
@@ -632,7 +684,7 @@ export default function SocialMedia() {
     return id;
   };
   const mapAssetsToGeneratedContent = (
-    assets: unknown[],
+    assets: MultimodalAsset[],
     filterModality?: string,
   ): GeneratedContent[] => {
     const hashtagRe = /#[\w\u0080-\uFFFF]+/g;
@@ -683,11 +735,10 @@ export default function SocialMedia() {
 
     return (assets || [])
       .filter(
-        (a: Record<string, unknown>) =>
-          !filterModality || a.modality === filterModality,
+        (a) => !filterModality || a.modality === filterModality,
       )
-      .map((a: Record<string, unknown>) => {
-        const m = a.metadata ?? {};
+      .map((a) => {
+        const m: AssetMetadata = a.metadata ?? {};
         const isMedia =
           a.modality === "image" ||
           a.modality === "audio" ||
@@ -2007,7 +2058,7 @@ export default function SocialMedia() {
                           topic={postContent || ""}
                           tone={selectedTone}
                           goal="growth"
-                          artistName={user?.displayName || user?.username || ""}
+                          artistName={userDisplayName || user?.username || ""}
                           onVideoGenerated={(url: string) => {
                             setGeneratedVideoUrl(url);
                             setMediaPreviewUrl(url);
@@ -2052,9 +2103,9 @@ export default function SocialMedia() {
                               "instagram") as AIImagePlatform
                           }
                           topic={postContent || ""}
-                          tone={selectedTone as Record<string, unknown>}
+                          tone={selectedTone as ImageTone}
                           goal="growth"
-                          artistName={user?.displayName || user?.username || ""}
+                          artistName={userDisplayName || user?.username || ""}
                           endpoint="/api/social/generate-image"
                           onImageGenerated={(url) => {
                             setGeneratedImageUrl(url);
@@ -2871,7 +2922,7 @@ export default function SocialMedia() {
                                       goal="growth"
                                       artistName={
                                         item.artist_name ||
-                                        user?.displayName ||
+                                        userDisplayName ||
                                         user?.username ||
                                         ""
                                       }
@@ -3084,7 +3135,10 @@ export default function SocialMedia() {
                             : new Date().toISOString().slice(0, 16),
                         platforms: editingCalendarPost.platforms || [],
                         postType: editingCalendarPost.postType || "post",
-                        content: editingCalendarPost.content || "",
+                        content:
+                          typeof editingCalendarPost.content === "string"
+                            ? editingCalendarPost.content
+                            : "",
                         mediaUrls: editingCalendarPost.mediaUrls || [],
                         hashtags: editingCalendarPost.hashtags || [],
                         mentions: editingCalendarPost.mentions || [],
@@ -3492,7 +3546,6 @@ export default function SocialMedia() {
                 <ChartCard
                   title="Engagement Trends"
                   subtitle="Last 14 days activity"
-                  icon={<Activity className="h-5 w-5 text-blue-500" />}
                 >
                   {weeklyStats?.dailyEngagement &&
                   weeklyStats.dailyEngagement.length > 0 ? (
@@ -3526,7 +3579,6 @@ export default function SocialMedia() {
                 <ChartCard
                   title="Platform Breakdown"
                   subtitle="Followers by platform"
-                  icon={<Globe className="h-5 w-5 text-blue-500" />}
                 >
                   {platforms.filter((p) => p.isConnected && p.followers > 0)
                     .length > 0 ? (
@@ -4269,6 +4321,7 @@ export default function SocialMedia() {
                                     variant="ghost"
                                     className="text-purple-600 hover:text-purple-700"
                                     onClick={() =>
+                                      insight.action &&
                                       handleAIAction(insight.action)
                                     }
                                     data-testid={`button-ai-action-${insight.action}`}
@@ -4491,12 +4544,38 @@ export default function SocialMedia() {
   );
 }
 
+interface PressKitPhoto {
+  url?: string;
+  caption?: string;
+}
+
+interface PressKitData {
+  id?: string;
+  artistName?: string;
+  genres?: string[];
+  shortBio?: string;
+  bio?: string;
+  contactEmail?: string;
+  bookingEmail?: string;
+  technicalRider?: string;
+  socialLinks?: {
+    instagram?: string;
+    twitter?: string;
+    youtube?: string;
+    facebook?: string;
+    spotify?: string;
+  };
+  photos?: PressKitPhoto[];
+  isPublic?: boolean;
+  slug?: string;
+}
+
 function PressKitTabContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
 
-  const { data: pressKit, isLoading } = useQuery({
+  const { data: pressKit, isLoading } = useQuery<PressKitData | null>({
     queryKey: ["/api/press-kit"],
   });
 
@@ -4559,10 +4638,10 @@ function PressKitTabContent() {
       const res = (await uploadWithProgress(
         "/api/storage/upload",
         formData,
-      )) as Record<string, unknown>;
+      )) as { file: { url: string } };
       const photoUrl = res.file.url;
 
-      const currentPhotos = (pressKit?.photos as unknown[]) || [];
+      const currentPhotos = (pressKit?.photos as PressKitPhoto[]) || [];
       updatePressKitMutation.mutate({
         ...pressKit,
         photos: [...currentPhotos, { url: photoUrl, caption: "" }],
@@ -4579,7 +4658,7 @@ function PressKitTabContent() {
   };
 
   const removePhoto = (index: number) => {
-    const currentPhotos = [...(pressKit?.photos as unknown[])];
+    const currentPhotos = [...(pressKit?.photos as PressKitPhoto[])];
     currentPhotos.splice(index, 1);
     updatePressKitMutation.mutate({ ...pressKit, photos: currentPhotos });
   };
@@ -4707,7 +4786,7 @@ function PressKitTabContent() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {pressKit?.photos?.map(
-                    (photo: Record<string, unknown>, index: number) => (
+                    (photo: PressKitPhoto, index: number) => (
                       <div
                         key={index}
                         className="group relative aspect-square rounded-md overflow-hidden border"
@@ -4854,6 +4933,26 @@ function PressKitTabContent() {
 // RADIO / DJ / BLOG PITCHING CONTENT
 // ============================================================================
 
+interface RadioPitchItem {
+  id: string;
+  trackTitle: string;
+  targetName: string;
+  targetType: string;
+  pitchNote?: string;
+  featureUrl?: string;
+  status: string;
+}
+
+interface RadioPitchStats {
+  total: number;
+  radio: number;
+  blog: number;
+  dj: number;
+  podcast: number;
+  features: number;
+  pending: number;
+}
+
 function RadioPitchingContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -4871,10 +4970,10 @@ function RadioPitchingContent() {
     demoUrl: "",
   });
 
-  const { data: pitches = [], isLoading } = useQuery<any[]>({
+  const { data: pitches = [], isLoading } = useQuery<RadioPitchItem[]>({
     queryKey: ["/api/radio-pitches"],
   });
-  const { data: stats } = useQuery<Record<string, unknown>>({
+  const { data: stats } = useQuery<RadioPitchStats>({
     queryKey: ["/api/radio-pitches/stats"],
   });
 
@@ -4920,7 +5019,7 @@ function RadioPitchingContent() {
     filterType === "all"
       ? pitches
       : pitches.filter(
-          (p: Record<string, unknown>) => p.targetType === filterType,
+          (p: RadioPitchItem) => p.targetType === filterType,
         );
 
   const typeColors: Record<string, string> = {
@@ -5155,7 +5254,7 @@ function RadioPitchingContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredPitches.map((p: Record<string, unknown>) => (
+              {filteredPitches.map((p: RadioPitchItem) => (
                 <div
                   key={p.id}
                   className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
@@ -5236,6 +5335,23 @@ function RadioPitchingContent() {
 // FAN EMAIL CAMPAIGNS CONTENT
 // ============================================================================
 
+interface FanCampaignItem {
+  id: string;
+  name: string;
+  subject: string;
+  campaignType?: string;
+  status: string;
+  recipientCount: number;
+  openCount: number;
+}
+
+interface FanCampaignStats {
+  totalCampaigns: number;
+  sent: number;
+  totalSubscribers: number;
+  avgOpenRate: number;
+}
+
 function FanCampaignsContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -5249,10 +5365,10 @@ function FanCampaignsContent() {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: campaigns = [], isLoading } = useQuery<any[]>({
+  const { data: campaigns = [], isLoading } = useQuery<FanCampaignItem[]>({
     queryKey: ["/api/fan-campaigns"],
   });
-  const { data: stats } = useQuery<Record<string, unknown>>({
+  const { data: stats } = useQuery<FanCampaignStats>({
     queryKey: ["/api/fan-campaigns/stats"],
   });
 
@@ -5508,7 +5624,7 @@ function FanCampaignsContent() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {campaigns.map((c: Record<string, unknown>) => (
+                  {campaigns.map((c: FanCampaignItem) => (
                     <div
                       key={c.id}
                       className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"

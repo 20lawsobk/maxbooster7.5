@@ -107,6 +107,62 @@ interface VideoInfo {
   sentimentLabel: string | null;
 }
 
+/** Video-config block returned by the analyze-audio / analyze-image endpoints. */
+interface VideoConfig {
+  genre?: string;
+  topic?: string;
+  tone?: string;
+  speed?: number;
+  bg?: string;
+  ac?: string;
+  duration?: number;
+  platform?: string;
+}
+
+/** Content seed derived from analyzed media. */
+interface ContentSeed {
+  topic?: string;
+  genre?: string;
+  artist?: string;
+  track?: string;
+}
+
+/** Subset of the raw audio analysis surfaced in the UI. */
+interface AudioAnalysisResult {
+  genre?: string;
+  tempo?: number;
+  key?: string;
+  error?: string;
+}
+
+/** Response shape of POST /api/social/analyze-audio. */
+interface AudioAnalysisResponse {
+  success?: boolean;
+  message?: string;
+  analysis?: AudioAnalysisResult;
+  seed?: ContentSeed;
+  content?: unknown;
+  video_config?: VideoConfig;
+}
+
+/** Subset of the raw image analysis surfaced in the UI. */
+interface ImageAnalysisResult {
+  mood?: string;
+  genre_hint?: string;
+  error?: string;
+}
+
+/** Response shape of POST /api/social/analyze-image. */
+interface ImageAnalysisResponse {
+  success?: boolean;
+  message?: string;
+  analysis?: ImageAnalysisResult;
+  seed?: ContentSeed;
+  content?: unknown;
+  video_config?: VideoConfig;
+  palette?: string[];
+}
+
 /** Narrow an unknown caught value to a string message. */
 function errMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error ?? "");
@@ -283,19 +339,15 @@ export function ServerVideoGenerator({
 
   // Audio mode state
   const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [audioAnalysis, setAudioAnalysis] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [audioAnalysis, setAudioAnalysis] =
+    useState<AudioAnalysisResponse | null>(null);
   const [isAnalyzingAudio, setIsAnalyzingAudio] = useState(false);
 
   // Image mode state
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [imageAnalysis, setImageAnalysis] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [imageAnalysis, setImageAnalysis] =
+    useState<ImageAnalysisResponse | null>(null);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
 
   // Voiceover
@@ -745,7 +797,7 @@ export function ServerVideoGenerator({
     } catch (err) {
       toast({
         title: "Analysis Failed",
-        description: err.message,
+        description: errMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -762,7 +814,7 @@ export function ServerVideoGenerator({
       });
       return;
     }
-    const vc = audioAnalysis.video_config || {};
+    const vc: VideoConfig = audioAnalysis.video_config || {};
     await callGenerateVideo({
       topic: vc.topic || audioAnalysis.seed?.topic || "music",
       tone: vc.tone || tone,
@@ -809,7 +861,7 @@ export function ServerVideoGenerator({
     } catch (err) {
       toast({
         title: "Analysis Failed",
-        description: err.message,
+        description: errMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -826,7 +878,7 @@ export function ServerVideoGenerator({
       });
       return;
     }
-    const vc = imageAnalysis.video_config || {};
+    const vc: VideoConfig = imageAnalysis.video_config || {};
     await callGenerateVideo({
       topic: vc.topic || imageAnalysis.seed?.topic || "music aesthetic",
       tone: vc.tone || tone,

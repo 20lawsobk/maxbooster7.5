@@ -31,7 +31,105 @@ import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
 import { DollarSign, Music, TrendingUp, Upload, Sparkles, Activity, Zap, Brain, Rocket, Crown, Globe, Calendar, ArrowUp, ArrowDown, Plus, AlertTriangle, CheckCircle, Info, Lightbulb, Lock } from "lucide-react";
 import { useLocation } from "wouter";
+import type { User } from "@shared/schema";
 
+type DashboardUserPersona =
+  | "artist"
+  | "producer"
+  | "label"
+  | "manager"
+  | null;
+
+interface CountdownProgress {
+  completed: number;
+  total: number;
+  percentage: number;
+}
+
+interface CountdownItem {
+  id: string | number;
+  title?: string;
+  releaseDate: string;
+  artworkUrl?: string | null;
+  status?: string;
+  progress?: CountdownProgress;
+  presaveCount?: number;
+}
+
+interface CountdownsResponse {
+  countdowns: CountdownItem[];
+}
+
+interface OnboardingStatusResponse {
+  hasCompletedOnboarding: boolean;
+  currentStep: number;
+}
+
+interface DashboardStats {
+  totalTracks: number;
+  activeDistributions: number;
+  totalRevenue: number;
+  socialReach: number;
+  monthlyGrowth: {
+    tracks: number;
+    distributions: number;
+    revenue: number;
+    socialReach: number;
+  };
+}
+
+interface DashboardTopPlatform {
+  name: string;
+  streams: number;
+  revenue: number;
+  growth: number;
+}
+
+interface DashboardActivity {
+  id: string | number;
+  status: string;
+  title: string;
+  description: string;
+  timestamp: string | number | Date;
+}
+
+interface ComprehensiveDashboardData {
+  stats?: DashboardStats;
+  topPlatforms?: DashboardTopPlatform[];
+  recentActivity?: DashboardActivity[];
+}
+
+interface DashboardProject {
+  id: string | number;
+  title?: string;
+  genre?: string;
+  streams?: number;
+  status?: string;
+}
+
+interface ProjectsResponse {
+  data: DashboardProject[];
+}
+
+interface AiRecommendation {
+  id?: string;
+  title: string;
+  description: string;
+  category?: string;
+  priority: string;
+}
+
+interface AiPredictions {
+  nextMonthStreams?: number;
+  nextMonthRevenue?: number;
+  viralPotential: number;
+}
+
+interface AiInsightsResponse {
+  performanceScore: number;
+  recommendations?: AiRecommendation[];
+  predictions: AiPredictions;
+}
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useRequireSubscription();
@@ -64,7 +162,7 @@ export default function Dashboard() {
 }
 
 function UpcomingReleasesSection() {
-  const { data, isLoading } = useQuery<{ countdowns: unknown[] }>({
+  const { data, isLoading } = useQuery<CountdownsResponse>({
     queryKey: ["/api/countdowns"],
   });
 
@@ -91,7 +189,7 @@ function UpcomingReleasesSection() {
           </div>
         ) : (
           <div className="space-y-3">
-            {countdowns.map((countdown: Record<string, unknown>) => {
+            {countdowns.map((countdown: CountdownItem) => {
               const releaseDate = new Date(countdown.releaseDate);
               const now = new Date();
               const diff = releaseDate.getTime() - now.getTime();
@@ -138,12 +236,12 @@ function UpcomingReleasesSection() {
 }
 
 // Separate component to ensure hooks are only called when user is authenticated
-function DashboardContent({ user }: { user: Record<string, unknown> }) {
+function DashboardContent({ user }: { user: User }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { invalidateOnProjectChange, invalidateDashboard } =
     useAnalyticsInvalidation();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userLevel, setUserLevel] = useState<
@@ -161,7 +259,7 @@ function DashboardContent({ user }: { user: Record<string, unknown> }) {
   );
 
   // Check onboarding status
-  const { data: onboardingStatus } = useQuery({
+  const { data: onboardingStatus } = useQuery<OnboardingStatusResponse>({
     queryKey: ["/api/auth/onboarding-status"],
     staleTime: 15 * 60 * 1000, // 15 minutes - less frequent changes
     retry: 1, // Limit retries
@@ -180,26 +278,26 @@ function DashboardContent({ user }: { user: Record<string, unknown> }) {
   }, [onboardingStatus]);
 
   // Fetch comprehensive dashboard data - now only called when user is authenticated
-  const { data: dashboardData } = useQuery({
+  const { data: dashboardData } = useQuery<ComprehensiveDashboardData>({
     queryKey: ["/api/dashboard/comprehensive"],
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
     meta: { silentError: true }, // Background polls must never show a red banner
   });
 
-  const { data: projectsData, isLoading: projectsLoading } = useQuery({
+  const { data: projectsData, isLoading: projectsLoading } = useQuery<ProjectsResponse>({
     queryKey: ["/api/projects"],
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });
 
-  const projects = (projectsData as Record<string, unknown>)?.data || [];
+  const projects = projectsData?.data || [];
 
   useQuery({
     queryKey: ["/api/analytics/dashboard"],
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });
 
-  const { data: aiInsights, isLoading: aiInsightsLoading } = useQuery({
+  const { data: aiInsights, isLoading: aiInsightsLoading } = useQuery<AiInsightsResponse>({
     queryKey: ["/api/ai/insights"],
     enabled: hasPaidSubscription, // Only fetch if user has paid subscription
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
@@ -464,7 +562,14 @@ function DashboardContent({ user }: { user: Record<string, unknown> }) {
 
         {/* Progressive Feature Discovery - Shows one feature at a time */}
         <PowerFeatureSpotlight
-          userPersona={user?.onboardingData?.persona || null}
+          userPersona={
+            user.onboardingData &&
+            typeof user.onboardingData === "object" &&
+            "persona" in user.onboardingData
+              ? (user.onboardingData as { persona?: DashboardUserPersona })
+                  .persona || null
+              : null
+          }
           compact={false}
         />
 
@@ -734,7 +839,7 @@ function DashboardContent({ user }: { user: Record<string, unknown> }) {
                     </div>
                   ) : projects.length > 0 ? (
                     <div className="space-y-3">
-                      {projects.slice(0, 5).map((project: unknown) => (
+                      {projects.slice(0, 5).map((project: DashboardProject) => (
                         <div
                           key={project.id}
                           className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"

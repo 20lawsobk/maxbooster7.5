@@ -146,6 +146,23 @@ interface Release {
   appleMusicStreams: number;
   youtubeStreams: number;
   albumArt?: string;
+  metadata?: ReleaseMetadata;
+}
+
+interface ReleaseMetadata {
+  artistName?: string;
+  releaseType?: string;
+  primaryGenre?: string;
+  secondaryGenre?: string;
+  language?: string;
+  labelName?: string;
+  copyrightYear?: string | number;
+  copyrightOwner?: string;
+  publishingRights?: string;
+  isExplicit?: boolean;
+  upcCode?: string;
+  selectedPlatforms?: string[];
+  [key: string]: unknown;
 }
 
 interface Track {
@@ -291,30 +308,116 @@ interface AnalyticsGrowth {
 interface StreamingTrend {
   date: string;
   streams: number;
-  platform: string;
+  change: number;
+  platform?: string;
 }
 
 interface GeographicData {
-  country: string;
+  region: string;
   streams: number;
-  earnings: number;
+  percentage: number;
 }
 
 interface EarningsBreakdown {
+  totalGrowth?: number;
   thisMonth: number;
-  monthGrowth: number;
-  pendingPayout: number;
-  nextPayoutDate: string;
+  monthGrowth?: number;
+  pendingPayout?: number;
+  nextPayoutDate?: string;
 }
 
 interface PlatformEarning {
   platform: string;
-  amount: number;
+  platformId?: string;
+  name?: string;
+  amount?: number;
+  earnings?: number;
+  streams?: number;
+  perStreamRate?: number;
+  percentage?: number;
 }
 
 interface PayoutHistory {
+  id?: string;
   date: string;
+  method?: string;
   amount: number;
+  status?: string;
+}
+
+interface LabelSubmissionItem {
+  id?: string;
+  trackTitle?: string;
+  labelName?: string;
+  contactName?: string;
+  contactRole?: string;
+  notes?: string;
+  priority?: string;
+  status?: string;
+}
+
+interface SampleClearanceItem {
+  id?: string;
+  trackTitle?: string;
+  sampleSource?: string;
+  sampleArtist?: string;
+  sampleLabel?: string;
+  clearanceType?: string;
+  fee?: number;
+  status?: string;
+}
+
+interface PlaylistPitchingStats {
+  total: number;
+  accepted: number;
+  placed: number;
+  pending: number;
+  rejected: number;
+  conversionRate: number;
+}
+
+interface ShowsStats {
+  totalShows: number;
+  totalRevenue: number;
+  avgTicketsSold: number;
+  upcomingCount: number;
+  pastCount: number;
+  pastRevenue: number;
+  avgCapacityFill: number;
+}
+
+interface VenuesStats {
+  total: number;
+  prospects: number;
+  contacted: number;
+  booked: number;
+  declined: number;
+  avgCapacity: number;
+}
+
+interface SyncLicensingStats {
+  totalTracks: number;
+  licensedCount: number;
+  pendingCount: number;
+  revenue: number;
+}
+
+interface LabelSubmissionsStats {
+  total: number;
+  submitted: number;
+  responded: number;
+  accepted: number;
+  pending: number;
+  conversionRate: number;
+}
+
+interface SampleClearancesStats {
+  total: number;
+  cleared: number;
+  pending: number;
+  needed: number;
+  denied: number;
+  totalFees: number;
 }
 
 interface HyperFollowAnalytics {
@@ -337,7 +440,7 @@ interface PlatformData {
 
 interface DistroPlatform extends PlatformData {
   id: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string;
   earnings: number;
 }
@@ -456,7 +559,7 @@ function PlaylistPitchingContent() {
   });
 
   const { data: stats, isLoading: statsLoading } = useQuery<
-    Record<string, unknown>
+    Partial<PlaylistPitchingStats>
   >({
     queryKey: ["/api/playlist-pitching/stats"],
   });
@@ -689,7 +792,7 @@ function ShowsContent() {
     queryKey: ["/api/shows"],
   });
 
-  const { data: stats } = useQuery<Record<string, unknown>>({
+  const { data: stats } = useQuery<Partial<ShowsStats>>({
     queryKey: ["/api/shows/stats"],
   });
 
@@ -879,7 +982,7 @@ function VenueBookingCRM() {
   const { data: venues = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/venues"],
   });
-  const { data: stats } = useQuery<Record<string, unknown>>({
+  const { data: stats } = useQuery<Partial<VenuesStats>>({
     queryKey: ["/api/venues/stats"],
   });
 
@@ -1110,7 +1213,7 @@ function SyncLicensingContent() {
     queryKey: ["/api/sync-licensing"],
   });
 
-  const { data: stats } = useQuery<Record<string, unknown>>({
+  const { data: stats } = useQuery<Partial<SyncLicensingStats>>({
     queryKey: ["/api/sync-licensing/stats"],
   });
 
@@ -1887,10 +1990,10 @@ export default function Distribution() {
           const releases = releasesData?.releases || [];
           const tableData = releases.map((release: Record<string, unknown>) => [
             release.title || "Untitled",
-            (release.metadata as Record<string, unknown>)?.artistName ||
+            (release.metadata as ReleaseMetadata)?.artistName ||
               release.artistName ||
               "Unknown Artist",
-            (release.metadata as Record<string, unknown>)?.primaryGenre ||
+            (release.metadata as ReleaseMetadata)?.primaryGenre ||
               release.genre ||
               "N/A",
             release.releaseDate
@@ -2468,7 +2571,7 @@ export default function Distribution() {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {releases.map((release: unknown) => (
+                  {releases.map((release: Release) => (
                     <Card
                       key={release.id}
                       className="group hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700"
@@ -2527,13 +2630,13 @@ export default function Distribution() {
                               {release.title}
                             </h3>
                             <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                              {(release.metadata as Record<string, unknown>)
+                              {(release.metadata as ReleaseMetadata)
                                 ?.artistName ||
                                 release.artistName ||
                                 "—"}
                             </p>
                             <div className="flex items-center space-x-2">
-                              {(release.metadata as Record<string, unknown>)
+                              {(release.metadata as ReleaseMetadata)
                                 ?.releaseType && (
                                 <Badge
                                   variant="outline"
@@ -2549,7 +2652,7 @@ export default function Distribution() {
                                   }
                                 </Badge>
                               )}
-                              {(release.metadata as Record<string, unknown>)
+                              {(release.metadata as ReleaseMetadata)
                                 ?.primaryGenre && (
                                 <Badge variant="outline" className="text-xs">
                                   {
@@ -2562,7 +2665,7 @@ export default function Distribution() {
                                   }
                                 </Badge>
                               )}
-                              {((release.metadata as Record<string, unknown>)
+                              {((release.metadata as ReleaseMetadata)
                                 ?.isExplicit ||
                                 release.isExplicit) && (
                                 <Badge
@@ -2606,7 +2709,7 @@ export default function Distribution() {
                             <div className="flex items-center space-x-1">
                               <Globe className="w-4 h-4" />
                               <span>
-                                {(release.metadata as Record<string, unknown>)
+                                {(release.metadata as ReleaseMetadata)
                                   ?.upcCode ||
                                   release.upcCode ||
                                   "—"}
@@ -2986,7 +3089,7 @@ export default function Distribution() {
                   <CardContent>
                     <div className="space-y-3">
                       {streamingTrends.length > 0 ? (
-                        streamingTrends.map((week: unknown, index: number) => (
+                        streamingTrends.map((week: StreamingTrend, index: number) => (
                           <div
                             key={index}
                             className="flex items-center justify-between"
@@ -3090,7 +3193,7 @@ export default function Distribution() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {geographicData.length > 0 ? (
-                      geographicData.map((region: unknown, index: number) => (
+                      geographicData.map((region: GeographicData, index: number) => (
                         <div
                           key={index}
                           className="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
@@ -3278,7 +3381,7 @@ export default function Distribution() {
                 <CardContent>
                   <div className="space-y-4">
                     {platformEarnings.length > 0 ? (
-                      platformEarnings.map((platform: unknown) => {
+                      platformEarnings.map((platform: PlatformEarning) => {
                         const platformInfo = DISTRO_PLATFORMS.find(
                           (p) => p.id === platform.platformId,
                         );
@@ -3347,7 +3450,7 @@ export default function Distribution() {
                 <CardContent>
                   <div className="space-y-4">
                     {payoutHistory.length > 0 ? (
-                      payoutHistory.map((payout: unknown, index: number) => (
+                      payoutHistory.map((payout: PayoutHistory, index: number) => (
                         <div
                           key={payout.id || index}
                           className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
@@ -3966,7 +4069,7 @@ export default function Distribution() {
                             <div className="flex-1">
                               <p className="font-medium">{release.title}</p>
                               <p className="text-sm text-muted-foreground">
-                                {(release.metadata as Record<string, unknown>)
+                                {(release.metadata as ReleaseMetadata)
                                   ?.artistName ||
                                   release.artistName ||
                                   "—"}
@@ -5052,7 +5155,7 @@ export default function Distribution() {
                         Artist
                       </p>
                       <p className="font-medium">
-                        {(selectedRelease.metadata as Record<string, unknown>)
+                        {(selectedRelease.metadata as ReleaseMetadata)
                           ?.artistName || "—"}
                       </p>
                     </div>
@@ -5076,7 +5179,7 @@ export default function Distribution() {
                         Release Type
                       </p>
                       <p className="font-medium capitalize">
-                        {(selectedRelease.metadata as Record<string, unknown>)
+                        {(selectedRelease.metadata as ReleaseMetadata)
                           ?.releaseType || "—"}
                       </p>
                     </div>
@@ -5085,7 +5188,7 @@ export default function Distribution() {
                         Genre
                       </p>
                       <p className="font-medium">
-                        {(selectedRelease.metadata as Record<string, unknown>)
+                        {(selectedRelease.metadata as ReleaseMetadata)
                           ?.primaryGenre || "—"}
                       </p>
                     </div>
@@ -5106,7 +5209,7 @@ export default function Distribution() {
                         Language
                       </p>
                       <p className="font-medium">
-                        {(selectedRelease.metadata as Record<string, unknown>)
+                        {(selectedRelease.metadata as ReleaseMetadata)
                           ?.language || "—"}
                       </p>
                     </div>
@@ -5115,7 +5218,7 @@ export default function Distribution() {
                         Copyright Owner
                       </p>
                       <p className="font-medium">
-                        {(selectedRelease.metadata as Record<string, unknown>)
+                        {(selectedRelease.metadata as ReleaseMetadata)
                           ?.copyrightOwner || "—"}
                       </p>
                     </div>
@@ -5124,12 +5227,12 @@ export default function Distribution() {
                         Copyright Year
                       </p>
                       <p className="font-medium">
-                        {(selectedRelease.metadata as Record<string, unknown>)
+                        {(selectedRelease.metadata as ReleaseMetadata)
                           ?.copyrightYear || "—"}
                       </p>
                     </div>
                   </div>
-                  {(selectedRelease.metadata as Record<string, unknown>)
+                  {(selectedRelease.metadata as ReleaseMetadata)
                     ?.selectedPlatforms?.length > 0 && (
                     <div>
                       <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-2">
@@ -5137,7 +5240,7 @@ export default function Distribution() {
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {(
-                          selectedRelease.metadata as Record<string, unknown>
+                          selectedRelease.metadata as ReleaseMetadata
                         ).selectedPlatforms.map((p: string) => (
                           <Badge
                             key={p}
@@ -5150,7 +5253,7 @@ export default function Distribution() {
                       </div>
                     </div>
                   )}
-                  {(selectedRelease.metadata as Record<string, unknown>)
+                  {(selectedRelease.metadata as ReleaseMetadata)
                     ?.labelName && (
                     <div>
                       <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">
@@ -5158,7 +5261,7 @@ export default function Distribution() {
                       </p>
                       <p className="font-medium">
                         {
-                          (selectedRelease.metadata as Record<string, unknown>)
+                          (selectedRelease.metadata as ReleaseMetadata)
                             .labelName
                         }
                       </p>
@@ -5180,7 +5283,7 @@ export default function Distribution() {
                       setEditReleaseForm({
                         title: selectedRelease.title,
                         artistName:
-                          (selectedRelease.metadata as Record<string, unknown>)
+                          (selectedRelease.metadata as ReleaseMetadata)
                             ?.artistName || "",
                         releaseDate: selectedRelease.releaseDate
                           ? new Date(selectedRelease.releaseDate)
@@ -5188,7 +5291,7 @@ export default function Distribution() {
                               .split("T")[0]
                           : "",
                         primaryGenre:
-                          (selectedRelease.metadata as Record<string, unknown>)
+                          (selectedRelease.metadata as ReleaseMetadata)
                             ?.primaryGenre || "",
                       });
                       setShowEditRelease(true);
@@ -5374,7 +5477,7 @@ function ARSubmissionsContent() {
   const { data: submissions = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/label-submissions"],
   });
-  const { data: stats } = useQuery<Record<string, unknown>>({
+  const { data: stats } = useQuery<Partial<LabelSubmissionsStats>>({
     queryKey: ["/api/label-submissions/stats"],
   });
 
@@ -5653,7 +5756,7 @@ function ARSubmissionsContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {submissions.map((sub: Record<string, unknown>) => (
+              {submissions.map((sub: LabelSubmissionItem) => (
                 <div
                   key={sub.id}
                   className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -5742,7 +5845,7 @@ function SampleClearanceContent() {
   const { data: clearances = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/sample-clearances"],
   });
-  const { data: stats } = useQuery<Record<string, unknown>>({
+  const { data: stats } = useQuery<Partial<SampleClearancesStats>>({
     queryKey: ["/api/sample-clearances/stats"],
   });
 
@@ -6014,7 +6117,7 @@ function SampleClearanceContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {clearances.map((c: Record<string, unknown>) => (
+              {clearances.map((c: SampleClearanceItem) => (
                 <div
                   key={c.id}
                   className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"

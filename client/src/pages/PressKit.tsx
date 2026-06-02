@@ -39,6 +39,41 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+interface PressKitPhoto {
+  url: string;
+  caption?: string;
+}
+
+interface PressKitSocialLinks {
+  instagram?: string;
+  twitter?: string;
+  youtube?: string;
+  facebook?: string;
+  spotify?: string;
+}
+
+interface PressKitData {
+  id?: string;
+  artistName?: string;
+  bio?: string;
+  shortBio?: string;
+  genres?: string[];
+  contactEmail?: string;
+  bookingEmail?: string;
+  website?: string;
+  socialLinks?: PressKitSocialLinks;
+  photos?: PressKitPhoto[];
+  technicalRider?: string;
+  hospitalityRider?: string;
+  hospitality?: string;
+  isPublic?: boolean;
+  slug?: string;
+}
+
+interface StorageUploadResponse {
+  file: { url: string };
+}
+
 export default function PressKit() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -72,7 +107,7 @@ export default function PressKit() {
     }
   };
 
-  const { data: pressKit, isLoading } = useQuery({
+  const { data: pressKit, isLoading } = useQuery<PressKitData>({
     queryKey: ["/api/press-kit"],
   });
 
@@ -129,10 +164,10 @@ export default function PressKit() {
       const res = (await uploadWithProgress(
         "/api/storage/upload",
         formData,
-      )) as Record<string, unknown>;
+      )) as StorageUploadResponse;
       const photoUrl = res.file.url;
 
-      const currentPhotos = (pressKit?.photos as unknown[]) || [];
+      const currentPhotos = pressKit?.photos || [];
       updatePressKitMutation.mutate({
         ...pressKit,
         photos: [...currentPhotos, { url: photoUrl, caption: "" }],
@@ -149,7 +184,7 @@ export default function PressKit() {
   };
 
   const removePhoto = (index: number) => {
-    const currentPhotos = [...(pressKit?.photos as unknown[])];
+    const currentPhotos = [...(pressKit?.photos ?? [])];
     currentPhotos.splice(index, 1);
     updatePressKitMutation.mutate({ ...pressKit, photos: currentPhotos });
   };
@@ -288,7 +323,7 @@ export default function PressKit() {
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     {pressKit?.photos?.map(
-                      (p: Record<string, unknown>, i: number) => (
+                      (p: PressKitPhoto, i: number) => (
                         <img
                           key={i}
                           src={p.url}
@@ -511,7 +546,7 @@ export default function PressKit() {
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {pressKit?.photos?.map(
-                        (photo: Record<string, unknown>, index: number) => (
+                        (photo: PressKitPhoto, index: number) => (
                           <div
                             key={index}
                             className="group relative aspect-square rounded-md overflow-hidden border"

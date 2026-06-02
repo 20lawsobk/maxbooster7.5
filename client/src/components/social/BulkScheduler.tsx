@@ -40,6 +40,66 @@ interface ValidationError {
   message: string;
 }
 
+interface BatchSummary {
+  id: string;
+  totalPosts: number;
+  processedPosts: number;
+  successfulPosts: number;
+  failedPosts: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+}
+
+interface BatchesResponse {
+  page: number;
+  pageSize: number;
+  batches: BatchSummary[];
+}
+
+interface BatchStatusResponse {
+  batchId: string;
+  status: string;
+  totalPosts: number;
+  processedPosts: number;
+  successfulPosts: number;
+  failedPosts: number;
+  statusBreakdown: Record<string, number>;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  queueStats: unknown;
+  posts: Array<{
+    id: string;
+    platform: string;
+    status: string;
+    scheduledAt: string | null;
+    publishedAt: string | null;
+    error: string | null;
+  }>;
+}
+
+interface ValidateResponse {
+  valid: boolean;
+  totalPosts: number;
+  errors: ValidationError[];
+  warnings: Array<{ index: number; message: string }>;
+}
+
+interface ScheduleResponse {
+  success: boolean;
+  batchId: string;
+  campaignId: string;
+  totalPosts: number;
+  message: string;
+}
+
+interface CancelResponse {
+  success: boolean;
+  message: string;
+}
+
 
 export function BulkScheduler() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -54,18 +114,19 @@ export function BulkScheduler() {
   const { toast } = useToast();
   useQueryClient();
 
-  const { data: batches, refetch: refetchBatches } = useQuery({
+  const { data: batches, refetch: refetchBatches } = useQuery<BatchesResponse>({
     queryKey: ["/api/social/bulk/batches"],
     refetchInterval: 15000,
   });
 
-  const { data: currentBatch, refetch: refetchCurrentBatch } = useQuery({
-    queryKey: ["/api/social/bulk/status", currentBatchId],
-    enabled: !!currentBatchId,
-    refetchInterval: currentBatchId ? 5000 : false,
-  });
+  const { data: currentBatch, refetch: refetchCurrentBatch } =
+    useQuery<BatchStatusResponse>({
+      queryKey: ["/api/social/bulk/status", currentBatchId],
+      enabled: !!currentBatchId,
+      refetchInterval: currentBatchId ? 5000 : false,
+    });
 
-  const validateMutation = useMutation({
+  const validateMutation = useMutation<ValidateResponse, Error, BulkPost[]>({
     mutationFn: async (posts: BulkPost[]) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch("/api/social/bulk/validate", {
@@ -99,7 +160,7 @@ export function BulkScheduler() {
     },
   });
 
-  const scheduleMutation = useMutation({
+  const scheduleMutation = useMutation<ScheduleResponse, Error, BulkPost[]>({
     mutationFn: async (posts: BulkPost[]) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch("/api/social/bulk/schedule", {
@@ -140,7 +201,7 @@ export function BulkScheduler() {
     },
   });
 
-  const cancelMutation = useMutation({
+  const cancelMutation = useMutation<CancelResponse, Error, string>({
     mutationFn: async (batchId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/bulk/${batchId}`, {
@@ -444,7 +505,7 @@ export function BulkScheduler() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {batches?.batches?.map((batch: unknown) => (
+            {batches?.batches?.map((batch) => (
               <div
                 key={batch.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/5 cursor-pointer"

@@ -59,6 +59,113 @@ import {
 } from "@/components/ui/alert-dialog";
 import { NotificationPreferences } from "@/components/notifications";
 
+interface ProfileResponse {
+  firstName?: string;
+  lastName?: string;
+  artistName?: string;
+  email?: string;
+  bio?: string;
+  website?: string;
+  location?: string;
+}
+
+interface NotificationSettingsResponse {
+  emailNotifications?: boolean;
+  pushNotifications?: boolean;
+  weeklyReports?: boolean;
+  salesAlerts?: boolean;
+  royaltyUpdates?: boolean;
+}
+
+interface PreferencesResponse {
+  theme?: string;
+  defaultBPM?: number;
+  defaultKey?: string;
+  autoSave?: boolean;
+  betaFeatures?: boolean;
+}
+
+interface PlanBenefits {
+  name: string;
+  price: number;
+  period: string;
+  features: string[];
+  cloudStorage: string;
+  support: string;
+  savings?: number;
+}
+
+interface PlanOption extends PlanBenefits {
+  tier: string;
+}
+
+interface SubscriptionResponse {
+  tier: string;
+  status: string;
+  statusBadge: string;
+  statusColor: string;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  priceId: string | null;
+  isExpired: boolean;
+  isLifetime: boolean;
+  isPastDue: boolean;
+  daysUntilRenewal: number | null;
+  canReactivate: boolean;
+  stripeConfigured: boolean;
+  syncError: string | null;
+  isTrialing: boolean;
+  trialEndsAt: string | null;
+  trialDaysRemaining: number | null;
+  planBenefits: PlanBenefits;
+  upgradeOptions: PlanOption[];
+  downgradeOptions: PlanOption[];
+  pricing: { monthly: number; yearly: number; lifetime: number };
+  price?: number;
+}
+
+interface PaymentMethodResponse {
+  last4: string | null;
+  expiry: string | null;
+  brand: string | null;
+}
+
+interface BillingHistoryItem {
+  id: string | null;
+  invoiceId: string;
+  date: string;
+  amount: number;
+  status: string | null;
+  description: string;
+  pdfUrl: string | null;
+}
+
+interface RefundItem {
+  id: string;
+  amount: number;
+  status: string;
+  reason: string | null;
+  created: string;
+  chargeId: string;
+  description: string;
+  statusDisplay: string;
+  statusColor: string;
+}
+
+interface RefundsResponse {
+  refunds: RefundItem[];
+  hasMore: boolean;
+}
+
+interface BillingActionError {
+  code?: string;
+  message?: string;
+  cancelAt?: string;
+  nextBillingDate?: string;
+  clientSecret?: string;
+  body?: BillingActionError;
+}
+
 export default function Settings() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
@@ -107,7 +214,6 @@ export default function Settings() {
     }
   }, [location]);
 
-  const [showPassword, setShowPassword] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [twoFactorOpen, setTwoFactorOpen] = useState(false);
   const [paymentUpdateOpen, setPaymentUpdateOpen] = useState(false);
@@ -135,7 +241,7 @@ export default function Settings() {
   }, [user?.avatarUrl, user?.profileImageUrl]);
 
   // Query for full profile data (supplemental — user from useRequireSubscription is the auth source)
-  const { data: fullProfile } = useQuery({
+  const { data: fullProfile } = useQuery<ProfileResponse>({
     queryKey: ["/api/auth/profile"],
     enabled: !!user,
     retry: 1,
@@ -143,40 +249,42 @@ export default function Settings() {
   });
 
   // Query for notification settings
-  const { data: notificationData } = useQuery({
+  const { data: notificationData } = useQuery<NotificationSettingsResponse>({
     queryKey: ["/api/auth/notifications"],
     enabled: !!user,
   });
 
   // Query for preferences
-  const { data: preferencesData } = useQuery({
+  const { data: preferencesData } = useQuery<PreferencesResponse>({
     queryKey: ["/api/auth/preferences"],
     enabled: !!user,
   });
 
   // Query for subscription data
-  const { data: subscriptionData } = useQuery({
+  const { data: subscriptionData } = useQuery<SubscriptionResponse>({
     queryKey: ["/api/billing/subscription"],
     enabled: !!user,
   });
 
   // Query for payment method
-  const { data: paymentMethod } = useQuery({
+  const { data: paymentMethod } = useQuery<PaymentMethodResponse>({
     queryKey: ["/api/billing/payment-method"],
     enabled: !!user,
   });
 
   // Query for billing history
-  const { data: billingHistory = [], isLoading: billingLoading } = useQuery({
-    queryKey: ["/api/billing/history"],
-    enabled: !!user,
-  });
+  const { data: billingHistory = [], isLoading: billingLoading } =
+    useQuery<BillingHistoryItem[]>({
+      queryKey: ["/api/billing/history"],
+      enabled: !!user,
+    });
 
   // Query for refunds
-  const { data: refundsData, isLoading: refundsLoading } = useQuery({
-    queryKey: ["/api/billing/refunds"],
-    enabled: !!user && refundsExpanded,
-  });
+  const { data: refundsData, isLoading: refundsLoading } =
+    useQuery<RefundsResponse>({
+      queryKey: ["/api/billing/refunds"],
+      enabled: !!user && refundsExpanded,
+    });
 
   // Query for login sessions
   useQuery({
@@ -187,7 +295,7 @@ export default function Settings() {
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
-    artistName: (user as Record<string, unknown>)?.artistName || "",
+    artistName: ((user as Record<string, unknown>)?.artistName as string) || "",
     email: user?.email || "",
     bio: "",
     website: "",
@@ -216,7 +324,8 @@ export default function Settings() {
       setProfileData({
         firstName: fullProfile.firstName || "",
         lastName: fullProfile.lastName || "",
-        artistName: (fullProfile as Record<string, unknown>).artistName || "",
+        artistName:
+          ((fullProfile as Record<string, unknown>).artistName as string) || "",
         email: fullProfile.email || "",
         bio: fullProfile.bio || "",
         website: fullProfile.website || "",
@@ -473,7 +582,8 @@ export default function Settings() {
       });
       setCancelSubscriptionOpen(false);
     } catch (error) {
-      const errorData = error.body || error;
+      const errorData =
+        (error as BillingActionError).body || (error as BillingActionError);
       const errorMessage =
         errorData.code === "SUBSCRIPTION_ALREADY_CANCELLED"
           ? "Your subscription is already cancelled"
@@ -491,7 +601,7 @@ export default function Settings() {
     }
   };
 
-  const [reactivating, setReactivating] = useState(false);
+  const [, setReactivating] = useState(false);
 
   const handleReactivateSubscription = async () => {
     setReactivating(true);
@@ -514,7 +624,8 @@ export default function Settings() {
           : "Your subscription has been reactivated!",
       });
     } catch (error) {
-      const errorData = error.body || error;
+      const errorData =
+        (error as BillingActionError).body || (error as BillingActionError);
 
       if (errorData.code === "PAYMENT_METHOD_REQUIRED") {
         toast({
@@ -571,7 +682,8 @@ export default function Settings() {
           data.message || "Your payment has been processed successfully.",
       });
     } catch (error) {
-      const errorData = error.body || error;
+      const errorData =
+        (error as BillingActionError).body || (error as BillingActionError);
 
       if (errorData.code === "PAYMENT_DECLINED") {
         toast({
@@ -1651,7 +1763,7 @@ export default function Settings() {
                     ) : (
                       <div className="space-y-3">
                         {billingHistory.map(
-                          (billing: Record<string, unknown>) => (
+                          (billing) => (
                             <div
                               key={billing.id || billing.invoiceId}
                               className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20 hover:bg-muted/20 transition-colors"
@@ -1782,7 +1894,7 @@ export default function Settings() {
                         ) : (
                           <div className="space-y-3">
                             {refundsData.refunds.map(
-                              (refund: Record<string, unknown>) => (
+                              (refund) => (
                                 <div
                                   key={refund.id}
                                   className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20"
@@ -2139,7 +2251,7 @@ export default function Settings() {
                       </h4>
                       <div className="grid gap-3">
                         {subscriptionData.upgradeOptions.map(
-                          (option: Record<string, unknown>) => (
+                          (option) => (
                             <div
                               key={option.tier}
                               className="p-4 rounded-lg border bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
@@ -2201,7 +2313,7 @@ export default function Settings() {
                       </h4>
                       <div className="grid gap-3">
                         {subscriptionData.downgradeOptions.map(
-                          (option: Record<string, unknown>) => (
+                          (option) => (
                             <div
                               key={option.tier}
                               className="p-4 rounded-lg border bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800"

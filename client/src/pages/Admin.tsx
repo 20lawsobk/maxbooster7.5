@@ -144,6 +144,47 @@ interface AdminAnalytics {
   newUsers: number;
 }
 
+interface ModerationReportsResponse {
+  reports: ModerationReport[];
+  pagination: Pagination;
+  stats: {
+    pending: number;
+    reviewed: number;
+    resolved: number;
+  };
+}
+
+interface PlatformSettings {
+  emailNotifications?: boolean;
+  maintenanceMode?: boolean;
+  userRegistrationEnabled?: boolean;
+  apiRateLimit?: number;
+  webhookEndpoint?: string | null;
+}
+
+interface RoyaltyRateRow {
+  id: number;
+  displayName: string;
+  baseRatePerStream: number;
+  premiumMultiplier: number;
+  updatedAt: string;
+}
+
+interface TaxTreatyRow {
+  id: number;
+  countryName: string;
+  countryCode: string;
+  withholdingRate: number;
+  treatyRate: number;
+  notes: string | null;
+}
+
+interface LabelSettingRow {
+  key: string;
+  value: string;
+  description: string | null;
+}
+
 const ADMIN_NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "users", label: "User Management", icon: Users },
@@ -179,7 +220,7 @@ export default function Admin() {
   const [moderationAction, setModerationAction] = useState("");
   const [moderationNotes, setModerationNotes] = useState("");
   const [killSwitchReason, setKillSwitchReason] = useState("");
-  const [killSwitchTarget, setKillSwitchTarget] = useState<"all" | string>(
+  const [, setKillSwitchTarget] = useState<"all" | string>(
     "all",
   );
   const [bypassDuration, setBypassDuration] = useState("2");
@@ -245,12 +286,12 @@ export default function Admin() {
     data: moderationReports,
     isLoading: moderationLoading,
     refetch: refetchModeration,
-  } = useQuery({
+  } = useQuery<ModerationReportsResponse>({
     queryKey: ["/api/admin/moderation/reports", { status: moderationFilter }],
     enabled: !!user,
   });
 
-  const { data: platformSettings } = useQuery({
+  const { data: platformSettings } = useQuery<PlatformSettings>({
     queryKey: ["/api/admin/settings"],
     enabled: !!user,
   });
@@ -2063,17 +2104,17 @@ export default function Admin() {
     } | null>(null);
 
     const { data: ratesData, refetch: refetchRates } = useQuery<{
-      rates: unknown[];
+      rates: RoyaltyRateRow[];
     }>({
       queryKey: ["/api/admin/financial-config/royalty-rates"],
     });
     const { data: treatiesData, refetch: refetchTreaties } = useQuery<{
-      treaties: unknown[];
+      treaties: TaxTreatyRow[];
     }>({
       queryKey: ["/api/admin/financial-config/tax-treaties"],
     });
     const { data: settingsData, refetch: refetchSettings } = useQuery<{
-      settings: unknown[];
+      settings: LabelSettingRow[];
     }>({
       queryKey: ["/api/admin/financial-config/label-settings"],
     });
@@ -2178,7 +2219,7 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {ratesData?.rates?.map((r: Record<string, unknown>) => (
+                {ratesData?.rates?.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">
                       {r.displayName}
@@ -2327,7 +2368,7 @@ export default function Admin() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {settingsData?.settings?.map((s: Record<string, unknown>) => (
+            {settingsData?.settings?.map((s) => (
               <div
                 key={s.key}
                 className="flex items-start justify-between gap-4 py-2 border-b last:border-0"
@@ -2418,7 +2459,7 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {treatiesData?.treaties?.map((t: Record<string, unknown>) => (
+                {treatiesData?.treaties?.map((t) => (
                   <TableRow key={t.id}>
                     <TableCell className="font-medium">
                       {t.countryName}
