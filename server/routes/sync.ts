@@ -198,7 +198,7 @@ const ACTION_HANDLERS: Record<
 
   // ── Tracks ────────────────────────────────────────────────────────────────
 
-  "track.add": async (payload, userId) => {
+  "track.add": async (payload, _userId) => {
     try {
       const data = payload as {
         projectId: string;
@@ -219,7 +219,7 @@ const ACTION_HANDLERS: Record<
     }
   },
 
-  "track.update": async (payload, userId) => {
+  "track.update": async (payload, _userId) => {
     try {
       const data = payload as {
         trackId: string;
@@ -248,7 +248,7 @@ const ACTION_HANDLERS: Record<
     }
   },
 
-  "track.delete": async (payload, userId) => {
+  "track.delete": async (payload, _userId) => {
     try {
       const data = payload as { trackId: string };
 
@@ -295,19 +295,19 @@ const ACTION_HANDLERS: Record<
 
   // ── Drafts ────────────────────────────────────────────────────────────────
   // Drafts live in the client-side IndexedDB; the server only needs to ACK.
-  "draft.save": async (payload, userId) => {
+  "draft.save": async (_payload, _userId) => {
     return { success: true, data: { saved: true } };
   },
 
   // ── Audio ─────────────────────────────────────────────────────────────────
   // Audio files are uploaded separately via multipart. This action ACKs
   // pending metadata so the queue item can be cleared.
-  "audio.upload": async (payload, userId) => {
+  "audio.upload": async (_payload, _userId) => {
     return { success: true, data: { acknowledged: true } };
   },
 
   // ── Fallback ─────────────────────────────────────────────────────────────
-  default: async (payload, userId) => {
+  default: async (_payload, userId) => {
     logger.warn("[sync] Unhandled action type", { userId });
     return { success: true, data: { processed: true } };
   },
@@ -403,7 +403,7 @@ router.get("/status", requireAuth, async (req, res) => {
 router.post("/resolve-conflict", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { actionId, resolution, mergedData } = req.body;
+    const { actionId, resolution } = req.body;
 
     if (!actionId || !["local", "server", "merged"].includes(resolution)) {
       return res

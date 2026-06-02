@@ -1,34 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
-import {
-  motion,
-  AnimatePresence,
-  useMotionValue,
-  useTransform,
-  PanInfo,
-} from "framer-motion";
-import {
-  Command,
-  Plus,
-  Music,
-  Share2,
-  BarChart3,
-  Settings,
-  Upload,
-  Home,
-  Keyboard,
-  Zap,
-  ChevronUp,
-  ChevronDown,
-  Grip,
-  X,
-  Star,
-  Clock,
-  Sparkles,
-  Folder,
-  ShoppingBag,
-  DollarSign,
-} from "lucide-react";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { Command, Plus, Music, Share2, BarChart3, Settings, Upload, Home, Keyboard, Zap, Grip, X, Star, Folder, ShoppingBag, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -233,7 +206,7 @@ export function QuickActionsMenu({
   };
 
   const handleDragEnd = useCallback(
-    (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       setIsDragging(false);
       const threshold = 50;
 

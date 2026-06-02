@@ -1,40 +1,6 @@
 import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Magnet,
-  Grid,
-  Layers,
-  Sliders,
-  Music,
-  Mic,
-  Volume2,
-  Clock,
-  Gauge,
-  Save,
-  FolderOpen,
-  Plus,
-  Undo2,
-  Redo2,
-  Wand2,
-  Brain,
-  Lightbulb,
-  ChevronDown,
-  Settings,
-  Zap,
-  SlidersHorizontal,
-  GitBranch,
-  Route,
-  Piano,
-  Drum,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, SkipForward, Repeat, Magnet, Layers, Sliders, Music, Volume2, Clock, Gauge, Save, FolderOpen, Plus, Undo2, Redo2, Brain, Lightbulb, ChevronDown, SlidersHorizontal, GitBranch, Route, Piano } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {

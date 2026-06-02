@@ -10,15 +10,7 @@
  * 100% in-house, no external APIs
  */
 
-import {
-  SynthesizerEngine,
-  DRUM_PRESETS,
-  BASS_PRESETS,
-  SYNTH_PRESETS,
-  type DrumParams,
-  type BassParams,
-  type SynthParams,
-} from "./SynthesizerEngine.js";
+import { SynthesizerEngine } from "./SynthesizerEngine.js";
 
 // ============================================================================
 // AUDIO UTILITIES

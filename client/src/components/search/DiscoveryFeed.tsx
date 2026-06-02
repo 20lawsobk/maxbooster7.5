@@ -6,21 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Sparkles,
-  TrendingUp,
-  Clock,
-  Music,
-  Play,
-  Heart,
-  ChevronRight,
-  RefreshCw,
-  Flame,
-  Star,
-  Zap,
-  User,
-  Disc,
-} from "lucide-react";
+import { Sparkles, TrendingUp, Clock, Music, Play, ChevronRight, RefreshCw, Flame, Star, Zap, Disc } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DiscoverySection {
@@ -306,7 +292,7 @@ function DiscoverSection({
           <div className="flex gap-4">
             {items
               .slice(0, 8)
-              .map((item: Record<string, unknown>, index: number) => (
+              .map((item: Record<string, unknown>, _index: number) => (
                 <BeatCardCompact
                   key={item.id}
                   beat={item}

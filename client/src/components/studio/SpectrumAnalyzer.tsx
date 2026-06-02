@@ -32,7 +32,7 @@ export function SpectrumAnalyzer({
 }: SpectrumAnalyzerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
-  const waterfallDataRef = useRef<ImageData[]>([]);
+  useRef<ImageData[]>([]);
   const peakHoldRef = useRef<Float32Array>(new Float32Array(barCount));
   const peakHoldTimeRef = useRef<Float32Array>(new Float32Array(barCount));
 

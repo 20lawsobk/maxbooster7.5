@@ -1,22 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  CombFilter,
-  LFO,
-  Oscillator,
-  ADSR,
-  EnvelopeFollower,
-  msToSamples,
-  dbToLinear,
-  clamp,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, LFO, Oscillator, ADSR, msToSamples, softClip, hardClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -74,7 +56,7 @@ export class ElectricBassSynth implements SynthesizerEngine {
     this.ampEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.ampEnvelope.release();
   }
@@ -168,7 +150,7 @@ export class SynthBassSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -278,7 +260,7 @@ export class AcousticBassSynth implements SynthesizerEngine {
     this.bodyEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.bodyEnvelope.release();
   }
@@ -376,7 +358,7 @@ export class SubBassSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -463,7 +445,7 @@ export class WobbleBassSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -577,7 +559,7 @@ export class FunkBassSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.slapEnvelope.release();
     this.popEnvelope.release();
@@ -680,7 +662,7 @@ export class ReesBassSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -789,7 +771,7 @@ export class FMBassSynth implements SynthesizerEngine {
     this.modEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.modEnvelope.release();
   }
@@ -887,7 +869,7 @@ export class PluckBassSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -1002,7 +984,7 @@ export class GrowlBassSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }

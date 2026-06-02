@@ -371,7 +371,7 @@ export function useBatchProgress(initialTotal: number = 0) {
   const incrementProgress = (
     success: boolean,
     currentItem?: string,
-    error?: string,
+    _error?: string,
   ) => {
     setState((prev) => ({
       ...prev,

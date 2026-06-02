@@ -15,13 +15,6 @@ import {
   Minimize2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useStudioStore, AutomationMode } from "@/lib/studioStore";
 import { audioEngine } from "@/lib/audioEngine";
 import { useToast } from "@/hooks/use-toast";
@@ -714,7 +707,6 @@ export function AutomationLane({
   };
 
   const selectedPoint = points.find((p) => p.id === selectedPointId);
-  const modeConfig = AUTOMATION_MODE_CONFIG[automationMode];
   const isWriting = automationMode === "write" && isPlaying;
   const isTouchRecording =
     automationMode === "touch" && isTouching && isPlaying;

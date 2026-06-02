@@ -24,14 +24,7 @@ import type {
   BufferSize,
   AudioFormat,
 } from "../../../shared/audioConstants";
-import {
-  SAMPLE_RATES,
-  BUFFER_SIZES,
-  TRACK_LIMITS,
-  PERFORMANCE_GUARANTEES,
-  getRecommendedBufferSize,
-  calculateLatencyMs,
-} from "../../../shared/audioConstants";
+import { SAMPLE_RATES, BUFFER_SIZES, TRACK_LIMITS, PERFORMANCE_GUARANTEES, calculateLatencyMs } from "../../../shared/audioConstants";
 import { logger } from "@/lib/logger";
 
 export type ExtendedSampleRate = 44100 | 48000 | 88200 | 96000 | 192000;
@@ -227,7 +220,6 @@ class AudioEngine {
   };
 
   private actualLatencyMs = 0;
-  private panLaw: PanLaw = "constantPower";
 
   // Latency compensation
   private latencyCompensation: LatencyCompensation = {
@@ -238,8 +230,6 @@ class AudioEngine {
   };
 
   // AudioWorklet state
-  private audioWorkletLoaded = false;
-  private meterWorkletNode: AudioWorkletNode | null = null;
 
   // Aux sends and returns
   private auxBuses = new Map<
@@ -256,7 +246,6 @@ class AudioEngine {
 
   // Automation lanes
   private automationLanes = new Map<string, AutomationLane[]>();
-  private automationScheduler: number | null = null;
 
   // Sidechain configurations
   private sidechainConfigs = new Map<string, SidechainConfig>();

@@ -1,23 +1,9 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  DelayLine,
-  BiquadFilter,
-  OnePoleFilter,
-  EnvelopeFollower,
-  LFO,
-  msToSamples,
-  dbToLinear,
-  softClip,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, DelayLine, BiquadFilter, OnePoleFilter, EnvelopeFollower, LFO, msToSamples, dbToLinear } from "./core";
 
 export class TapeDelayProcessor implements DSPProcessor {
   private delayL: DelayLine;
   private delayR: DelayLine;
   private wowFlutter: number = 0;
-  private saturation: number = 0;
   private lpFilterL: OnePoleFilter;
   private lpFilterR: OnePoleFilter;
   private hpFilterL: BiquadFilter;
@@ -36,7 +22,7 @@ export class TapeDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -120,7 +106,7 @@ export class DigitalDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -130,7 +116,6 @@ export class DigitalDelayProcessor implements DSPProcessor {
     const timeR = (params.timeRight as number) ?? 500;
     const feedback = (params.feedback as number) ?? 0.4;
     const highCut = (params.highCut as number) ?? 12000;
-    const sync = (params.sync as boolean) ?? false;
     const pingPong = (params.pingPong as boolean) ?? false;
 
     const delaySamplesL = msToSamples(timeL, this.sampleRate);
@@ -190,7 +175,7 @@ export class PingPongDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -257,7 +242,7 @@ export class SlapbackDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -321,7 +306,7 @@ export class ModDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -392,7 +377,7 @@ export class DuckingDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -466,7 +451,7 @@ export class MultiTapDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -590,7 +575,7 @@ export class FilterDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -671,14 +656,13 @@ export class ReverseDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
 
     const mix = (params.mix as number) ?? 0.4;
     const time = (params.time as number) ?? 500;
-    const feedback = (params.feedback as number) ?? 0.3;
     const crossfade = (params.crossfade as number) ?? 0.1;
     const highCut = (params.highCut as number) ?? 8000;
 
@@ -759,7 +743,7 @@ export class GranularDelayProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;

@@ -1,13 +1,5 @@
 import type { AudioAnalysisData, BeatInfo } from "./AudioAnalyzer";
-import {
-  TextAnimator,
-  type TextStyle,
-  type AnimationConfig,
-  type WordTiming,
-  type CharacterTiming,
-  DEFAULT_TEXT_STYLE,
-  ANIMATION_PRESETS,
-} from "./TextAnimator";
+import { TextAnimator, type TextStyle, type AnimationConfig, DEFAULT_TEXT_STYLE, ANIMATION_PRESETS } from "./TextAnimator";
 
 export type LyricFormat = "lrc" | "srt" | "plain";
 export type DisplayMode = "line" | "word" | "karaoke";
@@ -218,7 +210,7 @@ export class LyricEngine {
   parsePlainText(
     text: string,
     duration: number,
-    linesPerScreen: number = 2,
+    _linesPerScreen: number = 2,
   ): ParsedLyrics {
     const rawLines = text.split("\n").filter((l) => l.trim());
     const lines: LyricLine[] = [];
@@ -454,11 +446,6 @@ export class LyricEngine {
     for (const line of visibleLines) {
       const isCurrentLine =
         currentTime >= line.startTime && currentTime < line.endTime;
-      const lineProgress = isCurrentLine
-        ? (currentTime - line.startTime) / (line.endTime - line.startTime)
-        : currentTime >= line.endTime
-          ? 1
-          : 0;
 
       const style = isCurrentLine
         ? { ...textStyle, ...highlightStyle }
@@ -540,7 +527,7 @@ export class LyricEngine {
     if (!currentLine) return;
 
     const position = this.getTextPosition();
-    const { textStyle, highlightStyle, karaokeStyle } = this.config;
+    const { textStyle,  karaokeStyle } = this.config;
 
     const lineProgress =
       (currentTime - currentLine.startTime) /
@@ -611,7 +598,7 @@ export class LyricEngine {
   renderWithAnimation(
     currentTime: number,
     animationStyle: AnimationConfig["style"],
-    audioData?: AudioAnalysisData | null,
+    _audioData?: AudioAnalysisData | null,
   ): void {
     const currentLine = this.getCurrentLine(currentTime);
     if (!currentLine) return;

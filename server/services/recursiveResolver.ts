@@ -287,7 +287,7 @@ function rdataToIP(rdata: Buffer): string {
 }
 
 // Decode NS/CNAME/SOA name from rdata (first name field)
-function rdataToName(buf: Buffer, rdata: Buffer, rdataOffset: number): string {
+function rdataToName(_buf: Buffer, rdata: Buffer, _rdataOffset: number): string {
   // rdata offsets are relative to the full packet buffer
   // We get the rdata slice, but parseName needs the full buffer + absolute offset
   // Since we're working with slices, parse inline

@@ -1,20 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Zap,
-  X,
-  Command,
-  Plus,
-  Music,
-  Share2,
-  BarChart3,
-  Home,
-  Keyboard,
-  Settings,
-  Rocket,
-  ChevronUp,
-} from "lucide-react";
+import { Zap, Command, Plus, Music, Share2, BarChart3, Home, Keyboard, Rocket, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,

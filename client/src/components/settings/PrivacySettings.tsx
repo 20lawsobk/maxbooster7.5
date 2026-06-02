@@ -15,13 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -33,22 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Eye,
-  EyeOff,
-  Download,
-  Trash2,
-  Shield,
-  Globe,
-  Users,
-  Lock,
-  FileText,
-  CheckCircle,
-  AlertTriangle,
-  Loader2,
-  Clock,
-  Info,
-} from "lucide-react";
+import { Eye, Download, Trash2, Shield, Globe, Users, Lock, FileText, CheckCircle, AlertTriangle, Loader2, Clock, Info } from "lucide-react";
 
 interface PrivacySettings {
   profileVisibility: "public" | "private" | "connections";

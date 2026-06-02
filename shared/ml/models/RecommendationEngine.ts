@@ -14,11 +14,7 @@
 
 import * as tf from "@tensorflow/tfjs";
 import { BaseModel } from "./BaseModel.js";
-import type {
-  ModelMetadata,
-  TrainingOptions,
-  PredictionResult,
-} from "../types.js";
+import type { TrainingOptions } from "../types.js";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -136,20 +132,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return denominator === 0 ? 0 : dotProduct / denominator;
 }
 
-function euclideanDistance(a: number[], b: number[]): number {
-  if (a.length !== b.length) return Infinity;
 
-  let sum = 0;
-  for (let i = 0; i < a.length; i++) {
-    sum += (a[i] - b[i]) ** 2;
-  }
-  return Math.sqrt(sum);
-}
-
-function normalizeVector(v: number[]): number[] {
-  const norm = Math.sqrt(v.reduce((sum, x) => sum + x * x, 0));
-  return norm === 0 ? v : v.map((x) => x / norm);
-}
 
 function audioFeatureToVector(features: AudioFeatureVector): number[] {
   return [
@@ -920,7 +903,6 @@ export class RecommendationEngine extends BaseModel {
 
     for (let i = 0; i < targetLength; i++) {
       const targetEnergy = energyCurve[i];
-      const position = i / targetLength;
 
       let bestTrack: { id: string; track: TrackData; score: number } | null =
         null;
@@ -930,7 +912,6 @@ export class RecommendationEngine extends BaseModel {
         if (usedTrackIds.has(trackId)) continue;
 
         let score = 0;
-        const reasons: string[] = [];
 
         // Feature similarity to average
         const featureVec = audioFeatureToVector(track.features);

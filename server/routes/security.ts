@@ -22,11 +22,11 @@ router.use(require2FA);
 
 const processStartTime = Date.now();
 
-router.get("/metrics", async (req: Request, res: Response) => {
+router.get("/metrics", async (_req: Request, res: Response) => {
   try {
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    new Date(now.getTime() - 60 * 60 * 1000);
 
     const [
       activeSessionsResult,
@@ -142,7 +142,7 @@ router.get("/metrics", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/behavioral-alerts", async (req: Request, res: Response) => {
+router.get("/behavioral-alerts", async (_req: Request, res: Response) => {
   try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -225,7 +225,7 @@ router.get("/behavioral-alerts", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/anomaly-detection", async (req: Request, res: Response) => {
+router.get("/anomaly-detection", async (_req: Request, res: Response) => {
   try {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
@@ -324,7 +324,7 @@ router.get("/anomaly-detection", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/pentest-results", async (req: Request, res: Response) => {
+router.get("/pentest-results", async (_req: Request, res: Response) => {
   try {
     const now = new Date();
 

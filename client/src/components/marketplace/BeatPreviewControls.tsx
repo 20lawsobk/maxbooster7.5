@@ -57,12 +57,12 @@ export function BeatPreviewControls({
     targetBpm,
     targetKey,
     volume,
-    playbackRate,
+    
     pitchShift,
     loadBeat,
     play,
     pause,
-    stop,
+    
     setTargetBpm,
     setTargetKey,
     setVolume,
@@ -398,7 +398,7 @@ export function BeatPreviewBadges({
   originalKey: string;
   className?: string;
 }) {
-  const { targetBpm, pitchShift, currentBeatId } = useAudioPreviewStore();
+  const { targetBpm, pitchShift } = useAudioPreviewStore();
 
   const bpmDiff = targetBpm - originalBpm;
   const hasChanges = bpmDiff !== 0 || pitchShift !== 0;

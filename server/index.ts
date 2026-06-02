@@ -22,14 +22,7 @@ import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
 
 // MANDATORY safety imports - these MUST load successfully
-import {
-  initializeSafetySystems,
-  applyMandatoryMiddleware,
-  globalErrorHandler as safetyErrorHandler,
-  sanitizationMiddleware,
-  killSwitch,
-  stripeRawBodyParser,
-} from "./safety/index.js";
+import { initializeSafetySystems, applyMandatoryMiddleware, globalErrorHandler as safetyErrorHandler, sanitizationMiddleware, killSwitch } from "./safety/index.js";
 
 import { securityMiddleware } from "./middleware/security.js";
 import helmet from "helmet";
@@ -412,7 +405,7 @@ app.get("/api/boot-status", (_req: Request, res: Response) => {
 // after the server starts listening (before registerRoutes completes).  The full
 // route at routes.ts also registers this path; once that handler is active it
 // takes precedence because Express matches the first registered handler.
-app.post("/api/errors", (req: Request, res: Response) => {
+app.post("/api/errors", (_req: Request, res: Response) => {
   res.json({ received: true });
 });
 
@@ -434,7 +427,7 @@ app.get("/api/auth/me", (_req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({ authenticated: false, bootPhase: true });
 });
 
-app.post("/api/metrics/web-vitals", (req: Request, res: Response) => {
+app.post("/api/metrics/web-vitals", (_req: Request, res: Response) => {
   // Silently accept browser web-vitals payloads during the boot window so the
   // browser doesn't log 404 errors on first paint.  Metrics from this window
   // are lost; that's acceptable — the real handler registers within seconds.
@@ -1796,7 +1789,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         import("./services/diffusionBackgroundTrainer.js")
           .then(({ startBackgroundTraining }) => {
             startBackgroundTraining()
-              .then((result?: void) => {
+              .then((_result?: void) => {
                 logger.info(
                   "🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)",
                 );

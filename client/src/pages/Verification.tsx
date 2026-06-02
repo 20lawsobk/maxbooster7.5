@@ -45,16 +45,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-interface VerificationData {
-  id: string;
-  verificationType: "individual" | "business";
-  level: string;
-  status: string;
-  firstName?: string;
-  lastName?: string;
-  businessName?: string;
-  rejectionReason?: string;
-}
 
 interface DocumentChecklist {
   type: string;
@@ -1398,104 +1388,6 @@ function VerificationStepper({
   );
 }
 
-function DocumentChecklistCard({
-  checklist,
-}: {
-  checklist: DocumentChecklist[];
-}) {
-  const getStatusIcon = (status: DocumentChecklist["status"]) => {
-    switch (status) {
-      case "approved":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "rejected":
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <Upload className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getStatusLabel = (status: DocumentChecklist["status"]) => {
-    switch (status) {
-      case "approved":
-        return "Approved";
-      case "rejected":
-        return "Rejected";
-      case "pending":
-        return "Pending";
-      default:
-        return "Not Uploaded";
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Document Checklist
-        </CardTitle>
-        <CardDescription>
-          Track the status of your submitted documents
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {checklist.map((doc) => (
-            <div
-              key={doc.type}
-              className={`flex items-center justify-between p-3 rounded-lg border ${
-                doc.status === "approved"
-                  ? "border-green-500/50 bg-green-500/5"
-                  : doc.status === "rejected"
-                    ? "border-destructive/50 bg-destructive/5"
-                    : doc.status === "pending"
-                      ? "border-yellow-500/50 bg-yellow-500/5"
-                      : "border-dashed"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                {getStatusIcon(doc.status)}
-                <div>
-                  <p className="font-medium text-sm">{doc.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {doc.description}
-                  </p>
-                  {doc.status === "rejected" && doc.rejectionReason && (
-                    <p className="text-xs text-destructive mt-1">
-                      {doc.rejectionReason}
-                    </p>
-                  )}
-                  {doc.fileName && doc.status !== "not_uploaded" && (
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
-                      {doc.fileName}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Badge
-                variant={
-                  doc.status === "approved"
-                    ? "default"
-                    : doc.status === "rejected"
-                      ? "destructive"
-                      : doc.status === "pending"
-                        ? "secondary"
-                        : "outline"
-                }
-                className="text-xs"
-              >
-                {getStatusLabel(doc.status)}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 interface DocumentUploadCardProps {
   title: string;

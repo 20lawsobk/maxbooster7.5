@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { achievements } from "../../shared/schema";
-import { eq, count, inArray } from "drizzle-orm";
+import { count, inArray } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 const defaultAchievements = [

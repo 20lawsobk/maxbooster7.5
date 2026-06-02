@@ -8,18 +8,7 @@ import { promotionalToolsService } from "../services/promotionalToolsService.js"
 import { MaxCoreAIClient } from "../services/unifiedAIController.js";
 import { db } from "../db";
 import { socialAutopilotContent } from "@shared/schema";
-import {
-  eq,
-  count,
-  lt,
-  gte,
-  gt,
-  min,
-  desc,
-  and,
-  isNotNull,
-  isNull,
-} from "drizzle-orm";
+import { eq, count, lt, gte, gt, min, desc, and, isNotNull } from "drizzle-orm";
 
 const router = Router();
 

@@ -1,4 +1,4 @@
-import { Router, Request, Response, RequestHandler } from "express";
+import { Router, Request, Response } from "express";
 import { logger } from "../logger.js";
 import { db } from "../db";
 import { socialAccounts } from "@shared/schema";

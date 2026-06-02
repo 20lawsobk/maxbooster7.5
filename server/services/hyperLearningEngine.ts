@@ -1,6 +1,6 @@
 import { db } from "../db.js";
-import { autopilotLearningData, autopilotInsights } from "@shared/schema";
-import { eq, and, desc, gte, lte, sql, avg, count, sum } from "drizzle-orm";
+import { autopilotLearningData } from "@shared/schema";
+import { and, desc, gte, lte, avg, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { autopilotLearningService } from "./autopilotLearningService.js";
 import { EventEmitter } from "events";
@@ -11,7 +11,7 @@ import { EventEmitter } from "events";
 // This cache stores results in process memory for one 5-minute window, so each
 // distinct query hits the DB exactly once per cycle rather than on every call.
 // Zero PDIM overhead — fully in-process, no network I/O.
-const _HL_BUCKET_MS = 5 * 60 * 1000; // 5-minute bucket matches cycle interval
+ // 5-minute bucket matches cycle interval
 const _hlCache = new Map<string, { value: unknown; expiresAt: number }>();
 function _hlGet<T>(key: string): T | undefined {
   const e = _hlCache.get(key);
@@ -34,7 +34,6 @@ function _hlKey(id: string): string {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-const HUMAN_BASELINE = 1.0;
 const OWNER_LEARNING_RATE = 24.0; // 24x faster than average human
 const OWNER_MULTIPLIER = 3.0; // 3x owner capacity
 const LEARNING_MULTIPLIER = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 72x
@@ -43,7 +42,6 @@ const HYPER_ANALYSIS_DIMENSIONS =
   HUMAN_ANALYSIS_DIMENSIONS * LEARNING_MULTIPLIER;
 
 // Hyper A/B testing — 30 simultaneous variates for signal density
-const HYPER_AB_VARIATES = 30;
 const AB_MIN_IMPRESSIONS_PER_VARIATE = 30;
 const AB_SIGNIFICANCE_THRESHOLD = 0.8;
 // AI server for CurriculumTrainer / DiffusionTrainer dispatch
@@ -184,8 +182,6 @@ class HyperLearningEngine extends EventEmitter {
   // Baseline interval — Caffeine Mode compresses this dynamically via applyDeadlinePressure()
   private readonly LEARNING_INTERVAL_MS = 5 * 60 * 1000;
   private readonly MICRO_PATTERN_THRESHOLD = 0.15;
-  private readonly CROSS_PLATFORM_MIN_OVERLAP = 0.3;
-  private readonly PREDICTION_CONFIDENCE_THRESHOLD = 0.7;
 
   // Caffeine Mode — deadline pressure compresses learning cycles so the engine
   // absorbs feedback faster when the autopilot is behind its posting schedule.
@@ -396,7 +392,7 @@ class HyperLearningEngine extends EventEmitter {
 
   private async runMicroPatternDetection(): Promise<MicroPattern[]> {
     const patterns: MicroPattern[] = [];
-    const startTime = Date.now();
+    Date.now();
 
     try {
       const ninetyDaysAgo = new Date();
@@ -2467,9 +2463,9 @@ class HyperLearningEngine extends EventEmitter {
       model: CrossPlatformSynthesis | null;
     },
     predictions: PredictiveModel[],
-    behavioral: { patternsFound: number },
-    competitive: { insightsFound: number },
-    emergent: MicroPattern[],
+    _behavioral: { patternsFound: number },
+    _competitive: { insightsFound: number },
+    _emergent: MicroPattern[],
   ): Promise<HyperInsight[]> {
     const insights: HyperInsight[] = [];
 
@@ -2541,8 +2537,7 @@ class HyperLearningEngine extends EventEmitter {
   }
 
   async getHyperInsights(userId: string): Promise<HyperInsight[]> {
-    const baseInsights =
-      await autopilotLearningService.getLearningInsights(userId);
+    await autopilotLearningService.getLearningInsights(userId);
 
     const hyperInsights: HyperInsight[] = [];
 
@@ -2616,7 +2611,7 @@ class HyperLearningEngine extends EventEmitter {
   }
 
   async predictOptimalContent(
-    userId: string,
+    _userId: string,
     platform: string,
   ): Promise<{
     optimalTiming: { hour: number; dayOfWeek: number; confidence: number };

@@ -358,9 +358,9 @@ export class SocialAmplificationService {
   private async generateOrganicOptimizedContent(
     musicData: MusicData,
     targetAudience: Record<string, unknown>,
-    objective: string,
+    _objective: string,
   ): Promise<Record<string, OrganicContent>> {
-    const organicStrategy = await this.aiEngine.bypassNativeAdPlatforms(
+    await this.aiEngine.bypassNativeAdPlatforms(
       musicData,
       targetAudience,
     );
@@ -518,7 +518,7 @@ export class SocialAmplificationService {
 
   private async postOrganicContent(
     platform: string,
-    accountId: string,
+    _accountId: string,
     content: OrganicContent,
     musicData: MusicData,
   ): Promise<OrganicPerformance | null> {
@@ -581,7 +581,7 @@ export class SocialAmplificationService {
 
   private calculateRealisticPlatformMetrics(
     platform: string,
-    musicData: MusicData,
+    _musicData: MusicData,
   ): PerformanceMetrics {
     const platformBaselines: Record<
       string,
@@ -682,7 +682,7 @@ export class SocialAmplificationService {
 
   private async calculateProjectedBoost(
     organicPosts: OrganicPerformance[],
-    targetAudience: Record<string, unknown>,
+    _targetAudience: Record<string, unknown>,
   ): Promise<{ boostPercentage: number; costSavings: number }> {
     const paidAdBenchmarks = {
       avgCPM: 7.19,
@@ -751,11 +751,11 @@ export class SocialAmplificationService {
       (sum, p) => sum + p.metrics.shares,
       0,
     );
-    const organicTotalImpressions = organicPosts.reduce(
+    organicPosts.reduce(
       (sum, p) => sum + p.metrics.impressions,
       0,
     );
-    const organicTotalClicks = organicPosts.reduce(
+    organicPosts.reduce(
       (sum, p) => sum + p.metrics.clicks,
       0,
     );
@@ -1433,7 +1433,7 @@ export class SocialAmplificationService {
     return Math.min(consistency * 100 + 20, 100);
   }
 
-  private calculateNicheAuthority(metrics: PlatformMetrics): number {
+  private calculateNicheAuthority(_metrics: PlatformMetrics): number {
     return 60 + Math.random() * 35;
   }
 
@@ -1521,9 +1521,9 @@ export class SocialAmplificationService {
   }
 
   private identifySuperSpreaders(
-    metrics: PostMetrics,
+    _metrics: PostMetrics,
   ): Array<{ userId: string; amplification: number }> {
-    return Array.from({ length: 5 }, (_, i) => ({
+    return Array.from({ length: 5 }, (_, _i) => ({
       userId: "super_" + randomBytes(5).toString("hex"),
       amplification: Math.round(100 + Math.random() * 900),
     }));
@@ -1581,7 +1581,7 @@ export class SocialAmplificationService {
     };
   }
 
-  private async analyzeNetworkStructure(userId: string): Promise<number> {
+  private async analyzeNetworkStructure(_userId: string): Promise<number> {
     return 0.6 + Math.random() * 0.35;
   }
 
@@ -1699,28 +1699,28 @@ export class SocialAmplificationService {
       .sort((a: KeyNode, b: KeyNode) => b.centrality - a.centrality);
   }
 
-  private calculateClusteringCoefficient(networkData: NetworkData): number {
+  private calculateClusteringCoefficient(_networkData: NetworkData): number {
     return 0.3 + Math.random() * 0.4;
   }
 
   private calculateBetweennessCentrality(
-    userId: string,
-    networkData: NetworkData,
+    _userId: string,
+    _networkData: NetworkData,
   ): number {
     return 0.2 + Math.random() * 0.6;
   }
 
-  private calculateReachMultiplier(networkData: NetworkData): number {
+  private calculateReachMultiplier(_networkData: NetworkData): number {
     return 1.5 + Math.random() * 2.5;
   }
 
-  private calculateEigenvectorCentrality(networkData: NetworkData): number {
+  private calculateEigenvectorCentrality(_networkData: NetworkData): number {
     return 0.4 + Math.random() * 0.5;
   }
 
   private generateConnectionStrategies(
     connections: number,
-    networkData: NetworkData,
+    _networkData: NetworkData,
     keyNodes: KeyNode[],
   ): string[] {
     const strategies: string[] = [];
@@ -1771,7 +1771,7 @@ export class SocialAmplificationService {
     return Math.min(clustering * 40 + (reachMultiplier / 4) * 60, 100);
   }
 
-  private async calculateGrowthRate(userId: string): Promise<number> {
+  private async calculateGrowthRate(_userId: string): Promise<number> {
     return 0.05 + Math.random() * 0.15;
   }
 
@@ -1800,10 +1800,10 @@ export class SocialAmplificationService {
   }
 
   private async findCollaborationProspects(
-    userId: string,
-    userProfile: UserProfile,
-    userNetwork: NetworkData,
-    goal: string,
+    _userId: string,
+    _userProfile: UserProfile,
+    _userNetwork: NetworkData,
+    _goal: string,
   ): Promise<CollaborationProspect[]> {
     const numProspects = Math.floor(10 + Math.random() * 30);
 

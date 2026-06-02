@@ -73,148 +73,8 @@ import { PayoutDashboard } from "@/components/marketplace/PayoutDashboard";
 import StorefrontBuilder from "@/components/marketplace/StorefrontBuilder";
 import { BeatCard } from "@/components/marketplace/BeatCard";
 import { MarketplaceBeatCard } from "@/components/marketplace/MarketplaceBeatCard";
-import {
-  MarketplaceOutcomeHandler,
-  useMarketplaceOutcome,
-  WaveformAudioPlayer,
-  LicenseComparisonCard,
-  PurchaseConfirmationFlow,
-  BeatGridSkeleton,
-  ProducerGridSkeleton,
-  AnalyticsDashboardSkeleton,
-  PurchaseHistorySkeleton,
-  NoBeatsFoundEmptyState,
-  EmptyCartState,
-  NoPurchasesState,
-  NoMyBeatsState,
-  NoProducersFoundState,
-  NoAnalyticsDataState,
-  NoEscrowTransactionsState,
-  NoContractsState,
-  NoCollaborationsState,
-  FilterResultsHeader,
-} from "@/components/marketplace";
-import {
-  Music,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Heart,
-  Share2,
-  Download,
-  Upload,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  Filter,
-  SortAsc,
-  SortDesc,
-  Grid,
-  List,
-  Star,
-  Award,
-  Trophy,
-  Crown,
-  Flame,
-  TrendingUp,
-  Users,
-  Eye,
-  DollarSign,
-  CreditCard,
-  ShoppingCart,
-  Package,
-  Truck,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Clock,
-  Calendar,
-  MapPin,
-  Globe,
-  Lock,
-  Unlock,
-  Shield,
-  Zap,
-  Sparkles,
-  Brain,
-  Bot,
-  Target,
-  BarChart3,
-  PieChart,
-  LineChart,
-  Activity,
-  TrendingDown,
-  Minus,
-  PlusCircle,
-  Loader2,
-  MinusCircle,
-  X,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  MoreVertical,
-  Settings,
-  User,
-  UserPlus,
-  UserMinus,
-  UserCheck,
-  UserX,
-  MessageCircle,
-  Mail,
-  Phone,
-  Video,
-  Camera,
-  Image as ImageIcon,
-  File,
-  FileText,
-  FileAudio,
-  FileVideo,
-  FileImage,
-  Folder,
-  FolderOpen,
-  Save,
-  Copy,
-  Scissors,
-  Undo,
-  Redo,
-  RefreshCw,
-  RotateCcw,
-  RotateCw,
-  Maximize,
-  Minimize,
-  ExternalLink,
-  Link,
-  Link2,
-  Unlink,
-  Bookmark,
-  BookmarkCheck,
-  Flag,
-  ThumbsUp,
-  ThumbsDown,
-  Handshake,
-  FileSignature,
-  Wallet,
-  Banknote,
-  CircleDollarSign,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Shuffle,
-  Layers,
-  UploadCloud,
-  FolderUp,
-  Wand2,
-  Lightbulb,
-  Percent,
-  Receipt,
-  Scale,
-  ScrollText,
-} from "lucide-react";
+import { BeatGridSkeleton, PurchaseHistorySkeleton, NoBeatsFoundEmptyState, EmptyCartState, NoPurchasesState, NoMyBeatsState, NoEscrowTransactionsState, NoContractsState, NoCollaborationsState, FilterResultsHeader } from "@/components/marketplace";
+import { Music, Play, Pause, Volume2, VolumeX, Share2, Download, Upload, Plus, Edit, Trash2, Search, Grid, List, Star, Trophy, TrendingUp, Users, Eye, DollarSign, CreditCard, ShoppingCart, Package, CheckCircle, AlertCircle, Clock, MapPin, Shield, Sparkles, Brain, Target, BarChart3, PieChart, Activity, Loader2, X, Check, ChevronDown, UserPlus, UserCheck, MessageCircle, Image as ImageIcon, FileText, FileAudio, Save, RefreshCw, Link2, Handshake, FileSignature, Wallet, Banknote, SkipBack, SkipForward, Layers, UploadCloud, FolderUp, Lightbulb, Percent, Receipt, ScrollText } from "lucide-react";
 
 // BeatStars Clone Interfaces
 interface LicenseTier {
@@ -1164,7 +1024,7 @@ export default function Marketplace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: producersData, isLoading: producersLoading } =
+  const { data: producersData } =
     useQuery<ProducersResponse>({
       queryKey: ["/api/marketplace/producers"],
       staleTime: 5 * 60 * 1000,
@@ -1180,7 +1040,7 @@ export default function Marketplace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: salesAnalytics, isLoading: salesAnalyticsLoading } =
+  const { data: salesAnalytics } =
     useQuery<SalesAnalytics>({
       queryKey: ["/api/marketplace/sales-analytics"],
       enabled: !!user,
@@ -1268,7 +1128,7 @@ export default function Marketplace() {
     },
   });
 
-  const connectStripeMutation = useMutation({
+  useMutation({
     mutationFn: async () => {
       const response = await apiRequest(
         "POST",
@@ -2019,7 +1879,7 @@ export default function Marketplace() {
     },
   });
 
-  const createAffiliateMutation = useMutation({
+  useMutation({
     mutationFn: async (data: {
       name: string;
       email: string;
@@ -2151,7 +2011,7 @@ export default function Marketplace() {
     },
   });
 
-  const trackInteraction = async (
+  async (
     beatId: string,
     interactionType: string,
     extra?: Record<string, unknown>,

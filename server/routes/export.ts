@@ -44,26 +44,6 @@ interface ExportJob {
   expiresAt?: Date;
 }
 
-interface ShareLink {
-  id: string;
-  shortCode: string;
-  url: string;
-  name: string;
-  resourceType: "audio" | "project" | "stems" | "analytics" | "document";
-  resourceId: string;
-  userId: string;
-  createdAt: Date;
-  expiresAt?: Date;
-  isPasswordProtected: boolean;
-  passwordHash?: string;
-  maxDownloads?: number;
-  downloadCount: number;
-  viewCount: number;
-  isActive: boolean;
-  allowedEmails?: string[];
-  requiresEmail: boolean;
-  lastAccessedAt?: Date;
-}
 
 interface ExportHistoryItem {
   id: string;
@@ -514,7 +494,6 @@ router.get("/history", requireAuth, async (req: Request, res: Response) => {
       filtered = filtered.filter((item) => item.status === status);
     }
 
-    const total = filtered.length;
     const limitNum = Math.min(
       Math.max(parseInt(limit as string) || 50, 1),
       1000,
@@ -1210,11 +1189,6 @@ router.post("/chart", requireAuth, async (req: Request, res: Response) => {
 // BULK EXPORT (with ZIP bundling)
 // ============================================================================
 
-interface BulkExportItem {
-  id: string;
-  type: "audio" | "document" | "analytics" | "report";
-  format?: string;
-}
 
 const bulkExportSchema = z.object({
   items: z

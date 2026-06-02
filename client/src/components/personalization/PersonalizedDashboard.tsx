@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,22 +9,7 @@ import {
   WidgetConfig,
 } from "@/hooks/usePersonalizedLayout";
 import { SmartActionBar } from "./SmartActionBar";
-import {
-  Music,
-  DollarSign,
-  TrendingUp,
-  Users,
-  Upload,
-  Calendar,
-  Trophy,
-  Bell,
-  Brain,
-  Zap,
-  BarChart3,
-  MessageSquare,
-  Settings,
-  GripVertical,
-} from "lucide-react";
+import { Music, DollarSign, TrendingUp, Users, Upload, Calendar, Trophy, Bell, Brain, Zap, BarChart3, MessageSquare, GripVertical } from "lucide-react";
 
 interface PersonalizedDashboardProps {
   userId?: string;
@@ -54,11 +39,10 @@ export function PersonalizedDashboard({
   onNavigate,
 }: PersonalizedDashboardProps) {
   const {
-    layout,
+    
     isLoading,
     visibleWidgets,
     updateWidgetPosition,
-    toggleWidgetVisibility,
   } = usePersonalizedLayout();
 
   if (isLoading) {

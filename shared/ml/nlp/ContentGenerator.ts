@@ -6,18 +6,7 @@
  */
 
 import type { BrandVoiceProfile } from "../types.js";
-import {
-  SOCIAL_MEDIA_MUSIC_PATTERNS,
-  ARTIST_PERSONA_PROFILES,
-  MUSIC_GENRE_TAXONOMY,
-  GENRE_VIRAL_HOOKS,
-  PLATFORM_CONTENT_SCRIPTS,
-  CALL_TO_ACTION_LIBRARY,
-  EMOTIONAL_TRIGGER_PATTERNS,
-  VIDEO_CONTENT_TRAINING_PACK,
-  VIRAL_CONTENT_CORPUS,
-  VIRAL_CONTENT_CORPUS_FLAT,
-} from "../training/musicIndustryTrainingData.js";
+import { SOCIAL_MEDIA_MUSIC_PATTERNS, GENRE_VIRAL_HOOKS, CALL_TO_ACTION_LIBRARY, EMOTIONAL_TRIGGER_PATTERNS, VIRAL_CONTENT_CORPUS_FLAT } from "../training/musicIndustryTrainingData.js";
 
 export type ContentTone =
   | "professional"
@@ -924,57 +913,9 @@ export class ContentGenerator {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  private getGenreHook(
-    genre: string,
-    platform: string,
-    trackTitle: string,
-  ): string | null {
-    const normalizedGenre = genre
-      .toLowerCase()
-      .replace(/[\s_]/g, "-") as keyof typeof GENRE_VIRAL_HOOKS;
-    const normalizedPlatform =
-      platform.toLowerCase() as keyof (typeof GENRE_VIRAL_HOOKS)[typeof normalizedGenre];
-    const genreHooks = GENRE_VIRAL_HOOKS[normalizedGenre];
-    if (!genreHooks) return null;
-    const platformHooks = (genreHooks as Record<string, readonly string[]>)[
-      normalizedPlatform
-    ];
-    if (!platformHooks || platformHooks.length === 0) return null;
-    const hook = this.pickRandom(platformHooks);
-    return hook
-      .replace("{trackTitle}", trackTitle || "this track")
-      .replace("{timestamp}", "0:30")
-      .replace("{situation}", "a real moment");
-  }
 
-  private getGenreAdjective(genre: string): string {
-    const normalizedGenre = genre.toLowerCase().replace(/[\s_]/g, "-");
-    const vocab = GENRE_VOCABULARY[normalizedGenre];
-    if (!vocab) {
-      return this.pickRandom(MUSIC_VOCABULARY.adjectives);
-    }
-    return Math.random() > 0.4
-      ? this.pickRandom(vocab.adjectives)
-      : this.pickRandom(MUSIC_VOCABULARY.adjectives);
-  }
 
-  private getEmotionalTrigger(): string {
-    const categories = Object.values(EMOTIONAL_TRIGGER_PATTERNS);
-    const category = this.pickRandom(categories);
-    return this.pickRandom(category);
-  }
 
-  private getPlatformCTA(platform: string): string {
-    const normalizedPlatform = platform.toLowerCase();
-    const urgentCTAs = CALL_TO_ACTION_LIBRARY.streaming.urgent;
-    const directCTAs = CALL_TO_ACTION_LIBRARY.streaming.direct;
-    const commentCTAs = CALL_TO_ACTION_LIBRARY.engagement.comment_bait;
-    if (normalizedPlatform === "tiktok") return this.pickRandom(commentCTAs);
-    if (normalizedPlatform === "youtube") return this.pickRandom(directCTAs);
-    return Math.random() > 0.5
-      ? this.pickRandom(urgentCTAs)
-      : this.pickRandom(directCTAs);
-  }
 
   /**
    * Parse the topic string (which may contain enriched URL context) into structured fields.
@@ -1448,7 +1389,7 @@ export class ContentGenerator {
   // Returns null if the model lacks sufficient training data.
   private generateMarkovBody(
     ctx: ReturnType<typeof this.parseTopicContext>,
-    tone: ContentTone,
+    _tone: ContentTone,
   ): string | null {
     if (this.ngramModel.startSequences.length < 10) return null;
 
@@ -1896,7 +1837,7 @@ export class ContentGenerator {
   }
 
   private generateFromTemplate(
-    contentType: string,
+    _contentType: string,
     tone: ContentTone,
     context: {
       topic: string;
@@ -1922,36 +1863,6 @@ export class ContentGenerator {
     return `${hook}\n\n${body}\n\n${cta}`;
   }
 
-  private generateMarkovSequence(maxWords: number): string {
-    if (this.ngramModel.startSequences.length === 0) {
-      return "";
-    }
-
-    const startIdx = Math.floor(
-      Math.random() * this.ngramModel.startSequences.length,
-    );
-    let currentState = this.ngramModel.startSequences[startIdx];
-    const words = currentState.split(" ");
-
-    for (let i = 0; i < maxWords; i++) {
-      const transition = this.ngramModel.transitions.get(currentState);
-      if (!transition || transition.totalCount === 0) break;
-
-      const nextWord = this.weightedRandomChoice(
-        transition.nextWords,
-        transition.totalCount,
-      );
-      if (!nextWord) break;
-
-      words.push(nextWord);
-      const stateTokens = currentState.split(" ");
-      stateTokens.shift();
-      stateTokens.push(nextWord);
-      currentState = stateTokens.join(" ");
-    }
-
-    return words.join(" ");
-  }
 
   private weightedRandomChoice(
     options: Map<string, number>,

@@ -3,19 +3,7 @@ import axios from "axios";
 import { TwitterApi } from "twitter-api-v2";
 import { storage } from "./storage.js";
 import { logger } from "./logger.js";
-import {
-  executeSocialApiOperation,
-  twitterCircuit,
-  facebookCircuit,
-  instagramCircuit,
-  linkedinCircuit,
-  tiktokCircuit,
-  queueForRetry,
-} from "./services/externalServices.js";
-import {
-  CircuitBreakerError,
-  TimeoutError,
-} from "./services/circuitBreaker.js";
+import { executeSocialApiOperation } from "./services/externalServices.js";
 
 axios.defaults.timeout = 10000;
 

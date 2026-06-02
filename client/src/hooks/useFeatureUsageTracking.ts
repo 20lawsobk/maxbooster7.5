@@ -77,14 +77,14 @@ export function useFeatureUsageTracking() {
   );
 
   const trackAction = useCallback(
-    (actionName: string, context?: Record<string, any>) => {
+    (actionName: string, _context?: Record<string, any>) => {
       trackFeature(`action:${actionName}`);
     },
     [trackFeature],
   );
 
   const trackButtonClick = useCallback(
-    (buttonId: string, context?: Record<string, any>) => {
+    (buttonId: string, _context?: Record<string, any>) => {
       trackFeature(`button:${buttonId}`);
     },
     [trackFeature],

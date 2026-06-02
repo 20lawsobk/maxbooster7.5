@@ -1,13 +1,5 @@
 import { db } from "../db";
-import {
-  ssoConfigs,
-  workspaceMembers,
-  workspaceRoles,
-  users,
-  workspaceAuditLog,
-  type SSOConfig,
-  type InsertSSOConfig,
-} from "@shared/schema";
+import { ssoConfigs, workspaceMembers, users, workspaceAuditLog, type SSOConfig } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
@@ -512,7 +504,7 @@ export class SSOService {
 
   async handleOIDCCallback(
     workspaceId: string,
-    tokenData: Record<string, unknown>,
+    _tokenData: Record<string, unknown>,
     userInfo: Record<string, unknown>,
   ): Promise<{
     success: boolean;
@@ -837,7 +829,7 @@ export class SSOService {
 
   async getSCIMUsers(
     workspaceId: string,
-    filter?: string,
+    _filter?: string,
     startIndex: number = 1,
     count: number = 100,
   ): Promise<{

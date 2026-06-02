@@ -118,7 +118,6 @@ export class PluginStateManager {
     const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (!plugin) return;
 
-    const oldValue = plugin.parameters[parameterId];
     plugin.parameters[parameterId] = value;
     plugin.currentPresetId = null;
 

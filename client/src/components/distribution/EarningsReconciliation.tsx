@@ -44,38 +44,7 @@ import {
 } from "@/components/ui/chart-card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Calendar,
-  Download,
-  Upload,
-  CheckCircle,
-  Clock,
-  Search,
-  Filter,
-  RefreshCw,
-  FileText,
-  FileSpreadsheet,
-  ArrowUpRight,
-  ArrowDownRight,
-  Wallet,
-  Receipt,
-  AlertCircle,
-  CreditCard,
-  Banknote,
-  Building,
-  Globe,
-  PieChart,
-  History,
-  FileCheck,
-  AlertTriangle,
-  Info,
-  ExternalLink,
-  Copy,
-} from "lucide-react";
+import { DollarSign, BarChart3, Download, Upload, CheckCircle, Clock, Search, RefreshCw, FileSpreadsheet, ArrowUpRight, Wallet, Receipt, AlertCircle, CreditCard, Banknote, Building, Globe, FileCheck, AlertTriangle, Info, Copy } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -201,13 +170,13 @@ export function EarningsReconciliation() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: statements = [], isLoading: statementsLoading } = useQuery<
+  const { data: statements = [] } = useQuery<
     RoyaltyStatement[]
   >({
     queryKey: ["/api/distribution/earnings/statements", dateRange],
   });
 
-  const { data: earnings = [], isLoading: earningsLoading } = useQuery<
+  const { data: earnings = [] } = useQuery<
     EarningsEntry[]
   >({
     queryKey: [
@@ -217,7 +186,7 @@ export function EarningsReconciliation() {
     ],
   });
 
-  const { data: payouts = [], isLoading: payoutsLoading } = useQuery<
+  const { data: payouts = [] } = useQuery<
     PayoutRecord[]
   >({
     queryKey: ["/api/distribution/earnings/payouts"],

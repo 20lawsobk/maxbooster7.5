@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
@@ -209,7 +209,7 @@ function MiniLossChart({ history }: { history: TrainStatus["loss_history"] }) {
 }
 
 export default function TrainingDashboard() {
-  const { user, isLoading: authLoading } = useRequireAdmin();
+  const {  isLoading: authLoading } = useRequireAdmin();
   const qc = useQueryClient();
   const [mode, setMode] = useState<"session" | "day" | "continuous">("session");
   const [nSessions, setNSessions] = useState(3);

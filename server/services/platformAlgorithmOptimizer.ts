@@ -787,7 +787,7 @@ export class PlatformAlgorithmOptimizer {
     full: string,
     headline: string,
     cta: string,
-    content: string,
+    _content: string,
   ): AlgorithmAlignmentScore {
     const penalties: string[] = [];
     const boosts: string[] = [];
@@ -856,7 +856,7 @@ export class PlatformAlgorithmOptimizer {
   }
 
   private scoreYouTube(
-    full: string,
+    _full: string,
     headline: string,
     cta: string,
     content: string,

@@ -3,10 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  useCareerStageGuidance,
-  CareerGuidance,
-} from "@/hooks/useRecommendations";
+import { useCareerStageGuidance } from "@/hooks/useRecommendations";
 import { useUserPreferences, CareerStage } from "@/hooks/useUserPreferences";
 import { useLocation } from "wouter";
 import {
@@ -55,7 +52,7 @@ export function CareerStageGuidance({
   expanded = false,
 }: CareerStageGuidanceProps) {
   const { guidance, isLoading } = useCareerStageGuidance();
-  const { preferences } = useUserPreferences();
+  useUserPreferences();
   const [, setLocation] = useLocation();
 
   if (isLoading || !guidance) {

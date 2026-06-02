@@ -4,14 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  Clock,
-  CreditCard,
-  RefreshCw,
-  X,
-  Loader2,
-} from "lucide-react";
+import { AlertTriangle, Clock, CreditCard, RefreshCw, X } from "lucide-react";
 
 interface GracePeriodStatus {
   inGracePeriod: boolean;

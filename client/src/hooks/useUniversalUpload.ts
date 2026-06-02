@@ -58,7 +58,7 @@ export function useUniversalUpload() {
   );
   const [isUploading, setIsUploading] = useState(false);
   const abortControllers = useRef<Map<string, XMLHttpRequest>>(new Map());
-  const { toast } = useToast();
+  useToast();
 
   const generateId = () =>
     `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

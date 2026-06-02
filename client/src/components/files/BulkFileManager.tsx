@@ -1,9 +1,8 @@
 import { useState, useCallback } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,24 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Trash2,
-  Download,
-  FolderInput,
-  Copy,
-  Share2,
-  MoreHorizontal,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  FileAudio,
-  FileImage,
-  File,
-  X,
-  Undo2,
-  Archive,
-  RefreshCw,
-} from "lucide-react";
+import { Trash2, Download, FolderInput, Copy, CheckCircle2, AlertCircle, Loader2, FileAudio, FileImage, File, X, Undo2 } from "lucide-react";
 
 export type BulkOperationType =
   | "delete"
@@ -142,7 +124,6 @@ export function BulkFileManager({
   const selectedCount = selectedIds.size;
   const totalSelectedSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
   const allSelected = files.length > 0 && selectedCount === files.length;
-  const someSelected = selectedCount > 0 && selectedCount < files.length;
 
   const toggleSelection = useCallback(
     (id: string) => {

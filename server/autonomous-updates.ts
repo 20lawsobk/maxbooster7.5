@@ -584,7 +584,6 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   private async detectAlgorithmChanges(): Promise<TrendEvent> {
-    const recentMetrics = this.autopilotMetrics;
     const avgEngagement =
       this.performanceBaseline.get("avg_engagement_rate") || 0.05;
 
@@ -1267,7 +1266,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     modelId: string,
     versionId: string,
   ): Promise<void> {
-    const timestamp = Date.now();
+    Date.now();
     const canaryMetrics = {
       errorRate: this.deterministicValue(
         `${modelId}_${versionId}_canary`,
@@ -1406,7 +1405,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     modelId: string,
   ): Promise<unknown> {
     const startTime = Date.now();
-    const timestamp = Date.now();
+    Date.now();
 
     const datasetInfo = {
       recordCount: Math.floor(
@@ -1453,10 +1452,10 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   private async completeRetraining(
-    run: RetrainingRun,
+    _run: RetrainingRun,
     modelId: string,
   ): Promise<void> {
-    const trainingMetrics = {
+    ({
       finalLoss: this.deterministicValue(`${modelId}_loss`, 0.08, 0.12),
       finalAccuracy: this.deterministicValue(
         `${modelId}_train_acc`,
@@ -1464,7 +1463,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
         0.96,
       ),
       trainingTime: this.deterministicValue(`${modelId}_time`, 3600, 5400),
-    };
+    });
 
     const validationMetrics = {
       accuracy: this.deterministicValue(`${modelId}_val_acc`, 0.86, 0.95),
@@ -1703,15 +1702,6 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return deployment;
   }
 
-  private mapStrategyToImplementation(strategy: string): string {
-    const mapping: Record<string, string> = {
-      immediate: "instant",
-      canary: "canary",
-      scheduled: "rolling",
-      "manual-approval": "blue_green",
-    };
-    return mapping[strategy] || "instant";
-  }
 
   private async runPreDeploymentChecks(
     modelId: string,

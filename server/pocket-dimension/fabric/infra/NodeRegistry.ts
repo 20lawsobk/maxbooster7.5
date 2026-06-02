@@ -1,6 +1,6 @@
 import { db } from "../../../db.js";
 import { fabricStorageNodes } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import type {
   FabricStorageNode,

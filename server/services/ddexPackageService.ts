@@ -55,7 +55,6 @@ interface RoyaltySplit {
 }
 
 export class DDEXPackageService {
-  private static readonly DDEX_VERSION = "4.3";
   private static readonly MESSAGE_SCHEMA_VERSION = "ern/43";
 
   async generateDDEXXML(
@@ -447,7 +446,7 @@ export class DDEXPackageService {
 
     try {
       // Basic XML validation
-      const doc = create(xml);
+      create(xml);
 
       // Check for required elements
       const requiredElements = [

@@ -109,16 +109,6 @@ export class ZstdEngine {
     return Buffer.concat(chunks).subarray(0, target);
   }
 
-  private async loadDict(id: string): Promise<Buffer | undefined> {
-    if (this.dictCache.has(id)) return this.dictCache.get(id)!;
-    try {
-      const data = await fs.readFile(path.join(DICT_DIR, `${id}.dict`));
-      this.dictCache.set(id, data);
-      return data;
-    } catch {
-      return undefined;
-    }
-  }
 
   private async persistDict(
     id: string,

@@ -1,17 +1,8 @@
 import { Router, Request, Response } from "express";
 import { distributedCache } from "../infrastructure/distributedCache.js";
 import { db } from "../db";
-import {
-  analytics,
-  users,
-  subscriptions,
-  socialCampaigns,
-  campaigns,
-  projects,
-  releases,
-  playlistJourneys,
-} from "@shared/schema";
-import { eq, and, desc, sql, gte, lte, count, avg } from "drizzle-orm";
+import { analytics, releases, playlistJourneys } from "@shared/schema";
+import { eq, and, desc, sql, gte, lte, count } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth";
 import { logger } from "../logger";
 
@@ -161,7 +152,6 @@ router.get(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
 
       if (
         _churnPredictCache.data &&
@@ -2004,7 +1994,7 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { genre, country, minGrowth } = req.query;
+    const {   minGrowth } = req.query;
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
@@ -2032,7 +2022,7 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
     `);
 
     const rows = (growthRows as Record<string, unknown>).rows ?? growthRows;
-    let artists = rows.map((row: Record<string, unknown>, idx: number) => {
+    let artists = rows.map((row: Record<string, unknown>, _idx: number) => {
       const recent = Number(row.recent_streams ?? 0);
       const prev = Number(row.prev_streams ?? 0);
       const growth =

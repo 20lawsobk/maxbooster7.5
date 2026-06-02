@@ -5,7 +5,7 @@ import {
   PlaylistAttribution,
   dspAnalytics,
 } from "@shared/schema";
-import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export type PlaylistType =
@@ -374,9 +374,9 @@ class PlaylistAttributionService {
   }
 
   async getPlaylistStreamHistory(
-    userId: string,
-    playlistId: string,
-    platform: DSPPlatform,
+    _userId: string,
+    _playlistId: string,
+    _platform: DSPPlatform,
     days: number = 30,
   ): Promise<PlaylistStreamHistory[]> {
     const history: PlaylistStreamHistory[] = [];

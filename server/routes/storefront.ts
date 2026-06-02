@@ -25,25 +25,11 @@ import {
 import Stripe from "stripe";
 import { getBaseUrl } from "../config/defaults";
 import { db } from "../db";
-import {
-  eq,
-  and,
-  count,
-  avg,
-  sql,
-  lte,
-  gte,
-  or,
-  isNull,
-  inArray,
-} from "drizzle-orm";
+import { eq, and, count, avg, lte, gte, or, isNull, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import dns from "dns";
-import {
-  validateDnsLabel,
-  validateDomain,
-} from "../modules/domains/dnsValidators.js";
+import { validateDomain } from "../modules/domains/dnsValidators.js";
 import { env } from "../config/env.js";
 
 const dnsPromises = dns.promises;
@@ -68,7 +54,7 @@ function getErrorMessage(error: unknown): string {
  * GET /api/storefront/templates
  * Get all available storefront templates
  */
-router.get("/templates", async (req, res) => {
+router.get("/templates", async (_req, res) => {
   try {
     const templates = await storefrontService.getTemplates();
     res.json(templates);
@@ -1641,7 +1627,7 @@ router.put("/:storefrontId/listings/:listingId/discount", async (req, res) => {
     if (!req.isAuthenticated())
       return res.status(401).json({ error: "Unauthorized" });
 
-    const { storefrontId, listingId } = req.params;
+    const {  listingId } = req.params;
     const { discountPercent, discountExpiresAt } = req.body;
 
     const [listing] = await db

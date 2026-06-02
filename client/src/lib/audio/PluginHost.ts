@@ -376,7 +376,7 @@ export class PluginChain {
   /**
    * Load chain state
    */
-  loadState(state: PluginChainState): void {
+  loadState(_state: PluginChainState): void {
     // Clear existing plugins
     for (const plugin of this.plugins) {
       plugin.destroy();

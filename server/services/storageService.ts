@@ -84,7 +84,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
   async uploadFile(
     file: Buffer,
     key: string,
-    contentType?: string,
+    _contentType?: string,
   ): Promise<string> {
     // Write to local filesystem first (durable)
     try {

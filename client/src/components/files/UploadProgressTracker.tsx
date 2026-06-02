@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -230,7 +230,7 @@ export function UploadProgressTracker({
   );
   const completedUploads = uploads.filter((u) => u.outcome === "success");
   const failedUploads = uploads.filter((u) => u.outcome.startsWith("error_"));
-  const cancelledUploads = uploads.filter((u) => u.outcome === "cancelled");
+  uploads.filter((u) => u.outcome === "cancelled");
 
   const totalSize = uploads.reduce((sum, u) => sum + u.file.size, 0);
   const uploadedSize = uploads.reduce((sum, u) => sum + u.uploadedBytes, 0);

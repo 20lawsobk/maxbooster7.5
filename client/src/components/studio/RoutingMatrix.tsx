@@ -198,7 +198,7 @@ export function RoutingMatrix({
                 </div>
 
                 {/* Rows */}
-                {tracks.map((track, trackIndex) => (
+                {tracks.map((track, _trackIndex) => (
                   <div
                     key={track.id}
                     className="flex items-center mb-2 rounded hover:bg-white/5 transition-colors"

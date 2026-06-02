@@ -1,46 +1,9 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import * as Tone from "tone";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  Plus,
-  Volume2,
-  Trash2,
-  ZoomIn,
-  ZoomOut,
-  Grip,
-  Settings,
-  ChevronRight,
-  Repeat,
-  SkipBack,
-  SkipForward,
-  Mic,
-  Headphones,
-  Music,
-  Waves,
-  Sliders,
-  Activity,
-  X,
-  Copy,
-  Scissors,
-  MoreVertical,
-  Library,
-  Cpu,
-  GitBranch,
-  Layers,
-} from "lucide-react";
-import {
-  PluginDialog,
-  type PluginDefinition,
-  type PluginParameter,
-} from "./PluginDialog";
+import { Play, Pause, Square, Circle, Plus, ZoomIn, ZoomOut, ChevronRight, Repeat, SkipBack, SkipForward, Headphones, Music, Waves, Sliders, Activity, X, Library, Cpu, GitBranch } from "lucide-react";
+import { PluginDialog, type PluginDefinition } from "./PluginDialog";
 import { PluginBrowser } from "./PluginBrowser";
-import {
-  PixiWaveformRenderer,
-  type WaveformClipData,
-} from "./PixiWaveformRenderer";
+import { PixiWaveformRenderer } from "./PixiWaveformRenderer";
 import { RoutingFlowPanel } from "./RoutingFlowPanel";
 
 // =============================================================================
@@ -163,7 +126,7 @@ function useKeyboardShortcuts(handlers: Record<string, () => void>) {
 // UTILITY FUNCTIONS
 // =============================================================================
 
-const formatTimecode = (seconds: number, bpm: number = 120): string => {
+const formatTimecode = (seconds: number, _bpm: number = 120): string => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 1000);

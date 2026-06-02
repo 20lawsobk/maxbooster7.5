@@ -125,7 +125,7 @@ export function StatementDateRangePicker({
   const handlePresetChange = (preset: PresetPeriod) => {
     setPresetPeriod(preset);
     if (preset !== "custom" && presets[preset as keyof typeof presets]) {
-      const { startDate, endDate, label } =
+      const { startDate, endDate } =
         presets[preset as keyof typeof presets];
       const matchingStatement = statements.find(
         (s) =>

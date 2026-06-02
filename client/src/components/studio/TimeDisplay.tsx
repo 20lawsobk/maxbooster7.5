@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Clock, Music2, ChevronDown } from "lucide-react";
+import { Clock, Music2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

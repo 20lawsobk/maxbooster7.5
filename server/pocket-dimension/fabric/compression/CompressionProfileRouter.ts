@@ -18,9 +18,8 @@ const SEMANTIC_CLASSES = new Set<ContentClass>([
   "text",
   "metrics",
 ]);
-const ALREADY_COMPRESSED = new Set<ContentClass>(["archive"]);
+new Set<ContentClass>(["archive"]);
 
-const LARGE_MEDIA_THRESHOLD = 50 * 1024 * 1024;
 const LOSSY_SIZE_THRESHOLD = 5 * 1024 * 1024;
 
 export class CompressionProfileRouter {
@@ -80,7 +79,7 @@ export class CompressionProfileRouter {
   private async processLosslessMaxDedup(
     data: Buffer,
     contentClass: ContentClass,
-    originalName: string,
+    _originalName: string,
     opts: StoreOptions,
   ): Promise<CompressionResult> {
     const domain = opts.dimensionHint ?? contentClass;
@@ -137,7 +136,7 @@ export class CompressionProfileRouter {
     data: Buffer,
     contentClass: ContentClass,
     originalName: string,
-    opts: StoreOptions,
+    _opts: StoreOptions,
   ): Promise<CompressionResult> {
     let workingData = data;
     let codec = "passthrough";
@@ -183,7 +182,7 @@ export class CompressionProfileRouter {
   private async processSemanticArchive(
     data: Buffer,
     contentClass: ContentClass,
-    opts: StoreOptions,
+    _opts: StoreOptions,
   ): Promise<CompressionResult> {
     const archiveResult = await semanticArchiver.archive(data, contentClass);
 

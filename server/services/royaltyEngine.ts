@@ -1,20 +1,6 @@
 import { db } from "../db.js";
-import {
-  royaltyStatements,
-  recoupmentAccounts,
-  splitContracts,
-  dspRates,
-  exchangeRates,
-  revenueEvents,
-  projectRoyaltySplits,
-  releases,
-  users,
-  platformRoyaltyRates,
-  type RoyaltyStatement,
-  type InsertRoyaltyStatement,
-  type RecoupmentAccount,
-} from "@shared/schema";
-import { eq, and, gte, lte, desc, sql, between, isNull, or } from "drizzle-orm";
+import { royaltyStatements, recoupmentAccounts, splitContracts, dspRates, exchangeRates, revenueEvents, projectRoyaltySplits, platformRoyaltyRates, type RoyaltyStatement, type InsertRoyaltyStatement } from "@shared/schema";
+import { eq, and, gte, lte, desc, sql, isNull, or } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 
@@ -291,23 +277,6 @@ const TERRITORY_MULTIPLIERS: Record<string, number> = {
   default: 0.6,
 };
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  CAD: "C$",
-  AUD: "A$",
-  CHF: "CHF",
-  SEK: "kr",
-  NOK: "kr",
-  DKK: "kr",
-  BRL: "R$",
-  INR: "₹",
-  MXN: "MX$",
-  KRW: "₩",
-  ZAR: "R",
-};
 
 export class RoyaltyEngine {
   private platformFeeRate: number;

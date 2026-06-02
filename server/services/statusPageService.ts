@@ -1,21 +1,6 @@
 import { db } from "../db.js";
-import {
-  statusPageServices,
-  statusPageIncidents,
-  statusPageIncidentServices,
-  statusPageIncidentUpdates,
-  statusPageUptimeMetrics,
-  statusPageSubscribers,
-  type StatusPageService,
-  type StatusPageIncident,
-  type StatusPageIncidentUpdate,
-  type StatusPageSubscriber,
-  type InsertStatusPageService,
-  type InsertStatusPageIncident,
-  type InsertStatusPageIncidentUpdate,
-  type InsertStatusPageSubscriber,
-} from "@shared/schema";
-import { eq, and, desc, gte, lte, sql, isNull, or } from "drizzle-orm";
+import { statusPageServices, statusPageIncidents, statusPageIncidentServices, statusPageIncidentUpdates, statusPageUptimeMetrics, statusPageSubscribers, type StatusPageService, type StatusPageIncident, type StatusPageIncidentUpdate, type StatusPageSubscriber, type InsertStatusPageService } from "@shared/schema";
+import { eq, and, desc, gte, isNull, or } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 import { emailService } from "./emailService.js";
@@ -486,7 +471,7 @@ export class StatusPageService {
   }
 
   async unsubscribe(token: string): Promise<void> {
-    const result = await db
+    await db
       .delete(statusPageSubscribers)
       .where(eq(statusPageSubscribers.unsubscribeToken, token));
 

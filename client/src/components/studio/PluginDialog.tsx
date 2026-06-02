@@ -1,18 +1,6 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  Power,
-  RotateCcw,
-  ChevronDown,
-  Save,
-  Folder,
-  Volume2,
-  Activity,
-  Waves,
-  Music,
-  Sliders as SlidersIcon,
-} from "lucide-react";
+import { X, Power, RotateCcw, ChevronDown, Save, Folder, Activity, Waves, Music, Sliders as SlidersIcon } from "lucide-react";
 
 export interface PluginParameter {
   id: string;
@@ -224,137 +212,7 @@ function Knob({
   );
 }
 
-function VSlider({
-  value,
-  min,
-  max,
-  onChange,
-  label,
-  unit,
-  height = 100,
-  color = "#10b981",
-}: {
-  value: number;
-  min: number;
-  max: number;
-  onChange: (v: number) => void;
-  label: string;
-  unit?: string;
-  height?: number;
-  color?: string;
-}) {
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const normalized = (value - min) / (max - min);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    updateValue(e.clientY);
-  };
-
-  const updateValue = (clientY: number) => {
-    if (!sliderRef.current) return;
-    const rect = sliderRef.current.getBoundingClientRect();
-    const normalized =
-      1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-    onChange(min + normalized * (max - min));
-  };
-
-  useEffect(() => {
-    if (!isDragging) return;
-    const handleMouseMove = (e: MouseEvent) => updateValue(e.clientY);
-    const handleMouseUp = () => setIsDragging(false);
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging]);
-
-  const formatValue = (v: number) => {
-    if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(1)}k`;
-    if (Math.abs(v) < 1) return v.toFixed(2);
-    return v.toFixed(1);
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <span className="text-[9px] text-slate-500">{label}</span>
-      <div
-        ref={sliderRef}
-        className="relative w-4 rounded-full bg-slate-800 border border-slate-700 cursor-pointer"
-        style={{ height }}
-        onMouseDown={handleMouseDown}
-      >
-        <div
-          className="absolute bottom-0 left-0 right-0 rounded-full transition-all"
-          style={{
-            height: `${normalized * 100}%`,
-            backgroundColor: `${color}40`,
-          }}
-        />
-        <div
-          className="absolute left-1/2 -translate-x-1/2 w-6 h-3 rounded bg-slate-300 border border-slate-400 shadow-md"
-          style={{ bottom: `calc(${normalized * 100}% - 6px)` }}
-        />
-      </div>
-      <span className="text-[9px] font-mono" style={{ color }}>
-        {formatValue(value)}
-        {unit}
-      </span>
-    </div>
-  );
-}
-
-function HSlider({
-  value,
-  min,
-  max,
-  onChange,
-  label,
-  unit,
-  width = 120,
-  color = "#10b981",
-}: {
-  value: number;
-  min: number;
-  max: number;
-  onChange: (v: number) => void;
-  label: string;
-  unit?: string;
-  width?: number;
-  color?: string;
-}) {
-  const formatValue = (v: number) => {
-    if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(1)}k`;
-    if (Math.abs(v) < 1) return v.toFixed(2);
-    return v.toFixed(1);
-  };
-
-  return (
-    <div className="flex flex-col gap-1" style={{ width }}>
-      <div className="flex justify-between items-center">
-        <span className="text-[10px] text-slate-400">{label}</span>
-        <span className="text-[9px] font-mono" style={{ color }}>
-          {formatValue(value)}
-          {unit}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={(max - min) / 200}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 bg-slate-700 rounded-full appearance-none cursor-pointer"
-        style={{ accentColor: color }}
-      />
-    </div>
-  );
-}
 
 function Toggle({
   value,
@@ -449,28 +307,6 @@ function GainReductionMeter({
   );
 }
 
-function FrequencyVisualizer({
-  bands,
-  color,
-}: {
-  bands: number[];
-  color: string;
-}) {
-  return (
-    <div className="flex items-end justify-center gap-0.5 h-16 bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
-      {bands.map((v, i) => (
-        <div
-          key={i}
-          className="w-2 rounded-t transition-all"
-          style={{
-            height: `${Math.max(5, v * 100)}%`,
-            backgroundColor: `${color}${Math.floor(40 + v * 60).toString(16)}`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 function ADSRVisualizer({
   attack,
@@ -595,10 +431,10 @@ function EQSection({
   const freqParams = params.filter(
     (p) => p.id.includes("freq") || p.id.includes("frequency"),
   );
-  const gainParams = params.filter(
+  params.filter(
     (p) => p.id.includes("gain") && !p.id.includes("makeup"),
   );
-  const qParams = params.filter(
+  params.filter(
     (p) => p.id.includes("q") || p.id.includes("bandwidth"),
   );
   const hasEQBands = freqParams.length > 0;

@@ -138,7 +138,7 @@ export function generateDiffusionFrames(
       prompt = "",
       genre = "hip-hop",
       nFrames = 15,
-      fps = 30,
+      
       frameSize = 512,
       guidanceScale = 2.5,
       forceRetrain = false,
@@ -346,7 +346,7 @@ export async function generatePyTorchDiffusionVideo(
  * The client (DigitalGPUVideoPlayer streamMode + streamUrl props) connects
  * directly to this — no server round-trip needed after this call.
  */
-export function getPyTorchStreamUrl(opts: PyTorchDiffusionRequest): string {
+export function getPyTorchStreamUrl(_opts: PyTorchDiffusionRequest): string {
   const url = `${PYTORCH_API_BASE}/generate/stream`;
   return url;
 }

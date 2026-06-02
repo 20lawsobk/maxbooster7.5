@@ -40,26 +40,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Hash,
-  Plus,
-  Copy,
-  Search,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  RefreshCw,
-  Download,
-  Upload,
-  History,
-  Barcode,
-  Music,
-  Disc,
-  FileText,
-  ExternalLink,
-  Trash2,
-  Edit,
-} from "lucide-react";
+import { Hash, Plus, Copy, Search, CheckCircle, XCircle, RefreshCw, Download, History, Music, Disc, Trash2, Edit } from "lucide-react";
 
 interface ISRCCode {
   id: string;
@@ -116,13 +97,13 @@ export function ISRCManager({ releaseId, onCodeAssigned }: ISRCManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: isrcCodes = [], isLoading: isrcLoading } = useQuery<ISRCCode[]>(
+  const { data: isrcCodes = [] } = useQuery<ISRCCode[]>(
     {
       queryKey: ["/api/distribution/codes/isrc"],
     },
   );
 
-  const { data: upcCodes = [], isLoading: upcLoading } = useQuery<UPCCode[]>({
+  const { data: upcCodes = [] } = useQuery<UPCCode[]>({
     queryKey: ["/api/distribution/codes/upc"],
   });
 
@@ -174,7 +155,7 @@ export function ISRCManager({ releaseId, onCodeAssigned }: ISRCManagerProps) {
     },
   });
 
-  const validateCodeMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       code,
       type,
@@ -197,7 +178,7 @@ export function ISRCManager({ releaseId, onCodeAssigned }: ISRCManagerProps) {
     },
   });
 
-  const assignCodeMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       codeId,
       releaseId,

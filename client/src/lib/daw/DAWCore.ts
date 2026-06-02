@@ -1,34 +1,15 @@
 import { logger } from "../logger";
-import {
-  TransportEngine,
-  transportEngine,
-  TransportEvent,
-} from "./TransportEngine";
-import {
-  TimelineEngine,
-  timelineEngine,
-  TimelineEvent,
-  EditMode,
-} from "./TimelineEngine";
+import { TransportEngine, transportEngine } from "./TransportEngine";
+import { TimelineEngine, timelineEngine, EditMode } from "./TimelineEngine";
 import {
   AutomationEngine,
   automationEngine,
   AutomationMode,
   AutomationLane,
 } from "./AutomationEngine";
-import {
-  RoutingEngine,
-  routingEngine,
-  RoutingNode,
-  RoutingEdge,
-} from "./RoutingEngine";
-import { MIDIEngine, midiEngine, MIDIClip, MIDINote } from "./MIDIEngine";
-import {
-  NonDestructiveAudioEngine,
-  nonDestructiveAudio,
-  AudioEvent,
-  AudioSource,
-} from "./NonDestructiveAudio";
+import { RoutingEngine, routingEngine } from "./RoutingEngine";
+import { MIDIEngine, midiEngine } from "./MIDIEngine";
+import { NonDestructiveAudioEngine, nonDestructiveAudio } from "./NonDestructiveAudio";
 import {
   PluginStateManager,
   pluginStateManager,
@@ -40,17 +21,8 @@ import {
   Chord,
   MixSuggestion,
 } from "./MusicalIntelligence";
-import {
-  ProjectManager,
-  projectManager,
-  ProjectMetadata,
-} from "./ProjectManager";
-import {
-  Command,
-  CommandHistory,
-  commandHistory,
-  createCommand,
-} from "./CommandSystem";
+import { ProjectManager, projectManager } from "./ProjectManager";
+import { CommandHistory, commandHistory, createCommand } from "./CommandSystem";
 
 export interface DAWTrack {
   id: string;
@@ -188,7 +160,7 @@ export class DAWCore {
       this.transport.setAudioContext(this.audioContext);
       this.audio.setAudioContext(this.audioContext);
 
-      const masterNodeId = this.routing.addNode({
+      this.routing.addNode({
         type: "master",
         name: "Master",
         latency: 0,
@@ -688,7 +660,7 @@ export class DAWCore {
     this.state.focusedTrackId = null;
     this.history.clear();
 
-    const masterNodeId = this.routing.addNode({
+    this.routing.addNode({
       type: "master",
       name: "Master",
       latency: 0,

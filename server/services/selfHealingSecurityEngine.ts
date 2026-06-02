@@ -15,14 +15,8 @@ import { randomBytes } from "crypto";
 import { EventEmitter } from "events";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
-import {
-  securityThreats,
-  ipBlacklist,
-  notifications,
-  type InsertSecurityThreat,
-  type InsertIpBlacklist,
-} from "@shared/schema";
-import { eq, gte, and, sql, desc } from "drizzle-orm";
+import { securityThreats, ipBlacklist, notifications } from "@shared/schema";
+import { eq, gte } from "drizzle-orm";
 
 interface SecurityEvent {
   id: string;
@@ -828,7 +822,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const mttdP95 = this.calculatePercentile(this.metrics.detectionLatency, 95);
     const mttrP95 = this.calculatePercentile(this.metrics.responseLatency, 95);
     const mttr2P95 = this.calculatePercentile(this.metrics.recoveryLatency, 95);
-    const totalP95 = this.calculatePercentile(
+    this.calculatePercentile(
       this.metrics.totalHealingTime,
       95,
     );

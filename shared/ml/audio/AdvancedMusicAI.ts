@@ -26,11 +26,6 @@ interface SemanticVector {
   associations: string[];
 }
 
-interface ContextWindow {
-  tokens: string[];
-  weights: number[];
-  centerIndex: number;
-}
 
 interface MusicContext {
   genre: string;
@@ -1426,7 +1421,6 @@ const SCALE_KNOWLEDGE: Record<
 
 class SemanticAnalyzer {
   private wordEmbeddings: Map<string, number[]> = new Map();
-  private contextModel: tf.LayersModel | null = null;
 
   constructor() {
     this.initializeEmbeddings();
@@ -1717,7 +1711,7 @@ class SemanticAnalyzer {
 
   private extractDominantMood(
     tokens: string[],
-    vectors: SemanticVector[],
+    _vectors: SemanticVector[],
   ): MoodVector {
     const moodAccumulator: MoodVector = {
       valence: 0,
@@ -1798,8 +1792,8 @@ class MusicTheoryEngine {
   private generateChordProgression(
     key: string,
     scale: string,
-    mood: MoodVector,
-    genre: string,
+    _mood: MoodVector,
+    _genre: string,
   ): string[] {
     const progressionPatterns: Record<string, string[][]> = {
       major: [
@@ -2127,7 +2121,7 @@ class CreativeParameterSynthesizer {
   private buildTimbreContext(
     mood: MoodVector,
     genre: string,
-    contextVector: number[],
+    _contextVector: number[],
   ): TimbreContext {
     const genreInfo = GENRE_KNOWLEDGE[genre];
     const baseTimbre = genreInfo?.timbreProfile || {};
@@ -2213,7 +2207,7 @@ export class AdvancedMusicAI {
   }
 
   getSuggestions(partialText: string): string[] {
-    const analysis = this.semanticAnalyzer.analyzePhrase(partialText);
+    this.semanticAnalyzer.analyzePhrase(partialText);
     const suggestions: string[] = [];
 
     const tokens = partialText.toLowerCase().split(/\s+/);

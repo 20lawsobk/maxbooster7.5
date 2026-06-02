@@ -33,7 +33,7 @@ export class QueueBackpressureManager extends EventEmitter {
     logger.info(`   Max Memory: ${this.config.maxMemoryMB}MB`);
   }
 
-  registerQueue(name: string, queue: Record<string, unknown>): void {
+  registerQueue(name: string, _queue: Record<string, unknown>): void {
     logger.info(`📊 Registered queue for backpressure monitoring: ${name}`);
   }
 
@@ -115,7 +115,7 @@ export class QueueBackpressureManager extends EventEmitter {
   }
 
   async canAcceptJob(
-    queueName?: string,
+    _queueName?: string,
   ): Promise<{ allowed: boolean; reason?: string }> {
     if (this.backpressureActive) {
       return {

@@ -432,7 +432,7 @@ export function generateMaxBoosterContent(
 
 function buildMaxBoosterHashtags(
   category: MaxBoosterCategory,
-  platform: SupportedPlatform,
+  _platform: SupportedPlatform,
 ): string[] {
   const base = [
     "#MaxBooster",

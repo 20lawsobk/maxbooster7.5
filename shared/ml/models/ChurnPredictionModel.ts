@@ -281,7 +281,7 @@ export class ChurnPredictionModel extends BaseModel {
   }
 
   private identifyTopFactors(
-    features: ChurnFeatures,
+    _features: ChurnFeatures,
     vector: number[],
   ): Array<{ factor: string; impact: number }> {
     const impacts = this.featureNames.map((name, i) => ({

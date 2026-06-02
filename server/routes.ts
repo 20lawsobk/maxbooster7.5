@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction, Router } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { type Server } from "http";
 import crypto from "crypto";
 import { execSync } from "child_process";
@@ -7,28 +7,12 @@ import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import {
-  analytics,
-  userStorage,
-  userStorageFiles,
-  users,
-  notifications,
-  pushSubscriptions,
-  royaltyTransactions,
-  royaltySplits,
-  taxForms,
-  releases,
-  projects,
-  royaltyStatements,
-} from "../shared/schema.js";
-import { sum, count, ilike, inArray, or, ne, asc } from "drizzle-orm";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements } from "../shared/schema.js";
+import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
 import Stripe from "stripe";
-import {
-  getStripePriceIds,
-  ensureStripeProductsAndPrices,
-} from "./services/stripeSetup.js";
+import { getStripePriceIds } from "./services/stripeSetup.js";
 import { getBaseUrl } from "./config/defaults.js";
 import {
   generateSecret as otpGenerateSecret,
@@ -187,7 +171,7 @@ export function _userCacheInvalidate(userId: string): void {
 }
 
 // Middleware to attach user to request
-async function attachUser(req: Request, res: Response, next: NextFunction) {
+async function attachUser(req: Request, _res: Response, next: NextFunction) {
   const isProduction = isProductionEnv();
   const isApiRoute = req.path.startsWith("/api/");
 
@@ -306,9 +290,7 @@ export async function registerRoutes(
       const hasCookie = req.headers.cookie?.includes("sessionId");
       const hasSession = !!req.session;
       const hasUserId = !!req.session?.userId;
-      const sessionId = req.session?.id?.substring(0, 8) || "none";
-      const origin = req.headers.origin || "none";
-      const host = req.headers.host || "none";
+      req.session?.id?.substring(0, 8) || "none";
 
       logger.info({ hasSession, hasUserId }, "[Auth/me] Auth check");
 
@@ -1490,7 +1472,7 @@ export async function registerRoutes(
   // Auth: Upload avatar
   app.post(
     "/api/auth/avatar",
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, _next: NextFunction) => {
       if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
@@ -4883,7 +4865,7 @@ export async function registerRoutes(
               return res.status(400).json({ message: "No file provided" });
             }
 
-            const { name, assetType, description, tags } = req.body;
+            const { name, assetType, description } = req.body;
             const userId = req.user!.id;
 
             const storedFile = await storeUploadedFile(file, userId, "audio");
@@ -4931,7 +4913,6 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { name } = req.body;
       const storagePrefix = `user_${req.user.id}_${Date.now()}`;
       const [pocket] = await db
         .insert(userStorage)
@@ -4949,7 +4930,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/pocket/demo", async (req: Request, res: Response) => {
+  app.get("/api/pocket/demo", async (_req: Request, res: Response) => {
     try {
       return res.json({
         name: "Demo Pocket",
@@ -7308,7 +7289,6 @@ export async function registerRoutes(
           password,
           tosAccepted,
           privacyAccepted,
-          marketingConsent,
         } = req.body;
 
         if (!sessionId || !password) {
@@ -7345,7 +7325,6 @@ export async function registerRoutes(
         const email = session.customer_email;
         const username = session.metadata?.username;
         const tier = session.metadata?.tier || "monthly";
-        const birthdate = session.metadata?.birthdate;
 
         if (!email || !username) {
           return res

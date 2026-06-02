@@ -9,7 +9,7 @@ const youtube = google.youtube({
   auth: process.env.YOUTUBE_API_KEY,
 });
 
-const googleMyBusiness = google.mybusinessbusinessinformation({
+google.mybusinessbusinessinformation({
   version: "v1",
   auth: process.env.GOOGLE_MY_BUSINESS_API_KEY,
 });
@@ -53,7 +53,7 @@ export interface YouTubeChannelData {
 export class SocialMediaService {
   // Facebook/Instagram API Integration
   async getFacebookMetrics(
-    pageId?: string,
+    _pageId?: string,
   ): Promise<Partial<SocialMediaMetrics> | null> {
     try {
       if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
@@ -313,7 +313,7 @@ export class SocialMediaService {
       }
 
       // Fetch Threads user profile and metrics
-      const response = await axios.get(`https://graph.threads.net/v1.0/me`, {
+      await axios.get(`https://graph.threads.net/v1.0/me`, {
         params: {
           fields: "id,username,threads_profile_picture_url,threads_biography",
           access_token: process.env.THREADS_ACCESS_TOKEN,
@@ -427,7 +427,7 @@ export class SocialMediaService {
   }
 
   // Get real social media metrics from APIs
-  async getSocialMediaMetrics(userId: number): Promise<SocialMediaMetrics[]> {
+  async getSocialMediaMetrics(_userId: number): Promise<SocialMediaMetrics[]> {
     const metrics: SocialMediaMetrics[] = [];
 
     try {
@@ -555,7 +555,7 @@ export class SocialMediaService {
     platforms: string[],
     content: string,
     mediaUrl?: string,
-    scheduleTime?: Date,
+    _scheduleTime?: Date,
   ): Promise<{ success: boolean; platforms: string[]; errors?: string[] }> {
     const results: {
       success: boolean;

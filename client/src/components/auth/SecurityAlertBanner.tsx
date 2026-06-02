@@ -189,7 +189,7 @@ export function SecurityAlertBanner({
     (a) => !a.resolved && !dismissedIds.has(a.id),
   );
   const visibleAlerts = unresolvedAlerts.slice(0, maxVisibleAlerts);
-  const hiddenCount = Math.max(0, unresolvedAlerts.length - maxVisibleAlerts);
+  Math.max(0, unresolvedAlerts.length - maxVisibleAlerts);
 
   if (unresolvedAlerts.length === 0) return null;
 

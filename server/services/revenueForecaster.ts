@@ -1,10 +1,5 @@
 import { db } from "../db";
-import {
-  revenueForecasts,
-  dspAnalytics,
-  InsertRevenueForecast,
-  RevenueForecast,
-} from "@shared/schema";
+import { revenueForecasts, dspAnalytics, RevenueForecast } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
 
@@ -71,7 +66,6 @@ interface ReleaseImpactProjection {
 }
 
 class RevenueForecaster {
-  private readonly MODEL_VERSION = "2.0.0";
   private readonly CONFIDENCE_BASE = 0.7;
   private readonly DECAY_FACTOR = 0.95;
 
@@ -180,7 +174,7 @@ class RevenueForecaster {
 
   async getForecastAccuracy(
     userId: string,
-    options: { platform?: DSPPlatform } = {},
+    _options: { platform?: DSPPlatform } = {},
   ): Promise<{
     overallAccuracy: number;
     mape: number;
@@ -403,7 +397,7 @@ class RevenueForecaster {
     };
   }
 
-  async getSeasonalityAnalysis(userId: string): Promise<{
+  async getSeasonalityAnalysis(_userId: string): Promise<{
     weekdayPattern: { day: string; factor: number }[];
     monthlyPattern: { month: string; factor: number }[];
     yearOverYear: { year: number; revenue: number; growth: number }[];
@@ -571,7 +565,7 @@ class RevenueForecaster {
     };
   }
 
-  private detectSeasonality(data: TimeSeriesDataPoint[]): SeasonalityPattern {
+  private detectSeasonality(_data: TimeSeriesDataPoint[]): SeasonalityPattern {
     const dayOfWeek = [1, 1, 1, 1, 1, 1.1, 1.15];
     const monthOfYear = [
       0.9, 0.85, 0.95, 1, 1.05, 1.15, 1.1, 1.05, 1, 1.05, 1.2, 1.35,
@@ -667,7 +661,7 @@ class RevenueForecaster {
   private async storeForecast(
     userId: string,
     forecasts: ForecastResult[],
-    platform?: DSPPlatform,
+    _platform?: DSPPlatform,
   ): Promise<void> {
     const today = new Date();
 

@@ -1,20 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  LFO,
-  Oscillator,
-  msToSamples,
-  dbToLinear,
-  linearToDb,
-  clamp,
-  softClip,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, DelayLine, LFO, Oscillator, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
 
 export class AutoTuneProcessor implements DSPProcessor {
   private phaseAccumulator: number = 0;
@@ -32,7 +16,7 @@ export class AutoTuneProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -42,7 +26,6 @@ export class AutoTuneProcessor implements DSPProcessor {
     const key = (params.key as string) ?? "C";
     const scale = (params.scale as string) ?? "chromatic";
     const detune = (params.detune as number) ?? 0;
-    const formantPreserve = (params.formant as boolean) ?? true;
     const mix = (params.mix as number) ?? 1;
 
     const speedFactor = 1 - (speed / 100) * 0.99;
@@ -215,7 +198,7 @@ export class HarmonyProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -303,7 +286,7 @@ export class VocalDoublerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -387,7 +370,7 @@ export class FormantShifterProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -398,7 +381,6 @@ export class FormantShifterProcessor implements DSPProcessor {
     const mix = (params.mix as number) ?? 1;
 
     const formantFreqs = [270, 730, 2000, 3000, 4500];
-    const formantBandwidths = [60, 90, 150, 200, 300];
 
     const shiftRatio = Math.pow(2, shift / 12);
     const genderRatio = Math.pow(2, gender / 24);
@@ -463,7 +445,7 @@ export class VocalCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -478,7 +460,7 @@ export class VocalCompressorProcessor implements DSPProcessor {
     const warmth = (params.warmth as number) ?? 30;
     const mix = (params.mix as number) ?? 1;
 
-    const thresholdLin = dbToLinear(threshold);
+    dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
     const attackCoeff = Math.exp(-1 / msToSamples(attackMs, this.sampleRate));
     const releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, this.sampleRate));
@@ -580,7 +562,7 @@ export class VocalEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -680,7 +662,7 @@ export class DeBreathProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -769,7 +751,7 @@ export class VocalExciterProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -853,7 +835,7 @@ export class VocalRiderProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -928,7 +910,7 @@ export class VocoderProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;

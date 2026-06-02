@@ -28,13 +28,6 @@ interface InferenceRequest {
   reject: (err: Error) => void;
 }
 
-interface LoadRequest {
-  id: string;
-  modelId: string;
-  modelPath: string;
-  resolve: () => void;
-  reject: (err: Error) => void;
-}
 
 interface WorkerState {
   worker: Worker;

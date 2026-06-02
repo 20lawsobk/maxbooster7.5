@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -21,46 +20,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Users,
-  Headphones,
-  DollarSign,
-  Globe,
-  Music,
-  BarChart3,
-  ArrowUpRight,
-  ArrowDownRight,
-  Eye,
-  Heart,
-  Share2,
-  Calendar,
-  Clock,
-  MapPin,
-  Zap,
-  Sparkles,
-  Star,
-  Activity,
-  PieChart,
-  LineChart,
-} from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
+import { TrendingUp, Minus, Users, Headphones, DollarSign, Globe, Music, ArrowUpRight, ArrowDownRight, Calendar, MapPin, Zap, Sparkles, Star, Activity } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from "recharts";
 
 interface MetricCardProps {
   title: string;
@@ -160,7 +121,7 @@ function MetricCard({
             {sparkline && sparkline.length > 0 && (
               <div className="w-20 h-10 opacity-60">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={sparkline.map((v, i) => ({ value: v }))}>
+                  <AreaChart data={sparkline.map((v, _i) => ({ value: v }))}>
                     <Area
                       type="monotone"
                       dataKey="value"
@@ -191,39 +152,9 @@ function MetricCard({
   );
 }
 
-interface PlatformMetric {
-  platform: string;
-  streams: number;
-  followers: number;
-  change: number;
-  color: string;
-}
 
-interface GeoMetric {
-  country: string;
-  code: string;
-  streams: number;
-  percentage: number;
-  growth: number;
-}
 
-interface TimelineEvent {
-  date: string;
-  type: "release" | "playlist" | "milestone" | "viral";
-  title: string;
-  impact?: string;
-}
 
-const PLATFORM_COLORS = {
-  spotify: "#1DB954",
-  apple: "#FC3C44",
-  youtube: "#FF0000",
-  amazon: "#FF9900",
-  deezer: "#00C7F2",
-  tidal: "#000000",
-  soundcloud: "#FF5500",
-  tiktok: "#000000",
-};
 
 export function DataDenseAnalytics() {
   const [timeRange, setTimeRange] = useState("7d");
@@ -300,7 +231,7 @@ export function DataDenseAnalytics() {
     refetchInterval: 60000,
   });
 
-  const { data: aiInsights } = useQuery({
+  useQuery({
     queryKey: ["ai-insights", timeRange],
     queryFn: async () => {
       const response = await fetch(`/api/ai/insights?range=${timeRange}`);

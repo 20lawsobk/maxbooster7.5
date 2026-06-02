@@ -1,12 +1,11 @@
 import { logger } from "@/lib/logger";
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { uploadWithProgress } from "@/lib/queryClient";
-import { UploadList, type UploadItemData } from "@/components/ui/upload-item";
 import {
   isInFullscreenMode,
   exitFullscreenForUpload,
@@ -14,17 +13,7 @@ import {
   openFilePickerInFullscreen,
   canPickFilesInFullscreen,
 } from "@/hooks/useFullscreenFileUpload";
-import {
-  Upload,
-  FileAudio,
-  X,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Music,
-  FolderOpen,
-  Clipboard,
-} from "lucide-react";
+import { Upload, FileAudio, X, CheckCircle2, AlertCircle, Loader2, Music, FolderOpen } from "lucide-react";
 
 interface UploadingFile {
   id: string;
@@ -388,7 +377,7 @@ export function FileUploadZone({
     [processFiles],
   );
 
-  const handleFileSelect = useCallback(
+  useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (files && files.length > 0) {

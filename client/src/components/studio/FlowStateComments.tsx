@@ -1,24 +1,6 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  MessageSquare,
-  Plus,
-  Send,
-  Trash2,
-  Check,
-  CheckCheck,
-  Reply,
-  Pin,
-  PinOff,
-  MoreHorizontal,
-  Clock,
-  Play,
-  Filter,
-  ChevronDown,
-  AlertCircle,
-  Lightbulb,
-  HelpCircle,
-} from "lucide-react";
+import { MessageSquare, Plus, Send, Trash2, Check, CheckCheck, Reply, Pin, PinOff, MoreHorizontal, Clock, Play, AlertCircle, Lightbulb, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

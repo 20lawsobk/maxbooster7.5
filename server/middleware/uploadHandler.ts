@@ -2,18 +2,10 @@ import multer from "multer";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { randomBytes } from "crypto";
-import { Request, Response, NextFunction } from "express";
+import { Request } from "express";
 import { storageService } from "../services/storageService.js";
 import { logger } from "../logger.js";
-import {
-  validateUpload,
-  sanitizeFilename,
-  verifyMagicBytes,
-  UPLOAD_LIMITS,
-  type UploadCategory,
-  validateFileBuffer,
-  createUploadValidator,
-} from "./uploadSecurity.js";
+import { sanitizeFilename, verifyMagicBytes, UPLOAD_LIMITS, type UploadCategory, validateFileBuffer, createUploadValidator } from "./uploadSecurity.js";
 import {
   processImage,
   processAvatarImage,
@@ -41,7 +33,7 @@ const generalDiskStorage = multer.diskStorage({
 });
 
 const fileFilter = (
-  req: Request,
+  _req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) => {
@@ -124,7 +116,7 @@ export const avatarUpload = multer({
     fileSize: UPLOAD_LIMITS.avatar.maxSize,
     files: 1,
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext === ".svg") {
       cb(new Error("SVG files are not allowed for avatars"));
@@ -148,7 +140,7 @@ export const artworkUpload = multer({
     fileSize: UPLOAD_LIMITS.artwork.maxSize,
     files: 1,
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext === ".svg") {
       cb(new Error("SVG files are not allowed for artwork"));
@@ -172,7 +164,7 @@ export const audioUpload = multer({
     fileSize: UPLOAD_LIMITS.audio.maxSize,
     files: 10,
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     if (UPLOAD_LIMITS.audio.allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -420,7 +412,7 @@ export const documentUpload = multer({
     fileSize: UPLOAD_LIMITS.document.maxSize,
     files: 5,
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     if (UPLOAD_LIMITS.document.allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -438,7 +430,7 @@ export { createUploadValidator };
 // Error handler middleware for multer
 export const handleUploadError = (
   error: unknown,
-  req: Request,
+  _req: Request,
   res: unknown,
   next: unknown,
 ) => {

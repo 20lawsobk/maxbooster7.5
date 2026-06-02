@@ -31,10 +31,7 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
-import {
-  RenderOrchestrator,
-  type OrchestratorState,
-} from "@/lib/video/RenderOrchestrator";
+import { RenderOrchestrator } from "@/lib/video/RenderOrchestrator";
 import {
   compileTemplate,
   type CompilationResult,
@@ -44,16 +41,7 @@ import {
   type BrowserCapabilities,
 } from "@/lib/video/BrowserCapabilities";
 import { VideoExporter, type ExportProgress } from "@/lib/video/VideoExporter";
-import {
-  type AspectRatio,
-  type ColorPalette,
-  type PromoTemplateOptions,
-  type SocialTeaserOptions,
-  type ReleaseAnnouncementOptions,
-  type QuoteLyricOptions,
-  DEFAULT_PALETTES,
-  ASPECT_RATIOS,
-} from "@/lib/video/templates/PromoTemplates";
+import { type AspectRatio, type PromoTemplateOptions, type SocialTeaserOptions, type ReleaseAnnouncementOptions, type QuoteLyricOptions, DEFAULT_PALETTES, ASPECT_RATIOS } from "@/lib/video/templates/PromoTemplates";
 
 export type Platform =
   | "twitter"
@@ -251,7 +239,6 @@ export function VideoContentGenerator({
 
     const palette =
       DEFAULT_PALETTES[selectedPalette] || DEFAULT_PALETTES.modern;
-    const { width, height } = ASPECT_RATIOS[aspectRatio];
 
     let templateOptions: PromoTemplateOptions;
 
@@ -466,7 +453,7 @@ export function VideoContentGenerator({
     try {
       const result = await exporter.export(
         compilationResult.project,
-        async (canvas, frameNumber, timestamp) => {
+        async (canvas, _frameNumber, timestamp) => {
           orchestrator.renderFrame(timestamp);
           const ctx = canvas.getContext("2d");
           if (ctx && canvasRef.current) {

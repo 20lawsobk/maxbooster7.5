@@ -1,22 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  CombFilter,
-  LFO,
-  Oscillator,
-  ADSR,
-  EnvelopeFollower,
-  msToSamples,
-  dbToLinear,
-  clamp,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, DelayLine, LFO, Oscillator, ADSR, clamp, softClip, hardClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -76,7 +58,7 @@ export class MinimoogSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -194,7 +176,7 @@ export class ProphetSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -320,7 +302,7 @@ export class JupiterSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -448,7 +430,7 @@ export class OberheimSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -565,7 +547,7 @@ export class ARP2600Synth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -676,7 +658,7 @@ export class SH101Synth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -784,7 +766,7 @@ export class JunoSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -896,7 +878,7 @@ export class MS20Synth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -974,7 +956,6 @@ export class OdysseySynth implements SynthesizerEngine {
   private frequency: number = 220;
   private velocity: number = 0;
   private sampleRate: number = 44100;
-  private syncEnabled: boolean = true;
 
   constructor() {
     this.osc1 = new Oscillator();
@@ -1004,7 +985,7 @@ export class OdysseySynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -1127,7 +1108,7 @@ export class PolysixSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }

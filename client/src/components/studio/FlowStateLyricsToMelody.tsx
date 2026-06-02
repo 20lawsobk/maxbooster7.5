@@ -1,26 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { apiRequest, getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  PenTool,
-  Music,
-  Sparkles,
-  Play,
-  Pause,
-  RefreshCw,
-  Download,
-  Copy,
-  Wand2,
-  ChevronRight,
-  Volume2,
-  Sliders,
-  Heart,
-  Mic,
-  MicOff,
-  Upload,
-  FileAudio,
-  X,
-} from "lucide-react";
+import { PenTool, Music, Sparkles, Play, Pause, RefreshCw, Download, Copy, Wand2, Heart, Mic, MicOff, Upload, FileAudio, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

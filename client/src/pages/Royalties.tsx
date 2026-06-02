@@ -24,32 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  DollarSign,
-  Download,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Users,
-  Music,
-  Play,
-  RefreshCw,
-  Banknote,
-  PieChart,
-  Shield,
-  Scale,
-  FileText,
-  Zap,
-  Copyright,
-  Calculator,
-  Receipt,
-  BarChart3,
-  Plus,
-  Wallet,
-  Music2,
-  Loader2,
-} from "lucide-react";
+import { DollarSign, Download, TrendingUp, Clock, CheckCircle, AlertCircle, Users, Music, Play, RefreshCw, Banknote, PieChart, Scale, Zap, Copyright, Calculator, Receipt, BarChart3, Plus, Wallet, Music2, Loader2 } from "lucide-react";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
@@ -277,7 +252,7 @@ export default function Royalties() {
   });
   const disputes = disputesData?.disputes ?? [];
 
-  const { data: taxFormsData, isLoading: taxFormsLoading } = useQuery<{
+  const { data: taxFormsData } = useQuery<{
     forms: Array<{
       formType?: string | null;
       status?: string;
@@ -790,7 +765,7 @@ export default function Royalties() {
     (sum: number, r: Royalty) => sum + r.amount,
     0,
   );
-  const paidRoyalties = royalties.filter(
+  royalties.filter(
     (r: Royalty) => r.payoutStatus === "paid",
   );
   const totalStreams = royalties.reduce(
@@ -2691,16 +2666,16 @@ export default function Royalties() {
 // ============================================================================
 
 function TaxIntelligenceContent() {
-  const { data: royaltyData } = useQuery<Record<string, unknown>>({
+  useQuery<Record<string, unknown>>({
     queryKey: ["/api/royalties/statements"],
   });
-  const { data: payoutsData } = useQuery<Record<string, unknown>>({
+  useQuery<Record<string, unknown>>({
     queryKey: ["/api/payouts"],
   });
-  const { data: publishingData } = useQuery<any[]>({
+  useQuery<any[]>({
     queryKey: ["/api/publishing"],
   });
-  const { data: forecastData } = useQuery<Record<string, unknown>>({
+  useQuery<Record<string, unknown>>({
     queryKey: ["/api/royalties/forecast"],
   });
 

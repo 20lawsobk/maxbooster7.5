@@ -14,7 +14,7 @@ export function useAutoscroll({
 }: UseAutoscrollOptions) {
   const { currentTime, isPlaying, autoscrollMode, setScrollPosition } =
     useStudioStore();
-  const lastScrollTimeRef = useRef(0);
+  useRef(0);
   const animationFrameRef = useRef<number | null>(null);
 
   const getContainerWidth = useCallback(() => {

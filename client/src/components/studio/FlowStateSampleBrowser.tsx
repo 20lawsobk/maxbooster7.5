@@ -1,32 +1,5 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  FolderOpen,
-  Search,
-  Play,
-  Pause,
-  Square,
-  Star,
-  StarOff,
-  Heart,
-  Clock,
-  Music,
-  Drum,
-  Piano,
-  Guitar,
-  Volume2,
-  Filter,
-  Grid,
-  List,
-  ChevronRight,
-  ChevronDown,
-  Plus,
-  Download,
-  Tag,
-  Wand2,
-  Waveform,
-  Loader2,
-} from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { FolderOpen, Search, Play, Pause, Heart, Music, Drum, Piano, Guitar, Volume2, Grid, List, ChevronRight, ChevronDown, Plus, Wand2, Waveform } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -312,7 +284,7 @@ export function FlowStateSampleBrowser({
 
   const {
     data: apiSamples,
-    isLoading,
+    
     error: samplesError,
   } = useQuery({
     queryKey: ["studio-samples"],
@@ -458,11 +430,11 @@ export function FlowStateSampleBrowser({
     return `${seconds.toFixed(1)}s`;
   };
 
-  const formatSize = (bytes: number): string => {
+  ((bytes: number): string => {
     if (bytes < 1000) return `${bytes}B`;
     if (bytes < 1000000) return `${(bytes / 1000).toFixed(1)}KB`;
     return `${(bytes / 1000000).toFixed(1)}MB`;
-  };
+  });
 
   const favoriteCount = samples.filter((s) => s.isFavorite).length;
 

@@ -1,12 +1,6 @@
 import { db } from "../db";
-import {
-  users,
-  analytics,
-  projects,
-  posts,
-  distroReleases,
-} from "@shared/schema";
-import { sql, gte, lte, desc, and, count, sum, avg, eq } from "drizzle-orm";
+import { analytics, distroReleases } from "@shared/schema";
+import { sql, gte, desc, and, count, eq } from "drizzle-orm";
 
 // Music Career-Specific AI Analytics for Artists
 
@@ -344,7 +338,7 @@ export async function getCareerMilestones(
     .from(distroReleases)
     .where(eq(distroReleases.userId, userId));
 
-  const releaseCount = Number(releases[0]?.count || 0);
+  Number(releases[0]?.count || 0);
 
   const milestones: CareerMilestone[] = [];
 
@@ -404,7 +398,7 @@ export async function getCareerMilestones(
 }
 
 export async function generateMusicInsights(
-  userId: string,
+  _userId: string,
 ): Promise<MusicInsight[]> {
   const insights: MusicInsight[] = [];
 

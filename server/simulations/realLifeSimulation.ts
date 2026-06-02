@@ -35,7 +35,7 @@ import {
 const REAL_SECONDS_PER_SIMULATED_DAY = 0.48;
 const REAL_MS_PER_SIMULATED_DAY = REAL_SECONDS_PER_SIMULATED_DAY * 1000; // 480ms per day
 const REAL_MS_PER_SIMULATED_HOUR = REAL_MS_PER_SIMULATED_DAY / 24; // 20ms per hour
-const REAL_MS_PER_SIMULATED_MINUTE = REAL_MS_PER_SIMULATED_HOUR / 60; // ~0.33ms per minute
+ // ~0.33ms per minute
 const ACCELERATION_FACTOR = REAL_SECONDS_PER_SIMULATED_DAY / (24 * 60 * 60); // ~5.56e-6
 
 // Simulation time periods in days
@@ -307,7 +307,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
   private isRunning: boolean = false;
   private isPaused: boolean = false;
-  private intervalId?: NodeJS.Timeout;
 
   // POCKET DIMENSION STORAGE - Memory-efficient user tracking
   private pocketStorage: PocketSimulationStorage | null = null;
@@ -457,27 +456,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
   // Calculate target daily growth rate to hit milestones
   // 500K users by Year 2 from 50K start = 10x growth in 730 days
   // Required: (500000/50000)^(1/730) - 1 = 0.00316 = 0.316% daily compound
-  private calculateTargetDailyGrowth(): number {
-    const currentUsers = this.metrics.users.total;
-    const TAM = 80_000_000; // Total addressable market
-    const year2Target = 500_000;
-    const daysRemaining = Math.max(1, 730 - this.currentDay);
-
-    // Early stage: aggressive growth to hit 500K by Year 2
-    if (this.currentDay <= 730) {
-      // Calculate required daily growth rate to hit target
-      const requiredMultiplier = Math.pow(
-        year2Target / currentUsers,
-        1 / daysRemaining,
-      );
-      return Math.min(0.01, requiredMultiplier - 1); // Cap at 1% daily growth
-    }
-
-    // Post Year-2: slower growth with TAM saturation
-    const marketPenetration = currentUsers / TAM;
-    const saturationFactor = 1 - Math.pow(marketPenetration, 0.5); // Logistic slowdown
-    return 0.001 * saturationFactor; // 0.1% base with saturation
-  }
 
   // Calculate viral growth multiplier based on current user count
   private calculateViralGrowth(): number {
@@ -506,7 +484,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
   // Update market conditions with economic cycles
   private updateEconomicConditions(): void {
     const dayOfYear = this.currentDay % 365;
-    const yearProgress = dayOfYear / 365;
     const currentYear = Math.floor(this.currentDay / 365);
 
     // Economic cycles (4-year business cycle approximation)
@@ -703,8 +680,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
     // EXPONENTIAL VIRAL GROWTH MODEL
     // Base: probability * market growth * economic conditions * viral mechanics
     // Users generate referrals: each user has a chance to bring in new users
-    const baseSignupProb =
-      prob.userSignup * market.growthMultiplier * economicMultiplier;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // MAX BOOSTER EXPONENTIAL GROWTH ENGINE - FULLY OPTIMIZED
@@ -924,82 +899,9 @@ export class RealLifeSimulationEngine extends EventEmitter {
     }
   }
 
-  private async simulateMinute(): Promise<void> {
-    const prob = this.probabilities;
-
-    // Stream events
-    for (const release of this.releases.values()) {
-      if (Math.random() < prob.streamEvent) {
-        const streamCount = Math.floor(
-          1 + Math.random() * 100 * (release.isViral ? 50 : 1),
-        );
-        release.totalStreams += streamCount;
-        release.dailyStreams += streamCount;
-
-        if (streamCount > release.peakStreams) {
-          release.peakStreams = streamCount;
-        }
-
-        const revenue = streamCount * 0.004; // ~$0.004 per stream
-        release.revenue += revenue;
-        this.metrics.streams.daily += streamCount;
-        this.metrics.revenue.daily += revenue;
-
-        const user = this.users.get(release.userId);
-        if (user) {
-          user.totalStreams += streamCount;
-          user.lifetimeValue += revenue;
-        }
-      }
-    }
-
-    // Social engagement
-    if (Math.random() < prob.socialEngagement) {
-      this.metrics.social.engagementRate = 0.03 + Math.random() * 0.07;
-
-      for (const user of this.users.values()) {
-        user.followers += Math.floor(Math.random() * 5 * user.viralPotential);
-      }
-
-      this.metrics.social.totalFollowers = Array.from(
-        this.users.values(),
-      ).reduce((sum, u) => sum + u.followers, 0);
-    }
-
-    // Viral moments
-    if (Math.random() < prob.viralMoment / 60) {
-      // per minute check
-      const releases = Array.from(this.releases.values()).filter(
-        (r) => !r.isViral,
-      );
-      if (releases.length > 0) {
-        const release = releases[Math.floor(Math.random() * releases.length)];
-        release.isViral = true;
-        release.viralDate = new Date(this.simulatedCurrentDate);
-        this.metrics.streams.viralReleases++;
-
-        const user = this.users.get(release.userId);
-        if (user) {
-          user.viralPotential = Math.min(1, user.viralPotential + 0.2);
-        }
-
-        this.recordEvent(
-          "viral_moment",
-          "content",
-          {
-            releaseId: release.id,
-            userId: release.userId,
-            currentStreams: release.totalStreams,
-          },
-          "high",
-        );
-      }
-    }
-  }
 
   private async simulateDay(): Promise<void> {
     const prob = this.probabilities;
-    const market = this.marketConditions;
 
     // Update economic conditions daily (business cycles, inflation, consumer confidence)
     this.updateEconomicConditions();
@@ -1012,7 +914,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
     this.metrics.social.postsToday = 0;
 
     // CAPTURE PRE-CHURN USER COUNT for growth calculation
-    const usersBeforeChurn = this.metrics.users.total;
 
     // User churn (reduced for Max Booster's sticky platform)
     for (const [userId, user] of this.users.entries()) {
@@ -1265,7 +1166,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
   // Fast day simulation - aggregates all events mathematically for 98% acceleration
   private async simulateDayFast(): Promise<void> {
     const prob = this.probabilities;
-    const market = this.marketConditions;
 
     // Reset daily metrics
     this.metrics.users.newToday = 0;
@@ -1276,7 +1176,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
     // Calculate expected events based on probabilities (24 hours worth)
     const hoursPerDay = 24;
-    const minutesPerDay = 24 * 60;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // MAX BOOSTER EXPONENTIAL GROWTH - MEMORY-OPTIMIZED AGGREGATE TRACKING
@@ -1339,7 +1238,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
       usersNeededToday,
       Math.max(0, MAX_USER_OBJECTS - this.users.size),
     );
-    const aggregateUsers = usersNeededToday - usersToCreate;
 
     // Create user objects only for sample pool
     for (let i = 0; i < usersToCreate; i++) {

@@ -1,16 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  EnvelopeFollower,
-  msToSamples,
-  dbToLinear,
-  linearToDb,
-  softClip,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, msToSamples, dbToLinear, linearToDb, softClip } from "./core";
 
 export class VCACompressorProcessor implements DSPProcessor {
   private envelope: number = 0;
@@ -19,7 +7,7 @@ export class VCACompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -32,7 +20,7 @@ export class VCACompressorProcessor implements DSPProcessor {
     const makeupGain = (params.makeup as number) ?? 0;
     const mix = (params.mix as number) ?? 1;
 
-    const thresholdLin = dbToLinear(threshold);
+    dbToLinear(threshold);
     const makeupLin = dbToLinear(makeupGain);
     const attackCoeff = Math.exp(-1 / msToSamples(attackMs, this.sampleRate));
     const releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, this.sampleRate));
@@ -80,7 +68,7 @@ export class OpticalCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -149,7 +137,7 @@ export class FETCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -220,7 +208,7 @@ export class TubeCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -325,7 +313,7 @@ export class MultibandCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -472,7 +460,7 @@ export class ParallelCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -525,7 +513,7 @@ export class BusCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -536,7 +524,6 @@ export class BusCompressorProcessor implements DSPProcessor {
     const release = (params.release as number) ?? 300;
     const makeup = (params.makeup as number) ?? 3;
     const mix = (params.mix as number) ?? 1;
-    const sidechain = (params.sidechain as number) ?? 0;
 
     const thresholdLin = dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
@@ -587,7 +574,7 @@ export class MasteringCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -601,11 +588,11 @@ export class MasteringCompressorProcessor implements DSPProcessor {
     const knee = (params.knee as number) ?? 10;
     const mix = (params.mix as number) ?? 1;
 
-    const thresholdLin = dbToLinear(threshold);
+    dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
     const attackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
     const releaseCoeff = Math.exp(-1 / msToSamples(release, this.sampleRate));
-    const lookaheadSamples = msToSamples(lookahead, this.sampleRate);
+    msToSamples(lookahead, this.sampleRate);
     const kneeWidth = knee / 2;
 
     for (let i = 0; i < input.samples[0].length; i++) {
@@ -662,7 +649,7 @@ export class VintageCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -737,7 +724,7 @@ export class GlueCompressorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;

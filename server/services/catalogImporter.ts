@@ -5,10 +5,10 @@ import {
   releases,
   distroTracks,
 } from "@shared/schema";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { identifierService } from "./identifierService.js";
-import { labelCopyLinter, LabelCopyLinter } from "./labelCopyLinter.js";
+import { LabelCopyLinter } from "./labelCopyLinter.js";
 import ExcelJS from "exceljs";
 
 export interface ImportRow {
@@ -98,22 +98,6 @@ const CSV_COLUMN_MAPPINGS: Record<string, string> = {
   primary_language: "language",
 };
 
-const DDEX_FIELD_MAPPINGS: Record<string, string> = {
-  ReleaseTitle: "title",
-  DisplayArtistName: "artist",
-  GenreText: "genre",
-  ReleaseDate: "releaseDate",
-  ICPN: "upc",
-  ISRC: "isrc",
-  RecordLabelName: "label",
-  PLine: "copyrightHolder",
-  CLine: "copyrightHolder",
-  Title: "trackTitle",
-  SequenceNumber: "trackNumber",
-  Duration: "duration",
-  IsExplicit: "isExplicit",
-  LanguageOfPerformance: "language",
-};
 
 class CatalogImporter {
   private linter: LabelCopyLinter;
@@ -126,7 +110,7 @@ class CatalogImporter {
     userId: string,
     filename: string,
     fileType: "csv" | "xlsx" | "ddex",
-    fileSize: number,
+    _fileSize: number,
   ): Promise<string> {
     const [job] = await db
       .insert(catalogImportJobs)
@@ -276,7 +260,7 @@ class CatalogImporter {
         row.upc = upcMatch[1].trim();
       }
 
-      const isrcMatches = xmlContent.matchAll(/<ISRC[^>]*>(.*?)<\/ISRC>/gs);
+      xmlContent.matchAll(/<ISRC[^>]*>(.*?)<\/ISRC>/gs);
       const trackMatches = xmlContent.matchAll(/<Title[^>]*>(.*?)<\/Title>/gs);
 
       let trackNumber = 1;
@@ -360,7 +344,7 @@ class CatalogImporter {
 
   async validateRows(
     rows: ImportRow[],
-    jobId: string,
+    _jobId: string,
   ): Promise<{
     validRows: ImportRow[];
     errors: ImportError[];

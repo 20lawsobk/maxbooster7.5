@@ -30,27 +30,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  GripVertical,
-  Eye,
-  EyeOff,
-  Plus,
-  Save,
-  RotateCcw,
-  Trash2,
-  LayoutDashboard,
-  Maximize2,
-  Minimize2,
-  Check,
-  X,
-  Sparkles,
-  Download,
-  Upload,
-  Settings,
-  Copy,
-} from "lucide-react";
+import { GripVertical, Eye, EyeOff, Plus, Save, RotateCcw, LayoutDashboard, Sparkles, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DashboardWidget, WidgetSize, SmartWidgetConfig } from "./SmartWidget";
+import { WidgetSize, SmartWidgetConfig } from "./SmartWidget";
 
 interface DashboardLayout {
   id: string;

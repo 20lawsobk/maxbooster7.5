@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 
 const DESIGN_BASELINE = 1440;
 

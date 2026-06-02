@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -22,25 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import {
-  RefreshCw,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  XCircle,
-  Loader2,
-  ExternalLink,
-  RotateCcw,
-  ChevronRight,
-  Calendar,
-  TrendingUp,
-  Users,
-  Play,
-  Pause,
-  Info,
-  Zap,
-  AlertTriangle,
-} from "lucide-react";
+import { RefreshCw, CheckCircle2, Clock, AlertCircle, XCircle, Loader2, ExternalLink, RotateCcw, ChevronRight, Calendar, Users, Info, Zap, AlertTriangle } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -203,7 +185,6 @@ export function SubmissionStatusTracker({
   const {
     data: statusData,
     isLoading,
-    refetch,
   } = useQuery<{
     statuses: PlatformSubmissionStatus[];
     summary: SubmissionSummary;

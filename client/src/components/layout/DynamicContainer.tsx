@@ -163,7 +163,7 @@ export function AdaptiveVisibility({
   showOn,
   hideOn,
 }: AdaptiveVisibilityProps) {
-  const { isMobile, isTablet, isDesktop, isWide } = useAppLayout();
+  const { isMobile, isTablet, isDesktop } = useAppLayout();
 
   const currentBreakpoint = isMobile
     ? "xs"

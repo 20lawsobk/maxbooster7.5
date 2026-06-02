@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from "react";
+import { type ComponentType } from "react";
 import {
   Card,
   CardContent,
@@ -65,7 +65,7 @@ export function PlatformConnections() {
   const queryClient = useQueryClient();
   const { trackSocialAccountConnected } = useOnboardingProgress();
 
-  const { data: connections = [], isLoading } = useQuery<SocialConnection[]>({
+  const { data: connections = [] } = useQuery<SocialConnection[]>({
     queryKey: ["/api/social/connections"],
     retry: false,
   });

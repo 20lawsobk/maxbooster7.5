@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "../../../db";
-import { analytics, projects, releases, users } from "@shared/schema";
-import { eq, and, desc, sql, gte, lte, between } from "drizzle-orm";
+import { analytics, projects, users } from "@shared/schema";
+import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 import { apiKeyService, ApiKeyRequest } from "../../../services/apiKeyService";
 import { logger } from "../../../logger.js";
 import { advancedAnalyticsService } from "../../../services/advancedAnalyticsService";

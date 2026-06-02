@@ -14,11 +14,7 @@ import {
   type RuleEvaluationResult,
   PLATFORM_LIMITS,
 } from "../coordination/SocialMediaRuleEngine.js";
-import {
-  autopilotCoordinator,
-  type ExecutionIntent,
-  type CoordinationDecision,
-} from "../coordination/AutopilotCoordinator.js";
+import { autopilotCoordinator, type ExecutionIntent } from "../coordination/AutopilotCoordinator.js";
 import { featureStore } from "../coordination/FeatureStore.js";
 
 export interface SocialPost {
@@ -97,7 +93,6 @@ export interface ViralityPrediction {
 export class SocialMediaAutopilotAI extends BaseModel {
   private platformModels: Map<string, tf.LayersModel> = new Map();
   private viralityModel: tf.LayersModel | null = null;
-  private engagementModel: tf.LayersModel | null = null;
   private platformScalers: Map<string, { mean: number[]; std: number[] }> =
     new Map();
   private trainingHistory: SocialPost[] = [];
@@ -407,7 +402,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
   public async predictOptimalPostingTime(
     platform: string,
     userHistory: SocialPost[],
-    currentTrends: any,
+    _currentTrends: any,
   ): Promise<OptimalPostingSchedule[]> {
     if (!this.isTrained || !this.platformModels.has(platform)) {
       return this.getFallbackPostingTimes(platform, false);
@@ -494,8 +489,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     inputTensor.dispose();
     prediction.dispose();
 
-    const avgEngagement =
-      userPostHistory.reduce((sum, p) => sum + p.engagement, 0) /
+    userPostHistory.reduce((sum, p) => sum + p.engagement, 0) /
       userPostHistory.length;
     const topPosts = userPostHistory
       .sort((a, b) => b.engagement - a.engagement)
@@ -763,10 +757,8 @@ export class SocialMediaAutopilotAI extends BaseModel {
       Math.max(...this.trainingHistory.map((p) => p.likes)) || 1000;
     const maxComments =
       Math.max(...this.trainingHistory.map((p) => p.comments)) || 100;
-    const maxShares =
-      Math.max(...this.trainingHistory.map((p) => p.shares)) || 50;
-    const maxReach =
-      Math.max(...this.trainingHistory.map((p) => p.reach)) || 10000;
+    Math.max(...this.trainingHistory.map((p) => p.shares)) || 50;
+    Math.max(...this.trainingHistory.map((p) => p.reach)) || 10000;
 
     const postDate =
       post.postedAt instanceof Date && !isNaN(post.postedAt.getTime())
@@ -1035,7 +1027,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
   }
 
   private generateDataDrivenRecommendations(
-    content: any,
+    _content: any,
     topPosts: SocialPost[],
   ): string[] {
     const recommendations: string[] = [];
@@ -1118,14 +1110,14 @@ export class SocialMediaAutopilotAI extends BaseModel {
     };
   }
 
-  private calculateShareability(content: any, topPosts: SocialPost[]): number {
+  private calculateShareability(_content: any, topPosts: SocialPost[]): number {
     const avgShares =
       topPosts.reduce((sum, p) => sum + p.shares, 0) / topPosts.length;
     return Math.min(1, avgShares / 100);
   }
 
   private calculateEngagementPotential(
-    content: any,
+    _content: any,
     topPosts: SocialPost[],
   ): number {
     const avgEngagement =
@@ -1134,7 +1126,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
   }
 
   private calculateReachPotential(
-    content: any,
+    _content: any,
     topPosts: SocialPost[],
   ): number {
     const avgReach =
@@ -1324,7 +1316,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     mediaType: "text" | "image" | "video" | "audio",
     platform: string,
     template: any,
-    multimodalFeatures?: any,
+    _multimodalFeatures?: any,
   ): { text: string } {
     const contentTemplates = {
       tips: {
@@ -1364,7 +1356,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
    */
   private generateOptimizedHashtags(
     platform: string,
-    contentType: string,
+    _contentType: string,
     maxHashtags: number,
   ): string[] {
     const hashtagPool = {

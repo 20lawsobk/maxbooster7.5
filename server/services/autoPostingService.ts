@@ -750,7 +750,7 @@ class AutoPostingService {
   private async refreshToken(
     userId: string,
     platform: string,
-    refreshToken: string,
+    _refreshToken: string,
   ): Promise<{ accessToken: string; expiresIn?: number }> {
     try {
       const result = await socialOAuth.refreshAccessToken(userId, platform);
@@ -896,11 +896,3 @@ class AutoPostingService {
 // Export singleton instance
 export const autoPostingService = new AutoPostingService();
 
-interface OAuthConfig {
-  clientId: string;
-  clientSecret: string;
-  authUrl: string;
-  tokenUrl: string;
-  scopes: string[];
-  redirectUri: string;
-}

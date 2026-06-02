@@ -520,7 +520,7 @@ router.delete(
 router.get(
   "/roles/templates",
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (_req: AuthenticatedRequest, res: Response) => {
     try {
       const templates = rbacService.getRoleTemplates();
       res.json({ templates });

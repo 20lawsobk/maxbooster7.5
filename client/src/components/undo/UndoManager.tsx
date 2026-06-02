@@ -1,15 +1,9 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { useUndo } from "@/contexts/UndoContext";
-import {
-  UndoableAction,
-  ActionType,
-  ActionCategory,
-  ActionMetadata,
-  getActionLabel,
-} from "@/lib/undo/types";
+import { UndoableAction, getActionLabel } from "@/lib/undo/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Undo2, Redo2, History, AlertCircle, CheckCircle } from "lucide-react";
+import { Undo2, Redo2, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface UndoManagerProps {

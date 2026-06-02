@@ -429,7 +429,7 @@ export class AdvancedTimeSeriesModel extends BaseModel {
 
   public prepareTrainingData(
     data: number[],
-    timestamps?: Date[],
+    _timestamps?: Date[],
   ): {
     inputs: tf.Tensor;
     labels: tf.Tensor;

@@ -231,7 +231,7 @@ export class CircularVisualizer {
   private renderBars(
     ctx: CanvasRenderingContext2D,
     innerRadius: number,
-    outerRadius: number,
+    _outerRadius: number,
   ): void {
     const { barCount, barWidth, barMinHeight, barRadius } = this.options;
     const angleStep =
@@ -333,7 +333,7 @@ export class CircularVisualizer {
   private renderDots(
     ctx: CanvasRenderingContext2D,
     innerRadius: number,
-    outerRadius: number,
+    _outerRadius: number,
   ): void {
     const { barCount, barMaxHeight } = this.options;
     const angleStep =
@@ -358,9 +358,9 @@ export class CircularVisualizer {
   private renderSpikes(
     ctx: CanvasRenderingContext2D,
     innerRadius: number,
-    outerRadius: number,
+    _outerRadius: number,
   ): void {
-    const { barCount, barWidth, barMinHeight } = this.options;
+    const { barCount,  barMinHeight } = this.options;
     const angleStep =
       (this.options.endAngle - this.options.startAngle) / barCount;
     const halfAngle = angleStep / 4;
@@ -415,7 +415,6 @@ export class CircularVisualizer {
     ctx.closePath();
 
     for (let i = barCount; i >= 0; i--) {
-      const index = i % barCount;
       const angle = this.options.startAngle + i * angleStep;
       const x = Math.cos(angle) * innerRadius;
       const y = Math.sin(angle) * innerRadius;
@@ -460,7 +459,7 @@ export class CircularVisualizer {
     ctx.fill();
   }
 
-  private getBarColor(index: number, height: number): string {
+  private getBarColor(index: number, _height: number): string {
     const { gradientColors, barCount, useRadialGradient } = this.options;
 
     if (useRadialGradient && gradientColors.length > 1) {
@@ -510,8 +509,8 @@ export class CircularVisualizer {
 
   private renderParticles(
     ctx: CanvasRenderingContext2D,
-    centerX: number,
-    centerY: number,
+    _centerX: number,
+    _centerY: number,
   ): void {
     for (const particle of this.particles) {
       const alpha = particle.life / particle.maxLife;

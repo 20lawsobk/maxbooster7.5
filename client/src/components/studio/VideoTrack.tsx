@@ -1,28 +1,6 @@
 import { logger } from "@/lib/logger";
 import { useCallback, useState, useRef, useEffect, useMemo } from "react";
-import {
-  Video,
-  Upload,
-  Scissors,
-  Copy,
-  Clipboard,
-  Flag,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Maximize2,
-  X,
-  Film,
-  FileVideo,
-  Music,
-  ChevronDown,
-  MoreHorizontal,
-  Trash2,
-  RefreshCw,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { Video, Upload, Scissors, Copy, Clipboard, Flag, Play, Pause, Volume2, VolumeX, Maximize2, Film, FileVideo, Music, ChevronDown, MoreHorizontal, Trash2, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {

@@ -51,57 +51,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Upload,
-  Music,
-  Globe,
-  Calendar as CalendarIcon,
-  Clock,
-  MonitorSpeaker,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Play,
-  Download,
-  BarChart3,
-  DollarSign,
-  Users,
-  TrendingUp,
-  Eye,
-  Plus,
-  Link2,
-  Star,
-  X,
-  Share2,
-  Edit,
-  Trash2,
-  ExternalLink,
-  Headphones,
-  Music2,
-  Disc,
-  FileAudio,
-  Copy,
-  Settings,
-  CreditCard,
-  Banknote,
-  PieChart,
-  Target,
-  Zap,
-  Shield,
-  Crown,
-  Sparkles,
-  MapPin,
-  ListMusic,
-  Ticket,
-  Film,
-  Briefcase,
-  Video,
-  ShieldCheck,
-  Wand2,
-  Loader2,
-  ImagePlus,
-  Mic,
-} from "lucide-react";
+import { Upload, Music, Globe, Calendar as CalendarIcon, Clock, CheckCircle, XCircle, AlertCircle, Play, Download, BarChart3, DollarSign, Users, TrendingUp, Eye, Plus, Link2, X, Share2, Edit, Trash2, ExternalLink, Music2, Disc, FileAudio, Settings, CreditCard, Banknote, PieChart, Target, Zap, Shield, Crown, MapPin, ListMusic, Ticket, Film, Briefcase, Video, ShieldCheck, Wand2, Loader2, ImagePlus, Mic } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -1444,7 +1394,6 @@ export default function Distribution() {
   const {
     data: comprehensiveAnalytics,
     isLoading: analyticsLoading,
-    error: analyticsError,
   } = useQuery<ComprehensiveAnalytics>({
     queryKey: ["/api/analytics/dashboard"],
     enabled: !!user,
@@ -1514,7 +1463,7 @@ export default function Distribution() {
     enabled: !!user,
   });
 
-  const { data: platformsResponse, isLoading: platformsLoading } = useQuery<{
+  const { data: platformsResponse } = useQuery<{
     platforms: PlatformData[];
   }>({
     queryKey: ["/api/distribution/platforms"],
@@ -1668,7 +1617,7 @@ export default function Distribution() {
     },
   });
 
-  const createHyperFollowMutation = useMutation({
+  useMutation({
     mutationFn: async (releaseId: string) => {
       const response = await apiRequest(
         "POST",
@@ -1689,7 +1638,7 @@ export default function Distribution() {
   });
 
   // Chunked Upload Mutations
-  const initUploadMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       filename,
       totalSize,
@@ -1716,7 +1665,7 @@ export default function Distribution() {
     },
   });
 
-  const uploadChunkMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       sessionId,
       chunkIndex,
@@ -1742,7 +1691,7 @@ export default function Distribution() {
     },
   });
 
-  const finalizeUploadMutation = useMutation({
+  useMutation({
     mutationFn: async (sessionId: string) => {
       const response = await apiRequest(
         "POST",
@@ -1760,7 +1709,7 @@ export default function Distribution() {
     },
   });
 
-  const generateISRCMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       trackId,
       artist,
@@ -1790,7 +1739,7 @@ export default function Distribution() {
     },
   });
 
-  const generateUPCMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       releaseId,
       title,
@@ -1813,7 +1762,7 @@ export default function Distribution() {
     },
   });
 
-  const submitToSpotifyMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       releaseId,
       credentials,
@@ -1843,7 +1792,7 @@ export default function Distribution() {
     },
   });
 
-  const submitToAppleMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       releaseId,
       credentials,
@@ -1873,7 +1822,7 @@ export default function Distribution() {
     },
   });
 
-  const submitToYouTubeMutation = useMutation({
+  useMutation({
     mutationFn: async ({
       releaseId,
       credentials,
@@ -1903,7 +1852,7 @@ export default function Distribution() {
     },
   });
 
-  const { data: uploadSessionStatus } = useQuery<UploadSessionStatus | null>({
+  useQuery<UploadSessionStatus | null>({
     queryKey: ["/api/distribution/upload", activeSessionId, "status"],
     enabled: !!activeSessionId && !isPaused,
     refetchInterval: 5000,
@@ -2060,7 +2009,7 @@ export default function Distribution() {
       setUploadForm((prev) => ({
         ...prev,
         audioFiles: [...prev.audioFiles, ...audioFiles],
-        tracks: audioFiles.map((file, index) => ({
+        tracks: audioFiles.map((file, _index) => ({
           title: file.name.replace(/\.[^/.]+$/, ""),
           explicit: false,
           songwriters: "",
@@ -3771,7 +3720,7 @@ export default function Distribution() {
                     description: `Score: ${report.overallScore}% - ${report.checks.filter((c) => c.status === "passed").length}/${report.checks.length} checks passed`,
                   });
                 }}
-                onApplyFix={(checkId, fixAction) => {
+                onApplyFix={(_checkId, fixAction) => {
                   toast({
                     title: "Fix Applied",
                     description: `Applied fix: ${fixAction}`,

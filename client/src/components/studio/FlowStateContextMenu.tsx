@@ -82,7 +82,7 @@ export function FlowStateContextMenu({
             top: Math.min(position.y, window.innerHeight - 300),
           }}
         >
-          {items.map((item, index) => (
+          {items.map((item, _index) => (
             <div key={item.id}>
               {item.id === "separator" ? (
                 <div className="h-px bg-white/10 my-1" />

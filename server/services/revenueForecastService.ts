@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { analytics, revenueForecasts } from "@shared/schema";
-import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
+import { eq, and, gte, desc, sql, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 interface ForecastResult {
@@ -88,7 +88,6 @@ class RevenueForecastService {
 
     const baseMonthlyStreams =
       this.calculateAverageMonthlyStreams(historicalData);
-    const baseMonthlyRevenue = baseMonthlyStreams * streamToRevenueRate;
 
     let totalStreams = 0;
     let totalRevenue = 0;
@@ -512,7 +511,7 @@ class RevenueForecastService {
 
   private generateTips(
     currentMonthly: number,
-    projectedMonthly: number,
+    _projectedMonthly: number,
     growthRate: number,
   ): string[] {
     const tips: string[] = [];

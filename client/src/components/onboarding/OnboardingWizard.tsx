@@ -424,7 +424,7 @@ export default function OnboardingWizard({
 
   const rank = getRank(xp);
   const RankIcon = rank.icon;
-  const progressPct = Math.round((step / 4) * 100);
+  Math.round((step / 4) * 100);
 
   const STEP_TITLES = [
     "Choose Your Class",

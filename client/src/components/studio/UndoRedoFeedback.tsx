@@ -7,27 +7,7 @@ import {
   ReactNode,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Undo,
-  Redo,
-  History,
-  ChevronDown,
-  ChevronRight,
-  Check,
-  X,
-  RotateCcw,
-  Clock,
-  Trash2,
-  Copy,
-  Scissors,
-  Music,
-  Volume2,
-  Sliders,
-  Move,
-  Edit3,
-  GitBranch,
-  Layers,
-} from "lucide-react";
+import { Undo, Redo, History, ChevronDown, Check, Trash2, Copy, Scissors, Music, Volume2, Sliders, Move, Edit3, GitBranch, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -425,7 +405,7 @@ export function UndoRedoControls({
                   Future (Redo)
                 </DropdownMenuLabel>
                 <ScrollArea className="max-h-32">
-                  {state.future.map((action, i) => {
+                  {state.future.map((action, _i) => {
                     const Icon = getActionIcon(action.type);
                     return (
                       <DropdownMenuItem
@@ -464,7 +444,7 @@ export function UndoRedoControls({
                   No history yet
                 </div>
               ) : (
-                [...state.past].reverse().map((action, i) => {
+                [...state.past].reverse().map((action, _i) => {
                   const Icon = getActionIcon(action.type);
                   return (
                     <DropdownMenuItem

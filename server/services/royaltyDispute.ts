@@ -1,13 +1,6 @@
 import { db } from "../db.js";
-import {
-  royaltyDisputes,
-  royaltyStatements,
-  users,
-  releases,
-  type RoyaltyDispute,
-  type InsertRoyaltyDispute,
-} from "@shared/schema";
-import { eq, and, desc, or, gte, lte, sql } from "drizzle-orm";
+import { royaltyDisputes, royaltyStatements, users, type RoyaltyDispute, type InsertRoyaltyDispute } from "@shared/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 import { emailService } from "./emailService.js";
@@ -575,7 +568,7 @@ export class RoyaltyDisputeService {
   private async addSystemMessage(
     disputeId: string,
     message: string,
-    triggeredBy: string,
+    _triggeredBy: string,
   ): Promise<void> {
     await this.addMessage(disputeId, {
       message,

@@ -1,18 +1,6 @@
 import { db } from "../db";
 import { eq, and, desc, isNull, sql, gte } from "drizzle-orm";
-import {
-  careerCoachRecommendations,
-  careerGoals,
-  analytics,
-  releases,
-  projects,
-  socialAccounts,
-  dspAnalytics,
-  InsertCareerCoachRecommendation,
-  InsertCareerGoal,
-  CareerCoachRecommendation,
-  CareerGoal,
-} from "../../shared/schema";
+import { careerCoachRecommendations, careerGoals, analytics, releases, socialAccounts, dspAnalytics, InsertCareerCoachRecommendation, InsertCareerGoal, CareerCoachRecommendation, CareerGoal } from "../../shared/schema";
 import { logger } from "../logger";
 
 interface CareerGap {

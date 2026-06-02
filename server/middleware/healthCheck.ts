@@ -37,55 +37,8 @@ interface HealthStatus {
 }
 
 // Check database connectivity
-async function checkDatabase(): Promise<{
-  status: "healthy" | "unhealthy";
-  responseTime?: number;
-  error?: string;
-}> {
-  try {
-    const startTime = Date.now();
-    // Simple query to test database connectivity
-    const sql = neon(env.DATABASE_URL!);
-    await sql`SELECT 1`;
-    const responseTime = Date.now() - startTime;
-
-    return {
-      status: "healthy",
-      responseTime,
-    };
-  } catch (error: unknown) {
-    return {
-      status: "unhealthy",
-      error: error.message,
-    };
-  }
-}
 
 // Check memory usage
-function checkMemory(): {
-  status: "healthy" | "degraded" | "unhealthy";
-  usage: Record<string, unknown>;
-} {
-  const memUsage = process.memoryUsage();
-  const heapPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
-
-  let status: "healthy" | "degraded" | "unhealthy" = "healthy";
-  if (heapPercent > 90) {
-    status = "unhealthy";
-  } else if (heapPercent > 75) {
-    status = "degraded";
-  }
-
-  return {
-    status,
-    usage: {
-      heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
-      heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
-      heapPercent: Math.round(heapPercent),
-      rss: Math.round(memUsage.rss / 1024 / 1024), // MB
-    },
-  };
-}
 
 // Check CPU load
 function checkCPU(): {
@@ -112,7 +65,7 @@ function checkCPU(): {
 }
 
 // Comprehensive health check (cached for 30 seconds to reduce DB load)
-export async function healthCheck(req: Request, res: Response): Promise<void> {
+export async function healthCheck(_req: Request, res: Response): Promise<void> {
   try {
     const startTime = Date.now();
 
@@ -188,7 +141,7 @@ export async function healthCheck(req: Request, res: Response): Promise<void> {
 
 // Simple readiness check (cached for 10 seconds)
 export async function readinessCheck(
-  req: Request,
+  _req: Request,
   res: Response,
 ): Promise<void> {
   try {
@@ -217,7 +170,7 @@ export async function readinessCheck(
 }
 
 // Simple liveness check (no caching - always fresh)
-export function livenessCheck(req: Request, res: Response): void {
+export function livenessCheck(_req: Request, res: Response): void {
   const probe = getLivenessProbe();
   res.status(200).json({
     status: probe.status,

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
-import { errorService, ErrorCategory, ErrorSeverity } from "@/lib/errorService";
+import { errorService, ErrorCategory } from "@/lib/errorService";
 import { toast } from "@/hooks/use-toast";
 
 export interface ApiErrorState {

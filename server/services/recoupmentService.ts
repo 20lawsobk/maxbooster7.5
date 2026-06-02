@@ -1,13 +1,6 @@
 import { db } from "../db.js";
-import {
-  recoupmentAccounts,
-  royaltyStatements,
-  users,
-  releases,
-  type RecoupmentAccount,
-  type InsertRecoupmentAccount,
-} from "@shared/schema";
-import { eq, and, desc, sql, isNull, or } from "drizzle-orm";
+import { recoupmentAccounts, royaltyStatements, type RecoupmentAccount, type InsertRecoupmentAccount } from "@shared/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 

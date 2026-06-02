@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useEffect, useCallback, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Knob } from "./Knob";
 import { Label } from "@/components/ui/label";

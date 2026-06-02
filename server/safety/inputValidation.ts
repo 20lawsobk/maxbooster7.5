@@ -214,7 +214,7 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
  */
 export function sanitizationMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ): void {
   // Sanitize body

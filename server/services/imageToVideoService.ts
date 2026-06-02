@@ -217,7 +217,7 @@ async function renderImageWithKenBurns(
   // zoompan: zoom in/out + pan within source image
   // Output is at output resolution (width x height), source scaled from input image.
   // We render at full resolution — the zoompan filter handles the motion.
-  const zExpr = `pmax(${1.0},${1.0 + parseFloat(motion.z(durationSec).match(/0\.\d+/)?.[0] ?? "0.08") * intensityScale * 0 + 1}*(${motion.z(durationSec)}-1)+1)`;
+  `pmax(${1.0},${1.0 + parseFloat(motion.z(durationSec).match(/0\.\d+/)?.[0] ?? "0.08") * intensityScale * 0 + 1}*(${motion.z(durationSec)}-1)+1)`;
   // Simpler and more reliable zoompan expression:
   const zBasic = motion.z(durationSec);
   const xBasic = motion.x(width, width, durationSec);
@@ -517,7 +517,7 @@ function buildTextOverlays(
   style: Record<string, unknown>,
   width: number,
   height: number,
-  sceneDuration: number,
+  _sceneDuration: number,
   sceneType: "hook" | "body" | "cta" | "all",
   artistName?: string,
 ): string[] {

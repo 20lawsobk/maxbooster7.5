@@ -28,16 +28,7 @@ import {
 import { eq, and, inArray } from "drizzle-orm";
 import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
-import {
-  AUDIO_FORMATS,
-  SAMPLE_RATES,
-  BIT_DEPTHS,
-  FFMPEG_CODECS,
-  isSupportedSampleRate,
-  isSupportedBitDepth,
-  type SampleRate,
-  type BitDepth,
-} from "../../shared/audioConstants.js";
+import { SAMPLE_RATES, BIT_DEPTHS, isSupportedSampleRate, isSupportedBitDepth, type SampleRate, type BitDepth } from "../../shared/audioConstants.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -113,21 +104,6 @@ export interface ExportProgress {
   estimatedCompletion?: Date;
 }
 
-interface TrackAudioData {
-  trackId: string;
-  trackName: string;
-  audioClips: Array<{
-    id: string;
-    filePath: string;
-    startTime: number;
-    duration: number;
-    gain: number;
-  }>;
-  volume: number;
-  pan: number;
-  effects: unknown[];
-  mute: boolean;
-}
 
 class StemExportService {
   private readonly SUPPORTED_FORMATS: ExportFormat[] = [
@@ -150,12 +126,6 @@ class StemExportService {
     aac: "audio/aac",
   };
 
-  private readonly DEFAULT_BITRATES: Record<ExportQuality, string> = {
-    low: "128k",
-    medium: "192k",
-    high: "256k",
-    lossless: "320k",
-  };
 
   async startStemExport(options: StemExportOptions): Promise<StemExportResult> {
     const {
@@ -519,7 +489,7 @@ class StemExportService {
 
   private async mixAndRenderClips(
     clips: unknown[],
-    track: Record<string, unknown>,
+    _track: Record<string, unknown>,
     outputPath: string,
     options: StemExportOptions,
   ): Promise<void> {
@@ -758,7 +728,7 @@ class StemExportService {
   private async createZipArchive(
     exportId: string,
     files: IndividualStemFile[],
-    options: StemExportOptions,
+    _options: StemExportOptions,
     tempDir: string,
   ): Promise<{ storageKey: string; downloadUrl: string; zipSize: number }> {
     const zipFileName = `stems_${exportId}.zip`;
@@ -839,7 +809,7 @@ class StemExportService {
       logger.warn("FFmpeg not available - returning default duration");
       return 0;
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       ffmpeg.ffprobe(filePath, (err, metadata) => {
         if (err) {
           resolve(0);

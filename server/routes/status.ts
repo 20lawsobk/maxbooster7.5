@@ -47,7 +47,7 @@ const createServiceSchema = z.object({
   isPublic: z.boolean().optional(),
 });
 
-router.get("/", async (req, res) => {
+router.get("/", async (_req, res) => {
   try {
     const summary = await statusPageService.getStatusSummary();
 
@@ -108,7 +108,7 @@ router.get("/services/:serviceId/uptime", async (req, res) => {
   }
 });
 
-router.get("/incidents", async (req, res) => {
+router.get("/incidents", async (_req, res) => {
   try {
     const activeIncidents = await statusPageService.getActiveIncidents();
 
@@ -139,7 +139,7 @@ router.get("/incidents/:incidentId", async (req, res) => {
   }
 });
 
-router.get("/maintenance", async (req, res) => {
+router.get("/maintenance", async (_req, res) => {
   try {
     const scheduled = await statusPageService.getScheduledMaintenance();
 

@@ -5,7 +5,7 @@ import {
   users,
   userStreaks,
 } from "../../shared/schema.js";
-import { eq, asc, and, sql, desc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export interface OnboardingProgress {

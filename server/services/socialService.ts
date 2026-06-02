@@ -2,8 +2,8 @@ import { randomBytes } from "crypto";
 import { storage } from "../storage";
 import { aiContentService } from "./aiContentService";
 import { db } from "../db.js";
-import { socialAccounts, socialCampaigns, adCampaigns } from "@shared/schema";
-import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
+import { socialAccounts, socialCampaigns } from "@shared/schema";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
 
 import type { InsertAdCampaign, AdCampaign } from "@shared/schema";
 import { logger } from "../logger.js";
@@ -481,7 +481,7 @@ export class SocialService {
   async connectPlatform(
     userId: string,
     platform: string,
-    authCode: string,
+    _authCode: string,
   ): Promise<{
     success: boolean;
     accountId: string;
@@ -614,7 +614,7 @@ export class SocialService {
    */
   async amplifyPost(
     postId: string,
-    userId: string,
+    _userId: string,
   ): Promise<{
     success: boolean;
     amplificationId: string;

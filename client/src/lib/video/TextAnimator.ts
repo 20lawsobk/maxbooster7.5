@@ -575,7 +575,7 @@ export class TextAnimator {
     x: number,
     y: number,
     style: TextStyle,
-    time: number,
+    _time: number,
     intensity: number = 5,
   ): void {
     const offsetX = (Math.random() - 0.5) * intensity * 2;

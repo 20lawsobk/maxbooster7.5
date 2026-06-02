@@ -7,7 +7,7 @@ import {
   releases,
   securityThreats,
 } from "../../shared/schema.js";
-import { count, eq, gte, desc } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 const router = Router();
@@ -25,10 +25,10 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 router.use(requireAdmin);
 router.use(require2FA);
 
-router.get("/results", async (req, res) => {
+router.get("/results", async (_req, res) => {
   try {
     const now = new Date();
-    const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const [userCount, projectCount, releaseCount] = await Promise.all([
       db.select({ count: count() }).from(users),
@@ -198,7 +198,7 @@ router.get("/results", async (req, res) => {
   }
 });
 
-router.post("/run", async (req, res) => {
+router.post("/run", async (_req, res) => {
   try {
     logger.info("Manual audit triggered by admin");
     res.json({

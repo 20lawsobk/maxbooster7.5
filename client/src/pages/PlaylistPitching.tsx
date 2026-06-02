@@ -9,15 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -28,20 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Music,
-  Send,
-  Users,
-  Search,
-  ExternalLink,
-  Plus,
-  BarChart3,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Filter,
-  Trash2,
-} from "lucide-react";
+import { Send, Users, Search, ExternalLink, Plus, BarChart3, Clock, CheckCircle, Filter, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,7 +64,7 @@ interface PitchStats {
 }
 
 export default function PlaylistPitching() {
-  const { user } = useRequireSubscription();
+  useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isNewPitchOpen, setIsNewPitchOpen] = useState(false);

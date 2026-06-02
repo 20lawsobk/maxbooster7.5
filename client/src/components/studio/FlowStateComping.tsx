@@ -1,21 +1,6 @@
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronRight,
-  Check,
-  Star,
-  StarOff,
-  Trash2,
-  Copy,
-  Scissors,
-  Volume2,
-  VolumeX,
-  Headphones,
-  MoreVertical,
-  Layers,
-  GitMerge,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Star, StarOff, Trash2, Copy, Volume2, VolumeX, Headphones, MoreVertical, Layers, GitMerge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -140,7 +125,7 @@ export function FlowStateComping({
     [lanes, onLanesChange],
   );
 
-  const setTakeRating = useCallback(
+  useCallback(
     (laneId: string, takeId: string, rating: number) => {
       const newLanes = lanes.map((lane) => {
         if (lane.id !== laneId) return lane;

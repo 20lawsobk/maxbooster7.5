@@ -1,21 +1,6 @@
 import { randomBytes } from "crypto";
 import { db } from "../db";
-import {
-  takeGroups,
-  takeLanes,
-  takeSegments,
-  compVersions,
-  audioClips,
-  projects,
-  type TakeGroup,
-  type TakeLane,
-  type TakeSegment,
-  type CompVersion,
-  type InsertTakeGroup,
-  type InsertTakeLane,
-  type InsertTakeSegment,
-  type InsertCompVersion,
-} from "@shared/schema";
+import { takeGroups, takeLanes, takeSegments, compVersions, audioClips, type TakeGroup, type TakeLane, type TakeSegment, type CompVersion, type InsertTakeGroup, type InsertTakeLane, type InsertTakeSegment } from "@shared/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 
 import { logger } from "../logger.js";
@@ -261,7 +246,7 @@ export class CompingService {
     }
   }
 
-  async reorderLanes(groupId: string, laneIds: string[]): Promise<void> {
+  async reorderLanes(_groupId: string, laneIds: string[]): Promise<void> {
     try {
       for (let i = 0; i < laneIds.length; i++) {
         await db
@@ -530,7 +515,7 @@ export class CompingService {
     }
   }
 
-  async renderComp(groupId: string, userId: string): Promise<CompRenderResult> {
+  async renderComp(groupId: string, _userId: string): Promise<CompRenderResult> {
     try {
       const takeGroup = await this.getTakeGroup(groupId);
       if (!takeGroup) {

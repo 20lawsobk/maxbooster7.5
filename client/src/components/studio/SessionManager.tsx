@@ -13,25 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Save,
-  History,
-  GitBranch,
-  Camera,
-  Trash2,
-  RotateCcw,
-  Clock,
-  FileText,
-  Plus,
-  Play,
-  Pause,
-  Star,
-  StarOff,
-  MoreVertical,
-  Copy,
-  Check,
-  AlertTriangle,
-} from "lucide-react";
+import { Save, History, GitBranch, Camera, Trash2, RotateCcw, Clock, FileText, Plus, Play, Star, MoreVertical, Copy, AlertTriangle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

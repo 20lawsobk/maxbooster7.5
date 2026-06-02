@@ -20,13 +20,7 @@ import { eq } from "drizzle-orm";
 import { db, pool } from "../../db.js";
 import { claimedDomains } from "@shared/schema";
 import { logger } from "../../logger.js";
-import {
-  NS,
-  NS1,
-  NS2,
-  PLATFORM_DOMAIN,
-  DOMAIN_PRICES,
-} from "../domainRegistrarService.js";
+import { NS1, NS2, PLATFORM_DOMAIN, DOMAIN_PRICES } from "../domainRegistrarService.js";
 import type {
   RegistrarProvider,
   AvailabilityResult,

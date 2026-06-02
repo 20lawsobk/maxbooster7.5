@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   useAccessibility,
   type FontSize,
@@ -28,16 +28,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Eye,
-  Move,
-  Focus,
-  RotateCcw,
-  Type,
-  Palette,
-  Keyboard,
-  Volume2,
-} from "lucide-react";
+import { Eye, Move, Focus, RotateCcw, Type, Palette, Keyboard } from "lucide-react";
 import type { ContrastMode } from "@/hooks/useHighContrast";
 import { KeyboardShortcutsHelpDialog } from "./KeyboardShortcutsHelpDialog";
 

@@ -1,14 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Settings,
-  X,
-  Search,
-  RotateCcw,
-  AlertTriangle,
-  Check,
-  Keyboard,
-} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Settings, X, Search, RotateCcw, AlertTriangle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,12 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useShortcuts } from "@/contexts/ShortcutContext";
 import { ShortcutHint } from "./ShortcutHint";
-import {
-  ShortcutDefinition,
-  ShortcutModifier,
-  getPlatformModifiers,
-  formatShortcutKeys,
-} from "@/lib/shortcuts/types";
+import { ShortcutDefinition, ShortcutModifier } from "@/lib/shortcuts/types";
 
 interface ShortcutCustomizerProps {
   open: boolean;
@@ -151,11 +137,11 @@ export function ShortcutCustomizer({
     setConflict(null);
   };
 
-  const handleResetShortcut = (shortcutId: string) => {
+  ((shortcutId: string) => {
     if (!shortcutManager) return;
     shortcutManager.resetShortcut(shortcutId);
     setShortcuts(shortcutManager.getAllShortcuts());
-  };
+  });
 
   const handleResetAll = () => {
     if (!shortcutManager) return;

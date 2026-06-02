@@ -7,17 +7,8 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import { db } from "./db";
-import {
-  ipBlacklist,
-  securityThreats,
-  notifications,
-  aiModels,
-  aiModelVersions,
-  inferenceRuns,
-  explanationLogs,
-  type InsertSecurityThreat,
-} from "@shared/schema";
-import { eq, and, gte, or, desc, lte, sql } from "drizzle-orm";
+import { ipBlacklist, securityThreats, notifications, aiModels, inferenceRuns, explanationLogs } from "@shared/schema";
+import { eq, and, gte, or, sql } from "drizzle-orm";
 import { logger } from "./logger.js";
 import { env } from "./config/env.js";
 
@@ -94,14 +85,10 @@ interface SecurityComplianceReport {
 }
 
 // Local storage for security data (in-memory until schema tables are added)
-const securityBehaviorProfilesStore = new Map<
+new Map<
   string,
   SecurityBehaviorProfile
 >();
-const securityAnomaliesStore: SecurityAnomaly[] = [];
-const securityZeroDayAlertsStore: SecurityZeroDayAlert[] = [];
-const securityPenTestResultsStore: SecurityPenTestResult[] = [];
-const securityComplianceReportsStore: SecurityComplianceReport[] = [];
 
 const execAsync = promisify(exec);
 
@@ -900,7 +887,7 @@ export class SelfHealingSecuritySystem {
 
     if (!this.currentRequestContext) return;
 
-    const { ipAddress, threatType, severity } = this.currentRequestContext;
+    const { ipAddress,  severity } = this.currentRequestContext;
 
     await this.trackThreatInDatabase({
       threatType: "sql-injection",
@@ -925,7 +912,7 @@ export class SelfHealingSecuritySystem {
 
     if (!this.currentRequestContext) return;
 
-    const { ipAddress, threatType, severity } = this.currentRequestContext;
+    const { ipAddress,  severity } = this.currentRequestContext;
 
     await this.trackThreatInDatabase({
       threatType: "xss-attack",
@@ -1293,7 +1280,6 @@ export class SelfHealingSecuritySystem {
 
   // Calculate security score
   private calculateSecurityScore(): void {
-    const totalThreats = this.securityMetrics.totalThreats;
     const threatsBlocked = this.securityMetrics.threatsBlocked;
     const threatsHealed = this.securityMetrics.threatsHealed;
     const activeThreats = this.securityMetrics.activeThreats;
@@ -2008,7 +1994,7 @@ export class SelfHealingSecuritySystem {
     recommendations: string[];
     exportPath?: string;
   }> {
-    const startTime = Date.now();
+    Date.now();
     const reportId = `compliance_${standard}_${Date.now()}`;
 
     try {
@@ -2379,7 +2365,7 @@ interface IPThreatInfo {
 }
 
 class AnomalyDetector {
-  public detect(data: unknown): boolean {
+  public detect(_data: unknown): boolean {
     return false;
   }
 }

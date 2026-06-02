@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -13,23 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Knob } from "./Knob";
 import { cn } from "@/lib/utils";
-import {
-  Power,
-  RotateCcw,
-  Save,
-  ChevronDown,
-  Music,
-  Piano,
-  Drum,
-  Guitar,
-  Mic2,
-  Waves,
-  Zap,
-  Settings,
-  Layers,
-  Volume2,
-  Activity,
-} from "lucide-react";
+import { Power, RotateCcw, Music, Piano, Drum, Guitar, Mic2, Waves, Zap, Settings, Layers, Activity } from "lucide-react";
 
 export type InstrumentType =
   | "synth"

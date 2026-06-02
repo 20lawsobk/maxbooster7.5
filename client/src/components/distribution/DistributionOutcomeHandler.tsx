@@ -16,29 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import {
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  XCircle,
-  Loader2,
-  Upload,
-  Music,
-  Globe,
-  Shield,
-  Hash,
-  TrendingUp,
-  Trash2,
-  RotateCcw,
-  ChevronRight,
-  Info,
-  AlertTriangle,
-  Check,
-  Zap,
-  Activity,
-  MapPin,
-  BarChart3,
-} from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, XCircle, Loader2, Music, Globe, Shield, Hash, TrendingUp, Trash2, RotateCcw, Info, AlertTriangle, Activity, MapPin, BarChart3 } from "lucide-react";
 
 type OutcomeCategory =
   | "release"

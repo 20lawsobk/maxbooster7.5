@@ -1,15 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  EnvelopeFollower,
-  msToSamples,
-  dbToLinear,
-  linearToDb,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, EnvelopeFollower, dbToLinear } from "./core";
 
 export class ParametricEQProcessor implements DSPProcessor {
   private bandsL: BiquadFilter[] = [];
@@ -26,7 +15,7 @@ export class ParametricEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -117,7 +106,7 @@ export class GraphicEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -182,7 +171,6 @@ export class VintageEQProcessor implements DSPProcessor {
   private highShelfR: BiquadFilter;
   private presenceL: BiquadFilter;
   private presenceR: BiquadFilter;
-  private saturation: number = 0;
   private sampleRate: number = 44100;
 
   constructor() {
@@ -199,7 +187,7 @@ export class VintageEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -282,7 +270,7 @@ export class LinearPhaseEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -298,7 +286,6 @@ export class LinearPhaseEQProcessor implements DSPProcessor {
       this.buffer[0][this.position] = input.samples[0][i];
       this.buffer[1][this.position] = input.samples[1][i];
 
-      const outputPos = (this.position + this.fftSize / 2) % this.fftSize;
 
       let freqNorm = ((this.position / this.fftSize) * this.sampleRate) / 2;
       let gain = 1;
@@ -348,7 +335,7 @@ export class DynamicEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -430,7 +417,7 @@ export class SurgicalEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -495,8 +482,6 @@ export class AnalogEQProcessor implements DSPProcessor {
   private highMidR: BiquadFilter;
   private highShelfL: BiquadFilter;
   private highShelfR: BiquadFilter;
-  private satL: number = 0;
-  private satR: number = 0;
   private sampleRate: number = 44100;
 
   constructor() {
@@ -513,7 +498,7 @@ export class AnalogEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -618,7 +603,7 @@ export class MasteringEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -722,7 +707,7 @@ export class MidSideEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -793,7 +778,7 @@ export class TiltEQProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;

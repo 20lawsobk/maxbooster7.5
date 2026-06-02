@@ -7,19 +7,7 @@ import {
   AdvertisingAutopilotAI_v3,
   type OrganicCampaign,
 } from "../../shared/ml/models/AdvertisingAutopilotAI_v3.js";
-import {
-  SOCIAL_MEDIA_MUSIC_PATTERNS,
-  MUSIC_ADVERTISING_INTELLIGENCE,
-  ORGANIC_AS_ADS_PATTERNS,
-  PAID_AD_BENCHMARKS,
-  ENGAGEMENT_PREDICTION_FEATURES,
-  GENRE_VIRAL_HOOKS,
-  PLATFORM_CONTENT_SCRIPTS,
-  CALL_TO_ACTION_LIBRARY,
-  EMOTIONAL_TRIGGER_PATTERNS,
-  VIDEO_CONTENT_TRAINING_PACK,
-  getHashtagsForGenre,
-} from "../../shared/ml/training/musicIndustryTrainingData.js";
+import { ORGANIC_AS_ADS_PATTERNS, PAID_AD_BENCHMARKS, ENGAGEMENT_PREDICTION_FEATURES, GENRE_VIRAL_HOOKS, PLATFORM_CONTENT_SCRIPTS, CALL_TO_ACTION_LIBRARY, EMOTIONAL_TRIGGER_PATTERNS, VIDEO_CONTENT_TRAINING_PACK, getHashtagsForGenre } from "../../shared/ml/training/musicIndustryTrainingData.js";
 import { modelWeightStorage } from "./modelWeightStorage.js";
 
 const PLATFORMS = ["instagram", "tiktok", "twitter", "youtube", "facebook"];
@@ -369,9 +357,6 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
 
   for (let i = 0; i < count; i++) {
     const isPrimarilyInstagram = Math.random() > 0.4;
-    const benchmarks = isPrimarilyInstagram
-      ? instaBenchmarks
-      : tiktokBenchmarks;
     const campaignType = pick(campaignTypes);
     const mediaType = pick(mediaMix);
     const hourOfDay = randInt(8, 22);
@@ -609,7 +594,7 @@ async function trainMusicGenerator(): Promise<boolean> {
     const { AdvancedMusicAI } = await import(
       "../../shared/ml/audio/AdvancedMusicAI.js"
     );
-    const musicAI = new AdvancedMusicAI();
+    new AdvancedMusicAI();
     logger.info(
       "[BaseTrainer] Music generator initialized with full harmonic/rhythmic knowledge base",
     );

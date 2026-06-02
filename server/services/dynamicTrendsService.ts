@@ -1,7 +1,7 @@
 import { logger } from "../logger.js";
 import { db } from "../db";
 import { hashtagResearch } from "@shared/schema";
-import { eq, desc, and, gte } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -333,7 +333,6 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
 
 class DynamicTrendsService {
   private trendCache: TrendCache | null = null;
-  private hashtagCache: HashtagCache | null = null;
   private readonly CACHE_DURATION_MS = 30 * 60 * 1000;
 
   private getCacheKey(

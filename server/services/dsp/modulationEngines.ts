@@ -1,18 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  LFO,
-  Oscillator,
-  msToSamples,
-  dbToLinear,
-  clamp,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, LFO, Oscillator, msToSamples, clamp } from "./core";
 
 export class ChorusProcessor implements DSPProcessor {
   private delayLines: DelayLine[] = [];
@@ -31,7 +17,7 @@ export class ChorusProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -50,7 +36,6 @@ export class ChorusProcessor implements DSPProcessor {
 
     for (let v = 0; v < voices; v++) {
       this.lpFilters[v].setLowpass(highCut, this.sampleRate);
-      const phaseOffset = (v / voices) * Math.PI * 2;
       this.lfos[v].setFrequency(rate * (0.9 + v * 0.1), this.sampleRate);
     }
 
@@ -115,7 +100,7 @@ export class FlangerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -210,7 +195,7 @@ export class PhaserProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -291,7 +276,7 @@ export class TremoloProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -363,7 +348,7 @@ export class VibratoProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -433,7 +418,7 @@ export class RingModProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -516,7 +501,7 @@ export class RotaryProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -637,7 +622,7 @@ export class EnsembleProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -722,7 +707,7 @@ export class DimensionProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -806,7 +791,7 @@ export class AutoPanProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -814,7 +799,6 @@ export class AutoPanProcessor implements DSPProcessor {
     const rate = (params.rate as number) ?? 2;
     const depth = (params.depth as number) ?? 0.7;
     const shape = (params.shape as string) ?? "sine";
-    const phase = (params.phase as number) ?? 0;
     const center = (params.center as number) ?? 0;
     const smoothing = (params.smoothing as number) ?? 0.1;
     const mix = (params.mix as number) ?? 1.0;

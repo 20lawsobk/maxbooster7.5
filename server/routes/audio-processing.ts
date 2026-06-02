@@ -287,7 +287,7 @@ router.post("/process", requireAuth, async (req: Request, res: Response) => {
 
     const {
       sampleRate,
-      channels,
+      
       samples,
       leftChannel,
       rightChannel,
@@ -364,7 +364,7 @@ router.post("/process", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/presets", requireAuth, async (req: Request, res: Response) => {
+router.get("/presets", requireAuth, async (_req: Request, res: Response) => {
   try {
     const presets = {
       mixing: [
@@ -640,7 +640,7 @@ router.get("/presets", requireAuth, async (req: Request, res: Response) => {
 router.get(
   "/capabilities",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       res.json({
         success: true,

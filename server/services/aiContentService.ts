@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { aiService } from "./aiService";
-import { MaxCoreAIClient, unifiedAIController } from "./unifiedAIController.js";
+import { unifiedAIController } from "./unifiedAIController.js";
 import { renderVideo as renderAdvancedVideo } from "./advancedVideoRendererService.js";
 import { db } from "../db";
 
@@ -17,24 +17,8 @@ function seededIndex(seed: string, length: number): number {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-import {
-  aiModels,
-  aiModelVersions,
-  inferenceRuns,
-  explanationLogs,
-  userBrandVoices,
-  hashtagResearch,
-  bestPostingTimes,
-  autopilotPreferences,
-  type UserBrandVoice,
-  type InsertUserBrandVoice,
-  type InsertHashtagResearch,
-  type InsertBestPostingTime,
-  type InsertInferenceRun,
-  type InsertExplanationLog,
-  type AutopilotPreference,
-} from "@shared/schema";
-import { eq, and, gte, desc, sql } from "drizzle-orm";
+import { aiModels, aiModelVersions, inferenceRuns, explanationLogs, userBrandVoices, hashtagResearch, bestPostingTimes, autopilotPreferences, type AutopilotPreference } from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -42,12 +26,7 @@ import * as path from "path";
 // Sharp-based image generation (production-ready, replaces Canvas)
 import { sharpImageService } from "./sharpImageService.js";
 
-import {
-  synthesizeToWAV,
-  parseTextToParameters,
-  generateChordProgression,
-  generateMelody,
-} from "./musicGenerationService.js";
+import { synthesizeToWAV, generateChordProgression, generateMelody } from "./musicGenerationService.js";
 
 import { aiTranslationService } from "./aiTranslationService";
 import { dynamicTrendsService } from "./dynamicTrendsService";
@@ -1315,155 +1294,17 @@ export class AIContentService {
   // IN-HOUSE IMAGE GENERATION HELPERS
   // ============================================================================
 
-  private getPlatformImageDimensions(platform: string): {
-    width: number;
-    height: number;
-  } {
-    const dimensions: Record<string, { width: number; height: number }> = {
-      instagram: { width: 1080, height: 1080 },
-      facebook: { width: 1200, height: 630 },
-      twitter: { width: 1200, height: 675 },
-      tiktok: { width: 1080, height: 1920 },
-      youtube: { width: 1280, height: 720 },
-      linkedin: { width: 1200, height: 627 },
-    };
-    return dimensions[platform] || dimensions.instagram;
-  }
 
-  private createGradientBackground(
-    ctx: CanvasRenderingContext2D,
-    dimensions: { width: number; height: number },
-    tone: string,
-  ): CanvasGradient {
-    const gradient = ctx.createLinearGradient(
-      0,
-      0,
-      dimensions.width,
-      dimensions.height,
-    );
 
-    const colorSchemes: Record<string, [string, string, string]> = {
-      professional: ["#1a1a2e", "#16213e", "#0f3460"],
-      casual: ["#667eea", "#764ba2", "#6b8dd6"],
-      energetic: ["#ff6b6b", "#feca57", "#ff9ff3"],
-      creative: ["#a29bfe", "#6c5ce7", "#fd79a8"],
-      promotional: ["#00b894", "#00cec9", "#0984e3"],
-    };
 
-    const colors = colorSchemes[tone] || colorSchemes.creative;
-    gradient.addColorStop(0, colors[0]);
-    gradient.addColorStop(0.5, colors[1]);
-    gradient.addColorStop(1, colors[2]);
 
-    return gradient;
-  }
-
-  private addDecorativeElements(
-    ctx: CanvasRenderingContext2D,
-    dimensions: { width: number; height: number },
-    tone: string,
-  ): void {
-    ctx.globalAlpha = 0.1;
-
-    // Add abstract shapes — seeded from tone so same tone → same visual layout
-    for (let i = 0; i < 15; i++) {
-      ctx.beginPath();
-      const x =
-        (seededIndex(`${tone}:${i}:x`, 10000) / 10000) * dimensions.width;
-      const y =
-        (seededIndex(`${tone}:${i}:y`, 10000) / 10000) * dimensions.height;
-      const radius = (seededIndex(`${tone}:${i}:r`, 100) / 100) * 100 + 50;
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-    }
-
-    // Add wave pattern
-    ctx.globalAlpha = 0.15;
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    for (let x = 0; x < dimensions.width; x += 5) {
-      const y = dimensions.height * 0.7 + Math.sin(x * 0.02) * 50;
-      if (x === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-
-    ctx.globalAlpha = 1;
-  }
-
-  private addTextOverlay(
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    dimensions: { width: number; height: number },
-    platform: string,
-  ): void {
-    const maxWidth = dimensions.width * 0.8;
-    const fontSize = Math.min(dimensions.width * 0.06, 72);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // Try different fonts
-    const fonts = ["Arial Black", "Helvetica Bold", "sans-serif"];
-    ctx.font = `bold ${fontSize}px ${fonts.join(", ")}`;
-
-    // Add text shadow
-    ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetX = 3;
-    ctx.shadowOffsetY = 3;
-
-    // Word wrap text
-    const words = text.split(" ");
-    const lines: string[] = [];
-    let currentLine = "";
-
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine = testLine;
-      }
-    }
-    if (currentLine) lines.push(currentLine);
-
-    // Draw lines
-    const lineHeight = fontSize * 1.3;
-    const totalHeight = lines.length * lineHeight;
-    const startY = (dimensions.height - totalHeight) / 2;
-
-    lines.forEach((line, i) => {
-      ctx.fillText(line, dimensions.width / 2, startY + i * lineHeight);
-    });
-
-    ctx.shadowColor = "transparent";
-  }
-
-  private addPlatformBranding(
-    ctx: CanvasRenderingContext2D,
-    platform: string,
-    dimensions: { width: number; height: number },
-  ): void {
-    ctx.globalAlpha = 0.8;
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 24px Arial";
-    ctx.textAlign = "right";
-    ctx.fillText("Max Booster", dimensions.width - 30, dimensions.height - 30);
-    ctx.globalAlpha = 1;
-  }
 
   // ============================================================================
   // IN-HOUSE AUDIO GENERATION HELPERS
   // ============================================================================
 
   private promptToMusicParams(
-    prompt: string,
+    _prompt: string,
     tone?: string,
   ): Record<string, unknown> {
     const moodMap: Record<string, string> = {
@@ -1524,7 +1365,7 @@ export class AIContentService {
 
   async generateVariations(
     baseContent: string,
-    platform: string,
+    _platform: string,
     count: number = 3,
   ): Promise<string[]> {
     const abVariants = await this.generateABVariants(baseContent, "tone");
@@ -1572,7 +1413,7 @@ export class AIContentService {
   }
 
   async getOptimalPostingTimes(
-    userId: string,
+    _userId: string,
   ): Promise<PostingTimeRecommendation[]> {
     const dayNames = [
       "Sunday",

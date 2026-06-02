@@ -1,28 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Copy,
-  Trash2,
-  Edit,
-  Share2,
-  Download,
-  FolderPlus,
-  Music,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Eye,
-  EyeOff,
-  ChevronRight,
-  Scissors,
-  Clipboard,
-  RotateCcw,
-  Undo,
-  Redo,
-  Settings,
-  Info,
-} from "lucide-react";
+import { Copy, Trash2, Edit, Share2, Download, FolderPlus, Music, Volume2, VolumeX, Eye, ChevronRight, Scissors, Clipboard, RotateCcw, Undo, Redo, Settings, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShortcutHint } from "@/components/shortcuts/ShortcutHint";
 

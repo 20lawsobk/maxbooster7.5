@@ -6,7 +6,7 @@ import cron from "node-cron";
 import { apiRequest } from "../shared/api-client";
 import { logger } from "./logger.js";
 
-const execAsync = promisify(exec);
+promisify(exec);
 
 // Lazy service loaders — avoid circular imports at module load time.
 async function loadNotificationService() {
@@ -296,7 +296,7 @@ export class AutomationSystem extends EventEmitter {
       name: "Upload Beat to Marketplace",
       description: "Upload beat to marketplace",
       parameters: ["beatData", "pricing", "licenses"],
-      execute: async (params) => {
+      execute: async (_params) => {
         logger.info(`🎶 Uploading beat to marketplace`);
         // Implement beat upload
         return { success: true, message: "Beat uploaded to marketplace" };
@@ -490,7 +490,7 @@ export class AutomationSystem extends EventEmitter {
       name: "User Activity",
       description: "Check user activity level",
       parameters: ["userId", "activityType", "threshold"],
-      evaluate: async (params) => {
+      evaluate: async (_params) => {
         // Implement user activity check
         return true;
       },
@@ -501,7 +501,7 @@ export class AutomationSystem extends EventEmitter {
       name: "Performance Threshold",
       description: "Check if performance metrics meet threshold",
       parameters: ["metric", "operator", "value"],
-      evaluate: async (params) => {
+      evaluate: async (_params) => {
         // Implement performance check
         return true;
       },
@@ -512,7 +512,7 @@ export class AutomationSystem extends EventEmitter {
       name: "Revenue Threshold",
       description: "Check if revenue meets threshold",
       parameters: ["amount", "period", "operator"],
-      evaluate: async (params) => {
+      evaluate: async (_params) => {
         // Implement revenue check
         return true;
       },
@@ -523,7 +523,7 @@ export class AutomationSystem extends EventEmitter {
       name: "Stream Threshold",
       description: "Check if stream count meets threshold",
       parameters: ["count", "period", "operator"],
-      evaluate: async (params) => {
+      evaluate: async (_params) => {
         // Implement stream check
         return true;
       },
@@ -708,7 +708,7 @@ export class AutomationSystem extends EventEmitter {
 
       // Execute action
       const startTime = Date.now();
-      const result = await action.execute(actionConfig.parameters);
+      await action.execute(actionConfig.parameters);
       const executionTime = Date.now() - startTime;
 
       // Update metrics

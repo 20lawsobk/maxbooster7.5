@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -10,44 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useStudioStore } from "@/lib/studioStore";
 import { useDynamicLayout } from "@/hooks/useDynamicLayout";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Plus,
-  Minus,
-  Music2,
-  RotateCcw,
-  RotateCw,
-  Activity,
-  Sparkles,
-  Volume2,
-  VolumeX,
-  Volume1,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  Layers,
-  Timer,
-  AlertCircle,
-  Radio,
-  Grid3X3,
-  Eye,
-  Target,
-  Snowflake,
-  Cpu,
-  ChevronUp,
-  ChevronDown,
-  RotateCcwIcon,
-  Music,
-  Maximize,
-  Minimize,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, SkipForward, Repeat, Plus, Minus, Music2, RotateCcw, RotateCw, Activity, Volume2, VolumeX, Volume1, ArrowDownToLine, ArrowUpFromLine, Layers, AlertCircle, Radio, Grid3X3, Eye, Target, Snowflake, Cpu, ChevronUp, ChevronDown, Music, Maximize, Minimize, ZoomIn, ZoomOut } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -55,12 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  MUSICAL_KEYS,
-  type MusicalKey,
-  type KeyMode,
-  type ChordDisplayMode,
-} from "@/lib/studioStore";
+import { MUSICAL_KEYS, type MusicalKey, type KeyMode } from "@/lib/studioStore";
 import { AIMixer } from "@/lib/audio/AIMixer";
 import { AIMastering } from "@/lib/audio/AIMastering";
 import { useToast } from "@/hooks/use-toast";
@@ -137,8 +95,8 @@ export function TransportBar({
     setPreRollBars,
     countInBars,
     setCountInBars,
-    returnToStartOnStop,
-    setReturnToStartOnStop,
+    
+    
     inputMonitoring,
     setInputMonitoring,
     adaptiveSnapEnabled,
@@ -147,7 +105,7 @@ export function TransportBar({
     setTranslucentEventsEnabled,
     showSyncPoints,
     setShowSyncPoints,
-    frozenTracks,
+    
     getFrozenTrackCount,
     projectKey,
     projectKeyMode,
@@ -164,7 +122,7 @@ export function TransportBar({
   } = useStudioStore();
 
   // Responsive layout - include md breakpoint for landscape mobile/tablet
-  const { containerRef, isSmallScreen, isMediumScreen, breakpoint, width } =
+  const { containerRef, isSmallScreen, isMediumScreen,  width } =
     useDynamicLayout();
   // Compact mode for screens under 1024px (xs, sm, md) - covers landscape phones and small tablets
   const isCompact = isSmallScreen || isMediumScreen || width < 1024;

@@ -1,11 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  RefObject,
-  useMemo,
-} from "react";
+import { useState, useEffect, useRef, useCallback, RefObject } from "react";
 
 export type LayoutMode = "mobile" | "tablet" | "desktop" | "wide";
 

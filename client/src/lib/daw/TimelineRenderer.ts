@@ -506,7 +506,7 @@ export class TimelineRenderer {
   private drawPlayhead(
     ctx: CanvasRenderingContext2D,
     viewInfo: { startTime: number; endTime: number; pixelsPerSecond: number },
-    width: number,
+    _width: number,
     height: number,
   ): void {
     if (

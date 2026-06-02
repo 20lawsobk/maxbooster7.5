@@ -173,7 +173,7 @@ export async function initializeAdmin() {
 async function initializeAdminResources(
   adminId: string,
   adminEmail: string,
-  isNewAdmin: boolean,
+  _isNewAdmin: boolean,
 ) {
   try {
     // 1. Check and initialize Pocket Dimension storage

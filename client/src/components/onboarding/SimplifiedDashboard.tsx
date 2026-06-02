@@ -1,24 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  Music,
-  TrendingUp,
-  Share2,
-  Target,
-  Plus,
-  Play,
-  Upload,
-  Settings,
-  Sparkles,
-  Zap,
-  Crown,
-  ArrowRight,
-  CheckCircle,
-} from "lucide-react";
+import { Music, Share2, Target, Play, Upload, Settings, Sparkles, Zap, Crown, ArrowRight, CheckCircle } from "lucide-react";
 
 interface SimplifiedDashboardProps {
   onUpgrade: () => void;

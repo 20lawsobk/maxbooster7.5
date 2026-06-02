@@ -66,7 +66,7 @@ function sanitizeObject(
  */
 export function prototypePollutionMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ): void {
   try {
@@ -106,7 +106,7 @@ export function globalErrorHandler(
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): void {
   const requestId = (req as Record<string, unknown>).requestId || "unknown";
 

@@ -21,9 +21,7 @@ import { pocketManager, PocketDimension } from "./index.js";
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import { createGzip, createGunzip } from "zlib";
 import { pipeline } from "stream/promises";
-import { createReadStream, createWriteStream } from "fs";
 import { Readable } from "stream";
 
 // Capsule metadata structure
@@ -420,7 +418,7 @@ class PlatformCapsuleBuilder {
       hash: string;
       type: string;
     }>,
-    options: CapsuleBuildOptions,
+    _options: CapsuleBuildOptions,
   ): Promise<CapsuleManifest> {
     // Read package.json for dependencies
     let packageJson: Record<string, unknown> = {};
@@ -587,8 +585,8 @@ class PlatformCapsuleLoader {
       for (const dir of dirs) {
         if (dir.startsWith("capsule-") && !openPockets.includes(dir)) {
           try {
-            const metaPath = path.join(this.storagePath, dir, "__capsule__");
-            const metadataFile = path.join(
+            path.join(this.storagePath, dir, "__capsule__");
+            path.join(
               this.storagePath,
               dir,
               "metadata.json",

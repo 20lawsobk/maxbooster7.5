@@ -112,7 +112,7 @@ export const getCsrfToken: RequestHandler = (req: Request, res: Response) => {
 };
 
 export const refreshCsrfToken: RequestHandler = (
-  req: Request,
+  _req: Request,
   res: Response,
 ) => {
   const token = randomBytes(32).toString("hex");

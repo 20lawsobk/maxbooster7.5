@@ -19,29 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sparkles,
-  TrendingUp,
-  Star,
-  Users,
-  Music,
-  Globe,
-  Target,
-  Award,
-  Flame,
-  Rocket,
-  Filter,
-  Search,
-  Play,
-  ExternalLink,
-  ChevronRight,
-  ArrowUp,
-  Zap,
-  BarChart3,
-  Heart,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { Sparkles, TrendingUp, Users, Globe, Target, Award, Flame, Search, Play, ArrowUp, Zap, BarChart3, Loader2, RefreshCw } from "lucide-react";
 
 interface EmergingArtist {
   id: string;
@@ -317,7 +295,7 @@ export default function ARDiscoveryPanel({
   const {
     data: discoveryResponse,
     isLoading,
-    isError,
+    
     refetch,
   } = useQuery<{
     data: EmergingArtist[];

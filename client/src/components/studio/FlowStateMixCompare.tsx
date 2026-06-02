@@ -1,21 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  GitCompare,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  RotateCcw,
-  Plus,
-  Trash2,
-  Check,
-  Star,
-  StarOff,
-  ArrowLeftRight,
-  Clock,
-  Waveform,
-} from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
+import { GitCompare, Play, Pause, Volume2, VolumeX, RotateCcw, Plus, Trash2, Star, StarOff, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

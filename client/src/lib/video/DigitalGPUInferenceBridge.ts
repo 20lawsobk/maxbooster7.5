@@ -29,13 +29,7 @@
  */
 
 import { WebGLRenderer } from "./WebGLRenderer";
-import {
-  BLOOM_SHADER,
-  COLOR_GRADING_SHADER,
-  CHROMATIC_ABERRATION_SHADER,
-  VIGNETTE_SHADER,
-  NOISE_SHADER,
-} from "./ShaderPresets";
+import { BLOOM_SHADER, COLOR_GRADING_SHADER, CHROMATIC_ABERRATION_SHADER, VIGNETTE_SHADER } from "./ShaderPresets";
 
 export interface InferenceConfig {
   width: number;
@@ -269,23 +263,23 @@ export class DigitalGPUInferenceBridge {
         useOffscreen: typeof OffscreenCanvas !== "undefined",
       });
 
-      const gl = this.renderer.getContext();
-      const bloomProg = this.renderer.createShaderProgram(
+      this.renderer.getContext();
+      this.renderer.createShaderProgram(
         "bloom",
         BLOOM_SHADER.vertex,
         BLOOM_SHADER.fragment,
       );
-      const gradeProg = this.renderer.createShaderProgram(
+      this.renderer.createShaderProgram(
         "colorGrade",
         COLOR_GRADING_SHADER.vertex,
         COLOR_GRADING_SHADER.fragment,
       );
-      const chromaProg = this.renderer.createShaderProgram(
+      this.renderer.createShaderProgram(
         "chromaAb",
         CHROMATIC_ABERRATION_SHADER.vertex,
         CHROMATIC_ABERRATION_SHADER.fragment,
       );
-      const vignetteProg = this.renderer.createShaderProgram(
+      this.renderer.createShaderProgram(
         "vignette",
         VIGNETTE_SHADER.vertex,
         VIGNETTE_SHADER.fragment,
@@ -343,7 +337,7 @@ export class DigitalGPUInferenceBridge {
     const t = this.frameCount * 0.016;
     this.frameCount++;
 
-    const gl = this.renderer.getContext();
+    this.renderer.getContext();
     const { width, height } = this.config;
     const res = new Float32Array([width, height]);
 

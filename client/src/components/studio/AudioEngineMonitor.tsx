@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAudioContext } from "@/hooks/useAudioContext";
-import { Activity, Cpu, Clock, Zap, AlertCircle } from "lucide-react";
+import { Activity, Cpu, Clock, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface AudioEngineMonitorProps {

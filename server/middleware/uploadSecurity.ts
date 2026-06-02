@@ -80,7 +80,6 @@ const MAGIC_BYTES: Record<string, number[]> = {
   "application/pdf": [0x25, 0x50, 0x44, 0x46],
 };
 
-const MPEG_FRAME_SYNC = [0xff, 0xfb];
 
 const EXTENSION_TO_MIME: Record<string, string[]> = {
   ".jpg": ["image/jpeg"],

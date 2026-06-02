@@ -5,7 +5,6 @@ import {
   useBatchSelectContext,
   useOptionalBatchSelectContext,
 } from "./BatchSelectProvider";
-import { Check, Minus } from "lucide-react";
 
 export interface BatchSelectorProps {
   id: string;

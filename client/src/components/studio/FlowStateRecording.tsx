@@ -1,12 +1,7 @@
 import { logger } from "@/lib/logger";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -18,23 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Mic,
-  MicOff,
-  Circle,
-  Square,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Headphones,
-  Settings,
-  AlertCircle,
-  Check,
-  RefreshCw,
-  Waves,
-  Activity,
-} from "lucide-react";
+import { Mic, Circle, Square, Play, Pause, Headphones, AlertCircle, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -251,7 +230,7 @@ export function FlowStateRecording({
     animationFrameRef.current = requestAnimationFrame(updateLevels);
   }, [peakLevel]);
 
-  const drawWaveform = useCallback(() => {
+  useCallback(() => {
     if (!canvasRef.current || !analyzerRef.current) return;
 
     const canvas = canvasRef.current;
@@ -400,7 +379,7 @@ export function FlowStateRecording({
   };
 
   const inputDevices = audioDevices.filter((d) => d.kind === "audioinput");
-  const outputDevices = audioDevices.filter((d) => d.kind === "audiooutput");
+  audioDevices.filter((d) => d.kind === "audiooutput");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -284,7 +284,7 @@ export function StorageQuotaBar({
             <div className="h-2 rounded-full overflow-hidden bg-muted flex">
               {categories
                 .filter((c) => c.used > 0)
-                .map((category, index) => (
+                .map((category, _index) => (
                   <div
                     key={category.name}
                     className={cn("h-full", category.color)}

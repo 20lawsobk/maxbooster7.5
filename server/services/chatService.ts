@@ -4,9 +4,6 @@ import { eq, and, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { randomUUID } from "crypto";
 
-interface CreateSessionInput {
-  userId: string;
-}
 
 interface CreateMessageInput {
   sessionId: string;
@@ -94,7 +91,7 @@ export class ChatService {
     }
   }
 
-  async getUserChatHistory(userId: string, limit: number = 50): Promise<any[]> {
+  async getUserChatHistory(userId: string, _limit: number = 50): Promise<any[]> {
     try {
       const activeSessions = await db
         .select()

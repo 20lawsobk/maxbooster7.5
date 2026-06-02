@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useShortcuts, useShortcutGuide } from "@/contexts/ShortcutContext";
 import { ShortcutHint } from "@/components/shortcuts/ShortcutHint";
-import { ShortcutDefinition, ShortcutContext } from "@/lib/shortcuts/types";
+import { ShortcutContext } from "@/lib/shortcuts/types";
 
 interface ShortcutHintsProps {
   context?: ShortcutContext;

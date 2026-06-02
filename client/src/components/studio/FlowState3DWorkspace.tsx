@@ -232,7 +232,6 @@ export function FlowState3DWorkspace({
 
     ctx.strokeStyle = colors.grid;
     ctx.lineWidth = 1;
-    const gridSize = 20;
     const gridExtent = 10;
 
     for (let x = -gridExtent; x <= gridExtent; x++) {

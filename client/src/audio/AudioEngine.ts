@@ -312,7 +312,7 @@ export class ElementaryAudioEngine extends BaseAudioEngine {
     return buffer;
   }
 
-  renderDSP(dspFunction: () => any): void {
+  renderDSP(_dspFunction: () => any): void {
     if (!this.core) {
       logger.info(
         "[ElementaryAudioEngine] DSP render prepared for Elementary Audio",

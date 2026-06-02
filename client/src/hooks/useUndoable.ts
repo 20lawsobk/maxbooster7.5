@@ -33,7 +33,7 @@ export function useUndoable<T, Args extends unknown[]>(
   undoFn: (result: T, ...args: Args) => Promise<void>,
   redoFn?: (...args: Args) => Promise<T>,
 ): UseUndoableReturn<T, Args> {
-  const { executeAction, showUndoToast } = useUndo();
+  const { executeAction } = useUndo();
   const isExecutingRef = useRef(false);
 
   const execute = useCallback(

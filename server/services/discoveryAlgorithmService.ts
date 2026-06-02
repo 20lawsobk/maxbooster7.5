@@ -1,14 +1,6 @@
 import { db } from "../db";
-import { eq, desc, and, gte, sql, inArray } from "drizzle-orm";
-import {
-  userTasteProfiles,
-  beatInteractions,
-  beatDiscoveryScores,
-  listings,
-  users,
-  storefronts,
-  storefrontFollows,
-} from "@shared/schema";
+import { eq, desc, and, sql } from "drizzle-orm";
+import { userTasteProfiles, beatInteractions, listings, users, storefronts, storefrontFollows } from "@shared/schema";
 import { logger } from "../logger.js";
 
 const GENRE_LIST = [

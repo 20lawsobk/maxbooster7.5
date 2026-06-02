@@ -28,7 +28,7 @@ const chatbotRespondSchema = z.object({
   threadId: z.string().max(255).optional(),
 });
 
-const sentimentBatchSchema = z.object({
+z.object({
   messages: z
     .array(
       z.object({
@@ -41,7 +41,7 @@ const sentimentBatchSchema = z.object({
     .max(100),
 });
 
-const translateSchema = z.object({
+z.object({
   content: z.string().min(1).max(10000).optional(),
   prompt: z.string().min(1).max(10000).optional(),
   targetLanguage: z.string().min(2).max(10).optional(),
@@ -157,7 +157,7 @@ router.get(
 router.get(
   "/chatbot/templates",
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (_req: AuthenticatedRequest, res: Response) => {
     try {
       const templates = await socialChatbotService.getTemplates();
       res.json(templates);
@@ -1093,7 +1093,7 @@ router.post(
         contentType = "post",
         topic = "new music",
         tone = "energetic",
-        goal = "growth",
+        
         genre: rawGenre,
         artistName,
         trackTitle,
@@ -1103,11 +1103,11 @@ router.post(
         duration,
         // URL analysis context
         urlContentType, // raw content_type from URL analysis: 'website', 'track', 'video', etc.
-        contentCategory, // e.g. 'music', 'general', 'tech', 'events'
+         // e.g. 'music', 'general', 'tech', 'events'
         keywords, // string[] from URL analysis
         tags, // string[] from URL analysis
         urlDescription, // summary/description from URL analysis
-        sourcePlatform, // e.g. 'youtube', 'spotify'
+         // e.g. 'youtube', 'spotify'
         // Engagement signals from URL analysis
         viewCount,
         likeCount,
@@ -1117,9 +1117,8 @@ router.post(
         eventLocation,
         performers,
         // Product-specific fields
-        price,
+        
         brand,
-        rating,
       } = req.body;
 
       const validPlatforms = [
@@ -1209,9 +1208,6 @@ router.post(
       const effectiveLabel = label || inlineUrlAnalysis?.label;
       const effectiveReleaseDate =
         releaseDate || inlineUrlAnalysis?.release_date;
-      const effectiveDuration = duration || inlineUrlAnalysis?.duration;
-      const effectivePrice =
-        (req.body.price as string | undefined) || undefined;
       const inlineTitle = inlineUrlAnalysis?.title;
       const inlineBodyPreview = inlineUrlAnalysis?.body_preview;
       const inlineContentCategory =

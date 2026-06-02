@@ -142,19 +142,6 @@ type BgType =
   | "chromatic"
   | "sunrise";
 
-function getBgSourceArgs(
-  bgType: BgType,
-  bg: string,
-  width: number,
-  height: number,
-  dur: number,
-): string[] {
-  const s = `${width}x${height}`;
-  if (bgType === "solid") {
-    return ["-f", "lavfi", "-i", `color=c=${bg}:s=${s}:d=${dur}:r=30`];
-  }
-  return ["-f", "lavfi", "-i", `nullsrc=s=${s}:r=30:d=${dur}`];
-}
 
 /**
  * Returns an enhanced geq= VF expression for animated gradient backgrounds.
@@ -916,154 +903,6 @@ interface SceneSpec {
 // ── PYTHON FRAME PIPELINE ─────────────────────────────────────────────────────
 // Spawns the Python frame generator and pipes its raw RGB24 output directly
 // into FFmpeg for encoding + text overlay — no intermediate files needed.
-async function renderWithPython(
-  innerW: number,
-  innerH: number,
-  width: number,
-  height: number,
-  dur: number,
-  style: TemplateStyle,
-  genre: string,
-  textVfParts: string[],
-  outPath: string,
-  scenePrompt?: string,
-): Promise<void> {
-  const fps = 30;
-
-  const pythonCfgObj: Record<string, unknown> = {
-    width: innerW,
-    height: innerH,
-    duration: dur,
-    fps,
-    render_scale: 1,
-    bg: style.bg,
-    ac: style.ac,
-    genre,
-    eq_bars: true,
-    eq_height: 0.12,
-    eq_n_bars: 32,
-    speed: 1.0,
-    intensity: 0.88,
-  };
-
-  if (scenePrompt && scenePrompt.trim()) {
-    pythonCfgObj.scene_prompt = scenePrompt.trim();
-  } else {
-    pythonCfgObj.style = BG_TO_PYTHON[style.bgType] || "plasma_fractal";
-  }
-
-  pythonCfgObj.seed = parseInt(randomBytes(4).toString("hex"), 16);
-
-  const pythonCfg = JSON.stringify(pythonCfgObj);
-
-  const scaleFilter =
-    innerW !== width ? `scale=${width}:${height}:flags=lanczos,` : "";
-  const vf = `${scaleFilter}format=yuv420p,${textVfParts.join(",")}`;
-
-  if (!PYTHON_AVAILABLE) {
-    return Promise.reject(
-      new Error(
-        "Video render failed: Python 3 is not installed on this server. " +
-          "The Cinematic AI Video Studio requires Python with numpy and Pillow.",
-      ),
-    );
-  }
-
-  logger.debug("[VideoGen] vf filter string:", vf);
-
-  return new Promise<void>((resolve, reject) => {
-    const python = spawn(PYTHON, [FRAME_GENERATOR_PATH, pythonCfg]);
-    const ffmpeg = spawn(FFMPEG, [
-      "-y",
-      "-f",
-      "rawvideo",
-      "-pix_fmt",
-      "rgb24",
-      "-s",
-      `${innerW}x${innerH}`,
-      "-r",
-      String(fps),
-      "-i",
-      "pipe:0",
-      "-vf",
-      vf,
-      "-c:v",
-      "libx264",
-      "-preset",
-      "veryfast",
-      "-crf",
-      "20",
-      "-pix_fmt",
-      "yuv420p",
-      "-movflags",
-      "+faststart",
-      "-an",
-      "-frames:v",
-      String(Math.ceil(dur * fps)),
-      outPath,
-    ]);
-
-    python.stdout.pipe(ffmpeg.stdin);
-
-    ffmpeg.stdin.on("error", (e: NodeJS.ErrnoException) => {
-      if (e.code === "EPIPE" || e.code === "ECONNRESET") return;
-      logger.warn("[VideoGen] ffmpeg.stdin error:", e.message);
-    });
-
-    let ffErr = "";
-    let pyErr = "";
-    let rejected = false;
-    const doReject = (err: Error) => {
-      if (!rejected) {
-        rejected = true;
-        reject(err);
-      }
-    };
-
-    ffmpeg.stderr.on("data", (d: Buffer) => {
-      ffErr += d.toString();
-    });
-    python.stderr.on("data", (d: Buffer) => {
-      const msg = d.toString();
-      pyErr += msg;
-      if (!msg.includes("RuntimeWarning"))
-        logger.debug("[FrameGen]", msg.trim());
-    });
-
-    python.on("error", (e) =>
-      doReject(new Error(`Python error: ${e.message}`)),
-    );
-    ffmpeg.on("error", (e) =>
-      doReject(new Error(`FFmpeg error: ${e.message}`)),
-    );
-
-    ffmpeg.on("close", (code) => {
-      try {
-        python.stdout.unpipe(ffmpeg.stdin);
-      } catch {
-        /* intentional: stream may already be closed */
-      }
-      try {
-        ffmpeg.stdin.destroy();
-      } catch {
-        /* intentional: stream may already be closed */
-      }
-      if (code === 0) resolve();
-      else {
-        const ffErrSnip = ffErr.slice(-1000);
-        const pyErrSnip = pyErr.slice(-200).trim();
-        logger.warn(`[VideoGen] FFmpeg stderr tail: ${ffErrSnip}`);
-        if (pyErrSnip)
-          logger.warn(`[VideoGen] Python stderr tail: ${pyErrSnip}`);
-        doReject(new Error(`FFmpeg exited ${code}: ${ffErrSnip}`));
-      }
-    });
-
-    python.on("close", (code) => {
-      if (code !== 0) logger.warn(`[FrameGen] Python exited ${code}`);
-    });
-  });
-}
 
 async function renderScene(spec: SceneSpec): Promise<void> {
   const {
@@ -1077,7 +916,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
     outPath,
     platform,
   } = spec;
-  const genre = (spec.genre || "default").toLowerCase();
+  ((spec.genre || "default").toLowerCase());
   const mc = Math.max(16, Math.floor(width / (style.bs * 0.58)));
   const { hs, bs, cs } = scaleFonts(style, width, platform);
   const font = FONTS[style.font];
@@ -1197,7 +1036,6 @@ async function renderScene(spec: SceneSpec): Promise<void> {
     }
   }
 
-  const scenePrompt = spec.scene_prompt || "";
 
   if (isSolid) {
     // Solid background — fast FFmpeg color source, add vignette for cinematic depth

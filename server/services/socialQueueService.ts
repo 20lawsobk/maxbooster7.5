@@ -1,7 +1,7 @@
 import { getBoosterStateClient } from "../lib/boosterStateClient.js";
 import { config } from "../config/defaults.js";
 import { db } from "../db";
-import { posts, scheduledPostBatches, socialAccounts } from "@shared/schema";
+import { posts, scheduledPostBatches } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { logger } from "../logger.js";
@@ -112,12 +112,9 @@ class SocialQueueService {
 
   async addSocialPostJob(
     data: SocialPostJobData,
-    delay?: number,
+    _delay?: number,
   ): Promise<{ id: string; name: string; data: SocialPostJobData }> {
     const platform = data.platform.toLowerCase();
-    const rateLimits =
-      PLATFORM_RATE_LIMITS[platform as keyof typeof PLATFORM_RATE_LIMITS] ||
-      PLATFORM_RATE_LIMITS.default;
 
     return await this.socialQueue.add("publish-post", data, {
       priority: data.scheduledAt ? 2 : 1,

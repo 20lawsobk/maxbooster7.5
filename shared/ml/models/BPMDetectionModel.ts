@@ -58,20 +58,6 @@ interface EssentiaInstance {
   MFCC(...args: unknown[]): { mfcc: Float32Array; bands: Float32Array };
 }
 
-const NOTE_FREQUENCIES = {
-  C: 261.63,
-  "C#": 277.18,
-  D: 293.66,
-  "D#": 311.13,
-  E: 329.63,
-  F: 349.23,
-  "F#": 369.99,
-  G: 392.0,
-  "G#": 415.3,
-  A: 440.0,
-  "A#": 466.16,
-  B: 493.88,
-};
 
 const NOTE_NAMES = [
   "C",
@@ -221,7 +207,7 @@ export class BPMDetectionModel {
 
   private computeOnsetEnvelope(
     audioBuffer: Float32Array,
-    sampleRate: number,
+    _sampleRate: number,
   ): Float32Array {
     const frameSize = 2048;
     const hopSize = 512;
@@ -447,7 +433,7 @@ export class BPMDetectionModel {
 
   private computeConfidence(
     candidates: Array<{ bpm: number; score: number }>,
-    selectedBPM: number,
+    _selectedBPM: number,
   ): number {
     if (candidates.length === 0) return 0;
     if (candidates.length === 1) return candidates[0].score;

@@ -2,30 +2,9 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Heart,
-  MessageCircle,
-  Share2,
-  Bookmark,
-  MoreHorizontal,
-  Send,
-  ThumbsUp,
-  Eye,
-  Play,
-  Clock,
-  Calendar,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  Maximize2,
-  Hash,
-  AtSign,
-  MapPin,
-  Image as ImageIcon,
-  Video,
-} from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Send, ThumbsUp, Eye, Play, Clock, Calendar, CheckCircle, AlertCircle, Loader2, Image as ImageIcon } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,

@@ -474,7 +474,7 @@ class ReleaseCountdownService {
   async generateAISuggestedTasks(
     countdownId: string,
     genre?: string,
-    targetAudience?: string,
+    _targetAudience?: string,
   ): Promise<Array<Omit<InsertCountdownTask, "countdownId">>> {
     const baseTasks = PRE_RELEASE_CHECKLIST_TEMPLATES;
 

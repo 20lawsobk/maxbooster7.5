@@ -17,18 +17,7 @@ import {
   studioSamples,
 } from "@shared/schema";
 import { notificationService } from "../services/notificationService.js";
-import {
-  eq,
-  and,
-  or,
-  desc,
-  isNull,
-  inArray,
-  sql as drizzleSql,
-  ilike,
-  arrayOverlaps,
-  type SQL,
-} from "drizzle-orm";
+import { eq, and, or, desc, inArray, sql as drizzleSql, ilike, arrayOverlaps, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { studioService } from "../services/studioService";
 import { logger } from "../logger.js";
@@ -2323,7 +2312,7 @@ router.post(
   },
 );
 
-router.get("/conversions", requireAuth, async (req: Request, res: Response) => {
+router.get("/conversions", requireAuth, async (_req: Request, res: Response) => {
   try {
     res.json({ conversions: [] });
   } catch (error: unknown) {
@@ -2508,7 +2497,7 @@ router.post(
     try {
       const userId = req.user!.id;
       const { projectId } = req.params;
-      const { targetGenre, referenceTrack, autoEQ, autoCompression } = req.body;
+      const { targetGenre,  autoEQ, autoCompression } = req.body;
       res.json({
         success: true,
         projectId,
@@ -2553,7 +2542,6 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, genre } = req.query;
       res.json({
         suggestions: [
           {
@@ -2583,7 +2571,7 @@ router.get(
 router.get(
   "/ai-music/presets",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       res.json({
         presets: [
@@ -2640,7 +2628,6 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req.body;
       res.json({
         integrated: -14.2,
         truePeak: -1.0,
@@ -2661,7 +2648,6 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, referenceTrackId } = req.body;
       res.json({
         success: true,
         matchScore: 0.82,
@@ -3043,7 +3029,6 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req.params;
       res.json({ markers: [] });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching markers:");
@@ -3873,7 +3858,7 @@ router.post(
           updateData.routingBus = trackState.routingBus;
         }
 
-        const result = await db
+        await db
           .update(studioTracks)
           .set(updateData)
           .where(

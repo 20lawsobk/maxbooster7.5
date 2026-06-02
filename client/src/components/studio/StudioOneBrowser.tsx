@@ -1,27 +1,6 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Search,
-  Folder,
-  FolderOpen,
-  Music,
-  FileAudio,
-  ChevronRight,
-  ChevronDown,
-  Play,
-  Pause,
-  Volume2,
-  Filter,
-  LayoutGrid,
-  List,
-  Star,
-  Clock,
-  Download,
-  Plus,
-  MoreHorizontal,
-  Zap,
-  Loader2,
-} from "lucide-react";
+import { Search, Folder, FolderOpen, Music, FileAudio, ChevronRight, ChevronDown, Play, Pause, Filter, LayoutGrid, List, Star, Plus, Zap, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

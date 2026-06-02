@@ -17,7 +17,7 @@
  */
 
 import { Queue, Worker, Job } from "bullmq";
-import { getRedisClient, newBullMQRedisConnection } from "./redisClient.js";
+import { newBullMQRedisConnection } from "./redisClient.js";
 import { logger } from "../logger.js";
 import { customerHealthScoreService } from "../services/customerHealthScoreService.js";
 import { dunningService } from "../services/dunningService.js";

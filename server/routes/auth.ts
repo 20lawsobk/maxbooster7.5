@@ -24,7 +24,6 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
       const sessionId = req.session?.id;
 
       if (!sessionId) {
@@ -95,7 +94,6 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
       const sessionId = req.session?.id;
       const { extendMinutes = 30 } = req.body;
 

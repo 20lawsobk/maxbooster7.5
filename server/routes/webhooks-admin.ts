@@ -17,7 +17,7 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 router.use(requireAdmin);
 router.use(require2FA);
 
-router.get("/dead-letter", async (req, res) => {
+router.get("/dead-letter", async (_req, res) => {
   try {
     res.json({
       items: [],

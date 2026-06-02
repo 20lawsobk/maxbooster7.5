@@ -84,7 +84,7 @@ export class WaveformVisualizer {
     audioData: AudioAnalysisData,
     width: number,
     height: number,
-    time: number,
+    _time: number,
   ): void {
     const waveformData = this.getWaveformData(audioData);
     this.updateSmoothedData(waveformData);

@@ -237,7 +237,7 @@ function simulateAIBoosterOrganic(
   const qualityMultiplier = getContentQualityMultiplier(
     campaign.contentQuality,
   );
-  const durationMultiplier = Math.sqrt(campaign.duration); // Compounding effects over time
+  Math.sqrt(campaign.duration); // Compounding effects over time
 
   // Cross-platform synergy: posting on multiple platforms creates amplification
   const crossPlatformBoost = 1 + (campaign.platforms.length - 1) * 0.15;

@@ -83,7 +83,7 @@ export function PayoutDashboard() {
   });
 
   // Fetch account verification status
-  const { data: verification, isLoading: verificationLoading } =
+  const { data: verification } =
     useQuery<AccountVerification>({
       queryKey: ["/api/payouts/verify"],
       enabled: !!user,

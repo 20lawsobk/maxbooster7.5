@@ -1,30 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import {
-  MousePointer2,
-  PenLine,
-  Spline,
-  Edit3,
-  Trash2,
-  Undo2,
-  Redo2,
-  ZoomIn,
-  ZoomOut,
-  Eye,
-  EyeOff,
-  ChevronDown,
-  Lock,
-  Unlock,
-  Magnet,
-} from "lucide-react";
+import { MousePointer2, PenLine, Spline, Edit3, Trash2, Undo2, Redo2, Eye, EyeOff, ChevronDown, Lock, Unlock, Magnet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,

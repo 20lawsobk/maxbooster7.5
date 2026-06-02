@@ -18,20 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Info,
-  Loader2,
-  ArrowRight,
-  ExternalLink,
-  X,
-  Sparkles,
-  Trophy,
-  Rocket,
-  PartyPopper,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Info, Loader2, ArrowRight, X, Sparkles, Trophy, PartyPopper } from "lucide-react";
 
 export type FeedbackType = "success" | "error" | "warning" | "info" | "loading";
 
@@ -144,7 +131,6 @@ export function GlobalFeedbackProvider({ children }: { children: ReactNode }) {
       nextSteps,
       showConfetti,
       persistent,
-      dismissible = true,
     } = options;
 
     if (nextSteps && nextSteps.length > 0) {

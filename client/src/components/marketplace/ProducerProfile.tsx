@@ -17,105 +17,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Music,
-  Play,
-  Pause,
-  Heart,
-  Share2,
-  MessageCircle,
-  Star,
-  Award,
-  Trophy,
-  Crown,
-  Flame,
-  TrendingUp,
-  Users,
-  Eye,
-  DollarSign,
-  CheckCircle,
-  Calendar,
-  MapPin,
-  Globe,
-  Verified,
-  Headphones,
-  Download,
-  ShoppingCart,
-  ExternalLink,
-  Instagram,
-  Youtube,
-  Twitter,
-  Sparkles,
-  BarChart3,
-  Zap,
-  Music2,
-} from "lucide-react";
-import {
-  FacebookIcon,
-  InstagramIcon,
-  YouTubeIcon,
-  TikTokIcon,
-  TwitterIcon,
-} from "@/components/ui/brand-icons";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Music, Play, Pause, Heart, Share2, MessageCircle, Star, Award, Trophy, Crown, Flame, Users, CheckCircle, Calendar, MapPin, Globe, Headphones, ShoppingCart, BarChart3, Zap, Music2 } from "lucide-react";
+import { InstagramIcon, YouTubeIcon, TikTokIcon, TwitterIcon } from "@/components/ui/brand-icons";
 
-interface ProducerStats {
-  totalBeats: number;
-  totalSales: number;
-  totalPlays: number;
-  totalDownloads: number;
-  followers: number;
-  rating: number;
-  reviewCount: number;
-  responseRate: number;
-  responseTime: string;
-  memberSince: string;
-  location: string;
-}
 
-interface ProducerBadge {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  color: string;
-  description: string;
-  earnedAt: string;
-}
 
-interface ProducerSocial {
-  platform: string;
-  url: string;
-  followers?: number;
-}
 
-interface ProducerBeat {
-  id: string;
-  title: string;
-  price: number;
-  plays: number;
-  likes: number;
-  genre: string;
-  tempo: number;
-  coverUrl?: string;
-  audioUrl?: string;
-}
 
-interface ProducerReview {
-  id: string;
-  reviewer: {
-    name: string;
-    avatar?: string;
-  };
-  rating: number;
-  comment: string;
-  createdAt: string;
-  beatTitle?: string;
-}
 
 interface ProducerProfileProps {
   producerId: string;

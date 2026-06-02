@@ -130,7 +130,7 @@ export function PendingChanges({
     setSelectedActions(new Set());
   };
 
-  const handleClearCompleted = async () => {
+  async () => {
     await offlineQueue.clearCompleted();
     await loadActions();
   };

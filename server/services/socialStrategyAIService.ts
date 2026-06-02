@@ -192,16 +192,6 @@ export interface AIInsight {
 }
 
 class SocialStrategyAIService {
-  private contentPillars = [
-    "Educational",
-    "Entertainment",
-    "Behind the Scenes",
-    "User Generated Content",
-    "Promotional",
-    "Community Engagement",
-    "Trending/Viral",
-    "Personal/Authentic",
-  ];
 
   private platformOptimalTimes: Record<string, Record<string, number[]>> = {
     instagram: {
@@ -252,7 +242,7 @@ class SocialStrategyAIService {
   };
 
   async getContentRecommendations(
-    userId: string,
+    _userId: string,
     options: {
       platforms?: string[];
       count?: number;
@@ -413,7 +403,7 @@ class SocialStrategyAIService {
     return templates[platform] || templates.instagram;
   }
 
-  private generateHashtags(pillar: string, platform: string): string[] {
+  private generateHashtags(pillar: string, _platform: string): string[] {
     const baseHashtags = ["music", "artist", "newmusic", "musicproducer"];
     const pillarHashtags: Record<string, string[]> = {
       Educational: ["tutorial", "tips", "howto", "learn"],
@@ -431,14 +421,14 @@ class SocialStrategyAIService {
   }
 
   async getCampaignRecommendations(
-    userId: string,
+    _userId: string,
     options: {
       objective?: string;
       budget?: number;
       duration?: number;
     } = {},
   ): Promise<CampaignRecommendation[]> {
-    const { objective = "engagement", budget = 500, duration = 14 } = options;
+    const {  budget = 500, duration = 14 } = options;
 
     const startDate = new Date();
     const endDate = new Date();
@@ -577,7 +567,7 @@ class SocialStrategyAIService {
   }
 
   async getContentStrategy(
-    userId: string,
+    _userId: string,
     period: "weekly" | "monthly" | "quarterly" = "monthly",
   ): Promise<ContentStrategy> {
     return {
@@ -679,7 +669,7 @@ class SocialStrategyAIService {
   }
 
   private generateMonthlyThemes(
-    period: string,
+    _period: string,
   ): Array<{ week: number; theme: string; contentIdeas: string[] }> {
     const themes = [
       {
@@ -715,7 +705,7 @@ class SocialStrategyAIService {
   }
 
   async getBestPostingTimes(
-    userId: string,
+    _userId: string,
     platforms: string[] = ["instagram", "twitter", "tiktok"],
   ): Promise<PostingTimeRecommendation[]> {
     const recommendations: PostingTimeRecommendation[] = [];
@@ -737,11 +727,10 @@ class SocialStrategyAIService {
       let bestHour = 12;
       let maxScore = 0;
 
-      const dayRecommendations: PostingTimeRecommendation["times"][] = [];
 
       for (const day of days) {
         const hours = platformTimes[day] || [];
-        const times = hours.map((hour) => {
+        hours.map((hour) => {
           const score = Math.random() * 30 + 70;
           if (score > maxScore) {
             maxScore = score;
@@ -782,7 +771,7 @@ class SocialStrategyAIService {
   }
 
   async getGrowthPredictions(
-    userId: string,
+    _userId: string,
     platforms: string[] = ["instagram", "twitter", "tiktok"],
   ): Promise<GrowthPrediction[]> {
     const predictions: GrowthPrediction[] = [];
@@ -842,7 +831,7 @@ class SocialStrategyAIService {
   }
 
   async getEngagementTips(
-    userId: string,
+    _userId: string,
     options: {
       category?: string;
       platforms?: string[];
@@ -968,7 +957,7 @@ class SocialStrategyAIService {
   }
 
   async generateContentPlan(
-    userId: string,
+    _userId: string,
     options: {
       startDate?: Date;
       endDate?: Date;
@@ -1058,7 +1047,7 @@ class SocialStrategyAIService {
     };
   }
 
-  async getAIInsights(userId: string): Promise<AIInsight[]> {
+  async getAIInsights(_userId: string): Promise<AIInsight[]> {
     return [
       {
         id: randomBytes(8).toString("hex"),

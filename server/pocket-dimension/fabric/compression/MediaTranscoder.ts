@@ -80,7 +80,6 @@ export function classifyContentType(
 
 export class MediaTranscoder {
   private ffmpegAvailable: boolean | null = null;
-  private sharpAvailable: boolean | null = null;
 
   async transcodeVideo(
     data: Buffer,

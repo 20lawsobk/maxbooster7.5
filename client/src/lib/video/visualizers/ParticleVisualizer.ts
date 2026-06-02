@@ -343,7 +343,7 @@ export class ParticleVisualizer {
   private updateParticles(
     width: number,
     height: number,
-    audioData: AudioAnalysisData,
+    _audioData: AudioAnalysisData,
   ): void {
     const attractorX = width * this.options.attractorX;
     const attractorY = height * this.options.attractorY;

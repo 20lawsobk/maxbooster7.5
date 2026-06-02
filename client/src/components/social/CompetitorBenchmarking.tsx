@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -21,15 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -38,32 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Users,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  PieChart,
-  Plus,
-  Trash2,
-  RefreshCw,
-  Download,
-  Calendar,
-  Clock,
-  Target,
-  Award,
-  Eye,
-  Heart,
-  MessageSquare,
-  Share2,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  ExternalLink,
-  Mail,
-  FileText,
-  Settings,
-} from "lucide-react";
+import { Users, BarChart3, PieChart, Plus, Trash2, RefreshCw, Download, Clock, Target, Award, Eye, ArrowUp, ArrowDown, Minus, Mail } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -98,18 +65,6 @@ interface Competitor {
   color: string;
 }
 
-interface ContentPerformance {
-  postId: string;
-  competitorId: string;
-  platform: string;
-  content: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  views: number;
-  engagement: number;
-  postedAt: string;
-}
 
 const PLATFORM_CONFIG = {
   twitter: { icon: TwitterIcon, color: "#000000", name: "Twitter" },
@@ -122,7 +77,7 @@ const PLATFORM_CONFIG = {
 
 export function CompetitorBenchmarking() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
 
   const [activeTab, setActiveTab] = useState("overview");
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -139,7 +94,7 @@ export function CompetitorBenchmarking() {
   const [reportFrequency, setReportFrequency] = useState("weekly");
   const [reportEmail, setReportEmail] = useState("");
 
-  const { data: competitorsData, isLoading } = useQuery({
+  const { data: competitorsData } = useQuery({
     queryKey: ["/api/social/competitors"],
   });
 
@@ -155,16 +110,6 @@ export function CompetitorBenchmarking() {
     followersChange: 0,
     engagementChange: 0,
   };
-  const allData = [
-    ...competitors,
-    {
-      ...yourStats,
-      id: "you",
-      name: "Your Brand",
-      handle: "@maxbooster",
-      color: "#8b5cf6",
-    },
-  ];
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -190,7 +135,7 @@ export function CompetitorBenchmarking() {
     setShowAddDialog(false);
   };
 
-  const handleRemoveCompetitor = (id: string) => {
+  const handleRemoveCompetitor = (_id: string) => {
     toast({
       title: "Competitor Removed",
       description: "Competitor has been removed from tracking.",

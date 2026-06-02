@@ -5,7 +5,7 @@ import {
   type InsertEmailMessage,
   type InsertEmailEvent,
 } from "@shared/schema";
-import { eq, desc, sql, and, gte } from "drizzle-orm";
+import { eq, desc, sql, gte } from "drizzle-orm";
 import nacl from "tweetnacl";
 import { logger } from "../logger.js";
 

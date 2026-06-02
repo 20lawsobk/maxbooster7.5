@@ -764,7 +764,7 @@ export class AIMusicService {
               const integrated = parseFloat(data.input_i) || -23.0;
               const truePeak = parseFloat(data.input_tp) || -3.0;
               const loudnessRange = parseFloat(data.input_lra) || 7.0;
-              const threshold = parseFloat(data.input_thresh) || -33.0;
+              parseFloat(data.input_thresh) || -33.0;
 
               const audioData = this.bufferToFloat32Array(audioBuffer);
               const dynamicRange = this.calculateDynamicRange(audioData);
@@ -984,7 +984,7 @@ export class AIMusicService {
   ): Promise<AISuggestion[]> {
     const suggestions: AISuggestion[] = [];
 
-    const { genre, energy, mood, intensity, preset } = audioAnalysis;
+    const { genre, energy,  intensity, preset } = audioAnalysis;
 
     if (genre === "hip-hop" || genre === "trap") {
       suggestions.push({
@@ -1916,35 +1916,6 @@ export class AIMusicService {
     });
   }
 
-  private extractStem(
-    audioBuffer: Buffer,
-    spectralData: Float32Array,
-    stemType: string,
-  ): {
-    audioPath: string;
-    confidence: number;
-    spectralProfile: SpectralProfile;
-  } {
-    const bufferSize = audioBuffer.length;
-    const audioData = this.bufferToFloat32Array(audioBuffer);
-
-    const filteredAudio = this.applyFrequencyFilter(audioData, stemType);
-
-    const stemId = randomBytes(8).toString("hex");
-    const stemPath = `/stems/${stemType}_${stemId}.wav`;
-
-    const confidenceScore = this.calculateStemConfidence(
-      filteredAudio,
-      stemType,
-      bufferSize,
-    );
-
-    return {
-      audioPath: stemPath,
-      confidence: confidenceScore,
-      spectralProfile: this.calculateSpectralProfile(spectralData),
-    };
-  }
 
   private applyFrequencyFilter(
     audioData: Float32Array,
@@ -2390,7 +2361,7 @@ export class AIMusicService {
 
   private async performFFT(
     audioData: Float32Array,
-    sampleRate: number,
+    _sampleRate: number,
   ): Promise<Float32Array> {
     const fftSize = 4096;
     const fft = new FFT(fftSize);
@@ -2423,7 +2394,7 @@ export class AIMusicService {
     spectralData: Float32Array,
     sampleRate: number,
     stemType: "vocals" | "drums" | "bass" | "melody" | "harmony",
-    sessionId: string,
+    _sessionId: string,
   ): Promise<{
     audioPath: string;
     confidence: number;
@@ -2786,7 +2757,7 @@ export class AIMusicService {
 
   private calculateFeatureImportance(
     type: string,
-    output: unknown,
+    _output: unknown,
   ): Record<string, number> {
     const importance: Record<string, Record<string, number>> = {
       stem_separation: {
@@ -2819,9 +2790,9 @@ export class AIMusicService {
   }
 
   private generateDecisionPath(
-    type: string,
-    input: unknown,
-    output: unknown,
+    _type: string,
+    _input: unknown,
+    _output: unknown,
   ): unknown[] {
     return [
       { step: 1, action: "Input validation", result: "success" },
@@ -2874,7 +2845,7 @@ export class AIMusicService {
 
   async analyzeLoudness(
     projectId: string,
-    userId: string,
+    _userId: string,
     targetLUFS: number,
   ): Promise<{
     currentLUFS: number;

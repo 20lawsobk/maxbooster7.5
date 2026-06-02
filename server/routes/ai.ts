@@ -429,7 +429,7 @@ router.post("/forecast", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/health", requireAuth, async (req: Request, res: Response) => {
+router.get("/health", requireAuth, async (_req: Request, res: Response) => {
   try {
     const health = await unifiedAIController.getAIHealthStatus();
 
@@ -652,7 +652,7 @@ router.get(
   },
 );
 
-router.get("/stats", requireAuth, async (req: Request, res: Response) => {
+router.get("/stats", requireAuth, async (_req: Request, res: Response) => {
   try {
     const stats = unifiedAIController.getServiceStats();
 
@@ -703,7 +703,7 @@ router.post(
   },
 );
 
-router.get("/insights", requireAuth, async (req: Request, res: Response) => {
+router.get("/insights", requireAuth, async (_req: Request, res: Response) => {
   try {
     const insights = await unifiedAIController.generateInsights();
 
@@ -717,7 +717,7 @@ router.get("/insights", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/anomalies", requireAuth, async (req: Request, res: Response) => {
+router.get("/anomalies", requireAuth, async (_req: Request, res: Response) => {
   try {
     const anomalies = await unifiedAIController.detectAnomalies();
 
@@ -734,7 +734,7 @@ router.get("/anomalies", requireAuth, async (req: Request, res: Response) => {
 router.post(
   "/churn/predict",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       const prediction = await unifiedAIController.predictChurn();
 

@@ -1,27 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Music,
-  User,
-  Folder,
-  Disc,
-  ChevronLeft,
-  ChevronRight,
-  Grid,
-  List,
-  Filter,
-  SortAsc,
-  Play,
-  Heart,
-  MoreHorizontal,
-  ExternalLink,
-} from "lucide-react";
+import { Music, User, Folder, Disc, ChevronLeft, ChevronRight, Grid, List, Play, Heart, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchEmptyState } from "./SearchEmptyState";
 
@@ -92,20 +77,6 @@ export function SearchResults({
     staleTime: 60000,
   });
 
-  const getCategoryIcon = (type: string) => {
-    switch (type) {
-      case "beats":
-        return <Music className="h-4 w-4" />;
-      case "users":
-        return <User className="h-4 w-4" />;
-      case "projects":
-        return <Folder className="h-4 w-4" />;
-      case "releases":
-        return <Disc className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
 
   const getCategoryCount = (category: string) => {
     if (!searchData?.categories) return 0;

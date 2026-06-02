@@ -325,7 +325,7 @@ export class StudioService {
 
   async uploadAudio(
     file: Express.Multer.File,
-    userId: string,
+    _userId: string,
   ): Promise<{ id: string; url: string; duration?: number }> {
     try {
       const audioId = `audio_${randomBytes(8).toString("hex")}`;
@@ -379,7 +379,7 @@ export class StudioService {
   }
 
   async processAudio(
-    audioId: string,
+    _audioId: string,
     audioPath: string,
     userId?: string,
   ): Promise<{ waveformData: number[]; peaks: number[] }> {
@@ -566,9 +566,9 @@ export class StudioService {
   }
 
   async exportProject(
-    projectId: string,
-    userId: string,
-    options: {
+    _projectId: string,
+    _userId: string,
+    _options: {
       format: "wav" | "mp3" | "flac" | "aac";
       quality: "low" | "medium" | "high" | "lossless";
     },

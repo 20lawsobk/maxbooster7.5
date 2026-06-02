@@ -1,14 +1,6 @@
 import Stripe from "stripe";
 import { db } from "../db";
-import {
-  users,
-  orders,
-  instantPayouts,
-  notifications,
-  ledgerEntries,
-  splitPayments,
-  refunds,
-} from "@shared/schema";
+import { users, instantPayouts, notifications, ledgerEntries, splitPayments } from "@shared/schema";
 import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { withLock } from "../lib/distributedLock.js";
@@ -1718,7 +1710,7 @@ export class InstantPayoutService {
       const thisMonthEarnings = Number(
         monthlyEarningsResult.rows?.[0]?.monthly_earnings || 0,
       );
-      const monthlyCount = Number(
+      Number(
         monthlyEarningsResult.rows?.[0]?.monthly_sales || 0,
       );
 

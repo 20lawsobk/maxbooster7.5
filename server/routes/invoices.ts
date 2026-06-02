@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { invoices, orders, users, notifications } from "@shared/schema";
+import { invoices, orders } from "@shared/schema";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger";
 import { invoiceService } from "../services/invoiceService";
@@ -30,7 +30,6 @@ router.get(
         Math.max(parseInt(req.query.offset as string) || 0, 0),
         100_000,
       );
-      const status = req.query.status as string | undefined;
 
       let query = db
         .select()

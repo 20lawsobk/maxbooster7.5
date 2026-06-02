@@ -38,7 +38,7 @@ export function TokenRefreshHandler({
 }: TokenRefreshHandlerProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
   // Use a ref so changing this never causes the callback or effect to re-run
   const isRefreshingRef = useRef(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);

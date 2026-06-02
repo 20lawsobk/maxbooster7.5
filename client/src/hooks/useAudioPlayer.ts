@@ -121,13 +121,6 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         await initializeRef.current;
 
         // Convert track to AudioClip format
-        const clip: AudioClip = {
-          id: track.id,
-          url: track.url,
-          startTime: 0,
-          duration: track.duration || 0,
-          offset: 0,
-        };
 
         // Load buffer and get waveform data
         const buffer = await engineRef.current.loadBuffer(track.id, track.url);

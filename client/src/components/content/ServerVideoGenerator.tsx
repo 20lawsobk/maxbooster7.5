@@ -25,24 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Video,
-  Loader2,
-  Download,
-  Sparkles,
-  Clock,
-  Layout,
-  Film,
-  Zap,
-  Layers,
-  Mic,
-  Image,
-  FileText,
-  Upload,
-  CheckCircle,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Loader2, Download, Sparkles, Clock, Layout, Film, Zap, Layers, Mic, Image, FileText, Upload, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ServerVideoGeneratorProps {
   platform: string;

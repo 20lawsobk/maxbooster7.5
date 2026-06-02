@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { posts, approvalHistory, users, notifications } from "@shared/schema";
+import { posts, approvalHistory, users } from "@shared/schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";
 import { notificationService } from "./notificationService";
 import type { Request, Response, NextFunction } from "express";
@@ -144,7 +144,7 @@ export class ApprovalService {
   async validateStateTransition(
     postId: string,
     newStatus: ApprovalStatus,
-    userId: string,
+    _userId: string,
   ): Promise<{ valid: boolean; error?: string }> {
     const [post] = await db
       .select()

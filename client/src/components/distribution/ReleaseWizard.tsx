@@ -13,23 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle,
-  Save,
-  Send,
-  Music,
-  FileAudio,
-  FileText,
-  Globe,
-  Calendar,
-  Users,
-  Eye,
-  Sparkles,
-  Copy,
-  ExternalLink,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle, Save, Send, Music, FileAudio, FileText, Globe, Calendar, Eye, Sparkles } from "lucide-react";
 
 import { MetadataForm } from "./MetadataForm";
 import { TrackUploader } from "./TrackUploader";

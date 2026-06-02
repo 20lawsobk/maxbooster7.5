@@ -1,14 +1,5 @@
 import { motion } from "framer-motion";
-import {
-  Music,
-  Mic,
-  Upload,
-  Sparkles,
-  Play,
-  FolderOpen,
-  Wand2,
-  Layers,
-} from "lucide-react";
+import { Music, Upload, Sparkles, Play, Wand2, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface QuickAction {

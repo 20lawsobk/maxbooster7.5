@@ -18,24 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Trophy,
-  TrendingUp,
-  TrendingDown,
-  Globe,
-  Star,
-  Award,
-  Crown,
-  Target,
-  Users,
-  Music,
-  BarChart3,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { Trophy, TrendingUp, Users, Music, BarChart3, ArrowUp, ArrowDown, Minus, Loader2, RefreshCw } from "lucide-react";
 
 interface PlatformScore {
   platform: string;
@@ -391,7 +374,7 @@ export default function GlobalRankingDashboard({
   const {
     data: rankingResponse,
     isLoading,
-    isError,
+    
     refetch,
   } = useQuery<{
     data: {
@@ -416,8 +399,7 @@ export default function GlobalRankingDashboard({
   const similarArtists: SimilarArtist[] =
     propSimilarArtists || rankingData?.similarArtists || [];
 
-  const avgPlatformScore =
-    platformScores.length > 0
+  platformScores.length > 0
       ? Math.round(
           platformScores.reduce(
             (sum: number, p: PlatformScore) => sum + p.score,

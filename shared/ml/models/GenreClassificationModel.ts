@@ -6,7 +6,7 @@
 
 import * as tf from "@tensorflow/tfjs";
 import { BaseModel } from "./BaseModel.js";
-import type { GenreClassificationResult, AudioFeatures } from "../types.js";
+import type { GenreClassificationResult } from "../types.js";
 
 export const GENRES = [
   "rock",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -26,35 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Sparkles,
-  Play,
-  Pause,
-  TrendingUp,
-  Users,
-  Target,
-  Activity,
-  Brain,
-  Zap,
-  Settings as SettingsIcon,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  DollarSign,
-  BarChart3,
-  Image,
-  Video,
-  Music,
-  FileText,
-  Globe,
-  RefreshCw,
-  Save,
-  RotateCcw,
-  Megaphone,
-  Rocket,
-  Eye,
-  MousePointerClick,
-} from "lucide-react";
+import { Sparkles, Play, Pause, Activity, Brain, Settings as SettingsIcon, Clock, CheckCircle, AlertCircle, Image, Video, Music, FileText, Globe, RefreshCw, Save, RotateCcw, Megaphone } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,

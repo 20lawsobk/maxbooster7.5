@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { Volume2, VolumeX, Mic, Headphones, Plus } from "lucide-react";
+import { useRef, useCallback } from "react";
+import { Mic, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { studioOneTheme } from "@/lib/studioOneTheme";
 import { TouchFader, TouchPanKnob } from "./TouchFader";

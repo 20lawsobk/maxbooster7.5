@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -27,46 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Shield,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Activity,
-  Users,
-  Database,
-  Server,
-  Cpu,
-  HardDrive,
-  Network,
-  Zap,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  RefreshCw,
-  Download,
-  Settings,
-  Eye,
-  Bug,
-  TestTube,
-  FileText,
-  Clock,
-  Star,
-  Award,
-  Target,
-  AlertCircle,
-  Info,
-  CheckSquare,
-  XSquare,
-  MinusSquare,
-  Key,
-  Webhook,
-  Search,
-  Filter,
-  Trash2,
-  RotateCcw,
-  Loader2,
-} from "lucide-react";
+import { Shield, CheckCircle, XCircle, AlertTriangle, Activity, Users, Database, Server, Cpu, HardDrive, Network, Zap, BarChart3, TrendingUp, RefreshCw, Eye, Bug, TestTube, FileText, Clock, Star, Award, Target, AlertCircle, Info, CheckSquare, XSquare, Key, Webhook, Search, Filter, Trash2, RotateCcw, Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user, isLoading: authLoading } = useRequireAdmin();

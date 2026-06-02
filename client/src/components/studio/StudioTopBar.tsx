@@ -25,30 +25,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  MousePointer2,
-  Scissors,
-  Trash2,
-  ZoomIn,
-  ZoomOut,
-  Grid3x3,
-  Settings,
-  Activity,
-  Cpu,
-  Clock,
-  Upload,
-  Save,
-  Plus,
-  FolderOpen,
-  HelpCircle,
-  Undo2,
-  Redo2,
-  Wand2,
-  Disc3,
-  LayoutGrid,
-  Radio,
-  Home,
-} from "lucide-react";
+import { MousePointer2, Scissors, Trash2, ZoomIn, ZoomOut, Settings, Cpu, Clock, Upload, Save, Plus, HelpCircle, Undo2, Redo2, Wand2, Disc3, LayoutGrid, Radio, Home } from "lucide-react";
 
 interface Project {
   id: string;

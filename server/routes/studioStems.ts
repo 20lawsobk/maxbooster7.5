@@ -18,7 +18,6 @@ import { notificationService } from "../services/notificationService.js";
 import { db } from "../db.js";
 import { projects } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { SAMPLE_RATES, BIT_DEPTHS } from "../../shared/audioConstants.js";
 
 const router = Router();
 

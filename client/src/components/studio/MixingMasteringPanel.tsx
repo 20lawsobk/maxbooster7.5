@@ -1,25 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Sliders,
-  Volume2,
-  Activity,
-  BarChart3,
-  Waves,
-  Play,
-  Pause,
-  RotateCcw,
-  Check,
-  X,
-  ChevronDown,
-  Loader2,
-  Sparkles,
-  AlertCircle,
-  ArrowLeftRight,
-  Zap,
-  Target,
-  Gauge,
-} from "lucide-react";
+import { Sliders, Volume2, Loader2, Sparkles, AlertCircle, ArrowLeftRight, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";

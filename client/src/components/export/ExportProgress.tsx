@@ -463,7 +463,7 @@ export function ExportProgressPanel({
     ].includes(j.status),
   );
   const completedJobs = jobs.filter((j) => j.status === "complete");
-  const failedJobs = jobs.filter((j) => j.status === "failed");
+  jobs.filter((j) => j.status === "failed");
 
   const totalProgress =
     activeJobs.length > 0

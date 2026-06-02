@@ -8,7 +8,7 @@ import {
   collaborationAccessRequests,
   studioProjects,
 } from "@shared/schema";
-import { eq, and, desc, isNull } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
@@ -58,34 +58,7 @@ interface PresenceInfo {
   role: "owner" | "editor" | "viewer" | "commenter";
 }
 
-interface Version {
-  id: string;
-  projectId: string;
-  version: number;
-  name: string;
-  description?: string;
-  createdBy: string;
-  createdByName: string;
-  createdAt: Date;
-  size?: number;
-  changes?: string[];
-  isAutoSave?: boolean;
-  isCurrent?: boolean;
-}
 
-interface AccessRequest {
-  id: string;
-  projectId: string;
-  requesterId: string;
-  requesterName: string;
-  requesterEmail: string;
-  requestedAccess: "view" | "edit" | "comment";
-  message?: string;
-  status: "pending" | "approved" | "denied";
-  createdAt: Date;
-  respondedBy?: string;
-  respondedAt?: Date;
-}
 
 // ── Bounded in-memory state ────────────────────────────────────────────────
 // Both Maps are capped and swept so they cannot grow unboundedly.
@@ -876,21 +849,6 @@ const commentSchema = z.object({
   timestamp: z.number().optional(),
 });
 
-interface Comment {
-  id: string;
-  projectId: string;
-  elementId?: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  content: string;
-  parentId?: string;
-  mentions: string[];
-  timestamp?: number;
-  resolved: boolean;
-  createdAt: Date;
-  replies: Comment[];
-}
 
 router.post(
   "/comments",
@@ -1065,7 +1023,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId, elementId, yourVersion, baseVersion } = req.body;
+      const {  elementId, yourVersion, baseVersion } = req.body;
 
       const hasConflict = yourVersion !== baseVersion;
 

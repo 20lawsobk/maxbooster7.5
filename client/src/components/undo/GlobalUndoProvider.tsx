@@ -8,13 +8,7 @@ import React, {
   useRef,
 } from "react";
 import { UndoManager, getUndoManager } from "@/lib/undo/UndoManager";
-import {
-  UndoableAction,
-  UndoState,
-  ActionType,
-  ActionCategory,
-  ActionMetadata,
-} from "@/lib/undo/types";
+import { UndoableAction, UndoState } from "@/lib/undo/types";
 import { UndoToast } from "./UndoToast";
 import { apiRequest } from "@/lib/queryClient";
 

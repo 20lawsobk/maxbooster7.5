@@ -1,9 +1,5 @@
 import http from "http";
-import {
-  LoadTestFramework,
-  ScalabilityTester,
-  ScaleTestResult,
-} from "./loadTestFramework";
+import { ScalabilityTester, ScaleTestResult } from "./loadTestFramework";
 import { logger } from "../../logger.js";
 
 const BASE_URL = "http://localhost:5000";

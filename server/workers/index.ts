@@ -6,15 +6,7 @@ import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService
 import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js";
 import { Resend } from "resend";
 import { logger } from "../logger.js";
-import type {
-  AudioConvertJobData,
-  AudioMixJobData,
-  AudioJobResult,
-  CSVImportJobData,
-  CSVImportResult,
-  AnalyticsJobData,
-  EmailJobData,
-} from "../services/queueService.js";
+import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
 
 const audioService = new AudioService();
 const csvImportService = new RoyaltiesCSVImportService();

@@ -25,10 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useCommandPalette } from "@/contexts/ShortcutContext";
 import { Command } from "@/lib/commands/CommandRegistry";
-import {
-  getPlatformModifiers,
-  formatShortcutKeys,
-} from "@/lib/shortcuts/types";
+import { getPlatformModifiers } from "@/lib/shortcuts/types";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   navigation: ArrowRight,

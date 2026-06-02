@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -32,7 +32,7 @@ import {
   Gift,
   Target,
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -124,7 +124,7 @@ export default function FirstWeekSuccessPath({
     refetchInterval: 30000,
   });
 
-  const completeStepMutation = useMutation({
+  useMutation({
     mutationFn: async (stepId: string) => {
       const response = await apiRequest(
         "POST",

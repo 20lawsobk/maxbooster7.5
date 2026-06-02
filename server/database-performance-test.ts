@@ -1,12 +1,6 @@
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import {
-  users,
-  projects,
-  analytics,
-  releases,
-  earnings,
-} from "../../shared/schema";
+import { projects, analytics, releases, earnings } from "../../shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { logger } from "./logger.js";
 

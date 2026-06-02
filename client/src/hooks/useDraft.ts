@@ -35,8 +35,8 @@ export function useDraft<T = unknown>(
   const {
     formId,
     enabled = true,
-    autoSave = true,
-    autoSaveDelay = 2000,
+    
+    
     expirationMs,
     onSave,
     onRecover,

@@ -117,9 +117,9 @@ export function stripeWebhookMiddleware(
  */
 export function stripeRawBodyParser(
   req: Request,
-  res: Response,
+  _res: Response,
   buf: Buffer,
-  encoding: BufferEncoding,
+  _encoding: BufferEncoding,
 ): void {
   if (req.path === "/api/webhooks/stripe" || req.path.includes("stripe")) {
     (req as Record<string, unknown>).rawBody = buf;

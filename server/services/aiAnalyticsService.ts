@@ -1,26 +1,7 @@
 import { db } from "../db";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
-import {
-  users,
-  analytics,
-  projects,
-  posts,
-  orders,
-  sessions,
-  dspAnalytics,
-} from "@shared/schema";
-import {
-  sql,
-  gte,
-  lte,
-  desc,
-  and,
-  count,
-  sum,
-  avg,
-  eq,
-  isNotNull,
-} from "drizzle-orm";
+import { users, analytics, projects, posts, sessions, dspAnalytics } from "@shared/schema";
+import { sql, gte, lte, desc, and, count, eq, isNotNull } from "drizzle-orm";
 
 interface PredictMetricRequest {
   metric: "streams" | "engagement" | "revenue";
@@ -106,17 +87,6 @@ function calculateStandardDeviation(values: number[]): number {
   return Math.sqrt(variance);
 }
 
-function calculateMovingAverage(values: number[], window: number): number[] {
-  const result: number[] = [];
-  for (let i = 0; i < values.length; i++) {
-    const start = Math.max(0, i - window + 1);
-    const windowValues = values.slice(start, i + 1);
-    const avg =
-      windowValues.reduce((sum, val) => sum + val, 0) / windowValues.length;
-    result.push(avg);
-  }
-  return result;
-}
 
 export async function predictMetric(
   params: PredictMetricRequest,
@@ -341,7 +311,7 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
 }
 
 export async function forecastRevenue(
-  timeframe: string = "30d",
+  _timeframe: string = "30d",
 ): Promise<RevenueForecastResponse> {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

@@ -657,37 +657,8 @@ export const getQueryFn: <T>(options: {
   };
 
 // Enhanced retry logic with exponential backoff
-function retryDelayWithJitter(attemptIndex: number): number {
-  const baseDelay = Math.min(1000 * Math.pow(2, attemptIndex), 30000);
-  const jitter = Math.random() * 1000; // Add up to 1 second of jitter
-  return baseDelay + jitter;
-}
 
 // Determine if error is retryable
-function shouldRetry(error: unknown): boolean {
-  const err = error as Error;
-  // Don't retry on client errors (4xx)
-  if (err?.message?.includes("401") || err?.message?.includes("403")) {
-    return false;
-  }
-  if (err?.message?.match(/4\d{2}/)) {
-    return false;
-  }
-
-  // Don't retry on server errors (5xx) to prevent loading loops
-  if (err?.message?.match(/5\d{2}/)) {
-    return false;
-  }
-
-  // Only retry on network errors and timeouts
-  return (
-    err?.message?.includes("NetworkError") ||
-    err?.message?.includes("fetch") ||
-    err?.message?.includes("timeout") ||
-    err?.name === "NetworkError" ||
-    err?.name === "TimeoutError"
-  );
-}
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({

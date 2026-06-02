@@ -1,21 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Shield,
-  Eye,
-  Edit3,
-  MessageSquare,
-  Check,
-  X,
-  Clock,
-  ArrowUp,
-  ArrowDown,
-  Ban,
-  Send,
-  Loader2,
-  AlertTriangle,
-  UserPlus,
-} from "lucide-react";
+import { Shield, Eye, Edit3, MessageSquare, Check, X, Clock, ArrowUp, ArrowDown, Ban, Send, Loader2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -262,7 +247,7 @@ export function AccessRequestDialog({
     [onDeny, denyReason, onOutcome, toast],
   );
 
-  const handleUpgrade = useCallback(
+  useCallback(
     async (userId: string, userName: string, newLevel: AccessLevel) => {
       if (!onUpgrade) return;
 
@@ -296,7 +281,7 @@ export function AccessRequestDialog({
     [onUpgrade, onOutcome, toast],
   );
 
-  const handleDowngrade = useCallback(
+  useCallback(
     async (userId: string, userName: string, newLevel: AccessLevel) => {
       if (!onDowngrade) return;
 
@@ -330,7 +315,7 @@ export function AccessRequestDialog({
     [onDowngrade, onOutcome, toast],
   );
 
-  const handleRevoke = useCallback(
+  useCallback(
     async (userId: string, userName: string) => {
       if (!onRevoke) return;
 

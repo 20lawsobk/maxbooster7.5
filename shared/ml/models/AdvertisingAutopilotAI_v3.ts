@@ -254,7 +254,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
   private platformAlgorithmModels: Map<string, tf.LayersModel> = new Map(); // Per-platform optimization
   private audienceGraphModel: tf.LayersModel | null = null; // Audience segmentation
   private trustScoringModel: tf.LayersModel | null = null; // Authenticity scoring
-  private contentDistributionModel: tf.LayersModel | null = null; // Multi-platform allocation
+ // Multi-platform allocation
 
   // Training Data
   private campaignHistory: OrganicCampaign[] = [];
@@ -716,7 +716,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
         batchSize: 8,
         validationSplit: 0.2,
         callbacks: {
-          onEpochEnd: (epoch, logs) => {
+          onEpochEnd: (_epoch, logs) => {
             if (logs && logs.val_loss) {
               finalAccuracy = 1 - Math.min(logs.val_loss as number, 0.25);
             }
@@ -1725,7 +1725,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
   // Helper methods...
 
   private extractFeaturesFromContentPlan(plan: any): number[] {
-    const now = new Date();
+    new Date();
     const hourOfDay = plan.scheduledTime.getHours();
     const dayOfWeek = plan.scheduledTime.getDay();
 
@@ -1873,13 +1873,13 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     ];
   }
 
-  private isOptimalPostingTime(hour: number, platforms: string[]): boolean {
+  private isOptimalPostingTime(hour: number, _platforms: string[]): boolean {
     // General optimal hours across platforms: 10-12, 18-20
     return (hour >= 10 && hour <= 12) || (hour >= 18 && hour <= 20);
   }
 
   private calculateOptimalPostingTime(
-    platform: string,
+    _platform: string,
     algo: PlatformAlgorithmModel,
   ): Date {
     const bestHour = algo.optimalTiming.bestHoursOfDay[0] || 12;
@@ -1915,7 +1915,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
 
   private calculatePlatformAlgorithmScore(
     plan: any,
-    platform: string,
+    _platform: string,
     algo: PlatformAlgorithmModel,
   ): number {
     let score = 0.5;
@@ -1989,7 +1989,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
 
   private optimizeForPlatforms(
     platforms: string[],
-    features: number[],
+    _features: number[],
   ): Array<{
     platform: string;
     algorithmScore: number;
@@ -2004,7 +2004,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
       .sort((a, b) => b.algorithmScore - a.algorithmScore);
   }
 
-  private predictAudienceResonance(features: number[]): {
+  private predictAudienceResonance(_features: number[]): {
     primarySegments: string[];
     networkEffect: number;
     influencerLikelihood: number;
@@ -2056,7 +2056,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
   private generateViralRecommendations(
     plan: any,
     viralScore: number,
-    factors: any[],
+    _factors: any[],
   ): string[] {
     const recommendations: string[] = [];
 
@@ -2116,7 +2116,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     return "image";
   }
 
-  private suggestToneOfVoice(plan: any): string {
+  private suggestToneOfVoice(_plan: any): string {
     return "authentic, engaging, inspirational";
   }
 
@@ -2170,7 +2170,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
 
   private getFallbackDistributionPlan(
     platform: string,
-    plan: any,
+    _plan: any,
   ): ContentDistributionPlan {
     return {
       platform,
@@ -2526,7 +2526,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     mediaType: string,
     platform: string,
     adFormat: any,
-    multimodalFeatures?: any,
+    _multimodalFeatures?: any,
   ): any {
     const objectiveTemplates = {
       brand_awareness: {
@@ -2594,7 +2594,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
   private predictAdEngagement(
     mediaType: string,
     platform: string,
-    multimodalFeatures?: any,
+    _multimodalFeatures?: any,
   ): number {
     const baseEngagement = {
       facebook: { text: 150, image: 250, video: 500, audio: 100 },
@@ -2608,8 +2608,8 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
   }
 
   private predictCampaignROI(
-    mediaType: string,
-    platform: string,
+    _mediaType: string,
+    _platform: string,
     reach: number,
     engagement: number,
   ): number {
@@ -2622,7 +2622,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     return Math.min(10, Math.max(0, estimatedRevenue / estimatedCost));
   }
 
-  private generateTargetAudience(platform: string, objective: string): any {
+  private generateTargetAudience(_platform: string, _objective: string): any {
     return {
       demographics: {
         ageRange: "18-45",
@@ -2635,7 +2635,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
 
   private calculateOptimalBudget(
     expectedReach: number,
-    platform: string,
+    _platform: string,
   ): number {
     return Math.round(expectedReach * 0.01); // $0.01 per reach (but it's organic, so $0)
   }
@@ -2651,11 +2651,11 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     return optimalTimes[platform] || "12-3 PM";
   }
 
-  private getOptimalBidStrategy(platform: string, mediaType: string): string {
+  private getOptimalBidStrategy(_platform: string, _mediaType: string): string {
     return "Organic Amplification (No Paid Spend)";
   }
 
-  private getOptimalPlacements(platform: string, mediaType: string): string[] {
+  private getOptimalPlacements(platform: string, _mediaType: string): string[] {
     const placements = {
       facebook: ["Feed", "Stories", "Marketplace"],
       instagram: ["Feed", "Stories", "Reels", "Explore"],

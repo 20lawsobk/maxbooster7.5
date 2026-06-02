@@ -1,34 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  RefreshCw,
-  Clock,
-  Send,
-  Loader2,
-  Wifi,
-  WifiOff,
-  Shield,
-  Key,
-  ExternalLink,
-  Copy,
-  Share2,
-  Calendar,
-  Zap,
-  Timer,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Clock, Loader2, Key, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export type OutcomeStatus =

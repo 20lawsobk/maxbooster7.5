@@ -1,7 +1,6 @@
 // Max Booster 24/7/365 Reliability System
 // Real implementation that actually delivers continuous uptime
 import { EventEmitter } from "events";
-import { spawn, ChildProcess } from "child_process";
 import { reliabilityCoordinator } from "./reliability/reliability-coordinator";
 import { logger } from "./logger.js";
 
@@ -20,7 +19,6 @@ class MaxBooster247System extends EventEmitter {
   private metrics: SystemMetrics;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private memoryCheckInterval: NodeJS.Timeout | null = null;
-  private processRestartAttempts = 0;
   private maxRestartAttempts = 3;
   private startTime = Date.now();
   private isActive = false;

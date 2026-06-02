@@ -1,8 +1,4 @@
-import {
-  transportEngine,
-  MusicalPosition,
-  TransportEngine,
-} from "./TransportEngine";
+import { transportEngine, TransportEngine } from "./TransportEngine";
 
 export interface TimelineEvent {
   id: string;

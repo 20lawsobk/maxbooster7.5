@@ -1,18 +1,5 @@
 import { useState, useMemo } from "react";
-import {
-  History,
-  Undo2,
-  Redo2,
-  Clock,
-  GitBranch,
-  ChevronRight,
-  Filter,
-  Trash2,
-  RefreshCw,
-  Flag,
-  CheckCircle2,
-  X,
-} from "lucide-react";
+import { History, Undo2, Redo2, Clock, GitBranch, ChevronRight, Trash2, RefreshCw, Flag, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +93,7 @@ function TimelineItem({
   compact,
 }: TimelineItemProps) {
   const label = getActionLabel(action);
-  const { module, category, isDestructive, timestamp } = action.metadata;
+  const { module,  isDestructive, timestamp } = action.metadata;
 
   return (
     <div
@@ -201,7 +188,7 @@ export function UndoHistoryPanel({
 }: UndoHistoryPanelProps) {
   const { history, redoStack } = useUndoHistory();
   const { undo, redo, canUndo, canRedo, clearHistory } = useUndoActions();
-  const { getActionById } = useUndo();
+  useUndo();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [moduleFilter, setModuleFilter] = useState<string>("all");

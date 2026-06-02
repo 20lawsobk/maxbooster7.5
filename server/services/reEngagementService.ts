@@ -14,7 +14,7 @@
 
 import { db } from "../db.js";
 import { customerHealthScores, users } from "@shared/schema";
-import { and, lte, gte, isNull, or, sql, eq } from "drizzle-orm";
+import { and, lte, gte, isNull, or, eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { emailService } from "./emailService.js";
 import { withLock } from "../lib/distributedLock.js";

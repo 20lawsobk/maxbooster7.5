@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { eq, and, desc, isNotNull } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db.js";
 import {
   storefronts,
@@ -376,7 +376,7 @@ class AutopilotPublisher {
 
       // Also check license tier BOGOs
       if (recentListings.length > 0) {
-        const listingIds = recentListings.map((l) => l.id);
+        recentListings.map((l) => l.id);
         const bogoTiers = await db
           .select({
             listingId: listingLicenseTiers.listingId,
@@ -946,7 +946,7 @@ class AutopilotPublisher {
    */
   private async calculateNextOptimalPostingTime(
     platform: string,
-    frequency: string,
+    _frequency: string,
     userId?: string,
   ): Promise<Date> {
     const now = new Date();

@@ -21,21 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Volume2,
-  Headphones,
-  Speaker,
-  Layers,
-  Move3d,
-  Box,
-  CircleDot,
-  ArrowUpDown,
-  RotateCcw,
-  Plus,
-  Trash2,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { Headphones, Move3d, Box, CircleDot, RotateCcw, Trash2, Eye, EyeOff } from "lucide-react";
 
 export type SpeakerConfiguration = "stereo" | "5.1" | "7.1" | "9.1.6";
 export type MonitoringMode = "speakers" | "binaural";

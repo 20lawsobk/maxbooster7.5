@@ -215,7 +215,7 @@ export class ContentPatternLearner {
     termFrequency.forEach((docMap, term) => {
       let maxTFIDF = 0;
 
-      docMap.forEach((tf, docIdx) => {
+      docMap.forEach((tf, _docIdx) => {
         const df = documentFrequency.get(term) || 1;
         const idf = Math.log(numDocuments / df);
         const tfidf = tf * idf;

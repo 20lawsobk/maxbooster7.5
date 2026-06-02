@@ -27,7 +27,7 @@ const __metaUrl = (import.meta as Record<string, unknown>)?.url as
 const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
   : resolve(process.argv[1] ?? "");
-const __dirname = dirname(__filename);
+dirname(__filename);
 
 interface ProbeStatus {
   name: string;

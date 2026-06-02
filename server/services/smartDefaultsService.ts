@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { storage } from "../storage";
-import { eq, desc, sql, and, gte } from "drizzle-orm";
+import { eq, desc, and, gte } from "drizzle-orm";
 import { analytics, projects } from "../../shared/schema";
 
 export type ArtistType =
@@ -425,15 +425,15 @@ class SmartDefaultsService {
       .slice(0, 3)
       .map(([genre]) => genre);
 
-    const totalStreams = recentAnalytics.reduce(
+    recentAnalytics.reduce(
       (sum, a) => sum + (a.streams || 0),
       0,
     );
-    const totalRevenue = recentAnalytics.reduce(
+    recentAnalytics.reduce(
       (sum, a) => sum + (a.revenue || 0),
       0,
     );
-    const totalFollowers = recentAnalytics.reduce(
+    recentAnalytics.reduce(
       (sum, a) => sum + (a.followers || 0),
       0,
     );
@@ -776,7 +776,7 @@ class SmartDefaultsService {
 
   private getPlatformOptimalTimes(
     artistType: ArtistType,
-    genres: string[],
+    _genres: string[],
   ): OptimalSchedule["posting"] {
     const baseTimes: Record<
       string,
@@ -886,9 +886,9 @@ class SmartDefaultsService {
   }
 
   async getSmartSchedule(
-    userId: string,
+    _userId: string,
     platform: string,
-    contentType: string,
+    _contentType: string,
   ): Promise<{
     suggestions: {
       id: string;

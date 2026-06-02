@@ -156,7 +156,7 @@ export function StemsManager({ listingId, isOwner }: StemsManagerProps) {
     purchaseStemMutation.mutate(stemId);
   };
 
-  const handlePlayPause = (stemId: string, fileUrl: string) => {
+  const handlePlayPause = (stemId: string, _fileUrl: string) => {
     if (playingStem === stemId) {
       setPlayingStem(null);
     } else {

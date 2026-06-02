@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,7 +117,7 @@ export default function AchievementUnlockToast({
   onViewAll,
 }: AchievementUnlockToastProps) {
   const [showDetails, setShowDetails] = useState(false);
-  const queryClient = useQueryClient();
+  useQueryClient();
   const IconComponent = ICON_MAP[achievement.icon] || Trophy;
   const rarityStyle = RARITY_STYLES[achievement.rarity];
 
@@ -365,7 +365,7 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
   const [currentAchievement, setCurrentAchievement] =
     useState<Achievement | null>(null);
   const [queue, setQueue] = useState<Achievement[]>([]);
-  const queryClient = useQueryClient();
+  useQueryClient();
   const [, navigate] = useLocation();
 
   const { data: achievements = [], isLoading } = useQuery<Achievement[]>({

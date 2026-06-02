@@ -23,7 +23,7 @@ export function setupReliabilityEndpoints(
   requireAuth?: unknown,
 ): void {
   // System health dashboard - comprehensive status
-  app.get("/api/system/health", (req: Request, res: Response) => {
+  app.get("/api/system/health", (_req: Request, res: Response) => {
     try {
       const systemHealth = reliabilityCoordinator.getSystemHealth();
       const uptimeStats = reliabilityCoordinator.getUptimeStats();
@@ -64,10 +64,10 @@ export function setupReliabilityEndpoints(
   });
 
   // External monitoring endpoint - simplified status for monitoring tools
-  app.get("/api/system/status", (req: Request, res: Response) => {
+  app.get("/api/system/status", (_req: Request, res: Response) => {
     try {
       const health = reliabilityCoordinator.getSystemHealth();
-      const uptime = reliabilityCoordinator.getUptimeStats();
+      reliabilityCoordinator.getUptimeStats();
       const maxBoosterHealth = maxBooster247.getHealthSummary();
 
       // Simple response for external monitoring with real metrics
@@ -92,7 +92,7 @@ export function setupReliabilityEndpoints(
   });
 
   // Process monitoring details
-  app.get("/api/system/process", (req: Request, res: Response) => {
+  app.get("/api/system/process", (_req: Request, res: Response) => {
     try {
       const processHealth = processMonitor.getHealth();
       const summary = processMonitor.getHealthSummary();
@@ -116,10 +116,10 @@ export function setupReliabilityEndpoints(
   });
 
   // Memory monitoring details
-  app.get("/api/system/memory", (req: Request, res: Response) => {
+  app.get("/api/system/memory", (_req: Request, res: Response) => {
     try {
       const memorySummary = memoryManager.getMemorySummary();
-      const currentUsage = memoryManager.getCurrentUsage();
+      memoryManager.getCurrentUsage();
       const history = memoryManager.getUsageHistory(60); // Last hour
 
       res.json({
@@ -146,7 +146,7 @@ export function setupReliabilityEndpoints(
   });
 
   // Database monitoring details
-  app.get("/api/system/database", (req: Request, res: Response) => {
+  app.get("/api/system/database", (_req: Request, res: Response) => {
     try {
       const dbHealth = databaseResilience.getHealthMetrics();
       const poolStatus = databaseResilience.getPoolStatus();
@@ -176,11 +176,11 @@ export function setupReliabilityEndpoints(
   // Database query telemetry metrics (authenticated users only for security)
   const metricsHandler = requireAuth
     ? requireAuth
-    : (req: unknown, res: unknown, next: unknown) => next();
+    : (_req: unknown, _res: unknown, next: unknown) => next();
   app.get(
     "/api/system/database/metrics",
     metricsHandler,
-    (req: Request, res: Response) => {
+    (_req: Request, res: Response) => {
       try {
         const metrics = getQueryTelemetry();
 
@@ -284,10 +284,10 @@ export function setupReliabilityEndpoints(
   );
 
   // System metrics for Prometheus/Grafana integration
-  app.get("/api/system/metrics", (req: Request, res: Response) => {
+  app.get("/api/system/metrics", (_req: Request, res: Response) => {
     try {
       const health = reliabilityCoordinator.getSystemHealth();
-      const uptime = reliabilityCoordinator.getUptimeStats();
+      reliabilityCoordinator.getUptimeStats();
 
       // Prometheus-style metrics
       const metrics = [
@@ -371,7 +371,7 @@ export function setupReliabilityEndpoints(
     },
   );
 
-  app.get("/api/health/circuits", (req: Request, res: Response) => {
+  app.get("/api/health/circuits", (_req: Request, res: Response) => {
     try {
       const circuitHealth = getCircuitHealthSummary();
       const retryQueue = getRetryQueue();

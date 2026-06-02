@@ -13,17 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Type,
-  Palette,
-  Sparkles,
-  Music,
-  Upload,
-  X,
-  Check,
-  Wand2,
-  RefreshCw,
-} from "lucide-react";
+import { Type, Palette, Sparkles, Music, Upload, X, Check, Wand2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ColorPalette, AspectRatio } from "@/lib/video/templates";
 import { DEFAULT_PALETTES, ASPECT_RATIOS } from "@/lib/video/templates";

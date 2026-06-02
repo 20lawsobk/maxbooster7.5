@@ -174,7 +174,7 @@ class NotificationDispatcher {
     notificationType: string,
     ctx: PushContext = {},
   ): Promise<{ dispatched: number; totalSent: number }> {
-    const richPayload = buildPushPayload(notificationType, ctx);
+    buildPushPayload(notificationType, ctx);
     let dispatched = 0;
     let totalSent = 0;
 

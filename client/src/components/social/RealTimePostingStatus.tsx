@@ -3,20 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Loader2,
-  Send,
-  Calendar,
-  RefreshCw,
-  ExternalLink,
-  Copy,
-  Share2,
-  Eye,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Clock, Loader2, Send, RefreshCw, ExternalLink, Copy, Share2 } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -463,7 +450,7 @@ export function usePostingStatus() {
     );
   };
 
-  const failPosting = (error: string) => {
+  const failPosting = (_error: string) => {
     setProgress((prev) =>
       prev
         ? {

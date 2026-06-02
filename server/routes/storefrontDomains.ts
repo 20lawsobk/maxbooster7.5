@@ -1,14 +1,7 @@
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
 import dns from "dns";
-import {
-  checkManaged,
-  reserveManaged,
-  requestCustomDomain,
-  verifyCustomDomain,
-  listDomains,
-  deleteDomain,
-} from "../modules/domains/domain.controller.js";
+import { checkManaged, reserveManaged, listDomains, deleteDomain } from "../modules/domains/domain.controller.js";
 import {
   publishStorefront,
   unpublishStorefront,

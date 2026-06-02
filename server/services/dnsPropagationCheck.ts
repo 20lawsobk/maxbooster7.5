@@ -225,7 +225,7 @@ export async function checkDomainSetupPropagation(
   domain: string,
   platformIp: string,
   ns1: string,
-  ns2: string,
+  _ns2: string,
   storefrontId: string,
   baseDomain: string,
 ): Promise<{

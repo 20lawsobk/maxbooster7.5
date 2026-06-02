@@ -227,7 +227,7 @@ export function ForYouFeed() {
               </span>
             </Badge>
           ))}
-          {tasteProfile.topMoods.map((m, i) => (
+          {tasteProfile.topMoods.map((m, _i) => (
             <Badge
               key={m.mood}
               variant="secondary"

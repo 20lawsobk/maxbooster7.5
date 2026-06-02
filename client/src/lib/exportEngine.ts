@@ -16,11 +16,6 @@ import type {
   SampleRate,
   BitDepth,
 } from "../../../shared/audioConstants";
-import {
-  AUDIO_FORMATS,
-  SAMPLE_RATES,
-  BIT_DEPTHS,
-} from "../../../shared/audioConstants";
 
 export interface ExportTrack {
   id: string;

@@ -295,7 +295,6 @@ router.post("/record", async (req: Request, res: Response) => {
       entityType,
       previousState,
       newState,
-      metadata,
     } = req.body;
 
     if (!type || !module || !description) {
@@ -388,7 +387,7 @@ router.post("/batch", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { actions, groupName } = req.body;
+    const { actions } = req.body;
 
     if (!Array.isArray(actions) || actions.length === 0) {
       return res.status(400).json({ error: "Actions array is required" });
@@ -456,7 +455,7 @@ const deletedItemCache = new Map<string, DeletedItem>();
 // Individual per-user caps are enforced inline, but this is the global safety net.
 const MAX_DELETED_ITEMS = 5_000;
 const MAX_RESTORE_POINTS = 10_000;
-const UNDO_ITEM_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+ // 30 days
 
 setInterval(
   () => {

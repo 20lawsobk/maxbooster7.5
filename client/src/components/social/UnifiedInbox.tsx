@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -36,38 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Inbox,
-  Send,
-  Archive,
-  Clock,
-  CheckCircle,
-  Star,
-  StarOff,
-  MoreHorizontal,
-  Search,
-  Filter,
-  User,
-  Users,
-  MessageSquare,
-  Heart,
-  ThumbsUp,
-  ThumbsDown,
-  AlertTriangle,
-  Smile,
-  Meh,
-  Frown,
-  Reply,
-  Forward,
-  Trash2,
-  Eye,
-  EyeOff,
-  Bell,
-  BellOff,
-  Tag,
-  ChevronDown,
-  RefreshCw,
-} from "lucide-react";
+import { Inbox, Send, Archive, Clock, CheckCircle, MoreHorizontal, Search, User, Users, MessageSquare, AlertTriangle, Smile, Meh, Frown, Trash2, Eye, Tag, RefreshCw } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -177,7 +146,7 @@ export function UnifiedInbox() {
   const [showSnoozeDialog, setShowSnoozeDialog] = useState(false);
   const [snoozeUntil, setSnoozeUntil] = useState("");
 
-  const { data: messagesData, isLoading } = useQuery({
+  const { data: messagesData } = useQuery({
     queryKey: ["/api/social/inbox"],
   });
 
@@ -218,13 +187,13 @@ export function UnifiedInbox() {
     ).length,
   };
 
-  const handleSelectAll = (checked: boolean) => {
+  ((checked: boolean) => {
     if (checked) {
       setSelectedMessages(filteredMessages.map((m: Message) => m.id));
     } else {
       setSelectedMessages([]);
     }
-  };
+  });
 
   const handleSelectMessage = (id: string, checked: boolean) => {
     if (checked) {
@@ -254,18 +223,18 @@ export function UnifiedInbox() {
     setReplyContent("");
   };
 
-  const handleUseTemplate = (template: ReplyTemplate) => {
+  ((template: ReplyTemplate) => {
     setReplyContent(template.content);
     setShowTemplates(false);
-  };
+  });
 
-  const handleAssign = (teamMember: TeamMember) => {
+  ((teamMember: TeamMember) => {
     toast({
       title: "Message Assigned",
       description: `Message assigned to ${teamMember.name}`,
     });
     setShowAssignDialog(false);
-  };
+  });
 
   const handleSnooze = () => {
     toast({

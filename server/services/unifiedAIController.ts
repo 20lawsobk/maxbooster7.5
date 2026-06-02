@@ -52,18 +52,7 @@ import {
   type CreativePrediction,
   type ROIForecast,
 } from "../../shared/ml/models/AdOptimizationEngine.js";
-import {
-  SocialAutopilotEngine,
-  type Platform,
-  type ContentType,
-  type BestTimeResult,
-  type ContentTypeRecommendation,
-  type ViralPotentialScore,
-  type EngagementPrediction,
-  type ScheduleOptimization,
-  type HistoricalPost,
-  type AudienceInsights,
-} from "../../shared/ml/models/SocialAutopilotEngine.js";
+import { SocialAutopilotEngine, type Platform, type ContentType, type BestTimeResult, type ContentTypeRecommendation, type ViralPotentialScore, type ScheduleOptimization, type HistoricalPost, type AudienceInsights } from "../../shared/ml/models/SocialAutopilotEngine.js";
 import {
   AdvancedTimeSeriesModel,
   type MetricType,
@@ -1394,7 +1383,7 @@ export class UnifiedAIController {
   }
 
   private async checkServiceHealth(
-    name: string,
+    _name: string,
     healthCheck: () => Promise<unknown>,
   ): Promise<ServiceHealth> {
     const startTime = Date.now();
@@ -1416,7 +1405,7 @@ export class UnifiedAIController {
   }
 
   private checkSyncServiceHealth(
-    name: string,
+    _name: string,
     healthCheck: () => any,
   ): ServiceHealth {
     const startTime = Date.now();

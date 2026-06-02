@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { FileValidator, type ValidationResult } from "./FileValidator";
+import { FileValidator } from "./FileValidator";
 import {
   Upload,
   FileAudio,
@@ -141,7 +141,7 @@ export function FileUploader({
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
   const uploadStartTimeRef = useRef<Map<string, number>>(new Map());
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
 
   const generateFileId = () =>
     `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -191,7 +191,7 @@ export function FileUploader({
     formData.append("mimeType", uploadFile.file.type);
     formData.append("category", category);
 
-    const response = await apiRequest(
+    await apiRequest(
       "POST",
       `${uploadEndpoint}/chunk`,
       formData,

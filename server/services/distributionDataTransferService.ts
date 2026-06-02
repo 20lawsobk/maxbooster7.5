@@ -6,10 +6,6 @@ import {
   CircuitBreaker,
   CircuitBreakerRegistry,
 } from "../services/circuitBreaker";
-import {
-  labelGridService,
-  type LabelGridCatalogRelease,
-} from "./labelgrid-service";
 import { DISTRIBUTION_PLATFORMS } from "../seed/distributionPlatforms.js";
 
 // ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
@@ -424,11 +420,6 @@ const importedReleaseSchema = z.object({
   originalDistributor: z.string(),
 });
 
-function deterministicNumber(seed: string, max: number): number {
-  const hash = createHash("sha256").update(seed).digest("hex");
-  const value = parseInt(hash.substring(0, 8), 16);
-  return value % max;
-}
 
 class DistributionDataTransferService {
   private jobs: Map<string, DataTransferJob> = new Map();
@@ -588,7 +579,6 @@ class DistributionDataTransferService {
     csvContent: string,
     distributor: string,
   ): Promise<ImportedRelease[]> {
-    const releases: ImportedRelease[] = [];
     const lines = csvContent.split("\n").filter((line) => line.trim());
 
     if (lines.length < 2) {

@@ -1,23 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  createBuffer,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  CombFilter,
-  LFO,
-  Oscillator,
-  ADSR,
-  msToSamples,
-  dbToLinear,
-  clamp,
-  softClip,
-  hzToRadians,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, LFO, Oscillator, ADSR, msToSamples, clamp, softClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -28,7 +9,6 @@ export interface SynthesizerEngine {
 }
 
 class BowModel {
-  private position: number = 0;
   private velocity: number = 0;
   private pressure: number = 0.5;
   private friction: number = 0;
@@ -65,7 +45,6 @@ class StringModel {
     sampleRate: number,
     damping: number = 0.3,
   ): void {
-    const period = sampleRate / frequency;
     this.lpFilter.setLowpass(frequency * 3, sampleRate);
     this.feedback = 0.998 - damping * 0.01;
   }
@@ -156,7 +135,7 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
     const octaveOffsets = [0, 0, 0, -1];
     this.sections.forEach((section, sIdx) => {
       const baseFreq = frequency * Math.pow(2, octaveOffsets[sIdx]);
-      section.oscillators.forEach((osc, i) => {
+      section.oscillators.forEach((osc, _i) => {
         const detune = 1 + (Math.random() - 0.5) * 0.004;
         osc.setFrequency(baseFreq * detune, context.sampleRate);
       });
@@ -171,7 +150,7 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
     });
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.sections.forEach((section) => section.envelope.release());
   }
 
@@ -298,7 +277,7 @@ export class ViolinSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -406,7 +385,7 @@ export class CelloSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -512,7 +491,7 @@ export class ContrabassSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -616,7 +595,7 @@ export class ViolaSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -743,7 +722,7 @@ export class StringQuartetSynth implements SynthesizerEngine {
     });
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.instruments.forEach((inst) => inst.envelope.release());
   }
 
@@ -883,7 +862,7 @@ export class CinematicStringsSynth implements SynthesizerEngine {
     });
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.layers.forEach((layer) => layer.envelope.release());
   }
 
@@ -1012,7 +991,7 @@ export class PizzicatoStringsSynth implements SynthesizerEngine {
     this.bodyEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.pluckEnvelope.release();
     this.bodyEnvelope.release();
   }
@@ -1120,7 +1099,7 @@ export class TremoloStringsSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -1226,7 +1205,7 @@ export class SynthStringsSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }

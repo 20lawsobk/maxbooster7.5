@@ -27,66 +27,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  ComposedChart,
-  Area,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from "recharts";
-import {
-  Sparkles,
-  Wand2,
-  Image,
-  Type,
-  MousePointerClick,
-  TrendingUp,
-  Trophy,
-  RefreshCw,
-  Copy,
-  CheckCircle,
-  AlertCircle,
-  Play,
-  Pause,
-  BarChart3,
-  Target,
-  Zap,
-  Eye,
-  Layers,
-  Settings,
-  Plus,
-  Trash2,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  Brain,
-  Shuffle,
-  Crown,
-  Medal,
-  Award,
-  Rocket,
-  Activity,
-  Users,
-  DollarSign,
-  Lightbulb,
-  FlaskConical,
-  GitBranch,
-  RotateCcw,
-  ThumbsUp,
-  ThumbsDown,
-} from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
+import { Sparkles, Wand2, Type, MousePointerClick, TrendingUp, Trophy, RefreshCw, Copy, CheckCircle, AlertCircle, Play, Pause, BarChart3, Target, Eye, Layers, Settings, Plus, Clock, Brain, Crown, Rocket, Activity, DollarSign, Lightbulb, FlaskConical, GitBranch, RotateCcw, ThumbsUp, ThumbsDown } from "lucide-react";
 
 interface CreativeVariant {
   id: string;
@@ -223,11 +165,10 @@ export function CreativeAutomation() {
     confidence: { label: "Confidence", color: "#8b5cf6" },
   };
 
-  const totalImpressions = variants.reduce((acc, v) => acc + v.impressions, 0);
-  const totalConversions = variants.reduce((acc, v) => acc + v.conversions, 0);
+  variants.reduce((acc, v) => acc + v.impressions, 0);
+  variants.reduce((acc, v) => acc + v.conversions, 0);
   const totalRevenue = variants.reduce((acc, v) => acc + v.revenue, 0);
-  const avgCTR =
-    variants.length > 0
+  variants.length > 0
       ? variants.reduce((acc, v) => acc + v.ctr, 0) / variants.length
       : 0;
 

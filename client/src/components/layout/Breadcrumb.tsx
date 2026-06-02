@@ -136,7 +136,7 @@ export function BreadcrumbTrail() {
       <BreadcrumbList>
         {/* Desktop view - show all breadcrumbs */}
         <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-1.5">
-          {breadcrumbs.map((item, index) => (
+          {breadcrumbs.map((item, _index) => (
             <div key={item.href} className="inline-flex items-center gap-1.5">
               <BreadcrumbItem>
                 {item.isLast ? (
@@ -201,7 +201,7 @@ export function BreadcrumbTrail() {
             </>
           ) : (
             <>
-              {mobileItems.map((item, index) => (
+              {mobileItems.map((item, _index) => (
                 <div
                   key={item.href}
                   className="inline-flex items-center gap-1.5"

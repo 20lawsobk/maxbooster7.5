@@ -36,7 +36,7 @@ const endSessionSchema = z.object({
   sessionId: z.string().min(1).max(200).optional(),
 });
 
-router.get("/welcome", (req: Request, res: Response) => {
+router.get("/welcome", (_req: Request, res: Response) => {
   try {
     const response = aiHelpDeskService.getWelcomeMessage();
     res.json({
@@ -141,7 +141,7 @@ router.post("/end", (req: Request, res: Response) => {
   }
 });
 
-router.get("/info", (req: Request, res: Response) => {
+router.get("/info", (_req: Request, res: Response) => {
   try {
     res.json({
       success: true,

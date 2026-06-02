@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useState, useEffect } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
@@ -26,80 +26,19 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import {
-  SkeletonCard,
-  SkeletonDashboardStats,
-  SkeletonChart,
-  SkeletonList,
-} from "@/components/ui/skeleton-loader";
+import { SkeletonCard, SkeletonChart, SkeletonList } from "@/components/ui/skeleton-loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Play,
-  DollarSign,
-  Music,
-  Users,
-  TrendingUp,
-  Clock,
-  Upload,
-  Sparkles,
-  Activity,
-  BarChart3,
-  Share2,
-  Megaphone,
-  Zap,
-  Brain,
-  Rocket,
-  Crown,
-  Target,
-  Eye,
-  MousePointerClick,
-  Globe,
-  Calendar,
-  Award,
-  Star,
-  Heart,
-  Headphones,
-  Radio,
-  Tv,
-  Smartphone,
-  Laptop,
-  Monitor,
-  TrendingDown,
-  ArrowUp,
-  ArrowDown,
-  Plus,
-  Settings,
-  Bell,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  Lightbulb,
-  Shield,
-  Lock,
-  Unlock,
-} from "lucide-react";
+import { DollarSign, Music, TrendingUp, Upload, Sparkles, Activity, Zap, Brain, Rocket, Crown, Globe, Calendar, ArrowUp, ArrowDown, Plus, AlertTriangle, CheckCircle, Info, Lightbulb, Lock } from "lucide-react";
 import { useLocation } from "wouter";
 
-interface DashboardStats {
-  totalTracks: number;
-  activeDistributions: number;
-  totalRevenue: number;
-  socialReach: number;
-  monthlyGrowth: {
-    tracks: number;
-    distributions: number;
-    revenue: number;
-    socialReach: number;
-  };
-}
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useRequireSubscription();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useToast();
+  useQueryClient();
 
   // Show loading skeleton during auth check to prevent flickering
   if (authLoading) {
@@ -243,7 +182,7 @@ function DashboardContent({ user }: { user: Record<string, unknown> }) {
   }, [onboardingStatus]);
 
   // Fetch comprehensive dashboard data - now only called when user is authenticated
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
+  const { data: dashboardData } = useQuery({
     queryKey: ["/api/dashboard/comprehensive"],
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
@@ -257,7 +196,7 @@ function DashboardContent({ user }: { user: Record<string, unknown> }) {
 
   const projects = (projectsData as Record<string, unknown>)?.data || [];
 
-  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+  useQuery({
     queryKey: ["/api/analytics/dashboard"],
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });

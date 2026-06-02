@@ -10,24 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Play,
-  Pause,
-  Square,
-  Grid,
-  Music,
-  Pencil,
-  Eraser,
-  ZoomIn,
-  ZoomOut,
-  Scissors,
-  Copy,
-  Trash2,
-  Activity,
-  Waves,
-  ArrowUpDown,
-  Settings2,
-} from "lucide-react";
+import { Pencil, Eraser, ZoomIn, ZoomOut, Scissors, Trash2, Activity, Settings2 } from "lucide-react";
 
 interface MPEExpressionPoint {
   time: number;
@@ -135,7 +118,7 @@ export function PianoRoll({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const expressionCanvasRef = useRef<HTMLCanvasElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const playheadRef = useRef<HTMLDivElement>(null);
+  useRef<HTMLDivElement>(null);
 
   const beatsPerPixel = 0.1 / (zoom / 100);
   const visibleBeats = 64;
@@ -156,7 +139,7 @@ export function PianoRoll({
   };
 
   const allocateMPEChannel = useCallback(
-    (pitch: number): number => {
+    (_pitch: number): number => {
       if (!mpeEnabled || !mpeZoneConfig.enabled) return 1;
 
       const usedChannels = new Set(
@@ -503,7 +486,6 @@ export function PianoRoll({
           const y = baseY + NOTE_HEIGHT / 2 - pitchOffset;
 
           const pressure = getPressureValue(note, t);
-          const alpha = 0.3 + pressure * 0.7;
 
           if (i === 0) {
             ctx.moveTo(x, y);
@@ -743,7 +725,6 @@ export function PianoRoll({
     notes.forEach((note) => {
       if (note.id === editingExpressionNote) return;
 
-      const noteStartX = note.startTime / beatsPerPixel;
 
       laneTypes.forEach((laneType, laneIndex) => {
         const laneY = laneIndex * EXPRESSION_LANE_HEIGHT;

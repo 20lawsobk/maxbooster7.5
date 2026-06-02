@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
@@ -33,30 +33,7 @@ import {
   type MasteringSong,
 } from "@/lib/studioStore";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Disc3,
-  Music,
-  Play,
-  Pause,
-  Plus,
-  Trash2,
-  GripVertical,
-  Volume2,
-  Activity,
-  Download,
-  Upload,
-  Loader2,
-  RefreshCw,
-  AlertTriangle,
-  Check,
-  Clock,
-  Sliders,
-  AudioWaveform,
-  Gauge,
-  FileAudio,
-  Settings2,
-  Sparkles,
-} from "lucide-react";
+import { Disc3, Music, Play, Pause, Plus, Trash2, GripVertical, Volume2, Activity, Download, Loader2, RefreshCw, AudioWaveform, Gauge, Settings2, Sparkles } from "lucide-react";
 
 interface ProjectPageProps {
   isOpen: boolean;
@@ -109,12 +86,6 @@ function getLoudnessColor(lufs: number): string {
   return "#22c55e";
 }
 
-function getLoudnessLabel(lufs: number): string {
-  if (lufs >= -6) return "Too Loud";
-  if (lufs >= -9) return "Hot";
-  if (lufs >= -12) return "Optimal";
-  return "Safe";
-}
 
 function MockWaveform({
   color = "#3b82f6",
@@ -141,30 +112,6 @@ function MockWaveform({
   );
 }
 
-function LoudnessMeter({ value, target }: { value: number; target: number }) {
-  const percentage = Math.min(100, Math.max(0, ((value + 24) / 24) * 100));
-  const targetPercentage = Math.min(
-    100,
-    Math.max(0, ((target + 24) / 24) * 100),
-  );
-  const color = getLoudnessColor(value);
-
-  return (
-    <div className="relative w-full h-4 rounded-full bg-muted overflow-hidden">
-      <div
-        className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-        style={{ width: `${percentage}%`, backgroundColor: color }}
-      />
-      <div
-        className="absolute inset-y-0 w-0.5 bg-white/80"
-        style={{ left: `${targetPercentage}%` }}
-      />
-      <div className="absolute inset-0 flex items-center justify-center text-xs font-mono font-medium text-white mix-blend-difference">
-        {value.toFixed(1)} LUFS
-      </div>
-    </div>
-  );
-}
 
 function SongRow({
   song,
@@ -335,13 +282,13 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
   const {
     masteringProjects,
     activeMasteringProjectId,
-    isMasteringProcessing,
+    
     createMasteringProject,
-    deleteMasteringProject,
+    
     setActiveMasteringProject,
     addSongToProject,
     removeSongFromProject,
-    reorderSongs,
+    
     updateMasteringSettings,
     updateMasteringSong,
     setMasteringProcessing,

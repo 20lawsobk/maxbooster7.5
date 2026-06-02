@@ -1,6 +1,6 @@
 import { logger } from "@/lib/logger";
-import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -33,21 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  FolderOpen,
-  Plus,
-  Search,
-  Clock,
-  Music,
-  ChevronDown,
-  Loader2,
-  Star,
-  Trash2,
-  Copy,
-  MoreVertical,
-  FileAudio,
-  Save,
-} from "lucide-react";
+import { FolderOpen, Plus, Search, ChevronDown, Loader2, Trash2, Copy, MoreVertical, FileAudio, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

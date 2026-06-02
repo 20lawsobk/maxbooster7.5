@@ -140,8 +140,6 @@ export function useScreenReaderAnnouncer(
         warning: message || "Warning",
       };
 
-      const priority: AnnouncementPriority =
-        status === "error" ? "assertive" : "polite";
       const fullMessage = statusMessages[status] || message || "";
 
       if (status === "error") {

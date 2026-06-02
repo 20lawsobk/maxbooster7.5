@@ -69,7 +69,7 @@ const OAUTH_ERROR_MESSAGES: Record<
 };
 
 export default function Login() {
-  const { user: authUser, isLoading: authLoading } =
+  const {  isLoading: authLoading } =
     useRedirectIfAuthenticated();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -279,7 +279,6 @@ export default function Login() {
       queryClient.setQueryData(["/api/auth/me"], data);
       navigate(redirectAfterLogin);
     } catch (error: unknown) {
-      const err = error as Error;
       toast({
         title: "Connection Error",
         description:

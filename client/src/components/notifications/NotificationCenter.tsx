@@ -1,34 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import {
-  Bell,
-  BellRing,
-  Check,
-  CheckCheck,
-  Settings,
-  X,
-  Trash2,
-  Filter,
-  Loader2,
-  Shield,
-  Music2,
-  MessageSquare,
-  ShoppingBag,
-  DollarSign,
-  Users,
-  Megaphone,
-  BellOff,
-  Volume2,
-  VolumeX,
-  Trophy,
-  LayoutDashboard,
-  Heart,
-  Flame,
-  FileText,
-  BarChart2,
-  MapPin,
-} from "lucide-react";
+import { Bell, BellRing, CheckCheck, Settings, Trash2, Loader2, Shield, Music2, MessageSquare, ShoppingBag, DollarSign, Users, Megaphone, Trophy, LayoutDashboard, Heart, Flame, FileText, BarChart2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,14 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -55,16 +21,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { logger } from "@/lib/logger";
 import { NotificationItem } from "./NotificationItem";
 import { NotificationBadge } from "./NotificationBadge";
-import {
-  NotificationToast,
-  NotificationToastContainer,
-} from "./NotificationToast";
-import type {
-  Notification,
-  NotificationCategory,
-  NotificationPreferences,
-  NotificationOutcome,
-} from "./types";
+import { NotificationToastContainer } from "./NotificationToast";
+import type { Notification, NotificationCategory, NotificationPreferences } from "./types";
 import { categoryConfig, typeToCategory } from "./types";
 
 type TabFilter = "all" | "unread" | NotificationCategory;
@@ -188,7 +146,6 @@ export function NotificationCenter() {
   const {
     data: notifications = [],
     isLoading,
-    refetch,
   } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
     refetchInterval: isConnected ? false : 30000,

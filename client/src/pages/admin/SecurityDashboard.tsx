@@ -14,24 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
-import {
-  Shield,
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  Eye,
-  Clock,
-  TrendingUp,
-  Target,
-  Loader2,
-  AlertCircle,
-  RefreshCw,
-  Download,
-  Server,
-  Users,
-  Lock,
-} from "lucide-react";
+import { Shield, Activity, AlertTriangle, CheckCircle2, XCircle, Eye, Clock, Target, Loader2, AlertCircle, RefreshCw, Download, Server, Users, Lock } from "lucide-react";
 
 interface SecurityMetrics {
   systemHealth: {

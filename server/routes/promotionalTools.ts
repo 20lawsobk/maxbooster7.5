@@ -233,7 +233,7 @@ router.get("/promo-cards", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/promo-cards/templates", async (req: Request, res: Response) => {
+router.get("/promo-cards/templates", async (_req: Request, res: Response) => {
   try {
     res.json(promotionalToolsService.getPromoCardTemplates());
   } catch (error) {

@@ -125,7 +125,7 @@ router.get("/info", (_req, res) => {
  * Returns health status, region, and metrics for multi-region monitoring.
  */
 router.get("/health", (_req, res) => {
-  const info = getDNSInfo();
+  getDNSInfo();
   res.json({
     ok: true,
     region: process.env.REGION_NAME || "default",

@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Cpu, Snowflake } from "lucide-react";
+import { Cpu } from "lucide-react";
 
 interface PerformanceMonitorProps {
   cpuUsage: number;

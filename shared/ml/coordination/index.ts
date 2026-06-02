@@ -8,19 +8,10 @@ export * from "./SocialMediaRuleEngine.js";
 export * from "./AdvertisingRuleEngine.js";
 export * from "./FeatureStore.js";
 
-import {
-  autopilotCoordinator,
-  AutopilotCoordinator,
-} from "./AutopilotCoordinator.js";
-import {
-  socialMediaRuleEngine,
-  SocialMediaRuleEngine,
-} from "./SocialMediaRuleEngine.js";
-import {
-  advertisingRuleEngine,
-  AdvertisingRuleEngine,
-} from "./AdvertisingRuleEngine.js";
-import { featureStore, FeatureStore } from "./FeatureStore.js";
+import { autopilotCoordinator } from "./AutopilotCoordinator.js";
+import { socialMediaRuleEngine } from "./SocialMediaRuleEngine.js";
+import { advertisingRuleEngine } from "./AdvertisingRuleEngine.js";
+import { featureStore } from "./FeatureStore.js";
 
 export const coordination = {
   autopilotCoordinator,

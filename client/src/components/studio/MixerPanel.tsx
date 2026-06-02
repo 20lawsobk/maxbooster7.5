@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,7 +41,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import AudioEngine from "@/lib/audioEngine";
 import { useToast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ProfessionalFader } from "./ProfessionalFader";
 import { Knob } from "./Knob";
 import { VUMeter } from "./VUMeter";
@@ -157,7 +157,7 @@ export function MixerPanel({
   onBusAssign,
 }: MixerPanelProps) {
   const { toast } = useToast();
-  const { frozenTracks, isTrackFrozen } = useStudioStore();
+  const {  isTrackFrozen } = useStudioStore();
   const [masterVolume, setMasterVolume] = useState(0.8);
   const [trackEffects, setTrackEffects] = useState<
     Record<string, TrackEffects>

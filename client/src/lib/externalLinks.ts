@@ -6,8 +6,6 @@ import { logger } from "@/lib/logger";
  */
 
 // URL validation regex
-const URL_PATTERN =
-  /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
 
 // Allowed URL schemes for security
 const ALLOWED_SCHEMES = ["http:", "https:", "mailto:", "tel:"];

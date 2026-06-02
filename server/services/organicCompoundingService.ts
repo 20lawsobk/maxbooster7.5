@@ -1,20 +1,7 @@
 import { randomBytes } from "crypto";
 import { db } from "../db.js";
-import {
-  organicAssets,
-  organicChannels,
-  organicRoiSnapshots,
-  organicAssetLifetime,
-  type OrganicAsset,
-  type OrganicChannel,
-  type OrganicRoiSnapshot,
-  type OrganicAssetLifetimeRecord,
-  type InsertOrganicAsset,
-  type InsertOrganicChannel,
-  type InsertOrganicRoiSnapshot,
-  type InsertOrganicAssetLifetime,
-} from "@shared/schema";
-import { eq, and, gte, desc, sql, lte } from "drizzle-orm";
+import { organicAssets, organicChannels, organicRoiSnapshots, organicAssetLifetime, type OrganicAsset, type OrganicChannel, type OrganicRoiSnapshot, type OrganicAssetLifetimeRecord, type InsertOrganicAsset, type InsertOrganicChannel } from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 interface AssetPerformance {
@@ -161,7 +148,7 @@ class OrganicCompoundingService {
   }
 
   proposeCandidateAssets(
-    userId: string,
+    _userId: string,
     existingAssets: OrganicAsset[],
     channels: OrganicChannel[],
   ): AssetCandidate[] {
@@ -449,7 +436,7 @@ class OrganicCompoundingService {
   }
 
   selectBestChannelsForAsset(
-    assetId: string,
+    _assetId: string,
     channels: OrganicChannel[],
   ): OrganicChannel[] {
     try {
@@ -883,8 +870,6 @@ class OrganicCompoundingService {
 
       return assets
         .sort((a, b) => {
-          const perfA = a.performance as AssetPerformance | null;
-          const perfB = b.performance as AssetPerformance | null;
           const roiA = this.calculateQuickRoi(a);
           const roiB = this.calculateQuickRoi(b);
           return roiB - roiA;

@@ -2,20 +2,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  FileAudio,
-  FileImage,
-  FileVideo,
-  File,
-  Shield,
-  HardDrive,
-  Ruler,
-  FileType,
-  Loader2,
-} from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, FileAudio, File, Shield, HardDrive, Ruler, FileType, Loader2 } from "lucide-react";
 
 export interface ValidationOptions {
   maxSize?: number;
@@ -69,12 +56,6 @@ const DEFAULT_IMAGE_FORMATS = [
   "image/svg+xml",
 ];
 
-const DEFAULT_VIDEO_FORMATS = [
-  "video/mp4",
-  "video/webm",
-  "video/ogg",
-  "video/quicktime",
-];
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";

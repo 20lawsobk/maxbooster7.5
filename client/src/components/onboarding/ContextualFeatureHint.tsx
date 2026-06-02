@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Sparkles, Lightbulb, Zap } from "lucide-react";
@@ -116,7 +116,7 @@ export default function ContextualFeatureHint({
       );
       return { previousData };
     },
-    onError: (err, featureId, context) => {
+    onError: (_err, _featureId, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(
           ["/api/users/seen-features"],

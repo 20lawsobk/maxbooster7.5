@@ -17,7 +17,7 @@ router.use(requireAdmin);
  */
 router.get(
   "/dashboard",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const [queueHealth, aiMetrics, dashboard] = await Promise.all([
         queueMonitor.getHealthStatus(),
@@ -144,7 +144,7 @@ router.get(
  */
 router.get(
   "/health-summary",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const queueHealth = await queueMonitor.getHealthStatus();
 

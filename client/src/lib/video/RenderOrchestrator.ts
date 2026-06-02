@@ -1,34 +1,13 @@
 import { logger } from "../logger";
-import type {
-  VideoProject,
-  LayerConfig,
-  TransformConfig,
-  Keyframe,
-  RenderProgress,
-  BackgroundConfig,
-  VisualizerConfig,
-  TextConfig,
-  ImageConfig,
-  ShapeConfig,
-  ParticleConfig,
-} from "../../../../shared/video/VideoRendererEngine";
-import {
-  DEFAULT_TRANSFORM,
-  interpolateValue,
-  interpolateColor,
-  EASING_FUNCTIONS,
-} from "../../../../shared/video/VideoRendererEngine";
-import { Scene, Layer, getEasingFunction, type EasingName } from "./SceneGraph";
+import type { VideoProject, LayerConfig, TransformConfig, RenderProgress, BackgroundConfig, VisualizerConfig, TextConfig, ImageConfig, ShapeConfig, ParticleConfig } from "../../../../shared/video/VideoRendererEngine";
+import { DEFAULT_TRANSFORM } from "../../../../shared/video/VideoRendererEngine";
+import { Scene, Layer, type EasingName } from "./SceneGraph";
 import {
   AudioAnalyzer,
   generateMockAudioData,
   type AudioAnalysisData,
 } from "./AudioAnalyzer";
-import {
-  TextAnimator,
-  type TextStyle,
-  type AnimationConfig as TextAnimationConfig,
-} from "./TextAnimator";
+import { TextAnimator, type TextStyle } from "./TextAnimator";
 import { LyricEngine } from "./LyricEngine";
 import { SpectrumVisualizer } from "./visualizers/SpectrumVisualizer";
 import { WaveformVisualizer } from "./visualizers/WaveformVisualizer";
@@ -309,7 +288,7 @@ export class RenderOrchestrator {
   }
 
   private async loadImage(layerId: string, src: string): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
 
@@ -622,7 +601,7 @@ export class RenderOrchestrator {
     return gradient;
   }
 
-  private renderText(config: LayerConfig, time: number): void {
+  private renderText(config: LayerConfig, _time: number): void {
     const textConfig = config.config as TextConfig;
     const transform = config.transform || DEFAULT_TRANSFORM;
 
@@ -896,7 +875,7 @@ export class RenderOrchestrator {
     frameNumber: number,
     timestamp: number,
   ) => void {
-    return (canvas, frameNumber, timestamp) => {
+    return (canvas, _frameNumber, timestamp) => {
       this.renderFrame(timestamp);
 
       const targetCtx = canvas.getContext("2d");

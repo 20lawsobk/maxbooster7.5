@@ -314,8 +314,7 @@ export class BrandVoiceAnalyzer {
 
     const exclamationRatio =
       posts.filter((p) => p.includes("!")).length / Math.max(posts.length, 1);
-    const questionRatio =
-      posts.filter((p) => p.includes("?")).length / Math.max(posts.length, 1);
+    posts.filter((p) => p.includes("?")).length / Math.max(posts.length, 1);
 
     const isFormal =
       avgSentenceLength > 15 &&
@@ -678,7 +677,7 @@ export class BrandVoiceAnalyzer {
     if (posts.length >= 5) {
       const perPostScores = posts.map((post) => {
         const postText = post.toLowerCase();
-        const postTokens = this.tokenize(postText);
+        this.tokenize(postText);
         let topScore = 0;
         for (const [archetype, config] of Object.entries(ARTIST_ARCHETYPES)) {
           let s = 0;

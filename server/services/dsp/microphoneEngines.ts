@@ -1,21 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  CombFilter,
-  EnvelopeFollower,
-  LFO,
-  msToSamples,
-  dbToLinear,
-  linearToDb,
-  clamp,
-  softClip,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, EnvelopeFollower, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
 
 export class U87ModelerProcessor implements DSPProcessor {
   private hpFilterL: BiquadFilter;
@@ -52,7 +35,7 @@ export class U87ModelerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -174,7 +157,7 @@ export class C414ModelerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -317,7 +300,7 @@ export class SM7BModelerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -451,7 +434,7 @@ export class RibbonModelerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -591,7 +574,7 @@ export class SM58ModelerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -627,7 +610,6 @@ export class SM58ModelerProcessor implements DSPProcessor {
     this.grillEffectL.setLowpass(grillCutoff, this.sampleRate);
     this.grillEffectR.setLowpass(grillCutoff, this.sampleRate);
 
-    const feedbackNotch = 1000 + feedback * 30;
     const outGainLin = dbToLinear(outputGain);
 
     for (let i = 0; i < input.samples[0].length; i++) {
@@ -716,7 +698,7 @@ export class MicPreampProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -868,7 +850,7 @@ export class RoomSimProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -1003,7 +985,6 @@ export class MicIsolatorProcessor implements DSPProcessor {
     this.lpFilterL = new BiquadFilter();
     this.lpFilterR = new BiquadFilter();
 
-    const bandFreqs = [100, 250, 500, 1000, 2000, 4000, 8000, 12000];
     for (let i = 0; i < 8; i++) {
       this.noiseBands.push(new BiquadFilter());
       this.bandEnvelopes.push(new EnvelopeFollower(20, 150, 44100));
@@ -1013,7 +994,7 @@ export class MicIsolatorProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -1024,7 +1005,6 @@ export class MicIsolatorProcessor implements DSPProcessor {
     const release = (params.release as number) ?? 150;
     const hpFreq = (params.hpFreq as number) ?? 80;
     const lpFreq = (params.lpFreq as number) ?? 16000;
-    const lookahead = (params.lookahead as boolean) ?? false;
     const spectralMode = (params.spectral as boolean) ?? false;
     const mix = (params.mix as number) ?? 1;
 
@@ -1133,7 +1113,7 @@ export class PlosiveReducerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -1277,7 +1257,7 @@ export class ChannelStripProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;

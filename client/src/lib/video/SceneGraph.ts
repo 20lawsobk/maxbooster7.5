@@ -1,10 +1,4 @@
-import type {
-  LayerConfig,
-  TransformConfig,
-  AnimationConfig,
-  VideoProject,
-  Keyframe,
-} from "../../../../shared/video/VideoRendererEngine";
+import type { LayerConfig, TransformConfig, VideoProject, Keyframe } from "../../../../shared/video/VideoRendererEngine";
 import {
   DEFAULT_TRANSFORM,
   EASING_FUNCTIONS,
@@ -206,7 +200,6 @@ function cubicBezier(t: number, p1: number, p2: number): number {
   const t3 = t2 * t;
   const mt = 1 - t;
   const mt2 = mt * mt;
-  const mt3 = mt2 * mt;
 
   return 3 * mt2 * t * p1 + 3 * mt * t2 * p2 + t3;
 }
@@ -976,7 +969,6 @@ export interface SceneData {
 export class Timeline {
   private scenes: Map<string, Scene> = new Map();
   private currentSceneId: string | null = null;
-  private globalTime: number = 0;
   private markers: TimelineMarker[] = [];
 
   addScene(scene: Scene): void {

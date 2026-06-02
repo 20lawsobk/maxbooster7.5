@@ -1,4 +1,4 @@
-import { Router, Request, Response, RequestHandler } from "express";
+import { Router, Request, Response } from "express";
 import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 import { users } from "@shared/schema";

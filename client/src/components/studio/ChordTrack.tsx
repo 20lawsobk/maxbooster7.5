@@ -44,11 +44,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import {
-  useStudioStore,
-  formatChord,
-  type ChordDisplayMode,
-} from "@/lib/studioStore";
+import { useStudioStore, formatChord } from "@/lib/studioStore";
 
 export interface Chord {
   id: string;
@@ -80,20 +76,6 @@ const CHORD_ROOTS = [
   "G#",
   "A",
   "A#",
-  "B",
-];
-const CHORD_ROOTS_FLAT = [
-  "C",
-  "Db",
-  "D",
-  "Eb",
-  "E",
-  "F",
-  "Gb",
-  "G",
-  "Ab",
-  "A",
-  "Bb",
   "B",
 ];
 
@@ -261,7 +243,7 @@ export function ChordTrack({
     currentTime,
     snapEnabled,
     snapResolution,
-    zoom,
+    
     projectKey,
     chordDisplayMode,
   } = useStudioStore();
@@ -302,7 +284,7 @@ export function ChordTrack({
     [duration],
   );
 
-  const timeToPixels = useCallback(
+  useCallback(
     (time: number): number => {
       if (!timelineRef.current) return 0;
       const width = timelineRef.current.offsetWidth;

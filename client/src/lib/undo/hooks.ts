@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useUndo } from "@/contexts/UndoContext";
 import {
   UndoableAction,
@@ -71,7 +71,7 @@ export function useUndoableDelete<T>(
   entityType: string,
   deleteFn: (id: string) => Promise<T>,
   restoreFn: (id: string, data: T) => Promise<void>,
-  getDescription?: (id: string) => string,
+  _getDescription?: (id: string) => string,
 ) {
   return useUndoableAction<T, [string]>(
     {

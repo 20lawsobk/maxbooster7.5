@@ -26,69 +26,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  ComposedChart,
-  Area,
-  ScatterChart,
-  Scatter,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Treemap,
-} from "recharts";
-import {
-  GitBranch,
-  Target,
-  Eye,
-  MousePointerClick,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Zap,
-  Clock,
-  Calendar,
-  BarChart3,
-  PieChartIcon,
-  ArrowRight,
-  CheckCircle,
-  Users,
-  Activity,
-  Settings,
-  RefreshCw,
-  Layers,
-  Share2,
-  Filter,
-  Info,
-  Globe,
-  Smartphone,
-  Monitor,
-  Mail,
-  Search,
-  Megaphone,
-  Radio,
-  Video,
-  ShoppingCart,
-  ArrowUpRight,
-  ArrowDownRight,
-  Brain,
-  Lightbulb,
-  AlertCircle,
-  Network,
-  GitMerge,
-  Workflow,
-} from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ComposedChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
+import { GitBranch, Target, DollarSign, TrendingUp, Clock, BarChart3, ArrowRight, CheckCircle, Activity, Settings, RefreshCw, Layers, Share2, Info, Smartphone, Monitor, Video, ArrowUpRight, ArrowDownRight, Brain, Lightbulb, AlertCircle, Network, GitMerge, Workflow } from "lucide-react";
 
 type AttributionModel =
   | "first-touch"
@@ -123,13 +62,6 @@ interface ConversionPath {
   avgTouchpoints: number;
 }
 
-interface ChannelComparison {
-  channel: string;
-  currentModel: number;
-  previousModel: number;
-  change: number;
-  direction: "up" | "down" | "stable";
-}
 
 const COLORS = [
   "#3b82f6",
@@ -496,7 +428,7 @@ export function CrossChannelAttribution() {
                   label={({ name, value }) => `${name}: ${value}%`}
                   labelLine
                 >
-                  {chartData.map((entry, index) => (
+                  {chartData.map((_entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -544,7 +476,7 @@ export function CrossChannelAttribution() {
                     </tr>
                   </thead>
                   <tbody>
-                    {channelData.map((channel, idx) => (
+                    {channelData.map((channel, _idx) => (
                       <tr
                         key={channel.channel}
                         className="border-b hover:bg-muted/50"
@@ -1012,7 +944,7 @@ export function CrossChannelAttribution() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {channelData.slice(0, 5).map((channel, idx) => {
+                {channelData.slice(0, 5).map((channel, _idx) => {
                   const primaryValue = getModelValue(channel);
                   const comparisonValue = getComparisonValue(channel);
                   const change = primaryValue - comparisonValue;

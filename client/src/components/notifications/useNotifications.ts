@@ -75,7 +75,7 @@ export function useNotifications() {
       );
       return { previousNotifications };
     },
-    onError: (err, id, context) => {
+    onError: (_err, _id, context) => {
       queryClient.setQueryData(
         ["/api/notifications"],
         context?.previousNotifications,
@@ -109,7 +109,7 @@ export function useNotifications() {
     onSuccess: () => {
       toast({ title: "All notifications marked as read" });
     },
-    onError: (err, vars, context) => {
+    onError: (_err, _vars, context) => {
       queryClient.setQueryData(
         ["/api/notifications"],
         context?.previousNotifications,
@@ -143,7 +143,7 @@ export function useNotifications() {
     onSuccess: () => {
       toast({ title: "Notification deleted" });
     },
-    onError: (err, id, context) => {
+    onError: (_err, _id, context) => {
       queryClient.setQueryData(
         ["/api/notifications"],
         context?.previousNotifications,
@@ -174,7 +174,7 @@ export function useNotifications() {
     onSuccess: () => {
       toast({ title: "All notifications cleared" });
     },
-    onError: (err, vars, context) => {
+    onError: (_err, _vars, context) => {
       queryClient.setQueryData(
         ["/api/notifications"],
         context?.previousNotifications,

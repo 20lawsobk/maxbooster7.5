@@ -1,30 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Users,
-  UserPlus,
-  UserMinus,
-  Cloud,
-  CloudOff,
-  Check,
-  X,
-  AlertTriangle,
-  Loader2,
-  GitBranch,
-  GitMerge,
-  Save,
-  RefreshCw,
-  MessageSquare,
-  Wifi,
-  WifiOff,
-  Lock,
-  Unlock,
-  Eye,
-  Edit3,
-  Crown,
-  Bell,
-  BellOff,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { Users, UserPlus, UserMinus, Cloud, CloudOff, Check, AlertTriangle, Loader2, GitBranch, GitMerge, Save, RefreshCw, Lock, Unlock, Eye, Edit3, Crown, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -94,18 +70,6 @@ interface CollaborationOutcomesProps {
   className?: string;
 }
 
-const COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#f43f5e",
-  "#06b6d4",
-];
 
 export function CollaborationOutcomes({
   projectId,

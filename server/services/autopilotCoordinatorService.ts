@@ -288,8 +288,8 @@ class AutopilotCoordinatorService extends EventEmitter {
 
   getNextAvailableSlot(
     userId: string,
-    autopilotType: AutopilotType,
-    platform: string,
+    _autopilotType: AutopilotType,
+    _platform: string,
     preferredTime?: Date,
   ): AvailableSlot {
     const schedule = this.scheduleQueue.get(userId) || [];

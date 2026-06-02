@@ -718,7 +718,6 @@ const GENRE_PRESETS: Record<MasteringGenre, GenrePreset> = {
 
 export class IntelligentMasteringEngine {
   private sampleRate: number;
-  private readonly defaultSampleRate = 44100;
 
   constructor(sampleRate: number = 44100) {
     this.sampleRate = sampleRate;
@@ -1117,7 +1116,7 @@ export class IntelligentMasteringEngine {
   }
 
   private detectIssues(
-    spectral: SpectralFeatures,
+    _spectral: SpectralFeatures,
     dynamics: DynamicFeatures,
     currentLUFS: number,
     stereoWidth: number,

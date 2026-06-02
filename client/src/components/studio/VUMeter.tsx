@@ -31,7 +31,7 @@ export function VUMeter({
     damping: 15,
   });
 
-  const needleRotation = useTransform(springLevel, [-60, 0, 3], [-45, 0, 45]);
+  useTransform(springLevel, [-60, 0, 3], [-45, 0, 45]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

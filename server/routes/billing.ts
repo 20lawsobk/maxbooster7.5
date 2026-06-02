@@ -56,7 +56,7 @@ const stripe = stripeSecretKey
   : null;
 
 const requireStripe = (
-  req: Request,
+  _req: Request,
   res: Response,
   next: Record<string, unknown>,
 ) => {
@@ -283,7 +283,7 @@ const PLAN_BENEFITS = {
   },
 };
 
-router.get("/plans", async (req: Request, res: Response) => {
+router.get("/plans", async (_req: Request, res: Response) => {
   try {
     res.json({
       plans: [

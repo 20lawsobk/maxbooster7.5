@@ -27,31 +27,7 @@ import { eq, and } from "drizzle-orm";
 import { db } from "../db.js";
 import { storefrontDomains, dnsZoneRecords, dnsZones } from "@shared/schema";
 import { logger } from "../logger.js";
-import {
-  getOrCreateKeys,
-  makeDS,
-  makeDnskeyData,
-  signRRset,
-  buildNSEC3,
-  buildTypeBitmap,
-  zoneSalt,
-  encodeNameWire,
-  nsec3Rdata,
-  nsec3ParamRdata,
-  NSEC3_ITERATIONS,
-  RRTYPE_A,
-  RRTYPE_NS,
-  RRTYPE_SOA,
-  RRTYPE_MX,
-  RRTYPE_TXT,
-  RRTYPE_AAAA,
-  RRTYPE_DNSKEY,
-  RRTYPE_DS,
-  RRTYPE_RRSIG,
-  RRTYPE_NSEC3,
-  RRTYPE_NSEC3PAR,
-  RRTYPE_CAA,
-} from "./dnssec.js";
+import { getOrCreateKeys, makeDS, makeDnskeyData, signRRset, zoneSalt, encodeNameWire, nsec3ParamRdata, NSEC3_ITERATIONS, RRTYPE_DNSKEY, RRTYPE_DS } from "./dnssec.js";
 import { resolveGeoIP, getGeoDnsStatus } from "./geoDns.js";
 import {
   resolveRecursive,
@@ -854,65 +830,6 @@ function skipNameOffset(buf: Buffer, offset: number): number {
 }
 
 /** Convert a dns2 answer record's payload to raw RDATA Buffer for DNSSEC signing. */
-function recordToRdata(rr: Record<string, unknown>): Buffer | null {
-  try {
-    switch (rr.type) {
-      case 1: {
-        // A
-        const parts = (rr.address as string).split(".").map(Number);
-        return Buffer.from(parts);
-      }
-      case 28: {
-        // AAAA
-        const addr = rr.address as string;
-        const groups = expandIPv6Full(addr);
-        const buf = Buffer.alloc(16);
-        for (let i = 0; i < 8; i++) buf.writeUInt16BE(groups[i], i * 2);
-        return buf;
-      }
-      case 2: {
-        // NS
-        return encodeNameWire(rr.ns);
-      }
-      case 5: {
-        // CNAME
-        return encodeNameWire(rr.domain);
-      }
-      case 6: {
-        // SOA
-        const mname = encodeNameWire(rr.primary);
-        const rname = encodeNameWire(rr.admin);
-        const rest = Buffer.alloc(20);
-        rest.writeUInt32BE(rr.serial, 0);
-        rest.writeUInt32BE(rr.refresh, 4);
-        rest.writeUInt32BE(rr.retry, 8);
-        rest.writeUInt32BE(rr.expiration, 12);
-        rest.writeUInt32BE(rr.minimum, 16);
-        return Buffer.concat([mname, rname, rest]);
-      }
-      case 15: {
-        // MX
-        const prio = Buffer.alloc(2);
-        prio.writeUInt16BE(rr.priority ?? 10, 0);
-        return Buffer.concat([
-          prio,
-          encodeNameWire(rr.exchange ?? rr.value ?? ""),
-        ]);
-      }
-      case 16: {
-        // TXT
-        const str = Buffer.from(rr.data ?? rr.value ?? "");
-        const len = Buffer.alloc(1);
-        len[0] = str.length;
-        return Buffer.concat([len, str]);
-      }
-      default:
-        return null;
-    }
-  } catch {
-    return null;
-  }
-}
 
 function expandIPv6Full(addr: string): number[] {
   if (addr.includes("::")) {
@@ -1107,21 +1024,13 @@ async function buildNsec3ParamResponse(
   queryBuf: Buffer,
   zone: string,
 ): Promise<DohQueryResult> {
-  const dnsPacket = (await import("dns-packet")).default;
+  ((await import("dns-packet")).default);
   const txId = parseTxId(queryBuf);
   const salt = zoneSalt(zone);
 
   const rdata = nsec3ParamRdata(salt, NSEC3_ITERATIONS);
-  const keys = await getOrCreateKeys(zone);
+  await getOrCreateKeys(zone);
 
-  const answers: Record<string, unknown>[] = [
-    {
-      type: "UNKNOWN_51",
-      name: zone,
-      ttl: TTL_SOA,
-      data: { type: 51, data: rdata },
-    },
-  ];
 
   // For now return as raw — dns-packet may not support NSEC3PARAM natively
   // So we build the wire format manually

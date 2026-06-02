@@ -217,8 +217,8 @@ class DSPAnalyticsService {
   async fetchSpotifyAnalytics(
     userId: string,
     _credentials: PlatformCredentials,
-    startDate: Date,
-    endDate: Date,
+    _startDate: Date,
+    _endDate: Date,
   ): Promise<SpotifyArtistAnalytics | null> {
     try {
       logger.info(
@@ -307,8 +307,8 @@ class DSPAnalyticsService {
   async fetchAppleMusicAnalytics(
     userId: string,
     credentials: PlatformCredentials,
-    startDate: Date,
-    endDate: Date,
+    _startDate: Date,
+    _endDate: Date,
   ): Promise<AppleMusicAnalytics | null> {
     if (!credentials.accessToken) {
       logger.info(
@@ -416,8 +416,8 @@ class DSPAnalyticsService {
   async fetchAmazonMusicAnalytics(
     userId: string,
     credentials: PlatformCredentials,
-    startDate: Date,
-    endDate: Date,
+    _startDate: Date,
+    _endDate: Date,
   ): Promise<AmazonMusicAnalytics | null> {
     if (!credentials.accessToken) {
       logger.info(
@@ -727,12 +727,7 @@ class DSPAnalyticsService {
         : 0;
     const skips =
       data.views > 0 ? Math.floor(data.views * (1 - completionRate)) : 0;
-    const engagementRate =
-      data.views > 0
-        ? ((data.likes + data.comments + data.shares) / data.views) * 100
-        : 0;
-    const virality =
-      data.views > 0
+    data.views > 0
         ? Math.min(1, (data.shares / Math.max(data.views, 1)) * 50)
         : 0;
     return {
@@ -774,8 +769,6 @@ class DSPAnalyticsService {
     const totalViews = data.reelsViews + data.storiesViews;
     const totalEngagements =
       data.likes + data.comments + data.shares + data.saves;
-    const engagementRate =
-      data.reach > 0 ? (totalEngagements / data.reach) * 100 : 0;
     const skipRate = 0.35;
     const completionRate = Math.max(0, Math.min(1, 1 - skipRate));
     return {

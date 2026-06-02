@@ -1,17 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db, pool } from "../db.js";
-import {
-  users,
-  projects,
-  releases,
-  analytics,
-  posts,
-  orders,
-  systemSettings,
-  platformRoyaltyRates,
-  taxTreatyRates,
-  labelSettings,
-} from "../../shared/schema.js";
+import { users, projects, releases, analytics, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { killSwitch } from "../safety/killSwitch.js";
@@ -398,7 +387,7 @@ adminRouter.post("/subscriptions/lifetime", async (req, res) => {
   }
 });
 
-adminRouter.get("/system-health", async (req, res) => {
+adminRouter.get("/system-health", async (_req, res) => {
   try {
     const memUsage = process.memoryUsage();
     const uptime = process.uptime();
@@ -687,7 +676,7 @@ adminRouter.post("/moderation/users/:userId/ban", async (req, res) => {
   }
 });
 
-adminRouter.get("/analytics", async (req, res) => {
+adminRouter.get("/analytics", async (_req, res) => {
   try {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -855,10 +844,10 @@ adminRouter.get("/analytics", async (req, res) => {
   }
 });
 
-adminRouter.get("/metrics", async (req, res) => {
+adminRouter.get("/metrics", async (_req, res) => {
   try {
     const memUsage = process.memoryUsage();
-    const uptime = process.uptime();
+    process.uptime();
 
     const [activeUsersResult] = await db
       .select({ count: count() })
@@ -895,7 +884,7 @@ adminRouter.get("/metrics", async (req, res) => {
   }
 });
 
-adminRouter.get("/settings", async (req, res) => {
+adminRouter.get("/settings", async (_req, res) => {
   try {
     const settings = await db
       .select()
@@ -982,7 +971,7 @@ adminRouter.post("/settings/registration", async (req, res) => {
   }
 });
 
-adminRouter.get("/activity", async (req, res) => {
+adminRouter.get("/activity", async (_req, res) => {
   try {
     const recentUsers = await db
       .select({
@@ -1076,7 +1065,7 @@ function formatUptime(seconds: number): string {
 // ============================================================================
 
 // GET /api/admin/financial-config/royalty-rates
-adminRouter.get("/financial-config/royalty-rates", async (req, res) => {
+adminRouter.get("/financial-config/royalty-rates", async (_req, res) => {
   try {
     const rates = await db
       .select()
@@ -1119,7 +1108,7 @@ adminRouter.patch("/financial-config/royalty-rates/:id", async (req, res) => {
 });
 
 // GET /api/admin/financial-config/tax-treaties
-adminRouter.get("/financial-config/tax-treaties", async (req, res) => {
+adminRouter.get("/financial-config/tax-treaties", async (_req, res) => {
   try {
     const treaties = await db
       .select()
@@ -1162,7 +1151,7 @@ adminRouter.patch("/financial-config/tax-treaties/:id", async (req, res) => {
 });
 
 // GET /api/admin/financial-config/label-settings
-adminRouter.get("/financial-config/label-settings", async (req, res) => {
+adminRouter.get("/financial-config/label-settings", async (_req, res) => {
   try {
     const settings = await db
       .select()

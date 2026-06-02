@@ -1,36 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Volume2,
-  VolumeX,
-  Headphones,
-  MoreVertical,
-  ChevronDown,
-  ChevronUp,
-  Plus,
-  Settings,
-  Sliders,
-  Cable,
-  ArrowRight,
-  Power,
-  Layers,
-} from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Plus, Sliders, ArrowRight, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -113,7 +85,7 @@ export function FlowStateMixerPro({
   selectedChannelId,
   onSelectChannel,
 }: FlowStateMixerProProps) {
-  const { toast } = useToast();
+  useToast();
   const [showSends, setShowSends] = useState(true);
   const [showEQ, setShowEQ] = useState(false);
   const [showInserts, setShowInserts] = useState(false);
@@ -334,7 +306,7 @@ function ChannelStrip({
               <Power className="h-2.5 w-2.5" />
             </button>
           </div>
-          {["Low", "Mid", "High"].map((band, i) => {
+          {["Low", "Mid", "High"].map((band, _i) => {
             const key = `eq${band}` as "eqLow" | "eqMid" | "eqHigh";
             return (
               <div key={band} className="flex items-center gap-1">

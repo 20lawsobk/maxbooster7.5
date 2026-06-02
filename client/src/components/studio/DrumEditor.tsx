@@ -14,22 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Play,
-  Pause,
-  Square,
-  Copy,
-  ClipboardPaste,
-  Trash2,
-  Volume2,
-  Drum,
-  Grid3X3,
-  Shuffle,
-  ChevronLeft,
-  ChevronRight,
-  RotateCcw,
-  Zap,
-} from "lucide-react";
+import { Play, Pause, Square, Copy, ClipboardPaste, Trash2, Volume2, Drum, Shuffle, ChevronLeft, ChevronRight, RotateCcw, Zap } from "lucide-react";
 
 interface DrumHit {
   id: string;
@@ -405,7 +390,6 @@ export function DrumEditor({
 
     for (let row = 0; row < selectedKit.sounds.length; row++) {
       const y = row * ROW_HEIGHT;
-      const sound = selectedKit.sounds[row];
       const isSelected = selectedDrumIndex === row;
 
       ctx.fillStyle = isSelected
@@ -527,7 +511,7 @@ export function DrumEditor({
         pastePattern();
       } else if (e.key === "Delete" || e.key === "Backspace") {
         if (selectedDrumIndex !== null) {
-          const hitsToRemove = pattern.hits.filter(
+          pattern.hits.filter(
             (h) => h.drumIndex === selectedDrumIndex,
           );
           updatePattern({

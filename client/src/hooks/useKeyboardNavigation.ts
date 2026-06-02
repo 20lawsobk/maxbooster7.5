@@ -33,7 +33,7 @@ export interface UseKeyboardNavigationResult<T extends HTMLElement> {
 }
 
 export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
-  itemCount: number,
+  _itemCount: number,
   options: UseKeyboardNavigationOptions = {},
 ): UseKeyboardNavigationResult<T> {
   const {

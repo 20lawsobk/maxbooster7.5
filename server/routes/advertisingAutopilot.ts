@@ -7,7 +7,7 @@ import { aiModelManager } from "../services/aiModelManager.js";
 import { MaxCoreAIClient } from "../services/unifiedAIController.js";
 import { db } from "../db";
 import { adCampaigns } from "@shared/schema";
-import { eq, count, sum, avg, gt, desc, and, isNotNull } from "drizzle-orm";
+import { eq, count, gt, desc, and, isNotNull } from "drizzle-orm";
 
 const router = Router();
 

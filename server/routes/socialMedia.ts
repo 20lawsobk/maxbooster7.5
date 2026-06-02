@@ -6,29 +6,8 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { logger } from "../logger";
 import { db } from "../db";
-import {
-  socialInboxMessages,
-  socialMentions,
-  socialKeywords,
-  socialAccounts,
-  posts,
-  storefronts,
-  listings,
-  socialAutopilotContent,
-  artistProfiles,
-  campaigns,
-  contentCalendar,
-} from "@shared/schema";
-import {
-  eq,
-  and,
-  desc,
-  gte,
-  or,
-  inArray,
-  isNull,
-  isNotNull,
-} from "drizzle-orm";
+import { socialInboxMessages, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar } from "@shared/schema";
+import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
@@ -107,13 +86,6 @@ async function getUnifiedAI() {
     _unifiedAIController = m.unifiedAIController;
   }
   return _unifiedAIController!;
-}
-async function getContentQuality() {
-  if (!_contentQualityPipeline) {
-    const m = await import("../services/contentQualityPipeline.js");
-    _contentQualityPipeline = m.contentQualityPipeline;
-  }
-  return _contentQualityPipeline!;
 }
 async function getCompetitorBenchmark() {
   if (!_competitorBenchmarkService) {
@@ -1721,7 +1693,7 @@ router.post(
 router.get(
   "/inbox/templates",
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (_req: AuthenticatedRequest, res: Response) => {
     try {
       res.status(500).json({ error: "Internal server error" });
     } catch (error) {
@@ -1735,7 +1707,7 @@ router.get(
 router.get(
   "/inbox/team",
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (_req: AuthenticatedRequest, res: Response) => {
     try {
       res.status(500).json({ error: "Internal server error" });
     } catch (error) {
@@ -1789,10 +1761,6 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { startDate, endDate } = req.query as {
-        startDate?: string;
-        endDate?: string;
-      };
 
       // Scheduled social posts (includes autopilot-created posts with status 'pending')
       const scheduledPosts = await db
@@ -2138,7 +2106,6 @@ router.post(
         }
       }
 
-      const hasVariations = generatedContent.length > 1;
       const hasHashtags = generatedContent.some(
         (c) => c.hashtags && c.hashtags.length > 0,
       );
@@ -2275,248 +2242,6 @@ function assertSafeExternalUrl(raw: string): void {
 }
 
 // Helper function to fetch and extract metadata from any URL
-async function extractUrlMetadata(url: string): Promise<{
-  title: string;
-  description: string;
-  type: string;
-  contentType: string;
-}> {
-  // Guard against SSRF: reject private/loopback/metadata addresses before fetching.
-  assertSafeExternalUrl(url);
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; MaxBooster/1.0)",
-        Accept: "text/html,application/xhtml+xml",
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    const html = await response.text();
-
-    // Extract Open Graph and meta tags
-    const ogTitleMatch = html.match(
-      /<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i,
-    );
-    const ogDescMatch = html.match(
-      /<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i,
-    );
-    const ogTypeMatch = html.match(
-      /<meta[^>]*property=["']og:type["'][^>]*content=["']([^"']+)["']/i,
-    );
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const descMatch = html.match(
-      /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i,
-    );
-
-    const title = ogTitleMatch?.[1] || titleMatch?.[1] || "";
-    const description = ogDescMatch?.[1] || descMatch?.[1] || "";
-    const ogType = ogTypeMatch?.[1] || "";
-
-    // Determine content type based on URL patterns and og:type
-    let type = "website";
-    let contentType = "promotional";
-
-    const urlLower = url.toLowerCase();
-
-    // Playlists
-    if (
-      urlLower.includes("playlist") ||
-      urlLower.includes("/playlists/") ||
-      urlLower.includes("open.spotify.com/playlist")
-    ) {
-      type = "playlist";
-      contentType = "engagement";
-    }
-    // Podcasts
-    else if (
-      urlLower.includes("podcasts.apple.com") ||
-      urlLower.includes("anchor.fm") ||
-      urlLower.includes("spotify.com/show") ||
-      urlLower.includes("spotify.com/episode") ||
-      urlLower.includes("podbean") ||
-      urlLower.includes("buzzsprout") ||
-      urlLower.includes("transistor.fm") ||
-      urlLower.includes("overcast.fm") ||
-      urlLower.includes("castbox") ||
-      urlLower.includes("pocketcasts")
-    ) {
-      type = "podcast";
-      contentType = "announcement";
-    }
-    // Livestreams
-    else if (
-      urlLower.includes("twitch.tv") ||
-      urlLower.includes("kick.com") ||
-      urlLower.includes("live.") ||
-      urlLower.includes("/live") ||
-      urlLower.includes("livestream")
-    ) {
-      type = "livestream";
-      contentType = "announcement";
-    }
-    // Music platforms
-    else if (
-      urlLower.includes("spotify") ||
-      urlLower.includes("apple.com/music") ||
-      urlLower.includes("soundcloud") ||
-      urlLower.includes("tidal") ||
-      urlLower.includes("deezer") ||
-      urlLower.includes("bandcamp")
-    ) {
-      type = "music";
-      contentType = "release";
-    }
-    // Video platforms
-    else if (
-      urlLower.includes("youtube") ||
-      urlLower.includes("youtu.be") ||
-      urlLower.includes("vimeo") ||
-      urlLower.includes("tiktok")
-    ) {
-      type = "video";
-      contentType = "release";
-    }
-    // Crowdfunding
-    else if (
-      urlLower.includes("kickstarter") ||
-      urlLower.includes("indiegogo") ||
-      urlLower.includes("gofundme") ||
-      urlLower.includes("patreon") ||
-      urlLower.includes("buymeacoffee") ||
-      urlLower.includes("ko-fi")
-    ) {
-      type = "crowdfunding";
-      contentType = "promotional";
-    }
-    // Merch / physical products
-    else if (
-      urlLower.includes("merch") ||
-      urlLower.includes("merchbar") ||
-      urlLower.includes("bonfire.com") ||
-      urlLower.includes("printful") ||
-      urlLower.includes("teespring") ||
-      urlLower.includes("redbubble")
-    ) {
-      type = "merch";
-      contentType = "promotional";
-    }
-    // Press / Media features
-    else if (
-      urlLower.includes("press") ||
-      urlLower.includes("pitchfork") ||
-      urlLower.includes("billboard") ||
-      urlLower.includes("rollingstone") ||
-      urlLower.includes("complex.com") ||
-      urlLower.includes("hypebeast") ||
-      urlLower.includes("hotnewhiphop") ||
-      urlLower.includes("interview")
-    ) {
-      type = "press";
-      contentType = "announcement";
-    }
-    // NFTs / Web3
-    else if (
-      urlLower.includes("opensea") ||
-      urlLower.includes("rarible") ||
-      urlLower.includes("foundation.app") ||
-      urlLower.includes("nft") ||
-      urlLower.includes("mint") ||
-      urlLower.includes("zora.co")
-    ) {
-      type = "nft";
-      contentType = "promotional";
-    }
-    // Portfolios / personal websites
-    else if (
-      urlLower.includes("linktr.ee") ||
-      urlLower.includes("bio.link") ||
-      urlLower.includes("carrd.co") ||
-      urlLower.includes("about.me") ||
-      urlLower.includes("portfolio") ||
-      urlLower.includes("linkin.bio")
-    ) {
-      type = "portfolio";
-      contentType = "engagement";
-    }
-    // Collaboration / features
-    else if (
-      urlLower.includes("feat") ||
-      urlLower.includes("collab") ||
-      urlLower.includes("splice.com")
-    ) {
-      type = "collaboration";
-      contentType = "announcement";
-    }
-    // Education / tutorials
-    else if (
-      urlLower.includes("udemy") ||
-      urlLower.includes("skillshare") ||
-      urlLower.includes("masterclass") ||
-      urlLower.includes("coursera") ||
-      urlLower.includes("tutorial") ||
-      urlLower.includes("lesson")
-    ) {
-      type = "education";
-      contentType = "engagement";
-    }
-    // News/articles
-    else if (
-      ogType.includes("article") ||
-      urlLower.includes("/blog") ||
-      urlLower.includes("/news") ||
-      urlLower.includes("/article")
-    ) {
-      type = "article";
-      contentType = "announcement";
-    }
-    // E-commerce/products
-    else if (
-      ogType.includes("product") ||
-      urlLower.includes("/product") ||
-      urlLower.includes("/shop") ||
-      urlLower.includes("/store")
-    ) {
-      type = "product";
-      contentType = "promotional";
-    }
-    // Events
-    else if (
-      urlLower.includes("event") ||
-      urlLower.includes("ticket") ||
-      urlLower.includes("concert") ||
-      urlLower.includes("tour")
-    ) {
-      type = "event";
-      contentType = "announcement";
-    }
-    // Social profiles
-    else if (
-      urlLower.includes("instagram.com") ||
-      urlLower.includes("twitter.com") ||
-      urlLower.includes("facebook.com") ||
-      urlLower.includes("linkedin.com")
-    ) {
-      type = "social";
-      contentType = "engagement";
-    }
-
-    return {
-      title: title.trim().substring(0, 200),
-      description: description.trim().substring(0, 500),
-      type,
-      contentType,
-    };
-  } catch (error) {
-    logger.warn({ err: error }, "Failed to fetch URL metadata:");
-    return {
-      title: "",
-      description: "",
-      type: "website",
-      contentType: "promotional",
-    };
-  }
-}
 
 // Generate content from any URL (websites, music, videos, articles, products, etc.)
 router.post(
@@ -3214,7 +2939,7 @@ router.post(
         template,
         duration,
         bg_color,
-        text_color,
+        
         accent_color,
         artist_name,
         topic,
@@ -4385,21 +4110,20 @@ router.post(
         topic,
         platform,
         tone,
-        goal,
+        
         artist_name,
-        style,
+        
         // URL analysis context
         artist,
         track,
         genre,
-        thumbnail_url,
+        
         keywords,
         description,
         urlDescription,
         artistName,
         trackTitle,
         urlContentType,
-        contentCategory,
       } = req.body;
 
       if (!topic) {

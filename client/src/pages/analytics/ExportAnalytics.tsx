@@ -1,6 +1,6 @@
 import { useState, useCallback, memo } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -14,13 +14,6 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Download,
   FileText,
@@ -361,7 +354,7 @@ export function ExportAnalytics({
         setExportProgress(0);
       }, 3000);
     },
-    onError: (error) => {
+    onError: (_error) => {
       setExportStatus("error");
       toast({
         variant: "destructive",

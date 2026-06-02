@@ -1,19 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  EnvelopeFollower,
-  DelayLine,
-  LFO,
-  msToSamples,
-  dbToLinear,
-  linearToDb,
-  clamp,
-  softClip,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
 
 export class GateProcessor implements DSPProcessor {
   private envelope: number = 0;
@@ -27,7 +12,7 @@ export class GateProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -54,8 +39,6 @@ export class GateProcessor implements DSPProcessor {
 
       this.envelope = this.envelope * 0.9995 + inputLevel * 0.0005;
 
-      const openThreshold =
-        this.gateState === "closed" ? thresholdLin : hysteresisLin;
 
       if (inputLevel > thresholdLin) {
         this.gateState = "open";
@@ -118,7 +101,7 @@ export class ExpanderProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -131,8 +114,8 @@ export class ExpanderProcessor implements DSPProcessor {
     const range = (params.range as number) ?? -40;
     const mix = (params.mix as number) ?? 1;
 
-    const thresholdLin = dbToLinear(threshold);
-    const rangeLin = dbToLinear(range);
+    dbToLinear(threshold);
+    dbToLinear(range);
     const attackCoeff = Math.exp(-1 / msToSamples(attackMs, this.sampleRate));
     const releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, this.sampleRate));
     const kneeWidth = knee / 2;
@@ -190,7 +173,7 @@ export class DeEsserProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -275,7 +258,7 @@ export class TransientShaperProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -355,7 +338,7 @@ export class EnvelopeFollowerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -424,7 +407,7 @@ export class DuckerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -432,7 +415,6 @@ export class DuckerProcessor implements DSPProcessor {
     const threshold = (params.threshold as number) ?? -20;
     const range = (params.range as number) ?? -20;
     const attackMs = (params.attack as number) ?? 5;
-    const holdMs = (params.hold as number) ?? 100;
     const releaseMs = (params.release as number) ?? 200;
     const ducking = (params.ducking as number) ?? 100;
     const mix = (params.mix as number) ?? 1;
@@ -496,7 +478,7 @@ export class LimiterProProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -596,7 +578,7 @@ export class MaximizerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;
@@ -678,7 +660,7 @@ export class LevelerProcessor implements DSPProcessor {
   process(
     input: AudioBuffer,
     params: Record<string, number | boolean | string>,
-    context: DSPContext,
+    _context: DSPContext,
   ): AudioBuffer {
     const output = copyBuffer(input);
     this.sampleRate = input.sampleRate;

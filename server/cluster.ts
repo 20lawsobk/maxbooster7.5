@@ -160,7 +160,7 @@ const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
   : path.resolve(process.argv[1] ?? "");
 const __dirname = path.dirname(__filename);
-const require = createRequire(__metaUrl ?? "file://" + __filename);
+createRequire(__metaUrl ?? "file://" + __filename);
 
 // Clustering requires either:
 //   1. REPLIT_DEPLOYMENT is set (actual Autoscale deployment), OR

@@ -1,18 +1,6 @@
 import { db } from "../db.js";
-import {
-  dmcaNotices,
-  dmcaStrikes,
-  legalHolds,
-  users,
-  projects,
-  type DMCANotice,
-  type DMCAStrike,
-  type LegalHold,
-  type InsertDMCANotice,
-  type InsertDMCAStrike,
-  type InsertLegalHold,
-} from "@shared/schema";
-import { eq, and, desc, gte, sql, count } from "drizzle-orm";
+import { dmcaNotices, dmcaStrikes, legalHolds, users, projects, type DMCANotice, type DMCAStrike, type LegalHold } from "@shared/schema";
+import { eq, and, desc, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 import { emailService } from "./emailService.js";
@@ -616,7 +604,7 @@ export class DMCAService {
   }
 
   private async notifyOriginalClaimant(
-    counterNotice: DMCANotice,
+    _counterNotice: DMCANotice,
     originalNotice: DMCANotice,
   ): Promise<void> {
     try {

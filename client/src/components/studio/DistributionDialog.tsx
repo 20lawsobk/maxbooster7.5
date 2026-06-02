@@ -116,7 +116,7 @@ export function DistributionDialog({
     },
   });
 
-  const { data: existingPackage, isLoading: packageLoading } =
+  const { data: existingPackage } =
     useQuery<DistributionPackage>({
       queryKey: [`/api/distribution/packages/${projectId}`],
       enabled: open && !!projectId,

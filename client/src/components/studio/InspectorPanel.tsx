@@ -13,29 +13,7 @@ import {
   type EditTool,
 } from "@/lib/studioStore";
 import { PluginRack, type PluginInstance } from "./PluginRack";
-import {
-  Settings2,
-  ChevronDown,
-  ChevronUp,
-  Palette,
-  Volume2,
-  Sliders,
-  Zap,
-  Music,
-  FileAudio,
-  GripVertical,
-  X,
-  Plus,
-  ArrowRight,
-  Radio,
-  AudioWaveform,
-  Clock,
-  Hash,
-  MousePointer2,
-  Scissors,
-  Move,
-  Pencil,
-} from "lucide-react";
+import { Settings2, ChevronDown, ChevronUp, Palette, Volume2, Sliders, Zap, Music, FileAudio, GripVertical, X, ArrowRight, Radio, AudioWaveform, Clock, Hash, MousePointer2, Scissors, Move, Pencil } from "lucide-react";
 
 interface InspectorPanelProps {
   selectedTrack?: Record<string, unknown>;

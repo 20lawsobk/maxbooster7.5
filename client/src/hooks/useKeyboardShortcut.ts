@@ -1,9 +1,5 @@
 import { useEffect, useCallback, useRef, useState } from "react";
-import {
-  ShortcutModifier,
-  getPlatformModifiers,
-  matchesShortcut,
-} from "@/lib/shortcuts/types";
+import { ShortcutModifier, matchesShortcut } from "@/lib/shortcuts/types";
 
 export interface KeyboardShortcutConfig {
   key: string;

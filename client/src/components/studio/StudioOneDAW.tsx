@@ -2,69 +2,7 @@ import { logger } from "@/lib/logger";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Volume2,
-  Undo,
-  Redo,
-  Save,
-  Plus,
-  Settings,
-  Sliders,
-  Piano,
-  Layers,
-  Mic,
-  Music,
-  Drum,
-  Guitar,
-  FolderOpen,
-  ChevronDown,
-  ChevronRight,
-  MoreHorizontal,
-  Lock,
-  Unlock,
-  Eye,
-  EyeOff,
-  Trash2,
-  Copy,
-  Scissors,
-  ZoomIn,
-  ZoomOut,
-  Grid3X3,
-  Wand2,
-  PanelBottomOpen,
-  PanelBottomClose,
-  PanelRightOpen,
-  PanelRightClose,
-  Brain,
-  Sparkles,
-  Library,
-  Keyboard,
-  HelpCircle,
-  X,
-  Camera,
-  Check,
-  MousePointer2,
-  Pencil,
-  Eraser,
-  Film,
-  Radio,
-  Waves,
-  ArrowUpDown,
-  RotateCcw,
-  Activity,
-  Speaker,
-  FileText,
-  Headphones,
-  Maximize2,
-  Minimize2,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, Repeat, Volume2, Undo, Redo, Save, Plus, Settings, Sliders, Piano, Layers, Music, FolderOpen, ChevronDown, ChevronRight, Eye, Trash2, Copy, Scissors, ZoomIn, ZoomOut, Grid3X3, Wand2, PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose, Brain, Sparkles, Library, Keyboard, X, Camera, Check, MousePointer2, Pencil, Eraser, Film, Radio, Waves, ArrowUpDown, RotateCcw, Activity, Speaker, FileText, Headphones, Maximize2, Minimize2 } from "lucide-react";
 import { getShortcutManager } from "@/lib/shortcuts/ShortcutManager";
 import type { ShortcutDefinition } from "@/lib/shortcuts/types";
 import { cn } from "@/lib/utils";
@@ -119,7 +57,6 @@ interface StudioOneDAWProps {
   projectId: string | null;
 }
 
-type EditorMode = "arrange" | "edit" | "mixer";
 type PluginFilter = "all" | "effects" | "instruments";
 
 const TRACK_COLORS = [
@@ -138,7 +75,7 @@ const TRACK_COLORS = [
 export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const platform = usePlatform();
   const store = useUnifiedStore();
-  const { tracks, masterTrack, transport, view, project, canUndo, canRedo } =
+  const { tracks, masterTrack, transport,  project, canUndo, canRedo } =
     store;
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -255,10 +192,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   >(null);
   const {
     ref: containerRef,
-    scale: uiScale,
+    
     cssVars,
     trackHeaderWidth,
-    aiPanelWidth,
   } = useStudioScale();
 
   const [activeView, setActiveView] = useState<
@@ -1597,7 +1533,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           onProjectSelect={(id) => {
             navigate(`/studio/${id}`);
           }}
-          onCreateProject={(title, templateId) => {
+          onCreateProject={(title, _templateId) => {
             setPendingProjectTitle(title || "");
             setShowProjectDialog(true);
           }}
@@ -1609,7 +1545,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             if (!open) setPendingProjectTitle("");
           }}
           initialTitle={pendingProjectTitle}
-          onProjectCreated={(newProjectId) => {
+          onProjectCreated={(_newProjectId) => {
             queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
             queryClient.invalidateQueries({
               queryKey: ["/api/studio/projects"],
@@ -2433,7 +2369,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           currentTransportTime={livePosition}
           onRecordingStart={() => store.record()}
           onRecordingStop={() => store.stop()}
-          onClipUploaded={(trackId, clip) => {
+          onClipUploaded={(_trackId, clip) => {
             toast({
               title: "Recording Saved",
               description: `Clip "${clip.name}" added to track.`,
@@ -2562,7 +2498,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         currentProjectId={projectId}
         currentTitle={project.name}
         currentDescription={project.description}
-        onSaved={(newProjectId) => {
+        onSaved={(_newProjectId) => {
           queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
           queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
         }}
@@ -2823,7 +2759,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         projectId={projectId || ""}
         projectName={project.name}
         duration={project.duration || 0}
-        onExportComplete={(url) => {
+        onExportComplete={(_url) => {
           toast({
             title: "Export Complete",
             description: "Your audio file is ready for download.",
@@ -3518,530 +3454,6 @@ interface ToolbarProps {
   onToggleFullscreen: () => void;
 }
 
-function Toolbar({
-  zoom,
-  onZoomIn,
-  onZoomOut,
-  onAddTrack,
-  showInspector,
-  showEditor,
-  showMixer,
-  onToggleInspector,
-  onToggleEditor,
-  onToggleMixer,
-  onOpenAllPlugins,
-  onOpenInstruments,
-  onOpenEffects,
-  onOpenShortcuts,
-  onExport,
-  onImportAudio,
-  onStemExport,
-  showAutomation,
-  onToggleAutomation,
-  showSurroundPanel,
-  onToggleSurround,
-  showVideoTrack,
-  onToggleVideo,
-  showLyrics,
-  onToggleLyrics,
-  onOpenAudioDevices,
-  isFullscreen,
-  onToggleFullscreen,
-}: ToolbarProps) {
-  const [showAddMenu, setShowAddMenu] = useState(false);
-  const [showBrowseMenu, setShowBrowseMenu] = useState(false);
-  const [showViewMenu, setShowViewMenu] = useState(false);
-  const [showFileMenu, setShowFileMenu] = useState(false);
-
-  useEffect(() => {
-    const close = () => {
-      setShowAddMenu(false);
-      setShowBrowseMenu(false);
-      setShowViewMenu(false);
-      setShowFileMenu(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
-
-  const anyViewActive = showAutomation || showSurroundPanel || showVideoTrack;
-
-  return (
-    <div
-      className="bg-[#1f1f23] border-b border-[#333] shrink-0 flex items-center gap-1 px-3"
-      style={{ height: "var(--toolbar-h)" }}
-    >
-      {/* ── Add Track ── */}
-      <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowAddMenu(!showAddMenu)}
-          className="h-7 gap-1.5 text-xs font-medium"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add Track
-          <ChevronDown className="h-3 w-3 opacity-60" />
-        </Button>
-        <AnimatePresence>
-          {showAddMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="absolute top-full left-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-44"
-            >
-              {(
-                [
-                  { type: "audio" as const, icon: Music, label: "Audio Track" },
-                  {
-                    type: "instrument" as const,
-                    icon: Piano,
-                    label: "Instrument Track",
-                  },
-                  { type: "midi" as const, icon: Layers, label: "MIDI Track" },
-                  { type: "bus" as const, icon: Sliders, label: "Bus Track" },
-                ] as const
-              ).map(({ type, icon: Icon, label }) => (
-                <button
-                  key={type}
-                  onClick={() => {
-                    onAddTrack(type);
-                    setShowAddMenu(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[#3a3a3e] transition-colors"
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <div className="h-5 w-px bg-[#444] mx-0.5" />
-
-      {/* ── Edit Modes ── */}
-      {(() => {
-        const editMode = useStudioStore((s) => s.view.editMode);
-        const setEditMode = useStudioStore((s) => s.setEditMode);
-        return (
-          <div className="flex items-center gap-0.5">
-            {[
-              {
-                mode: "select" as const,
-                icon: MousePointer2,
-                label: "Select (V)",
-              },
-              { mode: "draw" as const, icon: Pencil, label: "Draw (B)" },
-              { mode: "erase" as const, icon: Eraser, label: "Erase (X)" },
-              { mode: "slice" as const, icon: Scissors, label: "Slice (C)" },
-            ].map(({ mode, icon: MIcon, label }) => (
-              <Tooltip key={mode}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditMode(mode as string)}
-                    className={cn(
-                      "h-7 w-7 p-0",
-                      editMode === mode && "bg-blue-600/20 text-blue-400",
-                    )}
-                  >
-                    <MIcon className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{label}</TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-        );
-      })()}
-
-      {/* ── Snap ── */}
-      {(() => {
-        const snapToGrid = useStudioStore((s) => s.view.snapToGrid);
-        const setView = useStudioStore((s) => s.setView);
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setView({ snapToGrid: !snapToGrid })}
-                className={cn(
-                  "h-7 w-7 p-0",
-                  snapToGrid && "bg-blue-600/20 text-blue-400",
-                )}
-              >
-                <Grid3X3 className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Snap to Grid</TooltipContent>
-          </Tooltip>
-        );
-      })()}
-
-      <div className="h-5 w-px bg-[#444] mx-0.5" />
-
-      {/* ── Browse dropdown ── */}
-      <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowBrowseMenu(!showBrowseMenu)}
-          className="h-7 gap-1 text-xs"
-        >
-          <Library className="h-3.5 w-3.5" />
-          Browse
-          <ChevronDown className="h-3 w-3 opacity-60" />
-        </Button>
-        <AnimatePresence>
-          {showBrowseMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="absolute top-full left-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-36"
-            >
-              {(
-                [
-                  {
-                    icon: Library,
-                    label: "All Plugins",
-                    action: onOpenAllPlugins,
-                  },
-                  {
-                    icon: Piano,
-                    label: "Instruments",
-                    action: onOpenInstruments,
-                  },
-                  { icon: Wand2, label: "Effects", action: onOpenEffects },
-                ] as const
-              ).map(({ icon: Icon, label, action }) => (
-                <button
-                  key={label}
-                  onClick={() => {
-                    action();
-                    setShowBrowseMenu(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[#3a3a3e] transition-colors"
-                >
-                  <Icon className="h-3.5 w-3.5 text-gray-400" />
-                  {label}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <div className="h-5 w-px bg-[#444] mx-0.5" />
-
-      {/* ── Zoom ── */}
-      <div className="flex items-center gap-0.5">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onZoomOut}
-          className="h-7 w-7 p-0"
-        >
-          <ZoomOut className="h-3.5 w-3.5" />
-        </Button>
-        <span className="text-xs text-gray-400 w-10 text-center tabular-nums">
-          {Math.round(zoom * 100)}%
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onZoomIn}
-          className="h-7 w-7 p-0"
-        >
-          <ZoomIn className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-
-      {/* ── Spacer ── */}
-      <div className="flex-1" />
-
-      {/* ── View dropdown ── */}
-      <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowViewMenu(!showViewMenu)}
-          className={cn(
-            "h-7 gap-1 text-xs relative",
-            anyViewActive && "text-blue-400",
-          )}
-        >
-          <Eye className="h-3.5 w-3.5" />
-          View
-          {anyViewActive && (
-            <span className="absolute top-1 right-5 w-1.5 h-1.5 bg-blue-400 rounded-full" />
-          )}
-          <ChevronDown className="h-3 w-3 opacity-60" />
-        </Button>
-        <AnimatePresence>
-          {showViewMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="absolute top-full right-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-44"
-            >
-              {(
-                [
-                  {
-                    icon: Activity,
-                    label: "Automation",
-                    active: showAutomation,
-                    action: onToggleAutomation,
-                    dot: "bg-purple-400",
-                  },
-                  {
-                    icon: Speaker,
-                    label: "Surround",
-                    active: showSurroundPanel,
-                    action: onToggleSurround,
-                    dot: "bg-cyan-400",
-                  },
-                  {
-                    icon: Film,
-                    label: "Video Track",
-                    active: showVideoTrack,
-                    action: onToggleVideo,
-                    dot: "bg-green-400",
-                  },
-                ] as const
-              ).map(({ icon: Icon, label, active, action, dot }) => (
-                <button
-                  key={label}
-                  onClick={() => {
-                    action();
-                    setShowViewMenu(false);
-                  }}
-                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-[#3a3a3e] transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <Icon
-                      className={cn(
-                        "h-3.5 w-3.5",
-                        active ? dot.replace("bg-", "text-") : "text-gray-400",
-                      )}
-                    />
-                    {label}
-                  </span>
-                  {active && (
-                    <span
-                      className={cn("w-2 h-2 rounded-full shrink-0", dot)}
-                    />
-                  )}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* ── File dropdown ── */}
-      <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowFileMenu(!showFileMenu)}
-          className="h-7 gap-1 text-xs"
-        >
-          <Save className="h-3.5 w-3.5" />
-          File
-          <ChevronDown className="h-3 w-3 opacity-60" />
-        </Button>
-        <AnimatePresence>
-          {showFileMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="absolute top-full right-0 mt-1 bg-[#2a2a2e] border border-[#444] rounded-lg shadow-xl z-50 py-1 min-w-44"
-            >
-              {(
-                [
-                  {
-                    icon: Save,
-                    label: "Export Audio",
-                    hint: "Ctrl+Shift+E",
-                    action: onExport,
-                  },
-                  {
-                    icon: FolderOpen,
-                    label: "Import Audio",
-                    hint: "Ctrl+I",
-                    action: onImportAudio,
-                  },
-                  {
-                    icon: Layers,
-                    label: "Export Stems",
-                    hint: "Ctrl+Shift+S",
-                    action: onStemExport,
-                  },
-                ] as const
-              ).map(({ icon: Icon, label, hint, action }) => (
-                <button
-                  key={label}
-                  onClick={() => {
-                    action();
-                    setShowFileMenu(false);
-                  }}
-                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-[#3a3a3e] transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <Icon className="h-3.5 w-3.5 text-gray-400" />
-                    {label}
-                  </span>
-                  <span className="text-[10px] text-gray-500 shrink-0">
-                    {hint}
-                  </span>
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <div className="h-5 w-px bg-[#444] mx-0.5" />
-
-      {/* ── Keyboard Shortcuts ── */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onOpenShortcuts}
-            className="h-7 w-7 p-0"
-          >
-            <Keyboard className="h-3.5 w-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Keyboard Shortcuts (?)</TooltipContent>
-      </Tooltip>
-
-      {/* ── Lyrics ── */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleLyrics}
-            className={cn(
-              "h-7 gap-1 text-xs",
-              showLyrics && "bg-emerald-600/20 text-emerald-400",
-            )}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            Lyrics
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Lyrics Editor (L)</TooltipContent>
-      </Tooltip>
-
-      {/* ── Audio Devices ── */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onOpenAudioDevices}
-            className="h-7 w-7 p-0"
-          >
-            <Headphones className="h-3.5 w-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Audio Device Settings</TooltipContent>
-      </Tooltip>
-
-      {/* ── Fullscreen ── */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleFullscreen}
-            className={cn("h-7 w-7 p-0", isFullscreen && "text-yellow-400")}
-          >
-            {isFullscreen ? (
-              <Minimize2 className="h-3.5 w-3.5" />
-            ) : (
-              <Maximize2 className="h-3.5 w-3.5" />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {isFullscreen ? "Exit Fullscreen (F11)" : "Fullscreen (F11)"}
-        </TooltipContent>
-      </Tooltip>
-
-      <div className="h-5 w-px bg-[#444] mx-0.5" />
-
-      {/* ── Panel Toggles ── */}
-      <div className="flex items-center gap-0.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleInspector}
-              className={cn(
-                "h-7 gap-1 text-xs",
-                showInspector && "bg-blue-600/20 text-blue-400",
-              )}
-            >
-              <PanelRightOpen className="h-3.5 w-3.5" />
-              Inspector
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Inspector (I)</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleEditor}
-              className={cn(
-                "h-7 gap-1 text-xs",
-                showEditor && "bg-blue-600/20 text-blue-400",
-              )}
-            >
-              <PanelBottomOpen className="h-3.5 w-3.5" />
-              Editor
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Editor (E)</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleMixer}
-              className={cn(
-                "h-7 gap-1 text-xs",
-                showMixer && "bg-blue-600/20 text-blue-400",
-              )}
-            >
-              <Sliders className="h-3.5 w-3.5" />
-              Mixer
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Mixer (M)</TooltipContent>
-        </Tooltip>
-      </div>
-    </div>
-  );
-}
 
 interface TimelineRulerProps {
   zoom: number;
@@ -5151,10 +4563,6 @@ function AudioClipView({
         <ContextMenuItem
           onClick={() => {
             const s = useStudioStore.getState();
-            const params =
-              (s as Record<string, unknown>)._clipEditParams?.[
-                clip.id as string
-              ] || {};
             (s as Record<string, unknown>)._showTimeStretchDialog = clip.id;
           }}
         >

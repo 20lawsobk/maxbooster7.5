@@ -148,7 +148,7 @@ export function FlowStateAddTrack({
 
   const createTrackMutation = useMutation({
     mutationFn: createTrack,
-    onSuccess: (track, variables) => {
+    onSuccess: (track, _variables) => {
       toast({
         title: "Track Created",
         description: `${selectedType?.name || "Track"} "${track.name}" has been added to your project`,

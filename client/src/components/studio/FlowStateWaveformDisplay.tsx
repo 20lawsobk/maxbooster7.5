@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Volume2, Scissors, ZoomIn, ZoomOut, Waves } from "lucide-react";
+import { Waves } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AudioClip {

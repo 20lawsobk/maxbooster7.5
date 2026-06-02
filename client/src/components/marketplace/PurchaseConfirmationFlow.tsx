@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -15,23 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  Download,
-  FileText,
-  Lock,
-  Music,
-  Shield,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-  Copy,
-  ExternalLink,
-  Sparkles,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Lock, Music, Shield, Loader2, CheckCircle, AlertCircle, Copy, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Beat {

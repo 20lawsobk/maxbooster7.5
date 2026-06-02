@@ -22,27 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Volume2,
-  FileAudio,
-  Upload,
-  Check,
-  X,
-  Clock,
-  Play,
-  Pause,
-  AlertTriangle,
-  Download,
-  Music,
-  Disc3,
-  Globe,
-  FileCheck,
-  ListChecks,
-  Sparkles,
-  Loader2,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Volume2, FileAudio, Upload, Check, X, Clock, AlertTriangle, Download, Music, Disc3, Globe, FileCheck, ListChecks, Sparkles, Loader2, Plus, Trash2 } from "lucide-react";
 
 interface MasteringDeliveryPanelProps {
   isOpen: boolean;

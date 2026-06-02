@@ -80,7 +80,7 @@ function getPeroidDescription(name: string): string {
 }
 
 // GET /api/simulation/periods - Get available simulation periods
-router.get("/periods", (req: Request, res: Response) => {
+router.get("/periods", (_req: Request, res: Response) => {
   try {
     const periods = Object.entries(SIMULATION_PERIODS).map(([name, days]) => ({
       name,
@@ -105,7 +105,7 @@ router.get("/periods", (req: Request, res: Response) => {
 });
 
 // GET /api/simulation/benchmarks - Get industry benchmarks
-router.get("/benchmarks", (req: Request, res: Response) => {
+router.get("/benchmarks", (_req: Request, res: Response) => {
   try {
     res.json({
       success: true,
@@ -223,7 +223,7 @@ router.post("/start", async (req: Request, res: Response) => {
 });
 
 // POST /api/simulation/start-full - Start full 50-year lifecycle simulation
-router.post("/start-full", async (req: Request, res: Response) => {
+router.post("/start-full", async (_req: Request, res: Response) => {
   try {
     const simulationId = `full_${Date.now()}`;
 
@@ -667,7 +667,7 @@ ${
 }
 
 // GET /api/simulation/list - List all simulations
-router.get("/list", (req: Request, res: Response) => {
+router.get("/list", (_req: Request, res: Response) => {
   try {
     const running = Array.from(activeSimulations.entries()).map(
       ([id, sim]) => ({

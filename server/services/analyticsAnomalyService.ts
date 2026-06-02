@@ -63,8 +63,8 @@ export class AnalyticsAnomalyService {
 
   determineAnomalyType(
     zScore: number,
-    value: number,
-    mean: number,
+    _value: number,
+    _mean: number,
   ): "spike" | "drop" | "unusual_pattern" {
     if (zScore > 2) return "spike";
     if (zScore < -2) return "drop";
@@ -74,7 +74,7 @@ export class AnalyticsAnomalyService {
   async detectAnomaly(
     metricData: MetricData[],
     currentValue: number,
-    baselineDays: number = this.SHORT_BASELINE_DAYS,
+    _baselineDays: number = this.SHORT_BASELINE_DAYS,
   ): Promise<AnomalyDetectionResult | null> {
     if (metricData.length < this.MIN_DATA_POINTS) {
       return null;
@@ -111,7 +111,7 @@ export class AnalyticsAnomalyService {
     metricType: "streams" | "revenue" | "listeners" | "engagement",
     days: number,
   ): Promise<MetricData[]> {
-    const endDate = new Date();
+    new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 

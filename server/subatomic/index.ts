@@ -17,8 +17,7 @@
 import { createGzip, createBrotliCompress, constants } from "zlib";
 import { promisify } from "util";
 import { pipeline } from "stream/promises";
-import { createReadStream, createWriteStream } from "fs";
-import { readFile, writeFile, stat, mkdir, readdir, unlink } from "fs/promises";
+import { readFile, writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 

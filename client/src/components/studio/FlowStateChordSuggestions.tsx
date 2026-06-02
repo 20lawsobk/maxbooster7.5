@@ -1,27 +1,12 @@
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Music,
-  Sparkles,
-  Play,
-  Pause,
-  Plus,
-  Check,
-  RefreshCw,
-  ChevronRight,
-  Wand2,
-  Lightbulb,
-  Heart,
-  Copy,
-  Download,
-} from "lucide-react";
+import { Music, Sparkles, Play, Pause, Plus, Check, RefreshCw, ChevronRight, Wand2, Lightbulb, Heart, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -69,19 +54,6 @@ interface FlowStateChordSuggestionsProps {
 }
 
 const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const CHORD_TYPES = [
-  "maj",
-  "min",
-  "7",
-  "maj7",
-  "min7",
-  "dim",
-  "aug",
-  "sus2",
-  "sus4",
-  "9",
-  "add9",
-];
 
 const STYLES = [
   "Pop",

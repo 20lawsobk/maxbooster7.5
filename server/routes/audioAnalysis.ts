@@ -1,9 +1,6 @@
 import { Router, Request, Response } from "express";
 import crypto from "crypto";
-import {
-  audioNormalizationService,
-  LOUDNESS_TARGETS,
-} from "../services/audioNormalizationService.js";
+import { LOUDNESS_TARGETS } from "../services/audioNormalizationService.js";
 import { audioMetadataService } from "../services/audioMetadataService.js";
 import { waveformCacheService } from "../services/waveformCacheService.js";
 import { logger } from "../logger.js";
