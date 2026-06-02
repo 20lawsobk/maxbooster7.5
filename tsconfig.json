@@ -9,13 +9,12 @@
   ],
   "compilerOptions": {
     "incremental": true,
-    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsbuildinfo.full",
     "noEmit": true,
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
-    "downlevelIteration": true,
     "lib": ["esnext", "dom", "dom.iterable"],
     "jsx": "react-jsx",
     "esModuleInterop": true,
@@ -23,7 +22,6 @@
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./client/src/*"],
