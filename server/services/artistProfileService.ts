@@ -3269,7 +3269,7 @@ class ArtistProfileService {
     profileId: string,
     userId: string,
     isrcs: string[],
-    _upcs: string[],
+    upcs: string[],
   ): Promise<void> {
     const discovered: Record<string, string> = {};
 
@@ -3284,9 +3284,42 @@ class ArtistProfileService {
           },
         );
         if (res.ok) {
-          const data = (await res.json()) as Record<string, unknown>;
+          const data = (await res.json()) as {
+            recordings?: Array<{
+              "artist-credit"?: Array<{ artist?: { id?: string } }>;
+            }>;
+          };
           for (const recording of data?.recordings ?? []) {
             const mbArtistId = recording["artist-credit"]?.[0]?.artist?.id;
+            if (mbArtistId && !discovered.musicbrainz) {
+              discovered.musicbrainz = mbArtistId;
+            }
+          }
+        }
+        await new Promise((r) => setTimeout(r, 600));
+      } catch {
+        /* skip */
+      }
+    }
+
+    // Query MusicBrainz for each UPC/barcode (release lookup)
+    for (const upc of upcs.slice(0, 15)) {
+      try {
+        const res = await fetch(
+          `https://musicbrainz.org/ws/2/release/?query=barcode:${encodeURIComponent(upc)}&fmt=json`,
+          {
+            headers: { "User-Agent": "MaxBooster/3.0" },
+            signal: AbortSignal.timeout(6000),
+          },
+        );
+        if (res.ok) {
+          const data = (await res.json()) as {
+            releases?: Array<{
+              "artist-credit"?: Array<{ artist?: { id?: string } }>;
+            }>;
+          };
+          for (const release of data?.releases ?? []) {
+            const mbArtistId = release["artist-credit"]?.[0]?.artist?.id;
             if (mbArtistId && !discovered.musicbrainz) {
               discovered.musicbrainz = mbArtistId;
             }
