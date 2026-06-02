@@ -1,18 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Undo2,
-  Redo2,
-  History,
-  Trash2,
-  Clock,
-  ChevronRight,
-  Circle,
-  Save,
-  RotateCcw,
-  Bookmark,
-  BookmarkCheck,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { Undo2, Redo2, History, Trash2, ChevronRight, Circle, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,

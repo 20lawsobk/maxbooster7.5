@@ -1,39 +1,6 @@
-import {
-  useState,
-  useCallback,
-  useEffect,
-  createContext,
-  useContext,
-  ReactNode,
-} from "react";
+import { useState, useCallback, createContext, useContext, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Loader2,
-  Music,
-  Wand2,
-  Sliders,
-  Layers,
-  Volume2,
-  Copy,
-  Trash2,
-  Download,
-  Users,
-  Cloud,
-  RefreshCw,
-  GitBranch,
-  Keyboard,
-  Undo,
-  Redo,
-  Info,
-  X,
-  ChevronRight,
-  Play,
-  Pause,
-  Activity,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Loader2, Music, Wand2, Sliders, Layers, Volume2, Copy, Trash2, Download, Users, Cloud, GitBranch, Undo, Redo, Info, X, ChevronRight, Play, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -381,7 +348,7 @@ export function StudioOutcomeDisplay({
 
 export function useStudioOutcomeHelpers() {
   const { addOutcome, updateOutcome, removeOutcome } = useStudioOutcome();
-  const { toast } = useToast();
+  useToast();
 
   const showGenerationProgress = useCallback(
     (title: string, progress: number) => {

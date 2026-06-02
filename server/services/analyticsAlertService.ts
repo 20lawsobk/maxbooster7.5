@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { randomBytes } from "crypto";
-import { eq, and, desc, sql, gte, lte, lt, gt, or } from "drizzle-orm";
+import { eq, and, desc, gte, lte } from "drizzle-orm";
 import { dspAnalytics } from "@shared/schema";
 import { logger } from "../logger";
 
@@ -316,14 +316,8 @@ class AnalyticsAlertService {
   }
 
   // @deprecated - No longer used. Mock data replaced with real DB queries.
-  private generateMockTriggerCities(): TriggerCity[] {
-    return [];
-  }
 
   // @deprecated - No longer used.
-  private getRandomPlatforms(): Platform[] {
-    return [];
-  }
 
   async trackPlaylistChanges(userId: string): Promise<PlaylistChange[]> {
     try {
@@ -339,9 +333,6 @@ class AnalyticsAlertService {
   }
 
   // @deprecated - No longer used. Playlist tracking requires real integration.
-  private generateMockPlaylistChanges(userId: string): PlaylistChange[] {
-    return [];
-  }
 
   async checkMilestones(
     userId: string,

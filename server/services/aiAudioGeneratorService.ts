@@ -9,11 +9,7 @@ const WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 import { randomBytes } from "crypto";
 
-import {
-  AIAudioGenerator,
-  type GenerationOutput,
-  type GenerationType,
-} from "../../shared/ml/audio/AIAudioGenerator.js";
+import { AIAudioGenerator, type GenerationType } from "../../shared/ml/audio/AIAudioGenerator.js";
 import { logger } from "../logger.js";
 import { storageService } from "./storageService.js";
 
@@ -185,7 +181,6 @@ export async function generateFromText(
       ) {
         const bassNotes = output.metadata.patterns.bass.notes;
         const scale = output.metadata.scale;
-        const key = output.metadata.key;
 
         // Group notes by position to form chords
         const notesByTime: Record<number, string[]> = {};

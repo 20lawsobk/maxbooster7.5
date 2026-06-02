@@ -309,7 +309,7 @@ router.get("/usage/:keyId", async (req: Request, res: Response) => {
  * GET /api/developer/docs
  * Get API documentation metadata
  */
-router.get("/docs", async (req: Request, res: Response) => {
+router.get("/docs", async (_req: Request, res: Response) => {
   try {
     return res.json({
       success: true,

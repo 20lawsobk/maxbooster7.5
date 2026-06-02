@@ -1,13 +1,7 @@
 import { useState, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,28 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  History,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Trophy,
-  Star,
-  Award,
-  Milestone,
-  Flag,
-  Play,
-  DollarSign,
-  Users,
-  Music,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  BarChart3,
-  LineChart,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { History, TrendingUp, Trophy, Milestone, ArrowUp, ArrowDown, BarChart3, LineChart, Loader2, RefreshCw } from "lucide-react";
 
 interface YearData {
   year: number;

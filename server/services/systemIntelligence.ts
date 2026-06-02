@@ -837,9 +837,6 @@ const SECURITY_RULES: SecurityRule[] = [
 
 class SystemIntelligenceEngine extends EventEmitter {
   private eventWindow: WindowedEvent[] = [];
-  private recentUnderstandings: Array<
-    ErrorUnderstanding & { triggeredBy: string }
-  > = [];
   private recentSecurityUnderstandings: Array<
     SecurityUnderstanding & { ip: string; threatId: string }
   > = [];

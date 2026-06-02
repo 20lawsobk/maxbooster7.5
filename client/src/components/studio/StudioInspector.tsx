@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ChevronRight, Volume2, Circle } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PluginRack, type PluginInstance } from "./PluginRack";
 
 interface StudioTrack {

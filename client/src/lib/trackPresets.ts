@@ -1498,7 +1498,7 @@ export function createPresetFromTrack(
 
 export function applyPresetToTrack(
   preset: TrackPreset,
-  track: StudioTrackSnapshot,
+  _track: StudioTrackSnapshot,
 ): Partial<StudioTrackSnapshot> {
   const updates: Partial<StudioTrackSnapshot> = {
     name: preset.data.name,

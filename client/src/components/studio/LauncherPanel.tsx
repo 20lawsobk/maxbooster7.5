@@ -1,12 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Play,
-  Square,
-  Plus,
-  ChevronDown,
-  MoreHorizontal,
-  Grid3X3,
-} from "lucide-react";
+import { Play, Square, Plus, MoreHorizontal, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

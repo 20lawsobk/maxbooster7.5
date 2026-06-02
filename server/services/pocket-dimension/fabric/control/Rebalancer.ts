@@ -50,8 +50,6 @@ export class Rebalancer {
       }
 
       for (const hotNode of hot) {
-        const overageBytes =
-          hotNode.usedBytes - hotNode.capacityBytes * this.HIGH_WATERMARK;
         let migratedBytes = 0;
 
         const candidateCold = cold.filter(
@@ -60,8 +58,8 @@ export class Rebalancer {
         if (candidateCold.length === 0) continue;
 
         const targetNode = candidateCold[0];
-        const hotStore = this.chunkStoreFactory(hotNode.id);
-        const coldStore = this.chunkStoreFactory(targetNode.id);
+        this.chunkStoreFactory(hotNode.id);
+        this.chunkStoreFactory(targetNode.id);
 
         const allNodes = await this.nodeRegistry.listAllNodes();
         const hotNodeRow = allNodes.find((n) => n.id === hotNode.id);

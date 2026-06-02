@@ -22,18 +22,8 @@
 
 import * as tf from "@tensorflow/tfjs";
 import { BaseModel } from "./BaseModel.js";
-import {
-  advertisingRuleEngine,
-  type AdContext,
-  type AdRuleEvaluationResult,
-  MUSIC_CAMPAIGN_BENCHMARKS,
-} from "../coordination/AdvertisingRuleEngine.js";
-import {
-  autopilotCoordinator,
-  type ExecutionIntent,
-  type CoordinationDecision,
-  type CampaignState,
-} from "../coordination/AutopilotCoordinator.js";
+import { advertisingRuleEngine, type AdContext, type AdRuleEvaluationResult } from "../coordination/AdvertisingRuleEngine.js";
+import { autopilotCoordinator, type ExecutionIntent, type CampaignState } from "../coordination/AutopilotCoordinator.js";
 import { featureStore } from "../coordination/FeatureStore.js";
 
 export interface CampaignData {
@@ -1142,7 +1132,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
   }
 
   private identifyTopElementsFromData(
-    creative: any,
+    _creative: any,
     campaigns: CampaignData[],
   ): Array<{ element: string; impact: number }> {
     const factors: Array<{ element: string; impact: number }> = [];
@@ -1172,7 +1162,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
   private getFallbackBudgetAllocation(
     totalBudget: number,
     platforms: string[],
-    objective: string,
+    _objective: string,
     basedOnData: boolean,
   ): BudgetAllocation[] {
     const defaultROI: Record<string, number> = {
@@ -1205,7 +1195,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
   private getFallbackCreativePerformance(
     creative: any,
-    platform: string,
+    _platform: string,
     basedOnData: boolean,
   ): CreativePerformancePrediction {
     return {

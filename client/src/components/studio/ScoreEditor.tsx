@@ -21,22 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  ZoomIn,
-  ZoomOut,
-  Pencil,
-  Eraser,
-  MousePointer2,
-  Printer,
-  Download,
-  Music,
-  ChevronLeft,
-  ChevronRight,
-  RotateCcw,
-  FileText,
-  Type,
-  Volume2,
-} from "lucide-react";
+import { ZoomIn, ZoomOut, Pencil, Eraser, MousePointer2, Printer, Download, Music, ChevronLeft, ChevronRight, Type, Volume2 } from "lucide-react";
 import { useStudioStore } from "@/lib/studioStore";
 import { useToast } from "@/hooks/use-toast";
 
@@ -75,7 +60,6 @@ const NOTE_NAMES = [
   "A#",
   "B",
 ];
-const NATURAL_NOTES = ["C", "D", "E", "F", "G", "A", "B"];
 
 const KEY_SIGNATURES: Record<string, { sharps?: string[]; flats?: string[] }> =
   {
@@ -96,7 +80,6 @@ const KEY_SIGNATURES: Record<string, { sharps?: string[]; flats?: string[] }> =
     Cb: { flats: ["B", "E", "A", "D", "G", "C", "F"] },
   };
 
-const TIME_SIGNATURES = ["4/4", "3/4", "2/4", "6/8", "12/8", "5/4", "7/8"];
 
 const DYNAMICS = ["ppp", "pp", "p", "mp", "mf", "f", "ff", "fff"];
 
@@ -109,13 +92,6 @@ const NOTE_DURATIONS = [
   { value: 0.125, label: "32nd", symbol: "𝅘𝅥𝅰" },
 ];
 
-const REST_DURATIONS = [
-  { value: 4, label: "Whole Rest" },
-  { value: 2, label: "Half Rest" },
-  { value: 1, label: "Quarter Rest" },
-  { value: 0.5, label: "Eighth Rest" },
-  { value: 0.25, label: "16th Rest" },
-];
 
 const STAFF_LINE_SPACING = 10;
 const STAFF_HEIGHT = STAFF_LINE_SPACING * 4;
@@ -188,11 +164,11 @@ const getClefForPitch = (pitch: number): "treble" | "bass" => {
   return pitch >= 60 ? "treble" : "bass";
 };
 
-const getNoteNameFromPitch = (pitch: number): string => {
+((pitch: number): string => {
   const octave = Math.floor(pitch / 12) - 1;
   const note = NOTE_NAMES[pitch % 12];
   return `${note}${octave}`;
-};
+});
 
 export function ScoreEditor({
   trackId,
@@ -225,7 +201,6 @@ export function ScoreEditor({
   );
 
   const beatsPerMeasure = numerator;
-  const beatValue = denominator;
 
   const totalMeasures = useMemo(() => {
     if (notes.length === 0) return 8;
@@ -655,7 +630,7 @@ export function ScoreEditor({
     [timeToX, keySignature, showDynamics, showLyrics],
   );
 
-  const drawRest = useCallback(
+  useCallback(
     (
       ctx: CanvasRenderingContext2D,
       x: number,

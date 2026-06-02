@@ -16,7 +16,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -139,8 +138,8 @@ export function PersonalizedDashboard({
   const {
     layout,
     isLoading,
-    saveLayout,
-    updateWidget,
+    
+    
     reorderWidgets,
     setPreset,
     isSaving,
@@ -259,8 +258,7 @@ export function PersonalizedDashboard({
     );
   }
 
-  const visibleWidgets =
-    layout?.widgets
+  layout?.widgets
       .filter((w) => w.visible)
       .sort((a, b) => a.order - b.order) || [];
 

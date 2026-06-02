@@ -1,13 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import {
-  Plus,
-  ChevronUp,
-  ChevronDown,
-  Maximize2,
-  Minimize2,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { StudioOneChannelStrip } from "./StudioOneChannelStrip";
 import { ConsoleNavColumn } from "./ConsoleNavColumn";
 import { studioOneTheme } from "@/lib/studioOneTheme";
@@ -94,7 +88,7 @@ export function StudioOneConsole({
   selectedTrackId,
   onTrackSelect,
 }: StudioOneConsoleProps) {
-  const { consolePanel, setPanelHeight, consoleSections } =
+  const { consolePanel, setPanelHeight } =
     useStudioLayoutStore();
   const [isResizing, setIsResizing] = useState(false);
   const [startY, setStartY] = useState(0);

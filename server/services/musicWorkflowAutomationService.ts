@@ -1334,7 +1334,7 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
-    const { releaseTitle = "New Release", releaseDate } = eventData;
+    const { releaseTitle = "New Release" } = eventData;
     const scheduled: string[] = [];
 
     const countdowns = [
@@ -1514,7 +1514,7 @@ class MusicWorkflowAutomationService {
 
   private async handleWeeklyPerformanceDigest(
     userId: string,
-    eventData: WorkflowEventData,
+    _eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
     const sections: string[] = [];
@@ -1728,7 +1728,7 @@ class MusicWorkflowAutomationService {
 
   private async handleRoyaltyCollectionReminder(
     userId: string,
-    eventData: WorkflowEventData,
+    _eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
     const actions: string[] = [];
@@ -2002,7 +2002,7 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
-    const { originalPlatform = "Instagram", postContent = "" } = eventData;
+    const { originalPlatform = "Instagram" } = eventData;
     const targets =
       config.targetPlatforms === "all"
         ? ["instagram", "tiktok", "twitter", "facebook"].filter(

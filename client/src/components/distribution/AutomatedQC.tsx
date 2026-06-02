@@ -20,38 +20,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Volume2,
-  Image,
-  FileText,
-  Hash,
-  AlertCircle,
-  Wand2,
-  RefreshCw,
-  Play,
-  Pause,
-  Music,
-  Shield,
-  Zap,
-  Eye,
-  Settings,
-  Download,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Volume2, Image, FileText, Hash, Wand2, RefreshCw, Play, Pause, Shield, Download } from "lucide-react";
 
 interface QCCheck {
   id: string;
@@ -168,7 +141,7 @@ export function AutomatedQC({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: qcReport, isLoading: reportLoading } = useQuery<QCReport>({
+  const { data: qcReport } = useQuery<QCReport>({
     queryKey: ["/api/distribution/qc", releaseId],
     enabled: !!releaseId,
   });

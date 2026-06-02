@@ -75,7 +75,7 @@ export function useActionHistory(
   options: UseActionHistoryOptions = {},
 ): UseActionHistoryResult {
   const { maxEntries = 100 } = options;
-  const { history, redoStack } = useUndoHistory();
+  const { history } = useUndoHistory();
   const { undo, getActionById } = useUndo();
 
   const entries = useMemo<ActionHistoryEntry[]>(() => {

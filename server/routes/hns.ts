@@ -35,7 +35,7 @@ function authRequired(
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
-router.get("/status", async (req, res) => {
+router.get("/status", async (_req, res) => {
   try {
     const ready = await hnsReady();
     if (!ready) {
@@ -215,7 +215,7 @@ router.post("/auctions/:id/sync", authRequired, async (req, res) => {
 });
 
 // ── Wallet ────────────────────────────────────────────────────────────────────
-router.get("/wallet", authRequired, async (req, res) => {
+router.get("/wallet", authRequired, async (_req, res) => {
   try {
     const [info, balance] = await Promise.all([
       hnsClient.getWalletInfo(),
@@ -235,7 +235,7 @@ router.get("/wallet", authRequired, async (req, res) => {
   }
 });
 
-router.get("/wallet/address", authRequired, async (req, res) => {
+router.get("/wallet/address", authRequired, async (_req, res) => {
   try {
     const address = await hnsClient.getReceiveAddress();
     res.json({ address, network: process.env.HNS_NETWORK || "main" });

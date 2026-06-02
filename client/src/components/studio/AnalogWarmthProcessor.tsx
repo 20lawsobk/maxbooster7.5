@@ -1,15 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Flame,
-  Power,
-  RotateCcw,
-  Settings,
-  Maximize2,
-  Minimize2,
-  Volume2,
-  Thermometer,
-} from "lucide-react";
+import { Flame, RotateCcw, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
@@ -276,7 +267,7 @@ export function AnalogWarmthProcessor({
       const driveAmount = 1 + drive * 10;
       let y = Math.tanh(biasedX * driveAmount);
 
-      const oddHarmonics = Math.tanh(biasedX * driveAmount * 1.5);
+      Math.tanh(biasedX * driveAmount * 1.5);
       const evenHarmonics =
         Math.tanh((biasedX + 0.1) * driveAmount) - Math.tanh(0.1 * driveAmount);
 
@@ -504,7 +495,6 @@ export function AnalogWarmthProcessor({
 
   const analyzeHarmonics = (curve: Float32Array) => {
     const harmonics: number[] = [];
-    const fundamental = 1;
 
     for (let h = 1; h <= 10; h++) {
       let sum = 0;

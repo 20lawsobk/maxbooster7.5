@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import {
   contractTemplateService,
   ContractVariables,
@@ -9,12 +9,7 @@ import { logger } from "../logger.js";
 import crypto from "crypto";
 import { randomBytes } from "crypto";
 import { db } from "../db";
-import {
-  marketplaceDisputes,
-  users,
-  contractTemplates,
-  splitSheets,
-} from "@shared/schema";
+import { marketplaceDisputes, contractTemplates, splitSheets } from "@shared/schema";
 import { eq, and, or, desc, notInArray, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -276,7 +271,6 @@ router.get("/marketplace-disputes", async (req: Request, res: Response) => {
 
     const { status } = req.query;
     const userId = req.user!.id;
-    const userRole = req.user!.role;
     const isAdmin = isAdminUser(req.user);
 
     let disputes;
@@ -761,7 +755,7 @@ router.get("/invoices/overdue/list", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/tax-forms/available", async (req: Request, res: Response) => {
+router.get("/tax-forms/available", async (_req: Request, res: Response) => {
   try {
     const availableForms = taxFormService.getAvailableForms();
     return res.json({ forms: availableForms });

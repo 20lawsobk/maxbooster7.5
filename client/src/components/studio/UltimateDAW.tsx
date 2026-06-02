@@ -8,63 +8,7 @@ import {
 } from "react";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Volume2,
-  Settings,
-  Wand2,
-  Sparkles,
-  Brain,
-  Layers,
-  Music,
-  Mic,
-  Scissors,
-  Undo,
-  Redo,
-  Save,
-  Download,
-  Grid3X3,
-  Zap,
-  Clock,
-  ChevronRight,
-  PanelRightOpen,
-  PanelRightClose,
-  Box,
-  Sliders,
-  Activity,
-  Target,
-  Gauge,
-  Palette,
-  Radio,
-  Keyboard,
-  MousePointer,
-  Move,
-  Pencil,
-  Eraser,
-  Plus,
-  HelpCircle,
-  Library,
-  Eye,
-  EyeOff,
-  Maximize2,
-  Minimize2,
-  SplitSquareVertical,
-  Waves,
-  ListMusic,
-  Piano,
-  Drum,
-  Guitar,
-  Terminal,
-  Network,
-  LayoutGrid,
-  Type,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, Repeat, Wand2, Sparkles, Brain, Music, Mic, Scissors, Undo, Redo, Save, Download, Grid3X3, Box, Sliders, Activity, Gauge, Radio, MousePointer, Move, Pencil, Eraser, Plus, Library, Piano, LayoutGrid, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -80,8 +24,7 @@ import { FlowStateSmartToolbar } from "./FlowStateSmartToolbar";
 import { FlowStateMixer } from "./FlowStateMixer";
 import { FlowStateSpectralVisualizer } from "./FlowStateSpectralVisualizer";
 import { FlowStatePluginChain } from "./FlowStatePluginChain";
-import { FlowStateTimeline, FlowStatePlayhead } from "./FlowStateTimeline";
-import { FlowStateAddTrack, AddTrackButton } from "./FlowStateAddTrack";
+import { FlowStateAddTrack } from "./FlowStateAddTrack";
 import { FlowStateKeyboardShortcuts } from "./FlowStateKeyboardShortcuts";
 import { FlowStatePluginBrowser } from "./FlowStatePluginBrowser";
 import { FlowStateInstrumentDialog } from "./FlowStateInstrumentDialog";
@@ -254,11 +197,11 @@ export function UltimateDAW({
   onExport,
 }: UltimateDAWProps) {
   const store = useUnifiedStore();
-  const { tracks, masterTrack, transport, view, project, canUndo, canRedo } =
+  const { tracks, masterTrack, transport,   canUndo, canRedo } =
     store;
 
   const { toast } = useToast();
-  const { forceSave, invalidateProjectQueries, loadProjectData } =
+  const { forceSave,  loadProjectData } =
     useProjectSync(projectId);
   const [mode, setMode] = useState<FlowStateMode>("create");
   const [isLoadingProject, setIsLoadingProject] = useState(false);
@@ -1260,7 +1203,7 @@ export function UltimateDAW({
                   </div>
                 ) : (
                   <div className="min-h-full">
-                    {tracks.map((track, index) => (
+                    {tracks.map((track, _index) => (
                       <div
                         key={track.id}
                         onClick={() => setSelectedTrackId(track.id)}

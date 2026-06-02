@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useShortcuts, useShortcutContext } from "@/contexts/ShortcutContext";
 import {
   ShortcutDefinition,

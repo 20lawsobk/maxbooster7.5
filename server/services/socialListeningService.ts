@@ -511,79 +511,10 @@ class SocialListeningService {
   }
 
   // @deprecated - No longer used. Kept for reference only.
-  private generateMockMentions(
-    count: number,
-    options: Record<string, unknown>,
-  ): Mention[] {
-    const platforms = [
-      "twitter",
-      "instagram",
-      "facebook",
-      "tiktok",
-      "youtube",
-      "linkedin",
-    ] as const;
-    const sentiments = ["positive", "neutral", "negative"] as const;
-    const types = ["mention", "hashtag", "keyword", "tag"] as const;
-
-    const sampleContent = [
-      "Just discovered this amazing music platform! 🎵 Game changer for independent artists.",
-      "Anyone else using this for their music distribution? Thoughts?",
-      "Finally, a platform that understands what artists need. Highly recommend!",
-      "Mixed feelings about the new update. Some features are great, others need work.",
-      "The customer support team is incredibly helpful. Had an issue resolved in minutes!",
-      "Not sure if the premium tier is worth it. Anyone have experience?",
-      "This is exactly what the music industry needed. Revolutionary! 🚀",
-      "Having some issues with the upload feature. Hope it gets fixed soon.",
-      "Best decision I made for my music career. The analytics are incredible!",
-      "Just released my new single through this platform. So easy to use!",
-    ];
-
-    const mentions: Mention[] = [];
-    for (let i = 0; i < count; i++) {
-      const platform = platforms[Math.floor(Math.random() * platforms.length)];
-      const sentiment =
-        sentiments[Math.floor(Math.random() * sentiments.length)];
-      const followers = Math.floor(Math.random() * 1000000);
-      const isInfluencer = followers > 50000;
-
-      mentions.push({
-        id: randomBytes(8).toString("hex"),
-        platform,
-        type: types[Math.floor(Math.random() * types.length)],
-        content:
-          sampleContent[Math.floor(Math.random() * sampleContent.length)],
-        authorId: randomBytes(8).toString("hex"),
-        authorName: `User ${i + 1}`,
-        authorHandle: `@user${i + 1}`,
-        authorFollowers: followers,
-        authorVerified: Math.random() > 0.9,
-        url: `https://${platform}.com/post/${randomBytes(8).toString("hex")}`,
-        timestamp: new Date(
-          Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
-        ),
-        sentiment,
-        reach: followers * (1 + Math.random()),
-        engagement: {
-          likes: Math.floor(Math.random() * 10000),
-          comments: Math.floor(Math.random() * 500),
-          shares: Math.floor(Math.random() * 1000),
-          saves: Math.floor(Math.random() * 200),
-        },
-        language: "en",
-        isInfluencer,
-        responded: Math.random() > 0.7,
-      });
-    }
-
-    return mentions.sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
-    );
-  }
 
   async analyzeSentiment(
-    userId: string,
-    options: {
+    _userId: string,
+    _options: {
       startDate?: Date;
       endDate?: Date;
       platforms?: string[];
@@ -627,7 +558,7 @@ class SocialListeningService {
   }
 
   async getTrendingTopics(
-    userId: string,
+    _userId: string,
     options: {
       industry?: string;
       region?: string;
@@ -637,13 +568,6 @@ class SocialListeningService {
   ): Promise<TrendingTopic[]> {
     const { limit = 20 } = options;
 
-    const categories = [
-      "music",
-      "entertainment",
-      "technology",
-      "lifestyle",
-      "news",
-    ] as const;
     const topics: TrendingTopic[] = [];
 
     const trendingData = [
@@ -738,7 +662,7 @@ class SocialListeningService {
   }
 
   async analyzeCompetitors(
-    userId: string,
+    _userId: string,
     competitorHandles: string[],
   ): Promise<CompetitorAnalysis[]> {
     const analyses: CompetitorAnalysis[] = [];
@@ -847,7 +771,7 @@ class SocialListeningService {
     return analyses;
   }
 
-  async getBrandHealth(userId: string): Promise<BrandHealth> {
+  async getBrandHealth(_userId: string): Promise<BrandHealth> {
     const awarenessScore = Math.floor(Math.random() * 20) + 70;
     const sentimentScore = Math.floor(Math.random() * 15) + 75;
     const engagementScore = Math.floor(Math.random() * 25) + 65;
@@ -906,7 +830,7 @@ class SocialListeningService {
   }
 
   async getShareOfVoice(
-    userId: string,
+    _userId: string,
     competitorNames: string[],
   ): Promise<ShareOfVoice> {
     const totalMentions = Math.floor(Math.random() * 10000) + 5000;
@@ -985,18 +909,18 @@ class SocialListeningService {
     return newQuery;
   }
 
-  async getListeningQueries(userId: string): Promise<ListeningQuery[]> {
+  async getListeningQueries(_userId: string): Promise<ListeningQuery[]> {
     return Array.from(this.trackedKeywords.values());
   }
 
   async deleteListeningQuery(
-    userId: string,
+    _userId: string,
     queryId: string,
   ): Promise<boolean> {
     return this.trackedKeywords.delete(queryId);
   }
 
-  async getIndustryBenchmarks(industry: string = "music"): Promise<{
+  async getIndustryBenchmarks(_industry: string = "music"): Promise<{
     engagementRate: { average: number; top10: number; bottom10: number };
     postFrequency: { average: number; recommended: number };
     responseTime: { average: number; excellent: number };

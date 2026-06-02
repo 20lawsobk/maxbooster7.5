@@ -1,4 +1,4 @@
-import { Router, type RequestHandler } from "express";
+import { Router } from "express";
 import { onboardingService } from "../services/onboardingService.js";
 import { db } from "../db.js";
 import { users } from "../../shared/schema.js";
@@ -73,7 +73,7 @@ router.get("/recommended-step", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/tasks", requireAuth, async (req, res) => {
+router.get("/tasks", requireAuth, async (_req, res) => {
   try {
     const tasks = await onboardingService.getTasks();
     res.json({ tasks });
@@ -99,7 +99,7 @@ router.post("/seed", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/status", async (req, res) => {
+router.get("/status", async (_req, res) => {
   try {
     const tasks = await onboardingService.getTasks();
     res.json({

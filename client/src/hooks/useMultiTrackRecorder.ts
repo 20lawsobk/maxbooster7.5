@@ -77,7 +77,7 @@ export function useMultiTrackRecorder(
   }, [context]);
 
   const startInputMonitoring = useCallback(
-    async (trackId: string, trackName: string) => {
+    async (trackId: string, _trackName: string) => {
       if (!context || !isSupported) return null;
 
       try {
@@ -290,7 +290,7 @@ export function useMultiTrackRecorder(
     return recordedBlobs;
   }, [state.activeRecorders]);
 
-  const punchIn = useCallback(async (currentTime: number) => {
+  const punchIn = useCallback(async (_currentTime: number) => {
     setState((prev) => ({
       ...prev,
       isPunched: true,

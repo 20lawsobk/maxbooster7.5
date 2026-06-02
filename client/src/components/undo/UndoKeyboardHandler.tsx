@@ -145,7 +145,6 @@ export function useUndoKeyboardShortcuts(
     onUndo,
     onRedo,
     excludeInputs = true,
-    customShortcuts,
   } = options;
 
   const isInputElement = useCallback((target: EventTarget | null): boolean => {

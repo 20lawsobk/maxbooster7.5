@@ -1,12 +1,6 @@
 import { db } from "../db.js";
-import {
-  users,
-  royaltyStatements,
-  recoupmentAccounts,
-  instantPayouts,
-  systemSettings,
-} from "@shared/schema";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { royaltyStatements, systemSettings } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 

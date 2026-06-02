@@ -1,4 +1,4 @@
-import { workerData, parentPort } from "worker_threads";
+import { parentPort } from "worker_threads";
 
 if (!parentPort) throw new Error("Must run as worker thread");
 

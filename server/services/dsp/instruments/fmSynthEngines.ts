@@ -1,19 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  LFO,
-  Oscillator,
-  ADSR,
-  msToSamples,
-  dbToLinear,
-  clamp,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, LFO, ADSR, clamp, softClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -156,7 +141,7 @@ export class DX7BellSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.operators.forEach((op) => op.release());
   }
@@ -247,7 +232,7 @@ export class DX7BassSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.operators.forEach((op) => op.release());
   }
@@ -360,7 +345,7 @@ export class DX7EPianoSynth implements SynthesizerEngine {
     this.tineEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.tineEnvelope.release();
     this.operators.forEach((op) => op.release());
@@ -462,7 +447,7 @@ export class DX7BrassSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
     this.operators.forEach((op) => op.release());
@@ -474,7 +459,7 @@ export class DX7BrassSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      const vibrato = this.lfo.sine() * 0.003 * envValue;
+      this.lfo.sine() * 0.003 * envValue;
 
       const modAmount = 2.0 + filterEnvValue * 2.5;
       const mod4 = this.operators[3].process(0) * modAmount;
@@ -567,7 +552,7 @@ export class DX7PadSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
     this.operators.forEach((op) => op.release());
@@ -582,7 +567,7 @@ export class DX7PadSynth implements SynthesizerEngine {
 
       const modLFO = this.lfo1.sine();
       const panLFO = this.lfo2.sine();
-      const vibrato = this.lfo3.sine() * 0.002;
+      this.lfo3.sine() * 0.002;
 
       const modAmount = 0.8 + modLFO * 0.4;
 
@@ -684,7 +669,7 @@ export class DX7LeadSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
     this.operators.forEach((op) => op.release());
@@ -696,7 +681,7 @@ export class DX7LeadSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      const vibrato = this.vibratoLFO.sine() * 0.004 * envValue;
+      this.vibratoLFO.sine() * 0.004 * envValue;
 
       const modAmount = 2.5 + filterEnvValue * 1.5;
       const mod4 = this.operators[3].process(0) * modAmount;
@@ -792,7 +777,7 @@ export class DX7KeysSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.drawbarEnvelopes.forEach((env) => env.release());
     this.operators.forEach((op) => op.release());
@@ -886,7 +871,7 @@ export class DX7PercSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.operators.forEach((op) => op.release());
   }
@@ -1003,7 +988,7 @@ export class FM8Synth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
     this.operators.forEach((op) => op.release());
@@ -1017,7 +1002,7 @@ export class FM8Synth implements SynthesizerEngine {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
       const modLFO = this.lfo1.sine();
-      const vibrato = this.lfo2.sine() * 0.002;
+      this.lfo2.sine() * 0.002;
 
       for (let o = 7; o >= 0; o--) {
         let modulation = 0;
@@ -1134,7 +1119,7 @@ export class ModularFMSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
     this.operators.forEach((op) => op.release());

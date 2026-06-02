@@ -1,11 +1,11 @@
-import { Router, NextFunction } from "express";
+import { Router } from "express";
 import { randomBytes } from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { db } from "../db";
-import { eq, and, desc, sql, gte, lte, sum, count, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, count, inArray } from "drizzle-orm";
 import {
   royaltyTransactions,
   royaltyStatements,
@@ -24,29 +24,18 @@ import { storageService } from "../services/storageService";
 import * as codeGenerationService from "../services/distributionCodeGenerationService";
 import { distributionService } from "../services/distributionService";
 import { labelGridService } from "../services/labelgrid-service";
-import {
-  musicCodesService,
-  isrcGenerator,
-  upcGenerator,
-} from "../services/musicCodes";
+import { musicCodesService } from "../services/musicCodes";
 import {
   labelCopyLinter,
   type ReleaseMetadata,
   type LintResult,
 } from "../services/labelCopyLinter";
-import {
-  dspPolicyChecker,
-  DSP_POLICIES,
-  type ComplianceResult,
-} from "../services/dspPolicyChecker";
+import { dspPolicyChecker, type ComplianceResult } from "../services/dspPolicyChecker";
 import {
   releaseWorkflowService,
   type TakedownReason,
 } from "../services/releaseWorkflow";
-import {
-  audioFingerprintService,
-  type DuplicateCheckResult,
-} from "../services/audioFingerprint";
+import { audioFingerprintService } from "../services/audioFingerprint";
 import { audioMetadataService } from "../services/audioMetadataService.js";
 import { logger } from "../logger";
 import { notificationService } from "../services/notificationService.js";
@@ -119,12 +108,6 @@ interface HyperFollowPage {
   presaves?: number;
 }
 
-interface PayoutRecord {
-  id: string;
-  amount: number;
-  status?: string;
-  createdAt?: Date;
-}
 
 const router = Router();
 
@@ -219,7 +202,7 @@ const generateCodeSchema = z.object({
   title: z.string(),
 });
 
-const createRoyaltySplitSchema = z.object({
+z.object({
   name: z.string().min(1),
   email: z.string().email(),
   role: z.enum([
@@ -721,7 +704,7 @@ router.get("/platforms", requireAuth, async (_req: Request, res: Response) => {
 router.post(
   "/platforms/verify",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       const result = await labelGridService.verifyDSPCatalog();
       res.json({
@@ -2683,7 +2666,6 @@ router.post(
   upload.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as AuthenticatedUser).id;
       const file = req.file;
 
       let data;
@@ -4543,7 +4525,7 @@ router.get(
 router.get(
   "/royalties/currency-rates",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       const [setting] = await db
         .select()
@@ -4757,11 +4739,7 @@ router.get(
 // DATA TRANSFER & PROFILE SYNC ENDPOINTS
 // ===================
 
-import {
-  distributionDataTransferService,
-  SUPPORTED_DISTRIBUTORS,
-  STREAMING_PLATFORMS,
-} from "../services/distributionDataTransferService";
+import { distributionDataTransferService } from "../services/distributionDataTransferService";
 
 // GET /api/distribution/transfer/distributors - Get supported distributors for import
 router.get(
@@ -5387,7 +5365,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { releaseId, trackId } = req.body;
+      const {  trackId } = req.body;
 
       const track = await storage.getDistroTrack(trackId);
       if (!track) {
@@ -5459,7 +5437,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { releaseId, trackId } = req.body;
+      const {  trackId } = req.body;
 
       const track = await storage.getDistroTrack(trackId);
       if (!track) {

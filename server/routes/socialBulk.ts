@@ -463,7 +463,7 @@ router.get("/batches", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/status", requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (_req, res) => {
   try {
     const queueStats = await socialQueueService.getQueueStats();
     return res.json({

@@ -5,7 +5,7 @@ import {
   InsertListenerCohort,
   ListenerCohort,
 } from "@shared/schema";
-import { eq, and, gte, lte, desc, sql, asc, lt } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, lt } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export type DSPPlatform =
@@ -270,7 +270,7 @@ class CohortAnalyticsService {
 
   async predictChurn(
     userId: string,
-    options: { threshold?: number } = {},
+    _options: { threshold?: number } = {},
   ): Promise<{
     atRiskListeners: number;
     churnRate: number;

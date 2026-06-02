@@ -1261,7 +1261,7 @@ router.get("/instant-fee", async (req, res) => {
  * GET /api/payouts/currencies
  * Get supported payout currencies
  */
-router.get("/currencies", async (req, res) => {
+router.get("/currencies", async (_req, res) => {
   try {
     const currencies = [
       {

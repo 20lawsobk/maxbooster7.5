@@ -165,7 +165,7 @@ router.get(
   },
 );
 
-router.get("/genre-templates", async (req: Request, res: Response) => {
+router.get("/genre-templates", async (_req: Request, res: Response) => {
   try {
     const templates = smartDefaultsEngine.getAllGenreTemplates();
     return res.json(templates);

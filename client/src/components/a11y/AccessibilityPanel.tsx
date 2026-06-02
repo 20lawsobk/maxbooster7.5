@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   useAccessibility,
   type FontSize,
@@ -31,17 +30,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Eye,
-  Move,
-  Focus,
-  RotateCcw,
-  Type,
-  Palette,
-  Settings,
-  Keyboard,
-  Volume2,
-} from "lucide-react";
+import { Eye, Move, Focus, RotateCcw, Type, Palette, Settings, Keyboard } from "lucide-react";
 import type { ContrastMode } from "@/hooks/useHighContrast";
 
 export interface AccessibilityPanelProps {
@@ -294,7 +283,6 @@ function AccessibilityPanelTabs() {
     colorBlindMode,
     setColorBlindMode,
     announce,
-    resetAllPreferences,
   } = useAccessibility();
 
   return (

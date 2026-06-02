@@ -254,26 +254,6 @@ export class LabelCopyLinter {
     return EXPLICIT_TERMS.some((term) => lowerText.includes(term));
   }
 
-  private detectLanguage(text: string): string {
-    const charPatterns: { [lang: string]: RegExp } = {
-      ja: /[\u3040-\u309F\u30A0-\u30FF]/,
-      ko: /[\uAC00-\uD7AF]/,
-      zh: /[\u4E00-\u9FFF]/,
-      ar: /[\u0600-\u06FF]/,
-      he: /[\u0590-\u05FF]/,
-      ru: /[\u0400-\u04FF]/,
-      th: /[\u0E00-\u0E7F]/,
-      hi: /[\u0900-\u097F]/,
-    };
-
-    for (const [lang, pattern] of Object.entries(charPatterns)) {
-      if (pattern.test(text)) {
-        return lang;
-      }
-    }
-
-    return "en";
-  }
 
   private validateTitle(
     title: string,

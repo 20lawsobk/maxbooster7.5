@@ -1,22 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  CombFilter,
-  LFO,
-  Oscillator,
-  ADSR,
-  EnvelopeFollower,
-  msToSamples,
-  dbToLinear,
-  clamp,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, DelayLine, AllPassFilter, CombFilter, LFO, Oscillator, ADSR, clamp, softClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -78,7 +60,7 @@ export class WarmPadSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -193,7 +175,7 @@ export class StringPadSynth implements SynthesizerEngine {
 
     this.sections.forEach((section, sIdx) => {
       const octaveOffset = sIdx === 3 ? 0.5 : 1;
-      section.oscillators.forEach((osc, i) => {
+      section.oscillators.forEach((osc, _i) => {
         const detune = 1 + (Math.random() - 0.5) * 0.006;
         osc.setFrequency(frequency * octaveOffset * detune, context.sampleRate);
       });
@@ -212,7 +194,7 @@ export class StringPadSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -348,7 +330,7 @@ export class ChoirPadSynth implements SynthesizerEngine {
     this.breathEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.breathEnvelope.release();
   }
@@ -360,7 +342,7 @@ export class ChoirPadSynth implements SynthesizerEngine {
       const envValue = this.envelope.process();
       const breathValue = this.breathEnvelope.process();
       const vibrato = this.vibratoLFO.sine() * 0.004 * envValue;
-      const formantMod = this.formantLFO.sine() * 0.08;
+      this.formantLFO.sine() * 0.08;
 
       let sampleL = 0;
       let sampleR = 0;
@@ -484,7 +466,7 @@ export class GlassPadSynth implements SynthesizerEngine {
     this.shimmerEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.shimmerEnvelope.release();
   }
@@ -615,7 +597,7 @@ export class DarkPadSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -748,7 +730,7 @@ export class EvolvingPadSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -900,7 +882,7 @@ export class NoisePadSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -1023,7 +1005,7 @@ export class BrassPadSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -1154,7 +1136,7 @@ export class DigitalPadSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -1164,7 +1146,7 @@ export class DigitalPadSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const stereoPan = this.stereoLFO.sine() * 0.3;
-      const phaseMod = this.phaseLFO.sine() * 0.1;
+      this.phaseLFO.sine() * 0.1;
 
       let sampleL = 0;
       let sampleR = 0;
@@ -1275,7 +1257,7 @@ export class SpacePadSynth implements SynthesizerEngine {
     this.reverbEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.reverbEnvelope.release();
   }

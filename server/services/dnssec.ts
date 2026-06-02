@@ -32,7 +32,7 @@
 import crypto from "crypto";
 import { db } from "../db.js";
 import { dnssecKeys } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -290,22 +290,10 @@ export function derToRaw(derSig: Buffer, keySize = 32): Buffer {
 /**
  * Build the canonical wire-format RDATA for an A record.
  */
-function aRdata(address: string): Buffer {
-  const parts = address.split(".").map(Number);
-  return Buffer.from(parts);
-}
 
 /**
  * Build the canonical wire-format RDATA for an AAAA record.
  */
-function aaaaRdata(address: string): Buffer {
-  // Expand IPv6 address to full 128-bit form
-  const full = expandIPv6(address);
-  const groups = full.split(":").map((g) => parseInt(g, 16));
-  const buf = Buffer.alloc(16);
-  for (let i = 0; i < 8; i++) buf.writeUInt16BE(groups[i], i * 2);
-  return buf;
-}
 
 function expandIPv6(addr: string): string {
   if (addr.includes("::")) {

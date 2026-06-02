@@ -12,7 +12,7 @@ import {
   royaltyTransactions,
   posts,
 } from "../../shared/schema";
-import { eq, and, gte, lte, desc, count, sum } from "drizzle-orm";
+import { eq, and, gte, lte, sum } from "drizzle-orm";
 
 const router = Router();
 
@@ -370,7 +370,7 @@ router.get(
 router.get(
   "/patterns",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const patterns = careerCoachService.getPatternLibrary();
       res.json({ success: true, data: { patterns, total: patterns.length } });

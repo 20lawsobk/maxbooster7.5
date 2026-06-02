@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,7 +53,7 @@ interface NextActionRecommendation {
 export function SmartNextActionWidget() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
   const [isDismissed, setIsDismissed] = useState(() => {
     return localStorage.getItem("smartNextActionDismissed") === "true";
   });
@@ -69,7 +69,6 @@ export function SmartNextActionWidget() {
     data: recommendation,
     isLoading,
     error,
-    refetch,
   } = useQuery<NextActionRecommendation>({
     queryKey: ["/api/dashboard/next-action"],
     enabled: !isDismissed && !!authUser, // Only fetch if not dismissed AND authenticated

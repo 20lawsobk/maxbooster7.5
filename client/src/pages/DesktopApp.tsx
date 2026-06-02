@@ -62,7 +62,7 @@ const platformDescriptions: Record<string, string> = {
 
 export default function DesktopApp() {
   const { t } = useTranslation();
-  const { user, isLoading } = useRequireSubscription();
+  const {  isLoading } = useRequireSubscription();
   const [releaseData, setReleaseData] = useState<ReleaseData | null>(null);
   const [loadingRelease, setLoadingRelease] = useState(true);
   const [expandedLinux, setExpandedLinux] = useState(false);
@@ -142,14 +142,6 @@ export default function DesktopApp() {
   ];
 
   const version = releaseData?.version || "latest";
-  const hasDesktop =
-    releaseData?.available &&
-    releaseData.desktop &&
-    releaseData.desktop.length > 0;
-  const hasMobile =
-    releaseData?.available &&
-    releaseData.mobile &&
-    releaseData.mobile.length > 0;
 
   function renderDownloadButton(asset: DownloadAsset, isMobile = false) {
     const isIos = asset.platform === "iOS";

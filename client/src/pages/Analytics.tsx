@@ -1,10 +1,10 @@
 import { logger } from "@/lib/logger";
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
@@ -36,102 +36,7 @@ import {
   SimpleAreaChart,
   PlatformBreakdown,
 } from "@/components/ui/chart-card";
-import {
-  BarChart3,
-  TrendingUp,
-  Play,
-  DollarSign,
-  Users,
-  Calendar,
-  Download,
-  Filter,
-  RefreshCw,
-  Eye,
-  Heart,
-  Share2,
-  Clock,
-  Globe,
-  Music,
-  Target,
-  Zap,
-  Activity,
-  PieChart,
-  LineChart,
-  MapPin,
-  Smartphone,
-  Monitor,
-  Headphones,
-  Radio,
-  Mic,
-  Volume2,
-  Star,
-  Award,
-  Trophy,
-  Crown,
-  Flame,
-  Sparkles,
-  SkipForward,
-  RotateCcw,
-  Brain,
-  Rocket,
-  Shield,
-  Lock,
-  Unlock,
-  CheckCircle,
-  AlertTriangle,
-  Info,
-  Lightbulb,
-  ArrowUp,
-  ArrowDown,
-  TrendingDown,
-  Plus,
-  Settings,
-  Bell,
-  Search,
-  Edit2,
-  Trash2,
-  MoreHorizontal,
-  ChevronDown,
-  ChevronRight,
-  Megaphone,
-  Tv,
-  Laptop,
-  Tablet,
-  Gamepad2,
-  Car,
-  Plane,
-  Train,
-  Bus,
-  Home,
-  Building,
-  School,
-  Coffee,
-  Utensils,
-  ShoppingBag,
-  Briefcase,
-  Dumbbell,
-  Gamepad,
-  Book,
-  Camera,
-  Video,
-  Image,
-  FileText,
-  Link,
-  Mail,
-  Phone,
-  MessageCircle,
-  ThumbsUp,
-  ThumbsDown,
-  UserMinus,
-  UserPlus,
-  ListMusic,
-  Map,
-  GitBranch,
-  Layers,
-  Percent,
-  FileDown,
-  BarChart2,
-} from "lucide-react";
+import { BarChart3, TrendingUp, Play, DollarSign, Users, Download, RefreshCw, Eye, Heart, Share2, Clock, Globe, Music, Target, Activity, MapPin, Trophy, Flame, Brain, Rocket, CheckCircle, AlertTriangle, Lightbulb, ArrowUp, ArrowDown, TrendingDown, Plus, Bell, Search, Trash2, ChevronDown, Megaphone, Camera, Video, UserMinus, UserPlus, ListMusic, Map, GitBranch, Layers, FileDown } from "lucide-react";
 
 import { StreamingAnalytics } from "./analytics/StreamingAnalytics";
 import { RevenueAnalytics } from "./analytics/RevenueAnalytics";
@@ -893,7 +798,7 @@ const ChurnAnalytics = memo(
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data.reasons.map((reason, idx) => (
+                {data.reasons.map((reason, _idx) => (
                   <div key={reason.reason} className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span>{reason.reason}</span>
@@ -1619,7 +1524,7 @@ export default function Analytics() {
     staleTime: 1 * 60 * 1000,
   });
 
-  const { isConnected, sendMessage, connectionStatus } = useWebSocket({
+  const { isConnected, sendMessage } = useWebSocket({
     onMessage: (message) => {
       const msg = message as AnalyticsWebSocketMessage;
       if (msg.type === "analytics_update") {
@@ -1811,7 +1716,7 @@ export default function Analytics() {
   });
 
   useEffect(() => {
-    const handleAnomalyDetected = (message: Record<string, unknown>) => {
+    ((message: Record<string, unknown>) => {
       if (message.type === "anomaly_detected") {
         queryClient.invalidateQueries({
           queryKey: ["/api/analytics/anomalies"],
@@ -1825,7 +1730,7 @@ export default function Analytics() {
           description: `${message.metricType} ${message.anomalyType}: ${message.deviationPercentage}% deviation`,
         });
       }
-    };
+    });
     return () => {};
   }, [queryClient, toast]);
 

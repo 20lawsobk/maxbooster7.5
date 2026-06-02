@@ -525,35 +525,6 @@ class LabelGridService {
     }
   }
 
-  private categorizeByRegion(
-    region: string,
-    type?: string,
-  ): LabelGridDSP["category"] {
-    if (type === "social" || type === "ugc") return "social";
-    if (type === "electronic") return "electronic";
-    if (type === "monetization" || type === "content_id") return "monetization";
-
-    const regionalMarkets = [
-      "china",
-      "india",
-      "middle_east",
-      "africa",
-      "asia",
-      "russia",
-      "latin_america",
-      "korea",
-      "japan",
-      "taiwan",
-    ];
-    if (region && regionalMarkets.some((r) => region.toLowerCase().includes(r)))
-      return "regional";
-
-    if (type === "niche" || type === "fitness" || type === "gaming")
-      return "niche";
-    if (type === "download" || type === "store") return "download";
-
-    return "streaming";
-  }
 
   /**
    * Retrieve all releases in the authenticated user's LabelGrid catalog.
@@ -1790,7 +1761,7 @@ class LabelGridService {
 
   private simulateUpdateRelease(
     releaseId: string,
-    updates: Partial<LabelGridRelease>,
+    _updates: Partial<LabelGridRelease>,
   ): LabelGridReleaseResponse {
     return {
       releaseId,
@@ -1802,7 +1773,7 @@ class LabelGridService {
 
   private simulateSetPublishingMetadata(
     releaseId: string,
-    metadata: LabelGridPublishingMetadata,
+    _metadata: LabelGridPublishingMetadata,
   ): { success: boolean; releaseId: string } {
     return {
       success: true,
@@ -1811,7 +1782,7 @@ class LabelGridService {
   }
 
   private simulateGetPublishingMetadata(
-    releaseId: string,
+    _releaseId: string,
   ): LabelGridPublishingMetadata {
     return {
       writers: [],
@@ -1834,7 +1805,7 @@ class LabelGridService {
     };
   }
 
-  private simulateGetSyncOpportunities(filters?: {
+  private simulateGetSyncOpportunities(_filters?: {
     genre?: string;
     minBudget?: number;
   }): LabelGridSyncOpportunity[] {
@@ -1870,8 +1841,8 @@ class LabelGridService {
   }
 
   private simulateGetSmartLinkAnalytics(
-    linkId: string,
-    dateRange?: { start: string; end: string },
+    _linkId: string,
+    _dateRange?: { start: string; end: string },
   ): LabelGridSmartLinkAnalytics {
     return {
       clicks: 0,
@@ -1909,9 +1880,9 @@ class LabelGridService {
   }
 
   private simulateGetPreSaveSubscribers(
-    campaignId: string,
-    limit?: number,
-    offset?: number,
+    _campaignId: string,
+    _limit?: number,
+    _offset?: number,
   ): { subscribers: LabelGridPreSaveSubscriber[]; total: number } {
     return {
       subscribers: [],
@@ -1933,12 +1904,12 @@ class LabelGridService {
   }
 
   private simulateGetContentClaims(
-    releaseId?: string,
+    _releaseId?: string,
   ): LabelGridContentClaim[] {
     return [];
   }
 
-  private simulateGetContentRevenue(dateRange?: {
+  private simulateGetContentRevenue(_dateRange?: {
     start: string;
     end: string;
   }): LabelGridContentRevenue {
@@ -1959,7 +1930,7 @@ class LabelGridService {
   }
 
   private simulateGetRoyaltyStatements(
-    year?: number,
+    _year?: number,
   ): LabelGridRoyaltyStatement[] {
     return [];
   }

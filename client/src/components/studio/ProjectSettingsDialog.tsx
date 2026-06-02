@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import {
@@ -47,33 +47,6 @@ interface ProjectSettingsDialogProps {
   }) => void;
 }
 
-const GENRES = [
-  "Hip-Hop",
-  "R&B",
-  "Pop",
-  "Electronic",
-  "Rock",
-  "Jazz",
-  "Classical",
-  "Country",
-  "Latin",
-  "Afrobeat",
-  "Reggae",
-  "Blues",
-  "Soul",
-  "Funk",
-  "Metal",
-  "Indie",
-  "Alternative",
-  "Dance",
-  "House",
-  "Techno",
-  "Trap",
-  "Drill",
-  "Lo-Fi",
-  "Ambient",
-  "Other",
-];
 
 const TIME_SIGNATURES = [
   { value: "4/4", label: "4/4" },

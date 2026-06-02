@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import { logger } from "@/lib/logger";
-import {
-  AlertTriangle,
-  GitMerge,
-  Download,
-  Upload,
-  Check,
-  X,
-} from "lucide-react";
+import { AlertTriangle, Download, Upload, Check, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -135,7 +128,7 @@ export function ConflictResolver({
     }
   };
 
-  const getDiffHighlight = (
+  ((
     localData: unknown,
     serverData: unknown,
   ): { localDiffs: string[]; serverDiffs: string[] } => {
@@ -164,7 +157,7 @@ export function ConflictResolver({
     }
 
     return { localDiffs, serverDiffs };
-  };
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

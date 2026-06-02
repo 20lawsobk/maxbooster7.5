@@ -70,7 +70,7 @@ function isReservedIp(raw: string): boolean {
  * Typed as net.LookupFunction so it can be passed directly to http/https Agent
  * without unsafe casts.
  */
-const safeDnsLookup: LookupFunction = (hostname, options, callback) => {
+const safeDnsLookup: LookupFunction = (hostname, _options, callback) => {
   dnsLookup(hostname, { all: true }, (err, addresses) => {
     if (err) {
       callback(err, "", 4);
@@ -616,7 +616,6 @@ export class ContentAnalysisService {
         .toBuffer({ resolveWithObject: true });
 
       const pixels = resized.data;
-      const pixelCount = pixels.length / 3;
 
       // Sample pixels for k-means clustering
       const samples: number[][] = [];
@@ -1069,7 +1068,7 @@ export class ContentAnalysisService {
    * Analyze video content
    */
   async analyzeVideo(
-    videoUrl: string,
+    _videoUrl: string,
     duration: number,
   ): Promise<VideoAnalysisResult> {
     await this.ensureInitialized();
@@ -1136,7 +1135,7 @@ export class ContentAnalysisService {
    * Analyze audio/music content
    */
   async analyzeAudio(
-    audioUrl: string,
+    _audioUrl: string,
     metadata?: Record<string, unknown>,
   ): Promise<AudioAnalysisResult> {
     await this.ensureInitialized();

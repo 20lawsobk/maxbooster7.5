@@ -329,7 +329,6 @@ const DAY_NAMES: DayOfWeek[] = [
 ];
 
 export class SocialAutopilotEngine extends BaseModel {
-  private engagementModel: tf.LayersModel | null = null;
   private viralityModel: tf.LayersModel | null = null;
   private timingModel: tf.LayersModel | null = null;
   private historicalData: Map<Platform, HistoricalPost[]> = new Map();
@@ -894,11 +893,10 @@ export class SocialAutopilotEngine extends BaseModel {
     postsPerWeek: number,
   ): ScheduleOptimization {
     const audience = this.audienceInsights.get(platform);
-    const historicalPosts = this.historicalData.get(platform) || [];
+    this.historicalData.get(platform) || [];
     const limits = PLATFORM_LIMITS[platform];
 
     const maxDailyPosts = limits?.maxDailyPosts || 5;
-    const minGapMinutes = limits?.minPostGapMinutes || 60;
 
     const postsPerDay = Math.min(Math.ceil(postsPerWeek / 7), maxDailyPosts);
 
@@ -1049,7 +1047,7 @@ export class SocialAutopilotEngine extends BaseModel {
     platform: Platform,
   ): FollowerGrowthStrategy {
     const audience = this.audienceInsights.get(platform);
-    const historicalPosts = this.historicalData.get(platform) || [];
+    this.historicalData.get(platform) || [];
 
     const currentFollowers = audience?.totalFollowers || 1000;
     const avgEngagement =
@@ -1250,7 +1248,7 @@ export class SocialAutopilotEngine extends BaseModel {
 
   private getContentTypeReason(
     platform: Platform,
-    type: ContentType,
+    _type: ContentType,
     score: number,
   ): string {
     if (score > 0.8)
@@ -1338,7 +1336,7 @@ export class SocialAutopilotEngine extends BaseModel {
   private calculateShareability(
     text: string | undefined,
     contentType: ContentType,
-    platform: Platform,
+    _platform: Platform,
   ): number {
     let score = 0.5;
 
@@ -1360,7 +1358,7 @@ export class SocialAutopilotEngine extends BaseModel {
   private calculateTrendAlignment(
     topics: string[],
     hashtags: string[],
-    platform: Platform,
+    _platform: Platform,
   ): number {
     const trendingTopics = [
       "newmusic",
@@ -1377,7 +1375,7 @@ export class SocialAutopilotEngine extends BaseModel {
     return Math.min(1, 0.3 + alignedCount * 0.15);
   }
 
-  private calculateNoveltyScore(text: string, platform: Platform): number {
+  private calculateNoveltyScore(_text: string, platform: Platform): number {
     const posts = this.historicalData.get(platform) || [];
     if (posts.length === 0) return 0.7;
     return 0.5 + Math.random() * 0.3;
@@ -1603,7 +1601,7 @@ export class SocialAutopilotEngine extends BaseModel {
 
   private calculateGrowthPotential(
     schedule: ScheduleOptimization["suggestedSchedule"],
-    platform: Platform,
+    _platform: Platform,
   ): number {
     const highPriorityCount = schedule.filter(
       (s) => s.priority === "high",

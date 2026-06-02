@@ -1,4 +1,3 @@
-import { Worker, isMainThread, parentPort, workerData } from "worker_threads";
 import http from "http";
 import https from "https";
 import { EventEmitter } from "events";
@@ -44,7 +43,6 @@ export interface ScaleTestResult {
 }
 
 export class LoadTestFramework extends EventEmitter {
-  private results: LoadTestResult[] = [];
   private responseTimes: number[] = [];
   private errors: Map<string, number> = new Map();
   private successCount = 0;

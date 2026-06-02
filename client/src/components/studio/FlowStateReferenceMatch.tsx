@@ -1,22 +1,6 @@
 import { useState, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Upload,
-  Waveform,
-  BarChart3,
-  Zap,
-  RefreshCw,
-  Check,
-  X,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Target,
-  Sparkles,
-  Download,
-  Layers,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { Upload, Waveform, BarChart3, Zap, RefreshCw, Check, Play, Pause, Target, Sparkles, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

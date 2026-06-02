@@ -8,12 +8,7 @@
 
 import { Router } from "express";
 import { db } from "../db.js";
-import {
-  npsResponses,
-  cancellationFeedback,
-  featureEvents,
-  customerHealthScores,
-} from "@shared/schema";
+import { npsResponses, cancellationFeedback, customerHealthScores } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";

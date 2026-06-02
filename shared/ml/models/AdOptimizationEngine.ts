@@ -1169,7 +1169,7 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private clusterAudiences(
-    campaign: Campaign,
+    _campaign: Campaign,
     audiences: AudienceTargeting[],
   ): AudienceCluster[] {
     const clusters: AudienceCluster[] = [];
@@ -1834,7 +1834,7 @@ export class AdOptimizationEngine extends BaseModel {
     return 0.5 + Math.tanh(avgChange) * 0.5;
   }
 
-  private getCompetitionLevel(platform: string, interests: string[]): number {
+  private getCompetitionLevel(platform: string, _interests: string[]): number {
     const baseCompetition: Record<string, number> = {
       facebook: 0.7,
       instagram: 0.75,
@@ -1903,7 +1903,7 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private generateCampaignRecommendations(
-    campaign: Campaign,
+    _campaign: Campaign,
     breakdown: ScoreBreakdown,
   ): string[] {
     const recommendations: string[] = [];
@@ -2032,7 +2032,7 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private findExcludeRecommendations(
-    campaign: Campaign,
+    _campaign: Campaign,
     clusters: (AudienceCluster & { score: number })[],
   ): string[] {
     const lowPerformers = clusters
@@ -2179,8 +2179,6 @@ export class AdOptimizationEngine extends BaseModel {
   }
 
   private calculateSampleSize(baseRate: number, expectedLift: number): number {
-    const alpha = 0.05;
-    const power = 0.8;
     const zAlpha = 1.96;
     const zBeta = 0.84;
 
@@ -2631,7 +2629,7 @@ export class AdOptimizationEngine extends BaseModel {
   private projectOrganicResults(
     profiles: SocialProfile[],
     content: OrganicContent,
-    goals: OrganicGoals,
+    _goals: OrganicGoals,
   ): ProjectedOrganicResults {
     const networkAnalysis = this.analyzeNetworkReach(profiles);
     const contentScore = this.scoreOrganicContent(content);
@@ -2887,7 +2885,7 @@ export class AdOptimizationEngine extends BaseModel {
 
   private suggestContentImprovements(
     content: OrganicContent,
-    currentScore: number,
+    _currentScore: number,
   ): string[] {
     const improvements: string[] = [];
 
@@ -2933,7 +2931,7 @@ export class AdOptimizationEngine extends BaseModel {
 
   private generateAmplificationTactics(
     profiles: SocialProfile[],
-    content: OrganicContent,
+    _content: OrganicContent,
   ): string[] {
     const tactics: string[] = [
       "Cross-post content across all connected platforms with platform-specific formatting",
@@ -2948,7 +2946,7 @@ export class AdOptimizationEngine extends BaseModel {
     return tactics;
   }
 
-  private generateEngagementStrategy(goals: OrganicGoals): EngagementStrategy {
+  private generateEngagementStrategy(_goals: OrganicGoals): EngagementStrategy {
     return {
       responseTimeTarget: "30 minutes",
       engagementActions: ["reply_to_comments", "like_mentions", "share_ugc"],

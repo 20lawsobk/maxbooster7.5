@@ -1,6 +1,5 @@
 import { db } from "../db";
 import { storage } from "../storage";
-import { eq, desc, sql, and, gte } from "drizzle-orm";
 
 export type ArtistType =
   | "solo"
@@ -368,7 +367,7 @@ class PersonalizationService {
 
   // Memory caps — in-process cache only. Preferences are persisted in the DB.
   private static readonly MAX_USERS = 50_000; // max concurrent cached users
-  private static readonly MAX_INTERACTIONS = 1_000; // max interaction events per user
+ // max interaction events per user
   private static readonly STALE_USER_TTL_MS = 4 * 60 * 60 * 1000; // 4 h inactivity → evict
 
   constructor() {
@@ -790,7 +789,7 @@ class PersonalizationService {
 
   async getRecommendations(userId: string): Promise<Recommendation[]> {
     const prefs = await this.getPreferences(userId);
-    const patterns = this.userPatterns.get(userId) || [];
+    this.userPatterns.get(userId) || [];
 
     const recommendations: Recommendation[] = [];
 
@@ -1026,7 +1025,7 @@ class PersonalizationService {
     suggestionId: string,
     platform?: string,
   ): Promise<void> {
-    const prefs = await this.getPreferences(userId);
+    await this.getPreferences(userId);
     await this.trackInteraction(userId, {
       type: "complete",
       target: "schedule-suggestion",

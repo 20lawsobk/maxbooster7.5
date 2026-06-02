@@ -1,6 +1,4 @@
 import { db } from "../db";
-import { users, analytics, socialAccounts } from "@shared/schema";
-import { eq, desc, gte } from "drizzle-orm";
 import { getRedisClient } from "../lib/redisConnectionFactory";
 import { logger } from "../logger";
 import {
@@ -462,8 +460,7 @@ class SmartDefaultsEngine {
         );
         const isGenreSuggested =
           genreTemplate.suggestedPlatforms.includes(platform);
-        const isCurrentlyUsed =
-          preferences.contentPreferences.platforms.includes(platform);
+        preferences.contentPreferences.platforms.includes(platform);
 
         let priority: "primary" | "secondary" | "emerging";
         if (isGenreSuggested && ageOverlap > 0.6) {

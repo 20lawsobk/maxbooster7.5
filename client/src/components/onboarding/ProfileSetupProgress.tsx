@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -15,26 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-import {
-  User,
-  Music,
-  Camera,
-  FileText,
-  Link as LinkIcon,
-  Share2,
-  CheckCircle,
-  Circle,
-  ArrowRight,
-  Sparkles,
-  Trophy,
-  Star,
-  AlertCircle,
-  Clock,
-  Mail,
-  Shield,
-  Settings,
-  Zap,
-} from "lucide-react";
+import { User, Music, Camera, FileText, Share2, CheckCircle, ArrowRight, Sparkles, Trophy, Star, AlertCircle, Clock, Mail, Shield, Zap } from "lucide-react";
 
 export type ProfileSetupStep =
   | "verify_email"

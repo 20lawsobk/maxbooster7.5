@@ -128,7 +128,7 @@ export class AdvertisingNormalizationService {
    */
   async checkCompliance(
     content: string,
-    assets: string[],
+    _assets: string[],
   ): Promise<{ status: string; issues: Record<string, unknown> }> {
     const issues = {
       offensive: this.detectOffensiveContent(content),

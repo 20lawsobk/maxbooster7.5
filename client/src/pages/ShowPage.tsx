@@ -5,7 +5,6 @@ import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useStudioStore } from "@/lib/studioStore";
 import { useMetronome } from "@/hooks/useMetronome";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,48 +36,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Play,
-  Pause,
-  Square,
-  SkipBack,
-  SkipForward,
-  Music,
-  FileText,
-  Sliders,
-  Volume2,
-  VolumeX,
-  Headphones,
-  Timer,
-  AlertTriangle,
-  Maximize,
-  Minimize,
-  Settings,
-  Plus,
-  Trash2,
-  GripVertical,
-  ChevronUp,
-  ChevronDown,
-  Edit2,
-  Save,
-  Clock,
-  Zap,
-  Tablet,
-  Wifi,
-  WifiOff,
-  Eye,
-  EyeOff,
-  ArrowUp,
-  ArrowDown,
-  Layers,
-  Activity,
-  Radio,
-  StopCircle,
-  RotateCcw,
-  ListMusic,
-  MessageSquare,
-  Mic,
-} from "lucide-react";
+import { Play, Pause, Square, SkipBack, SkipForward, Music, FileText, Sliders, Volume2, VolumeX, Headphones, Timer, Maximize, Minimize, Settings, Plus, Trash2, ChevronUp, ChevronDown, Save, Tablet, Wifi, WifiOff, EyeOff, Radio, StopCircle, ListMusic, MessageSquare } from "lucide-react";
 
 interface SetlistSong {
   id: string;
@@ -110,17 +68,17 @@ interface RemoteDevice {
 }
 
 export default function ShowPage() {
-  const { user, isLoading } = useRequireSubscription();
+  const {  isLoading } = useRequireSubscription();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
 
   const {
     tempo,
     setTempo,
     isPlaying,
     setIsPlaying,
-    currentTime,
-    setCurrentTime,
+    
+    
     metronomeEnabled,
     setMetronomeEnabled,
     metronomeVolume,

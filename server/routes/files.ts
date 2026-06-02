@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db.js";
 import { userStorage, userStorageFiles } from "../../shared/schema.js";
-import { eq, and, desc, sql, like, isNull, isNotNull, lt } from "drizzle-orm";
+import { eq, and, desc, sql, isNull, isNotNull } from "drizzle-orm";
 import { storageService } from "../services/storageService.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import path from "path";
@@ -304,10 +304,9 @@ router.post(
         chunkIndex,
         totalChunks,
         fileId,
-        fileName,
-        fileSize,
+        
+        
         mimeType,
-        category = "files",
       } = req.body;
 
       if (!req.file) {
@@ -601,10 +600,10 @@ router.get("/list", async (req: Request, res: Response) => {
     }
 
     const {
-      folder = "/",
-      type,
-      sort = "uploadedAt",
-      order = "desc",
+      
+      
+      
+      
       includeDeleted = "false",
     } = req.query;
     const rawLimit2 = Number(req.query.limit ?? 50);

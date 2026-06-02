@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { setInterval, clearInterval } from "worker-timers";
 import { useUnifiedStore } from "@/stores/unifiedStoreAdapter";
 import { AudioEngineFactory } from "@/audio/AudioEngine";
 
@@ -40,7 +39,6 @@ export interface PrecisionTransportControls {
   toggleCountIn: () => void;
 }
 
-const TIMER_INTERVAL_MS = 1000 / 60;
 
 export function usePrecisionTransport(): [
   PrecisionTransportState,
@@ -49,7 +47,7 @@ export function usePrecisionTransport(): [
   const store = useUnifiedStore();
   const { transport, project } = store;
 
-  const timerRef = useRef<number | null>(null);
+  useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
   const audioEngineRef = useRef(AudioEngineFactory.getEngine());
   const [cpuUsage, setCpuUsage] = useState(0);

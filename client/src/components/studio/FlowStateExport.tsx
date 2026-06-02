@@ -1,13 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,23 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import {
-  Download,
-  Music,
-  FileAudio,
-  Settings,
-  Folder,
-  Check,
-  AlertCircle,
-  Loader2,
-  Volume2,
-  Waves,
-  Clock,
-  HardDrive,
-  Zap,
-} from "lucide-react";
+import { Download, Waves, Clock, HardDrive, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 

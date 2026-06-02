@@ -1,7 +1,6 @@
 import { createHash } from "crypto";
 import type { CdcChunk } from "./types.js";
 
-const WINDOW_SIZE = 48;
 const MIN_CHUNK = 512 * 1024;
 const AVG_CHUNK = 2 * 1024 * 1024;
 const MAX_CHUNK = 8 * 1024 * 1024;

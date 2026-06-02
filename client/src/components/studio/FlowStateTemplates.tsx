@@ -1,31 +1,10 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Folder,
-  Plus,
-  Check,
-  Star,
-  StarOff,
-  Search,
-  Music,
-  Drum,
-  Guitar,
-  Piano,
-  Mic2,
-  Layers,
-  Settings,
-  Download,
-  Upload,
-  Copy,
-  Trash2,
-  Play,
-  ChevronRight,
-} from "lucide-react";
+import { Folder, Plus, Check, Star, StarOff, Search, Music, Drum, Guitar, Piano, Mic2, Layers, Settings, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 

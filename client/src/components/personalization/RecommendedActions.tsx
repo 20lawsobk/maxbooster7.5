@@ -12,25 +12,7 @@ import {
   CareerStage,
   ArtistType,
 } from "./SmartDefaultsProvider";
-import {
-  ArrowRight,
-  Clock,
-  Zap,
-  Target,
-  TrendingUp,
-  MessageSquare,
-  DollarSign,
-  CheckCircle,
-  XCircle,
-  Lightbulb,
-  Star,
-  Music,
-  Users,
-  Upload,
-  Settings,
-  BarChart3,
-  Sparkles,
-} from "lucide-react";
+import { Clock, Zap, Target, TrendingUp, MessageSquare, DollarSign, CheckCircle, XCircle, Lightbulb, Star, Music, Users, Upload, Settings, BarChart3, Sparkles } from "lucide-react";
 
 export interface RecommendedAction {
   id: string;

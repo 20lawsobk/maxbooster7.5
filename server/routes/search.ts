@@ -1,32 +1,8 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db.js";
 import { storage } from "../storage.js";
-import {
-  eq,
-  ilike,
-  or,
-  and,
-  desc,
-  sql,
-  count,
-  gte,
-  lte,
-  asc,
-  sum,
-  inArray,
-} from "drizzle-orm";
-import {
-  users,
-  projects,
-  beats,
-  releases,
-  studioProjects,
-  storefronts,
-  analytics,
-  socialCampaigns,
-  searchHistory,
-  filterPresets,
-} from "../../shared/schema.js";
+import { eq, ilike, or, and, desc, count, gte, lte, asc, sum, inArray } from "drizzle-orm";
+import { users, projects, beats, releases, analytics, socialCampaigns, searchHistory, filterPresets } from "../../shared/schema.js";
 import { logger } from "../logger.js";
 
 const router = Router();
@@ -67,11 +43,6 @@ interface SearchQuery {
   sort?: "relevance" | "newest" | "popular" | "price_low" | "price_high";
 }
 
-interface SearchHistoryItem {
-  query: string;
-  timestamp: Date;
-  resultCount: number;
-}
 
 interface TrendingSearch {
   query: string;
@@ -79,7 +50,6 @@ interface TrendingSearch {
   trend: "up" | "down" | "stable";
 }
 
-const trendingSearchesCache: TrendingSearch[] = [];
 const autocompleteCache = new Map<string, string[]>();
 const MAX_AUTOCOMPLETE_CACHE = 2_000; // cap total entries; each key expires via setTimeout
 
@@ -598,7 +568,7 @@ router.get("/autocomplete", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/trending", async (req: Request, res: Response) => {
+router.get("/trending", async (_req: Request, res: Response) => {
   try {
     const trendingBeats = await db
       .select({
@@ -703,7 +673,6 @@ router.delete("/history/:query", async (req: Request, res: Response) => {
 router.get("/discover", async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { category = "all" } = req.query;
 
     const newReleases = await db
       .select()
@@ -1206,7 +1175,7 @@ router.get("/suggestions", async (req: Request, res: Response) => {
 router.get("/distribution", async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { q = "", status, platform } = req.query;
+    const { q = "", status } = req.query;
     const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
     const offset = Math.min(
       Math.max(0, Number(req.query.offset ?? 0)),
@@ -1550,7 +1519,7 @@ router.get("/social/search", async (req: Request, res: Response) => {
 
 router.get("/marketplace/producers", async (req: Request, res: Response) => {
   try {
-    const { q = "", genre } = req.query;
+    const { q = "" } = req.query;
     const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
     const offset = Math.min(
       Math.max(0, Number(req.query.offset ?? 0)),

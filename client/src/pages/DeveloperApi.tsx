@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
@@ -36,28 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Code,
-  Key,
-  Copy,
-  Trash2,
-  Eye,
-  EyeOff,
-  Plus,
-  Activity,
-  BarChart3,
-  CheckCircle2,
-  AlertCircle,
-  Info,
-  Zap,
-  Clock,
-  TrendingUp,
-  Shield,
-  Terminal,
-  Book,
-  ExternalLink,
-  RefreshCw,
-} from "lucide-react";
+import { Code, Key, Copy, Trash2, Plus, Activity, CheckCircle2, AlertCircle, Zap, Clock, Terminal, Book } from "lucide-react";
 
 interface ApiKey {
   id: string;
@@ -71,19 +50,6 @@ interface ApiKey {
   expiresAt: string | null;
 }
 
-interface ApiUsage {
-  totalRequests: number;
-  byEndpoint: Array<{
-    endpoint: string;
-    requests: number;
-    avgResponseTime: number;
-  }>;
-  byDay: Array<{
-    date: string;
-    requests: number;
-    avgResponseTime: number;
-  }>;
-}
 
 export default function DeveloperApi() {
   const { user, isLoading: authLoading } = useRequireAuth();
@@ -111,7 +77,7 @@ export default function DeveloperApi() {
   });
 
   // Fetch usage statistics
-  const { data: usageData, isLoading: usageLoading } = useQuery({
+  const { data: usageData } = useQuery({
     queryKey: ["/api/developer/usage"],
     enabled: !!user,
   });

@@ -16,13 +16,7 @@ import {
   type OutputModality,
   PACK_DEFINITIONS,
 } from "@shared/types/multimodalGeneration.js";
-import {
-  PLATFORM_RULES,
-  getRules,
-  enforceTextLength,
-  enforceHashtagLimit,
-  type PlatformRules,
-} from "@shared/config/platformRules.js";
+import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from "@shared/config/platformRules.js";
 
 // Strip any trailing /api so the base is always the root, then append /api.
 // This means AI_SERVER_URL can be set to either the root or the /api form and both work.
@@ -239,43 +233,7 @@ function matchReleaseByUrl(
   return undefined;
 }
 
-function safeExtractJson(raw: string): Record<string, unknown> {
-  const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = fenceMatch ? fenceMatch[1] : raw;
-  const braceStart = candidate.indexOf("{");
-  const braceEnd = candidate.lastIndexOf("}");
-  if (braceStart !== -1 && braceEnd !== -1) {
-    try {
-      return JSON.parse(candidate.slice(braceStart, braceEnd + 1));
-    } catch {}
-  }
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error("Could not parse JSON from MaxCore response");
-  }
-}
 
-function validateTaskPlan(
-  raw: Record<string, unknown>,
-  requestId: string,
-): TaskPlan {
-  if (!raw || !Array.isArray(raw.steps)) {
-    throw new Error("TaskPlan missing steps array");
-  }
-  const steps: TaskStep[] = (raw.steps as Record<string, unknown>[]).map(
-    (s: Record<string, unknown>, i: number) => ({
-      id: s.id || `step_${i}`,
-      type: s.type === "analyze" ? "analyze" : "generate",
-      worker: ["text", "image", "audio", "video"].includes(s.worker)
-        ? s.worker
-        : "text",
-      inputFrom: s.inputFrom || "normalizedInput",
-      params: s.params || {},
-    }),
-  );
-  return { requestId, steps };
-}
 
 // ── Local URL analyzer ────────────────────────────────────────────────────────
 
@@ -969,7 +927,7 @@ function getMaxBoosterRouteMeta(url: string): PageMeta | null {
 
 async function fetchUrlMetadata(
   url: string,
-  ctx: UrlContext,
+  _ctx: UrlContext,
 ): Promise<PageMeta> {
   // ── Max Booster own-app routes — no HTTP round-trip needed ─────
   const ownMeta = getMaxBoosterRouteMeta(url);
@@ -1305,7 +1263,7 @@ function getHashtagsForPlatform(
 function buildCopyFromContext(
   ctx: UrlContext,
   meta: PageMeta,
-  intent: string,
+  _intent: string,
   targetPlatform?: string,
 ): { hook: string; body: string; cta: string } {
   const title = meta.title ?? "";
@@ -2290,23 +2248,6 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
  * tokens, repeated hashtags).  Used to skip bad /generate/text outputs and
  * fall back to the local template builder.
  */
-function isGarbledText(text: string): boolean {
-  if (!text || text.length === 0) return false;
-  const first80 = text.slice(0, 80);
-  // 3+ standalone numbers in the first 80 chars → garbage
-  const numberTokens = (first80.match(/\b\d+\b/g) ?? []).length;
-  if (numberTokens >= 3) return true;
-  // Any angle-bracket control token → garbage
-  if (/<[A-Z_]{3,}>/.test(text)) return true;
-  // Same hashtag repeated 3+ times → garbage
-  const htMatch = text.match(/#(\w+)/g) ?? [];
-  const htFreq = htMatch.reduce<Record<string, number>>((acc, h) => {
-    acc[h] = (acc[h] ?? 0) + 1;
-    return acc;
-  }, {});
-  if (Object.values(htFreq).some((n) => n >= 3)) return true;
-  return false;
-}
 
 function buildLocalTextAssets(
   rawSlots: unknown[],
@@ -2427,7 +2368,7 @@ const textWorker = {
             },
           ]);
 
-    const slotsWithRules = rawSlots.map((slot: Record<string, unknown>) => ({
+    rawSlots.map((slot: Record<string, unknown>) => ({
       ...slot,
       platformRules: getRules(slot.platform as Platform)?.text ?? null,
     }));

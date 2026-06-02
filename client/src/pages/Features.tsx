@@ -2,20 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/ui/Logo";
-import {
-  Sparkles,
-  BarChart3,
-  Share2,
-  Megaphone,
-  DollarSign,
-  Music,
-  Wand2,
-  Globe,
-  TrendingUp,
-  Shield,
-  Zap,
-  Award,
-} from "lucide-react";
+import { Sparkles, Share2, Megaphone, Music, Globe, Zap } from "lucide-react";
 
 export default function Features() {
   return (

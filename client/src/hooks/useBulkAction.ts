@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -72,13 +72,6 @@ const defaultProgress: BulkActionProgress = {
   percentage: 0,
 };
 
-const defaultResult: BulkActionResult = {
-  success: [],
-  failed: [],
-  totalRequested: 0,
-  totalSucceeded: 0,
-  totalFailed: 0,
-};
 
 export function useBulkAction(
   options: UseBulkActionOptions = {},

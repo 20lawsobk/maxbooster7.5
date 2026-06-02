@@ -346,7 +346,7 @@ router.post("/diffusion/generate", requireAuth, async (req, res) => {
 
 // ── Background self-training control endpoints ─────────────────────────────
 
-router.get("/diffusion/background/status", requireAuth, async (req, res) => {
+router.get("/diffusion/background/status", requireAuth, async (_req, res) => {
   try {
     const { getBackgroundStatus } = await import(
       "../services/diffusionBackgroundTrainer.js"
@@ -357,7 +357,7 @@ router.get("/diffusion/background/status", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/diffusion/background/start", requireAuth, async (req, res) => {
+router.post("/diffusion/background/start", requireAuth, async (_req, res) => {
   try {
     const { startBackgroundTraining, getBackgroundStatus } = await import(
       "../services/diffusionBackgroundTrainer.js"

@@ -2,38 +2,15 @@ import { randomBytes } from "crypto";
 import { storage } from "../storage";
 import { db } from "../db.js";
 import { dspAnalytics, releases, royaltySplits } from "@shared/schema";
-import { eq, and, sql as drizzleSql } from "drizzle-orm";
+import { eq, sql as drizzleSql } from "drizzle-orm";
 import { notificationService } from "./notificationService.js";
 
-import type {
-  InsertRelease,
-  Release,
-  DistributionPackage,
-  InsertDistributionPackage,
-  DistributionTrack,
-  InsertDistributionTrack,
-  InsertDistributionSLAMetric,
-  DistributionSLAMetric,
-  InsertContentIdRegistration,
-  ContentIdRegistration,
-  InsertSyncLicense,
-  SyncLicense,
-  InsertSyncLicenseInquiry,
-  SyncLicenseInquiry,
-  InsertRoyaltySplit,
-  RoyaltySplit,
-  InsertRoyaltyTransaction,
-  RoyaltyTransaction,
-  InsertPreSaveCampaign,
-  PreSaveCampaign,
-  InsertPreSaveEntry,
-  PreSaveEntry,
-} from "@shared/schema";
+import type { InsertRelease, Release, DistributionPackage, InsertDistributionPackage, DistributionTrack, InsertDistributionTrack, DistributionSLAMetric, ContentIdRegistration, InsertSyncLicense, SyncLicense, InsertSyncLicenseInquiry, SyncLicenseInquiry, InsertRoyaltySplit, RoyaltySplit, InsertRoyaltyTransaction, RoyaltyTransaction, InsertPreSaveCampaign, PreSaveCampaign, InsertPreSaveEntry, PreSaveEntry } from "@shared/schema";
 import archiver from "archiver";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
-import { createReadStream, createWriteStream } from "fs";
+import { createWriteStream } from "fs";
 import { storageService } from "./storageService.js";
 import os from "os";
 import { randomUUID } from "crypto";
@@ -443,7 +420,7 @@ export class DistributionService {
   /**
    * Get release analytics — aggregated from dsp_analytics table
    */
-  async getReleaseAnalytics(releaseId: string, userId: string) {
+  async getReleaseAnalytics(releaseId: string, _userId: string) {
     try {
       const rows = await db
         .select({
@@ -1512,8 +1489,8 @@ Generated: ${new Date().toISOString()}
   async calculateRoyaltyDistribution(
     releaseId: string,
     totalEarnings: number,
-    periodStart: Date,
-    periodEnd: Date,
+    _periodStart: Date,
+    _periodEnd: Date,
   ): Promise<{
     distributions: Array<{
       splitId: string;

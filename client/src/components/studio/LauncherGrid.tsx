@@ -1,14 +1,4 @@
-import { useState, useCallback } from "react";
-import {
-  Play,
-  Square,
-  Plus,
-  Music,
-  Disc,
-  Layers,
-  ChevronDown,
-  MoreHorizontal,
-} from "lucide-react";
+import { Play, Square, Plus, Layers, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -231,7 +221,7 @@ export function LauncherGrid({
       {/* Scene Grid */}
       <ScrollArea className="flex-1">
         <div className="flex flex-col">
-          {scenes.map((scene, sceneIndex) => (
+          {scenes.map((scene, _sceneIndex) => (
             <div
               key={scene.id}
               className="flex border-b"

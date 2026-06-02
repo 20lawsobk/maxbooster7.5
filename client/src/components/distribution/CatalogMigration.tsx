@@ -187,7 +187,6 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
     totalTracks,
     validation,
     platformPresence,
-    missingFields,
   } = release._meta;
 
   const allDiscrepancies = validation.flatMap((v) => v.discrepancies);

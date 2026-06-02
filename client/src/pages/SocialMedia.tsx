@@ -50,72 +50,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest, uploadWithProgress } from "@/lib/queryClient";
-import {
-  Share2,
-  Plus,
-  Calendar,
-  BarChart2,
-  BarChart3,
-  Users,
-  Heart,
-  MessageCircle,
-  MessageSquare,
-  Eye,
-  ExternalLink,
-  Settings,
-  RefreshCw,
-  Upload,
-  Image,
-  Video,
-  Music,
-  Link,
-  Hash,
-  AtSign,
-  Globe,
-  Lock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Clock,
-  TrendingUp,
-  Target,
-  Zap,
-  Brain,
-  Sparkles,
-  Wand2,
-  Bot,
-  Send,
-  Edit,
-  Trash2,
-  Copy,
-  Download,
-  Filter,
-  Search,
-  Play,
-  Star,
-  Activity,
-  ArrowRight,
-  X,
-  FileImage,
-  Radio,
-  Mail,
-  Newspaper,
-  Mic2,
-  CheckCircle2,
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
-import {
-  FacebookIcon,
-  InstagramIcon,
-  YouTubeIcon,
-  TikTokIcon,
-  LinkedInIcon,
-  ThreadsIcon,
-  GoogleIcon,
-  MetaIcon,
-  XIcon,
-} from "@/components/ui/brand-icons";
+import { Share2, Plus, Calendar, BarChart2, BarChart3, Users, Heart, MessageCircle, MessageSquare, Eye, RefreshCw, Upload, Image, Video, Link, Globe, CheckCircle, XCircle, Clock, TrendingUp, Zap, Brain, Sparkles, Wand2, Bot, Send, Edit, Trash2, Copy, Download, Star, Activity, ArrowRight, X, FileImage, Radio, Mail, Newspaper, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { YouTubeIcon, TikTokIcon, LinkedInIcon, ThreadsIcon, GoogleIcon, MetaIcon, XIcon } from "@/components/ui/brand-icons";
 import { ContentCalendarView } from "@/components/social/ContentCalendarView";
 import {
   SchedulePostDialog,
@@ -137,14 +73,7 @@ import {
   AIImageGenerator,
   type ImagePlatform as AIImagePlatform,
 } from "@/components/content/AIImageGenerator";
-import {
-  SocialOutcomeHandler,
-  useOutcomeHandler,
-  OAuthStatusGrid,
-  NoPlatformsConnected,
-  NoScheduledPosts,
-  NoAnalyticsData,
-} from "@/components/social";
+import { SocialOutcomeHandler, useOutcomeHandler } from "@/components/social";
 
 // Social Media Platform Interfaces
 interface SocialPlatform {
@@ -184,17 +113,6 @@ interface SocialPost {
   publishedAt?: string;
 }
 
-interface AIContent {
-  id: string;
-  platform: string;
-  content: string;
-  hashtags: string[];
-  mentions: string[];
-  media: string[];
-  tone: "professional" | "casual" | "funny" | "inspirational" | "promotional";
-  engagement: number;
-  virality: number;
-}
 
 interface GeneratedContent {
   platform: string;
@@ -481,9 +399,9 @@ export default function SocialMedia() {
     clearOutcome,
     handleOAuthSuccess,
     handleOAuthDenied,
-    handleOAuthExpired,
+    
     handlePlatformUnavailable,
-    handlePostScheduled,
+    
     handleContentGenerated,
     handleContentGenerationFailed,
   } = useOutcomeHandler();
@@ -524,12 +442,12 @@ export default function SocialMedia() {
   >(new Set());
 
   // Helper function to format numbers with K/M suffix
-  const formatNumber = (num: number): string => {
+  ((num: number): string => {
     if (!num || num === 0) return "0";
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
-  };
+  });
 
   // Handle OAuth callback URL parameters
   useEffect(() => {
@@ -650,24 +568,24 @@ export default function SocialMedia() {
       : defaultPlatform;
   });
 
-  const { data: posts = [], isLoading: postsLoading } = useQuery<SocialPost[]>({
+  const { data: posts = [] } = useQuery<SocialPost[]>({
     queryKey: ["/api/social/posts"],
     enabled: !!user,
   });
 
-  const { data: metrics, isLoading: metricsLoading } = useQuery<SocialMetrics>({
+  const { data: metrics } = useQuery<SocialMetrics>({
     queryKey: ["/api/social/metrics"],
     enabled: !!user,
   });
 
-  const { data: aiInsights, isLoading: aiInsightsLoading } =
+  const { data: aiInsights } =
     useQuery<AIInsightsData>({
       queryKey: ["/api/social/ai-insights"],
       enabled: !!user,
       meta: { silentError: true },
     });
 
-  const { data: activity = [], isLoading: activityLoading } = useQuery<
+  const { data: activity = [] } = useQuery<
     ActivityItem[]
   >({
     queryKey: ["/api/social/activity"],
@@ -681,14 +599,14 @@ export default function SocialMedia() {
     });
 
   // Calendar queries
-  const { data: calendarPosts = [], isLoading: calendarLoading } = useQuery<
+  const { data: calendarPosts = [] } = useQuery<
     CalendarPost[] | { posts: CalendarPost[] }
   >({
     queryKey: ["/api/social/calendar"],
     enabled: !!user,
   });
 
-  const { data: calendarStats, isLoading: calendarStatsLoading } =
+  const { data: calendarStats } =
     useQuery<CalendarStats>({
       queryKey: ["/api/social/calendar/stats"],
       enabled: !!user,
@@ -1281,15 +1199,14 @@ export default function SocialMedia() {
   });
 
   // Autopilot Queries and Mutations
-  const { data: autopilotStatus, isLoading: autopilotLoading } =
-    useQuery<AutopilotStatus>({
+  useQuery<AutopilotStatus>({
       queryKey: ["/api/autopilot/status"],
       enabled: !!user,
       refetchInterval: 30000,
       meta: { silentError: true },
     });
 
-  const configureAutopilotMutation = useMutation({
+  useMutation({
     mutationFn: async (config: unknown) => {
       const response = await apiRequest(
         "POST",
@@ -1315,7 +1232,7 @@ export default function SocialMedia() {
     },
   });
 
-  const startAutopilotMutation = useMutation({
+  useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/autopilot/start", {});
       return response.json();
@@ -1338,7 +1255,7 @@ export default function SocialMedia() {
     },
   });
 
-  const stopAutopilotMutation = useMutation({
+  useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/autopilot/stop", {});
       return response.json();
@@ -5016,14 +4933,6 @@ function RadioPitchingContent() {
     magazine: "bg-pink-100 text-pink-700",
   };
 
-  const statusColors: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-600",
-    submitted: "bg-blue-100 text-blue-700",
-    under_review: "bg-yellow-100 text-yellow-700",
-    featured: "bg-green-100 text-green-700",
-    declined: "bg-red-100 text-red-700",
-    following_up: "bg-orange-100 text-orange-700",
-  };
 
   return (
     <div className="space-y-6">

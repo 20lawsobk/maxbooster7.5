@@ -41,8 +41,8 @@ const PROBE_INTERVAL_DEGRADED_MS = 10_000; // speed up when degraded
 const PROBE_INTERVAL_CRITICAL_MS = 5_000; // fastest when critical
 const SLOW_QUERY_THRESHOLD_MS = 1_000; // raised: Neon serverless cold-starts can exceed 400ms without being degraded
 const PDIM_SLOW_THRESHOLD_MS = 1_500; // raised: PDIM under burst load routinely exceeds 800ms without being degraded
-const HEAP_WARN_RATIO = 0.8; // warn when heap > 80 % of limit
-const HEAP_PATCH_RATIO = 0.92; // patch when heap > 92 %
+ // warn when heap > 80 % of limit
+ // patch when heap > 92 %
 const ROUTE_ERROR_WINDOW_MS = 60_000;
 const ROUTE_ERROR_THRESHOLD = 0.2; // 20 % 5xx → mark degraded
 const MAX_HISTORY = 200;

@@ -1421,7 +1421,6 @@ export class SelfEvolutionEngine extends EventEmitter {
   private lastCycleAt: Date | null = null;
   private lastCycleError: string | null = null;
   private totalCyclesRun: number = 0;
-  private competitorFeatures: CompetitorFeature[] = [];
   private platformStandards: PlatformStandard[] = [];
   // Competitive leadership tracking
   private competitivePositionScore: number = 0;
@@ -1437,16 +1436,6 @@ export class SelfEvolutionEngine extends EventEmitter {
   private readonly MAX_UPGRADES_IN_MEMORY = 200;
   private readonly MAX_SEEN_IDS = 2000;
   private readonly STATE_KEY = "evolution-state/state.json";
-  private readonly MAX_BOOSTER_MODULES = [
-    "studio",
-    "distribution",
-    "social",
-    "advertising",
-    "marketplace",
-    "analytics",
-    "security",
-    "monetization",
-  ];
 
   constructor() {
     super();
@@ -2527,29 +2516,6 @@ export class SelfEvolutionEngine extends EventEmitter {
   // HELPER METHODS
   // ============================================
 
-  private async checkIfMaxBoosterHasFeature(
-    featureName: string,
-  ): Promise<boolean> {
-    // Check if we already have this feature implemented
-    const existingFeatures = [
-      "AI Mixing",
-      "AI Mastering",
-      "BPM Detection",
-      "Key Detection",
-      "Stem Separation",
-      "Loudness Normalization",
-      "Social Media Autopilot",
-      "Advertising Autopilot",
-      "Analytics Dashboard",
-      "Distribution",
-    ];
-
-    return existingFeatures.some(
-      (f) =>
-        featureName.toLowerCase().includes(f.toLowerCase()) ||
-        f.toLowerCase().includes(featureName.toLowerCase()),
-    );
-  }
 
   private async identifyTargetFiles(change: IndustryChange): Promise<string[]> {
     const moduleFileMap: Record<string, string[]> = {
@@ -2598,15 +2564,6 @@ export class SelfEvolutionEngine extends EventEmitter {
     }
   }
 
-  private hashString(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash);
-  }
 
   private camelCase(str: string): string {
     return str

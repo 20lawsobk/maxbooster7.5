@@ -1,48 +1,7 @@
 import { logger } from "@/lib/logger";
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Volume2,
-  Settings,
-  Wand2,
-  Sparkles,
-  Brain,
-  Layers,
-  Music,
-  Mic,
-  Scissors,
-  Undo,
-  Redo,
-  Save,
-  Download,
-  Grid3X3,
-  Zap,
-  Clock,
-  ChevronRight,
-  PanelRightOpen,
-  PanelRightClose,
-  Box,
-  Sliders,
-  Activity,
-  Target,
-  Gauge,
-  Palette,
-  Radio,
-  Keyboard,
-  MousePointer,
-  Move,
-  Pencil,
-  Eraser,
-  Plus,
-  HelpCircle,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, Repeat, Settings, Wand2, Sparkles, Brain, Layers, Music, Mic, Scissors, Save, Download, Box, Sliders, Activity, Gauge, Radio, MousePointer, Move, Pencil, Eraser, Plus, HelpCircle } from "lucide-react";
 import "./FlowStateTheme.css";
 import {
   useFlowStateAdapter,
@@ -1307,7 +1266,7 @@ export function FlowStateStudioPro({
         isOpen={showAIGeneratorDialog}
         onClose={() => setShowAIGeneratorDialog(false)}
         projectId={projectId ? parseInt(projectId) : 0}
-        onGenerated={(params) => {
+        onGenerated={(_params) => {
           setShowAIGeneratorDialog(false);
         }}
       />

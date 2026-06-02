@@ -49,7 +49,7 @@ export function SessionExpiryWarning({
 }: SessionExpiryWarningProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 

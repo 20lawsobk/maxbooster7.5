@@ -20,13 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  Download,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-} from "lucide-react";
+import { Download, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";

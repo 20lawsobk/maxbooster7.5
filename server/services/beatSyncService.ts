@@ -17,7 +17,7 @@
 
 import { execFile, execFileSync, spawn } from "child_process";
 import { promisify } from "util";
-import { existsSync, readFileSync, unlinkSync } from "fs";
+import { existsSync, unlinkSync } from "fs";
 import { writeFile as fsWriteFile } from "fs/promises";
 import path from "path";
 import os from "os";
@@ -146,7 +146,7 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
   }
 
   // Smooth the envelope (3-sample moving average)
-  const smoothed = loudnessLog.map((v, i) => {
+  const smoothed = loudnessLog.map((_v, i) => {
     const window = loudnessLog.slice(Math.max(0, i - 1), i + 2);
     return window.reduce((s, x) => s + x, 0) / window.length;
   });
@@ -517,7 +517,7 @@ async function analyzeBeatLibrosa(
 
 function findMajorPeaks(
   envelope: number[],
-  duration: number,
+  _duration: number,
   threshold: number,
   minGapSamples: number,
 ): number[] {

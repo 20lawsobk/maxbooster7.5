@@ -97,18 +97,6 @@ function applyWindow(signal: Float32Array, window: Float32Array): Float32Array {
   return result;
 }
 
-function computeMagnitudeSpectrum(
-  fft: any,
-  realPart: number[],
-  imagPart: number[],
-): Float32Array {
-  const length = realPart.length / 2;
-  const magnitudes = new Float32Array(length);
-  for (let i = 0; i < length; i++) {
-    magnitudes[i] = Math.sqrt(realPart[i] ** 2 + imagPart[i] ** 2);
-  }
-  return magnitudes;
-}
 
 // ============================================================================
 // SPECTRAL ANALYSIS

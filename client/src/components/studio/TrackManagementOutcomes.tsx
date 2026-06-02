@@ -1,25 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Plus,
-  Copy,
-  Trash2,
-  Download,
-  Music,
-  Mic,
-  Drum,
-  Guitar,
-  Piano,
-  Waves,
-  Loader2,
-  Check,
-  AlertTriangle,
-  Undo,
-  ChevronRight,
-  Volume2,
-  Layers,
-  FolderPlus,
-} from "lucide-react";
+import { Plus, Copy, Trash2, Download, Music, Mic, Drum, Guitar, Piano, Waves, Loader2, AlertTriangle, Undo, Volume2, Layers, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -257,7 +238,7 @@ export function TrackManagementOutcomes({
     }
   }, [selectedTrack, onDeleteTrack, onUndo, toast]);
 
-  const handleDuplicateTrack = useCallback(
+  useCallback(
     async (track: Track) => {
       setIsProcessing(true);
       try {
@@ -351,15 +332,15 @@ export function TrackManagementOutcomes({
     }
   }, [selectedTrack, bounceOptions, onBounceTrack, toast]);
 
-  const openDeleteDialog = (track: Track) => {
+  ((track: Track) => {
     setSelectedTrack(track);
     setShowDeleteDialog(true);
-  };
+  });
 
-  const openBounceDialog = (track: Track) => {
+  ((track: Track) => {
     setSelectedTrack(track);
     setShowBounceDialog(true);
-  };
+  });
 
   return (
     <div className={cn("space-y-4", className)}>

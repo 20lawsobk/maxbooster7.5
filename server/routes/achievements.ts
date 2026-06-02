@@ -6,7 +6,7 @@ import { requireSafeParam } from "../middleware/requestValidation.js";
 
 const router = Router();
 
-router.get("/", requireAuth, async (req: Request, res: Response) => {
+router.get("/", requireAuth, async (_req: Request, res: Response) => {
   try {
     const achievements = await achievementService.getAllAchievements();
     return res.json(achievements);

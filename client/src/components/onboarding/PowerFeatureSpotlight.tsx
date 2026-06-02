@@ -123,7 +123,7 @@ export default function PowerFeatureSpotlight({
       );
       return { previousData };
     },
-    onError: (err, featureId, context) => {
+    onError: (_err, _featureId, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(
           ["/api/users/seen-features"],

@@ -1,11 +1,5 @@
 import { db } from "../db";
-import {
-  workspaceRoles,
-  workspaceMembers,
-  workspaces,
-  type WorkspaceRole,
-  type InsertWorkspaceRole,
-} from "@shared/schema";
+import { workspaceRoles, workspaceMembers, workspaces, type WorkspaceRole } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 

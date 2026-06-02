@@ -12,7 +12,7 @@ import { isProductionEnv } from "./lib/envHelpers.js";
 
 const execAsync = promisify(exec);
 
-const isDevelopment = !isProductionEnv();
+!isProductionEnv();
 let hasLoggedWarning = false;
 
 // Scalability Optimization System
@@ -82,7 +82,7 @@ export class ScalabilitySystem {
         cluster.fork();
       }
 
-      cluster.on("exit", (worker, code, signal) => {
+      cluster.on("exit", (worker, _code, _signal) => {
         logger.info(`💀 Worker ${worker.process.pid} died`);
         cluster.fork(); // Restart worker
       });
@@ -301,7 +301,7 @@ export class ScalabilitySystem {
 
   // Check scaling needs
   private async checkScalingNeeds(): Promise<void> {
-    const { cpuUsage, memoryUsage, activeConnections, throughput } =
+    const { cpuUsage, memoryUsage, activeConnections } =
       this.metrics;
 
     // Scale up conditions for extreme concurrency
@@ -435,7 +435,7 @@ export class ScalabilitySystem {
 
   // Middleware for request tracking
   public requestTrackingMiddleware = (
-    req: Request,
+    _req: Request,
     res: Response,
     next: NextFunction,
   ) => {

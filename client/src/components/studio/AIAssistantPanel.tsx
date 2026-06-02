@@ -15,21 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Wand2,
-  Music,
-  Upload,
-  Zap,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle2,
-  Lightbulb,
-  Volume2,
-  Target,
-  Sparkles,
-  FileAudio,
-  Loader2,
-} from "lucide-react";
+import { Music, Upload, Zap, TrendingUp, AlertCircle, CheckCircle2, Lightbulb, Volume2, Target, Loader2 } from "lucide-react";
 
 const LUFS_TARGETS = [
   { value: "-14", label: "-14 LUFS (Spotify, YouTube)", platform: "Streaming" },
@@ -92,7 +78,7 @@ export function AIAssistantPanel({
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
 
-  const { data: presetsData } = useQuery({
+  useQuery({
     queryKey: ["/api/studio/ai-music/presets"],
     queryFn: async () => {
       try {

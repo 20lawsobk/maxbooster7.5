@@ -1,4 +1,4 @@
-import type { AdCreative, AdCampaign } from "@shared/schema";
+import type { AdCreative } from "@shared/schema";
 import { storage } from "../storage";
 import { db } from "../db";
 import {
@@ -8,7 +8,7 @@ import {
   adCreativePredictions,
   adConversions,
 } from "@shared/schema";
-import { eq, and, gte, desc, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 interface CampaignInput {
   budget?: number;
@@ -1004,7 +1004,7 @@ export class AdvertisingAIService {
   ): Promise<Record<string, unknown>> {
     const startTime = Date.now();
 
-    const { campaignId, budget = 0, platforms, objective } = campaignSettings;
+    const { campaignId, budget = 0, platforms } = campaignSettings;
 
     // Deterministic forecasting
     const seed = (campaignId || 1) * 11111;
@@ -1104,7 +1104,6 @@ export class AdvertisingAIService {
     // Early warning system
     const warnings = [];
     const expectedCTR = 0.025;
-    const expectedConversionRate = 0.03;
 
     if (dailyProjections.length > 7) {
       const week1Clicks = dailyProjections
@@ -1376,7 +1375,7 @@ export class AdvertisingAIService {
    */
   private calculateAdSpendSavings(
     platformPerformance: Record<string, PlatformMetrics>,
-    suggestedBudget: number,
+    _suggestedBudget: number,
   ): number {
     let totalSavings = 0;
     const adCosts: Record<string, number> = {
@@ -1418,7 +1417,7 @@ export class AdvertisingAIService {
    */
   private generateEngagementOptimizations(
     creative: AdCreative,
-    platformPerformance: Record<string, PlatformMetrics>,
+    _platformPerformance: Record<string, PlatformMetrics>,
   ): string[] {
     const optimizations: string[] = [];
     const text = creative.normalizedContent || creative.rawContent || "";

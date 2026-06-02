@@ -165,7 +165,7 @@ export function DataTransferWizard() {
     queryKey: ["/api/distribution/transfer/platforms"],
   });
 
-  const { data: linkedProfiles, refetch: refetchProfiles } = useQuery<{
+  const { data: linkedProfiles } = useQuery<{
     profiles: LinkedProfile[];
   }>({
     queryKey: ["/api/distribution/profiles"],

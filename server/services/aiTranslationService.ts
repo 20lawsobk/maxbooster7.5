@@ -381,10 +381,10 @@ class AITranslationService {
     content: string,
     headline: string | undefined,
     hashtags: string[],
-    sourceLang: string,
+    _sourceLang: string,
     targetLang: string,
     preserveTone: boolean,
-    platform?: string,
+    _platform?: string,
   ): Promise<TranslatedContent> {
     const langData = LANGUAGE_DATA[targetLang];
     if (!langData) {
@@ -616,24 +616,6 @@ class AITranslationService {
     return Math.min(confidence, 95);
   }
 
-  private createFallbackTranslation(
-    content: string,
-    headline: string | undefined,
-    hashtags: string[],
-    targetLang: string,
-  ): TranslatedContent {
-    return {
-      language: targetLang,
-      languageCode: targetLang,
-      content: content,
-      headline: headline,
-      hashtags: hashtags,
-      culturalNotes: [
-        "Fallback to original content - manual translation recommended",
-      ],
-      confidence: 30,
-    };
-  }
 
   getSupportedLanguages(): {
     code: string;

@@ -252,7 +252,7 @@ router.get(
 router.get(
   "/stats",
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (_req: AuthenticatedRequest, res: Response) => {
     try {
       const stats = await fabricStorage.getStats();
       res.json(stats);

@@ -9,13 +9,6 @@ import {
 } from "@/lib/imageUpload";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,36 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { announce } from "@/lib/accessibility";
 import { cn } from "@/lib/utils";
-import {
-  Music,
-  Mic2,
-  Guitar,
-  Headphones,
-  Building2,
-  Users,
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  X,
-  Sparkles,
-  Camera,
-  Upload,
-  User,
-  PartyPopper,
-  Rocket,
-  Target,
-  Share2,
-  DollarSign,
-  BarChart3,
-  Zap,
-  Star,
-  Heart,
-  Instagram,
-  Twitter,
-  Youtube,
-  ExternalLink,
-  Trophy,
-} from "lucide-react";
+import { Music, Mic2, Guitar, Headphones, Building2, Users, ArrowRight, ArrowLeft, Check, X, Sparkles, Camera, Upload, User, PartyPopper, Rocket, Share2, DollarSign, BarChart3, Star, Heart, Trophy } from "lucide-react";
 
 interface WelcomeFlowProps {
   isOpen: boolean;

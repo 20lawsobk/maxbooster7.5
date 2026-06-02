@@ -1,13 +1,6 @@
 import { logger } from "../lib/logger";
 import { useState, useEffect, useCallback } from "react";
-import {
-  offlineQueue,
-  syncManager,
-  QueuedAction,
-  ActionPriority,
-  ConflictStrategy,
-  ActionStatus,
-} from "@/lib/offline";
+import { offlineQueue, syncManager, QueuedAction, ActionPriority, ConflictStrategy } from "@/lib/offline";
 
 export interface QueueStats {
   pending: number;
@@ -75,7 +68,7 @@ export function useSyncQueue(
     autoSync = true,
     onActionAdded,
     onActionCompleted,
-    onActionFailed,
+    
     onConflict,
   } = options;
 

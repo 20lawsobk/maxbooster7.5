@@ -946,7 +946,7 @@ class CustomAIEngine {
 
   async optimizeSocialPosting(
     platform: string,
-    content: unknown,
+    _content: unknown,
   ): Promise<unknown> {
     const modelParams = this.modelParameters.get("social_posting") || {};
 
@@ -1481,7 +1481,7 @@ class CustomAIEngine {
     return platformRecs[contentType] || "High-quality image or short video";
   }
 
-  private trackTemplateUsage(templateId: string, platform: string): void {
+  private trackTemplateUsage(templateId: string, _platform: string): void {
     this.recentlyUsedTemplates.push(templateId);
     if (this.recentlyUsedTemplates.length > 10) {
       this.recentlyUsedTemplates.shift();

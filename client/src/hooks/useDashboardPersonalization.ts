@@ -137,7 +137,7 @@ export function useDashboardPersonalization() {
       if (!layout) return;
 
       const widgets = layout.widgets
-        .map((w, index) => ({
+        .map((w, _index) => ({
           ...w,
           position:
             w.id === widgetId

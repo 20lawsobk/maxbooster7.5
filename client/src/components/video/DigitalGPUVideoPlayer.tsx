@@ -32,14 +32,7 @@
  *       instead of Date.now() — sub-millisecond frame timing.
  */
 
-import React, {
-  useRef,
-  useEffect,
-  useCallback,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from "react";
 
 import {
   DigitalGPUInferenceBridge,
@@ -129,7 +122,7 @@ const DigitalGPUVideoPlayer = forwardRef<
   const {
     frames = [],
     sceneName = "default",
-    sceneMetadata,
+    
     serverGpuApplied = false,
     skipClientGpu = false,
     streamMode = false,

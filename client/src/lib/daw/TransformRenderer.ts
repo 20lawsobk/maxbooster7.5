@@ -177,7 +177,7 @@ export class TransformRenderer {
   private async processChain(
     inputData: Float32Array,
     chain: ProcessingChain,
-    audioContext?: AudioContext,
+    _audioContext?: AudioContext,
     onProgress?: (progress: number) => void,
   ): Promise<Float32Array> {
     if (chain.bypass || chain.plugins.length === 0) {
@@ -292,9 +292,9 @@ export class TransformRenderer {
     output: Float32Array,
     params: Record<string, number>,
   ): Float32Array {
-    const lowGain = Math.pow(10, (params.lowGain ?? 0) / 20);
+    Math.pow(10, (params.lowGain ?? 0) / 20);
     const midGain = Math.pow(10, (params.midGain ?? 0) / 20);
-    const highGain = Math.pow(10, (params.highGain ?? 0) / 20);
+    Math.pow(10, (params.highGain ?? 0) / 20);
 
     for (let i = 0; i < input.length; i++) {
       output[i] = input[i] * midGain;

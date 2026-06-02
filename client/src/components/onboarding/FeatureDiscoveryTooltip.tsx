@@ -6,17 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  X,
-  ArrowRight,
-  ArrowLeft,
-  Lightbulb,
-  Sparkles,
-  HelpCircle,
-  Check,
-  SkipForward,
-  RotateCcw,
-} from "lucide-react";
+import { X, ArrowRight, ArrowLeft, Lightbulb, HelpCircle, Check, SkipForward, RotateCcw } from "lucide-react";
 
 export interface TooltipStep {
   id: string;
@@ -45,12 +35,6 @@ interface FeatureDiscoveryTooltipProps {
   initialStep?: number;
 }
 
-const POSITION_OFFSETS = {
-  top: { x: 0, y: -12 },
-  bottom: { x: 0, y: 12 },
-  left: { x: -12, y: 0 },
-  right: { x: 12, y: 0 },
-};
 
 export default function FeatureDiscoveryTooltip({
   tutorial,

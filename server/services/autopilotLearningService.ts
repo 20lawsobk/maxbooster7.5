@@ -554,7 +554,7 @@ class AutopilotLearningService {
 
   async getActiveInsights(userId: string): Promise<any[]> {
     try {
-      const now = new Date();
+      new Date();
       return await db
         .select()
         .from(autopilotInsights)
@@ -673,7 +673,7 @@ class AutopilotLearningService {
 
   private async updateInsightsIfNeeded(
     userId: string,
-    platform: string,
+    _platform: string,
   ): Promise<void> {
     try {
       const thirtyDaysAgo = new Date();

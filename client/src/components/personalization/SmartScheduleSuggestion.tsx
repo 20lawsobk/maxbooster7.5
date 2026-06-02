@@ -26,24 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Clock,
-  Calendar,
-  TrendingUp,
-  Users,
-  Sparkles,
-  Globe,
-  Sun,
-  Moon,
-  Sunrise,
-  Sunset,
-  Target,
-  BarChart3,
-  CheckCircle,
-  Info,
-  Zap,
-  ThumbsUp,
-} from "lucide-react";
+import { Clock, Calendar, TrendingUp, Users, Sparkles, Globe, Sun, Moon, Sunrise, Sunset, Target, Info, Zap, ThumbsUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type DayOfWeek =
@@ -114,12 +97,6 @@ const timeSlotIcons: Record<TimeSlot, React.ElementType> = {
   night: Moon,
 };
 
-const timeSlotLabels: Record<TimeSlot, string> = {
-  morning: "6am - 12pm",
-  afternoon: "12pm - 5pm",
-  evening: "5pm - 9pm",
-  night: "9pm - 6am",
-};
 
 const daysOfWeek: DayOfWeek[] = [
   "monday",
@@ -138,7 +115,7 @@ export function SmartScheduleSuggestion({
   showAnalytics = true,
   compact = false,
 }: SmartScheduleSuggestionProps) {
-  const queryClient = useQueryClient();
+  useQueryClient();
   const [selectedPlatform, setSelectedPlatform] = useState(platform);
   const [hoveredDay, setHoveredDay] = useState<DayOfWeek | null>(null);
 

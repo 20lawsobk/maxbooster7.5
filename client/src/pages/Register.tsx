@@ -97,7 +97,7 @@ const OAUTH_ERROR_MESSAGES: Record<
 
 export default function Register() {
   const [, navigate] = useLocation();
-  const { register } = useAuth();
+  useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   useRedirectIfAuthenticated();

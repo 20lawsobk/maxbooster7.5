@@ -3,19 +3,9 @@ import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { logger } from "../logger.js";
-import {
-  viralScoringService,
-  type ContentData,
-  type ViralScore,
-} from "../services/viralScoring.js";
-import {
-  timingOptimizerService,
-  type OptimalTiming,
-} from "../services/timingOptimizer.js";
-import {
-  contentVariantGeneratorService,
-  type Variant,
-} from "../services/contentVariantGenerator.js";
+import { viralScoringService, type ContentData } from "../services/viralScoring.js";
+import { timingOptimizerService } from "../services/timingOptimizer.js";
+import { contentVariantGeneratorService } from "../services/contentVariantGenerator.js";
 import {
   algorithmIntelligenceService,
   type AlgorithmHealth,

@@ -23,26 +23,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Edit,
-  Loader2,
-  Eye,
-  Settings,
-  Tag,
-  Calendar,
-  ChevronRight,
-  Info,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Edit, Loader2, Eye, Settings, ChevronRight, Info } from "lucide-react";
 
 export interface BatchEditField {
   key: string;

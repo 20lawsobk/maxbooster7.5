@@ -149,7 +149,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     modulePreload: {
       polyfill: false,
-      resolveDependencies(filename, deps) {
+      resolveDependencies(_filename, deps) {
         // Never eagerly preload heavy or rarely-needed chunks — let them load
         // on demand when the relevant route or feature is first accessed.
         const HEAVY = [

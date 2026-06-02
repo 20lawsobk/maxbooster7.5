@@ -15,32 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Play,
-  Square,
-  Shield,
-  Cpu,
-  Activity,
-  Zap,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  RefreshCw,
-  FlaskConical,
-  Radio,
-  Globe,
-  Music,
-  BarChart3,
-  PowerOff,
-  Power,
-  Loader2,
-  Wrench,
-  Bug,
-  HeartPulse,
-  Server,
-  Timer,
-} from "lucide-react";
+import { Play, Square, Shield, Cpu, Activity, Zap, TrendingUp, AlertTriangle, CheckCircle, Clock, RefreshCw, FlaskConical, Radio, Globe, Music, BarChart3, PowerOff, Power, Loader2, Wrench, Bug, HeartPulse, Server } from "lucide-react";
 
 const URGENCY_COLORS: Record<string, string> = {
   critical: "bg-red-100 text-red-700 border-red-200",
@@ -88,10 +63,10 @@ export default function AdminAutonomy() {
     queryKey: updatesKey,
     refetchInterval: 30000,
   });
-  const { data: changesData } = useQuery<Record<string, unknown>>({
+  useQuery<Record<string, unknown>>({
     queryKey: changesKey,
   });
-  const { data: upgradesData } = useQuery<Record<string, unknown>>({
+  useQuery<Record<string, unknown>>({
     queryKey: upgradesKey,
   });
   const { data: securityMetrics } = useQuery<Record<string, unknown>>({
@@ -1137,8 +1112,6 @@ export default function AdminAutonomy() {
                     (pf.subsystems as Record<string, unknown>) ?? {};
                   const patches: Record<string, unknown>[] =
                     pf.activePatches ?? [];
-                  const incidents: Record<string, unknown>[] =
-                    pf.incidents ?? [];
                   const subsysNames = Object.keys(subsystems);
                   const degraded = subsysNames.filter(
                     (s) =>

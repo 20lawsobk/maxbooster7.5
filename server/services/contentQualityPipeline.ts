@@ -3,11 +3,7 @@ import { db } from "../db";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { aiService } from "./aiService";
-import {
-  advancedSocialAIService,
-  type AdvancedContentRequest,
-  type ContentScoring as AdvancedScoring,
-} from "./advancedSocialAIService.js";
+import { advancedSocialAIService, type AdvancedContentRequest } from "./advancedSocialAIService.js";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
 import { platformAlgorithmOptimizer } from "./platformAlgorithmOptimizer.js";
 import { getCalibratedWeights } from "./maxcoreScoreCalibrator.js";
@@ -96,15 +92,6 @@ function pressureAdjustedMinScore(baseMin: number): number {
  * with an engagement score boost proportional to how behind we are.
  * Max +12 pts at critical pressure.
  */
-function pressureUrgencyBoost(content: string): number {
-  if (_currentPressure <= 0) return 0;
-  const urgencyRx =
-    /\b(now|tonight|today|last chance|limited|dropping|coming|soon|hours? left|don'?t miss|before|exclusive|only|this week|right now|immediately)\b/i;
-  if (!urgencyRx.test(content)) return 0;
-  const factor = Math.min(1, _currentPressure / 1.5);
-  const maxBoost = _currentPressure > 1.5 ? 12 : _currentPressure > 0.5 ? 8 : 4;
-  return Math.round(maxBoost * factor);
-}
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ContentVariant {
@@ -179,52 +166,6 @@ export interface RecentPerformance {
   bestPostingTimes: { day: number; hour: number }[];
 }
 
-const PLATFORM_CONSTRAINTS: Record<
-  string,
-  {
-    maxCharacters: number;
-    optimalHashtags: { min: number; max: number };
-    optimalEmojis: { min: number; max: number };
-    features: string[];
-  }
-> = {
-  twitter: {
-    maxCharacters: 280,
-    optimalHashtags: { min: 1, max: 3 },
-    optimalEmojis: { min: 0, max: 2 },
-    features: ["threads", "polls", "mentions"],
-  },
-  instagram: {
-    maxCharacters: 2200,
-    optimalHashtags: { min: 5, max: 15 },
-    optimalEmojis: { min: 2, max: 5 },
-    features: ["carousels", "reels", "stories", "shoppable"],
-  },
-  facebook: {
-    maxCharacters: 63206,
-    optimalHashtags: { min: 1, max: 3 },
-    optimalEmojis: { min: 1, max: 3 },
-    features: ["events", "groups", "live", "stories"],
-  },
-  tiktok: {
-    maxCharacters: 2200,
-    optimalHashtags: { min: 3, max: 5 },
-    optimalEmojis: { min: 1, max: 3 },
-    features: ["duets", "stitches", "sounds", "effects"],
-  },
-  linkedin: {
-    maxCharacters: 3000,
-    optimalHashtags: { min: 3, max: 5 },
-    optimalEmojis: { min: 0, max: 2 },
-    features: ["articles", "newsletters", "polls"],
-  },
-  youtube: {
-    maxCharacters: 5000,
-    optimalHashtags: { min: 3, max: 15 },
-    optimalEmojis: { min: 1, max: 3 },
-    features: ["shorts", "community", "premiere"],
-  },
-};
 
 const HOOK_PATTERNS = [
   /^(🔥|💥|⚡|🚀|✨|🎵|🎶|🚨|💀|🤯|👀|💯|🎤|🎧)/,
@@ -440,18 +381,6 @@ const RELEASE_PHASE_MULTIPLIERS: Record<string, number> = {
 // ─── SELF-IDENTIFICATION PHRASES ──────────────────────────────────────────────
 // Phrases that make the reader see themselves in the content. Boosts comments
 // and shares because people tag friends who "fit" the identity described.
-const SELF_IDENTIFICATION_PHRASES = [
-  "For the artists who are still building",
-  "This one is for the people who feel everything",
-  "If you've ever written a song at 3am and wondered if it matters",
-  "For everyone who told you it was just a hobby",
-  "For the independent artists grinding without a label",
-  "If you believe in the music before anyone else does",
-  "For the ones who never stopped creating even when nobody was watching",
-  "For the fans who stream on repeat and never skip",
-  "If music has ever saved you on a hard day — this one is for you",
-  "For the bedroom producers who became everything",
-];
 
 class ContentQualityPipeline {
   async buildContext(
@@ -713,7 +642,6 @@ class ContentQualityPipeline {
           let hookTemplate = seededPick(hookList as string[]);
 
           // Fill simple template placeholders
-          const artistName = context.artistName || "your artist";
           const topic = context.topic || "new music";
           hookTemplate = hookTemplate
             .replace(/\{scenario\}/g, topic)
@@ -1396,7 +1324,7 @@ class ContentQualityPipeline {
   ): number {
     let score = 55;
     const lower = content.toLowerCase();
-    const headlineLower = headline.toLowerCase();
+    headline.toLowerCase();
 
     // ── Hook quality ──────────────────────────────────────────────────────────
     if (headline.match(/^(🔥|💥|⚡|🚀|🚨|👀|💀|🤯|💯)/)) score += 7;
@@ -1869,7 +1797,7 @@ class ContentQualityPipeline {
       const advancedResult =
         await advancedSocialAIService.generateAdvancedContent(advancedRequest);
 
-      const variants: ContentVariant[] = advancedResult.variants.map((v, i) => {
+      const variants: ContentVariant[] = advancedResult.variants.map((v, _i) => {
         // Apply algorithm signal optimization and run full pipeline scoring
         const body = v.content.split("\n\n")[1] || v.content;
         const optimised = this.applyAlgorithmSignalOptimization(

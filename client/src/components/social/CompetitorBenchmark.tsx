@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -44,47 +44,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Users,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  LineChart,
-  PieChart,
-  Plus,
-  Trash2,
-  RefreshCw,
-  Download,
-  Calendar,
-  Clock,
-  Target,
-  Award,
-  Eye,
-  Heart,
-  MessageSquare,
-  Share2,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  ExternalLink,
-  Mail,
-  FileText,
-  Settings,
-  MoreHorizontal,
-  Search,
-  Zap,
-  Crown,
-  Activity,
-  Globe,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+import { Users, TrendingUp, TrendingDown, BarChart3, PieChart, Plus, Trash2, RefreshCw, Download, Clock, Target, Eye, ArrowUp, ArrowDown, Minus, ExternalLink, Mail, MoreHorizontal, Zap, Crown, Activity, CheckCircle, AlertCircle } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -94,7 +54,6 @@ import {
   TwitterIcon,
 } from "@/components/ui/brand-icons";
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays } from "date-fns";
 
 interface Competitor {
   id: string;
@@ -315,7 +274,7 @@ export function CompetitorBenchmark() {
     setShowAddDialog(false);
   };
 
-  const handleRemoveCompetitor = (id: string, name: string) => {
+  const handleRemoveCompetitor = (_id: string, name: string) => {
     toast({
       title: "Competitor Removed",
       description: `${name} has been removed from tracking.`,
@@ -404,7 +363,7 @@ export function CompetitorBenchmark() {
   };
 
   const renderEngagementComparison = () => {
-    const maxEngagement = Math.max(...allBrands.map((b) => b.avgEngagement));
+    Math.max(...allBrands.map((b) => b.avgEngagement));
 
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -12,11 +12,7 @@ import { db } from "../../db.js";
 import { hnsAuctions } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { logger } from "../../logger.js";
-import {
-  HnsClient,
-  HnsNameInfo,
-  buildMaxBoosterNSRecords,
-} from "./HnsClient.js";
+import { HnsClient, buildMaxBoosterNSRecords } from "./HnsClient.js";
 
 export type AuctionState =
   | "pending_open"
@@ -192,7 +188,6 @@ export class HnsAuctionManager {
       if (!owned) throw new Error(`Did not win auction for "${row.name}"`);
     }
 
-    const dns = process.env.BASE_DOMAIN || "max-booster.com";
     const records = buildMaxBoosterNSRecords(row.name, ns1IP, ns2IP);
 
     try {

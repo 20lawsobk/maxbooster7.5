@@ -1,20 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  Volume2,
-  VolumeX,
-  Headphones,
-  Mic,
-  ChevronDown,
-  ChevronUp,
-  Plus,
-  MoreVertical,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,13 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { studioOneTheme } from "@/lib/studioOneTheme";
 import { useStudioLayoutStore } from "@/lib/studioLayoutStore";
-import {
-  valueToDb,
-  dbToValue,
-  MAX_DB,
-  MIN_DB,
-  DB_RANGE,
-} from "./ProfessionalFader";
+import { valueToDb, dbToValue } from "./ProfessionalFader";
 
 interface InsertEffect {
   id: string;

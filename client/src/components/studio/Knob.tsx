@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion, useSpring, useMotionValue, useTransform } from "framer-motion";
+import { motion, useSpring, useMotionValue } from "framer-motion";
 
 interface KnobProps {
   value: number; // -1 to 1 or 0 to 1 depending on bipolar

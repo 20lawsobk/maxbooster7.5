@@ -1,24 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-  Waves,
-  Zap,
-  Settings,
-  Play,
-  Pause,
-  RotateCcw,
-  Cpu,
-  Activity,
-  Maximize2,
-  Minimize2,
-  Lock,
-  Unlock,
-  Brush,
-  Eraser,
-  Move,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { Waves, Zap, RotateCcw, Cpu, Activity, Maximize2, Minimize2, Lock, Unlock, Brush, Eraser, Move, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
@@ -77,8 +59,8 @@ export function SpectralProcessor({
 }: SpectralProcessorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const spectrogramRef = useRef<ImageData | null>(null);
-  const animationRef = useRef<number>();
-  const gpuContextRef = useRef<WebGLRenderingContext | GPU | null>(null);
+  useRef<number>();
+  useRef<WebGLRenderingContext | GPU | null>(null);
 
   const [config, setConfig] = useState<SpectralProcessorConfig>({
     fftSize: 2048,
@@ -164,7 +146,6 @@ export function SpectralProcessor({
       setIsProcessing(true);
 
       const channelData = buffer.getChannelData(0);
-      const sampleRate = buffer.sampleRate;
       const fftSize = config.fftSize;
       const hopSize = Math.floor(fftSize * (1 - config.overlap));
       const numFrames = Math.floor((channelData.length - fftSize) / hopSize);

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useEffect, useState } from "react";
+import { useCallback, useMemo, useEffect } from "react";
 import ReactFlow, {
   Node,
   Edge,
@@ -15,18 +15,7 @@ import ReactFlow, {
   NodeProps,
   Panel,
 } from "reactflow";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Volume2,
-  Headphones,
-  Mic,
-  Music,
-  Radio,
-  Sliders,
-  Plus,
-  X,
-  Trash2,
-} from "lucide-react";
+import { Volume2, Headphones, Music, Radio, Sliders, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUnifiedStore } from "@/stores/unifiedStoreAdapter";
 import { cn } from "@/lib/utils";
@@ -42,12 +31,6 @@ interface RoutingNode {
   solo: boolean;
 }
 
-interface RoutingConnection {
-  from: string;
-  to: string;
-  gain: number;
-  preFader: boolean;
-}
 
 const NODE_TYPE_ICONS: Record<string, React.ReactNode> = {
   track: <Music className="w-4 h-4" />,

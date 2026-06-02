@@ -428,7 +428,7 @@ async function fetchModelStates(): Promise<
  * live POST /api/generate/content generation signals — all in parallel.
  */
 async function fetchMaxCoreCalibration(
-  summary: PerformanceSummary | null,
+  _summary: PerformanceSummary | null,
 ): Promise<{
   calibration: MaxCoreCalibrationResponse | null;
   reachable: boolean;

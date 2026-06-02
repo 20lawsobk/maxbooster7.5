@@ -12,7 +12,7 @@ export function OAuthCallbackHandler() {
     const search = window.location.search;
     const params = new URLSearchParams(search);
     const code = params.get("code");
-    const state = params.get("state");
+    params.get("state");
     const error = params.get("error");
 
     if (!code && !error) return;

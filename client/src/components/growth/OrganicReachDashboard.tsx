@@ -12,23 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  BarChart3,
-  Zap,
-  Target,
-  Lightbulb,
-  RefreshCw,
-  ArrowUpRight,
-  Activity,
-  Eye,
-  Share2,
-  Heart,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, BarChart3, Zap, Target, Lightbulb, RefreshCw, ArrowUpRight, Activity, Eye, Heart } from "lucide-react";
 
 interface PlatformHealth {
   platform: string;
@@ -140,20 +124,6 @@ export function OrganicReachDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "healthy":
-        return "bg-green-500";
-      case "warning":
-        return "bg-yellow-500";
-      case "critical":
-        return "bg-red-500";
-      case "shadowbanned":
-        return "bg-purple-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<
@@ -474,7 +444,7 @@ export function OrganicReachDashboard() {
                     </div>
 
                     <div className="grid grid-cols-7 gap-1">
-                      {dayNames.map((day, i) => (
+                      {dayNames.map((day, _i) => (
                         <div
                           key={day}
                           className="text-center text-xs text-muted-foreground"

@@ -228,7 +228,6 @@ class ReliabilityCoordinator extends EventEmitter {
   }
 
   private updateReliabilityMetrics(): void {
-    const uptimeHours = this.systemHealth.uptime / (1000 * 60 * 60);
 
     // Calculate uptime percentage (assume target is 99.9%)
     this.systemHealth.reliability.uptimePercentage = Math.min(
@@ -330,7 +329,7 @@ class ReliabilityCoordinator extends EventEmitter {
 
   private async attemptAutoRecovery(
     component: string,
-    data: unknown,
+    _data: unknown,
   ): Promise<void> {
     logger.info(`🔄 Attempting auto-recovery for ${component}...`);
 

@@ -24,27 +24,7 @@ import {
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
-import {
-  TrendingUp,
-  TrendingDown,
-  Users,
-  AlertTriangle,
-  DollarSign,
-  Activity,
-  Brain,
-  Zap,
-  Target,
-  Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
-  Loader2,
-  Sparkles,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Shield,
-} from "lucide-react";
+import { TrendingUp, Users, AlertTriangle, DollarSign, Activity, Brain, Zap, Target, ArrowUpRight, ArrowDownRight, Loader2, Sparkles, AlertCircle, CheckCircle2, XCircle, Clock, Shield } from "lucide-react";
 
 interface MetricPrediction {
   metric: string;
@@ -244,7 +224,6 @@ export default function AIDashboard() {
       const data = await response.json();
 
       const currentMRR = data.currentMRR || 0;
-      const projectedMRR = data.projectedMRR || 0;
       const growthRate = data.growthRate || 0;
 
       const scenarios: RevenueScenario[] = [
@@ -351,7 +330,6 @@ export default function AIDashboard() {
   const {
     data: releaseStrategy,
     isLoading: loadingReleaseStrategy,
-    error: releaseStrategyError,
   } = useQuery<ReleaseStrategyInsight>({
     queryKey: ["/api/analytics/music/release-strategy"],
     queryFn: async () => {
@@ -385,7 +363,6 @@ export default function AIDashboard() {
   const {
     data: careerMilestones,
     isLoading: loadingMilestones,
-    error: milestonesError,
   } = useQuery<CareerMilestone[]>({
     queryKey: ["/api/analytics/music/milestones"],
     queryFn: async () => {
@@ -399,11 +376,7 @@ export default function AIDashboard() {
     },
   });
 
-  const {
-    data: musicInsights,
-    isLoading: loadingMusicInsights,
-    error: musicInsightsError,
-  } = useQuery<MusicInsight[]>({
+  useQuery<MusicInsight[]>({
     queryKey: ["/api/analytics/music/insights"],
     queryFn: async () => {
       const response = await fetch("/api/analytics/music/insights", {

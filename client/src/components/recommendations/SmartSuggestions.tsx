@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,23 +18,7 @@ import {
 } from "@/hooks/useSmartDefaults";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Brain,
-  Sparkles,
-  Calendar,
-  Share2,
-  Settings,
-  Check,
-  X,
-  ArrowRight,
-  Zap,
-  TrendingUp,
-  Clock,
-  Target,
-  AlertCircle,
-  ChevronRight,
-  RefreshCw,
-} from "lucide-react";
+import { Brain, Sparkles, Calendar, Share2, Settings, Check, ArrowRight, Zap, TrendingUp, Clock, Target, AlertCircle, RefreshCw } from "lucide-react";
 
 interface SmartSuggestionsProps {
   showHeader?: boolean;
@@ -46,7 +30,7 @@ export function SmartSuggestions({
   defaultTab = "all",
 }: SmartSuggestionsProps) {
   const {
-    recommendations,
+    
     isLoading: loadingRecs,
     getHighPriorityRecommendations,
   } = useRecommendations();

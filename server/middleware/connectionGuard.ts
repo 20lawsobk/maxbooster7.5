@@ -4,7 +4,7 @@ import { config } from "../config/defaults.js";
 import { logger } from "../logger.js";
 
 export class ConnectionGuard {
-  static async checkCapacity(req: Request, res: Response, next: NextFunction) {
+  static async checkCapacity(_req: Request, res: Response, next: NextFunction) {
     try {
       // Check pool utilization
       const activeConnections = pool.totalCount;

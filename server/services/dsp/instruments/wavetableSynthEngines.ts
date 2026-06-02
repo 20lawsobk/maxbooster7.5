@@ -1,21 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  LFO,
-  Oscillator,
-  ADSR,
-  EnvelopeFollower,
-  msToSamples,
-  dbToLinear,
-  clamp,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, DelayLine, LFO, Oscillator, ADSR, clamp, softClip, hardClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -236,7 +219,7 @@ export class SerumSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -350,7 +333,7 @@ export class MassiveSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -472,7 +455,7 @@ export class SynthwaveSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -612,7 +595,7 @@ export class VocalWavetableSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -622,7 +605,7 @@ export class VocalWavetableSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
-      const vibrato = this.vibratoLFO.sine() * 0.003 * envValue;
+      this.vibratoLFO.sine() * 0.003 * envValue;
 
       for (let o = 0; o < 4; o++) {
         this.oscillators[o].setTablePosition(morphValue);
@@ -734,7 +717,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
     this.breathEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.breathEnvelope.release();
   }
@@ -747,7 +730,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
       const breathEnvValue = this.breathEnvelope.process();
 
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
-      const breathMod = this.breathLFO.sine() * 0.1 * breathEnvValue;
+      this.breathLFO.sine() * 0.1 * breathEnvValue;
 
       for (let o = 0; o < 6; o++) {
         this.oscillators[o].setTablePosition(morphValue * 0.8);
@@ -857,7 +840,7 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -975,7 +958,7 @@ export class PPGSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -1089,7 +1072,7 @@ export class MicrotonalSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -1221,7 +1204,7 @@ export class HybridSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }
@@ -1363,7 +1346,7 @@ export class GranularWavetableSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.filterEnvelope.release();
   }

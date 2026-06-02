@@ -1,4 +1,3 @@
-import { Request, Response, NextFunction } from "express";
 import { promisify } from "util";
 import { exec } from "child_process";
 import fs from "fs/promises";
@@ -6,7 +5,7 @@ import path from "path";
 import crypto from "crypto";
 import { logger } from "./logger.js";
 
-const execAsync = promisify(exec);
+promisify(exec);
 
 // Comprehensive Testing System
 export class TestingSystem {

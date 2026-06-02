@@ -1,19 +1,6 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Shield,
-  User,
-  Bell,
-  Eye,
-  Link as LinkIcon,
-  Loader2,
-  Key,
-  Mail,
-  Cookie,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Shield, User, Bell, Eye, Link as LinkIcon, Key, Mail, Cookie } from "lucide-react";
 
 export type SettingsCategory =
   | "profile"

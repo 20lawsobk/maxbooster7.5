@@ -311,7 +311,7 @@ export function createAriaProgressBar(
   };
 }
 
-export function createAriaAlert(message: string): AriaProps {
+export function createAriaAlert(_message: string): AriaProps {
   return {
     role: "alert",
     "aria-live": "assertive",
@@ -319,7 +319,7 @@ export function createAriaAlert(message: string): AriaProps {
   };
 }
 
-export function createAriaStatus(message: string): AriaProps {
+export function createAriaStatus(_message: string): AriaProps {
   return {
     role: "status",
     "aria-live": "polite",

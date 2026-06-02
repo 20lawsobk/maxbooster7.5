@@ -1,34 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Keyboard,
-  Command,
-  Search,
-  X,
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  SkipForward,
-  Scissors,
-  Copy,
-  Clipboard,
-  Trash2,
-  Undo,
-  Redo,
-  Save,
-  ZoomIn,
-  ZoomOut,
-  Volume2,
-  Layers,
-  Music,
-  Settings,
-  Maximize2,
-  Grid,
-  Mic,
-  Download,
-} from "lucide-react";
+import { Keyboard, Search, X, Play, Square, Circle, SkipBack, SkipForward, Scissors, Copy, Clipboard, Trash2, Undo, Redo, Save, ZoomIn, ZoomOut, Layers, Music, Maximize2, Grid, Mic, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";

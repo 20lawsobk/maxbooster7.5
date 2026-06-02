@@ -1,29 +1,7 @@
 import { Router, type RequestHandler } from "express";
 import { db } from "../../db.js";
-import {
-  users,
-  projects,
-  releases,
-  analytics,
-  posts,
-  orders,
-  systemSettings,
-  artistProfiles,
-} from "../../../shared/schema.js";
-import {
-  eq,
-  desc,
-  asc,
-  like,
-  or,
-  sql,
-  count,
-  sum,
-  and,
-  gte,
-  lte,
-  isNotNull,
-} from "drizzle-orm";
+import { users, projects, releases, analytics, posts, systemSettings, artistProfiles } from "../../../shared/schema.js";
+import { eq, desc, like, or, sql, count, sum, and, gte } from "drizzle-orm";
 import { logger } from "../../logger.js";
 import bcrypt from "bcrypt";
 import os from "os";
@@ -464,7 +442,7 @@ router.post("/users/:userId/email", async (req, res) => {
 // ANALYTICS ENDPOINTS
 // ============================================================
 
-router.get("/analytics", async (req, res) => {
+router.get("/analytics", async (_req, res) => {
   try {
     const cacheKey = `admin:stats:${Math.floor(Date.now() / 60000)}`;
     const payload = await distributedCache.getOrSet(
@@ -546,7 +524,7 @@ router.get("/analytics", async (req, res) => {
 // SETTINGS ENDPOINTS
 // ============================================================
 
-router.get("/settings", async (req, res) => {
+router.get("/settings", async (_req, res) => {
   try {
     const settings = await db
       .select()
@@ -755,7 +733,7 @@ function formatTimeAgo(date: Date | null): string {
 // SYSTEM METRICS ENDPOINT (enhanced)
 // ============================================================
 
-router.get("/metrics", async (req, res) => {
+router.get("/metrics", async (_req, res) => {
   try {
     const memUsage = process.memoryUsage();
     const uptimeSeconds = process.uptime();

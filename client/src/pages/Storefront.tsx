@@ -291,7 +291,7 @@ export default function Storefront() {
   const isOwnerPreview =
     !!user && !!storefront && storefront.userId === user.id;
 
-  const { data: tiers = [], isLoading: tiersLoading } = useQuery<
+  const { data: tiers = [] } = useQuery<
     MembershipTier[]
   >({
     queryKey: [`/api/storefront/${storefront?.id}/membership-tiers/public`],
@@ -305,7 +305,7 @@ export default function Storefront() {
     },
   });
 
-  const { data: listings = [], isLoading: listingsLoading } = useQuery<
+  const { data: listings = [] } = useQuery<
     MarketplaceListing[]
   >({
     queryKey: [`/api/storefront/${storefront?.id}/listings`],

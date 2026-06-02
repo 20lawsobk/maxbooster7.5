@@ -55,7 +55,7 @@ function ActionItem({
   onUndo?: () => void;
 }) {
   const label = getActionLabel(action);
-  const { module, category, isDestructive, timestamp } = action.metadata;
+  const { module,  isDestructive, timestamp } = action.metadata;
 
   return (
     <div
@@ -204,7 +204,7 @@ export function ActionHistory({
                   {redoStack
                     .slice()
                     .reverse()
-                    .map((action, index) => (
+                    .map((action, _index) => (
                       <div
                         key={action.id}
                         className="text-xs text-muted-foreground pl-5"

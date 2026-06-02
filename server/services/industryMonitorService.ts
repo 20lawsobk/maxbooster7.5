@@ -233,7 +233,7 @@ class IndustryMonitorService {
   private parseRss(
     xml: string,
     feedName: string,
-    feedUrl: string,
+    _feedUrl: string,
   ): LiveIndustryChange[] {
     const changes: LiveIndustryChange[] = [];
 

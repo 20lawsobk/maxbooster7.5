@@ -803,7 +803,7 @@ router.post("/analytics/compare", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req.body as BatchRequest;
+    const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: "No IDs provided" });
     }

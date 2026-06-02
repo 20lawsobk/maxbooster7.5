@@ -16,29 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Music,
-  Play,
-  Pause,
-  Heart,
-  Share2,
-  Star,
-  Users,
-  UserPlus,
-  UserCheck,
-  DollarSign,
-  CheckCircle,
-  MapPin,
-  Globe,
-  ArrowLeft,
-  ShoppingCart,
-  Headphones,
-  RefreshCw,
-  Loader2,
-  FileText,
-  Infinity as InfinityIcon,
-  Lock,
-} from "lucide-react";
+import { Music, Share2, Star, Users, UserPlus, UserCheck, DollarSign, CheckCircle, MapPin, Globe, ArrowLeft, ShoppingCart, RefreshCw, Loader2, FileText, Infinity as InfinityIcon, Lock } from "lucide-react";
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -116,7 +94,7 @@ const DEFAULT_LICENSES = [
 ];
 
 export default function ProducerProfilePage() {
-  const { user, isLoading: authLoading } = useRequireAuth();
+  const {  isLoading: authLoading } = useRequireAuth();
   const params = useParams<{ producerId: string }>();
   const producerId = params.producerId;
   const [, navigate] = useLocation();

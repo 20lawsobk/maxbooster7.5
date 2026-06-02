@@ -1,28 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  Trash2,
-  Copy,
-  Volume2,
-  VolumeX,
-  Headphones,
-  Music,
-  Drum,
-  Guitar,
-  Mic2,
-  Piano,
-  Layers,
-  Grid3X3,
-  Maximize2,
-  Settings,
-} from "lucide-react";
+import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
+import { Play, Pause, Square, Circle, Plus, Volume2, VolumeX, Headphones, Music, Drum, Piano, Layers, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,13 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -164,7 +136,7 @@ export function FlowStateClipLauncher({
       muted: false,
       solo: false,
       armed: false,
-      clips: scenes.map((scene, sceneIdx) => ({
+      clips: scenes.map((_scene, sceneIdx) => ({
         id: `slot-${trackIdx}-${sceneIdx}`,
         sceneIndex: sceneIdx,
         trackIndex: trackIdx,
@@ -330,7 +302,7 @@ export function FlowStateClipLauncher({
       muted: false,
       solo: false,
       armed: false,
-      clips: scenes.map((scene, idx) => ({
+      clips: scenes.map((_scene, idx) => ({
         id: `slot-new-${idx}`,
         sceneIndex: idx,
         trackIndex: tracks.length,

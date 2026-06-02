@@ -1,23 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Users,
-  Shield,
-  Share2,
-  Activity,
-  Eye,
-  Clock,
-  Link,
-  Mail,
-  UserPlus,
-  UserMinus,
-  Settings,
-  FileText,
-  AlertCircle,
-} from "lucide-react";
+import { CheckCircle, XCircle, Shield, Share2, Activity, Eye, Clock, Link, Mail, UserPlus, UserMinus, Settings, FileText, AlertCircle } from "lucide-react";
 
 export type WorkspaceOutcomeType =
   | "workspace_created"
@@ -213,7 +196,6 @@ export function WorkspaceOutcomeHandler({
     if (!outcome) return;
 
     const config = getOutcomeConfig(outcome);
-    const Icon = config.icon;
 
     let description = outcome.message;
 

@@ -5,13 +5,7 @@ import fsPromises from "fs/promises";
 import os from "os";
 import { storageService } from "./storageService.js";
 import { queueService } from "./queueService.js";
-import type {
-  WarpJobPayload,
-  WarpPreviewPayload,
-  TransientDetectionPayload,
-  WarpJobResult,
-  TransientDetectionResult,
-} from "./queueService.js";
+import type { WarpJobPayload, TransientDetectionPayload, WarpJobResult, TransientDetectionResult } from "./queueService.js";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { warpMarkers, audioClips } from "@shared/schema";
@@ -86,17 +80,7 @@ interface AudioMetadata {
   format: string;
 }
 
-const RUBBERBAND_QUALITY_MAP: Record<WarpAlgorithm["quality"], string> = {
-  fast: "-c2",
-  normal: "-c4",
-  high: "-c6",
-};
 
-const RUBBERBAND_FLAGS = {
-  preserveFormants: "--formant",
-  smooth: "--smooth",
-  highQuality: "--realtime",
-};
 
 export class TimeStretchService {
   private tempDir: string;
@@ -170,7 +154,6 @@ export class TimeStretchService {
       pitchShift = 0,
       preserveFormants = true,
       algorithm = "phase_vocoder",
-      quality = "normal",
     } = options;
 
     return new Promise((resolve, reject) => {
@@ -317,8 +300,6 @@ export class TimeStretchService {
 
       const finalSourceTime =
         sortedMarkers[sortedMarkers.length - 1].sourceTime;
-      const finalTargetTime =
-        sortedMarkers[sortedMarkers.length - 1].targetTime;
       const remainingDuration = metadata.duration - finalSourceTime;
 
       if (remainingDuration > 0.001) {
@@ -515,11 +496,10 @@ export class TimeStretchService {
       logger.warn("FFmpeg not available - using synthetic peak data");
       return this.generateSyntheticPeaks(inputPath);
     }
-    const windowMs = 10;
     const outputFile = path.join(this.tempDir, `peaks_${randomUUID()}.raw`);
 
     try {
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve, _reject) => {
         ffmpeg(inputPath)
           .audioFilters([
             "aformat=channel_layouts=mono",

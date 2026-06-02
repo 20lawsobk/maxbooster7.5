@@ -1,8 +1,8 @@
 import { logger } from "../logger";
-import { offlineQueue, initOfflineQueue } from "./OfflineQueue";
-import { syncManager, initSyncManager } from "./SyncManager";
-import { draftStorage, initDraftStorage } from "./DraftStorage";
-import { offlineCache, initOfflineCache } from "./OfflineCache";
+import { initOfflineQueue } from "./OfflineQueue";
+import { initSyncManager } from "./SyncManager";
+import { initDraftStorage } from "./DraftStorage";
+import { initOfflineCache } from "./OfflineCache";
 
 export { offlineQueue, initOfflineQueue } from "./OfflineQueue";
 export type {

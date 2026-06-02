@@ -20,11 +20,7 @@ import type {
   Notification,
   NotificationCategory,
 } from "@/components/notifications/types";
-import {
-  categoryConfig,
-  typeToCategory,
-  priorityConfig,
-} from "@/components/notifications/types";
+import { categoryConfig, typeToCategory } from "@/components/notifications/types";
 
 function resolveActionUrl(url: string): string {
   if (url.startsWith("/marketplace/beat/")) return "/marketplace";

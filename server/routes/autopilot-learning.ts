@@ -375,7 +375,7 @@ router.post("/generate-insights", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/hyper/status", requireAuth, async (req, res) => {
+router.get("/hyper/status", requireAuth, async (_req, res) => {
   try {
     const status = hyperLearningEngine.getStatus();
 
@@ -460,7 +460,7 @@ router.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/hyper/metrics", requireAuth, async (req, res) => {
+router.get("/hyper/metrics", requireAuth, async (_req, res) => {
   try {
     const metrics = hyperLearningEngine.getMetrics();
 
@@ -501,7 +501,7 @@ router.get("/hyper/metrics", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/hyper/start", requireAuth, async (req, res) => {
+router.post("/hyper/start", requireAuth, async (_req, res) => {
   try {
     await hyperLearningEngine.start();
     const status = hyperLearningEngine.getStatus();
@@ -517,7 +517,7 @@ router.post("/hyper/start", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/hyper/stop", requireAuth, async (req, res) => {
+router.post("/hyper/stop", requireAuth, async (_req, res) => {
   try {
     await hyperLearningEngine.stop();
 

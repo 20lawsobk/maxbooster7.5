@@ -2,13 +2,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -16,24 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBatchSelectContext } from "./BatchSelectProvider";
-import {
-  X,
-  Trash2,
-  Edit,
-  Download,
-  Upload,
-  MoreHorizontal,
-  CheckCircle,
-  Send,
-  Calendar,
-  Copy,
-  RefreshCw,
-  FileText,
-  Settings,
-  Share2,
-  Archive,
-  Tag,
-} from "lucide-react";
+import { X, Trash2, Edit, Download, MoreHorizontal, Send, Calendar, Copy, RefreshCw, Settings, Archive, Tag } from "lucide-react";
 
 export type BatchAction = {
   id: string;
@@ -66,7 +43,7 @@ export function BatchActionBar({
   className,
   position = "floating",
 }: BatchActionBarProps) {
-  const { selectedIds, selectedCount, clearSelection, resource } =
+  const { selectedIds, selectedCount, clearSelection } =
     useBatchSelectContext();
 
   if (selectedCount === 0) return null;
@@ -156,7 +133,7 @@ export function BatchActionBar({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {moreActions.map((action, index) => (
+                {moreActions.map((action, _index) => (
                   <DropdownMenuItem
                     key={action.id}
                     onClick={() => action.onClick(selectedArray)}

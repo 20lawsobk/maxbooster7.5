@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { smartDefaultsService } from "../services/smartDefaultsService";
 import { personalizationService } from "../services/personalizationService";
 import { logger } from "../logger";
@@ -403,7 +403,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const prefs = await personalizationService.getPreferences(req.user.id);
+      await personalizationService.getPreferences(req.user.id);
       await personalizationService.updatePreferences(req.user.id, {
         hiddenFeatures: [],
         featurePreferences: {},
@@ -421,7 +421,7 @@ router.post(
 router.post(
   "/apply-suggested-priorities",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       return res.json({
         success: true,

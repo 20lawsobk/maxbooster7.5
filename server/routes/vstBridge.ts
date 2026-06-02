@@ -31,7 +31,7 @@ const loadProgramSchema = z.object({
   programIndex: z.number().int().min(0),
 });
 
-router.get("/status", requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (_req, res) => {
   try {
     const stats = vstPluginBridge.getStats();
     res.json({
@@ -49,7 +49,7 @@ router.get("/status", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/initialize", requireAuth, async (req, res) => {
+router.post("/initialize", requireAuth, async (_req, res) => {
   try {
     await vstPluginBridge.initialize();
     res.json({
@@ -98,7 +98,7 @@ router.post("/connect-desktop", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/disconnect-desktop", requireAuth, async (req, res) => {
+router.post("/disconnect-desktop", requireAuth, async (_req, res) => {
   try {
     vstPluginBridge.disconnectDesktopApp();
     res.json({
@@ -356,7 +356,7 @@ router.delete("/instances/:id", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/formats", requireAuth, async (req, res) => {
+router.get("/formats", requireAuth, async (_req, res) => {
   try {
     res.json({
       success: true,

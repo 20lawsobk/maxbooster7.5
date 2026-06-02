@@ -7,15 +7,7 @@ import {
   useLastAction,
 } from "@/contexts/UndoContext";
 import { useUndoStack } from "./useUndoStack";
-import {
-  UndoableAction,
-  ActionType,
-  ActionCategory,
-  ActionMetadata,
-  isDestructiveAction,
-  getActionLabel,
-  createActionId,
-} from "@/lib/undo/types";
+import { UndoableAction, ActionType, ActionMetadata, isDestructiveAction, createActionId } from "@/lib/undo/types";
 import { apiRequest } from "@/lib/queryClient";
 
 export interface GlobalUndoState {
@@ -90,7 +82,7 @@ export function useGlobalUndo(
   const { history, redoStack } = useUndoHistory();
   const { undo, redo, canUndo, canRedo, clearHistory } = useUndoActions();
   const { lastAction, showUndoToast, dismissUndoToast } = useLastAction();
-  const undoStack = useUndoStack();
+  useUndoStack();
 
   const state: GlobalUndoState = useMemo(
     () => ({

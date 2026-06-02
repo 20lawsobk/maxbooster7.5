@@ -189,7 +189,7 @@ export class AIMixer {
    * Apply intelligent EQ based on frequency masking
    */
   private applyIntelligentEQ(
-    analysis: Map<string, TrackAnalysis>,
+    _analysis: Map<string, TrackAnalysis>,
     instruments: Map<string, InstrumentType>,
     result: MixResult,
   ): void {

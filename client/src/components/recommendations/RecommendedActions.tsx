@@ -3,19 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useNextActions, NextAction } from "@/hooks/useRecommendations";
+import { useNextActions } from "@/hooks/useRecommendations";
 import { useLocation } from "wouter";
-import {
-  ArrowRight,
-  Clock,
-  Zap,
-  Target,
-  TrendingUp,
-  MessageSquare,
-  DollarSign,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+import { ArrowRight, Clock, Zap, Target, TrendingUp, MessageSquare, DollarSign } from "lucide-react";
 
 const categoryIcons: Record<string, React.ElementType> = {
   content: MessageSquare,

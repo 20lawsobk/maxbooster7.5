@@ -12,12 +12,7 @@ interface StripeWebhookRequest extends Request {
 }
 import Stripe from "stripe";
 import { logger } from "../../logger.js";
-import {
-  stripeWebhookMiddleware,
-  handleWebhookEvent,
-  checkIdempotency,
-  registerWebhookHandler,
-} from "../../safety/stripeWebhookSecurity";
+import { stripeWebhookMiddleware, handleWebhookEvent, registerWebhookHandler } from "../../safety/stripeWebhookSecurity";
 import { auditPayment } from "../../safety/auditLogger";
 import { db } from "../../db";
 import {
@@ -564,7 +559,7 @@ router.post(
  * GET /api/webhooks/stripe/health
  * Health check for webhook endpoint
  */
-router.get("/health", (req: Request, res: Response) => {
+router.get("/health", (_req: Request, res: Response) => {
   res.json({
     status: "ok",
     webhookSecretConfigured: !!env.STRIPE_WEBHOOK_SECRET,

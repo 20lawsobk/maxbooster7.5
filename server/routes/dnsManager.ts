@@ -194,7 +194,7 @@ router.get("/usage", async (req, res) => {
   }
 });
 
-router.get("/info", (req, res) => {
+router.get("/info", (_req, res) => {
   res.json({
     nameservers: [NS1, NS2],
     serverIp: DNS_SERVER_IP,

@@ -1,23 +1,5 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Scissors,
-  Play,
-  Pause,
-  Square,
-  RotateCcw,
-  Grid,
-  Wand2,
-  Music,
-  Download,
-  Copy,
-  Trash2,
-  Volume2,
-  Lock,
-  Unlock,
-  Zap,
-  Layers,
-} from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Scissors, Play, Pause, Square, RotateCcw, Grid, Wand2, Download, Trash2, Volume2, Lock, Unlock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

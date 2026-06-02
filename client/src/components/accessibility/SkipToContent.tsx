@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { announcePolite } from "@/lib/a11y/screenReader";
 
@@ -17,21 +17,6 @@ export interface SkipToContentProps {
   className?: string;
 }
 
-const defaultLinks: SkipLinkItem[] = [
-  {
-    id: "main-content",
-    label: "Skip to main content",
-    shortcut: "Alt+1",
-    priority: 1,
-  },
-  {
-    id: "navigation",
-    label: "Skip to navigation",
-    shortcut: "Alt+2",
-    priority: 2,
-  },
-  { id: "search", label: "Skip to search", shortcut: "Alt+3", priority: 3 },
-];
 
 export function SkipToContent({
   mainContentId = "main-content",

@@ -255,7 +255,7 @@ class AutoScalingManager {
     };
   }
 
-  getKubeMetricsHandler(req: Request, res: Response): void {
+  getKubeMetricsHandler(_req: Request, res: Response): void {
     try {
       const metrics = this.getMetrics();
       res.json({
@@ -317,7 +317,7 @@ function requireAdminInline(
 scalingMetricsRouter.get(
   "/metrics",
   requireAdminInline,
-  (req: Request, res: Response) => {
+  (_req: Request, res: Response) => {
     try {
       const metrics = autoScalingManager.getMetrics();
       res.json({
@@ -346,7 +346,7 @@ scalingMetricsRouter.get(
 scalingMetricsRouter.get(
   "/health/detailed",
   requireAdminInline,
-  (req: Request, res: Response) => {
+  (_req: Request, res: Response) => {
     try {
       const metrics = autoScalingManager.getMetrics();
       const isHealthy =
@@ -378,10 +378,10 @@ scalingMetricsRouter.get(
   },
 );
 
-scalingMetricsRouter.get("/ready", (req: Request, res: Response) => {
+scalingMetricsRouter.get("/ready", (_req: Request, res: Response) => {
   res.status(200).json({ ready: true, timestamp: new Date().toISOString() });
 });
 
-scalingMetricsRouter.get("/live", (req: Request, res: Response) => {
+scalingMetricsRouter.get("/live", (_req: Request, res: Response) => {
   res.status(200).json({ alive: true, uptime: process.uptime() });
 });

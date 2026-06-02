@@ -3,7 +3,6 @@ import { storage } from "../storage";
 import { platformAPI } from "../platform-apis";
 import { adCampaigns, adCreatives, contentCalendar } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import type { AdCampaign, AdCreative } from "@shared/schema";
 import { logger } from "../logger.js";
 
 /**
@@ -426,7 +425,7 @@ export class AdvertisingDispatchService {
     userId: string,
     creative: unknown,
     platform: string,
-    postId: string,
+    _postId: string,
     campaign: unknown,
   ): Promise<unknown> {
     const entry = await db
@@ -537,7 +536,7 @@ export class AdvertisingDispatchService {
     platform: string,
     variant: unknown,
     userId: string,
-    campaign: unknown,
+    _campaign: unknown,
   ): Promise<unknown> {
     try {
       // Prepare content from variant

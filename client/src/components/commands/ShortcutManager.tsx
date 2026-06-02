@@ -1,18 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Settings,
-  Download,
-  Upload,
-  RotateCcw,
-  Search,
-  Keyboard,
-  FileJson,
-  Check,
-  AlertTriangle,
-  X,
-  ChevronRight,
-} from "lucide-react";
+import { Settings, Download, Upload, RotateCcw, Search, Keyboard, FileJson, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,12 +29,7 @@ import { cn } from "@/lib/utils";
 import { useShortcuts } from "@/contexts/ShortcutContext";
 import { ShortcutHint } from "@/components/shortcuts/ShortcutHint";
 import { ShortcutCustomizer } from "@/components/shortcuts/ShortcutCustomizer";
-import {
-  ShortcutDefinition,
-  ShortcutModifier,
-  ShortcutContext,
-  getPlatformModifiers,
-} from "@/lib/shortcuts/types";
+import { ShortcutDefinition, ShortcutModifier, ShortcutContext } from "@/lib/shortcuts/types";
 
 interface ShortcutManagerProps {
   open: boolean;

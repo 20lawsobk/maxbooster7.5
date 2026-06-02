@@ -9,13 +9,7 @@ import {
   EXPANDED_EFFECTS,
   ALL_PLUGINS,
 } from "./plugins/index";
-import {
-  getEffectProcessor,
-  getInstrumentSynthesizer,
-  getProcessorInfo,
-  type DSPProcessor,
-  type SynthesizerEngine,
-} from "./dsp/index";
+import { getEffectProcessor, getInstrumentSynthesizer, getProcessorInfo } from "./dsp/index";
 
 export type {
   PluginCategory,
@@ -780,7 +774,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    sampleRate: number,
+    _sampleRate: number,
   ): void {
     const outputGain = Math.pow(10, ((params.outputGain as number) || 0) / 20);
 
@@ -794,7 +788,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    sampleRate: number,
+    _sampleRate: number,
   ): void {
     const ceiling = Math.pow(10, ((params.ceiling as number) || -0.3) / 20);
     const threshold = Math.pow(10, ((params.threshold as number) || -6) / 20);
@@ -898,7 +892,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    sampleRate: number,
+    _sampleRate: number,
   ): void {
     const mode = (params.mode as string) || "tube";
     const drive = (params.drive as number) || 0.5;
@@ -1142,7 +1136,7 @@ class PluginHostService {
   async getPresets(
     pluginId: string,
     userId: string,
-    options: { includePublic?: boolean; category?: string } = {},
+    _options: { includePublic?: boolean; category?: string } = {},
   ): Promise<PluginPreset[]> {
     const plugin = this.getPluginById(pluginId);
     if (!plugin) {

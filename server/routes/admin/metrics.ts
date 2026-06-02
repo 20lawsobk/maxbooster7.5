@@ -73,7 +73,7 @@ router.post("/metrics/test", async (req, res) => {
 /**
  * Get active alert incidents
  */
-router.get("/alerts/incidents", async (req, res) => {
+router.get("/alerts/incidents", async (_req, res) => {
   try {
     const incidents = await metricsService.getActiveIncidents();
     res.json({ incidents });
@@ -115,7 +115,7 @@ router.post("/alerts/rules", async (req, res) => {
 /**
  * Trigger alert evaluation (for testing)
  */
-router.post("/alerts/evaluate", async (req, res) => {
+router.post("/alerts/evaluate", async (_req, res) => {
   try {
     await metricsService.evaluateAlerts();
     res.json({ success: true, message: "Alerts evaluated" });

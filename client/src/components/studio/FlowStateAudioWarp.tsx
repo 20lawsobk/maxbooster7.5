@@ -1,22 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Timer,
-  Maximize2,
-  Music2,
-  Plus,
-  Trash2,
-  RotateCcw,
-  Play,
-  Pause,
-  Lock,
-  Unlock,
-  ArrowLeftRight,
-  MoveHorizontal,
-  Waves,
-  Settings,
-  Loader2,
-} from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Timer, Trash2, RotateCcw, Play, Pause, Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -137,7 +120,7 @@ export function FlowStateAudioWarp({
 
   const {
     data: apiMarkers,
-    isLoading: isLoadingMarkers,
+    
     error: markersError,
   } = useQuery({
     queryKey: ["warp-markers", clipId],
@@ -173,7 +156,7 @@ export function FlowStateAudioWarp({
     }
   }, [markersError, toast]);
 
-  const detectTransientsMutation = useMutation({
+  useMutation({
     mutationFn: async () => {
       if (!clipId) throw new Error("No clip selected");
       const response = await apiRequest(
@@ -205,7 +188,7 @@ export function FlowStateAudioWarp({
     },
   });
 
-  const commitWarpMutation = useMutation({
+  useMutation({
     mutationFn: async () => {
       if (!clipId) throw new Error("No clip selected");
       const response = await apiRequest(
@@ -317,7 +300,7 @@ export function FlowStateAudioWarp({
     }
   };
 
-  const handleMarkerDrag = (markerId: string, newTime: number) => {
+  ((markerId: string, newTime: number) => {
     setMarkers((prev) =>
       prev.map((m) =>
         m.id === markerId && !m.isLocked
@@ -325,7 +308,7 @@ export function FlowStateAudioWarp({
           : m,
       ),
     );
-  };
+  });
 
   const deleteMarker = (markerId: string) => {
     const marker = markers.find((m) => m.id === markerId);

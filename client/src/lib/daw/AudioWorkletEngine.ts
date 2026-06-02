@@ -105,7 +105,6 @@ export class AudioWorkletEngine {
   private lastScheduleTime: number = 0;
   private scheduleAheadTime: number = 0.1;
   private lookAhead: number = 25;
-  private nextClipTime: number = 0;
   private schedulerTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private meteringInterval: number | null = null;
@@ -521,7 +520,7 @@ export class AudioWorkletEngine {
   }
 
   private stopAllSources(): void {
-    this.scheduledSources.forEach((sources, clipId) => {
+    this.scheduledSources.forEach((sources, _clipId) => {
       sources.forEach((source) => {
         try {
           source.stop();
@@ -835,7 +834,7 @@ export class AudioWorkletEngine {
       cancelAnimationFrame(this.animationFrameId);
     }
 
-    this.trackNodes.forEach((nodes, trackId) => {
+    this.trackNodes.forEach((nodes, _trackId) => {
       nodes.analyzer.disconnect();
       nodes.panner.disconnect();
       nodes.gain.disconnect();

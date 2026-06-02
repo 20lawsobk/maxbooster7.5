@@ -673,7 +673,7 @@ export const useStudioStore = create<StudioState>()(
             })),
 
           toggleTrackSolo: (trackId) => {
-            const { mixer, tracks } = get();
+            const { mixer } = get();
             if (mixer.soloMode === "exclusive") {
               set((state) => ({
                 tracks: state.tracks.map((t) => ({
@@ -1304,7 +1304,7 @@ export const useStudioStore = create<StudioState>()(
             const { history, historyIndex } = get();
             if (historyIndex > 0) {
               const prevEntry = history[historyIndex - 1];
-              set((state) => ({
+              set((_state) => ({
                 ...prevEntry.state,
                 historyIndex: historyIndex - 1,
               }));
@@ -1315,7 +1315,7 @@ export const useStudioStore = create<StudioState>()(
             const { history, historyIndex } = get();
             if (historyIndex < history.length - 1) {
               const nextEntry = history[historyIndex + 1];
-              set((state) => ({
+              set((_state) => ({
                 ...nextEntry.state,
                 historyIndex: historyIndex + 1,
               }));

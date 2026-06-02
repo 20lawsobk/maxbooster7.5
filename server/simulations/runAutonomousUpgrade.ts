@@ -54,7 +54,7 @@ async function main() {
     );
 
     logger.info("Main Scenario Results:");
-    mainResults.scenarios.forEach((scenario, i) => {
+    mainResults.scenarios.forEach((scenario, _i) => {
       const status = scenario.success ? "✅" : "❌";
       const detectionMins = (scenario.detectionTime / (60 * 1000)).toFixed(0);
       const upgradeHours = (scenario.upgradeTime / (60 * 60 * 1000)).toFixed(1);

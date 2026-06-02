@@ -199,16 +199,6 @@ const scaleNotes: Record<string, string[]> = {
 };
 
 // Chord formulas (intervals from root in semitones)
-const chordFormulas: Record<string, number[]> = {
-  major: [0, 4, 7],
-  minor: [0, 3, 7],
-  dim: [0, 3, 6],
-  aug: [0, 4, 8],
-  major7: [0, 4, 7, 11],
-  minor7: [0, 3, 7, 10],
-  dom7: [0, 4, 7, 10],
-  dim7: [0, 3, 6, 9],
-};
 
 // ============================================================================
 // SEEDED RANDOM NUMBER GENERATOR (for deterministic output)
@@ -394,7 +384,7 @@ export function generateMelody(
     const duration = seed.choice(pattern);
 
     // Find current chord
-    const currentChord = chords.find(
+    chords.find(
       (c) => c.time <= currentTime && c.time + c.duration > currentTime,
     );
 

@@ -1,23 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  createBuffer,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  CombFilter,
-  LFO,
-  Oscillator,
-  ADSR,
-  msToSamples,
-  dbToLinear,
-  clamp,
-  softClip,
-  hzToRadians,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, CombFilter, LFO, Oscillator, ADSR, msToSamples, softClip } from "../core";
 
 export interface NoteParams {
   frequency: number;
@@ -38,7 +19,6 @@ class HammerModel {
   private hardness: number;
   private mass: number;
   private velocity: number = 0;
-  private position: number = 0;
 
   constructor(hardness: number = 0.8, mass: number = 0.5) {
     this.hardness = hardness;
@@ -82,7 +62,7 @@ class StringResonator {
     const period = Math.floor(sampleRate / frequency);
     this.combFilters.forEach((comb, i) => {
       const detuning = 1 + (i - 1) * 0.001;
-      const detunedPeriod = Math.floor(period * detuning);
+      Math.floor(period * detuning);
       comb.setFeedback(this.damping);
       comb.setDamping(0.3);
     });
@@ -161,7 +141,7 @@ export class GrandPianoSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -177,7 +157,6 @@ export class GrandPianoSynth implements SynthesizerEngine {
           this.frequency * (h + 1),
           this.sampleRate,
         );
-        const inharmonicity = 1 + 0.0001 * (h + 1) * (h + 1);
         const harmonicSample =
           this.oscillators[h].sine() * this.harmonicAmplitudes[h];
         sample += harmonicSample;
@@ -270,7 +249,7 @@ export class UprightPianoSynth implements SynthesizerEngine {
     this.damperEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.damperEnvelope.release();
   }
@@ -379,7 +358,7 @@ export class ElectricPianoSynth implements SynthesizerEngine {
     this.tineEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.tineEnvelope.release();
   }
@@ -491,7 +470,7 @@ export class ClavinetSynth implements SynthesizerEngine {
     this.filterEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.pickupEnvelope.release();
     this.filterEnvelope.release();
@@ -593,7 +572,7 @@ export class HonkyTonkSynth implements SynthesizerEngine {
     this.envelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
   }
 
@@ -687,7 +666,7 @@ export class ToyPianoSynth implements SynthesizerEngine {
     this.strikeEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.strikeEnvelope.release();
   }
@@ -781,7 +760,7 @@ export class TackPianoSynth implements SynthesizerEngine {
     this.tackEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.tackEnvelope.release();
   }
@@ -885,7 +864,7 @@ export class PreparedPianoSynth implements SynthesizerEngine {
     this.muteEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.muteEnvelope.release();
   }
@@ -990,7 +969,7 @@ export class FeltPianoSynth implements SynthesizerEngine {
     this.softEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.softEnvelope.release();
   }
@@ -1085,7 +1064,7 @@ export class GlassPianoSynth implements SynthesizerEngine {
     this.bellEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.bellEnvelope.release();
   }

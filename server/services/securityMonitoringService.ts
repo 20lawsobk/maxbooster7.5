@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { sessions, users, passwordResetTokens } from "@shared/schema";
-import { gte, sql, count, desc, eq, and } from "drizzle-orm";
+import { gte, sql, count, eq, and } from "drizzle-orm";
 import { env } from "../config/env.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
 

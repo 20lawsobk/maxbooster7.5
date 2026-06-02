@@ -138,19 +138,19 @@ export function Timeline({
     setRangeSelection,
     clearRangeSelection,
     projectDuration,
-    projectEndMarker,
+    
     expandTimelineIfNeeded,
     fitTimelineToContents,
     autoExpandEnabled,
     autoscrollPaused,
     pauseAutoscroll,
-    isAutoscrollActive,
+    
     adaptiveSnapEnabled,
     showSyncPoints,
     translucentEventsEnabled,
     loopToolEnabled,
     timeStretchEnabled,
-    horizontalDropMode,
+    
     setHorizontalDropMode,
     getAdaptiveSnapInterval,
   } = useStudioStore();
@@ -201,7 +201,7 @@ export function Timeline({
 
   // Tempo Detection State
   const {
-    projectTempoMaps,
+    
     isAnalyzingTempo,
     analyzingClipId,
     addTempoMap,
@@ -242,7 +242,7 @@ export function Timeline({
 
   // Handle tempo detection
   const handleDetectTempo = useCallback(
-    async (clipId: string, trackId: string, clipDuration: number) => {
+    async (clipId: string, _trackId: string, clipDuration: number) => {
       setIsAnalyzingTempo(true, clipId);
       try {
         const tempoMap = await analyzeClipTempo(clipId, clipDuration);
@@ -382,7 +382,7 @@ export function Timeline({
     [effectiveDuration],
   );
 
-  const timeToPixels = useCallback(
+  useCallback(
     (time: number): number => {
       if (!timelineRef.current) return 0;
       const width = timelineRef.current.offsetWidth;
@@ -619,7 +619,6 @@ export function Timeline({
       if (currentTool === "split" && onClipSplit) {
         e.stopPropagation();
         const rect = e.currentTarget.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
         const parentRect = timelineRef.current?.getBoundingClientRect();
         if (parentRect) {
           const absoluteX = e.clientX - parentRect.left;
@@ -1408,7 +1407,7 @@ export function Timeline({
               />
             )}
 
-            {tracks.map((track, trackIndex) => {
+            {tracks.map((track, _trackIndex) => {
               const clips = trackClips.get(track.id) || [];
               const crossfadeRegions = getCrossfadeRegions(clips);
 
@@ -1823,7 +1822,6 @@ export function Timeline({
                                         Math.sin(phase * 0.5) * 6 +
                                         Math.sin(phase * 2.3) * 4;
                                       const y1 = centerY - amplitude;
-                                      const y2 = centerY + amplitude;
 
                                       path += ` L ${x} ${y1}`;
                                     }

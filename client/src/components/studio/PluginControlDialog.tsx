@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -12,20 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Knob } from "./Knob";
-import {
-  Power,
-  RotateCcw,
-  Save,
-  ChevronDown,
-  Activity,
-  Volume2,
-  Waves,
-  Clock,
-  Sparkles,
-  Music,
-  Zap,
-  Wind,
-} from "lucide-react";
+import { RotateCcw, Activity, Volume2, Waves, Clock, Sparkles, Music, Zap, Wind } from "lucide-react";
 import type { PluginInstance, PluginType } from "./PluginRack";
 
 interface PluginPreset {

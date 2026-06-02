@@ -116,7 +116,7 @@ export class PocketSimulationStorage {
   // ============================================================================
 
   addUsers(
-    count: number,
+    _count: number,
     distribution: {
       tier: "monthly" | "yearly" | "lifetime";
       archetype:

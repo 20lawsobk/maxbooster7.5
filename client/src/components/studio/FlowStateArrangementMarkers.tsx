@@ -1,24 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Flag,
-  Plus,
-  Trash2,
-  Edit2,
-  ChevronLeft,
-  ChevronRight,
-  Play,
-  Pause,
-  Copy,
-  Lock,
-  Unlock,
-  Palette,
-  Music,
-  Repeat,
-  SkipForward,
-  SkipBack,
-  Loader2,
-} from "lucide-react";
+import { Flag, Plus, Trash2, Edit2, Play, Copy, Lock, Unlock, Repeat, SkipForward, SkipBack } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -250,7 +231,7 @@ export function FlowStateArrangementMarkers({
 
   const {
     markers: apiMarkers,
-    isLoading,
+    
     error: markersError,
     createMarker,
     updateMarker: updateMarkerApi,
@@ -471,7 +452,7 @@ export function FlowStateArrangementMarkers({
     return `${bars}.${beat}`;
   };
 
-  const selectedMarkerData = markers.find((m) => m.id === selectedMarker);
+  markers.find((m) => m.id === selectedMarker);
 
   return (
     <div

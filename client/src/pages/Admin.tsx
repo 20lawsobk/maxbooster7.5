@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,57 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Users,
-  DollarSign,
-  Music,
-  TrendingUp,
-  Search,
-  Filter,
-  Download,
-  UserCheck,
-  UserX,
-  Crown,
-  Calendar,
-  Mail,
-  Edit,
-  Trash2,
-  Eye,
-  Ban,
-  Shield,
-  CreditCard,
-  Activity,
-  Server,
-  Database,
-  Cpu,
-  HardDrive,
-  Wifi,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Power,
-  PowerOff,
-  Flag,
-  Unlock,
-  Lock,
-  MessageSquare,
-  AlertCircle,
-  RefreshCw,
-  Clock,
-  Zap,
-  BarChart3,
-  Settings,
-  UserCog,
-  FileWarning,
-  Globe,
-  LayoutDashboard,
-  Sliders,
-  Percent,
-  Save,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-} from "lucide-react";
+import { Users, DollarSign, Music, Search, Download, UserCheck, Crown, Edit, Trash2, Eye, Ban, Shield, CreditCard, Activity, Server, Database, Cpu, HardDrive, Wifi, AlertTriangle, CheckCircle, XCircle, Power, PowerOff, Flag, Unlock, Lock, MessageSquare, AlertCircle, RefreshCw, Clock, Zap, BarChart3, Settings, Globe, LayoutDashboard, Sliders, Percent, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -241,7 +190,6 @@ export default function Admin() {
   const {
     data: usersData,
     isLoading: usersLoading,
-    refetch: refetchUsers,
   } = useQuery<UsersResponse>({
     queryKey: [
       "/api/admin/users",

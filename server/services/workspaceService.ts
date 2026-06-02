@@ -1,22 +1,6 @@
 import { db } from "../db";
-import {
-  workspaces,
-  workspaceMembers,
-  workspaceRoles,
-  workspaceInvitations,
-  workspaceCatalogs,
-  workspaceAuditLog,
-  users,
-  type Workspace,
-  type WorkspaceMember,
-  type WorkspaceRole,
-  type WorkspaceInvitation,
-  type InsertWorkspace,
-  type InsertWorkspaceMember,
-  type InsertWorkspaceInvitation,
-  type InsertWorkspaceAuditLog,
-} from "@shared/schema";
-import { eq, and, desc, sql, count, or } from "drizzle-orm";
+import { workspaces, workspaceMembers, workspaceRoles, workspaceInvitations, workspaceCatalogs, workspaceAuditLog, users, type Workspace, type WorkspaceMember, type WorkspaceRole, type WorkspaceInvitation, type InsertWorkspace, type InsertWorkspaceAuditLog } from "@shared/schema";
+import { eq, and, desc, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 
@@ -47,14 +31,6 @@ interface WorkspaceBranding {
   customDomain?: string;
 }
 
-interface WorkspaceFeatures {
-  ssoEnabled: boolean;
-  scimEnabled: boolean;
-  advancedAnalytics: boolean;
-  customRoles: boolean;
-  approvalWorkflows: boolean;
-  auditLogs: boolean;
-}
 
 interface CreateWorkspaceParams {
   name: string;

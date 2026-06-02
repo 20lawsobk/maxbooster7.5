@@ -200,23 +200,7 @@ const PLATFORMS = {
   },
 };
 
-function generateCodeVerifier(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
-  let result = "";
-  const bytes = crypto.randomBytes(64);
-  for (let i = 0; i < 64; i++) {
-    result += chars.charAt(bytes[i] % chars.length);
-  }
-  return result;
-}
 
-function generateCodeChallenge(
-  verifier: string,
-  encoding: "hex" | "base64url" = "base64url",
-): string {
-  return crypto.createHash("sha256").update(verifier).digest(encoding);
-}
 
 const _rawOAuthSecret = env.SESSION_SECRET || process.env.SECRET_KEY;
 if (
@@ -372,7 +356,7 @@ router.get(
 router.get(
   "/platforms",
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (_req: AuthenticatedRequest, res: Response) => {
     const platformList = Object.entries(PLATFORMS).map(([key, config]) => ({
       id: key,
       name: config.name,

@@ -10,7 +10,7 @@ import {
   MusicImpactMetric,
   SocialPatternAggregate,
 } from "@shared/schema";
-import { eq, and, gte, lte, desc, sql, lt } from "drizzle-orm";
+import { eq, and, gte, lte, desc, lt } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 import { aiModelManager } from "./aiModelManager.js";
@@ -366,7 +366,7 @@ class SocialFanbaseService {
   }
 
   private async generateExploreCandidates(
-    userId: string,
+    _userId: string,
   ): Promise<ContentCandidate[]> {
     const hookTypes = [
       "emotional",

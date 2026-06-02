@@ -2,7 +2,7 @@ import { Router, type RequestHandler } from "express";
 import { require2FA } from "../middleware/auth.js";
 import { db } from "../db.js";
 import { systemLogs, insertSystemLogSchema } from "@shared/schema";
-import { eq, desc, and, sql, count } from "drizzle-orm";
+import { eq, desc, and, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 const router = Router();
@@ -122,7 +122,7 @@ router.post("/write", async (req, res) => {
   }
 });
 
-router.get("/services", async (req, res) => {
+router.get("/services", async (_req, res) => {
   try {
     res.json({
       services: [
@@ -142,7 +142,7 @@ router.get("/services", async (req, res) => {
   }
 });
 
-router.get("/levels", async (req, res) => {
+router.get("/levels", async (_req, res) => {
   try {
     res.json({
       levels: ["debug", "info", "warn", "error", "fatal"],

@@ -10,24 +10,6 @@ import {
 import { logger } from "../logger.js";
 import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
 
-interface SocialContentOptions {
-  platform?:
-    | "twitter"
-    | "instagram"
-    | "youtube"
-    | "tiktok"
-    | "facebook"
-    | "linkedin";
-  contentType: "post" | "story" | "video" | "ad";
-  tone: "professional" | "casual" | "energetic" | "creative" | "promotional";
-  customPrompt?: string;
-  musicData?: {
-    genre: string;
-    mood: string;
-    title: string;
-    artist: string;
-  };
-}
 
 interface AIAdvertisingConfig {
   targetAudience: {
@@ -127,7 +109,6 @@ interface MasterSettings {
 }
 
 export class AIService {
-  private readonly REDIS_TTL = 3600;
   private readonly GENRE_PROFILES_PREFIX = "ai:genreProfiles:";
   private readonly AUDIO_PATTERNS_PREFIX = "ai:audioPatterns:";
 
@@ -313,8 +294,8 @@ export class AIService {
    * Deterministic mixing based on audio analysis
    */
   async mixTrack(
-    trackId: string,
-    userId: string,
+    _trackId: string,
+    _userId: string,
     audioData?: Buffer,
   ): Promise<{ success: boolean; mixSettings: MixSettings }> {
     try {
@@ -341,8 +322,8 @@ export class AIService {
    * Genre-aware mastering algorithms
    */
   async masterTrack(
-    trackId: string,
-    userId: string,
+    _trackId: string,
+    _userId: string,
     audioData?: Buffer,
   ): Promise<{ success: boolean; masterSettings: MasterSettings }> {
     try {
@@ -448,7 +429,7 @@ export class AIService {
     }
   }
 
-  private detectKeyFromBuffer(audioData: Buffer, hash: number): string {
+  private detectKeyFromBuffer(_audioData: Buffer, hash: number): string {
     const keys = [
       "C",
       "C#",
@@ -515,7 +496,7 @@ export class AIService {
   }
 
   private detectStemsFromBuffer(
-    audioData: Buffer,
+    _audioData: Buffer,
     hash: number,
   ): AudioAnalysisResult["stems"] {
     // Deterministic stem detection based on buffer characteristics
@@ -542,7 +523,7 @@ export class AIService {
 
   private calculateCampaignEfficiency(
     campaignType: string,
-    musicData: unknown,
+    _musicData: unknown,
   ): number {
     const typeMultipliers = {
       viral: 0.95,
@@ -646,7 +627,7 @@ export class AIService {
 
   private optimizeDistributionPlan(
     config: AIAdvertisingConfig,
-    musicData: unknown,
+    _musicData: unknown,
   ): Record<string, unknown> {
     // Create distribution plan based on campaign type and audience
     const platforms =
@@ -837,18 +818,6 @@ export class AIService {
     }
   }
 
-  private async getAudioPattern(key: string): Promise<unknown> {
-    try {
-      const redis = await this.getRedis();
-      if (!redis) return null;
-
-      const val = await redis.get(`${this.AUDIO_PATTERNS_PREFIX}${key}`);
-      return val ? JSON.parse(val) : null;
-    } catch (error: unknown) {
-      logger.warn({ err: error }, `Failed to get audio pattern for ${key}:`);
-      return null;
-    }
-  }
 }
 
 // Export singleton instance

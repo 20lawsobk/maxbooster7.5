@@ -17,38 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Eye,
-  Play,
-  DollarSign,
-  ShoppingCart,
-  Users,
-  Music,
-  Target,
-  Zap,
-  Award,
-  ArrowUpRight,
-  ArrowDownRight,
-} from "lucide-react";
-import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { BarChart3, Eye, Play, DollarSign, ShoppingCart, Target, Zap, Award, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface AnalyticsData {
   overview: {
@@ -179,7 +149,7 @@ export function ProducerAnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("30d");
   const [activeTab, setActiveTab] = useState("overview");
 
-  const { data: analytics = emptyAnalytics, isLoading } =
+  const { data: analytics = emptyAnalytics } =
     useQuery<AnalyticsData>({
       queryKey: ["/api/marketplace/producer-analytics", timeRange],
       queryFn: async () => {

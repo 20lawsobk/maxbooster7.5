@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -133,11 +133,11 @@ export default function FanHub() {
     queryKey: ["/api/fan-hub/subscribers", { search: searchTerm }],
   });
 
-  const { data: stats, isLoading: loadingStats } = useQuery<FanHubStats>({
+  const { data: stats } = useQuery<FanHubStats>({
     queryKey: ["/api/fan-hub/stats"],
   });
 
-  const { data: messages, isLoading: loadingMessages } = useQuery<FanMessage[]>(
+  const { data: messages } = useQuery<FanMessage[]>(
     {
       queryKey: ["/api/fan-hub/messages"],
     },

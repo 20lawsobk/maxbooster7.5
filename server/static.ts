@@ -8,16 +8,11 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./db";
-import {
-  listings,
-  storefrontDomains,
-  storefronts,
-  users,
-} from "@shared/schema";
+import { listings, storefrontDomains, storefronts } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+path.dirname(__filename);
 
 const SITE_URL = process.env.SITE_URL || "https://max-booster.com";
 

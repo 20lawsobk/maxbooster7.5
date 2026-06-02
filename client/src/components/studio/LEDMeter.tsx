@@ -190,7 +190,6 @@ export function LEDMeter({
         {DB_MARKS.slice()
           .reverse()
           .map((db) => {
-            const position = ((db + 60) / 63) * 100;
             return (
               <div
                 key={db}

@@ -7,35 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Search,
-  Mic,
-  X,
-  Clock,
-  TrendingUp,
-  Music,
-  User,
-  Folder,
-  Disc,
-  Loader2,
-  Sparkles,
-  History,
-  Trash2,
-} from "lucide-react";
+import { Search, Mic, X, TrendingUp, Music, User, Disc, Loader2, History, Trash2 } from "lucide-react";
 import { useDebounce } from "@/hooks";
 import { cn } from "@/lib/utils";
 

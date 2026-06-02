@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
@@ -35,29 +35,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Link2,
-  Copy,
-  Check,
-  Lock,
-  Unlock,
-  Clock,
-  Calendar as CalendarIcon,
-  Download,
-  Eye,
-  EyeOff,
-  Trash2,
-  RefreshCw,
-  AlertCircle,
-  ExternalLink,
-  Users,
-  Shield,
-  Mail,
-  Share2,
-  Loader2,
-  QrCode,
-  Link,
-} from "lucide-react";
+import { Link2, Copy, Check, Lock, Unlock, Clock, Calendar as CalendarIcon, Download, Eye, EyeOff, Trash2, RefreshCw, ExternalLink, Mail, Share2, Loader2, Link } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";

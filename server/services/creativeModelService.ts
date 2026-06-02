@@ -946,9 +946,9 @@ Only override a beat's timing or transition if there is a strong narrative reaso
 // ─── Stage 6: Video Assembly ───────────────────────────────────────────────────
 
 async function assemblyStage(
-  keyframePaths: string[],
-  timing: AlignedTimeline,
-  audioPath: string,
+  _keyframePaths: string[],
+  _timing: AlignedTimeline,
+  _audioPath: string,
   brief: CreativeBrief,
   musicMeta: MusicMeta,
   ctx: CreativeContext,

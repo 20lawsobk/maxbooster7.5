@@ -5,7 +5,7 @@ import {
   releaseVersionHistory,
   releaseScheduledActions,
 } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export type ReleaseStatus =
@@ -388,7 +388,7 @@ class ReleaseWorkflowService {
     return versions;
   }
 
-  async getPendingRequests(userId?: string): Promise<any[]> {
+  async getPendingRequests(_userId?: string): Promise<any[]> {
     const baseQuery = db
       .select()
       .from(releaseWorkflowRequests)

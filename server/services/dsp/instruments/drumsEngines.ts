@@ -1,22 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  AllPassFilter,
-  CombFilter,
-  LFO,
-  Oscillator,
-  ADSR,
-  EnvelopeFollower,
-  msToSamples,
-  dbToLinear,
-  clamp,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, Oscillator, ADSR, msToSamples, softClip, hardClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -143,7 +125,7 @@ export class AcousticDrumsSynth implements SynthesizerEngine {
     this.roomFilter.setLowpass(4000, 0.5, context.sampleRate);
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.kickEnvelope.release();
     this.snareEnvelope.release();
     this.hihatEnvelope.release();
@@ -303,7 +285,7 @@ export class ElectronicDrumsSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.kickEnvelope.release();
     this.snareEnvelope.release();
     this.hihatEnvelope.release();
@@ -447,7 +429,7 @@ export class BreakbeatDrumsSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.kickEnvelope.release();
     this.snareEnvelope.release();
     this.hihatEnvelope.release();
@@ -603,7 +585,7 @@ export class TrapDrumsSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.kickEnvelope.release();
     this.subEnvelope.release();
     this.snareEnvelope.release();
@@ -766,7 +748,7 @@ export class JazzDrumsSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.kickEnvelope.release();
     this.snareEnvelope.release();
     this.brushEnvelope.release();
@@ -935,7 +917,7 @@ export class RockDrumsSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.kickEnvelope.release();
     this.snareEnvelope.release();
     this.tomEnvelope.release();
@@ -1095,7 +1077,7 @@ export class PercussionSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.pitchEnvelope.release();
   }
@@ -1244,7 +1226,7 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
     this.hitEnvelope.trigger();
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.envelope.release();
     this.hitEnvelope.release();
   }
@@ -1393,7 +1375,7 @@ export class LoFiDrumsSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.kickEnvelope.release();
     this.snareEnvelope.release();
     this.hihatEnvelope.release();
@@ -1567,7 +1549,7 @@ export class OrchestralDrumsSynth implements SynthesizerEngine {
     }
   }
 
-  noteOff(context: DSPContext): void {
+  noteOff(_context: DSPContext): void {
     this.timpaniEnvelope.release();
     this.bassDrumEnvelope.release();
     this.cymbalEnvelope.release();

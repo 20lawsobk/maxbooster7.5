@@ -1,5 +1,5 @@
 import { db } from "../db.js";
-import { auditLogs, type InsertAuditLog, type AuditLog } from "@shared/schema";
+import { auditLogs, type AuditLog } from "@shared/schema";
 import { eq, and, lt, desc, sql, gte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import cron from "node-cron";

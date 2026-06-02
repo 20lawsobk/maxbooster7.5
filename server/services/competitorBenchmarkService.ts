@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import { db } from "../db";
 import { competitorProfiles, posts } from "@shared/schema";
-import { eq, and, desc, gte, sql } from "drizzle-orm";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export interface CompetitorMetrics {

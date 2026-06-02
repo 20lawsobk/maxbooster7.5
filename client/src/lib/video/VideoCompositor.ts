@@ -1,7 +1,4 @@
-import type {
-  LayerConfig,
-  TransformConfig,
-} from "../../../../shared/video/VideoRendererEngine";
+import type { TransformConfig } from "../../../../shared/video/VideoRendererEngine";
 import {
   DEFAULT_TRANSFORM,
   interpolateValue,
@@ -479,8 +476,7 @@ export class VideoCompositor {
     layers: CompositeLayer[],
     backgroundColor?: string,
   ): Promise<ImageData> {
-    const frameNumber = Math.floor(timestamp * timing.fps);
-    const normalizedTime = timestamp / timing.duration;
+    Math.floor(timestamp * timing.fps);
 
     return this.compositeFrame(layers, backgroundColor);
   }

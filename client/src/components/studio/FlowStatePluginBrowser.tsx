@@ -297,7 +297,7 @@ export function FlowStatePluginBrowser({
       }
       return instantiatePlugin(pluginId, projectId, trackId);
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, _variables) => {
       toast({
         title: "Plugin Added",
         description: `Successfully added plugin to ${trackId ? "track" : "project"}`,

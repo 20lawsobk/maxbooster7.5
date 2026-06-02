@@ -25,7 +25,7 @@ router.use(requireAdmin, require2FA);
 const MAX_BYPASS_HOURS = 72; // hard ceiling — prevents indefinite bypass
 const MAX_EXTEND_HOURS = 24; // per-extension ceiling
 
-router.get("/status", async (req: Request, res: Response) => {
+router.get("/status", async (_req: Request, res: Response) => {
   try {
     const status = await paymentBypassService.getStatus();
     res.json({ success: true, ...status });

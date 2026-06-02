@@ -7,11 +7,11 @@
  *   3) DNS Records       — full-featured zone editor (A / AAAA / CNAME / MX / TXT / NS / SRV / CAA)
  */
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,36 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Globe,
-  Plus,
-  Trash2,
-  Edit,
-  RefreshCw,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Copy,
-  Server,
-  ChevronRight,
-  ArrowLeft,
-  Shield,
-  Zap,
-  Info,
-  Search,
-  Star,
-  Sparkles,
-  ExternalLink,
-  Lock,
-  XCircle,
-  Link2,
-  Link2Off,
-  ShoppingBag,
-  ArrowUpRight,
-  Download,
-  FileText,
-  TriangleAlert,
-} from "lucide-react";
+import { Globe, Plus, Trash2, Edit, RefreshCw, CheckCircle2, Clock, AlertCircle, Copy, Server, ChevronRight, ArrowLeft, Shield, Zap, Info, Search, Star, Sparkles, ExternalLink, XCircle, Link2, Link2Off, ShoppingBag, ArrowUpRight, Download, FileText, TriangleAlert } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -134,12 +105,8 @@ interface DnsRecord {
 
 const PLATFORM_DOMAIN = "max-booster.com";
 const NS = PLATFORM_DOMAIN;
-const NS1 = `ns1.${PLATFORM_DOMAIN}`;
-const NS2 = `ns2.${PLATFORM_DOMAIN}`;
 // Artist stores live at {label}.max-booster.com — resolved via wildcard A/CNAME at registrar.
 // The domain value stored in DB is {label}.max-booster.com.
-const platformStoreUrl = (label: string) =>
-  `https://${label}.${PLATFORM_DOMAIN}`;
 
 const FEATURED_TLDS = [
   ".com",
@@ -466,7 +433,7 @@ function DnsZoneEditor({
   const records: DnsRecord[] = recordsData?.records ?? [];
 
   // ── Storefront URL link ──────────────────────────────────────────────────
-  const { data: linkData, refetch: refetchLink } = useQuery({
+  const { data: linkData } = useQuery({
     queryKey: ["/api/dns-manager/zones", zone.id, "storefront-link"],
     queryFn: () =>
       apiRequest(

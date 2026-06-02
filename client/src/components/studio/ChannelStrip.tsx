@@ -1,21 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  Volume2,
-  VolumeX,
-  Headphones,
-  Mic,
-  Settings2,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mic, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  ProfessionalFader,
-  valueToDb,
-  dbToValue,
-  MAX_DB,
-} from "./ProfessionalFader";
+import { ProfessionalFader, valueToDb } from "./ProfessionalFader";
 import { VUMeter } from "./VUMeter";
 import { Knob } from "./Knob";
 import {

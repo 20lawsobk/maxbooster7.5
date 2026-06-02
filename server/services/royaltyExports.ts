@@ -1,22 +1,11 @@
 import { db } from "../db.js";
-import {
-  royaltyStatements,
-  recoupmentAccounts,
-  splitContracts,
-  users,
-  releases,
-  type RoyaltyStatement,
-} from "@shared/schema";
+import { royaltyStatements, recoupmentAccounts, type RoyaltyStatement } from "@shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { royaltiesTaxComplianceService } from "./royaltiesTaxComplianceService.js";
-import {
-  royaltyEngine,
-  type PeriodStatement,
-  type SplitBreakdown,
-} from "./royaltyEngine.js";
+import { royaltyEngine } from "./royaltyEngine.js";
 
 declare module "jspdf" {
   interface jsPDF {
@@ -542,7 +531,7 @@ export class RoyaltyExportsService {
 
   private exportMultipleToCSV(
     statements: RoyaltyStatement[],
-    options: ExportOptions,
+    _options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const headers = [
       "Statement ID",
@@ -591,7 +580,7 @@ export class RoyaltyExportsService {
 
   private exportMultipleToPDF(
     statements: RoyaltyStatement[],
-    options: ExportOptions,
+    _options: ExportOptions,
   ): { data: Buffer; filename: string; mimeType: string } {
     const doc = new jsPDF();
 
@@ -650,7 +639,7 @@ export class RoyaltyExportsService {
 
   private exportMultipleToJSON(
     statements: RoyaltyStatement[],
-    options: ExportOptions,
+    _options: ExportOptions,
   ): { data: string; filename: string; mimeType: string } {
     const exportData = {
       exportDate: new Date().toISOString(),

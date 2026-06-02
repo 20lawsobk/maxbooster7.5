@@ -298,7 +298,7 @@ class ContentVariantGeneratorService {
     count: number = 5,
   ): Promise<string[][]> {
     const sets: string[][] = [];
-    const existingHashtags = new Set(
+    new Set(
       content.hashtags.map((h) => h.toLowerCase()),
     );
 

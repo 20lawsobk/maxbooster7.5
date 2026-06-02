@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { isrcRegistry, upcRegistry } from "@shared/schema";
-import { eq, and, sql, desc, like } from "drizzle-orm";
+import { eq, desc, like } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 
@@ -459,7 +459,7 @@ class IdentifierService {
   async assignISRCToTrack(isrc: string, trackId: string): Promise<boolean> {
     const cleanISRC = isrc.replace(/[-\s]/g, "").toUpperCase();
 
-    const result = await db
+    await db
       .update(isrcRegistry)
       .set({
         trackId,
@@ -473,7 +473,7 @@ class IdentifierService {
   async assignUPCToRelease(upc: string, releaseId: string): Promise<boolean> {
     const cleanUPC = upc.replace(/[-\s]/g, "");
 
-    const result = await db
+    await db
       .update(upcRegistry)
       .set({
         releaseId,

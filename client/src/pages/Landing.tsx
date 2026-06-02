@@ -18,33 +18,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Sparkles,
-  BarChart3,
-  Share2,
-  Megaphone,
-  DollarSign,
-  Check,
-  ArrowRight,
-  Play,
-  Star,
-  Users,
-  TrendingUp,
-  Music,
-  Shield,
-  Menu,
-  ChevronLeft,
-  ChevronRight,
-  Zap,
-  Brain,
-  Globe,
-  Cpu,
-  Waveform,
-  Radio,
-  Rocket,
-  Crown,
-  Activity,
-} from "lucide-react";
+import { Sparkles, BarChart3, Share2, Megaphone, DollarSign, Check, ArrowRight, Play, Star, Music, Shield, Menu, ChevronLeft, ChevronRight, Zap, Brain, Globe, Cpu, Rocket, Crown, Activity } from "lucide-react";
 
 const demoSlides = [
   {
@@ -185,63 +159,6 @@ const plans = [
   },
 ];
 
-function AnimatedCounter({
-  target,
-  suffix = "",
-}: {
-  target: string;
-  suffix?: string;
-}) {
-  const [display, setDisplay] = useState("0");
-  const ref = useRef<HTMLSpanElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting || started.current) return;
-        started.current = true;
-        observer.disconnect();
-
-        const numMatch = target.match(/[\d.]+/);
-        if (!numMatch) {
-          setDisplay(target);
-          return;
-        }
-        const num = parseFloat(numMatch[0]);
-        const prefix = target.slice(0, numMatch.index ?? 0);
-        const postfix = target.slice(
-          (numMatch.index ?? 0) + numMatch[0].length,
-        );
-        const duration = 1400;
-        const start = performance.now();
-
-        const frame = (now: number) => {
-          const t = Math.min((now - start) / duration, 1);
-          const ease = 1 - Math.pow(1 - t, 3);
-          const cur = Number.isInteger(num)
-            ? Math.round(ease * num)
-            : +(ease * num).toFixed(1);
-          setDisplay(`${prefix}${cur}${postfix}`);
-          if (t < 1) requestAnimationFrame(frame);
-        };
-        requestAnimationFrame(frame);
-      },
-      { threshold: 0.4 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [target]);
-
-  return (
-    <span ref={ref} className="counter-pop">
-      {display}
-      {suffix}
-    </span>
-  );
-}
 
 function useScrollReveal() {
   useEffect(() => {

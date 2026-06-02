@@ -4,21 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Shuffle,
-  Heart,
-  Share2,
-  Download,
-  MoreHorizontal,
-  Loader2,
-} from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Repeat, Heart, Share2, Download, Loader2 } from "lucide-react";
 
 interface WaveformAudioPlayerProps {
   audioUrl: string;
@@ -65,7 +51,7 @@ export function WaveformAudioPlayer({
 }: WaveformAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationRef = useRef<number>(0);
+  useRef<number>(0);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +80,7 @@ export function WaveformAudioPlayer({
         return hash / 0xffffffff;
       };
       const bars = 100;
-      const generated = Array.from({ length: bars }, (_, i) => {
+      const generated = Array.from({ length: bars }, (_, _i) => {
         const r1 = seededRand();
         const r2 = seededRand();
         return 0.2 + r1 * 0.6 + Math.sin(r2 * Math.PI) * 0.2;
@@ -217,14 +203,14 @@ export function WaveformAudioPlayer({
     }
   };
 
-  const handleSeek = (value: number[]) => {
+  ((value: number[]) => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const newTime = (value[0] / 100) * duration;
     audio.currentTime = newTime;
     setCurrentTime(newTime);
-  };
+  });
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

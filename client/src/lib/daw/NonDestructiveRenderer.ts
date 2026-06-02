@@ -1,4 +1,4 @@
-import { PeakData, peakCacheEngine } from "./PeakCacheEngine";
+import { peakCacheEngine } from "./PeakCacheEngine";
 
 export interface DataZoomState {
   verticalScale: number;

@@ -1,19 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Command,
-  Search,
-  Plus,
-  Upload,
-  Music,
-  BarChart3,
-  Share2,
-  Settings,
-  HelpCircle,
-  ChevronUp,
-  Home,
-} from "lucide-react";
+import { Command, Plus, Upload, Music, BarChart3, HelpCircle, ChevronUp, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -22,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useShortcuts, useCommandPalette } from "@/contexts/ShortcutContext";
+import { useShortcuts } from "@/contexts/ShortcutContext";
 import { ShortcutHint, ShortcutTooltipContent } from "./ShortcutHint";
 
 interface QuickAction {

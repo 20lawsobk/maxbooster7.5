@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -13,19 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Box,
-  Headphones,
-  Volume2,
-  Move3d,
-  RotateCcw,
-  Eye,
-  EyeOff,
-  Plus,
-  Trash2,
-  Settings2,
-  Speaker,
-} from "lucide-react";
+import { Box, Headphones, Volume2, Move3d, RotateCcw, Eye, EyeOff, Plus, Trash2, Speaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Knob } from "./Knob";
 

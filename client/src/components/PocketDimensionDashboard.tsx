@@ -14,21 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Database,
-  FolderOpen,
-  FileText,
-  Layers,
-  Sparkles,
-  ArrowDown,
-  ArrowUp,
-  RefreshCw,
-  Plus,
-  Trash2,
-  Lock,
-  Unlock,
-  HardDrive,
-} from "lucide-react";
+import { Database, FolderOpen, FileText, Layers, Sparkles, ArrowDown, ArrowUp, RefreshCw, Plus, HardDrive } from "lucide-react";
 
 interface PocketStats {
   totalEntries: number;

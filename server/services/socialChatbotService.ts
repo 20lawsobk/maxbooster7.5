@@ -2,7 +2,6 @@ import { randomBytes } from "crypto";
 
 import { logger } from "../logger";
 import { db } from "../db";
-import { eq, and, desc, sql, gte } from "drizzle-orm";
 
 export interface ChatbotMessage {
   id: string;
@@ -662,7 +661,7 @@ class SocialChatbotService {
     return response;
   }
 
-  private generateAIResponse(content: string, intent: MessageIntent): string {
+  private generateAIResponse(_content: string, intent: MessageIntent): string {
     const fallbackResponses: Record<string, string> = {
       greeting: "Hi! Thanks for reaching out. How can I help you today? 😊",
       inquiry_music:
@@ -790,7 +789,7 @@ class SocialChatbotService {
     return newEntry;
   }
 
-  async getStats(userId: string): Promise<ChatbotStats> {
+  async getStats(_userId: string): Promise<ChatbotStats> {
     const totalMessages = 1250;
     const automatedResponses = 1062;
     const humanHandled = 188;
@@ -853,7 +852,7 @@ class SocialChatbotService {
 
   async routeMessage(
     message: ChatbotMessage,
-    userId: string,
+    _userId: string,
   ): Promise<{
     action: "auto_respond" | "queue" | "escalate";
     assignedTo?: string;

@@ -117,16 +117,7 @@ export class AutonomousService extends EventEmitter {
     map.set(key, value);
   }
 
-  private addToProcessingQueue(
-    key: string,
-    value: Record<string, unknown>,
-  ): void {
-    this.boundedMapSet(this.processingQueue, key, value, MAX_PROCESSING_QUEUE);
-  }
 
-  private addToLearningData(key: string, value: Record<string, unknown>): void {
-    this.boundedMapSet(this.learningData, key, value, MAX_LEARNING_DATA);
-  }
 
   private async loadMetricsFromCache(): Promise<void> {
     // If PDIM circuit is OPEN at startup, the load will fail for every attempt.
@@ -639,7 +630,7 @@ export class AutonomousService extends EventEmitter {
 
   async autoProcessArtwork(
     imageBuffer: Buffer,
-    releaseType: "single" | "EP" | "album",
+    _releaseType: "single" | "EP" | "album",
   ): Promise<AutoImageResult> {
     const standardSize = 3000;
 

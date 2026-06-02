@@ -443,7 +443,7 @@ export class AdvertisingRuleEngine {
   }
 
   public calculateBudgetDistribution(
-    totalBudget: number,
+    _totalBudget: number,
     campaignDuration: number,
     releaseDate?: Date,
   ): Array<{ day: number; budgetPercentage: number; reasoning: string }> {
@@ -542,7 +542,7 @@ export class AdvertisingRuleEngine {
   }
 
   public getAudienceExpansionRecommendation(
-    currentAudienceSize: number,
+    _currentAudienceSize: number,
     saturationLevel: number,
     conversionRate: number,
   ): { shouldExpand: boolean; expansionFactor: number; strategy: string } {

@@ -1,6 +1,4 @@
-import { midiEngine, MIDIClip, MIDINote } from "./MIDIEngine";
-import { automationEngine, AutomationLane } from "./AutomationEngine";
-import { timelineEngine, TimelineEvent } from "./TimelineEngine";
+import { MIDINote } from "./MIDIEngine";
 
 export type ChordQuality =
   | "major"
@@ -351,8 +349,6 @@ export class MusicalIntelligenceEngine {
     const KICK = 36;
     const SNARE = 38;
     const HIHAT = 42;
-    const HIHAT_OPEN = 46;
-    const CLAP = 39;
 
     for (let beat = 0; beat < totalBeats; beat += 0.25) {
       const beatInBar = beat % 4;

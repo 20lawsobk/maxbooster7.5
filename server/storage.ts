@@ -1,69 +1,8 @@
 import { logger } from "./logger";
 import { randomBytes } from "crypto";
-import {
-  users,
-  dspProviders,
-  projects,
-  releases,
-  posts,
-  socialAccounts,
-  socialCampaigns,
-  adCampaigns,
-  adCreatives,
-  contentCalendar,
-  aiModels,
-  notifications,
-  analytics,
-  pluginCatalog,
-  pluginPresets,
-  distroReleases,
-  distroTracks,
-  instantPayouts,
-  royaltyTransactions,
-  hyperFollowPages,
-  jwtTokens,
-  refreshTokens,
-  listings,
-  listingLicenseTiers,
-  sessions,
-  collabSnapshots,
-  storefronts,
-  storefrontFollows,
-  storefrontRatings,
-  orders,
-  autopilotLearningData,
-  inferenceRuns,
-  socialKeywords,
-  socialMentions,
-  socialAutopilotContent,
-  artistProfiles,
-  systemSettings,
-  workspaceAuditLog,
-  contractTemplates,
-  type User,
-  type InsertUser,
-  type DSPProvider,
-  type InsertProject,
-  type CollabSnapshot,
-  type InsertCollabSnapshot,
-} from "@shared/schema";
+import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot } from "@shared/schema";
 import { db, dbRead } from "./db";
-import {
-  eq,
-  and,
-  desc,
-  gte,
-  lte,
-  sql,
-  inArray,
-  ilike,
-  or,
-  asc,
-  lt,
-  gt,
-  ne,
-  isNotNull,
-} from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
 type Release = typeof releases.$inferSelect;
@@ -458,8 +397,7 @@ export class DatabaseStorage implements IStorage {
       scheduledTime,
       viralPrediction,
       createdBy,
-      results,
-      ...rest
+      results
     } = post;
     const [newPost] = await db
       .insert(posts)
@@ -1186,7 +1124,7 @@ export class DatabaseStorage implements IStorage {
     return Object.entries(byCampaign)
       .filter(([, variants]) => variants.length >= 2)
       .map(([campaignId, variants]) => {
-        const perfs = variants.map(
+        variants.map(
           (v) => (v.performance as Record<string, any>) || {},
         );
         const best = variants.reduce((a, b) => {
@@ -1702,8 +1640,8 @@ export class DatabaseStorage implements IStorage {
 
   async getAnalytics(
     userId: string,
-    startDate?: Date,
-    endDate?: Date,
+    _startDate?: Date,
+    _endDate?: Date,
   ): Promise<any[]> {
     let query = dbRead
       .select()

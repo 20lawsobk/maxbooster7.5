@@ -1,16 +1,6 @@
 import { logger } from "@/lib/logger";
 import { useState, useMemo } from "react";
-import {
-  Flag,
-  GitBranch,
-  Clock,
-  RotateCcw,
-  Plus,
-  Trash2,
-  ChevronRight,
-  AlertTriangle,
-  CheckCircle2,
-} from "lucide-react";
+import { Flag, GitBranch, Clock, RotateCcw, Plus, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -178,7 +168,7 @@ export function RestorePointDialog({
   const restorePoints: RestorePoint[] = useMemo(() => {
     const points = getRestorePoints();
     return points
-      .map((action, index) => {
+      .map((action, _index) => {
         const pointIndex = history.findIndex((a) => a.id === action.id);
         const actionsAfter = historyLength - pointIndex - 1;
 

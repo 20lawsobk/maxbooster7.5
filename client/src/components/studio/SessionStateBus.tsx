@@ -1,30 +1,7 @@
-import {
-  createContext,
-  useContext,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useState } from "react";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import {
-  Radio,
-  Link,
-  Unlink,
-  RefreshCw,
-  Activity,
-  Eye,
-  EyeOff,
-  Settings,
-  ChevronDown,
-  ChevronUp,
-  Trash2,
-  Copy,
-  Download,
-  Upload,
-} from "lucide-react";
+import { Radio, Link, Unlink, RefreshCw, Activity, Eye, EyeOff, ChevronDown, ChevronUp, Trash2, Copy, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,13 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export type PluginParameterType =
   | "number"
@@ -463,7 +433,7 @@ export function SessionStateBusPanel({
     {} as Record<string, PluginState[]>,
   );
 
-  const handleCreateLink = (targetPluginId: string, targetParamId: string) => {
+  ((targetPluginId: string, targetParamId: string) => {
     if (!selectedSource) return;
 
     createLink({
@@ -479,7 +449,7 @@ export function SessionStateBusPanel({
 
     setSelectedSource(null);
     setLinkCreationMode(false);
-  };
+  });
 
   const handleExportState = () => {
     const state = {

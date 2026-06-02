@@ -1,26 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Users,
-  UserPlus,
-  MessageSquare,
-  Send,
-  Video,
-  VideoOff,
-  Mic,
-  MicOff,
-  PhoneOff,
-  Settings,
-  Link,
-  Copy,
-  Check,
-  Circle,
-  MousePointer2,
-  Eye,
-  EyeOff,
-  Crown,
-  Shield,
-} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { Users, UserPlus, Send, Copy, Check, MousePointer2, Eye, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

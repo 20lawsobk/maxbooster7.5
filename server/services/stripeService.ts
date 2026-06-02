@@ -3,19 +3,10 @@ import crypto from "crypto";
 import { storage } from "../storage";
 import { getStripePriceIds } from "./stripeSetup.js";
 import { logger } from "../logger.js";
-import { stripeCircuit, executeStripeOperation } from "./externalServices.js";
+import { executeStripeOperation } from "./externalServices.js";
 import { db } from "../db.js";
-import {
-  users,
-  orders,
-  listingStems,
-  refunds,
-  ledgerEntries,
-  notifications,
-  instantPayouts,
-  taxForms,
-} from "@shared/schema";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { users, orders, listingStems, refunds, ledgerEntries, notifications, taxForms } from "@shared/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
 import { env } from "../config/env.js";
 import { isProductionEnv } from "../lib/envHelpers.js";

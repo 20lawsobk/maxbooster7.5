@@ -16,20 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Upload,
-  X,
-  FileAudio,
-  AlertCircle,
-  CheckCircle,
-  RotateCcw,
-  ChevronDown,
-  Music,
-  User,
-  Disc,
-  Tag,
-  Loader2,
-} from "lucide-react";
+import { Upload, X, FileAudio, AlertCircle, CheckCircle, ChevronDown, User, Tag, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 
@@ -152,11 +139,6 @@ export function TrackUploader({
   const extractMetadataFromFilename = useCallback(
     (filename: string): AudioMetadata => {
       const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
-      const patterns = [
-        /^(\d+)[\s._-]+(.+)$/,
-        /^(.+?)[\s._-]+[-–][\s._-]+(.+)$/,
-        /^(.+)$/,
-      ];
       let trackNumber: number | undefined;
       let title = nameWithoutExt;
       let artist: string | undefined;

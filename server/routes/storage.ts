@@ -912,7 +912,7 @@ router.post("/duplicate", requireAuth, async (req: Request, res: Response) => {
 
 router.post("/validate", async (req: Request, res: Response) => {
   try {
-    const { fileName, fileSize, mimeType, options = {} } = req.body;
+    const {  fileSize, mimeType, options = {} } = req.body;
 
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -1264,7 +1264,7 @@ router.post(
 router.post(
   "/hybrid/auto-tier",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       const result = await hybridStorageService.runAutoTiering();
 

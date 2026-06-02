@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Music, ArrowLeft, Shield, CreditCard } from "lucide-react";
+import { ArrowLeft, Shield, CreditCard } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { apiRequest } from "@/lib/queryClient";
 

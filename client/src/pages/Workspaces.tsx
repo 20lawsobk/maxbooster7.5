@@ -5,14 +5,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,39 +30,8 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Building2,
-  Plus,
-  Users,
-  Settings,
-  Crown,
-  Mail,
-  UserPlus,
-  LogOut,
-  Music,
-  Briefcase,
-  Home,
-  Shield,
-  Activity,
-  Share2,
-  Eye,
-} from "lucide-react";
-import {
-  WorkspaceOutcomeHandler,
-  useWorkspaceOutcome,
-  MemberManagementCard,
-  type WorkspaceMemberDetails,
-  RolePermissionMatrix,
-  type Role,
-  PresenceAvatars,
-  type Collaborator,
-  ActivityFeed,
-  type ActivityItem,
-  SharingDialog,
-  type ShareMember,
-  type ShareLink,
-  type SharePermission,
-} from "@/components/workspace";
+import { Building2, Plus, Users, Crown, UserPlus, Music, Briefcase, Home, Shield, Activity, Share2, Eye } from "lucide-react";
+import { WorkspaceOutcomeHandler, useWorkspaceOutcome, MemberManagementCard, type WorkspaceMemberDetails, RolePermissionMatrix, type Role, PresenceAvatars, type Collaborator, ActivityFeed, type ActivityItem, SharingDialog, type SharePermission } from "@/components/workspace";
 
 interface Workspace {
   id: string;
@@ -1122,7 +1084,7 @@ export default function Workspaces() {
                 email: m.email,
                 avatar: m.avatar,
               }))}
-              onShareWithMembers={async (memberIds, permission) => {
+              onShareWithMembers={async (memberIds, _permission) => {
                 workspaceOutcome.projectShared("", memberIds.length);
               }}
               onUpdateMemberPermission={async (memberId, permission) => {

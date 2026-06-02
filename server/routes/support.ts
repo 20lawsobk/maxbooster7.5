@@ -1,6 +1,6 @@
 import { Router, type RequestHandler } from "express";
 import { db } from "../db.js";
-import { supportTickets, users } from "../../shared/schema.js";
+import { supportTickets } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, avg, and } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { requireAuth, require2FA } from "../middleware/auth.js";
@@ -94,7 +94,7 @@ router.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
   }
 });
 
-router.get("/stats", requireAdmin, require2FA, async (req, res) => {
+router.get("/stats", requireAdmin, require2FA, async (_req, res) => {
   try {
     const [ticketStatsResult, avgResponseResult, avgSatisfactionResult] =
       await Promise.all([

@@ -359,7 +359,7 @@ export function ContentGenerator() {
     },
   });
 
-  const generateContentMutation = useMutation({
+  useMutation({
     mutationFn: async (data: {
       prompt: string;
       language: string;

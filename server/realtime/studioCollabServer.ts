@@ -5,13 +5,7 @@ import { parse as parseUrl } from "url";
 import { parse as parseCookie } from "cookie";
 import * as Y from "yjs";
 import { yjsService } from "../services/yjsService.js";
-import {
-  presenceManager,
-  type PresenceState,
-  type CursorPosition,
-  type SelectionState,
-  type CollaboratorInfo,
-} from "./presenceManager.js";
+import { presenceManager, type CursorPosition, type SelectionState, type CollaboratorInfo } from "./presenceManager.js";
 import { jwtAuthService } from "../services/jwtAuthService.js";
 import { storage } from "../storage.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
@@ -57,12 +51,6 @@ interface PresenceUpdateMessage extends CollabMessage {
   };
 }
 
-interface AwarenessMessage extends CollabMessage {
-  type: "awareness:update";
-  payload: {
-    collaborators: CollaboratorInfo[];
-  };
-}
 
 type IncomingCollabMessage =
   | YjsUpdateMessage
@@ -73,7 +61,6 @@ type IncomingCollabMessage =
   | { type: "sync:request" };
 
 const PING_INTERVAL_MS = 30000;
-const PONG_TIMEOUT_MS = 10000;
 const AWARENESS_BROADCAST_INTERVAL_MS = 5000;
 
 // Hard cap on simultaneous studio collaboration connections per process.

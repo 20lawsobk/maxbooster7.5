@@ -344,23 +344,6 @@ async function itunesTracksByAlbum(
  * Search Apple Music for a specific release title+artist.
  * Returns the best matching album entry or null.
  */
-async function itunesFindRelease(
-  title: string,
-  artistName: string,
-): Promise<iTunesAlbumEntry | null> {
-  const data = await itunesRequest<{ results: unknown[] }>(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(`${artistName} ${title}`)}&entity=album&limit=10&country=US`,
-  );
-  for (const r of data?.results ?? []) {
-    if (titleMatch(r.collectionName || "", title)) return r as iTunesAlbumEntry;
-  }
-  // Fuzzy fallback: similarity ≥ 0.7
-  for (const r of data?.results ?? []) {
-    if (titleSimilarity(r.collectionName || "", title) >= 0.7)
-      return r as iTunesAlbumEntry;
-  }
-  return null;
-}
 
 // ─── Deezer validation for one release ───────────────────────────────────────
 
@@ -754,7 +737,7 @@ async function hydrateLabelGridRelease(
   }
 
   // ── Collect alternate versions across platforms ───────────────────────────
-  const allAlternates = [
+  [
     ...new Set([
       ...deezerResult.alternateVersions,
       ...amResult.alternateVersions,

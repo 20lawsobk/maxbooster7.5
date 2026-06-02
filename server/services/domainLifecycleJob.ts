@@ -19,8 +19,7 @@
  *   - Renewal failure
  */
 
-import { eq, sql, and, or, lte, lt, inArray } from "drizzle-orm";
-import { db, pool } from "../db.js";
+import { pool } from "../db.js";
 import { claimedDomains } from "@shared/schema";
 import { logger } from "../logger.js";
 import { getRegistrarProvider } from "./registrar/index.js";

@@ -14,19 +14,7 @@ import type {
   AudioJobResult,
 } from "./queueService.js";
 import { logger } from "../logger.js";
-import {
-  AUDIO_FORMATS,
-  SAMPLE_RATES,
-  BIT_DEPTHS,
-  FFMPEG_CODECS,
-  isSupportedSampleRate,
-  isSupportedBitDepth,
-  isSupportedFormat,
-  validateAudioConfig,
-  type AudioFormat,
-  type SampleRate,
-  type BitDepth,
-} from "../../shared/audioConstants.js";
+import { AUDIO_FORMATS, SAMPLE_RATES, BIT_DEPTHS, FFMPEG_CODECS, validateAudioConfig, type AudioFormat, type SampleRate, type BitDepth } from "../../shared/audioConstants.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -95,7 +83,7 @@ export class AudioService {
   /**
    * Get FFmpeg codec for audio format
    */
-  getFFmpegCodec(audioFormat: AudioFormat, bitDepth?: BitDepth): string {
+  getFFmpegCodec(audioFormat: AudioFormat, _bitDepth?: BitDepth): string {
     if (audioFormat === AUDIO_FORMATS.FLOAT32) {
       return FFMPEG_CODECS.float32;
     } else if (audioFormat === AUDIO_FORMATS.PCM24) {
@@ -162,7 +150,7 @@ export class AudioService {
 
   async processAudioFile(
     filePath: string,
-    userId: string,
+    _userId: string,
   ): Promise<AudioAnalysis> {
     try {
       if (!fs.existsSync(filePath)) {
@@ -1047,7 +1035,7 @@ export class AudioService {
   async mixAudioTracks(
     tracks: unknown[],
     userId: string,
-    outputPath?: string,
+    _outputPath?: string,
   ): Promise<JobResponse> {
     const tracksData = tracks.map((track) => ({
       storageKey: track.filePath || track.storageKey,
@@ -1281,7 +1269,7 @@ export class AudioService {
 
   async exportStems(
     tracks: unknown[],
-    outputDir: string,
+    _outputDir: string,
     format: string = "wav",
   ): Promise<{ stems: string[]; zip?: string }> {
     try {

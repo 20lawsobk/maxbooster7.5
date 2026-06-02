@@ -1,18 +1,6 @@
 import { db } from "../db";
-import {
-  users,
-  dspProviders,
-  onboardingProgress,
-  userAchievements,
-  releaseCountdowns,
-  scheduledPosts,
-  beatListings,
-  distributionPackages,
-  analyticsStreams,
-  invoices,
-  sessions,
-} from "@shared/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { users, dspProviders } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 interface TestResult {

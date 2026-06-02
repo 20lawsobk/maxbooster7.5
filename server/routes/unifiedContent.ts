@@ -278,7 +278,7 @@ router.post(
 
 // ─── GET /api/content/generate-unified/platforms ─────────────────────────────
 
-router.get("/platforms", (req: Request, res: Response) => {
+router.get("/platforms", (_req: Request, res: Response) => {
   res.json({
     platforms: ALL_PLATFORMS.map((p) => ({
       id: p,
@@ -289,7 +289,7 @@ router.get("/platforms", (req: Request, res: Response) => {
 
 // ─── GET /api/content/generate-unified/features ──────────────────────────────
 
-router.get("/features", (req: Request, res: Response) => {
+router.get("/features", (_req: Request, res: Response) => {
   res.json({
     features: MAX_BOOSTER_FEATURES.map((f) => ({
       id: f.id,

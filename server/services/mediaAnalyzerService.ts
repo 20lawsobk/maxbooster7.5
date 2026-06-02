@@ -176,7 +176,7 @@ function runPython(
       reject(new Error(`Analyzer timed out after ${timeout}ms`));
     }, timeout);
 
-    child.on("close", (code) => {
+    child.on("close", (_code) => {
       clearTimeout(timer);
       const trimmed = stdout.trim();
       if (!trimmed) {

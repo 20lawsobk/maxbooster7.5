@@ -19,15 +19,6 @@ export interface AccessibilityPreferences {
   keyboardNavigationEnabled: boolean;
 }
 
-const defaultPreferences: AccessibilityPreferences = {
-  reducedMotion: null,
-  contrastMode: null,
-  fontSize: "medium",
-  colorBlindMode: "none",
-  focusIndicatorWidth: 2,
-  screenReaderOptimized: false,
-  keyboardNavigationEnabled: true,
-};
 
 export function useAccessibilityPreferences() {
   const queryClient = useQueryClient();

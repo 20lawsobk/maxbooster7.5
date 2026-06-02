@@ -54,7 +54,7 @@ export class RoyaltiesCSVImportService {
   async dryRunImport(
     buffer: Buffer,
     mapping: Record<string, string>,
-    userId: string,
+    _userId: string,
   ) {
     const fileHash = this.calculateFileHash(buffer);
     const existing = await storage.checkFileHash(fileHash);
@@ -96,7 +96,7 @@ export class RoyaltiesCSVImportService {
 
   async importCSV(
     buffer: Buffer,
-    mapping: Record<string, string>,
+    _mapping: Record<string, string>,
     userId: string,
     filename: string,
   ): Promise<JobResponse> {

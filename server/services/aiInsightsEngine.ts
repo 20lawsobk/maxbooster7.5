@@ -1,19 +1,7 @@
 import { type Project } from "@shared/schema";
 import { db } from "../db";
-import {
-  analytics,
-  users,
-  studioProjects,
-  aiMetricPredictions,
-  aiCohortAnalysis,
-  aiChurnPredictions,
-  aiRevenueForecasts,
-  aiAnomalyDetections,
-  aiModels,
-  aiModelVersions,
-  inferenceRuns,
-} from "@shared/schema";
-import { eq, sql, and, gte, lte, desc, asc } from "drizzle-orm";
+import { analytics, users, studioProjects, aiMetricPredictions, aiCohortAnalysis, aiChurnPredictions, aiRevenueForecasts, aiAnomalyDetections, aiModels, inferenceRuns } from "@shared/schema";
+import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 interface DashboardStats {
@@ -621,7 +609,7 @@ export class CustomAIEngine {
     userId: string,
     timeframe: "7d" | "30d" | "90d" = "30d",
   ): Promise<InsightNarrative[]> {
-    const startTime = Date.now();
+    Date.now();
     const insights: InsightNarrative[] = [];
 
     const stats = await this.getUserStats(userId, timeframe);
@@ -745,7 +733,7 @@ export class CustomAIEngine {
   generateOptimizations(
     stats: DashboardStats,
     projects: Project[],
-    historicalData?: unknown[],
+    _historicalData?: unknown[],
   ): AIOptimizations {
     const recommendations: AIRecommendation[] = [];
 
@@ -993,7 +981,7 @@ export class CustomAIEngine {
   }
 
   private async getCohortUsers(
-    cohortDefinition: CohortDefinition,
+    _cohortDefinition: CohortDefinition,
   ): Promise<any[]> {
     return [];
   }
@@ -1002,7 +990,7 @@ export class CustomAIEngine {
     users: unknown[],
     startDate: Date,
     days: number,
-    metrics: string[],
+    _metrics: string[],
   ): Promise<unknown> {
     if (users.length === 0) {
       return { retention: 0, ltv: 0, engagement: 0, churn: 0, conversion: 0 };
@@ -1054,7 +1042,7 @@ export class CustomAIEngine {
 
   private async compareCohortToAverage(
     cohortMetrics: Record<string, unknown>,
-    cohortType: string,
+    _cohortType: string,
   ): Promise<number> {
     const industryRetentionBenchmark = 0.35;
     const cohortRetention = cohortMetrics?.retention ?? 0;
@@ -1064,7 +1052,7 @@ export class CustomAIEngine {
   }
 
   private async extractChurnFeatures(userId: string): Promise<unknown> {
-    const user = await db
+    await db
       .select()
       .from(users)
       .where(eq(users.id, userId))
@@ -1158,7 +1146,7 @@ export class CustomAIEngine {
 
   private generateRetentionRecommendations(
     riskFactors: unknown[],
-    features: unknown,
+    _features: unknown,
   ): AIRecommendation[] {
     const recommendations: AIRecommendation[] = [];
 
@@ -1203,7 +1191,6 @@ export class CustomAIEngine {
     period: string,
   ): Promise<number[]> {
     const periods = this.getPeriodCount(period) * 2;
-    const data: number[] = [];
 
     const revenueData = await db
       .select()
@@ -1261,7 +1248,7 @@ export class CustomAIEngine {
     };
   }
 
-  private detectSeasonality(data: number[]): number {
+  private detectSeasonality(_data: number[]): number {
     return 1.0;
   }
 
@@ -1295,8 +1282,8 @@ export class CustomAIEngine {
   }
 
   private async calculateRevenueBreakdown(
-    userId: string,
-    forecastDate: Date,
+    _userId: string,
+    _forecastDate: Date,
   ): Promise<unknown> {
     return {
       byPlan: { basic: 100, premium: 250, enterprise: 500 },
@@ -1318,8 +1305,8 @@ export class CustomAIEngine {
   }
 
   private async performRootCauseAnalysis(
-    userId: string,
-    metricName: string,
+    _userId: string,
+    _metricName: string,
     value: number,
     baseline: number,
     context?: unknown,
@@ -1359,8 +1346,8 @@ export class CustomAIEngine {
   }
 
   private async findCorrelatedEvents(
-    userId: string,
-    context?: unknown,
+    _userId: string,
+    _context?: unknown,
   ): Promise<any[]> {
     return [];
   }
@@ -1377,7 +1364,7 @@ export class CustomAIEngine {
   }
 
   private async estimateUserImpact(
-    metricName: string,
+    _metricName: string,
     value: number,
     baseline: number,
   ): Promise<number> {
@@ -1529,8 +1516,8 @@ export class CustomAIEngine {
   }
 
   private async compareToBenchmarks(
-    userId: string,
-    stats: unknown,
+    _userId: string,
+    _stats: unknown,
   ): Promise<unknown> {
     return {
       revenuePercentile: 75,

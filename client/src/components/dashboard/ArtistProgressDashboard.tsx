@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -21,22 +21,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import {
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Music,
-  DollarSign,
-  Zap,
-  Award,
-  Target,
-  Crown,
-  Flame,
-  Star,
-  Trophy,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+import { TrendingDown, Users, Music, DollarSign, Zap, Award, Target, Crown, Flame, Star, Trophy, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GrowthMetrics {

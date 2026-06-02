@@ -49,12 +49,6 @@ const PROMO_CARD_DIMENSIONS: Record<string, { width: number; height: number }> =
     twitter: { width: 1200, height: 675 },
   };
 
-const MINI_VIDEO_DIMENSIONS: Record<string, { width: number; height: number }> =
-  {
-    "1:1": { width: 1080, height: 1080 },
-    "9:16": { width: 1080, height: 1920 },
-    "16:9": { width: 1920, height: 1080 },
-  };
 
 class PromotionalToolsService {
   private autopilotEngines: Map<string, AutopilotEngine> = new Map();
@@ -667,7 +661,7 @@ class PromotionalToolsService {
   }
 
   async calculateArtistScore(userId: string): Promise<ArtistScore> {
-    const autopilot = this.getAutonomousAutopilotForUser(userId);
+    this.getAutonomousAutopilotForUser(userId);
 
     const streamingScore = Math.random() * 100;
     const socialScore = Math.random() * 100;

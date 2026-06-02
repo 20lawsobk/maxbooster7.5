@@ -37,7 +37,6 @@ if (JWT_SECRET.length < 32) {
 const ACCESS_TOKEN_EXPIRY = "15m";
 const ACCESS_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
-const REVOKED_TOKEN_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 interface TokenPair {
   accessToken: string;
@@ -77,7 +76,7 @@ export class JWTAuthService {
 
   async issueTokens(userId: string, role: string = "user"): Promise<TokenPair> {
     const accessTokenId = crypto.randomUUID();
-    const refreshTokenId = crypto.randomUUID();
+    crypto.randomUUID();
     const refreshTokenValue = crypto.randomBytes(32).toString("hex");
     const tokenVersion = await this.getUserTokenVersion(userId);
 
@@ -193,7 +192,7 @@ export class JWTAuthService {
 
     const tokenVersion = await this.getUserTokenVersion(user.id);
     const accessTokenId = crypto.randomUUID();
-    const newRefreshTokenId = crypto.randomUUID();
+    crypto.randomUUID();
     const newRefreshTokenValue = crypto.randomBytes(32).toString("hex");
     const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
     const refreshTokenExpiresAt = new Date(

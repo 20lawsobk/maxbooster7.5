@@ -1,13 +1,7 @@
-import { useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -45,38 +39,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Edit,
-  Trash2,
-  Copy,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  DollarSign,
-  Megaphone,
-  FileText,
-  MoreHorizontal,
-  GripVertical,
-  Send,
-  Eye,
-  Users,
-  Target,
-  Sparkles,
-  Zap,
-  Filter,
-  Download,
-  RefreshCw,
-  PartyPopper,
-  Star,
-  CalendarDays,
-  LayoutGrid,
-  List,
-} from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Edit, Trash2, Clock, CheckCircle, XCircle, AlertCircle, DollarSign, Megaphone, FileText, MoreHorizontal, GripVertical, Send, Eye, Users, Target, Sparkles, Zap, RefreshCw, PartyPopper, CalendarDays, LayoutGrid, List } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -86,17 +49,7 @@ import {
   TwitterIcon,
 } from "@/components/ui/brand-icons";
 import { useToast } from "@/hooks/use-toast";
-import {
-  format,
-  addDays,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  isSameDay,
-  isToday,
-  addMonths,
-  subMonths,
-} from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 
 interface ScheduledPost {
   id: string;
@@ -209,7 +162,7 @@ const STATUS_CONFIG = {
 
 export function UnifiedCalendar() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
@@ -233,7 +186,7 @@ export function UnifiedCalendar() {
     budget: 0,
   });
 
-  const { data: postsData, isLoading: postsLoading } = useQuery({
+  const { data: postsData } = useQuery({
     queryKey: ["/api/social/unified-calendar/posts"],
   });
 
@@ -293,11 +246,6 @@ export function UnifiedCalendar() {
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const hourSlots = Array.from({ length: 24 }, (_, i) => i);
 
-  const cellVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1 },
-    hover: { scale: 1.02, transition: { duration: 0.2 } },
-  };
 
   const postVariants = {
     hidden: { opacity: 0, y: -10 },
@@ -419,12 +367,12 @@ export function UnifiedCalendar() {
     setShowApprovalDialog(false);
   };
 
-  const handlePublishNow = (post: ScheduledPost) => {
+  ((post: ScheduledPost) => {
     toast({
       title: "Publishing...",
       description: `"${post.title}" is being published to ${post.platforms.length} platforms.`,
     });
-  };
+  });
 
   const handleAddToQueue = (item: QueueItem) => {
     toast({

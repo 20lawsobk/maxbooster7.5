@@ -14,11 +14,7 @@
  */
 
 import { logger } from "./logger";
-import {
-  PocketDimension,
-  pocketManager,
-  PocketDimensionConfig,
-} from "./pocket-dimension/index.js";
+import { PocketDimension, pocketManager } from "./pocket-dimension/index.js";
 import { EventEmitter } from "events";
 import crypto from "crypto";
 
@@ -774,7 +770,6 @@ class AudioQualityMaximizer extends EventEmitter {
   private pocket: PocketDimension | null = null;
   private readonly pocketId = "audio-quality-vault-v1";
   private initialized = false;
-  private qualitySettings = QUALITY_PRESETS.AUDIO.lossless;
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
@@ -1088,7 +1083,7 @@ export class UltraQualityEngine extends EventEmitter {
 
   private updateMetrics(): void {
     const cacheStats = this.cache.getStats();
-    const preloaderStats = this.preloader.getStats();
+    this.preloader.getStats();
 
     this.metrics = {
       ...this.metrics,

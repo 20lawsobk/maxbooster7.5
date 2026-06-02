@@ -1,44 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CheckCircle2,
-  XCircle,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  Globe,
-  Info,
-  Key,
-  Wrench,
-  Music2,
-  AlertCircle,
-  RefreshCw,
-  Search,
-  Edit2,
-  Save,
-  X,
-  Zap,
-  BarChart2,
-  Shield,
-  Download,
-  Upload,
-  Link2,
-  Activity,
-  Network,
-  Dna,
-  History,
-  ScanSearch,
-  GitBranch,
-  Hash,
-  Star,
-  TriangleAlert,
-  Fingerprint,
-  BookOpen,
-  Share2,
-  Disc3,
-  SendHorizonal,
-} from "lucide-react";
+import { CheckCircle2, XCircle, ExternalLink, ChevronDown, ChevronUp, Loader2, Globe, Info, Key, Wrench, Music2, AlertCircle, RefreshCw, Search, Edit2, Save, X, Zap, BarChart2, Shield, Download, Upload, Link2, Activity, Network, Dna, ScanSearch, GitBranch, Hash, Star, TriangleAlert, Fingerprint, BookOpen, Disc3, SendHorizonal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -267,7 +229,6 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const {
     data: hub,
     isLoading,
-    refetch: refetchHub,
   } = useQuery<HubData>({
     queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`],
     queryFn: () =>
@@ -727,10 +688,10 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     }
   };
 
-  const getClaimStateForPortal = (platformKey: string) =>
+  ((platformKey: string) =>
     pipelineData?.pipeline?.find(
       (p: Record<string, unknown>) => p.platform === platformKey,
-    );
+    ));
 
   const CLAIM_STEP_LABELS = [
     "Not Started",

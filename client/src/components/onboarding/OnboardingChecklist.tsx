@@ -14,34 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import {
-  CheckCircle,
-  Circle,
-  X,
-  ChevronDown,
-  ChevronUp,
-  User,
-  Sparkles,
-  Music,
-  Share2,
-  Crown,
-  Gift,
-  Zap,
-  ArrowRight,
-  HelpCircle,
-  Trophy,
-  Star,
-  Flame,
-  Target,
-  BarChart3,
-  Calendar,
-  UserPlus,
-  ShoppingBag,
-  Minimize2,
-  Maximize2,
-  PartyPopper,
-  Lock,
-} from "lucide-react";
+import { CheckCircle, Circle, X, ChevronDown, ChevronUp, User, Sparkles, Music, Share2, Crown, Zap, ArrowRight, HelpCircle, Trophy, Star, Flame, Target, BarChart3, Calendar, UserPlus, ShoppingBag, Minimize2, PartyPopper, Lock } from "lucide-react";
 import { Link } from "wouter";
 
 interface OnboardingTask {
@@ -219,10 +192,9 @@ export default function OnboardingChecklist({
   const completedCount = progress?.tasks.filter((t) => t.completed).length || 0;
   const totalCount = progress?.tasks.length || 0;
   const progressPercentage = progress?.completionPercentage || 0;
-  const currentReward =
-    REWARDS.find((r) => progressPercentage < r.threshold) ||
+  REWARDS.find((r) => progressPercentage < r.threshold) ||
     REWARDS[REWARDS.length - 1];
-  const unlockedRewards = REWARDS.filter(
+  REWARDS.filter(
     (r) => progressPercentage >= r.threshold,
   );
 

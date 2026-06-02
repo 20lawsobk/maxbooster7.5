@@ -1,7 +1,6 @@
 import http from "http";
 import { logger } from "../../logger.js";
 
-const BASE_URL = "http://localhost:5000";
 
 interface LoadTestResult {
   endpoint: string;

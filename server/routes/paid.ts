@@ -22,7 +22,7 @@ paidRouter.get("/dashboard", requirePaid, (req, res) => {
 });
 
 // Example: Paid-only feature
-paidRouter.get("/feature", requirePaid, (req, res) => {
+paidRouter.get("/feature", requirePaid, (_req, res) => {
   res.json({ message: "This is a paid feature.", available: true });
 });
 

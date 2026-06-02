@@ -1,4 +1,4 @@
-import { openExternalLink, isPWAStandalone } from "@/lib/externalLinks";
+import { openExternalLink } from "@/lib/externalLinks";
 import { ExternalLink as ExternalLinkIcon } from "lucide-react";
 
 interface ExternalLinkProps {

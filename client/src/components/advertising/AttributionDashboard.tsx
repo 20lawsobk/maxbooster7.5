@@ -25,47 +25,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  Sankey,
-  Tooltip,
-  ResponsiveContainer,
-  Treemap,
-  LineChart,
-  Line,
-  ComposedChart,
-  Area,
-} from "recharts";
-import {
-  GitBranch,
-  Target,
-  Eye,
-  MousePointerClick,
-  DollarSign,
-  TrendingUp,
-  Zap,
-  Clock,
-  Calendar,
-  BarChart3,
-  PieChartIcon,
-  ArrowRight,
-  CheckCircle,
-  Users,
-  Activity,
-  Settings,
-  RefreshCw,
-  Layers,
-  Share2,
-  Filter,
-  Info,
-} from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, Line, ComposedChart, Area } from "recharts";
+import { GitBranch, Target, Eye, MousePointerClick, DollarSign, Zap, Clock, Calendar, BarChart3, ArrowRight, CheckCircle, Activity, RefreshCw, Layers, Share2, Info } from "lucide-react";
 
 type AttributionModel =
   | "first-click"
@@ -379,7 +340,7 @@ export function AttributionDashboard() {
                   label={({ name, value }) => `${name}: ${value}%`}
                   labelLine
                 >
-                  {chartData.map((entry, index) => (
+                  {chartData.map((_entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}

@@ -1,11 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  useBatchSelectContext,
-  useOptionalBatchSelectContext,
-} from "./BatchSelectProvider";
+import { useOptionalBatchSelectContext } from "./BatchSelectProvider";
 
 export interface SelectAllCheckboxProps {
   ids?: string[];

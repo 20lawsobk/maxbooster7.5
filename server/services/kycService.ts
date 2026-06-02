@@ -1,14 +1,6 @@
 import { db } from "../db.js";
-import {
-  kycVerifications,
-  kycDocuments,
-  users,
-  type KYCVerification,
-  type KYCDocument,
-  type InsertKYCVerification,
-  type InsertKYCDocument,
-} from "@shared/schema";
-import { eq, and, desc, gte, or } from "drizzle-orm";
+import { kycVerifications, kycDocuments, users, type KYCVerification, type KYCDocument } from "@shared/schema";
+import { eq, desc, or } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 import { emailService } from "./emailService.js";

@@ -579,10 +579,6 @@ class NamecheapProvider implements DnsProvider {
     return resp.text();
   }
 
-  private extractXmlValue(xml: string, tag: string): string | null {
-    const match = xml.match(new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`, "i"));
-    return match ? match[1] : null;
-  }
 
   private isSuccess(xml: string): boolean {
     return xml.includes('Status="OK"');
@@ -1515,7 +1511,7 @@ export function validateDnsRecord(record: DnsRecord): string | null {
  * Build the CAA record values that should be auto-provisioned when a
  * domain is activated (mirrors Vercel's behaviour).
  */
-export function buildCaaRecords(domain: string): DnsRecord[] {
+export function buildCaaRecords(_domain: string): DnsRecord[] {
   return [
     { type: "CAA", name: "@", value: '0 issue "letsencrypt.org"', ttl: 3600 },
     { type: "CAA", name: "@", value: '0 issue "pki.goog"', ttl: 3600 },

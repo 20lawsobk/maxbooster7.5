@@ -45,7 +45,7 @@ export function NetworkStatusBanner({
     isOnline,
     isOffline,
     isReconnecting,
-    syncStatus,
+    
     pendingCount,
     status,
   } = useOfflineStatus();

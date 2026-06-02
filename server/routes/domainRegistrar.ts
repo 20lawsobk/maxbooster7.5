@@ -21,7 +21,7 @@
  */
 
 import { Router } from "express";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db, pool } from "../db.js";
 import { claimedDomains, domainContacts, storefronts } from "@shared/schema";
 import { logger } from "../logger.js";

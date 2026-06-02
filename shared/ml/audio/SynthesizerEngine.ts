@@ -137,19 +137,6 @@ const NOTE_FREQUENCIES: Record<string, number> = {
   B: 493.88,
 };
 
-const SCALE_INTERVALS: Record<string, number[]> = {
-  major: [0, 2, 4, 5, 7, 9, 11],
-  minor: [0, 2, 3, 5, 7, 8, 10],
-  dorian: [0, 2, 3, 5, 7, 9, 10],
-  phrygian: [0, 1, 3, 5, 7, 8, 10],
-  lydian: [0, 2, 4, 6, 7, 9, 11],
-  mixolydian: [0, 2, 4, 5, 7, 9, 10],
-  locrian: [0, 1, 3, 5, 6, 8, 10],
-  pentatonic_major: [0, 2, 4, 7, 9],
-  pentatonic_minor: [0, 3, 5, 7, 10],
-  blues: [0, 3, 5, 6, 7, 10],
-  harmonic_minor: [0, 2, 3, 5, 7, 8, 11],
-};
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -161,21 +148,12 @@ function getNoteFrequency(note: string, octave: number): number {
   return baseFreq * Math.pow(2, octaveDiff);
 }
 
-function midiToFrequency(midi: number): number {
-  return 440 * Math.pow(2, (midi - 69) / 12);
-}
 
-function frequencyToMidi(freq: number): number {
-  return 69 + 12 * Math.log2(freq / 440);
-}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
 
 // Seeded random for reproducible generation
 class SeededRandom {
@@ -317,7 +295,7 @@ function generateEnvelope(
   params: EnvelopeParams,
   time: number,
   noteOffTime: number | null,
-  sampleRate: number,
+  _sampleRate: number,
 ): number {
   const { attack, decay, sustain, release } = params;
 
@@ -471,7 +449,6 @@ class LadderFilter {
 
     // 4-pole cascade
     for (let i = 0; i < 4; i++) {
-      const pole = this.stage[i];
       x = x * this.tunedCoeff + this.delay[i] * (1 - this.tunedCoeff);
       this.delay[i] = x;
       this.stage[i] = x;
@@ -487,58 +464,8 @@ class LadderFilter {
 }
 
 // State Variable Filter (multi-mode with smooth transitions)
-class StateVariableFilter {
-  private low: number = 0;
-  private band: number = 0;
-  private high: number = 0;
-  private notch: number = 0;
-
-  process(
-    input: number,
-    cutoff: number,
-    resonance: number,
-    sampleRate: number,
-  ): {
-    low: number;
-    band: number;
-    high: number;
-    notch: number;
-  } {
-    const f = 2 * Math.sin((Math.PI * cutoff) / sampleRate);
-    const q = 1 / Math.max(0.5, resonance);
-
-    this.high = input - this.low - q * this.band;
-    this.band += f * this.high;
-    this.low += f * this.band;
-    this.notch = this.high + this.low;
-
-    return {
-      low: this.low,
-      band: this.band,
-      high: this.high,
-      notch: this.notch,
-    };
-  }
-
-  reset() {
-    this.low = this.band = this.high = this.notch = 0;
-  }
-}
 
 // Harmonic Overtone Generator for richer timbres
-function generateWithHarmonics(
-  baseFreq: number,
-  time: number,
-  harmonicStructure: { ratio: number; amplitude: number; phase?: number }[],
-): number {
-  let sample = 0;
-  for (const harmonic of harmonicStructure) {
-    const freq = baseFreq * harmonic.ratio;
-    const phase = harmonic.phase || 0;
-    sample += Math.sin(2 * Math.PI * freq * time + phase) * harmonic.amplitude;
-  }
-  return sample;
-}
 
 // Predefined harmonic structures for realistic timbres
 const HARMONIC_STRUCTURES = {
@@ -815,18 +742,6 @@ class DCBlocker {
 }
 
 // Oversampling for anti-aliasing
-function oversample2x(samples: Float32Array): Float32Array {
-  const output = new Float32Array(samples.length * 2);
-  for (let i = 0; i < samples.length; i++) {
-    output[i * 2] = samples[i];
-    if (i < samples.length - 1) {
-      output[i * 2 + 1] = (samples[i] + samples[i + 1]) * 0.5;
-    } else {
-      output[i * 2 + 1] = samples[i] * 0.5;
-    }
-  }
-  return output;
-}
 
 function downsample2x(samples: Float32Array): Float32Array {
   const output = new Float32Array(Math.floor(samples.length / 2));
@@ -894,40 +809,9 @@ function softClip(x: number, drive: number = 1): number {
   return Math.tanh(k * x) / Math.tanh(k);
 }
 
-function hardClip(x: number, threshold: number = 0.8): number {
-  return clamp(x, -threshold, threshold);
-}
 
-function bitCrush(x: number, bits: number): number {
-  const levels = Math.pow(2, bits);
-  return Math.round(x * levels) / levels;
-}
 
 // Simple delay line for chorus/flanger effects
-class DelayLine {
-  private buffer: Float32Array;
-  private writeIndex: number = 0;
-  private maxDelay: number;
-
-  constructor(maxDelaySamples: number) {
-    this.maxDelay = maxDelaySamples;
-    this.buffer = new Float32Array(maxDelaySamples);
-  }
-
-  write(sample: number) {
-    this.buffer[this.writeIndex] = sample;
-    this.writeIndex = (this.writeIndex + 1) % this.maxDelay;
-  }
-
-  read(delaySamples: number): number {
-    const readIndex =
-      (this.writeIndex - delaySamples + this.maxDelay) % this.maxDelay;
-    const index0 = Math.floor(readIndex);
-    const index1 = (index0 + 1) % this.maxDelay;
-    const frac = readIndex - index0;
-    return this.buffer[index0] * (1 - frac) + this.buffer[index1] * frac;
-  }
-}
 
 // ============================================================================
 // DRUM SYNTHESIZERS
@@ -1148,7 +1032,7 @@ export function synthesizeBass(
   const { sampleRate, duration } = genParams;
   const samples = Math.floor(sampleRate * duration);
   const output = new Float32Array(samples);
-  const rng = new SeededRandom(Date.now());
+  new SeededRandom(Date.now());
 
   const baseFreq = getNoteFrequency(params.note, params.octave);
   const { type, filter, distortion = 0, subOscMix = 0.3 } = params;

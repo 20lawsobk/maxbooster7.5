@@ -318,7 +318,7 @@ router.post(
   },
 );
 
-router.get("/presets", requireAuth, async (req, res) => {
+router.get("/presets", requireAuth, async (_req, res) => {
   try {
     const instruments = melodyPatternService.getAvailableInstruments();
     const genres = melodyPatternService.getAvailableGenres();

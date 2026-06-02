@@ -1,21 +1,9 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  GitBranch,
-  GitMerge,
-  Check,
-  X,
-  AlertTriangle,
-  Loader2,
-  ArrowLeft,
-  ArrowRight,
-  Eye,
-  Code,
-  Diff,
-} from "lucide-react";
+import { GitBranch, GitMerge, Check, AlertTriangle, Loader2, ArrowLeft, ArrowRight, Eye, Code, Diff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import {

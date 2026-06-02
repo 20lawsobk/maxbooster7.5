@@ -91,7 +91,7 @@ export function PayoutHistoryTimeline({
     });
   };
 
-  const getStatusIcon = (status: string, type: string) => {
+  const getStatusIcon = (status: string, _type: string) => {
     const iconClass = "w-5 h-5";
     switch (status) {
       case "completed":

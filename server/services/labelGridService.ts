@@ -12,7 +12,7 @@
 
 import axios from "axios";
 import { storage } from "../storage";
-import type { Release, DistributionPackage } from "@shared/schema";
+import type { Release } from "@shared/schema";
 import { labelSettings } from "@shared/schema";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
@@ -408,7 +408,7 @@ export class LabelGridService {
    *   YY  = Year of reference
    *   NNNNN = Unique designation code
    */
-  private async generateISRC(trackId: string): Promise<string> {
+  private async generateISRC(_trackId: string): Promise<string> {
     const registrant = await this.getLabelSetting(
       "isrc_registrant_code",
       "MXB",

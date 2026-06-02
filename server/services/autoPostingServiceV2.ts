@@ -388,7 +388,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToInstagram(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -417,7 +417,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToFacebook(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -444,7 +444,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToTwitter(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -580,7 +580,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToYouTube(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -686,7 +686,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToLinkedIn(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -798,7 +798,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToThreads(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -883,7 +883,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToGoogleBusiness(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {

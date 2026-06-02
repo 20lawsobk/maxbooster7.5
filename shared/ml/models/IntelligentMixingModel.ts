@@ -35,7 +35,6 @@ export interface AudioAnalysis {
 
 export class IntelligentMixingModel {
   private readonly targetLUFS = -14;
-  private readonly targetDynamicRange = 8;
 
   constructor() {}
 
@@ -201,7 +200,7 @@ export class IntelligentMixingModel {
     return energy;
   }
 
-  private calculateStereoWidth(buffer: Float32Array): number {
+  private calculateStereoWidth(_buffer: Float32Array): number {
     return 0.5;
   }
 
@@ -252,7 +251,7 @@ export class IntelligentMixingModel {
 
   private optimizeEQ(
     analysis: AudioAnalysis,
-    targetGenre?: string,
+    _targetGenre?: string,
   ): Array<{ freq: number; gain: number; q: number }> {
     const bands: Array<{ freq: number; gain: number; q: number }> = [];
 

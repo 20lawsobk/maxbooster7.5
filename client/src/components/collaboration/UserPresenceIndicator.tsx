@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
@@ -302,7 +302,6 @@ export function UserPresenceIndicator({
         <div className="p-2 space-y-1">
           <AnimatePresence mode="popLayout">
             {(expandedView ? users : visibleUsers).map((user) => {
-              const StatusIcon = STATUS_CONFIG[user.status].icon;
               const RoleIcon = ROLE_CONFIG[user.role].icon;
 
               return (

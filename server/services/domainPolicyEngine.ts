@@ -306,7 +306,7 @@ export async function emitDomainEvent(
  */
 export async function getDomainEvents(
   domainId: string,
-  userId: string,
+  _userId: string,
 ): Promise<unknown[]> {
   const { rows } = await pool.query(
     `SELECT event_type, fqdn, metadata, created_at

@@ -69,7 +69,6 @@ const QUICK_SUGGESTIONS = [
   },
 ];
 
-const PAGE_SIZE = 40;
 
 function welcomeMessage(username?: string): Message {
   return {

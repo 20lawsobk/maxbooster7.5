@@ -1,27 +1,8 @@
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertTriangle,
-  CreditCard,
-  RefreshCw,
-  Shield,
-  Clock,
-  XCircle,
-  Ban,
-  Wifi,
-  HelpCircle,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { CreditCard, RefreshCw, Shield, Clock, XCircle, Ban, Wifi, HelpCircle, ChevronRight, Loader2 } from "lucide-react";
 
 type DeclineReason =
   | "insufficient_funds"

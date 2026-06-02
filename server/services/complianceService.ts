@@ -1,13 +1,6 @@
 import { storage } from "../storage";
 import crypto from "crypto";
-import type {
-  ComplianceControl,
-  ComplianceEvidence,
-  ComplianceAudit,
-  InsertComplianceControl,
-  InsertComplianceEvidence,
-  InsertComplianceAudit,
-} from "@shared/schema";
+import type { ComplianceControl, ComplianceAudit, InsertComplianceAudit } from "@shared/schema";
 import { logger } from "../logger.js";
 
 interface ComplianceReport {
@@ -70,7 +63,7 @@ export class ComplianceService {
     return ComplianceService.instance;
   }
 
-  async generateSOC2Report(dateRange?: {
+  async generateSOC2Report(_dateRange?: {
     startDate: Date;
     endDate: Date;
   }): Promise<ComplianceReport> {
@@ -162,7 +155,7 @@ encryption, monitoring, and incident response capabilities.`;
       (c) => c.status === "implemented",
     );
     const partialControls = controls.filter((c) => c.status === "partial");
-    const plannedControls = controls.filter((c) => c.status === "planned");
+    controls.filter((c) => c.status === "planned");
 
     const overallScore = this.calculateComplianceScore(controls);
 
@@ -241,7 +234,7 @@ ${implementedControls.length} of ${controls.length} required controls are fully 
       (c) => c.status === "implemented",
     );
     const partialControls = controls.filter((c) => c.status === "partial");
-    const plannedControls = controls.filter((c) => c.status === "planned");
+    controls.filter((c) => c.status === "planned");
 
     const overallScore = this.calculateComplianceScore(controls);
 
@@ -762,7 +755,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
   }
 
   private generateSOC2Recommendations(
-    findings: Finding[],
+    _findings: Finding[],
     gaps: GapAnalysisItem[],
   ): string[] {
     const recommendations: string[] = [];
@@ -797,7 +790,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
   }
 
   private generateISO27001Recommendations(
-    findings: Finding[],
+    _findings: Finding[],
     gaps: GapAnalysisItem[],
   ): string[] {
     const recommendations: string[] = [];
@@ -831,7 +824,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
   }
 
   private generateGDPRRecommendations(
-    findings: Finding[],
+    _findings: Finding[],
     gaps: GapAnalysisItem[],
   ): string[] {
     const recommendations: string[] = [];

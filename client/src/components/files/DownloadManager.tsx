@@ -6,24 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Download,
-  Pause,
-  Play,
-  X,
-  RotateCcw,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  FileAudio,
-  FileImage,
-  File,
-  Minimize2,
-  Maximize2,
-  Zap,
-  FolderOpen,
-  ExternalLink,
-} from "lucide-react";
+import { Download, Pause, Play, X, RotateCcw, CheckCircle2, AlertCircle, Loader2, FileAudio, FileImage, File, Minimize2, Maximize2, Zap, FolderOpen } from "lucide-react";
 
 export type DownloadOutcome =
   | "pending"
@@ -180,7 +163,7 @@ export function DownloadManager({
   const failedDownloads = downloads.filter((d) =>
     d.outcome.startsWith("error_"),
   );
-  const pausedDownloads = downloads.filter((d) => d.outcome === "paused");
+  downloads.filter((d) => d.outcome === "paused");
 
   const totalSize = downloads.reduce((sum, d) => sum + d.fileSize, 0);
   const downloadedSize = downloads.reduce(

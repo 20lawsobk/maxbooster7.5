@@ -4,7 +4,7 @@ import {
   releaseScheduledActions,
   preSaveCampaigns,
 } from "@shared/schema";
-import { eq, and, lte, gte, desc, sql } from "drizzle-orm";
+import { eq, and, lte, gte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { releaseWorkflowService } from "./releaseWorkflowService.js";
 
@@ -182,7 +182,6 @@ class ReleaseScheduler {
       return { date: requestedDate, adjusted: false };
     }
 
-    const daysFromFriday = dayOfWeek > 5 ? dayOfWeek - 5 : 5 - dayOfWeek;
     const nextFriday = this.getNextFriday(requestedDate);
     const prevFriday = new Date(nextFriday);
     prevFriday.setDate(prevFriday.getDate() - 7);

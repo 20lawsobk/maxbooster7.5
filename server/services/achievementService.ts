@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { eq, and, desc, sql, gte, count } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import {
   achievements,
   userAchievements,
@@ -124,7 +124,7 @@ class AchievementService {
   }
 
   private calculateProgress(
-    eventType: string,
+    _eventType: string,
     eventData: Record<string, any>,
     requirement: AchievementRequirement,
   ): number {

@@ -24,7 +24,6 @@ import { cdcChunker } from "./compression/ContentDefinedChunker.js";
 import type { StoreOptions } from "./compression/types.js";
 import { logger } from "../../logger.js";
 
-const DEFAULT_CHUNK_SIZE = 8 * 1024 * 1024;
 
 export class PocketStorageService {
   constructor(

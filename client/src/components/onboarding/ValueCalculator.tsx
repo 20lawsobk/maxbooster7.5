@@ -72,7 +72,6 @@ export function ValueCalculator() {
   const subscriptionTier = user?.subscriptionTier || "monthly";
   const isLifetime = subscriptionTier === "lifetime";
   const isYearly = subscriptionTier === "yearly";
-  const isMonthly = subscriptionTier === "monthly";
 
   const userMonthlyPrice = isLifetime
     ? 0

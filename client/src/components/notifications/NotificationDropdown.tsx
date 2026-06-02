@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NotificationItem } from "./NotificationItem";
 import { useNotifications } from "./useNotifications";
-import type { Notification, NotificationType } from "./types";
+import type { Notification } from "./types";
 
 interface NotificationDropdownProps {
   notifications: Notification[];

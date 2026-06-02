@@ -280,7 +280,7 @@ class AIHelpDeskService {
     message: string,
     category: string | undefined,
     intent: string,
-    context: ConversationContext,
+    _context: ConversationContext,
   ): HelpDeskResponse {
     const { helpDesk, company } = BUSINESS_CONFIG;
 
@@ -451,9 +451,9 @@ What would you like to know more about?`,
    */
   async escalateToHuman(
     sessionId: string,
-    reason: string,
+    _reason: string,
   ): Promise<{ ticketId: string; message: string }> {
-    const context = this.conversations.get(sessionId);
+    this.conversations.get(sessionId);
     const ticketId = `TKT-${Date.now()}`;
 
     return {

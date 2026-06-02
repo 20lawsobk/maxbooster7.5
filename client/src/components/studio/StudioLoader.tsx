@@ -10,23 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  StudioSkeleton,
-  ProjectListSkeleton,
-  TrackLoadingSkeleton,
-  FileBrowserSkeleton,
-} from "./StudioSkeleton";
-import {
-  AlertCircle,
-  RefreshCw,
-  WifiOff,
-  Clock,
-  Plus,
-  FolderOpen,
-  Home,
-  AlertTriangle,
-  CheckCircle,
-} from "lucide-react";
+import { StudioSkeleton } from "./StudioSkeleton";
+import { AlertCircle, RefreshCw, WifiOff, Clock, Plus, Home, AlertTriangle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { errorService, captureException } from "@/lib/errorService";
 import { apiRequest } from "@/lib/queryClient";
@@ -84,7 +69,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   const {
     data: projectsData,
     isLoading: projectsLoading,
-    isError: projectsError,
+    
     error: projectsErrorData,
     refetch: refetchProjects,
   } = useQuery({
@@ -107,9 +92,9 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   // Query for samples with error handling
   const {
     data: samplesData,
-    isLoading: samplesLoading,
-    isError: samplesError,
-    error: samplesErrorData,
+    
+    
+    
     refetch: refetchSamples,
   } = useQuery({
     queryKey: ["/api/studio/samples"],
@@ -192,7 +177,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
         status: "draft",
       });
 
-      const newProject = await response.json();
+      await response.json();
 
       // Invalidate and refetch - sync across all project views
       await queryClient.invalidateQueries({

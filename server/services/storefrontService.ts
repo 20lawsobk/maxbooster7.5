@@ -8,7 +8,7 @@ import {
   listings,
   users,
 } from "@shared/schema";
-import { eq, and, desc, sql, count } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import Stripe from "stripe";
 
 import { logger } from "../logger.js";
@@ -833,7 +833,6 @@ export class StorefrontService {
         .limit(1);
 
       const tier = tierResults[0]?.tier;
-      const storefront = tierResults[0]?.storefront;
 
       if (!tier) {
         throw new Error("Membership tier not found");

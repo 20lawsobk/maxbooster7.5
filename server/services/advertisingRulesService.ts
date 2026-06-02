@@ -175,7 +175,7 @@ export class AdvertisingRulesService {
   /**
    * Extract learnings from rule execution
    */
-  private extractLearnings(rule: unknown, variant: unknown): string {
+  private extractLearnings(_rule: unknown, variant: unknown): string {
     const learnings: string[] = [];
     const metrics = variant.actualMetrics || {};
 

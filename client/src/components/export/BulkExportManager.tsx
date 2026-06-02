@@ -22,38 +22,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Download,
-  Archive,
-  FileAudio,
-  FileText,
-  FileSpreadsheet,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Pause,
-  Play,
-  X,
-  RefreshCw,
-  Settings2,
-  Mail,
-  HardDrive,
-  Layers,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Download, Archive, FileAudio, FileText, FileSpreadsheet, Loader2, CheckCircle2, XCircle, AlertTriangle, X, RefreshCw, Settings2, Mail, HardDrive, Layers, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import {
-  FormatSelector,
-  AUDIO_FORMATS,
-  BulkFormatSelector,
-  type BulkFormatConfig,
-  type AudioFormat,
-} from "./FormatSelector";
+import { AUDIO_FORMATS, BulkFormatSelector, type BulkFormatConfig } from "./FormatSelector";
 import { QualitySelector, type AudioQualitySettings } from "./QualitySelector";
 
 export type BulkExportStatus =
@@ -118,15 +91,6 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-function formatTime(seconds: number): string {
-  if (seconds < 60) return `${Math.ceil(seconds)}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.ceil(seconds % 60);
-  if (mins < 60) return `${mins}m ${secs}s`;
-  const hours = Math.floor(mins / 60);
-  const remainingMins = mins % 60;
-  return `${hours}h ${remainingMins}m`;
-}
 
 const BulkExportItemRow = memo(function BulkExportItemRow({
   item,
@@ -412,7 +376,7 @@ export function BulkExportManager({
   className,
 }: BulkExportManagerProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     new Set(items.map((i) => i.id)),

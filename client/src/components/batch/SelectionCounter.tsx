@@ -3,10 +3,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, CheckSquare, Square } from "lucide-react";
-import {
-  useBatchSelectContext,
-  useOptionalBatchSelectContext,
-} from "./BatchSelectProvider";
+import { useOptionalBatchSelectContext } from "./BatchSelectProvider";
 
 export interface SelectionCounterProps {
   className?: string;

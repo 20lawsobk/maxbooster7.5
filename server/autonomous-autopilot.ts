@@ -672,86 +672,8 @@ export class AutonomousAutopilot extends EventEmitter {
     return "tips"; // Default fallback
   }
 
-  private getContentTemplates(params: unknown): string[] {
-    const templates: Record<string, string[]> = {
-      professional: [
-        `Industry insight: ${params.topic} is reshaping how we approach business strategy. Key implications for ${params.targetAudience}:`,
-        `After analyzing current ${params.topic} trends, here are three critical factors every leader should consider:`,
-        `The future of ${params.topic} depends on understanding these fundamental principles:`,
-        `${params.topic} presents both challenges and opportunities. Here's how to navigate effectively:`,
-      ],
-      casual: [
-        `Just discovered something interesting about ${params.topic}! 🤔`,
-        `Hot take: ${params.topic} is about to change everything. Here's why:`,
-        `Let's talk about ${params.topic} - this is actually pretty fascinating:`,
-        `${params.topic} update: Things are getting interesting! 👀`,
-      ],
-      authoritative: [
-        `${params.topic} analysis: Based on extensive research, here are the key findings:`,
-        `The definitive guide to ${params.topic}: Everything you need to know:`,
-        `${params.topic} best practices that deliver measurable results:`,
-        `Comprehensive ${params.topic} strategy framework:`,
-      ],
-      friendly: [
-        `Hey everyone! Wanted to share some thoughts on ${params.topic} 😊`,
-        `Good morning! Let's dive into ${params.topic} together:`,
-        `Hope everyone's having a great day! Quick ${params.topic} tip:`,
-        `${params.topic} made simple - here's what you need to know:`,
-      ],
-      innovative: [
-        `🚀 Revolutionary approach to ${params.topic}: Here's what's changing:`,
-        `Breaking: ${params.topic} innovation that's disrupting the entire industry:`,
-        `Next-generation ${params.topic} strategies that are already working:`,
-        `The cutting-edge of ${params.topic}: What early adopters are doing differently:`,
-      ],
-    };
 
-    return templates[params.brandPersonality] || templates["professional"];
-  }
 
-  private customizeContentTemplate(template: string, params: unknown): string {
-    // Add context and value based on objectives
-    let content = template;
-
-    if (params.objectives.includes("thought-leadership")) {
-      content += `\n\n💡 Key insight: This approach has proven effective across multiple ${params.businessVertical} organizations.`;
-    }
-
-    if (params.objectives.includes("engagement")) {
-      content += `\n\nWhat's your experience with this? Share your thoughts below! 👇`;
-    }
-
-    if (params.objectives.includes("brand-awareness")) {
-      content += `\n\n#${params.businessVertical} #Innovation #Growth`;
-    }
-
-    return content;
-  }
-
-  private generateOptimalHashtags(content: string, platform: string): string[] {
-    const words = content.toLowerCase().split(/\s+/);
-    const keywords = words.filter(
-      (word) => word.length > 4 && !this.isStopWord(word),
-    );
-
-    const platformHashtagCounts = {
-      Instagram: 8,
-      Twitter: 3,
-      LinkedIn: 3,
-      Facebook: 2,
-      TikTok: 5,
-    };
-
-    const maxHashtags =
-      (platformHashtagCounts as Record<string, unknown>)[platform] || 3;
-
-    // Generate contextual hashtags
-    const hashtags = keywords
-      .slice(0, maxHashtags)
-      .map((word) => `#${word.charAt(0).toUpperCase() + word.slice(1)}`);
-
-    return hashtags;
-  }
 
   private isStopWord(word: string): boolean {
     const stopWords = [

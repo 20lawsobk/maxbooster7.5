@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import path from "path";
 import crypto from "crypto";
@@ -28,7 +28,7 @@ import {
   storefrontRatings,
   beatInteractions,
 } from "@shared/schema";
-import { eq, and, gte, sql, desc, asc, or, inArray, avg } from "drizzle-orm";
+import { eq, and, gte, sql, desc, asc, or, inArray } from "drizzle-orm";
 import { getBaseUrl } from "../config/defaults.js";
 import { requireAuth } from "../middleware/auth.js";
 import { processUploadedBeat } from "../services/audioSeparatorService.js";
@@ -468,7 +468,7 @@ async function _computeTimelineData(timeRange: string, userId: string) {
     .where(eq(listings.userId, userId))
     .limit(500);
 
-  const listingIdSet = new Set(userListingIds.map((l) => l.id));
+  new Set(userListingIds.map((l) => l.id));
 
   const data = [];
   for (let i = periodCount - 1; i >= 0; i--) {
@@ -711,7 +711,7 @@ router.get("/my-beats", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/producers", async (req: Request, res: Response) => {
+router.get("/producers", async (_req: Request, res: Response) => {
   try {
     const producers = await storage.getProducers();
     res.json({ producers: producers || [] });
@@ -1523,7 +1523,7 @@ router.post(
       const {
         title,
         genre,
-        mood,
+        
         tempo,
         key,
         price,

@@ -1,8 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import {
-  idempotencyService,
-  IdempotencyOptions,
-} from "../services/idempotencyService.js";
+import { idempotencyService } from "../services/idempotencyService.js";
 import { logger } from "../logger.js";
 
 export interface IdempotencyMiddlewareOptions {

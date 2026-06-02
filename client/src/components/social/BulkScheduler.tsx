@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Upload,
@@ -41,26 +40,6 @@ interface ValidationError {
   message: string;
 }
 
-interface BatchStatus {
-  batchId: string;
-  status: string;
-  totalPosts: number;
-  processedPosts: number;
-  successfulPosts: number;
-  failedPosts: number;
-  statusBreakdown: Record<string, number>;
-  posts: Array<{
-    id: string;
-    platform: string;
-    status: string;
-    scheduledAt: string;
-    publishedAt?: string;
-    error?: string;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-  completedAt?: string;
-}
 
 export function BulkScheduler() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -73,7 +52,7 @@ export function BulkScheduler() {
   >([]);
   const [currentBatchId, setCurrentBatchId] = useState<string | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
 
   const { data: batches, refetch: refetchBatches } = useQuery({
     queryKey: ["/api/social/bulk/batches"],

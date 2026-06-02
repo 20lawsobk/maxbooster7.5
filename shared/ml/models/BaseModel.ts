@@ -116,11 +116,11 @@ export abstract class BaseModel {
 
     try {
       const prediction = this.model.predict(inputTensor) as tf.Tensor;
-      const output = this.postprocessOutput(prediction);
+      this.postprocessOutput(prediction);
 
       // Calculate confidence (simplified)
       const softmax = tf.softmax(prediction);
-      const maxConfidence = await softmax.max().data();
+      await softmax.max().data();
       const confidenceArray = await softmax.data();
 
       return {
@@ -185,7 +185,6 @@ export abstract class BaseModel {
     await this.model.save(path);
 
     // Save metadata
-    const metadataPath = `${path}/metadata.json`;
     // Note: In browser, this would save to IndexedDB
     // In Node.js, this would save to filesystem
   }

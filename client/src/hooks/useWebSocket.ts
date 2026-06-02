@@ -18,7 +18,7 @@ interface UseWebSocketOptions {
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const {
-    userId,
+    
     onMessage,
     onConnect,
     onDisconnect,

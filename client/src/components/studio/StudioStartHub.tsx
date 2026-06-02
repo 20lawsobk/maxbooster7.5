@@ -15,50 +15,13 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import {
-  Plus,
-  FolderOpen,
-  Music,
-  Star,
-  Clock,
-  Layout,
-  Mic,
-  AudioWaveform,
-  Disc3,
-  Piano,
-  Layers,
-  Sparkles,
-  ChevronRight,
-  Search,
-  Grid3X3,
-  List,
-  MoreVertical,
-  Trash2,
-  Copy,
-  Edit3,
-  Play,
-  User,
-  Settings,
-  HelpCircle,
-  BookOpen,
-  Sliders,
-  Radio,
-  Folder,
-  FileAudio,
-  Headphones,
-  Crown,
-  Zap,
-  TrendingUp,
-  Calendar,
-  Music2,
-  Music4,
-} from "lucide-react";
+import { Plus, Music, Star, Clock, Layout, Mic, AudioWaveform, Disc3, Layers, Sparkles, ChevronRight, Search, Grid3X3, List, MoreVertical, Trash2, Copy, Edit3, Play, Settings, HelpCircle, BookOpen, Sliders, Radio, FileAudio, Headphones, Crown, Zap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

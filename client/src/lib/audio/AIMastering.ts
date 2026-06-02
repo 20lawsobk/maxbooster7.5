@@ -160,13 +160,6 @@ export class AIMastering {
     result: MasteringResult,
   ): void {
     // Target tonal balance curve (pink noise reference)
-    const targetCurve = {
-      bass: 0, // 20-250 Hz
-      lowMid: -3, // 250-500 Hz
-      mid: -6, // 500-2k Hz
-      highMid: -9, // 2k-8k Hz
-      treble: -12, // 8k-20k Hz
-    };
 
     // Apply gentle EQ corrections
     if (analysis.lufs < -20) {
@@ -357,7 +350,7 @@ export class AIMastering {
    * Perform final analysis and generate recommendations
    */
   private performFinalAnalysis(
-    buffer: AudioBuffer,
+    _buffer: AudioBuffer,
     result: MasteringResult,
   ): void {
     // Estimate output metrics (would need actual processed buffer in production)
@@ -688,7 +681,7 @@ class StereoEnhancer {
     this.monoFilter.frequency.value = Math.max(20, Math.min(500, freq));
   }
 
-  setBalance(balance: number): void {
+  setBalance(_balance: number): void {
     // Balance correction (-1 to 1)
     // Implement with additional gain nodes if needed
   }

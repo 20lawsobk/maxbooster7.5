@@ -28,33 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Eye,
-  Save,
-  Copy,
-  ExternalLink,
-  Upload,
-  Palette,
-  Mail,
-  Share2,
-  Smartphone,
-  BarChart3,
-  Link as LinkIcon,
-  Trash2,
-  X,
-  Check,
-  Music,
-  Globe,
-  Sparkles,
-} from "lucide-react";
+import { Eye, Save, Copy, ExternalLink, Upload, Palette, Mail, Share2, BarChart3, Link as LinkIcon, X, Check, Music, Sparkles } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,

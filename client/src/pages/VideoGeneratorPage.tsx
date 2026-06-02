@@ -33,7 +33,7 @@ export default function VideoGeneratorPage() {
   const bgColor = normColor(rawBg);
   const accentColor = normColor(rawAc);
 
-  const handleVideoGenerated = (url: string) => {
+  const handleVideoGenerated = (_url: string) => {
     toast({
       title: "Video ready!",
       description: "Your promotional video has been generated.",

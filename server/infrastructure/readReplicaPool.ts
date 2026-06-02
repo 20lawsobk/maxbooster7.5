@@ -25,7 +25,6 @@ class ReadReplicaPool {
   private replicaPools: Pool[] = [];
   private replicaWeights: number[] = [];
   private totalWeight: number = 0;
-  private currentReplicaIndex: number = 0;
   private healthyReplicas: Set<number> = new Set();
   private healthCheckInterval: NodeJS.Timeout | null = null;
 
@@ -112,7 +111,7 @@ class ReadReplicaPool {
       }
     };
 
-    const replicas: ReplicaConfig[] = replicaUrls.map((url, index) => {
+    const replicas: ReplicaConfig[] = replicaUrls.map((url, _index) => {
       const config = parseUrl(url);
       return {
         host: config.host || "localhost",

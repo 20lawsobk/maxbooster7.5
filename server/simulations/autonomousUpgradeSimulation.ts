@@ -470,7 +470,7 @@ export async function simulateAutonomousUpgrade(
   const gainedCount = mainScenarios.filter(
     (s) => s.competitiveImpact === "gained",
   ).length;
-  const maintainedCount = mainScenarios.filter(
+  mainScenarios.filter(
     (s) => s.competitiveImpact === "maintained",
   ).length;
   const lostCount = mainScenarios.filter(
@@ -672,7 +672,7 @@ export function generateSimulationReport(
   report += `**Competitive Advantage**: ${mainResults.competitiveAdvantage.toUpperCase()}\n\n`;
 
   // Detailed scenario breakdown
-  mainResults.scenarios.forEach((scenario, index) => {
+  mainResults.scenarios.forEach((scenario, _index) => {
     report += `### Scenario ${scenario.id}: ${scenario.name}\n\n`;
     report += `**Type**: ${scenario.changeType} | **Severity**: ${scenario.severity} | **Success**: ${scenario.success ? "✅" : "❌"}\n\n`;
     report += `**Details**: ${scenario.details}\n\n`;

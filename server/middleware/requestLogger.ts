@@ -150,7 +150,7 @@ export function requestLogger(
 // Error context middleware - adds context to errors for better debugging
 export function errorContext(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ): void {
   // Add request context to any errors that occur

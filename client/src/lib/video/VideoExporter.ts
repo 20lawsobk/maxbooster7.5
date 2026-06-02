@@ -1,7 +1,4 @@
-import type {
-  VideoProject,
-  RenderProgress,
-} from "../../../../shared/video/VideoRendererEngine";
+import type { VideoProject } from "../../../../shared/video/VideoRendererEngine";
 
 export type VideoFormat = "webm" | "mp4";
 export type VideoResolution = "720p" | "1080p" | "4k";
@@ -244,7 +241,7 @@ export class VideoExporter {
   private async recordFrames(
     project: VideoProject,
     frameRenderer: FrameRenderer,
-    resolution: ResolutionConfig,
+    _resolution: ResolutionConfig,
     frameRate: FrameRate,
     onProgress?: (progress: ExportProgress) => void,
   ): Promise<Blob> {
@@ -257,7 +254,6 @@ export class VideoExporter {
       }
 
       const totalFrames = Math.ceil(project.duration * frameRate);
-      const frameDuration = 1000 / frameRate;
       let currentFrame = 0;
 
       this.mediaRecorder.ondataavailable = (event) => {

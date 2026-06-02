@@ -145,7 +145,7 @@ export class AudioFingerprintService {
 
   private async computeFingerprint(
     audioPath: string,
-    options: FingerprintOptions,
+    _options: FingerprintOptions,
   ): Promise<{
     hash: string;
     duration: number;
@@ -154,7 +154,7 @@ export class AudioFingerprintService {
     metadata?: Record<string, unknown>;
   }> {
     const fileBuffer = await fs.promises.readFile(audioPath);
-    const fileHash = crypto
+    crypto
       .createHash("sha256")
       .update(fileBuffer)
       .digest("hex");

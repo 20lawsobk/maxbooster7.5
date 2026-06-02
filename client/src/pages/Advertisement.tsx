@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
@@ -49,66 +49,8 @@ import {
   AIImageGenerator,
   type ImagePlatform,
 } from "@/components/content/AIImageGenerator";
-import {
-  CreativeVariantGenerator,
-  CrossChannelAttribution,
-  CreativeAutomation,
-} from "@/components/advertising";
-import {
-  Target,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Play,
-  Eye,
-  MousePointerClick,
-  BarChart3,
-  Plus,
-  Settings,
-  Calendar,
-  Music,
-  Tv,
-  Zap,
-  Shield,
-  Brain,
-  Rocket,
-  Crown,
-  Sparkles,
-  Activity,
-  Globe,
-  CheckCircle,
-  AlertTriangle,
-  Info,
-  Lightbulb,
-  Clock,
-  Upload,
-  X,
-  Bot,
-  RefreshCw,
-  Gauge,
-  Layers,
-  GitBranch,
-  Network,
-  PieChart,
-  AlertCircle,
-  FlaskConical,
-  Timer,
-  Radio,
-  UserPlus,
-  Copy,
-  Search,
-  ExternalLink,
-  LineChart,
-  ArrowUpRight,
-  ArrowDownRight,
-  Percent,
-  Lock,
-  Unlock,
-  Filter,
-  Scan,
-  FileImage,
-  Loader2,
-} from "lucide-react";
+import { CreativeVariantGenerator, CreativeAutomation } from "@/components/advertising";
+import { Target, TrendingUp, TrendingDown, Users, Play, Eye, MousePointerClick, Plus, Music, Tv, Zap, Brain, Rocket, Sparkles, Globe, CheckCircle, AlertTriangle, Lightbulb, Clock, Upload, X, Bot, RefreshCw, Layers, Network, PieChart, Timer, Radio, UserPlus, Copy, Search, Lock, Unlock, FileImage, Loader2 } from "lucide-react";
 
 interface AdCampaign {
   id: string;
@@ -343,10 +285,10 @@ export default function Advertisement() {
   )
     ? lookalikeAudiencesData
     : lookalikeAudiencesData?.audiences || [];
-  const forecasts: ForecastData[] = Array.isArray(forecastsData)
+  Array.isArray(forecastsData)
     ? forecastsData
     : forecastsData?.forecasts || [];
-  const competitorInsights: CompetitorInsight[] = Array.isArray(
+  Array.isArray(
     competitorInsightsData,
   )
     ? competitorInsightsData
@@ -364,10 +306,10 @@ export default function Advertisement() {
     }
   };
 
-  const setActiveEnterpriseTab = (tab: string) => {
+  ((tab: string) => {
     setActiveEnterpriseTabState(tab);
     handleTrackAdvertisingExplored();
-  };
+  });
   const [videoPlatform, setVideoPlatform] =
     useState<VideoPlatform>("instagram");
   const [adCreativePlatform, setAdCreativePlatform] =
@@ -401,21 +343,21 @@ export default function Advertisement() {
   const [lookalikeSourceType, setLookalikeSourceType] = useState("top-engaged");
   const [lookalikeExpansionLevel, setLookalikeExpansionLevel] = useState(2);
 
-  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<
+  const { data: campaigns = [] } = useQuery<
     AdCampaign[]
   >({
     queryKey: ["/api/advertising/campaigns"],
     enabled: !!user,
   });
 
-  const { data: aiInsights, isLoading: insightsLoading } = useQuery<AIInsights>(
+  useQuery<AIInsights>(
     {
       queryKey: ["/api/advertising/ai-insights"],
       enabled: !!user,
     },
   );
 
-  const { data: socialConnections, isLoading: connectionsLoading } =
+  const { data: socialConnections } =
     useQuery<SocialConnections>({
       queryKey: ["/api/social/platform-status"],
       enabled: !!user,
@@ -597,8 +539,7 @@ export default function Advertisement() {
     },
   });
 
-  const { data: autopilotStatus, isLoading: autopilotLoading } =
-    useQuery<AutopilotStatus>({
+  useQuery<AutopilotStatus>({
       queryKey: ["/api/autopilot/status"],
       enabled: !!user,
       refetchInterval: 30000,
@@ -698,11 +639,11 @@ export default function Advertisement() {
     createCampaignMutation.mutate(campaignForm);
   };
 
-  const totalImpressions = campaigns.reduce(
+  campaigns.reduce(
     (acc: number, campaign: AdCampaign) => acc + campaign.impressions,
     0,
   );
-  const totalClicks = campaigns.reduce(
+  campaigns.reduce(
     (acc: number, campaign: AdCampaign) => acc + campaign.clicks,
     0,
   );

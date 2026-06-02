@@ -927,7 +927,7 @@ class AlgorithmIntelligenceService {
 
   async checkShadowBan(
     platform: string,
-    userId: string,
+    _userId: string,
     recentMetrics?: {
       hashtagReach: number;
       exploreReach: number;
@@ -1167,7 +1167,7 @@ class AlgorithmIntelligenceService {
   }
 
   async adaptToAlgorithmChange(
-    platform: string,
+    _platform: string,
     change: AlgorithmChange,
   ): Promise<{
     strategy: string[];

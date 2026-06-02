@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Volume2, VolumeX, Headphones, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MixerTrack {

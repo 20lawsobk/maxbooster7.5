@@ -1,20 +1,7 @@
 import { logger } from "@/lib/logger";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  RotateCcw,
-  Download,
-  Scissors,
-  Copy,
-  Layers,
-} from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, ZoomIn, ZoomOut, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -78,9 +65,9 @@ export function RealTimeWaveformDisplay({
 }: RealTimeWaveformDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>();
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
+  useRef<number>();
+  useRef<AudioContext | null>(null);
+  useRef<AnalyserNode | null>(null);
   const [localWaveformData, setLocalWaveformData] = useState<number[]>([]);
   const [isHovering, setIsHovering] = useState(false);
   const [hoverTime, setHoverTime] = useState(0);

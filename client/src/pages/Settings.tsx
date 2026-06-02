@@ -18,40 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  User,
-  Lock,
-  Bell,
-  Palette,
-  Music,
-  Shield,
-  CreditCard,
-  Download,
-  Trash2,
-  Upload,
-  Eye,
-  EyeOff,
-  Link as LinkIcon,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Loader2,
-  Crown,
-  Calendar,
-  Receipt,
-  Zap,
-  ArrowUpRight,
-  ArrowDownRight,
-  Info,
-  DollarSign,
-  TrendingUp,
-  HardDrive,
-  Headphones,
-  Check,
-  Keyboard,
-} from "lucide-react";
+import { User, Lock, Bell, Palette, Shield, CreditCard, Download, Trash2, Upload, Eye, Link as LinkIcon, RefreshCw, AlertTriangle, CheckCircle, Clock, XCircle, Loader2, Crown, Calendar, Receipt, Zap, ArrowUpRight, ArrowDownRight, Info, DollarSign, TrendingUp, HardDrive, Headphones, Check, Keyboard } from "lucide-react";
 import { ShortcutCustomizer } from "@/components/shortcuts/ShortcutCustomizer";
 import {
   Dialog,
@@ -67,7 +34,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
-import { apiRequest, queryClient as qc } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { PlatformConnections } from "@/components/social/platform-connections";
 import ChangePasswordDialog from "@/components/dialogs/ChangePasswordDialog";
@@ -100,7 +67,6 @@ export default function Settings() {
   const {
     trackProfileComplete,
     trackSocialAccountConnected,
-    trackCollaboratorInvited,
   } = useOnboardingProgress();
   const [location, navigate] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -215,7 +181,7 @@ export default function Settings() {
   });
 
   // Query for login sessions
-  const { data: loginSessions = [], isLoading: sessionsLoading } = useQuery({
+  useQuery({
     queryKey: ["/api/auth/sessions"],
     enabled: !!user,
   });
@@ -326,7 +292,7 @@ export default function Settings() {
     updateProfileMutation.mutate(profileData);
   };
 
-  const handleNotificationChange = async (key: string, value: boolean) => {
+  async (key: string, value: boolean) => {
     const previousSettings = { ...notificationSettings };
 
     // Optimistic update
@@ -670,10 +636,10 @@ export default function Settings() {
     }
   };
 
-  const openTerminateConfirmation = (sessionId: string) => {
+  ((sessionId: string) => {
     setSessionToTerminate(sessionId);
     setTerminateSessionOpen(true);
-  };
+  });
 
   const handleTerminateSession = async () => {
     if (!sessionToTerminate) return;
@@ -703,7 +669,7 @@ export default function Settings() {
     }
   };
 
-  const handleExportData = async () => {
+  async () => {
     try {
       const response = await fetch("/api/auth/export-data", {
         credentials: "include",

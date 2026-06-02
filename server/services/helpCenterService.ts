@@ -1,5 +1,4 @@
 import { db } from "../db";
-import { eq, and, or, like, desc, asc, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 export interface FAQItem {

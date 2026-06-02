@@ -7,22 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Upload,
-  Pause,
-  Play,
-  X,
-  RotateCcw,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  ListOrdered,
-  Trash2,
-  FileAudio,
-  ChevronDown,
-  ChevronUp,
-  Zap,
-} from "lucide-react";
+import { Pause, Play, X, RotateCcw, CheckCircle2, AlertCircle, Loader2, ListOrdered, Trash2, FileAudio, ChevronDown, ChevronUp, Zap } from "lucide-react";
 
 export interface QueuedFile {
   id: string;

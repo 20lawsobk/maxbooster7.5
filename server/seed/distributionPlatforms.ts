@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { dspProviders } from "@shared/schema";
-import { eq, sql, count } from "drizzle-orm";
+import { sql, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export const DISTRIBUTION_PLATFORMS = [

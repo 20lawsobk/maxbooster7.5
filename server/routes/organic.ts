@@ -51,7 +51,6 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
       const { contentId } = req.params;
 
       res.json({
@@ -484,7 +483,6 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
 
       res.json({
         overview: {
@@ -512,7 +510,6 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
 
       res.json({
         totalPosts: 0,
@@ -532,7 +529,6 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
 
       res.json({
         reach: null,
@@ -553,7 +549,6 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
 
       res.json({
         recommendations: [],

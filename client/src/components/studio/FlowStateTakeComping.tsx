@@ -1,25 +1,6 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Layers,
-  Check,
-  CheckCheck,
-  Star,
-  StarOff,
-  Trash2,
-  Play,
-  Pause,
-  RotateCcw,
-  ChevronDown,
-  ChevronUp,
-  Mic,
-  Volume2,
-  VolumeX,
-  Scissors,
-  Copy,
-  Wand2,
-  Loader2,
-} from "lucide-react";
+import { Layers, Check, CheckCheck, Star, StarOff, Trash2, Play, Pause, RotateCcw, ChevronDown, ChevronUp, Mic, Volume2, VolumeX, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -89,7 +70,7 @@ export function FlowStateTakeComping({
   className,
 }: FlowStateTakeCompingProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
   const studioStore = useStudioStore();
   const currentProjectId = projectId || studioStore.currentProjectId;
 
@@ -160,7 +141,7 @@ export function FlowStateTakeComping({
 
   const {
     data: takeGroups,
-    isLoading: isLoadingGroups,
+    
     error: groupsError,
   } = useQuery({
     queryKey: ["comping-groups", currentProjectId],
@@ -209,7 +190,7 @@ export function FlowStateTakeComping({
     }
   }, [takeGroups, duration]);
 
-  const renderCompMutation = useMutation({
+  useMutation({
     mutationFn: async (groupId: string) => {
       if (!currentProjectId) throw new Error("No project selected");
       const response = await apiRequest(
@@ -415,9 +396,9 @@ export function FlowStateTakeComping({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const getRegionForTime = (time: number): TakeRegion | undefined => {
+  ((time: number): TakeRegion | undefined => {
     return selectedRegions.find((r) => time >= r.startTime && time < r.endTime);
-  };
+  });
 
   const getTakeColor = (takeId: string): string => {
     const colors = [

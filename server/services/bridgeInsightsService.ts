@@ -1,15 +1,6 @@
 import { randomBytes } from "crypto";
 import { db } from "../db.js";
-import {
-  autopilotCrossInsights,
-  AutopilotCrossInsight,
-  socialPatternAggregates,
-  organicAssets,
-  organicChannels,
-  OrganicAsset,
-  OrganicChannel,
-  SocialPatternAggregate,
-} from "@shared/schema";
+import { autopilotCrossInsights, AutopilotCrossInsight, socialPatternAggregates, organicAssets, organicChannels } from "@shared/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 

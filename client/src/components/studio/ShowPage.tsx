@@ -10,23 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Play,
-  Pause,
-  Square,
-  SkipForward,
-  SkipBack,
-  X,
-  Maximize,
-  Minimize,
-  Plus,
-  Trash2,
-  GripVertical,
-  Music,
-  Clock,
-  Activity,
-  FileText,
-} from "lucide-react";
+import { Play, Square, SkipForward, SkipBack, X, Maximize, Minimize, Plus, Trash2, GripVertical, Music, Activity, FileText } from "lucide-react";
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -77,7 +61,7 @@ export function ShowPage() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const elapsedIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const itemTimerRef = useRef<NodeJS.Timeout | null>(null);
+  useRef<NodeJS.Timeout | null>(null);
 
   const activeSetlist = getActiveSetlist();
   const currentItem = getCurrentSetlistItem();

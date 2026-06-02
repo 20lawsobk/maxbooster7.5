@@ -470,7 +470,7 @@ class MelodyPatternService {
   }
 
   private generatePercussionPatterns(
-    genre: string,
+    _genre: string,
     instrument: string,
     characteristics: { swing: number; complexity: number; syncopation: number },
   ): DrumPattern[] {
@@ -522,7 +522,7 @@ class MelodyPatternService {
   }
 
   private generateTrainedPatterns(
-    genre: string,
+    _genre: string,
     instrument: string,
     characteristics: { swing: number; complexity: number; syncopation: number },
   ): MelodyPattern[] {
@@ -573,7 +573,7 @@ class MelodyPatternService {
 
   private generateDrumPatterns(
     genre: string,
-    kit: string,
+    _kit: string,
     characteristics: { swing: number; complexity: number; syncopation: number },
   ): DrumPattern[] {
     const patterns: DrumPattern[] = [];
@@ -597,7 +597,7 @@ class MelodyPatternService {
     return patterns;
   }
 
-  private generateBassNote(index: number, syncopation: number): number {
+  private generateBassNote(_index: number, _syncopation: number): number {
     const bassNotes = [0, 3, 5, 7, 10];
     return bassNotes[Math.floor(Math.random() * bassNotes.length)];
   }
@@ -616,7 +616,7 @@ class MelodyPatternService {
     return [2, 4, 8][Math.floor(Math.random() * 3)];
   }
 
-  private generateLeadNote(index: number, complexity: number): number {
+  private generateLeadNote(_index: number, complexity: number): number {
     const range = Math.floor(7 + complexity * 5);
     return Math.floor(Math.random() * range);
   }
@@ -628,17 +628,17 @@ class MelodyPatternService {
     return this.weightedRandom(durations, weights);
   }
 
-  private generateMelodyNote(index: number, complexity: number): number {
+  private generateMelodyNote(_index: number, complexity: number): number {
     const range = Math.floor(5 + complexity * 7);
     return Math.floor(Math.random() * range);
   }
 
-  private generateMelodyDuration(swing: number): number {
+  private generateMelodyDuration(_swing: number): number {
     const durations = [0.25, 0.5, 0.75, 1, 1.5, 2];
     return durations[Math.floor(Math.random() * durations.length)];
   }
 
-  private generateVelocity(index: number, complexity: number): number {
+  private generateVelocity(index: number, _complexity: number): number {
     const base = 70 + Math.floor(Math.random() * 30);
     const accent = index % 4 === 0 ? 15 : 0;
     return Math.min(127, base + accent);
@@ -737,7 +737,7 @@ class MelodyPatternService {
   }
 
   private generateClapPattern(
-    genre: string,
+    _genre: string,
     steps: number,
     chars: { swing: number; complexity: number; syncopation: number },
   ): number[] {
@@ -748,7 +748,7 @@ class MelodyPatternService {
   }
 
   private generatePercussionPattern(
-    genre: string,
+    _genre: string,
     steps: number,
     chars: { swing: number; complexity: number; syncopation: number },
   ): number[] {
@@ -894,7 +894,7 @@ class MelodyPatternService {
     return { notes, durations, velocities, octave: 4 };
   }
 
-  private generateFallbackDrums(params: GenerationParams): DrumPattern {
+  private generateFallbackDrums(_params: GenerationParams): DrumPattern {
     const steps = 16;
     return {
       kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
@@ -959,7 +959,7 @@ class MelodyPatternService {
     return "pop";
   }
 
-  private numeralToChord(numeral: string, key: string, scale: string): string {
+  private numeralToChord(numeral: string, key: string, _scale: string): string {
     const numeralMap: Record<string, number> = {
       I: 0,
       i: 0,
@@ -988,7 +988,7 @@ class MelodyPatternService {
     return chordRoot + (isMinor ? "m" : "");
   }
 
-  private getVoicing(chord: string, key: string): number[] {
+  private getVoicing(chord: string, _key: string): number[] {
     const root = chord
       .replace("m", "")
       .replace("7", "")

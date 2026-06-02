@@ -1,11 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -17,31 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Play,
-  Pause,
-  Square,
-  Grid,
-  Music,
-  Pencil,
-  Eraser,
-  MousePointer2,
-  ZoomIn,
-  ZoomOut,
-  Scissors,
-  Copy,
-  Trash2,
-  Undo2,
-  Redo2,
-  Magnet,
-  Piano,
-  Drum,
-  Activity,
-  ChevronLeft,
-  ChevronRight,
-  X,
-} from "lucide-react";
+import { Play, Pause, Square, Pencil, Eraser, MousePointer2, ZoomIn, ZoomOut, Scissors, Copy, Trash2, Undo2, Redo2, Magnet, Piano, Activity, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -87,7 +57,6 @@ const BEATS_PER_MEASURE = 4;
 const TOTAL_OCTAVES = 8;
 const TOTAL_NOTES = TOTAL_OCTAVES * 12;
 const VELOCITY_LANE_HEIGHT = 60;
-const PIANO_KEY_WIDTH = 48;
 
 type Tool = "select" | "pencil" | "eraser" | "scissors";
 

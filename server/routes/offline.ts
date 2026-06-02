@@ -21,7 +21,7 @@ const updateSettingsSchema = z.object({
   offlineNotifications: z.boolean().optional(),
 });
 
-router.get("/status", requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (_req, res) => {
   try {
     const isOnline = offlineModeService.getOnlineStatus();
     const capabilities = offlineModeService.getOfflineCapabilities();
@@ -45,7 +45,7 @@ router.get("/status", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/capabilities", requireAuth, async (req, res) => {
+router.get("/capabilities", requireAuth, async (_req, res) => {
   try {
     const capabilities = offlineModeService.getOfflineCapabilities();
 
@@ -194,7 +194,7 @@ router.post("/sync/:projectId", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/sync-all", requireAuth, async (req, res) => {
+router.post("/sync-all", requireAuth, async (_req, res) => {
   try {
     const { results, totalTime } = await offlineModeService.syncAll();
 
@@ -214,7 +214,7 @@ router.post("/sync-all", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/settings", requireAuth, async (req, res) => {
+router.get("/settings", requireAuth, async (_req, res) => {
   try {
     const settings = offlineModeService.getSettings();
 
@@ -248,7 +248,7 @@ router.put("/settings", requireAuth, async (req, res) => {
   }
 });
 
-router.delete("/cache", requireAuth, async (req, res) => {
+router.delete("/cache", requireAuth, async (_req, res) => {
   try {
     await offlineModeService.clearCache();
 

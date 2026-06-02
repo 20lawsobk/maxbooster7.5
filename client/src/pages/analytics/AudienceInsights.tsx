@@ -1,21 +1,7 @@
-import { useState, useMemo, memo } from "react";
+import { useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Legend,
-} from "recharts";
+import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import {
   Card,
   CardContent,
@@ -26,24 +12,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Users,
-  Globe,
-  TrendingUp,
-  TrendingDown,
-  MapPin,
-  Clock,
-  Heart,
-  UserPlus,
-  UserMinus,
-  Activity,
-  Target,
-} from "lucide-react";
+import { Users, Globe, TrendingUp, TrendingDown, Heart, UserPlus, Target } from "lucide-react";
 import { DateRangePicker } from "@/components/analytics/DateRangePicker";
-import {
-  AudienceEmptyState,
-  GeoEmptyState,
-} from "@/components/analytics/AnalyticsEmptyStates";
+import { AudienceEmptyState } from "@/components/analytics/AnalyticsEmptyStates";
 import {
   DemographicsSkeleton,
   GeographicSkeleton,
@@ -468,7 +439,7 @@ export function AudienceInsights({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {demographics.age.map((age, index) => (
+                {demographics.age.map((age, _index) => (
                   <div key={age.range} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{age.range}</span>

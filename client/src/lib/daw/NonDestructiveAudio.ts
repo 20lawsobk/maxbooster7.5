@@ -421,7 +421,6 @@ export class NonDestructiveAudioEngine {
     const endBeat = Math.max(
       ...events.map((e) => e.startBeat + e.durationBeats),
     );
-    const duration = endBeat - startBeat;
 
     logger.info(
       `Consolidating ${events.length} events from beat ${startBeat} to ${endBeat}`,

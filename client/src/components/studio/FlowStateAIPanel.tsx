@@ -1,36 +1,7 @@
 import { logger } from "@/lib/logger";
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Brain,
-  Sparkles,
-  Wand2,
-  Music,
-  Mic,
-  Sliders,
-  Gauge,
-  Radio,
-  ChevronRight,
-  Lightbulb,
-  ArrowRight,
-  Check,
-  X,
-  RefreshCw,
-  Zap,
-  FileAudio,
-  Loader2,
-  Volume2,
-  Layers,
-  TrendingUp,
-  Target,
-  GitBranch,
-  Settings2,
-  Palette,
-  Clock,
-  Hash,
-  BarChart3,
-  Waves,
-} from "lucide-react";
+import { Brain, Sparkles, Wand2, Music, Mic, Sliders, Gauge, Radio, ChevronRight, Lightbulb, ArrowRight, Check, X, RefreshCw, Zap, FileAudio, Loader2, Volume2, Layers, TrendingUp, Target, GitBranch, Hash, BarChart3, Waves } from "lucide-react";
 import type { FlowStateMode } from "@/hooks/useFlowStateAdapter";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";

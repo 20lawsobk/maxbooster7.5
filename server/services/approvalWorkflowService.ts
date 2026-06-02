@@ -1,18 +1,6 @@
 import { db } from "../db";
-import {
-  approvalWorkflows,
-  approvalRequests,
-  approvalSteps,
-  workspaceAuditLog,
-  users,
-  type ApprovalWorkflow,
-  type ApprovalRequest,
-  type ApprovalStep,
-  type InsertApprovalWorkflow,
-  type InsertApprovalRequest,
-  type InsertApprovalStep,
-} from "@shared/schema";
-import { eq, and, desc, sql, or, gte, lte } from "drizzle-orm";
+import { approvalWorkflows, approvalRequests, approvalSteps, workspaceAuditLog, users, type ApprovalWorkflow, type ApprovalRequest, type ApprovalStep, type InsertApprovalWorkflow } from "@shared/schema";
+import { eq, and, desc, sql, or, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { notificationService } from "./notificationService";
 import { rbacService } from "./rbacService";
@@ -492,7 +480,7 @@ export class ApprovalWorkflowService {
 
   async getPendingApprovals(
     workspaceId: string,
-    userId: string,
+    _userId: string,
   ): Promise<any[]> {
     try {
       const pendingRequests = await db

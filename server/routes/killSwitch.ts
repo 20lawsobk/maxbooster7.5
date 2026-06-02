@@ -35,7 +35,7 @@ router.use(requireAdmin as Record<string, unknown>, require2FA);
  * GET /api/kill-switch/status
  * Get current kill switch state
  */
-router.get("/status", requireAdmin, (req: Request, res: Response) => {
+router.get("/status", requireAdmin, (_req: Request, res: Response) => {
   try {
     const state = killSwitch.getState();
 

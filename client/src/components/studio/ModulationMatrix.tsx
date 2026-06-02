@@ -1,20 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Waves,
-  Plus,
-  Trash2,
-  Link,
-  Unlink,
-  Play,
-  Pause,
-  Settings,
-  ChevronDown,
-  ChevronUp,
-  RotateCcw,
-  Copy,
-  Clipboard,
-} from "lucide-react";
+import { Waves, Plus, Trash2, Link, Play, Pause, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
@@ -30,11 +16,6 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Knob } from "./Knob";
 
 export type LFOWaveform =

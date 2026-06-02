@@ -14,7 +14,7 @@ router.use(require2FA);
 
 router.get(
   "/queue-metrics",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const metrics = await queueMonitor.collectAllMetrics();
       const metricsArray = Array.from(metrics.entries()).map(
@@ -63,7 +63,7 @@ router.get(
 
 router.get(
   "/queue-health",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const healthStatus = await queueMonitor.getHealthStatus();
 
@@ -86,7 +86,7 @@ router.get(
 
 router.get(
   "/ai-models",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const metrics = aiModelManager.getMetrics();
       const summary = aiModelManager.getTelemetrySummary();
@@ -107,7 +107,7 @@ router.get(
 
 router.get(
   "/system-health",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const [queueHealth, aiMetrics] = await Promise.all([
         queueMonitor.getHealthStatus(),
@@ -205,7 +205,7 @@ router.post(
 
 router.get(
   "/dashboard",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const dashboardData = metricsCollector.getDashboardData();
       const alertConfig = alertingService.getConfig();
@@ -255,7 +255,7 @@ router.post(
 
 router.get(
   "/alerting/config",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
       const config = alertingService.getConfig();
 

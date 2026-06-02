@@ -26,13 +26,13 @@ import {
   scryptSync,
 } from "crypto";
 import { createGzip, createGunzip, constants as zlibConstants } from "zlib";
-import { pipeline, Readable, Writable, Transform } from "stream";
+import { pipeline, Readable, Writable } from "stream";
 import { promisify } from "util";
 import { EventEmitter } from "events";
 import fs from "fs/promises";
 import path from "path";
 
-const pipelineAsync = promisify(pipeline);
+promisify(pipeline);
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -633,7 +633,7 @@ export class PocketDimension extends EventEmitter {
 
       const source = Readable.from(data);
       const destination = new Writable({
-        write(chunk, encoding, callback) {
+        write(chunk, _encoding, callback) {
           chunks.push(chunk);
           callback();
         },
@@ -654,7 +654,7 @@ export class PocketDimension extends EventEmitter {
 
       const source = Readable.from(data);
       const destination = new Writable({
-        write(chunk, encoding, callback) {
+        write(chunk, _encoding, callback) {
           chunks.push(chunk);
           callback();
         },

@@ -288,7 +288,7 @@ class ErrorService {
 
   private getUserFriendlyMessage(
     category: ErrorCategory,
-    error: Error | unknown,
+    _error: Error | unknown,
   ): string {
     const messages: Record<ErrorCategory, string> = {
       network:
@@ -309,7 +309,7 @@ class ErrorService {
 
   private getRecoveryActions(
     category: ErrorCategory,
-    context?: Partial<ErrorContext>,
+    _context?: Partial<ErrorContext>,
   ): ErrorRecoveryAction[] {
     const actions: ErrorRecoveryAction[] = [];
 

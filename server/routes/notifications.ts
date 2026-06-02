@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { storage } from "../storage";
 import { db, dbRead } from "../db";
-import { eq, and, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { notifications, users } from "../../shared/schema";
 import { requireAuth } from "../middleware/auth";
 import { logger } from "../logger.js";
@@ -989,7 +989,7 @@ router.post("/push/silent", async (req: Request, res: Response) => {
 // ── Canonical push routes (called by usePushNotifications hook) ──────────────
 
 // Returns VAPID public key so the browser can create a push subscription
-router.get("/push-key", (req: Request, res: Response) => {
+router.get("/push-key", (_req: Request, res: Response) => {
   const publicKey = webPushService.getPublicKey();
   if (!publicKey) {
     return res.status(503).json({ error: "Push notifications not configured" });

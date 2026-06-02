@@ -162,7 +162,7 @@ router.get("/status", async (req, res) => {
   }
 });
 
-router.get("/support", async (req, res) => {
+router.get("/support", async (_req, res) => {
   try {
     res.json({
       supportContact: kycService.getSupportContact(),
@@ -195,7 +195,7 @@ router.get("/support", async (req, res) => {
   }
 });
 
-router.get("/document-types", async (req, res) => {
+router.get("/document-types", async (_req, res) => {
   try {
     const documentTypes = [
       { type: "government_id", ...kycService.getDocumentInfo("government_id") },
@@ -506,7 +506,7 @@ router.post("/documents/resubmit", upload.single("file"), async (req, res) => {
       });
     }
 
-    const { verificationId, documentType, previousDocumentId } = req.body;
+    const { verificationId, documentType } = req.body;
 
     if (!verificationId || !documentType) {
       return res

@@ -15,21 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Shield,
-  CheckCircle,
-  XCircle,
-  Clock,
-  User,
-  Building2,
-  FileText,
-  Eye,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  Download,
-  AlertCircle,
-} from "lucide-react";
+import { Shield, CheckCircle, XCircle, Clock, User, Building2, FileText, Eye, ChevronDown, ChevronUp, Loader2, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,

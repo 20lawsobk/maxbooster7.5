@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,19 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Brain,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Settings,
-  Lightbulb,
-  RotateCcw,
-  Eye,
-  MousePointerClick,
-  Timer,
-} from "lucide-react";
+import { Brain, TrendingUp, Clock, CheckCircle, Lightbulb, RotateCcw, Eye, MousePointerClick, Timer } from "lucide-react";
 
 export interface InteractionPattern {
   id: string;
@@ -271,7 +259,7 @@ export function PreferenceLearner({
   );
 
   const pendingInsights = insights.filter((i) => !i.applied);
-  const appliedInsights = insights.filter((i) => i.applied);
+  insights.filter((i) => i.applied);
 
   if (!showDashboard) {
     return null;

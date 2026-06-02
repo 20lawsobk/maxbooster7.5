@@ -18,15 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useShortcutGuide, useShortcuts } from "@/contexts/ShortcutContext";
 import { ShortcutHint } from "./ShortcutHint";
-import {
-  ShortcutDefinition,
-  ShortcutCategory,
-  ShortcutContext,
-} from "@/lib/shortcuts/types";
+import { ShortcutDefinition, ShortcutContext } from "@/lib/shortcuts/types";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   global: Keyboard,
@@ -64,7 +59,7 @@ interface ShortcutGuideProps {
 }
 
 export function ShortcutGuide({ className }: ShortcutGuideProps) {
-  const { isOpen, close, shortcuts, context } = useShortcutGuide();
+  const { isOpen, close,  context } = useShortcutGuide();
   const { shortcutManager } = useShortcuts();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedContext, setSelectedContext] = useState<

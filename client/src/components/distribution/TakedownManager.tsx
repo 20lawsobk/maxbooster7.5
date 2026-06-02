@@ -21,15 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -42,29 +34,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Trash2,
-  Plus,
-  Search,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Clock,
-  RefreshCw,
-  FileText,
-  Shield,
-  AlertTriangle,
-  ExternalLink,
-  MessageSquare,
-  Send,
-  Flag,
-  Scale,
-  Upload,
-  Eye,
-  RotateCcw,
-  Ban,
-  Gavel,
-} from "lucide-react";
+import { Trash2, Plus, Search, CheckCircle, XCircle, AlertCircle, Clock, RefreshCw, FileText, Shield, AlertTriangle, Send, Flag, Scale, Upload, Eye, RotateCcw, Ban, Gavel } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -217,25 +187,25 @@ export function TakedownManager() {
     supportingDocs: [] as string[],
   });
 
-  const { data: takedowns = [], isLoading: takedownsLoading } = useQuery<
+  const { data: takedowns = [] } = useQuery<
     TakedownRequest[]
   >({
     queryKey: ["/api/distribution/takedowns"],
   });
 
-  const { data: claims = [], isLoading: claimsLoading } = useQuery<
+  const { data: claims = [] } = useQuery<
     CopyrightClaim[]
   >({
     queryKey: ["/api/distribution/claims"],
   });
 
-  const { data: disputes = [], isLoading: disputesLoading } = useQuery<
+  const { data: disputes = [] } = useQuery<
     Dispute[]
   >({
     queryKey: ["/api/distribution/disputes"],
   });
 
-  const { data: reinstatements = [], isLoading: reinstatementsLoading } =
+  const { data: reinstatements = [] } =
     useQuery<ReinstatementRequest[]>({
       queryKey: ["/api/distribution/reinstatements"],
     });

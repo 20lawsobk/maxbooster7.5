@@ -2,23 +2,7 @@ import { useState, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  Legend,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import {
   Card,
   CardContent,
@@ -30,19 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  GitCompare,
-  Activity,
-  Users,
-  DollarSign,
-  Heart,
-  Share2,
-  ArrowRight,
-  Zap,
-} from "lucide-react";
+import { GitCompare, ArrowRight, Zap } from "lucide-react";
 import { DateRangePicker } from "@/components/analytics/DateRangePicker";
 import { PlatformFilterChips } from "@/components/analytics/PlatformFilterChips";
 import {

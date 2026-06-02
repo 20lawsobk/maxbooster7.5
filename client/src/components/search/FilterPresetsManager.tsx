@@ -33,21 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Bookmark,
-  Plus,
-  Save,
-  Trash2,
-  Edit,
-  MoreHorizontal,
-  Star,
-  StarOff,
-  Check,
-  X,
-  Filter,
-  Loader2,
-  ChevronDown,
-} from "lucide-react";
+import { Bookmark, Plus, Save, Trash2, Edit, MoreHorizontal, Star, StarOff, Check, Filter, Loader2, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -211,7 +197,7 @@ export function FilterPresetsManager({
     setShowSaveDialog(true);
   };
 
-  const formatFilterValue = (
+  ((
     key: string,
     value: Record<string, unknown>,
   ): string => {
@@ -219,7 +205,7 @@ export function FilterPresetsManager({
     if (key.includes("bpm")) return `${value} BPM`;
     if (typeof value === "boolean") return value ? "Yes" : "No";
     return String(value);
-  };
+  });
 
   if (compact) {
     return (

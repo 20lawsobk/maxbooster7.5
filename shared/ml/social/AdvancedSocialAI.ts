@@ -1136,7 +1136,6 @@ export class AdvancedSocialAI {
       count++;
     });
 
-    const avgEngagement = count > 0 ? totalEngagement / count : 0.5;
     const avgVirality = count > 0 ? totalVirality / count : 0.5;
     const avgSentiment = count > 0 ? totalSentiment / count : 0.5;
     const avgFormality = count > 0 ? totalFormality / count : 0.5;
@@ -1261,7 +1260,7 @@ export class AdvancedSocialAI {
 
   private generateHook(
     request: SocialContentRequest,
-    platform: PlatformProfile,
+    _platform: PlatformProfile,
     objective: ContentObjective,
     tone: ToneProfile,
   ): string {
@@ -1305,7 +1304,7 @@ export class AdvancedSocialAI {
     platform: PlatformProfile,
     objective: ContentObjective,
     tone: ToneProfile,
-    audience: AudienceSegment,
+    _audience: AudienceSegment,
   ): string {
     const topic = request.topic || "new music";
     const genre = request.genre || "music";
@@ -1347,8 +1346,8 @@ export class AdvancedSocialAI {
   }
 
   private generateCTA(
-    request: SocialContentRequest,
-    platform: PlatformProfile,
+    _request: SocialContentRequest,
+    _platform: PlatformProfile,
     objective: ContentObjective,
     tone: ToneProfile,
   ): string {
@@ -1643,7 +1642,7 @@ export class AdvancedSocialAI {
   }
 
   private generateVariants(
-    request: SocialContentRequest,
+    _request: SocialContentRequest,
     hook: string,
     body: string,
     cta: string,
@@ -1710,7 +1709,7 @@ export class AdvancedSocialAI {
   }
 
   private recommendMedia(
-    request: SocialContentRequest,
+    _request: SocialContentRequest,
     platform: PlatformProfile,
     objective: ContentObjective,
   ): string {
@@ -1790,7 +1789,7 @@ export class AdvancedSocialAI {
   }
 
   // Get viral pattern suggestions
-  getViralPatternSuggestions(topic: string): ViralPattern[] {
+  getViralPatternSuggestions(_topic: string): ViralPattern[] {
     return VIRAL_PATTERNS.filter((pattern) => pattern.shareability > 0.7);
   }
 

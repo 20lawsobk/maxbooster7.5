@@ -1,12 +1,6 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -30,40 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Search,
-  Hash,
-  AtSign,
-  Bell,
-  BellOff,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  AlertCircle,
-  Smile,
-  Meh,
-  Frown,
-  User,
-  Users,
-  Globe,
-  Zap,
-  Shield,
-  Eye,
-  Plus,
-  Trash2,
-  RefreshCw,
-  Download,
-  Filter,
-  MessageSquare,
-  BarChart3,
-  PieChart,
-  Activity,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Volume2,
-  Star,
-} from "lucide-react";
+import { Search, Hash, AtSign, Bell, BellOff, TrendingUp, TrendingDown, AlertTriangle, Smile, Meh, Frown, User, Shield, Eye, Plus, Trash2, MessageSquare, PieChart, Activity, Clock, CheckCircle, Star } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -157,7 +118,7 @@ const SENTIMENT_CONFIG = {
 
 export function SocialListening() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  useQueryClient();
 
   const [activeTab, setActiveTab] = useState("overview");
   const [showAddKeywordDialog, setShowAddKeywordDialog] = useState(false);
@@ -170,19 +131,19 @@ export function SocialListening() {
   const [showAlertSettings, setShowAlertSettings] = useState(false);
   const [alertThreshold, setAlertThreshold] = useState(10);
 
-  const { data: keywordsData, isLoading: keywordsLoading } = useQuery({
+  const { data: keywordsData } = useQuery({
     queryKey: ["/api/social/listening/keywords"],
   });
 
-  const { data: trendingData, isLoading: trendingLoading } = useQuery({
+  const { data: trendingData } = useQuery({
     queryKey: ["/api/social/listening/trending"],
   });
 
-  const { data: influencersData, isLoading: influencersLoading } = useQuery({
+  const { data: influencersData } = useQuery({
     queryKey: ["/api/social/listening/influencers"],
   });
 
-  const { data: alertsData, isLoading: alertsLoading } = useQuery({
+  const { data: alertsData } = useQuery({
     queryKey: ["/api/social/listening/alerts"],
   });
 
@@ -229,14 +190,14 @@ export function SocialListening() {
     setShowAddKeywordDialog(false);
   };
 
-  const handleRemoveKeyword = (id: string) => {
+  const handleRemoveKeyword = (_id: string) => {
     toast({
       title: "Keyword Removed",
       description: "Keyword has been removed from tracking.",
     });
   };
 
-  const handleToggleAlerts = (id: string, enabled: boolean) => {
+  const handleToggleAlerts = (_id: string, enabled: boolean) => {
     toast({
       title: enabled ? "Alerts Enabled" : "Alerts Disabled",
       description: enabled
@@ -245,7 +206,7 @@ export function SocialListening() {
     });
   };
 
-  const handleAcknowledgeAlert = (id: string) => {
+  const handleAcknowledgeAlert = (_id: string) => {
     toast({
       title: "Alert Acknowledged",
       description: "This alert has been marked as reviewed.",

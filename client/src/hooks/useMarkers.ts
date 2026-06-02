@@ -25,7 +25,7 @@ export function useMarkers(projectId: string | null) {
       // Sync markers from API to Zustand store
       if (data.markers) {
         const currentMarkerIds = new Set(markers.map((m) => m.id));
-        const apiMarkerIds = new Set(data.markers.map((m: unknown) => m.id));
+        new Set(data.markers.map((m: unknown) => m.id));
 
         // Add or update markers from API
         data.markers.forEach((marker: unknown) => {
@@ -69,7 +69,7 @@ export function useMarkers(projectId: string | null) {
       addMarker(optimisticMarker);
       return { tempId, previousData };
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, _variables, context) => {
       if (context?.tempId) {
         deleteMarker(context.tempId);
       }
@@ -84,7 +84,7 @@ export function useMarkers(projectId: string | null) {
       );
       toast({ title: "Marker created" });
     },
-    onError: (error: unknown, variables, context) => {
+    onError: (error: unknown, _variables, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(["markers", projectId], context.previousData);
       }
@@ -177,10 +177,10 @@ export function useMarkers(projectId: string | null) {
       deleteMarker(id);
       return { previousMarker, previousData };
     },
-    onSuccess: (id) => {
+    onSuccess: (_id) => {
       toast({ title: "Marker deleted" });
     },
-    onError: (error: unknown, id, context) => {
+    onError: (error: unknown, _id, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(["markers", projectId], context.previousData);
       }

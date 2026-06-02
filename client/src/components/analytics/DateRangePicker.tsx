@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Calendar, ChevronDown, X } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

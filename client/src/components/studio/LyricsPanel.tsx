@@ -1,24 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import {
-  FileText,
-  Plus,
-  Trash2,
-  GripHorizontal,
-  X,
-  Clock,
-  ArrowUpDown,
-  AlignLeft,
-  Mic,
-  Download,
-  Upload,
-  ChevronDown,
-  Music2,
-  LayoutList,
-  Layers,
-  Edit3,
-  Check,
-  Hash,
-} from "lucide-react";
+import { FileText, Plus, GripHorizontal, X, Clock, ArrowUpDown, Mic, Download, Upload, Music2, LayoutList, Layers, Edit3, Check, Hash } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -233,7 +214,7 @@ interface LyricLineRowProps {
   onSeek?: (t: number) => void;
 }
 
-const LyricLineRow = memo(function LyricLineRow({
+memo(function LyricLineRow({
   line,
   idx,
   isActive,
@@ -732,9 +713,8 @@ export function LyricsPanel({
       {/* Mini Timeline Strip */}
       <div className="h-5 bg-[#0d0d12] border-b border-[#222] shrink-0 relative overflow-hidden">
         <div className="flex h-full">
-          {sections.map((sec, i) => {
+          {sections.map((sec, _i) => {
             const meta = SECTION_META[sec.type];
-            const lineCount = sec.lines.length;
             return (
               <button
                 key={sec.id}

@@ -545,9 +545,6 @@ class ArtistProgressService {
   }
 
   // @deprecated - No longer used. Empty array returned instead.
-  private generateSampleHistory(days: number): unknown[] {
-    return [];
-  }
 
   private getDefaultGrowthMetrics(): GrowthMetrics {
     return {

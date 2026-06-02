@@ -154,24 +154,6 @@ function toServiceOrder(dbOrder: Record<string, unknown>): Order {
   };
 }
 
-function toDBOrder(serviceOrder: Partial<Order>): Partial<DBOrder> {
-  const dbOrder: Partial<DBOrder> = {};
-
-  if (serviceOrder.id) dbOrder.id = serviceOrder.id;
-  if (serviceOrder.beatId) dbOrder.listingId = serviceOrder.beatId;
-  if (serviceOrder.buyerId) dbOrder.buyerId = serviceOrder.buyerId;
-  if (serviceOrder.sellerId) dbOrder.sellerId = serviceOrder.sellerId;
-  if (serviceOrder.licenseType) dbOrder.licenseType = serviceOrder.licenseType;
-  if (serviceOrder.amount !== undefined)
-    dbOrder.amountCents = Math.round(serviceOrder.amount * 100);
-  if (serviceOrder.status) dbOrder.status = serviceOrder.status;
-  if (serviceOrder.paymentIntentId)
-    dbOrder.stripePaymentIntentId = serviceOrder.paymentIntentId;
-  if (serviceOrder.licenseDocumentUrl)
-    dbOrder.licenseDocumentUrl = serviceOrder.licenseDocumentUrl;
-
-  return dbOrder;
-}
 
 // Valid musical keys for validation
 const VALID_MUSICAL_KEYS = [
@@ -562,7 +544,7 @@ export class MarketplaceService {
   /**
    * Distribute royalty splits to collaborators using Stripe Connect
    */
-  async distributeSplits(orderId: string): Promise<{ success: boolean }> {
+  async distributeSplits(_orderId: string): Promise<{ success: boolean }> {
     try {
       if (!stripe) {
         throw new Error("Stripe not configured");

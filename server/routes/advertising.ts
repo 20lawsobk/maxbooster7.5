@@ -13,7 +13,7 @@ import {
   createHardenedUpload,
 } from "../middleware/uploadHandler.js";
 import { db } from "../db.js";
-import { eq, desc, sql, and, isNotNull } from "drizzle-orm";
+import { eq, desc, and, isNotNull } from "drizzle-orm";
 import { adCampaigns, adCreatives, systemSettings } from "@shared/schema";
 import { aiModelManager } from "../services/aiModelManager.js";
 import { autopilotEngine } from "../autopilot-engine.js";

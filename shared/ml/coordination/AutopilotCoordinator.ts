@@ -171,7 +171,7 @@ export class AutopilotCoordinator {
       intent.audienceCohort,
       intent.platform,
     );
-    const campaignPriority = this.getHighestCampaignPriority();
+    this.getHighestCampaignPriority();
 
     if (conflicts.length > 0) {
       return this.resolveConflicts(intent, conflicts);

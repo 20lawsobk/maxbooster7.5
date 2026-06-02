@@ -29,23 +29,8 @@
  */
 
 import * as tf from "@tensorflow/tfjs";
-import {
-  AdvancedMusicAI,
-  type CreativeParameters,
-  type MoodVector,
-  GENRE_KNOWLEDGE,
-  MOOD_SEMANTICS,
-  SCALE_KNOWLEDGE,
-} from "./AdvancedMusicAI.js";
-import type {
-  DrumParams,
-  BassParams,
-  SynthParams,
-  FilterParams,
-  EnvelopeParams,
-  OscillatorType,
-  FilterType,
-} from "./SynthesizerEngine.js";
+import { AdvancedMusicAI, type CreativeParameters, type MoodVector } from "./AdvancedMusicAI.js";
+import type { DrumParams, BassParams, SynthParams, FilterParams, EnvelopeParams, OscillatorType } from "./SynthesizerEngine.js";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -1005,7 +990,6 @@ class TextTokenizer {
 class IntentClassifier {
   private model: tf.LayersModel | null = null;
   private tokenizer: TextTokenizer;
-  private isTraining: boolean = false;
 
   constructor(tokenizer: TextTokenizer) {
     this.tokenizer = tokenizer;

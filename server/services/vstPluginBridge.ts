@@ -232,7 +232,7 @@ class VSTPluginBridge extends EventEmitter {
     }
   }
 
-  private async scanDirectory(path: string): Promise<VSTScanResult> {
+  private async scanDirectory(_path: string): Promise<VSTScanResult> {
     const result: VSTScanResult = {
       scanned: 0,
       valid: 0,

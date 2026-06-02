@@ -113,7 +113,6 @@ export function ResponsiveTimeline({
     [zoomLevel, scrollX, scrollY, onZoomChange, onScrollChange],
   );
 
-  const trackHeight = TRACK_HEIGHT;
   const effectivePixelsPerBar = pixelsPerBar * zoomLevel;
 
   return (

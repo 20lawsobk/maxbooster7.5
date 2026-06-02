@@ -187,7 +187,7 @@ export class SocialMediaContentGenerator {
   private async createSharpOptimizedDesign(
     platform: string,
     musicData: unknown,
-    targetAudience: unknown,
+    _targetAudience: unknown,
     dimensions: { width: number; height: number },
   ): Promise<string> {
     const { width, height } = dimensions;
@@ -292,7 +292,7 @@ export class SocialMediaContentGenerator {
   async generateSocialMediaVideo(
     platform: string,
     musicData: unknown,
-    targetAudience: unknown,
+    _targetAudience: unknown,
   ): Promise<string> {
     try {
       const dimensions = this.getPlatformVideoDimensions(platform);
@@ -351,7 +351,7 @@ export class SocialMediaContentGenerator {
 
       const combinedBuffer = await sharp(frames[0])
         .composite(
-          frames.slice(1).map((frame, index) => ({
+          frames.slice(1).map((frame, _index) => ({
             input: frame,
             top: 0,
             left: 0,
@@ -425,40 +425,10 @@ export class SocialMediaContentGenerator {
     );
   }
 
-  private async createAIOptimizedDesign(
-    platform: string,
-    musicData: unknown,
-    targetAudience: unknown,
-  ): Promise<void> {
-    const { width, height } = this.getPlatformDimensions(platform);
-
-    // AI-optimized color scheme based on music genre and target audience
-    const colorScheme = this.generateAIColorScheme(musicData, targetAudience);
-
-    // Create gradient background
-    const gradient = this.ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, colorScheme.primary);
-    gradient.addColorStop(1, colorScheme.secondary);
-
-    this.ctx.fillStyle = gradient;
-    this.ctx.fillRect(0, 0, width, height);
-
-    // Add AI-generated visual elements
-    await this.addVisualElements(musicData, targetAudience);
-
-    // Add text with AI-optimized typography
-    this.addOptimizedText(musicData, platform, targetAudience);
-
-    // Add branding elements
-    this.addBrandingElements(platform);
-
-    // Apply AI-optimized filters and effects
-    this.applyAIFilters(platform, targetAudience);
-  }
 
   private generateAIColorScheme(
     musicData: unknown,
-    targetAudience: unknown,
+    _targetAudience: unknown,
   ): Record<string, unknown> {
     // AI algorithm to determine optimal colors based on:
     // - Music genre
@@ -536,7 +506,7 @@ export class SocialMediaContentGenerator {
 
   private addGenreIcons(genre: string): void {
     // Add genre-specific visual elements
-    const { width, height } = this.canvas;
+    const { width } = this.canvas;
 
     this.ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
     this.ctx.font = "48px Arial";
@@ -558,7 +528,7 @@ export class SocialMediaContentGenerator {
     this.ctx.fillText(icon, width - 60, 60);
   }
 
-  private addTrendingElements(targetAudience: unknown): void {
+  private addTrendingElements(_targetAudience: unknown): void {
     // Add trending visual elements based on target audience
     const { width, height } = this.canvas;
 
@@ -569,7 +539,7 @@ export class SocialMediaContentGenerator {
     this.ctx.fillText("#Trending", width - 20, height - 20);
   }
 
-  private addAIPatterns(musicData: unknown, targetAudience: unknown): void {
+  private addAIPatterns(musicData: unknown, _targetAudience: unknown): void {
     // Add AI-generated patterns based on music and audience data
     const { width, height } = this.canvas;
 
@@ -643,7 +613,7 @@ export class SocialMediaContentGenerator {
 
   private getOptimizedTextConfig(
     platform: string,
-    targetAudience: unknown,
+    _targetAudience: unknown,
   ): Record<string, unknown> {
     // AI-optimized text configuration based on platform and audience
     const configs = {
@@ -690,7 +660,7 @@ export class SocialMediaContentGenerator {
     this.ctx.fillText(`via ${platform}`, width - 20, height - 20);
   }
 
-  private applyAIFilters(platform: string, targetAudience: unknown): void {
+  private applyAIFilters(_platform: string, _targetAudience: unknown): void {
     // Apply AI-optimized filters and effects based on platform and audience
     const { width, height } = this.canvas;
 
@@ -741,13 +711,13 @@ export class SocialMediaContentGenerator {
     const title = data.title || data.name || "New Release";
     const artist = data.artist || data.artistName || "B-Lawz Music";
 
-    const videoConfig = {
+    ({
       style: this.getAIVideoStyle(musicData, targetAudience),
       effects: this.getAIVideoEffects(platform, musicData),
       transitions: this.getAIVideoTransitions(platform),
       textOverlay: this.getAIVideoTextOverlay(musicData, platform),
       colorScheme: this.generateAIColorScheme(musicData, targetAudience),
-    };
+    });
 
     const brandGold = "#FFD700";
     const brandPurple = "#9B59B6";
@@ -1034,8 +1004,8 @@ export class SocialMediaContentGenerator {
 
   // AI video style generation
   private getAIVideoStyle(
-    musicData: unknown,
-    targetAudience: unknown,
+    _musicData: unknown,
+    _targetAudience: unknown,
   ): Record<string, unknown> {
     return {
       animation: "dynamic",
@@ -1047,8 +1017,8 @@ export class SocialMediaContentGenerator {
 
   // AI video effects generation
   private getAIVideoEffects(
-    platform: string,
-    musicData: unknown,
+    _platform: string,
+    _musicData: unknown,
   ): Record<string, unknown> {
     return {
       filters: ["vintage", "neon"],
@@ -1058,7 +1028,7 @@ export class SocialMediaContentGenerator {
   }
 
   // AI video transitions
-  private getAIVideoTransitions(platform: string): Record<string, unknown> {
+  private getAIVideoTransitions(_platform: string): Record<string, unknown> {
     return {
       type: "smooth",
       duration: 0.5,
@@ -1069,7 +1039,7 @@ export class SocialMediaContentGenerator {
   // AI video text overlay
   private getAIVideoTextOverlay(
     musicData: unknown,
-    platform: string,
+    _platform: string,
   ): Record<string, unknown> {
     return {
       title: musicData.title || "New Release",
@@ -1083,7 +1053,7 @@ export class SocialMediaContentGenerator {
   // AI audio style generation
   private getAIAudioStyle(
     musicData: unknown,
-    targetAudience: unknown,
+    _targetAudience: unknown,
   ): Record<string, unknown> {
     return {
       genre: musicData.genre || "pop",
@@ -1095,8 +1065,8 @@ export class SocialMediaContentGenerator {
 
   // AI audio effects
   private getAIAudioEffects(
-    platform: string,
-    musicData: unknown,
+    _platform: string,
+    _musicData: unknown,
   ): Record<string, unknown> {
     return {
       eq: "balanced",

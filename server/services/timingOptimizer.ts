@@ -577,7 +577,7 @@ class TimingOptimizerService {
   async getOptimalTiming(
     platform: string,
     timezone: string = "America/New_York",
-    userId?: string,
+    _userId?: string,
   ): Promise<OptimalTiming> {
     const cacheKey = `${this.CACHE_PREFIX}optimal:${platform}:${timezone}`;
 

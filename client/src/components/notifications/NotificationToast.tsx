@@ -1,13 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import {
-  X,
-  ExternalLink,
-  Bell,
-  CheckCircle,
-  AlertTriangle,
-  Info,
-} from "lucide-react";
+import { X, ExternalLink, Bell, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Notification, NotificationPriority } from "./types";
