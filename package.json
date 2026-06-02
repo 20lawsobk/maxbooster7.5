@@ -334,6 +334,7 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.58.2",
+    "@typescript/native-preview": "^7.0.0-dev.20260601.1",
     "autoprefixer": "^10.4.24",
     "drizzle-kit": "^0.31.9",
     "electron": "^40.4.1",
