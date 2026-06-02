@@ -396,8 +396,7 @@ export class DatabaseStorage implements IStorage {
       content,
       scheduledTime,
       viralPrediction,
-      createdBy,
-      results
+      createdBy
     } = post;
     const [newPost] = await db
       .insert(posts)

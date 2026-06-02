@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,11 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -253,21 +249,6 @@ export function SearchFilters({
 
   const presets: FilterPreset[] = presetsData?.presets || [];
 
-  const hasConflict = (
-    key: string,
-    value: Record<string, unknown>,
-  ): string | null => {
-    if (key === "exclusive_only" && value && filters.hasStems) {
-      return "Exclusive beats may not include stems";
-    }
-    if (key === "bpm_min" && filters.bpm_max && value > filters.bpm_max) {
-      return "Min BPM cannot exceed max BPM";
-    }
-    if (key === "price_min" && filters.price_max && value > filters.price_max) {
-      return "Min price cannot exceed max price";
-    }
-    return null;
-  };
 
   return (
     <Card className={cn("bg-slate-800/50 border-slate-700", className)}>

@@ -2,7 +2,7 @@ import { logger } from "@/lib/logger";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Square, Circle, SkipBack, Repeat, Volume2, Undo, Redo, Save, Plus, Settings, Sliders, Piano, Layers, Music, FolderOpen, ChevronDown, ChevronRight, Eye, Trash2, Copy, Scissors, ZoomIn, ZoomOut, Grid3X3, Wand2, PanelBottomOpen, PanelBottomClose, PanelRightOpen, PanelRightClose, Brain, Sparkles, Library, Keyboard, X, Camera, Check, MousePointer2, Pencil, Eraser, Film, Radio, Waves, ArrowUpDown, RotateCcw, Activity, Speaker, FileText, Headphones, Maximize2, Minimize2 } from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, Repeat, Volume2, Undo, Redo, Save, Plus, Settings, Sliders, Piano, Layers, Music, FolderOpen, ChevronDown, ChevronRight, Trash2, Copy, ZoomIn, ZoomOut, Wand2, PanelBottomClose, PanelRightClose, Brain, Sparkles, Library, Keyboard, X, Camera, Check, Pencil, Film, Radio, Waves, ArrowUpDown, RotateCcw, Activity, Speaker, FileText, Headphones, Maximize2, Minimize2 } from "lucide-react";
 import { getShortcutManager } from "@/lib/shortcuts/ShortcutManager";
 import type { ShortcutDefinition } from "@/lib/shortcuts/types";
 import { cn } from "@/lib/utils";
@@ -3423,36 +3423,6 @@ function TransportBar({
   );
 }
 
-interface ToolbarProps {
-  zoom: number;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onAddTrack: (type: "audio" | "instrument" | "midi" | "bus") => void;
-  showInspector: boolean;
-  showEditor: boolean;
-  showMixer: boolean;
-  onToggleInspector: () => void;
-  onToggleEditor: () => void;
-  onToggleMixer: () => void;
-  onOpenAllPlugins: () => void;
-  onOpenInstruments: () => void;
-  onOpenEffects: () => void;
-  onOpenShortcuts: () => void;
-  onExport: () => void;
-  onImportAudio: () => void;
-  onStemExport: () => void;
-  showAutomation: boolean;
-  onToggleAutomation: () => void;
-  showSurroundPanel: boolean;
-  onToggleSurround: () => void;
-  showVideoTrack: boolean;
-  onToggleVideo: () => void;
-  showLyrics: boolean;
-  onToggleLyrics: () => void;
-  onOpenAudioDevices: () => void;
-  isFullscreen: boolean;
-  onToggleFullscreen: () => void;
-}
 
 
 interface TimelineRulerProps {

@@ -4123,7 +4123,6 @@ router.post(
         urlDescription,
         artistName,
         trackTitle,
-        urlContentType,
       } = req.body;
 
       if (!topic) {

@@ -767,8 +767,6 @@ class DSPAnalyticsService {
     endDate: Date,
   ): NormalizedDSPAnalytics {
     const totalViews = data.reelsViews + data.storiesViews;
-    const totalEngagements =
-      data.likes + data.comments + data.shares + data.saves;
     const skipRate = 0.35;
     const completionRate = Math.max(0, Math.min(1, 1 - skipRate));
     return {

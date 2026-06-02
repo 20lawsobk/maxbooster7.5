@@ -48,11 +48,6 @@ interface TrendCache {
   expiresAt: Date;
 }
 
-interface HashtagCache {
-  data: Map<string, HashtagData[]>;
-  fetchedAt: Date;
-  expiresAt: Date;
-}
 
 const MUSIC_GENRE_TRENDS: Record<
   string,

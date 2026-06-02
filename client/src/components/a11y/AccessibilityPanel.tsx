@@ -282,7 +282,6 @@ function AccessibilityPanelTabs() {
     setFontSize,
     colorBlindMode,
     setColorBlindMode,
-    announce,
   } = useAccessibility();
 
   return (

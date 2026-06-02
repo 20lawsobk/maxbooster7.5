@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { db } from "../db";
 
 import Stripe from "stripe";
-import { type Order as DBOrder, listingLicenseTiers } from "@shared/schema";
+import { listingLicenseTiers } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
 import { logger } from "../logger.js";

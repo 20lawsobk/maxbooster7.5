@@ -114,7 +114,7 @@ class SocialQueueService {
     data: SocialPostJobData,
     _delay?: number,
   ): Promise<{ id: string; name: string; data: SocialPostJobData }> {
-    const platform = data.platform.toLowerCase();
+    data.platform.toLowerCase();
 
     return await this.socialQueue.add("publish-post", data, {
       priority: data.scheduledAt ? 2 : 1,

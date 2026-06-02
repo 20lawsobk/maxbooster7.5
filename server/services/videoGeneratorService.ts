@@ -27,7 +27,7 @@
  *              animation types, cinematic vignette, text depth effects
  */
 
-import { execFile, execFileSync, spawn } from "child_process";
+import { execFile, execFileSync } from "child_process";
 import { PYTHON, PYTHON_AVAILABLE } from "./pythonPath.js";
 import { promisify } from "util";
 import { mkdirSync, existsSync, unlinkSync } from "fs";
@@ -65,7 +65,7 @@ const FFMPEG = resolveFFmpegPath();
 const OUTPUT_DIR = path.join(process.cwd(), "uploads", "videos");
 const TEMP_DIR = path.join(process.cwd(), "uploads", "video_temp");
 const FONT_DIR = "/usr/share/fonts/truetype/dejavu";
-const FRAME_GENERATOR_PATH = path.join(
+path.join(
   process.cwd(),
   "server",
   "services",
@@ -73,19 +73,6 @@ const FRAME_GENERATOR_PATH = path.join(
 );
 
 // Maps legacy FFmpeg bgType names → Python frame generator style names
-const BG_TO_PYTHON: Record<string, string> = {
-  plasma: "plasma_fractal",
-  aurora: "aurora_curtains",
-  neon_pulse: "neon_tunnel",
-  gradient_sweep: "liquid_metal",
-  wave: "aurora_curtains",
-  fire: "fire_embers",
-  warp: "warp_speed",
-  galaxy: "galaxy_spiral",
-  hologram: "neon_tunnel",
-  chromatic: "plasma_fractal",
-  sunrise: "golden_hour",
-};
 
 // ── FONTS ─────────────────────────────────────────────────────────────────────
 const FONTS = {

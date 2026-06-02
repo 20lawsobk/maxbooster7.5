@@ -295,20 +295,6 @@ export function derToRaw(derSig: Buffer, keySize = 32): Buffer {
  * Build the canonical wire-format RDATA for an AAAA record.
  */
 
-function expandIPv6(addr: string): string {
-  if (addr.includes("::")) {
-    const [left, right] = addr.split("::");
-    const l = left ? left.split(":") : [];
-    const r = right ? right.split(":") : [];
-    const missing = 8 - l.length - r.length;
-    const middle = Array(missing).fill("0000");
-    return [...l, ...middle, ...r].map((g) => g.padStart(4, "0")).join(":");
-  }
-  return addr
-    .split(":")
-    .map((g) => g.padStart(4, "0"))
-    .join(":");
-}
 
 /**
  * Build a canonical wire-format DNS RR for signing (RFC 4034 §6.2).

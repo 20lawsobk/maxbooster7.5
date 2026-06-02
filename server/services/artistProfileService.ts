@@ -1,26 +1,7 @@
 import { db } from "../db.js";
-import { eq, and, ilike, inArray } from "drizzle-orm";
-import {
-  artistProfiles,
-  artistProfileReleases,
-  releases,
-  distroReleases,
-  distroTracks,
-  profileClaimPipeline,
-  profileClaimEvents,
-  artistIdentityLinks,
-  artistDnaSnapshots,
-  profileSplitEvents,
-  distributorHistoryImports,
-} from "@shared/schema";
-import type {
-  ArtistProfile,
-  InsertArtistProfile,
-  ProfileClaimPipeline,
-  ArtistIdentityLink,
-  ArtistDnaSnapshot,
-  ProfileSplitEvent,
-} from "@shared/schema";
+import { eq, and, inArray } from "drizzle-orm";
+import { artistProfiles, artistProfileReleases, distroTracks, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports } from "@shared/schema";
+import type { ArtistProfile, InsertArtistProfile, ProfileClaimPipeline, ArtistIdentityLink, ArtistDnaSnapshot } from "@shared/schema";
 import { logger } from "../logger.js";
 import { labelGridService } from "./labelgrid-service.js";
 import type { LabelGridArtistPlatformPresence } from "./labelgrid-service.js";
@@ -157,7 +138,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "soundcloud",
     label: "SoundCloud",
-    searchUrl: (n, s) =>
+    searchUrl: (n, _s) =>
       `https://soundcloud.com/search/people?q=${encodeURIComponent(n)}`,
   },
   {
@@ -287,18 +268,18 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "instagram",
     label: "Instagram",
-    searchUrl: (n, s) => `https://www.instagram.com/${s}/`,
+    searchUrl: (_n, s) => `https://www.instagram.com/${s}/`,
   },
   {
     id: "facebook",
     label: "Facebook",
-    searchUrl: (n, s) =>
+    searchUrl: (n, _s) =>
       `https://www.facebook.com/search/top?q=${encodeURIComponent(n)}`,
   },
   {
     id: "snapchat",
     label: "Snapchat",
-    searchUrl: (n, s) => `https://www.snapchat.com/add/${s}`,
+    searchUrl: (_n, s) => `https://www.snapchat.com/add/${s}`,
   },
   {
     id: "youtube-content-id",
@@ -309,17 +290,17 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "twitch",
     label: "Twitch",
-    searchUrl: (n, s) => `https://www.twitch.tv/${s}`,
+    searchUrl: (_n, s) => `https://www.twitch.tv/${s}`,
   },
   {
     id: "soundexchange",
     label: "SoundExchange",
-    searchUrl: (n) => `https://www.soundexchange.com/artist-registration/`,
+    searchUrl: (_n) => `https://www.soundexchange.com/artist-registration/`,
   },
   {
     id: "peloton",
     label: "Peloton",
-    searchUrl: (n) => `https://www.onepeloton.com/music`,
+    searchUrl: (_n) => `https://www.onepeloton.com/music`,
   },
   {
     id: "soundtrack-your-brand",
@@ -354,12 +335,12 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "medianet",
     label: "MediaNet",
-    searchUrl: (n) => `https://www.mndigital.com`,
+    searchUrl: (_n) => `https://www.mndigital.com`,
   },
   {
     id: "gracenote",
     label: "Gracenote",
-    searchUrl: (n) => `https://www.gracenote.com/music/`,
+    searchUrl: (_n) => `https://www.gracenote.com/music/`,
   },
   {
     id: "shazam",
@@ -418,7 +399,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "vevo",
     label: "Vevo",
-    searchUrl: (n, s) => `https://www.vevo.com/artist/${s}`,
+    searchUrl: (_n, s) => `https://www.vevo.com/artist/${s}`,
   },
   {
     id: "kuack-media",
@@ -496,7 +477,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "mixcloud",
     label: "Mixcloud",
-    searchUrl: (n, s) => `https://www.mixcloud.com/${s}/`,
+    searchUrl: (_n, s) => `https://www.mixcloud.com/${s}/`,
   },
   {
     id: "resso",
@@ -567,7 +548,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "feed-fm",
     label: "Feed.fm",
-    searchUrl: (n) => `https://feed.fm/publishers/`,
+    searchUrl: (_n) => `https://feed.fm/publishers/`,
   },
   {
     id: "epidemic-sound",
@@ -578,7 +559,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "fortnite",
     label: "Fortnite",
-    searchUrl: (n) => `https://www.fortnite.com/news`,
+    searchUrl: (_n) => `https://www.fortnite.com/news`,
   },
   {
     id: "dj-city",
@@ -856,7 +837,7 @@ class ArtistProfileService {
   private async _withRetry<T>(
     fn: () => Promise<T>,
     maxAttempts = 3,
-    label = "external API",
+    _label = "external API",
   ): Promise<T> {
     let lastErr: unknown;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -3288,7 +3269,7 @@ class ArtistProfileService {
     profileId: string,
     userId: string,
     isrcs: string[],
-    upcs: string[],
+    _upcs: string[],
   ): Promise<void> {
     const discovered: Record<string, string> = {};
 

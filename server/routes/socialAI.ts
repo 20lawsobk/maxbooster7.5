@@ -1100,7 +1100,7 @@ router.post(
         albumName,
         label,
         releaseDate,
-        duration,
+        
         // URL analysis context
         urlContentType, // raw content_type from URL analysis: 'website', 'track', 'video', etc.
          // e.g. 'music', 'general', 'tech', 'events'

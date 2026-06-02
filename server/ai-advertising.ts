@@ -441,29 +441,10 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private extractHeadlines(_content: string): string[] {
-    // Parse AI-generated headlines
-    return ["AI-Generated Headline 1", "AI-Generated Headline 2"];
-  }
 
-  private extractCaptions(_content: string): string[] {
-    return ["AI-Generated Caption 1", "AI-Generated Caption 2"];
-  }
 
-  private extractCTAs(_content: string): string[] {
-    return ["Listen Now", "Stream Today"];
-  }
 
-  private extractEmotionalTriggers(_content: string): string[] {
-    return ["Discovery", "Exclusivity"];
-  }
 
-  private extractPlatformAdaptations(_content: string): Record<string, unknown> {
-    return {
-      TikTok: "Short, punchy, viral-ready",
-      Instagram: "Visual-first approach",
-    };
-  }
 
   // Platform-specific replacement methods
   private async replaceFacebookAds(

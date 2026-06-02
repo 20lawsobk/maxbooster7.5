@@ -1917,23 +1917,6 @@ export class AIMusicService {
   }
 
 
-  private applyFrequencyFilter(
-    audioData: Float32Array,
-    stemType: string,
-  ): Float32Array {
-    const filtered = new Float32Array(audioData.length);
-
-    for (let i = 0; i < audioData.length; i++) {
-      const attenuation = this.getFilterAttenuation(
-        i,
-        audioData.length,
-        stemType,
-      );
-      filtered[i] = audioData[i] * attenuation;
-    }
-
-    return filtered;
-  }
 
   private getFilterAttenuation(
     index: number,

@@ -481,7 +481,7 @@ router.get(
 router.get(
   "/dashboard",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
 
       res.json({
@@ -508,7 +508,7 @@ router.get(
 router.get(
   "/stats",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
 
       res.json({
@@ -527,7 +527,7 @@ router.get(
 router.get(
   "/metrics",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
 
       res.json({
@@ -547,7 +547,7 @@ router.get(
 router.get(
   "/recommendations",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     try {
 
       res.json({

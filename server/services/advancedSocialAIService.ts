@@ -42,15 +42,6 @@ function seededIndex(seed: string, length: number): number {
 
 // seededGate: deterministic probability gate — replaces Math.random() < threshold.
 // Same seed → same true/false outcome every time. threshold range: 0.0–1.0.
-function seededGate(seed: string, threshold: number): boolean {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-    h >>>= 0;
-  }
-  return h % 1000 < Math.round(threshold * 1000);
-}
 
 // ============================================================================
 // MAX BOOSTER PLATFORM KNOWLEDGE
@@ -1832,78 +1823,7 @@ class AdvancedSocialAIService {
   }
 
 
-  private buildEmotionalArcBody(
-    request: AdvancedContentRequest,
-    platform: PlatformProfile,
-  ): string | null {
-    const topic = request.topic || "new music";
-    const genre = request.genre || "music";
-    const artist = request.artistName || "";
-    const contentType = request.contentType || "announcement";
 
-    const arcTemplates =
-      EMOTIONAL_ARC_TEMPLATES[contentType] ||
-      EMOTIONAL_ARC_TEMPLATES.announcement;
-    if (!arcTemplates || arcTemplates.length === 0) return null;
-
-    const arcSeed = `${request.artistName}:${topic}:${contentType}:arc`;
-    const template = arcTemplates[seededIndex(arcSeed, arcTemplates.length)];
-    const fill = (s: string) =>
-      s
-        .replace(/\{topic\}/g, topic)
-        .replace(/\{genre\}/g, genre)
-        .replace(/\{artist\}/g, artist || "I");
-
-    const platformDNA =
-      PLATFORM_NATIVE_DNA[request.platforms[0]?.toLowerCase()] ||
-      PLATFORM_NATIVE_DNA.instagram;
-    platformDNA.openers[
-        seededIndex(`${arcSeed}:opener`, platformDNA.openers.length)
-      ];
-
-    const arc = [
-      fill(template.hook),
-      fill(template.context),
-      fill(template.tension),
-      fill(template.resolution),
-    ].join(" ");
-
-    const siPhrases = SELF_IDENTIFICATION_PHRASES.universal;
-    const selfId =
-      request.objective === "viral" || request.objective === "engagement"
-        ? siPhrases[seededIndex(`${arcSeed}:selfid`, siPhrases.length)]
-        : null;
-
-    const parts: string[] = [arc];
-    if (selfId) parts.push(selfId);
-
-    const maxLen = platform.characterLimit
-      ? Math.min(platform.characterLimit - 100, 600)
-      : 500;
-    let result = parts.join(" ");
-    if (result.length > maxLen)
-      result = result.substring(0, maxLen - 3) + "...";
-
-    return result;
-  }
-
-  private buildCuriosityGapHook(
-    request: AdvancedContentRequest,
-  ): string | null {
-    const topic = request.topic || "new music";
-    const genre = request.genre || "music";
-    if (request.objective !== "viral" && request.objective !== "engagement")
-      return null;
-
-    const pattern =
-      CURIOSITY_GAP_PATTERNS[
-        seededIndex(
-          `${topic}:${genre}:curiosity`,
-          CURIOSITY_GAP_PATTERNS.length,
-        )
-      ];
-    return pattern.replace(/\{topic\}/g, topic).replace(/\{genre\}/g, genre);
-  }
 
 
 

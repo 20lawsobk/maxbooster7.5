@@ -42,7 +42,6 @@ export function PersonalizedDashboard({
     
     isLoading,
     visibleWidgets,
-    updateWidgetPosition,
   } = usePersonalizedLayout();
 
   if (isLoading) {
