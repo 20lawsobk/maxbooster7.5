@@ -56,6 +56,91 @@ interface AnomalySummary {
   bySeverity?: Record<string, number>;
 }
 
+type BadgeVariant = "default" | "destructive" | "outline" | "secondary";
+
+interface AnomalyRecord {
+  id: string;
+  anomalyType: string;
+  severity: string;
+  metricType: string;
+  baselineValue: string;
+  actualValue: string;
+  deviationPercentage: string;
+  detectedAt: string;
+  acknowledgedAt?: string | null;
+}
+
+interface CrossPlatformMetric {
+  platform: string;
+  streams: number;
+  listeners: number;
+  engagement: number;
+  revenue: number;
+  growthRate: number;
+}
+
+interface CrossPlatformComparisonData {
+  platforms: string[];
+  metrics: CrossPlatformMetric[];
+  topPerformer: string;
+  recommendations: string[];
+}
+
+interface CrossPlatformResponse {
+  success: boolean;
+  data: CrossPlatformComparisonData;
+}
+
+interface TriggerCityData {
+  city: string;
+  country: string;
+  region: string;
+  latitude: number;
+  longitude: number;
+  growthRate: number;
+  streamCount: number;
+  listenerCount: number;
+  previousWeekStreams: number;
+  growthPercentage: number;
+  isHotspot: boolean;
+  detectedAt: string;
+  trendDirection: string;
+  platforms: string[];
+}
+
+interface TriggerCitiesResponse {
+  success: boolean;
+  data: TriggerCityData[];
+}
+
+interface AlertRecord {
+  id: string;
+  type: string;
+  priority: string;
+  title: string;
+  message: string;
+  platform?: string;
+  createdAt: string;
+  dismissed: boolean;
+}
+
+interface AlertsResponse {
+  success: boolean;
+  data: AlertRecord[];
+}
+
+interface AlertSummaryData {
+  total: number;
+  unread: number;
+  byType: Record<string, number>;
+  byPriority: Record<string, number>;
+}
+
+interface AlertSummaryResponse {
+  success: boolean;
+  data: AlertSummaryData;
+}
+
 interface FanJourneyStage {
   stage: string;
   count: number;
@@ -1515,7 +1600,7 @@ export default function Analytics() {
     data: analyticsData,
     isLoading: analyticsLoading,
     refetch,
-  } = useQuery({
+  } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics/dashboard", timeRange],
     enabled: !!user,
     refetchInterval: autoRefresh ? 30000 : false,
@@ -1590,7 +1675,7 @@ export default function Analytics() {
     isLoading: anomaliesLoading,
     refetch: refetchAnomalies,
   } = useQuery<{
-    anomalies: Record<string, unknown>[];
+    anomalies: AnomalyRecord[];
     summary: AnomalySummary | undefined;
   }>({
     queryKey: [
@@ -1643,19 +1728,18 @@ export default function Analytics() {
     },
   });
 
-  const { data: crossPlatformData, isLoading: crossPlatformLoading } = useQuery(
-    {
+  const { data: crossPlatformData, isLoading: crossPlatformLoading } =
+    useQuery<CrossPlatformResponse>({
       queryKey: ["/api/analytics-alerts/cross-platform-comparison"],
       enabled: !!user && selectedTab === "cross-platform",
       staleTime: 5 * 60 * 1000,
-    },
-  );
+    });
 
   const {
     data: triggerCitiesData,
     isLoading: triggerCitiesLoading,
     refetch: refetchTriggerCities,
-  } = useQuery({
+  } = useQuery<TriggerCitiesResponse>({
     queryKey: ["/api/analytics-alerts/trigger-cities"],
     enabled: !!user && selectedTab === "trigger-cities",
     staleTime: 5 * 60 * 1000,
@@ -1665,13 +1749,13 @@ export default function Analytics() {
     data: alertsData,
     isLoading: alertsLoading,
     refetch: refetchAlerts,
-  } = useQuery({
+  } = useQuery<AlertsResponse>({
     queryKey: ["/api/analytics-alerts/alerts"],
     enabled: !!user && selectedTab === "alerts",
     refetchInterval: autoRefresh ? 60000 : false,
   });
 
-  const { data: alertSummaryData } = useQuery({
+  const { data: alertSummaryData } = useQuery<AlertSummaryResponse>({
     queryKey: ["/api/analytics-alerts/alerts/summary"],
     enabled: !!user,
     staleTime: 30000,
@@ -1793,7 +1877,13 @@ export default function Analytics() {
   }
 
   const data = analyticsData as AnalyticsData;
-  const currentData = realtimeData || data?.overview;
+  const currentValue = (
+    key: keyof AnalyticsData["overview"],
+  ): number | string | undefined => {
+    const rt = realtimeData?.[key];
+    if (typeof rt === "number" || typeof rt === "string") return rt;
+    return data?.overview?.[key];
+  };
 
   const getTimeSinceUpdate = useCallback(() => {
     const seconds = Math.floor((Date.now() - lastUpdate) / 1000);
@@ -1912,7 +2002,9 @@ export default function Analytics() {
           <StatCard
             title="Total Streams"
             value={
-              currentData?.totalStreams || data?.overview?.totalStreams || 0
+              currentValue("totalStreams") ||
+              data?.overview?.totalStreams ||
+              0
             }
             change={data?.overview?.growthRate || 0}
             trend={
@@ -1930,7 +2022,9 @@ export default function Analytics() {
           <StatCard
             title="Total Revenue"
             value={
-              currentData?.totalRevenue || data?.overview?.totalRevenue || 0
+              currentValue("totalRevenue") ||
+              data?.overview?.totalRevenue ||
+              0
             }
             change={data?.overview?.growthRate || 0}
             trend={
@@ -1949,7 +2043,9 @@ export default function Analytics() {
           <StatCard
             title="Total Listeners"
             value={
-              currentData?.totalListeners || data?.overview?.totalListeners || 0
+              currentValue("totalListeners") ||
+              data?.overview?.totalListeners ||
+              0
             }
             change={data?.overview?.growthRate || 0}
             trend={
@@ -2348,9 +2444,7 @@ export default function Analytics() {
             ) : crossPlatformData?.data ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  {(
-                    crossPlatformData.data as Record<string, unknown>
-                  ).metrics?.map((platform: Record<string, unknown>) => {
+                  {crossPlatformData.data.metrics?.map((platform) => {
                     const platformColors: Record<string, string> = {
                       spotify: "bg-green-500",
                       apple: "bg-red-500",
@@ -2443,8 +2537,7 @@ export default function Analytics() {
                   })}
                 </div>
 
-                {(crossPlatformData.data as Record<string, unknown>)
-                  .recommendations?.length > 0 && (
+                {crossPlatformData.data.recommendations.length > 0 && (
                   <Card className="mt-6">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -2454,9 +2547,7 @@ export default function Analytics() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {(
-                          crossPlatformData.data as Record<string, unknown>
-                        ).recommendations.map((rec: string, idx: number) => (
+                        {crossPlatformData.data.recommendations.map((rec, idx) => (
                           <div
                             key={idx}
                             className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg"
@@ -2516,10 +2607,10 @@ export default function Analytics() {
                   <Skeleton key={i} className="h-40" />
                 ))}
               </div>
-            ) : (triggerCitiesData?.data as unknown[])?.length > 0 ? (
+            ) : (triggerCitiesData?.data?.length ?? 0) > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(triggerCitiesData?.data as unknown[]).map(
-                  (city: Record<string, unknown>, idx: number) => (
+                {triggerCitiesData?.data?.map(
+                  (city, idx) => (
                     <Card
                       key={idx}
                       className={`relative overflow-hidden ${city.isHotspot ? "border-orange-500 border-2" : ""}`}
@@ -2662,8 +2753,7 @@ export default function Analytics() {
                     <Bell className="h-5 w-5 text-blue-500" />
                     <div>
                       <p className="text-2xl font-bold">
-                        {(alertSummaryData.data as Record<string, unknown>)
-                          .total || 0}
+                        {alertSummaryData.data.total || 0}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Total Alerts
@@ -2676,8 +2766,7 @@ export default function Analytics() {
                     <Eye className="h-5 w-5 text-orange-500" />
                     <div>
                       <p className="text-2xl font-bold">
-                        {(alertSummaryData.data as Record<string, unknown>)
-                          .unread || 0}
+                        {alertSummaryData.data.unread || 0}
                       </p>
                       <p className="text-xs text-muted-foreground">Unread</p>
                     </div>
@@ -2688,8 +2777,7 @@ export default function Analytics() {
                     <Trophy className="h-5 w-5 text-yellow-500" />
                     <div>
                       <p className="text-2xl font-bold">
-                        {(alertSummaryData.data as Record<string, unknown>)
-                          .byType?.milestone || 0}
+                        {alertSummaryData.data.byType?.milestone || 0}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Milestones
@@ -2702,10 +2790,8 @@ export default function Analytics() {
                     <ListMusic className="h-5 w-5 text-green-500" />
                     <div>
                       <p className="text-2xl font-bold">
-                        {((alertSummaryData.data as Record<string, unknown>)
-                          .byType?.playlist_add || 0) +
-                          ((alertSummaryData.data as Record<string, unknown>)
-                            .byType?.playlist_remove || 0)}
+                        {(alertSummaryData.data.byType?.playlist_add || 0) +
+                          (alertSummaryData.data.byType?.playlist_remove || 0)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Playlist Changes
@@ -2722,10 +2808,10 @@ export default function Analytics() {
                   <Skeleton key={i} className="h-24" />
                 ))}
               </div>
-            ) : (alertsData?.data as unknown[])?.length > 0 ? (
+            ) : (alertsData?.data?.length ?? 0) > 0 ? (
               <div className="space-y-4">
-                {(alertsData?.data as unknown[]).map(
-                  (alert: Record<string, unknown>) => {
+                {alertsData?.data?.map(
+                  (alert) => {
                     const priorityColors: Record<string, string> = {
                       critical:
                         "border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20",
@@ -2900,7 +2986,7 @@ export default function Analytics() {
                   <CardContent>
                     <div className="space-y-4">
                       {data.fanJourney.journeyInsights.map(
-                        (insight: Record<string, unknown>, idx: number) => (
+                        (insight, idx) => (
                           <div
                             key={idx}
                             className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border"
@@ -3180,7 +3266,7 @@ export default function Analytics() {
             ) : anomalyData?.anomalies && anomalyData.anomalies.length > 0 ? (
               <div className="space-y-4">
                 {anomalyData.anomalies.map(
-                  (anomaly: Record<string, unknown>) => {
+                  (anomaly) => {
                     const severityColors: Record<string, string> = {
                       critical: "border-red-500 bg-red-50 dark:bg-red-950/20",
                       high: "border-orange-500 bg-orange-50 dark:bg-orange-950/20",
@@ -3189,7 +3275,7 @@ export default function Analytics() {
                       low: "border-blue-500 bg-blue-50 dark:bg-blue-950/20",
                     };
 
-                    const severityBadgeColors: Record<string, string> = {
+                    const severityBadgeColors: Record<string, BadgeVariant> = {
                       critical: "destructive",
                       high: "default",
                       medium: "secondary",
@@ -3222,9 +3308,8 @@ export default function Analytics() {
                                 <div className="flex items-center gap-3">
                                   <Badge
                                     variant={
-                                      (severityBadgeColors[
-                                        anomaly.severity
-                                      ] as unknown) || "default"
+                                      severityBadgeColors[anomaly.severity] ||
+                                      "default"
                                     }
                                   >
                                     {anomaly.severity}

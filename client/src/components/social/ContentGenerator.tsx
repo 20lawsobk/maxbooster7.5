@@ -240,10 +240,116 @@ interface GenerationContext {
   platformBreakdown: Record<string, number>;
 }
 
+interface UrlAnalysis {
+  // Core identifiers
+  url: string;
+  domain: string;
+  platform: string;
+  platform_category: string;
+  is_music: boolean;
+  // Basic metadata
+  title: string;
+  description: string;
+  author: string;
+  published: string;
+  modified: string;
+  og_image: string;
+  thumbnail_url: string;
+  canonical: string;
+  language: string;
+  // Classification
+  content_type: string;
+  content_category: string;
+  genre: string;
+  tone: string;
+  // Music-specific
+  artist: string;
+  track: string;
+  album: string;
+  duration: string;
+  release_date: string;
+  label: string;
+  isrc: string;
+  bpm: string;
+  tracklist?: string[];
+  track_count?: number;
+  members?: string[];
+  // Content arrays
+  keywords: string[];
+  tags: string[];
+  headings: string[];
+  body_preview: string;
+  summary: string;
+  // Engagement metrics (null when unavailable)
+  view_count?: number | null;
+  like_count?: number | null;
+  comment_count?: number | null;
+  play_count?: number | null;
+  share_count?: number | null;
+  subscriber_count?: number | string | null;
+  // Media
+  embed_url?: string;
+  // Article
+  reading_time_minutes?: number | null;
+  word_count?: number | null;
+  section?: string;
+  // Event-specific
+  event_date?: string;
+  event_end_date?: string;
+  event_location?: string;
+  performers?: string[];
+  organizer?: string;
+  // Product-specific
+  price?: string;
+  currency?: string;
+  brand?: string;
+  rating?: string;
+  review_count?: number | null;
+  // Platform IDs
+  final_url?: string;
+  youtube_id?: string;
+  spotify_type?: string;
+  spotify_id?: string;
+  apple_music_type?: string;
+  apple_music_id?: string;
+  // Meta
+  data_sources?: string[];
+  error?: string;
+}
+
+interface VisualSpecVideoConfig {
+  template?: string;
+  bg_color?: string;
+  accent_color?: string;
+  topic?: string;
+  artist_name?: string;
+  hook?: string;
+  body?: string;
+  cta?: string;
+  platform?: string;
+  tone?: string;
+}
+
+interface VisualSpec {
+  success?: boolean;
+  message?: string;
+  color_palette?: string[];
+  template_name?: string;
+  template?: string;
+  aspect_ratio?: string;
+  bg_color?: string;
+  accent_color?: string;
+  title_text?: string;
+  text_color?: string;
+  subtitle_text?: string;
+  tagline?: string;
+  visual_mood?: string;
+  video_config?: VisualSpecVideoConfig;
+}
+
 export function ContentGenerator() {
   const { toast } = useToast();
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
-  const [culturalAdaptation, setCulturalAdaptation] = useState(true);
+  const [selectedLanguage] = useState("en");
   const [contentPrompt, setContentPrompt] = useState("");
   const [generatedContent, setGeneratedContent] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("instagram");
@@ -253,21 +359,14 @@ export function ContentGenerator() {
 
   const [showUrlImport, setShowUrlImport] = useState(false);
   const [importUrl, setImportUrl] = useState("");
-  const [urlAnalysis, setUrlAnalysis] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [urlAnalysis, setUrlAnalysis] = useState<UrlAnalysis | null>(null);
   const [urlImporting, setUrlImporting] = useState(false);
-  const [visualSpec, setVisualSpec] = useState<Record<string, unknown> | null>(
-    null,
-  );
+  const [visualSpec, setVisualSpec] = useState<VisualSpec | null>(null);
 
   // Inline URL auto-detection states
   const [detectedUrl, setDetectedUrl] = useState<string | null>(null);
-  const [promptUrlAnalysis, setPromptUrlAnalysis] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [promptUrlAnalysis, setPromptUrlAnalysis] =
+    useState<UrlAnalysis | null>(null);
   const [promptUrlFetching, setPromptUrlFetching] = useState(false);
   const promptUrlDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -381,9 +480,7 @@ export function ContentGenerator() {
     onError: (error: Error) => {
       toast({
         title: "Generation Failed",
-        description:
-          (error as Record<string, unknown>).message ||
-          "Unable to generate content",
+        description: error.message || "Unable to generate content",
         variant: "destructive",
       });
     },
@@ -415,9 +512,7 @@ export function ContentGenerator() {
     onError: (error: Error) => {
       toast({
         title: "Generation Failed",
-        description:
-          (error as Record<string, unknown>).message ||
-          "Unable to generate content",
+        description: error.message || "Unable to generate content",
         variant: "destructive",
       });
     },
@@ -773,7 +868,9 @@ export function ContentGenerator() {
     } catch (err) {
       toast({
         title: "Import failed",
-        description: err.message || "Could not analyze that URL",
+        description:
+          (err instanceof Error && err.message) ||
+          "Could not analyze that URL",
         variant: "destructive",
       });
     } finally {
@@ -1315,7 +1412,8 @@ export function ContentGenerator() {
                                 size="sm"
                                 className="w-full h-7 text-xs"
                                 onClick={() => {
-                                  const vc = visualSpec.video_config || {};
+                                  const vc: VisualSpecVideoConfig =
+                                    visualSpec.video_config || {};
                                   const params = new URLSearchParams({
                                     template: vc.template || "cinematic_promo",
                                     bg_color: (

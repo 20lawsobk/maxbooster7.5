@@ -16,16 +16,192 @@ import { apiRequest } from "@/lib/queryClient";
 import { Sparkles, Image as ImageIcon, Video, Music, FileText, Globe, Loader2, CheckCircle, TrendingUp, Eye, Heart, Zap, Target } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface AnalysisResult {
-  type: "image" | "video" | "audio" | "text" | "website";
-  data: Record<string, unknown>;
-  timestamp: string;
+type ContentType = "image" | "video" | "audio" | "text" | "website";
+
+interface ImageAnalysisResult {
+  colors: {
+    dominant: string[];
+    palette: string[];
+    mood: "vibrant" | "muted" | "dark" | "light" | "neutral";
+  };
+  composition: {
+    layout: "centered" | "rule-of-thirds" | "symmetric" | "dynamic";
+    visualWeight: "balanced" | "heavy-top" | "heavy-bottom" | "left" | "right";
+    complexity: number;
+  };
+  content: {
+    hasFaces: boolean;
+    faceCount: number;
+    hasText: boolean;
+    textAmount: "none" | "minimal" | "moderate" | "heavy";
+    mainSubject: string;
+    objects: string[];
+    scene: string;
+  };
+  branding: {
+    hasLogo: boolean;
+    brandingStrength: number;
+    professionalQuality: number;
+  };
+  engagement: {
+    attentionGrabbing: number;
+    emotionalImpact: "high" | "medium" | "low";
+    shareability: number;
+  };
+  vibe: string[];
+  confidence: number;
 }
 
+interface VideoAnalysisResult {
+  duration: number;
+  scenes: {
+    count: number;
+    avgDuration: number;
+    transitions: "fast" | "moderate" | "slow";
+  };
+  motion: {
+    intensity: "static" | "low" | "moderate" | "high" | "frenetic";
+    cameraMovement: boolean;
+    actionPaced: boolean;
+  };
+  audio: {
+    hasMusic: boolean;
+    hasSpeech: boolean;
+    musicEnergy: number;
+    audioQuality: number;
+  };
+  visual: {
+    colors: ImageAnalysisResult["colors"];
+    quality: number;
+    lighting: "bright" | "dark" | "natural" | "dramatic";
+  };
+  engagement: {
+    hookStrength: number;
+    retention: {
+      first5Seconds: number;
+      first30Seconds: number;
+      overall: number;
+    };
+    callToActionPresence: boolean;
+  };
+  content: {
+    category: string;
+    hasFaces: boolean;
+    peoplePresent: boolean;
+    brandingVisible: boolean;
+  };
+  viralPotential: number;
+  confidence: number;
+}
+
+interface AudioAnalysisResult {
+  music: {
+    tempo: number;
+    key: string;
+    mode: "major" | "minor" | "unknown";
+    genre: string[];
+    energy: number;
+    danceability: number;
+    valence: number;
+    acousticness: number;
+  };
+  production: {
+    quality: number;
+    mastered: boolean;
+    dynamicRange: number;
+    clarity: number;
+  };
+  vocals: {
+    present: boolean;
+    prominence: number;
+    language: string;
+    deliveryStyle: string;
+  };
+  mood: string[];
+  marketability: number;
+  confidence: number;
+}
+
+interface WebsiteAnalysisResult {
+  design: {
+    layout: "single-page" | "multi-section" | "complex";
+    colors: string[];
+    colorScheme: "monochrome" | "complementary" | "analogous" | "triadic";
+    visualHierarchy: number;
+  };
+  content: {
+    headline: string;
+    valueProposition: string;
+    ctaCount: number;
+    ctaClarity: number;
+    socialProof: boolean;
+    trustSignals: string[];
+  };
+  ux: {
+    loadSpeed: "fast" | "moderate" | "slow";
+    mobileOptimized: boolean;
+    navigationClarity: number;
+    frictionPoints: string[];
+  };
+  conversion: {
+    aboveTheFold: string[];
+    urgency: boolean;
+    scarcity: boolean;
+    guarantees: boolean;
+    conversionOptimization: number;
+  };
+  branding: {
+    consistent: boolean;
+    professional: boolean;
+    memorable: number;
+  };
+  confidence: number;
+}
+
+interface TextAnalysisResult {
+  structure: {
+    length: number;
+    sentences: number;
+    paragraphs: number;
+    readability: number;
+  };
+  tone: {
+    sentiment: "positive" | "negative" | "neutral";
+    emotion: string[];
+    formality: "casual" | "professional" | "mixed";
+    energy: number;
+  };
+  content: {
+    mainTopics: string[];
+    keywords: string[];
+    hashtagsUsed: string[];
+    mentionsUsed: string[];
+    hasCallToAction: boolean;
+    callToActionStrength: number;
+  };
+  engagement: {
+    questionEngagement: boolean;
+    personalConnection: boolean;
+    storytelling: boolean;
+    viralPotential: number;
+  };
+  quality: {
+    clarity: number;
+    authenticity: number;
+    persuasiveness: number;
+  };
+  confidence: number;
+}
+
+type AnalysisResult =
+  | { type: "image"; data: ImageAnalysisResult; timestamp: string }
+  | { type: "video"; data: VideoAnalysisResult; timestamp: string }
+  | { type: "audio"; data: AudioAnalysisResult; timestamp: string }
+  | { type: "text"; data: TextAnalysisResult; timestamp: string }
+  | { type: "website"; data: WebsiteAnalysisResult; timestamp: string };
+
 export function ContentAnalyzer() {
-  const [activeTab, setActiveTab] = useState<
-    "image" | "video" | "audio" | "text" | "website"
-  >("image");
+  const [activeTab, setActiveTab] = useState<ContentType>("image");
   const [imageUrl, setImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
@@ -36,7 +212,7 @@ export function ContentAnalyzer() {
   const { toast } = useToast();
 
   const analyzeContent = async (
-    type: string,
+    type: ContentType,
     url: string,
     content?: string,
   ) => {
@@ -60,11 +236,25 @@ export function ContentAnalyzer() {
       const response = await rawResponse.json();
 
       if (response.success) {
-        setResult({
-          type: type as Record<string, unknown>,
-          data: response.analysis,
-          timestamp: response.timestamp,
-        });
+        const data = response.analysis;
+        const timestamp = response.timestamp;
+        switch (type) {
+          case "image":
+            setResult({ type, data, timestamp });
+            break;
+          case "video":
+            setResult({ type, data, timestamp });
+            break;
+          case "audio":
+            setResult({ type, data, timestamp });
+            break;
+          case "text":
+            setResult({ type, data, timestamp });
+            break;
+          case "website":
+            setResult({ type, data, timestamp });
+            break;
+        }
         toast({
           title: "✨ Analysis Complete",
           description: `Your ${type} has been analyzed with AI-powered insights.`,
@@ -74,7 +264,8 @@ export function ContentAnalyzer() {
       toast({
         title: "Analysis Failed",
         description:
-          error.message || "Failed to analyze content. Please try again.",
+          (error instanceof Error && error.message) ||
+          "Failed to analyze content. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -112,13 +303,15 @@ export function ContentAnalyzer() {
     } catch (error) {
       toast({
         title: "Save Failed",
-        description: error.message || "Failed to save for autopilot training.",
+        description:
+          (error instanceof Error && error.message) ||
+          "Failed to save for autopilot training.",
         variant: "destructive",
       });
     }
   };
 
-  const renderImageAnalysis = (data: Record<string, unknown>) => (
+  const renderImageAnalysis = (data: ImageAnalysisResult) => (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -210,7 +403,7 @@ export function ContentAnalyzer() {
     </div>
   );
 
-  const renderVideoAnalysis = (data: Record<string, unknown>) => (
+  const renderVideoAnalysis = (data: VideoAnalysisResult) => (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -298,7 +491,7 @@ export function ContentAnalyzer() {
     </div>
   );
 
-  const renderTextAnalysis = (data: Record<string, unknown>) => (
+  const renderTextAnalysis = (data: TextAnalysisResult) => (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -379,7 +572,7 @@ export function ContentAnalyzer() {
     </div>
   );
 
-  const renderWebsiteAnalysis = (data: Record<string, unknown>) => (
+  const renderWebsiteAnalysis = (data: WebsiteAnalysisResult) => (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -489,7 +682,7 @@ export function ContentAnalyzer() {
       <CardContent>
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as Record<string, unknown>)}
+          onValueChange={(v) => setActiveTab(v as ContentType)}
           className="space-y-4"
         >
           <TabsList className="grid grid-cols-5 w-full">

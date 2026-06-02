@@ -50,7 +50,41 @@ import {
   type ImagePlatform,
 } from "@/components/content/AIImageGenerator";
 import { CreativeVariantGenerator, CreativeAutomation } from "@/components/advertising";
-import { Target, TrendingUp, TrendingDown, Users, Play, Eye, MousePointerClick, Plus, Music, Tv, Zap, Brain, Rocket, Sparkles, Globe, CheckCircle, AlertTriangle, Lightbulb, Clock, Upload, X, Bot, RefreshCw, Layers, Network, PieChart, Timer, Radio, UserPlus, Copy, Search, Lock, Unlock, FileImage, Loader2 } from "lucide-react";
+import { Target, TrendingUp, TrendingDown, Users, Play, Eye, MousePointerClick, Plus, Music, Tv, Zap, Brain, Rocket, Sparkles, Globe, CheckCircle, AlertTriangle, Lightbulb, Clock, Upload, X, Bot, RefreshCw, Layers, Network, PieChart, Timer, Radio, UserPlus, Copy, Search, Lock, Unlock, FileImage, Loader2, Trash2 } from "lucide-react";
+
+interface PressKitPhoto {
+  url: string;
+  caption?: string;
+}
+
+interface PressKitSocialLinks {
+  instagram?: string;
+  twitter?: string;
+  youtube?: string;
+  facebook?: string;
+  spotify?: string;
+}
+
+interface PressKitData {
+  id?: string;
+  artistName?: string;
+  bio?: string;
+  shortBio?: string;
+  genres?: string[];
+  contactEmail?: string;
+  bookingEmail?: string;
+  website?: string;
+  socialLinks?: PressKitSocialLinks;
+  photos?: PressKitPhoto[];
+  technicalRider?: string;
+  hospitalityRider?: string;
+  isPublic?: boolean;
+  slug?: string;
+}
+
+interface StorageUploadResponse {
+  file: { url: string };
+}
 
 interface AdCampaign {
   id: string;
@@ -251,6 +285,7 @@ export default function Advertisement() {
     impressions?: number;
     impressionsChange?: number;
     engagement?: number;
+    engagementRate?: number;
     viralScore?: number;
   }>({
     queryKey: ["/api/organic/metrics"],
@@ -295,7 +330,7 @@ export default function Advertisement() {
     : competitorInsightsData?.insights || [];
 
   const [isCreateCampaignOpen, setIsCreateCampaignOpenState] = useState(false);
-  const [activeEnterpriseTab, setActiveEnterpriseTabState] = useState(
+  const [, setActiveEnterpriseTabState] = useState(
     "creative-automation",
   );
 
@@ -2243,7 +2278,7 @@ function PressKitTabContent() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
 
-  const { data: pressKit, isLoading } = useQuery({
+  const { data: pressKit, isLoading } = useQuery<PressKitData>({
     queryKey: ["/api/press-kit"],
   });
 
@@ -2306,10 +2341,10 @@ function PressKitTabContent() {
       const res = (await uploadWithProgress(
         "/api/storage/upload",
         formData,
-      )) as Record<string, unknown>;
+      )) as StorageUploadResponse;
       const photoUrl = res.file.url;
 
-      const currentPhotos = (pressKit?.photos as unknown[]) || [];
+      const currentPhotos = pressKit?.photos || [];
       updatePressKitMutation.mutate({
         ...pressKit,
         photos: [...currentPhotos, { url: photoUrl, caption: "" }],
@@ -2326,7 +2361,7 @@ function PressKitTabContent() {
   };
 
   const removePhoto = (index: number) => {
-    const currentPhotos = [...(pressKit?.photos as unknown[])];
+    const currentPhotos = [...(pressKit?.photos ?? [])];
     currentPhotos.splice(index, 1);
     updatePressKitMutation.mutate({ ...pressKit, photos: currentPhotos });
   };
@@ -2450,7 +2485,7 @@ function PressKitTabContent() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {pressKit?.photos?.map(
-                    (photo: Record<string, unknown>, index: number) => (
+                    (photo: PressKitPhoto, index: number) => (
                       <div
                         key={index}
                         className="group relative aspect-square rounded-md overflow-hidden border"

@@ -65,6 +65,18 @@ interface Competitor {
 }
 
 
+interface CompetitorsResponse {
+  competitors?: Competitor[];
+}
+
+interface YourStats {
+  totalFollowers: number;
+  avgEngagement: number;
+  shareOfVoice: number;
+  followersChange: number;
+  engagementChange: number;
+}
+
 const PLATFORM_CONFIG = {
   twitter: { icon: TwitterIcon, color: "#000000", name: "Twitter" },
   instagram: { icon: InstagramIcon, color: "#E4405F", name: "Instagram" },
@@ -86,18 +98,16 @@ export function CompetitorBenchmarking() {
     platforms: [] as string[],
   });
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
-  const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(
-    null,
-  );
+  const [, setSelectedCompetitor] = useState<string | null>(null);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportFrequency, setReportFrequency] = useState("weekly");
   const [reportEmail, setReportEmail] = useState("");
 
-  const { data: competitorsData } = useQuery({
+  const { data: competitorsData } = useQuery<CompetitorsResponse>({
     queryKey: ["/api/social/competitors"],
   });
 
-  const { data: yourStatsData } = useQuery({
+  const { data: yourStatsData } = useQuery<YourStats>({
     queryKey: ["/api/social/your-stats"],
   });
 

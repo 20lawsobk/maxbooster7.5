@@ -66,6 +66,34 @@ interface ApprovalHistoryItem {
   userName: string;
 }
 
+interface ApprovalStats {
+  total: number;
+  draft: number;
+  pending_review: number;
+  approved: number;
+  rejected: number;
+  published: number;
+  userRole?: string;
+  pending_approvals?: number;
+}
+
+interface ApprovalStatsResponse {
+  success: boolean;
+  stats: ApprovalStats;
+}
+
+interface ApprovalPostsResponse {
+  success: boolean;
+  total: number;
+  posts: Post[];
+}
+
+interface ApprovalHistoryResponse {
+  success: boolean;
+  postId: string;
+  history: ApprovalHistoryItem[];
+}
+
 const statusConfig = {
   draft: {
     color: "bg-gray-500/20 text-gray-400",
@@ -110,19 +138,21 @@ export function ApprovalDashboard() {
   const [rejectReason, setRejectReason] = useState("");
   const [approveComment, setApproveComment] = useState("");
 
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<ApprovalStatsResponse>({
     queryKey: ["/api/social/approvals/stats"],
   });
 
-  const { data: pendingApprovals, isLoading: isLoadingPending } = useQuery({
-    queryKey: ["/api/social/approvals/pending"],
-  });
+  const { data: pendingApprovals, isLoading: isLoadingPending } =
+    useQuery<ApprovalPostsResponse>({
+      queryKey: ["/api/social/approvals/pending"],
+    });
 
-  const { data: myPosts, isLoading: isLoadingMyPosts } = useQuery({
-    queryKey: ["/api/social/approvals/my-posts"],
-  });
+  const { data: myPosts, isLoading: isLoadingMyPosts } =
+    useQuery<ApprovalPostsResponse>({
+      queryKey: ["/api/social/approvals/my-posts"],
+    });
 
-  const { data: approvalHistory } = useQuery({
+  const { data: approvalHistory } = useQuery<ApprovalHistoryResponse>({
     queryKey: ["/api/social/approvals/history", selectedPost?.id],
     enabled: !!selectedPost && showHistoryDialog,
   });
@@ -444,9 +474,9 @@ export function ApprovalDashboard() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="pending">
             Pending Approvals
-            {pendingApprovals?.total > 0 && (
+            {(pendingApprovals?.total ?? 0) > 0 && (
               <Badge className="ml-2" variant="secondary">
-                {pendingApprovals.total}
+                {pendingApprovals?.total}
               </Badge>
             )}
           </TabsTrigger>

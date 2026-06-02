@@ -29,6 +29,127 @@ import {
 } from "@/components/ui/dialog";
 import { Shield, CheckCircle, XCircle, AlertTriangle, Activity, Users, Database, Server, Cpu, HardDrive, Network, Zap, BarChart3, TrendingUp, RefreshCw, Eye, Bug, TestTube, FileText, Clock, Star, Award, Target, AlertCircle, Info, CheckSquare, XSquare, Key, Webhook, Search, Filter, Trash2, RotateCcw, Loader2 } from "lucide-react";
 
+interface AuditIssue {
+  severity: string;
+  title: string;
+  description: string;
+}
+
+interface AuditRecommendation {
+  title: string;
+  description: string;
+  priority: string;
+}
+
+interface AuditResults {
+  overallScore: number;
+  securityScore: number;
+  functionalityScore: number;
+  performanceScore: number;
+  codeQualityScore: number;
+  accessibilityScore: number;
+  seoScore: number;
+  issues: AuditIssue[];
+  recommendations: AuditRecommendation[];
+  compliance: Record<string, boolean>;
+  lastAudit: string;
+}
+
+interface TestingResults {
+  overallScore: number;
+  unitTestScore: number;
+  integrationTestScore: number;
+  e2eTestScore: number;
+  performanceTestScore: number;
+  securityTestScore: number;
+  accessibilityTestScore: number;
+  passedTests: number;
+  failedTests: number;
+  skippedTests: number;
+  totalTests: number;
+  coverage: Record<string, number>;
+  lastRun: string;
+}
+
+interface SystemMetrics {
+  uptime: number;
+  activeUsers: number;
+  cpu: number;
+  memory: number;
+  disk: number;
+  network: number;
+  avgResponseTime?: number;
+  responseTime?: number;
+}
+
+interface TopCountry {
+  country: string;
+  users: number;
+}
+
+interface UserAnalytics {
+  newUsers: number;
+  totalRevenue: number;
+  monthlyGrowth: number;
+  topCountries?: TopCountry[];
+}
+
+interface ActivityItem {
+  type: string;
+  action: string;
+  user: string;
+  time: string;
+  timestamp?: string | Date | null;
+}
+
+interface AdminUser {
+  id: string;
+  username?: string | null;
+  email?: string | null;
+  role?: string | null;
+  subscriptionTier?: string | null;
+  subscriptionStatus?: string | null;
+  emailVerified?: boolean | null;
+  createdAt?: string | null;
+  stripeCustomerId?: string | null;
+}
+
+interface AdminUsersResponse {
+  users: AdminUser[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    offset: number;
+  };
+}
+
+interface WebhookDlqItem {
+  id: string;
+  webhookEventId: string;
+  attempts: number;
+  lastError: string;
+  status: string;
+}
+
+interface WebhookDlqResponse {
+  queue?: WebhookDlqItem[];
+}
+
+interface LogEntry {
+  id: string;
+  level: string;
+  service: string;
+  timestamp: string | Date;
+  message: string;
+  context?: Record<string, unknown> | null;
+}
+
+interface LogsResponse {
+  logs: LogEntry[];
+}
+
 export default function AdminDashboard() {
   const { user, isLoading: authLoading } = useRequireAdmin();
   const [activeTab, setActiveTab] = useState("overview");
@@ -36,10 +157,7 @@ export default function AdminDashboard() {
   const [usersPage, setUsersPage] = useState(1);
   const [usersSearch, setUsersSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedUser, setSelectedUser] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
 
   // Debounce search input
@@ -59,7 +177,7 @@ export default function AdminDashboard() {
     data: auditResults,
     isLoading: auditLoading,
     refetch: refetchAudit,
-  } = useQuery({
+  } = useQuery<AuditResults>({
     queryKey: ["/api/audit/results"],
     enabled: isAdmin,
     refetchInterval: 30000,
@@ -70,7 +188,7 @@ export default function AdminDashboard() {
     data: testResults,
     isLoading: testLoading,
     refetch: refetchTests,
-  } = useQuery({
+  } = useQuery<TestingResults>({
     queryKey: ["/api/testing/results"],
     enabled: isAdmin,
     refetchInterval: 60000,
@@ -81,7 +199,7 @@ export default function AdminDashboard() {
     data: systemMetrics,
     isLoading: metricsLoading,
     refetch: refetchMetrics,
-  } = useQuery({
+  } = useQuery<SystemMetrics>({
     queryKey: ["/api/admin/metrics"],
     enabled: isAdmin,
     refetchInterval: 30000,
@@ -92,7 +210,7 @@ export default function AdminDashboard() {
     data: userAnalytics,
     isLoading: userAnalyticsLoading,
     refetch: refetchAnalytics,
-  } = useQuery({
+  } = useQuery<UserAnalytics>({
     queryKey: ["/api/admin/analytics"],
     enabled: isAdmin,
   });
@@ -102,7 +220,7 @@ export default function AdminDashboard() {
     data: recentActivity = [],
     isLoading: activityLoading,
     refetch: refetchActivity,
-  } = useQuery({
+  } = useQuery<ActivityItem[]>({
     queryKey: ["/api/admin/activity"],
     enabled: isAdmin,
   });
@@ -113,7 +231,7 @@ export default function AdminDashboard() {
     isLoading: usersLoading,
     error: usersError,
     refetch: refetchUsers,
-  } = useQuery({
+  } = useQuery<AdminUsersResponse>({
     queryKey: ["/api/admin/users", usersPage, debouncedSearch],
     enabled: isAdmin,
     queryFn: async () => {
@@ -507,7 +625,7 @@ export default function AdminDashboard() {
                         analyticsData.topCountries.length > 0 ? (
                           analyticsData.topCountries
                             .slice(0, 3)
-                            .map((country: unknown, index: number) => (
+                            .map((country: TopCountry, index: number) => (
                               <div
                                 key={index}
                                 className="flex items-center justify-between"
@@ -545,7 +663,7 @@ export default function AdminDashboard() {
                   <Skeleton className="h-48 w-full" />
                 ) : recentActivity.length > 0 ? (
                   <div className="space-y-4">
-                    {recentActivity.map((activity: unknown, index: number) => (
+                    {recentActivity.map((activity: ActivityItem, index: number) => (
                       <div
                         key={index}
                         className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg"
@@ -721,7 +839,7 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="space-y-3">
                         {auditData.issues.map(
-                          (issue: unknown, index: number) => (
+                          (issue: AuditIssue, index: number) => (
                             <Alert
                               key={index}
                               className={`${
@@ -776,7 +894,7 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="space-y-3">
                         {auditData.recommendations.map(
-                          (rec: unknown, index: number) => (
+                          (rec: AuditRecommendation, index: number) => (
                             <div
                               key={index}
                               className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
@@ -826,7 +944,7 @@ export default function AdminDashboard() {
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     {Object.entries(auditData.compliance).map(
-                      ([key, value]: [string, any]) => (
+                      ([key, value]: [string, boolean]) => (
                         <div
                           key={key}
                           className={`p-4 rounded-lg text-center ${
@@ -969,7 +1087,7 @@ export default function AdminDashboard() {
                         </h4>
                         <div className="space-y-3">
                           {Object.entries(testData.coverage).map(
-                            ([key, value]: [string, any]) => (
+                            ([key, value]: [string, number]) => (
                               <div key={key} className="space-y-1">
                                 <div className="flex items-center justify-between">
                                   <span className="text-sm text-gray-600 capitalize">
@@ -1085,7 +1203,7 @@ export default function AdminDashboard() {
                         </TableHeader>
                         <TableBody>
                           {usersData.users.map(
-                            (userData: Record<string, unknown>) => (
+                            (userData: AdminUser) => (
                               <TableRow key={userData.id}>
                                 <TableCell className="font-medium">
                                   {userData.username}
@@ -1329,7 +1447,7 @@ export default function AdminDashboard() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Object.entries(auditData.compliance).map(
-                      ([key, value]: [string, any]) => (
+                      ([key, value]: [string, boolean]) => (
                         <div
                           key={key}
                           className={`p-6 rounded-lg ${
@@ -1390,7 +1508,6 @@ export default function AdminDashboard() {
 // Token Management Tab Component
 function TokenManagementTab() {
   const { toast } = useToast();
-  const [tokenUserId, setTokenUserId] = useState("");
   const [revokeTokenId, setRevokeTokenId] = useState("");
 
   const { mutate: issueToken, isPending: issuingToken } = useMutation({
@@ -1501,7 +1618,7 @@ function WebhookMonitorTab() {
   const { toast } = useToast();
   const [eventId, setEventId] = useState("");
 
-  const { data: dlqData, isLoading: dlqLoading } = useQuery({
+  const { data: dlqData, isLoading: dlqLoading } = useQuery<WebhookDlqResponse>({
     queryKey: ["/api/admin/webhooks/dead-letter"],
   });
 
@@ -1595,7 +1712,7 @@ function WebhookMonitorTab() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2" data-testid="list-dlq-items">
-              {dlqData.queue.map((item: unknown, index: number) => (
+              {dlqData.queue.map((item: WebhookDlqItem, index: number) => (
                 <div
                   key={item.id}
                   className="p-3 bg-gray-50 rounded-lg"
@@ -1639,7 +1756,7 @@ function LogViewerTab() {
     data: logsData,
     isLoading: logsLoading,
     refetch: refetchLogs,
-  } = useQuery({
+  } = useQuery<LogsResponse>({
     queryKey: ["/api/logs/query", { level, service, limit }],
     enabled: false,
   });
@@ -1720,7 +1837,7 @@ function LogViewerTab() {
               className="space-y-2 max-h-96 overflow-y-auto"
               data-testid="list-log-events"
             >
-              {logsData.logs.map((log: unknown, index: number) => (
+              {logsData.logs.map((log: LogEntry, index: number) => (
                 <div
                   key={log.id}
                   className={`p-3 rounded-lg text-sm ${

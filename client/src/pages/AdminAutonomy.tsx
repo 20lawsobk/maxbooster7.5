@@ -42,6 +42,151 @@ const SOURCE_ICON: Record<string, React.ReactNode> = {
   security: <AlertTriangle className="w-3 h-3" />,
 };
 
+interface SafetyStatus {
+  autoEvolutionEnabled?: boolean;
+  reason?: string;
+}
+
+interface IndustryChange {
+  id?: string;
+  source: string;
+  title?: string;
+  urgency: string;
+  description?: string;
+  competitiveImpact?: number;
+  implementationComplexity?: string;
+  estimatedImplementationHours?: number;
+}
+
+interface Upgrade {
+  id?: string;
+  type?: string;
+  applied?: boolean;
+  status: string;
+  enhancementCategory?: string;
+  notAppliedReason?: string;
+  createdAt?: string;
+}
+
+interface PostingKnob {
+  platform: string;
+  contentFormatPriority?: string[];
+  engagementTargeting?: string;
+}
+
+interface AutoUpdateStatus {
+  isRunning?: boolean;
+  safety?: SafetyStatus;
+  recentChanges?: IndustryChange[];
+  recentUpgrades?: Upgrade[];
+  changesDetected?: number;
+  upgradesApplied?: number;
+  upgradesGenerated?: number;
+  upgradesRecordedNotApplied?: number;
+  lastCycle?: string;
+  activePostingKnobs?: PostingKnob[];
+}
+
+interface SecurityMetrics {
+  securityScore?: number;
+  activeThreats?: number;
+  totalThreats?: number;
+}
+
+interface SecurityThreat {
+  type?: string;
+  severity?: string;
+}
+
+interface RunningStatus {
+  isRunning?: boolean;
+}
+
+interface AuditLogEntry {
+  action: string;
+  system?: string;
+  triggeredBy?: string;
+  timestamp?: string;
+}
+
+interface KillSwitchState {
+  globalKilled?: boolean;
+  systemStates?: Record<string, boolean>;
+  auditLog?: AuditLogEntry[];
+}
+
+interface KillSwitchResponse extends KillSwitchState {
+  data?: KillSwitchState;
+}
+
+interface ChainPattern {
+  suppressed?: boolean;
+  attempts: number;
+}
+
+interface ChainHistory {
+  result?: string;
+  patternName?: string;
+}
+
+interface ChainFixerResponse {
+  patterns?: ChainPattern[];
+  history?: ChainHistory[];
+}
+
+interface PlatformSubsystem {
+  status?: string;
+}
+
+interface Patch {
+  name?: string;
+  subsystem?: string;
+}
+
+interface PlatformFixerState {
+  subsystems?: Record<string, PlatformSubsystem>;
+  activePatches?: Patch[];
+  overallStatus?: string;
+}
+
+interface PlatformFixerResponse extends PlatformFixerState {
+  data?: PlatformFixerState;
+}
+
+interface SelfHealingStatus {
+  isRunning?: boolean;
+  blockedIpCount?: number;
+}
+
+interface SelfHealingStatusResponse {
+  data?: SelfHealingStatus;
+}
+
+interface HealingSummary {
+  isHealingFasterThanAttacks?: boolean;
+  healingSpeedRatio?: string;
+  threatsDetected?: number;
+  threatsBlocked?: number;
+}
+
+interface LatencyBucket {
+  p95?: string | number;
+}
+
+interface HealingLatencyMetrics {
+  detection?: LatencyBucket;
+  response?: LatencyBucket;
+}
+
+interface SelfHealingMetrics {
+  summary?: HealingSummary;
+  latencyMetrics?: HealingLatencyMetrics;
+}
+
+interface SelfHealingMetricsResponse {
+  data?: SelfHealingMetrics;
+}
+
 export default function AdminAutonomy() {
   const { user, isLoading: authLoading } = useRequireAdmin();
   const { toast } = useToast();
@@ -57,28 +202,27 @@ export default function AdminAutonomy() {
   const autopilotKey = ["/api/autopilot/status"];
   const autonomousKey = ["/api/auto/social/status"];
 
-  const { data: status, isLoading: statusLoading } = useQuery<
-    Record<string, unknown>
-  >({
-    queryKey: updatesKey,
-    refetchInterval: 30000,
-  });
+  const { data: status, isLoading: statusLoading } =
+    useQuery<AutoUpdateStatus>({
+      queryKey: updatesKey,
+      refetchInterval: 30000,
+    });
   useQuery<Record<string, unknown>>({
     queryKey: changesKey,
   });
   useQuery<Record<string, unknown>>({
     queryKey: upgradesKey,
   });
-  const { data: securityMetrics } = useQuery<Record<string, unknown>>({
+  const { data: securityMetrics } = useQuery<SecurityMetrics>({
     queryKey: securityMetricsKey,
   });
-  const { data: securityThreats } = useQuery<Record<string, unknown>>({
+  const { data: securityThreats } = useQuery<SecurityThreat[]>({
     queryKey: securityThreatsKey,
   });
-  const { data: autopilotStatus } = useQuery<Record<string, unknown>>({
+  const { data: autopilotStatus } = useQuery<RunningStatus>({
     queryKey: autopilotKey,
   });
-  const { data: autonomousStatus } = useQuery<Record<string, unknown>>({
+  const { data: autonomousStatus } = useQuery<RunningStatus>({
     queryKey: autonomousKey,
   });
 
@@ -158,26 +302,24 @@ export default function AdminAutonomy() {
   const selfHealingStatusKey = ["/api/security/self-healing/status"];
   const selfHealingMetricsKey = ["/api/security/self-healing/metrics"];
 
-  const { data: chainFixerStatus, refetch: refetchChainFixer } = useQuery<
-    Record<string, unknown>
-  >({
-    queryKey: chainFixerKey,
-    refetchInterval: 15000,
-    enabled: !!user,
-  });
-  const { data: platformFixerStatus, refetch: refetchPlatformFixer } = useQuery<
-    Record<string, unknown>
-  >({
-    queryKey: platformFixerKey,
-    refetchInterval: 15000,
-    enabled: !!user,
-  });
-  const { data: selfHealingStatusData } = useQuery<Record<string, unknown>>({
+  const { data: chainFixerStatus, refetch: refetchChainFixer } =
+    useQuery<ChainFixerResponse>({
+      queryKey: chainFixerKey,
+      refetchInterval: 15000,
+      enabled: !!user,
+    });
+  const { data: platformFixerStatus, refetch: refetchPlatformFixer } =
+    useQuery<PlatformFixerResponse>({
+      queryKey: platformFixerKey,
+      refetchInterval: 15000,
+      enabled: !!user,
+    });
+  const { data: selfHealingStatusData } = useQuery<SelfHealingStatusResponse>({
     queryKey: selfHealingStatusKey,
     refetchInterval: 10000,
     enabled: !!user,
   });
-  const { data: selfHealingMetricsData } = useQuery<Record<string, unknown>>({
+  const { data: selfHealingMetricsData } = useQuery<SelfHealingMetricsResponse>({
     queryKey: selfHealingMetricsKey,
     refetchInterval: 10000,
     enabled: !!user,
@@ -209,12 +351,11 @@ export default function AdminAutonomy() {
   });
 
   const killSwitchKey = ["/api/kill-switch/status"];
-  const { data: killSwitchData, refetch: refetchKillSwitch } = useQuery<
-    Record<string, unknown>
-  >({
-    queryKey: killSwitchKey,
-    refetchInterval: 30000,
-  });
+  const { data: killSwitchData, refetch: refetchKillSwitch } =
+    useQuery<KillSwitchResponse>({
+      queryKey: killSwitchKey,
+      refetchInterval: 30000,
+    });
 
   const killAll = useMutation({
     mutationFn: async () =>
@@ -306,9 +447,8 @@ export default function AdminAutonomy() {
 
   const isRunning = status?.isRunning ?? false;
   const safetyStatus = status?.safety;
-  const recentChanges: Record<string, unknown>[] = status?.recentChanges ?? [];
-  const recentUpgrades: Record<string, unknown>[] =
-    status?.recentUpgrades ?? [];
+  const recentChanges: IndustryChange[] = status?.recentChanges ?? [];
+  const recentUpgrades: Upgrade[] = status?.recentUpgrades ?? [];
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-gray-900">
@@ -318,11 +458,12 @@ export default function AdminAutonomy() {
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Emergency Kill Switch */}
           {(() => {
-            const ksData = killSwitchData?.data ?? killSwitchData ?? {};
+            const ksData: KillSwitchState =
+              killSwitchData?.data ?? killSwitchData ?? {};
             const globalKilled: boolean = ksData.globalKilled ?? false;
             const systemStates: Record<string, boolean> =
               ksData.systemStates ?? {};
-            const auditLog: Record<string, unknown>[] = ksData.auditLog ?? [];
+            const auditLog: AuditLogEntry[] = ksData.auditLog ?? [];
             const registeredSystems = Object.keys(systemStates);
             return (
               <Card
@@ -439,7 +580,7 @@ export default function AdminAutonomy() {
                             .reverse()
                             .slice(0, 10)
                             .map(
-                              (entry: Record<string, unknown>, i: number) => (
+                              (entry: AuditLogEntry, i: number) => (
                                 <div
                                   key={i}
                                   className="flex items-center gap-2 text-xs text-muted-foreground"
@@ -551,8 +692,7 @@ export default function AdminAutonomy() {
 
               {/* Live posting-format / engagement guidance currently shaping posts */}
               {(() => {
-                const knobs: Record<string, unknown>[] =
-                  status?.activePostingKnobs ?? [];
+                const knobs: PostingKnob[] = status?.activePostingKnobs ?? [];
                 if (knobs.length === 0) return null;
                 const fmtPlatform = (p: string) =>
                   p === "global" ? "All platforms" : p;
@@ -563,7 +703,7 @@ export default function AdminAutonomy() {
                       Live posting guidance (applied now)
                     </div>
                     <div className="space-y-1.5">
-                      {knobs.map((k: Record<string, unknown>, i: number) => {
+                      {knobs.map((k: PostingKnob, i: number) => {
                         const formats: string[] = k.contentFormatPriority ?? [];
                         const engagement: string | undefined =
                           k.engagementTargeting;
@@ -654,7 +794,7 @@ export default function AdminAutonomy() {
                 ) : (
                   <ScrollArea className="h-64">
                     <div className="space-y-2 pr-2">
-                      {recentChanges.map((change: Record<string, unknown>) => (
+                      {recentChanges.map((change: IndustryChange) => (
                         <div
                           key={change.id}
                           className="p-3 border rounded-lg text-sm space-y-1"
@@ -709,7 +849,7 @@ export default function AdminAutonomy() {
                   <ScrollArea className="h-64">
                     <div className="space-y-2 pr-2">
                       {recentUpgrades.map(
-                        (upgrade: Record<string, unknown>) => (
+                        (upgrade: Upgrade) => (
                           <div
                             key={upgrade.id}
                             className="p-3 border rounded-lg text-sm space-y-1"
@@ -890,7 +1030,7 @@ export default function AdminAutonomy() {
                   <ScrollArea className="h-24 mt-2">
                     {(securityThreats ?? [])
                       .slice(-5)
-                      .map((t: Record<string, unknown>, i: number) => (
+                      .map((t: SecurityThreat, i: number) => (
                         <div
                           key={i}
                           className="text-xs p-1.5 border rounded mb-1"
@@ -922,10 +1062,13 @@ export default function AdminAutonomy() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {(() => {
-                  const healStatus = selfHealingStatusData?.data ?? {};
-                  const metrics = selfHealingMetricsData?.data ?? {};
-                  const summary = metrics.summary ?? {};
-                  const latency = metrics.latencyMetrics ?? {};
+                  const healStatus: SelfHealingStatus =
+                    selfHealingStatusData?.data ?? {};
+                  const metrics: SelfHealingMetrics =
+                    selfHealingMetricsData?.data ?? {};
+                  const summary: HealingSummary = metrics.summary ?? {};
+                  const latency: HealingLatencyMetrics =
+                    metrics.latencyMetrics ?? {};
                   const isHealing = summary.isHealingFasterThanAttacks ?? false;
                   return (
                     <>
@@ -1008,16 +1151,15 @@ export default function AdminAutonomy() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {(() => {
-                  const cf = chainFixerStatus ?? {};
-                  const patterns: Record<string, unknown>[] = cf.patterns ?? [];
-                  const history: Record<string, unknown>[] = cf.history ?? [];
+                  const cf: ChainFixerResponse = chainFixerStatus ?? {};
+                  const patterns: ChainPattern[] = cf.patterns ?? [];
+                  const history: ChainHistory[] = cf.history ?? [];
                   const active = patterns.filter(
-                    (p: Record<string, unknown>) =>
-                      !p.suppressed && p.attempts > 0,
+                    (p: ChainPattern) => !p.suppressed && p.attempts > 0,
                   );
                   const totalFixes = history.length;
                   const successFixes = history.filter(
-                    (h: Record<string, unknown>) => h.result === "success",
+                    (h: ChainHistory) => h.result === "success",
                   ).length;
                   return (
                     <>
@@ -1055,7 +1197,7 @@ export default function AdminAutonomy() {
                             {[...history]
                               .reverse()
                               .slice(0, 5)
-                              .map((h: Record<string, unknown>, i: number) => (
+                              .map((h: ChainHistory, i: number) => (
                                 <div
                                   key={i}
                                   className="flex items-center gap-1.5 text-xs"
@@ -1106,12 +1248,11 @@ export default function AdminAutonomy() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {(() => {
-                  const pf =
+                  const pf: PlatformFixerState =
                     platformFixerStatus?.data ?? platformFixerStatus ?? {};
-                  const subsystems: Record<string, unknown> =
-                    (pf.subsystems as Record<string, unknown>) ?? {};
-                  const patches: Record<string, unknown>[] =
-                    pf.activePatches ?? [];
+                  const subsystems: Record<string, PlatformSubsystem> =
+                    pf.subsystems ?? {};
+                  const patches: Patch[] = pf.activePatches ?? [];
                   const subsysNames = Object.keys(subsystems);
                   const degraded = subsysNames.filter(
                     (s) =>
@@ -1170,7 +1311,7 @@ export default function AdminAutonomy() {
                           <div className="space-y-1 pr-1">
                             {patches
                               .slice(0, 3)
-                              .map((p: Record<string, unknown>, i: number) => (
+                              .map((p: Patch, i: number) => (
                                 <div
                                   key={i}
                                   className="text-xs text-muted-foreground truncate"
