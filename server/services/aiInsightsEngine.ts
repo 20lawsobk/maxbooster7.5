@@ -65,13 +65,7 @@ interface CohortAnalysisResult {
   cohortIdentifier: string;
   cohortStartDate: Date;
   cohortSize: number;
-  metrics: {
-    day1: { retention: number; ltv: number; engagement: number };
-    day7: { retention: number; ltv: number; engagement: number };
-    day30: { retention: number; ltv: number; engagement: number };
-    day90: { retention: number; ltv: number; engagement: number };
-    day365: { retention: number; ltv: number; engagement: number };
-  };
+  metrics: Record<string, CohortMetricPoint>;
   comparisonToAverage: number;
   visualizationData: Record<string, unknown>;
 }
@@ -133,6 +127,58 @@ interface InsightNarrative {
   supportingData: Record<string, unknown>;
 }
 
+interface UserStats {
+  revenueGrowth: number;
+  primaryGrowthDriver: string;
+  topChannel: string;
+  topChannelContribution: number;
+  conversionRate: number;
+  platformDiversity: number;
+  totalRevenue: number;
+  totalStreams: number;
+}
+
+interface TrendAnalysis {
+  streamDecline: number;
+  lastReleaseDate: Date;
+}
+
+interface Benchmarks {
+  revenuePercentile: number;
+  averageConversionRate: number;
+}
+
+interface ChurnFeatures {
+  engagementScore: number;
+  engagementTrend: string;
+  paymentFailures: number;
+  supportTickets: number;
+  lastActivityDays: number;
+  featureUsageScore: number;
+  totalProjects: number;
+  avgStreams: number;
+}
+
+interface CohortMetricPoint {
+  retention: number;
+  ltv: number;
+  engagement: number;
+  churn: number;
+  conversion: number;
+}
+
+interface RevenueBreakdown {
+  byPlan?: Record<string, number>;
+  byChannel?: Record<string, number>;
+  byRegion?: Record<string, number>;
+  bySegment?: Record<string, number>;
+}
+
+interface SeasonalityInfo {
+  period: number;
+  amplitude: number;
+}
+
 export class CustomAIEngine {
   private modelCache: Map<string, { modelId: string; versionId: string }> =
     new Map();
@@ -182,7 +228,9 @@ export class CustomAIEngine {
         inferenceType,
         inputData,
         outputData,
-        confidenceScore: outputData.confidenceScore || null,
+        confidenceScore:
+          (outputData as { confidenceScore?: number | null })
+            ?.confidenceScore || null,
         executionTimeMs,
         success: true,
       });
@@ -312,7 +360,7 @@ export class CustomAIEngine {
     const cohortSize = cohortUsers.length;
 
     const timePoints = [1, 7, 30, 90, 365];
-    const cohortMetrics: Record<string, unknown> = {};
+    const cohortMetrics: Record<string, CohortMetricPoint> = {};
 
     for (const days of timePoints) {
       const dayKey = `day${days}`;
@@ -873,7 +921,7 @@ export class CustomAIEngine {
   }
 
   private detectSeasonalityAndTrend(data: number[]): {
-    seasonality: { period: number; amplitude: number } | null;
+    seasonality: SeasonalityInfo | null;
     trend: number;
   } {
     if (data.length < 14) {
@@ -925,7 +973,7 @@ export class CustomAIEngine {
     historicalData: number[],
     daysAhead: number,
     algorithm: string,
-    seasonality: unknown,
+    seasonality: SeasonalityInfo | null,
     trend: number,
   ): number {
     if (algorithm === "seasonal_decomposition" && seasonality) {
@@ -987,11 +1035,11 @@ export class CustomAIEngine {
   }
 
   private async calculateCohortMetrics(
-    users: unknown[],
+    users: Array<Record<string, unknown>>,
     startDate: Date,
     days: number,
     _metrics: string[],
-  ): Promise<unknown> {
+  ): Promise<CohortMetricPoint> {
     if (users.length === 0) {
       return { retention: 0, ltv: 0, engagement: 0, churn: 0, conversion: 0 };
     }
@@ -1045,13 +1093,15 @@ export class CustomAIEngine {
     _cohortType: string,
   ): Promise<number> {
     const industryRetentionBenchmark = 0.35;
-    const cohortRetention = cohortMetrics?.retention ?? 0;
+    const retentionVal = cohortMetrics?.retention;
+    const cohortRetention =
+      typeof retentionVal === "number" ? retentionVal : 0;
     return parseFloat(
       ((cohortRetention - industryRetentionBenchmark) * 100).toFixed(2),
     );
   }
 
-  private async extractChurnFeatures(userId: string): Promise<unknown> {
+  private async extractChurnFeatures(userId: string): Promise<ChurnFeatures> {
     await db
       .select()
       .from(users)
@@ -1075,7 +1125,7 @@ export class CustomAIEngine {
     };
   }
 
-  private calculateChurnProbability(features: unknown): number {
+  private calculateChurnProbability(features: ChurnFeatures): number {
     let probability = 0.1;
 
     if (features.engagementScore < 0.3) probability += 0.3;
@@ -1096,7 +1146,7 @@ export class CustomAIEngine {
     return "low";
   }
 
-  private estimateChurnTimeWindow(features: unknown): number {
+  private estimateChurnTimeWindow(features: ChurnFeatures): number {
     if (features.engagementScore < 0.2) return 7;
     if (features.engagementScore < 0.4) return 14;
     if (features.engagementScore < 0.6) return 30;
@@ -1104,7 +1154,7 @@ export class CustomAIEngine {
   }
 
   private identifyTopRiskFactors(
-    features: unknown,
+    features: ChurnFeatures,
   ): Array<{ factor: string; importance: number; value: unknown }> {
     const factors: Array<{
       factor: string;
@@ -1145,8 +1195,8 @@ export class CustomAIEngine {
   }
 
   private generateRetentionRecommendations(
-    riskFactors: unknown[],
-    _features: unknown,
+    riskFactors: Array<{ factor: string; importance: number; value: unknown }>,
+    _features: ChurnFeatures,
   ): AIRecommendation[] {
     const recommendations: AIRecommendation[] = [];
 
@@ -1284,7 +1334,7 @@ export class CustomAIEngine {
   private async calculateRevenueBreakdown(
     _userId: string,
     _forecastDate: Date,
-  ): Promise<unknown> {
+  ): Promise<RevenueBreakdown> {
     return {
       byPlan: { basic: 100, premium: 250, enterprise: 500 },
       byChannel: { organic: 300, paid: 400, referral: 150 },
@@ -1325,7 +1375,7 @@ export class CustomAIEngine {
       });
     }
 
-    if (context?.campaignActive) {
+    if ((context as { campaignActive?: boolean } | undefined)?.campaignActive) {
       causes.push({
         cause: "Marketing campaign impact",
         likelihood: 0.8,
@@ -1374,7 +1424,7 @@ export class CustomAIEngine {
   private async getUserStats(
     userId: string,
     timeframe: string,
-  ): Promise<unknown> {
+  ): Promise<UserStats> {
     const days = parseInt(timeframe);
     const now = new Date();
     const startDate = new Date(now);
@@ -1469,7 +1519,7 @@ export class CustomAIEngine {
   private async analyzeTrends(
     userId: string,
     timeframe: string,
-  ): Promise<unknown> {
+  ): Promise<TrendAnalysis> {
     const days = parseInt(timeframe) || 30;
     const now = new Date();
     const periodStart = new Date(now);
@@ -1517,8 +1567,8 @@ export class CustomAIEngine {
 
   private async compareToBenchmarks(
     _userId: string,
-    _stats: unknown,
-  ): Promise<unknown> {
+    _stats: UserStats,
+  ): Promise<Benchmarks> {
     return {
       revenuePercentile: 75,
       averageConversionRate: 3.5,

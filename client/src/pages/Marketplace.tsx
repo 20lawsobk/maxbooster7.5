@@ -70,6 +70,11 @@ import { PayoutDashboard } from "@/components/marketplace/PayoutDashboard";
 import StorefrontBuilder from "@/components/marketplace/StorefrontBuilder";
 import { BeatCard } from "@/components/marketplace/BeatCard";
 import { MarketplaceBeatCard } from "@/components/marketplace/MarketplaceBeatCard";
+import type {
+  MarketplaceBeatCardBeat,
+  LicenseTierInfo,
+} from "@/components/marketplace/MarketplaceBeatCard";
+import type { MerchItem, MerchOrder } from "@shared/schema";
 import { BeatGridSkeleton, PurchaseHistorySkeleton, NoBeatsFoundEmptyState, EmptyCartState, NoPurchasesState, NoMyBeatsState, NoEscrowTransactionsState, NoContractsState, NoCollaborationsState, FilterResultsHeader } from "@/components/marketplace";
 import { Music, Play, Pause, Volume2, VolumeX, Share2, Download, Upload, Plus, Edit, Trash2, Search, Grid, List, Star, Trophy, TrendingUp, Users, Eye, DollarSign, CreditCard, ShoppingCart, Package, CheckCircle, AlertCircle, Clock, MapPin, Shield, Sparkles, Brain, Target, BarChart3, PieChart, Activity, Loader2, X, Check, ChevronDown, UserPlus, UserCheck, MessageCircle, Image as ImageIcon, FileText, FileAudio, Save, RefreshCw, Link2, Handshake, FileSignature, Wallet, Banknote, SkipBack, SkipForward, Layers, UploadCloud, FolderUp, Lightbulb, Percent, Receipt, ScrollText } from "lucide-react";
 
@@ -194,6 +199,20 @@ interface CartItem {
   price: number;
 }
 
+interface MerchStats {
+  totalRevenue: number;
+  totalOrders: number;
+  ordersThisMonth: number;
+  inventoryAlerts: number;
+  bestSellers: unknown[];
+  lowInventoryItems: unknown[];
+}
+
+interface UpdateListingResponse {
+  id: string;
+  [key: string]: unknown;
+}
+
 interface EscrowTransaction {
   id: string;
   beatId: string;
@@ -224,6 +243,7 @@ interface LicenseTemplate {
   allowsProfit: boolean;
   allowsSync: boolean;
   customTerms?: string;
+  fileFormats?: string[];
   isActive: boolean;
 }
 
@@ -416,16 +436,25 @@ const LICENSE_TYPES: LicenseTemplate[] = [
   },
 ];
 
+interface FollowStatusResponse {
+  isFollowing: boolean;
+}
+
+interface ProducerFollowMutation {
+  mutate: (producerId: string) => void;
+  isPending: boolean;
+}
+
 function ProducerFollowButton({
   producerId,
   followMutation,
   unfollowMutation,
 }: {
   producerId: string;
-  followMutation: Record<string, unknown>;
-  unfollowMutation: Record<string, unknown>;
+  followMutation: ProducerFollowMutation;
+  unfollowMutation: ProducerFollowMutation;
 }) {
-  const { data: followStatus, isLoading } = useQuery({
+  const { data: followStatus, isLoading } = useQuery<FollowStatusResponse>({
     queryKey: ["/api/marketplace/producers", producerId, "follow-status"],
     queryFn: async () => {
       const response = await fetch(
@@ -488,10 +517,6 @@ export default function Marketplace() {
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
-  const [selectedListingId, setSelectedListingId] = useState<string | null>(
-    null,
-  );
-  const [hasStems, setHasStems] = useState(false);
   const howlRef = useRef<Howl | null>(null);
   const blobUrlRef = useRef<string | null>(null);
   const isPickingFileRef = useRef(false);
@@ -760,7 +785,6 @@ export default function Marketplace() {
   const [showPreviewPlayer, setShowPreviewPlayer] = useState(false);
   const [currentBeat, setCurrentBeat] = useState<Beat | null>(null);
 
-  const [showEscrowModal, setShowEscrowModal] = useState(false);
   const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [showLicenseViewer, setShowLicenseViewer] = useState(false);
   const [licenseViewerContent, setLicenseViewerContent] = useState<
@@ -815,17 +839,19 @@ export default function Marketplace() {
   });
 
   // Merch Store queries and mutations
-  const { data: merchItems, isLoading: merchLoading } = useQuery({
+  const { data: merchItems, isLoading: merchLoading } = useQuery<MerchItem[]>({
     queryKey: ["/api/merch"],
     enabled: activeTab === "merch",
   });
 
-  const { data: merchOrders, isLoading: ordersLoading } = useQuery({
+  const { data: merchOrders, isLoading: ordersLoading } = useQuery<
+    MerchOrder[]
+  >({
     queryKey: ["/api/merch/orders"],
     enabled: activeTab === "merch",
   });
 
-  const { data: merchStats } = useQuery({
+  const { data: merchStats } = useQuery<MerchStats>({
     queryKey: ["/api/merch/stats"],
     enabled: activeTab === "merch",
   });
@@ -1179,7 +1205,12 @@ export default function Marketplace() {
     },
   });
 
-  const updateBeatMutation = useMutation({
+  const updateBeatMutation = useMutation<
+    UpdateListingResponse,
+    Error,
+    { id: string; data: FormData },
+    { prevMy?: unknown; prevAll?: unknown }
+  >({
     mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
       const response = await apiRequest(
         "PUT",
@@ -1260,12 +1291,10 @@ export default function Marketplace() {
         }
 
         const apply = (qk: readonly unknown[]) => {
-          const prev = queryClient.getQueryData<any[]>(
-            qk as Record<string, unknown>,
-          );
+          const prev = queryClient.getQueryData<any[]>(qk);
           if (Array.isArray(prev)) {
             queryClient.setQueryData(
-              qk as Record<string, unknown>,
+              qk,
               prev.map((b) => (b?.id === id ? { ...b, ...patch } : b)),
             );
           }
@@ -1279,8 +1308,8 @@ export default function Marketplace() {
     },
     onError: (
       err: Error,
-      _vars: unknown,
-      ctx: { prevMy?: unknown; prevAll?: unknown },
+      _vars: { id: string; data: FormData },
+      ctx: { prevMy?: unknown; prevAll?: unknown } | undefined,
     ) => {
       if (ctx?.prevMy !== undefined)
         queryClient.setQueryData(["/api/marketplace/my-beats"], ctx.prevMy);
@@ -1305,12 +1334,10 @@ export default function Marketplace() {
       // any server-side normalization (e.g. trimmed strings, computed prices).
       if (updated && updated.id) {
         const merge = (key: readonly unknown[]) => {
-          const prev = queryClient.getQueryData<any[]>(
-            key as Record<string, unknown>,
-          );
+          const prev = queryClient.getQueryData<any[]>(key);
           if (Array.isArray(prev)) {
             queryClient.setQueryData(
-              key as Record<string, unknown>,
+              key,
               prev.map((b) =>
                 b?.id === updated.id ? { ...b, ...updated } : b,
               ),
@@ -3093,12 +3120,14 @@ export default function Marketplace() {
                 {beats.map((beat) => (
                   <MarketplaceBeatCard
                     key={beat.id}
-                    beat={beat as Record<string, unknown>}
+                    beat={beat as MarketplaceBeatCardBeat}
                     isPlaying={isPlaying === beat.id}
                     isLoadingAudio={isLoadingAudio}
                     availableLicenses={getAvailableLicenses(beat)}
                     getLicenseTier={(license) =>
-                      getLicenseTier(beat, license) as Record<string, unknown>
+                      getLicenseTier(beat, license) as
+                        | LicenseTierInfo
+                        | undefined
                     }
                     getLicensePrice={(license) =>
                       getLicensePrice(beat, license)
@@ -3761,17 +3790,19 @@ export default function Marketplace() {
                     unlimited: "Unlimited Lease",
                     exclusive: "Exclusive Rights",
                   };
-                  const licenseName =
-                    purchase.licenseSnapshot?.label ||
-                    licenseLabels[purchase.licenseType] ||
-                    purchase.licenseType;
                   const snapshot = purchase.licenseSnapshot as Record<
                     string,
                     unknown
                   >;
-                  const fileFormats = snapshot?.fileFormats?.map((f: string) =>
-                    f.toUpperCase(),
-                  ) || ["MP3"];
+                  const snapshotLabel = snapshot?.label;
+                  const licenseName =
+                    (typeof snapshotLabel === "string" && snapshotLabel) ||
+                    licenseLabels[purchase.licenseType] ||
+                    purchase.licenseType;
+                  const snapshotFileFormats = snapshot?.fileFormats;
+                  const fileFormats = Array.isArray(snapshotFileFormats)
+                    ? snapshotFileFormats.map((f: string) => f.toUpperCase())
+                    : ["MP3"];
 
                   return (
                     <Card key={purchase.id} className="overflow-hidden">
@@ -3841,7 +3872,7 @@ export default function Marketplace() {
                                   {fmt}
                                 </Badge>
                               ))}
-                              {snapshot?.bogoEnabled && (
+                              {Boolean(snapshot?.bogoEnabled) && (
                                 <Badge className="bg-orange-500 text-xs">
                                   BOGO
                                 </Badge>
@@ -4367,11 +4398,11 @@ export default function Marketplace() {
                         <span className="font-medium">{license.duration}</span>
                       </div>
                     </div>
-                    {(license as Record<string, unknown>).fileFormats && (
+                    {license.fileFormats && (
                       <div className="flex justify-between">
                         <span>File Formats</span>
                         <span className="font-medium text-xs">
-                          {(license as Record<string, unknown>).fileFormats}
+                          {license.fileFormats}
                         </span>
                       </div>
                     )}
@@ -4987,7 +5018,7 @@ export default function Marketplace() {
                       </p>
                     </div>
                   ) : (
-                    merchItems?.map((item: Record<string, unknown>) => (
+                    merchItems?.map((item) => (
                       <Card
                         key={item.id}
                         className="overflow-hidden bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
@@ -5023,7 +5054,7 @@ export default function Marketplace() {
                               </p>
                             </div>
                             <div className="font-bold text-blue-600">
-                              ${parseFloat(item.price).toFixed(2)}
+                              ${parseFloat(String(item.price)).toFixed(2)}
                             </div>
                           </div>
                         </CardHeader>
@@ -5092,7 +5123,7 @@ export default function Marketplace() {
                             </TableCell>
                           </TableRow>
                         ) : (
-                          merchOrders?.map((order: Record<string, unknown>) => (
+                          merchOrders?.map((order) => (
                             <TableRow key={order.id}>
                               <TableCell className="font-mono text-xs">
                                 {order.id.split("-")[0]}
@@ -5106,7 +5137,7 @@ export default function Marketplace() {
                                 </div>
                               </TableCell>
                               <TableCell className="text-sm font-medium">
-                                ${parseFloat(order.total).toFixed(2)}
+                                ${parseFloat(String(order.total)).toFixed(2)}
                               </TableCell>
                               <TableCell>
                                 <Badge

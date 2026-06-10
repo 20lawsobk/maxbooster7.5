@@ -27,7 +27,7 @@ export type WorkflowPhase =
 export interface ConfigField {
   label: string;
   type: "boolean" | "string" | "number" | "select";
-  default: Record<string, unknown>;
+  default: boolean | string | number;
   options?: string[];
   description?: string;
 }
@@ -46,7 +46,7 @@ export interface WorkflowTemplate {
 
 export interface WorkflowEventData {
   userId: string;
-  [key: string]: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 // ─── Template definitions (15 covering full music artist journey) ─────────────
@@ -1118,7 +1118,7 @@ class MusicWorkflowAutomationService {
         );
     } catch (err) {
       status = "failed";
-      error = err?.message ?? "Unknown error";
+      error = err instanceof Error ? err.message : "Unknown error";
       logger.warn(
         { err: err },
         `[MusicWorkflow] Failed "${template.name}" for user ${userId}:`,
@@ -1398,7 +1398,7 @@ class MusicWorkflowAutomationService {
       userId,
       type: "info",
       title: "Distribution Submitted",
-      message: `"${releaseTitle}" has been submitted to ${platforms.length > 0 ? platforms.join(", ") : "streaming platforms"}. Expect approval within 24–72 hours.`,
+      message: `"${releaseTitle}" has been submitted to ${Array.isArray(platforms) && platforms.length > 0 ? platforms.join(", ") : "streaming platforms"}. Expect approval within 24–72 hours.`,
       link: "/distribution",
     });
     actions.push("Push notification sent");
@@ -2006,7 +2006,7 @@ class MusicWorkflowAutomationService {
     const targets =
       config.targetPlatforms === "all"
         ? ["instagram", "tiktok", "twitter", "facebook"].filter(
-            (p) => p !== originalPlatform.toLowerCase(),
+            (p) => p !== String(originalPlatform).toLowerCase(),
           )
         : [config.targetPlatforms];
 
@@ -2438,7 +2438,7 @@ class MusicWorkflowAutomationService {
   }
 
   stop(): void {
-    for (const [key, task] of this.scheduledTasks) {
+    for (const [, task] of this.scheduledTasks) {
       task.stop();
     }
     this.scheduledTasks.clear();

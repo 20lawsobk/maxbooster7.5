@@ -2,7 +2,7 @@ import { storage } from "../storage";
 import { db } from "../db";
 
 import Stripe from "stripe";
-import { listingLicenseTiers } from "@shared/schema";
+import { listingLicenseTiers, type ListingLicenseTier } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
 import { logger } from "../logger.js";
@@ -26,8 +26,11 @@ export interface BeatListing {
   price: number;
   audioUrl: string;
   artworkUrl?: string;
+  coverArt?: string;
   tags?: string[];
   licenses: BeatLicense[];
+  hasLicenseTiers?: boolean;
+  licenseTiers?: ListingLicenseTierView[];
   status: "draft" | "active" | "sold" | "inactive";
   createdAt: Date;
 }
@@ -137,8 +140,66 @@ export interface Order {
   createdAt: Date;
 }
 
+// Shape of a listing's JSONB metadata bag (genre/bpm/key/licenses/tags…)
+interface ListingMetadata {
+  genre?: string;
+  mood?: string;
+  bpm?: number;
+  key?: string;
+  licenseType?: string;
+  licenses?: BeatLicense[];
+  tags?: string[];
+}
+
+// Shape of a listing row as returned by storage.createListing/updateListing
+interface ListingRow {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  priceCents: number;
+  audioUrl?: string | null;
+  previewUrl?: string | null;
+  artworkUrl?: string | null;
+  isPublished?: boolean | null;
+  metadata?: unknown;
+  createdAt?: Date | null;
+}
+
+// Shape of a per-license tier view attached to enriched listings
+interface ListingLicenseTierView {
+  id: string;
+  licenseType: string;
+  label?: string | null;
+  priceCents: number;
+  price: number;
+  discountPriceCents?: number | null;
+  fileFormats?: string[] | null;
+  bogoEnabled?: boolean | null;
+  bogoGetType?: string | null;
+  bogoGetPercent?: number | null;
+  isActive?: boolean | null;
+}
+
+// Shape of an order row as returned by storage order queries
+interface DbOrderRow {
+  id: string;
+  listingId?: string | null;
+  userId?: string | null;
+  buyerId?: string | null;
+  sellerId?: string | null;
+  licenseType?: string | null;
+  amount?: number | null;
+  amountCents?: number | null;
+  status?: string | null;
+  stripePaymentIntentId?: string | null;
+  licenseDocumentUrl?: string | null;
+  createdAt?: Date | null;
+}
+
 // Helper functions to map between service and database Order types
-function toServiceOrder(dbOrder: Record<string, unknown>): Order {
+function toServiceOrder(dbOrder: DbOrderRow): Order {
   return {
     id: dbOrder.id,
     beatId: dbOrder.listingId || "",
@@ -342,17 +403,18 @@ export class MarketplaceService {
       };
 
       // Create listing in database (UUID generated automatically)
-      const createdListing = await storage.createListing(dbListing);
+      const createdListing = (await storage.createListing(
+        dbListing,
+      )) as ListingRow;
 
       // Map database result back to service format
-      const metadata =
-        (createdListing.metadata as Record<string, unknown>) || {};
+      const metadata = (createdListing.metadata as ListingMetadata) || {};
       return {
         id: createdListing.id,
         userId: createdListing.userId,
         title: createdListing.title,
         description: createdListing.description || undefined,
-        genre: metadata.genre || createdListing.category,
+        genre: (metadata.genre || createdListing.category) ?? undefined,
         bpm: metadata.bpm,
         key: metadata.key,
         price: createdListing.priceCents / 100,
@@ -823,7 +885,7 @@ export class MarketplaceService {
       const user = await storage.getUser(userId);
 
       const listingIds = listings.map((l) => l.id);
-      let allTiers: unknown[] = [];
+      const allTiers: ListingLicenseTier[] = [];
       if (listingIds.length > 0) {
         for (const lid of listingIds) {
           const tiers = await db
@@ -884,7 +946,7 @@ export class MarketplaceService {
       const producer = await storage.getUser(producerId);
 
       const listingIds = listings.map((l) => l.id);
-      let allTiers: unknown[] = [];
+      const allTiers: ListingLicenseTier[] = [];
       if (listingIds.length > 0) {
         for (const lid of listingIds) {
           const tiers = await db
@@ -992,8 +1054,7 @@ export class MarketplaceService {
       if (data.artworkUrl !== undefined)
         updateData.artworkUrl = data.artworkUrl;
 
-      const existingMetadata =
-        (listing as Record<string, unknown>).metadata || {};
+      const existingMetadata = (listing.metadata as ListingMetadata) || {};
       updateData.metadata = {
         ...existingMetadata,
         genre: data.genre ?? existingMetadata.genre,
@@ -1004,17 +1065,19 @@ export class MarketplaceService {
         tags: data.tags ?? existingMetadata.tags ?? [],
       };
 
-      const updatedListing = await storage.updateListing(listingId, updateData);
+      const updatedListing = (await storage.updateListing(
+        listingId,
+        updateData,
+      )) as ListingRow | null;
       if (!updatedListing) return null;
 
-      const metadata =
-        (updatedListing.metadata as Record<string, unknown>) || {};
+      const metadata = (updatedListing.metadata as ListingMetadata) || {};
       return {
         id: updatedListing.id,
         userId: updatedListing.userId,
         title: updatedListing.title,
         description: updatedListing.description || undefined,
-        genre: metadata.genre || updatedListing.category,
+        genre: (metadata.genre || updatedListing.category) ?? undefined,
         bpm: metadata.bpm,
         key: metadata.key,
         price: updatedListing.priceCents / 100,
@@ -1106,8 +1169,7 @@ export class MarketplaceService {
 
       if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
         const tier = beat.licenseTiers.find(
-          (t: Record<string, unknown>) =>
-            t.licenseType === licenseType && t.isActive,
+          (t) => t.licenseType === licenseType && t.isActive,
         );
         if (!tier) {
           throw new Error("Invalid or inactive license type");
@@ -1126,7 +1188,7 @@ export class MarketplaceService {
         };
       } else {
         const license = beat.licenses.find(
-          (l: Record<string, unknown>) => l.type === licenseType,
+          (l) => l.type === licenseType,
         );
         if (!license) {
           throw new Error("Invalid license type");
