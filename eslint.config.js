@@ -7,6 +7,7 @@ import js from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import reactHooks from "eslint-plugin-react-hooks";
+import noDivisionByZero from "./eslint-rules/no-division-by-zero.js";
 
 export default [
   {
@@ -105,10 +106,14 @@ export default [
     plugins: {
       "@typescript-eslint": tseslint,
       "react-hooks": reactHooks,
+      "no-division-by-zero": { rules: { "no-division-by-zero": noDivisionByZero } },
     },
     rules: {
       // Re-import recommended TS rules manually (flat config doesn't inherit).
       ...tseslint.configs.recommended.rules,
+
+      // HARDENING: Division-by-zero prevention (Recommendation 1)
+      "no-division-by-zero/no-division-by-zero": "error",
 
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "no-unused-vars": "off",
