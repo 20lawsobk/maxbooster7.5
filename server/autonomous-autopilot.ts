@@ -817,7 +817,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
     if (recentPerformance.length > 5) {
       const avgEngagement =
-        recentPerformance.reduce((a, b) => a + b, 0) / recentPerformance.length;
+        recentPerformance.reduce((a, b) => a + b, 0) / (recentPerformance.length || 1);
 
       if (avgEngagement > 0.05) {
         // High engagement
@@ -882,7 +882,7 @@ export class AutonomousAutopilot extends EventEmitter {
     // Update topic performance map and trial counts for UCB1
     topicPerformance.forEach((performances, topic) => {
       const avgPerformance =
-        performances.reduce((a, b) => a + b, 0) / performances.length;
+        performances.reduce((a, b) => a + b, 0) / (performances.length || 1);
       this.topicPerformanceMap.set(topic, avgPerformance);
       this.topicTrialCountMap.set(topic, performances.length);
     });

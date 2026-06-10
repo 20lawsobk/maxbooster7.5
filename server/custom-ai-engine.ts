@@ -573,9 +573,9 @@ class CustomAIEngine {
     }
 
     const avgEngagement =
-      history.reduce((sum, h) => sum + (h.engagement || 0), 0) / history.length;
+      history.reduce((sum, h) => sum + (h.engagement || 0), 0) / (history.length || 1);
     const avgQuality =
-      history.reduce((sum, h) => sum + (h.quality || 0), 0) / history.length;
+      history.reduce((sum, h) => sum + (h.quality || 0), 0) / (history.length || 1);
 
     return {
       records: history.length,
