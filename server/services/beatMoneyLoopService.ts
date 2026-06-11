@@ -609,10 +609,10 @@ class BeatMoneyLoopService {
         campaign.id,
         BEAT_MONEY_LOOP_ADMIN_ID,
       );
-      const postsCreated = result.results.postsCreated ?? 0;
+      const postsCreated = result.results?.postsCreated ?? 0;
       if (result.success && postsCreated > 0) {
         logger.info(
-          `[BeatMoneyLoop] campaign ${campaign.id} posted to ${result.results.platformsUsed.join(", ")} (${postsCreated} posts)`,
+          `[BeatMoneyLoop] campaign ${campaign.id} posted to ${result.results!.platformsUsed.join(", ")} (${postsCreated} posts)`,
         );
         return {
           campaignId: campaign.id,
