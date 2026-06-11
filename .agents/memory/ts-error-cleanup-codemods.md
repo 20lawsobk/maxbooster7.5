@@ -55,3 +55,16 @@ To fix a few mis-edited files without re-running the whole codemod (whose tc pos
 ## Measuring (critical)
 
 The split typecheck uses incremental `.cache/tsbuildinfo.{server,client}`. After editing, **always `rm -f .cache/tsbuildinfo.server .cache/tsbuildinfo.client` before re-running** or the cache serves stale error counts (a fast ~40s run with unchanged counts = stale cache). Full clean re-check ≈160s per the `tccap` capture workflow (writes /tmp/tc_server.txt + /tmp/tc_client.txt + /tmp/tc_done).
+
+## The `{}` / Record<string,unknown> external-JSON cluster (NOT the drizzle-row template)
+
+A large chunk of TS2339("Property X does not exist on type '{}'")+TS2322 in service files is NOT DB-row drift — it is third-party API responses parsed as `Record<string, unknown>` (each value `unknown`, so nested access + result-field assignment fail).
+**Safe, behavior-preserving fix:** loosen ONLY the external-JSON boundary sites `Record<string, unknown>` -> `Record<string, any>` (the `.json()) as Record...` casts, the `(x: Record...)` map/filter callback params, and `name: Record...[]` array decls). LEAVE internal accumulators (`changes`/`snapshotJson`/`jsonLd` object literals built locally) as `unknown` — they are correct and not erroring.
+**Why:** these responses are already accessed defensively (`?.`, `??`, `String(...)`), so they never relied on compile-time narrowing; `any` changes zero runtime behavior. Hand-writing nested optional interfaces is the "correct" alternative but the notes' warning holds — optional->required result fields spawn fresh TS2322, high effort, high risk.
+**How to apply:** a precise perl targeting those 3-4 forms distinguishes external sites from locals reliably (locals never use `(x: Record...)`/`...[]`/`.json()) as`). `any` is only acceptable at the external boundary; keep `unknown` for internal business objects (architect-endorsed convention; consider a named `ExternalJson = Record<string, any>` alias for auditability).
+
+## `const x = null` literal-narrows to `never` inside `if (x)` — annotation does NOT help
+
+A dead consumer block guarded by an always-null const (`const lgArtist = null; if (lgArtist) { lgArtist.platforms ... }`) throws TS2339-on-`never`. Adding a declared type `const lgArtist: T | null = null` does NOT fix it — CFA still tracks the assigned literal `null`, so the truthy branch narrows to `never`.
+**Fix:** use a type ASSERTION on the initializer: `const lgArtist = null as T | null`. The `as` makes the initializer's apparent type `T | null` (not the `null` literal), so `if (lgArtist)` narrows to `T` and the dead-but-typed block compiles. Runtime stays null (behavior-identical).
+**Trap:** fixing the `never` can EXPOSE a downstream TS2345 (e.g. optional `id` passed to a `string` param). If the block is dead, make the asserted fields required (`id: string`) to fully clear it; document inline that it's unreachable.

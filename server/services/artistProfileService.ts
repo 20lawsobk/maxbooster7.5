@@ -861,11 +861,12 @@ class ArtistProfileService {
         return await fn();
       } catch (err) {
         lastErr = err;
+        const e = err as { name?: string; message?: string; cause?: { code?: string } };
         const isRetryable =
-          err?.name === "TimeoutError" ||
-          err?.message?.includes("timeout") ||
-          err?.message?.includes("network") ||
-          err?.cause?.code === "UND_ERR_CONNECT_TIMEOUT";
+          e?.name === "TimeoutError" ||
+          e?.message?.includes("timeout") ||
+          e?.message?.includes("network") ||
+          e?.cause?.code === "UND_ERR_CONNECT_TIMEOUT";
         if (isRetryable && attempt < maxAttempts) {
           await new Promise((r) => setTimeout(r, 300 * attempt));
           continue;
@@ -936,9 +937,9 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = (await response.json()) as Record<string, unknown>;
+      const data = (await response.json()) as Record<string, any>;
       return (data.artists?.items || []).map(
-        (a: Record<string, unknown>): SpotifyArtistResult => ({
+        (a: Record<string, any>): SpotifyArtistResult => ({
           id: a.id,
           uri: a.uri,
           name: a.name,
@@ -972,7 +973,7 @@ class ArtistProfileService {
 
       if (!response.ok) return null;
 
-      const a = (await response.json()) as Record<string, unknown>;
+      const a = (await response.json()) as Record<string, any>;
       return {
         id: a.id,
         uri: a.uri,
@@ -996,11 +997,11 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = (await response.json()) as Record<string, unknown>;
+      const data = (await response.json()) as Record<string, any>;
       return (data.results || [])
-        .filter((a: Record<string, unknown>) => a.artistId && a.artistName)
+        .filter((a: Record<string, any>) => a.artistId && a.artistName)
         .map(
-          (a: Record<string, unknown>): AppleArtistResult => ({
+          (a: Record<string, any>): AppleArtistResult => ({
             id: String(a.artistId),
             name: a.artistName,
             genres: [
@@ -1029,12 +1030,12 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = (await response.json()) as Record<string, unknown>;
+      const data = (await response.json()) as Record<string, any>;
       if (data.error) return []; // Deezer returns {error:{...}} on quota/errors
       return (data.data || [])
-        .filter((a: Record<string, unknown>) => a.id && a.name)
+        .filter((a: Record<string, any>) => a.id && a.name)
         .map(
-          (a: Record<string, unknown>): DeezerArtistResult => ({
+          (a: Record<string, any>): DeezerArtistResult => ({
             id: String(a.id),
             name: a.name,
             // Prefer highest-resolution image: xl → big → medium → small
@@ -1065,12 +1066,12 @@ class ArtistProfileService {
     };
 
     const parseMbArtists = (
-      data: Record<string, unknown>,
+      data: Record<string, any>,
     ): MusicBrainzArtistResult[] =>
       (data.artists || [])
-        .filter((a: Record<string, unknown>) => a.id && a.name)
+        .filter((a: Record<string, any>) => a.id && a.name)
         .map(
-          (a: Record<string, unknown>): MusicBrainzArtistResult => ({
+          (a: Record<string, any>): MusicBrainzArtistResult => ({
             id: a.id,
             name: a.name,
             score: Number(a.score ?? 0),
@@ -1078,10 +1079,10 @@ class ArtistProfileService {
             country: a.country ?? null,
             // Include both genre tags and regular tags for richer scoring
             tags: [
-              ...(a.tags || []).map((t: Record<string, unknown>) =>
+              ...(a.tags || []).map((t: Record<string, any>) =>
                 String(t.name),
               ),
-              ...(a["genre-list"] || []).map((g: Record<string, unknown>) =>
+              ...(a["genre-list"] || []).map((g: Record<string, any>) =>
                 String(g.name ?? g),
               ),
             ].filter((v, i, arr) => arr.indexOf(v) === i),
@@ -1103,7 +1104,7 @@ class ArtistProfileService {
       );
 
       if (strictRes.ok) {
-        const data = (await strictRes.json()) as Record<string, unknown>;
+        const data = (await strictRes.json()) as Record<string, any>;
         const results = parseMbArtists(data);
         if (results.length > 0) return results;
       }
@@ -1116,7 +1117,7 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       });
       if (!relaxedRes.ok) return [];
-      const relaxedData = (await relaxedRes.json()) as Record<string, unknown>;
+      const relaxedData = (await relaxedRes.json()) as Record<string, any>;
       return parseMbArtists(relaxedData);
     } catch (err) {
       logger.warn(
@@ -1145,9 +1146,9 @@ class ArtistProfileService {
       }
       if (!response.ok) return [];
 
-      const data = (await response.json()) as Record<string, unknown>;
+      const data = (await response.json()) as Record<string, any>;
       return (data.results || []).slice(0, 5).map(
-        (a: Record<string, unknown>): AudiomackArtistResult => ({
+        (a: Record<string, any>): AudiomackArtistResult => ({
           id: String(a.id ?? a.url_slug ?? ""),
           name: a.name ?? a.label ?? "",
           slug: a.url_slug ?? "",
@@ -1158,10 +1159,11 @@ class ArtistProfileService {
       );
     } catch (err) {
       // Suppress noise — Audiomack API consistently requires auth in production
-      if (!err?.message?.includes("401")) {
+      const e = err as { message?: string };
+      if (!e?.message?.includes("401")) {
         logger.warn(
           "[ArtistProfile] Audiomack search error (non-fatal):",
-          err?.message ?? err,
+          e?.message ?? err,
         );
       }
       return [];
@@ -1179,12 +1181,12 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(7000),
       });
       if (response.ok) {
-        const data = (await response.json()) as Record<string, unknown>;
-        const artists: Record<string, unknown>[] =
+        const data = (await response.json()) as Record<string, any>;
+        const artists: Record<string, any>[] =
           data?.data?.results ?? data?.results ?? [];
         if (artists.length > 0) {
           return artists.slice(0, 5).map(
-            (a: Record<string, unknown>): JioSaavnArtistResult => ({
+            (a: Record<string, any>): JioSaavnArtistResult => ({
               id: String(a.id ?? ""),
               name: a.name ?? a.title ?? "",
               // saavn.dev image array: [{quality:"50x50",url:...},{quality:"150x150",url:...},{quality:"500x500",url:...}]
@@ -1192,7 +1194,7 @@ class ArtistProfileService {
                 (Array.isArray(a.image)
                   ? (
                       a.image.find(
-                        (i: Record<string, unknown>) => i.quality === "500x500",
+                        (i: Record<string, any>) => i.quality === "500x500",
                       ) ?? a.image[a.image.length - 1]
                     )?.url
                   : a.image) ?? null,
@@ -1215,10 +1217,10 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       });
       if (!response.ok) return [];
-      const data = (await response.json()) as Record<string, unknown>;
-      const artists: Record<string, unknown>[] = data?.artists?.data ?? [];
+      const data = (await response.json()) as Record<string, any>;
+      const artists: Record<string, any>[] = data?.artists?.data ?? [];
       return artists.slice(0, 5).map(
-        (a: Record<string, unknown>): JioSaavnArtistResult => ({
+        (a: Record<string, any>): JioSaavnArtistResult => ({
           id: String(a.id ?? ""),
           name: a.title ?? a.name ?? "",
           imageUrl: a.image ?? null,
@@ -1254,19 +1256,19 @@ class ArtistProfileService {
         },
       ).then(async (r) => {
         if (!r.ok) return null;
-        const d = (await r.json()) as Record<string, unknown>;
-        const results: Record<string, unknown>[] = d.results || [];
+        const d = (await r.json()) as Record<string, any>;
+        const results: Record<string, any>[] = d.results || [];
 
         // Prefer explicit artist record (wrapperType==='artist')
         let artist = results.find(
-          (x: Record<string, unknown>) =>
+          (x: Record<string, any>) =>
             x.wrapperType === "artist" || x.kind === "artist",
         );
 
         // Fallback: extract artist info from album collection (iTunes often returns album first)
         if (!artist) {
           const album = results.find(
-            (x: Record<string, unknown>) =>
+            (x: Record<string, any>) =>
               x.wrapperType === "collection" || x.collectionType === "Album",
           );
           if (album?.artistId) {
@@ -1298,7 +1300,7 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       }).then(async (r) => {
         if (!r.ok) return null;
-        const d = (await r.json()) as Record<string, unknown>;
+        const d = (await r.json()) as Record<string, any>;
         if (!d?.artist?.id || d.error) return null;
         return {
           id: String(d.artist.id),
@@ -1381,10 +1383,11 @@ class ArtistProfileService {
         return profile;
       } catch (err) {
         lastErr = err;
+        const e = err as { message?: string; cause?: { message?: string } };
         const isTransient =
-          err?.message?.includes("Failed query") ||
-          err?.cause?.message?.includes("timeout") ||
-          err?.cause?.message?.includes("connection");
+          e?.message?.includes("Failed query") ||
+          e?.cause?.message?.includes("timeout") ||
+          e?.cause?.message?.includes("connection");
         if (isTransient && attempt < 3) {
           await new Promise((r) => setTimeout(r, 200 * attempt));
           continue;
@@ -1729,7 +1732,14 @@ class ArtistProfileService {
     // (token scopes: user.view-catalog, user.gate-use). LabelGrid platform status is
     // populated separately via webhook callbacks from distribution submissions.
     // UPC results are exact and bypass confidence scoring — treated as 97 confidence.
-    const lgArtist = null; // LabelGrid does not expose an artist search endpoint
+    // LabelGrid does not expose an artist search endpoint, so this is always null;
+    // the `as` cast keeps the (currently unreachable) consumer block below well-typed
+    // for when webhook-populated platform data is wired in.
+    const lgArtist = null as {
+      platforms: LabelGridArtistPlatformPresence[];
+      id: string;
+      name: string;
+    } | null;
     const [raw, upcHits] = await Promise.all([
       this.searchAllPlatforms(query),
       upc
@@ -2019,7 +2029,7 @@ class ArtistProfileService {
           },
         );
         if (res.ok) {
-          const d = (await res.json()) as Record<string, unknown>;
+          const d = (await res.json()) as Record<string, any>;
           synced.push("deezer");
           if (
             d.picture_medium &&
@@ -2333,7 +2343,7 @@ class ArtistProfileService {
           signal: AbortSignal.timeout(8000),
         });
         if (!res.ok) continue;
-        const data = (await res.json()) as Record<string, unknown>;
+        const data = (await res.json()) as Record<string, any>;
         const recordings = data?.recordings ?? [];
         for (const recording of recordings) {
           const artistCredit = recording["artist-credit"]?.[0];
@@ -2382,8 +2392,8 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       });
       if (res.ok) {
-        const data = (await res.json()) as Record<string, unknown>;
-        const relations: Record<string, unknown>[] = data?.relations ?? [];
+        const data = (await res.json()) as Record<string, any>;
+        const relations: Record<string, any>[] = data?.relations ?? [];
 
         for (const rel of relations) {
           const url = rel.url?.resource ?? "";
@@ -2596,7 +2606,7 @@ class ArtistProfileService {
             },
           );
           if (!res.ok) continue;
-          const data = (await res.json()) as Record<string, unknown>;
+          const data = (await res.json()) as Record<string, any>;
           // Look at URL relations to check Spotify artist IDs
           for (const recording of data?.recordings ?? []) {
             const mbArtistId = recording["artist-credit"]?.[0]?.artist?.id;
@@ -3735,7 +3745,7 @@ class ArtistProfileService {
     if (profile.spotifyArtistId) {
       checked.push("spotify");
       try {
-        const token = await this._getSpotifyToken();
+        const token = await this.getSpotifyToken();
         if (token) {
           const res = await fetch(
             `https://api.spotify.com/v1/artists/${profile.spotifyArtistId}/albums?limit=5&include_groups=single,album`,
@@ -3745,9 +3755,9 @@ class ArtistProfileService {
             },
           );
           if (res.ok) {
-            const data = (await res.json()) as Record<string, unknown>;
+            const data = (await res.json()) as Record<string, any>;
             const remoteAlbumNames = (data.items ?? []).map(
-              (a: Record<string, unknown>) => a.name as string,
+              (a: Record<string, any>) => a.name as string,
             );
             logger.info(
               `[ArtistProfile] Watch: Spotify profile=${profileId} albums=${remoteAlbumNames.length}`,
