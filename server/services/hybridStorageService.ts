@@ -1056,4 +1056,4 @@ export class HybridStorageService {
   }
 }
 
-export const _hybridStorageService = HybridStorageService?.getInstance();
+export const hybridStorageService = HybridStorageService?.getInstance();
