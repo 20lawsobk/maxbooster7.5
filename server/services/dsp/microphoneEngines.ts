@@ -184,7 +184,7 @@ export class C414ModelerProcessor implements DSPProcessor {
     this?.highShelfR.setHighShelf(10000, brilliance * 0.5, this?.sampleRate);
 
     let lowFreqMod = 0;
-    let highFreqMod = 0;
+    let _highFreqMod = 0;
 
     switch (pattern) {
       case "figure8":

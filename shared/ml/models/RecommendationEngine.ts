@@ -132,8 +132,6 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return denominator === 0 ? 0 : dotProduct / denominator;
 }
 
-
-
 function audioFeatureToVector(features: AudioFeatureVector): number[] {
   return [
     features.tempo / 200, // Normalize to 0-1

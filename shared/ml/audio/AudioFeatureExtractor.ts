@@ -429,7 +429,7 @@ export function extractTimbreFeatures(
 
   // Find first peak after zero crossing (fundamental period)
   let harmonicRatio = 0.5;
-  let foundPeak = false;
+  let _foundPeak = false;
   let peakValue = 0;
 
   for (let i = 20; i < autocorr.length - 1; i++) {
