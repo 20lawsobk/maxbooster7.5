@@ -20,14 +20,14 @@ export function safeAverage(arr: number[]): number {
  */
 export function safeWeightedAverage(
   values: number[],
-  weights: number[]
+  weights: number[],
 ): number {
   if (!values || !weights || values.length === 0 || weights.length === 0) {
     return 0;
   }
   if (values.length !== weights.length) {
     throw new Error(
-      `Values and weights arrays must have same length: ${values.length} vs ${weights.length}`
+      `Values and weights arrays must have same length: ${values.length} vs ${weights.length}`,
     );
   }
 
@@ -37,7 +37,10 @@ export function safeWeightedAverage(
     return sum + value * weight;
   }, 0);
 
-  const totalWeight = weights.reduce((sum, w) => sum + (isFinite(w) ? w : 0), 0);
+  const totalWeight = weights.reduce(
+    (sum, w) => sum + (isFinite(w) ? w : 0),
+    0,
+  );
   return totalWeight > 0 ? weightedSum / totalWeight : 0;
 }
 
@@ -88,9 +91,7 @@ export function safeStandardDeviation(arr: number[]): number {
 export function safeMedian(arr: number[]): number {
   if (!arr || arr.length === 0) return 0;
 
-  const validNumbers = arr
-    .filter((n) => isFinite(n))
-    .sort((a, b) => a - b);
+  const validNumbers = arr.filter((n) => isFinite(n)).sort((a, b) => a - b);
 
   if (validNumbers.length === 0) return 0;
 

@@ -1,4 +1,16 @@
-import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
+import {
+  AudioBuffer,
+  DSPContext,
+  DSPProcessor,
+  copyBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  msToSamples,
+  dbToLinear,
+  linearToDb,
+  clamp,
+  softClip,
+} from "./core";
 
 export class GateProcessor implements DSPProcessor {
   private envelope: number = 0;
@@ -38,7 +50,6 @@ export class GateProcessor implements DSPProcessor {
       const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
 
       this.envelope = this.envelope * 0.9995 + inputLevel * 0.0005;
-
 
       if (inputLevel > thresholdLin) {
         this.gateState = "open";

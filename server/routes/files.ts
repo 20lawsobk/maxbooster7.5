@@ -299,11 +299,7 @@ router.post(
           .json({ success: false, error: "Authentication required" });
       }
 
-      const {
-        chunkIndex,
-        totalChunks,
-        fileId,
-      } = req.body;
+      const { chunkIndex, totalChunks, fileId } = req.body;
 
       if (!req.file) {
         return res
@@ -595,13 +591,7 @@ router.get("/list", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const {
-      
-      
-      
-      
-      includeDeleted = "false",
-    } = req.query;
+    const { includeDeleted = "false" } = req.query;
     const rawLimit2 = Number(req.query.limit ?? 50);
     const rawOffset2 = Number(req.query.offset ?? 0);
     const limit = Math.min(

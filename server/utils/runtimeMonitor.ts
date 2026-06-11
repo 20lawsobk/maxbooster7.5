@@ -35,7 +35,7 @@ class RuntimeMonitor {
     value: number,
     service: string,
     operation: string,
-    expectedRange?: { min: number; max: number }
+    expectedRange?: { min: number; max: number },
   ): void {
     if (!isFinite(value)) {
       if (Number.isNaN(value)) {
@@ -59,10 +59,15 @@ class RuntimeMonitor {
     arr: number[],
     service: string,
     operation: string,
-    expectedRange?: { min: number; max: number }
+    expectedRange?: { min: number; max: number },
   ): void {
     arr.forEach((value, index) => {
-      this.monitorValue(value, service, `${operation}[${index}]`, expectedRange);
+      this.monitorValue(
+        value,
+        service,
+        `${operation}[${index}]`,
+        expectedRange,
+      );
     });
   }
 
@@ -74,7 +79,7 @@ class RuntimeMonitor {
     service: string,
     operation: string,
     value: number,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ): void {
     const alert: MonitoringAlert = {
       timestamp: new Date().toISOString(),
@@ -89,7 +94,10 @@ class RuntimeMonitor {
     this.alertCounts[type]++;
 
     // Log immediately
-    console.warn(`[MONITORING_ALERT] ${type} detected in ${service}.${operation}:`, alert);
+    console.warn(
+      `[MONITORING_ALERT] ${type} detected in ${service}.${operation}:`,
+      alert,
+    );
 
     // Check if threshold exceeded
     if (this.alertCounts[type] >= this.alertThresholds[type]) {
@@ -102,10 +110,10 @@ class RuntimeMonitor {
    */
   private escalateAlert(
     type: "NaN" | "Infinity" | "Negative" | "OutOfRange",
-    service: string
+    service: string,
   ): void {
     console.error(
-      `[CRITICAL_ALERT] ${type} threshold exceeded in ${service}. Recommend immediate investigation.`
+      `[CRITICAL_ALERT] ${type} threshold exceeded in ${service}. Recommend immediate investigation.`,
     );
     // In production, this would trigger PagerDuty, Sentry, etc.
   }
@@ -147,7 +155,7 @@ class RuntimeMonitor {
         alerts: this.alerts,
       },
       null,
-      2
+      2,
     );
   }
 }
@@ -158,13 +166,14 @@ export const runtimeMonitor = new RuntimeMonitor();
 /**
  * Decorator for automatic monitoring
  */
-export function MonitorNumericOutput(
-  expectedRange?: { min: number; max: number }
-) {
+export function MonitorNumericOutput(expectedRange?: {
+  min: number;
+  max: number;
+}) {
   return function (
     target: any,
     propertyKey: string,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;
 
@@ -176,14 +185,17 @@ export function MonitorNumericOutput(
           result,
           target.constructor.name,
           propertyKey,
-          expectedRange
+          expectedRange,
         );
-      } else if (Array.isArray(result) && result.every((v) => typeof v === "number")) {
+      } else if (
+        Array.isArray(result) &&
+        result.every((v) => typeof v === "number")
+      ) {
         runtimeMonitor.monitorArray(
           result,
           target.constructor.name,
           propertyKey,
-          expectedRange
+          expectedRange,
         );
       }
 
@@ -197,13 +209,14 @@ export function MonitorNumericOutput(
 /**
  * Async decorator for automatic monitoring
  */
-export function MonitorAsyncNumericOutput(
-  expectedRange?: { min: number; max: number }
-) {
+export function MonitorAsyncNumericOutput(expectedRange?: {
+  min: number;
+  max: number;
+}) {
   return function (
     target: any,
     propertyKey: string,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;
 
@@ -215,14 +228,17 @@ export function MonitorAsyncNumericOutput(
           result,
           target.constructor.name,
           propertyKey,
-          expectedRange
+          expectedRange,
         );
-      } else if (Array.isArray(result) && result.every((v) => typeof v === "number")) {
+      } else if (
+        Array.isArray(result) &&
+        result.every((v) => typeof v === "number")
+      ) {
         runtimeMonitor.monitorArray(
           result,
           target.constructor.name,
           propertyKey,
-          expectedRange
+          expectedRange,
         );
       }
 

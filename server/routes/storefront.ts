@@ -25,7 +25,17 @@ import {
 import Stripe from "stripe";
 import { getBaseUrl } from "../config/defaults";
 import { db } from "../db";
-import { eq, and, count, avg, lte, gte, or, isNull, inArray } from "drizzle-orm";
+import {
+  eq,
+  and,
+  count,
+  avg,
+  lte,
+  gte,
+  or,
+  isNull,
+  inArray,
+} from "drizzle-orm";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import dns from "dns";
@@ -411,11 +421,9 @@ router.patch("/:id/publish", async (req, res) => {
     res.json(updated);
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error toggling storefront publish status:");
-    res
-      .status(500)
-      .json({
-        error: getErrorMessage(error) || "Failed to update publish status",
-      });
+    res.status(500).json({
+      error: getErrorMessage(error) || "Failed to update publish status",
+    });
   }
 });
 
@@ -659,11 +667,9 @@ router.post("/subscribe/:tierId", async (req, res) => {
 
     const stripeKey = env.STRIPE_SECRET_KEY;
     if (!stripeKey?.startsWith("sk_")) {
-      return res
-        .status(503)
-        .json({
-          error: "Payment service unavailable. Please try again later.",
-        });
+      return res.status(503).json({
+        error: "Payment service unavailable. Please try again later.",
+      });
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
@@ -766,11 +772,9 @@ router.post("/memberships/:membershipId/cancel", async (req, res) => {
     }
 
     if (errMsg.includes("Stripe")) {
-      return res
-        .status(503)
-        .json({
-          error: "Payment service unavailable. Please try again later.",
-        });
+      return res.status(503).json({
+        error: "Payment service unavailable. Please try again later.",
+      });
     }
 
     res.status(500).json({ error: errMsg || "Failed to cancel membership" });
@@ -1011,11 +1015,9 @@ router.put("/:storefrontId/custom-domain", async (req, res) => {
         existingDomain.length > 0 &&
         existingDomain[0].storefrontId !== storefrontId
       ) {
-        return res
-          .status(400)
-          .json({
-            error: "This domain is already in use by another storefront",
-          });
+        return res.status(400).json({
+          error: "This domain is already in use by another storefront",
+        });
       }
 
       const updatedStorefront = await storefrontService.updateStorefront(
@@ -1394,11 +1396,9 @@ router.post("/:id/checkout", async (req, res) => {
     const stripeKey = env.STRIPE_SECRET_KEY;
     if (!stripeKey) {
       logger.warn("Stripe secret key is not configured");
-      return res
-        .status(503)
-        .json({
-          error: "Payment processing is not available. Please contact support.",
-        });
+      return res.status(503).json({
+        error: "Payment processing is not available. Please contact support.",
+      });
     }
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
 
@@ -1627,7 +1627,7 @@ router.put("/:storefrontId/listings/:listingId/discount", async (req, res) => {
     if (!req.isAuthenticated())
       return res.status(401).json({ error: "Unauthorized" });
 
-    const {  listingId } = req.params;
+    const { listingId } = req.params;
     const { discountPercent, discountExpiresAt } = req.body;
 
     const [listing] = await db

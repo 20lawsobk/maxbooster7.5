@@ -16,7 +16,17 @@ function seededIndex(seed: string, length: number): number {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-import { aiModels, aiModelVersions, inferenceRuns, explanationLogs, userBrandVoices, hashtagResearch, bestPostingTimes, autopilotPreferences, type AutopilotPreference } from "@shared/schema";
+import {
+  aiModels,
+  aiModelVersions,
+  inferenceRuns,
+  explanationLogs,
+  userBrandVoices,
+  hashtagResearch,
+  bestPostingTimes,
+  autopilotPreferences,
+  type AutopilotPreference,
+} from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import * as fs from "fs/promises";
@@ -25,7 +35,11 @@ import * as path from "path";
 // Sharp-based image generation (production-ready, replaces Canvas)
 import { sharpImageService } from "./sharpImageService.js";
 
-import { synthesizeToWAV, generateChordProgression, generateMelody } from "./musicGenerationService.js";
+import {
+  synthesizeToWAV,
+  generateChordProgression,
+  generateMelody,
+} from "./musicGenerationService.js";
 
 import { dynamicTrendsService } from "./dynamicTrendsService";
 
@@ -1291,11 +1305,6 @@ export class AIContentService {
   // ============================================================================
   // IN-HOUSE IMAGE GENERATION HELPERS
   // ============================================================================
-
-
-
-
-
 
   // ============================================================================
   // IN-HOUSE AUDIO GENERATION HELPERS

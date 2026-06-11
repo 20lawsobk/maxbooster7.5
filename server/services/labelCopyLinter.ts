@@ -254,7 +254,6 @@ export class LabelCopyLinter {
     return EXPLICIT_TERMS.some((term) => lowerText.includes(term));
   }
 
-
   private validateTitle(
     title: string,
     isTrack: boolean = false,

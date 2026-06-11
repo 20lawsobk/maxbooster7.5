@@ -171,7 +171,7 @@ router.get("/defaults", async (_req: Request, res: Response) => {
 
 router.get("/conflicts", async (req: Request, res: Response) => {
   try {
-    const { key, modifiers,  excludeId } = req.query;
+    const { key, modifiers, excludeId } = req.query;
 
     if (!key) {
       return res.status(400).json({ error: "Key is required" });

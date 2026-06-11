@@ -25,7 +25,14 @@
 import { logger } from "../logger.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 
-import { PLATFORM_SPECS, assembleCaption, getVisualSpec, enforceHashtagLimit, type SupportedPlatform, type ContentSlot } from "./contentPipeline/platformFormatters.js";
+import {
+  PLATFORM_SPECS,
+  assembleCaption,
+  getVisualSpec,
+  enforceHashtagLimit,
+  type SupportedPlatform,
+  type ContentSlot,
+} from "./contentPipeline/platformFormatters.js";
 
 import {
   generateHooks,

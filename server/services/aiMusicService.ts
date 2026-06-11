@@ -981,7 +981,7 @@ export class AIMusicService {
   ): Promise<AISuggestion[]> {
     const suggestions: AISuggestion[] = [];
 
-    const { genre, energy,  intensity, preset } = audioAnalysis;
+    const { genre, energy, intensity, preset } = audioAnalysis;
 
     if (genre === "hip-hop" || genre === "trap") {
       suggestions.push({
@@ -1912,9 +1912,6 @@ export class AIMusicService {
       return Math.sin(normalized * Math.PI) * Math.random() * 0.5 + 0.5;
     });
   }
-
-
-
 
   private calculateStemConfidence(
     filteredAudio: Float32Array,

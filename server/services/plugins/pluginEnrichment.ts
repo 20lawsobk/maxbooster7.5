@@ -147,7 +147,7 @@ const eqBands = (count: number): PluginParameter[] => {
 };
 
 // Multiband compressor band (xover, threshold, ratio, attack, release, makeup).
-((count: number, xovers: number[]): PluginParameter[] => {
+(count: number, xovers: number[]): PluginParameter[] => {
   const out: PluginParameter[] = [];
   for (let n = 1; n <= count; n++) {
     if (n < count)
@@ -172,7 +172,7 @@ const eqBands = (count: number): PluginParameter[] => {
     out.push(f(`band${n}Makeup`, `Band ${n} Makeup`, 0, -12, 24, "dB"));
   }
   return out;
-});
+};
 
 const REFERENCE: Partial<
   Record<EffectType | InstrumentType | string, ParamFactory>

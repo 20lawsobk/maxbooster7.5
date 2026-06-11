@@ -138,7 +138,7 @@ export function generateDiffusionFrames(
       prompt = "",
       genre = "hip-hop",
       nFrames = 15,
-      
+
       frameSize = 512,
       guidanceScale = 2.5,
       forceRetrain = false,

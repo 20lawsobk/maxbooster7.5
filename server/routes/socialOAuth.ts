@@ -200,8 +200,6 @@ const PLATFORMS = {
   },
 };
 
-
-
 const _rawOAuthSecret = env.SESSION_SECRET || process.env.SECRET_KEY;
 if (
   !_rawOAuthSecret &&

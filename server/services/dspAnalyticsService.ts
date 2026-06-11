@@ -728,8 +728,8 @@ class DSPAnalyticsService {
     const skips =
       data.views > 0 ? Math.floor(data.views * (1 - completionRate)) : 0;
     data.views > 0
-        ? Math.min(1, (data.shares / Math.max(data.views, 1)) * 50)
-        : 0;
+      ? Math.min(1, (data.shares / Math.max(data.views, 1)) * 50)
+      : 0;
     return {
       platform: "tiktok",
       period: { start: startDate, end: endDate },

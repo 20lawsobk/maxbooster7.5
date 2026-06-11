@@ -1108,7 +1108,6 @@ export class MLModelRegistry {
     return sortedArray[Math.max(0, Math.min(index, sortedArray.length - 1))];
   }
 
-
   /**
    * Get registry statistics
    */

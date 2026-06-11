@@ -97,7 +97,6 @@ function applyWindow(signal: Float32Array, window: Float32Array): Float32Array {
   return result;
 }
 
-
 // ============================================================================
 // SPECTRAL ANALYSIS
 // ============================================================================

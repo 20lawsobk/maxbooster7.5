@@ -44,7 +44,6 @@ interface ExportJob {
   expiresAt?: Date;
 }
 
-
 interface ExportHistoryItem {
   id: string;
   userId: string;
@@ -1188,7 +1187,6 @@ router.post("/chart", requireAuth, async (req: Request, res: Response) => {
 // ============================================================================
 // BULK EXPORT (with ZIP bundling)
 // ============================================================================
-
 
 const bulkExportSchema = z.object({
   items: z

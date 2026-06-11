@@ -9,7 +9,6 @@ import {
 import { logger } from "../logger.js";
 import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
 
-
 interface AIAdvertisingConfig {
   targetAudience: {
     age: string;
@@ -816,7 +815,6 @@ export class AIService {
       return null;
     }
   }
-
 }
 
 // Export singleton instance

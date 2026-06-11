@@ -48,7 +48,6 @@ interface TrendCache {
   expiresAt: Date;
 }
 
-
 const MUSIC_GENRE_TRENDS: Record<
   string,
   { hashtags: string[]; relatedTopics: string[] }

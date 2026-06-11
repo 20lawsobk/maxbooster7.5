@@ -67,7 +67,7 @@ const DEFAULT_CADENCE_MS = 4 * 60 * 60 * 1000; // 4 h
 const FAILURE_BACKOFF_CADENCE_MS = 12 * 60 * 60 * 1000; // 12 h after 2+ consecutive failures
 const FALLBACK_PRICE = 29.99;
 const PRICE_UNDERCUT_FACTOR = 0.95;
- // ~ 8 bars at 120 BPM — short preview-grade beat
+// ~ 8 bars at 120 BPM — short preview-grade beat
 
 const TRENDING_GENRE_FALLBACK = "trap";
 const TRENDING_MOOD_FALLBACK = "dark";

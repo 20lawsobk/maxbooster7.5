@@ -1,5 +1,10 @@
 import { db } from "../db.js";
-import { systemMetrics, alertRules, alertIncidents, type InsertAlertRule } from "@shared/schema";
+import {
+  systemMetrics,
+  alertRules,
+  alertIncidents,
+  type InsertAlertRule,
+} from "@shared/schema";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 

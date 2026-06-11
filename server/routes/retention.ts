@@ -8,7 +8,11 @@
 
 import { Router } from "express";
 import { db } from "../db.js";
-import { npsResponses, cancellationFeedback, customerHealthScores } from "@shared/schema";
+import {
+  npsResponses,
+  cancellationFeedback,
+  customerHealthScores,
+} from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
@@ -89,12 +93,10 @@ router.post(
     try {
       const parsed = cancellationSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid feedback data",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Invalid feedback data",
+          details: parsed.error.flatten(),
+        });
       }
 
       const userId = req.user!.id;

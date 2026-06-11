@@ -1,5 +1,19 @@
 import { db } from "../db";
-import { workspaces, workspaceMembers, workspaceRoles, workspaceInvitations, workspaceCatalogs, workspaceAuditLog, users, type Workspace, type WorkspaceMember, type WorkspaceRole, type WorkspaceInvitation, type InsertWorkspace, type InsertWorkspaceAuditLog } from "@shared/schema";
+import {
+  workspaces,
+  workspaceMembers,
+  workspaceRoles,
+  workspaceInvitations,
+  workspaceCatalogs,
+  workspaceAuditLog,
+  users,
+  type Workspace,
+  type WorkspaceMember,
+  type WorkspaceRole,
+  type WorkspaceInvitation,
+  type InsertWorkspace,
+  type InsertWorkspaceAuditLog,
+} from "@shared/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
@@ -30,7 +44,6 @@ interface WorkspaceBranding {
   colors?: { primary: string; secondary: string };
   customDomain?: string;
 }
-
 
 interface CreateWorkspaceParams {
   name: string;
@@ -547,9 +560,7 @@ export class WorkspaceService {
     }
   }
 
-  async inviteMember(
-    params: InviteMemberParams,
-  ): Promise<{
+  async inviteMember(params: InviteMemberParams): Promise<{
     success: boolean;
     invitation?: WorkspaceInvitation;
     error?: string;

@@ -110,12 +110,10 @@ router.post("/", requireAuth, async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, "[FanCampaigns] Failed to create campaign:");
     if (error instanceof Error && error.name === "ZodError") {
-      return res
-        .status(400)
-        .json({
-          error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
-        });
+      return res.status(400).json({
+        error: "Validation error",
+        details: (error as Record<string, unknown>).flatten(),
+      });
     }
     res.status(500).json({ error: "Failed to create campaign" });
   }

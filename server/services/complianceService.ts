@@ -1,6 +1,10 @@
 import { storage } from "../storage";
 import crypto from "crypto";
-import type { ComplianceControl, ComplianceAudit, InsertComplianceAudit } from "@shared/schema";
+import type {
+  ComplianceControl,
+  ComplianceAudit,
+  InsertComplianceAudit,
+} from "@shared/schema";
 import { logger } from "../logger.js";
 
 interface ComplianceReport {

@@ -27,7 +27,18 @@ import { eq, and } from "drizzle-orm";
 import { db } from "../db.js";
 import { storefrontDomains, dnsZoneRecords, dnsZones } from "@shared/schema";
 import { logger } from "../logger.js";
-import { getOrCreateKeys, makeDS, makeDnskeyData, signRRset, zoneSalt, encodeNameWire, nsec3ParamRdata, NSEC3_ITERATIONS, RRTYPE_DNSKEY, RRTYPE_DS } from "./dnssec.js";
+import {
+  getOrCreateKeys,
+  makeDS,
+  makeDnskeyData,
+  signRRset,
+  zoneSalt,
+  encodeNameWire,
+  nsec3ParamRdata,
+  NSEC3_ITERATIONS,
+  RRTYPE_DNSKEY,
+  RRTYPE_DS,
+} from "./dnssec.js";
 import { resolveGeoIP, getGeoDnsStatus } from "./geoDns.js";
 import {
   resolveRecursive,
@@ -1024,13 +1035,12 @@ async function buildNsec3ParamResponse(
   queryBuf: Buffer,
   zone: string,
 ): Promise<DohQueryResult> {
-  ((await import("dns-packet")).default);
+  (await import("dns-packet")).default;
   const txId = parseTxId(queryBuf);
   const salt = zoneSalt(zone);
 
   const rdata = nsec3ParamRdata(salt, NSEC3_ITERATIONS);
   await getOrCreateKeys(zone);
-
 
   // For now return as raw — dns-packet may not support NSEC3PARAM natively
   // So we build the wire format manually

@@ -8,7 +8,11 @@ import {
   EXPANDED_EFFECTS,
   ALL_PLUGINS,
 } from "./plugins/index";
-import { getEffectProcessor, getInstrumentSynthesizer, getProcessorInfo } from "./dsp/index";
+import {
+  getEffectProcessor,
+  getInstrumentSynthesizer,
+  getProcessorInfo,
+} from "./dsp/index";
 
 export type {
   PluginCategory,
@@ -1209,9 +1213,7 @@ class PluginHostService {
     return this.updateInstanceParameters(instanceId, preset.parameters);
   }
 
-  getFactoryPresets(
-    pluginId: string,
-  ): Array<{
+  getFactoryPresets(pluginId: string): Array<{
     name: string;
     parameters: Record<string, number | boolean | string>;
   }> {

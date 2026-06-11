@@ -805,8 +805,7 @@ export async function getDomainStatus(storefrontDomainId: string): Promise<{
     [storefrontDomainId],
   );
   if (!rows[0]) throw new Error("Domain not found");
-  const { domain, status, storefront_id, verification_token } =
-    rows[0];
+  const { domain, status, storefront_id, verification_token } = rows[0];
 
   const certRow = (
     await pool.query<{ cert_status: string }>(

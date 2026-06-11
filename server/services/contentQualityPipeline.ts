@@ -2,7 +2,10 @@ import { logger } from "../logger.js";
 import { db } from "../db";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { advancedSocialAIService, type AdvancedContentRequest } from "./advancedSocialAIService.js";
+import {
+  advancedSocialAIService,
+  type AdvancedContentRequest,
+} from "./advancedSocialAIService.js";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
 import { platformAlgorithmOptimizer } from "./platformAlgorithmOptimizer.js";
 import { getCalibratedWeights } from "./maxcoreScoreCalibrator.js";
@@ -164,7 +167,6 @@ export interface RecentPerformance {
   topPerformingTopics: string[];
   bestPostingTimes: { day: number; hour: number }[];
 }
-
 
 const HOOK_PATTERNS = [
   /^(🔥|💥|⚡|🚀|✨|🎵|🎶|🚨|💀|🤯|👀|💯|🎤|🎧)/,
@@ -607,9 +609,8 @@ class ContentQualityPipeline {
             CALL_TO_ACTION_LIBRARY,
             GENRE_VIRAL_HOOKS,
             EMOTIONAL_TRIGGER_PATTERNS,
-          } = await import(
-            "../../shared/ml/training/musicIndustryTrainingData.js"
-          );
+          } =
+            await import("../../shared/ml/training/musicIndustryTrainingData.js");
 
           // Deterministic seed: same user + strategy + index → same pick every
           // time so content is reproducible without Math.random().
@@ -1796,37 +1797,39 @@ class ContentQualityPipeline {
       const advancedResult =
         await advancedSocialAIService.generateAdvancedContent(advancedRequest);
 
-      const variants: ContentVariant[] = advancedResult.variants.map((v, _i) => {
-        // Apply algorithm signal optimization and run full pipeline scoring
-        const body = v.content.split("\n\n")[1] || v.content;
-        const optimised = this.applyAlgorithmSignalOptimization(
-          v.headline,
-          body,
-          v.cta,
-          context.platform,
-        );
-        const platformOpt = this.validatePlatformConstraints(
-          `${optimised.headline}\n\n${optimised.body}`,
-          v.hashtags,
-          context.platform,
-        );
-        const scores = this.scoreContent(
-          `${optimised.headline}\n\n${optimised.body}`,
-          optimised.headline,
-          optimised.cta,
-          context,
-          platformOpt,
-        );
-        return {
-          id: v.id,
-          content: optimised.body,
-          headline: optimised.headline,
-          hashtags: v.hashtags,
-          callToAction: optimised.cta,
-          scores,
-          platformOptimizations: platformOpt,
-        };
-      });
+      const variants: ContentVariant[] = advancedResult.variants.map(
+        (v, _i) => {
+          // Apply algorithm signal optimization and run full pipeline scoring
+          const body = v.content.split("\n\n")[1] || v.content;
+          const optimised = this.applyAlgorithmSignalOptimization(
+            v.headline,
+            body,
+            v.cta,
+            context.platform,
+          );
+          const platformOpt = this.validatePlatformConstraints(
+            `${optimised.headline}\n\n${optimised.body}`,
+            v.hashtags,
+            context.platform,
+          );
+          const scores = this.scoreContent(
+            `${optimised.headline}\n\n${optimised.body}`,
+            optimised.headline,
+            optimised.cta,
+            context,
+            platformOpt,
+          );
+          return {
+            id: v.id,
+            content: optimised.body,
+            headline: optimised.headline,
+            hashtags: v.hashtags,
+            callToAction: optimised.cta,
+            scores,
+            platformOptimizations: platformOpt,
+          };
+        },
+      );
 
       // Primary variant — apply full scoring pipeline too
       const primaryBody = advancedResult.primary.body;

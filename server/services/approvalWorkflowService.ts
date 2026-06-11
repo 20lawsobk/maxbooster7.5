@@ -1,5 +1,15 @@
 import { db } from "../db";
-import { approvalWorkflows, approvalRequests, approvalSteps, workspaceAuditLog, users, type ApprovalWorkflow, type ApprovalRequest, type ApprovalStep, type InsertApprovalWorkflow } from "@shared/schema";
+import {
+  approvalWorkflows,
+  approvalRequests,
+  approvalSteps,
+  workspaceAuditLog,
+  users,
+  type ApprovalWorkflow,
+  type ApprovalRequest,
+  type ApprovalStep,
+  type InsertApprovalWorkflow,
+} from "@shared/schema";
 import { eq, and, desc, sql, or, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { notificationService } from "./notificationService";
@@ -62,9 +72,7 @@ interface SubmitApprovalParams {
 }
 
 export class ApprovalWorkflowService {
-  async createWorkflow(
-    params: CreateWorkflowParams,
-  ): Promise<{
+  async createWorkflow(params: CreateWorkflowParams): Promise<{
     success: boolean;
     workflow?: ApprovalWorkflow;
     error?: string;

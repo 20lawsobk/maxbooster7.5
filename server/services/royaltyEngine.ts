@@ -1,5 +1,16 @@
 import { db } from "../db.js";
-import { royaltyStatements, recoupmentAccounts, splitContracts, dspRates, exchangeRates, revenueEvents, projectRoyaltySplits, platformRoyaltyRates, type RoyaltyStatement, type InsertRoyaltyStatement } from "@shared/schema";
+import {
+  royaltyStatements,
+  recoupmentAccounts,
+  splitContracts,
+  dspRates,
+  exchangeRates,
+  revenueEvents,
+  projectRoyaltySplits,
+  platformRoyaltyRates,
+  type RoyaltyStatement,
+  type InsertRoyaltyStatement,
+} from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, isNull, or } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
@@ -276,7 +287,6 @@ const TERRITORY_MULTIPLIERS: Record<string, number> = {
   GLOBAL: 0.75,
   default: 0.6,
 };
-
 
 export class RoyaltyEngine {
   private platformFeeRate: number;

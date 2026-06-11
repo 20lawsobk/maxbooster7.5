@@ -1,4 +1,14 @@
-import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, msToSamples, dbToLinear, linearToDb, softClip } from "./core";
+import {
+  AudioBuffer,
+  DSPContext,
+  DSPProcessor,
+  copyBuffer,
+  BiquadFilter,
+  msToSamples,
+  dbToLinear,
+  linearToDb,
+  softClip,
+} from "./core";
 
 export class VCACompressorProcessor implements DSPProcessor {
   private envelope: number = 0;

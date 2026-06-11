@@ -584,11 +584,7 @@ class PlatformCapsuleLoader {
         if (dir.startsWith("capsule-") && !openPockets.includes(dir)) {
           try {
             path.join(this.storagePath, dir, "__capsule__");
-            path.join(
-              this.storagePath,
-              dir,
-              "metadata.json",
-            );
+            path.join(this.storagePath, dir, "metadata.json");
 
             // Check if this is a capsule by looking for capsule metadata in the pocket
             const pocket = await pocketManager.openPocket(dir);

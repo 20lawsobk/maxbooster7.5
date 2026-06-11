@@ -1,5 +1,9 @@
 import { db } from "../db";
-import { revenueForecasts, dspAnalytics, RevenueForecast } from "@shared/schema";
+import {
+  revenueForecasts,
+  dspAnalytics,
+  RevenueForecast,
+} from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
 

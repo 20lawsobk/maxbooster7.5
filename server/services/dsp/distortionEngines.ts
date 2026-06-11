@@ -1,4 +1,15 @@
-import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, msToSamples, dbToLinear, softClip, hardClip } from "./core";
+import {
+  AudioBuffer,
+  DSPContext,
+  DSPProcessor,
+  copyBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  msToSamples,
+  dbToLinear,
+  softClip,
+  hardClip,
+} from "./core";
 
 export class TubeDistortionProcessor implements DSPProcessor {
   private hpFilterL: BiquadFilter;

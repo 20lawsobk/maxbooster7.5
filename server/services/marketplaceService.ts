@@ -214,7 +214,6 @@ function toServiceOrder(dbOrder: DbOrderRow): Order {
   };
 }
 
-
 // Valid musical keys for validation
 const VALID_MUSICAL_KEYS = [
   "C",
@@ -1187,9 +1186,7 @@ export class MarketplaceService {
           bogoGetPercent: tier.bogoGetPercent,
         };
       } else {
-        const license = beat.licenses.find(
-          (l) => l.type === licenseType,
-        );
+        const license = beat.licenses.find((l) => l.type === licenseType);
         if (!license) {
           throw new Error("Invalid license type");
         }

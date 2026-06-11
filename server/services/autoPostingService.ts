@@ -895,4 +895,3 @@ class AutoPostingService {
 
 // Export singleton instance
 export const autoPostingService = new AutoPostingService();
-

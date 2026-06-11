@@ -48,11 +48,9 @@ router.post("/devices/register", requireAuth, async (req, res) => {
     }
 
     if (!isValidPlatform(platform)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(", ")}`,
+      });
     }
 
     const device = registerDevice(userId, {
@@ -114,19 +112,15 @@ router.get("/version/check", requireAuth, async (req, res) => {
     const currentVersion = req.query.currentVersion as string;
 
     if (!platform || !currentVersion) {
-      return res
-        .status(400)
-        .json({
-          error: "platform and currentVersion query params are required",
-        });
+      return res.status(400).json({
+        error: "platform and currentVersion query params are required",
+      });
     }
 
     if (!isValidPlatform(platform)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(", ")}`,
+      });
     }
 
     const versionInfo = checkForUpdate(platform, currentVersion);
@@ -162,11 +156,9 @@ router.post("/version/notify", requireAuth, async (req, res) => {
     }
 
     if (!isValidPlatform(platform)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(", ")}`,
+      });
     }
 
     const notification = pushUpdateNotification(
@@ -247,11 +239,9 @@ router.post("/remote-update/trigger", requireAuth, async (req, res) => {
     }
 
     if (!isValidPlatform(platform)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid platform. Must be one of: ${VALID_PLATFORMS.join(", ")}`,
+      });
     }
 
     const rollout = triggerRemoteUpdate(

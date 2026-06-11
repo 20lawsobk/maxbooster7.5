@@ -1,7 +1,28 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db.js";
-import { eq, ilike, or, and, desc, count, gte, lte, asc, sum, inArray } from "drizzle-orm";
-import { users, projects, beats, releases, analytics, socialCampaigns, searchHistory, filterPresets } from "../../shared/schema.js";
+import {
+  eq,
+  ilike,
+  or,
+  and,
+  desc,
+  count,
+  gte,
+  lte,
+  asc,
+  sum,
+  inArray,
+} from "drizzle-orm";
+import {
+  users,
+  projects,
+  beats,
+  releases,
+  analytics,
+  socialCampaigns,
+  searchHistory,
+  filterPresets,
+} from "../../shared/schema.js";
 import { logger } from "../logger.js";
 
 const router = Router();
@@ -41,7 +62,6 @@ interface SearchQuery {
   mood?: string;
   sort?: "relevance" | "newest" | "popular" | "price_low" | "price_high";
 }
-
 
 interface TrendingSearch {
   query: string;

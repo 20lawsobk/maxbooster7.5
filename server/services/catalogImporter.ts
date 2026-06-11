@@ -98,7 +98,6 @@ const CSV_COLUMN_MAPPINGS: Record<string, string> = {
   primary_language: "language",
 };
 
-
 class CatalogImporter {
   private linter: LabelCopyLinter;
 

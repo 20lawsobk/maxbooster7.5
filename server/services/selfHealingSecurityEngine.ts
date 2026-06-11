@@ -822,10 +822,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const mttdP95 = this.calculatePercentile(this.metrics.detectionLatency, 95);
     const mttrP95 = this.calculatePercentile(this.metrics.responseLatency, 95);
     const mttr2P95 = this.calculatePercentile(this.metrics.recoveryLatency, 95);
-    this.calculatePercentile(
-      this.metrics.totalHealingTime,
-      95,
-    );
+    this.calculatePercentile(this.metrics.totalHealingTime, 95);
 
     return {
       ...this.metrics,

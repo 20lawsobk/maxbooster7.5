@@ -96,12 +96,10 @@ router.post("/", requireAuth, async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, "[MusicVideos] Failed to create:");
     if (error instanceof Error && error.name === "ZodError") {
-      return res
-        .status(400)
-        .json({
-          error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
-        });
+      return res.status(400).json({
+        error: "Validation error",
+        details: (error as Record<string, unknown>).flatten(),
+      });
     }
     res.status(500).json({ error: "Failed to create music video production" });
   }
@@ -151,12 +149,10 @@ router.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, "[MusicVideos] Failed to update:");
     if (error instanceof Error && error.name === "ZodError") {
-      return res
-        .status(400)
-        .json({
-          error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
-        });
+      return res.status(400).json({
+        error: "Validation error",
+        details: (error as Record<string, unknown>).flatten(),
+      });
     }
     res.status(500).json({ error: "Failed to update music video production" });
   }
@@ -348,9 +344,8 @@ router.post("/diffusion/generate", requireAuth, async (req, res) => {
 
 router.get("/diffusion/background/status", requireAuth, async (_req, res) => {
   try {
-    const { getBackgroundStatus } = await import(
-      "../services/diffusionBackgroundTrainer.js"
-    );
+    const { getBackgroundStatus } =
+      await import("../services/diffusionBackgroundTrainer.js");
     res.json(getBackgroundStatus());
   } catch {
     res.json({ running: false, error: "Background trainer not loaded" });
@@ -359,21 +354,18 @@ router.get("/diffusion/background/status", requireAuth, async (_req, res) => {
 
 router.post("/diffusion/background/start", requireAuth, async (_req, res) => {
   try {
-    const { startBackgroundTraining, getBackgroundStatus } = await import(
-      "../services/diffusionBackgroundTrainer.js"
-    );
+    const { startBackgroundTraining, getBackgroundStatus } =
+      await import("../services/diffusionBackgroundTrainer.js");
     startBackgroundTraining();
     res.json({
       message: "Background self-training started",
       status: getBackgroundStatus(),
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        error: "Could not start background trainer",
-        details: String(err),
-      });
+    res.status(500).json({
+      error: "Could not start background trainer",
+      details: String(err),
+    });
   }
 });
 
@@ -397,12 +389,10 @@ router.post("/diffusion/background/stop", requireAuth, async (req, res) => {
       status: getBackgroundStatus(),
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        error: "Could not stop background trainer",
-        details: String(err),
-      });
+    res.status(500).json({
+      error: "Could not stop background trainer",
+      details: String(err),
+    });
   }
 });
 

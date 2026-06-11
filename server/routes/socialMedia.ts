@@ -6,7 +6,17 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { logger } from "../logger";
 import { db } from "../db";
-import { socialInboxMessages, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar } from "@shared/schema";
+import {
+  socialInboxMessages,
+  socialAccounts,
+  posts,
+  storefronts,
+  listings,
+  socialAutopilotContent,
+  artistProfiles,
+  campaigns,
+  contentCalendar,
+} from "@shared/schema";
 import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
@@ -2939,7 +2949,7 @@ router.post(
         template,
         duration,
         bg_color,
-        
+
         accent_color,
         artist_name,
         topic,
@@ -3174,13 +3184,11 @@ router.get(
       res.json(result.data);
     } catch (error) {
       logger.warn({ err: error }, "Failed to poll video job:");
-      res
-        .status(500)
-        .json({
-          success: false,
-          status: "error",
-          message: "Job status check failed",
-        });
+      res.status(500).json({
+        success: false,
+        status: "error",
+        message: "Job status check failed",
+      });
     }
   },
 );
@@ -3403,12 +3411,10 @@ router.get(
     logger.warn(
       `[VideoProxy] Could not retrieve ${filename} from any MaxCore path`,
     );
-    return res
-      .status(404)
-      .json({
-        error:
-          "Video not found — it may have expired on MaxCore. Please regenerate.",
-      });
+    return res.status(404).json({
+      error:
+        "Video not found — it may have expired on MaxCore. Please regenerate.",
+    });
   },
 );
 
@@ -3778,12 +3784,10 @@ router.post(
       res.json(data);
     } catch (error) {
       logger.warn({ err: error }, "Failed to extract URL metadata:");
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Failed to extract metadata from URL",
-        });
+      res.status(500).json({
+        success: false,
+        message: "Failed to extract metadata from URL",
+      });
     }
   },
 );
@@ -3815,12 +3819,10 @@ router.post(
       res.json(result);
     } catch (error) {
       logger.warn({ err: error }, "Failed to generate campaign from URL:");
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Campaign generation from URL failed",
-        });
+      res.status(500).json({
+        success: false,
+        message: "Campaign generation from URL failed",
+      });
     }
   },
 );
@@ -3858,12 +3860,10 @@ router.post(
       }
 
       if (!storefront) {
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: "Storefront not found or you do not own it",
-          });
+        return res.status(404).json({
+          success: false,
+          message: "Storefront not found or you do not own it",
+        });
       }
 
       if (!storefront.isActive) {
@@ -3947,12 +3947,10 @@ router.post(
         await getVeoMusic()
       ).generateCampaign(campaignRequest);
       if (!result || !result.success) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: result?.error || "Campaign generation failed",
-          });
+        return res.status(500).json({
+          success: false,
+          message: result?.error || "Campaign generation failed",
+        });
       }
 
       res.json({
@@ -3967,12 +3965,10 @@ router.post(
       });
     } catch (error) {
       logger.warn({ err: error }, "Failed to promote storefront:");
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Storefront promotion campaign failed",
-        });
+      res.status(500).json({
+        success: false,
+        message: "Storefront promotion campaign failed",
+      });
     }
   },
 );
@@ -4002,20 +3998,16 @@ router.post(
         .limit(1);
       const listing = rows[0] as Record<string, unknown>;
       if (!listing)
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: "Listing not found or you do not own it",
-          });
+        return res.status(404).json({
+          success: false,
+          message: "Listing not found or you do not own it",
+        });
 
       if (!listing.isPublished) {
-        return res
-          .status(403)
-          .json({
-            success: false,
-            message: "Listing must be published before promoting",
-          });
+        return res.status(403).json({
+          success: false,
+          message: "Listing must be published before promoting",
+        });
       }
 
       let storefrontName = "My Store";
@@ -4074,12 +4066,10 @@ router.post(
         await getVeoMusic()
       ).generateCampaign(campaignRequest);
       if (!result || !result.success) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: result?.error || "Campaign generation failed",
-          });
+        return res.status(500).json({
+          success: false,
+          message: result?.error || "Campaign generation failed",
+        });
       }
 
       res.json({
@@ -4110,14 +4100,14 @@ router.post(
         topic,
         platform,
         tone,
-        
+
         artist_name,
-        
+
         // URL analysis context
         artist,
         track,
         genre,
-        
+
         keywords,
         description,
         urlDescription,
@@ -4392,12 +4382,10 @@ router.post(
     try {
       const file = req.file;
       if (!file) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "audio file is required (field: audio)",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "audio file is required (field: audio)",
+        });
       }
 
       const analysis = await analyzeAudio(file.buffer, file.originalname);
@@ -4467,12 +4455,10 @@ router.post(
     try {
       const file = req.file;
       if (!file) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "image file is required (field: image)",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "image file is required (field: image)",
+        });
       }
 
       const analysis = await analyzeImage(file.buffer, file.originalname);
@@ -4634,9 +4620,8 @@ router.post(
       // ── Persist to PDIM (non-blocking — response already sent after this) ──
       let pdimMeta: Record<string, unknown> | null = null;
       try {
-        const { storeVoiceFile } = await import(
-          "../services/pdimMediaStorageService.js"
-        );
+        const { storeVoiceFile } =
+          await import("../services/pdimMediaStorageService.js");
         pdimMeta = await storeVoiceFile(userId, result.outputPath!, {
           profileUsed: result.profileUsed || profileId || "smooth_narrator",
           voiceUsed: result.voiceUsed || "flite",
@@ -4664,12 +4649,10 @@ router.post(
       });
     } catch (e) {
       logger.warn("[Route] synthesize-voice:", e?.message);
-      res
-        .status(500)
-        .json({
-          success: false,
-          error: e?.message || "Voice synthesis failed",
-        });
+      res.status(500).json({
+        success: false,
+        error: e?.message || "Voice synthesis failed",
+      });
     }
   },
 );
@@ -4734,21 +4717,18 @@ router.post(
     try {
       const file = req.file;
       if (!file?.path) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: "Audio file required (multipart/form-data, field: audio)",
-          });
+        return res.status(400).json({
+          success: false,
+          error: "Audio file required (multipart/form-data, field: audio)",
+        });
       }
 
       // ── Check PDIM cache first ────────────────────────────────────────────
       let analysis;
       let cacheHit = false;
       try {
-        const { getCachedBeatAnalysis, cacheBeatAnalysis } = await import(
-          "../services/pdimMediaStorageService.js"
-        );
+        const { getCachedBeatAnalysis, cacheBeatAnalysis } =
+          await import("../services/pdimMediaStorageService.js");
         const cached = await getCachedBeatAnalysis(file.path);
         if (cached) {
           analysis = cached;
@@ -4920,9 +4900,8 @@ router.post(
           "anonymous";
         let pdimVideoMeta: Record<string, unknown> | null = null;
         try {
-          const { storeMusicVideo } = await import(
-            "../services/pdimMediaStorageService.js"
-          );
+          const { storeMusicVideo } =
+            await import("../services/pdimMediaStorageService.js");
           const videoFilePath = `${process.cwd()}/uploads/videos/${result.filename}`;
           pdimVideoMeta = await storeMusicVideo(userId, videoFilePath, result);
           if (pdimVideoMeta) {
@@ -5070,12 +5049,10 @@ router.get(
         maxDurationSeconds: 60,
       });
     } catch (e) {
-      res
-        .status(500)
-        .json({
-          success: false,
-          error: e?.message || "Failed to load capabilities",
-        });
+      res.status(500).json({
+        success: false,
+        error: e?.message || "Failed to load capabilities",
+      });
     }
   },
 );

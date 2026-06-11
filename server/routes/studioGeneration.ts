@@ -643,12 +643,10 @@ router.post(
           execErr?.message ||
           "Pitch tracking process failed";
         logger.warn("[audio-to-melody] execFile error:", msg);
-        return res
-          .status(500)
-          .json({
-            error:
-              "Pitch tracking failed. Make sure the audio contains a clear melody.",
-          });
+        return res.status(500).json({
+          error:
+            "Pitch tracking failed. Make sure the audio contains a clear melody.",
+        });
       }
 
       let result: Record<string, unknown>;

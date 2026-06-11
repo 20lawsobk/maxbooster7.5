@@ -1,5 +1,11 @@
 import { db } from "../db.js";
-import { royaltyDisputes, royaltyStatements, users, type RoyaltyDispute, type InsertRoyaltyDispute } from "@shared/schema";
+import {
+  royaltyDisputes,
+  royaltyStatements,
+  users,
+  type RoyaltyDispute,
+  type InsertRoyaltyDispute,
+} from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";

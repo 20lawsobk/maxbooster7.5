@@ -579,7 +579,6 @@ class NamecheapProvider implements DnsProvider {
     return resp.text();
   }
 
-
   private isSuccess(xml: string): boolean {
     return xml.includes('Status="OK"');
   }

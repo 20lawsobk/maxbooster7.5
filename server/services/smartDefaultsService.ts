@@ -425,18 +425,9 @@ class SmartDefaultsService {
       .slice(0, 3)
       .map(([genre]) => genre);
 
-    recentAnalytics.reduce(
-      (sum, a) => sum + (a.streams || 0),
-      0,
-    );
-    recentAnalytics.reduce(
-      (sum, a) => sum + (a.revenue || 0),
-      0,
-    );
-    recentAnalytics.reduce(
-      (sum, a) => sum + (a.followers || 0),
-      0,
-    );
+    recentAnalytics.reduce((sum, a) => sum + (a.streams || 0), 0);
+    recentAnalytics.reduce((sum, a) => sum + (a.revenue || 0), 0);
+    recentAnalytics.reduce((sum, a) => sum + (a.followers || 0), 0);
 
     return {
       mostUsedFeatures,

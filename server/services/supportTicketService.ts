@@ -1,5 +1,12 @@
 import { db } from "../db";
-import { supportTickets, supportTicketMessages, supportTicketTags, users, type InsertSupportTicket, type UpdateSupportTicket } from "@shared/schema";
+import {
+  supportTickets,
+  supportTicketMessages,
+  supportTicketTags,
+  users,
+  type InsertSupportTicket,
+  type UpdateSupportTicket,
+} from "@shared/schema";
 import { eq, and, desc, or, inArray, sql } from "drizzle-orm";
 import { emailService } from "./emailService";
 import { notificationService } from "./notificationService";

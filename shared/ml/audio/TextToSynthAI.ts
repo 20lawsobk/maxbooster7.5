@@ -29,8 +29,19 @@
  */
 
 import * as tf from "@tensorflow/tfjs";
-import { AdvancedMusicAI, type CreativeParameters, type MoodVector } from "./AdvancedMusicAI.js";
-import type { DrumParams, BassParams, SynthParams, FilterParams, EnvelopeParams, OscillatorType } from "./SynthesizerEngine.js";
+import {
+  AdvancedMusicAI,
+  type CreativeParameters,
+  type MoodVector,
+} from "./AdvancedMusicAI.js";
+import type {
+  DrumParams,
+  BassParams,
+  SynthParams,
+  FilterParams,
+  EnvelopeParams,
+  OscillatorType,
+} from "./SynthesizerEngine.js";
 
 // ============================================================================
 // TYPE DEFINITIONS

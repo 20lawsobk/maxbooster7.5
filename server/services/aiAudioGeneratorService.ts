@@ -9,7 +9,10 @@ const WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 import { randomBytes } from "crypto";
 
-import { AIAudioGenerator, type GenerationType } from "../../shared/ml/audio/AIAudioGenerator.js";
+import {
+  AIAudioGenerator,
+  type GenerationType,
+} from "../../shared/ml/audio/AIAudioGenerator.js";
 import { logger } from "../logger.js";
 import { storageService } from "./storageService.js";
 

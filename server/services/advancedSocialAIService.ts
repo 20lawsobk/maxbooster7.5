@@ -1546,11 +1546,6 @@ class AdvancedSocialAIService {
     }
   }
 
-
-
-
-
-
   /**
    * Reshape the hashtag set per the Self-Evolution `hashtagStrategy` knob.
    *  - niche   → fewer, more targeted tags (down to the platform minimum).

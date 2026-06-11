@@ -1,5 +1,11 @@
 import { db } from "../db";
-import { ssoConfigs, workspaceMembers, users, workspaceAuditLog, type SSOConfig } from "@shared/schema";
+import {
+  ssoConfigs,
+  workspaceMembers,
+  users,
+  workspaceAuditLog,
+  type SSOConfig,
+} from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
@@ -916,9 +922,7 @@ export class SSOService {
     }
   }
 
-  async getIdPMetadata(
-    workspaceId: string,
-  ): Promise<{
+  async getIdPMetadata(workspaceId: string): Promise<{
     success: boolean;
     metadata?: Record<string, unknown>;
     error?: string;

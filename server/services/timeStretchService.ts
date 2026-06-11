@@ -5,7 +5,12 @@ import fsPromises from "fs/promises";
 import os from "os";
 import { storageService } from "./storageService.js";
 import { queueService } from "./queueService.js";
-import type { WarpJobPayload, TransientDetectionPayload, WarpJobResult, TransientDetectionResult } from "./queueService.js";
+import type {
+  WarpJobPayload,
+  TransientDetectionPayload,
+  WarpJobResult,
+  TransientDetectionResult,
+} from "./queueService.js";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { warpMarkers, audioClips } from "@shared/schema";
@@ -79,8 +84,6 @@ interface AudioMetadata {
   channels: number;
   format: string;
 }
-
-
 
 export class TimeStretchService {
   private tempDir: string;

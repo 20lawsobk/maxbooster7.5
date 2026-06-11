@@ -250,12 +250,10 @@ router.post("/claim", async (req, res) => {
           alreadyOwned: true,
         });
       }
-      return res
-        .status(409)
-        .json({
-          ok: false,
-          error: "This domain is already registered by another user.",
-        });
+      return res.status(409).json({
+        ok: false,
+        error: "This domain is already registered by another user.",
+      });
     }
 
     // Enforce quota + subscription (throws on violation)

@@ -1,5 +1,17 @@
 import { db } from "../db.js";
-import { statusPageServices, statusPageIncidents, statusPageIncidentServices, statusPageIncidentUpdates, statusPageUptimeMetrics, statusPageSubscribers, type StatusPageService, type StatusPageIncident, type StatusPageIncidentUpdate, type StatusPageSubscriber, type InsertStatusPageService } from "@shared/schema";
+import {
+  statusPageServices,
+  statusPageIncidents,
+  statusPageIncidentServices,
+  statusPageIncidentUpdates,
+  statusPageUptimeMetrics,
+  statusPageSubscribers,
+  type StatusPageService,
+  type StatusPageIncident,
+  type StatusPageIncidentUpdate,
+  type StatusPageSubscriber,
+  type InsertStatusPageService,
+} from "@shared/schema";
 import { eq, and, desc, gte, isNull, or } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";

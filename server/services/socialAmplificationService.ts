@@ -358,10 +358,7 @@ export class SocialAmplificationService {
     targetAudience: Record<string, unknown>,
     _objective: string,
   ): Promise<Record<string, OrganicContent>> {
-    await this.aiEngine.bypassNativeAdPlatforms(
-      musicData,
-      targetAudience,
-    );
+    await this.aiEngine.bypassNativeAdPlatforms(musicData, targetAudience);
 
     const content: Record<string, OrganicContent> = {};
 
@@ -749,14 +746,8 @@ export class SocialAmplificationService {
       (sum, p) => sum + p.metrics.shares,
       0,
     );
-    organicPosts.reduce(
-      (sum, p) => sum + p.metrics.impressions,
-      0,
-    );
-    organicPosts.reduce(
-      (sum, p) => sum + p.metrics.clicks,
-      0,
-    );
+    organicPosts.reduce((sum, p) => sum + p.metrics.impressions, 0);
+    organicPosts.reduce((sum, p) => sum + p.metrics.clicks, 0);
 
     const organicAvgEngagement =
       organicTotalReach > 0

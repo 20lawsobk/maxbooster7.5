@@ -204,7 +204,6 @@ export async function seedAchievements() {
   }
 }
 
-
 const isMainModule =
   process.argv[1] &&
   (process.argv[1].endsWith("seedAchievements.ts") ||
