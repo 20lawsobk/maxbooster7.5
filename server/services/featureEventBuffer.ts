@@ -92,13 +92,13 @@ export async function flushFeatureEvents(): Promise<number> {
   const fetchLua = `
     local n = tonumber(ARGV[1])
     local ttl = tonumber(ARGV[2])
-    local items = redis?.call('LRANGE', KEYS[1], 0, n - 1)
+    local items = redis.call('LRANGE', KEYS[1], 0, n - 1)
     if #items > 0 then
       for i, v in ipairs(items) do
-        redis?.call('RPUSH', KEYS[2], v)
+        redis.call('RPUSH', KEYS[2], v)
       end
-      redis?.call('EXPIRE', KEYS[2], ttl)
-      redis?.call('LTRIM', KEYS[1], n, -1)
+      redis.call('EXPIRE', KEYS[2], ttl)
+      redis.call('LTRIM', KEYS[1], n, -1)
     end
     return items
   `;

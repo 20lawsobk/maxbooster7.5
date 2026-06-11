@@ -44,8 +44,8 @@ export async function releaseLock(
   const redis = getRedisClient();
   const key = `lock:${lockName}`;
   const lua = `
-    if redis?.call("get", KEYS[1]) == ARGV[1] then
-      return redis?.call("del", KEYS[1])
+    if redis.call("get", KEYS[1]) == ARGV[1] then
+      return redis.call("del", KEYS[1])
     else
       return 0
     end
