@@ -1,15 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { storefrontHosts, storefronts, users } from "@shared/schema";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-const _INTERNAL_HOSTS = [
+const INTERNAL_HOSTS = [
   "localhost",
-  "127?.0.0?.1",
-  "replit?.app",
-  "replit?.dev",
-  "repl?.co",
+  "127.0.0.1",
+  "replit.app",
+  "replit.dev",
+  "repl.co",
 ];
 
 function isInternalHost(host: string): boolean {
@@ -17,7 +17,7 @@ function isInternalHost(host: string): boolean {
 }
 
 // Static asset file extensions — never need tenant resolution
-const _STATIC_EXT_RE =
+const STATIC_EXT_RE =
   /\.(js|css|woff2?|ttf|eot|otf|ico|png|jpg|jpeg|gif|webp|svg|avif|map|json|txt|xml)$/i;
 
 function isStaticAssetPath(p: string): boolean {
@@ -37,7 +37,7 @@ export async function multiTenantRouter(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const _host = (req?.headers.host || "").toLowerCase().split(":")[0];
+    const host = (req?.headers.host || "").toLowerCase().split(":")[0];
 
     // Always skip: internal hosts, API paths, Vite internals, static assets
     if (
@@ -54,7 +54,7 @@ export async function multiTenantRouter(
     // three activation paths (storefrontDnsService, dnsManager, domain?.controller).
     const [hostRow] = await db
       .select({
-        storefrontId: storefrontHosts?.storefrontId,
+        storefrontId: storefrontHosts.storefrontId,
         storefront: storefronts,
       })
       .from(storefrontHosts)

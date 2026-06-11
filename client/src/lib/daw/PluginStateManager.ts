@@ -52,7 +52,7 @@ export class PluginStateManager {
   private saveTimer: number | null = null;
 
   constructor() {
-    this?.state = {
+    this.state = {
       plugins: [],
       presets: [],
       automationBindings: new Map(),
@@ -71,7 +71,7 @@ export class PluginStateManager {
     name: string,
     defaultParameters: Record<string, number | boolean | string> = {},
   ): void {
-    const _existingIndex = this?.state.plugins?.findIndex(
+    const existingIndex = this?.state.plugins?.findIndex(
       (p) => p?.instanceId === instanceId,
     );
 
@@ -91,7 +91,7 @@ export class PluginStateManager {
     };
 
     if (existingIndex !== -1) {
-      this?.state.plugins[existingIndex] = plugin;
+      this.state.plugins[existingIndex] = plugin;
     } else {
       this?.state.plugins?.push(plugin);
     }
@@ -100,7 +100,7 @@ export class PluginStateManager {
   }
 
   unregisterPlugin(instanceId: string): void {
-    const _index = this?.state.plugins?.findIndex(
+    const index = this?.state.plugins?.findIndex(
       (p) => p?.instanceId === instanceId,
     );
     if (index !== -1) {
@@ -115,11 +115,11 @@ export class PluginStateManager {
     parameterId: string,
     value: number | boolean | string,
   ): void {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (!plugin) return;
 
-    plugin?.parameters[parameterId] = value;
-    plugin?.currentPresetId = null;
+    plugin.parameters[parameterId] = value;
+    plugin.currentPresetId = null;
 
     this?.emitParameterChange(instanceId, parameterId, value);
     this?.scheduleSave();
@@ -130,15 +130,15 @@ export class PluginStateManager {
     instanceId: string,
     parameters: Record<string, number | boolean | string>,
   ): void {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (!plugin) return;
 
     for (const [parameterId, value] of Object?.entries(parameters)) {
-      plugin?.parameters[parameterId] = value;
+      plugin.parameters[parameterId] = value;
       this?.emitParameterChange(instanceId, parameterId, value);
     }
 
-    plugin?.currentPresetId = null;
+    plugin.currentPresetId = null;
     this?.scheduleSave();
     this?.notify();
   }
@@ -147,38 +147,38 @@ export class PluginStateManager {
     instanceId: string,
     parameterId: string,
   ): number | boolean | string | undefined {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     return plugin?.parameters[parameterId];
   }
 
   getAllParameters(
     instanceId: string,
   ): Record<string, number | boolean | string> | null {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     return plugin ? { ...plugin?.parameters } : null;
   }
 
   setBypass(instanceId: string, bypassed: boolean): void {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin?.bypassed = bypassed;
+      plugin.bypassed = bypassed;
       this?.notify();
     }
   }
 
   setLatency(instanceId: string, latency: number): void {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin?.latency = latency;
+      plugin.latency = latency;
       this?.notify();
     }
   }
 
   reportError(instanceId: string, errorMessage: string): void {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin?.hasError = true;
-      plugin?.errorMessage = errorMessage;
+      plugin.hasError = true;
+      plugin.errorMessage = errorMessage;
       if (!this?.state.failedPlugins?.includes(instanceId)) {
         this?.state.failedPlugins?.push(instanceId);
       }
@@ -187,11 +187,11 @@ export class PluginStateManager {
   }
 
   clearError(instanceId: string): void {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin?.hasError = false;
-      plugin?.errorMessage = null;
-      this?.state.failedPlugins = this?.state.failedPlugins?.filter(
+      plugin.hasError = false;
+      plugin.errorMessage = null;
+      this.state.failedPlugins = this?.state.failedPlugins?.filter(
         (id) => id !== instanceId,
       );
       this?.notify();
@@ -199,35 +199,35 @@ export class PluginStateManager {
   }
 
   createPreset(instanceId: string, name: string): string | null {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (!plugin) return null;
 
-    const _id = `preset_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `preset_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
     const preset: PluginPreset = {
       id,
       name,
-      pluginId: plugin?.pluginId,
+      pluginId: plugin.pluginId,
       parameters: { ...plugin?.parameters },
       isFactory: false,
-      createdAt: Date?.now(),
-      modifiedAt: Date?.now(),
+      createdAt: Date.now(),
+      modifiedAt: Date.now(),
     };
 
     this?.state.presets?.push(preset);
-    plugin?.currentPresetId = id;
+    plugin.currentPresetId = id;
     this?.notify();
     return id;
   }
 
   loadPreset(instanceId: string, presetId: string): boolean {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
-    const _preset = this?.state.presets?.find((p) => p?.id === presetId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const preset = this?.state.presets?.find((p) => p?.id === presetId);
 
     if (!plugin || !preset) return false;
     if (plugin?.pluginId !== preset?.pluginId) return false;
 
-    plugin?.parameters = { ...preset?.parameters };
-    plugin?.currentPresetId = presetId;
+    plugin.parameters = { ...preset?.parameters };
+    plugin.currentPresetId = presetId;
 
     for (const [parameterId, value] of Object?.entries(preset?.parameters)) {
       this?.emitParameterChange(instanceId, parameterId, value);
@@ -242,31 +242,31 @@ export class PluginStateManager {
     newParameters?: Record<string, number | boolean | string>,
     newName?: string,
   ): boolean {
-    const _preset = this?.state.presets?.find((p) => p?.id === presetId);
+    const preset = this?.state.presets?.find((p) => p?.id === presetId);
     if (!preset || preset?.isFactory) return false;
 
     if (newParameters) {
-      preset?.parameters = { ...newParameters };
+      preset.parameters = { ...newParameters };
     }
     if (newName) {
-      preset?.name = newName;
+      preset.name = newName;
     }
-    preset?.modifiedAt = Date?.now();
+    preset.modifiedAt = Date?.now();
 
     this?.notify();
     return true;
   }
 
   deletePreset(presetId: string): boolean {
-    const _preset = this?.state.presets?.find((p) => p?.id === presetId);
+    const preset = this?.state.presets?.find((p) => p?.id === presetId);
     if (!preset || preset?.isFactory) return false;
 
-    const _index = this?.state.presets?.indexOf(preset);
+    const index = this?.state.presets?.indexOf(preset);
     this?.state.presets?.splice(index, 1);
 
     for (const plugin of this?.state.plugins) {
       if (plugin?.currentPresetId === presetId) {
-        plugin?.currentPresetId = null;
+        plugin.currentPresetId = null;
       }
     }
 
@@ -286,15 +286,15 @@ export class PluginStateManager {
     }>,
   ): void {
     for (const preset of presets) {
-      const _id = `preset_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+      const id = `preset_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
       this?.state.presets?.push({
         id,
-        name: preset?.name,
+        name: preset.name,
         pluginId,
-        parameters: preset?.parameters,
+        parameters: preset.parameters,
         isFactory: true,
-        createdAt: Date?.now(),
-        modifiedAt: Date?.now(),
+        createdAt: Date.now(),
+        modifiedAt: Date.now(),
       });
     }
     this?.notify();
@@ -311,8 +311,8 @@ export class PluginStateManager {
       this?.state.automationBindings?.set(instanceId, []);
     }
 
-    const _bindings = this?.state.automationBindings?.get(instanceId)!;
-    const _existingIndex = bindings?.findIndex(
+    const bindings = this?.state.automationBindings?.get(instanceId)!;
+    const existingIndex = bindings?.findIndex(
       (b) => b?.parameterId === parameterId,
     );
 
@@ -333,9 +333,9 @@ export class PluginStateManager {
   }
 
   unbindAutomation(instanceId: string, parameterId: string): void {
-    const _bindings = this?.state.automationBindings?.get(instanceId);
+    const bindings = this?.state.automationBindings?.get(instanceId);
     if (bindings) {
-      const _index = bindings?.findIndex((b) => b?.parameterId === parameterId);
+      const index = bindings?.findIndex((b) => b?.parameterId === parameterId);
       if (index !== -1) {
         bindings?.splice(index, 1);
         this?.notify();
@@ -348,18 +348,18 @@ export class PluginStateManager {
   }
 
   copyPluginState(instanceId: string): Record<string, any> | null {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (!plugin) return null;
 
     return {
-      pluginId: plugin?.pluginId,
+      pluginId: plugin.pluginId,
       parameters: { ...plugin?.parameters },
-      bypassed: plugin?.bypassed,
+      bypassed: plugin.bypassed,
     };
   }
 
   pastePluginState(instanceId: string, state: Record<string, any>): boolean {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (!plugin) return false;
 
     if (state?.pluginId && state?.pluginId !== plugin?.pluginId) {
@@ -382,9 +382,9 @@ export class PluginStateManager {
   }
 
   movePlugin(instanceId: string, newTrackId: string): void {
-    const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
+    const plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin?.trackId = newTrackId;
+      plugin.trackId = newTrackId;
       this?.notify();
     }
   }
@@ -414,8 +414,8 @@ export class PluginStateManager {
     if (this?.saveTimer !== null) {
       clearTimeout(this?.saveTimer);
     }
-    this?.saveTimer = window?.setTimeout(() => {
-      this?.saveTimer = null;
+    this.saveTimer = window?.setTimeout(() => {
+      this.saveTimer = null;
     }, 1000);
   }
 
@@ -436,10 +436,10 @@ export class PluginStateManager {
   }
 
   deserialize(data: { plugins: PluginState[]; presets: PluginPreset[] }): void {
-    this?.state.plugins = structuredClone(data?.plugins);
-    this?.state.presets = structuredClone(data?.presets);
+    this.state.plugins = structuredClone(data?.plugins);
+    this.state.presets = structuredClone(data?.presets);
     this?.notify();
   }
 }
 
-export const _pluginStateManager = new PluginStateManager();
+export const pluginStateManager = new PluginStateManager();

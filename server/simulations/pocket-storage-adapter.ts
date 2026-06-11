@@ -10,8 +10,8 @@
  * This allows simulating 50+ years with millions of users without memory issues.
  */
 
-import { pocketManager, PocketDimension } from "../pocket-dimension/index?.js";
-import { logger } from "../logger?.js";
+import { pocketManager, PocketDimension } from "../pocket-dimension/index.js";
+import { logger } from "../logger.js";
 
 // ============================================================================
 // TYPES
@@ -86,20 +86,20 @@ export class PocketSimulationStorage {
   private snapshotCount: number = 0;
 
   constructor(simulationId: string) {
-    this?.simulationId = simulationId;
+    this.simulationId = simulationId;
   }
 
   async initialize(): Promise<void> {
     if (this?.isInitialized) return;
 
     try {
-      this?.pocket = await pocketManager?.openPocket(`sim-${this?.simulationId}`, {
+      this.pocket = await pocketManager?.openPocket(`sim-${this?.simulationId}`, {
         compressionLevel: 9,
         enableDeduplication: true,
         chunkSize: 256 * 1024, // 256KB chunks for simulation data
       });
 
-      this?.isInitialized = true;
+      this.isInitialized = true;
       logger?.info(
         `[PocketStorage] Initialized for simulation ${this?.simulationId}`,
       );
@@ -107,7 +107,7 @@ export class PocketSimulationStorage {
       logger?.warn(
         `[PocketStorage] Failed to initialize pocket, using memory-only mode`,
       );
-      this?.isInitialized = true;
+      this.isInitialized = true;
     }
   }
 
@@ -131,18 +131,18 @@ export class PocketSimulationStorage {
     }[],
   ): void {
     for (const user of distribution) {
-      this?.aggregateUsers.total++;
-      this?.aggregateUsers.byTier[user?.tier]++;
-      this?.aggregateUsers.byArchetype[user?.archetype]++;
-      this?.aggregateUsers.totalRevenue += user?.revenue;
-      this?.aggregateUsers.totalStreams += user?.streams;
+      this.aggregateUsers.total++;
+      this.aggregateUsers.byTier[user?.tier]++;
+      this.aggregateUsers.byArchetype[user?.archetype]++;
+      this.aggregateUsers.totalRevenue += user?.revenue;
+      this.aggregateUsers.totalStreams += user?.streams;
     }
 
     // Update averages
     if (this?.aggregateUsers.total > 0) {
-      this?.aggregateUsers.avgRevenue =
+      this.aggregateUsers.avgRevenue =
         this?.aggregateUsers.totalRevenue / this?.aggregateUsers.total;
-      this?.aggregateUsers.avgStreams =
+      this.aggregateUsers.avgStreams =
         this?.aggregateUsers.totalStreams / this?.aggregateUsers.total;
     }
   }
@@ -153,38 +153,38 @@ export class PocketSimulationStorage {
     archetypeDistribution: Record<string, number>,
     avgRevenue: number,
   ): void {
-    this?.aggregateUsers.total += count;
+    this.aggregateUsers.total += count;
 
     for (const [tier, pct] of Object?.entries(tierDistribution)) {
-      const _tierCount = Math?.floor(count * pct);
-      this?.aggregateUsers.byTier[
-        tier as keyof typeof this?.aggregateUsers.byTier
+      const tierCount = Math?.floor(count * pct);
+      this.aggregateUsers.byTier[
+        tier as keyof typeof this.aggregateUsers.byTier
       ] += tierCount;
     }
 
     for (const [archetype, pct] of Object?.entries(archetypeDistribution)) {
-      const _archetypeCount = Math?.floor(count * pct);
-      this?.aggregateUsers.byArchetype[
-        archetype as keyof typeof this?.aggregateUsers.byArchetype
+      const archetypeCount = Math?.floor(count * pct);
+      this.aggregateUsers.byArchetype[
+        archetype as keyof typeof this.aggregateUsers.byArchetype
       ] += archetypeCount;
     }
 
-    this?.aggregateUsers.totalRevenue += count * avgRevenue;
-    this?.aggregateUsers.avgRevenue =
+    this.aggregateUsers.totalRevenue += count * avgRevenue;
+    this.aggregateUsers.avgRevenue =
       this?.aggregateUsers.totalRevenue / Math?.max(1, this?.aggregateUsers.total);
   }
 
   removeUsers(count: number): void {
     // Distribute churn across tiers proportionally
-    const _totalBefore = this?.aggregateUsers.total;
+    const totalBefore = this?.aggregateUsers.total;
     if (totalBefore === 0) return;
 
     for (const tier of Object?.keys(this?.aggregateUsers.byTier) as Array<
-      keyof typeof this?.aggregateUsers.byTier
+      keyof typeof this.aggregateUsers.byTier
     >) {
-      const _tierPct = this?.aggregateUsers.byTier[tier] / totalBefore;
-      const _tierChurn = Math?.floor(count * tierPct);
-      this?.aggregateUsers.byTier[tier] = Math?.max(
+      const tierPct = this?.aggregateUsers.byTier[tier] / totalBefore;
+      const tierChurn = Math?.floor(count * tierPct);
+      this.aggregateUsers.byTier[tier] = Math?.max(
         0,
         this?.aggregateUsers.byTier[tier] - tierChurn,
       );
@@ -192,17 +192,17 @@ export class PocketSimulationStorage {
 
     for (const archetype of Object?.keys(
       this?.aggregateUsers.byArchetype,
-    ) as Array<keyof typeof this?.aggregateUsers.byArchetype>) {
-      const _archetypePct =
+    ) as Array<keyof typeof this.aggregateUsers.byArchetype>) {
+      const archetypePct =
         this?.aggregateUsers.byArchetype[archetype] / totalBefore;
-      const _archetypeChurn = Math?.floor(count * archetypePct);
-      this?.aggregateUsers.byArchetype[archetype] = Math?.max(
+      const archetypeChurn = Math?.floor(count * archetypePct);
+      this.aggregateUsers.byArchetype[archetype] = Math?.max(
         0,
         this?.aggregateUsers.byArchetype[archetype] - archetypeChurn,
       );
     }
 
-    this?.aggregateUsers.total = Math?.max(0, this?.aggregateUsers.total - count);
+    this.aggregateUsers.total = Math?.max(0, this?.aggregateUsers.total - count);
   }
 
   getAggregateUsers(): AggregateUserData {
@@ -247,18 +247,18 @@ export class PocketSimulationStorage {
     const snapshot: SimulationSnapshot = {
       day,
       timestamp: new Date(),
-      users: this?.getAggregateUsers(),
+      users: this.getAggregateUsers(),
       revenue: {
-        daily: metrics?.revenue?.daily || 0,
-        monthly: metrics?.revenue?.mrr || 0,
-        yearly: metrics?.revenue?.arr || 0,
-        lifetime: metrics?.revenue?.lifetime || 0,
+        daily: metrics.revenue?.daily || 0,
+        monthly: metrics.revenue?.mrr || 0,
+        yearly: metrics.revenue?.arr || 0,
+        lifetime: metrics.revenue?.lifetime || 0,
       },
       metrics: {
-        streams: metrics?.streams?.total || 0,
-        viralReleases: metrics?.streams?.viralReleases || 0,
-        socialPosts: metrics?.autonomous?.postsAutoPublished || 0,
-        releases: metrics?.autonomous?.releasesAutoDistributed || 0,
+        streams: metrics.streams?.total || 0,
+        viralReleases: metrics.streams?.viralReleases || 0,
+        socialPosts: metrics.autonomous?.postsAutoPublished || 0,
+        releases: metrics.autonomous?.releasesAutoDistributed || 0,
       },
     };
 
@@ -267,7 +267,7 @@ export class PocketSimulationStorage {
         `snapshots/day-${day?.toString().padStart(5, "0")}.json`,
         JSON?.stringify(snapshot),
       );
-      this?.snapshotCount++;
+      this.snapshotCount++;
     } catch (error) {
       // Pocket storage failed, continue without persistence
     }
@@ -277,7 +277,7 @@ export class PocketSimulationStorage {
     if (!this?.pocket) return null;
 
     try {
-      const _data = await this?.pocket.read(
+      const data = await this?.pocket.read(
         `snapshots/day-${day?.toString().padStart(5, "0")}.json`,
       );
       return JSON?.parse(data?.toString());
@@ -290,11 +290,11 @@ export class PocketSimulationStorage {
     if (!this?.pocket) return [];
 
     const snapshots: SimulationSnapshot[] = [];
-    const _entries = await this?.pocket.list("snapshots/");
+    const entries = await this?.pocket.list("snapshots/");
 
     for (const entry of entries) {
       try {
-        const _data = await this?.pocket.read(entry?.path);
+        const data = await this?.pocket.read(entry?.path);
         snapshots?.push(JSON?.parse(data?.toString()));
       } catch {
         // Skip corrupted snapshots
@@ -315,23 +315,23 @@ export class PocketSimulationStorage {
     compressionRatio: number;
     estimatedMemorySavings: string;
   }> {
-    const _pocketStats = this?.pocket?.getStats();
+    const pocketStats = this?.pocket?.getStats();
 
     // Calculate memory savings
     // Without pocket: ~500 bytes per user object * total users
     // With pocket: aggregate tracking = ~200 bytes total + compressed snapshots
-    const _withoutPocket = this?.aggregateUsers.total * 500;
-    const _withPocket = 200 + (pocketStats?.compressedSize || 0);
-    const _savings =
+    const withoutPocket = this?.aggregateUsers.total * 500;
+    const withPocket = 200 + (pocketStats?.compressedSize || 0);
+    const savings =
       withoutPocket > 0
         ? ((withoutPocket - withPocket) / withoutPocket) * 100
         : 0;
 
     return {
-      memoryUsers: this?.samplePool.size,
-      aggregateUsers: this?.aggregateUsers.total,
-      snapshotCount: this?.snapshotCount,
-      compressionRatio: pocketStats?.compressionRatio || 1,
+      memoryUsers: this.samplePool.size,
+      aggregateUsers: this.aggregateUsers.total,
+      snapshotCount: this.snapshotCount,
+      compressionRatio: pocketStats.compressionRatio || 1,
       estimatedMemorySavings: `${savings?.toFixed(1)}%`,
     };
   }
@@ -343,10 +343,10 @@ export class PocketSimulationStorage {
   async close(): Promise<void> {
     if (this?.pocket) {
       await pocketManager?.closePocket(`sim-${this?.simulationId}`);
-      this?.pocket = null;
+      this.pocket = null;
     }
     this?.samplePool.clear();
-    this?.isInitialized = false;
+    this.isInitialized = false;
   }
 }
 

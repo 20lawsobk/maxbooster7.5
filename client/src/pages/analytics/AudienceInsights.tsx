@@ -179,8 +179,8 @@ export function AudienceInsights({
 
   const demographics = useMemo<DemographicData>(
     () => ({
-      age: data?.audience?.demographics?.age || [],
-      gender: data?.audience?.demographics?.gender || [],
+      age: data.audience?.demographics?.age || [],
+      gender: data.audience?.demographics?.gender || [],
     }),
     [data],
   );
@@ -213,9 +213,9 @@ export function AudienceInsights({
     return [
       {
         label: "Total Followers",
-        current: data?.overview?.totalFollowers || 0,
+        current: data.overview?.totalFollowers || 0,
         previous: 0,
-        change: data?.overview?.growthRate || 0,
+        change: data.overview?.growthRate || 0,
         target: 0,
       },
       {

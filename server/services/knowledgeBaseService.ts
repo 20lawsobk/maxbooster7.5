@@ -5,7 +5,7 @@ import {
   type UpdateKnowledgeBaseArticle,
 } from "@shared/schema";
 import { eq, and, desc, or, sql, ilike } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export class KnowledgeBaseService {
   async createArticle(articleData: InsertKnowledgeBaseArticle) {
@@ -29,7 +29,7 @@ export class KnowledgeBaseService {
         .set({ views: sql`${knowledgeBaseArticles?.views} + 1` })
         .where(eq(knowledgeBaseArticles?.id, articleId));
 
-      return { ...article, views: article?.views + 1 };
+      return { ...article, views: article.views + 1 };
     }
 
     return null;
@@ -41,7 +41,7 @@ export class KnowledgeBaseService {
       .from(knowledgeBaseArticles)
       .where(eq(knowledgeBaseArticles?.isPublished, true));
 
-    const _conditions = [];
+    const conditions = [];
 
     if (query) {
       conditions?.push(
@@ -60,7 +60,7 @@ export class KnowledgeBaseService {
       dbQuery = dbQuery?.where(and(...conditions));
     }
 
-    const _articles = await dbQuery
+    const articles = await dbQuery
       .orderBy(desc(knowledgeBaseArticles?.views))
       .limit(limit);
 
@@ -122,7 +122,7 @@ export class KnowledgeBaseService {
   }
 
   async markHelpful(articleId: string, isHelpful: boolean) {
-    const _field = isHelpful
+    const field = isHelpful
       ? knowledgeBaseArticles?.helpfulCount
       : knowledgeBaseArticles?.notHelpfulCount;
 
@@ -141,9 +141,9 @@ export class KnowledgeBaseService {
   }
 
   async getCategories() {
-    const _categories = await db
+    const categories = await db
       .select({
-        category: knowledgeBaseArticles?.category,
+        category: knowledgeBaseArticles.category,
         count: sql<number>`count(*)::int`,
       })
       .from(knowledgeBaseArticles)
@@ -154,16 +154,16 @@ export class KnowledgeBaseService {
   }
 
   async getKBStats() {
-    const _totalArticles = await db
+    const totalArticles = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(knowledgeBaseArticles)
       .where(eq(knowledgeBaseArticles?.isPublished, true));
 
-    const _totalViews = await db
+    const totalViews = await db
       .select({ total: sql<number>`sum(${knowledgeBaseArticles?.views})::int` })
       .from(knowledgeBaseArticles);
 
-    const _avgHelpfulness = await db
+    const avgHelpfulness = await db
       .select({
         avg: sql<number>`
           AVG(
@@ -185,7 +185,7 @@ export class KnowledgeBaseService {
   }
 
   async seedDefaultArticles() {
-    const _existingArticles = await db
+    const existingArticles = await db
       .select()
       .from(knowledgeBaseArticles)
       .limit(1);
@@ -356,4 +356,4 @@ Solutions to frequently encountered problems.
   }
 }
 
-export const _knowledgeBaseService = new KnowledgeBaseService();
+export const knowledgeBaseService = new KnowledgeBaseService();

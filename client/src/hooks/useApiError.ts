@@ -36,8 +36,8 @@ const DEFAULT_RETRYABLE_CATEGORIES: ErrorCategory[] = [
 ];
 
 function categorizeError(error: Error): ErrorCategory {
-  const _message = error?.message.toLowerCase();
-  const _name = error?.name.toLowerCase();
+  const message = error?.message.toLowerCase();
+  const name = error?.name.toLowerCase();
 
   if (
     message?.includes("network") ||
@@ -136,14 +136,14 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
     isOffline: !navigator?.onLine,
   });
 
-  const _abortControllerRef = useRef<AbortController | null>(null);
-  const _lastOperationRef = useRef<(() => Promise<unknown>) | null>(null);
-  const _retryTimeoutRef = useRef<NodeJS?.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastOperationRef = useRef<(() => Promise<unknown>) | null>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const _handleOnline = () =>
+    const handleOnline = () =>
       setState((prev) => ({ ...prev, isOffline: false }));
-    const _handleOffline = () => {
+    const handleOffline = () => {
       setState((prev) => ({ ...prev, isOffline: true }));
       if (showToast) {
         toast({
@@ -175,7 +175,7 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
     };
   }, []);
 
-  const _reset = useCallback(() => {
+  const reset = useCallback(() => {
     setState({
       error: null,
       isError: false,
@@ -185,25 +185,25 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
       retryCount: 0,
       isOffline: !navigator?.onLine,
     });
-    lastOperationRef?.current = null;
+    lastOperationRef.current = null;
   }, []);
 
-  const _cancel = useCallback(() => {
+  const cancel = useCallback(() => {
     if (abortControllerRef?.current) {
       abortControllerRef?.current.abort();
-      abortControllerRef?.current = null;
+      abortControllerRef.current = null;
     }
     if (retryTimeoutRef?.current) {
       clearTimeout(retryTimeoutRef?.current);
-      retryTimeoutRef?.current = null;
+      retryTimeoutRef.current = null;
     }
     setState((prev) => ({ ...prev, isRetrying: false }));
   }, []);
 
-  const _execute = useCallback(
+  const execute = useCallback(
     async <T>(fn: () => Promise<T>): Promise<T | null> => {
-      lastOperationRef?.current = fn;
-      abortControllerRef?.current = new AbortController();
+      lastOperationRef.current = fn;
+      abortControllerRef.current = new AbortController();
 
       try {
         if (state?.isOffline) {
@@ -220,7 +220,7 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
           errorMessage: "",
         }));
 
-        const _result = await fn();
+        const result = await fn();
 
         setState((prev) => ({
           ...prev,
@@ -231,16 +231,16 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
         onSuccess?.();
         return result;
       } catch (error) {
-        const _err = error instanceof Error ? error : new Error(String(error));
+        const err = error instanceof Error ? error : new Error(String(error));
 
         if (err?.name === "AbortError") {
           return null;
         }
 
-        const _category = categorizeError(err);
-        const _userMessage = getUserFriendlyMessage(category);
-        const _isRetryable = retryableCategories?.includes(category);
-        const _currentRetry = state?.retryCount;
+        const category = categorizeError(err);
+        const userMessage = getUserFriendlyMessage(category);
+        const isRetryable = retryableCategories?.includes(category);
+        const currentRetry = state?.retryCount;
 
         setState((prev) => ({
           ...prev,
@@ -264,25 +264,25 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
         onError?.(err, category);
 
         if (isRetryable && currentRetry < maxRetries) {
-          const _delay = retryDelay * Math?.pow(2, currentRetry);
+          const delay = retryDelay * Math?.pow(2, currentRetry);
 
           setState((prev) => ({ ...prev, isRetrying: true }));
           onRetry?.(currentRetry + 1);
 
           return new Promise((resolve) => {
-            retryTimeoutRef?.current = setTimeout(async () => {
+            retryTimeoutRef.current = setTimeout(async () => {
               setState((prev) => ({
                 ...prev,
-                retryCount: prev?.retryCount + 1,
+                retryCount: prev.retryCount + 1,
               }));
-              const _result = await execute(fn);
+              const result = await execute(fn);
               resolve(result);
             }, delay);
           });
         }
 
         if (showToast) {
-          const _toastVariant =
+          const toastVariant =
             category === "auth"
               ? "destructive"
               : category === "validation"
@@ -311,7 +311,7 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
     ],
   );
 
-  const _retry = useCallback(async () => {
+  const retry = useCallback(async () => {
     if (lastOperationRef?.current) {
       setState((prev) => ({ ...prev, retryCount: 0 }));
       await execute(lastOperationRef?.current as () => Promise<unknown>);
@@ -355,24 +355,24 @@ export function useApiMutation<TData, TVariables = void>(
 ) {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<TData | null>(null);
-  const _apiError = useApiError({
-    onError: options?.onError,
+  const apiError = useApiError({
+    onError: options.onError,
     onSuccess: () => {
       if (options?.successMessage) {
         toast({
           title: "Success",
-          description: options?.successMessage,
+          description: options.successMessage,
           variant: "success",
         });
       }
     },
   });
 
-  const _mutate = useCallback(
+  const mutate = useCallback(
     async (variables: TVariables): Promise<TData | null> => {
       setIsLoading(true);
       try {
-        const _result = await apiError?.execute(() =>
+        const result = await apiError?.execute(() =>
           options?.mutationFn(variables),
         );
         if (result !== null) {
@@ -387,7 +387,7 @@ export function useApiMutation<TData, TVariables = void>(
     [apiError, options],
   );
 
-  const _reset = useCallback(() => {
+  const reset = useCallback(() => {
     setData(null);
     apiError?.reset();
   }, [apiError]);
@@ -406,7 +406,7 @@ export function useOfflineStatus() {
   const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
-    const _handleOnline = () => {
+    const handleOnline = () => {
       if (isOffline) {
         setWasOffline(true);
         toast({
@@ -418,7 +418,7 @@ export function useOfflineStatus() {
       setIsOffline(false);
     };
 
-    const _handleOffline = () => {
+    const handleOffline = () => {
       setIsOffline(true);
       toast({
         title: "You're offline",
@@ -440,11 +440,11 @@ export function useOfflineStatus() {
 }
 
 export function useCancelableRequest<T>() {
-  const _abortControllerRef = useRef<AbortController | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const _execute = useCallback(
+  const execute = useCallback(
     async (
       requestFn: (
         signal: AbortSignal,
@@ -455,12 +455,12 @@ export function useCancelableRequest<T>() {
         abortControllerRef?.current.abort();
       }
 
-      abortControllerRef?.current = new AbortController();
+      abortControllerRef.current = new AbortController();
       setIsLoading(true);
       setProgress(0);
 
       try {
-        const _result = await requestFn(
+        const result = await requestFn(
           abortControllerRef?.current.signal,
           setProgress,
         );
@@ -478,16 +478,16 @@ export function useCancelableRequest<T>() {
         throw error;
       } finally {
         setIsLoading(false);
-        abortControllerRef?.current = null;
+        abortControllerRef.current = null;
       }
     },
     [],
   );
 
-  const _cancel = useCallback(() => {
+  const cancel = useCallback(() => {
     if (abortControllerRef?.current) {
       abortControllerRef?.current.abort();
-      abortControllerRef?.current = null;
+      abortControllerRef.current = null;
       setIsLoading(false);
       setProgress(0);
     }

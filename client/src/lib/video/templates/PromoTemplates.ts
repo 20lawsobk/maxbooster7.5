@@ -82,7 +82,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#0f172a",
     text: "#ffffff",
     textSecondary: "#94a3b8",
-    overlay: "rgba(15, 23, 42, 0?.8)",
+    overlay: "rgba(15, 23, 42, 0.8)",
   },
   neon: {
     primary: "#00ff88",
@@ -91,7 +91,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#000000",
     text: "#ffffff",
     textSecondary: "#888888",
-    overlay: "rgba(0, 0, 0, 0?.7)",
+    overlay: "rgba(0, 0, 0, 0.7)",
   },
   minimal: {
     primary: "#1a1a1a",
@@ -100,7 +100,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#ffffff",
     text: "#1a1a1a",
     textSecondary: "#666666",
-    overlay: "rgba(255, 255, 255, 0?.9)",
+    overlay: "rgba(255, 255, 255, 0.9)",
   },
   vintage: {
     primary: "#d4a574",
@@ -109,7 +109,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#1a1612",
     text: "#f5e6d3",
     textSecondary: "#bfae9f",
-    overlay: "rgba(26, 22, 18, 0?.85)",
+    overlay: "rgba(26, 22, 18, 0.85)",
   },
   electric: {
     primary: "#ff3366",
@@ -118,7 +118,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#0a0a1a",
     text: "#ffffff",
     textSecondary: "#aabbcc",
-    overlay: "rgba(10, 10, 26, 0?.75)",
+    overlay: "rgba(10, 10, 26, 0.75)",
   },
   pastel: {
     primary: "#ffc8dd",
@@ -127,7 +127,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#fff5f5",
     text: "#2d2d2d",
     textSecondary: "#666666",
-    overlay: "rgba(255, 245, 245, 0?.85)",
+    overlay: "rgba(255, 245, 245, 0.85)",
   },
 };
 
@@ -447,8 +447,8 @@ function getDefaultTransform(): TransformConfig {
     scaleX: 1,
     scaleY: 1,
     rotation: 0,
-    anchorX: 0?.5,
-    anchorY: 0?.5,
+    anchorX: 0.5,
+    anchorY: 0.5,
   };
 }
 
@@ -473,23 +473,23 @@ export function compileReleaseAnnouncement(
     startTime: 0,
     endTime: duration,
     config: {
-      type: background?.type,
-      color: background?.color || palette?.background,
-      gradientColors: background?.gradientColors || [
+      type: background.type,
+      color: background.color || palette?.background,
+      gradientColors: background.gradientColors || [
         palette?.primary,
         palette?.secondary,
       ],
-      gradientAngle: background?.gradientAngle || 135,
-      imageUrl: background?.imageUrl,
-      blur: background?.blur || 0,
-      overlay: background?.overlay || palette?.overlay,
+      gradientAngle: background.gradientAngle || 135,
+      imageUrl: background.imageUrl,
+      blur: background.blur || 0,
+      overlay: background.overlay || palette?.overlay,
     },
     animations: [],
   });
 
   if (options?.coverArtUrl) {
-    const _coverSize = Math?.min(width, height) * 0?.4;
-    const _isPortrait = height > width;
+    const coverSize = Math?.min(width, height) * 0.4;
+    const isPortrait = height > width;
     layers?.push({
       id: generateId(),
       type: "image",
@@ -498,20 +498,20 @@ export function compileReleaseAnnouncement(
       opacity: 1,
       transform: {
         ...getDefaultTransform(),
-        x: isPortrait ? (width - coverSize) / 2 : width * 0?.15,
-        y: isPortrait ? height * 0?.2 : (height - coverSize) / 2,
+        x: isPortrait ? (width - coverSize) / 2 : width * 0.15,
+        y: isPortrait ? height * 0.2 : (height - coverSize) / 2,
         scaleX: 1,
         scaleY: 1,
       },
-      startTime: 0?.2,
+      startTime: 0.2,
       endTime: duration,
       config: {
-        src: options?.coverArtUrl,
+        src: options.coverArtUrl,
         width: coverSize,
         height: coverSize,
         borderRadius: 12,
         shadow: {
-          color: "rgba(0,0,0,0?.5)",
+          color: "rgba(0,0,0,0.5)",
           blur: 30,
           offsetX: 0,
           offsetY: 10,
@@ -520,40 +520,40 @@ export function compileReleaseAnnouncement(
       animations: [
         {
           property: "scaleX",
-          from: 0?.8,
+          from: 0.8,
           to: 1,
-          startTime: 0?.2,
-          endTime: 0?.8,
+          startTime: 0.2,
+          endTime: 0.8,
           easing: "easeOut",
         },
         {
           property: "scaleY",
-          from: 0?.8,
+          from: 0.8,
           to: 1,
-          startTime: 0?.2,
-          endTime: 0?.8,
+          startTime: 0.2,
+          endTime: 0.8,
           easing: "easeOut",
         },
         {
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 0?.2,
-          endTime: 0?.6,
+          startTime: 0.2,
+          endTime: 0.6,
           easing: "easeOut",
         },
       ],
-      audioReactive: options?.audioReactive?.enabled
+      audioReactive: options.audioReactive?.enabled
         ? {
             enabled: true,
             property: "scale",
-            intensity: 0?.05,
+            intensity: 0.05,
           }
         : undefined,
     });
   }
 
-  const _releaseTypeLabel = options?.releaseType.toUpperCase();
+  const releaseTypeLabel = options?.releaseType.toUpperCase();
   layers?.push({
     id: generateId(),
     type: "text",
@@ -563,16 +563,16 @@ export function compileReleaseAnnouncement(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.08,
+      y: height * 0.08,
     },
-    startTime: 0?.5,
+    startTime: 0.5,
     endTime: duration,
     config: {
       text: `NEW ${releaseTypeLabel}`,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.025),
+      fontSize: Math.round(width * 0.025),
       fontWeight: "600",
-      color: palette?.accent,
+      color: palette.accent,
       align: "center",
       letterSpacing: 4,
     },
@@ -581,8 +581,8 @@ export function compileReleaseAnnouncement(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0?.5,
-        endTime: 0?.8,
+        startTime: 0.5,
+        endTime: 0.8,
         easing: "easeOut",
       },
     ],
@@ -597,42 +597,42 @@ export function compileReleaseAnnouncement(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.7,
+      y: height * 0.7,
     },
-    startTime: 0?.8,
+    startTime: 0.8,
     endTime: duration,
     config: {
-      text: options?.releaseName,
+      text: options.releaseName,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.06),
+      fontSize: Math.round(width * 0.06),
       fontWeight: "800",
-      color: palette?.text,
+      color: palette.text,
       align: "center",
-      maxWidth: width * 0?.8,
+      maxWidth: width * 0.8,
     },
     animations: [
       {
         property: "y",
-        from: height * 0?.75,
-        to: height * 0?.7,
-        startTime: 0?.8,
-        endTime: 1?.3,
+        from: height * 0.75,
+        to: height * 0.7,
+        startTime: 0.8,
+        endTime: 1.3,
         easing: "easeOut",
       },
       {
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0?.8,
-        endTime: 1?.2,
+        startTime: 0.8,
+        endTime: 1.2,
         easing: "easeOut",
       },
     ],
-    audioReactive: options?.audioReactive?.enabled
+    audioReactive: options.audioReactive?.enabled
       ? {
           enabled: true,
           property: "glow",
-          intensity: 0?.3,
+          intensity: 0.3,
         }
       : undefined,
   });
@@ -646,16 +646,16 @@ export function compileReleaseAnnouncement(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.77,
+      y: height * 0.77,
     },
-    startTime: 1?.0,
+    startTime: 1.0,
     endTime: duration,
     config: {
-      text: options?.artistName,
+      text: options.artistName,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.035),
+      fontSize: Math.round(width * 0.035),
       fontWeight: "500",
-      color: palette?.textSecondary,
+      color: palette.textSecondary,
       align: "center",
     },
     animations: [
@@ -663,8 +663,8 @@ export function compileReleaseAnnouncement(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 1?.0,
-        endTime: 1?.4,
+        startTime: 1.0,
+        endTime: 1.4,
         easing: "easeOut",
       },
     ],
@@ -679,16 +679,16 @@ export function compileReleaseAnnouncement(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.85,
+      y: height * 0.85,
     },
-    startTime: 1?.5,
+    startTime: 1.5,
     endTime: duration,
     config: {
       text: `OUT ${options?.releaseDate}`,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.028),
+      fontSize: Math.round(width * 0.028),
       fontWeight: "600",
-      color: palette?.accent,
+      color: palette.accent,
       align: "center",
     },
     animations: [
@@ -696,8 +696,8 @@ export function compileReleaseAnnouncement(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 1?.5,
-        endTime: 1?.8,
+        startTime: 1.5,
+        endTime: 1.8,
         easing: "easeOut",
       },
     ],
@@ -720,19 +720,19 @@ export function compileReleaseAnnouncement(
   }
 
   return {
-    id: options?.id,
-    name: options?.name,
+    id: options.id,
+    name: options.name,
     type: "release",
     width,
     height,
-    fps: options?.fps || 30,
+    fps: options.fps || 30,
     duration,
     layers,
     metadata: {
       createdAt: new Date().toISOString(),
-      aspectRatio: options?.aspectRatio,
+      aspectRatio: options.aspectRatio,
       platform: ASPECT_RATIOS[options?.aspectRatio].platforms,
-      palette: options?.palette,
+      palette: options.palette,
     },
   };
 }
@@ -752,13 +752,13 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
     startTime: 0,
     endTime: duration,
     config: {
-      type: background?.type,
-      color: background?.color || palette?.background,
-      gradientColors: background?.gradientColors || [
+      type: background.type,
+      color: background.color || palette?.background,
+      gradientColors: background.gradientColors || [
         palette?.background,
         palette?.primary + "40",
       ],
-      gradientAngle: background?.gradientAngle || 180,
+      gradientAngle: background.gradientAngle || 180,
     },
     animations: [],
   });
@@ -772,42 +772,42 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.12,
+      y: height * 0.12,
     },
-    startTime: 0?.3,
+    startTime: 0.3,
     endTime: duration,
     config: {
-      text: options?.tourName,
+      text: options.tourName,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.055),
+      fontSize: Math.round(width * 0.055),
       fontWeight: "900",
-      color: palette?.text,
+      color: palette.text,
       align: "center",
-      maxWidth: width * 0?.9,
+      maxWidth: width * 0.9,
     },
     animations: [
       {
         property: "scaleX",
-        from: 1?.2,
+        from: 1.2,
         to: 1,
-        startTime: 0?.3,
-        endTime: 0?.8,
+        startTime: 0.3,
+        endTime: 0.8,
         easing: "easeOut",
       },
       {
         property: "scaleY",
-        from: 1?.2,
+        from: 1.2,
         to: 1,
-        startTime: 0?.3,
-        endTime: 0?.8,
+        startTime: 0.3,
+        endTime: 0.8,
         easing: "easeOut",
       },
       {
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0?.3,
-        endTime: 0?.6,
+        startTime: 0.3,
+        endTime: 0.6,
         easing: "easeOut",
       },
     ],
@@ -822,16 +822,16 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.19,
+      y: height * 0.19,
     },
-    startTime: 0?.5,
+    startTime: 0.5,
     endTime: duration,
     config: {
-      text: options?.artistName,
+      text: options.artistName,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.03),
+      fontSize: Math.round(width * 0.03),
       fontWeight: "500",
-      color: palette?.textSecondary,
+      color: palette.textSecondary,
       align: "center",
     },
     animations: [
@@ -839,19 +839,19 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0?.5,
-        endTime: 0?.8,
+        startTime: 0.5,
+        endTime: 0.8,
         easing: "easeOut",
       },
     ],
   });
 
-  const _dateStartY = height * 0?.28;
-  const _dateSpacing = height * 0?.08;
-  const _maxVisibleDates = Math?.min(options?.dates.length, 6);
+  const dateStartY = height * 0.28;
+  const dateSpacing = height * 0.08;
+  const maxVisibleDates = Math?.min(options?.dates.length, 6);
 
   options?.dates.slice(0, maxVisibleDates).forEach((dateInfo, index) => {
-    const _delayBase = 0?.8 + index * 0?.15;
+    const delayBase = 0.8 + index * 0.15;
     layers?.push({
       id: generateId(),
       type: "text",
@@ -860,26 +860,26 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
       opacity: 1,
       transform: {
         ...getDefaultTransform(),
-        x: width * 0?.1,
+        x: width * 0.1,
         y: dateStartY + index * dateSpacing,
       },
       startTime: delayBase,
       endTime: duration,
       config: {
-        text: dateInfo?.date,
+        text: dateInfo.date,
         font: "Inter",
-        fontSize: Math?.round(width * 0?.022),
+        fontSize: Math.round(width * 0.022),
         fontWeight: "600",
-        color: palette?.accent,
+        color: palette.accent,
         align: "left",
       },
       animations: [
         {
           property: "x",
-          from: width * 0?.05,
-          to: width * 0?.1,
+          from: width * 0.05,
+          to: width * 0.1,
           startTime: delayBase,
-          endTime: delayBase + 0?.4,
+          endTime: delayBase + 0.4,
           easing: "easeOut",
         },
         {
@@ -887,7 +887,7 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
           from: 0,
           to: 1,
           startTime: delayBase,
-          endTime: delayBase + 0?.3,
+          endTime: delayBase + 0.3,
           easing: "easeOut",
         },
       ],
@@ -901,35 +901,35 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
       opacity: 1,
       transform: {
         ...getDefaultTransform(),
-        x: width * 0?.35,
+        x: width * 0.35,
         y: dateStartY + index * dateSpacing,
       },
-      startTime: delayBase + 0?.1,
+      startTime: delayBase + 0.1,
       endTime: duration,
       config: {
         text: `${dateInfo?.venue} - ${dateInfo?.city}${dateInfo?.country ? `, ${dateInfo?.country}` : ""}`,
         font: "Inter",
-        fontSize: Math?.round(width * 0?.02),
+        fontSize: Math.round(width * 0.02),
         fontWeight: "400",
-        color: dateInfo?.soldOut ? palette?.textSecondary : palette?.text,
+        color: dateInfo.soldOut ? palette?.textSecondary : palette?.text,
         align: "left",
-        maxWidth: width * 0?.5,
+        maxWidth: width * 0.5,
       },
       animations: [
         {
           property: "x",
-          from: width * 0?.3,
-          to: width * 0?.35,
-          startTime: delayBase + 0?.1,
-          endTime: delayBase + 0?.5,
+          from: width * 0.3,
+          to: width * 0.35,
+          startTime: delayBase + 0.1,
+          endTime: delayBase + 0.5,
           easing: "easeOut",
         },
         {
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: delayBase + 0?.1,
-          endTime: delayBase + 0?.4,
+          startTime: delayBase + 0.1,
+          endTime: delayBase + 0.4,
           easing: "easeOut",
         },
       ],
@@ -944,15 +944,15 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
         opacity: 1,
         transform: {
           ...getDefaultTransform(),
-          x: width * 0?.88,
+          x: width * 0.88,
           y: dateStartY + index * dateSpacing,
         },
-        startTime: delayBase + 0?.2,
+        startTime: delayBase + 0.2,
         endTime: duration,
         config: {
           text: "SOLD OUT",
           font: "Inter",
-          fontSize: Math?.round(width * 0?.015),
+          fontSize: Math.round(width * 0.015),
           fontWeight: "700",
           color: "#ff4444",
           align: "right",
@@ -962,8 +962,8 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
             property: "opacity",
             from: 0,
             to: 1,
-            startTime: delayBase + 0?.2,
-            endTime: delayBase + 0?.5,
+            startTime: delayBase + 0.2,
+            endTime: delayBase + 0.5,
             easing: "easeOut",
           },
         ],
@@ -988,19 +988,19 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
   }
 
   return {
-    id: options?.id,
-    name: options?.name,
+    id: options.id,
+    name: options.name,
     type: "tour",
     width,
     height,
-    fps: options?.fps || 30,
+    fps: options.fps || 30,
     duration,
     layers,
     metadata: {
       createdAt: new Date().toISOString(),
-      aspectRatio: options?.aspectRatio,
+      aspectRatio: options.aspectRatio,
       platform: ASPECT_RATIOS[options?.aspectRatio].platforms,
-      palette: options?.palette,
+      palette: options.palette,
     },
   };
 }
@@ -1022,10 +1022,10 @@ export function compileBehindTheScenes(
     startTime: 0,
     endTime: duration,
     config: {
-      type: background?.type,
-      color: background?.color || palette?.background,
-      filmGrain: options?.filmGrain || 0,
-      vintageEffect: options?.vintageEffect || false,
+      type: background.type,
+      color: background.color || palette?.background,
+      filmGrain: options.filmGrain || 0,
+      vintageEffect: options.vintageEffect || false,
     },
     animations: [],
   });
@@ -1042,9 +1042,9 @@ export function compileBehindTheScenes(
       startTime: currentTime,
       endTime: currentTime + clip?.duration,
       config: {
-        src: clip?.url,
+        src: clip.url,
         fit: "cover",
-        transition: options?.animation?.transition || "crossfade",
+        transition: options.animation?.transition || "crossfade",
       },
       animations: [
         {
@@ -1052,14 +1052,14 @@ export function compileBehindTheScenes(
           from: 0,
           to: 1,
           startTime: currentTime,
-          endTime: currentTime + 0?.5,
+          endTime: currentTime + 0.5,
           easing: "easeOut",
         },
         {
           property: "opacity",
           from: 1,
           to: 0,
-          startTime: currentTime + clip?.duration - 0?.5,
+          startTime: currentTime + clip?.duration - 0.5,
           endTime: currentTime + clip?.duration,
           easing: "easeIn",
         },
@@ -1076,19 +1076,19 @@ export function compileBehindTheScenes(
         transform: {
           ...getDefaultTransform(),
           x: width / 2,
-          y: height * 0?.88,
+          y: height * 0.88,
         },
-        startTime: currentTime + 0?.3,
-        endTime: currentTime + clip?.duration - 0?.3,
+        startTime: currentTime + 0.3,
+        endTime: currentTime + clip?.duration - 0.3,
         config: {
-          text: clip?.caption,
+          text: clip.caption,
           font: "Inter",
-          fontSize: Math?.round(width * 0?.025),
+          fontSize: Math.round(width * 0.025),
           fontWeight: "400",
-          color: palette?.text,
+          color: palette.text,
           align: "center",
           shadow: {
-            color: "rgba(0,0,0,0?.8)",
+            color: "rgba(0,0,0,0.8)",
             blur: 10,
             offsetX: 0,
             offsetY: 2,
@@ -1099,8 +1099,8 @@ export function compileBehindTheScenes(
             property: "opacity",
             from: 0,
             to: 1,
-            startTime: currentTime + 0?.3,
-            endTime: currentTime + 0?.6,
+            startTime: currentTime + 0.3,
+            endTime: currentTime + 0.6,
             easing: "easeOut",
           },
         ],
@@ -1119,16 +1119,16 @@ export function compileBehindTheScenes(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.1,
+      y: height * 0.1,
     },
-    startTime: 0?.5,
+    startTime: 0.5,
     endTime: duration,
     config: {
-      text: options?.title,
+      text: options.title,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.04),
+      fontSize: Math.round(width * 0.04),
       fontWeight: "700",
-      color: palette?.text,
+      color: palette.text,
       align: "center",
     },
     animations: [
@@ -1136,8 +1136,8 @@ export function compileBehindTheScenes(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0?.5,
-        endTime: 0?.8,
+        startTime: 0.5,
+        endTime: 0.8,
         easing: "easeOut",
       },
     ],
@@ -1153,16 +1153,16 @@ export function compileBehindTheScenes(
       transform: {
         ...getDefaultTransform(),
         x: width / 2,
-        y: height * 0?.15,
+        y: height * 0.15,
       },
-      startTime: 0?.7,
+      startTime: 0.7,
       endTime: duration,
       config: {
-        text: options?.subtitle,
+        text: options.subtitle,
         font: "Inter",
-        fontSize: Math?.round(width * 0?.025),
+        fontSize: Math.round(width * 0.025),
         fontWeight: "400",
-        color: palette?.textSecondary,
+        color: palette.textSecondary,
         align: "center",
       },
       animations: [
@@ -1170,8 +1170,8 @@ export function compileBehindTheScenes(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 0?.7,
-          endTime: 1?.0,
+          startTime: 0.7,
+          endTime: 1.0,
           easing: "easeOut",
         },
       ],
@@ -1183,19 +1183,19 @@ export function compileBehindTheScenes(
   }
 
   return {
-    id: options?.id,
-    name: options?.name,
+    id: options.id,
+    name: options.name,
     type: "bts",
     width,
     height,
-    fps: options?.fps || 30,
+    fps: options.fps || 30,
     duration,
     layers,
     metadata: {
       createdAt: new Date().toISOString(),
-      aspectRatio: options?.aspectRatio,
+      aspectRatio: options.aspectRatio,
       platform: ASPECT_RATIOS[options?.aspectRatio].platforms,
-      palette: options?.palette,
+      palette: options.palette,
     },
   };
 }
@@ -1217,22 +1217,22 @@ export function compileQuoteLyric(
     startTime: 0,
     endTime: duration,
     config: {
-      type: background?.type,
-      color: background?.color || palette?.background,
-      gradientColors: background?.gradientColors || [
+      type: background.type,
+      color: background.color || palette?.background,
+      gradientColors: background.gradientColors || [
         palette?.background,
         palette?.primary + "30",
       ],
-      blur: options?.backgroundBlur || 0,
+      blur: options.backgroundBlur || 0,
     },
     animations: [],
   });
 
-  const _quoteStyle = options?.quotationStyle || "minimal";
-  const _quoteFontSize =
-    quoteStyle === "handwritten" ? width * 0?.045 : width * 0?.04;
-  const _quoteFont = quoteStyle === "handwritten" ? "Georgia" : "Inter";
-  const _quoteWeight = quoteStyle === "neon" ? "300" : "500";
+  const quoteStyle = options?.quotationStyle || "minimal";
+  const quoteFontSize =
+    quoteStyle === "handwritten" ? width * 0.045 : width * 0.04;
+  const quoteFont = quoteStyle === "handwritten" ? "Georgia" : "Inter";
+  const quoteWeight = quoteStyle === "neon" ? "300" : "500";
 
   if (quoteStyle === "decorative" || quoteStyle === "neon") {
     layers?.push({
@@ -1240,36 +1240,36 @@ export function compileQuoteLyric(
       type: "text",
       zIndex: 5,
       visible: true,
-      opacity: 0?.3,
+      opacity: 0.3,
       transform: {
         ...getDefaultTransform(),
-        x: width * 0?.12,
-        y: height * 0?.35,
+        x: width * 0.12,
+        y: height * 0.35,
       },
-      startTime: 0?.3,
+      startTime: 0.3,
       endTime: duration,
       config: {
         text: '"',
         font: "Georgia",
-        fontSize: Math?.round(width * 0?.15),
+        fontSize: Math.round(width * 0.15),
         fontWeight: "400",
-        color: palette?.accent,
+        color: palette.accent,
         align: "center",
       },
       animations: [
         {
           property: "opacity",
           from: 0,
-          to: 0?.3,
-          startTime: 0?.3,
-          endTime: 0?.6,
+          to: 0.3,
+          startTime: 0.3,
+          endTime: 0.6,
           easing: "easeOut",
         },
       ],
     });
   }
 
-  layers?.push({
+  layers.push({
     id: generateId(),
     type: "text",
     zIndex: 10,
@@ -1278,20 +1278,20 @@ export function compileQuoteLyric(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.45,
+      y: height * 0.45,
     },
-    startTime: 0?.5,
+    startTime: 0.5,
     endTime: duration,
     config: {
-      text: options?.quote,
+      text: options.quote,
       font: quoteFont,
-      fontSize: Math?.round(quoteFontSize),
+      fontSize: Math.round(quoteFontSize),
       fontWeight: quoteWeight,
-      color: palette?.text,
+      color: palette.text,
       align: "center",
-      maxWidth: width * 0?.8,
-      lineHeight: 1?.5,
-      glowColor: quoteStyle === "neon" ? palette?.accent : undefined,
+      maxWidth: width * 0.8,
+      lineHeight: 1.5,
+      glowColor: quoteStyle === "neon" ? palette.accent : undefined,
       glowIntensity: quoteStyle === "neon" ? 20 : undefined,
     },
     animations: [
@@ -1299,25 +1299,25 @@ export function compileQuoteLyric(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0?.5,
-        endTime: 1?.2,
+        startTime: 0.5,
+        endTime: 1.2,
         easing: "easeOut",
       },
     ],
-    audioReactive: options?.audioReactive?.enabled
+    audioReactive: options.audioReactive.enabled
       ? {
           enabled: true,
           property: "glow",
-          intensity: 0?.5,
+          intensity: 0.5,
         }
       : undefined,
   });
 
-  if (options?.attribution || options?.artistName) {
-    const _attributionText =
-      options?.attribution ||
-      `— ${options?.artistName}${options?.songTitle ? `, "${options?.songTitle}"` : ""}`;
-    layers?.push({
+  if (options.attribution || options.artistName) {
+    const attributionText =
+      options.attribution ||
+      `— ${options.artistName}${options.songTitle ? `, "${options?.songTitle}"` : ""}`;
+    layers.push({
       id: generateId(),
       type: "text",
       zIndex: 11,
@@ -1326,16 +1326,16 @@ export function compileQuoteLyric(
       transform: {
         ...getDefaultTransform(),
         x: width / 2,
-        y: height * 0?.65,
+        y: height * 0.65,
       },
-      startTime: 1?.5,
+      startTime: 1.5,
       endTime: duration,
       config: {
         text: attributionText,
         font: "Inter",
-        fontSize: Math?.round(width * 0?.022),
+        fontSize: Math.round(width * 0.022),
         fontWeight: "400",
-        color: palette?.textSecondary,
+        color: palette.textSecondary,
         align: "center",
       },
       animations: [
@@ -1343,18 +1343,18 @@ export function compileQuoteLyric(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 1?.5,
-          endTime: 1?.8,
+          startTime: 1.5,
+          endTime: 1.8,
           easing: "easeOut",
         },
       ],
     });
   }
 
-  if (options?.callToAction) {
-    layers?.push(
+  if (options.callToAction) {
+    layers.push(
       createCallToActionLayer(
-        options?.callToAction,
+        options.callToAction,
         width,
         height,
         duration,
@@ -1363,24 +1363,24 @@ export function compileQuoteLyric(
     );
   }
 
-  if (options?.logo) {
-    layers?.push(createLogoLayer(options?.logo, width, height, duration));
+  if (options.logo) {
+    layers.push(createLogoLayer(options.logo, width, height, duration));
   }
 
   return {
-    id: options?.id,
-    name: options?.name,
+    id: options.id,
+    name: options.name,
     type: "quote",
     width,
     height,
-    fps: options?.fps || 30,
+    fps: options.fps || 30,
     duration,
     layers,
     metadata: {
       createdAt: new Date().toISOString(),
-      aspectRatio: options?.aspectRatio,
-      platform: ASPECT_RATIOS[options?.aspectRatio].platforms,
-      palette: options?.palette,
+      aspectRatio: options.aspectRatio,
+      platform: ASPECT_RATIOS[options.aspectRatio].platforms,
+      palette: options.palette,
     },
   };
 }
@@ -1388,11 +1388,11 @@ export function compileQuoteLyric(
 export function compileCountdownTimer(
   options: CountdownTimerOptions,
 ): CompiledTemplate {
-  const { width, height } = ASPECT_RATIOS[options?.aspectRatio];
+  const { width, height } = ASPECT_RATIOS[options.aspectRatio];
   const layers: TemplateLayer[] = [];
   const { palette, background, duration } = options;
 
-  layers?.push({
+  layers.push({
     id: generateId(),
     type: "background",
     zIndex: 0,
@@ -1402,29 +1402,29 @@ export function compileCountdownTimer(
     startTime: 0,
     endTime: duration,
     config: {
-      type: background?.type,
-      color: background?.color || palette?.background,
-      gradientColors: background?.gradientColors,
+      type: background.type,
+      color: background.color || palette.background,
+      gradientColors: background.gradientColors,
     },
     animations: [],
   });
 
-  if (options?.coverArtUrl) {
-    layers?.push({
+  if (options.coverArtUrl) {
+    layers.push({
       id: generateId(),
       type: "image",
       zIndex: 2,
       visible: true,
-      opacity: 0?.15,
+      opacity: 0.15,
       transform: {
         ...getDefaultTransform(),
-        scaleX: 1?.2,
-        scaleY: 1?.2,
+        scaleX: 1.2,
+        scaleY: 1.2,
       },
       startTime: 0,
       endTime: duration,
       config: {
-        src: options?.coverArtUrl,
+        src: options.coverArtUrl,
         fit: "cover",
         blur: 30,
       },
@@ -1432,7 +1432,7 @@ export function compileCountdownTimer(
     });
   }
 
-  layers?.push({
+  layers.push({
     id: generateId(),
     type: "text",
     zIndex: 10,
@@ -1441,16 +1441,16 @@ export function compileCountdownTimer(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.15,
+      y: height * 0.15,
     },
-    startTime: 0?.3,
+    startTime: 0.3,
     endTime: duration,
     config: {
-      text: options?.title,
+      text: options.title,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.045),
+      fontSize: Math.round(width * 0.045),
       fontWeight: "700",
-      color: palette?.text,
+      color: palette.text,
       align: "center",
     },
     animations: [
@@ -1458,14 +1458,14 @@ export function compileCountdownTimer(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0?.3,
-        endTime: 0?.6,
+        startTime: 0.3,
+        endTime: 0.6,
         easing: "easeOut",
       },
     ],
   });
 
-  layers?.push({
+  layers.push({
     id: generateId(),
     type: "text",
     zIndex: 11,
@@ -1474,16 +1474,16 @@ export function compileCountdownTimer(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.22,
+      y: height * 0.22,
     },
-    startTime: 0?.5,
+    startTime: 0.5,
     endTime: duration,
     config: {
-      text: options?.eventName,
+      text: options.eventName,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.028),
+      fontSize: Math.round(width * 0.028),
       fontWeight: "400",
-      color: palette?.textSecondary,
+      color: palette.textSecondary,
       align: "center",
     },
     animations: [
@@ -1491,24 +1491,24 @@ export function compileCountdownTimer(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0?.5,
-        endTime: 0?.8,
+        startTime: 0.5,
+        endTime: 0.8,
         easing: "easeOut",
       },
     ],
   });
 
-  const _timerY = height * 0?.45;
-  const _timerFontSize =
-    options?.timerStyle === "minimal" ? width * 0?.08 : width * 0?.1;
-  const _timerUnits = ["DAYS", "HOURS", "MINS", "SECS"];
-  const _unitSpacing = width * 0?.22;
-  const _startX = width / 2 - unitSpacing * 1?.5;
+  const timerY = height * 0.45;
+  const timerFontSize =
+    options.timerStyle === "minimal" ? width * 0.08 : width * 0.1;
+  const timerUnits = ["DAYS", "HOURS", "MINS", "SECS"];
+  const unitSpacing = width * 0.22;
+  const startX = width / 2 - unitSpacing * 1.5;
 
-  timerUnits?.forEach((unit, index) => {
-    const _x = startX + index * unitSpacing;
+  timerUnits.forEach((unit, index) => {
+    const x = startX + index * unitSpacing;
 
-    layers?.push({
+    layers.push({
       id: generateId(),
       type: "text",
       zIndex: 20 + index,
@@ -1519,58 +1519,58 @@ export function compileCountdownTimer(
         x,
         y: timerY,
       },
-      startTime: 0?.6 + index * 0?.1,
+      startTime: 0.6 + index * 0.1,
       endTime: duration,
       config: {
         text: "00",
-        font: options?.timerStyle === "digital" ? "monospace" : "Inter",
-        fontSize: Math?.round(timerFontSize),
+        font: options.timerStyle === "digital" ? "monospace" : "Inter",
+        fontSize: Math.round(timerFontSize),
         fontWeight: "700",
-        color: palette?.text,
+        color: palette.text,
         align: "center",
         isCountdownDigit: true,
-        countdownUnit: unit?.toLowerCase(),
-        targetDate: options?.targetDate,
-        glowColor: options?.timerStyle === "neon" ? palette?.accent : undefined,
-        glowIntensity: options?.timerStyle === "neon" ? 15 : undefined,
+        countdownUnit: unit.toLowerCase(),
+        targetDate: options.targetDate,
+        glowColor: options.timerStyle === "neon" ? palette.accent : undefined,
+        glowIntensity: options.timerStyle === "neon" ? 15 : undefined,
       },
       animations: [
         {
           property: "scaleX",
-          from: 0?.5,
+          from: 0.5,
           to: 1,
-          startTime: 0?.6 + index * 0?.1,
-          endTime: 0?.9 + index * 0?.1,
+          startTime: 0.6 + index * 0.1,
+          endTime: 0.9 + index * 0.1,
           easing: "bounce",
         },
         {
           property: "scaleY",
-          from: 0?.5,
+          from: 0.5,
           to: 1,
-          startTime: 0?.6 + index * 0?.1,
-          endTime: 0?.9 + index * 0?.1,
+          startTime: 0.6 + index * 0.1,
+          endTime: 0.9 + index * 0.1,
           easing: "bounce",
         },
         {
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 0?.6 + index * 0?.1,
-          endTime: 0?.8 + index * 0?.1,
+          startTime: 0.6 + index * 0.1,
+          endTime: 0.8 + index * 0.1,
           easing: "easeOut",
         },
       ],
-      audioReactive: options?.audioReactive?.enabled
+      audioReactive: options.audioReactive.enabled
         ? {
             enabled: true,
             property: "scale",
-            intensity: 0?.03,
+            intensity: 0.03,
           }
         : undefined,
     });
 
-    if (options?.showLabels) {
-      layers?.push({
+    if (options.showLabels) {
+      layers.push({
         id: generateId(),
         type: "text",
         zIndex: 30 + index,
@@ -1579,16 +1579,16 @@ export function compileCountdownTimer(
         transform: {
           ...getDefaultTransform(),
           x,
-          y: timerY + timerFontSize * 0?.7,
+          y: timerY + timerFontSize * 0.7,
         },
-        startTime: 0?.8 + index * 0?.1,
+        startTime: 0.8 + index * 0.1,
         endTime: duration,
         config: {
           text: unit,
           font: "Inter",
-          fontSize: Math?.round(width * 0?.015),
+          fontSize: Math.round(width * 0.015),
           fontWeight: "500",
-          color: palette?.textSecondary,
+          color: palette.textSecondary,
           align: "center",
           letterSpacing: 2,
         },
@@ -1597,8 +1597,8 @@ export function compileCountdownTimer(
             property: "opacity",
             from: 0,
             to: 1,
-            startTime: 0?.8 + index * 0?.1,
-            endTime: 1?.0 + index * 0?.1,
+            startTime: 0.8 + index * 0.1,
+            endTime: 1.0 + index * 0.1,
             easing: "easeOut",
           },
         ],
@@ -1606,7 +1606,7 @@ export function compileCountdownTimer(
     }
   });
 
-  layers?.push({
+  layers.push({
     id: generateId(),
     type: "text",
     zIndex: 50,
@@ -1615,16 +1615,16 @@ export function compileCountdownTimer(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.75,
+      y: height * 0.75,
     },
-    startTime: 1?.5,
+    startTime: 1.5,
     endTime: duration,
     config: {
-      text: options?.artistName,
+      text: options.artistName,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.025),
+      fontSize: Math.round(width * 0.025),
       fontWeight: "500",
-      color: palette?.textSecondary,
+      color: palette.textSecondary,
       align: "center",
     },
     animations: [
@@ -1632,17 +1632,17 @@ export function compileCountdownTimer(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 1?.5,
-        endTime: 1?.8,
+        startTime: 1.5,
+        endTime: 1.8,
         easing: "easeOut",
       },
     ],
   });
 
-  if (options?.callToAction) {
-    layers?.push(
+  if (options.callToAction) {
+    layers.push(
       createCallToActionLayer(
-        options?.callToAction,
+        options.callToAction,
         width,
         height,
         duration,
@@ -1651,24 +1651,24 @@ export function compileCountdownTimer(
     );
   }
 
-  if (options?.logo) {
-    layers?.push(createLogoLayer(options?.logo, width, height, duration));
+  if (options.logo) {
+    layers.push(createLogoLayer(options.logo, width, height, duration));
   }
 
   return {
-    id: options?.id,
-    name: options?.name,
+    id: options.id,
+    name: options.name,
     type: "countdown",
     width,
     height,
-    fps: options?.fps || 30,
+    fps: options.fps || 30,
     duration,
     layers,
     metadata: {
       createdAt: new Date().toISOString(),
-      aspectRatio: options?.aspectRatio,
-      platform: ASPECT_RATIOS[options?.aspectRatio].platforms,
-      palette: options?.palette,
+      aspectRatio: options.aspectRatio,
+      platform: ASPECT_RATIOS[options.aspectRatio].platforms,
+      palette: options.palette,
     },
   };
 }
@@ -1676,11 +1676,11 @@ export function compileCountdownTimer(
 export function compileSplitScreen(
   options: SplitScreenOptions,
 ): CompiledTemplate {
-  const { width, height } = ASPECT_RATIOS[options?.aspectRatio];
+  const { width, height } = ASPECT_RATIOS[options.aspectRatio];
   const layers: TemplateLayer[] = [];
   const { palette, background, duration } = options;
 
-  layers?.push({
+  layers.push({
     id: generateId(),
     type: "background",
     zIndex: 0,
@@ -1690,19 +1690,19 @@ export function compileSplitScreen(
     startTime: 0,
     endTime: duration,
     config: {
-      type: background?.type,
-      color: background?.color || palette?.background,
+      type: background.type,
+      color: background.color || palette.background,
     },
     animations: [],
   });
 
-  const _isDiagonal = options?.dividerStyle === "diagonal";
-  const _leftWidth = isDiagonal ? width * 0?.55 : width / 2;
+  const isDiagonal = options.dividerStyle === "diagonal";
+  const leftWidth = isDiagonal ? width * 0.55 : width / 2;
 
-  if (options?.leftContent.imageUrl || options?.leftContent.videoUrl) {
-    layers?.push({
+  if (options.leftContent.imageUrl || options.leftContent.videoUrl) {
+    layers.push({
       id: generateId(),
-      type: options?.leftContent.videoUrl ? "video" : "image",
+      type: options.leftContent.videoUrl ? "video" : "image",
       zIndex: 5,
       visible: true,
       opacity: 1,
@@ -1716,21 +1716,21 @@ export function compileSplitScreen(
       startTime: 0,
       endTime: duration,
       config: {
-        src: options?.leftContent.videoUrl || options?.leftContent.imageUrl,
+        src: options.leftContent.videoUrl || options.leftContent.imageUrl,
         fit: "cover",
         clipPath: isDiagonal
-          ? `polygon(0 0, ${leftWidth}px 0, ${leftWidth - width * 0?.1}px ${height}px, 0 ${height}px)`
+          ? `polygon(0 0, ${leftWidth}px 0, ${leftWidth - width * 0.1}px ${height}px, 0 ${height}px)`
           : `rect(0, ${leftWidth}px, ${height}px, 0)`,
       },
       animations:
-        options?.animation?.revealDirection === "left-to-right"
+        options.animation.revealDirection === "left-to-right"
           ? [
               {
                 property: "x",
                 from: -leftWidth,
                 to: 0,
-                startTime: 0?.3,
-                endTime: 1?.0,
+                startTime: 0.3,
+                endTime: 1.0,
                 easing: "easeOut",
               },
             ]
@@ -1738,16 +1738,16 @@ export function compileSplitScreen(
     });
   }
 
-  if (options?.rightContent.imageUrl || options?.rightContent.videoUrl) {
-    layers?.push({
+  if (options.rightContent.imageUrl || options.rightContent.videoUrl) {
+    layers.push({
       id: generateId(),
-      type: options?.rightContent.videoUrl ? "video" : "image",
+      type: options.rightContent.videoUrl ? "video" : "image",
       zIndex: 6,
       visible: true,
       opacity: 1,
       transform: {
         ...getDefaultTransform(),
-        x: isDiagonal ? leftWidth - width * 0?.1 : width / 2,
+        x: isDiagonal ? leftWidth - width * 0.1 : width / 2,
         y: 0,
         anchorX: 0,
         anchorY: 0,
@@ -1755,21 +1755,21 @@ export function compileSplitScreen(
       startTime: 0,
       endTime: duration,
       config: {
-        src: options?.rightContent.videoUrl || options?.rightContent.imageUrl,
+        src: options.rightContent.videoUrl || options.rightContent.imageUrl,
         fit: "cover",
         clipPath: isDiagonal
-          ? `polygon(${width * 0?.1}px 0, ${width - leftWidth + width * 0?.1}px 0, ${width - leftWidth + width * 0?.1}px ${height}px, 0 ${height}px)`
+          ? `polygon(${width * 0.1}px 0, ${width - leftWidth + width * 0.1}px 0, ${width - leftWidth + width * 0.1}px ${height}px, 0 ${height}px)`
           : undefined,
       },
       animations:
-        options?.animation?.revealDirection === "right-to-left"
+        options.animation.revealDirection === "right-to-left"
           ? [
               {
                 property: "x",
                 from: width,
-                to: isDiagonal ? leftWidth - width * 0?.1 : width / 2,
-                startTime: 0?.3,
-                endTime: 1?.0,
+                to: isDiagonal ? leftWidth - width * 0.1 : width / 2,
+                startTime: 0.3,
+                endTime: 1.0,
                 easing: "easeOut",
               },
             ]
@@ -1777,8 +1777,8 @@ export function compileSplitScreen(
     });
   }
 
-  if (options?.dividerStyle !== "none") {
-    layers?.push({
+  if (options.dividerStyle !== "none") {
+    layers.push({
       id: generateId(),
       type: "shape",
       zIndex: 10,
@@ -1788,27 +1788,27 @@ export function compileSplitScreen(
         ...getDefaultTransform(),
         x: width / 2,
         y: 0,
-        anchorX: 0?.5,
+        anchorX: 0.5,
         anchorY: 0,
       },
-      startTime: 0?.5,
+      startTime: 0.5,
       endTime: duration,
       config: {
         type: "rectangle",
         width: isDiagonal ? 8 : 4,
         height: height,
-        fill: options?.dividerColor || palette?.accent,
+        fill: options.dividerColor || palette.accent,
         rotation: isDiagonal ? -5 : 0,
       },
       animations:
-        options?.animation?.dividerAnimation === "glow"
+        options.animation.dividerAnimation === "glow"
           ? [
               {
                 property: "opacity",
-                from: 0?.5,
+                from: 0.5,
                 to: 1,
-                startTime: 0?.5,
-                endTime: 1?.5,
+                startTime: 0.5,
+                endTime: 1.5,
                 easing: "easeInOut",
               },
             ]
@@ -1816,8 +1816,8 @@ export function compileSplitScreen(
     });
   }
 
-  if (options?.leftContent.label) {
-    layers?.push({
+  if (options.leftContent.label) {
+    layers.push({
       id: generateId(),
       type: "text",
       zIndex: 20,
@@ -1826,18 +1826,18 @@ export function compileSplitScreen(
       transform: {
         ...getDefaultTransform(),
         x: leftWidth / 2,
-        y: height * 0?.08,
+        y: height * 0.08,
       },
-      startTime: 1?.0,
+      startTime: 1.0,
       endTime: duration,
       config: {
-        text: options?.leftContent.label,
+        text: options.leftContent.label,
         font: "Inter",
-        fontSize: Math?.round(width * 0?.02),
+        fontSize: Math.round(width * 0.02),
         fontWeight: "600",
-        color: palette?.text,
+        color: palette.text,
         align: "center",
-        backgroundColor: palette?.overlay,
+        backgroundColor: palette.overlay,
         padding: 10,
         borderRadius: 4,
       },
@@ -1846,16 +1846,16 @@ export function compileSplitScreen(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 1?.0,
-          endTime: 1?.3,
+          startTime: 1.0,
+          endTime: 1.3,
           easing: "easeOut",
         },
       ],
     });
   }
 
-  if (options?.rightContent.label) {
-    layers?.push({
+  if (options.rightContent.label) {
+    layers.push({
       id: generateId(),
       type: "text",
       zIndex: 21,
@@ -1864,18 +1864,18 @@ export function compileSplitScreen(
       transform: {
         ...getDefaultTransform(),
         x: width / 2 + leftWidth / 2,
-        y: height * 0?.08,
+        y: height * 0.08,
       },
-      startTime: 1?.0,
+      startTime: 1.0,
       endTime: duration,
       config: {
-        text: options?.rightContent.label,
+        text: options.rightContent.label,
         font: "Inter",
-        fontSize: Math?.round(width * 0?.02),
+        fontSize: Math.round(width * 0.02),
         fontWeight: "600",
-        color: palette?.text,
+        color: palette.text,
         align: "center",
-        backgroundColor: palette?.overlay,
+        backgroundColor: palette.overlay,
         padding: 10,
         borderRadius: 4,
       },
@@ -1884,16 +1884,16 @@ export function compileSplitScreen(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 1?.0,
-          endTime: 1?.3,
+          startTime: 1.0,
+          endTime: 1.3,
           easing: "easeOut",
         },
       ],
     });
   }
 
-  if (options?.comparisonType === "vs") {
-    layers?.push({
+  if (options.comparisonType === "vs") {
+    layers.push({
       id: generateId(),
       type: "text",
       zIndex: 25,
@@ -1904,16 +1904,16 @@ export function compileSplitScreen(
         x: width / 2,
         y: height / 2,
       },
-      startTime: 0?.8,
+      startTime: 0.8,
       endTime: duration,
       config: {
         text: "VS",
         font: "Inter",
-        fontSize: Math?.round(width * 0?.05),
+        fontSize: Math.round(width * 0.05),
         fontWeight: "900",
-        color: palette?.accent,
+        color: palette.accent,
         align: "center",
-        glowColor: palette?.accent,
+        glowColor: palette.accent,
         glowIntensity: 20,
       },
       animations: [
@@ -1921,40 +1921,40 @@ export function compileSplitScreen(
           property: "scaleX",
           from: 2,
           to: 1,
-          startTime: 0?.8,
-          endTime: 1?.2,
+          startTime: 0.8,
+          endTime: 1.2,
           easing: "bounce",
         },
         {
           property: "scaleY",
           from: 2,
           to: 1,
-          startTime: 0?.8,
-          endTime: 1?.2,
+          startTime: 0.8,
+          endTime: 1.2,
           easing: "bounce",
         },
       ],
     });
   }
 
-  if (options?.logo) {
-    layers?.push(createLogoLayer(options?.logo, width, height, duration));
+  if (options.logo) {
+    layers.push(createLogoLayer(options.logo, width, height, duration));
   }
 
   return {
-    id: options?.id,
-    name: options?.name,
+    id: options.id,
+    name: options.name,
     type: "split",
     width,
     height,
-    fps: options?.fps || 30,
+    fps: options.fps || 30,
     duration,
     layers,
     metadata: {
       createdAt: new Date().toISOString(),
-      aspectRatio: options?.aspectRatio,
-      platform: ASPECT_RATIOS[options?.aspectRatio].platforms,
-      palette: options?.palette,
+      aspectRatio: options.aspectRatio,
+      platform: ASPECT_RATIOS[options.aspectRatio].platforms,
+      palette: options.palette,
     },
   };
 }
@@ -1962,11 +1962,11 @@ export function compileSplitScreen(
 export function compileSocialTeaser(
   options: SocialTeaserOptions,
 ): CompiledTemplate {
-  const { width, height } = ASPECT_RATIOS[options?.aspectRatio];
+  const { width, height } = ASPECT_RATIOS[options.aspectRatio];
   const layers: TemplateLayer[] = [];
   const { palette, background, duration } = options;
 
-  layers?.push({
+  layers.push({
     id: generateId(),
     type: "background",
     zIndex: 0,
@@ -1976,49 +1976,49 @@ export function compileSocialTeaser(
     startTime: 0,
     endTime: duration,
     config: {
-      type: background?.type,
-      color: background?.color || palette?.background,
-      gradientColors: background?.gradientColors || [
-        palette?.background,
-        palette?.primary + "40",
+      type: background.type,
+      color: background.color || palette.background,
+      gradientColors: background.gradientColors || [
+        palette.background,
+        palette.primary + "40",
       ],
       gradientAngle: 180,
     },
     animations: [],
   });
 
-  if (options?.coverArtUrl) {
-    layers?.push({
+  if (options.coverArtUrl) {
+    layers.push({
       id: generateId(),
       type: "image",
       zIndex: 2,
       visible: true,
-      opacity: 0?.2,
+      opacity: 0.2,
       transform: {
         ...getDefaultTransform(),
-        scaleX: 1?.3,
-        scaleY: 1?.3,
+        scaleX: 1.3,
+        scaleY: 1.3,
       },
       startTime: 0,
       endTime: duration,
       config: {
-        src: options?.coverArtUrl,
+        src: options.coverArtUrl,
         fit: "cover",
         blur: 40,
       },
       animations: [
         {
           property: "scaleX",
-          from: 1?.3,
-          to: 1?.5,
+          from: 1.3,
+          to: 1.5,
           startTime: 0,
           endTime: duration,
           easing: "linear",
         },
         {
           property: "scaleY",
-          from: 1?.3,
-          to: 1?.5,
+          from: 1.3,
+          to: 1.5,
           startTime: 0,
           endTime: duration,
           easing: "linear",
@@ -2027,8 +2027,8 @@ export function compileSocialTeaser(
     });
   }
 
-  const _hookDelay = 0?.2;
-  layers?.push({
+  const hookDelay = 0.2;
+  layers.push({
     id: generateId(),
     type: "text",
     zIndex: 10,
@@ -2037,34 +2037,34 @@ export function compileSocialTeaser(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.35,
+      y: height * 0.35,
     },
     startTime: hookDelay,
-    endTime: duration * 0?.6,
+    endTime: duration * 0.6,
     config: {
-      text: options?.hookText,
+      text: options.hookText,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.055),
+      fontSize: Math.round(width * 0.055),
       fontWeight: "800",
-      color: palette?.text,
+      color: palette.text,
       align: "center",
-      maxWidth: width * 0?.85,
+      maxWidth: width * 0.85,
     },
     animations: [
       {
         property: "scaleX",
-        from: 0?.8,
+        from: 0.8,
         to: 1,
         startTime: hookDelay,
-        endTime: hookDelay + 0?.4,
+        endTime: hookDelay + 0.4,
         easing: "easeOut",
       },
       {
         property: "scaleY",
-        from: 0?.8,
+        from: 0.8,
         to: 1,
         startTime: hookDelay,
-        endTime: hookDelay + 0?.4,
+        endTime: hookDelay + 0.4,
         easing: "easeOut",
       },
       {
@@ -2072,34 +2072,34 @@ export function compileSocialTeaser(
         from: 0,
         to: 1,
         startTime: hookDelay,
-        endTime: hookDelay + 0?.3,
+        endTime: hookDelay + 0.3,
         easing: "easeOut",
       },
       {
         property: "opacity",
         from: 1,
         to: 0,
-        startTime: duration * 0?.5,
-        endTime: duration * 0?.6,
+        startTime: duration * 0.5,
+        endTime: duration * 0.6,
         easing: "easeIn",
       },
     ],
-    audioReactive: options?.audioReactive?.enabled
+    audioReactive: options.audioReactive.enabled
       ? {
           enabled: true,
           property: "scale",
-          intensity: 0?.05,
+          intensity: 0.05,
         }
       : undefined,
   });
 
-  const _revealTime =
-    options?.animation?.revealTiming === "early"
-      ? duration * 0?.4
-      : options?.animation?.revealTiming === "late"
-        ? duration * 0?.7
-        : duration * 0?.55;
-  layers?.push({
+  const revealTime =
+    options.animation.revealTiming === "early"
+      ? duration * 0.4
+      : options.animation.revealTiming === "late"
+        ? duration * 0.7
+        : duration * 0.55;
+  layers.push({
     id: generateId(),
     type: "text",
     zIndex: 11,
@@ -2108,26 +2108,26 @@ export function compileSocialTeaser(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.45,
+      y: height * 0.45,
     },
     startTime: revealTime,
     endTime: duration,
     config: {
-      text: options?.mainContent,
+      text: options.mainContent,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.045),
+      fontSize: Math.round(width * 0.045),
       fontWeight: "600",
-      color: palette?.text,
+      color: palette.text,
       align: "center",
-      maxWidth: width * 0?.85,
+      maxWidth: width * 0.85,
     },
     animations: [
       {
         property: "y",
-        from: height * 0?.5,
-        to: height * 0?.45,
+        from: height * 0.5,
+        to: height * 0.45,
         startTime: revealTime,
-        endTime: revealTime + 0?.5,
+        endTime: revealTime + 0.5,
         easing: "easeOut",
       },
       {
@@ -2135,13 +2135,13 @@ export function compileSocialTeaser(
         from: 0,
         to: 1,
         startTime: revealTime,
-        endTime: revealTime + 0?.3,
+        endTime: revealTime + 0.3,
         easing: "easeOut",
       },
     ],
   });
 
-  layers?.push({
+  layers.push({
     id: generateId(),
     type: "text",
     zIndex: 12,
@@ -2150,16 +2150,16 @@ export function compileSocialTeaser(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0?.55,
+      y: height * 0.55,
     },
-    startTime: revealTime + 0?.3,
+    startTime: revealTime + 0.3,
     endTime: duration,
     config: {
-      text: options?.artistName,
+      text: options.artistName,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.028),
+      fontSize: Math.round(width * 0.028),
       fontWeight: "500",
-      color: palette?.accent,
+      color: palette.accent,
       align: "center",
     },
     animations: [
@@ -2167,15 +2167,15 @@ export function compileSocialTeaser(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: revealTime + 0?.3,
-        endTime: revealTime + 0?.6,
+        startTime: revealTime + 0.3,
+        endTime: revealTime + 0.6,
         easing: "easeOut",
       },
     ],
   });
 
-  if (options?.mentionHandle) {
-    layers?.push({
+  if (options.mentionHandle) {
+    layers.push({
       id: generateId(),
       type: "text",
       zIndex: 13,
@@ -2184,16 +2184,16 @@ export function compileSocialTeaser(
       transform: {
         ...getDefaultTransform(),
         x: width / 2,
-        y: height * 0?.9,
+        y: height * 0.9,
       },
-      startTime: duration * 0?.7,
+      startTime: duration * 0.7,
       endTime: duration,
       config: {
-        text: options?.mentionHandle,
+        text: options.mentionHandle,
         font: "Inter",
-        fontSize: Math?.round(width * 0?.022),
+        fontSize: Math.round(width * 0.022),
         fontWeight: "500",
-        color: palette?.textSecondary,
+        color: palette.textSecondary,
         align: "center",
       },
       animations: [
@@ -2201,16 +2201,16 @@ export function compileSocialTeaser(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: duration * 0?.7,
-          endTime: duration * 0?.8,
+          startTime: duration * 0.7,
+          endTime: duration * 0.8,
           easing: "easeOut",
         },
       ],
     });
   }
 
-  if (options?.swipeUpText) {
-    layers?.push({
+  if (options.swipeUpText) {
+    layers.push({
       id: generateId(),
       type: "text",
       zIndex: 50,
@@ -2219,24 +2219,24 @@ export function compileSocialTeaser(
       transform: {
         ...getDefaultTransform(),
         x: width / 2,
-        y: height * 0?.82,
+        y: height * 0.82,
       },
-      startTime: duration * 0?.75,
+      startTime: duration * 0.75,
       endTime: duration,
       config: {
-        text: `↑ ${options?.swipeUpText}`,
+        text: `↑ ${options.swipeUpText}`,
         font: "Inter",
-        fontSize: Math?.round(width * 0?.022),
+        fontSize: Math.round(width * 0.022),
         fontWeight: "600",
-        color: palette?.text,
+        color: palette.text,
         align: "center",
       },
       animations: [
         {
           property: "y",
-          from: height * 0?.85,
-          to: height * 0?.82,
-          startTime: duration * 0?.75,
+          from: height * 0.85,
+          to: height * 0.82,
+          startTime: duration * 0.75,
           endTime: duration,
           easing: "easeInOut",
         },
@@ -2244,32 +2244,32 @@ export function compileSocialTeaser(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: duration * 0?.75,
-          endTime: duration * 0?.85,
+          startTime: duration * 0.75,
+          endTime: duration * 0.85,
           easing: "easeOut",
         },
       ],
     });
   }
 
-  if (options?.logo) {
-    layers?.push(createLogoLayer(options?.logo, width, height, duration));
+  if (options.logo) {
+    layers.push(createLogoLayer(options.logo, width, height, duration));
   }
 
   return {
-    id: options?.id,
-    name: options?.name,
+    id: options.id,
+    name: options.name,
     type: "teaser",
     width,
     height,
-    fps: options?.fps || 30,
+    fps: options.fps || 30,
     duration,
     layers,
     metadata: {
       createdAt: new Date().toISOString(),
-      aspectRatio: options?.aspectRatio,
-      platform: ASPECT_RATIOS[options?.aspectRatio].platforms,
-      palette: options?.palette,
+      aspectRatio: options.aspectRatio,
+      platform: ASPECT_RATIOS[options.aspectRatio].platforms,
+      palette: options.palette,
     },
   };
 }
@@ -2281,15 +2281,15 @@ function createCallToActionLayer(
   duration: number,
   palette: ColorPalette,
 ): TemplateLayer {
-  const _ctaY =
-    cta?.position === "bottom"
-      ? height * 0?.92
-      : cta?.position === "center"
+  const ctaY =
+    cta.position === "bottom"
+      ? height * 0.92
+      : cta.position === "center"
         ? height / 2
-        : cta?.position === "top"
-          ? height * 0?.08
-          : cta?.customPosition?.y || height * 0?.92;
-  const _ctaX = cta?.customPosition?.x || width / 2;
+        : cta.position === "top"
+          ? height * 0.08
+          : cta.customPosition.y || height * 0.92;
+  const ctaX = cta.customPosition.x || width / 2;
 
   return {
     id: generateId(),
@@ -2302,54 +2302,54 @@ function createCallToActionLayer(
       x: ctaX,
       y: ctaY,
     },
-    startTime: duration * 0?.7,
+    startTime: duration * 0.7,
     endTime: duration,
     config: {
-      text: cta?.text,
+      text: cta.text,
       font: "Inter",
-      fontSize: Math?.round(width * 0?.025),
+      fontSize: Math.round(width * 0.025),
       fontWeight: "600",
-      color: cta?.textColor || palette?.text,
+      color: cta.textColor || palette.text,
       align: "center",
       backgroundColor:
-        cta?.style === "button" || cta?.style === "pill"
-          ? cta?.backgroundColor || palette?.accent
+        cta.style === "button" || cta.style === "pill"
+          ? cta.backgroundColor || palette.accent
           : undefined,
       padding:
-        cta?.style === "button"
+        cta.style === "button"
           ? { x: 24, y: 12 }
-          : cta?.style === "pill"
+          : cta.style === "pill"
             ? { x: 32, y: 8 }
             : undefined,
       borderRadius:
-        cta?.borderRadius ||
-        (cta?.style === "pill" ? 50 : cta?.style === "button" ? 8 : 0),
+        cta.borderRadius ||
+        (cta.style === "pill" ? 50 : cta.style === "button" ? 8 : 0),
     },
     animations: [
       {
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: duration * 0?.7,
-        endTime: duration * 0?.8,
+        startTime: duration * 0.7,
+        endTime: duration * 0.8,
         easing: "easeOut",
       },
-      ...(cta?.animation?.type === "pulse"
+      ...(cta.animation.type === "pulse"
         ? [
             {
               property: "scaleX",
               from: 1,
-              to: 1?.05,
-              startTime: duration * 0?.85,
-              endTime: duration * 0?.95,
+              to: 1.05,
+              startTime: duration * 0.85,
+              endTime: duration * 0.95,
               easing: "easeInOut" as const,
             },
             {
               property: "scaleY",
               from: 1,
-              to: 1?.05,
-              startTime: duration * 0?.85,
-              endTime: duration * 0?.95,
+              to: 1.05,
+              startTime: duration * 0.85,
+              endTime: duration * 0.95,
               easing: "easeInOut" as const,
             },
           ]
@@ -2365,65 +2365,65 @@ function createLogoLayer(
   duration: number,
 ): TemplateLayer {
   const positions: Record<string, { x: number; y: number }> = {
-    "top-left": { x: width * 0?.08, y: height * 0?.05 },
-    "top-right": { x: width * 0?.92, y: height * 0?.05 },
-    "bottom-left": { x: width * 0?.08, y: height * 0?.95 },
-    "bottom-right": { x: width * 0?.92, y: height * 0?.95 },
+    "top-left": { x: width * 0.08, y: height * 0.05 },
+    "top-right": { x: width * 0.92, y: height * 0.05 },
+    "bottom-left": { x: width * 0.08, y: height * 0.95 },
+    "bottom-right": { x: width * 0.92, y: height * 0.95 },
     center: { x: width / 2, y: height / 2 },
   };
 
-  const _pos =
-    logo?.position === "custom" && logo?.customPosition
-      ? logo?.customPosition
-      : positions[logo?.position] || positions["bottom-right"];
+  const pos =
+    logo.position === "custom" && logo.customPosition
+      ? logo.customPosition
+      : positions[logo.position] || positions["bottom-right"];
 
   return {
     id: generateId(),
     type: "image",
     zIndex: 200,
     visible: true,
-    opacity: logo?.opacity,
+    opacity: logo.opacity,
     transform: {
       ...getDefaultTransform(),
-      x: pos?.x,
-      y: pos?.y,
+      x: pos.x,
+      y: pos.y,
     },
-    startTime: logo?.animation?.delay || 0,
+    startTime: logo.animation.delay || 0,
     endTime: duration,
     config: {
-      src: logo?.imageUrl || "",
-      width: logo?.size,
-      height: logo?.size,
+      src: logo.imageUrl || "",
+      width: logo.size,
+      height: logo.size,
       fit: "contain",
     },
     animations:
-      logo?.animation?.type === "fade"
+      logo.animation.type === "fade"
         ? [
             {
               property: "opacity",
               from: 0,
-              to: logo?.opacity,
-              startTime: logo?.animation.delay || 0,
-              endTime: (logo?.animation.delay || 0) + logo?.animation.duration,
+              to: logo.opacity,
+              startTime: logo.animation.delay || 0,
+              endTime: (logo.animation.delay || 0) + logo.animation.duration,
               easing: "easeOut",
             },
           ]
-        : logo?.animation?.type === "zoom"
+        : logo.animation.type === "zoom"
           ? [
               {
                 property: "scaleX",
                 from: 0,
                 to: 1,
-                startTime: logo?.animation.delay || 0,
-                endTime: (logo?.animation.delay || 0) + logo?.animation.duration,
+                startTime: logo.animation.delay || 0,
+                endTime: (logo.animation.delay || 0) + logo.animation.duration,
                 easing: "easeOut",
               },
               {
                 property: "scaleY",
                 from: 0,
                 to: 1,
-                startTime: logo?.animation.delay || 0,
-                endTime: (logo?.animation.delay || 0) + logo?.animation.duration,
+                startTime: logo.animation.delay || 0,
+                endTime: (logo.animation.delay || 0) + logo.animation.duration,
                 easing: "easeOut",
               },
             ]
@@ -2434,7 +2434,7 @@ function createLogoLayer(
 export function compileTemplate(
   options: PromoTemplateOptions,
 ): CompiledTemplate {
-  switch (options?.type) {
+  switch (options.type) {
     case "release":
       return compileReleaseAnnouncement(options);
     case "tour":

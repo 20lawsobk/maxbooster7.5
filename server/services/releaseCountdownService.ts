@@ -131,7 +131,7 @@ class ReleaseCountdownService {
         })
         .returning();
 
-      const _tasks = this?.generatePreReleaseChecklist(
+      const tasks = this?.generatePreReleaseChecklist(
         new Date(releaseData?.releaseDate),
       );
       await this?.bulkAddTasks(countdown?.id, tasks);
@@ -168,7 +168,7 @@ class ReleaseCountdownService {
 
   async getActiveCountdowns(userId: string): Promise<ReleaseCountdown[]> {
     try {
-      const _countdowns = await db
+      const countdowns = await db
         .select()
         .from(releaseCountdowns)
         .where(
@@ -187,7 +187,7 @@ class ReleaseCountdownService {
 
   async getAllCountdowns(userId: string): Promise<ReleaseCountdown[]> {
     try {
-      const _countdowns = await db
+      const countdowns = await db
         .select()
         .from(releaseCountdowns)
         .where(eq(releaseCountdowns?.userId, userId))
@@ -227,8 +227,8 @@ class ReleaseCountdownService {
     taskData: Omit<InsertCountdownTask, "countdownId">,
   ): Promise<CountdownTask> {
     try {
-      const _existingTasks = await this?.getTasks(countdownId);
-      const _maxOrder = existingTasks?.reduce(
+      const existingTasks = await this?.getTasks(countdownId);
+      const maxOrder = existingTasks?.reduce(
         (max, t) => Math?.max(max, t?.order || 0),
         0,
       );
@@ -257,13 +257,13 @@ class ReleaseCountdownService {
     try {
       if (tasks?.length === 0) return [];
 
-      const _tasksToInsert = tasks?.map((task, index) => ({
+      const tasksToInsert = tasks?.map((task, index) => ({
         countdownId,
         order: index,
         ...task,
       }));
 
-      const _insertedTasks = await db
+      const insertedTasks = await db
         .insert(countdownTasks)
         .values(tasksToInsert)
         .returning();
@@ -280,7 +280,7 @@ class ReleaseCountdownService {
 
   async getTasks(countdownId: string): Promise<CountdownTask[]> {
     try {
-      const _tasks = await db
+      const tasks = await db
         .select()
         .from(countdownTasks)
         .where(eq(countdownTasks?.countdownId, countdownId))
@@ -297,14 +297,14 @@ class ReleaseCountdownService {
   ): Promise<Map<string, CountdownTask[]>> {
     if (countdownIds?.length === 0) return new Map();
     try {
-      const _rows = await db
+      const rows = await db
         .select()
         .from(countdownTasks)
         .where(inArray(countdownTasks?.countdownId, countdownIds))
         .orderBy(countdownTasks?.order);
-      const _map = new Map<string, CountdownTask[]>();
+      const map = new Map<string, CountdownTask[]>();
       for (const row of rows) {
-        const _arr = map?.get(row?.countdownId) ?? [];
+        const arr = map?.get(row?.countdownId) ?? [];
         arr?.push(row);
         map?.set(row?.countdownId, arr);
       }
@@ -367,7 +367,7 @@ class ReleaseCountdownService {
     countdownId: string,
   ): Promise<CountdownAnalytic[]> {
     try {
-      const _analytics = await db
+      const analytics = await db
         .select()
         .from(countdownAnalytics)
         .where(eq(countdownAnalytics?.countdownId, countdownId))
@@ -384,7 +384,7 @@ class ReleaseCountdownService {
     data: { presaves?: number; shares?: number; pageViews?: number },
   ): Promise<CountdownAnalytic> {
     try {
-      const _today = new Date();
+      const today = new Date();
       today?.setHours(0, 0, 0, 0);
 
       const [existing] = await db
@@ -434,13 +434,13 @@ class ReleaseCountdownService {
     dailyData: CountdownAnalytic[];
   }> {
     try {
-      const _analytics = await this?.getCountdownAnalytics(countdownId);
+      const analytics = await this?.getCountdownAnalytics(countdownId);
 
-      const _totals = analytics?.reduce(
+      const totals = analytics?.reduce(
         (acc, record) => ({
-          totalPresaves: acc?.totalPresaves + (record?.presaves || 0),
-          totalShares: acc?.totalShares + (record?.shares || 0),
-          totalPageViews: acc?.totalPageViews + (record?.pageViews || 0),
+          totalPresaves: acc.totalPresaves + (record?.presaves || 0),
+          totalShares: acc.totalShares + (record?.shares || 0),
+          totalPageViews: acc.totalPageViews + (record?.pageViews || 0),
         }),
         { totalPresaves: 0, totalShares: 0, totalPageViews: 0 },
       );
@@ -459,13 +459,13 @@ class ReleaseCountdownService {
     releaseDate: Date,
   ): Array<Omit<InsertCountdownTask, "countdownId">> {
     return PRE_RELEASE_CHECKLIST_TEMPLATES?.map((template) => {
-      const _dueDate = new Date(releaseDate);
+      const dueDate = new Date(releaseDate);
       dueDate?.setDate(dueDate?.getDate() + template?.dueOffset);
 
       return {
-        task: template?.task,
+        task: template.task,
         dueDate,
-        category: template?.category,
+        category: template.category,
         order: 0,
       };
     });
@@ -476,7 +476,7 @@ class ReleaseCountdownService {
     genre?: string,
     _targetAudience?: string,
   ): Promise<Array<Omit<InsertCountdownTask, "countdownId">>> {
-    const _baseTasks = PRE_RELEASE_CHECKLIST_TEMPLATES;
+    const baseTasks = PRE_RELEASE_CHECKLIST_TEMPLATES;
 
     const genreSpecificTasks: PreReleaseChecklistItem[] = [];
 
@@ -530,9 +530,9 @@ class ReleaseCountdownService {
       );
     }
 
-    const _allTasks = [...baseTasks, ...genreSpecificTasks];
+    const allTasks = [...baseTasks, ...genreSpecificTasks];
 
-    const _countdown = await db
+    const countdown = await db
       .select()
       .from(releaseCountdowns)
       .where(eq(releaseCountdowns?.id, countdownId))
@@ -542,16 +542,16 @@ class ReleaseCountdownService {
       throw new Error("Countdown not found");
     }
 
-    const _releaseDate = new Date(countdown[0].releaseDate);
+    const releaseDate = new Date(countdown[0].releaseDate);
 
     return allTasks?.map((template) => {
-      const _dueDate = new Date(releaseDate);
+      const dueDate = new Date(releaseDate);
       dueDate?.setDate(dueDate?.getDate() + template?.dueOffset);
 
       return {
-        task: template?.task,
+        task: template.task,
         dueDate,
-        category: template?.category,
+        category: template.category,
         order: 0,
       };
     });
@@ -562,10 +562,10 @@ class ReleaseCountdownService {
     userId: string,
   ): Promise<{ countdown: ReleaseCountdown; tasks: CountdownTask[] } | null> {
     try {
-      const _countdown = await this?.getCountdown(countdownId, userId);
+      const countdown = await this?.getCountdown(countdownId, userId);
       if (!countdown) return null;
 
-      const _tasks = await this?.getTasks(countdownId);
+      const tasks = await this?.getTasks(countdownId);
       return { countdown, tasks };
     } catch (error) {
       logger?.warn("Error fetching countdown with tasks:", error);
@@ -578,9 +578,9 @@ class ReleaseCountdownService {
     total: number;
     percentage: number;
   } {
-    const _total = tasks?.length;
-    const _completed = tasks?.filter((t) => t?.completedAt !== null).length;
-    const _percentage = total > 0 ? Math?.round((completed / total) * 100) : 0;
+    const total = tasks?.length;
+    const completed = tasks?.filter((t) => t?.completedAt !== null).length;
+    const percentage = total > 0 ? Math?.round((completed / total) * 100) : 0;
     return { completed, total, percentage };
   }
 
@@ -591,20 +591,20 @@ class ReleaseCountdownService {
     seconds: number;
     isReleased: boolean;
   } {
-    const _now = new Date();
-    const _diff = releaseDate?.getTime() - now?.getTime();
+    const now = new Date();
+    const diff = releaseDate?.getTime() - now?.getTime();
 
     if (diff <= 0) {
       return { days: 0, hours: 0, minutes: 0, seconds: 0, isReleased: true };
     }
 
-    const _days = Math?.floor(diff / (1000 * 60 * 60 * 24));
-    const _hours = Math?.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const _minutes = Math?.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const _seconds = Math?.floor((diff % (1000 * 60)) / 1000);
+    const days = Math?.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math?.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math?.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math?.floor((diff % (1000 * 60)) / 1000);
 
     return { days, hours, minutes, seconds, isReleased: false };
   }
 }
 
-export const _releaseCountdownService = new ReleaseCountdownService();
+export const releaseCountdownService = new ReleaseCountdownService();

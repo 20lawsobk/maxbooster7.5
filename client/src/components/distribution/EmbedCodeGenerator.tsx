@@ -863,14 +863,14 @@ export function EmbedCodeGenerator() {
   const artist = selectedRelease?.artistName || "Your Artist";
 
   // Smart link URL — use the release's hyperFollowUrl if available, else build lnk.to
-  const slug = selectedRelease?.title
+  const slug = selectedRelease.title
     ? selectedRelease.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "")
     : "your-release";
   const smartLinkUrl =
-    selectedRelease?.hyperFollowUrl || `https://lnk.to/${slug}`;
+    selectedRelease.hyperFollowUrl || `https://lnk.to/${slug}`;
 
   // Heights for iframes
   const iframeHeights: Record<string, number> = {
@@ -1392,7 +1392,7 @@ export function EmbedCodeGenerator() {
                           className={`rounded-lg bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center flex-shrink-0
                           ${rwSize === "small" ? "w-12 h-12" : rwSize === "medium" ? "w-24 h-24" : "w-36 h-36"}`}
                         >
-                          {selectedRelease?.albumArt ? (
+                          {selectedRelease.albumArt ? (
                             <img
                               src={selectedRelease.albumArt}
                               className="w-full h-full object-cover rounded-lg"
@@ -1583,7 +1583,7 @@ export function EmbedCodeGenerator() {
                     showTracklist={plShowTracklist}
                     title={title}
                     artist={artist}
-                    artwork={selectedRelease?.albumArt}
+                    artwork={selectedRelease.albumArt}
                   />
                 </CardContent>
               </Card>

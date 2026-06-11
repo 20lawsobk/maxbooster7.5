@@ -149,7 +149,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "social_connect",
     area: "social_presence",
     priority: 1,
-    trigger: (s) => s?.socialAccounts.length === 0,
+    trigger: (s) => s.socialAccounts.length === 0,
     severity: () => "high",
     title: () => "Connect a social account to unlock your promotional engine",
     description: () =>
@@ -170,10 +170,10 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "social_connect",
     area: "social_presence",
     priority: 1,
-    trigger: (s) => s?.socialAccounts.length === 1,
+    trigger: (s) => s.socialAccounts.length === 1,
     severity: () => "high",
     title: (s) =>
-      `Add a second social platform to ${s?.socialAccounts[0] || "your current one"}`,
+      `Add a second social platform to ${s.socialAccounts[0] || "your current one"}`,
     description: (s) =>
       `You're on ${s?.socialAccounts[0] || "one platform"}, but cross-platform presence multiplies your reach. Each platform has a unique algorithm and audience — being on 2 platforms roughly doubles your organic reach ceiling.`,
     actionUrl: "/settings?tab=integrations",
@@ -192,8 +192,8 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "engagement_boost",
     area: "engagement",
     priority: 2,
-    trigger: (s) => s?.avgEngagementRate < 0?.04 && s?.totalStreams > 500,
-    severity: (s) => (s?.avgEngagementRate < 0?.02 ? "high" : "medium"),
+    trigger: (s) => s?.avgEngagementRate < 0.04 && s?.totalStreams > 500,
+    severity: (s) => (s?.avgEngagementRate < 0.02 ? "high" : "medium"),
     title: () =>
       "Your save rate is low — boost it to unlock algorithmic playlists",
     description: () =>
@@ -215,7 +215,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "content_optimization",
     area: "content_cadence",
     priority: 2,
-    trigger: (s) => s?.socialAccounts.length >= 1 && s?.avgEngagementRate < 0?.08,
+    trigger: (s) => s?.socialAccounts.length >= 1 && s?.avgEngagementRate < 0.08,
     severity: () => "medium",
     title: () => "Post consistently — the algorithm rewards daily activity",
     description: () =>
@@ -237,7 +237,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "content_optimization",
     area: "content_type",
     priority: 3,
-    trigger: (s) => s?.totalStreams > 100 && s?.socialAccounts.length >= 1,
+    trigger: (s) => s.totalStreams > 100 && s.socialAccounts.length >= 1,
     severity: () => "low",
     title: () => "Add behind-the-scenes content to build deeper fan loyalty",
     description: () =>
@@ -250,7 +250,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
       "Use Max Booster's AI to write captions that complement your BTS visual",
     ],
     expectedImpact:
-      "BTS content averages 2?.3× more saves and comments than promotional posts",
+      "BTS content averages 2.3× more saves and comments than promotional posts",
     timeframe: "Immediate — post this week",
   },
 
@@ -261,23 +261,23 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     area: "platform_optimization",
     priority: 2,
     trigger: (s) => {
-      const _platforms = Object?.entries(s?.platformStreams).sort(
+      const platforms = Object.entries(s.platformStreams).sort(
         (a, b) => b[1] - a[1],
       );
-      return platforms?.length >= 2 && platforms[0][1] > platforms[1][1] * 3;
+      return platforms.length >= 2 && platforms[0][1] > platforms[1][1] * 3;
     },
     severity: () => "medium",
     title: (s) => {
-      const _top = Object?.entries(s?.platformStreams).sort(
+      const top = Object.entries(s.platformStreams).sort(
         (a, b) => b[1] - a[1],
       )[0];
-      return `Double down on ${top?.[0] || "your top platform"} — that\'s where your fans are`;
+      return `Double down on ${top[0] || "your top platform"} — that\'s where your fans are`;
     },
     description: (s) => {
-      const _top = Object?.entries(s?.platformStreams).sort(
+      const top = Object.entries(s.platformStreams).sort(
         (a, b) => b[1] - a[1],
       )[0];
-      return `Your streams on ${top?.[0] || "your top platform"} are significantly higher than other platforms. This tells you where your fanbase naturally lives — optimize your promotional efforts there for maximum ROI.`;
+      return `Your streams on ${top[0] || "your top platform"} are significantly higher than other platforms. This tells you where your fanbase naturally lives — optimize your promotional efforts there for maximum ROI.`;
     },
     actionUrl: "/analytics",
     steps: [
@@ -295,7 +295,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "growth_opportunity",
     area: "playlist_strategy",
     priority: 1,
-    trigger: (s) => s?.totalStreams > 1000 && s?.releaseCount >= 1,
+    trigger: (s) => s.totalStreams > 1000 && s.releaseCount >= 1,
     severity: () => "high",
     title: () =>
       "Pitch your music to independent playlists — they're the fastest growth lever",
@@ -346,13 +346,13 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     title: () =>
       "Diversify beyond streaming — beats, merch, and sync can 10× your revenue",
     description: () =>
-      "Streaming revenue alone averages $0?.003–0?.005 per stream. At 5,000 streams/month, that's $15–25. Adding beat sales, merchandise, or sync licensing can realistically generate $500–2,000/month from the same fanbase.",
+      "Streaming revenue alone averages $0.003–0.005 per stream. At 5,000 streams/month, that's $15–25. Adding beat sales, merchandise, or sync licensing can realistically generate $500–2,000/month from the same fanbase.",
     actionUrl: "/marketplace",
     steps: [
       "List your instrumentals on Max Booster's Beat Marketplace — set non-exclusive licenses at $30–75",
       "Create 3 merchandise items using print-on-demand (no upfront inventory cost)",
       "Submit your music for sync licensing — TV, YouTube, and podcast placements pay $50–500+ per placement",
-      "Offer a fan subscription tier through Max Booster for exclusive content at $4?.99/month",
+      "Offer a fan subscription tier through Max Booster for exclusive content at $4.99/month",
     ],
     expectedImpact:
       "Artists with 3+ revenue streams earn 5–10× more than streaming-only artists",
@@ -386,7 +386,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "growth_opportunity",
     area: "sync_licensing",
     priority: 3,
-    trigger: (s) => s?.totalStreams > 2000 && s?.totalRevenue < 200,
+    trigger: (s) => s.totalStreams > 2000 && s.totalRevenue < 200,
     severity: () => "low",
     title: () =>
       "Submit for sync licensing — one placement can pay more than 100,000 streams",
@@ -410,11 +410,11 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "geo_targeting",
     area: "geo_targeting",
     priority: 3,
-    trigger: (s) => !!s?.topCity,
+    trigger: (s) => !!s.topCity,
     severity: () => "low",
-    title: (s) => `You have a hotspot in ${s?.topCity} — capitalize on it`,
+    title: (s) => `You have a hotspot in ${s.topCity} — capitalize on it`,
     description: (s) =>
-      `${s?.topCity} is your strongest market. Local artists who invest in their top city see dramatically better live booking opportunities, local press coverage, and word-of-mouth growth. A concentrated local fanbase also signals to algorithms that you have genuine community support.`,
+      `${s.topCity} is your strongest market. Local artists who invest in their top city see dramatically better live booking opportunities, local press coverage, and word-of-mouth growth. A concentrated local fanbase also signals to algorithms that you have genuine community support.`,
     actionUrl: "/advertising",
     steps: [
       "Run targeted social ads specifically to your top city fans — cost as low as $5/day",
@@ -476,7 +476,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "growth_opportunity",
     area: "press_pr",
     priority: 3,
-    trigger: (s) => s?.totalStreams > 1000,
+    trigger: (s) => s.totalStreams > 1000,
     severity: () => "low",
     title: () =>
       "Update your Electronic Press Kit (EPK) to attract press and booking agents",
@@ -499,7 +499,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "growth_opportunity",
     area: "radio_pr",
     priority: 3,
-    trigger: (s) => s?.totalStreams > 5000 && s?.releaseCount >= 3,
+    trigger: (s) => s.totalStreams > 5000 && s.releaseCount >= 3,
     severity: () => "low",
     title: () =>
       "Pitch to music blogs and college radio — they're still powerful discovery channels",
@@ -570,7 +570,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "benchmark",
     area: "milestone",
     priority: 2,
-    trigger: (s) => s?.totalRevenue < 10 && s?.totalStreams > 100,
+    trigger: (s) => s.totalRevenue < 10 && s.totalStreams > 100,
     severity: () => "medium",
     title: () => "Set up royalty collection to start earning from every stream",
     description: () =>
@@ -593,14 +593,14 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "growth_opportunity",
     area: "profile_optimization",
     priority: 2,
-    trigger: (s) => s?.totalStreams > 500,
+    trigger: (s) => s.totalStreams > 500,
     severity: () => "medium",
     title: () => "Claim and optimize your artist profiles on all DSPs",
     description: () =>
       "Verified artist profiles on Spotify for Artists, Apple Music for Artists, and Amazon Music for Artists give you control over your image, access to streaming data, and the ability to pitch for editorial playlists. Unclaimed profiles miss out on all of these benefits.",
     actionUrl: "/distribution",
     steps: [
-      "Claim your Spotify for Artists profile at artists?.spotify.com",
+      "Claim your Spotify for Artists profile at artists.spotify.com",
       "Upload a professional artist photo and complete your bio on all DSPs",
       'Enable "Artist\'s Pick" to feature your newest release at the top of your profile',
       "Submit your next release for editorial playlist consideration via Spotify for Artists",
@@ -630,9 +630,9 @@ class CareerCoachService {
     try {
       logger?.info(`Generating daily recommendations for user ${userId}`);
 
-      const _today = new Date();
+      const today = new Date();
       today?.setHours(0, 0, 0, 0);
-      const _existingToday = await db
+      const existingToday = await db
         .select()
         .from(careerCoachRecommendations)
         .where(
@@ -651,43 +651,43 @@ class CareerCoachService {
         return existingToday;
       }
 
-      const _snapshot = await this?.getUserAnalyticsSnapshot(userId);
+      const snapshot = await this?.getUserAnalyticsSnapshot(userId);
       const recommendations: InsertCareerCoachRecommendation[] = [];
 
-      const _triggeredPatterns = CAREER_COACH_PATTERNS?.filter((p) =>
+      const triggeredPatterns = CAREER_COACH_PATTERNS?.filter((p) =>
         p?.trigger(snapshot),
       );
       triggeredPatterns?.sort((a, b) => {
-        const _sevOrder = { high: 0, medium: 1, low: 2 };
-        const _aSev = sevOrder[a?.severity(snapshot)];
-        const _bSev = sevOrder[b?.severity(snapshot)];
+        const sevOrder = { high: 0, medium: 1, low: 2 };
+        const aSev = sevOrder[a?.severity(snapshot)];
+        const bSev = sevOrder[b?.severity(snapshot)];
         return aSev !== bSev ? aSev - bSev : a?.priority - b?.priority;
       });
 
       for (const pattern of triggeredPatterns?.slice(0, 6)) {
         recommendations?.push({
           userId,
-          type: pattern?.type,
-          title: pattern?.title(snapshot),
-          description: pattern?.description(snapshot),
-          priority: pattern?.priority,
-          actionUrl: pattern?.actionUrl,
+          type: pattern.type,
+          title: pattern.title(snapshot),
+          description: pattern.description(snapshot),
+          priority: pattern.priority,
+          actionUrl: pattern.actionUrl,
           metadata: {
-            patternId: pattern?.id,
-            area: pattern?.area,
-            severity: pattern?.severity(snapshot),
-            steps: pattern?.steps,
-            expectedImpact: pattern?.expectedImpact,
-            timeframe: pattern?.timeframe,
+            patternId: pattern.id,
+            area: pattern.area,
+            severity: pattern.severity(snapshot),
+            steps: pattern.steps,
+            expectedImpact: pattern.expectedImpact,
+            timeframe: pattern.timeframe,
             snapshot: {
-              totalStreams: snapshot?.totalStreams,
-              totalFollowers: snapshot?.totalFollowers,
-              totalRevenue: snapshot?.totalRevenue,
-              releaseCount: snapshot?.releaseCount,
-              daysSinceRelease: snapshot?.daysSinceRelease,
-              socialAccounts: snapshot?.socialAccounts,
-              topPlatform: snapshot?.topPlatform,
-              topCity: snapshot?.topCity,
+              totalStreams: snapshot.totalStreams,
+              totalFollowers: snapshot.totalFollowers,
+              totalRevenue: snapshot.totalRevenue,
+              releaseCount: snapshot.releaseCount,
+              daysSinceRelease: snapshot.daysSinceRelease,
+              socialAccounts: snapshot.socialAccounts,
+              topPlatform: snapshot.topPlatform,
+              topCity: snapshot.topCity,
             },
           },
         });
@@ -696,7 +696,7 @@ class CareerCoachService {
       if (recommendations?.length === 0) {
         recommendations?.push({
           userId,
-          type: this?.recommendationTypes.GROWTH_OPPORTUNITY,
+          type: this.recommendationTypes.GROWTH_OPPORTUNITY,
           title: "You're building strong momentum — here's how to sustain it",
           description:
             "Your career metrics look solid. Focus on consistency: maintain your release cadence, keep engaging your audience, and explore new revenue streams to keep growing.",
@@ -740,27 +740,27 @@ class CareerCoachService {
   }
 
   async analyzeCareerGaps(userId: string): Promise<CareerGap[]> {
-    const _snapshot = await this?.getUserAnalyticsSnapshot(userId);
+    const snapshot = await this?.getUserAnalyticsSnapshot(userId);
     const gaps: CareerGap[] = [];
 
-    const _triggeredPatterns = CAREER_COACH_PATTERNS?.filter((p) =>
+    const triggeredPatterns = CAREER_COACH_PATTERNS?.filter((p) =>
       p?.trigger(snapshot),
     );
     for (const pattern of triggeredPatterns) {
       gaps?.push({
-        area: pattern?.area,
-        severity: pattern?.severity(snapshot),
-        description: pattern?.description(snapshot),
-        recommendation: pattern?.title(snapshot),
-        actionUrl: pattern?.actionUrl,
-        steps: pattern?.steps,
-        expectedImpact: pattern?.expectedImpact,
-        timeframe: pattern?.timeframe,
+        area: pattern.area,
+        severity: pattern.severity(snapshot),
+        description: pattern.description(snapshot),
+        recommendation: pattern.title(snapshot),
+        actionUrl: pattern.actionUrl,
+        steps: pattern.steps,
+        expectedImpact: pattern.expectedImpact,
+        timeframe: pattern.timeframe,
       });
     }
 
     return gaps?.sort((a, b) => {
-      const _severityOrder = { high: 0, medium: 1, low: 2 };
+      const severityOrder = { high: 0, medium: 1, low: 2 };
       return severityOrder[a?.severity] - severityOrder[b?.severity];
     });
   }
@@ -770,25 +770,25 @@ class CareerCoachService {
     goalType: string,
   ): Promise<CareerGoal | null> {
     try {
-      const _suggestion = await this?.suggestSmartGoal(userId, goalType);
+      const suggestion = await this?.suggestSmartGoal(userId, goalType);
       if (!suggestion) return null;
 
-      const _deadline = new Date();
+      const deadline = new Date();
       deadline?.setDate(deadline?.getDate() + suggestion?.deadlineDays);
 
       const [goal] = await db
         .insert(careerGoals)
         .values({
           userId,
-          goalType: suggestion?.goalType,
-          title: suggestion?.title,
-          description: suggestion?.description,
-          targetValue: suggestion?.targetValue,
+          goalType: suggestion.goalType,
+          title: suggestion.title,
+          description: suggestion.description,
+          targetValue: suggestion.targetValue,
           currentValue: 0,
-          unit: suggestion?.unit,
+          unit: suggestion.unit,
           deadline,
           status: "active",
-          metadata: { reasoning: suggestion?.reasoning },
+          metadata: { reasoning: suggestion.reasoning },
         })
         .returning();
 
@@ -914,7 +914,7 @@ class CareerCoachService {
     const [deleted] = await db
       .delete(careerGoals)
       .where(and(eq(careerGoals?.id, goalId), eq(careerGoals?.userId, userId)))
-      .returning({ id: careerGoals?.id });
+      .returning({ id: careerGoals.id });
     return !!deleted;
   }
 
@@ -940,20 +940,20 @@ class CareerCoachService {
 
   getPatternLibrary() {
     return CAREER_COACH_PATTERNS?.map((p) => ({
-      id: p?.id,
-      type: p?.type,
-      area: p?.area,
-      priority: p?.priority,
-      actionUrl: p?.actionUrl,
-      steps: p?.steps,
-      expectedImpact: p?.expectedImpact,
-      timeframe: p?.timeframe,
+      id: p.id,
+      type: p.type,
+      area: p.area,
+      priority: p.priority,
+      actionUrl: p.actionUrl,
+      steps: p.steps,
+      expectedImpact: p.expectedImpact,
+      timeframe: p.timeframe,
     }));
   }
 
   private async getGoalTarget(goalId: string): Promise<number> {
     const [goal] = await db
-      .select({ targetValue: careerGoals?.targetValue })
+      .select({ targetValue: careerGoals.targetValue })
       .from(careerGoals)
       .where(eq(careerGoals?.id, goalId))
       .limit(1);
@@ -963,7 +963,7 @@ class CareerCoachService {
   private async getUserAnalyticsSnapshot(
     userId: string,
   ): Promise<UserAnalyticsSnapshot> {
-    const _analyticsData = await db
+    const analyticsData = await db
       .select({
         totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
         totalFollowers: sql<number>`COALESCE(MAX(${analytics?.followers}), 0)`,
@@ -972,18 +972,18 @@ class CareerCoachService {
       .from(analytics)
       .where(eq(analytics?.userId, userId));
 
-    const _releasesData = await db
+    const releasesData = await db
       .select()
       .from(releases)
       .where(eq(releases?.userId, userId))
       .orderBy(desc(releases?.createdAt));
 
-    const _socialData = await db
+    const socialData = await db
       .select()
       .from(socialAccounts)
       .where(eq(socialAccounts?.userId, userId));
 
-    const _dspData = await db
+    const dspData = await db
       .select()
       .from(dspAnalytics)
       .where(eq(dspAnalytics?.userId, userId))
@@ -1000,16 +1000,16 @@ class CareerCoachService {
       let totalStreams = 0;
 
       for (const d of dspData) {
-        const _platform = d?.platform || "unknown";
+        const platform = d?.platform || "unknown";
         platformStreams[platform] =
           (platformStreams[platform] || 0) + (d?.streams || 0);
-        const _engagement = (d?.saves || 0) + (d?.playlistAdds || 0);
+        const engagement = (d?.saves || 0) + (d?.playlistAdds || 0);
         platformEngagement[platform] =
           (platformEngagement[platform] || 0) + engagement;
         totalEngagement += engagement;
         totalStreams += d?.streams || 0;
 
-        const _geo = d?.geography as {
+        const geo = d?.geography as {
           countries?: { name: string; streams: number }[];
         } | null;
         if (geo?.countries?.[0]) {
@@ -1024,8 +1024,8 @@ class CareerCoachService {
       avgEngagementRate = totalStreams > 0 ? totalEngagement / totalStreams : 0;
     }
 
-    const _lastReleaseDate = releasesData[0]?.createdAt || null;
-    const _daysSinceRelease = lastReleaseDate
+    const lastReleaseDate = releasesData[0]?.createdAt || null;
+    const daysSinceRelease = lastReleaseDate
       ? Math?.floor(
           (Date?.now() - new Date(lastReleaseDate).getTime()) /
             (1000 * 60 * 60 * 24),
@@ -1036,9 +1036,9 @@ class CareerCoachService {
       totalStreams: Number(analyticsData[0]?.totalStreams || 0),
       totalFollowers: Number(analyticsData[0]?.totalFollowers || 0),
       totalRevenue: Number(analyticsData[0]?.totalRevenue || 0),
-      releaseCount: releasesData?.length,
+      releaseCount: releasesData.length,
       lastReleaseDate,
-      socialAccounts: socialData?.map((s) => s?.platform),
+      socialAccounts: socialData.map((s) => s?.platform),
       topPlatform,
       topCity,
       avgEngagementRate,
@@ -1052,7 +1052,7 @@ class CareerCoachService {
     userId: string,
     goalType: string,
   ): Promise<SmartGoalSuggestion | null> {
-    const _snapshot = await this?.getUserAnalyticsSnapshot(userId);
+    const snapshot = await this?.getUserAnalyticsSnapshot(userId);
 
     const suggestions: Record<string, SmartGoalSuggestion> = {
       streams: {
@@ -1060,7 +1060,7 @@ class CareerCoachService {
         title: "Increase Monthly Streams",
         description:
           "Grow your monthly streaming numbers through consistent releases and promotion",
-        targetValue: Math?.max(Math?.round(snapshot?.totalStreams * 1?.5), 10000),
+        targetValue: Math.max(Math?.round(snapshot?.totalStreams * 1.5), 10000),
         unit: "streams",
         deadlineDays: 30,
         reasoning: `Based on your current ${snapshot?.totalStreams.toLocaleString()} streams, a 50% growth target is ambitious but achievable with focused playlist pitching and a new release.`,
@@ -1069,7 +1069,7 @@ class CareerCoachService {
         goalType: "followers",
         title: "Grow Your Fanbase",
         description: "Build your follower count across all connected platforms",
-        targetValue: Math?.max(Math?.round(snapshot?.totalFollowers * 1?.25), 1000),
+        targetValue: Math.max(Math?.round(snapshot?.totalFollowers * 1.25), 1000),
         unit: "followers",
         deadlineDays: 60,
         reasoning: `Growing your fanbase by 25% from ${snapshot?.totalFollowers.toLocaleString()} over 2 months aligns with industry growth rates. Focus on collaborations and consistent posting.`,
@@ -1079,7 +1079,7 @@ class CareerCoachService {
         title: "Consistent Release Schedule",
         description:
           "Maintain a regular release cadence to feed the algorithm and keep fans engaged",
-        targetValue: snapshot?.releaseCount + 4,
+        targetValue: snapshot.releaseCount + 4,
         unit: "releases",
         deadlineDays: 90,
         reasoning:
@@ -1090,7 +1090,7 @@ class CareerCoachService {
         title: "Boost Save & Engagement Rate",
         description:
           "Increase the save-to-stream ratio to unlock algorithmic playlist placements",
-        targetValue: Math?.max(snapshot?.avgEngagementRate * 2, 0?.05),
+        targetValue: Math.max(snapshot?.avgEngagementRate * 2, 0.05),
         unit: "rate",
         deadlineDays: 30,
         reasoning:
@@ -1101,7 +1101,7 @@ class CareerCoachService {
         title: "Reach Your First Revenue Milestone",
         description:
           "Diversify income streams through beat sales, sync, and merchandise",
-        targetValue: Math?.max(snapshot?.totalRevenue * 2, 100),
+        targetValue: Math.max(snapshot?.totalRevenue * 2, 100),
         unit: "dollars",
         deadlineDays: 90,
         reasoning: `Starting from $${snapshot?.totalRevenue.toFixed(2)}, doubling your revenue is achievable by adding beat marketplace listings and sync submissions.`,
@@ -1123,4 +1123,4 @@ class CareerCoachService {
   }
 }
 
-export const _careerCoachService = new CareerCoachService();
+export const careerCoachService = new CareerCoachService();

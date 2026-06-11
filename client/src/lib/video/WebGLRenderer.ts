@@ -92,49 +92,49 @@ export class WebGLRenderer {
   private maxTextureUnits: number = 0;
 
   constructor(options: WebGLRendererOptions) {
-    this?.width = options?.width;
-    this?.height = options?.height;
-    this?.isOffscreen = options?.useOffscreen ?? false;
+    this.width = options?.width;
+    this.height = options?.height;
+    this.isOffscreen = options?.useOffscreen ?? false;
 
     if (this?.isOffscreen && typeof OffscreenCanvas !== "undefined") {
-      this?.canvas = new OffscreenCanvas(this?.width, this?.height);
+      this.canvas = new OffscreenCanvas(this?.width, this?.height);
     } else {
-      this?.canvas = document?.createElement("canvas");
-      this?.canvas.width = this?.width;
-      this?.canvas.height = this?.height;
+      this.canvas = document?.createElement("canvas");
+      this.canvas.width = this?.width;
+      this.canvas.height = this?.height;
     }
 
     const contextOptions: WebGLContextAttributes = {
-      antialias: options?.antialias ?? true,
-      alpha: options?.alpha ?? true,
-      premultipliedAlpha: options?.premultipliedAlpha ?? true,
-      preserveDrawingBuffer: options?.preserveDrawingBuffer ?? true,
-      powerPreference: options?.powerPreference ?? "high-performance",
+      antialias: options.antialias ?? true,
+      alpha: options.alpha ?? true,
+      premultipliedAlpha: options.premultipliedAlpha ?? true,
+      preserveDrawingBuffer: options.preserveDrawingBuffer ?? true,
+      powerPreference: options.powerPreference ?? "high-performance",
     };
 
-    const _gl = this?.canvas.getContext("webgl2", contextOptions);
+    const gl = this?.canvas.getContext("webgl2", contextOptions);
     if (!gl) {
       throw new Error("WebGL2 is not supported in this browser");
     }
-    this?.gl = gl;
+    this.gl = gl;
 
-    this?.renderState = {
+    this.renderState = {
       currentProgram: null,
       currentFramebuffer: null,
       blendMode: "normal",
-      viewport: { x: 0, y: 0, width: this?.width, height: this?.height },
+      viewport: { x: 0, y: 0, width: this.width, height: this.height },
     };
 
     this?.initialize();
   }
 
   private initialize(): void {
-    const _gl = this?.gl;
+    const gl = this?.gl;
 
     this?.loadExtensions();
 
-    this?.maxTextureSize = gl?.getParameter(gl?.MAX_TEXTURE_SIZE);
-    this?.maxTextureUnits = gl?.getParameter(gl?.MAX_TEXTURE_IMAGE_UNITS);
+    this.maxTextureSize = gl?.getParameter(gl?.MAX_TEXTURE_SIZE);
+    this.maxTextureUnits = gl?.getParameter(gl?.MAX_TEXTURE_IMAGE_UNITS);
 
     gl?.viewport(0, 0, this?.width, this?.height);
     gl?.clearColor(0, 0, 0, 0);
@@ -146,29 +146,29 @@ export class WebGLRenderer {
   }
 
   private loadExtensions(): void {
-    const _gl = this?.gl;
+    const gl = this?.gl;
 
     gl?.getExtension("EXT_color_buffer_float");
     gl?.getExtension("OES_texture_float_linear");
     gl?.getExtension("EXT_float_blend");
 
-    this?.extensionsLoaded = true;
+    this.extensionsLoaded = true;
   }
 
   private createQuadBuffer(): void {
-    const _gl = this?.gl;
+    const gl = this?.gl;
 
-    const _vertices = new Float32Array([
+    const vertices = new Float32Array([
       -1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, 1, 1, 1,
     ]);
 
-    const _buffer = gl?.createBuffer();
+    const buffer = gl?.createBuffer();
     if (!buffer) throw new Error("Failed to create quad buffer");
 
     gl?.bindBuffer(gl?.ARRAY_BUFFER, buffer);
     gl?.bufferData(gl?.ARRAY_BUFFER, vertices, gl?.STATIC_DRAW);
 
-    this?.quadBuffer = {
+    this.quadBuffer = {
       buffer,
       itemSize: 4,
       numItems: 4,
@@ -176,7 +176,7 @@ export class WebGLRenderer {
   }
 
   private createDefaultProgram(): void {
-    const _vertexShaderSource = `#version 300 es
+    const vertexShaderSource = `#version 300 es
       precision highp float;
       
       in vec2 a_position;
@@ -188,11 +188,11 @@ export class WebGLRenderer {
       
       void main() {
         v_texCoord = a_texCoord;
-        gl_Position = u_transform * vec4(a_position, 0?.0, 1?.0);
+        gl_Position = u_transform * vec4(a_position, 0.0, 1.0);
       }
     `;
 
-    const _fragmentShaderSource = `#version 300 es
+    const fragmentShaderSource = `#version 300 es
       precision highp float;
       
       in vec2 v_texCoord;
@@ -213,7 +213,7 @@ export class WebGLRenderer {
       }
     `;
 
-    this?.defaultProgram = this?.createShaderProgram(
+    this.defaultProgram = this?.createShaderProgram(
       "default",
       vertexShaderSource,
       fragmentShaderSource,
@@ -225,15 +225,15 @@ export class WebGLRenderer {
     vertexSource: string,
     fragmentSource: string,
   ): ShaderProgram {
-    const _gl = this?.gl;
+    const gl = this?.gl;
 
-    const _vertexShader = this?.compileShader(gl?.VERTEX_SHADER, vertexSource);
-    const _fragmentShader = this?.compileShader(
+    const vertexShader = this?.compileShader(gl?.VERTEX_SHADER, vertexSource);
+    const fragmentShader = this?.compileShader(
       gl?.FRAGMENT_SHADER,
       fragmentSource,
     );
 
-    const _program = gl?.createProgram();
+    const program = gl?.createProgram();
     if (!program) throw new Error("Failed to create shader program");
 
     gl?.attachShader(program, vertexShader);
@@ -241,7 +241,7 @@ export class WebGLRenderer {
     gl?.linkProgram(program);
 
     if (!gl?.getProgramParameter(program, gl?.LINK_STATUS)) {
-      const _error = gl?.getProgramInfoLog(program);
+      const error = gl?.getProgramInfoLog(program);
       throw new Error(`Failed to link shader program: ${error}`);
     }
 
@@ -261,16 +261,16 @@ export class WebGLRenderer {
   }
 
   private compileShader(type: number, source: string): WebGLShader {
-    const _gl = this?.gl;
-    const _shader = gl?.createShader(type);
+    const gl = this?.gl;
+    const shader = gl?.createShader(type);
     if (!shader) throw new Error("Failed to create shader");
 
     gl?.shaderSource(shader, source);
     gl?.compileShader(shader);
 
     if (!gl?.getShaderParameter(shader, gl?.COMPILE_STATUS)) {
-      const _error = gl?.getShaderInfoLog(shader);
-      const _shaderType = type === gl?.VERTEX_SHADER ? "vertex" : "fragment";
+      const error = gl?.getShaderInfoLog(shader);
+      const shaderType = type === gl?.VERTEX_SHADER ? "vertex" : "fragment";
       throw new Error(`Failed to compile ${shaderType} shader: ${error}`);
     }
 
@@ -278,16 +278,16 @@ export class WebGLRenderer {
   }
 
   private extractUniforms(shaderProgram: ShaderProgram): void {
-    const _gl = this?.gl;
-    const _numUniforms = gl?.getProgramParameter(
+    const gl = this?.gl;
+    const numUniforms = gl?.getProgramParameter(
       shaderProgram?.program,
       gl?.ACTIVE_UNIFORMS,
     );
 
     for (let i = 0; i < numUniforms; i++) {
-      const _uniformInfo = gl?.getActiveUniform(shaderProgram?.program, i);
+      const uniformInfo = gl?.getActiveUniform(shaderProgram?.program, i);
       if (uniformInfo) {
-        const _location = gl?.getUniformLocation(
+        const location = gl?.getUniformLocation(
           shaderProgram?.program,
           uniformInfo?.name,
         );
@@ -299,16 +299,16 @@ export class WebGLRenderer {
   }
 
   private extractAttributes(shaderProgram: ShaderProgram): void {
-    const _gl = this?.gl;
-    const _numAttributes = gl?.getProgramParameter(
+    const gl = this?.gl;
+    const numAttributes = gl?.getProgramParameter(
       shaderProgram?.program,
       gl?.ACTIVE_ATTRIBUTES,
     );
 
     for (let i = 0; i < numAttributes; i++) {
-      const _attributeInfo = gl?.getActiveAttrib(shaderProgram?.program, i);
+      const attributeInfo = gl?.getActiveAttrib(shaderProgram?.program, i);
       if (attributeInfo) {
-        const _location = gl?.getAttribLocation(
+        const location = gl?.getAttribLocation(
           shaderProgram?.program,
           attributeInfo?.name,
         );
@@ -320,7 +320,7 @@ export class WebGLRenderer {
   useProgram(program: ShaderProgram): void {
     if (this?.renderState.currentProgram !== program) {
       this?.gl.useProgram(program?.program);
-      this?.renderState.currentProgram = program;
+      this.renderState.currentProgram = program;
     }
   }
 
@@ -329,8 +329,8 @@ export class WebGLRenderer {
     name: string,
     value: number | number[] | Float32Array | Int32Array,
   ): void {
-    const _gl = this?.gl;
-    const _location = program?.uniforms.get(name);
+    const gl = this?.gl;
+    const location = program?.uniforms.get(name);
     if (!location) return;
 
     this?.useProgram(program);
@@ -342,7 +342,7 @@ export class WebGLRenderer {
         gl?.uniform1f(location, value);
       }
     } else if (value instanceof Float32Array || Array?.isArray(value)) {
-      const _arr =
+      const arr =
         value instanceof Float32Array ? value : new Float32Array(value);
       switch (arr?.length) {
         case 2:
@@ -385,7 +385,7 @@ export class WebGLRenderer {
     name: string,
     matrix: Float32Array,
   ): void {
-    const _location = program?.uniforms.get(name);
+    const location = program?.uniforms.get(name);
     if (location) {
       this?.useProgram(program);
       this?.gl.uniformMatrix4fv(location, false, matrix);
@@ -397,14 +397,14 @@ export class WebGLRenderer {
     width?: number,
     height?: number,
   ): Framebuffer {
-    const _gl = this?.gl;
-    const _w = width ?? this?.width;
-    const _h = height ?? this?.height;
+    const gl = this?.gl;
+    const w = width ?? this?.width;
+    const h = height ?? this?.height;
 
-    const _framebuffer = gl?.createFramebuffer();
+    const framebuffer = gl?.createFramebuffer();
     if (!framebuffer) throw new Error("Failed to create framebuffer");
 
-    const _texture = gl?.createTexture();
+    const texture = gl?.createTexture();
     if (!texture) throw new Error("Failed to create framebuffer texture");
 
     gl?.bindTexture(gl?.TEXTURE_2D, texture);
@@ -433,7 +433,7 @@ export class WebGLRenderer {
       0,
     );
 
-    const _status = gl?.checkFramebufferStatus(gl?.FRAMEBUFFER);
+    const status = gl?.checkFramebufferStatus(gl?.FRAMEBUFFER);
     if (status !== gl?.FRAMEBUFFER_COMPLETE) {
       throw new Error(`Framebuffer is incomplete: ${status}`);
     }
@@ -446,7 +446,7 @@ export class WebGLRenderer {
   }
 
   bindFramebuffer(framebuffer: Framebuffer | null): void {
-    const _gl = this?.gl;
+    const gl = this?.gl;
     if (framebuffer) {
       gl?.bindFramebuffer(gl?.FRAMEBUFFER, framebuffer?.framebuffer);
       gl?.viewport(0, 0, framebuffer?.width, framebuffer?.height);
@@ -454,12 +454,12 @@ export class WebGLRenderer {
       gl?.bindFramebuffer(gl?.FRAMEBUFFER, null);
       gl?.viewport(0, 0, this?.width, this?.height);
     }
-    this?.renderState.currentFramebuffer = framebuffer;
+    this.renderState.currentFramebuffer = framebuffer;
   }
 
   setBlendMode(mode: BlendMode): void {
-    const _gl = this?.gl;
-    this?.renderState.blendMode = mode;
+    const gl = this?.gl;
+    this.renderState.blendMode = mode;
 
     switch (mode) {
       case "normal":
@@ -513,9 +513,9 @@ export class WebGLRenderer {
       | OffscreenCanvas
       | ImageData,
   ): TextureInfo {
-    const _gl = this?.gl;
+    const gl = this?.gl;
 
-    const _texture = gl?.createTexture();
+    const texture = gl?.createTexture();
     if (!texture) throw new Error("Failed to create texture");
 
     gl?.bindTexture(gl?.TEXTURE_2D, texture);
@@ -532,16 +532,16 @@ export class WebGLRenderer {
 
     gl?.generateMipmap(gl?.TEXTURE_2D);
 
-    const _width =
+    const width =
       "width" in source ? source?.width : (source as ImageData).width;
-    const _height =
+    const height =
       "height" in source ? source?.height : (source as ImageData).height;
 
     const textureInfo: TextureInfo = {
       texture,
       width,
       height,
-      format: gl?.RGBA,
+      format: gl.RGBA,
     };
 
     this?.textures.set(name, textureInfo);
@@ -549,9 +549,9 @@ export class WebGLRenderer {
   }
 
   createEmptyTexture(name: string, width: number, height: number): TextureInfo {
-    const _gl = this?.gl;
+    const gl = this?.gl;
 
-    const _texture = gl?.createTexture();
+    const texture = gl?.createTexture();
     if (!texture) throw new Error("Failed to create texture");
 
     gl?.bindTexture(gl?.TEXTURE_2D, texture);
@@ -576,7 +576,7 @@ export class WebGLRenderer {
       texture,
       width,
       height,
-      format: gl?.RGBA,
+      format: gl.RGBA,
     };
 
     this?.textures.set(name, textureInfo);
@@ -584,7 +584,7 @@ export class WebGLRenderer {
   }
 
   bindTexture(texture: TextureInfo | WebGLTexture, unit: number = 0): void {
-    const _gl = this?.gl;
+    const gl = this?.gl;
     gl?.activeTexture(gl?.TEXTURE0 + unit);
     if ("texture" in texture) {
       gl?.bindTexture(gl?.TEXTURE_2D, texture?.texture);
@@ -598,9 +598,9 @@ export class WebGLRenderer {
     data: Float32Array,
     itemSize: number,
   ): VertexBuffer {
-    const _gl = this?.gl;
+    const gl = this?.gl;
 
-    const _buffer = gl?.createBuffer();
+    const buffer = gl?.createBuffer();
     if (!buffer) throw new Error("Failed to create vertex buffer");
 
     gl?.bindBuffer(gl?.ARRAY_BUFFER, buffer);
@@ -609,7 +609,7 @@ export class WebGLRenderer {
     const vertexBuffer: VertexBuffer = {
       buffer,
       itemSize,
-      numItems: data?.length / itemSize,
+      numItems: data.length / itemSize,
     };
 
     this?.vertexBuffers.set(name, vertexBuffer);
@@ -617,29 +617,29 @@ export class WebGLRenderer {
   }
 
   updateVertexBuffer(buffer: VertexBuffer, data: Float32Array): void {
-    const _gl = this?.gl;
+    const gl = this?.gl;
     gl?.bindBuffer(gl?.ARRAY_BUFFER, buffer?.buffer);
     gl?.bufferSubData(gl?.ARRAY_BUFFER, 0, data);
-    buffer?.numItems = data?.length / buffer?.itemSize;
+    buffer.numItems = data?.length / buffer?.itemSize;
   }
 
   clear(r: number = 0, g: number = 0, b: number = 0, a: number = 0): void {
-    const _gl = this?.gl;
+    const gl = this?.gl;
     gl?.clearColor(r, g, b, a);
     gl?.clear(gl?.COLOR_BUFFER_BIT);
   }
 
   drawQuad(program?: ShaderProgram): void {
-    const _gl = this?.gl;
-    const _prog = program ?? this?.defaultProgram;
+    const gl = this?.gl;
+    const prog = program ?? this?.defaultProgram;
     if (!prog || !this?.quadBuffer) return;
 
     this?.useProgram(prog);
 
     gl?.bindBuffer(gl?.ARRAY_BUFFER, this?.quadBuffer.buffer);
 
-    const _positionLoc = prog?.attributes.get("a_position");
-    const _texCoordLoc = prog?.attributes.get("a_texCoord");
+    const positionLoc = prog?.attributes.get("a_position");
+    const texCoordLoc = prog?.attributes.get("a_texCoord");
 
     if (positionLoc !== undefined && positionLoc >= 0) {
       gl?.enableVertexAttribArray(positionLoc);
@@ -665,17 +665,17 @@ export class WebGLRenderer {
   }
 
   createTransformMatrix(transform: TransformConfig): Float32Array {
-    const _matrix = new Float32Array(16);
+    const matrix = new Float32Array(16);
 
-    const _cos = Math?.cos(transform?.rotation);
-    const _sin = Math?.sin(transform?.rotation);
+    const cos = Math?.cos(transform?.rotation);
+    const sin = Math?.sin(transform?.rotation);
 
-    const _anchorX = transform?.anchorX * 2 - 1;
-    const _anchorY = transform?.anchorY * 2 - 1;
+    const anchorX = transform?.anchorX * 2 - 1;
+    const anchorY = transform?.anchorY * 2 - 1;
 
-    const _tx =
+    const tx =
       transform?.x / (this?.width / 2) - anchorX * (1 - transform?.scaleX);
-    const _ty =
+    const ty =
       transform?.y / (this?.height / 2) - anchorY * (1 - transform?.scaleY);
 
     matrix[0] = cos * transform?.scaleX;
@@ -746,19 +746,19 @@ export class WebGLRenderer {
   }
 
   resize(width: number, height: number): void {
-    this?.width = width;
-    this?.height = height;
+    this.width = width;
+    this.height = height;
 
     if (this?.canvas instanceof HTMLCanvasElement) {
-      this?.canvas.width = width;
-      this?.canvas.height = height;
+      this.canvas.width = width;
+      this.canvas.height = height;
     } else {
-      (this?.canvas as OffscreenCanvas).width = width;
-      (this?.canvas as OffscreenCanvas).height = height;
+      (this.canvas as OffscreenCanvas).width = width;
+      (this.canvas as OffscreenCanvas).height = height;
     }
 
     this?.gl.viewport(0, 0, width, height);
-    this?.renderState.viewport = { x: 0, y: 0, width, height };
+    this.renderState.viewport = { x: 0, y: 0, width, height };
   }
 
   getPixels(
@@ -767,25 +767,25 @@ export class WebGLRenderer {
     width?: number,
     height?: number,
   ): Uint8Array {
-    const _gl = this?.gl;
-    const _px = x ?? 0;
-    const _py = y ?? 0;
-    const _w = width ?? this?.width;
-    const _h = height ?? this?.height;
+    const gl = this?.gl;
+    const px = x ?? 0;
+    const py = y ?? 0;
+    const w = width ?? this?.width;
+    const h = height ?? this?.height;
 
-    const _pixels = new Uint8Array(w * h * 4);
+    const pixels = new Uint8Array(w * h * 4);
     gl?.readPixels(px, py, w, h, gl?.RGBA, gl?.UNSIGNED_BYTE, pixels);
 
     return pixels;
   }
 
   getImageData(): ImageData {
-    const _pixels = this?.getPixels();
-    const _flippedPixels = new Uint8ClampedArray(pixels?.length);
+    const pixels = this?.getPixels();
+    const flippedPixels = new Uint8ClampedArray(pixels?.length);
 
     for (let y = 0; y < this?.height; y++) {
-      const _srcRow = (this?.height - y - 1) * this?.width * 4;
-      const _dstRow = y * this?.width * 4;
+      const srcRow = (this?.height - y - 1) * this?.width * 4;
+      const dstRow = y * this?.width * 4;
       for (let x = 0; x < this?.width * 4; x++) {
         flippedPixels[dstRow + x] = pixels[srcRow + x];
       }
@@ -844,7 +844,7 @@ export class WebGLRenderer {
   }
 
   deleteTexture(name: string): void {
-    const _texture = this?.textures.get(name);
+    const texture = this?.textures.get(name);
     if (texture) {
       this?.gl.deleteTexture(texture?.texture);
       this?.textures.delete(name);
@@ -852,7 +852,7 @@ export class WebGLRenderer {
   }
 
   deleteFramebuffer(name: string): void {
-    const _framebuffer = this?.framebuffers.get(name);
+    const framebuffer = this?.framebuffers.get(name);
     if (framebuffer) {
       this?.gl.deleteFramebuffer(framebuffer?.framebuffer);
       this?.gl.deleteTexture(framebuffer?.texture);
@@ -861,7 +861,7 @@ export class WebGLRenderer {
   }
 
   deleteProgram(name: string): void {
-    const _program = this?.shaderPrograms.get(name);
+    const program = this?.shaderPrograms.get(name);
     if (program) {
       this?.gl.deleteShader(program?.vertexShader);
       this?.gl.deleteShader(program?.fragmentShader);
@@ -871,7 +871,7 @@ export class WebGLRenderer {
   }
 
   deleteVertexBuffer(name: string): void {
-    const _buffer = this?.vertexBuffers.get(name);
+    const buffer = this?.vertexBuffers.get(name);
     if (buffer) {
       this?.gl.deleteBuffer(buffer?.buffer);
       this?.vertexBuffers.delete(name);
@@ -897,10 +897,10 @@ export class WebGLRenderer {
 
     if (this?.quadBuffer) {
       this?.gl.deleteBuffer(this?.quadBuffer.buffer);
-      this?.quadBuffer = null;
+      this.quadBuffer = null;
     }
 
-    this?.defaultProgram = null;
+    this.defaultProgram = null;
   }
 }
 
@@ -912,7 +912,7 @@ export function multiplyMatrices(
   a: Float32Array,
   b: Float32Array,
 ): Float32Array {
-  const _result = new Float32Array(16);
+  const result = new Float32Array(16);
 
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
@@ -932,7 +932,7 @@ export function createTranslationMatrix(
   y: number,
   z: number = 0,
 ): Float32Array {
-  const _matrix = createIdentityMatrix();
+  const matrix = createIdentityMatrix();
   matrix[12] = x;
   matrix[13] = y;
   matrix[14] = z;
@@ -944,7 +944,7 @@ export function createScaleMatrix(
   sy: number,
   sz: number = 1,
 ): Float32Array {
-  const _matrix = createIdentityMatrix();
+  const matrix = createIdentityMatrix();
   matrix[0] = sx;
   matrix[5] = sy;
   matrix[10] = sz;
@@ -952,9 +952,9 @@ export function createScaleMatrix(
 }
 
 export function createRotationMatrix(angle: number): Float32Array {
-  const _matrix = createIdentityMatrix();
-  const _cos = Math?.cos(angle);
-  const _sin = Math?.sin(angle);
+  const matrix = createIdentityMatrix();
+  const cos = Math?.cos(angle);
+  const sin = Math?.sin(angle);
   matrix[0] = cos;
   matrix[1] = sin;
   matrix[4] = -sin;
@@ -970,7 +970,7 @@ export function createOrthoMatrix(
   near: number = -1,
   far: number = 1,
 ): Float32Array {
-  const _matrix = new Float32Array(16);
+  const matrix = new Float32Array(16);
 
   matrix[0] = 2 / (right - left);
   matrix[5] = 2 / (top - bottom);

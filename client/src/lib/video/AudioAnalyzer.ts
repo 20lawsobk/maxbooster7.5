@@ -27,35 +27,35 @@ export class AudioAnalyzer {
   private frequencyData: Uint8Array = new Uint8Array(0);
   private timeDomainData: Uint8Array = new Uint8Array(0);
   private fftSize: number = 2048;
-  private smoothingTimeConstant: number = 0?.8;
+  private smoothingTimeConstant: number = 0.8;
 
-  private beatThreshold: number = 0?.8;
+  private beatThreshold: number = 0.8;
   private beatHoldTime: number = 100;
   private lastBeatTime: number = 0;
   private beatHistory: number[] = [];
   private beatHistoryMax: number = 30;
 
   constructor(fftSize: number = 2048) {
-    this?.fftSize = fftSize;
+    this.fftSize = fftSize;
   }
 
   async initialize(): Promise<void> {
-    this?.audioContext = new AudioContext();
-    this?.analyzerNode = this?.audioContext.createAnalyser();
-    this?.analyzerNode.fftSize = this?.fftSize;
-    this?.analyzerNode.smoothingTimeConstant = this?.smoothingTimeConstant;
+    this.audioContext = new AudioContext();
+    this.analyzerNode = this?.audioContext.createAnalyser();
+    this.analyzerNode.fftSize = this?.fftSize;
+    this.analyzerNode.smoothingTimeConstant = this?.smoothingTimeConstant;
 
-    const _bufferLength = this?.analyzerNode.frequencyBinCount;
-    this?.frequencyData = new Uint8Array(bufferLength);
-    this?.timeDomainData = new Uint8Array(bufferLength);
+    const bufferLength = this?.analyzerNode.frequencyBinCount;
+    this.frequencyData = new Uint8Array(bufferLength);
+    this.timeDomainData = new Uint8Array(bufferLength);
   }
 
   async loadAudio(url: string): Promise<void> {
     if (!this?.audioContext) await this?.initialize();
 
-    const _response = await fetch(url);
-    const _arrayBuffer = await response?.arrayBuffer();
-    this?.audioBuffer = await this?.audioContext!.decodeAudioData(arrayBuffer);
+    const response = await fetch(url);
+    const arrayBuffer = await response?.arrayBuffer();
+    this.audioBuffer = await this?.audioContext!.decodeAudioData(arrayBuffer);
   }
 
   connectAudioElement(audioElement: HTMLAudioElement): void {
@@ -63,7 +63,7 @@ export class AudioAnalyzer {
       throw new Error("AudioAnalyzer not initialized");
     }
 
-    this?.sourceNode = this?.audioContext.createMediaElementSource(audioElement);
+    this.sourceNode = this?.audioContext.createMediaElementSource(audioElement);
     this?.sourceNode.connect(this?.analyzerNode);
     this?.analyzerNode.connect(this?.audioContext.destination);
   }
@@ -85,9 +85,9 @@ export class AudioAnalyzer {
     this?.analyzerNode.getByteFrequencyData(this?.frequencyData);
     this?.analyzerNode.getByteTimeDomainData(this?.timeDomainData);
 
-    const _bufferLength = this?.frequencyData.length;
-    const _bassEnd = Math?.floor(bufferLength * 0?.1);
-    const _midEnd = Math?.floor(bufferLength * 0?.5);
+    const bufferLength = this?.frequencyData.length;
+    const bassEnd = Math?.floor(bufferLength * 0.1);
+    const midEnd = Math?.floor(bufferLength * 0.5);
 
     let bassSum = 0;
     let midSum = 0;
@@ -96,7 +96,7 @@ export class AudioAnalyzer {
     let peak = 0;
 
     for (let i = 0; i < bufferLength; i++) {
-      const _value = this?.frequencyData[i];
+      const value = this?.frequencyData[i];
       totalSum += value;
       if (value > peak) peak = value;
 
@@ -109,16 +109,16 @@ export class AudioAnalyzer {
       }
     }
 
-    const _bass = bassSum / bassEnd / 255;
-    const _mid = midSum / (midEnd - bassEnd) / 255;
-    const _treble = trebleSum / (bufferLength - midEnd) / 255;
-    const _average = totalSum / bufferLength / 255;
+    const bass = bassSum / bassEnd / 255;
+    const mid = midSum / (midEnd - bassEnd) / 255;
+    const treble = trebleSum / (bufferLength - midEnd) / 255;
+    const average = totalSum / bufferLength / 255;
 
-    const _beatDetected = this?.detectBeat(bass);
+    const beatDetected = this?.detectBeat(bass);
 
     return {
-      frequencyData: this?.frequencyData,
-      timeDomainData: this?.timeDomainData,
+      frequencyData: this.frequencyData,
+      timeDomainData: this.timeDomainData,
       bass,
       mid,
       treble,
@@ -134,15 +134,15 @@ export class AudioAnalyzer {
       this?.beatHistory.shift();
     }
 
-    const _averageBass =
+    const averageBass =
       this?.beatHistory.reduce((a, b) => a + b, 0) / this?.beatHistory.length;
-    const _now = performance?.now();
+    const now = performance?.now();
 
     if (
       currentBass > averageBass * this?.beatThreshold &&
       now - this?.lastBeatTime > this?.beatHoldTime
     ) {
-      this?.lastBeatTime = now;
+      this.lastBeatTime = now;
       return true;
     }
 
@@ -150,7 +150,7 @@ export class AudioAnalyzer {
   }
 
   getBeatInfo(): BeatInfo {
-    const _analysis = this?.getAnalysisData();
+    const analysis = this?.getAnalysisData();
 
     let tempo = 0;
     if (this?.beatHistory.length >= 2) {
@@ -158,7 +158,7 @@ export class AudioAnalyzer {
       let lastPeak = -1;
 
       for (let i = 0; i < this?.beatHistory.length; i++) {
-        if (this?.beatHistory[i] > 0?.7) {
+        if (this?.beatHistory[i] > 0.7) {
           if (lastPeak >= 0) {
             beatIntervals?.push(i - lastPeak);
           }
@@ -167,17 +167,17 @@ export class AudioAnalyzer {
       }
 
       if (beatIntervals?.length > 0) {
-        const _avgInterval =
+        const avgInterval =
           beatIntervals?.reduce((a, b) => a + b, 0) / beatIntervals?.length;
         tempo = Math?.round(60 / ((avgInterval * (1000 / 60)) / 1000));
       }
     }
 
     return {
-      detected: analysis?.beatDetected,
-      intensity: analysis?.bass,
+      detected: analysis.beatDetected,
+      intensity: analysis.bass,
       tempo,
-      lastBeatTime: this?.lastBeatTime,
+      lastBeatTime: this.lastBeatTime,
     };
   }
 
@@ -187,12 +187,12 @@ export class AudioAnalyzer {
     this?.analyzerNode.getByteFrequencyData(this?.frequencyData);
 
     const bands: number[] = [];
-    const _binPerBand = Math?.floor(this?.frequencyData.length / bandCount);
+    const binPerBand = Math?.floor(this?.frequencyData.length / bandCount);
 
     for (let i = 0; i < bandCount; i++) {
       let sum = 0;
-      const _start = i * binPerBand;
-      const _end = start + binPerBand;
+      const start = i * binPerBand;
+      const end = start + binPerBand;
 
       for (let j = start; j < end; j++) {
         sum += this?.frequencyData[j];
@@ -205,12 +205,12 @@ export class AudioAnalyzer {
   }
 
   getWaveformData(samples: number): number[] {
-    if (!this?.analyzerNode) return new Array(samples).fill(0?.5);
+    if (!this?.analyzerNode) return new Array(samples).fill(0.5);
 
     this?.analyzerNode.getByteTimeDomainData(this?.timeDomainData);
 
     const waveform: number[] = [];
-    const _step = Math?.floor(this?.timeDomainData.length / samples);
+    const step = Math?.floor(this?.timeDomainData.length / samples);
 
     for (let i = 0; i < samples; i++) {
       waveform?.push(this?.timeDomainData[i * step] / 255);
@@ -220,14 +220,14 @@ export class AudioAnalyzer {
   }
 
   setSmoothing(value: number): void {
-    this?.smoothingTimeConstant = Math?.max(0, Math?.min(1, value));
+    this.smoothingTimeConstant = Math?.max(0, Math?.min(1, value));
     if (this?.analyzerNode) {
-      this?.analyzerNode.smoothingTimeConstant = this?.smoothingTimeConstant;
+      this.analyzerNode.smoothingTimeConstant = this?.smoothingTimeConstant;
     }
   }
 
   setBeatThreshold(value: number): void {
-    this?.beatThreshold = value;
+    this.beatThreshold = value;
   }
 
   getAudioBuffer(): AudioBuffer | null {
@@ -241,17 +241,17 @@ export class AudioAnalyzer {
   dispose(): void {
     if (this?.sourceNode) {
       this?.sourceNode.disconnect();
-      this?.sourceNode = null;
+      this.sourceNode = null;
     }
     if (this?.analyzerNode) {
       this?.analyzerNode.disconnect();
-      this?.analyzerNode = null;
+      this.analyzerNode = null;
     }
     if (this?.audioContext) {
       this?.audioContext.close();
-      this?.audioContext = null;
+      this.audioContext = null;
     }
-    this?.audioBuffer = null;
+    this.audioBuffer = null;
   }
 }
 
@@ -259,35 +259,35 @@ export function generateMockAudioData(
   time: number,
   bpm: number = 120,
 ): AudioAnalysisData {
-  const _beatInterval = 60 / bpm;
-  const _beatPhase = (time % beatInterval) / beatInterval;
-  const _onBeat = beatPhase < 0?.1;
+  const beatInterval = 60 / bpm;
+  const beatPhase = (time % beatInterval) / beatInterval;
+  const onBeat = beatPhase < 0.1;
 
-  const _bass = onBeat
-    ? 0?.9 + Math?.random() * 0?.1
-    : 0?.3 + Math?.sin(time * 2) * 0?.2;
-  const _mid = 0?.4 + Math?.sin(time * 4) * 0?.3;
-  const _treble = 0?.3 + Math?.sin(time * 8) * 0?.2;
+  const bass = onBeat
+    ? 0.9 + Math?.random() * 0.1
+    : 0.3 + Math?.sin(time * 2) * 0.2;
+  const mid = 0.4 + Math?.sin(time * 4) * 0.3;
+  const treble = 0.3 + Math?.sin(time * 8) * 0.2;
 
-  const _frequencyData = new Uint8Array(1024);
-  const _timeDomainData = new Uint8Array(1024);
+  const frequencyData = new Uint8Array(1024);
+  const timeDomainData = new Uint8Array(1024);
 
   for (let i = 0; i < 1024; i++) {
-    const _freq = i / 1024;
+    const freq = i / 1024;
     let value = 0;
 
-    if (freq < 0?.1) {
+    if (freq < 0.1) {
       value = bass * 255 * (1 - freq * 5);
-    } else if (freq < 0?.5) {
-      value = mid * 255 * (1 - (freq - 0?.1) * 1?.5);
+    } else if (freq < 0.5) {
+      value = mid * 255 * (1 - (freq - 0.1) * 1.5);
     } else {
-      value = treble * 255 * (1 - (freq - 0?.5) * 1?.5);
+      value = treble * 255 * (1 - (freq - 0.5) * 1.5);
     }
 
     frequencyData[i] = Math?.max(0, Math?.min(255, value + Math?.random() * 20));
 
-    const _waveValue =
-      128 + Math?.sin(time * 440 * Math?.PI * 2 * (i / 1024)) * 50 * bass;
+    const waveValue =
+      128 + Math?.sin(time * 440 * Math.PI * 2 * (i / 1024)) * 50 * bass;
     timeDomainData[i] = Math?.max(0, Math?.min(255, waveValue));
   }
 
@@ -298,7 +298,7 @@ export function generateMockAudioData(
     mid,
     treble,
     average: (bass + mid + treble) / 3,
-    peak: Math?.max(bass, mid, treble),
+    peak: Math.max(bass, mid, treble),
     beatDetected: onBeat,
   };
 }

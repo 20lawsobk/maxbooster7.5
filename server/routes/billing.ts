@@ -31,31 +31,31 @@ import { eq } from "drizzle-orm";
 import { logger } from "../logger";
 import { executeStripeOperation } from "../services/externalServices";
 import { billingRateLimiter } from "../middleware/rateLimiter";
-import { requireAuth } from "../middleware/auth?.js";
-import { notificationService } from "../services/notificationService?.js";
-import { stripeService } from "../services/stripeService?.js";
-import { instantPayoutService } from "../services/instantPayoutService?.js";
-import { env } from "../config/env?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { notificationService } from "../services/notificationService.js";
+import { stripeService } from "../services/stripeService.js";
+import { instantPayoutService } from "../services/instantPayoutService.js";
+import { env } from "../config/env.js";
 
-const _router = Router();
+const router = Router();
 
 // SECURITY: Apply rate limiting to all billing endpoints
 router?.use(billingRateLimiter);
 
-const _stripeSecretKey = env?.STRIPE_SECRET_KEY;
+const stripeSecretKey = env?.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
   logger?.warn(
     "[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors.",
   );
 }
 
-const _stripe = stripeSecretKey
+const stripe = stripeSecretKey
   ? new Stripe(stripeSecretKey, {
-      apiVersion: "2026-01-28?.clover",
+      apiVersion: "2026-01-28.clover",
     })
   : null;
 
-const _requireStripe = (
+const requireStripe = (
   _req: Request,
   res: Response,
   next: Record<string, unknown>,
@@ -71,9 +71,9 @@ const _requireStripe = (
   next();
 };
 
-const _mapStripeError = (error: Stripe?.StripeRawError | any) => {
-  const _errorCode = error?.code || error?.type;
-  const _errorMessage = error?.message || "An unexpected error occurred";
+const mapStripeError = (error: Stripe.StripeRawError | any) => {
+  const errorCode = error?.code || error?.type;
+  const errorMessage = error?.message || "An unexpected error occurred";
 
   switch (errorCode) {
     case "card_declined":
@@ -83,7 +83,7 @@ const _mapStripeError = (error: Stripe?.StripeRawError | any) => {
         message:
           "Your card was declined. Please try a different payment method.",
         retryable: true,
-        declineCode: error?.decline_code,
+        declineCode: error.decline_code,
       };
     case "incorrect_cvc":
     case "incorrect_number":
@@ -97,7 +97,7 @@ const _mapStripeError = (error: Stripe?.StripeRawError | any) => {
         message:
           "Your card information is invalid. Please check and try again.",
         retryable: true,
-        field: errorCode?.replace("invalid_", "").replace("incorrect_", ""),
+        field: errorCode.replace("invalid_", "").replace("incorrect_", ""),
       };
     case "authentication_required":
     case "requires_action":
@@ -107,7 +107,7 @@ const _mapStripeError = (error: Stripe?.StripeRawError | any) => {
         message:
           "Additional authentication is required. Please complete the verification.",
         retryable: true,
-        clientSecret: error?.payment_intent?.client_secret,
+        clientSecret: error.payment_intent?.client_secret,
       };
     case "expired_card":
       return {
@@ -172,24 +172,24 @@ async function getOrCreateStripeCustomer(
 
   // SECURITY FIX: Wrap Stripe customer creation with circuit breaker
   try {
-    const _result = await executeStripeOperation(() =>
+    const result = await executeStripeOperation(() =>
       stripe?.customers.create(
         {
-          email: user?.email,
-          metadata: { userId: user?.id },
+          email: user.email,
+          metadata: { userId: user.id },
         },
         { idempotencyKey: `create_customer_${user?.id}` },
       ),
     );
 
-    const _customer = result?.data;
+    const customer = result?.data;
 
     let saved = false;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         await db
           .update(users)
-          .set({ stripeCustomerId: customer?.id })
+          .set({ stripeCustomerId: customer.id })
           .where(eq(users?.id, user?.id));
         saved = true;
         break;
@@ -213,7 +213,7 @@ async function getOrCreateStripeCustomer(
   }
 }
 
-const _PLAN_BENEFITS = {
+const PLAN_BENEFITS = {
   monthly: {
     name: "Monthly",
     price: 49,
@@ -360,10 +360,10 @@ router?.post(
           });
       }
 
-      const _userId = req?.user!.id;
-      const _customerId = await getOrCreateStripeCustomer(req?.user);
-      const _appUrl =
-        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster?.com";
+      const userId = req?.user!.id;
+      const customerId = await getOrCreateStripeCustomer(req?.user);
+      const appUrl =
+        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster.com";
 
       const priceMap: Record<
         string,
@@ -378,11 +378,11 @@ router?.post(
         lifetime: { amount: 69900, mode: "payment" },
       };
 
-      const _plan = priceMap[planId];
+      const plan = priceMap[planId];
 
       const sessionParams: Record<string, unknown> = {
         customer: customerId,
-        mode: plan?.mode,
+        mode: plan.mode,
         line_items: [
           {
             price_data: {
@@ -394,9 +394,9 @@ router?.post(
                     ? "Lifetime access to all Max Booster features"
                     : `${planId?.charAt(0).toUpperCase() + planId?.slice(1)} subscription to Max Booster`,
               },
-              unit_amount: plan?.amount,
+              unit_amount: plan.amount,
               ...(plan?.interval
-                ? { recurring: { interval: plan?.interval } }
+                ? { recurring: { interval: plan.interval } }
                 : {}),
             },
             quantity: 1,
@@ -407,8 +407,8 @@ router?.post(
         metadata: { userId, planId },
       };
 
-      const _session = await stripe?.checkout.sessions?.create(sessionParams);
-      res?.json({ url: session?.url, sessionId: session?.id });
+      const session = await stripe?.checkout.sessions?.create(sessionParams);
+      res?.json({ url: session.url, sessionId: session.id });
     } catch (error) {
       logger?.warn(
         { err: error },
@@ -429,7 +429,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -444,24 +444,24 @@ router?.get(
         });
       }
 
-      let stripeSubscription: Stripe?.Subscription | null = null;
+      let stripeSubscription: Stripe.Subscription | null = null;
       let subscriptionError: string | null = null;
 
       if (user?.stripeCustomerId && stripe) {
         try {
-          const _subscriptions = await stripe?.subscriptions.list({
-            customer: user?.stripeCustomerId,
+          const subscriptions = await stripe?.subscriptions.list({
+            customer: user.stripeCustomerId,
             limit: 5,
-            expand: ["data?.default_payment_method"],
+            expand: ["data.default_payment_method"],
           });
 
-          const _activeSubscription = subscriptions?.data.find(
+          const activeSubscription = subscriptions?.data.find(
             (s) => s?.status === "active" || s?.status === "trialing",
           );
-          const _canceledSubscription = subscriptions?.data.find(
+          const canceledSubscription = subscriptions?.data.find(
             (s) => s?.status === "canceled" || s?.cancel_at_period_end,
           );
-          const _pastDueSubscription = subscriptions?.data.find(
+          const pastDueSubscription = subscriptions?.data.find(
             (s) => s?.status === "past_due" || s?.status === "unpaid",
           );
 
@@ -480,8 +480,8 @@ router?.get(
         }
       }
 
-      const _now = new Date();
-      const _subscriptionEndsAt = stripeSubscription?.current_period_end
+      const now = new Date();
+      const subscriptionEndsAt = stripeSubscription?.current_period_end
         ? new Date(stripeSubscription?.current_period_end * 1000)
         : user?.subscriptionEndsAt;
 
@@ -541,11 +541,11 @@ router?.get(
         statusColor = "red";
       }
 
-      const _isExpired =
+      const isExpired =
         subscriptionEndsAt &&
         subscriptionEndsAt < now &&
         user?.subscriptionTier !== "lifetime";
-      const _daysUntilRenewal = subscriptionEndsAt
+      const daysUntilRenewal = subscriptionEndsAt
         ? Math?.ceil(
             (subscriptionEndsAt?.getTime() - now?.getTime()) /
               (1000 * 60 * 60 * 24),
@@ -553,8 +553,8 @@ router?.get(
         : null;
 
       // Get current plan benefits
-      const _currentTier = user?.subscriptionTier || "free";
-      const _planBenefits =
+      const currentTier = user?.subscriptionTier || "free";
+      const planBenefits =
         PLAN_BENEFITS[currentTier as keyof typeof PLAN_BENEFITS] ||
         PLAN_BENEFITS?.free;
 
@@ -578,28 +578,28 @@ router?.get(
         status: computedStatus,
         statusBadge,
         statusColor,
-        currentPeriodEnd: subscriptionEndsAt?.toISOString() || null,
-        cancelAtPeriodEnd: stripeSubscription?.cancel_at_period_end || false,
-        priceId: stripeSubscription?.items?.data[0]?.price?.id || null,
+        currentPeriodEnd: subscriptionEndsAt.toISOString() || null,
+        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end || false,
+        priceId: stripeSubscription.items?.data[0]?.price?.id || null,
         isExpired,
-        isLifetime: user?.subscriptionTier === "lifetime",
-        isPastDue: stripeSubscription?.status === "past_due",
+        isLifetime: user.subscriptionTier === "lifetime",
+        isPastDue: stripeSubscription.status === "past_due",
         daysUntilRenewal:
           daysUntilRenewal && daysUntilRenewal > 0 ? daysUntilRenewal : null,
-        canReactivate: stripeSubscription?.cancel_at_period_end === true,
+        canReactivate: stripeSubscription.cancel_at_period_end === true,
         stripeConfigured: !!stripe,
         syncError: subscriptionError,
         // Trial information
         isTrialing,
-        trialEndsAt: trialEndsAt?.toISOString() || null,
+        trialEndsAt: trialEndsAt.toISOString() || null,
         trialDaysRemaining,
         // Plan benefits and options
         planBenefits,
-        upgradeOptions: upgradeOptions?.map((tier) => ({
+        upgradeOptions: upgradeOptions.map((tier) => ({
           tier,
           ...PLAN_BENEFITS[tier as keyof typeof PLAN_BENEFITS],
         })),
-        downgradeOptions: downgradeOptions?.map((tier) => ({
+        downgradeOptions: downgradeOptions.map((tier) => ({
           tier,
           ...PLAN_BENEFITS[tier as keyof typeof PLAN_BENEFITS],
         })),
@@ -617,8 +617,8 @@ router?.get(
         [1, 3, 7].includes(daysUntilRenewal) &&
         user?.subscriptionTier !== "lifetime"
       ) {
-        const _plan = user?.subscriptionTier || "free";
-        const _days = daysUntilRenewal;
+        const plan = user?.subscriptionTier || "free";
+        const days = daysUntilRenewal;
         setImmediate(async () => {
           try {
             await notificationService?.sendSubscriptionExpiringNotification(
@@ -650,7 +650,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -667,18 +667,18 @@ router?.get(
       }
 
       try {
-        const _paymentMethods = await stripe?.paymentMethods.list({
-          customer: user?.stripeCustomerId,
+        const paymentMethods = await stripe?.paymentMethods.list({
+          customer: user.stripeCustomerId,
           type: "card",
           limit: 1,
         });
 
         if (paymentMethods?.data.length > 0) {
-          const _pm = paymentMethods?.data[0];
+          const pm = paymentMethods?.data[0];
           return res?.json({
-            last4: pm?.card?.last4,
+            last4: pm.card?.last4,
             expiry: `${pm?.card?.exp_month}/${pm?.card?.exp_year}`,
-            brand: pm?.card?.brand,
+            brand: pm.card?.brand,
           });
         }
       } catch (err) {
@@ -698,7 +698,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -712,20 +712,20 @@ router?.get(
       }
 
       try {
-        const _invoices = await stripe?.invoices.list({
-          customer: user?.stripeCustomerId,
+        const invoices = await stripe?.invoices.list({
+          customer: user.stripeCustomerId,
           limit: 24,
         });
 
-        const _history = invoices?.data.map((invoice) => ({
-          id: invoice?.id,
-          invoiceId: invoice?.number || invoice?.id,
+        const history = invoices?.data.map((invoice) => ({
+          id: invoice.id,
+          invoiceId: invoice.number || invoice?.id,
           date: new Date(invoice?.created * 1000).toISOString(),
           amount: (invoice?.amount_paid || 0) / 100,
-          status: invoice?.status,
+          status: invoice.status,
           description:
             invoice?.lines.data[0]?.description || "Max Booster Subscription",
-          pdfUrl: invoice?.invoice_pdf,
+          pdfUrl: invoice.invoice_pdf,
         }));
 
         return res?.json(history);
@@ -753,7 +753,7 @@ router?.post(
         });
       }
 
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { immediately = false, reason } = req?.body;
 
       const [user] = await db
@@ -778,8 +778,8 @@ router?.post(
         });
       }
 
-      const _subscriptions = await stripe?.subscriptions.list({
-        customer: user?.stripeCustomerId,
+      const subscriptions = await stripe?.subscriptions.list({
+        customer: user.stripeCustomerId,
         limit: 1,
       });
 
@@ -791,7 +791,7 @@ router?.post(
         });
       }
 
-      const _subscription = subscriptions?.data[0];
+      const subscription = subscriptions?.data[0];
 
       if (subscription?.status === "canceled") {
         return res?.status(400).json({
@@ -855,7 +855,7 @@ router?.post(
           cancelAt: new Date(
             subscription?.current_period_end * 1000,
           ).toISOString(),
-          daysRemaining: Math?.ceil(
+          daysRemaining: Math.ceil(
             (subscription?.current_period_end * 1000 - Date?.now()) /
               (1000 * 60 * 60 * 24),
           ),
@@ -863,11 +863,11 @@ router?.post(
       }
     } catch (error) {
       logger?.warn({ err: error }, "[Billing] Failed to cancel subscription:");
-      const _mappedError = mapStripeError(error);
+      const mappedError = mapStripeError(error);
       res?.status(mappedError?.status).json({
-        message: mappedError?.message,
-        code: mappedError?.code,
-        retryable: mappedError?.retryable,
+        message: mappedError.message,
+        code: mappedError.code,
+        retryable: mappedError.retryable,
       });
     }
   },
@@ -886,7 +886,7 @@ router?.post(
         });
       }
 
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -902,8 +902,8 @@ router?.post(
         });
       }
 
-      const _subscriptions = await stripe?.subscriptions.list({
-        customer: user?.stripeCustomerId,
+      const subscriptions = await stripe?.subscriptions.list({
+        customer: user.stripeCustomerId,
         limit: 5,
       });
 
@@ -915,7 +915,7 @@ router?.post(
         });
       }
 
-      const _subscription = subscriptions?.data[0];
+      const subscription = subscriptions?.data[0];
 
       if (subscription?.status === "canceled") {
         return res?.status(400).json({
@@ -935,8 +935,8 @@ router?.post(
         });
       }
 
-      const _paymentMethods = await stripe?.paymentMethods.list({
-        customer: user?.stripeCustomerId,
+      const paymentMethods = await stripe?.paymentMethods.list({
+        customer: user.stripeCustomerId,
         type: "card",
         limit: 1,
       });
@@ -978,11 +978,11 @@ router?.post(
         { err: error },
         "[Billing] Failed to reactivate subscription:",
       );
-      const _mappedError = mapStripeError(error);
+      const mappedError = mapStripeError(error);
       res?.status(mappedError?.status).json({
-        message: mappedError?.message,
-        code: mappedError?.code,
-        retryable: mappedError?.retryable,
+        message: mappedError.message,
+        code: mappedError.code,
+        retryable: mappedError.retryable,
       });
     }
   },
@@ -1001,7 +1001,7 @@ router?.get(
         });
       }
 
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { invoiceId } = req?.params;
 
       const [user] = await db
@@ -1018,7 +1018,7 @@ router?.get(
         });
       }
 
-      let invoice: Stripe?.Invoice;
+      let invoice: Stripe.Invoice;
       try {
         invoice = await stripe?.invoices.retrieve(invoiceId);
       } catch (stripeError: unknown) {
@@ -1067,11 +1067,11 @@ router?.get(
       });
     } catch (error) {
       logger?.warn({ err: error }, "[Billing] Failed to download invoice:");
-      const _mappedError = mapStripeError(error);
+      const mappedError = mapStripeError(error);
       res?.status(mappedError?.status).json({
-        message: mappedError?.message,
-        code: mappedError?.code,
-        retryable: mappedError?.retryable,
+        message: mappedError.message,
+        code: mappedError.code,
+        retryable: mappedError.retryable,
       });
     }
   },
@@ -1088,19 +1088,19 @@ router?.post(
           .json({ error: "Billing service not configured" });
       }
 
-      const _userId = req?.user!.id;
-      const _customerId = await getOrCreateStripeCustomer(req?.user);
+      const userId = req?.user!.id;
+      const customerId = await getOrCreateStripeCustomer(req?.user);
 
-      const _session = await stripe?.checkout.sessions?.create({
+      const session = await stripe?.checkout.sessions?.create({
         customer: customerId,
         mode: "setup",
         payment_method_types: ["card"],
-        success_url: `${process?.env.APP_URL || "https://max-booster?.com"}/settings?payment=updated`,
-        cancel_url: `${process?.env.APP_URL || "https://max-booster?.com"}/settings?payment=canceled`,
+        success_url: `${process.env.APP_URL || "https://max-booster.com"}/settings?payment=updated`,
+        cancel_url: `${process.env.APP_URL || "https://max-booster.com"}/settings?payment=canceled`,
         metadata: { userId },
       });
 
-      res?.json({ url: session?.url });
+      res?.json({ url: session.url });
     } catch (error) {
       logger?.warn({ err: error }, "[Billing] Failed to create setup session:");
       res?.status(500).json({ error: "Failed to update payment method" });
@@ -1119,7 +1119,7 @@ router?.post(
           .json({ error: "Billing service not configured" });
       }
 
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -1131,12 +1131,12 @@ router?.post(
         return res?.status(400).json({ error: "No billing account found" });
       }
 
-      const _portalSession = await stripe?.billingPortal.sessions?.create({
-        customer: user?.stripeCustomerId,
-        return_url: `${process?.env.APP_URL || "https://max-booster?.com"}/settings`,
+      const portalSession = await stripe?.billingPortal.sessions?.create({
+        customer: user.stripeCustomerId,
+        return_url: `${process?.env.APP_URL || "https://max-booster.com"}/settings`,
       });
 
-      res?.json({ url: portalSession?.url });
+      res?.json({ url: portalSession.url });
     } catch (error) {
       logger?.warn({ err: error }, "[Billing] Failed to create portal session:");
       res?.status(500).json({ error: "Failed to access billing portal" });
@@ -1149,7 +1149,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { orderId, amountCents, reason } = req?.body;
 
       if (!orderId) {
@@ -1175,7 +1175,7 @@ router?.post(
         }
       }
 
-      const _result = await stripeService?.createRefund({
+      const result = await stripeService?.createRefund({
         orderId,
         userId,
         amountCents,
@@ -1184,12 +1184,12 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({
         success: true,
-        refundId: result?.refundId,
+        refundId: result.refundId,
         message: "Refund initiated successfully",
       });
     } catch (error) {
@@ -1206,7 +1206,7 @@ router?.get(
     try {
       const { refundId } = req?.params;
 
-      const _refund = await stripeService?.getRefundStatus(refundId);
+      const refund = await stripeService?.getRefundStatus(refundId);
 
       if (refund?.userId !== req?.user!.id) {
         return res?.status(403).json({ error: "Forbidden" });
@@ -1230,7 +1230,7 @@ router?.get(
     try {
       const { orderId } = req?.params;
 
-      const _refunds = await stripeService?.getOrderRefunds(orderId);
+      const refunds = await stripeService?.getOrderRefunds(orderId);
 
       res?.json({ refunds });
     } catch (error) {
@@ -1245,14 +1245,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-      const _offset = Math?.min(
+      const userId = req?.user!.id;
+      const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+      const offset = Math?.min(
         Math?.max(parseInt(req?.query.offset as string) || 0, 0),
         100_000,
       );
 
-      const _entries = await instantPayoutService?.getLedgerHistory(
+      const entries = await instantPayoutService?.getLedgerHistory(
         userId,
         limit,
         offset,
@@ -1272,7 +1272,7 @@ router?.post(
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -1288,8 +1288,8 @@ router?.post(
         });
       }
 
-      const _subscriptions = await stripe!.subscriptions?.list({
-        customer: user?.stripeCustomerId,
+      const subscriptions = await stripe!.subscriptions?.list({
+        customer: user.stripeCustomerId,
         status: "past_due",
         limit: 1,
       });
@@ -1297,8 +1297,8 @@ router?.post(
       let subscription = subscriptions?.data[0];
 
       if (!subscription) {
-        const _unpaidSubs = await stripe!.subscriptions?.list({
-          customer: user?.stripeCustomerId,
+        const unpaidSubs = await stripe!.subscriptions?.list({
+          customer: user.stripeCustomerId,
           status: "unpaid",
           limit: 1,
         });
@@ -1313,7 +1313,7 @@ router?.post(
 
         subscription = unpaidSubs?.data[0];
       }
-      const _latestInvoice = await stripe!.invoices?.retrieve(
+      const latestInvoice = await stripe!.invoices?.retrieve(
         subscription?.latest_invoice as string,
       );
 
@@ -1327,8 +1327,8 @@ router?.post(
 
       try {
         // Idempotency key scoped to user+invoice so duplicate taps/timeouts never double-charge.
-        const _idempotencyKey = `retry-pay-${userId}-${latestInvoice?.id}`;
-        const _paidInvoice = await stripe!.invoices?.pay(
+        const idempotencyKey = `retry-pay-${userId}-${latestInvoice?.id}`;
+        const paidInvoice = await stripe!.invoices?.pay(
           latestInvoice?.id,
           {},
           { idempotencyKey },
@@ -1351,10 +1351,10 @@ router?.post(
           });
         }
       } catch (payError: unknown) {
-        const _mappedError = mapStripeError(payError);
+        const mappedError = mapStripeError(payError);
 
         if (mappedError?.code === "REQUIRES_3D_SECURE") {
-          const _paymentIntent = await stripe!.paymentIntents?.retrieve(
+          const paymentIntent = await stripe!.paymentIntents?.retrieve(
             latestInvoice?.payment_intent as string,
           );
 
@@ -1362,15 +1362,15 @@ router?.post(
             message: "Additional authentication required",
             code: "REQUIRES_3D_SECURE",
             requires_action: true,
-            clientSecret: paymentIntent?.client_secret,
+            clientSecret: paymentIntent.client_secret,
             retryable: true,
           });
         }
 
         return res?.status(mappedError?.status).json({
-          message: mappedError?.message,
-          code: mappedError?.code,
-          retryable: mappedError?.retryable,
+          message: mappedError.message,
+          code: mappedError.code,
+          retryable: mappedError.retryable,
           suggestedAction:
             mappedError?.code === "PAYMENT_DECLINED"
               ? "Please update your payment method and try again."
@@ -1385,11 +1385,11 @@ router?.post(
       });
     } catch (error) {
       logger?.warn({ err: error }, "[Billing] Failed to retry payment:");
-      const _mappedError = mapStripeError(error);
+      const mappedError = mapStripeError(error);
       res?.status(mappedError?.status).json({
-        message: mappedError?.message,
-        code: mappedError?.code,
-        retryable: mappedError?.retryable,
+        message: mappedError.message,
+        code: mappedError.code,
+        retryable: mappedError.retryable,
       });
     }
   },
@@ -1401,7 +1401,7 @@ router?.delete(
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -1416,8 +1416,8 @@ router?.delete(
         });
       }
 
-      const _subscriptions = await stripe!.subscriptions?.list({
-        customer: user?.stripeCustomerId,
+      const subscriptions = await stripe!.subscriptions?.list({
+        customer: user.stripeCustomerId,
         status: "active",
         limit: 1,
       });
@@ -1432,12 +1432,12 @@ router?.delete(
           code: "ACTIVE_SUBSCRIPTION_EXISTS",
           retryable: false,
           hasActiveSubscription: true,
-          subscriptionTier: user?.subscriptionTier,
+          subscriptionTier: user.subscriptionTier,
         });
       }
 
-      const _paymentMethods = await stripe!.paymentMethods?.list({
-        customer: user?.stripeCustomerId,
+      const paymentMethods = await stripe!.paymentMethods?.list({
+        customer: user.stripeCustomerId,
         type: "card",
       });
 
@@ -1461,10 +1461,10 @@ router?.delete(
       });
     } catch (error) {
       logger?.warn({ err: error }, "[Billing] Failed to remove payment method:");
-      const _mappedError = mapStripeError(error);
+      const mappedError = mapStripeError(error);
       res?.status(mappedError?.status).json({
-        message: mappedError?.message,
-        code: mappedError?.code,
+        message: mappedError.message,
+        code: mappedError.code,
       });
     }
   },
@@ -1476,7 +1476,7 @@ router?.post(
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { paymentIntentId, paymentMethodId } = req?.body;
 
       if (!paymentIntentId) {
@@ -1487,7 +1487,7 @@ router?.post(
         });
       }
 
-      const _paymentIntent =
+      const paymentIntent =
         await stripe!.paymentIntents?.retrieve(paymentIntentId);
 
       if (paymentIntent?.status === "succeeded") {
@@ -1520,7 +1520,7 @@ router?.post(
         paymentIntent?.status === "requires_confirmation"
       ) {
         if (paymentMethodId) {
-          const _confirmedIntent = await stripe!.paymentIntents?.confirm(
+          const confirmedIntent = await stripe!.paymentIntents?.confirm(
             paymentIntentId,
             {
               payment_method: paymentMethodId,
@@ -1546,8 +1546,8 @@ router?.post(
             return res?.status(402).json({
               message: "Additional authentication required",
               code: "REQUIRES_3D_SECURE",
-              clientSecret: confirmedIntent?.client_secret,
-              status: confirmedIntent?.status,
+              clientSecret: confirmedIntent.client_secret,
+              status: confirmedIntent.status,
               retryable: true,
             });
           }
@@ -1556,8 +1556,8 @@ router?.post(
         return res?.status(402).json({
           message: "Payment requires additional authentication",
           code: "REQUIRES_ACTION",
-          clientSecret: paymentIntent?.client_secret,
-          status: paymentIntent?.status,
+          clientSecret: paymentIntent.client_secret,
+          status: paymentIntent.status,
           retryable: true,
         });
       }
@@ -1572,13 +1572,13 @@ router?.post(
       }
 
       if (paymentIntent?.status === "requires_payment_method") {
-        const _lastError = paymentIntent?.last_payment_error;
+        const lastError = paymentIntent?.last_payment_error;
         return res?.status(402).json({
           message:
             lastError?.message ||
             "3D Secure authentication failed. Please try a different card.",
           code: "3DS_FAILED",
-          declineCode: lastError?.decline_code,
+          declineCode: lastError.decline_code,
           status: "failed",
           retryable: true,
         });
@@ -1588,16 +1588,16 @@ router?.post(
         success: false,
         message: "Payment is still processing",
         code: "PROCESSING",
-        status: paymentIntent?.status,
+        status: paymentIntent.status,
         retryable: true,
       });
     } catch (error) {
       logger?.warn({ err: error }, "[Billing] 3DS confirmation failed:");
-      const _mappedError = mapStripeError(error);
+      const mappedError = mapStripeError(error);
       res?.status(mappedError?.status).json({
-        message: mappedError?.message,
-        code: mappedError?.code,
-        retryable: mappedError?.retryable,
+        message: mappedError.message,
+        code: mappedError.code,
+        retryable: mappedError.retryable,
       });
     }
   },
@@ -1608,7 +1608,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { invoiceId, chargeId, reason, amount, description } = req?.body;
 
       if (!invoiceId && !chargeId) {
@@ -1627,7 +1627,7 @@ router?.post(
         });
       }
 
-      const _validReasons = [
+      const validReasons = [
         "duplicate",
         "fraudulent",
         "requested_by_customer",
@@ -1669,7 +1669,7 @@ router?.post(
       let refundableAmount: number = 0;
 
       if (invoiceId) {
-        const _invoice = await stripe?.invoices.retrieve(invoiceId);
+        const invoice = await stripe?.invoices.retrieve(invoiceId);
 
         if (invoice?.customer !== user?.stripeCustomerId) {
           return res?.status(403).json({
@@ -1690,7 +1690,7 @@ router?.post(
         chargeToRefund = invoice?.charge as string;
         refundableAmount = invoice?.amount_paid;
       } else if (chargeId) {
-        const _charge = await stripe?.charges.retrieve(chargeId);
+        const charge = await stripe?.charges.retrieve(chargeId);
 
         if (charge?.customer !== user?.stripeCustomerId) {
           return res?.status(403).json({
@@ -1702,10 +1702,10 @@ router?.post(
 
         if (!charge?.paid || charge?.refunded) {
           return res?.status(400).json({
-            message: charge?.refunded
+            message: charge.refunded
               ? "This charge has already been fully refunded"
               : "Only paid charges can be refunded",
-            code: charge?.refunded ? "ALREADY_REFUNDED" : "CHARGE_NOT_PAID",
+            code: charge.refunded ? "ALREADY_REFUNDED" : "CHARGE_NOT_PAID",
             retryable: false,
           });
         }
@@ -1721,13 +1721,13 @@ router?.post(
         });
       }
 
-      const _refundAmount = amount
+      const refundAmount = amount
         ? Math?.min(amount, refundableAmount)
         : refundableAmount;
-      const _isPartialRefund = refundAmount < refundableAmount;
+      const isPartialRefund = refundAmount < refundableAmount;
 
-      const _refundRequestId = `refund_req_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
-      const _refundRequestPayload = {
+      const refundRequestId = `refund_req_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
+      const refundRequestPayload = {
         id: refundRequestId,
         chargeId: chargeToRefund,
         invoiceId: invoiceId || null,
@@ -1783,11 +1783,11 @@ router?.post(
         });
       }
 
-      const _mappedError = mapStripeError(error);
+      const mappedError = mapStripeError(error);
       res?.status(mappedError?.status).json({
-        message: mappedError?.message,
-        code: mappedError?.code,
-        retryable: mappedError?.retryable,
+        message: mappedError.message,
+        code: mappedError.code,
+        retryable: mappedError.retryable,
       });
     }
   },
@@ -1798,7 +1798,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { disputeId, evidence } = req?.body;
 
       if (!disputeId) {
@@ -1840,9 +1840,9 @@ router?.post(
       }
 
       try {
-        const _dispute = await stripe?.disputes.retrieve(disputeId);
+        const dispute = await stripe?.disputes.retrieve(disputeId);
 
-        const _charge = await stripe?.charges.retrieve(dispute?.charge as string);
+        const charge = await stripe?.charges.retrieve(dispute?.charge as string);
         if (charge?.customer !== user?.stripeCustomerId) {
           return res?.status(403).json({
             message: "You do not have permission to access this dispute",
@@ -1855,26 +1855,26 @@ router?.post(
           return res?.status(400).json({
             message: `This dispute has already been ${dispute?.status}`,
             code: "DISPUTE_CLOSED",
-            status: dispute?.status,
+            status: dispute.status,
             retryable: false,
           });
         }
 
-        const evidenceSubmission: Stripe?.DisputeUpdateParams.Evidence = {};
+        const evidenceSubmission: Stripe.DisputeUpdateParams.Evidence = {};
 
         if (evidence?.customer_name)
-          evidenceSubmission?.customer_name = evidence?.customer_name;
+          evidenceSubmission.customer_name = evidence?.customer_name;
         if (evidence?.customer_email_address)
-          evidenceSubmission?.customer_email_address =
+          evidenceSubmission.customer_email_address =
             evidence?.customer_email_address;
         if (evidence?.product_description)
-          evidenceSubmission?.product_description = evidence?.product_description;
+          evidenceSubmission.product_description = evidence?.product_description;
         if (evidence?.uncategorized_text)
-          evidenceSubmission?.uncategorized_text = evidence?.uncategorized_text;
+          evidenceSubmission.uncategorized_text = evidence?.uncategorized_text;
 
         await stripe?.disputes.update(disputeId, {
           evidence: evidenceSubmission,
-          submit: evidence?.submit === true,
+          submit: evidence.submit === true,
         });
 
         logger?.info(
@@ -1883,12 +1883,12 @@ router?.post(
 
         res?.json({
           success: true,
-          message: evidence?.submit
+          message: evidence.submit
             ? "Evidence submitted successfully. Stripe will review within 60-90 days."
             : "Evidence saved as draft. You can continue editing before submitting.",
-          code: evidence?.submit ? "EVIDENCE_SUBMITTED" : "EVIDENCE_SAVED",
+          code: evidence.submit ? "EVIDENCE_SUBMITTED" : "EVIDENCE_SAVED",
           disputeId,
-          status: evidence?.submit ? "under_review" : "needs_response",
+          status: evidence.submit ? "under_review" : "needs_response",
         });
       } catch (stripeError: unknown) {
         if (
@@ -1909,11 +1909,11 @@ router?.post(
         { err: error },
         "[Billing] Failed to submit dispute evidence:",
       );
-      const _mappedError = mapStripeError(error);
+      const mappedError = mapStripeError(error);
       res?.status(mappedError?.status).json({
-        message: mappedError?.message,
-        code: mappedError?.code,
-        retryable: mappedError?.retryable,
+        message: mappedError.message,
+        code: mappedError.code,
+        retryable: mappedError.retryable,
       });
     }
   },
@@ -1924,7 +1924,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -1949,21 +1949,21 @@ router?.get(
         });
       }
 
-      let stripeSubscription: Stripe?.Subscription | null = null;
-      let latestInvoice: Stripe?.Invoice | null = null;
+      let stripeSubscription: Stripe.Subscription | null = null;
+      let latestInvoice: Stripe.Invoice | null = null;
 
       if (user?.stripeCustomerId && stripe) {
         try {
-          const _subscriptions = await stripe?.subscriptions.list({
-            customer: user?.stripeCustomerId,
+          const subscriptions = await stripe?.subscriptions.list({
+            customer: user.stripeCustomerId,
             limit: 1,
-            expand: ["data?.latest_invoice"],
+            expand: ["data.latest_invoice"],
           });
 
           if (subscriptions?.data.length > 0) {
             stripeSubscription = subscriptions?.data[0];
             latestInvoice =
-              stripeSubscription?.latest_invoice as Stripe?.Invoice | null;
+              stripeSubscription?.latest_invoice as Stripe.Invoice | null;
           }
         } catch (err) {
           logger?.warn(
@@ -1973,7 +1973,7 @@ router?.get(
         }
       }
 
-      const _now = new Date();
+      const now = new Date();
       let gracePeriodActive = false;
       let gracePeriodEndsAt: Date | null = null;
       let gracePeriodDaysRemaining: number | null = null;
@@ -1987,8 +1987,8 @@ router?.get(
       ) {
         gracePeriodActive = true;
 
-        const _gracePeriodDays = 7;
-        const _currentPeriodEnd = new Date(
+        const gracePeriodDays = 7;
+        const currentPeriodEnd = new Date(
           stripeSubscription?.current_period_end * 1000,
         );
         gracePeriodEndsAt = new Date(
@@ -2011,23 +2011,23 @@ router?.get(
         }
       }
 
-      const _isGracePeriodExpired =
+      const isGracePeriodExpired =
         gracePeriodActive && gracePeriodEndsAt && gracePeriodEndsAt < now;
 
       res?.json({
         inGracePeriod: gracePeriodActive && !isGracePeriodExpired,
         gracePeriodActive,
-        gracePeriodEndsAt: gracePeriodEndsAt?.toISOString() || null,
+        gracePeriodEndsAt: gracePeriodEndsAt.toISOString() || null,
         gracePeriodDaysRemaining: gracePeriodDaysRemaining || 0,
         gracePeriodExpired: isGracePeriodExpired,
         subscriptionStatus:
           stripeSubscription?.status || user?.subscriptionStatus || "inactive",
-        tier: user?.subscriptionTier || "free",
+        tier: user.subscriptionTier || "free",
         payment: {
-          failedAt: paymentFailedAt?.toISOString() || null,
+          failedAt: paymentFailedAt.toISOString() || null,
           retryAttempts,
           maxRetryAttempts: 4,
-          nextRetryAt: nextRetryAt?.toISOString() || null,
+          nextRetryAt: nextRetryAt.toISOString() || null,
           retriesExhausted: retryAttempts >= 4,
         },
         actions: gracePeriodActive
@@ -2065,7 +2065,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -2078,26 +2078,26 @@ router?.get(
       }
 
       try {
-        const _charges = await stripe?.charges.list({
-          customer: user?.stripeCustomerId,
+        const charges = await stripe?.charges.list({
+          customer: user.stripeCustomerId,
           limit: 100,
         });
 
-        const _disputedCharges = charges?.data.filter((charge) => charge?.dispute);
+        const disputedCharges = charges?.data.filter((charge) => charge?.dispute);
         const disputes: unknown[] = [];
 
         for (const charge of disputedCharges) {
           if (charge?.dispute) {
-            const _dispute = await stripe?.disputes.retrieve(
+            const dispute = await stripe?.disputes.retrieve(
               charge?.dispute as string,
             );
             disputes?.push({
-              id: dispute?.id,
-              chargeId: charge?.id,
-              amount: dispute?.amount / 100,
-              currency: dispute?.currency,
-              reason: dispute?.reason,
-              status: dispute?.status,
+              id: dispute.id,
+              chargeId: charge.id,
+              amount: dispute.amount / 100,
+              currency: dispute.currency,
+              reason: dispute.reason,
+              status: dispute.status,
               statusDisplay:
                 dispute?.status === "won"
                   ? "Won"
@@ -2123,12 +2123,12 @@ router?.get(
                           ? "blue"
                           : "gray",
               created: new Date(dispute?.created * 1000).toISOString(),
-              evidenceDueBy: dispute?.evidence_details?.due_by
+              evidenceDueBy: dispute.evidence_details?.due_by
                 ? new Date(dispute?.evidence_details.due_by * 1000).toISOString()
                 : null,
-              hasEvidence: dispute?.evidence_details?.has_evidence || false,
-              submissionCount: dispute?.evidence_details?.submission_count || 0,
-              description: charge?.description || "Max Booster Subscription",
+              hasEvidence: dispute.evidence_details?.has_evidence || false,
+              submissionCount: dispute.evidence_details?.submission_count || 0,
+              description: charge.description || "Max Booster Subscription",
             });
           }
         }
@@ -2139,8 +2139,8 @@ router?.get(
         );
 
         return res?.json({
-          disputes: disputes?.slice(0, 20),
-          hasMore: disputes?.length > 20,
+          disputes: disputes.slice(0, 20),
+          hasMore: disputes.length > 20,
         });
       } catch (err) {
         logger?.warn({ err: err }, "[Billing] Failed to fetch disputes:");
@@ -2159,7 +2159,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { status, limit = 20 } = req?.query;
 
       const [user] = await db
@@ -2173,33 +2173,33 @@ router?.get(
       }
 
       try {
-        const invoiceParams: Stripe?.InvoiceListParams = {
-          customer: user?.stripeCustomerId,
-          limit: Math?.min(Number(limit), 100),
+        const invoiceParams: Stripe.InvoiceListParams = {
+          customer: user.stripeCustomerId,
+          limit: Math.min(Number(limit), 100),
         };
 
         if (status && typeof status === "string") {
-          invoiceParams?.status = status as Stripe?.InvoiceListParams.Status;
+          invoiceParams.status = status as Stripe.InvoiceListParams.Status;
         }
 
-        const _invoices = await stripe?.invoices.list(invoiceParams);
+        const invoices = await stripe?.invoices.list(invoiceParams);
 
-        const _now = new Date();
-        const _invoiceList = invoices?.data.map((invoice) => {
-          const _dueDate = invoice?.due_date
+        const now = new Date();
+        const invoiceList = invoices?.data.map((invoice) => {
+          const dueDate = invoice?.due_date
             ? new Date(invoice?.due_date * 1000)
             : null;
-          const _isOverdue =
+          const isOverdue =
             dueDate && dueDate < now && invoice?.status === "open";
 
           return {
-            id: invoice?.id,
-            number: invoice?.number || invoice?.id,
+            id: invoice.id,
+            number: invoice.number || invoice?.id,
             amount: (invoice?.amount_due || 0) / 100,
             amountPaid: (invoice?.amount_paid || 0) / 100,
             amountRemaining: (invoice?.amount_remaining || 0) / 100,
-            currency: invoice?.currency,
-            status: invoice?.status,
+            currency: invoice.currency,
+            status: invoice.status,
             statusDisplay:
               invoice?.status === "paid"
                 ? "Paid"
@@ -2228,18 +2228,18 @@ router?.get(
                         : "red",
             isOverdue,
             created: new Date(invoice?.created * 1000).toISOString(),
-            dueDate: dueDate?.toISOString() || null,
-            paidAt: invoice?.status_transitions?.paid_at
+            dueDate: dueDate.toISOString() || null,
+            paidAt: invoice.status_transitions?.paid_at
               ? new Date(
                   invoice?.status_transitions.paid_at * 1000,
                 ).toISOString()
               : null,
             description:
               invoice?.lines.data[0]?.description || "Max Booster Subscription",
-            pdfUrl: invoice?.invoice_pdf,
-            hostedUrl: invoice?.hosted_invoice_url,
-            attemptCount: invoice?.attempt_count || 0,
-            nextPaymentAttempt: invoice?.next_payment_attempt
+            pdfUrl: invoice.invoice_pdf,
+            hostedUrl: invoice.hosted_invoice_url,
+            attemptCount: invoice.attempt_count || 0,
+            nextPaymentAttempt: invoice.next_payment_attempt
               ? new Date(invoice?.next_payment_attempt * 1000).toISOString()
               : null,
           };
@@ -2247,7 +2247,7 @@ router?.get(
 
         return res?.json({
           invoices: invoiceList,
-          hasMore: invoices?.has_more,
+          hasMore: invoices.has_more,
         });
       } catch (err) {
         logger?.warn({ err: err }, "[Billing] Failed to fetch invoices:");
@@ -2266,7 +2266,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -2279,8 +2279,8 @@ router?.get(
       }
 
       try {
-        const _charges = await stripe?.charges.list({
-          customer: user?.stripeCustomerId,
+        const charges = await stripe?.charges.list({
+          customer: user.stripeCustomerId,
           limit: 50,
         });
 
@@ -2290,13 +2290,13 @@ router?.get(
           if (charge?.refunds && charge?.refunds.data?.length > 0) {
             for (const refund of charge?.refunds.data) {
               refunds?.push({
-                id: refund?.id,
-                amount: refund?.amount / 100,
-                status: refund?.status,
-                reason: refund?.reason,
+                id: refund.id,
+                amount: refund.amount / 100,
+                status: refund.status,
+                reason: refund.reason,
                 created: new Date(refund?.created * 1000).toISOString(),
-                chargeId: charge?.id,
-                description: charge?.description || "Max Booster Subscription",
+                chargeId: charge.id,
+                description: charge.description || "Max Booster Subscription",
                 statusDisplay:
                   refund?.status === "succeeded"
                     ? "Completed"
@@ -2324,8 +2324,8 @@ router?.get(
         );
 
         return res?.json({
-          refunds: refunds?.slice(0, 20),
-          hasMore: refunds?.length > 20,
+          refunds: refunds.slice(0, 20),
+          hasMore: refunds.length > 20,
         });
       } catch (err) {
         logger?.warn({ err: err }, "[Billing] Failed to fetch refunds:");
@@ -2344,7 +2344,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [user] = await db
         .select()
@@ -2352,9 +2352,9 @@ router?.get(
         .where(eq(users?.id, userId))
         .limit(1);
 
-      const _tier = user?.subscriptionTier || "free";
+      const tier = user?.subscriptionTier || "free";
 
-      const _usageStats = {
+      const usageStats = {
         tier,
         period: {
           start: new Date(

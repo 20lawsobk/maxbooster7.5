@@ -464,25 +464,25 @@ export function StudioStartHub({
                   id: "recent",
                   label: "Recent",
                   icon: Clock,
-                  count: hubData?.recentProjects.length,
+                  count: hubData.recentProjects.length,
                 },
                 {
                   id: "songs",
                   label: "Songs",
                   icon: Music,
-                  count: hubData?.stats.totalSongs,
+                  count: hubData.stats.totalSongs,
                 },
                 {
                   id: "projects",
                   label: "Projects",
                   icon: Disc3,
-                  count: hubData?.stats.totalMasteringProjects,
+                  count: hubData.stats.totalMasteringProjects,
                 },
                 {
                   id: "shows",
                   label: "Shows",
                   icon: Radio,
-                  count: hubData?.stats.totalShows,
+                  count: hubData.stats.totalShows,
                 },
               ].map((item) => (
                 <button

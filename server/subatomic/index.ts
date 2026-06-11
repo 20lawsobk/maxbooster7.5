@@ -20,7 +20,7 @@ import path from "path";
 import crypto from "crypto";
 
 // Subatomic size thresholds (in bytes)
-export const _SUBATOMIC_THRESHOLDS = {
+export const SUBATOMIC_THRESHOLDS = {
   QUARK: 1024, // 1KB - Smallest unit
   ELECTRON: 10 * 1024, // 10KB - Tiny modules
   PROTON: 50 * 1024, // 50KB - Small modules
@@ -75,7 +75,7 @@ class SubatomicCore {
   private initialized: boolean = false;
 
   constructor() {
-    this?.storagePath = path?.join(process?.cwd(), ".subatomic");
+    this.storagePath = path?.join(process?.cwd(), ".subatomic");
   }
 
   async initialize(): Promise<void> {
@@ -90,7 +90,7 @@ class SubatomicCore {
       await mkdir(path?.join(this?.storagePath, "particles"), {
         recursive: true,
       });
-      this?.initialized = true;
+      this.initialized = true;
       // Subatomic core initialized
     } catch (_error) {
       // Subatomic initialization failed - non-critical
@@ -126,15 +126,15 @@ class SubatomicCore {
    * Returns cached version on subsequent accesses
    */
   async loadModule<T>(id: string): Promise<T> {
-    const _module = this?.modules.get(id);
+    const module = this?.modules.get(id);
     if (!module) {
       throw new Error(`[SUBATOMIC] Module ${id} not registered`);
     }
 
     // Check if already loaded (wave function collapsed)
     if (this?.loadedModules.has(id)) {
-      module?.accessCount++;
-      module?.lastAccess = new Date();
+      module.accessCount++;
+      module.lastAccess = new Date();
       return this?.loadedModules.get(id) as T;
     }
 
@@ -146,14 +146,14 @@ class SubatomicCore {
     }
 
     // Collapse the wave function (load the module)
-    const _startTime = performance?.now();
-    const _loaded = await module?.loader();
-    const _loadTime = performance?.now() - startTime;
+    const startTime = performance?.now();
+    const loaded = await module?.loader();
+    const loadTime = performance?.now() - startTime;
 
-    module?.state = "collapsed";
-    module?.loadTime = loadTime;
-    module?.accessCount = 1;
-    module?.lastAccess = new Date();
+    module.state = "collapsed";
+    module.loadTime = loadTime;
+    module.accessCount = 1;
+    module.lastAccess = new Date();
 
     this?.loadedModules.set(id, loaded);
     this?.accessLog.push({ module: id, time: new Date(), duration: loadTime });
@@ -171,36 +171,36 @@ class SubatomicCore {
     data: Buffer | string,
     type: "text" | "binary" | "json" = "binary",
   ): Promise<CompressionResult> {
-    const _input = typeof data === "string" ? Buffer?.from(data) : data;
-    const _originalSize = input?.length;
+    const input = typeof data === "string" ? Buffer?.from(data) : data;
+    const originalSize = input?.length;
 
     // Hash for caching
-    const _hash = crypto
+    const hash = crypto
       .createHash("sha256")
       .update(input)
       .digest("hex")
       .substring(0, 16);
 
     // Check cache
-    const _cached = this?.compressionCache.get(hash);
+    const cached = this?.compressionCache.get(hash);
     if (cached) {
       return {
         original: originalSize,
-        compressed: cached?.length,
-        ratio: cached?.length / originalSize,
+        compressed: cached.length,
+        ratio: cached.length / originalSize,
         algorithm: "subatomic",
         hash,
       };
     }
 
     // Try multiple algorithms and pick the best
-    const _results = await Promise?.all([
+    const results = await Promise?.all([
       this?.compressGzip(input),
       this?.compressBrotli(input),
     ]);
 
     // Select smallest result
-    const _best = results?.reduce((a, b) =>
+    const best = results?.reduce((a, b) =>
       a?.compressed.length < b?.compressed.length ? a : b,
     );
 
@@ -215,8 +215,8 @@ class SubatomicCore {
 
     return {
       original: originalSize,
-      compressed: finalCompressed?.length,
-      ratio: finalCompressed?.length / originalSize,
+      compressed: finalCompressed.length,
+      ratio: finalCompressed.length / originalSize,
       algorithm:
         type === "json" || type === "text" ? "subatomic" : best?.algorithm,
       hash,
@@ -227,11 +227,11 @@ class SubatomicCore {
     data: Buffer,
   ): Promise<{ compressed: Buffer; algorithm: "gzip" }> {
     return new Promise((resolve, reject) => {
-      const _gzip = createGzip({ level: 9 });
+      const gzip = createGzip({ level: 9 });
       const chunks: Buffer[] = [];
       gzip?.on("data", (chunk) => chunks?.push(chunk));
       gzip?.on("end", () =>
-        resolve({ compressed: Buffer?.concat(chunks), algorithm: "gzip" }),
+        resolve({ compressed: Buffer.concat(chunks), algorithm: "gzip" }),
       );
       gzip?.on("error", reject);
       gzip?.end(data);
@@ -242,7 +242,7 @@ class SubatomicCore {
     data: Buffer,
   ): Promise<{ compressed: Buffer; algorithm: "brotli" }> {
     return new Promise((resolve, reject) => {
-      const _brotli = createBrotliCompress({
+      const brotli = createBrotliCompress({
         params: {
           [constants?.BROTLI_PARAM_QUALITY]: constants?.BROTLI_MAX_QUALITY,
         },
@@ -250,7 +250,7 @@ class SubatomicCore {
       const chunks: Buffer[] = [];
       brotli?.on("data", (chunk) => chunks?.push(chunk));
       brotli?.on("end", () =>
-        resolve({ compressed: Buffer?.concat(chunks), algorithm: "brotli" }),
+        resolve({ compressed: Buffer.concat(chunks), algorithm: "brotli" }),
       );
       brotli?.on("error", reject);
       brotli?.end(data);
@@ -276,27 +276,27 @@ class SubatomicCore {
    */
   async atomize(
     filePath: string,
-    maxChunkSize: number = SUBATOMIC_THRESHOLDS?.QUARK,
+    maxChunkSize: number = SUBATOMIC_THRESHOLDS.QUARK,
   ): Promise<string[]> {
-    const _content = await readFile(filePath);
+    const content = await readFile(filePath);
     const chunks: string[] = [];
 
     let offset = 0;
     while (offset < content?.length) {
-      const _chunk = content?.subarray(offset, offset + maxChunkSize);
-      const _hash = crypto
+      const chunk = content?.subarray(offset, offset + maxChunkSize);
+      const hash = crypto
         .createHash("sha256")
         .update(chunk)
         .digest("hex")
         .substring(0, 16);
-      const _chunkPath = path?.join(
+      const chunkPath = path?.join(
         this?.storagePath,
         "particles",
         `${hash}.particle`,
       );
 
       // Compress and save chunk
-      const _compressed = await this?.compress(chunk);
+      const compressed = await this?.compress(chunk);
       await writeFile(
         chunkPath,
         this?.compressionCache.get(compressed?.hash) || chunk,
@@ -314,8 +314,8 @@ class SubatomicCore {
    * Evicts least recently used and least frequently accessed
    */
   async evictCache(targetSize: number): Promise<number> {
-    const _entries = Array?.from(this?.compressionCache.entries());
-    const _currentSize = entries?.reduce((sum, [_, v]) => sum + v?.length, 0);
+    const entries = Array?.from(this?.compressionCache.entries());
+    const currentSize = entries?.reduce((sum, [_, v]) => sum + v?.length, 0);
 
     if (currentSize <= targetSize) return 0;
 
@@ -343,9 +343,9 @@ class SubatomicCore {
     heavy: Array<{ name: string; estimatedSize: number; alternative?: string }>;
     totalEstimated: number;
   }> {
-    const _content = await readFile(packageJsonPath, "utf-8");
-    const _pkg = JSON?.parse(content);
-    const _deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
+    const content = await readFile(packageJsonPath, "utf-8");
+    const pkg = JSON?.parse(content);
+    const deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
 
     // Known heavy packages and their lightweight alternatives
     const heavyPackages: Record<
@@ -410,28 +410,28 @@ class SubatomicCore {
    * Get subatomic statistics
    */
   getStats(): SubatomicStats {
-    const _modules = Array?.from(this?.modules.values());
-    const _loadedModules = modules?.filter((m) => m?.state === "collapsed");
+    const modules = Array?.from(this?.modules.values());
+    const loadedModules = modules?.filter((m) => m?.state === "collapsed");
 
-    const _cacheSize = Array?.from(this?.compressionCache.values()).reduce(
+    const cacheSize = Array?.from(this?.compressionCache.values()).reduce(
       (sum, buf) => sum + buf?.length,
       0,
     );
 
-    const _avgLoadTime =
+    const avgLoadTime =
       loadedModules?.length > 0
         ? loadedModules?.reduce((sum, m) => sum + (m?.loadTime || 0), 0) /
           loadedModules?.length
         : 0;
 
-    const _totalHits = modules?.reduce((sum, m) => sum + m?.accessCount, 0);
-    const _uniqueLoads = loadedModules?.length;
+    const totalHits = modules?.reduce((sum, m) => sum + m?.accessCount, 0);
+    const uniqueLoads = loadedModules?.length;
 
     return {
-      totalModules: modules?.length,
-      loadedModules: loadedModules?.length,
-      totalOriginalSize: modules?.reduce((sum, m) => sum + m?.size, 0),
-      totalCompressedSize: modules?.reduce(
+      totalModules: modules.length,
+      loadedModules: loadedModules.length,
+      totalOriginalSize: modules.reduce((sum, m) => sum + m?.size, 0),
+      totalCompressedSize: modules.reduce(
         (sum, m) => sum + m?.compressedSize,
         0,
       ),
@@ -452,9 +452,9 @@ class SubatomicCore {
    * Generate a subatomic report
    */
   async generateReport(): Promise<string> {
-    const _stats = this?.getStats();
-    const _depsAnalysis = await this?.analyzeDependencies(
-      path?.join(process?.cwd(), "package?.json"),
+    const stats = this?.getStats();
+    const depsAnalysis = await this?.analyzeDependencies(
+      path?.join(process?.cwd(), "package.json"),
     );
 
     return `
@@ -486,7 +486,7 @@ ${depsAnalysis?.heavy
 }
 
 // Singleton instance
-export const _subatomicCore = new SubatomicCore();
+export const subatomicCore = new SubatomicCore();
 
 // Express middleware for subatomic compression
 export function subatomicMiddleware() {
@@ -496,20 +496,20 @@ export function subatomicMiddleware() {
     next: Record<string, unknown>,
   ) => {
     // Check if client accepts brotli
-    const _acceptEncoding = req?.headers["accept-encoding"] || "";
+    const acceptEncoding = req?.headers["accept-encoding"] || "";
 
     // Store original send
-    const _originalSend = res?.send.bind(res);
+    const originalSend = res?.send.bind(res);
 
-    res?.send = async function (body: Record<string, unknown>) {
+    res.send = async function (body: Record<string, unknown>) {
       if (typeof body === "string" || Buffer?.isBuffer(body)) {
-        const _input = typeof body === "string" ? Buffer?.from(body) : body;
+        const input = typeof body === "string" ? Buffer?.from(body) : body;
 
         // Only compress if large enough
-        if (input?.length > SUBATOMIC_THRESHOLDS?.ELECTRON) {
-          const _result = await subatomicCore?.compress(input);
+        if (input?.length > SUBATOMIC_THRESHOLDS.ELECTRON) {
+          const result = await subatomicCore?.compress(input);
 
-          if (result?.ratio < 0?.9) {
+          if (result?.ratio < 0.9) {
             // Only if we saved >10%
             res?.setHeader(
               "Content-Encoding",

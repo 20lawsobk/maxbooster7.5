@@ -1,9 +1,9 @@
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { dspAnalytics, releases, royaltySplits } from "@shared/schema";
 import { eq, sql as drizzleSql } from "drizzle-orm";
-import { notificationService } from "./notificationService?.js";
+import { notificationService } from "./notificationService.js";
 
 import type { InsertRelease, Release, DistributionPackage, InsertDistributionPackage, DistributionTrack, InsertDistributionTrack, DistributionSLAMetric, ContentIdRegistration, InsertSyncLicense, SyncLicense, InsertSyncLicenseInquiry, SyncLicenseInquiry, InsertRoyaltySplit, RoyaltySplit, InsertRoyaltyTransaction, RoyaltyTransaction, InsertPreSaveCampaign, PreSaveCampaign, InsertPreSaveEntry, PreSaveEntry } from "@shared/schema";
 import archiver from "archiver";
@@ -11,13 +11,13 @@ import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
 import { createWriteStream } from "fs";
-import { storageService } from "./storageService?.js";
+import { storageService } from "./storageService.js";
 import os from "os";
 import { randomUUID } from "crypto";
-import { labelGridService } from "./labelgrid-service?.js";
-import { logger } from "../logger?.js";
+import { labelGridService } from "./labelgrid-service.js";
+import { logger } from "../logger.js";
 
-const _DEFAULT_SLA_TARGET_HOURS = 48;
+const DEFAULT_SLA_TARGET_HOURS = 48;
 
 export interface DSPProvider {
   id: string;
@@ -40,7 +40,7 @@ export class DistributionService {
    */
   async createRelease(data: InsertRelease): Promise<Release> {
     try {
-      const _release = await storage?.createRelease(data);
+      const release = await storage?.createRelease(data);
       return release;
     } catch (error: unknown) {
       logger?.warn("Error creating release:", error);
@@ -53,9 +53,9 @@ export class DistributionService {
    */
   async getUserReleases(userId: string): Promise<Release[]> {
     try {
-      return await storage?.getUserReleases(userId);
+      return await storage.getUserReleases(userId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching releases:", error);
+      logger.warn("Error fetching releases:", error);
       throw new Error("Failed to fetch releases");
     }
   }
@@ -68,10 +68,10 @@ export class DistributionService {
     userId: string,
   ): Promise<Release | undefined> {
     try {
-      const _releases = await storage?.getUserReleases(userId);
-      return releases?.find((r) => r?.id === releaseId);
+      const releases = await storage.getUserReleases(userId);
+      return releases.find((r) => r.id === releaseId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching release:", error);
+      logger.warn("Error fetching release:", error);
       throw new Error("Failed to fetch release");
     }
   }
@@ -89,58 +89,58 @@ export class DistributionService {
     estimatedLiveDate: Date;
   }> {
     try {
-      const _release = await this?.getRelease(releaseId, userId);
+      const release = await this.getRelease(releaseId, userId);
       if (!release) {
         throw new Error("Release not found");
       }
 
       // Check if LabelGrid is configured
-      if (labelGridService?.isConfigured()) {
+      if (labelGridService.isConfigured()) {
         // PRODUCTION: Use LabelGrid API for real distribution
         try {
           // Prepare release data for LabelGrid
-          const _labelGridRelease = {
-            title: release?.title,
-            artist: release?.artist,
+          const labelGridRelease = {
+            title: release.title,
+            artist: release.artist,
             releaseDate:
-              release?.releaseDate?.toISOString() || new Date().toISOString(),
-            upc: release?.upc || undefined,
+              release.releaseDate.toISOString() || new Date().toISOString(),
+            upc: release.upc || undefined,
             tracks: [],
-            artwork: release?.coverArt || "",
-            genre: release?.genre || "General",
+            artwork: release.coverArt || "",
+            genre: release.genre || "General",
             platforms: [providerId], // Submit to specific platform
-            label: release?.label,
+            label: release.label,
             copyrightYear: new Date().getFullYear(),
-            copyrightOwner: release?.copyrightHolder || release?.artist,
+            copyrightOwner: release.copyrightHolder || release.artist,
           };
 
           // Submit to LabelGrid (it handles database updates internally)
-          const _result = await labelGridService?.submitRelease(labelGridRelease);
+          const result = await labelGridService.submitRelease(labelGridRelease);
 
           return {
             success: true,
-            dispatchId: result?.releaseId,
-            estimatedLiveDate: result?.estimatedLiveDate
-              ? new Date(result?.estimatedLiveDate)
-              : new Date(Date?.now() + 7 * 24 * 60 * 60 * 1000),
+            dispatchId: result.releaseId,
+            estimatedLiveDate: result.estimatedLiveDate
+              ? new Date(result.estimatedLiveDate)
+              : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           };
         } catch (error: unknown) {
-          logger?.warn("LabelGrid distribution failed:", error);
+          logger.warn("LabelGrid distribution failed:", error);
           throw error;
         }
       } else {
         // DEVELOPMENT/DEMO MODE: Simulated distribution (no real API calls)
-        logger?.warn("⚠️  LabelGrid API token not configured - using demo mode");
-        logger?.warn(
+        logger.warn("⚠️  LabelGrid API token not configured - using demo mode");
+        logger.warn(
           "   Set LABELGRID_API_TOKEN in environment to enable real distribution",
         );
 
-        const _dispatchId = `demo_dispatch_${randomBytes(8).toString("hex")}`;
-        const _estimatedLiveDate = new Date(Date?.now() + 24 * 60 * 60 * 1000);
+        const dispatchId = `demo_dispatch_${randomBytes(8).toString("hex")}`;
+        const estimatedLiveDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         // Update release platforms
-        const _platforms = (release?.platforms as Record<string, unknown>) || [];
-        platforms?.push({
+        const platforms = (release.platforms as Record<string, unknown>) || [];
+        platforms.push({
           providerId,
           status: "processing",
           dispatchId,
@@ -148,7 +148,7 @@ export class DistributionService {
           estimatedLiveDate,
         });
 
-        await storage?.updateRelease(releaseId, userId, { platforms });
+        await storage.updateRelease(releaseId, userId, { platforms });
 
         return {
           success: true,
@@ -157,7 +157,7 @@ export class DistributionService {
         };
       }
     } catch (error: unknown) {
-      logger?.warn("Error submitting to provider:", error);
+      logger.warn("Error submitting to provider:", error);
       throw new Error("Failed to submit to provider");
     }
   }
@@ -170,22 +170,22 @@ export class DistributionService {
     userId: string,
   ): Promise<DispatchStatus[]> {
     try {
-      const _release = await this?.getRelease(releaseId, userId);
+      const release = await this.getRelease(releaseId, userId);
       if (!release) {
         throw new Error("Release not found");
       }
 
-      const _platforms = (release?.platforms as unknown[]) || [];
+      const platforms = (release.platforms as unknown[]) || [];
 
-      return platforms?.map((p) => ({
-        provider: p?.providerId,
-        status: p?.status,
-        submittedAt: p?.submittedAt ? new Date(p?.submittedAt) : undefined,
-        liveDate: p?.liveDate ? new Date(p?.liveDate) : undefined,
-        errorMessage: p?.errorMessage,
+      return platforms.map((p) => ({
+        provider: p.providerId,
+        status: p.status,
+        submittedAt: p.submittedAt ? new Date(p.submittedAt) : undefined,
+        liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
+        errorMessage: p.errorMessage,
       }));
     } catch (error: unknown) {
-      logger?.warn("Error tracking dispatch status:", error);
+      logger.warn("Error tracking dispatch status:", error);
       throw new Error("Failed to track dispatch status");
     }
   }
@@ -202,21 +202,21 @@ export class DistributionService {
     externalId?: string;
   }): Promise<void> {
     try {
-      logger?.info("DSP Webhook received:", payload);
+      logger.info("DSP Webhook received:", payload);
 
       // Validate required fields before proceeding
-      const _provider = String(payload?.provider ?? "").trim();
-      const _releaseId = String(payload?.releaseId ?? "").trim();
-      const _rawStatus = String(payload?.status ?? "").trim();
-      const _liveDate = payload?.liveDate
-        ? String(payload?.liveDate).trim()
+      const provider = String(payload.provider ?? "").trim();
+      const releaseId = String(payload.releaseId ?? "").trim();
+      const rawStatus = String(payload.status ?? "").trim();
+      const liveDate = payload.liveDate
+        ? String(payload.liveDate).trim()
         : undefined;
-      const _errorMessage = payload?.errorMessage
-        ? String(payload?.errorMessage).trim()
+      const errorMessage = payload.errorMessage
+        ? String(payload.errorMessage).trim()
         : undefined;
 
       if (!provider || !releaseId || !rawStatus) {
-        logger?.warn("DSP Webhook: missing required fields", {
+        logger.warn("DSP Webhook: missing required fields", {
           provider,
           releaseId,
           rawStatus,
@@ -247,16 +247,16 @@ export class DistributionService {
         under_review: "in_review",
         review: "in_review",
       };
-      const _internalStatus = STATUS_MAP[rawStatus?.toLowerCase()] || rawStatus;
-      const _status = rawStatus; // keep original for metadata storage
+      const internalStatus = STATUS_MAP[rawStatus.toLowerCase()] || rawStatus;
+      const status = rawStatus; // keep original for metadata storage
 
       // Parse live date safely — guard against invalid date strings
       let parsedLiveDate: Date | undefined;
       if (liveDate) {
-        const _d = new Date(liveDate);
-        parsedLiveDate = isNaN(d?.getTime()) ? undefined : d;
+        const d = new Date(liveDate);
+        parsedLiveDate = isNaN(d.getTime()) ? undefined : d;
         if (!parsedLiveDate) {
-          logger?.warn("DSP Webhook: invalid liveDate value, ignoring", {
+          logger.warn("DSP Webhook: invalid liveDate value, ignoring", {
             liveDate,
             provider,
           });
@@ -264,25 +264,25 @@ export class DistributionService {
       }
 
       // Update the release status in DB
-      const _updatedRows = await db
+      const updatedRows = await db
         .update(releases)
         .set({
           status: internalStatus,
           ...(parsedLiveDate ? { releaseDate: parsedLiveDate } : {}),
           metadata: drizzleSql`
             COALESCE(metadata, '{}'::jsonb) ||
-            ${JSON?.stringify({ [`${provider}_status`]: status, [`${provider}_updated_at`]: new Date().toISOString(), ...(errorMessage ? { [`${provider}_error`]: errorMessage } : {}) })}::jsonb
+            ${JSON.stringify({ [`${provider}status`]: status, [`${provider}_updated_at`]: new Date().toISOString(), ...(errorMessage ? { [`${provider}_error`]: errorMessage } : {}) })}::jsonb
           `,
         })
-        .where(eq(releases?.id, releaseId))
+        .where(eq(releases.id, releaseId))
         .returning();
 
-      if (!updatedRows?.length) {
-        logger?.warn("DSP Webhook: release not found", { releaseId, provider });
+      if (!updatedRows.length) {
+        logger.warn("DSP Webhook: release not found", { releaseId, provider });
         return;
       }
 
-      const _release = updatedRows[0];
+      const release = updatedRows[0];
 
       // Build a meaningful notification for the artist
       const NOTIF: Record<
@@ -291,49 +291,49 @@ export class DistributionService {
       > = {
         live: {
           title: "🎉 Your release is now live!",
-          body: `"${release?.title}" is now streaming on ${provider}.`,
+          body: `"${release.title}" is now streaming on ${provider}.`,
           type: "release",
         },
         rejected: {
           title: "⚠️ Release rejected by distributor",
-          body: `"${release?.title}" was rejected by ${provider}${errorMessage ? `: ${errorMessage}` : ""}. Please review and resubmit.`,
+          body: `"${release.title}" was rejected by ${provider}${errorMessage ? `: ${errorMessage}` : ""}. Please review and resubmit.`,
           type: "system",
         },
         takedown: {
           title: "📥 Takedown processed",
-          body: `"${release?.title}" has been taken down from ${provider}.`,
+          body: `"${release.title}" has been taken down from ${provider}.`,
           type: "release",
         },
         processing: {
           title: "⏳ Release being processed",
-          body: `"${release?.title}" is now in delivery queue on ${provider}.`,
+          body: `"${release.title}" is now in delivery queue on ${provider}.`,
           type: "release",
         },
         in_review: {
           title: "🔍 Release under review",
-          body: `"${release?.title}" is under review by ${provider}.`,
+          body: `"${release.title}" is under review by ${provider}.`,
           type: "release",
         },
       };
 
-      const _notifData = NOTIF[internalStatus];
-      if (notifData && release?.userId) {
-        await notificationService?.sendNotification(
-          release?.userId,
-          notifData?.type as Record<string, unknown>,
-          notifData?.title,
-          notifData?.body,
+      const notifData = NOTIF[internalStatus];
+      if (notifData && release.userId) {
+        await notificationService.sendNotification(
+          release.userId,
+          notifData.type as Record<string, unknown>,
+          notifData.title,
+          notifData.body,
           { releaseId, provider, status: internalStatus },
         );
       }
 
-      logger?.info("DSP Webhook processed successfully", {
+      logger.info("DSP Webhook processed successfully", {
         releaseId,
         provider,
         internalStatus,
       });
     } catch (error: unknown) {
-      logger?.warn("Error handling DSP webhook:", error);
+      logger.warn("Error handling DSP webhook:", error);
       throw new Error("Failed to handle DSP webhook");
     }
   }
@@ -386,12 +386,12 @@ export class DistributionService {
    */
   async distributeRelease(releaseId: string, userId: string) {
     try {
-      const _release = await this?.getRelease(releaseId, userId);
+      const release = await this.getRelease(releaseId, userId);
       if (!release) {
         throw new Error("Release not found");
       }
 
-      const _platforms = [
+      const platforms = [
         "spotify",
         "apple_music",
         "youtube_music",
@@ -400,10 +400,10 @@ export class DistributionService {
         "tidal",
       ];
 
-      const _distributionResults = platforms?.map((platform) => ({
+      const distributionResults = platforms.map((platform) => ({
         platform,
         status: "processing",
-        estimatedLiveDate: new Date(Date?.now() + 24 * 60 * 60 * 1000),
+        estimatedLiveDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
       }));
 
       return {
@@ -412,7 +412,7 @@ export class DistributionService {
         platforms: distributionResults,
       };
     } catch (error: unknown) {
-      logger?.warn("Distribution error:", error);
+      logger.warn("Distribution error:", error);
       throw new Error("Failed to distribute release");
     }
   }
@@ -422,58 +422,58 @@ export class DistributionService {
    */
   async getReleaseAnalytics(releaseId: string, _userId: string) {
     try {
-      const _rows = await db
+      const rows = await db
         .select({
-          platform: dspAnalytics?.platform,
-          totalStreams: drizzleSql<number>`COALESCE(SUM(${dspAnalytics?.streams}), 0)`,
-          totalRevenue: drizzleSql<number>`COALESCE(SUM(${dspAnalytics?.revenue}), 0)`,
-          totalSaves: drizzleSql<number>`COALESCE(SUM(${dspAnalytics?.saves}), 0)`,
-          totalListeners: drizzleSql<number>`COALESCE(SUM(${dspAnalytics?.listeners}), 0)`,
+          platform: dspAnalytics.platform,
+          totalStreams: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          totalRevenue: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
+          totalSaves: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
+          totalListeners: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
         })
         .from(dspAnalytics)
-        .where(eq(dspAnalytics?.releaseId, releaseId))
-        .groupBy(dspAnalytics?.platform);
+        .where(eq(dspAnalytics.releaseId, releaseId))
+        .groupBy(dspAnalytics.platform);
 
-      const _totalStreams = rows?.reduce((s, r) => s + Number(r?.totalStreams), 0);
-      const _totalRevenue = rows?.reduce((s, r) => s + Number(r?.totalRevenue), 0);
+      const totalStreams = rows.reduce((s, r) => s + Number(r.totalStreams), 0);
+      const totalRevenue = rows.reduce((s, r) => s + Number(r.totalRevenue), 0);
 
       const platforms: Record<
         string,
         { streams: number; revenue: number; saves: number; listeners: number }
       > = {};
       for (const row of rows) {
-        platforms[row?.platform] = {
-          streams: Number(row?.totalStreams),
-          revenue: Number(row?.totalRevenue),
-          saves: Number(row?.totalSaves),
-          listeners: Number(row?.totalListeners),
+        platforms[row.platform] = {
+          streams: Number(row.totalStreams),
+          revenue: Number(row.totalRevenue),
+          saves: Number(row.totalSaves),
+          listeners: Number(row.totalListeners),
         };
       }
 
-      const _timeline = await db
+      const timeline = await db
         .select({
-          date: dspAnalytics?.date,
-          streams: drizzleSql<number>`COALESCE(SUM(${dspAnalytics?.streams}), 0)`,
-          revenue: drizzleSql<number>`COALESCE(SUM(${dspAnalytics?.revenue}), 0)`,
+          date: dspAnalytics.date,
+          streams: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          revenue: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
         })
         .from(dspAnalytics)
-        .where(eq(dspAnalytics?.releaseId, releaseId))
-        .groupBy(dspAnalytics?.date)
-        .orderBy(dspAnalytics?.date);
+        .where(eq(dspAnalytics.releaseId, releaseId))
+        .groupBy(dspAnalytics.date)
+        .orderBy(dspAnalytics.date);
 
       return {
         totalStreams,
-        totalRevenue: Math?.round(totalRevenue * 100) / 100,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
         platforms,
         demographics: {},
-        timeline: timeline?.map((t) => ({
-          date: t?.date,
-          streams: Number(t?.streams),
-          revenue: Math?.round(Number(t?.revenue) * 100) / 100,
+        timeline: timeline.map((t) => ({
+          date: t.date,
+          streams: Number(t.streams),
+          revenue: Math.round(Number(t.revenue) * 100) / 100,
         })),
       };
     } catch (error: unknown) {
-      logger?.warn("Analytics error:", error);
+      logger.warn("Analytics error:", error);
       throw new Error("Failed to fetch analytics");
     }
   }
@@ -492,50 +492,50 @@ export class DistributionService {
     }>,
   ) {
     try {
-      const _total = splits?.reduce((sum, s) => sum + s?.percentage, 0);
-      if (Math?.abs(total - 100) > 0?.01) {
+      const total = splits.reduce((sum, s) => sum + s.percentage, 0);
+      if (Math.abs(total - 100) > 0.01) {
         throw new Error(
-          `Split percentages must total 100% (got ${total?.toFixed(2)}%)`,
+          `Split percentages must total 100% (got ${total.toFixed(2)}%)`,
         );
       }
 
       await db
         .delete(royaltySplits)
-        .where(eq(royaltySplits?.releaseId, releaseId));
+        .where(eq(royaltySplits.releaseId, releaseId));
 
-      const _splitValues = splits?.map((s) => {
-        if (!s?.email) {
-          logger?.warn(
-            `[Distribution] Royalty split collaborator ${s?.userId} has no email — ` +
+      const splitValues = splits.map((s) => {
+        if (!s.email) {
+          logger.warn(
+            `[Distribution] Royalty split collaborator ${s.userId} has no email — ` +
               `payouts may not be deliverable. Ask the collaborator to update their profile.`,
           );
         }
         return {
           releaseId,
-          userId: s?.userId,
-          collaboratorName: s?.name || s?.userId,
-          collaboratorEmail: s?.email || null,
-          role: s?.role,
-          percentage: s?.percentage,
+          userId: s.userId,
+          collaboratorName: s.name || s.userId,
+          collaboratorEmail: s.email || null,
+          role: s.role,
+          percentage: s.percentage,
           status: "active",
         };
       });
 
-      const _inserted = await db
+      const inserted = await db
         .insert(royaltySplits)
         .values(splitValues)
         .returning();
 
       return { success: true, splitId: `split_${releaseId}`, splits: inserted };
     } catch (error: unknown) {
-      logger?.warn("Royalty split error:", error);
+      logger.warn("Royalty split error:", error);
       throw new Error("Failed to setup royalty split");
     }
   }
 
   /**
    * Validate ISRC (International Standard Recording Code)
-   * Format: CC-XXX-YY-NNNNN (e?.g., US-S1Z-99-00001)
+   * Format: CC-XXX-YY-NNNNN (e.g., US-S1Z-99-00001)
    *
    * NOTE: This validates the dashed format. ISRC can also be represented as 12 continuous
    * characters (CCXXXYYNNNNN). Some DSPs accept either format. Consider normalizing input
@@ -543,13 +543,13 @@ export class DistributionService {
    */
   validateISRC(isrc: string): boolean {
     // HARDENING: Accept both dashed and non-dashed formats
-    const _normalizedIsrc = isrc?.replace(/[-\s]/g, "").toUpperCase();
-    if (normalizedIsrc?.length !== 12) {
+    const normalizedIsrc = isrc.replace(/[-\s]/g, "").toUpperCase();
+    if (normalizedIsrc.length !== 12) {
       return false;
     }
     // Pattern: 2 country letters + 3 registrant alphanumeric + 2 year digits + 5 designation digits
-    const _isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
-    return isrcPattern?.test(normalizedIsrc);
+    const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
+    return isrcPattern.test(normalizedIsrc);
   }
 
   /**
@@ -557,8 +557,8 @@ export class DistributionService {
    * Format: 12-13 digits
    */
   validateUPC(upc: string): boolean {
-    const _upcPattern = /^\d{12,13}$/;
-    return upcPattern?.test(upc);
+    const upcPattern = /^\d{12,13}$/;
+    return upcPattern.test(upc);
   }
 
   /**
@@ -568,11 +568,11 @@ export class DistributionService {
     artworkPath: string,
   ): Promise<{ valid: boolean; error?: string }> {
     try {
-      if (!fs?.existsSync(artworkPath)) {
+      if (!fs.existsSync(artworkPath)) {
         return { valid: false, error: "Artwork file not found" };
       }
 
-      const _ext = path?.extname(artworkPath).toLowerCase();
+      const ext = path.extname(artworkPath).toLowerCase();
       if (![".jpg", ".jpeg", ".png"].includes(ext)) {
         return { valid: false, error: "Artwork must be JPEG or PNG" };
       }
@@ -598,7 +598,7 @@ export class DistributionService {
         throw new Error("Invalid UPC format. Must be 12-13 digits.");
       }
 
-      const _pkg = await storage?.createDistributionPackage(data);
+      const pkg = await storage?.createDistributionPackage(data);
       return pkg;
     } catch (error: unknown) {
       logger?.warn("Error creating distribution package:", error);
@@ -614,41 +614,41 @@ export class DistributionService {
     artistProfileData?: Record<string, string | null>,
   ): Promise<unknown> {
     try {
-      const _pkg = await storage?.getDistributionPackageById(packageId);
+      const pkg = await storage?.getDistributionPackageById(packageId);
       if (!pkg) {
         throw new Error("Distribution package not found");
       }
 
-      const _tracks = await storage?.getPackageTracks(packageId);
+      const tracks = await storage?.getPackageTracks(packageId);
 
       // Build DSP-compliant metadata structure
       const metadata: Record<string, any> = {
         release: {
-          upc: pkg?.upc,
-          title: pkg?.albumTitle,
-          releaseDate: pkg?.releaseDate?.toISOString().split("T")[0],
-          label: pkg?.label,
-          artwork: pkg?.artworkUrl,
-          copyrightP: pkg?.copyrightP,
-          copyrightC: pkg?.copyrightC,
+          upc: pkg.upc,
+          title: pkg.albumTitle,
+          releaseDate: pkg.releaseDate?.toISOString().split("T")[0],
+          label: pkg.label,
+          artwork: pkg.artworkUrl,
+          copyrightP: pkg.copyrightP,
+          copyrightC: pkg.copyrightC,
         },
-        tracks: tracks?.map((track) => ({
-          isrc: track?.isrc,
-          trackNumber: track?.trackNumber,
-          title: track?.title,
-          artist: track?.artist,
-          genre: track?.genre,
-          duration: track?.duration,
-          explicitContent: track?.explicitContent,
-          credits: track?.credits ? JSON?.parse(track?.credits) : {},
-          lyrics: track?.lyrics,
+        tracks: tracks.map((track) => ({
+          isrc: track.isrc,
+          trackNumber: track.trackNumber,
+          title: track.title,
+          artist: track.artist,
+          genre: track.genre,
+          duration: track.duration,
+          explicitContent: track.explicitContent,
+          credits: track.credits ? JSON?.parse(track?.credits) : {},
+          lyrics: track.lyrics,
         })),
         licensing: {
           territories: ["WORLDWIDE"],
           rights: ["streaming", "download"],
           restrictions: [],
         },
-        metadata_version: "1?.0",
+        metadata_version: "1.0",
         generated_at: new Date().toISOString(),
       };
 
@@ -656,16 +656,16 @@ export class DistributionService {
       // These IDs instruct DSPs to map the release to an existing artist page
       // rather than creating a new one (DistroKid-style identity anchoring).
       if (artistProfileData) {
-        metadata?.artist_identifiers = {
-          is_new_artist: artistProfileData?.isNewArtist === "true",
-          spotify_artist_id: artistProfileData?.spotifyArtistId ?? null,
-          spotify_artist_uri: artistProfileData?.spotifyArtistUri ?? null,
-          apple_artist_id: artistProfileData?.appleArtistId ?? null,
-          youtube_channel_id: artistProfileData?.youtubeChannelId ?? null,
-          tidal_artist_id: artistProfileData?.tidalArtistId ?? null,
-          deezer_artist_id: artistProfileData?.deezerArtistId ?? null,
-          soundcloud_artist_id: artistProfileData?.soundcloudArtistId ?? null,
-          amazon_music_artist_id: artistProfileData?.amazonMusicArtistId ?? null,
+        metadata.artist_identifiers = {
+          is_new_artist: artistProfileData.isNewArtist === "true",
+          spotify_artist_id: artistProfileData.spotifyArtistId ?? null,
+          spotify_artist_uri: artistProfileData.spotifyArtistUri ?? null,
+          apple_artist_id: artistProfileData.appleArtistId ?? null,
+          youtube_channel_id: artistProfileData.youtubeChannelId ?? null,
+          tidal_artist_id: artistProfileData.tidalArtistId ?? null,
+          deezer_artist_id: artistProfileData.deezerArtistId ?? null,
+          soundcloud_artist_id: artistProfileData.soundcloudArtistId ?? null,
+          amazon_music_artist_id: artistProfileData.amazonMusicArtistId ?? null,
         };
       }
 
@@ -681,9 +681,9 @@ export class DistributionService {
    */
   async generateCSV(packageId: string): Promise<string> {
     try {
-      const _tracks = await storage?.getPackageTracks(packageId);
+      const tracks = await storage?.getPackageTracks(packageId);
 
-      const _headers = [
+      const headers = [
         "Track Number",
         "ISRC",
         "Title",
@@ -693,7 +693,7 @@ export class DistributionService {
         "Explicit Content",
       ];
 
-      const _rows = tracks?.map((track) => [
+      const rows = tracks?.map((track) => [
         track?.trackNumber?.toString() || "",
         track?.isrc || "",
         track?.title || "",
@@ -703,7 +703,7 @@ export class DistributionService {
         track?.explicitContent ? "Yes" : "No",
       ]);
 
-      const _csvContent = [
+      const csvContent = [
         headers?.join(","),
         ...rows?.map((row) => row?.map((cell) => `"${cell}"`).join(",")),
       ].join("\n");
@@ -719,19 +719,19 @@ export class DistributionService {
    * Package metadata, CSV, and artwork as ZIP file
    */
   async packageAsZIP(packageId: string): Promise<string> {
-    const _tempZipPath = path?.join(
+    const tempZipPath = path?.join(
       os?.tmpdir(),
       `distribution_${randomUUID()}.zip`,
     );
 
     try {
-      const _pkg = await storage?.getDistributionPackageById(packageId);
+      const pkg = await storage?.getDistributionPackageById(packageId);
       if (!pkg) {
         throw new Error("Distribution package not found");
       }
 
-      const _output = createWriteStream(tempZipPath);
-      const _archive = archiver("zip", { zlib: { level: 9 } });
+      const output = createWriteStream(tempZipPath);
+      const archive = archiver("zip", { zlib: { level: 9 } });
 
       await new Promise<void>((resolve, reject) => {
         output?.on("close", () => {
@@ -747,26 +747,26 @@ export class DistributionService {
         this?.generateMetadataJSON(packageId)
           .then((metadata) => {
             archive?.append(JSON?.stringify(metadata, null, 2), {
-              name: "metadata?.json",
+              name: "metadata.json",
             });
 
             // Add tracks?.csv
             this?.generateCSV(packageId)
               .then((csv) => {
-                archive?.append(csv, { name: "tracks?.csv" });
+                archive?.append(csv, { name: "tracks.csv" });
 
                 // Add artwork if available
                 if (pkg?.artworkUrl) {
                   // Convert public URL path to filesystem path
-                  // pkg?.artworkUrl is like "/distribution/artwork/artwork_123?.jpg"
-                  const _artworkFilePath = path?.join(
+                  // pkg?.artworkUrl is like "/distribution/artwork/artwork_123.jpg"
+                  const artworkFilePath = path?.join(
                     process?.cwd(),
                     "public",
                     pkg?.artworkUrl,
                   );
 
                   if (fs?.existsSync(artworkFilePath)) {
-                    const _artworkExt = path?.extname(pkg?.artworkUrl);
+                    const artworkExt = path?.extname(pkg?.artworkUrl);
                     archive?.file(artworkFilePath, {
                       name: `artwork${artworkExt}`,
                     });
@@ -776,7 +776,7 @@ export class DistributionService {
                 }
 
                 // Add README
-                const _readme = `Distribution Package
+                const readme = `Distribution Package
 =====================
 
 Package ID: ${packageId}
@@ -792,7 +792,7 @@ ${pkg?.artworkUrl ? "- artwork: Album artwork" : ""}
 
 Generated: ${new Date().toISOString()}
 `;
-                archive?.append(readme, { name: "README?.txt" });
+                archive?.append(readme, { name: "README.txt" });
 
                 archive?.finalize();
               })
@@ -802,9 +802,9 @@ Generated: ${new Date().toISOString()}
       });
 
       // Upload ZIP to storageService
-      const _zipBuffer = await fsPromises?.readFile(tempZipPath);
-      const _zipFilename = `distribution_${packageId}_${Date?.now()}.zip`;
-      const _zipKey = await storageService?.uploadFile(
+      const zipBuffer = await fsPromises?.readFile(tempZipPath);
+      const zipFilename = `distribution_${packageId}_${Date?.now()}.zip`;
+      const zipKey = await storageService?.uploadFile(
         zipBuffer,
         "exports",
         zipFilename,
@@ -901,21 +901,21 @@ Generated: ${new Date().toISOString()}
     lastChecked: Date;
   }> {
     try {
-      const _release = await storage?.getDistroRelease(releaseId);
+      const release = await storage?.getDistroRelease(releaseId);
       if (!release) {
         throw new Error("Release not found");
       }
 
       if (labelGridService?.isConfigured()) {
         try {
-          const _status = await labelGridService?.getDeliveryStatus(releaseId);
+          const status = await labelGridService?.getDeliveryStatus(releaseId);
           return {
-            status: status?.status || "pending",
+            status: status.status || "pending",
             platforms:
               status?.platforms?.map((p: Record<string, unknown>) => ({
-                platform: p?.platform,
-                status: p?.status,
-                liveDate: p?.liveDate ? new Date(p?.liveDate) : undefined,
+                platform: p.platform,
+                status: p.status,
+                liveDate: p.liveDate ? new Date(p?.liveDate) : undefined,
               })) || [],
             lastChecked: new Date(),
           };
@@ -924,13 +924,13 @@ Generated: ${new Date().toISOString()}
         }
       }
 
-      const _currentPlatforms = (release?.platforms as unknown[]) || [];
+      const currentPlatforms = (release?.platforms as unknown[]) || [];
       return {
-        status: release?.status || "draft",
-        platforms: currentPlatforms?.map((p: Record<string, unknown>) => ({
+        status: release.status || "draft",
+        platforms: currentPlatforms.map((p: Record<string, unknown>) => ({
           platform: typeof p === "string" ? p : p?.platform || p?.name,
-          status: p?.status || "pending",
-          liveDate: p?.liveDate ? new Date(p?.liveDate) : undefined,
+          status: p.status || "pending",
+          liveDate: p.liveDate ? new Date(p?.liveDate) : undefined,
         })),
         lastChecked: new Date(),
       };
@@ -952,12 +952,12 @@ Generated: ${new Date().toISOString()}
     platform: string,
   ): Promise<DistributionSLAMetric> {
     try {
-      const _submittedAt = new Date();
-      const _targetDeliveryAt = new Date(
+      const submittedAt = new Date();
+      const targetDeliveryAt = new Date(
         submittedAt?.getTime() + DEFAULT_SLA_TARGET_HOURS * 60 * 60 * 1000,
       );
 
-      const _metric = await storage?.createDistributionSLAMetric({
+      const metric = await storage?.createDistributionSLAMetric({
         releaseId,
         platform,
         submittedAt,
@@ -985,19 +985,19 @@ Generated: ${new Date().toISOString()}
     liveAt?: Date,
   ): Promise<DistributionSLAMetric> {
     try {
-      const _metric = await storage?.getDistributionSLAMetric(metricId);
+      const metric = await storage?.getDistributionSLAMetric(metricId);
       if (!metric) {
         throw new Error("SLA metric not found");
       }
 
-      const _actualDeliveryAt = new Date();
-      const _deliveryHours =
+      const actualDeliveryAt = new Date();
+      const deliveryHours =
         (actualDeliveryAt?.getTime() - metric?.submittedAt.getTime()) /
         (1000 * 60 * 60);
-      const _metSLA =
+      const metSLA =
         deliveryHours <= (metric?.slaTargetHours || DEFAULT_SLA_TARGET_HOURS);
 
-      const _updated = await storage?.updateDistributionSLAMetric(metricId, {
+      const updated = await storage?.updateDistributionSLAMetric(metricId, {
         actualDeliveryAt,
         liveAt: liveAt || actualDeliveryAt,
         actualDeliveryHours: deliveryHours,
@@ -1045,12 +1045,12 @@ Generated: ${new Date().toISOString()}
     byPlatform: Record<string, { total: number; onTime: number; rate: number }>;
   }> {
     try {
-      const _metrics = await storage?.getSLAMetricsByUser(userId, days);
+      const metrics = await storage?.getSLAMetricsByUser(userId, days);
 
-      const _completed = metrics?.filter((m) => m?.actualDeliveryAt);
-      const _onTime = completed?.filter((m) => m?.metSLA);
+      const completed = metrics?.filter((m) => m?.actualDeliveryAt);
+      const onTime = completed?.filter((m) => m?.metSLA);
 
-      const _avgHours =
+      const avgHours =
         completed?.length > 0
           ? completed?.reduce(
               (sum, m) => sum + (m?.actualDeliveryHours || 0),
@@ -1064,7 +1064,7 @@ Generated: ${new Date().toISOString()}
       > = {};
       for (const m of completed) {
         if (!byPlatform[m?.platform]) {
-          byPlatform[m?.platform] = { total: 0, onTime: 0, rate: 0 };
+          byPlatform[m.platform] = { total: 0, onTime: 0, rate: 0 };
         }
         byPlatform[m?.platform].total++;
         if (m?.metSLA) byPlatform[m?.platform].onTime++;
@@ -1076,10 +1076,10 @@ Generated: ${new Date().toISOString()}
       }
 
       return {
-        totalDeliveries: completed?.length,
-        onTimeDeliveries: onTime?.length,
-        lateDeliveries: completed?.length - onTime?.length,
-        averageDeliveryHours: Math?.round(avgHours * 10) / 10,
+        totalDeliveries: completed.length,
+        onTimeDeliveries: onTime.length,
+        lateDeliveries: completed.length - onTime?.length,
+        averageDeliveryHours: Math.round(avgHours * 10) / 10,
         complianceRate:
           completed?.length > 0 ? (onTime?.length / completed?.length) * 100 : 100,
         byPlatform,
@@ -1095,12 +1095,12 @@ Generated: ${new Date().toISOString()}
    */
   async retryDelivery(metricId: string): Promise<DistributionSLAMetric> {
     try {
-      const _metric = await storage?.getDistributionSLAMetric(metricId);
+      const metric = await storage?.getDistributionSLAMetric(metricId);
       if (!metric) {
         throw new Error("SLA metric not found");
       }
 
-      const _updated = await storage?.updateDistributionSLAMetric(metricId, {
+      const updated = await storage?.updateDistributionSLAMetric(metricId, {
         status: "pending",
         deliveryPhase: "retrying",
         retryCount: (metric?.retryCount || 0) + 1,
@@ -1139,18 +1139,18 @@ Generated: ${new Date().toISOString()}
     youtubeChannelId?: string;
   }): Promise<ContentIdRegistration> {
     try {
-      const _registration = await storage?.createContentIdRegistration({
-        releaseId: data?.releaseId,
-        trackId: data?.trackId,
-        userId: data?.userId,
-        isrc: data?.isrc,
-        registrationType: data?.registrationType || "sound_recording",
-        ownershipPercentage: data?.ownershipPercentage || 100,
-        territories: data?.territories || ["WORLDWIDE"],
-        matchPolicy: data?.matchPolicy || "monetize",
-        claimPolicy: data?.claimPolicy || "monetize",
-        allowUserUploads: data?.allowUserUploads || false,
-        youtubeChannelId: data?.youtubeChannelId,
+      const registration = await storage?.createContentIdRegistration({
+        releaseId: data.releaseId,
+        trackId: data.trackId,
+        userId: data.userId,
+        isrc: data.isrc,
+        registrationType: data.registrationType || "sound_recording",
+        ownershipPercentage: data.ownershipPercentage || 100,
+        territories: data.territories || ["WORLDWIDE"],
+        matchPolicy: data.matchPolicy || "monetize",
+        claimPolicy: data.claimPolicy || "monetize",
+        allowUserUploads: data.allowUserUploads || false,
+        youtubeChannelId: data.youtubeChannelId,
         status: "pending",
         submittedAt: new Date(),
       });
@@ -1214,22 +1214,22 @@ Generated: ${new Date().toISOString()}
     }>;
   }> {
     try {
-      const _registrations =
+      const registrations =
         await storage?.getContentIdRegistrationsByUser(userId);
 
-      const _byTrack = registrations?.map((r) => ({
-        trackId: r?.trackId,
-        isrc: r?.isrc,
-        claims: r?.totalClaims || 0,
-        revenue: r?.totalRevenue || 0,
+      const byTrack = registrations?.map((r) => ({
+        trackId: r.trackId,
+        isrc: r.isrc,
+        claims: r.totalClaims || 0,
+        revenue: r.totalRevenue || 0,
       }));
 
       return {
-        totalClaims: registrations?.reduce(
+        totalClaims: registrations.reduce(
           (sum, r) => sum + (r?.totalClaims || 0),
           0,
         ),
-        totalRevenue: registrations?.reduce(
+        totalRevenue: registrations.reduce(
           (sum, r) => sum + (r?.totalRevenue || 0),
           0,
         ),
@@ -1250,7 +1250,7 @@ Generated: ${new Date().toISOString()}
    */
   async createSyncLicense(data: InsertSyncLicense): Promise<SyncLicense> {
     try {
-      const _license = await storage?.createSyncLicense(data);
+      const license = await storage?.createSyncLicense(data);
       logger?.info(`✅ Sync license created for release: ${data?.releaseId}`);
       return license;
     } catch (error: unknown) {
@@ -1296,7 +1296,7 @@ Generated: ${new Date().toISOString()}
     data: InsertSyncLicenseInquiry,
   ): Promise<SyncLicenseInquiry> {
     try {
-      const _inquiry = await storage?.createSyncLicenseInquiry(data);
+      const inquiry = await storage?.createSyncLicenseInquiry(data);
 
       // Update inquiry count on license
       await storage?.incrementSyncLicenseInquiries(data?.syncLicenseId);
@@ -1333,8 +1333,8 @@ Generated: ${new Date().toISOString()}
   ): Promise<SyncLicenseInquiry> {
     try {
       return await storage?.updateSyncLicenseInquiry(inquiryId, {
-        status: response?.status,
-        responseNotes: response?.responseNotes,
+        status: response.status,
+        responseNotes: response.responseNotes,
         respondedAt: new Date(),
       });
     } catch (error: unknown) {
@@ -1353,11 +1353,11 @@ Generated: ${new Date().toISOString()}
   async createRoyaltySplit(data: InsertRoyaltySplit): Promise<RoyaltySplit> {
     try {
       // Validate that total splits don't exceed 100%
-      const _existingSplits = await storage?.getRoyaltySplitsByRelease(
+      const existingSplits = await storage?.getRoyaltySplitsByRelease(
         data?.releaseId,
         data?.trackId,
       );
-      const _totalExisting = existingSplits?.reduce(
+      const totalExisting = existingSplits?.reduce(
         (sum, s) => sum + s?.percentage,
         0,
       );
@@ -1368,7 +1368,7 @@ Generated: ${new Date().toISOString()}
         );
       }
 
-      const _split = await storage?.createRoyaltySplit({
+      const split = await storage?.createRoyaltySplit({
         ...data,
         status: "pending",
         inviteSentAt: new Date(),
@@ -1412,14 +1412,14 @@ Generated: ${new Date().toISOString()}
   ): Promise<RoyaltySplit> {
     try {
       if (updates?.percentage !== undefined) {
-        const _split = await storage?.getRoyaltySplit(splitId);
+        const split = await storage?.getRoyaltySplit(splitId);
         if (!split) throw new Error("Split not found");
 
-        const _otherSplits = await storage?.getRoyaltySplitsByRelease(
+        const otherSplits = await storage?.getRoyaltySplitsByRelease(
           split?.releaseId,
           split?.trackId,
         );
-        const _otherTotal = otherSplits
+        const otherTotal = otherSplits
           .filter((s) => s?.id !== splitId)
           .reduce((sum, s) => sum + s?.percentage, 0);
 
@@ -1459,10 +1459,10 @@ Generated: ${new Date().toISOString()}
         userId,
         status: "accepted",
         inviteAcceptedAt: new Date(),
-        payoutMethod: payoutDetails?.payoutMethod,
-        stripeAccountId: payoutDetails?.stripeAccountId,
-        paypalEmail: payoutDetails?.paypalEmail,
-        bankDetails: payoutDetails?.bankDetails,
+        payoutMethod: payoutDetails.payoutMethod,
+        stripeAccountId: payoutDetails.stripeAccountId,
+        paypalEmail: payoutDetails.paypalEmail,
+        bankDetails: payoutDetails.bankDetails,
       });
     } catch (error: unknown) {
       logger?.warn("Error accepting royalty split:", error);
@@ -1501,16 +1501,16 @@ Generated: ${new Date().toISOString()}
     totalDistributed: number;
   }> {
     try {
-      const _splits = await storage?.getRoyaltySplitsByRelease(releaseId);
+      const splits = await storage?.getRoyaltySplitsByRelease(releaseId);
 
-      const _distributions = splits?.map((split) => ({
-        splitId: split?.id,
-        collaboratorName: split?.collaboratorName,
-        percentage: split?.percentage,
+      const distributions = splits?.map((split) => ({
+        splitId: split.id,
+        collaboratorName: split.collaboratorName,
+        percentage: split.percentage,
         amount: (totalEarnings * split?.percentage) / 100,
       }));
 
-      const _totalDistributed = distributions?.reduce(
+      const totalDistributed = distributions?.reduce(
         (sum, d) => sum + d?.amount,
         0,
       );
@@ -1529,10 +1529,10 @@ Generated: ${new Date().toISOString()}
     data: InsertRoyaltyTransaction,
   ): Promise<RoyaltyTransaction> {
     try {
-      const _transaction = await storage?.createRoyaltyTransaction(data);
+      const transaction = await storage?.createRoyaltyTransaction(data);
 
       // Update split totals
-      const _split = await storage?.getRoyaltySplit(data?.splitId);
+      const split = await storage?.getRoyaltySplit(data?.splitId);
       if (split) {
         await storage?.updateRoyaltySplit(data?.splitId, {
           totalEarned: (split?.totalEarned || 0) + data?.amount,
@@ -1570,11 +1570,11 @@ Generated: ${new Date().toISOString()}
     data: InsertPreSaveCampaign,
   ): Promise<PreSaveCampaign> {
     try {
-      const _slug =
+      const slug =
         data?.slug ||
         `${data?.name.toLowerCase().replace(/\s+/g, "-")}-${randomBytes(3).toString("hex")}`;
 
-      const _campaign = await storage?.createPreSaveCampaign({
+      const campaign = await storage?.createPreSaveCampaign({
         ...data,
         slug,
         status: "active",
@@ -1624,32 +1624,32 @@ Generated: ${new Date().toISOString()}
    */
   async recordPreSave(data: InsertPreSaveEntry): Promise<PreSaveEntry> {
     try {
-      const _entry = await storage?.createPreSaveEntry(data);
+      const entry = await storage?.createPreSaveEntry(data);
 
       // Update campaign counters
-      const _campaign = await storage?.getPreSaveCampaign(data?.campaignId);
+      const campaign = await storage?.getPreSaveCampaign(data?.campaignId);
       if (campaign) {
         const updates: Partial<PreSaveCampaign> = {
           totalSaves: (campaign?.totalSaves || 0) + 1,
         };
 
         if (data?.platform === "spotify") {
-          updates?.spotifySaves = (campaign?.spotifySaves || 0) + 1;
+          updates.spotifySaves = (campaign?.spotifySaves || 0) + 1;
         } else if (data?.platform === "apple_music") {
-          updates?.appleMusicSaves = (campaign?.appleMusicSaves || 0) + 1;
+          updates.appleMusicSaves = (campaign?.appleMusicSaves || 0) + 1;
         } else if (data?.platform === "deezer") {
-          updates?.deezerSaves = (campaign?.deezerSaves || 0) + 1;
+          updates.deezerSaves = (campaign?.deezerSaves || 0) + 1;
         }
 
         if (data?.email) {
-          updates?.emailSignups = (campaign?.emailSignups || 0) + 1;
+          updates.emailSignups = (campaign?.emailSignups || 0) + 1;
         }
 
         // Calculate conversion rate
-        const _totalSaves = updates?.totalSaves || campaign?.totalSaves || 0;
-        const _pageViews =
+        const totalSaves = updates?.totalSaves || campaign?.totalSaves || 0;
+        const pageViews =
           (campaign?.metadata as Record<string, unknown>)?.pageViews || 1;
-        updates?.conversionRate = (totalSaves / pageViews) * 100;
+        updates.conversionRate = (totalSaves / pageViews) * 100;
 
         await storage?.updatePreSaveCampaign(data?.campaignId, updates);
       }
@@ -1687,12 +1687,12 @@ Generated: ${new Date().toISOString()}
     timeline: Array<{ date: string; saves: number }>;
   }> {
     try {
-      const _campaign = await storage?.getPreSaveCampaign(campaignId);
+      const campaign = await storage?.getPreSaveCampaign(campaignId);
       if (!campaign) {
         throw new Error("Campaign not found");
       }
 
-      const _entries = await storage?.getPreSaveEntriesByCampaign(campaignId);
+      const entries = await storage?.getPreSaveEntriesByCampaign(campaignId);
 
       const byPlatform: Record<string, number> = {};
       const byCountry: Record<string, number> = {};
@@ -1700,32 +1700,32 @@ Generated: ${new Date().toISOString()}
       const byDate: Record<string, number> = {};
 
       for (const entry of entries) {
-        byPlatform[entry?.platform] = (byPlatform[entry?.platform] || 0) + 1;
+        byPlatform[entry.platform] = (byPlatform[entry?.platform] || 0) + 1;
 
         if (entry?.country) {
-          byCountry[entry?.country] = (byCountry[entry?.country] || 0) + 1;
+          byCountry[entry.country] = (byCountry[entry?.country] || 0) + 1;
         }
 
-        const _source = entry?.utmSource || "direct";
+        const source = entry?.utmSource || "direct";
         bySource[source] = (bySource[source] || 0) + 1;
 
         if (entry?.createdAt) {
-          const _date = entry?.createdAt.toISOString().split("T")[0];
+          const date = entry?.createdAt.toISOString().split("T")[0];
           byDate[date] = (byDate[date] || 0) + 1;
         }
       }
 
-      const _timeline = Object?.entries(byDate)
+      const timeline = Object?.entries(byDate)
         .map(([date, saves]) => ({ date, saves }))
         .sort((a, b) => a?.date.localeCompare(b?.date));
 
       return {
-        totalSaves: campaign?.totalSaves || 0,
+        totalSaves: campaign.totalSaves || 0,
         byPlatform,
         byCountry,
         bySource,
-        emailSignups: campaign?.emailSignups || 0,
-        conversionRate: campaign?.conversionRate || 0,
+        emailSignups: campaign.emailSignups || 0,
+        conversionRate: campaign.conversionRate || 0,
         timeline,
       };
     } catch (error: unknown) {
@@ -1765,4 +1765,4 @@ Generated: ${new Date().toISOString()}
   }
 }
 
-export const _distributionService = new DistributionService();
+export const distributionService = new DistributionService();

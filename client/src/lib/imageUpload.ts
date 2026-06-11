@@ -13,14 +13,14 @@ export async function uploadImageFile(
   endpoint: string,
   fieldName = "file",
 ): Promise<string> {
-  const _formData = new FormData();
+  const formData = new FormData();
   formData?.append(fieldName, file);
 
-  const _response = await apiRequest("POST", endpoint, formData);
+  const response = await apiRequest("POST", endpoint, formData);
   if (!response?.ok) {
     let message = `Upload failed (${response?.status})`;
     try {
-      const _body = (await response?.json()) as {
+      const body = (await response?.json()) as {
         error?: string;
         message?: string;
       };
@@ -31,7 +31,7 @@ export async function uploadImageFile(
     throw new Error(message);
   }
 
-  const _data = (await response?.json()) as {
+  const data = (await response?.json()) as {
     url?: string;
     avatarUrl?: string;
     imageUrl?: string;
@@ -47,7 +47,7 @@ export async function uploadImageFile(
     };
   };
 
-  const _url =
+  const url =
     data?.url ??
     data?.avatarUrl ??
     data?.imageUrl ??

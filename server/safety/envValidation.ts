@@ -5,7 +5,7 @@
  * Server MUST NOT start if critical variables are missing.
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface EnvRequirement {
   name: string;
@@ -76,7 +76,7 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: false,
     category: "monitoring",
     description: "Sentry DSN for error tracking",
-    validator: (v) => v?.includes("sentry?.io"),
+    validator: (v) => v?.includes("sentry.io"),
   },
 
   // BoosterState - Custom in-memory store (replaces Redis)
@@ -214,7 +214,7 @@ export function validateEnvironment(
   logger?.info("════════════════════════════════════════════════════════");
 
   for (const req of ENV_REQUIREMENTS) {
-    const _value = process?.env[req?.name];
+    const value = process?.env[req?.name];
 
     if (!value) {
       if (req?.required) {
@@ -246,7 +246,7 @@ export function validateEnvironment(
     logger?.info(`   ✓ ${req?.name}`);
   }
 
-  const _isValid = errors?.length === 0;
+  const isValid = errors?.length === 0;
 
   logger?.info("────────────────────────────────────────────────────────");
   logger?.info(`   Valid: ${valid} | Missing: ${missing} | Invalid: ${invalid}`);
@@ -273,7 +273,7 @@ export function validateEnvironment(
     errors,
     warnings,
     summary: {
-      total: ENV_REQUIREMENTS?.length,
+      total: ENV_REQUIREMENTS.length,
       valid,
       missing,
       invalid,
@@ -285,7 +285,7 @@ export function validateEnvironment(
  * Quick check for a specific env var
  */
 export function requireEnv(name: string): string {
-  const _value = process?.env[name];
+  const value = process?.env[name];
   if (!value) {
     throw new Error(`Required environment variable ${name} is not set`);
   }

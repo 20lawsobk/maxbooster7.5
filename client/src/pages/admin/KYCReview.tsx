@@ -106,7 +106,7 @@ export default function KYCReview() {
         if (!res.ok) throw new Error("Failed to fetch verifications");
         return res.json();
       },
-      enabled: user?.role === "admin",
+      enabled: user.role === "admin",
     });
 
   const reviewMutation = useMutation({
@@ -223,7 +223,7 @@ export default function KYCReview() {
     );
   }
 
-  const verifications = pendingData?.verifications || [];
+  const verifications = pendingData.verifications || [];
 
   const getStatusBadge = (status: string) => {
     const variants: Record<

@@ -2,8 +2,8 @@ import { randomBytes } from "crypto";
 
 import fsPromises from "fs/promises";
 import path from "path";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { sql } from "drizzle-orm";
 
 export interface AuditLog {
@@ -50,18 +50,18 @@ export class SecurityService {
   constructor() {
     setInterval(
       () => {
-        while (this?.auditLogs.size > SecurityService?.MAX_AUDIT_LOGS) {
-          const _k = this?.auditLogs.keys().next().value;
+        while (this?.auditLogs.size > SecurityService.MAX_AUDIT_LOGS) {
+          const k = this?.auditLogs.keys().next().value;
           if (k !== undefined) this?.auditLogs.delete(k);
           else break;
         }
-        while (this?.incidents.size > SecurityService?.MAX_INCIDENTS) {
-          const _k = this?.incidents.keys().next().value;
+        while (this?.incidents.size > SecurityService.MAX_INCIDENTS) {
+          const k = this?.incidents.keys().next().value;
           if (k !== undefined) this?.incidents.delete(k);
           else break;
         }
-        while (this?.healthChecks.size > SecurityService?.MAX_HEALTH) {
-          const _k = this?.healthChecks.keys().next().value;
+        while (this?.healthChecks.size > SecurityService.MAX_HEALTH) {
+          const k = this?.healthChecks.keys().next().value;
           if (k !== undefined) this?.healthChecks.delete(k);
           else break;
         }
@@ -158,7 +158,7 @@ export class SecurityService {
    */
   async checkHealth(service: string): Promise<HealthCheck> {
     try {
-      const _startTime = Date?.now();
+      const startTime = Date?.now();
       let status: "healthy" | "degraded" | "down" = "healthy";
       let message: string | undefined;
 
@@ -167,7 +167,7 @@ export class SecurityService {
         case "database":
           try {
             await db?.execute(sql`SELECT 1`);
-            const _responseTime = Date?.now() - startTime;
+            const responseTime = Date?.now() - startTime;
             if (responseTime > 1000) {
               status = "degraded";
               message = "Database response time is slow";
@@ -180,7 +180,7 @@ export class SecurityService {
 
         case "stripe":
           try {
-            const _stripeKey = process?.env.STRIPE_SECRET_KEY;
+            const stripeKey = process?.env.STRIPE_SECRET_KEY;
             if (!stripeKey) {
               status = "degraded";
               message = "Stripe secret key not configured";
@@ -196,7 +196,7 @@ export class SecurityService {
         case "storage":
           // Check storage service
           try {
-            const _uploadsDir = path?.join(process?.cwd(), "uploads");
+            const uploadsDir = path?.join(process?.cwd(), "uploads");
             if (!fs?.existsSync(uploadsDir)) {
               status = "degraded";
               message = "Uploads directory not accessible";
@@ -214,7 +214,7 @@ export class SecurityService {
       const healthCheck: HealthCheck = {
         service,
         status,
-        responseTime: Date?.now() - startTime,
+        responseTime: Date.now() - startTime,
         lastCheck: new Date(),
         message,
       };
@@ -273,14 +273,14 @@ export class SecurityService {
     resolvedBy: string,
   ): Promise<SecurityIncident> {
     try {
-      const _incident = this?.incidents.get(incidentId);
+      const incident = this?.incidents.get(incidentId);
       if (!incident) {
         throw new Error("Incident not found");
       }
 
-      incident?.status = "resolved";
-      incident?.resolvedAt = new Date();
-      incident?.resolvedBy = resolvedBy;
+      incident.status = "resolved";
+      incident.resolvedAt = new Date();
+      incident.resolvedBy = resolvedBy;
 
       this?.incidents.set(incidentId, incident);
 
@@ -331,7 +331,7 @@ export class SecurityService {
     try {
       // Fetch user from database to check their role
       const [user] = await db
-        .select({ role: users?.role, subscriptionTier: users?.subscriptionTier })
+        .select({ role: users.role, subscriptionTier: users.subscriptionTier })
         .from(users)
         .where(eq(users?.id, userId))
         .limit(1);
@@ -375,20 +375,20 @@ export class SecurityService {
       };
 
       // Check if user's role grants the permission
-      const _userRole = user?.role || "user";
-      const _userRolePermissions =
-        rolePermissions[userRole] || rolePermissions?.user;
+      const userRole = user.role || "user";
+      const userRolePermissions =
+        rolePermissions[userRole] || rolePermissions.user;
 
       if (
-        userRolePermissions?.includes("*") ||
-        userRolePermissions?.includes(permission)
+        userRolePermissions.includes("*") ||
+        userRolePermissions.includes(permission)
       ) {
         return true;
       }
 
       // Check if user's subscription tier grants the permission
-      const _userTier = user?.subscriptionTier || "free";
-      const _userTierPermissions =
+      const userTier = user?.subscriptionTier || "free";
+      const userTierPermissions =
         tierPermissions[userTier] || tierPermissions?.free;
 
       if (userTierPermissions?.includes(permission)) {
@@ -415,10 +415,10 @@ export class SecurityService {
     requests: { total: number; errorsToday: number };
   }> {
     try {
-      const _uptime = process?.uptime();
-      const _memUsage = process?.memoryUsage();
-      const _totalMem = memUsage?.heapTotal;
-      const _usedMem = memUsage?.heapUsed;
+      const uptime = process?.uptime();
+      const memUsage = process?.memoryUsage();
+      const totalMem = memUsage?.heapTotal;
+      const usedMem = memUsage?.heapUsed;
 
       return {
         uptime,
@@ -440,21 +440,21 @@ export class SecurityService {
   }
 
   private async writeAuditLogToFile(log: AuditLog): Promise<void> {
-    const _logDir = path?.join(process?.cwd(), "logs");
+    const logDir = path?.join(process?.cwd(), "logs");
     await fsPromises?.mkdir(logDir, { recursive: true });
 
-    const _logFile = path?.join(logDir, "audit?.log");
-    const _logEntry = `${log?.timestamp.toISOString()} | ${log?.userId} | ${log?.action} | ${log?.resource} | ${JSON?.stringify(log?.metadata)}\n`;
+    const logFile = path?.join(logDir, "audit.log");
+    const logEntry = `${log?.timestamp.toISOString()} | ${log?.userId} | ${log?.action} | ${log?.resource} | ${JSON?.stringify(log?.metadata)}\n`;
 
     await fsPromises?.appendFile(logFile, logEntry);
   }
 
   private async writeIncidentToFile(incident: SecurityIncident): Promise<void> {
-    const _logDir = path?.join(process?.cwd(), "logs");
+    const logDir = path?.join(process?.cwd(), "logs");
     await fsPromises?.mkdir(logDir, { recursive: true });
 
-    const _logFile = path?.join(logDir, "security?.log");
-    const _logEntry = `${incident?.createdAt.toISOString()} | ${incident?.severity} | ${incident?.title} | ${incident?.description}\n`;
+    const logFile = path?.join(logDir, "security.log");
+    const logEntry = `${incident?.createdAt.toISOString()} | ${incident?.severity} | ${incident?.title} | ${incident?.description}\n`;
 
     await fsPromises?.appendFile(logFile, logEntry);
   }
@@ -468,4 +468,4 @@ export class SecurityService {
   }
 }
 
-export const _securityService = new SecurityService();
+export const securityService = new SecurityService();

@@ -33,7 +33,7 @@
  *   If EVAL is unavailable callers fall back to sequential
  *   ZCOUNT + ZADD, serialised through PDIM's single-chain HTTP queue.
  */
-export const _SLIDING_WINDOW_LUA = `
+export const SLIDING_WINDOW_LUA = `
 local key          = KEYS[1]
 local window_start = tonumber(ARGV[1])
 local max_req      = tonumber(ARGV[2])

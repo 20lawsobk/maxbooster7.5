@@ -17,35 +17,35 @@ import {
 describe("AI System KPI Verification", () => {
   describe("Autonomous Upgrade System", () => {
     test("meets ≥95% success rate", async () => {
-      const _result = await simulateAutonomousUpgrade();
+      const result = await simulateAutonomousUpgrade();
       expect(result?.metrics.upgradeSuccessRate).toBeGreaterThanOrEqual(95);
     }, 30000);
 
     test("meets ≥100% quality threshold vs manual baseline", async () => {
-      const _result = await simulateAutonomousUpgrade();
+      const result = await simulateAutonomousUpgrade();
       expect(result?.metrics.algorithmQualityAverage).toBeGreaterThanOrEqual(
         100,
       );
     }, 30000);
 
     test("achieves zero downtime deployments", async () => {
-      const _result = await simulateAutonomousUpgrade();
+      const result = await simulateAutonomousUpgrade();
       expect(result?.metrics.zeroDowntime).toBe(true);
     }, 30000);
 
     test("maintains or gains competitive advantage", async () => {
-      const _result = await simulateAutonomousUpgrade();
+      const result = await simulateAutonomousUpgrade();
       expect(["maintained", "gained"]).toContain(result?.competitiveAdvantage);
     }, 30000);
 
     test("meets detection speed SLA compliance", async () => {
-      const _result = await simulateAutonomousUpgrade();
+      const result = await simulateAutonomousUpgrade();
       expect(result?.metrics.detectionSpeedCompliance).toBe(true);
     }, 30000);
 
     test("produces deterministic results (reproducible)", async () => {
-      const _run1 = await simulateAutonomousUpgrade();
-      const _run2 = await simulateAutonomousUpgrade();
+      const run1 = await simulateAutonomousUpgrade();
+      const run2 = await simulateAutonomousUpgrade();
 
       // Results should be identical
       expect(run1?.totalScenarios).toEqual(run2?.totalScenarios);
@@ -79,19 +79,19 @@ describe("AI System KPI Verification", () => {
     }, 60000);
 
     test("long-term simulation meets ≥95% success rate", async () => {
-      const _result = await simulateLongTermAdaptation();
+      const result = await simulateLongTermAdaptation();
       expect(result?.metrics.upgradeSuccessRate).toBeGreaterThanOrEqual(95);
     }, 30000);
 
     test("long-term simulation maintains continuous adaptation", async () => {
-      const _result = await simulateLongTermAdaptation();
+      const result = await simulateLongTermAdaptation();
       expect(result?.yearLongSimulation?.continuousAdaptation).toBe(true);
     }, 30000);
   });
 
   describe("Ad Booster System", () => {
-    test("meets ≥2?.0x amplification factor (100%+ boost)", async () => {
-      const _campaign = {
+    test("meets ≥2.0x amplification factor (100%+ boost)", async () => {
+      const campaign = {
         name: "Test Campaign",
         type: "product_launch" as const,
         audienceSize: "medium" as const,
@@ -101,19 +101,19 @@ describe("AI System KPI Verification", () => {
         contentQuality: 90,
       };
 
-      const _result = await simulateAdBooster(campaign);
-      expect(result?.amplificationFactor).toBeGreaterThanOrEqual(2?.0);
+      const result = await simulateAdBooster(campaign);
+      expect(result?.amplificationFactor).toBeGreaterThanOrEqual(2.0);
     }, 30000);
 
     test("comprehensive simulation - all scenarios pass", async () => {
-      const _results = await runComprehensiveSimulation();
+      const results = await runComprehensiveSimulation();
       expect(results?.summary.allScenariosPass).toBe(true);
-      expect(results?.summary.minAmplification).toBeGreaterThanOrEqual(2?.0);
-      expect(results?.summary.averageAmplification).toBeGreaterThanOrEqual(2?.5);
+      expect(results?.summary.minAmplification).toBeGreaterThanOrEqual(2.0);
+      expect(results?.summary.averageAmplification).toBeGreaterThanOrEqual(2.5);
     }, 60000);
 
     test("produces deterministic results (reproducible)", async () => {
-      const _campaign = {
+      const campaign = {
         name: "Test Campaign",
         type: "product_launch" as const,
         audienceSize: "medium" as const,
@@ -123,8 +123,8 @@ describe("AI System KPI Verification", () => {
         contentQuality: 90,
       };
 
-      const _run1 = await simulateAdBooster(campaign);
-      const _run2 = await simulateAdBooster(campaign);
+      const run1 = await simulateAdBooster(campaign);
+      const run2 = await simulateAdBooster(campaign);
 
       // Results should be identical for deterministic calculations
       expect(run1?.amplificationFactor).toEqual(run2?.amplificationFactor);
@@ -140,7 +140,7 @@ describe("AI System KPI Verification", () => {
     }, 60000);
 
     test("achieves zero cost organic amplification", async () => {
-      const _campaign = {
+      const campaign = {
         name: "Test Campaign",
         type: "brand_awareness" as const,
         audienceSize: "small" as const,
@@ -150,7 +150,7 @@ describe("AI System KPI Verification", () => {
         contentQuality: 85,
       };
 
-      const _result = await simulateAdBooster(campaign);
+      const result = await simulateAdBooster(campaign);
       expect(result?.aiBoosterOrganic.totalCost).toBe(0);
     }, 30000);
   });
@@ -158,8 +158,8 @@ describe("AI System KPI Verification", () => {
   describe("Integration Tests", () => {
     test("all critical KPIs pass together", async () => {
       // Run both simulations
-      const _autonomousResult = await simulateAutonomousUpgrade();
-      const _adBoosterResults = await runComprehensiveSimulation();
+      const autonomousResult = await simulateAutonomousUpgrade();
+      const adBoosterResults = await runComprehensiveSimulation();
 
       // Verify all critical KPIs
       expect(
@@ -170,7 +170,7 @@ describe("AI System KPI Verification", () => {
       ).toBeGreaterThanOrEqual(100);
       expect(adBoosterResults?.summary.allScenariosPass).toBe(true);
       expect(adBoosterResults?.summary.minAmplification).toBeGreaterThanOrEqual(
-        2?.0,
+        2.0,
       );
 
       // Verify system health
@@ -185,9 +185,9 @@ describe("AI System KPI Verification", () => {
   describe("Reproducibility Verification", () => {
     test("running simulations multiple times produces identical results", async () => {
       // Run autonomous upgrade 3 times
-      const _auto1 = await simulateAutonomousUpgrade();
-      const _auto2 = await simulateAutonomousUpgrade();
-      const _auto3 = await simulateAutonomousUpgrade();
+      const auto1 = await simulateAutonomousUpgrade();
+      const auto2 = await simulateAutonomousUpgrade();
+      const auto3 = await simulateAutonomousUpgrade();
 
       // All should have identical metrics
       expect(auto1?.metrics.upgradeSuccessRate).toEqual(
@@ -209,8 +209,8 @@ describe("AI System KPI Verification", () => {
     }, 120000);
 
     test("different seeds produce different results", async () => {
-      const _result1 = await simulateAutonomousUpgrade(12345);
-      const _result2 = await simulateAutonomousUpgrade(54321);
+      const result1 = await simulateAutonomousUpgrade(12345);
+      const result2 = await simulateAutonomousUpgrade(54321);
 
       // Different seeds should produce different scenario details
       // but both should still pass KPI thresholds
@@ -218,7 +218,7 @@ describe("AI System KPI Verification", () => {
       expect(result2?.metrics.upgradeSuccessRate).toBeGreaterThanOrEqual(95);
 
       // At least some metrics should differ with different seeds
-      const _hasDifferences =
+      const hasDifferences =
         result1?.scenarios[0].detectionTime !==
           result2?.scenarios[0].detectionTime ||
         result1?.scenarios[0].upgradeTime !== result2?.scenarios[0].upgradeTime ||

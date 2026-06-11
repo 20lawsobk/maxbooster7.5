@@ -354,7 +354,7 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
         trackId,
         slotIndex,
         name: `Clip ${clipNum}`,
-        color: track?.color || "#4ade80",
+        color: track.color || "#4ade80",
         duration: 4,
       });
     },

@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { weeklyInsightsService } from "../services/weeklyInsightsService?.js";
-import { logger } from "../logger?.js";
+import { weeklyInsightsService } from "../services/weeklyInsightsService.js";
+import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 router?.get("/api/email-preferences", async (req: Request, res: Response) => {
   try {
@@ -10,7 +10,7 @@ router?.get("/api/email-preferences", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const _preferences = await weeklyInsightsService?.getEmailPreferences(
+    const preferences = await weeklyInsightsService?.getEmailPreferences(
       req?.user.id,
     );
     return res?.json(preferences);
@@ -37,19 +37,19 @@ router?.patch("/api/email-preferences", async (req: Request, res: Response) => {
 
     const updates: Record<string, unknown> = {};
     if (typeof weeklyInsights === "boolean")
-      updates?.weeklyInsights = weeklyInsights;
+      updates.weeklyInsights = weeklyInsights;
     if (typeof weeklyInsightsFrequency === "string")
-      updates?.weeklyInsightsFrequency = weeklyInsightsFrequency;
+      updates.weeklyInsightsFrequency = weeklyInsightsFrequency;
     if (typeof marketingEmails === "boolean")
-      updates?.marketingEmails = marketingEmails;
+      updates.marketingEmails = marketingEmails;
     if (typeof releaseAlerts === "boolean")
-      updates?.releaseAlerts = releaseAlerts;
+      updates.releaseAlerts = releaseAlerts;
     if (typeof collaborationAlerts === "boolean")
-      updates?.collaborationAlerts = collaborationAlerts;
+      updates.collaborationAlerts = collaborationAlerts;
     if (typeof revenueAlerts === "boolean")
-      updates?.revenueAlerts = revenueAlerts;
+      updates.revenueAlerts = revenueAlerts;
 
-    const _updated = await weeklyInsightsService?.updateEmailPreferences(
+    const updated = await weeklyInsightsService?.updateEmailPreferences(
       req?.user.id,
       updates,
     );
@@ -78,7 +78,7 @@ router?.get(
       );
     } catch (error) {
       logger?.warn({ err: error }, "Failed to unsubscribe:");
-      return res?.redirect("/settings?error=Failed%20to%20unsubscribe");
+      return res.redirect("/settings?error=Failed%20to%20unsubscribe");
     }
   },
 );
@@ -91,7 +91,7 @@ router?.get(
         return res?.status(401).json({ error: "Authentication required" });
       }
 
-      const _preview = await weeklyInsightsService?.getPreviewData(req?.user.id);
+      const preview = await weeklyInsightsService?.getPreviewData(req?.user.id);
       if (!preview) {
         return res?.status(404).json({ error: "Unable to generate preview" });
       }
@@ -111,7 +111,7 @@ router?.get(
       const { id } = req?.params;
       await weeklyInsightsService?.trackEmailOpen(id);
 
-      const _transparentPixel = Buffer?.from(
+      const transparentPixel = Buffer?.from(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
         "base64",
       );
@@ -123,7 +123,7 @@ router?.get(
       return res?.send(transparentPixel);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to track email open:");
-      const _transparentPixel = Buffer?.from(
+      const transparentPixel = Buffer?.from(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
         "base64",
       );
@@ -133,13 +133,13 @@ router?.get(
   },
 );
 
-const _EMAIL_CLICK_FALLBACK = "https://maxbooster?.ai/dashboard";
-const _ALLOWED_REDIRECT_HOSTS = new Set([
-  "maxbooster?.ai",
-  "www?.maxbooster.ai",
-  "max-booster?.com",
-  "www?.max-booster?.com",
-  "app?.maxbooster.ai",
+const EMAIL_CLICK_FALLBACK = "https://maxbooster.ai/dashboard";
+const ALLOWED_REDIRECT_HOSTS = new Set([
+  "maxbooster.ai",
+  "www.maxbooster.ai",
+  "max-booster.com",
+  "www.max-booster.com",
+  "app.maxbooster.ai",
 ]);
 
 function sanitizeEmailRedirect(raw: unknown): string {
@@ -152,10 +152,10 @@ function sanitizeEmailRedirect(raw: unknown): string {
   }
   // Allow only pre-approved hosts for absolute URLs
   try {
-    const _parsed = new URL(raw);
+    const parsed = new URL(raw);
     if (
-      (parsed?.protocol === "https:" || parsed?.protocol === "http:") &&
-      ALLOWED_REDIRECT_HOSTS?.has(parsed?.hostname)
+      (parsed.protocol === "https:" || parsed.protocol === "http:") &&
+      ALLOWED_REDIRECT_HOSTS.has(parsed.hostname)
     ) {
       return raw;
     }
@@ -165,39 +165,39 @@ function sanitizeEmailRedirect(raw: unknown): string {
   return EMAIL_CLICK_FALLBACK;
 }
 
-router?.get(
+router.get(
   "/api/emails/track/:id/click",
   async (req: Request, res: Response) => {
     try {
-      const { id } = req?.params;
-      const _redirectUrl = sanitizeEmailRedirect(req?.query.redirect);
+      const { id } = req.params;
+      const redirectUrl = sanitizeEmailRedirect(req.query.redirect);
 
-      await weeklyInsightsService?.trackEmailClick(id, redirectUrl);
+      await weeklyInsightsService.trackEmailClick(id, redirectUrl);
 
-      return res?.redirect(redirectUrl);
+      return res.redirect(redirectUrl);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to track email click:");
-      return res?.redirect(EMAIL_CLICK_FALLBACK);
+      logger.warn({ err: error }, "Failed to track email click:");
+      return res.redirect(EMAIL_CLICK_FALLBACK);
     }
   },
 );
 
-router?.post(
+router.post(
   "/api/admin/emails/send-weekly-insights",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.user || req?.user.role !== "admin") {
-        return res?.status(403).json({ error: "Admin access required" });
+      if (!req.user || req.user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
       }
 
-      const _result = await weeklyInsightsService?.sendWeeklyInsights();
-      return res?.json({
+      const result = await weeklyInsightsService.sendWeeklyInsights();
+      return res.json({
         message: "Weekly insights batch completed",
         ...result,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to send weekly insights batch:");
-      return res?.status(500).json({ error: "Failed to send weekly insights" });
+      logger.warn({ err: error }, "Failed to send weekly insights batch:");
+      return res.status(500).json({ error: "Failed to send weekly insights" });
     }
   },
 );

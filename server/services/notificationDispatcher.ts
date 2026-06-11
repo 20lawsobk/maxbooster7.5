@@ -9,19 +9,19 @@
  *   3. Mobile Push (FCM)    — native Android / iOS apps via Firebase Cloud Messaging
  *
  * Usage:
- *   import { notificationDispatcher } from './notificationDispatcher?.js';
+ *   import { notificationDispatcher } from './notificationDispatcher.js';
  *   await notificationDispatcher?.dispatch(userId, notificationType, context);
  */
 
-import { logger } from "../logger?.js";
-import { webPushService } from "./webPushService?.js";
-import { desktopPushService } from "./desktopPushService?.js";
-import { mobilePushService } from "./mobilePushService?.js";
+import { logger } from "../logger.js";
+import { webPushService } from "./webPushService.js";
+import { desktopPushService } from "./desktopPushService.js";
+import { mobilePushService } from "./mobilePushService.js";
 import {
   buildPushPayload,
   buildSilentPayload,
   type PushContext,
-} from "./pushNotificationTypes?.js";
+} from "./pushNotificationTypes.js";
 import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -56,21 +56,21 @@ class NotificationDispatcher {
       forceChannels?: Array<"web" | "desktop" | "mobile">;
     } = {},
   ): Promise<DispatchResult> {
-    const _richPayload = buildPushPayload(notificationType, ctx);
+    const richPayload = buildPushPayload(notificationType, ctx);
 
     if (richPayload?.silent) {
       return this?.dispatchSilent(userId, "feed_refresh");
     }
 
-    const _prefs = await this?.getUserPushPrefs(userId);
+    const prefs = await this?.getUserPushPrefs(userId);
     if (!prefs?.enabled && !opts?.skipCategoryCheck) {
       logger?.info(`[Dispatcher] Push disabled for user ${userId}, skipping`);
       return ZERO;
     }
 
     if (!opts?.skipCategoryCheck) {
-      const _category = richPayload?.category;
-      const _allowed = prefs?.categories[category] ?? true;
+      const category = richPayload?.category;
+      const allowed = prefs?.categories[category] ?? true;
       if (!allowed) {
         logger?.info(
           `[Dispatcher] Category ${category} disabled for user ${userId}, skipping`,
@@ -79,7 +79,7 @@ class NotificationDispatcher {
       }
 
       if (prefs?.muteAll) {
-        const _isUrgent = richPayload?.requireInteraction;
+        const isUrgent = richPayload?.requireInteraction;
         if (!isUrgent || !prefs?.allowUrgentDuringQuietHours) {
           return ZERO;
         }
@@ -108,8 +108,8 @@ class NotificationDispatcher {
     if (desktopResult?.sent > 0) activeChannels?.push("desktop");
     if (mobileResult?.sent > 0) activeChannels?.push("mobile");
 
-    const _totalSent = webResult?.sent + desktopResult?.sent + mobileResult?.sent;
-    const _totalFailed =
+    const totalSent = webResult?.sent + desktopResult?.sent + mobileResult?.sent;
+    const totalFailed =
       webResult?.failed + desktopResult?.failed + mobileResult?.failed;
 
     if (totalSent > 0) {
@@ -134,7 +134,7 @@ class NotificationDispatcher {
     userId: string,
     reason: "feed_refresh" | "message_sync" | "count_update" = "feed_refresh",
   ): Promise<DispatchResult> {
-    const _payload = buildSilentPayload(reason);
+    const payload = buildSilentPayload(reason);
 
     const [webResult, desktopResult, mobileResult] = await Promise?.all([
       webPushService?.isReady()
@@ -160,7 +160,7 @@ class NotificationDispatcher {
       web: webResult,
       desktop: desktopResult,
       mobile: mobileResult,
-      totalSent: webResult?.sent + desktopResult?.sent + mobileResult?.sent,
+      totalSent: webResult.sent + desktopResult?.sent + mobileResult?.sent,
       totalFailed:
         webResult?.failed + desktopResult?.failed + mobileResult?.failed,
       channels: ["silent"],
@@ -181,7 +181,7 @@ class NotificationDispatcher {
     await Promise?.all(
       userIds?.map(async (userId) => {
         try {
-          const _result = await this?.dispatch(userId, notificationType, ctx);
+          const result = await this?.dispatch(userId, notificationType, ctx);
           if (result?.totalSent > 0) {
             dispatched++;
             totalSent += result?.totalSent;
@@ -204,14 +204,14 @@ class NotificationDispatcher {
   // ── Test push across all channels ──────────────────────────────────────────
 
   async sendTestToUser(userId: string): Promise<DispatchResult> {
-    const _richPayload = buildPushPayload("system_update", {
+    const richPayload = buildPushPayload("system_update", {
       contentTitle: "Test Notification",
       contentPreview: "Push notifications are working across all your devices!",
     });
 
-    richPayload?.title = "🔔 Max Booster Test";
-    richPayload?.body = "Push notifications are working on this device!";
-    richPayload?.tag = "test";
+    richPayload.title = "🔔 Max Booster Test";
+    richPayload.body = "Push notifications are working on this device!";
+    richPayload.tag = "test";
 
     const [webResult, desktopResult, mobileResult] = await Promise?.all([
       webPushService?.isReady()
@@ -229,7 +229,7 @@ class NotificationDispatcher {
       web: webResult,
       desktop: desktopResult,
       mobile: mobileResult,
-      totalSent: webResult?.sent + desktopResult?.sent + mobileResult?.sent,
+      totalSent: webResult.sent + desktopResult?.sent + mobileResult?.sent,
       totalFailed:
         webResult?.failed + desktopResult?.failed + mobileResult?.failed,
       channels: [
@@ -245,17 +245,17 @@ class NotificationDispatcher {
   getStatus() {
     return {
       web: {
-        ready: webPushService?.isReady(),
-        publicKey: webPushService?.getPublicKey()
+        ready: webPushService.isReady(),
+        publicKey: webPushService.getPublicKey()
           ? "✅ configured"
           : "❌ missing",
       },
       desktop: {
-        ready: desktopPushService?.isReady(),
+        ready: desktopPushService.isReady(),
       },
       mobile: {
-        ready: mobilePushService?.isReady(),
-        mode: mobilePushService?.getMode(),
+        ready: mobilePushService.isReady(),
+        mode: mobilePushService.getMode(),
       },
     };
   }
@@ -265,20 +265,20 @@ class NotificationDispatcher {
   private async getUserPushPrefs(userId: string) {
     try {
       const [user] = await db
-        .select({ notificationSettings: users?.notificationSettings })
+        .select({ notificationSettings: users.notificationSettings })
         .from(users)
         .where(eq(users?.id, userId))
         .limit(1);
 
-      const _settings =
+      const settings =
         (user?.notificationSettings as Record<string, unknown>) || {};
-      const _push = (settings?.push as Record<string, unknown>) || {};
+      const push = (settings?.push as Record<string, unknown>) || {};
       // Default push?.enabled to true: a user who has granted browser permission
       // and registered a subscription endpoint has already opted in.  Only block
       // if they have explicitly set enabled=false in their preferences.
       return {
-        enabled: push?.enabled !== false,
-        muteAll: settings?.muteAll ?? false,
+        enabled: push.enabled !== false,
+        muteAll: settings.muteAll ?? false,
         allowUrgentDuringQuietHours:
           (settings?.quietHours as Record<string, unknown>)?.allowUrgent ?? true,
         categories: (push?.categories as Record<string, boolean>) || {},
@@ -294,4 +294,4 @@ class NotificationDispatcher {
   }
 }
 
-export const _notificationDispatcher = new NotificationDispatcher();
+export const notificationDispatcher = new NotificationDispatcher();

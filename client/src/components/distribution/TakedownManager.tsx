@@ -1120,7 +1120,7 @@ export function TakedownManager() {
               <Button
                 onClick={() =>
                   requestReinstatementMutation.mutate({
-                    takedownId: selectedTakedown?.id || "",
+                    takedownId: selectedTakedown.id || "",
                     reason: "Reinstatement request",
                   })
                 }

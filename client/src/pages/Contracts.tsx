@@ -1041,10 +1041,10 @@ export default function Contracts() {
                         return {
                           name: p.name,
                           role: p.role,
-                          status: sig?.signedAt
+                          status: sig.signedAt
                             ? ("signed" as const)
                             : ("pending" as const),
-                          signedAt: sig?.signedAt,
+                          signedAt: sig.signedAt,
                         };
                       })
                     }

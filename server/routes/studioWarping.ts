@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db";
 import {
   audioClips,
@@ -10,39 +10,39 @@ import {
 import { insertWarpMarkerSchema, updateWarpMarkerSchema } from "@shared/schema";
 import { eq, and, asc } from "drizzle-orm";
 import { z } from "zod";
-import { logger } from "../logger?.js";
-import { queueService } from "../services/queueService?.js";
+import { logger } from "../logger.js";
+import { queueService } from "../services/queueService.js";
 import { randomUUID } from "crypto";
 
-const _router = Router();
+const router = Router();
 
-const _warpPreviewSchema = z?.object({
-  startTime: z?.number().min(0),
-  endTime: z?.number().min(0),
-  pitchShift: z?.number().min(-24).max(24).optional(),
-  preserveFormants: z?.boolean().optional().default(true),
+const warpPreviewSchema = z.object({
+  startTime: z.number().min(0),
+  endTime: z.number().min(0),
+  pitchShift: z.number().min(-24).max(24).optional(),
+  preserveFormants: z.boolean().optional().default(true),
   algorithm: z
     .enum(["rubberband", "phase_vocoder", "wsola"])
     .optional()
     .default("phase_vocoder"),
-  quality: z?.enum(["fast", "normal", "high"]).optional().default("normal"),
+  quality: z.enum(["fast", "normal", "high"]).optional().default("normal"),
 });
 
-const _warpCommitSchema = z?.object({
-  pitchShift: z?.number().min(-24).max(24).optional(),
-  preserveFormants: z?.boolean().optional().default(true),
+const warpCommitSchema = z.object({
+  pitchShift: z.number().min(-24).max(24).optional(),
+  preserveFormants: z.boolean().optional().default(true),
   algorithm: z
     .enum(["rubberband", "phase_vocoder", "wsola"])
     .optional()
     .default("phase_vocoder"),
-  quality: z?.enum(["fast", "normal", "high"]).optional().default("high"),
-  replaceOriginal: z?.boolean().optional().default(false),
+  quality: z.enum(["fast", "normal", "high"]).optional().default("high"),
+  replaceOriginal: z.boolean().optional().default(false),
 });
 
-const _transientDetectionSchema = z?.object({
-  sensitivity: z?.number().min(0).max(1).optional().default(0?.5),
-  minTransientGap: z?.number().min(0?.01).max(1).optional().default(0?.05),
-  createMarkers: z?.boolean().optional().default(false),
+const transientDetectionSchema = z.object({
+  sensitivity: z.number().min(0).max(1).optional().default(0.5),
+  minTransientGap: z.number().min(0.01).max(1).optional().default(0.05),
+  createMarkers: z.boolean().optional().default(false),
 });
 
 async function verifyClipOwnership(
@@ -53,7 +53,7 @@ async function verifyClipOwnership(
   track: Record<string, unknown>;
   project: Record<string, unknown>;
 } | null> {
-  const _clip = await db?.query.audioClips?.findFirst({
+  const clip = await db?.query.audioClips?.findFirst({
     where: eq(audioClips?.id, clipId),
   });
 
@@ -61,7 +61,7 @@ async function verifyClipOwnership(
     return null;
   }
 
-  const _track = await db?.query.studioTracks?.findFirst({
+  const track = await db?.query.studioTracks?.findFirst({
     where: eq(studioTracks?.id, clip?.trackId),
   });
 
@@ -69,7 +69,7 @@ async function verifyClipOwnership(
     return null;
   }
 
-  const _project = await db?.query.projects?.findFirst({
+  const project = await db?.query.projects?.findFirst({
     where: and(eq(projects?.id, track?.projectId), eq(projects?.userId, userId)),
   });
 
@@ -83,14 +83,14 @@ async function verifyClipOwnership(
 router?.get("/clips/:clipId/warp/markers", requireAuth, async (req, res) => {
   try {
     const { clipId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _ownership = await verifyClipOwnership(clipId, userId);
+    const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
       return res?.status(404).json({ error: "Clip not found or unauthorized" });
     }
 
-    const _markers = await db?.query.warpMarkers?.findMany({
+    const markers = await db?.query.warpMarkers?.findMany({
       where: eq(warpMarkers?.clipId, clipId),
       orderBy: [asc(warpMarkers?.sourceTime)],
     });
@@ -105,14 +105,14 @@ router?.get("/clips/:clipId/warp/markers", requireAuth, async (req, res) => {
 router?.post("/clips/:clipId/warp/markers", requireAuth, async (req, res) => {
   try {
     const { clipId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _ownership = await verifyClipOwnership(clipId, userId);
+    const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
       return res?.status(404).json({ error: "Clip not found or unauthorized" });
     }
 
-    const _markerData = insertWarpMarkerSchema?.parse({
+    const markerData = insertWarpMarkerSchema?.parse({
       ...req?.body,
       clipId,
     });
@@ -125,10 +125,10 @@ router?.post("/clips/:clipId/warp/markers", requireAuth, async (req, res) => {
     res?.status(201).json(newMarker);
   } catch (error) {
     logger?.warn({ err: error }, "Error creating warp marker:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid marker data", details: error?.issues });
+        .json({ error: "Invalid marker data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to create warp marker" });
   }
@@ -140,16 +140,16 @@ router?.put(
   async (req, res) => {
     try {
       const { clipId, markerId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _ownership = await verifyClipOwnership(clipId, userId);
+      const ownership = await verifyClipOwnership(clipId, userId);
       if (!ownership) {
         return res
           .status(404)
           .json({ error: "Clip not found or unauthorized" });
       }
 
-      const _marker = await db?.query.warpMarkers?.findFirst({
+      const marker = await db?.query.warpMarkers?.findFirst({
         where: and(
           eq(warpMarkers?.id, markerId),
           eq(warpMarkers?.clipId, clipId),
@@ -160,7 +160,7 @@ router?.put(
         return res?.status(404).json({ error: "Warp marker not found" });
       }
 
-      const _updates = updateWarpMarkerSchema?.parse(req?.body);
+      const updates = updateWarpMarkerSchema?.parse(req?.body);
 
       const [updatedMarker] = await db
         .update(warpMarkers)
@@ -174,10 +174,10 @@ router?.put(
       res?.json(updatedMarker);
     } catch (error) {
       logger?.warn({ err: error }, "Error updating warp marker:");
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid marker data", details: error?.issues });
+          .json({ error: "Invalid marker data", details: error.issues });
       }
       res?.status(500).json({ error: "Failed to update warp marker" });
     }
@@ -190,16 +190,16 @@ router?.delete(
   async (req, res) => {
     try {
       const { clipId, markerId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _ownership = await verifyClipOwnership(clipId, userId);
+      const ownership = await verifyClipOwnership(clipId, userId);
       if (!ownership) {
         return res
           .status(404)
           .json({ error: "Clip not found or unauthorized" });
       }
 
-      const _marker = await db?.query.warpMarkers?.findFirst({
+      const marker = await db?.query.warpMarkers?.findFirst({
         where: and(
           eq(warpMarkers?.id, markerId),
           eq(warpMarkers?.clipId, clipId),
@@ -223,37 +223,37 @@ router?.delete(
 router?.post("/clips/:clipId/warp/preview", requireAuth, async (req, res) => {
   try {
     const { clipId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _ownership = await verifyClipOwnership(clipId, userId);
+    const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
       return res?.status(404).json({ error: "Clip not found or unauthorized" });
     }
 
     const { clip } = ownership;
-    const _options = warpPreviewSchema?.parse(req?.body);
+    const options = warpPreviewSchema?.parse(req?.body);
 
-    const _markers = await db?.query.warpMarkers?.findMany({
+    const markers = await db?.query.warpMarkers?.findMany({
       where: eq(warpMarkers?.clipId, clipId),
       orderBy: [asc(warpMarkers?.sourceTime)],
     });
 
-    const _jobId = randomUUID();
-    const _jobData = {
+    const jobId = randomUUID();
+    const jobData = {
       userId,
       clipId,
-      storageKey: clip?.filePath,
-      markers: markers?.map((m: Record<string, unknown>) => ({
-        id: m?.id,
-        sourceTime: m?.sourceTime,
-        targetTime: m?.targetTime,
+      storageKey: clip.filePath,
+      markers: markers.map((m: Record<string, unknown>) => ({
+        id: m.id,
+        sourceTime: m.sourceTime,
+        targetTime: m.targetTime,
       })),
-      startTime: options?.startTime,
-      endTime: options?.endTime,
-      pitchShift: options?.pitchShift,
-      preserveFormants: options?.preserveFormants,
-      algorithm: options?.algorithm,
-      quality: options?.quality,
+      startTime: options.startTime,
+      endTime: options.endTime,
+      pitchShift: options.pitchShift,
+      preserveFormants: options.preserveFormants,
+      algorithm: options.algorithm,
+      quality: options.quality,
     };
 
     await queueService?.addJob(
@@ -273,10 +273,10 @@ router?.post("/clips/:clipId/warp/preview", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error creating warp preview:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid preview options", details: error?.issues });
+        .json({ error: "Invalid preview options", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to create warp preview" });
   }
@@ -285,17 +285,17 @@ router?.post("/clips/:clipId/warp/preview", requireAuth, async (req, res) => {
 router?.post("/clips/:clipId/warp/commit", requireAuth, async (req, res) => {
   try {
     const { clipId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _ownership = await verifyClipOwnership(clipId, userId);
+    const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
       return res?.status(404).json({ error: "Clip not found or unauthorized" });
     }
 
     const { clip } = ownership;
-    const _options = warpCommitSchema?.parse(req?.body);
+    const options = warpCommitSchema?.parse(req?.body);
 
-    const _markers = await db?.query.warpMarkers?.findMany({
+    const markers = await db?.query.warpMarkers?.findMany({
       where: eq(warpMarkers?.clipId, clipId),
       orderBy: [asc(warpMarkers?.sourceTime)],
     });
@@ -306,21 +306,21 @@ router?.post("/clips/:clipId/warp/commit", requireAuth, async (req, res) => {
         .json({ error: "No warp markers found for this clip" });
     }
 
-    const _jobId = randomUUID();
-    const _jobData = {
+    const jobId = randomUUID();
+    const jobData = {
       userId,
       clipId,
-      storageKey: clip?.filePath,
-      markers: markers?.map((m: Record<string, unknown>) => ({
-        id: m?.id,
-        sourceTime: m?.sourceTime,
-        targetTime: m?.targetTime,
+      storageKey: clip.filePath,
+      markers: markers.map((m: Record<string, unknown>) => ({
+        id: m.id,
+        sourceTime: m.sourceTime,
+        targetTime: m.targetTime,
       })),
-      pitchShift: options?.pitchShift ?? clip?.pitchShift,
-      preserveFormants: options?.preserveFormants ?? clip?.preserveFormants,
-      algorithm: options?.algorithm,
-      quality: options?.quality,
-      replaceOriginal: options?.replaceOriginal,
+      pitchShift: options.pitchShift ?? clip?.pitchShift,
+      preserveFormants: options.preserveFormants ?? clip?.preserveFormants,
+      algorithm: options.algorithm,
+      quality: options.quality,
+      replaceOriginal: options.replaceOriginal,
     };
 
     await queueService?.addJob(
@@ -342,10 +342,10 @@ router?.post("/clips/:clipId/warp/commit", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error committing warp:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid commit options", details: error?.issues });
+        .json({ error: "Invalid commit options", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to commit warp" });
   }
@@ -354,23 +354,23 @@ router?.post("/clips/:clipId/warp/commit", requireAuth, async (req, res) => {
 router?.get("/clips/:clipId/warp/transients", requireAuth, async (req, res) => {
   try {
     const { clipId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _ownership = await verifyClipOwnership(clipId, userId);
+    const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
       return res?.status(404).json({ error: "Clip not found or unauthorized" });
     }
 
     const { clip } = ownership;
-    const _options = transientDetectionSchema?.parse(req?.query);
+    const options = transientDetectionSchema?.parse(req?.query);
 
-    const _jobId = randomUUID();
-    const _jobData = {
+    const jobId = randomUUID();
+    const jobData = {
       userId,
       clipId,
-      storageKey: clip?.filePath,
-      sensitivity: options?.sensitivity,
-      minTransientGap: options?.minTransientGap,
+      storageKey: clip.filePath,
+      sensitivity: options.sensitivity,
+      minTransientGap: options.minTransientGap,
     };
 
     await queueService?.addJob(
@@ -391,10 +391,10 @@ router?.get("/clips/:clipId/warp/transients", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error detecting transients:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid detection options", details: error?.issues });
+        .json({ error: "Invalid detection options", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to detect transients" });
   }
@@ -403,31 +403,31 @@ router?.get("/clips/:clipId/warp/transients", requireAuth, async (req, res) => {
 router?.post("/clips/:clipId/warp/quantize", requireAuth, async (req, res) => {
   try {
     const { clipId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _ownership = await verifyClipOwnership(clipId, userId);
+    const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
       return res?.status(404).json({ error: "Clip not found or unauthorized" });
     }
 
     const { clip } = ownership;
 
-    const _quantizeSchema = z?.object({
-      targetBpm: z?.number().min(20).max(300),
-      strength: z?.number().min(0).max(1).optional().default(1?.0),
-      sensitivity: z?.number().min(0).max(1).optional().default(0?.5),
+    const quantizeSchema = z.object({
+      targetBpm: z.number().min(20).max(300),
+      strength: z.number().min(0).max(1).optional().default(1.0),
+      sensitivity: z.number().min(0).max(1).optional().default(0.5),
     });
 
-    const _options = quantizeSchema?.parse(req?.body);
+    const options = quantizeSchema?.parse(req?.body);
 
-    const _jobId = randomUUID();
-    const _jobData = {
+    const jobId = randomUUID();
+    const jobData = {
       userId,
       clipId,
-      storageKey: clip?.filePath,
-      targetBpm: options?.targetBpm,
-      strength: options?.strength,
-      sensitivity: options?.sensitivity,
+      storageKey: clip.filePath,
+      targetBpm: options.targetBpm,
+      strength: options.strength,
+      sensitivity: options.sensitivity,
     };
 
     await queueService?.addJob("audio-quantize", `quantize-${jobId}`, jobData, {
@@ -443,10 +443,10 @@ router?.post("/clips/:clipId/warp/quantize", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error quantizing to grid:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid quantize options", details: error?.issues });
+        .json({ error: "Invalid quantize options", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to start quantization" });
   }
@@ -455,9 +455,9 @@ router?.post("/clips/:clipId/warp/quantize", requireAuth, async (req, res) => {
 router?.delete("/clips/:clipId/warp/markers", requireAuth, async (req, res) => {
   try {
     const { clipId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _ownership = await verifyClipOwnership(clipId, userId);
+    const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
       return res?.status(404).json({ error: "Clip not found or unauthorized" });
     }
@@ -479,37 +479,37 @@ router?.delete("/clips/:clipId/warp/markers", requireAuth, async (req, res) => {
 router?.get("/clips/:clipId/warp/tempo", requireAuth, async (req, res) => {
   try {
     const { clipId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _ownership = await verifyClipOwnership(clipId, userId);
+    const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
       return res?.status(404).json({ error: "Clip not found or unauthorized" });
     }
 
     const { clip } = ownership;
 
-    const _markers = await db?.query.warpMarkers?.findMany({
+    const markers = await db?.query.warpMarkers?.findMany({
       where: eq(warpMarkers?.clipId, clipId),
       orderBy: [asc(warpMarkers?.sourceTime)],
     });
 
-    const _stretchRatio = clip?.timeStretch || 1?.0;
-    const _originalDuration = clip?.duration / stretchRatio;
+    const stretchRatio = clip?.timeStretch || 1.0;
+    const originalDuration = clip?.duration / stretchRatio;
 
     res?.json({
       clipId,
       originalDuration,
-      currentDuration: clip?.duration,
+      currentDuration: clip.duration,
       timeStretch: stretchRatio,
-      pitchShift: clip?.pitchShift || 0,
-      preserveFormants: clip?.preserveFormants ?? true,
-      markerCount: markers?.length,
-      markers: markers?.map((m: Record<string, unknown>) => ({
-        id: m?.id,
-        sourceTime: m?.sourceTime,
-        targetTime: m?.targetTime,
-        markerType: m?.markerType,
-        isAnchor: m?.isAnchor,
+      pitchShift: clip.pitchShift || 0,
+      preserveFormants: clip.preserveFormants ?? true,
+      markerCount: markers.length,
+      markers: markers.map((m: Record<string, unknown>) => ({
+        id: m.id,
+        sourceTime: m.sourceTime,
+        targetTime: m.targetTime,
+        markerType: m.markerType,
+        isAnchor: m.isAnchor,
       })),
     });
   } catch (error: unknown) {

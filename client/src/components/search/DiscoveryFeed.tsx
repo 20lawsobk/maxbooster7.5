@@ -490,7 +490,7 @@ export function SimilarBeatsSection({
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Zap className="h-5 w-5 text-yellow-400" />
-          Similar to "{data.sourceBeat?.title}"
+          Similar to "{data.sourceBeat.title}"
         </CardTitle>
         <p className="text-sm text-slate-400">
           Beats with similar{" "}

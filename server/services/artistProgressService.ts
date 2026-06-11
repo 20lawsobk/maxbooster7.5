@@ -69,9 +69,9 @@ class ArtistProgressService {
 
   async captureSnapshot(userId: string): Promise<void> {
     try {
-      const _today = new Date().toISOString().split("T")[0];
+      const today = new Date().toISOString().split("T")[0];
 
-      const _existingSnapshot = await db
+      const existingSnapshot = await db
         .select()
         .from(artistProgressSnapshots)
         .where(
@@ -87,7 +87,7 @@ class ArtistProgressService {
         return;
       }
 
-      const _analyticsData = await db
+      const analyticsData = await db
         .select({
           totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
           totalFollowers: sql<number>`COALESCE(MAX(${analytics?.followers}), 0)`,
@@ -96,31 +96,31 @@ class ArtistProgressService {
         .from(analytics)
         .where(eq(analytics?.userId, userId));
 
-      const _releasesCount = await db
+      const releasesCount = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(releases)
         .where(eq(releases?.userId, userId));
 
-      const _projectsCount = await db
+      const projectsCount = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(projects)
         .where(eq(projects?.userId, userId));
 
-      const _stats = analyticsData[0] || {
+      const stats = analyticsData[0] || {
         totalStreams: 0,
         totalFollowers: 0,
         totalRevenue: 0,
       };
-      const _releaseCount = releasesCount[0]?.count || 0;
-      const _projectCount = projectsCount[0]?.count || 0;
+      const releaseCount = releasesCount[0]?.count || 0;
+      const projectCount = projectsCount[0]?.count || 0;
 
-      const _engagementScore = this?.calculateEngagementScore(
+      const engagementScore = this?.calculateEngagementScore(
         Number(stats?.totalStreams),
         Number(stats?.totalFollowers),
         releaseCount,
       );
 
-      const _growthRate = await this?.calculateCurrentGrowthRate(userId);
+      const growthRate = await this?.calculateCurrentGrowthRate(userId);
 
       await db?.insert(artistProgressSnapshots).values({
         userId,
@@ -134,7 +134,7 @@ class ArtistProgressService {
       });
 
       logger?.info(
-        `Captured snapshot for user ${userId}: streams=${stats?.totalStreams}, followers=${stats?.totalFollowers}`,
+        `Captured snapshot for user ${userId}: streams=${stats.totalStreams}, followers=${stats?.totalFollowers}`,
       );
     } catch (error) {
       logger?.warn(
@@ -147,10 +147,10 @@ class ArtistProgressService {
 
   async getProgressHistory(userId: string, days: number = 30): Promise<any[]> {
     try {
-      const _startDate = new Date();
+      const startDate = new Date();
       startDate?.setDate(startDate?.getDate() - days);
 
-      const _history = await db
+      const history = await db
         .select()
         .from(artistProgressSnapshots)
         .where(
@@ -169,13 +169,13 @@ class ArtistProgressService {
       }
 
       return history?.map((snapshot) => ({
-        date: snapshot?.snapshotDate,
-        streams: snapshot?.totalStreams,
-        followers: snapshot?.totalFollowers,
-        revenue: snapshot?.totalRevenue,
-        releases: snapshot?.totalReleases,
-        engagementScore: snapshot?.engagementScore,
-        growthRate: snapshot?.growthRate,
+        date: snapshot.snapshotDate,
+        streams: snapshot.totalStreams,
+        followers: snapshot.totalFollowers,
+        revenue: snapshot.totalRevenue,
+        releases: snapshot.totalReleases,
+        engagementScore: snapshot.engagementScore,
+        growthRate: snapshot.growthRate,
       }));
     } catch (error) {
       logger?.warn(
@@ -188,11 +188,11 @@ class ArtistProgressService {
 
   async calculateGrowthMetrics(userId: string): Promise<GrowthMetrics> {
     try {
-      const _now = new Date();
-      const _oneWeekAgo = new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const _twoWeeksAgo = new Date(now?.getTime() - 14 * 24 * 60 * 60 * 1000);
-      const _oneMonthAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const _twoMonthsAgo = new Date(now?.getTime() - 60 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const oneWeekAgo = new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const twoWeeksAgo = new Date(now?.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const oneMonthAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const twoMonthsAgo = new Date(now?.getTime() - 60 * 24 * 60 * 60 * 1000);
 
       const [currentWeek, previousWeek, currentMonth, previousMonth] =
         await Promise?.all([
@@ -218,50 +218,50 @@ class ArtistProgressService {
           ),
         ]);
 
-      const _weekOverWeek = {
-        streams: this?.calculatePercentChange(
+      const weekOverWeek = {
+        streams: this.calculatePercentChange(
           previousWeek?.streams,
           currentWeek?.streams,
         ),
-        followers: this?.calculatePercentChange(
+        followers: this.calculatePercentChange(
           previousWeek?.followers,
           currentWeek?.followers,
         ),
-        revenue: this?.calculatePercentChange(
+        revenue: this.calculatePercentChange(
           previousWeek?.revenue,
           currentWeek?.revenue,
         ),
-        engagement: this?.calculatePercentChange(
+        engagement: this.calculatePercentChange(
           previousWeek?.engagement,
           currentWeek?.engagement,
         ),
       };
 
-      const _monthOverMonth = {
-        streams: this?.calculatePercentChange(
+      const monthOverMonth = {
+        streams: this.calculatePercentChange(
           previousMonth?.streams,
           currentMonth?.streams,
         ),
-        followers: this?.calculatePercentChange(
+        followers: this.calculatePercentChange(
           previousMonth?.followers,
           currentMonth?.followers,
         ),
-        revenue: this?.calculatePercentChange(
+        revenue: this.calculatePercentChange(
           previousMonth?.revenue,
           currentMonth?.revenue,
         ),
-        engagement: this?.calculatePercentChange(
+        engagement: this.calculatePercentChange(
           previousMonth?.engagement,
           currentMonth?.engagement,
         ),
       };
 
-      const _avgGrowth =
+      const avgGrowth =
         (weekOverWeek?.streams + weekOverWeek?.followers + weekOverWeek?.revenue) /
         3;
-      const _trend =
+      const trend =
         avgGrowth > 5 ? "rising" : avgGrowth < -5 ? "declining" : "stable";
-      const _velocity = Math?.abs(avgGrowth);
+      const velocity = Math?.abs(avgGrowth);
 
       return { weekOverWeek, monthOverMonth, trend, velocity };
     } catch (error) {
@@ -275,14 +275,14 @@ class ArtistProgressService {
 
   async getCareerMilestones(userId: string): Promise<CareerMilestone[]> {
     try {
-      const _latestSnapshot = await db
+      const latestSnapshot = await db
         .select()
         .from(artistProgressSnapshots)
         .where(eq(artistProgressSnapshots?.userId, userId))
         .orderBy(desc(artistProgressSnapshots?.snapshotDate))
         .limit(1);
 
-      const _snapshot = latestSnapshot[0] || {
+      const snapshot = latestSnapshot[0] || {
         totalStreams: 0,
         totalFollowers: 0,
         totalRevenue: 0,
@@ -348,10 +348,10 @@ class ArtistProgressService {
     try {
       await this?.captureSnapshot(userId);
 
-      const _history = await this?.getProgressHistory(userId, 60);
-      const _growthMetrics = await this?.calculateGrowthMetrics(userId);
+      const history = await this?.getProgressHistory(userId, 60);
+      const growthMetrics = await this?.calculateGrowthMetrics(userId);
 
-      const _current = history[history?.length - 1] || {
+      const current = history[history?.length - 1] || {
         streams: 0,
         followers: 0,
         revenue: 0,
@@ -360,10 +360,10 @@ class ArtistProgressService {
         growthRate: 0,
       };
 
-      const _thirtyDaysAgo =
+      const thirtyDaysAgo =
         history[Math?.max(0, history?.length - 31)] || current;
 
-      const _careerScore = this?.calculateCareerScore(
+      const careerScore = this?.calculateCareerScore(
         Number(current?.streams),
         Number(current?.followers),
         Number(current?.revenue),
@@ -371,7 +371,7 @@ class ArtistProgressService {
         growthMetrics?.velocity,
       );
 
-      const _percentileRank = this?.calculatePercentileRank(careerScore);
+      const percentileRank = this?.calculatePercentileRank(careerScore);
 
       return {
         careerScore,
@@ -407,8 +407,8 @@ class ArtistProgressService {
     releases: number,
   ): number {
     if (followers === 0) return 0;
-    const _streamsPerFollower = streams / followers;
-    const _releasesBonus = Math?.min(releases * 2, 20);
+    const streamsPerFollower = streams / followers;
+    const releasesBonus = Math?.min(releases * 2, 20);
     return Math?.min(
       100,
       Math?.round(Math?.log10(streamsPerFollower + 1) * 20 + releasesBonus),
@@ -417,10 +417,10 @@ class ArtistProgressService {
 
   private async calculateCurrentGrowthRate(userId: string): Promise<number> {
     try {
-      const _oneWeekAgo = new Date();
+      const oneWeekAgo = new Date();
       oneWeekAgo?.setDate(oneWeekAgo?.getDate() - 7);
 
-      const _snapshots = await db
+      const snapshots = await db
         .select()
         .from(artistProgressSnapshots)
         .where(
@@ -436,12 +436,12 @@ class ArtistProgressService {
 
       if (snapshots?.length < 2) return 0;
 
-      const _oldest = snapshots[0];
-      const _newest = snapshots[snapshots?.length - 1];
+      const oldest = snapshots[0];
+      const newest = snapshots[snapshots?.length - 1];
 
-      const _oldTotal =
+      const oldTotal =
         Number(oldest?.totalStreams) + Number(oldest?.totalFollowers);
-      const _newTotal =
+      const newTotal =
         Number(newest?.totalStreams) + Number(newest?.totalFollowers);
 
       return this?.calculatePercentChange(oldTotal, newTotal);
@@ -456,7 +456,7 @@ class ArtistProgressService {
     endDate: string,
   ) {
     try {
-      const _result = await db
+      const result = await db
         .select({
           streams: sql<number>`COALESCE(AVG(${artistProgressSnapshots?.totalStreams}), 0)`,
           followers: sql<number>`COALESCE(AVG(${artistProgressSnapshots?.totalFollowers}), 0)`,
@@ -492,11 +492,11 @@ class ArtistProgressService {
     engagement: number,
     velocity: number,
   ): number {
-    const _streamScore = Math?.min(30, Math?.log10(streams + 1) * 5);
-    const _followerScore = Math?.min(25, Math?.log10(followers + 1) * 4);
-    const _revenueScore = Math?.min(20, Math?.log10(revenue + 1) * 4);
-    const _engagementScore = Math?.min(15, engagement * 0?.15);
-    const _velocityScore = Math?.min(10, velocity * 0?.5);
+    const streamScore = Math?.min(30, Math?.log10(streams + 1) * 5);
+    const followerScore = Math?.min(25, Math?.log10(followers + 1) * 4);
+    const revenueScore = Math?.min(20, Math?.log10(revenue + 1) * 4);
+    const engagementScore = Math?.min(15, engagement * 0.15);
+    const velocityScore = Math?.min(10, velocity * 0.5);
 
     return Math?.round(
       streamScore +
@@ -522,7 +522,7 @@ class ArtistProgressService {
     label: string,
     icon: string,
   ): void {
-    const _thresholds = this?.milestoneThresholds[type];
+    const thresholds = this?.milestoneThresholds[type];
     for (const threshold of thresholds) {
       if (currentValue >= threshold) {
         milestones?.push({
@@ -577,9 +577,9 @@ class ArtistProgressService {
         engagementScore: 0,
       },
       percentileRank: 0,
-      growthMetrics: this?.getDefaultGrowthMetrics(),
+      growthMetrics: this.getDefaultGrowthMetrics(),
     };
   }
 }
 
-export const _artistProgressService = new ArtistProgressService();
+export const artistProgressService = new ArtistProgressService();

@@ -17,12 +17,12 @@
  */
 
 import { createRequire } from "module";
-import { logger } from "./logger?.js";
-import { env } from "./config/env?.js";
+import { logger } from "./logger.js";
+import { env } from "./config/env.js";
 
-const _isProduction =
+const isProduction =
   process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
-const _dsn = env?.SENTRY_DSN;
+const dsn = env?.SENTRY_DSN;
 
 // Many subsystems (circuit breakers, workers, reliability monitors) each attach
 // listeners to the global process object.  Raise the cap to silence the Node?.js
@@ -31,9 +31,9 @@ process?.setMaxListeners(50);
 
 // ── Dynamic Sentry load — safe even when @sentry/node is absent ──────────────
 // Using createRequire() inside a try/catch works in both ESM (development, tsx)
-// and CJS (production bundle — esbuild converts import?.meta.url to __filename).
+// and CJS (production bundle — esbuild converts import.meta.url to __filename).
 // A missing module is caught gracefully instead of crashing the worker.
-const __moduleRequire = createRequire(import?.meta.url);
+const _moduleRequire = createRequire(import.meta.url);
 type SentryModule = typeof import("@sentry/node");
 let Sentry: SentryModule | null = null;
 
@@ -41,9 +41,9 @@ try {
   Sentry = _moduleRequire("@sentry/node") as SentryModule;
   Sentry?.init({
     dsn: isProduction ? dsn : undefined,
-    tracesSampleRate: isProduction ? 0?.2 : 0,
-    profilesSampleRate: isProduction ? 0?.05 : 0,
-    environment: process?.env.NODE_ENV || "development",
+    tracesSampleRate: isProduction ? 0.2 : 0,
+    profilesSampleRate: isProduction ? 0.05 : 0,
+    environment: process.env.NODE_ENV || "development",
     beforeSend(event) {
       if (!isProduction) return null;
       return event;
@@ -60,20 +60,20 @@ try {
 
 // Non-fatal error codes — pipe/stream/network disconnects that occur during
 // normal operation and must never trigger a shutdown or Sentry alert.
-const _NON_FATAL_CODES = new Set(["EPIPE", "ECONNRESET", "ECONNABORTED"]);
+const NON_FATAL_CODES = new Set(["EPIPE", "ECONNRESET", "ECONNABORTED"]);
 
 // Non-fatal message patterns — transient PDIM, LuaExecutor, and BullMQ errors
 // expected under load and handled automatically by the ChainFixer / circuit breaker.
-const _NON_FATAL_MSG =
+const NON_FATAL_MSG =
   /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|LuaExecutor.*timeout/i;
 
 // Completely silent patterns — circuit-open rejections already logged by the
 // circuit breaker itself; logging them again here just duplicates the stack.
-const _SILENT_MSG =
+const SILENT_MSG =
   /\[LuaExecutor\] PDIM circuit OPEN|PDIM circuit OPEN.*skipping Worker|Circuit OPEN.*skipping/i;
 
 process?.on("uncaughtException", (err) => {
-  const _code = (err as NodeJS?.ErrnoException).code;
+  const code = (err as NodeJS.ErrnoException).code;
 
   // Non-fatal stream/pipe errors — log as warn and continue.
   if (code && NON_FATAL_CODES?.has(code)) {
@@ -104,8 +104,8 @@ process?.on("uncaughtException", (err) => {
 });
 
 process?.on("unhandledRejection", (reason: Record<string, unknown>) => {
-  const _err = reason instanceof Error ? reason : new Error(String(reason));
-  const _code = (reason as NodeJS?.ErrnoException)?.code;
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  const code = (reason as NodeJS.ErrnoException)?.code;
 
   // Completely silent: circuit-open rejections are already owned by the
   // circuit breaker's own rate-limited logging — duplicating them here

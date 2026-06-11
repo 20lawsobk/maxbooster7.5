@@ -111,70 +111,70 @@ export interface OfflineStorageAPI {
 
 export const offlineStorage: OfflineStorageAPI = {
   queue: {
-    enqueue: offlineQueue?.enqueue.bind(offlineQueue),
-    dequeue: offlineQueue?.dequeue.bind(offlineQueue),
-    getAction: offlineQueue?.getAction.bind(offlineQueue),
-    getAllPending: offlineQueue?.getAllPending.bind(offlineQueue),
-    getByStatus: offlineQueue?.getByStatus.bind(offlineQueue),
-    getPendingCount: offlineQueue?.getPendingCount.bind(offlineQueue),
-    markCompleted: offlineQueue?.markCompleted.bind(offlineQueue),
-    markFailed: offlineQueue?.markFailed.bind(offlineQueue),
-    recordConflict: offlineQueue?.recordConflict.bind(offlineQueue),
-    resolveConflict: offlineQueue?.resolveConflict.bind(offlineQueue),
-    getConflicts: offlineQueue?.getConflicts.bind(offlineQueue),
-    clearCompleted: offlineQueue?.clearCompleted.bind(offlineQueue),
-    clearAll: offlineQueue?.clearAll.bind(offlineQueue),
-    getStats: offlineQueue?.getStats.bind(offlineQueue),
-    on: offlineQueue?.on.bind(offlineQueue),
-    off: offlineQueue?.off.bind(offlineQueue),
+    enqueue: offlineQueue.enqueue.bind(offlineQueue),
+    dequeue: offlineQueue.dequeue.bind(offlineQueue),
+    getAction: offlineQueue.getAction.bind(offlineQueue),
+    getAllPending: offlineQueue.getAllPending.bind(offlineQueue),
+    getByStatus: offlineQueue.getByStatus.bind(offlineQueue),
+    getPendingCount: offlineQueue.getPendingCount.bind(offlineQueue),
+    markCompleted: offlineQueue.markCompleted.bind(offlineQueue),
+    markFailed: offlineQueue.markFailed.bind(offlineQueue),
+    recordConflict: offlineQueue.recordConflict.bind(offlineQueue),
+    resolveConflict: offlineQueue.resolveConflict.bind(offlineQueue),
+    getConflicts: offlineQueue.getConflicts.bind(offlineQueue),
+    clearCompleted: offlineQueue.clearCompleted.bind(offlineQueue),
+    clearAll: offlineQueue.clearAll.bind(offlineQueue),
+    getStats: offlineQueue.getStats.bind(offlineQueue),
+    on: offlineQueue.on.bind(offlineQueue),
+    off: offlineQueue.off.bind(offlineQueue),
   },
   drafts: {
-    save: draftStorage?.saveDraft.bind(draftStorage),
-    get: draftStorage?.getDraft.bind(draftStorage),
-    getAll: draftStorage?.getAllDrafts.bind(draftStorage),
-    delete: draftStorage?.deleteDraft.bind(draftStorage),
-    hasDraft: draftStorage?.hasDraft.bind(draftStorage),
-    detectConflict: draftStorage?.detectConflict.bind(draftStorage),
-    setupAutoSave: draftStorage?.setupAutoSave.bind(draftStorage),
-    stopAutoSave: draftStorage?.stopAutoSave.bind(draftStorage),
-    recover: draftStorage?.recoverDraft.bind(draftStorage),
-    cleanupExpired: draftStorage?.cleanupExpired.bind(draftStorage),
-    clearAll: draftStorage?.clearAll.bind(draftStorage),
-    getStats: draftStorage?.getDraftStats.bind(draftStorage),
-    on: draftStorage?.on.bind(draftStorage),
-    off: draftStorage?.off.bind(draftStorage),
+    save: draftStorage.saveDraft.bind(draftStorage),
+    get: draftStorage.getDraft.bind(draftStorage),
+    getAll: draftStorage.getAllDrafts.bind(draftStorage),
+    delete: draftStorage.deleteDraft.bind(draftStorage),
+    hasDraft: draftStorage.hasDraft.bind(draftStorage),
+    detectConflict: draftStorage.detectConflict.bind(draftStorage),
+    setupAutoSave: draftStorage.setupAutoSave.bind(draftStorage),
+    stopAutoSave: draftStorage.stopAutoSave.bind(draftStorage),
+    recover: draftStorage.recoverDraft.bind(draftStorage),
+    cleanupExpired: draftStorage.cleanupExpired.bind(draftStorage),
+    clearAll: draftStorage.clearAll.bind(draftStorage),
+    getStats: draftStorage.getDraftStats.bind(draftStorage),
+    on: draftStorage.on.bind(draftStorage),
+    off: draftStorage.off.bind(draftStorage),
   },
   cache: {
-    set: offlineCache?.set.bind(offlineCache),
-    get: offlineCache?.get.bind(offlineCache),
-    getWithMetadata: offlineCache?.getWithMetadata.bind(offlineCache),
-    has: offlineCache?.has.bind(offlineCache),
-    delete: offlineCache?.delete.bind(offlineCache),
-    getByCategory: offlineCache?.getByCategory.bind(offlineCache),
-    invalidateCategory: offlineCache?.invalidateCategory.bind(offlineCache),
-    invalidateByVersion: offlineCache?.invalidateByVersion.bind(offlineCache),
-    cleanupExpired: offlineCache?.cleanupExpired.bind(offlineCache),
-    clear: offlineCache?.clear.bind(offlineCache),
-    getStats: offlineCache?.getStats.bind(offlineCache),
-    cacheAnalytics: offlineCache?.cacheAnalytics.bind(offlineCache),
-    cacheDashboard: offlineCache?.cacheDashboard.bind(offlineCache),
-    cacheUserData: offlineCache?.cacheUserData.bind(offlineCache),
-    cacheUIData: offlineCache?.cacheUIData.bind(offlineCache),
-    prefetch: offlineCache?.prefetch.bind(offlineCache),
-    on: offlineCache?.on.bind(offlineCache),
+    set: offlineCache.set.bind(offlineCache),
+    get: offlineCache.get.bind(offlineCache),
+    getWithMetadata: offlineCache.getWithMetadata.bind(offlineCache),
+    has: offlineCache.has.bind(offlineCache),
+    delete: offlineCache.delete.bind(offlineCache),
+    getByCategory: offlineCache.getByCategory.bind(offlineCache),
+    invalidateCategory: offlineCache.invalidateCategory.bind(offlineCache),
+    invalidateByVersion: offlineCache.invalidateByVersion.bind(offlineCache),
+    cleanupExpired: offlineCache.cleanupExpired.bind(offlineCache),
+    clear: offlineCache.clear.bind(offlineCache),
+    getStats: offlineCache.getStats.bind(offlineCache),
+    cacheAnalytics: offlineCache.cacheAnalytics.bind(offlineCache),
+    cacheDashboard: offlineCache.cacheDashboard.bind(offlineCache),
+    cacheUserData: offlineCache.cacheUserData.bind(offlineCache),
+    cacheUIData: offlineCache.cacheUIData.bind(offlineCache),
+    prefetch: offlineCache.prefetch.bind(offlineCache),
+    on: offlineCache.on.bind(offlineCache),
   },
   sync: {
-    sync: syncManager?.sync.bind(syncManager),
-    pause: syncManager?.pause.bind(syncManager),
-    resume: syncManager?.resume.bind(syncManager),
-    retryFailed: syncManager?.retryFailed.bind(syncManager),
-    forceSyncAction: syncManager?.forceSyncAction.bind(syncManager),
-    getStatus: syncManager?.getStatus.bind(syncManager),
-    getProgress: syncManager?.getProgress.bind(syncManager),
-    isOnline: syncManager?.isNetworkOnline.bind(syncManager),
-    getQueueStats: syncManager?.getQueueStats.bind(syncManager),
-    on: syncManager?.on.bind(syncManager),
-    off: syncManager?.off.bind(syncManager),
+    sync: syncManager.sync.bind(syncManager),
+    pause: syncManager.pause.bind(syncManager),
+    resume: syncManager.resume.bind(syncManager),
+    retryFailed: syncManager.retryFailed.bind(syncManager),
+    forceSyncAction: syncManager.forceSyncAction.bind(syncManager),
+    getStatus: syncManager.getStatus.bind(syncManager),
+    getProgress: syncManager.getProgress.bind(syncManager),
+    isOnline: syncManager.isNetworkOnline.bind(syncManager),
+    getQueueStats: syncManager.getQueueStats.bind(syncManager),
+    on: syncManager.on.bind(syncManager),
+    off: syncManager.off.bind(syncManager),
   },
   init: initOfflineSystem,
 };
@@ -237,15 +237,15 @@ export async function fetchWithCache<T = unknown>(
     staleWhileRevalidate?: boolean;
   },
 ): Promise<T> {
-  const _cached = await offlineCache?.get<T>(key);
+  const cached = await offlineCache?.get<T>(key);
 
   if (cached !== null) {
     if (options?.staleWhileRevalidate) {
       fetcher()
         .then((data) => {
           offlineCache?.set(key, data, {
-            category: options?.category,
-            ttlMs: options?.ttlMs,
+            category: options.category,
+            ttlMs: options.ttlMs,
           });
         })
         .catch((err: unknown) =>
@@ -256,14 +256,14 @@ export async function fetchWithCache<T = unknown>(
   }
 
   try {
-    const _data = await fetcher();
+    const data = await fetcher();
     await offlineCache?.set(key, data, {
-      category: options?.category,
-      ttlMs: options?.ttlMs,
+      category: options.category,
+      ttlMs: options.ttlMs,
     });
     return data;
   } catch (error) {
-    const _staleCached = await offlineCache?.get<T>(key);
+    const staleCached = await offlineCache?.get<T>(key);
     if (staleCached !== null) {
       return staleCached;
     }

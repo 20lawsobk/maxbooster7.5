@@ -7,26 +7,26 @@
 
 import { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { randomUUID } from "crypto";
-import { isRoutesReady } from "../lib/bootState?.js";
-import { selfHealingSecurityMiddleware } from "../middleware/selfHealingMiddleware?.js";
-import { Sentry } from "../instrument?.js";
-import { DistributedRateLimiter } from "../middleware/scalableRateLimiter?.js";
-import { getRedisClient } from "../lib/redisClient?.js";
-import { env } from "../config/env?.js";
-import { isProductionEnv } from "../lib/envHelpers?.js";
+import { isRoutesReady } from "../lib/bootState.js";
+import { selfHealingSecurityMiddleware } from "../middleware/selfHealingMiddleware.js";
+import { Sentry } from "../instrument.js";
+import { DistributedRateLimiter } from "../middleware/scalableRateLimiter.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { env } from "../config/env.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 function isInternalIp(ip: string): boolean {
   if (!ip) return false;
-  const _stripped = ip?.replace(/^::ffff:/, "");
+  const stripped = ip?.replace(/^::ffff:/, "");
   return (
-    stripped === "127?.0.0?.1" ||
+    stripped === "127.0.0.1" ||
     stripped === "::1" ||
     stripped === "localhost" ||
     stripped?.startsWith("10.") ||
-    stripped?.startsWith("172?.16.") ||
-    stripped?.startsWith("192?.168.")
+    stripped?.startsWith("172.16.") ||
+    stripped?.startsWith("192.168.")
   );
 }
 
@@ -44,7 +44,7 @@ function sanitizeObject(
     return obj?.map((item) => sanitizeObject(item, depth + 1));
   }
 
-  const _dangerous = ["__proto__", "constructor", "prototype"];
+  const dangerous = ["__proto__", "constructor", "prototype"];
   const sanitized: Record<string, unknown> = {};
 
   for (const key of Object?.keys(obj)) {
@@ -69,10 +69,10 @@ export function prototypePollutionMiddleware(
 ): void {
   try {
     if (req?.body && typeof req?.body === "object") {
-      req?.body = sanitizeObject(req?.body);
+      req.body = sanitizeObject(req?.body);
     }
     if (req?.query && typeof req?.query === "object") {
-      const _sanitized = sanitizeObject(req?.query);
+      const sanitized = sanitizeObject(req?.query);
       for (const key of Object?.keys(req?.query)) {
         if (!(key in sanitized))
           delete (req?.query as Record<string, unknown>)[key];
@@ -80,7 +80,7 @@ export function prototypePollutionMiddleware(
       Object?.assign(req?.query, sanitized);
     }
     if (req?.params && typeof req?.params === "object") {
-      const _sanitizedParams = sanitizeObject(req?.params);
+      const sanitizedParams = sanitizeObject(req?.params);
       Object?.assign(req?.params, sanitizedParams);
     }
     next();
@@ -106,17 +106,17 @@ export function globalErrorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  const _requestId = (req as Record<string, unknown>).requestId || "unknown";
+  const requestId = (req as Record<string, unknown>).requestId || "unknown";
 
   let statusCode = 500;
   let message = err?.message || "Internal server error";
 
   if (err?.name === "ZodError") {
     statusCode = 400;
-    const _issues = Array?.isArray((err as Record<string, unknown>).issues)
+    const issues = Array?.isArray((err as Record<string, unknown>).issues)
       ? (err as Record<string, unknown>).issues
       : [];
-    const _firstIssue = issues[0];
+    const firstIssue = issues[0];
     message = firstIssue
       ? `Validation failed: ${firstIssue?.path?.length ? firstIssue?.path.join(".") + " - " : ""}${firstIssue?.message}`
       : "Validation failed";
@@ -133,10 +133,10 @@ export function globalErrorHandler(
     logger?.warn(
       {
         requestId,
-        error: err?.message,
-        stack: err?.stack,
-        path: req?.path,
-        method: req?.method,
+        error: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
         userId: (req?.user as Record<string, unknown>)?.id,
       },
       `[${requestId}] Unhandled error: ${err?.message}`,
@@ -156,14 +156,14 @@ export function globalErrorHandler(
     }
   }
 
-  const _isDev = !isProductionEnv();
+  const isDev = !isProductionEnv();
 
   // Sanitize infrastructure-level error messages before surfacing to clients.
   // PDIM / circuit-breaker errors are service-layer internals — they're not
   // useful for debugging application logic and should never be shown verbatim.
-  const _isPdimError =
-    /^(\[?PDIM\]?|Circuit OPEN|PDIM HTTP|PDIM returned)/i?.test(message);
-  const _clientMessage = isPdimError
+  const isPdimError =
+    /^(\[?PDIM\]?|Circuit OPEN|PDIM HTTP|PDIM returned)/i.test(message);
+  const clientMessage = isPdimError
     ? "A temporary service issue occurred. Please try again in a moment."
     : isDev
       ? message
@@ -171,7 +171,7 @@ export function globalErrorHandler(
         ? "Internal server error"
         : message;
 
-  res?.status(statusCode).json({
+  res.status(statusCode).json({
     success: false,
     error: clientMessage,
     requestId,
@@ -187,9 +187,9 @@ export function requestIdMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  const _requestId = (req?.headers["x-request-id"] as string) || randomUUID();
+  const requestId = (req.headers["x-request-id"] as string) || randomUUID();
   (req as Record<string, unknown>).requestId = requestId;
-  res?.setHeader("x-request-id", requestId);
+  res.setHeader("x-request-id", requestId);
   next();
 }
 
@@ -201,28 +201,28 @@ export function requestLoggingMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  const _start = Date?.now();
-  const _requestId = (req as Record<string, unknown>).requestId;
+  const start = Date.now();
+  const requestId = (req as Record<string, unknown>).requestId;
 
-  res?.on("finish", () => {
-    const _duration = Date?.now() - start;
+  res.on("finish", () => {
+    const duration = Date.now() - start;
     // 401/403 are expected auth flows (unauthenticated clients, token expiry) — log at INFO.
-    const _isAuthStatus = res?.statusCode === 401 || res?.statusCode === 403;
+    const isAuthStatus = res.statusCode === 401 || res.statusCode === 403;
     // Static/Vite asset 404s are browser SW cache artifacts on restart — not actionable.
-    const _isStaticAsset =
-      req?.path.startsWith("/assets/") ||
-      req?.path.startsWith("/src/") ||
-      req?.path.startsWith("/@fs/") ||
-      req?.path.startsWith("/@vite") ||
-      /\.(js|css|map|woff2?|ttf|eot|svg|png|ico|webp)(\?|$)/.test(req?.path);
-    const _isAsset404 = res?.statusCode === 404 && isStaticAsset;
+    const isStaticAsset =
+      req.path.startsWith("/assets/") ||
+      req.path.startsWith("/src/") ||
+      req.path.startsWith("/@fs/") ||
+      req.path.startsWith("/@vite") ||
+      /\.(js|css|map|woff2?|ttf|eot|svg|png|ico|webp)(\?|$)/.test(req.path);
+    const isAsset404 = res.statusCode === 404 && isStaticAsset;
     // 404s during the boot window (before registerRoutes() completes) are startup
     // races — the route is not yet mounted, not a real missing-endpoint error.
-    const _isBootWindow404 = res?.statusCode === 404 && !isRoutesReady();
-    const _level =
-      res?.statusCode >= 500
+    const isBootWindow404 = res.statusCode === 404 && !isRoutesReady();
+    const level =
+      res.statusCode >= 500
         ? "error"
-        : res?.statusCode >= 400 &&
+        : res.statusCode >= 400 &&
             !isAuthStatus &&
             !isAsset404 &&
             !isBootWindow404
@@ -230,7 +230,7 @@ export function requestLoggingMiddleware(
           : "info";
 
     logger[level](
-      `[${requestId}] ${req?.method} ${req?.path} - ${res?.statusCode} (${duration}ms)`,
+      `[${requestId}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`,
     );
   });
 
@@ -247,52 +247,52 @@ export function applyMandatoryMiddleware(
   const loadedMiddleware: string[] = [];
   const failedMiddleware: string[] = [];
 
-  logger?.info("════════════════════════════════════════════════════════");
-  logger?.info("🛡️ LOADING MANDATORY SECURITY MIDDLEWARE");
-  logger?.info("════════════════════════════════════════════════════════");
+  logger.info("════════════════════════════════════════════════════════");
+  logger.info("🛡️ LOADING MANDATORY SECURITY MIDDLEWARE");
+  logger.info("════════════════════════════════════════════════════════");
 
   // 1. Request ID (required for correlation)
   try {
-    app?.use(requestIdMiddleware);
-    loadedMiddleware?.push("requestId");
-    logger?.info("   ✓ Request ID middleware");
+    app.use(requestIdMiddleware);
+    loadedMiddleware.push("requestId");
+    logger.info("   ✓ Request ID middleware");
   } catch (error) {
-    failedMiddleware?.push("requestId");
-    logger?.warn({ err: error }, "   ✗ Request ID middleware FAILED");
+    failedMiddleware.push("requestId");
+    logger.warn({ err: error }, "   ✗ Request ID middleware FAILED");
     throw new Error("Failed to load mandatory requestId middleware");
   }
 
   // 2. Request logging
   try {
-    app?.use(requestLoggingMiddleware);
-    loadedMiddleware?.push("requestLogging");
-    logger?.info("   ✓ Request logging middleware");
+    app.use(requestLoggingMiddleware);
+    loadedMiddleware.push("requestLogging");
+    logger.info("   ✓ Request logging middleware");
   } catch (error) {
-    failedMiddleware?.push("requestLogging");
-    logger?.warn({ err: error }, "   ✗ Request logging middleware FAILED");
+    failedMiddleware.push("requestLogging");
+    logger.warn({ err: error }, "   ✗ Request logging middleware FAILED");
     throw new Error("Failed to load mandatory requestLogging middleware");
   }
 
   // 3. Helmet security headers
   // The canonical helmet instance with production-aware CSP is already registered
-  // in server/middleware/security?.ts (securityMiddleware), which runs BEFORE this
+  // in server/middleware/security.ts (securityMiddleware), which runs BEFORE this
   // mandatory middleware block.  Registering a second helmet here would run AFTER
   // the stricter one and its last-write-wins behaviour would silently downgrade the
-  // Content-Security-Policy (e?.g. re-adding 'unsafe-inline' to scriptSrc).
+  // Content-Security-Policy (e.g. re-adding 'unsafe-inline' to scriptSrc).
   // We therefore SKIP the duplicate helmet call here and rely on securityMiddleware.
-  loadedMiddleware?.push("helmet");
-  logger?.info(
+  loadedMiddleware.push("helmet");
+  logger.info(
     "   ✓ Helmet security headers (deferred to securityMiddleware — avoids CSP downgrade)",
   );
 
   // 4. CORS (required)
   try {
-    const _isProduction = isProductionEnv();
+    const isProduction = isProductionEnv();
 
     // Explicit allowlist. In production this includes the deployed domain plus all
     // Replit preview/dev subdomains (used by Replit's webview and deployment system).
     // In development every origin is permitted so local tooling is not blocked.
-    const _explicitOrigin = env?.CORS_ORIGIN || env?.DOMAIN || env?.APP_URL || "";
+    const explicitOrigin = env?.CORS_ORIGIN || env?.DOMAIN || env?.APP_URL || "";
 
     const allowedExactOrigins: string[] = explicitOrigin
       ? explicitOrigin
@@ -311,22 +311,22 @@ export function applyMandatoryMiddleware(
           }
 
           // Always allow Replit's own preview / webview / deployment domains.
-          const _isReplitDomain =
-            origin?.endsWith(".replit?.dev") ||
-            origin?.endsWith(".repl?.co") ||
-            origin?.endsWith(".replit?.app");
+          const isReplitDomain =
+            origin.endsWith(".replit.dev") ||
+            origin.endsWith(".repl.co") ||
+            origin.endsWith(".replit.app");
 
-          // Allow localhost / 127?.0.0?.1 origins (Replit webview preview)
-          const _isLocalOrigin =
-            origin?.startsWith("http://localhost:") ||
-            origin?.startsWith("http://127?.0.0?.1:");
+          // Allow localhost / 127.0.0.1 origins (Replit webview preview)
+          const isLocalOrigin =
+            origin.startsWith("http://localhost:") ||
+            origin.startsWith("http://127.0.0.1:");
 
           // Always allow the platform's own custom domain and all its subdomains
           // (artist storefronts live at *.max-booster?.com).
-          const _isPlatformDomain =
-            origin === "https://max-booster?.com" ||
-            origin === "https://www?.max-booster?.com" ||
-            origin?.endsWith(".max-booster?.com");
+          const isPlatformDomain =
+            origin === "https://max-booster.com" ||
+            origin === "https://www.max-booster.com" ||
+            origin?.endsWith(".max-booster.com");
 
           if (isReplitDomain || isLocalOrigin || isPlatformDomain) {
             callback(null, true);
@@ -340,7 +340,7 @@ export function applyMandatoryMiddleware(
           }
 
           // Production — enforce explicit allowlist.
-          const _allowed = allowedExactOrigins?.includes(origin);
+          const allowed = allowedExactOrigins?.includes(origin);
           if (allowed) {
             callback(null, true);
           } else {
@@ -386,12 +386,12 @@ export function applyMandatoryMiddleware(
 
   // 6. Rate limiting — Redis-backed distributed sliding window; in-memory fallback
   try {
-    const _isDev = !isProductionEnv();
-    const _isLoadTest =
+    const isDev = !isProductionEnv();
+    const isLoadTest =
       process?.env.LOAD_TEST_MODE === "true" ||
       process?.env.DISABLE_RATE_LIMIT === "true";
-    const _maxRequests = isLoadTest ? 1_000_000 : isDev ? 100_000 : 1_000;
-    const _windowMs = 15 * 60 * 1000;
+    const maxRequests = isLoadTest ? 1_000_000 : isDev ? 100_000 : 1_000;
+    const windowMs = 15 * 60 * 1000;
 
     let redisClient: Record<string, unknown> | null = null;
     try {
@@ -400,13 +400,13 @@ export function applyMandatoryMiddleware(
       /* fall through to in-memory */
     }
 
-    const _limiter = new DistributedRateLimiter(
+    const limiter = new DistributedRateLimiter(
       {
         windowMs,
         maxRequests,
         skip: (req) => {
           if (isDev || isLoadTest) return true;
-          const _ip = req?.ip || req?.socket?.remoteAddress || "";
+          const ip = req?.ip || req?.socket?.remoteAddress || "";
           if (isInternalIp(ip)) return true;
           return (
             req?.path === "/health" ||
@@ -415,8 +415,8 @@ export function applyMandatoryMiddleware(
           );
         },
         keyGenerator: (req) => {
-          const _userId = (req as Record<string, unknown>).user?.id;
-          const _ip = req?.ip || req?.socket?.remoteAddress || "unknown";
+          const userId = (req as Record<string, unknown>).user?.id;
+          const ip = req?.ip || req?.socket?.remoteAddress || "unknown";
           return `mandatory:${userId ?? ip}`;
         },
       },
@@ -424,7 +424,7 @@ export function applyMandatoryMiddleware(
     );
     app?.use(limiter?.middleware());
     loadedMiddleware?.push("rateLimit");
-    const _backend = redisClient ? "Redis" : "in-memory";
+    const backend = redisClient ? "Redis" : "in-memory";
     logger?.info(
       `   ✓ Rate limiting middleware (max: ${maxRequests}/15min, backend: ${backend}, skip: ${isDev || isLoadTest ? "dev/test mode" : "disabled"})`,
     );
@@ -436,12 +436,12 @@ export function applyMandatoryMiddleware(
 
   // 7. Strict API rate limiting (for sensitive endpoints) — Redis-backed
   try {
-    const _isDev = !isProductionEnv();
-    const _isLoadTest =
+    const isDev = !isProductionEnv();
+    const isLoadTest =
       process?.env.LOAD_TEST_MODE === "true" ||
       process?.env.DISABLE_RATE_LIMIT === "true";
-    const _maxRequests = isDev || isLoadTest ? 100_000 : 200;
-    const _windowMs = 15 * 60 * 1000;
+    const maxRequests = isDev || isLoadTest ? 100_000 : 200;
+    const windowMs = 15 * 60 * 1000;
 
     let redisClient: Record<string, unknown> | null = null;
     try {
@@ -450,17 +450,17 @@ export function applyMandatoryMiddleware(
       /* fall through to in-memory */
     }
 
-    const _strictLimiter = new DistributedRateLimiter(
+    const strictLimiter = new DistributedRateLimiter(
       {
         windowMs,
         maxRequests,
         skip: (req) => {
           if (isDev || isLoadTest) return true;
-          const _ip = req?.ip || req?.socket?.remoteAddress || "";
+          const ip = req?.ip || req?.socket?.remoteAddress || "";
           if (isInternalIp(ip)) return true;
           // Session maintenance endpoints are exempt — they have their own rate limiter
           // and are required for every page load (not actual login attempts)
-          const _sessionPaths = [
+          const sessionPaths = [
             "/api/auth/refresh-token",
             "/api/auth/me",
             "/api/auth/heartbeat",
@@ -469,7 +469,7 @@ export function applyMandatoryMiddleware(
           return false;
         },
         keyGenerator: (req) => {
-          const _ip = req?.ip || req?.socket?.remoteAddress || "unknown";
+          const ip = req?.ip || req?.socket?.remoteAddress || "unknown";
           return `strict:${ip}`;
         },
       },
@@ -507,7 +507,7 @@ export function applyMandatoryMiddleware(
   logger?.info("════════════════════════════════════════════════════════");
 
   return {
-    success: failedMiddleware?.length === 0,
+    success: failedMiddleware.length === 0,
     loadedMiddleware,
     failedMiddleware,
   };

@@ -221,7 +221,7 @@ export function MasteringDeliveryPanel({
     normalize: true,
     dither: true,
     loudness: -14,
-    filename: project?.title || "Master",
+    filename: project.title || "Master",
   });
   const [exportQueue, setExportQueue] = useState<ExportJob[]>([]);
   const [checklist, setChecklist] =

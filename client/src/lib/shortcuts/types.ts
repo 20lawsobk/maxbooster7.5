@@ -70,7 +70,7 @@ export interface PlatformModifiers {
 }
 
 export function getPlatformModifiers(): PlatformModifiers {
-  const _isMac =
+  const isMac =
     typeof navigator !== "undefined" &&
     /Mac|iPod|iPhone|iPad/.test(navigator?.platform);
 
@@ -86,7 +86,7 @@ export function formatShortcutKeys(
   key: string,
   modifiers?: ShortcutModifier[],
 ): string {
-  const _platform = getPlatformModifiers();
+  const platform = getPlatformModifiers();
   const parts: string[] = [];
 
   if (modifiers?.includes("cmd") || modifiers?.includes("ctrl")) {
@@ -99,7 +99,7 @@ export function formatShortcutKeys(
     parts?.push(platform?.alt);
   }
 
-  const _displayKey = key?.length === 1 ? key?.toUpperCase() : key;
+  const displayKey = key?.length === 1 ? key?.toUpperCase() : key;
   parts?.push(displayKey);
 
   return parts?.join("+");
@@ -109,12 +109,12 @@ export function parseShortcutString(shortcut: string): {
   key: string;
   modifiers: ShortcutModifier[];
 } {
-  const _parts = shortcut?.toLowerCase().split("+");
-  const _key = parts[parts?.length - 1];
+  const parts = shortcut?.toLowerCase().split("+");
+  const key = parts[parts?.length - 1];
   const modifiers: ShortcutModifier[] = [];
 
   for (let i = 0; i < parts?.length - 1; i++) {
-    const _part = parts[i].trim();
+    const part = parts[i].trim();
     if (part === "cmd" || part === "command" || part === "⌘") {
       modifiers?.push("cmd");
     } else if (part === "ctrl" || part === "control") {
@@ -136,23 +136,23 @@ export function matchesShortcut(
   shortcut: ShortcutDefinition,
 ): boolean {
   if (!shortcut?.key || !event?.key) return false;
-  const _platform = getPlatformModifiers();
-  const _modifiers = shortcut?.modifiers || [];
+  const platform = getPlatformModifiers();
+  const modifiers = shortcut?.modifiers || [];
 
-  const _keyMatches =
+  const keyMatches =
     event?.key.toLowerCase() === shortcut?.key.toLowerCase() ||
     event?.code.toLowerCase() === `key${shortcut?.key}`.toLowerCase();
 
-  const _cmdCtrlRequired =
+  const cmdCtrlRequired =
     modifiers?.includes("cmd") || modifiers?.includes("ctrl");
-  const _cmdCtrlPressed = event[platform?.modKey] || event?.ctrlKey;
-  const _cmdCtrlMatches = cmdCtrlRequired === cmdCtrlPressed;
+  const cmdCtrlPressed = event[platform?.modKey] || event?.ctrlKey;
+  const cmdCtrlMatches = cmdCtrlRequired === cmdCtrlPressed;
 
-  const _shiftRequired = modifiers?.includes("shift");
-  const _shiftMatches = shiftRequired === event?.shiftKey;
+  const shiftRequired = modifiers?.includes("shift");
+  const shiftMatches = shiftRequired === event?.shiftKey;
 
-  const _altRequired = modifiers?.includes("alt");
-  const _altMatches = altRequired === event?.altKey;
+  const altRequired = modifiers?.includes("alt");
+  const altMatches = altRequired === event?.altKey;
 
   return keyMatches && cmdCtrlMatches && shiftMatches && altMatches;
 }

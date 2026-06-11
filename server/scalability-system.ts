@@ -2,15 +2,15 @@ import { Request, Response, NextFunction } from "express";
 import {
   getBoosterStateClient,
   BoosterStateClient,
-} from "./lib/boosterStateClient?.js";
+} from "./lib/boosterStateClient.js";
 import { promisify } from "util";
 import { exec } from "child_process";
 import cluster from "cluster";
 import * as os from "os";
-import { logger } from "./logger?.js";
-import { isProductionEnv } from "./lib/envHelpers?.js";
+import { logger } from "./logger.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
-const _execAsync = promisify(exec);
+const execAsync = promisify(exec);
 
 !isProductionEnv();
 let hasLoggedWarning = false;
@@ -27,10 +27,10 @@ export class ScalabilitySystem {
   private isOptimized: boolean = false;
 
   private constructor() {
-    this?.loadBalancer = new LoadBalancer();
-    this?.performanceMonitor = new PerformanceMonitor();
-    this?.autoScaler = new AutoScaler();
-    this?.metrics = {
+    this.loadBalancer = new LoadBalancer();
+    this.performanceMonitor = new PerformanceMonitor();
+    this.autoScaler = new AutoScaler();
+    this.metrics = {
       totalRequests: 0,
       averageResponseTime: 0,
       cacheHitRate: 0,
@@ -39,7 +39,7 @@ export class ScalabilitySystem {
       activeConnections: 0,
       throughput: 0,
       errorRate: 0,
-      lastOptimization: Date?.now(),
+      lastOptimization: Date.now(),
       optimizationScore: 0,
     };
 
@@ -48,15 +48,15 @@ export class ScalabilitySystem {
 
   public static getInstance(): ScalabilitySystem {
     if (!ScalabilitySystem?.instance) {
-      ScalabilitySystem?.instance = new ScalabilitySystem();
+      ScalabilitySystem.instance = new ScalabilitySystem();
     }
     return ScalabilitySystem?.instance;
   }
 
   // Initialize scalability system
   private async initializeSystem(): Promise<void> {
-    this?.client = await getBoosterStateClient();
-    this?.cacheManager = new CacheManager(this?.client);
+    this.client = await getBoosterStateClient();
+    this.cacheManager = new CacheManager(this?.client);
     logger?.info("✅ BoosterState connected for caching");
 
     this?.startPerformanceMonitoring();
@@ -72,7 +72,7 @@ export class ScalabilitySystem {
 
   // Setup cluster for multi-core processing
   private setupCluster(): void {
-    const _numCPUs = os?.cpus().length;
+    const numCPUs = os?.cpus().length;
 
     if (cluster?.isMaster) {
       logger?.info(`🔄 Master process ${process?.pid} is running`);
@@ -141,28 +141,28 @@ export class ScalabilitySystem {
   private async collectMetrics(): Promise<void> {
     try {
       // CPU usage
-      const _cpuUsage = await this?.getCPUUsage();
-      this?.metrics.cpuUsage = cpuUsage;
+      const cpuUsage = await this?.getCPUUsage();
+      this.metrics.cpuUsage = cpuUsage;
 
       // Memory usage
-      const _memoryUsage = await this?.getMemoryUsage();
-      this?.metrics.memoryUsage = memoryUsage;
+      const memoryUsage = await this?.getMemoryUsage();
+      this.metrics.memoryUsage = memoryUsage;
 
       // Active connections
-      const _activeConnections = await this?.getActiveConnections();
-      this?.metrics.activeConnections = activeConnections;
+      const activeConnections = await this?.getActiveConnections();
+      this.metrics.activeConnections = activeConnections;
 
       // Cache hit rate
-      const _cacheHitRate = await this?.cacheManager.getHitRate();
-      this?.metrics.cacheHitRate = cacheHitRate;
+      const cacheHitRate = await this?.cacheManager.getHitRate();
+      this.metrics.cacheHitRate = cacheHitRate;
 
       // Throughput
-      const _throughput = await this?.getThroughput();
-      this?.metrics.throughput = throughput;
+      const throughput = await this?.getThroughput();
+      this.metrics.throughput = throughput;
 
       // Error rate
-      const _errorRate = await this?.getErrorRate();
-      this?.metrics.errorRate = errorRate;
+      const errorRate = await this?.getErrorRate();
+      this.metrics.errorRate = errorRate;
 
       await this?.client.setex(
         "scalability:metrics",
@@ -190,7 +190,7 @@ export class ScalabilitySystem {
   private async getMemoryUsage(): Promise<number> {
     try {
       const { stdout } = await execAsync(
-        "free | grep Mem | awk '{printf \"%.2f\", $3/$2 * 100?.0}'",
+        "free | grep Mem | awk '{printf \"%.2f\", $3/$2 * 100.0}'",
       );
       return parseFloat(stdout?.trim()) || 0;
     } catch (error: unknown) {
@@ -214,10 +214,10 @@ export class ScalabilitySystem {
   private async getThroughput(): Promise<number> {
     try {
       // Calculate requests per second
-      const _currentTime = Date?.now();
-      const _timeWindow = 60000; // 1 minute
-      const _requests = await this?.client.get("scalability:requests:count");
-      const _lastReset = await this?.client.get(
+      const currentTime = Date?.now();
+      const timeWindow = 60000; // 1 minute
+      const requests = await this?.client.get("scalability:requests:count");
+      const lastReset = await this?.client.get(
         "scalability:requests:last_reset",
       );
 
@@ -239,13 +239,13 @@ export class ScalabilitySystem {
   // Get error rate
   private async getErrorRate(): Promise<number> {
     try {
-      const _totalRequests = await this?.client.get("scalability:requests:total");
-      const _errorRequests = await this?.client.get(
+      const totalRequests = await this?.client.get("scalability:requests:total");
+      const errorRequests = await this?.client.get(
         "scalability:requests:errors",
       );
 
-      const _total = parseInt(totalRequests || "0");
-      const _errors = parseInt(errorRequests || "0");
+      const total = parseInt(totalRequests || "0");
+      const errors = parseInt(errorRequests || "0");
 
       return total > 0 ? (errors / total) * 100 : 0;
     } catch (error: unknown) {
@@ -335,8 +335,8 @@ export class ScalabilitySystem {
 
     // Ensure stateless, distributed, and resilient architecture
     // Add recommendations for geo-redundancy, sharding, CDN, and failover
-    this?.metrics.lastOptimization = Date?.now();
-    this?.isOptimized = true;
+    this.metrics.lastOptimization = Date?.now();
+    this.isOptimized = true;
 
     logger?.info("✅ System optimization for 80B users completed");
   }
@@ -412,12 +412,12 @@ export class ScalabilitySystem {
     const { cpuUsage, memoryUsage, cacheHitRate, errorRate } = this?.metrics;
 
     let score = 100;
-    score -= cpuUsage * 0?.5; // -0?.5 points per CPU %
-    score -= memoryUsage * 0?.3; // -0?.3 points per memory %
-    score += cacheHitRate * 0?.2; // +0?.2 points per cache hit %
+    score -= cpuUsage * 0.5; // -0.5 points per CPU %
+    score -= memoryUsage * 0.3; // -0.3 points per memory %
+    score += cacheHitRate * 0.2; // +0.2 points per cache hit %
     score -= errorRate * 2; // -2 points per error %
 
-    this?.metrics.optimizationScore = Math?.max(0, Math?.min(100, score));
+    this.metrics.optimizationScore = Math?.max(0, Math?.min(100, score));
   }
 
   // Public methods
@@ -439,17 +439,17 @@ export class ScalabilitySystem {
     res: Response,
     next: NextFunction,
   ) => {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Track request
-    this?.metrics.totalRequests++;
+    this.metrics.totalRequests++;
 
     this?.client.incr("scalability:requests:count");
     this?.client.incr("scalability:requests:total");
 
     res?.on("finish", async () => {
-      const _responseTime = Date?.now() - startTime;
-      this?.metrics.averageResponseTime =
+      const responseTime = Date?.now() - startTime;
+      this.metrics.averageResponseTime =
         (this?.metrics.averageResponseTime + responseTime) / 2;
 
       if (res?.statusCode >= 400) {
@@ -463,18 +463,18 @@ export class ScalabilitySystem {
   // Cache middleware
   public cacheMiddleware = (ttl: number = 300) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-      const _cacheKey = `cache:${req?.method}:${req?.url}`;
+      const cacheKey = `cache:${req?.method}:${req?.url}`;
 
       try {
-        const _cached = await this?.client.get(cacheKey);
+        const cached = await this?.client.get(cacheKey);
         if (cached) {
           return res?.json(JSON?.parse(cached));
         }
 
-        const _originalSend = res?.send;
-        const _client = this?.client;
+        const originalSend = res?.send;
+        const client = this?.client;
 
-        res?.send = function (data) {
+        res.send = function (data) {
           if (res?.statusCode === 200) {
             client?.setex(
               cacheKey,
@@ -498,11 +498,11 @@ export class ScalabilitySystem {
     windowMs: number = 60000,
   ) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-      const _clientId = req?.ip || "unknown";
-      const _key = `rate_limit:${clientId}`;
+      const clientId = req?.ip || "unknown";
+      const key = `rate_limit:${clientId}`;
 
       try {
-        const _current = await this?.client.incr(key);
+        const current = await this?.client.incr(key);
 
         if (current === 1) {
           await this?.client.expire(key, Math?.ceil(windowMs / 1000));
@@ -511,7 +511,7 @@ export class ScalabilitySystem {
         if (current > maxRequests) {
           return res?.status(429).json({
             error: "Too many requests",
-            retryAfter: Math?.ceil(windowMs / 1000),
+            retryAfter: Math.ceil(windowMs / 1000),
           });
         }
 
@@ -535,8 +535,8 @@ class LoadBalancer {
   getNextServer(): Server | null {
     if (this?.servers.length === 0) return null;
 
-    const _server = this?.servers[this?.currentIndex];
-    this?.currentIndex = (this?.currentIndex + 1) % this?.servers.length;
+    const server = this?.servers[this?.currentIndex];
+    this.currentIndex = (this?.currentIndex + 1) % this?.servers.length;
 
     return server;
   }
@@ -549,15 +549,15 @@ class CacheManager {
 
   constructor(client?: BoosterStateClient) {
     if (!client) throw new Error("CacheManager requires a BoosterStateClient");
-    this?.client = client;
+    this.client = client;
   }
 
   async get(key: string): Promise<string | null> {
-    const _value = await this?.client.get(key);
+    const value = await this?.client.get(key);
     if (value) {
-      this?.hitCount++;
+      this.hitCount++;
     } else {
-      this?.missCount++;
+      this.missCount++;
     }
     return value;
   }
@@ -571,7 +571,7 @@ class CacheManager {
   }
 
   async getHitRate(): Promise<number> {
-    const _total = this?.hitCount + this?.missCount;
+    const total = this?.hitCount + this?.missCount;
     return total > 0 ? (this?.hitCount / total) * 100 : 0;
   }
 }
@@ -595,14 +595,14 @@ class AutoScaler {
 
   async scaleUp(): Promise<void> {
     if (this?.currentInstances < this?.maxInstances) {
-      this?.currentInstances++;
+      this.currentInstances++;
       logger?.info(`📈 Scaled up to ${this?.currentInstances} instances`);
     }
   }
 
   async scaleDown(): Promise<void> {
     if (this?.currentInstances > this?.minInstances) {
-      this?.currentInstances--;
+      this.currentInstances--;
       logger?.info(`📉 Scaled down to ${this?.currentInstances} instances`);
     }
   }

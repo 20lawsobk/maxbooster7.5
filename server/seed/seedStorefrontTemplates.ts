@@ -1,9 +1,9 @@
 import { db } from "../db";
 import { storefrontTemplates } from "../../shared/schema";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { count } from "drizzle-orm";
 
-const _TEMPLATES = [
+const TEMPLATES = [
   {
     name: "Beat Producer Pro",
     slug: "beat-producer-pro",
@@ -147,12 +147,12 @@ export async function seedStorefrontTemplates() {
 
     await db?.insert(storefrontTemplates).values(
       TEMPLATES?.map((t) => ({
-        name: t?.name,
-        slug: t?.slug,
-        description: t?.description,
-        isPremium: t?.isPremium,
+        name: t.name,
+        slug: t.slug,
+        description: t.description,
+        isPremium: t.isPremium,
         isActive: true,
-        configuration: t?.configuration,
+        configuration: t.configuration,
       })),
     );
 

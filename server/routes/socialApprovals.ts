@@ -7,13 +7,13 @@ import {
   approvalHistory,
 } from "@shared/schema";
 import { z } from "zod";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { eq, desc, count } from "drizzle-orm";
 
-const _router = Router();
+const router = Router();
 
-interface AuthenticatedRequest extends Express?.Request {
+interface AuthenticatedRequest extends Express.Request {
   user?: {
     id: string;
     email: string;
@@ -26,7 +26,7 @@ router?.get("/pending", async (req: AuthenticatedRequest, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _hasPermission = await approvalService?.checkPermission(
+    const hasPermission = await approvalService?.checkPermission(
       req?.user.id,
       "approve",
     );
@@ -37,11 +37,11 @@ router?.get("/pending", async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    const _pendingPosts = await approvalService?.getPendingApprovals(req?.user.id);
+    const pendingPosts = await approvalService?.getPendingApprovals(req?.user.id);
 
     return res?.json({
       success: true,
-      total: pendingPosts?.length,
+      total: pendingPosts.length,
       posts: pendingPosts,
     });
   } catch (error: unknown) {
@@ -58,9 +58,9 @@ router?.post("/:postId/submit", async (req: AuthenticatedRequest, res) => {
 
     const { postId } = req?.params;
 
-    const _validatedData = submitForReviewSchema?.parse({ postId });
+    const validatedData = submitForReviewSchema?.parse({ postId });
 
-    const _hasPermission = await approvalService?.checkPermission(
+    const hasPermission = await approvalService?.checkPermission(
       req?.user.id,
       "submit",
     );
@@ -71,14 +71,14 @@ router?.post("/:postId/submit", async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    const _result = await approvalService?.submitForReview(
+    const result = await approvalService?.submitForReview(
       validatedData?.postId,
       req?.user.id,
     );
 
     if (!result?.success) {
       return res?.status(400).json({
-        error: result?.error || "Failed to submit for review",
+        error: result.error || "Failed to submit for review",
       });
     }
 
@@ -89,10 +89,10 @@ router?.post("/:postId/submit", async (req: AuthenticatedRequest, res) => {
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Submit for review error:");
 
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res?.status(400).json({
         error: "Validation failed",
-        details: error?.issues,
+        details: error.issues,
       });
     }
 
@@ -109,9 +109,9 @@ router?.post("/:postId/approve", async (req: AuthenticatedRequest, res) => {
     const { postId } = req?.params;
     const { comment } = req?.body;
 
-    const _validatedData = approvePostSchema?.parse({ postId, comment });
+    const validatedData = approvePostSchema?.parse({ postId, comment });
 
-    const _hasPermission = await approvalService?.checkPermission(
+    const hasPermission = await approvalService?.checkPermission(
       req?.user.id,
       "approve",
     );
@@ -122,7 +122,7 @@ router?.post("/:postId/approve", async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    const _result = await approvalService?.approvePost(
+    const result = await approvalService?.approvePost(
       validatedData?.postId,
       req?.user.id,
       validatedData?.comment,
@@ -130,7 +130,7 @@ router?.post("/:postId/approve", async (req: AuthenticatedRequest, res) => {
 
     if (!result?.success) {
       return res?.status(400).json({
-        error: result?.error || "Failed to approve post",
+        error: result.error || "Failed to approve post",
       });
     }
 
@@ -141,10 +141,10 @@ router?.post("/:postId/approve", async (req: AuthenticatedRequest, res) => {
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Approve post error:");
 
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res?.status(400).json({
         error: "Validation failed",
-        details: error?.issues,
+        details: error.issues,
       });
     }
 
@@ -161,9 +161,9 @@ router?.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
     const { postId } = req?.params;
     const { reason, comment } = req?.body;
 
-    const _validatedData = rejectPostSchema?.parse({ postId, reason, comment });
+    const validatedData = rejectPostSchema?.parse({ postId, reason, comment });
 
-    const _hasPermission = await approvalService?.checkPermission(
+    const hasPermission = await approvalService?.checkPermission(
       req?.user.id,
       "reject",
     );
@@ -174,7 +174,7 @@ router?.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    const _result = await approvalService?.rejectPost(
+    const result = await approvalService?.rejectPost(
       validatedData?.postId,
       req?.user.id,
       validatedData?.reason,
@@ -183,7 +183,7 @@ router?.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
 
     if (!result?.success) {
       return res?.status(400).json({
-        error: result?.error || "Failed to reject post",
+        error: result.error || "Failed to reject post",
       });
     }
 
@@ -194,10 +194,10 @@ router?.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Reject post error:");
 
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res?.status(400).json({
         error: "Validation failed",
-        details: error?.issues,
+        details: error.issues,
       });
     }
 
@@ -221,7 +221,7 @@ router?.post("/:postId/schedule", async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    const _hasPermission = await approvalService?.checkPermission(
+    const hasPermission = await approvalService?.checkPermission(
       req?.user.id,
       "schedule",
     );
@@ -232,7 +232,7 @@ router?.post("/:postId/schedule", async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    const _result = await approvalService?.schedulePost(
+    const result = await approvalService?.schedulePost(
       postId,
       req?.user.id,
       new Date(scheduledAt),
@@ -241,7 +241,7 @@ router?.post("/:postId/schedule", async (req: AuthenticatedRequest, res) => {
 
     if (!result?.success) {
       return res?.status(400).json({
-        error: result?.error || "Failed to schedule post",
+        error: result.error || "Failed to schedule post",
       });
     }
 
@@ -264,7 +264,7 @@ router?.post("/:postId/publish", async (req: AuthenticatedRequest, res) => {
     const { postId } = req?.params;
     const { comment } = req?.body;
 
-    const _hasPermission = await approvalService?.checkPermission(
+    const hasPermission = await approvalService?.checkPermission(
       req?.user.id,
       "publish",
     );
@@ -275,7 +275,7 @@ router?.post("/:postId/publish", async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    const _result = await approvalService?.publishPost(
+    const result = await approvalService?.publishPost(
       postId,
       req?.user.id,
       comment,
@@ -283,7 +283,7 @@ router?.post("/:postId/publish", async (req: AuthenticatedRequest, res) => {
 
     if (!result?.success) {
       return res?.status(400).json({
-        error: result?.error || "Failed to publish post",
+        error: result.error || "Failed to publish post",
       });
     }
 
@@ -305,7 +305,7 @@ router?.get("/history/:postId", async (req: AuthenticatedRequest, res) => {
 
     const { postId } = req?.params;
 
-    const _history = await approvalService?.getApprovalHistory(postId);
+    const history = await approvalService?.getApprovalHistory(postId);
 
     return res?.json({
       success: true,
@@ -325,14 +325,14 @@ router?.get("/my-posts", async (req: AuthenticatedRequest, res) => {
     }
 
     const { status } = req?.query;
-    const _posts = await approvalService?.getUserPosts(
+    const posts = await approvalService?.getUserPosts(
       req?.user.id,
       status as Record<string, unknown>,
     );
 
     return res?.json({
       success: true,
-      total: posts?.length,
+      total: posts.length,
       posts,
     });
   } catch (error: unknown) {
@@ -347,24 +347,24 @@ router?.get("/stats", async (req: AuthenticatedRequest, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _allPosts = await approvalService?.getUserPosts(req?.user.id);
-    const _userRole = await approvalService?.getUserRole(req?.user.id);
+    const allPosts = await approvalService?.getUserPosts(req?.user.id);
+    const userRole = await approvalService?.getUserRole(req?.user.id);
 
-    const _stats = {
-      total: allPosts?.length,
-      draft: allPosts?.filter((p) => p?.approvalStatus === "draft").length,
-      pending_review: allPosts?.filter(
+    const stats = {
+      total: allPosts.length,
+      draft: allPosts.filter((p) => p?.approvalStatus === "draft").length,
+      pending_review: allPosts.filter(
         (p) => p?.approvalStatus === "pending_review",
       ).length,
-      approved: allPosts?.filter((p) => p?.approvalStatus === "approved").length,
-      rejected: allPosts?.filter((p) => p?.approvalStatus === "rejected").length,
-      published: allPosts?.filter((p) => p?.approvalStatus === "published")
+      approved: allPosts.filter((p) => p?.approvalStatus === "approved").length,
+      rejected: allPosts.filter((p) => p?.approvalStatus === "rejected").length,
+      published: allPosts.filter((p) => p?.approvalStatus === "published")
         .length,
       userRole,
     };
 
     if (["reviewer", "manager", "admin"].includes(userRole)) {
-      const _pendingApprovals = await approvalService?.getPendingApprovals(
+      const pendingApprovals = await approvalService?.getPendingApprovals(
         req?.user.id,
       );
       stats["pending_approvals"] = pendingApprovals?.length;
@@ -386,14 +386,14 @@ router?.get("/history", async (req: AuthenticatedRequest, res) => {
     if (!req?.user) {
       return res?.status(401).json({ error: "Unauthorized" });
     }
-    const _userId = req?.user.id;
-    const _limit = Math?.min(parseInt(String(req?.query.limit ?? "50"), 10), 200);
-    const _offset = Math?.min(
+    const userId = req?.user.id;
+    const limit = Math?.min(parseInt(String(req?.query.limit ?? "50"), 10), 200);
+    const offset = Math?.min(
       Math?.max(parseInt(String(req?.query.offset ?? "0"), 10), 0),
       100_000,
     );
 
-    const _items = await db
+    const items = await db
       .select()
       .from(approvalHistory)
       .where(eq(approvalHistory?.userId, userId))

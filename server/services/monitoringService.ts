@@ -1,5 +1,5 @@
 import { securityService } from "./securityService";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface SystemMetric {
   name: string;
@@ -41,8 +41,8 @@ export class MonitoringService {
     services: unknown[];
   }> {
     try {
-      const _services = ["database", "stripe", "storage", "api"];
-      const _healthChecks = await Promise?.all(
+      const services = ["database", "stripe", "storage", "api"];
+      const healthChecks = await Promise?.all(
         services?.map((service) => securityService?.checkHealth(service)),
       );
 
@@ -99,7 +99,7 @@ export class MonitoringService {
         this?.metrics.set(name, []);
       }
 
-      const _metricList = this?.metrics.get(name)!;
+      const metricList = this?.metrics.get(name)!;
       metricList?.push(metric);
 
       // Keep only last 1000 metrics per type
@@ -141,16 +141,16 @@ export class MonitoringService {
    * Check if metric exceeds threshold
    */
   private async checkThreshold(metric: string, value: number): Promise<void> {
-    const _threshold = this?.thresholds.get(metric);
+    const threshold = this?.thresholds.get(metric);
     if (!threshold) return;
 
     if (value >= threshold?.value) {
       const alert: Alert = {
         id: `alert_${Date?.now()}`,
         metric,
-        threshold: threshold?.value,
+        threshold: threshold.value,
         currentValue: value,
-        severity: threshold?.severity as Record<string, unknown>,
+        severity: threshold.severity as Record<string, unknown>,
         message: `${metric} exceeded threshold: ${value} >= ${threshold?.value}`,
         createdAt: new Date(),
       };
@@ -220,29 +220,29 @@ export class MonitoringService {
     errors: { total: number; rate: number };
   }> {
     try {
-      const _systemMetrics = await securityService?.getSystemMetrics();
+      const systemMetrics = await securityService?.getSystemMetrics();
 
       // Calculate request metrics
-      const _requestMetrics = await this?.getMetrics("requests");
-      const _errorMetrics = await this?.getMetrics("errors");
+      const requestMetrics = await this?.getMetrics("requests");
+      const errorMetrics = await this?.getMetrics("errors");
 
-      const _totalRequests = requestMetrics?.reduce((sum, m) => sum + m?.value, 0);
-      const _totalErrors = errorMetrics?.reduce((sum, m) => sum + m?.value, 0);
-      const _successRate =
+      const totalRequests = requestMetrics?.reduce((sum, m) => sum + m?.value, 0);
+      const totalErrors = errorMetrics?.reduce((sum, m) => sum + m?.value, 0);
+      const successRate =
         totalRequests > 0
           ? ((totalRequests - totalErrors) / totalRequests) * 100
           : 100;
 
       // Calculate average response time
-      const _responseTimeMetrics = await this?.getMetrics("response_time");
-      const _avgResponseTime =
+      const responseTimeMetrics = await this?.getMetrics("response_time");
+      const avgResponseTime =
         responseTimeMetrics?.length > 0
           ? responseTimeMetrics?.reduce((sum, m) => sum + m?.value, 0) /
             responseTimeMetrics?.length
           : 0;
 
       return {
-        uptime: systemMetrics?.uptime,
+        uptime: systemMetrics.uptime,
         requests: {
           total: totalRequests,
           successRate,
@@ -250,7 +250,7 @@ export class MonitoringService {
         },
         resources: {
           cpu: 0, // Would be calculated from CPU metrics
-          memory: systemMetrics?.memory.percentage,
+          memory: systemMetrics.memory.percentage,
           disk: 0, // Would be calculated from disk metrics
         },
         errors: {
@@ -287,7 +287,7 @@ export class MonitoringService {
     setInterval(async () => {
       try {
         // Collect system metrics
-        const _systemMetrics = await securityService?.getSystemMetrics();
+        const systemMetrics = await securityService?.getSystemMetrics();
         await this?.trackMetric(
           "memory_usage",
           systemMetrics?.memory.percentage,
@@ -296,7 +296,7 @@ export class MonitoringService {
         await this?.trackMetric("uptime", systemMetrics?.uptime, "s");
 
         // Run health checks
-        const _health = await this?.runHealthChecks();
+        const health = await this?.runHealthChecks();
         await this?.trackMetric(
           "health_status",
           health?.overall === "healthy" ? 1 : 0,
@@ -308,4 +308,4 @@ export class MonitoringService {
   }
 }
 
-export const _monitoringService = new MonitoringService();
+export const monitoringService = new MonitoringService();

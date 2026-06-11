@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { workspaces, workspaceMembers, workspaceRoles, workspaceInvitations, workspaceCatalogs, workspaceAuditLog, users, type Workspace, type WorkspaceMember, type WorkspaceRole, type WorkspaceInvitation, type InsertWorkspace, type InsertWorkspaceAuditLog } from "@shared/schema";
 import { eq, and, desc, count } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
 
 export type WorkspaceType = "artist" | "label" | "agency" | "management";
@@ -70,40 +70,40 @@ export class WorkspaceService {
     params: CreateWorkspaceParams,
   ): Promise<{ success: boolean; workspace?: Workspace; error?: string }> {
     try {
-      const _slug = this?.generateSlug(params?.name);
+      const slug = this?.generateSlug(params?.name);
 
       const [workspace] = await db
         .insert(workspaces)
         .values({
-          name: params?.name,
+          name: params.name,
           slug,
-          type: params?.type,
-          ownerId: params?.ownerId,
-          description: params?.description,
-          settings: params?.settings || undefined,
-          branding: params?.branding || undefined,
+          type: params.type,
+          ownerId: params.ownerId,
+          description: params.description,
+          settings: params.settings || undefined,
+          branding: params.branding || undefined,
         })
         .returning();
 
       await this?.initializeDefaultRoles(workspace?.id);
 
-      const _ownerRole = await this?.getRoleByName(workspace?.id, "Owner");
+      const ownerRole = await this?.getRoleByName(workspace?.id, "Owner");
       if (ownerRole) {
         await this?.addMember({
-          workspaceId: workspace?.id,
-          userId: params?.ownerId,
-          roleId: ownerRole?.id,
+          workspaceId: workspace.id,
+          userId: params.ownerId,
+          roleId: ownerRole.id,
           role: "owner",
         });
       }
 
       await this?.logAuditEvent({
-        workspaceId: workspace?.id,
-        userId: params?.ownerId,
-        action: "workspace?.created",
+        workspaceId: workspace.id,
+        userId: params.ownerId,
+        action: "workspace.created",
         resourceType: "workspace",
-        resourceId: workspace?.id,
-        newValues: { name: params?.name, type: params?.type },
+        resourceId: workspace.id,
+        newValues: { name: params.name, type: params.type },
       });
 
       return { success: true, workspace };
@@ -143,10 +143,10 @@ export class WorkspaceService {
 
   async getUserWorkspaces(userId: string): Promise<Workspace[]> {
     try {
-      const _memberships = await db
+      const memberships = await db
         .select({
           workspace: workspaces,
-          role: workspaceMembers?.role,
+          role: workspaceMembers.role,
         })
         .from(workspaceMembers)
         .innerJoin(workspaces, eq(workspaceMembers?.workspaceId, workspaces?.id))
@@ -170,7 +170,7 @@ export class WorkspaceService {
     userId: string,
   ): Promise<{ success: boolean; workspace?: Workspace; error?: string }> {
     try {
-      const _existingWorkspace = await this?.getWorkspace(workspaceId);
+      const existingWorkspace = await this?.getWorkspace(workspaceId);
       if (!existingWorkspace) {
         return { success: false, error: "Workspace not found" };
       }
@@ -187,7 +187,7 @@ export class WorkspaceService {
       await this?.logAuditEvent({
         workspaceId,
         userId,
-        action: "workspace?.updated",
+        action: "workspace.updated",
         resourceType: "workspace",
         resourceId: workspaceId,
         previousValues: existingWorkspace,
@@ -206,7 +206,7 @@ export class WorkspaceService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const _workspace = await this?.getWorkspace(workspaceId);
+      const workspace = await this?.getWorkspace(workspaceId);
       if (!workspace) {
         return { success: false, error: "Workspace not found" };
       }
@@ -228,7 +228,7 @@ export class WorkspaceService {
   }
 
   private async initializeDefaultRoles(workspaceId: string): Promise<void> {
-    const _defaultRoles = [
+    const defaultRoles = [
       {
         name: "Owner",
         description: "Full access to all workspace features",
@@ -328,11 +328,11 @@ export class WorkspaceService {
     for (const role of defaultRoles) {
       await db?.insert(workspaceRoles).values({
         workspaceId,
-        name: role?.name,
-        description: role?.description,
-        permissions: role?.permissions,
-        isSystem: role?.isSystem,
-        priority: role?.priority,
+        name: role.name,
+        description: role.description,
+        permissions: role.permissions,
+        isSystem: role.isSystem,
+        priority: role.priority,
       });
     }
   }
@@ -367,7 +367,7 @@ export class WorkspaceService {
     invitedBy?: string;
   }): Promise<{ success: boolean; member?: WorkspaceMember; error?: string }> {
     try {
-      const _existingMember = await this?.getMember(
+      const existingMember = await this?.getMember(
         params?.workspaceId,
         params?.userId,
       );
@@ -381,12 +381,12 @@ export class WorkspaceService {
       const [member] = await db
         .insert(workspaceMembers)
         .values({
-          workspaceId: params?.workspaceId,
-          userId: params?.userId,
-          roleId: params?.roleId,
-          role: params?.role,
-          invitedBy: params?.invitedBy,
-          invitedAt: params?.invitedBy ? new Date() : undefined,
+          workspaceId: params.workspaceId,
+          userId: params.userId,
+          roleId: params.roleId,
+          role: params.role,
+          invitedBy: params.invitedBy,
+          invitedAt: params.invitedBy ? new Date() : undefined,
           joinedAt: new Date(),
           status: "active",
         })
@@ -423,19 +423,19 @@ export class WorkspaceService {
 
   async getMembers(workspaceId: string): Promise<any[]> {
     try {
-      const _members = await db
+      const members = await db
         .select({
-          id: workspaceMembers?.id,
-          userId: workspaceMembers?.userId,
-          role: workspaceMembers?.role,
-          roleId: workspaceMembers?.roleId,
-          status: workspaceMembers?.status,
-          joinedAt: workspaceMembers?.joinedAt,
-          lastActiveAt: workspaceMembers?.lastActiveAt,
-          userEmail: users?.email,
-          userFirstName: users?.firstName,
-          userLastName: users?.lastName,
-          userProfileImage: users?.profileImageUrl,
+          id: workspaceMembers.id,
+          userId: workspaceMembers.userId,
+          role: workspaceMembers.role,
+          roleId: workspaceMembers.roleId,
+          status: workspaceMembers.status,
+          joinedAt: workspaceMembers.joinedAt,
+          lastActiveAt: workspaceMembers.lastActiveAt,
+          userEmail: users.email,
+          userFirstName: users.firstName,
+          userLastName: users.lastName,
+          userProfileImage: users.profileImageUrl,
         })
         .from(workspaceMembers)
         .innerJoin(users, eq(workspaceMembers?.userId, users?.id))
@@ -472,7 +472,7 @@ export class WorkspaceService {
         return { success: false, error: "Member not found" };
       }
 
-      const _previousRole = member?.role;
+      const previousRole = member?.role;
 
       await db
         .update(workspaceMembers)
@@ -487,7 +487,7 @@ export class WorkspaceService {
         await this?.logAuditEvent({
           workspaceId,
           userId: updatedBy,
-          action: "member?.role_changed",
+          action: "member.role_changed",
           resourceType: "member",
           resourceId: memberId,
           previousValues: { role: previousRole },
@@ -534,10 +534,10 @@ export class WorkspaceService {
       await this?.logAuditEvent({
         workspaceId,
         userId: removedBy,
-        action: "member?.removed",
+        action: "member.removed",
         resourceType: "member",
         resourceId: memberId,
-        previousValues: { userId: member?.userId, role: member?.role },
+        previousValues: { userId: member.userId, role: member.role },
       });
 
       return { success: true };
@@ -555,14 +555,14 @@ export class WorkspaceService {
     error?: string;
   }> {
     try {
-      const _existingUser = await db
+      const existingUser = await db
         .select()
         .from(users)
         .where(eq(users?.email, params?.email))
         .limit(1);
 
       if (existingUser?.length > 0) {
-        const _existingMember = await this?.getMember(
+        const existingMember = await this?.getMember(
           params?.workspaceId,
           existingUser[0].id,
         );
@@ -593,31 +593,31 @@ export class WorkspaceService {
         };
       }
 
-      const _token = this?.generateInviteToken();
-      const _expiresAt = new Date();
+      const token = this?.generateInviteToken();
+      const expiresAt = new Date();
       expiresAt?.setDate(expiresAt?.getDate() + 7);
 
       const [invitation] = await db
         .insert(workspaceInvitations)
         .values({
-          workspaceId: params?.workspaceId,
-          email: params?.email,
-          role: params?.role,
-          roleId: params?.roleId,
+          workspaceId: params.workspaceId,
+          email: params.email,
+          role: params.role,
+          roleId: params.roleId,
           token,
-          invitedBy: params?.invitedBy,
-          message: params?.message,
+          invitedBy: params.invitedBy,
+          message: params.message,
           expiresAt,
         })
         .returning();
 
       await this?.logAuditEvent({
-        workspaceId: params?.workspaceId,
-        userId: params?.invitedBy,
-        action: "invitation?.sent",
+        workspaceId: params.workspaceId,
+        userId: params.invitedBy,
+        action: "invitation.sent",
         resourceType: "invitation",
-        resourceId: invitation?.id,
-        newValues: { email: params?.email, role: params?.role },
+        resourceId: invitation.id,
+        newValues: { email: params.email, role: params.role },
       });
 
       return { success: true, invitation };
@@ -657,12 +657,12 @@ export class WorkspaceService {
         return { success: false, error: "Invitation has expired" };
       }
 
-      const _addResult = await this?.addMember({
-        workspaceId: invitation?.workspaceId,
+      const addResult = await this?.addMember({
+        workspaceId: invitation.workspaceId,
         userId,
-        roleId: invitation?.roleId ?? undefined,
-        role: invitation?.role ?? "member",
-        invitedBy: invitation?.invitedBy,
+        roleId: invitation.roleId ?? undefined,
+        role: invitation.role ?? "member",
+        invitedBy: invitation.invitedBy,
       });
 
       if (!addResult?.success) {
@@ -679,11 +679,11 @@ export class WorkspaceService {
         .where(eq(workspaceInvitations?.id, invitation?.id));
 
       await this?.logAuditEvent({
-        workspaceId: invitation?.workspaceId,
+        workspaceId: invitation.workspaceId,
         userId,
-        action: "invitation?.accepted",
+        action: "invitation.accepted",
         resourceType: "invitation",
-        resourceId: invitation?.id,
+        resourceId: invitation.id,
       });
 
       return { success: true };
@@ -697,7 +697,7 @@ export class WorkspaceService {
     workspaceId: string,
   ): Promise<WorkspaceInvitation[]> {
     try {
-      const _invitations = await db
+      const invitations = await db
         .select()
         .from(workspaceInvitations)
         .where(
@@ -736,9 +736,9 @@ export class WorkspaceService {
         .where(eq(workspaceInvitations?.id, invitationId));
 
       await this?.logAuditEvent({
-        workspaceId: invitation?.workspaceId,
+        workspaceId: invitation.workspaceId,
         userId: cancelledBy,
-        action: "invitation?.cancelled",
+        action: "invitation.cancelled",
         resourceType: "invitation",
         resourceId: invitationId,
       });
@@ -765,7 +765,7 @@ export class WorkspaceService {
       await this?.logAuditEvent({
         workspaceId,
         userId: addedBy,
-        action: "catalog?.project_added",
+        action: "catalog.project_added",
         resourceType: "project",
         resourceId: projectId,
       });
@@ -795,7 +795,7 @@ export class WorkspaceService {
       await this?.logAuditEvent({
         workspaceId,
         userId: removedBy,
-        action: "catalog?.project_removed",
+        action: "catalog.project_removed",
         resourceType: "project",
         resourceId: projectId,
       });
@@ -809,7 +809,7 @@ export class WorkspaceService {
 
   async getCatalog(workspaceId: string): Promise<any[]> {
     try {
-      const _catalog = await db
+      const catalog = await db
         .select()
         .from(workspaceCatalogs)
         .where(eq(workspaceCatalogs?.workspaceId, workspaceId))
@@ -838,19 +838,19 @@ export class WorkspaceService {
     offset: number = 0,
   ): Promise<any[]> {
     try {
-      const _logs = await db
+      const logs = await db
         .select({
-          id: workspaceAuditLog?.id,
-          action: workspaceAuditLog?.action,
-          resourceType: workspaceAuditLog?.resourceType,
-          resourceId: workspaceAuditLog?.resourceId,
-          changes: workspaceAuditLog?.changes,
-          previousValues: workspaceAuditLog?.previousValues,
-          newValues: workspaceAuditLog?.newValues,
-          createdAt: workspaceAuditLog?.createdAt,
-          userId: workspaceAuditLog?.userId,
-          userEmail: users?.email,
-          userName: users?.firstName,
+          id: workspaceAuditLog.id,
+          action: workspaceAuditLog.action,
+          resourceType: workspaceAuditLog.resourceType,
+          resourceId: workspaceAuditLog.resourceId,
+          changes: workspaceAuditLog.changes,
+          previousValues: workspaceAuditLog.previousValues,
+          newValues: workspaceAuditLog.newValues,
+          createdAt: workspaceAuditLog.createdAt,
+          userId: workspaceAuditLog.userId,
+          userEmail: users.email,
+          userName: users.firstName,
         })
         .from(workspaceAuditLog)
         .leftJoin(users, eq(workspaceAuditLog?.userId, users?.id))
@@ -888,7 +888,7 @@ export class WorkspaceService {
     workspaceId: string,
     userId: string,
   ): Promise<boolean> {
-    const _member = await this?.getMember(workspaceId, userId);
+    const member = await this?.getMember(workspaceId, userId);
     return member !== null && member?.status === "active";
   }
 
@@ -896,7 +896,7 @@ export class WorkspaceService {
     workspaceId: string,
     userId: string,
   ): Promise<WorkspaceRoleType | null> {
-    const _member = await this?.getMember(workspaceId, userId);
+    const member = await this?.getMember(workspaceId, userId);
     return (member?.role as WorkspaceRoleType) || null;
   }
 
@@ -908,29 +908,29 @@ export class WorkspaceService {
     sharedBy: string;
   }): Promise<{ success: boolean; shares?: unknown[]; error?: string }> {
     try {
-      const _shares = [];
+      const shares = [];
 
       for (const memberId of params?.memberIds) {
-        const _share = {
-          id: crypto?.randomUUID(),
-          projectId: params?.projectId,
+        const share = {
+          id: crypto.randomUUID(),
+          projectId: params.projectId,
           userId: memberId,
-          permission: params?.permission,
-          sharedBy: params?.sharedBy,
+          permission: params.permission,
+          sharedBy: params.sharedBy,
           createdAt: new Date().toISOString(),
         };
         shares?.push(share);
       }
 
       await this?.logAuditEvent({
-        workspaceId: params?.workspaceId,
-        userId: params?.sharedBy,
-        action: "project?.shared",
+        workspaceId: params.workspaceId,
+        userId: params.sharedBy,
+        action: "project.shared",
         resourceType: "project",
-        resourceId: params?.projectId,
+        resourceId: params.projectId,
         newValues: {
-          memberCount: params?.memberIds.length,
-          permission: params?.permission,
+          memberCount: params.memberIds.length,
+          permission: params.permission,
         },
       });
 
@@ -975,37 +975,37 @@ export class WorkspaceService {
     error?: string;
   }> {
     try {
-      const _token = crypto?.randomBytes(16).toString("hex");
-      const _baseUrl = process?.env.BASE_URL || "https://maxbooster?.app";
+      const token = crypto?.randomBytes(16).toString("hex");
+      const baseUrl = process?.env.BASE_URL || "https://maxbooster.app";
 
       let expiresAt = null;
       if (params?.expirationDays) {
-        const _expDate = new Date();
+        const expDate = new Date();
         expDate?.setDate(expDate?.getDate() + params?.expirationDays);
         expiresAt = expDate?.toISOString();
       }
 
-      const _link = {
-        id: crypto?.randomUUID(),
+      const link = {
+        id: crypto.randomUUID(),
         url: `${baseUrl}/share/${token}`,
-        projectId: params?.projectId,
-        permission: params?.permission,
+        projectId: params.projectId,
+        permission: params.permission,
         expiresAt,
         password: !!params?.password,
         accessCount: 0,
         createdAt: new Date().toISOString(),
-        createdBy: params?.createdBy,
-        allowDownload: params?.allowDownload ?? true,
-        requireSignIn: params?.requireSignIn ?? false,
+        createdBy: params.createdBy,
+        allowDownload: params.allowDownload ?? true,
+        requireSignIn: params.requireSignIn ?? false,
       };
 
       await this?.logAuditEvent({
-        workspaceId: params?.workspaceId,
-        userId: params?.createdBy,
-        action: "share_link?.created",
+        workspaceId: params.workspaceId,
+        userId: params.createdBy,
+        action: "share_link.created",
         resourceType: "share_link",
-        resourceId: link?.id,
-        newValues: { permission: params?.permission, expiresAt },
+        resourceId: link.id,
+        newValues: { permission: params.permission, expiresAt },
       });
 
       return { success: true, link };
@@ -1028,15 +1028,15 @@ export class WorkspaceService {
 
   async getWorkspacePresence(workspaceId: string): Promise<any[]> {
     try {
-      const _members = await this?.getMembers(workspaceId);
+      const members = await this?.getMembers(workspaceId);
 
       return members?.map((member) => ({
-        userId: member?.userId,
+        userId: member.userId,
         displayName:
           `${member?.userFirstName || ""} ${member?.userLastName || ""}`.trim() ||
           member?.userEmail,
-        avatar: member?.userProfileImage,
-        color: this?.generateUserColor(member?.userId),
+        avatar: member.userProfileImage,
+        color: this.generateUserColor(member?.userId),
         status:
           member?.lastActiveAt &&
           Date?.now() - new Date(member?.lastActiveAt).getTime() < 5 * 60 * 1000
@@ -1052,7 +1052,7 @@ export class WorkspaceService {
   }
 
   private generateUserColor(userId: string): string {
-    const _colors = [
+    const colors = [
       "#FF6B6B",
       "#4ECDC4",
       "#45B7D1",
@@ -1064,11 +1064,11 @@ export class WorkspaceService {
       "#BB8FCE",
       "#85C1E9",
     ];
-    const _hash = userId
+    const hash = userId
       .split("")
       .reduce((acc, char) => acc + char?.charCodeAt(0), 0);
     return colors[hash % colors?.length];
   }
 }
 
-export const _workspaceService = new WorkspaceService();
+export const workspaceService = new WorkspaceService();

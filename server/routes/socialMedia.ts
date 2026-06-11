@@ -9,14 +9,14 @@ import { db } from "../db";
 import { socialInboxMessages, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar } from "@shared/schema";
 import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
-import { requireAuth, requireAuthOnly } from "../middleware/auth?.js";
-import { aiRateLimiter } from "../middleware/rateLimiter?.js";
-import { notificationService } from "../services/notificationService?.js";
+import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
+import { aiRateLimiter } from "../middleware/rateLimiter.js";
+import { notificationService } from "../services/notificationService.js";
 import {
   audioUpload,
   artworkUpload,
   mediaUpload,
-} from "../middleware/uploadHandler?.js";
+} from "../middleware/uploadHandler.js";
 import {
   analyzeUrl,
   analyzeAudio,
@@ -24,108 +24,108 @@ import {
   urlToContentSeed,
   audioToContentSeed,
   imageToContentSeed,
-} from "../services/mediaAnalyzerService?.js";
+} from "../services/mediaAnalyzerService.js";
 import {
   getVisualSpec,
   type SupportedPlatform as ContentSupportedPlatform,
   ALL_PLATFORMS as CONTENT_ALL_PLATFORMS,
-} from "../services/contentPipeline/platformFormatters?.js";
+} from "../services/contentPipeline/platformFormatters.js";
 
 // ── Lazy-loaded AI/TF-heavy services ──────────────────────────────────────────
 // These are only imported on first use inside route handlers — NOT at module
 // load time — so route registration never fails due to missing TF native libs.
-let _unifiedAIController:
-  | typeof import("../services/unifiedAIController?.js").unifiedAIController
+let unifiedAIController:
+  | typeof import("../services/unifiedAIController.js").unifiedAIController
   | null = null;
-let _contentQualityPipeline:
-  | typeof import("../services/contentQualityPipeline?.js").contentQualityPipeline
+let contentQualityPipeline:
+  | typeof import("../services/contentQualityPipeline.js").contentQualityPipeline
   | null = null;
-let _competitorBenchmarkService:
-  | typeof import("../services/competitorBenchmarkService?.js").competitorBenchmarkService
+let competitorBenchmarkService:
+  | typeof import("../services/competitorBenchmarkService.js").competitorBenchmarkService
   | null = null;
-let _pythonAIService:
-  | typeof import("../services/pythonAIService?.js").pythonAIService
+let pythonAIService:
+  | typeof import("../services/pythonAIService.js").pythonAIService
   | null = null;
-let _veoMusicService:
-  | typeof import("../services/veoMusicService?.js").veoMusicService
+let veoMusicService:
+  | typeof import("../services/veoMusicService.js").veoMusicService
   | null = null;
 let _renderAdvancedVideo:
-  | typeof import("../services/advancedVideoRendererService?.js").renderVideo
+  | typeof import("../services/advancedVideoRendererService.js").renderVideo
   | null = null;
-let _maxcoreVideoUrlStore:
-  | typeof import("../services/advancedVideoRendererService?.js").maxcoreVideoUrlStore
+let maxcoreVideoUrlStore:
+  | typeof import("../services/advancedVideoRendererService.js").maxcoreVideoUrlStore
   | null = null;
 let _voiceSynthService:
-  | typeof import("../services/voiceSynthesisService?.js")
+  | typeof import("../services/voiceSynthesisService.js")
   | null = null;
-let _beatSyncService: typeof import("../services/beatSyncService?.js") | null =
+let beatSyncService: typeof import("../services/beatSyncService.js") | null =
   null;
-let _imageToVideoService:
-  | typeof import("../services/imageToVideoService?.js")
+let imageToVideoService:
+  | typeof import("../services/imageToVideoService.js")
   | null = null;
 
 async function getVoiceSynthService() {
   if (!_voiceSynthService)
-    _voiceSynthService = await import("../services/voiceSynthesisService?.js");
+    _voiceSynthService = await import("../services/voiceSynthesisService.js");
   return _voiceSynthService!;
 }
 async function getBeatSyncService() {
-  if (!_beatSyncService)
-    _beatSyncService = await import("../services/beatSyncService?.js");
-  return _beatSyncService!;
+  if (!beatSyncService)
+    beatSyncService = await import("../services/beatSyncService.js");
+  return beatSyncService!;
 }
 async function getImageToVideoService() {
-  if (!_imageToVideoService)
-    _imageToVideoService = await import("../services/imageToVideoService?.js");
-  return _imageToVideoService!;
+  if (!imageToVideoService)
+    imageToVideoService = await import("../services/imageToVideoService.js");
+  return imageToVideoService!;
 }
 
 async function getUnifiedAI() {
-  if (!_unifiedAIController) {
-    const _m = await import("../services/unifiedAIController?.js");
-    _unifiedAIController = m?.unifiedAIController;
+  if (!unifiedAIController) {
+    const m = await import("../services/unifiedAIController.js");
+    unifiedAIController = m?.unifiedAIController;
   }
-  return _unifiedAIController!;
+  return unifiedAIController!;
 }
 async function getCompetitorBenchmark() {
-  if (!_competitorBenchmarkService) {
-    const _m = await import("../services/competitorBenchmarkService?.js");
-    _competitorBenchmarkService = m?.competitorBenchmarkService;
+  if (!competitorBenchmarkService) {
+    const m = await import("../services/competitorBenchmarkService.js");
+    competitorBenchmarkService = m?.competitorBenchmarkService;
   }
-  return _competitorBenchmarkService!;
+  return competitorBenchmarkService!;
 }
 async function getPythonAI() {
-  if (!_pythonAIService) {
-    const _m = await import("../services/pythonAIService?.js");
-    _pythonAIService = m?.pythonAIService;
+  if (!pythonAIService) {
+    const m = await import("../services/pythonAIService.js");
+    pythonAIService = m?.pythonAIService;
   }
-  return _pythonAIService!;
+  return pythonAIService!;
 }
 async function getVeoMusic() {
-  if (!_veoMusicService) {
-    const _m = await import("../services/veoMusicService?.js");
-    _veoMusicService = m?.veoMusicService;
+  if (!veoMusicService) {
+    const m = await import("../services/veoMusicService.js");
+    veoMusicService = m?.veoMusicService;
   }
-  return _veoMusicService!;
+  return veoMusicService!;
 }
 async function getRenderAdvancedVideo() {
   if (!_renderAdvancedVideo) {
-    const _m = await import("../services/advancedVideoRendererService?.js");
+    const m = await import("../services/advancedVideoRendererService.js");
     _renderAdvancedVideo = m?.renderVideo;
-    _maxcoreVideoUrlStore = m?.maxcoreVideoUrlStore;
+    maxcoreVideoUrlStore = m?.maxcoreVideoUrlStore;
   }
   return _renderAdvancedVideo!;
 }
 async function getMaxcoreVideoUrlStore() {
-  if (!_maxcoreVideoUrlStore) {
-    const _m = await import("../services/advancedVideoRendererService?.js");
+  if (!maxcoreVideoUrlStore) {
+    const m = await import("../services/advancedVideoRendererService.js");
     _renderAdvancedVideo = m?.renderVideo;
-    _maxcoreVideoUrlStore = m?.maxcoreVideoUrlStore;
+    maxcoreVideoUrlStore = m?.maxcoreVideoUrlStore;
   }
-  return _maxcoreVideoUrlStore!;
+  return maxcoreVideoUrlStore!;
 }
 
-const _router = Router();
+const router = Router();
 
 // ── Async FFmpeg job store ─────────────────────────────────────────────────────
 // Holds in-progress and completed FFmpeg video jobs.  Jobs are pruned after
@@ -140,10 +140,10 @@ interface FFmpegJob {
   createdAt: number;
 }
 
-const _ffmpegJobs = new Map<string, FFmpegJob>();
+const ffmpegJobs = new Map<string, FFmpegJob>();
 
 function pruneStaleFFmpegJobs() {
-  const _now = Date?.now();
+  const now = Date?.now();
   for (const [id, job] of ffmpegJobs?.entries()) {
     if (now - job?.createdAt > 10 * 60 * 1000) ffmpegJobs?.delete(id);
   }
@@ -166,8 +166,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _posts = (await storage?.getSocialPosts?.(userId)) || [];
+      const userId = req?.user!.id;
+      const posts = (await storage?.getSocialPosts?.(userId)) || [];
       res?.json(posts);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social posts:");
@@ -176,7 +176,7 @@ router?.get(
   },
 );
 
-const _VALID_PLATFORMS = [
+const VALID_PLATFORMS = [
   "instagram",
   "twitter",
   "facebook",
@@ -187,11 +187,11 @@ const _VALID_PLATFORMS = [
   "googlebusiness",
 ] as const;
 
-const _schedulePostSchema = z?.object({
-  platform: z?.enum(VALID_PLATFORMS),
-  content: z?.string().min(1).max(10000),
-  mediaUrls: z?.array(z?.string().url()).max(10).optional(),
-  scheduledAt: z?.string().optional().nullable(),
+const schedulePostSchema = z.object({
+  platform: z.enum(VALID_PLATFORMS),
+  content: z.string().min(1).max(10000),
+  mediaUrls: z.array(z.string().url()).max(10).optional(),
+  scheduledAt: z.string().optional().nullable(),
 });
 
 router?.post(
@@ -199,17 +199,17 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _parsed = schedulePostSchema?.safeParse(req?.body);
+      const parsed = schedulePostSchema?.safeParse(req?.body);
       if (!parsed?.success) {
         return res
           .status(400)
-          .json({ error: "Invalid request", details: parsed?.error.issues });
+          .json({ error: "Invalid request", details: parsed.error.issues });
       }
       const { platform, content, mediaUrls, scheduledAt } = parsed?.data;
 
-      const _scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
+      const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
 
       const [post] = await db
         .insert(posts)
@@ -254,7 +254,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { postId } = req?.params;
 
       const [post] = await db
@@ -276,8 +276,8 @@ router?.post(
 
       setImmediate(async () => {
         try {
-          const _platform = post?.platform || "Social";
-          const _content = post?.content || "";
+          const platform = post?.platform || "Social";
+          const content = post?.content || "";
           await notificationService?.sendSocialPostPublishedNotification(
             userId,
             platform,
@@ -303,8 +303,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _metrics = (await storage?.getSocialMetrics?.(userId)) || {
+      const userId = req?.user!.id;
+      const metrics = (await storage?.getSocialMetrics?.(userId)) || {
         totalFollowers: 0,
         totalEngagement: 0,
         totalReach: 0,
@@ -341,8 +341,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _events = (await storage?.getSocialCalendarEvents?.(userId)) || [];
+      const userId = req?.user!.id;
+      const events = (await storage?.getSocialCalendarEvents?.(userId)) || [];
       res?.json(events);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social calendar:");
@@ -357,8 +357,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _stats = (await storage?.getSocialCalendarStats?.(userId)) || {
+      const userId = req?.user!.id;
+      const stats = (await storage?.getSocialCalendarStats?.(userId)) || {
         totalScheduled: 0,
         pendingApproval: 0,
         published: 0,
@@ -383,7 +383,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform, content, mediaUrls, scheduledAt, status } = req?.body;
 
       if (!platform || !content) {
@@ -392,8 +392,8 @@ router?.post(
           .json({ error: "Platform and content are required" });
       }
 
-      const _scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
-      const _postStatus = status || (scheduledDate ? "scheduled" : "draft");
+      const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
+      const postStatus = status || (scheduledDate ? "scheduled" : "draft");
 
       const [post] = await db
         .insert(posts)
@@ -436,11 +436,11 @@ router?.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { postId } = req?.params;
       const { platform, content, mediaUrls, scheduledAt, status } = req?.body;
 
-      const _existing = await db
+      const existing = await db
         .select()
         .from(posts)
         .where(and(eq(posts?.id, postId), eq(posts?.userId, userId)))
@@ -451,12 +451,12 @@ router?.put(
       }
 
       const updates: Record<string, unknown> = {};
-      if (platform !== undefined) updates?.platform = platform;
-      if (content !== undefined) updates?.content = content;
-      if (mediaUrls !== undefined) updates?.mediaUrls = mediaUrls;
-      if (status !== undefined) updates?.status = status;
+      if (platform !== undefined) updates.platform = platform;
+      if (content !== undefined) updates.content = content;
+      if (mediaUrls !== undefined) updates.mediaUrls = mediaUrls;
+      if (status !== undefined) updates.status = status;
       if (scheduledAt !== undefined)
-        updates?.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+        updates.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
 
       const [updated] = await db
         .update(posts)
@@ -482,7 +482,7 @@ router?.patch(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { postIds, updates } = req?.body as {
         postIds: string[];
         updates: {
@@ -505,33 +505,33 @@ router?.patch(
       }
 
       // Verify all posts belong to this user
-      const _existing = await db
-        .select({ id: posts?.id })
+      const existing = await db
+        .select({ id: posts.id })
         .from(posts)
         .where(and(inArray(posts?.id, postIds), eq(posts?.userId, userId)));
 
-      const _validIds = existing?.map((r) => r?.id);
+      const validIds = existing?.map((r) => r?.id);
       if (validIds?.length === 0) {
         return res?.status(404).json({ error: "No matching posts found" });
       }
 
       const dbUpdates: Record<string, unknown> = {};
-      if (updates?.status !== undefined) dbUpdates?.status = updates?.status;
-      if (updates?.platform !== undefined) dbUpdates?.platform = updates?.platform;
-      if (updates?.content !== undefined) dbUpdates?.content = updates?.content;
+      if (updates?.status !== undefined) dbUpdates.status = updates?.status;
+      if (updates?.platform !== undefined) dbUpdates.platform = updates?.platform;
+      if (updates?.content !== undefined) dbUpdates.content = updates?.content;
       if (updates?.scheduledAt !== undefined) {
-        dbUpdates?.scheduledAt = updates?.scheduledAt
+        dbUpdates.scheduledAt = updates?.scheduledAt
           ? new Date(updates?.scheduledAt)
           : null;
       }
 
-      const _updated = await db
+      const updated = await db
         .update(posts)
         .set(dbUpdates)
         .where(and(inArray(posts?.id, validIds), eq(posts?.userId, userId)))
         .returning();
 
-      res?.json({ updated: updated?.length, posts: updated });
+      res?.json({ updated: updated.length, posts: updated });
     } catch (error) {
       logger?.warn({ err: error }, "Batch calendar update error");
       res?.status(500).json({ error: "Failed to batch update posts" });
@@ -545,7 +545,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { postIds } = req?.body as { postIds: string[] };
 
       if (!Array?.isArray(postIds) || postIds?.length === 0) {
@@ -554,7 +554,7 @@ router?.post(
           .json({ error: "postIds must be a non-empty array" });
       }
 
-      const _existing = await db
+      const existing = await db
         .select()
         .from(posts)
         .where(and(inArray(posts?.id, postIds), eq(posts?.userId, userId)));
@@ -588,13 +588,13 @@ router?.post(
             }
           });
 
-          results?.push({ id: post?.id, success: true });
+          results?.push({ id: post.id, success: true });
         } catch (err) {
-          results?.push({ id: post?.id, success: false, error: String(err) });
+          results?.push({ id: post.id, success: false, error: String(err) });
         }
       }
 
-      const _successCount = results?.filter((r) => r?.success).length;
+      const successCount = results?.filter((r) => r?.success).length;
       res?.json({ published: successCount, results });
     } catch (error) {
       logger?.warn({ err: error }, "Batch publish error");
@@ -609,9 +609,9 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       // Support both JSON body and query-string for DELETE
-      const _rawIds = req?.body?.postIds ?? req?.query?.postIds;
+      const rawIds = req?.body?.postIds ?? req?.query?.postIds;
       const postIds: string[] = Array?.isArray(rawIds)
         ? rawIds
         : typeof rawIds === "string"
@@ -624,12 +624,12 @@ router?.delete(
           .json({ error: "postIds must be a non-empty array" });
       }
 
-      const _existing = await db
-        .select({ id: posts?.id })
+      const existing = await db
+        .select({ id: posts.id })
         .from(posts)
         .where(and(inArray(posts?.id, postIds), eq(posts?.userId, userId)));
 
-      const _validIds = existing?.map((r) => r?.id);
+      const validIds = existing?.map((r) => r?.id);
       if (validIds?.length === 0) {
         return res?.status(404).json({ error: "No matching posts found" });
       }
@@ -638,7 +638,7 @@ router?.delete(
         .delete(posts)
         .where(and(inArray(posts?.id, validIds), eq(posts?.userId, userId)));
 
-      res?.json({ deleted: validIds?.length, ids: validIds });
+      res?.json({ deleted: validIds.length, ids: validIds });
     } catch (error) {
       logger?.warn({ err: error }, "Batch delete error");
       res?.status(500).json({ error: "Failed to batch delete posts" });
@@ -652,10 +652,10 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { postId } = req?.params;
 
-      const _existing = await db
+      const existing = await db
         .select()
         .from(posts)
         .where(and(eq(posts?.id, postId), eq(posts?.userId, userId)))
@@ -683,8 +683,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _activity = (await storage?.getSocialActivity?.(userId)) || [];
+      const userId = req?.user!.id;
+      const activity = (await storage?.getSocialActivity?.(userId)) || [];
       res?.json(activity);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social activity:");
@@ -699,8 +699,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _stats = (await storage?.getSocialWeeklyStats?.(userId)) || [];
+      const userId = req?.user!.id;
+      const stats = (await storage?.getSocialWeeklyStats?.(userId)) || [];
       res?.json(stats);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get weekly stats:");
@@ -715,8 +715,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _insights = await (
+      const userId = req?.user!.id;
+      const insights = await (
         storage?.getSocialAIInsights?.(userId) ?? Promise?.resolve([])
       ).catch(() => []);
       res?.json(insights);
@@ -729,7 +729,7 @@ router?.get(
 
 // Track the time this server process started — any sync older than this used the old
 // code and must be re-fetched immediately regardless of the 1-hour guard.
-const _SERVER_BOOT_MS = Date?.now();
+const SERVER_BOOT_MS = Date?.now();
 
 // Get platform status - returns connected social accounts from OAuth connections
 // Returns array format for SocialMedia page, also works for Advertisement page
@@ -738,29 +738,29 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       // Get actual OAuth connections from socialAccounts table
-      const _connections = await db
+      const connections = await db
         .select()
         .from(socialAccounts)
         .where(eq(socialAccounts?.userId, userId))
         .limit(50);
 
-      const _connectionMap = new Map<string, (typeof connections)[0]>();
+      const connectionMap = new Map<string, (typeof connections)[0]>();
       for (const conn of connections) {
         if (conn?.isActive) {
           connectionMap?.set(conn?.platform, conn);
         }
       }
 
-      const _ONE_HOUR_MS = 60 * 60 * 1000;
-      const _now = Date?.now();
+      const ONE_HOUR_MS = 60 * 60 * 1000;
+      const now = Date?.now();
       const stalePlatforms: string[] = [];
       for (const conn of connections) {
         if (conn?.isActive) {
-          const _meta = conn?.metadata as Record<string, unknown>;
-          const _lastSync = meta?.lastSyncedAt
+          const meta = conn?.metadata as Record<string, unknown>;
+          const lastSync = meta?.lastSyncedAt
             ? new Date(meta?.lastSyncedAt).getTime()
             : conn?.createdAt
               ? new Date(conn?.createdAt).getTime()
@@ -773,11 +773,11 @@ router?.get(
       }
 
       if (stalePlatforms?.length > 0) {
-        const _uniquePlatforms = new Set<string>();
-        const _hasPreBootStale = stalePlatforms?.some((p) => {
-          const _conn = connections?.find((c) => c?.platform === p);
-          const _meta = conn?.metadata as Record<string, unknown>;
-          const _lastSync = meta?.lastSyncedAt
+        const uniquePlatforms = new Set<string>();
+        const hasPreBootStale = stalePlatforms?.some((p) => {
+          const conn = connections?.find((c) => c?.platform === p);
+          const meta = conn?.metadata as Record<string, unknown>;
+          const lastSync = meta?.lastSyncedAt
             ? new Date(meta?.lastSyncedAt).getTime()
             : 0;
           return lastSync < SERVER_BOOT_MS;
@@ -803,7 +803,7 @@ router?.get(
             ),
           );
           // Refresh the connection map with newly synced data
-          const _freshConns = await db
+          const freshConns = await db
             .select()
             .from(socialAccounts)
             .where(eq(socialAccounts?.userId, userId))
@@ -822,7 +822,7 @@ router?.get(
         }
       }
 
-      const _supportedPlatforms = [
+      const supportedPlatforms = [
         { id: "meta", name: "Meta (Facebook + Instagram)" },
         { id: "twitter", name: "Twitter (X)" },
         { id: "youtube", name: "YouTube" },
@@ -839,25 +839,25 @@ router?.get(
         { id: "spotify", name: "Spotify" },
       ];
 
-      const _platformStatus = supportedPlatforms?.map((platform) => {
+      const platformStatus = supportedPlatforms?.map((platform) => {
         if (platform?.id === "meta") {
-          const _fb = connectionMap?.get("facebook");
-          const _ig = connectionMap?.get("instagram");
-          const _isConnected = !!(fb || ig);
+          const fb = connectionMap?.get("facebook");
+          const ig = connectionMap?.get("instagram");
+          const isConnected = !!(fb || ig);
 
           // Sum followers from BOTH Facebook and Instagram
-          const _fbFollowers = fb?.followerCount || 0;
-          const _igFollowers = ig?.followerCount || 0;
-          const _followers = fbFollowers + igFollowers;
+          const fbFollowers = fb?.followerCount || 0;
+          const igFollowers = ig?.followerCount || 0;
+          const followers = fbFollowers + igFollowers;
 
-          const _fbMeta = fb?.metadata as Record<string, unknown>;
-          const _igMeta = ig?.metadata as Record<string, unknown>;
+          const fbMeta = fb?.metadata as Record<string, unknown>;
+          const igMeta = ig?.metadata as Record<string, unknown>;
 
           // Average engagement across both (only include platforms with real data)
-          const _rates = [fbMeta?.engagementRate, igMeta?.engagementRate].filter(
+          const rates = [fbMeta?.engagementRate, igMeta?.engagementRate].filter(
             (r) => typeof r === "number" && r > 0,
           );
-          const _engagement =
+          const engagement =
             rates?.length > 0
               ? Math?.round(
                   (rates?.reduce((a: number, b: number) => a + b, 0) /
@@ -867,63 +867,63 @@ router?.get(
               : 0;
 
           // Most recent sync across FB + IG
-          const _fbSync = fbMeta?.lastSyncedAt
+          const fbSync = fbMeta?.lastSyncedAt
             ? new Date(fbMeta?.lastSyncedAt).getTime()
             : 0;
-          const _igSync = igMeta?.lastSyncedAt
+          const igSync = igMeta?.lastSyncedAt
             ? new Date(igMeta?.lastSyncedAt).getTime()
             : 0;
-          const _lastSync = new Date(
+          const lastSync = new Date(
             Math?.max(fbSync, igSync) || Date?.now(),
           ).toISOString();
 
           // Primary conn for username/profileUrl — prefer IG, fall back to FB
-          const _primaryConn = ig || fb;
-          const _secondaryConn = ig ? fb : undefined;
+          const primaryConn = ig || fb;
+          const secondaryConn = ig ? fb : undefined;
 
           return {
             id: "meta",
-            name: platform?.name,
+            name: platform.name,
             isConnected,
             followers,
             engagement,
             lastSync,
             status: isConnected ? "active" : "inactive",
-            username: primaryConn?.username || undefined,
-            profileUrl: primaryConn?.profileUrl || "",
-            platformUserId: primaryConn?.platformUserId || "",
+            username: primaryConn.username || undefined,
+            profileUrl: primaryConn.profileUrl || "",
+            platformUserId: primaryConn.platformUserId || "",
             // Expose per-platform breakdown in metadata for UI tooltip/detail
             metadata: {
               ...(primaryConn?.metadata || {}),
               facebook: {
                 followers: fbFollowers,
-                username: fb?.username || null,
-                profileUrl: fb?.profileUrl || null,
-                engagementRate: fbMeta?.engagementRate || 0,
+                username: fb.username || null,
+                profileUrl: fb.profileUrl || null,
+                engagementRate: fbMeta.engagementRate || 0,
               },
               instagram: {
                 followers: igFollowers,
-                username: ig?.username || null,
-                profileUrl: ig?.profileUrl || null,
-                engagementRate: igMeta?.engagementRate || 0,
+                username: ig.username || null,
+                profileUrl: ig.profileUrl || null,
+                engagementRate: igMeta.engagementRate || 0,
               },
             },
             // Extra field used by the connected accounts detail view
-            secondaryUsername: secondaryConn?.username || undefined,
+            secondaryUsername: secondaryConn.username || undefined,
           };
         }
-        const _conn = connectionMap?.get(platform?.id);
-        const _connMeta = conn?.metadata as Record<string, unknown>;
-        const _engagement =
+        const conn = connectionMap?.get(platform?.id);
+        const connMeta = conn?.metadata as Record<string, unknown>;
+        const engagement =
           typeof connMeta?.engagementRate === "number"
             ? connMeta?.engagementRate
             : 0;
-        const _needsReconnect = !!connMeta?.needsReconnect;
+        const needsReconnect = !!connMeta?.needsReconnect;
         return {
-          id: platform?.id,
-          name: platform?.name,
+          id: platform.id,
+          name: platform.name,
           isConnected: !!conn,
-          followers: conn?.followerCount || 0,
+          followers: conn.followerCount || 0,
           engagement,
           lastSync:
             connMeta?.lastSyncedAt || conn?.createdAt?.toISOString() || "",
@@ -933,11 +933,11 @@ router?.get(
               : "active"
             : "inactive",
           needsReconnect,
-          tokenRefreshFailedAt: connMeta?.tokenRefreshFailedAt || null,
-          username: conn?.username || undefined,
-          profileUrl: conn?.profileUrl || "",
-          platformUserId: conn?.platformUserId || "",
-          metadata: conn?.metadata || {},
+          tokenRefreshFailedAt: connMeta.tokenRefreshFailedAt || null,
+          username: conn.username || undefined,
+          profileUrl: conn.profileUrl || "",
+          platformUserId: conn.platformUserId || "",
+          metadata: conn.metadata || {},
         };
       });
 
@@ -954,15 +954,15 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _connections = await db
+      const connections = await db
         .select()
         .from(socialAccounts)
         .where(eq(socialAccounts?.userId, userId))
         .limit(50);
 
-      const _activePlatforms = new Set<string>();
+      const activePlatforms = new Set<string>();
       for (const conn of connections) {
         if (conn?.isActive) {
           if (conn?.platform === "facebook" || conn?.platform === "instagram") {
@@ -976,7 +976,7 @@ router?.post(
       const allResults: Record<string, any> = {};
       for (const p of activePlatforms) {
         try {
-          const _result = await syncPlatformData(userId, p);
+          const result = await syncPlatformData(userId, p);
           Object?.assign(allResults, result);
         } catch (err) {
           logger?.warn({ err: err }, `sync-all: failed to sync ${p}:`);
@@ -988,14 +988,14 @@ router?.post(
 
       setImmediate(async () => {
         try {
-          const _followerMilestones = [
+          const followerMilestones = [
             1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000,
           ];
           for (const conn of connections) {
             if (!conn?.isActive || !conn?.followerCount) continue;
-            const _followers = conn?.followerCount as number;
+            const followers = conn?.followerCount as number;
             if (followerMilestones?.includes(followers)) {
-              const _platformName =
+              const platformName =
                 conn?.platform.charAt(0).toUpperCase() + conn?.platform.slice(1);
               await notificationService?.sendFollowerMilestoneNotification(
                 userId,
@@ -1025,8 +1025,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _keywords =
+      const userId = req?.user!.id;
+      const keywords =
         (await storage?.getSocialListeningKeywords?.(userId)) || [];
       res?.json(keywords);
     } catch (error) {
@@ -1043,11 +1043,11 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _user = await storage?.getUser(userId);
+      const userId = req?.user!.id;
+      const user = await storage?.getUser(userId);
 
-      const _ai = await getUnifiedAI();
-      const _mcResult = await ai?.generateContent({
+      const ai = await getUnifiedAI();
+      const mcResult = await ai?.generateContent({
         topic: "trending music hashtags for social media marketing",
         platform: "instagram",
         tone: "energetic",
@@ -1095,31 +1095,31 @@ router?.get(
       };
 
       function guessCategory(tag: string): string {
-        const _t = tag?.replace(/^#/, "").toLowerCase();
+        const t = tag?.replace(/^#/, "").toLowerCase();
         for (const [key, cat] of Object?.entries(categoryMap)) {
           if (t?.includes(key)) return cat;
         }
         return "general";
       }
 
-      const _dayOfYear = Math?.floor(
+      const dayOfYear = Math?.floor(
         (Date?.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
           86400000,
       );
-      const _hourOfDay = new Date().getUTCHours();
+      const hourOfDay = new Date().getUTCHours();
 
-      const _trending = rawTags?.map((tag, i) => {
-        const _base = hashVolume(tag, 15000);
-        const _timeFactor =
-          Math?.sin((dayOfYear + i) * 0?.3 + hourOfDay * 0?.1) * 0?.15;
-        const _volume = Math?.round(base * (1 + timeFactor));
+      const trending = rawTags?.map((tag, i) => {
+        const base = hashVolume(tag, 15000);
+        const timeFactor =
+          Math?.sin((dayOfYear + i) * 0.3 + hourOfDay * 0.1) * 0.15;
+        const volume = Math?.round(base * (1 + timeFactor));
         return {
-          hashtag: tag?.startsWith("#") ? tag : `#${tag}`,
+          hashtag: tag.startsWith("#") ? tag : `#${tag}`,
           posts: volume,
           trend:
-            timeFactor > 0?.05
+            timeFactor > 0.05
               ? "up"
-              : timeFactor < -0?.05
+              : timeFactor < -0.05
                 ? "down"
                 : ("stable" as string),
           category: guessCategory(tag),
@@ -1141,8 +1141,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _trending =
+      const userId = req?.user!.id;
+      const trending =
         (await storage?.getSocialListeningTrending?.(userId)) || [];
       res?.json(trending);
     } catch (error) {
@@ -1160,8 +1160,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _influencers =
+      const userId = req?.user!.id;
+      const influencers =
         (await storage?.getSocialListeningInfluencers?.(userId)) || [];
       res?.json(influencers);
     } catch (error) {
@@ -1182,8 +1182,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _alerts = (await storage?.getSocialListeningAlerts?.(userId)) || [];
+      const userId = req?.user!.id;
+      const alerts = (await storage?.getSocialListeningAlerts?.(userId)) || [];
       res?.json(alerts);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social listening alerts:");
@@ -1202,8 +1202,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _competitors = await (
+      const userId = req?.user!.id;
+      const competitors = await (
         await getCompetitorBenchmark()
       ).getCompetitors(userId);
       res?.json(competitors);
@@ -1220,19 +1220,19 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { name, handle, platforms } = req?.body;
 
       if (!name || !handle) {
         return res?.status(400).json({ error: "Name and handle are required" });
       }
 
-      const _result = await (
+      const result = await (
         await getCompetitorBenchmark()
       ).addCompetitor(userId, { name, handle, platforms });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.status(201).json(result?.competitor);
@@ -1249,15 +1249,15 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { id } = req?.params;
 
-      const _result = await (
+      const result = await (
         await getCompetitorBenchmark()
       ).removeCompetitor(userId, id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -1274,8 +1274,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _stats = (await storage?.getUserSocialStats?.(userId)) || null;
+      const userId = req?.user!.id;
+      const stats = (await storage?.getUserSocialStats?.(userId)) || null;
       res?.json(stats);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get your social stats:");
@@ -1290,14 +1290,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _competitors = await (
+      const userId = req?.user!.id;
+      const competitors = await (
         await getCompetitorBenchmark()
       ).getCompetitors(userId);
-      const _yourBrand = await (
+      const yourBrand = await (
         await getCompetitorBenchmark()
       ).getYourStats(userId);
-      const _comparison = await (
+      const comparison = await (
         await getCompetitorBenchmark()
       ).getBenchmarkComparison(userId);
       res?.json({ competitors, yourBrand, comparison });
@@ -1314,8 +1314,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _insights = await (
+      const userId = req?.user!.id;
+      const insights = await (
         await getCompetitorBenchmark()
       ).getInsights(userId);
       res?.json(insights);
@@ -1332,8 +1332,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _shareOfVoice = await (
+      const userId = req?.user!.id;
+      const shareOfVoice = await (
         await getCompetitorBenchmark()
       ).getShareOfVoice(userId);
       res?.json(shareOfVoice);
@@ -1354,7 +1354,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const {
         platform,
         status,
@@ -1372,9 +1372,9 @@ router?.get(
         .limit(Math?.max(1, Math?.min(200, Number(limit) || 50)))
         .offset(Math?.min(Math?.max(0, Number(offset) || 0), 100_000));
 
-      const _messages = await query;
+      const messages = await query;
 
-      const _filteredMessages = messages?.filter((m) => {
+      const filteredMessages = messages?.filter((m) => {
         if (platform && platform !== "all" && m?.platform !== platform)
           return false;
         if (status && status !== "all" && m?.status !== status) return false;
@@ -1386,32 +1386,32 @@ router?.get(
       });
 
       res?.json({
-        messages: filteredMessages?.map((m) => ({
-          id: m?.id,
-          platform: m?.platform,
-          type: m?.messageType,
-          content: m?.content,
+        messages: filteredMessages.map((m) => ({
+          id: m.id,
+          platform: m.platform,
+          type: m.messageType,
+          content: m.content,
           author: {
-            id: m?.authorId,
-            name: m?.authorName,
-            username: m?.authorHandle,
-            avatar: m?.authorAvatar,
-            followers: m?.authorFollowers,
-            verified: m?.authorVerified,
+            id: m.authorId,
+            name: m.authorName,
+            username: m.authorHandle,
+            avatar: m.authorAvatar,
+            followers: m.authorFollowers,
+            verified: m.authorVerified,
           },
-          postContent: m?.postContent,
-          postUrl: m?.postUrl,
-          sentiment: m?.sentiment,
-          priority: m?.priority,
-          status: m?.status,
-          assignedTo: m?.assignedTo,
-          tags: m?.tags || [],
-          threadId: m?.threadId,
-          createdAt: m?.createdAt,
-          readAt: m?.readAt,
-          repliedAt: m?.repliedAt,
+          postContent: m.postContent,
+          postUrl: m.postUrl,
+          sentiment: m.sentiment,
+          priority: m.priority,
+          status: m.status,
+          assignedTo: m.assignedTo,
+          tags: m.tags || [],
+          threadId: m.threadId,
+          createdAt: m.createdAt,
+          readAt: m.readAt,
+          repliedAt: m.repliedAt,
         })),
-        total: filteredMessages?.length,
+        total: filteredMessages.length,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get inbox messages:");
@@ -1426,29 +1426,29 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _messages = await db
+      const userId = req?.user!.id;
+      const messages = await db
         .select()
         .from(socialInboxMessages)
         .where(eq(socialInboxMessages?.userId, userId))
         .limit(200);
 
-      const _stats = {
-        total: messages?.length,
-        unread: messages?.filter((m) => m?.status === "unread").length,
-        highPriority: messages?.filter(
+      const stats = {
+        total: messages.length,
+        unread: messages.filter((m) => m?.status === "unread").length,
+        highPriority: messages.filter(
           (m) => m?.priority === "high" && m?.status === "unread",
         ).length,
-        negative: messages?.filter(
+        negative: messages.filter(
           (m) => m?.sentiment === "negative" && m?.status === "unread",
         ).length,
         byPlatform: {
-          twitter: messages?.filter((m) => m?.platform === "twitter").length,
-          instagram: messages?.filter((m) => m?.platform === "instagram").length,
-          facebook: messages?.filter((m) => m?.platform === "facebook").length,
-          tiktok: messages?.filter((m) => m?.platform === "tiktok").length,
-          youtube: messages?.filter((m) => m?.platform === "youtube").length,
-          linkedin: messages?.filter((m) => m?.platform === "linkedin").length,
+          twitter: messages.filter((m) => m?.platform === "twitter").length,
+          instagram: messages.filter((m) => m?.platform === "instagram").length,
+          facebook: messages.filter((m) => m?.platform === "facebook").length,
+          tiktok: messages.filter((m) => m?.platform === "tiktok").length,
+          youtube: messages.filter((m) => m?.platform === "youtube").length,
+          linkedin: messages.filter((m) => m?.platform === "linkedin").length,
         },
       };
       res?.json(stats);
@@ -1471,7 +1471,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { id } = req?.params;
 
       await db
@@ -1501,7 +1501,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { messageIds } = req?.body;
 
       if (!Array?.isArray(messageIds)) {
@@ -1523,7 +1523,7 @@ router?.post(
           );
       }
 
-      res?.json({ success: true, updated: messageIds?.length });
+      res?.json({ success: true, updated: messageIds.length });
     } catch (error) {
       logger?.warn({ err: error }, "Failed to mark messages as read:");
       res?.status(500).json({ error: "Failed to mark messages as read" });
@@ -1537,7 +1537,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { id } = req?.params;
       const { content } = req?.body;
 
@@ -1596,8 +1596,8 @@ router?.post(
           category: "inbox",
           title: "Reply Sent",
           message: `Your reply to @${message?.authorHandle} on ${message?.platform} has been sent.`,
-          platform: message?.platform,
-          author: message?.authorHandle,
+          platform: message.platform,
+          author: message.authorHandle,
         },
       });
     } catch (error) {
@@ -1622,7 +1622,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { id } = req?.params;
       const { assigneeId, assigneeName } = req?.body;
 
@@ -1668,7 +1668,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { id } = req?.params;
 
       await db
@@ -1723,8 +1723,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _connections = await db
+      const userId = req?.user!.id;
+      const connections = await db
         .select()
         .from(socialAccounts)
         .where(eq(socialAccounts?.userId, userId))
@@ -1734,14 +1734,14 @@ router?.get(
         connections
           .filter((c) => c?.isActive)
           .map((c) => ({
-            platform: c?.platform,
-            username: c?.username,
-            connected: c?.isActive,
-            connectedAt: c?.createdAt,
-            followers: c?.followerCount || 0,
-            profileUrl: c?.profileUrl || "",
-            platformUserId: c?.platformUserId || "",
-            metadata: c?.metadata || {},
+            platform: c.platform,
+            username: c.username,
+            connected: c.isActive,
+            connectedAt: c.createdAt,
+            followers: c.followerCount || 0,
+            profileUrl: c.profileUrl || "",
+            platformUserId: c.platformUserId || "",
+            metadata: c.metadata || {},
           })),
       );
     } catch (error) {
@@ -1760,10 +1760,10 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       // Scheduled social posts (includes autopilot-created posts with status 'pending')
-      const _scheduledPosts = await db
+      const scheduledPosts = await db
         .select()
         .from(posts)
         .where(
@@ -1781,65 +1781,65 @@ router?.get(
         .limit(200);
 
       // Content calendar entries
-      const _calendarEntries = await db
+      const calendarEntries = await db
         .select()
         .from(contentCalendar)
         .where(eq(contentCalendar?.userId, userId))
         .orderBy(desc(contentCalendar?.scheduledAt))
         .limit(200);
 
-      const _calendarPostIds = new Set(calendarEntries?.map((c) => c?.id));
+      const calendarPostIds = new Set(calendarEntries?.map((c) => c?.id));
 
       // Merge and normalise both sources
-      const _allPosts = [
+      const allPosts = [
         ...scheduledPosts
           .filter((p) => !calendarPostIds?.has(p?.id))
           .map((p) => {
-            const _eng = (p?.engagement as Record<string, unknown>) || {};
-            const _meta = eng?._autopilotMeta ? eng : {};
+            const eng = (p?.engagement as Record<string, unknown>) || {};
+            const meta = eng?._autopilotMeta ? eng : {};
             let parsedContent: Record<string, unknown> = {};
             try {
               parsedContent = JSON?.parse(p?.content ?? "{}");
             } catch {
               parsedContent = {};
             }
-            const _contentObj = meta?.content || parsedContent || {};
-            const _titleText =
+            const contentObj = meta?.content || parsedContent || {};
+            const titleText =
               contentObj?.text ||
               contentObj?.caption ||
               p?.content?.slice(0, 80) ||
               "(no caption)";
-            const _resolvedStatus =
+            const resolvedStatus =
               p?.status === "pending" ? "scheduled" : (p?.status ?? "scheduled");
             return {
-              id: p?.id,
+              id: p.id,
               title: String(titleText).slice(0, 80),
-              platform: meta?.platforms?.[0] || p?.platform,
-              platforms: meta?.platforms || [p?.platform].filter(Boolean),
+              platform: meta.platforms?.[0] || p?.platform,
+              platforms: meta.platforms || [p?.platform].filter(Boolean),
               status: resolvedStatus,
-              scheduledAt: p?.scheduledAt,
-              publishedAt: p?.publishedAt,
+              scheduledAt: p.scheduledAt,
+              publishedAt: p.publishedAt,
               content: contentObj,
-              mediaUrls: p?.mediaUrls ?? [],
+              mediaUrls: p.mediaUrls ?? [],
               source: "autopilot" as const,
-              createdBy: meta?.createdBy || "social_autopilot",
+              createdBy: meta.createdBy || "social_autopilot",
             };
           }),
         ...calendarEntries?.map((c) => ({
-          id: c?.id,
-          title: c?.title,
-          platform: c?.platform,
-          status: c?.status,
-          scheduledAt: c?.scheduledAt,
-          publishedAt: c?.publishedAt,
+          id: c.id,
+          title: c.title,
+          platform: c.platform,
+          status: c.status,
+          scheduledAt: c.scheduledAt,
+          publishedAt: c.publishedAt,
           content:
             ((c?.content as Record<string, unknown>)?.body as string) ?? null,
-          mediaUrls: c?.mediaUrls ?? [],
+          mediaUrls: c.mediaUrls ?? [],
           source: "calendar" as const,
         })),
       ];
 
-      return res?.json({ posts: allPosts, total: allPosts?.length });
+      return res?.json({ posts: allPosts, total: allPosts.length });
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get unified calendar posts:");
       return res?.json({ posts: [], total: 0 });
@@ -1852,9 +1852,9 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _userCampaigns = await db
+      const userCampaigns = await db
         .select()
         .from(campaigns)
         .where(eq(campaigns?.userId, userId))
@@ -1863,7 +1863,7 @@ router?.get(
 
       return res?.json({
         campaigns: userCampaigns,
-        total: userCampaigns?.length,
+        total: userCampaigns.length,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get unified calendar campaigns:");
@@ -1874,8 +1874,8 @@ router?.get(
 
 // Static music-industry calendar dates — updated for the current year.
 // These mark high-impact windows when artists should schedule releases/campaigns.
-const _MUSIC_INDUSTRY_HOLIDAYS = (() => {
-  const _y = new Date().getFullYear();
+const MUSIC_INDUSTRY_HOLIDAYS = (() => {
+  const y = new Date().getFullYear();
   return [
     {
       id: "new-release-friday",
@@ -1955,7 +1955,7 @@ router?.get(
     try {
       return res?.json({
         holidays: MUSIC_INDUSTRY_HOLIDAYS,
-        total: MUSIC_INDUSTRY_HOLIDAYS?.length,
+        total: MUSIC_INDUSTRY_HOLIDAYS.length,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get unified calendar holidays:");
@@ -1969,10 +1969,10 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       // Posts that are scheduled but not yet published (the publishing queue)
-      const _queuedPosts = await db
+      const queuedPosts = await db
         .select()
         .from(posts)
         .where(
@@ -1985,7 +1985,7 @@ router?.get(
         .orderBy(posts?.scheduledAt)
         .limit(100);
 
-      return res?.json({ queue: queuedPosts, total: queuedPosts?.length });
+      return res?.json({ queue: queuedPosts, total: queuedPosts.length });
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get unified calendar queue:");
       return res?.json({ queue: [], total: 0 });
@@ -2010,7 +2010,7 @@ router?.post(
         tone = "energetic",
       } = req?.body;
 
-      const _validPlatforms = [
+      const validPlatforms = [
         "instagram",
         "twitter",
         "facebook",
@@ -2020,7 +2020,7 @@ router?.post(
         "threads",
         "googlebusiness",
       ];
-      const _validTones = ["professional", "casual", "energetic", "promotional"];
+      const validTones = ["professional", "casual", "energetic", "promotional"];
       const contentTypeMap: Record<string, string> = {
         post: "engagement",
         announcement: "announcement",
@@ -2055,21 +2055,21 @@ router?.post(
         quote: "engagement",
       };
 
-      const _generatedContent = [];
-      const _failedPlatforms = [];
+      const generatedContent = [];
+      const failedPlatforms = [];
 
       // MaxCore AI is the only source — all platforms in parallel
-      const _mcResults = await Promise?.allSettled(
+      const mcResults = await Promise?.allSettled(
         platforms
           .filter((p: string) => validPlatforms?.includes(p))
           .map(async (platform: string) => {
-            const _ai = await getUnifiedAI();
-            const _result = await ai?.generateContent({
-              tone: validTones?.includes(tone) ? tone : "energetic",
+            const ai = await getUnifiedAI();
+            const result = await ai?.generateContent({
+              tone: validTones.includes(tone) ? tone : "energetic",
               platform,
               topic: topic || "music",
               contentType: contentTypeMap[contentType] || "engagement",
-              userId: req?.user?.id,
+              userId: req.user?.id,
               includeHashtags: true,
               includeEmojis: true,
             });
@@ -2089,15 +2089,15 @@ router?.post(
         if (result?.success && result?.data) {
           generatedContent?.push({
             platform,
-            caption: result?.data.caption,
-            content: result?.data.caption,
-            hashtags: result?.data.hashtags,
-            hook: result?.data.hook,
-            body: result?.data.body,
-            cta: result?.data.cta,
-            emojis: result?.data.emojis,
-            characterCount: result?.data.charCount,
-            estimatedEngagement: result?.data.estimatedEngagement,
+            caption: result.data.caption,
+            content: result.data.caption,
+            hashtags: result.data.hashtags,
+            hook: result.data.hook,
+            body: result.data.body,
+            cta: result.data.cta,
+            emojis: result.data.emojis,
+            characterCount: result.data.charCount,
+            estimatedEngagement: result.data.estimatedEngagement,
             optimalPostTime: getOptimalPostTime(platform),
             source: "MaxCoreAI",
           });
@@ -2106,13 +2106,13 @@ router?.post(
         }
       }
 
-      const _hasHashtags = generatedContent?.some(
+      const hasHashtags = generatedContent?.some(
         (c) => c?.hashtags && c?.hashtags.length > 0,
       );
-      const _optimalTime = generatedContent[0]?.optimalPostTime || null;
+      const optimalTime = generatedContent[0]?.optimalPostTime || null;
 
       res?.json({
-        success: generatedContent?.length > 0,
+        success: generatedContent.length > 0,
         generatedContent,
         platforms,
         contentType,
@@ -2133,21 +2133,21 @@ router?.post(
             generatedContent?.length > 0
               ? `Generated ${generatedContent?.length} content variation${generatedContent?.length > 1 ? "s" : ""}.${hasHashtags ? " Hashtag suggestions included." : ""}${optimalTime ? ` Best posting time: ${optimalTime}.` : ""}`
               : "Failed to generate content. Please try again.",
-          variationsCount: generatedContent?.length,
+          variationsCount: generatedContent.length,
           hasHashtags,
           optimalTime,
-          fallbackAvailable: failedPlatforms?.length > 0,
+          fallbackAvailable: failedPlatforms.length > 0,
         },
       });
 
       if (generatedContent?.length > 0 && req?.user?.id) {
         setImmediate(async () => {
           try {
-            const _firstPiece = generatedContent[0];
-            const _platformLabel =
+            const firstPiece = generatedContent[0];
+            const platformLabel =
               firstPiece?.platform.charAt(0).toUpperCase() +
               firstPiece?.platform.slice(1);
-            const _snippet = (
+            const snippet = (
               firstPiece?.caption ||
               firstPiece?.content ||
               ""
@@ -2213,20 +2213,20 @@ function assertSafeExternalUrl(raw: string): void {
       status: 400,
     });
   }
-  const _h = parsed?.hostname.toLowerCase().replace(/^\[|\]$/g, ""); // strip IPv6 brackets
-  const _blocked = [
+  const h = parsed?.hostname.toLowerCase().replace(/^\[|\]$/g, ""); // strip IPv6 brackets
+  const blocked = [
     /^localhost$/i,
-    /^127\./, // 127?.0.0?.0/8  loopback
+    /^127\./, // 127.0.0.0/8  loopback
     /^0\.0\.0\.0$/,
     /^::1$/,
     /^fc00:/i,
     /^fd/i, // IPv6 unique-local
     /^fe80:/i, // IPv6 link-local
-    /^10\./, // 10?.0.0?.0/8   private
-    /^172\.(1[6-9]|2\d|3[01])\./, // 172?.16.0?.0/12 private
-    /^192\.168\./, // 192?.168.0?.0/16 private
-    /^169\.254\./, // 169?.254.0?.0/16 link-local + AWS/GCP metadata
-    /^100\.64\./, // 100?.64.0?.0/10 CGNAT
+    /^10\./, // 10.0.0.0/8   private
+    /^172\.(1[6-9]|2\d|3[01])\./, // 172.16.0.0/12 private
+    /^192\.168\./, // 192.168.0.0/16 private
+    /^169\.254\./, // 169.254.0.0/16 link-local + AWS/GCP metadata
+    /^100\.64\./, // 100.64.0.0/10 CGNAT
     /^198\.51\.100\./, // TEST-NET-2
     /^203\.0\.113\./, // TEST-NET-3
     /metadata\.google\.internal$/i,
@@ -2267,13 +2267,13 @@ router?.post(
       } catch (ssrfErr) {
         return res
           .status(400)
-          .json({ error: ssrfErr?.message || "Invalid URL" });
+          .json({ error: ssrfErr.message || "Invalid URL" });
       }
 
       // Use the rich Python URL analyzer for full metadata extraction.
       // If the analyzer fails (network error, SSL issue, bot-block) we fall back
       // to a minimal stub so MaxCore can still generate relevant content from the URL.
-      let analysis: import("../services/mediaAnalyzerService?.js").UrlAnalysis;
+      let analysis: import("../services/mediaAnalyzerService.js").UrlAnalysis;
       try {
         analysis = await analyzeUrl(url?.trim());
       } catch (analyzeErr) {
@@ -2281,15 +2281,15 @@ router?.post(
           "[generate-from-url] URL analysis failed — using URL-derived stub:",
           analyzeErr?.message,
         );
-        const _parsedUrl = (() => {
+        const parsedUrl = (() => {
           try {
             return new URL(url?.trim());
           } catch {
             return null;
           }
         })();
-        const _domain = parsedUrl?.hostname?.replace(/^www\./, "") || url;
-        const _pathWords = (parsedUrl?.pathname || "")
+        const domain = parsedUrl?.hostname?.replace(/^www\./, "") || url;
+        const pathWords = (parsedUrl?.pathname || "")
           .replace(/[-_/]/g, " ")
           .trim();
         analysis = {
@@ -2351,18 +2351,18 @@ router?.post(
           apple_music_type: "",
           apple_music_id: "",
           data_sources: ["url_fallback"],
-          error: analyzeErr?.message,
+          error: analyzeErr.message,
         } as Record<string, unknown>;
       }
-      const _seed = urlToContentSeed(analysis);
+      const seed = urlToContentSeed(analysis);
 
       // Build a clean, structured topic for the AI model — no pollution from targetAudience or format
       let topic: string;
       if (seed?.track && seed?.artist) {
-        topic = `"${seed?.track}" by ${seed?.artist}`;
+        topic = `"${seed.track}" by ${seed?.artist}`;
         if (seed?.genre && seed?.genre !== "default") topic += ` — ${seed?.genre}`;
       } else if (seed?.track) {
-        topic = `"${seed?.track}"`;
+        topic = `"${seed.track}"`;
       } else if (seed?.artist) {
         topic = `New music by ${seed?.artist}`;
       } else if (analysis?.title) {
@@ -2376,10 +2376,10 @@ router?.post(
       }
 
       // Derive the content_type for better CTA selection
-      const _contentType =
+      const contentType =
         seed?.content_type || seed?.platform_category || "general";
 
-      const _validPlatforms = [
+      const validPlatforms = [
         "instagram",
         "twitter",
         "facebook",
@@ -2389,11 +2389,11 @@ router?.post(
         "threads",
         "googlebusiness",
       ];
-      const _validTones = ["professional", "casual", "energetic", "promotional"];
+      const validTones = ["professional", "casual", "energetic", "promotional"];
       const generatedContent: Record<string, unknown>[] = [];
 
       // Combine keywords + tags from URL analysis into a deduplicated keyword list
-      const _allKeywords = [
+      const allKeywords = [
         ...new Set([...(seed?.keywords || []), ...(seed?.tags || [])]),
       ].slice(0, 20);
 
@@ -2424,29 +2424,29 @@ router?.post(
       if (targetAudience) extraParts?.push(`Target: ${targetAudience}`);
 
       // MaxCore AI is the only source — generate for all platforms in parallel
-      const _platformResults = await Promise?.allSettled(
+      const platformResults = await Promise?.allSettled(
         platforms
           .filter((p: string) => validPlatforms?.includes(p))
           .map(async (platform: string) => {
-            const _ai = await getUnifiedAI();
-            const _result = await ai?.generateContent({
-              tone: validTones?.includes(tone) ? tone : "energetic",
+            const ai = await getUnifiedAI();
+            const result = await ai?.generateContent({
+              tone: validTones.includes(tone) ? tone : "energetic",
               platform,
-              topic: topic?.substring(0, 120),
-              genre: seed?.genre || "hip-hop",
-              artistName: seed?.artist || "",
-              trackTitle: seed?.track || "",
-              album: seed?.album || undefined,
-              releaseDate: seed?.release_date || undefined,
-              label: seed?.label || undefined,
-              keywords: allKeywords?.length ? allKeywords : undefined,
-              mood: seed?.tone !== "default" ? seed?.tone : undefined,
-              description: analysis?.description?.slice(0, 200) || undefined,
-              bodyPreview: seed?.body_preview?.slice(0, 300) || undefined,
-              extraContext: extraParts?.length
+              topic: topic.substring(0, 120),
+              genre: seed.genre || "hip-hop",
+              artistName: seed.artist || "",
+              trackTitle: seed.track || "",
+              album: seed.album || undefined,
+              releaseDate: seed.release_date || undefined,
+              label: seed.label || undefined,
+              keywords: allKeywords.length ? allKeywords : undefined,
+              mood: seed.tone !== "default" ? seed?.tone : undefined,
+              description: analysis.description?.slice(0, 200) || undefined,
+              bodyPreview: seed.body_preview?.slice(0, 300) || undefined,
+              extraContext: extraParts.length
                 ? extraParts?.join(" | ")
                 : undefined,
-              userId: req?.user?.id,
+              userId: req.user?.id,
               includeHashtags: true,
               includeEmojis: true,
             });
@@ -2459,46 +2459,46 @@ router?.post(
         const { platform, result } = settled?.value;
         if (!result?.success || !result?.data) continue;
 
-        const _captionText = result?.data.caption + `\n\n🔗 ${url}`;
-        const _rawCaption = result?.data.caption || "";
-        const _captionParts = rawCaption
+        const captionText = result?.data.caption + `\n\n🔗 ${url}`;
+        const rawCaption = result?.data.caption || "";
+        const captionParts = rawCaption
           .split(/\n\n+/)
           .map((s: string) => s?.trim())
           .filter(Boolean);
-        const _derivedHook =
+        const derivedHook =
           result?.data.hook ||
           captionParts[0] ||
           rawCaption?.split("\n")[0] ||
           "";
-        const _derivedBody = result?.data.body || captionParts[1] || "";
-        const _derivedCta = result?.data.cta || captionParts[2] || "";
+        const derivedBody = result?.data.body || captionParts[1] || "";
+        const derivedCta = result?.data.cta || captionParts[2] || "";
         // Video overlays need short, punchy text (no hashtags, no URLs)
-        const _stripMeta = (s: string) =>
+        const stripMeta = (s: string) =>
           s
             .replace(/#\w+/g, "")
             .replace(/https?:\/\/\S+/g, "")
             .replace(/🔗.*$/g, "")
             .trim();
-        const _videoHook = stripMeta(derivedHook).slice(0, 80);
-        const _videoBody = stripMeta(derivedBody).slice(0, 100);
-        const _videoCta =
+        const videoHook = stripMeta(derivedHook).slice(0, 80);
+        const videoBody = stripMeta(derivedBody).slice(0, 100);
+        const videoCta =
           stripMeta(derivedCta).slice(0, 50) || "Join Max Booster";
         generatedContent?.push({
           platform,
           caption: captionText,
           content: captionText,
-          hashtags: result?.data.hashtags,
+          hashtags: result.data.hashtags,
           hook: derivedHook,
           body: derivedBody,
           cta: derivedCta,
           video_hook: videoHook,
           video_body: videoBody,
           video_cta: videoCta,
-          artist_name: seed?.artist || "",
-          genre: seed?.genre || "hip-hop",
-          thumbnail_url: seed?.og_image || seed?.thumbnail_url || "",
+          artist_name: seed.artist || "",
+          genre: seed.genre || "hip-hop",
+          thumbnail_url: seed.og_image || seed?.thumbnail_url || "",
           sourceUrl: url,
-          extractedTitle: analysis?.title,
+          extractedTitle: analysis.title,
           contentType,
           format,
           targetAudience: targetAudience || undefined,
@@ -2511,60 +2511,60 @@ router?.post(
         for (const platform of platforms) {
           if (!validPlatforms?.includes(platform)) continue;
 
-          const _result = await (
+          const result = await (
             await getUnifiedAI()
           ).generateContent({
-            tone: validTones?.includes(tone) ? tone : "energetic",
+            tone: validTones.includes(tone) ? tone : "energetic",
             platform,
-            topic: topic?.substring(0, 120),
-            genre: seed?.genre || "hip-hop",
-            artistName: seed?.artist || "",
-            trackTitle: seed?.track || "",
-            userId: req?.user?.id,
+            topic: topic.substring(0, 120),
+            genre: seed.genre || "hip-hop",
+            artistName: seed.artist || "",
+            trackTitle: seed.track || "",
+            userId: req.user?.id,
             includeHashtags: true,
             includeEmojis: true,
           });
 
           if (result?.success && result?.data) {
-            const _captionText = result?.data.caption + `\n\n🔗 ${url}`;
-            const _rawCaption = result?.data.caption || "";
-            const _captionParts = rawCaption
+            const captionText = result?.data.caption + `\n\n🔗 ${url}`;
+            const rawCaption = result?.data.caption || "";
+            const captionParts = rawCaption
               .split(/\n\n+/)
               .map((s: string) => s?.trim())
               .filter(Boolean);
-            const _derivedHook =
+            const derivedHook =
               result?.data.hook ||
               captionParts[0] ||
               rawCaption?.split("\n")[0] ||
               "";
-            const _derivedBody = result?.data.body || captionParts[1] || "";
-            const _derivedCta = result?.data.cta || captionParts[2] || "";
-            const _stripMeta = (s: string) =>
+            const derivedBody = result?.data.body || captionParts[1] || "";
+            const derivedCta = result?.data.cta || captionParts[2] || "";
+            const stripMeta = (s: string) =>
               s
                 .replace(/#\w+/g, "")
                 .replace(/https?:\/\/\S+/g, "")
                 .replace(/🔗.*$/g, "")
                 .trim();
-            const _videoHook = stripMeta(derivedHook).slice(0, 80);
-            const _videoBody = stripMeta(derivedBody).slice(0, 100);
-            const _videoCta =
+            const videoHook = stripMeta(derivedHook).slice(0, 80);
+            const videoBody = stripMeta(derivedBody).slice(0, 100);
+            const videoCta =
               stripMeta(derivedCta).slice(0, 50) || "Join Max Booster";
             generatedContent?.push({
               platform,
               caption: captionText,
               content: captionText,
-              hashtags: result?.data.hashtags,
+              hashtags: result.data.hashtags,
               hook: derivedHook,
               body: derivedBody,
               cta: derivedCta,
               video_hook: videoHook,
               video_body: videoBody,
               video_cta: videoCta,
-              artist_name: seed?.artist || "",
-              genre: seed?.genre || "hip-hop",
-              thumbnail_url: seed?.og_image || seed?.thumbnail_url || "",
+              artist_name: seed.artist || "",
+              genre: seed.genre || "hip-hop",
+              thumbnail_url: seed.og_image || seed?.thumbnail_url || "",
               sourceUrl: url,
-              extractedTitle: analysis?.title,
+              extractedTitle: analysis.title,
               contentType,
               format,
               targetAudience: targetAudience || undefined,
@@ -2580,14 +2580,14 @@ router?.post(
         url,
         platforms,
         metadata: {
-          title: analysis?.title,
-          description: analysis?.description?.substring(0, 200),
+          title: analysis.title,
+          description: analysis.description?.substring(0, 200),
           type: contentType,
-          artist: seed?.artist || "",
-          track: seed?.track || "",
-          genre: seed?.genre || "",
-          thumbnail: seed?.og_image || seed?.thumbnail_url || "",
-          platform: analysis?.platform,
+          artist: seed.artist || "",
+          track: seed.track || "",
+          genre: seed.genre || "",
+          thumbnail: seed.og_image || seed?.thumbnail_url || "",
+          platform: analysis.platform,
         },
       });
     } catch (error) {
@@ -2603,8 +2603,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _scheduledPosts = (await storage?.getScheduledPosts?.(userId)) || [];
+      const userId = req?.user!.id;
+      const scheduledPosts = (await storage?.getScheduledPosts?.(userId)) || [];
       res?.json(scheduledPosts);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get scheduled posts:");
@@ -2619,11 +2619,11 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform, period = "30d" } = req?.query;
 
-      const _days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
-      const _periodStart = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
+      const days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
+      const periodStart = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
 
       const [accounts, periodPosts, autopilotContent, artistProfile] =
         await Promise?.all([
@@ -2654,12 +2654,12 @@ router?.get(
         ]);
 
       // Kick off background follower-count sync for stale accounts
-      const _ONE_HOUR_MS = 60 * 60 * 1000;
-      const _now = Date?.now();
-      const _stalePlatforms = new Set<string>();
+      const ONE_HOUR_MS = 60 * 60 * 1000;
+      const now = Date?.now();
+      const stalePlatforms = new Set<string>();
       for (const acc of accounts) {
         if (!acc?.isActive) continue;
-        const _lastSynced = (acc?.metadata as Record<string, unknown>)
+        const lastSynced = (acc?.metadata as Record<string, unknown>)
           ?.lastSyncedAt
           ? new Date(
               (acc?.metadata as Record<string, unknown>).lastSyncedAt,
@@ -2701,9 +2701,9 @@ router?.get(
       > = {};
 
       for (const post of periodPosts) {
-        const _eng = post?.engagement as Record<string, unknown>;
+        const eng = post?.engagement as Record<string, unknown>;
         if (eng) {
-          const _pl = (post?.platform || "unknown").toLowerCase();
+          const pl = (post?.platform || "unknown").toLowerCase();
           if (!platformEngagement[pl])
             platformEngagement[pl] = {
               likes: 0,
@@ -2727,9 +2727,9 @@ router?.get(
       }
 
       for (const content of autopilotContent) {
-        const _perf = content?.performance as Record<string, unknown>;
+        const perf = content?.performance as Record<string, unknown>;
         if (perf) {
-          const _pl = (content?.platform || "unknown").toLowerCase();
+          const pl = (content?.platform || "unknown").toLowerCase();
           if (!platformEngagement[pl])
             platformEngagement[pl] = {
               likes: 0,
@@ -2750,22 +2750,22 @@ router?.get(
         }
       }
 
-      const _totalEngagement = totalLikes + totalComments + totalShares;
-      const _totalFollowers = accounts?.reduce(
+      const totalEngagement = totalLikes + totalComments + totalShares;
+      const totalFollowers = accounts?.reduce(
         (sum, acc) => sum + (acc?.followerCount || 0),
         0,
       );
-      const _engagementRate =
+      const engagementRate =
         totalViews > 0
           ? Math?.round((totalEngagement / totalViews) * 10000) / 100
           : 0;
 
       // Platform breakdown enriched with follower counts from connected accounts
-      const _platformBreakdown = accounts
+      const platformBreakdown = accounts
         .filter((acc) => acc?.isActive)
         .map((acc) => {
-          const _pl = acc?.platform.toLowerCase();
-          const _eng = platformEngagement[pl] || {
+          const pl = acc?.platform.toLowerCase();
+          const eng = platformEngagement[pl] || {
             likes: 0,
             comments: 0,
             shares: 0,
@@ -2773,16 +2773,16 @@ router?.get(
             posts: 0,
           };
           return {
-            platform: acc?.platform,
-            username: acc?.username || "",
-            followers: acc?.followerCount || 0,
-            posts: eng?.posts,
-            likes: eng?.likes,
-            comments: eng?.comments,
-            shares: eng?.shares,
-            views: eng?.views,
-            engagement: eng?.likes + eng?.comments + eng?.shares,
-            profileUrl: acc?.profileUrl || "",
+            platform: acc.platform,
+            username: acc.username || "",
+            followers: acc.followerCount || 0,
+            posts: eng.posts,
+            likes: eng.likes,
+            comments: eng.comments,
+            shares: eng.shares,
+            views: eng.views,
+            engagement: eng.likes + eng?.comments + eng?.shares,
+            profileUrl: acc.profileUrl || "",
           };
         });
 
@@ -2792,16 +2792,16 @@ router?.get(
         { date: string; posts: number; engagement: number; views: number }
       > = {};
       for (let i = days - 1; i >= 0; i--) {
-        const _d = new Date(Date?.now() - i * 24 * 60 * 60 * 1000)
+        const d = new Date(Date?.now() - i * 24 * 60 * 60 * 1000)
           .toISOString()
           .split("T")[0];
         dailyMap[d] = { date: d, posts: 0, engagement: 0, views: 0 };
       }
       for (const post of periodPosts) {
-        const _d = new Date(post?.createdAt!).toISOString().split("T")[0];
+        const d = new Date(post?.createdAt!).toISOString().split("T")[0];
         if (dailyMap[d]) {
           dailyMap[d].posts += 1;
-          const _eng = post?.engagement as Record<string, unknown>;
+          const eng = post?.engagement as Record<string, unknown>;
           if (eng) {
             dailyMap[d].engagement +=
               (eng?.likes || 0) + (eng?.comments || 0) + (eng?.shares || 0);
@@ -2810,10 +2810,10 @@ router?.get(
         }
       }
       for (const content of autopilotContent) {
-        const _d = new Date(content?.createdAt!).toISOString().split("T")[0];
+        const d = new Date(content?.createdAt!).toISOString().split("T")[0];
         if (dailyMap[d]) {
           dailyMap[d].posts += 1;
-          const _perf = content?.performance as Record<string, unknown>;
+          const perf = content?.performance as Record<string, unknown>;
           if (perf) {
             dailyMap[d].engagement +=
               (perf?.likes || 0) + (perf?.comments || 0) + (perf?.shares || 0);
@@ -2823,14 +2823,14 @@ router?.get(
       }
 
       // Top posts by engagement
-      const _allPostsForRanking = [
+      const allPostsForRanking = [
         ...periodPosts?.map((p) => ({
-          id: p?.id,
-          platform: p?.platform,
-          content: p?.content?.substring(0, 120) || "",
-          publishedAt: p?.publishedAt || p?.createdAt,
+          id: p.id,
+          platform: p.platform,
+          content: p.content?.substring(0, 120) || "",
+          publishedAt: p.publishedAt || p?.createdAt,
           engagement: (() => {
-            const _e = p?.engagement as Record<string, unknown>;
+            const e = p?.engagement as Record<string, unknown>;
             return e ? (e?.likes || 0) + (e?.comments || 0) + (e?.shares || 0) : 0;
           })(),
           views: (p?.engagement as Record<string, unknown>)?.views || 0,
@@ -2841,14 +2841,14 @@ router?.get(
 
       // Spotify artist data if connected
       let spotifyStats: Record<string, unknown> | null = null;
-      const _profile = artistProfile[0];
+      const profile = artistProfile[0];
       if (profile?.spotifyArtistId) {
         try {
-          const _clientId = process?.env.SPOTIFY_CLIENT_ID;
-          const _clientSecret = process?.env.SPOTIFY_CLIENT_SECRET;
+          const clientId = process?.env.SPOTIFY_CLIENT_ID;
+          const clientSecret = process?.env.SPOTIFY_CLIENT_SECRET;
           if (clientId && clientSecret) {
-            const _tokenRes = await fetch(
-              "https://accounts?.spotify.com/api/token",
+            const tokenRes = await fetch(
+              "https://accounts.spotify.com/api/token",
               {
                 method: "POST",
                 headers: {
@@ -2856,32 +2856,32 @@ router?.get(
                   Authorization: `Basic ${Buffer?.from(`${clientId}:${clientSecret}`).toString("base64")}`,
                 },
                 body: "grant_type=client_credentials",
-                signal: AbortSignal?.timeout(6000),
+                signal: AbortSignal.timeout(6000),
               },
             );
             if (tokenRes?.ok) {
               const { access_token } = (await tokenRes?.json()) as {
                 access_token: string;
               };
-              const _artistRes = await fetch(
-                `https://api?.spotify.com/v1/artists/${profile?.spotifyArtistId}`,
+              const artistRes = await fetch(
+                `https://api?.spotify.com/v1/artists/${profile.spotifyArtistId}`,
                 {
                   headers: { Authorization: `Bearer ${access_token}` },
-                  signal: AbortSignal?.timeout(6000),
+                  signal: AbortSignal.timeout(6000),
                 },
               );
               if (artistRes?.ok) {
-                const _artist = (await artistRes?.json()) as Record<
+                const artist = (await artistRes?.json()) as Record<
                   string,
                   unknown
                 >;
                 spotifyStats = {
-                  followers: artist?.followers?.total || 0,
-                  popularity: artist?.popularity || 0,
-                  genres: artist?.genres || [],
-                  artistId: profile?.spotifyArtistId,
-                  artistName: artist?.name,
-                  imageUrl: artist?.images?.[0]?.url || null,
+                  followers: artist.followers?.total || 0,
+                  popularity: artist.popularity || 0,
+                  genres: artist.genres || [],
+                  artistId: profile.spotifyArtistId,
+                  artistName: artist.name,
+                  imageUrl: artist.images?.[0]?.url || null,
                 };
               }
             }
@@ -2905,17 +2905,17 @@ router?.get(
           engagementRate,
           totalReach: totalReach || totalViews,
           totalImpressions: totalImpressions || totalViews,
-          postsPublished: periodPosts?.length + autopilotContent?.length,
+          postsPublished: periodPosts.length + autopilotContent?.length,
           totalLikes,
           totalComments,
           totalShares,
           totalViews,
         },
         platformBreakdown,
-        dailyMetrics: Object?.values(dailyMap),
+        dailyMetrics: Object.values(dailyMap),
         topPosts: allPostsForRanking,
         spotifyStats,
-        connectedPlatforms: accounts?.filter((a) => a?.isActive).length,
+        connectedPlatforms: accounts.filter((a) => a?.isActive).length,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social analytics:");
@@ -2951,16 +2951,16 @@ router?.post(
         voiceover,
       } = req?.body;
 
-      const _userId = req?.user?.id;
+      const userId = req?.user?.id;
 
       // ── Always respond immediately — client polls via /video-job/:id ─────────
       // Holding the HTTP connection open during generation (2–5 min) triggers
       // proxy timeouts that the client misreads as auth failures.  All paths
       // (Python AI and FFmpeg) now run in a background job and store their
       // result in the ffmpegJobs map so the polling endpoint can serve it.
-      const _jobId = `video_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
+      const jobId = `video_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
       pruneStaleFFmpegJobs();
-      ffmpegJobs?.set(jobId, { status: "processing", createdAt: Date?.now() });
+      ffmpegJobs?.set(jobId, { status: "processing", createdAt: Date.now() });
 
       // ── Background job: MaxCore video render ──────────────────────────────────
       (async () => {
@@ -2978,14 +2978,14 @@ router?.post(
           let resolvedTopic = topic || "";
           if (topic && /^https?:\/\//.test(topic?.trim())) {
             try {
-              const _urlDomain = new URL(topic?.trim()).hostname?.replace(
+              const urlDomain = new URL(topic?.trim()).hostname?.replace(
                 /^www\./,
                 "",
               );
               // Convert domain to a readable product/platform name:
-              //   "maxbooster?.replit.app" → "MaxBooster"
-              //   "my-beats?.com"          → "My Beats"
-              const _platformName = urlDomain
+              //   "maxbooster.replit.app" → "MaxBooster"
+              //   "my-beats.com"          → "My Beats"
+              const platformName = urlDomain
                 .split(".")[0]
                 .replace(/-/g, " ")
                 .replace(/\b\w/g, (c: string) => c?.toUpperCase());
@@ -3001,7 +3001,7 @@ router?.post(
             // feeds the video renderer, not the template engine.
             let scriptSource = "template";
             try {
-              const _scriptResult = await (
+              const scriptResult = await (
                 await getUnifiedAI()
               ).generateContent({
                 platform: (platform || "tiktok") as string,
@@ -3019,7 +3019,7 @@ router?.post(
               });
 
               if (scriptResult?.success && scriptResult?.data) {
-                const _d = scriptResult?.data as Record<string, unknown>;
+                const d = scriptResult?.data as Record<string, unknown>;
                 hook = (d?.hook || d?.caption || "").slice(0, 80);
                 body = (d?.body || d?.caption || "").split("\n")[0].slice(0, 120);
                 cta = (d?.cta || "").slice(0, 60);
@@ -3040,12 +3040,12 @@ router?.post(
 
             logger?.info(
               `[VideoGen] Video script ready via ${scriptSource} — ` +
-                `hook="${hook?.slice(0, 40)}…"`,
+                `hook="${hook.slice(0, 40)}…"`,
             );
           }
 
           // Shared render params for all video renderers.
-          const _videoParams = {
+          const videoParams = {
             topic: resolvedTopic || hook || body || "new music",
             platform: platform || "tiktok",
             template: template || undefined,
@@ -3070,7 +3070,7 @@ router?.post(
           logger?.info(
             `[VideoGen] Routing job ${jobId} through Advanced Video Renderer`,
           );
-          const _result = await (
+          const result = await (
             await getRenderAdvancedVideo()
           )({
             ...videoParams,
@@ -3081,18 +3081,18 @@ router?.post(
             ffmpegJobs?.set(jobId, {
               status: "done",
               result,
-              createdAt: Date?.now(),
+              createdAt: Date.now(),
             });
             logger?.info(
-              `[VideoGen] Job ${jobId} done via ${result?.source || "renderer"} — url=${result?.url}`,
+              `[VideoGen] Job ${jobId} done via ${result.source || "renderer"} — url=${result?.url}`,
             );
           } else {
-            const _errMsg =
+            const errMsg =
               result?.error || "Video generation failed (no error message)";
             ffmpegJobs?.set(jobId, {
               status: "error",
               error: errMsg,
-              createdAt: Date?.now(),
+              createdAt: Date.now(),
             });
             logger?.warn(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
           }
@@ -3102,7 +3102,7 @@ router?.post(
             error:
               (err instanceof Error ? err?.message : undefined) ||
               "Video generation failed",
-            createdAt: Date?.now(),
+            createdAt: Date.now(),
           });
           logger?.warn(
             { err: err },
@@ -3131,33 +3131,33 @@ router?.get(
 
       // Check the local FFmpeg job map first (jobs created by the async generate-video route).
       // FFmpeg job IDs are prefixed with "ffmpeg_" so they never collide with Python AI job IDs.
-      const _ffmpegJob = ffmpegJobs?.get(jobId);
+      const ffmpegJob = ffmpegJobs?.get(jobId);
       if (ffmpegJob) {
         if (ffmpegJob?.status === "processing") {
           return res?.json({ status: "processing", progress: 50 });
         }
         if (ffmpegJob?.status === "done" && ffmpegJob?.result) {
-          const _r = ffmpegJob?.result;
+          const r = ffmpegJob?.result;
           return res?.json({
             ...r,
             status: "completed",
-            video_url: r?.url ?? null,
-            thumbnail_url: r?.thumbnail_url ?? r?.thumbnailUrl ?? null,
-            metadata: r?.metadata ?? {},
+            video_url: r.url ?? null,
+            thumbnail_url: r.thumbnail_url ?? r?.thumbnailUrl ?? null,
+            metadata: r.metadata ?? {},
           });
         }
         // error or unknown state
         return res?.status(500).json({
           status: "error",
-          message: ffmpegJob?.error ?? "Video generation failed",
+          message: ffmpegJob.error ?? "Video generation failed",
         });
       }
 
       // video_* jobs are always FFmpeg-backed.  If they're not in the map the
       // server must have restarted and the job is gone — tell the client clearly
       // so it can show a retry prompt instead of hanging forever.
-      if (jobId?.startsWith("video_")) {
-        return res?.status(410).json({
+      if (jobId.startsWith("video_")) {
+        return res.status(410).json({
           status: "error",
           error:
             "Server was restarted while your video was rendering. Please generate again.",
@@ -3165,15 +3165,15 @@ router?.get(
       }
 
       // Fall through to Python AI service for non-FFmpeg jobs
-      const _result = await (await getPythonAI()).getVideoJobStatus(jobId);
-      if (!result?.success) {
+      const result = await (await getPythonAI()).getVideoJobStatus(jobId);
+      if (!result.success) {
         return res
           .status(503)
-          .json({ success: false, status: "error", message: result?.error });
+          .json({ success: false, status: "error", message: result.error });
       }
-      res?.json(result?.data);
+      res.json(result.data);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to poll video job:");
+      logger.warn({ err: error }, "Failed to poll video job:");
       res
         .status(500)
         .json({
@@ -3191,27 +3191,27 @@ router?.get(
  * The browser never touches MaxCore directly — our server adds the auth headers.
  * Falls back through multiple URL path variants that MaxCore might use.
  */
-router?.get(
+router.get(
   "/video-proxy/:filename",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
-    const { filename } = req?.params;
-    if (!filename || !filename?.match(/^[\w\-]+\.mp4$/i)) {
-      return res?.status(400).json({ error: "Invalid filename" });
+    const { filename } = req.params;
+    if (!filename || !filename.match(/^[\w\-]+\.mp4$/i)) {
+      return res.status(400).json({ error: "Invalid filename" });
     }
 
-    const _MC_AI_URL = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-    const _MC_AI_KEY = process?.env.AI_SERVER_KEY || "";
+    const MC_AI_URL = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
+    const MC_AI_KEY = process.env.AI_SERVER_KEY || "";
 
     // 1. Check local cache first — if it was written to disk AND is a real video, serve it directly.
     //    Minimum 10 KB: MaxCore's SPA returns ~683-byte HTML pages for unknown paths.
     //    Anything smaller than 10 KB is a corrupted/HTML cache entry — skip and re-proxy.
-    const _localPath = path?.join(process?.cwd(), "uploads", "videos", filename);
+    const localPath = path?.join(process?.cwd(), "uploads", "videos", filename);
     try {
-      const _stat = await fsPromises?.stat(localPath);
+      const stat = await fsPromises?.stat(localPath);
       if (stat?.size > 10_240) {
         res?.setHeader("Content-Type", "video/mp4");
-        res?.setHeader("Cache-Control", "public, max-age=86400");
+        res.setHeader("Cache-Control", "public, max-age=86400");
         res?.setHeader("Accept-Ranges", "bytes");
         return fs?.createReadStream(localPath).pipe(res);
       }
@@ -3227,19 +3227,19 @@ router?.get(
     }
 
     // 2. Try to fetch from MaxCore using stored URL or candidate paths
-    const _urlStore = await getMaxcoreVideoUrlStore();
+    const urlStore = await getMaxcoreVideoUrlStore();
     const candidateUrls: string[] = [];
 
     // Add the stored URL first if we have it
-    const _storedUrl = urlStore?.get(filename);
+    const storedUrl = urlStore?.get(filename);
     if (storedUrl) candidateUrls?.push(storedUrl);
 
     if (MC_AI_URL) {
       // Extract job UUID from filename pattern: video_<uuid>.mp4
-      const _uuidMatch = filename?.match(
+      const uuidMatch = filename?.match(
         /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i,
       );
-      const _uuid = uuidMatch ? uuidMatch[1] : null;
+      const uuid = uuidMatch ? uuidMatch[1] : null;
 
       // Job-ID-based download routes first (most likely to work if MaxCore has them)
       if (uuid) {
@@ -3290,13 +3290,13 @@ router?.get(
 
     for (const url of candidateUrls) {
       try {
-        const _upstream = await fetch(url, {
+        const upstream = await fetch(url, {
           headers: authHeaders,
-          signal: AbortSignal?.timeout(30_000),
+          signal: AbortSignal.timeout(30_000),
         });
         if (!upstream?.ok) {
           logger?.info(
-            `[VideoProxy] Candidate ${url} → HTTP ${upstream?.status} ct="${upstream?.headers.get("content-type") ?? ""}"`,
+            `[VideoProxy] Candidate ${url} → HTTP ${upstream.status} ct="${upstream.headers.get("content-type") ?? ""}"`,
           );
           continue;
         }
@@ -3305,60 +3305,60 @@ router?.get(
         // Content-type alone is unreliable — MaxCore's SPA returns text/html with
         // 200 OK for every unrecognised path.  We read a small peek chunk first;
         // if it doesn't look like a real video we cancel and try the next candidate.
-        const _reader = upstream?.body?.getReader();
+        const reader = upstream?.body?.getReader();
         if (!reader) continue;
 
         // Read up to 512 bytes to inspect magic bytes
-        const _peekResult = await reader?.read();
-        const _peekChunk = peekResult?.value;
-        const _peekDone = peekResult?.done;
+        const peekResult = await reader?.read();
+        const peekChunk = peekResult?.value;
+        const peekDone = peekResult?.done;
 
         if (!peekChunk || peekChunk?.length === 0) {
           reader?.cancel();
           continue;
         }
 
-        const _peekBuf = Buffer?.from(peekChunk);
-        const _isMP4 =
+        const peekBuf = Buffer?.from(peekChunk);
+        const isMP4 =
           peekBuf?.length >= 8 &&
           peekBuf?.slice(4, 8).toString("ascii") === "ftyp";
-        const _isWebM =
+        const isWebM =
           peekBuf?.length >= 4 &&
           peekBuf[0] === 0x1a &&
           peekBuf[1] === 0x45 &&
           peekBuf[2] === 0xdf &&
           peekBuf[3] === 0xa3;
-        const _isAVI =
+        const isAVI =
           peekBuf?.length >= 4 &&
           peekBuf?.slice(0, 4).toString("ascii") === "RIFF";
 
         // Reject anything that starts with HTML markers
-        const _peekText = peekBuf?.slice(0, 100).toString("utf8").toLowerCase();
-        const _looksHTML =
+        const peekText = peekBuf?.slice(0, 100).toString("utf8").toLowerCase();
+        const looksHTML =
           peekText?.includes("<!doctype") ||
           peekText?.includes("<html") ||
           peekText?.startsWith("<!");
 
-        const _isRealVideo = (isMP4 || isWebM || isAVI) && !looksHTML;
+        const isRealVideo = (isMP4 || isWebM || isAVI) && !looksHTML;
 
-        const _ct = upstream?.headers.get("content-type") ?? "";
+        const ct = upstream?.headers.get("content-type") ?? "";
         if (!isRealVideo) {
           reader?.cancel();
           logger?.info(
-            `[VideoProxy] Candidate ${url} → NOT video (HTTP 200, ct="${ct}", peek="${peekText?.slice(0, 60).replace(/\n/g, "\\n")}")`,
+            `[VideoProxy] Candidate ${url} → NOT video (HTTP 200, ct="${ct}", peek="${peekText.slice(0, 60).replace(/\n/g, "\\n")}")`,
           );
           continue;
         }
 
-        const _cl = upstream?.headers.get("content-length");
+        const cl = upstream?.headers.get("content-length");
         res?.setHeader("Content-Type", "video/mp4");
         if (cl) res?.setHeader("Content-Length", cl);
-        res?.setHeader("Cache-Control", "public, max-age=86400");
+        res.setHeader("Cache-Control", "public, max-age=86400");
         res?.setHeader("Accept-Ranges", "bytes");
         res?.writeHead(200);
 
         // Stream: write the peeked chunk first, then pipe the rest
-        const _nodeStream = new (await import("stream")).PassThrough();
+        const nodeStream = new (await import("stream")).PassThrough();
         nodeStream?.pipe(res);
         nodeStream?.write(peekChunk);
 
@@ -3375,7 +3375,7 @@ router?.get(
             }
             nodeStream?.end();
             // Cache to disk after full stream
-            const _buf = Buffer?.concat(chunks);
+            const buf = Buffer?.concat(chunks);
             if (buf?.length > 10_240) {
               await fsPromises?.mkdir(
                 path?.join(process?.cwd(), "uploads", "videos"),
@@ -3417,7 +3417,7 @@ router?.get(
   requireAuthOnly,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await (await getPythonAI()).getCinematicTemplates();
+      const result = await (await getPythonAI()).getCinematicTemplates();
       if (result?.success && result?.data) {
         res?.json({
           ...result?.data,
@@ -3585,7 +3585,7 @@ router?.post(
         });
       }
 
-      const _result = await (
+      const result = await (
         await getVeoMusic()
       ).generateCampaign({
         track_id,
@@ -3612,7 +3612,7 @@ router?.post(
       if (!result?.success) {
         return res?.status(500).json({
           success: false,
-          message: result?.error || "Video campaign generation failed",
+          message: result.error || "Video campaign generation failed",
         });
       }
 
@@ -3641,7 +3641,7 @@ router?.post(
         });
       }
 
-      const _asset = await (
+      const asset = await (
         await getVeoMusic()
       ).generateForPost({
         title,
@@ -3675,7 +3675,7 @@ router?.get(
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const _data = await (await getVeoMusic()).getAvailablePlatforms();
+      const data = await (await getVeoMusic()).getAvailablePlatforms();
       if (!data) {
         return res?.status(503).json({
           success: false,
@@ -3697,7 +3697,7 @@ router?.get(
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const _data = await (await getVeoMusic()).getAvailableGoals();
+      const data = await (await getVeoMusic()).getAvailableGoals();
       if (!data) {
         return res?.status(503).json({
           success: false,
@@ -3718,7 +3718,7 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { platform } = req?.params;
-      const _data = await (await getVeoMusic()).getRecommendedGoals(platform);
+      const data = await (await getVeoMusic()).getRecommendedGoals(platform);
       if (!data) {
         return res?.status(404).json({
           success: false,
@@ -3740,7 +3740,7 @@ router?.get(
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const _status = await (await getVeoMusic()).getPipelineStatus();
+      const status = await (await getVeoMusic()).getPipelineStatus();
       if (!status) {
         return res?.status(503).json({
           success: false,
@@ -3768,7 +3768,7 @@ router?.post(
         });
       }
 
-      const _data = await (await getVeoMusic()).extractUrlMetadata(url);
+      const data = await (await getVeoMusic()).extractUrlMetadata(url);
       if (!data) {
         return res?.status(503).json({
           success: false,
@@ -3801,7 +3801,7 @@ router?.post(
         });
       }
 
-      const _result = await (
+      const result = await (
         await getVeoMusic()
       ).generateCampaignFromUrl(url, overrides);
       if (!result || !result?.success) {
@@ -3809,7 +3809,7 @@ router?.post(
           .status(result?.error?.includes("unavailable") ? 503 : 500)
           .json({
             success: false,
-            message: result?.error || "Campaign generation from URL failed",
+            message: result.error || "Campaign generation from URL failed",
           });
       }
       res?.json(result);
@@ -3830,7 +3830,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user?.id;
+      const userId = req?.user?.id;
       if (!userId)
         return res
           .status(401)
@@ -3840,7 +3840,7 @@ router?.post(
 
       let storefront: Record<string, unknown> | null = null;
       if (slug) {
-        const _rows = await db
+        const rows = await db
           .select()
           .from(storefronts)
           .where(
@@ -3849,7 +3849,7 @@ router?.post(
           .limit(1);
         storefront = rows[0];
       } else {
-        const _rows = await db
+        const rows = await db
           .select()
           .from(storefronts)
           .where(eq(storefronts?.userId, userId))
@@ -3872,13 +3872,13 @@ router?.post(
           .json({ success: false, message: "Storefront is not active" });
       }
 
-      const _customization = (storefront?.customization || {}) as Record<
+      const customization = (storefront?.customization || {}) as Record<
         string,
         any
       >;
-      const _seo = (storefront?.seo || {}) as Record<string, any>;
+      const seo = (storefront?.seo || {}) as Record<string, any>;
 
-      const _storeListings = await db
+      const storeListings = await db
         .select()
         .from(listings)
         .where(
@@ -3889,35 +3889,35 @@ router?.post(
         )
         .limit(10);
 
-      const _listingCount = storeListings?.length;
-      const _genres = [
+      const listingCount = storeListings?.length;
+      const genres = [
         ...new Set(
           storeListings
             .map((l: Record<string, unknown>) => l?.category)
             .filter(Boolean),
         ),
       ];
-      const _topListings = storeListings
+      const topListings = storeListings
         .slice(0, 3)
         .map((l: Record<string, unknown>) => l?.title)
         .join(", ");
 
-      const _description = seo?.description || customization?.bio || "";
-      const _title = seo?.title || storefront?.name || "My Storefront";
-      const _artworkUrl =
+      const description = seo?.description || customization?.bio || "";
+      const title = seo?.title || storefront?.name || "My Storefront";
+      const artworkUrl =
         seo?.ogImage || customization?.banner || customization?.logo || "";
-      const _keywords = seo?.keywords || [];
+      const keywords = seo?.keywords || [];
 
       let story = `Promote ${title}.`;
       if (description) story += ` ${description?.slice(0, 200)}.`;
       if (listingCount > 0)
         story += ` Featuring ${listingCount} beats${topListings ? ` including ${topListings}` : ""}.`;
-      if (genres?.length > 0) story += ` Genres: ${genres?.join(", ")}.`;
+      if (genres.length > 0) story += ` Genres: ${genres?.join(", ")}.`;
       story += " Drive traffic and sales to the storefront.";
 
       const campaignRequest: Record<string, any> = {
         title,
-        artist: storefront?.name,
+        artist: storefront.name,
         mood: mood || "energetic",
         era: "modern",
         story,
@@ -3935,15 +3935,15 @@ router?.post(
         content_type: "website",
       };
 
-      if (brand_notes) campaignRequest?.brand_notes = brand_notes;
+      if (brand_notes) campaignRequest.brand_notes = brand_notes;
       else if (description)
-        campaignRequest?.brand_notes = description?.slice(0, 300);
+        campaignRequest.brand_notes = description?.slice(0, 300);
 
-      if (campaign_notes) campaignRequest?.campaign_notes = campaign_notes;
-      if (artworkUrl) campaignRequest?.artwork_url = artworkUrl;
-      if (keywords?.length > 0) campaignRequest?.keywords = keywords;
+      if (campaign_notes) campaignRequest.campaign_notes = campaign_notes;
+      if (artworkUrl) campaignRequest.artwork_url = artworkUrl;
+      if (keywords.length > 0) campaignRequest.keywords = keywords;
 
-      const _result = await (
+      const result = await (
         await getVeoMusic()
       ).generateCampaign(campaignRequest);
       if (!result || !result?.success) {
@@ -3951,16 +3951,16 @@ router?.post(
           .status(500)
           .json({
             success: false,
-            message: result?.error || "Campaign generation failed",
+            message: result.error || "Campaign generation failed",
           });
       }
 
       res?.json({
         ...result,
         storefront: {
-          id: storefront?.id,
-          name: storefront?.name,
-          slug: storefront?.slug,
+          id: storefront.id,
+          name: storefront.name,
+          slug: storefront.slug,
           listingCount,
           genres,
         },
@@ -3982,7 +3982,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user?.id;
+      const userId = req?.user?.id;
       if (!userId)
         return res
           .status(401)
@@ -3995,12 +3995,12 @@ router?.post(
           .status(400)
           .json({ success: false, message: "Missing listingId" });
 
-      const _rows = await db
+      const rows = await db
         .select()
         .from(listings)
         .where(and(eq(listings?.id, listingId), eq(listings?.userId, userId)))
         .limit(1);
-      const _listing = rows[0] as Record<string, unknown>;
+      const listing = rows[0] as Record<string, unknown>;
       if (!listing)
         return res
           .status(404)
@@ -4020,7 +4020,7 @@ router?.post(
 
       let storefrontName = "My Store";
       if (listing?.storefrontId) {
-        const _storeRows = await db
+        const storeRows = await db
           .select()
           .from(storefronts)
           .where(eq(storefronts?.id, listing?.storefrontId))
@@ -4030,12 +4030,12 @@ router?.post(
             (storeRows[0] as Record<string, unknown>).name || storefrontName;
       }
 
-      const _metadata = (listing?.metadata || {}) as Record<string, any>;
-      const _title = listing?.title;
-      const _description = listing?.description || "";
-      const _category = listing?.category || metadata?.genre || "";
-      const _artworkUrl = listing?.artworkUrl || "";
-      const _priceDisplay = listing?.priceCents
+      const metadata = (listing?.metadata || {}) as Record<string, any>;
+      const title = listing?.title;
+      const description = listing?.description || "";
+      const category = listing?.category || metadata?.genre || "";
+      const artworkUrl = listing?.artworkUrl || "";
+      const priceDisplay = listing?.priceCents
         ? `$${(listing?.priceCents / 100).toFixed(2)}`
         : "";
 
@@ -4045,7 +4045,7 @@ router?.post(
       if (priceDisplay) story += ` Available now for ${priceDisplay}.`;
       story += " Get it before it's gone!";
 
-      const _isMusic = listing?.audioUrl || category;
+      const isMusic = listing.audioUrl || category;
 
       const campaignRequest: Record<string, any> = {
         title,
@@ -4060,40 +4060,40 @@ router?.post(
           "shorts",
         ],
         audio_duration_sec: 180,
-        source_url: `/marketplace/beat/${listing?.id}`,
+        source_url: `/marketplace/beat/${listing.id}`,
         source_platform: isMusic ? "maxbooster" : "website",
         content_type: isMusic ? "music" : "website",
       };
 
-      if (brand_notes) campaignRequest?.brand_notes = brand_notes;
-      if (campaign_notes) campaignRequest?.campaign_notes = campaign_notes;
-      if (artworkUrl) campaignRequest?.artwork_url = artworkUrl;
-      if (category) campaignRequest?.genre = category;
+      if (brand_notes) campaignRequest.brand_notes = brand_notes;
+      if (campaign_notes) campaignRequest.campaign_notes = campaign_notes;
+      if (artworkUrl) campaignRequest.artwork_url = artworkUrl;
+      if (category) campaignRequest.genre = category;
 
-      const _result = await (
+      const result = await (
         await getVeoMusic()
       ).generateCampaign(campaignRequest);
-      if (!result || !result?.success) {
+      if (!result || !result.success) {
         return res
           .status(500)
           .json({
             success: false,
-            message: result?.error || "Campaign generation failed",
+            message: result.error || "Campaign generation failed",
           });
       }
 
-      res?.json({
+      res.json({
         ...result,
         listing: {
-          id: listing?.id,
-          title: listing?.title,
-          category: listing?.category,
+          id: listing.id,
+          title: listing.title,
+          category: listing.category,
           price: priceDisplay,
           storefrontName,
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to promote listing:");
+      logger.warn({ err: error }, "Failed to promote listing:");
       res
         .status(500)
         .json({ success: false, message: "Listing promotion campaign failed" });
@@ -4101,7 +4101,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/generate-image",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -4123,7 +4123,7 @@ router?.post(
         urlDescription,
         artistName,
         trackTitle,
-      } = req?.body;
+      } = req.body;
 
       if (!topic) {
         return res
@@ -4133,19 +4133,19 @@ router?.post(
 
       // Build enriched topic string from URL analysis context (same as /generate route)
       const contextParts: string[] = [];
-      const _resolvedTrack = track || trackTitle;
-      const _resolvedArtist = artist || artistName || artist_name;
-      if (resolvedTrack) contextParts?.push(`"${resolvedTrack}"`);
-      if (resolvedArtist) contextParts?.push(`by ${resolvedArtist}`);
-      contextParts?.push(String(topic));
+      const resolvedTrack = track || trackTitle;
+      const resolvedArtist = artist || artistName || artist_name;
+      if (resolvedTrack) contextParts.push(`"${resolvedTrack}"`);
+      if (resolvedArtist) contextParts.push(`by ${resolvedArtist}`);
+      contextParts.push(String(topic));
       if (urlDescription && urlDescription !== topic)
-        contextParts?.push(urlDescription);
-      if (description && description !== topic) contextParts?.push(description);
-      const _enrichedTopic = contextParts?.filter(Boolean).join(" — ");
+        contextParts.push(urlDescription);
+      if (description && description !== topic) contextParts.push(description);
+      const enrichedTopic = contextParts.filter(Boolean).join(" — ");
 
       // Generate a rich visual spec using MaxCore local pipeline
-      const _resolvedPlatform = (
-        CONTENT_ALL_PLATFORMS?.includes(platform as ContentSupportedPlatform)
+      const resolvedPlatform = (
+        CONTENT_ALL_PLATFORMS.includes(platform as ContentSupportedPlatform)
           ? platform
           : "instagram"
       ) as ContentSupportedPlatform;
@@ -4157,16 +4157,16 @@ router?.post(
         playful: ["#ffbe0b", "#fb5607", "#ff006e", "#8338ec"],
         nostalgic: ["#d4a373", "#ccd5ae", "#e9edc9", "#fefae0"],
       };
-      const _resolvedTone = String(tone || "energetic").toLowerCase();
-      const _colorPalette = toneColorMap[resolvedTone] ?? toneColorMap?.energetic;
+      const resolvedTone = String(tone || "energetic").toLowerCase();
+      const colorPalette = toneColorMap[resolvedTone] ?? toneColorMap.energetic;
 
-      const _visualSpec = getVisualSpec(
+      const visualSpec = getVisualSpec(
         resolvedPlatform,
         "video_post",
         colorPalette,
       );
 
-      const _specData = {
+      const specData = {
         ...visualSpec,
         topic: enrichedTopic || topic,
         platform: resolvedPlatform,
@@ -4174,19 +4174,19 @@ router?.post(
         artist: resolvedArtist || "",
         track: resolvedTrack || "",
         genre: genre || "",
-        keywords: Array?.isArray(keywords) ? keywords : [],
+        keywords: Array.isArray(keywords) ? keywords : [],
         description: description || urlDescription || "",
         source: "MaxCoreAI",
       };
 
-      res?.json({
+      res.json({
         success: true,
         visual_spec: specData,
         image_url: null,
         ...specData,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to generate social image:");
+      logger.warn({ err: error }, "Failed to generate social image:");
       res
         .status(500)
         .json({ success: false, message: "Image generation failed" });
@@ -4196,12 +4196,12 @@ router?.post(
 
 // ── Media-to-Content: URL ─────────────────────────────────────────────────────
 
-router?.post(
+router.post(
   "/analyze-url",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { url, platform } = req?.body;
+      const { url, platform } = req.body;
       if (!url || typeof url !== "string") {
         return res
           .status(400)
@@ -4210,55 +4210,55 @@ router?.post(
 
       // SSRF guard — block private/internal targets before spawning Python subprocess
       try {
-        assertSafeExternalUrl(url?.trim());
+        assertSafeExternalUrl(url.trim());
       } catch (ssrfErr) {
         return res
           .status(400)
-          .json({ success: false, message: ssrfErr?.message || "Invalid URL" });
+          .json({ success: false, message: ssrfErr.message || "Invalid URL" });
       }
 
-      const _analysis = await analyzeUrl(url?.trim());
-      if (analysis?.error && !analysis?.title) {
+      const analysis = await analyzeUrl(url.trim());
+      if (analysis.error && !analysis.title) {
         return res
           .status(422)
-          .json({ success: false, message: analysis?.error, analysis });
+          .json({ success: false, message: analysis.error, analysis });
       }
 
-      const _seed = urlToContentSeed(analysis);
+      const seed = urlToContentSeed(analysis);
 
       // Auto-generate social content from the extracted data using rich context
-      const _aiTopic =
-        seed?.track && seed?.artist
-          ? `"${seed?.track}" by ${seed?.artist}${seed?.genre && seed?.genre !== "default" ? ` — ${seed?.genre}` : ""}`
-          : seed?.track
-            ? `"${seed?.track}"`
-            : seed?.artist
-              ? `New music by ${seed?.artist}`
-              : seed?.topic.slice(0, 80);
+      const aiTopic =
+        seed.track && seed.artist
+          ? `"${seed.track}" by ${seed.artist}${seed.genre && seed.genre !== "default" ? ` — ${seed.genre}` : ""}`
+          : seed.track
+            ? `"${seed.track}"`
+            : seed.artist
+              ? `New music by ${seed.artist}`
+              : seed.topic.slice(0, 80);
 
-      const _urlKeywords = [
-        ...new Set([...(seed?.keywords || []), ...(seed?.tags || [])]),
+      const urlKeywords = [
+        ...new Set([...(seed.keywords || []), ...(seed.tags || [])]),
       ].slice(0, 20);
-      const _content = await (
+      const content = await (
         await getUnifiedAI()
       ).generateContent({
         platform: platform || "instagram",
         topic: aiTopic,
-        tone: seed?.tone !== "default" ? seed?.tone : "energetic",
-        genre: seed?.genre !== "default" ? seed?.genre : "hip-hop",
-        artistName: seed?.artist,
-        trackTitle: seed?.track,
-        album: seed?.album || undefined,
-        releaseDate: seed?.release_date || undefined,
-        label: seed?.label || undefined,
-        keywords: urlKeywords?.length ? urlKeywords : undefined,
-        description: analysis?.description?.slice(0, 200) || undefined,
-        bodyPreview: seed?.body_preview?.slice(0, 300) || undefined,
+        tone: seed.tone !== "default" ? seed.tone : "energetic",
+        genre: seed.genre !== "default" ? seed.genre : "hip-hop",
+        artistName: seed.artist,
+        trackTitle: seed.track,
+        album: seed.album || undefined,
+        releaseDate: seed.release_date || undefined,
+        label: seed.label || undefined,
+        keywords: urlKeywords.length ? urlKeywords : undefined,
+        description: analysis.description.slice(0, 200) || undefined,
+        bodyPreview: seed.body_preview.slice(0, 300) || undefined,
         extraContext:
           [
-            seed?.view_count ? `${seed?.view_count.toLocaleString()} views` : "",
-            seed?.like_count ? `${seed?.like_count.toLocaleString()} likes` : "",
-            seed?.play_count ? `${seed?.play_count.toLocaleString()} plays` : "",
+            seed.view_count ? `${seed.view_count.toLocaleString()} views` : "",
+            seed.like_count ? `${seed.like_count.toLocaleString()} likes` : "",
+            seed.play_count ? `${seed.play_count.toLocaleString()} plays` : "",
           ]
             .filter(Boolean)
             .join(" | ") || undefined,
@@ -4290,31 +4290,31 @@ router?.post(
         apple_music: { bg: "#1c1c1e", ac: "#fc3c44" },
       };
 
-      const _genreKey = (seed?.genre || "hip-hop").toLowerCase();
-      const _platformKey = (analysis?.platform || "").toLowerCase();
-      const _colors = platformColorMap[platformKey] ||
+      const genreKey = (seed.genre || "hip-hop").toLowerCase();
+      const platformKey = (analysis.platform || "").toLowerCase();
+      const colors = platformColorMap[platformKey] ||
         genreColorMap[genreKey] || { bg: "#1a1a2e", ac: "#e94560" };
 
       // Use AI-generated hook/body/cta for the video overlay when available
-      const _aiHook = content?.data?.hook || "";
-      const _aiBody = content?.data?.body || "";
-      const _aiCta = content?.data?.cta || "";
+      const aiHook = content.data.hook || "";
+      const aiBody = content.data.body || "";
+      const aiCta = content.data.cta || "";
 
       // Build punchy video-specific text (fallback from AI result)
-      const _videoHook =
+      const videoHook =
         aiHook ||
-        (seed?.track && seed?.artist
-          ? `${seed?.track} — out now`
-          : seed?.track
-            ? `New drop: ${seed?.track}`
-            : seed?.artist
-              ? `New music from ${seed?.artist}`
-              : aiTopic?.slice(0, 50));
+        (seed.track && seed.artist
+          ? `${seed.track} — out now`
+          : seed.track
+            ? `New drop: ${seed.track}`
+            : seed.artist
+              ? `New music from ${seed.artist}`
+              : aiTopic.slice(0, 50));
 
-      const _videoBody =
+      const videoBody =
         aiBody ||
-        (seed?.artist && seed?.track
-          ? `${seed?.genre && seed?.genre !== "default" ? seed?.genre.charAt(0).toUpperCase() + seed?.genre.slice(1) + " — " : ""}Stream by ${seed?.artist}`
+        (seed.artist && seed.track
+          ? `${seed.genre && seed.genre !== "default" ? seed.genre.charAt(0).toUpperCase() + seed.genre.slice(1) + " — " : ""}Stream by ${seed.artist}`
           : "Stream now on all platforms");
 
       const videoCtaMap: Record<string, string> = {
@@ -4324,65 +4324,65 @@ router?.post(
         article: "Read more — link in bio",
         podcast: "Listen now — link in bio",
       };
-      const _videoCta =
-        aiCta || videoCtaMap[seed?.content_type] || "Follow for more";
+      const videoCta =
+        aiCta || videoCtaMap[seed.content_type] || "Follow for more";
 
-      const _videoConfig = {
+      const videoConfig = {
         topic: aiTopic,
-        genre: seed?.genre || "hip-hop",
-        tone: seed?.tone !== "default" ? seed?.tone : "energetic",
+        genre: seed.genre || "hip-hop",
+        tone: seed.tone !== "default" ? seed.tone : "energetic",
         platform: platform || "tiktok",
         duration: 15,
-        artist_name: seed?.artist || "",
+        artist_name: seed.artist || "",
         hook: videoHook,
         body: videoBody,
         cta: videoCta,
-        bg_color: colors?.bg,
-        accent_color: colors?.ac,
-        thumbnail_url: seed?.og_image || seed?.thumbnail_url || "",
+        bg_color: colors.bg,
+        accent_color: colors.ac,
+        thumbnail_url: seed.og_image || seed.thumbnail_url || "",
       };
 
-      const _audioStyle = {
-        genre: seed?.genre || "hip-hop",
-        mood: seed?.tone || "energetic",
-        prompt: `${seed?.genre || "hip-hop"} beat for "${seed?.topic.slice(0, 40)}"`,
-        bpm: seed?.genre === "trap" ? 140 : seed?.genre === "r&b" ? 90 : 120,
+      const audioStyle = {
+        genre: seed.genre || "hip-hop",
+        mood: seed.tone || "energetic",
+        prompt: `${seed.genre || "hip-hop"} beat for "${seed.topic.slice(0, 40)}"`,
+        bpm: seed.genre === "trap" ? 140 : seed.genre === "r&b" ? 90 : 120,
       };
 
-      const _imagePrompt =
+      const imagePrompt =
         [
-          seed?.artist ? `Artist: ${seed?.artist}` : "",
-          seed?.track ? `Track: ${seed?.track}` : "",
-          seed?.genre ? `Genre: ${seed?.genre}` : "",
-          seed?.tone ? `Mood: ${seed?.tone}` : "",
-          seed?.og_image ? `Reference image: ${seed?.og_image}` : "",
+          seed.artist ? `Artist: ${seed.artist}` : "",
+          seed.track ? `Track: ${seed.track}` : "",
+          seed.genre ? `Genre: ${seed.genre}` : "",
+          seed.tone ? `Mood: ${seed.tone}` : "",
+          seed.og_image ? `Reference image: ${seed.og_image}` : "",
         ]
           .filter(Boolean)
-          .join(". ") || seed?.topic;
+          .join(". ") || seed.topic;
 
-      res?.json({
+      res.json({
         success: true,
         analysis,
         seed,
-        content: content?.content || content || null,
+        content: content.content || content || null,
         video_config: videoConfig,
         audio_style: audioStyle,
         image_prompt: imagePrompt,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "analyze-url failed:");
-      res?.status(500).json({ success: false, message: "URL analysis failed" });
+      logger.warn({ err: error }, "analyze-url failed:");
+      res.status(500).json({ success: false, message: "URL analysis failed" });
     }
   },
 );
 
 // ── Media-to-Content: Audio ───────────────────────────────────────────────────
 
-router?.post(
+router.post(
   "/analyze-audio",
   requireAuth,
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    audioUpload?.single("audio")(
+    audioUpload.single("audio")(
       req as Record<string, unknown>,
       res as Record<string, unknown>,
       next,
@@ -4390,7 +4390,7 @@ router?.post(
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _file = req?.file;
+      const file = req.file;
       if (!file) {
         return res
           .status(400)
@@ -4400,33 +4400,33 @@ router?.post(
           });
       }
 
-      const _analysis = await analyzeAudio(file?.buffer, file?.originalname);
-      if (analysis?.error) {
+      const analysis = await analyzeAudio(file.buffer, file.originalname);
+      if (analysis.error) {
         return res
           .status(422)
-          .json({ success: false, message: analysis?.error, analysis });
+          .json({ success: false, message: analysis.error, analysis });
       }
 
-      const _seed = audioToContentSeed(analysis);
-      const _platform = (req?.body.platform as string) || "instagram";
+      const seed = audioToContentSeed(analysis);
+      const platform = (req.body.platform as string) || "instagram";
 
       // Generate content from audio features
-      const _content = await (
+      const content = await (
         await getUnifiedAI()
       ).generateContent({
         type: "social_post",
         platform,
-        topic: seed?.topic,
+        topic: seed.topic,
         tone: "default",
-        genre: seed?.genre,
-        artistName: seed?.artist,
-        trackTitle: seed?.track,
+        genre: seed.genre,
+        artistName: seed.artist,
+        trackTitle: seed.track,
       });
 
       // Produce a video config the frontend can use to call /generate-video
-      const _videoConfig = {
-        genre: analysis?.genre,
-        topic: seed?.topic,
+      const videoConfig = {
+        genre: analysis.genre,
+        topic: seed.topic,
         tone: "default",
         speed: undefined as number | undefined, // let NN decide
         bg: "0x1a1a2e",
@@ -4435,15 +4435,15 @@ router?.post(
         platform,
       };
 
-      res?.json({
+      res.json({
         success: true,
         analysis,
         seed,
-        content: content?.content || content || null,
+        content: content.content || content || null,
         video_config: videoConfig,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "analyze-audio failed:");
+      logger.warn({ err: error }, "analyze-audio failed:");
       res
         .status(500)
         .json({ success: false, message: "Audio analysis failed" });
@@ -4453,11 +4453,11 @@ router?.post(
 
 // ── Media-to-Content: Image ───────────────────────────────────────────────────
 
-router?.post(
+router.post(
   "/analyze-image",
   requireAuth,
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    artworkUpload?.single("image")(
+    artworkUpload.single("image")(
       req as Record<string, unknown>,
       res as Record<string, unknown>,
       next,
@@ -4465,7 +4465,7 @@ router?.post(
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _file = req?.file;
+      const file = req.file;
       if (!file) {
         return res
           .status(400)
@@ -4475,49 +4475,49 @@ router?.post(
           });
       }
 
-      const _analysis = await analyzeImage(file?.buffer, file?.originalname);
-      if (analysis?.error) {
+      const analysis = await analyzeImage(file.buffer, file.originalname);
+      if (analysis.error) {
         return res
           .status(422)
-          .json({ success: false, message: analysis?.error, analysis });
+          .json({ success: false, message: analysis.error, analysis });
       }
 
-      const _seed = imageToContentSeed(analysis);
-      const _platform = (req?.body.platform as string) || "instagram";
+      const seed = imageToContentSeed(analysis);
+      const platform = (req.body.platform as string) || "instagram";
 
       // Generate content from visual mood
-      const _content = await (
+      const content = await (
         await getUnifiedAI()
       ).generateContent({
         type: "social_post",
         platform,
-        topic: `${analysis?.mood} visual aesthetic, ${analysis?.genre_hint} music`,
-        tone: analysis?.tone || "default",
-        genre: analysis?.genre_hint,
-        artistName: (req?.body.artist_name as string) || "",
+        topic: `${analysis.mood} visual aesthetic, ${analysis.genre_hint} music`,
+        tone: analysis.tone || "default",
+        genre: analysis.genre_hint,
+        artistName: (req.body.artist_name as string) || "",
       });
 
       // Video config with extracted colors baked in
-      const _videoConfig = {
-        genre: analysis?.genre_hint,
-        topic: `${analysis?.mood} aesthetic`,
-        tone: analysis?.tone || "default",
-        bg: analysis?.bg_color,
-        ac: analysis?.ac_color,
+      const videoConfig = {
+        genre: analysis.genre_hint,
+        topic: `${analysis.mood} aesthetic`,
+        tone: analysis.tone || "default",
+        bg: analysis.bg_color,
+        ac: analysis.ac_color,
         duration: 15,
         platform,
       };
 
-      res?.json({
+      res.json({
         success: true,
         analysis,
         seed,
-        content: content?.content || content || null,
+        content: content.content || content || null,
         video_config: videoConfig,
-        palette: analysis?.palette.slice(0, 5),
+        palette: analysis.palette.slice(0, 5),
       });
     } catch (error) {
-      logger?.warn({ err: error }, "analyze-image failed:");
+      logger.warn({ err: error }, "analyze-image failed:");
       res
         .status(500)
         .json({ success: false, message: "Image analysis failed" });
@@ -4533,15 +4533,15 @@ router?.post(
  * GET /voice-profiles
  * Returns all available voice profiles with metadata.
  */
-router?.get(
+router.get(
   "/voice-profiles",
   requireAuthOnly,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const _svc = await getVoiceSynthService();
-      res?.json({ success: true, profiles: svc?.listVoiceProfiles() });
+      const svc = await getVoiceSynthService();
+      res.json({ success: true, profiles: svc.listVoiceProfiles() });
     } catch (e) {
-      logger?.warn("[Route] voice-profiles:", e?.message);
+      logger.warn("[Route] voice-profiles:", e.message);
       res
         .status(500)
         .json({ success: false, error: "Failed to load voice profiles" });
@@ -4556,12 +4556,12 @@ router?.get(
  *
  * Returns: { success, outputPath, publicUrl, durationSeconds, profileUsed }
  */
-router?.post(
+router.post(
   "/synthesize-voice",
   requireAuthOnly,
   (req, res, next) => {
     // mediaUpload → disk storage so referenceAudioPath has a real file path for FFmpeg
-    mediaUpload?.single("reference_audio")(
+    mediaUpload.single("reference_audio")(
       req as Record<string, unknown>,
       res as Record<string, unknown>,
       next,
@@ -4578,7 +4578,7 @@ router?.post(
         reverbAmount,
         outputFormat,
         segments,
-      } = req?.body as {
+      } = req.body as {
         text?: string;
         profileId?: string;
         speed?: number;
@@ -4589,10 +4589,10 @@ router?.post(
         segments?: string;
       };
 
-      const _svc = await getVoiceSynthService();
-      const _referenceAudioPath = req?.file?.path;
+      const svc = await getVoiceSynthService();
+      const referenceAudioPath = req.file.path;
 
-      const _options = {
+      const options = {
         profileId,
         speed: speed ? Number(speed) : undefined,
         pitch: pitch ? Number(pitch) : undefined,
@@ -4608,67 +4608,67 @@ router?.post(
       if (segments) {
         let parsedSegments: Array<{ text: string; pause?: number }> = [];
         try {
-          parsedSegments = JSON?.parse(segments);
+          parsedSegments = JSON.parse(segments);
         } catch {
           return res
             .status(400)
             .json({ success: false, error: "Invalid segments JSON" });
         }
-        result = await svc?.synthesizeSegments(parsedSegments, options);
+        result = await svc.synthesizeSegments(parsedSegments, options);
       } else {
-        if (!text?.trim())
+        if (!text.trim())
           return res
             .status(400)
             .json({ success: false, error: "text is required" });
-        result = await svc?.synthesizeVoice(text, options);
+        result = await svc.synthesizeVoice(text, options);
       }
 
-      if (!result?.success)
-        return res?.status(500).json({ success: false, error: result?.error });
+      if (!result.success)
+        return res.status(500).json({ success: false, error: result.error });
 
-      const _filename = result?.outputPath!.split("/").pop();
-      const _publicUrl = `/uploads/voices/${filename}`;
-      const _userId =
-        req?.user?.id?.toString() || req?.user?.userId?.toString() || "anonymous";
+      const filename = result.outputPath!.split("/").pop();
+      const publicUrl = `/uploads/voices/${filename}`;
+      const userId =
+        req.user.id.toString() || req.user.userId.toString() || "anonymous";
 
       // ── Persist to PDIM (non-blocking — response already sent after this) ──
       let pdimMeta: Record<string, unknown> | null = null;
       try {
         const { storeVoiceFile } = await import(
-          "../services/pdimMediaStorageService?.js"
+          "../services/pdimMediaStorageService.js"
         );
-        pdimMeta = await storeVoiceFile(userId, result?.outputPath!, {
-          profileUsed: result?.profileUsed || profileId || "smooth_narrator",
-          voiceUsed: result?.voiceUsed || "flite",
-          durationSeconds: result?.durationSeconds,
+        pdimMeta = await storeVoiceFile(userId, result.outputPath!, {
+          profileUsed: result.profileUsed || profileId || "smooth_narrator",
+          voiceUsed: result.voiceUsed || "flite",
+          durationSeconds: result.durationSeconds,
           text: typeof text === "string" ? text : undefined,
         });
       } catch (e) {
-        logger?.warn(
+        logger.warn(
           "[Route] voice PDIM store skipped:",
-          e?.message?.slice(0, 80),
+          e.message.slice(0, 80),
         );
       }
 
-      res?.json({
+      res.json({
         success: true,
         publicUrl,
         filename,
-        durationSeconds: result?.durationSeconds,
-        profileUsed: result?.profileUsed,
-        voiceUsed: result?.voiceUsed,
-        outputPath: result?.outputPath,
+        durationSeconds: result.durationSeconds,
+        profileUsed: result.profileUsed,
+        voiceUsed: result.voiceUsed,
+        outputPath: result.outputPath,
         pdim: pdimMeta
-          ? { key: pdimMeta?.pdimKey, compressedSize: pdimMeta?.compressedSize }
+          ? { key: pdimMeta.pdimKey, compressedSize: pdimMeta.compressedSize }
           : null,
       });
     } catch (e) {
-      logger?.warn("[Route] synthesize-voice:", e?.message);
+      logger.warn("[Route] synthesize-voice:", e.message);
       res
         .status(500)
         .json({
           success: false,
-          error: e?.message || "Voice synthesis failed",
+          error: e.message || "Voice synthesis failed",
         });
     }
   },
@@ -4679,11 +4679,11 @@ router?.post(
  * Body: multipart/form-data with audio field
  * Returns: { estimatedPitch, estimatedTempo, energy, suggestedProfileId }
  */
-router?.post(
+router.post(
   "/analyze-reference-voice",
   requireAuthOnly,
   (req, res, next) => {
-    mediaUpload?.single("audio")(
+    mediaUpload.single("audio")(
       req as Record<string, unknown>,
       res as Record<string, unknown>,
       next,
@@ -4691,20 +4691,20 @@ router?.post(
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _file = req?.file;
-      if (!file?.path) {
+      const file = req.file;
+      if (!file.path) {
         return res
           .status(400)
           .json({ success: false, error: "Audio file required" });
       }
-      const _svc = await getVoiceSynthService();
-      const _characteristics = await svc?.analyzeReferenceVoice(file?.path);
-      res?.json({ success: true, characteristics });
+      const svc = await getVoiceSynthService();
+      const characteristics = await svc.analyzeReferenceVoice(file.path);
+      res.json({ success: true, characteristics });
     } catch (e) {
-      logger?.warn("[Route] analyze-reference-voice:", e?.message);
+      logger.warn("[Route] analyze-reference-voice:", e.message);
       res
         .status(500)
-        .json({ success: false, error: e?.message || "Analysis failed" });
+        .json({ success: false, error: e.message || "Analysis failed" });
     }
   },
 );
@@ -4719,12 +4719,12 @@ router?.post(
  * Returns full BeatAnalysis: { bpm, confidence, beats, downbeats, sections,
  *   energyEnvelope, peakPositions, durationSeconds, tier }
  */
-router?.post(
+router.post(
   "/analyze-audio-beats",
   requireAuthOnly,
   (req, res, next) => {
     // mediaUpload → disk storage gives us a real file path for FFmpeg analysis
-    mediaUpload?.single("audio")(
+    mediaUpload.single("audio")(
       req as Record<string, unknown>,
       res as Record<string, unknown>,
       next,
@@ -4732,8 +4732,8 @@ router?.post(
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _file = req?.file;
-      if (!file?.path) {
+      const file = req.file;
+      if (!file.path) {
         return res
           .status(400)
           .json({
@@ -4747,30 +4747,30 @@ router?.post(
       let cacheHit = false;
       try {
         const { getCachedBeatAnalysis, cacheBeatAnalysis } = await import(
-          "../services/pdimMediaStorageService?.js"
+          "../services/pdimMediaStorageService.js"
         );
-        const _cached = await getCachedBeatAnalysis(file?.path);
+        const cached = await getCachedBeatAnalysis(file.path);
         if (cached) {
           analysis = cached;
           cacheHit = true;
         } else {
-          const _svc = await getBeatSyncService();
-          analysis = await svc?.analyzeAudio(file?.path);
+          const svc = await getBeatSyncService();
+          analysis = await svc.analyzeAudio(file.path);
           // Cache the result in PDIM for 24 hours
-          await cacheBeatAnalysis(file?.path, analysis);
+          await cacheBeatAnalysis(file.path, analysis);
         }
       } catch {
         // PDIM unavailable — fall through to direct analysis
-        const _svc = await getBeatSyncService();
-        analysis = await svc?.analyzeAudio(file?.path);
+        const svc = await getBeatSyncService();
+        analysis = await svc.analyzeAudio(file.path);
       }
 
-      res?.json({ success: true, analysis, cacheHit });
+      res.json({ success: true, analysis, cacheHit });
     } catch (e) {
-      logger?.warn("[Route] analyze-audio-beats:", e?.message);
+      logger.warn("[Route] analyze-audio-beats:", e.message);
       res
         .status(500)
-        .json({ success: false, error: e?.message || "Beat analysis failed" });
+        .json({ success: false, error: e.message || "Beat analysis failed" });
     }
   },
 );
@@ -4786,14 +4786,14 @@ interface MusicVideoJob {
   error?: string;
   createdAt: number;
 }
-const _musicVideoJobs = new Map<string, MusicVideoJob>();
+const musicVideoJobs = new Map<string, MusicVideoJob>();
 
 // Prune jobs older than 15 minutes
 setInterval(
   () => {
-    const _cutoff = Date?.now() - 15 * 60 * 1000;
-    for (const [id, job] of musicVideoJobs?.entries()) {
-      if (job?.createdAt < cutoff) musicVideoJobs?.delete(id);
+    const cutoff = Date.now() - 15 * 60 * 1000;
+    for (const [id, job] of musicVideoJobs.entries()) {
+      if (job.createdAt < cutoff) musicVideoJobs.delete(id);
     }
   },
   3 * 60 * 1000,
@@ -4814,23 +4814,23 @@ setInterval(
  *
  * Returns immediately with jobId — poll /music-video-job/:jobId for result.
  */
-router?.post(
+router.post(
   "/generate-music-video",
   requireAuthOnly,
   (req, res, next) => {
     // mediaUpload → disk storage, accepts both images + audio in one request
-    mediaUpload?.fields([
+    mediaUpload.fields([
       { name: "images", maxCount: 10 },
       { name: "audio", maxCount: 1 },
       { name: "reference_voice", maxCount: 1 },
     ])(req as Record<string, unknown>, res as Record<string, unknown>, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
-    const _jobId = `mvjob_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
-    musicVideoJobs?.set(jobId, { status: "processing", createdAt: Date?.now() });
+    const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    musicVideoJobs.set(jobId, { status: "processing", createdAt: Date.now() });
 
     // Respond immediately
-    res?.json({
+    res.json({
       success: true,
       jobId,
       message: "Music video generation started",
@@ -4839,120 +4839,120 @@ router?.post(
     // Process async
     (async () => {
       try {
-        const _files = req?.files as
-          | Record<string, Express?.Multer.File[]>
+        const files = req.files as
+          | Record<string, Express.Multer.File[]>
           | undefined;
-        const _imageFiles = files?.images || [];
-        const _audioFile = files?.audio?.[0];
-        const _voiceRef = files?.reference_voice?.[0];
+        const imageFiles = files.images || [];
+        const audioFile = files.audio[0];
+        const voiceRef = files.reference_voice[0];
 
-        if (!imageFiles?.length) {
-          musicVideoJobs?.set(jobId, {
+        if (!imageFiles.length) {
+          musicVideoJobs.set(jobId, {
             status: "error",
             error: "At least one image is required",
-            createdAt: Date?.now(),
+            createdAt: Date.now(),
           });
           return;
         }
 
-        const _body = req?.body as Record<string, string>;
+        const body = req.body as Record<string, string>;
 
-        const _imagePaths = imageFiles
-          .map((f: Express?.Multer.File) => f?.path)
+        const imagePaths = imageFiles
+          .map((f: Express.Multer.File) => f.path)
           .filter(Boolean);
-        const _audioPath = audioFile?.path;
+        const audioPath = audioFile.path;
 
         // Optional: synthesize voice narration before rendering
         let voiceSynthPath: string | undefined;
-        if (body?.synthesize_voice === "true" && body?.voice_text?.trim()) {
+        if (body.synthesize_voice === "true" && body.voice_text.trim()) {
           try {
-            const _voiceSvc = await getVoiceSynthService();
-            const _voiceResult = await voiceSvc?.synthesizeVoice(
-              body?.voice_text,
+            const voiceSvc = await getVoiceSynthService();
+            const voiceResult = await voiceSvc.synthesizeVoice(
+              body.voice_text,
               {
-                profileId: body?.voice_profile_id || "smooth_narrator",
-                referenceAudioPath: voiceRef?.path,
+                profileId: body.voice_profile_id || "smooth_narrator",
+                referenceAudioPath: voiceRef.path,
               },
             );
-            if (voiceResult?.success && voiceResult?.outputPath) {
-              voiceSynthPath = voiceResult?.outputPath;
+            if (voiceResult.success && voiceResult.outputPath) {
+              voiceSynthPath = voiceResult.outputPath;
             }
           } catch (e) {
-            logger?.warn("[MusicVideo] Voice synthesis skipped:", e?.message);
+            logger.warn("[MusicVideo] Voice synthesis skipped:", e.message);
           }
         }
 
-        const _imgSvc = await getImageToVideoService();
-        const _result = await imgSvc?.imageToMusicVideo({
+        const imgSvc = await getImageToVideoService();
+        const result = await imgSvc.imageToMusicVideo({
           imagePaths,
           audioPath,
           voiceSynthPath,
-          template: body?.template,
-          platform: body?.platform,
-          aspect_ratio: body?.aspect_ratio,
-          duration: body?.duration ? Number(body?.duration) : undefined,
-          genre: body?.genre,
-          hook: body?.hook,
-          body: body?.body,
-          cta: body?.cta,
-          artistName: body?.artist_name || body?.artistName,
-          beatSync: body?.beat_sync !== "false",
+          template: body.template,
+          platform: body.platform,
+          aspect_ratio: body.aspect_ratio,
+          duration: body.duration ? Number(body.duration) : undefined,
+          genre: body.genre,
+          hook: body.hook,
+          body: body.body,
+          cta: body.cta,
+          artistName: body.artist_name || body.artistName,
+          beatSync: body.beat_sync !== "false",
           kenBurnsIntensity:
-            (body?.intensity as Record<string, unknown>) || "moderate",
+            (body.intensity as Record<string, unknown>) || "moderate",
           colorGrade:
-            (body?.color_grade as Record<string, unknown>) || "cinematic",
-          transitionType: body?.transition,
+            (body.color_grade as Record<string, unknown>) || "cinematic",
+          transitionType: body.transition,
         });
 
-        if (!result?.success) {
-          musicVideoJobs?.set(jobId, {
+        if (!result.success) {
+          musicVideoJobs.set(jobId, {
             status: "error",
-            error: result?.error || "Render failed",
-            createdAt: Date?.now(),
+            error: result.error || "Render failed",
+            createdAt: Date.now(),
           });
           return;
         }
 
         // ── Persist rendered video to PDIM as primary storage ────────────────
-        const _userId =
-          req?.user?.id?.toString() ||
-          req?.user?.userId?.toString() ||
+        const userId =
+          req.user.id.toString() ||
+          req.user.userId.toString() ||
           "anonymous";
         let pdimVideoMeta: Record<string, unknown> | null = null;
         try {
           const { storeMusicVideo } = await import(
-            "../services/pdimMediaStorageService?.js"
+            "../services/pdimMediaStorageService.js"
           );
-          const _videoFilePath = `${process?.cwd()}/uploads/videos/${result?.filename}`;
+          const videoFilePath = `${process.cwd()}/uploads/videos/${result.filename}`;
           pdimVideoMeta = await storeMusicVideo(userId, videoFilePath, result);
           if (pdimVideoMeta) {
-            result?.pdim = {
-              key: pdimVideoMeta?.pdimKey,
-              compressedSize: pdimVideoMeta?.compressedSize,
-              tier: pdimVideoMeta?.tier,
+            result.pdim = {
+              key: pdimVideoMeta.pdimKey,
+              compressedSize: pdimVideoMeta.compressedSize,
+              tier: pdimVideoMeta.tier,
             };
           }
         } catch (e) {
-          logger?.warn(
+          logger.warn(
             `[MusicVideo] PDIM store skipped for job ${jobId}:`,
-            e?.message?.slice(0, 80),
+            e.message.slice(0, 80),
           );
         }
 
-        musicVideoJobs?.set(jobId, {
+        musicVideoJobs.set(jobId, {
           status: "done",
           result,
-          createdAt: Date?.now(),
+          createdAt: Date.now(),
         });
-        logger?.info(
-          `[MusicVideo] Job ${jobId} complete — ${result?.filename} | PDIM: ${pdimVideoMeta?.pdimKey ?? "skipped"}`,
+        logger.info(
+          `[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta.pdimKey ?? "skipped"}`,
         );
       } catch (e) {
-        logger?.warn(`[MusicVideo] Job ${jobId} failed:`, e?.message);
-        musicVideoJobs?.set(jobId, {
+        logger.warn(`[MusicVideo] Job ${jobId} failed:`, e.message);
+        musicVideoJobs.set(jobId, {
           status: "error",
-          error: e?.message || "Music video generation failed",
-          createdAt: Date?.now(),
+          error: e.message || "Music video generation failed",
+          createdAt: Date.now(),
         });
       }
     })();
@@ -4969,7 +4969,7 @@ router?.get(
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     const { jobId } = req?.params;
-    const _job = musicVideoJobs?.get(jobId);
+    const job = musicVideoJobs?.get(jobId);
 
     if (!job) {
       return res
@@ -4988,10 +4988,10 @@ router?.get(
     if (job?.status === "error") {
       return res
         .status(500)
-        .json({ success: false, status: "error", error: job?.error });
+        .json({ success: false, status: "error", error: job.error });
     }
 
-    res?.json({ success: true, status: "done", result: job?.result });
+    res?.json({ success: true, status: "done", result: job.result });
   },
 );
 
@@ -5010,12 +5010,12 @@ router?.get(
       ]);
       res?.json({
         success: true,
-        voices: voiceSvc?.listVoiceProfiles().map((p) => ({
-          id: p?.id,
-          name: p?.name,
-          description: p?.description,
-          category: p?.category,
-          gender: p?.gender,
+        voices: voiceSvc.listVoiceProfiles().map((p) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          category: p.category,
+          gender: p.gender,
         })),
         kenBurns: ["subtle", "moderate", "dramatic"],
         colorGrades: ["none", "warm", "cool", "cinematic", "neon"],
@@ -5074,7 +5074,7 @@ router?.get(
         .status(500)
         .json({
           success: false,
-          error: e?.message || "Failed to load capabilities",
+          error: e.message || "Failed to load capabilities",
         });
     }
   },

@@ -1,13 +1,13 @@
 import { Router } from "express";
-import { logger } from "../logger?.js";
-import { queueMonitor } from "../monitoring/queueMonitor?.js";
-import { aiModelManager } from "../services/aiModelManager?.js";
-import { asyncHandler } from "../middleware/errorHandler?.js";
-import { alertingService } from "../monitoring/alertingService?.js";
-import { metricsCollector } from "../monitoring/metricsCollector?.js";
-import { requireAdmin, require2FA } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { queueMonitor } from "../monitoring/queueMonitor.js";
+import { aiModelManager } from "../services/aiModelManager.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { alertingService } from "../monitoring/alertingService.js";
+import { metricsCollector } from "../monitoring/metricsCollector.js";
+import { requireAdmin, require2FA } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 router?.use(requireAdmin);
 router?.use(require2FA);
@@ -16,8 +16,8 @@ router?.get(
   "/queue-metrics",
   asyncHandler(async (_req, res) => {
     try {
-      const _metrics = await queueMonitor?.collectAllMetrics();
-      const _metricsArray = Array?.from(metrics?.entries()).map(
+      const metrics = await queueMonitor?.collectAllMetrics();
+      const metricsArray = Array?.from(metrics?.entries()).map(
         ([name, data]) => ({
           queue: name,
           ...data,
@@ -41,7 +41,7 @@ router?.get(
   asyncHandler(async (req, res) => {
     try {
       const { queueName } = req?.params;
-      const _metrics = await queueMonitor?.collectMetrics(queueName);
+      const metrics = await queueMonitor?.collectMetrics(queueName);
 
       if (!metrics) {
         return res?.status(404).json({
@@ -65,12 +65,12 @@ router?.get(
   "/queue-health",
   asyncHandler(async (_req, res) => {
     try {
-      const _healthStatus = await queueMonitor?.getHealthStatus();
+      const healthStatus = await queueMonitor?.getHealthStatus();
 
       res?.json({
         success: true,
-        healthy: healthStatus?.healthy,
-        queues: Array?.from(healthStatus?.queues.entries()).map(
+        healthy: healthStatus.healthy,
+        queues: Array.from(healthStatus?.queues.entries()).map(
           ([name, data]) => ({
             name,
             ...data,
@@ -88,9 +88,9 @@ router?.get(
   "/ai-models",
   asyncHandler(async (_req, res) => {
     try {
-      const _metrics = aiModelManager?.getMetrics();
-      const _summary = aiModelManager?.getTelemetrySummary();
-      const _cacheStats = aiModelManager?.getCacheStats();
+      const metrics = aiModelManager?.getMetrics();
+      const summary = aiModelManager?.getTelemetrySummary();
+      const cacheStats = aiModelManager?.getCacheStats();
 
       res?.json({
         success: true,
@@ -114,14 +114,14 @@ router?.get(
         aiModelManager?.getMetrics(),
       ]);
 
-      const _allQueuesHealthy = queueHealth?.healthy;
-      const _aiModelsHealthy =
+      const allQueuesHealthy = queueHealth?.healthy;
+      const aiModelsHealthy =
         aiMetrics?.socialAutopilot.currentSize <=
           aiMetrics?.socialAutopilot.maxSize &&
         aiMetrics?.advertisingAutopilot.currentSize <=
           aiMetrics?.advertisingAutopilot.maxSize;
 
-      const _systemHealthy = allQueuesHealthy && aiModelsHealthy;
+      const systemHealthy = allQueuesHealthy && aiModelsHealthy;
 
       res?.json({
         success: true,
@@ -130,18 +130,18 @@ router?.get(
         components: {
           queues: {
             healthy: allQueuesHealthy,
-            details: Array?.from(queueHealth?.queues.entries()).map(
+            details: Array.from(queueHealth?.queues.entries()).map(
               ([name, data]) => ({
                 name,
-                status: data?.status,
+                status: data.status,
               }),
             ),
           },
           aiModels: {
             healthy: aiModelsHealthy,
             social: {
-              current: aiMetrics?.socialAutopilot.currentSize,
-              max: aiMetrics?.socialAutopilot.maxSize,
+              current: aiMetrics.socialAutopilot.currentSize,
+              max: aiMetrics.socialAutopilot.maxSize,
               utilizationPercent: (
                 (aiMetrics?.socialAutopilot.currentSize /
                   aiMetrics?.socialAutopilot.maxSize) *
@@ -149,8 +149,8 @@ router?.get(
               ).toFixed(1),
             },
             advertising: {
-              current: aiMetrics?.advertisingAutopilot.currentSize,
-              max: aiMetrics?.advertisingAutopilot.maxSize,
+              current: aiMetrics.advertisingAutopilot.currentSize,
+              max: aiMetrics.advertisingAutopilot.maxSize,
               utilizationPercent: (
                 (aiMetrics?.advertisingAutopilot.currentSize /
                   aiMetrics?.advertisingAutopilot.maxSize) *
@@ -183,7 +183,7 @@ router?.post(
       });
 
       logger?.info("📊 Queue monitoring thresholds updated by admin", {
-        adminId: req?.user.id,
+        adminId: req.user.id,
         thresholds: {
           maxWaitingJobs,
           maxFailedRate,
@@ -207,16 +207,16 @@ router?.get(
   "/dashboard",
   asyncHandler(async (_req, res) => {
     try {
-      const _dashboardData = metricsCollector?.getDashboardData();
-      const _alertConfig = alertingService?.getConfig();
+      const dashboardData = metricsCollector?.getDashboardData();
+      const alertConfig = alertingService?.getConfig();
 
       res?.json({
         success: true,
         dashboard: dashboardData,
         alerting: {
-          emailEnabled: alertConfig?.emailEnabled,
-          webhookEnabled: alertConfig?.webhookEnabled,
-          thresholds: alertConfig?.thresholds,
+          emailEnabled: alertConfig.emailEnabled,
+          webhookEnabled: alertConfig.webhookEnabled,
+          thresholds: alertConfig.thresholds,
         },
         timestamp: new Date(),
       });
@@ -232,11 +232,11 @@ router?.post(
   asyncHandler(async (req, res) => {
     try {
       const { name } = req?.body;
-      const _baselineName = name || "baseline";
-      const _filepath = await metricsCollector?.saveBaseline(baselineName);
+      const baselineName = name || "baseline";
+      const filepath = await metricsCollector?.saveBaseline(baselineName);
 
       logger?.info("📊 Baseline metrics saved by admin", {
-        adminId: req?.user.id,
+        adminId: req.user.id,
         baselineName,
         filepath,
       });
@@ -257,15 +257,15 @@ router?.get(
   "/alerting/config",
   asyncHandler(async (_req, res) => {
     try {
-      const _config = alertingService?.getConfig();
+      const config = alertingService?.getConfig();
 
       res?.json({
         success: true,
         config: {
-          emailEnabled: config?.emailEnabled,
-          webhookEnabled: config?.webhookEnabled,
-          recipientCount: config?.emailRecipients.length,
-          thresholds: config?.thresholds,
+          emailEnabled: config.emailEnabled,
+          webhookEnabled: config.webhookEnabled,
+          recipientCount: config.emailRecipients.length,
+          thresholds: config.thresholds,
         },
       });
     } catch (error) {
@@ -284,7 +284,7 @@ router?.post(
         title: "Test Alert",
         message: "This is a test alert from Max Booster monitoring system.",
         timestamp: new Date(),
-        metadata: { testBy: req?.user.email },
+        metadata: { testBy: req.user.email },
       });
 
       res?.json({

@@ -22,7 +22,7 @@ export interface UploadOptions {
   withCredentials?: boolean;
 }
 
-const _DEFAULT_AUDIO_TYPES = [
+const DEFAULT_AUDIO_TYPES = [
   "audio/wav",
   "audio/x-wav",
   "audio/wave",
@@ -39,7 +39,7 @@ const _DEFAULT_AUDIO_TYPES = [
   "audio/x-m4a",
 ];
 
-const _DEFAULT_EXTENSIONS = [
+const DEFAULT_EXTENSIONS = [
   ".wav",
   ".mp3",
   ".flac",
@@ -50,30 +50,30 @@ const _DEFAULT_EXTENSIONS = [
   ".aac",
   ".m4a",
 ];
-const _DEFAULT_MAX_SIZE = 500 * 1024 * 1024;
+const DEFAULT_MAX_SIZE = 500 * 1024 * 1024;
 
 export function useUniversalUpload() {
   const [uploads, setUploads] = useState<Map<string, UploadProgress>>(
     new Map(),
   );
   const [isUploading, setIsUploading] = useState(false);
-  const _abortControllers = useRef<Map<string, XMLHttpRequest>>(new Map());
+  const abortControllers = useRef<Map<string, XMLHttpRequest>>(new Map());
   useToast();
 
-  const _generateId = () =>
+  const generateId = () =>
     `upload_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
 
-  const _validateFile = useCallback(
+  const validateFile = useCallback(
     (file: File, options: UploadOptions): string | null => {
-      const _maxSize = options?.maxFileSize ?? DEFAULT_MAX_SIZE;
-      const _acceptedTypes = options?.acceptedTypes ?? DEFAULT_AUDIO_TYPES;
-      const _acceptedExtensions =
+      const maxSize = options?.maxFileSize ?? DEFAULT_MAX_SIZE;
+      const acceptedTypes = options?.acceptedTypes ?? DEFAULT_AUDIO_TYPES;
+      const acceptedExtensions =
         options?.acceptedExtensions ?? DEFAULT_EXTENSIONS;
 
-      const _extension = "." + (file?.name.split(".").pop()?.toLowerCase() || "");
+      const extension = "." + (file?.name.split(".").pop()?.toLowerCase() || "");
 
-      const _isValidType = acceptedTypes?.includes(file?.type);
-      const _isValidExtension = acceptedExtensions?.includes(extension);
+      const isValidType = acceptedTypes?.includes(file?.type);
+      const isValidExtension = acceptedExtensions?.includes(extension);
 
       if (!isValidType && !isValidExtension) {
         return `Unsupported file type "${extension}". Accepted: ${acceptedExtensions?.join(", ")}`;
@@ -92,7 +92,7 @@ export function useUniversalUpload() {
     [],
   );
 
-  const _uploadFile = useCallback(
+  const uploadFile = useCallback(
     async (
       file: File,
       options: UploadOptions,
@@ -101,10 +101,10 @@ export function useUniversalUpload() {
       response?: Record<string, unknown>;
       error?: string;
     }> => {
-      const _uploadId = generateId();
-      const _fieldName = options?.fieldName ?? "audioFile";
+      const uploadId = generateId();
+      const fieldName = options?.fieldName ?? "audioFile";
 
-      const _validationError = validateFile(file, options);
+      const validationError = validateFile(file, options);
       if (validationError) {
         options?.onError?.(validationError, file);
         return { success: false, error: validationError };
@@ -112,7 +112,7 @@ export function useUniversalUpload() {
 
       const progressData: UploadProgress = {
         id: uploadId,
-        fileName: file?.name,
+        fileName: file.name,
         progress: 0,
         status: "pending",
       };
@@ -121,10 +121,10 @@ export function useUniversalUpload() {
       setIsUploading(true);
 
       return new Promise((resolve) => {
-        const _xhr = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
         abortControllers?.current.set(uploadId, xhr);
 
-        const _formData = new FormData();
+        const formData = new FormData();
         formData?.append(fieldName, file, file?.name);
 
         if (options?.additionalData) {
@@ -137,10 +137,10 @@ export function useUniversalUpload() {
 
         xhr?.upload.addEventListener("progress", (e) => {
           if (e?.lengthComputable) {
-            const _progress = Math?.round((e?.loaded / e?.total) * 100);
+            const progress = Math?.round((e?.loaded / e?.total) * 100);
             const updated: UploadProgress = {
               id: uploadId,
-              fileName: file?.name,
+              fileName: file.name,
               progress,
               status: "uploading",
             };
@@ -162,7 +162,7 @@ export function useUniversalUpload() {
 
             const updated: UploadProgress = {
               id: uploadId,
-              fileName: file?.name,
+              fileName: file.name,
               progress: 100,
               status: "success",
             };
@@ -171,7 +171,7 @@ export function useUniversalUpload() {
 
             setTimeout(() => {
               setUploads((prev) => {
-                const _next = new Map(prev);
+                const next = new Map(prev);
                 next?.delete(uploadId);
                 if (next?.size === 0) setIsUploading(false);
                 return next;
@@ -182,7 +182,7 @@ export function useUniversalUpload() {
           } else {
             let errorMessage = "Upload failed";
             try {
-              const _response = JSON?.parse(xhr?.responseText);
+              const response = JSON?.parse(xhr?.responseText);
               errorMessage =
                 response?.message ||
                 response?.error ||
@@ -194,7 +194,7 @@ export function useUniversalUpload() {
 
             const updated: UploadProgress = {
               id: uploadId,
-              fileName: file?.name,
+              fileName: file.name,
               progress: 0,
               status: "error",
               error: errorMessage,
@@ -208,11 +208,11 @@ export function useUniversalUpload() {
 
         xhr?.addEventListener("error", () => {
           abortControllers?.current.delete(uploadId);
-          const _errorMessage = "Network error - please check your connection";
+          const errorMessage = "Network error - please check your connection";
 
           const updated: UploadProgress = {
             id: uploadId,
-            fileName: file?.name,
+            fileName: file.name,
             progress: 0,
             status: "error",
             error: errorMessage,
@@ -226,7 +226,7 @@ export function useUniversalUpload() {
         xhr?.addEventListener("abort", () => {
           abortControllers?.current.delete(uploadId);
           setUploads((prev) => {
-            const _next = new Map(prev);
+            const next = new Map(prev);
             next?.delete(uploadId);
             if (next?.size === 0) setIsUploading(false);
             return next;
@@ -236,11 +236,11 @@ export function useUniversalUpload() {
 
         xhr?.addEventListener("timeout", () => {
           abortControllers?.current.delete(uploadId);
-          const _errorMessage = "Upload timed out - please try again";
+          const errorMessage = "Upload timed out - please try again";
 
           const updated: UploadProgress = {
             id: uploadId,
-            fileName: file?.name,
+            fileName: file.name,
             progress: 0,
             status: "error",
             error: errorMessage,
@@ -252,15 +252,15 @@ export function useUniversalUpload() {
         });
 
         xhr?.open("POST", options?.endpoint);
-        xhr?.withCredentials = options?.withCredentials ?? true;
-        xhr?.timeout = 10 * 60 * 1000;
+        xhr.withCredentials = options?.withCredentials ?? true;
+        xhr.timeout = 10 * 60 * 1000;
         xhr?.send(formData);
       });
     },
     [validateFile],
   );
 
-  const _uploadMultiple = useCallback(
+  const uploadMultiple = useCallback(
     async (
       files: File[],
       options: UploadOptions,
@@ -272,11 +272,11 @@ export function useUniversalUpload() {
       const failed: { file: File; error: string }[] = [];
 
       for (const file of files) {
-        const _result = await uploadFile(file, options);
+        const result = await uploadFile(file, options);
         if (result?.success) {
           successful?.push(file);
         } else {
-          failed?.push({ file, error: result?.error || "Unknown error" });
+          failed?.push({ file, error: result.error || "Unknown error" });
         }
       }
 
@@ -285,23 +285,23 @@ export function useUniversalUpload() {
     [uploadFile],
   );
 
-  const _cancelUpload = useCallback((uploadId: string) => {
-    const _xhr = abortControllers?.current.get(uploadId);
+  const cancelUpload = useCallback((uploadId: string) => {
+    const xhr = abortControllers?.current.get(uploadId);
     if (xhr) {
       xhr?.abort();
     }
   }, []);
 
-  const _cancelAll = useCallback(() => {
+  const cancelAll = useCallback(() => {
     abortControllers?.current.forEach((xhr) => xhr?.abort());
     abortControllers?.current.clear();
     setUploads(new Map());
     setIsUploading(false);
   }, []);
 
-  const _clearCompleted = useCallback(() => {
+  const clearCompleted = useCallback(() => {
     setUploads((prev) => {
-      const _next = new Map(prev);
+      const next = new Map(prev);
       next?.forEach((upload, id) => {
         if (upload?.status === "success" || upload?.status === "error") {
           next?.delete(id);
@@ -318,7 +318,7 @@ export function useUniversalUpload() {
     cancelUpload,
     cancelAll,
     clearCompleted,
-    uploads: Array?.from(uploads?.values()),
+    uploads: Array.from(uploads?.values()),
     isUploading,
     validateFile,
   };
@@ -327,7 +327,7 @@ export function useUniversalUpload() {
 export function getAcceptString(
   extensions: string[] = DEFAULT_EXTENSIONS,
 ): string {
-  const _mimeTypes = [
+  const mimeTypes = [
     "audio/wav",
     "audio/mpeg",
     "audio/mp3",

@@ -76,11 +76,11 @@ export function useTemplate(
 ): UseTemplateResult {
   const { type, onSuccess, onError } = options;
   const { toast } = useToast();
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   const [isApplying, setIsApplying] = useState(false);
 
-  const _queryKey = type ? ["/api/templates", type] : ["/api/templates"];
+  const queryKey = type ? ["/api/templates", type] : ["/api/templates"];
 
   const {
     data: templates = [],
@@ -89,12 +89,12 @@ export function useTemplate(
   } = useQuery<Template[]>({
     queryKey,
     queryFn: async () => {
-      const _endpoint = type ? `/api/templates?type=${type}` : "/api/templates";
+      const endpoint = type ? `/api/templates?type=${type}` : "/api/templates";
       return apiRequest("GET", endpoint);
     },
   });
 
-  const _createMutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: async (input: CreateTemplateInput) => {
       return apiRequest("POST", "/api/templates", input);
     },
@@ -102,21 +102,21 @@ export function useTemplate(
       queryClient?.invalidateQueries({ queryKey: ["/api/templates"] });
       toast({
         title: "Template created",
-        description: `"${template?.name}" has been saved`,
+        description: `"${template.name}" has been saved`,
       });
       onSuccess?.(template);
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to create template",
-        description: error?.message,
+        description: error.message,
         variant: "destructive",
       });
       onError?.(error);
     },
   });
 
-  const _updateMutation = useMutation({
+  const updateMutation = useMutation({
     mutationFn: async ({
       id,
       input,
@@ -130,19 +130,19 @@ export function useTemplate(
       queryClient?.invalidateQueries({ queryKey: ["/api/templates"] });
       toast({
         title: "Template updated",
-        description: `"${template?.name}" has been updated`,
+        description: `"${template.name}" has been updated`,
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to update template",
-        description: error?.message,
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  const _deleteMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       return apiRequest("DELETE", `/api/templates/${id}`);
     },
@@ -153,20 +153,20 @@ export function useTemplate(
     onError: (error: Error) => {
       toast({
         title: "Failed to delete template",
-        description: error?.message,
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  const _createTemplate = useCallback(
+  const createTemplate = useCallback(
     async (input: CreateTemplateInput): Promise<Template> => {
       return createMutation?.mutateAsync(input);
     },
     [createMutation],
   );
 
-  const _updateTemplate = useCallback(
+  const updateTemplate = useCallback(
     async (
       id: string,
       input: Partial<CreateTemplateInput>,
@@ -176,21 +176,21 @@ export function useTemplate(
     [updateMutation],
   );
 
-  const _deleteTemplate = useCallback(
+  const deleteTemplate = useCallback(
     async (id: string): Promise<void> => {
       return deleteMutation?.mutateAsync(id);
     },
     [deleteMutation],
   );
 
-  const _applyTemplate = useCallback(
+  const applyTemplate = useCallback(
     async (
       templateId: string,
       targetIds: string[],
     ): Promise<ApplyTemplateResult> => {
       setIsApplying(true);
       try {
-        const _result = await apiRequest(
+        const result = await apiRequest(
           "POST",
           `/api/templates/${templateId}/apply`,
           { targetIds },
@@ -211,13 +211,13 @@ export function useTemplate(
 
         return result;
       } catch (error) {
-        const _err =
+        const err =
           error instanceof Error
             ? error
             : new Error("Failed to apply template");
         toast({
           title: "Failed to apply template",
-          description: err?.message,
+          description: err.message,
           variant: "destructive",
         });
         throw err;
@@ -228,37 +228,37 @@ export function useTemplate(
     [toast],
   );
 
-  const _duplicateTemplate = useCallback(
+  const duplicateTemplate = useCallback(
     async (id: string, newName: string): Promise<Template> => {
-      const _template = templates?.find((t) => t?.id === id);
+      const template = templates?.find((t) => t?.id === id);
       if (!template) throw new Error("Template not found");
 
       return createTemplate({
         name: newName,
-        description: template?.description,
-        type: template?.type,
-        data: template?.data,
+        description: template.description,
+        type: template.type,
+        data: template.data,
         isShared: false,
-        tags: template?.tags,
+        tags: template.tags,
       });
     },
     [templates, createTemplate],
   );
 
-  const _getTemplate = useCallback(
+  const getTemplate = useCallback(
     (id: string): Template | undefined => {
       return templates?.find((t) => t?.id === id);
     },
     [templates],
   );
 
-  const _saveAsTemplate = useCallback(
+  const saveAsTemplate = useCallback(
     async (
       name: string,
       templateType: TemplateType,
       items: unknown[],
     ): Promise<Template> => {
-      const _commonFields = extractCommonFields(items);
+      const commonFields = extractCommonFields(items);
 
       return createTemplate({
         name,
@@ -281,7 +281,7 @@ export function useTemplate(
     duplicateTemplate,
     getTemplate,
     saveAsTemplate,
-    isCreating: createMutation?.isPending,
+    isCreating: createMutation.isPending,
     isApplying,
   };
 }
@@ -291,13 +291,13 @@ function extractCommonFields(items: unknown[]): Record<string, any> {
   if (items?.length === 1) return { ...items[0] };
 
   const common: Record<string, any> = {};
-  const _firstItem = items[0];
+  const firstItem = items[0];
 
   for (const key of Object?.keys(firstItem)) {
     if (key === "id" || key === "createdAt" || key === "updatedAt") continue;
 
-    const _firstValue = firstItem[key];
-    const _allSame = items?.every(
+    const firstValue = firstItem[key];
+    const allSame = items?.every(
       (item) => JSON?.stringify(item[key]) === JSON?.stringify(firstValue),
     );
 
@@ -311,17 +311,17 @@ function extractCommonFields(items: unknown[]): Record<string, any> {
 
 export function useTemplateLibrary() {
   const { toast } = useToast();
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   const { data: allTemplates = [], isLoading } = useQuery<Template[]>({
     queryKey: ["/api/templates"],
     queryFn: () => apiRequest("GET", "/api/templates"),
   });
 
-  const _templatesByType = allTemplates?.reduce<Record<TemplateType, Template[]>>(
+  const templatesByType = allTemplates?.reduce<Record<TemplateType, Template[]>>(
     (acc, template) => {
       if (!acc[template?.type]) {
-        acc[template?.type] = [];
+        acc[template.type] = [];
       }
       acc[template?.type].push(template);
       return acc;
@@ -329,24 +329,24 @@ export function useTemplateLibrary() {
     {} as Record<TemplateType, Template[]>,
   );
 
-  const _defaultTemplates = allTemplates?.filter((t) => t?.isDefault);
-  const _sharedTemplates = allTemplates?.filter((t) => t?.isShared);
-  const _recentTemplates = [...allTemplates]
+  const defaultTemplates = allTemplates?.filter((t) => t?.isDefault);
+  const sharedTemplates = allTemplates?.filter((t) => t?.isShared);
+  const recentTemplates = [...allTemplates]
     .sort(
       (a, b) =>
         new Date(b?.updatedAt).getTime() - new Date(a?.updatedAt).getTime(),
     )
     .slice(0, 5);
-  const _popularTemplates = [...allTemplates]
+  const popularTemplates = [...allTemplates]
     .sort((a, b) => b?.usageCount - a?.usageCount)
     .slice(0, 5);
 
-  const _importTemplate = async (file: File): Promise<Template> => {
-    const _formData = new FormData();
+  const importTemplate = async (file: File): Promise<Template> => {
+    const formData = new FormData();
     formData?.append("file", file);
 
-    const _csrfToken = getCsrfTokenFromCookie();
-    const _result = await fetch("/api/templates/import", {
+    const csrfToken = getCsrfTokenFromCookie();
+    const result = await fetch("/api/templates/import", {
       method: "POST",
       credentials: "include",
       headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
@@ -356,18 +356,18 @@ export function useTemplateLibrary() {
     queryClient?.invalidateQueries({ queryKey: ["/api/templates"] });
     toast({
       title: "Template imported",
-      description: `"${result?.name}" has been imported`,
+      description: `"${result.name}" has been imported`,
     });
     return result;
   };
 
-  const _exportTemplate = async (id: string): Promise<void> => {
-    const _response = await fetch(`/api/templates/${id}/export`);
-    const _blob = await response?.blob();
-    const _url = URL?.createObjectURL(blob);
-    const _a = document?.createElement("a");
-    a?.href = url;
-    a?.download = `template-${id}.json`;
+  const exportTemplate = async (id: string): Promise<void> => {
+    const response = await fetch(`/api/templates/${id}/export`);
+    const blob = await response?.blob();
+    const url = URL?.createObjectURL(blob);
+    const a = document?.createElement("a");
+    a.href = url;
+    a.download = `template-${id}.json`;
     a?.click();
     URL?.revokeObjectURL(url);
   };

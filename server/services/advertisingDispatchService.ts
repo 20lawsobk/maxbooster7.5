@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { platformAPI } from "../platform-apis";
 import { adCampaigns, adCreatives, contentCalendar } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 /**
  * Advertising Dispatch Service
@@ -45,7 +45,7 @@ export class AdvertisingDispatchService {
   }> {
     try {
       // 1. Get campaign
-      const _campaigns = await db
+      const campaigns = await db
         .select()
         .from(adCampaigns)
         .where(
@@ -62,7 +62,7 @@ export class AdvertisingDispatchService {
         };
       }
 
-      const _campaign = campaigns[0];
+      const campaign = campaigns[0];
 
       // 2. Check if campaign is already active
       if (campaign?.status === "active" || campaign?.status === "running") {
@@ -74,7 +74,7 @@ export class AdvertisingDispatchService {
       }
 
       // 3. Get campaign creatives
-      const _creatives = await db
+      const creatives = await db
         .select()
         .from(adCreatives)
         .where(eq(adCreatives?.campaignId, campaignId));
@@ -91,18 +91,18 @@ export class AdvertisingDispatchService {
       // 4. Determine target platforms.
       // NOTE: adCampaigns has a singular `platform` column (NOT `platforms`).
       // Additional fan-out platforms may be supplied via metadata?.fanOutPlatforms.
-      const _meta = (campaign?.metadata as Record<string, unknown> | null) || {};
-      const _fanOut = Array?.isArray(meta?.fanOutPlatforms)
+      const meta = (campaign?.metadata as Record<string, unknown> | null) || {};
+      const fanOut = Array?.isArray(meta?.fanOutPlatforms)
         ? (meta?.fanOutPlatforms as unknown[]).filter(
             (p): p is string => typeof p === "string",
           )
         : [];
-      const _requestedPlatforms = Array?.from(
+      const requestedPlatforms = Array?.from(
         new Set([campaign?.platform, ...fanOut].filter((p): p is string => !!p)),
       );
 
       // 5. Verify user has connected social accounts
-      const _connectedPlatforms = await this?.getConnectedPlatforms(userId);
+      const connectedPlatforms = await this?.getConnectedPlatforms(userId);
 
       if (connectedPlatforms?.length === 0) {
         return {
@@ -122,7 +122,7 @@ export class AdvertisingDispatchService {
       }
 
       // Filter to only use platforms that are both requested AND connected
-      const _platformsToUse = requestedPlatforms?.filter((p) =>
+      const platformsToUse = requestedPlatforms?.filter((p) =>
         connectedPlatforms?.includes(p?.toLowerCase()),
       );
 
@@ -147,16 +147,16 @@ export class AdvertisingDispatchService {
         // NOTE: adCreatives stores copy in `description`/`headline` and media in
         // `mediaUrl` (there are no `normalizedContent`/`rawContent`/`assetUrls`
         // columns), so read the real columns here.
-        const _copy = creative?.description || creative?.headline || "";
-        const _content = {
+        const copy = creative?.description || creative?.headline || "";
+        const content = {
           text: copy,
           body: copy,
-          mediaUrl: creative?.mediaUrl || null,
-          hashtags: this?.extractHashtags(copy),
+          mediaUrl: creative.mediaUrl || null,
+          hashtags: this.extractHashtags(copy),
         };
 
         // Post to each platform
-        const _publishResults = await platformAPI?.publishContent(
+        const publishResults = await platformAPI?.publishContent(
           content,
           platformsToUse,
           userId,
@@ -165,12 +165,12 @@ export class AdvertisingDispatchService {
         // Process results
         for (const result of publishResults) {
           if (result?.success && result?.postId) {
-            postResults[`${result?.platform}_${creative?.id}`] = result?.postId;
+            postResults[`${result.platform}_${creative.id}`] = result?.postId;
             successfulPosts++;
 
             // Create content calendar entry
             try {
-              const _calendarEntry = await this?.createCalendarEntry(
+              const calendarEntry = await this?.createCalendarEntry(
                 userId,
                 creative,
                 result?.platform,
@@ -188,9 +188,9 @@ export class AdvertisingDispatchService {
             // Create delivery log
             try {
               await storage?.createAdDeliveryLog({
-                variantId: creative?.id,
-                platform: result?.platform,
-                platformAdId: result?.postId,
+                variantId: creative.id,
+                platform: result.platform,
+                platformAdId: result.postId,
                 deliveryStatus: "active",
                 platformResponse: {
                   type: "organic_post",
@@ -209,10 +209,10 @@ export class AdvertisingDispatchService {
             // Log failure
             try {
               await storage?.createAdDeliveryLog({
-                variantId: creative?.id,
-                platform: result?.platform,
+                variantId: creative.id,
+                platform: result.platform,
                 deliveryStatus: "failed",
-                errorMessage: result?.error || "Unknown error",
+                errorMessage: result.error || "Unknown error",
                 retryCount: 1,
               });
             } catch (err: unknown) {
@@ -223,8 +223,8 @@ export class AdvertisingDispatchService {
       }
 
       // 7. Update campaign status and metrics
-      const _organicMetrics = {
-        posts: Object?.entries(postResults).map(([key, postId]) => {
+      const organicMetrics = {
+        posts: Object.entries(postResults).map(([key, postId]) => {
           const [platform] = key?.split("_");
           return {
             platform,
@@ -293,7 +293,7 @@ export class AdvertisingDispatchService {
   ): Promise<void> {
     try {
       // Get campaign
-      const _campaigns = await db
+      const campaigns = await db
         .select()
         .from(adCampaigns)
         .where(
@@ -305,8 +305,8 @@ export class AdvertisingDispatchService {
         throw new Error("Campaign not found");
       }
 
-      const _campaign = campaigns[0];
-      const _organicMetrics = campaign?.organicMetrics as Record<string, unknown>;
+      const campaign = campaigns[0];
+      const organicMetrics = campaign?.organicMetrics as Record<string, unknown>;
 
       if (!organicMetrics || !organicMetrics?.posts) {
         logger?.info("No organic posts to track for campaign", campaignId);
@@ -314,7 +314,7 @@ export class AdvertisingDispatchService {
       }
 
       // Update metrics for each post
-      const _updatedPosts = [];
+      const updatedPosts = [];
       let totalImpressions = 0;
       let totalEngagements = 0;
       let totalReach = 0;
@@ -324,25 +324,25 @@ export class AdvertisingDispatchService {
 
         try {
           // Collect engagement data from platform
-          const _engagement = await platformAPI?.collectEngagementData(
+          const engagement = await platformAPI?.collectEngagementData(
             post?.postId,
             post?.platform,
             userId,
           );
 
           // Update post metrics
-          const _updatedPost = {
+          const updatedPost = {
             ...post,
             metrics: {
-              impressions: engagement?.impressions || engagement?.views || 0,
+              impressions: engagement.impressions || engagement?.views || 0,
               engagements:
                 engagement?.likes + engagement?.comments + engagement?.shares,
-              shares: engagement?.shares,
+              shares: engagement.shares,
               clicks: 0, // Not available from most platforms
-              reach: engagement?.reach || engagement?.impressions || 0,
-              engagementRate: engagement?.engagementRate || 0,
+              reach: engagement.reach || engagement?.impressions || 0,
+              engagementRate: engagement.engagementRate || 0,
             },
-            organicBoost: this?.calculateOrganicBoost(engagement),
+            organicBoost: this.calculateOrganicBoost(engagement),
             lastUpdated: new Date().toISOString(),
           };
 
@@ -362,7 +362,7 @@ export class AdvertisingDispatchService {
       }
 
       // Update campaign with new metrics
-      const _updatedOrganicMetrics = {
+      const updatedOrganicMetrics = {
         ...organicMetrics,
         posts: updatedPosts,
         totalImpressions,
@@ -397,7 +397,7 @@ export class AdvertisingDispatchService {
    * @returns Array of connected platform names (lowercase)
    */
   private async getConnectedPlatforms(userId: string): Promise<string[]> {
-    const _user = await storage?.getUser(userId);
+    const user = await storage?.getUser(userId);
     if (!user) return [];
 
     const platforms: string[] = [];
@@ -428,7 +428,7 @@ export class AdvertisingDispatchService {
     _postId: string,
     campaign: unknown,
   ): Promise<unknown> {
-    const _entry = await db
+    const entry = await db
       .insert(contentCalendar)
       .values({
         userId,
@@ -437,9 +437,9 @@ export class AdvertisingDispatchService {
         platforms: [platform] as Record<string, unknown>,
         status: "published",
         postType: "campaign_post",
-        content: creative?.normalizedContent || creative?.rawContent,
-        mediaUrls: creative?.assetUrls as Record<string, unknown>,
-        hashtags: this?.extractHashtags(
+        content: creative.normalizedContent || creative?.rawContent,
+        mediaUrls: creative.assetUrls as Record<string, unknown>,
+        hashtags: this.extractHashtags(
           creative?.normalizedContent || creative?.rawContent || "",
         ) as Record<string, unknown>,
         publishedAt: new Date(),
@@ -456,8 +456,8 @@ export class AdvertisingDispatchService {
    * @returns Array of hashtags
    */
   private extractHashtags(text: string): string[] {
-    const _hashtagRegex = /#[\w]+/g;
-    const _matches = text?.match(hashtagRegex);
+    const hashtagRegex = /#[\w]+/g;
+    const matches = text?.match(hashtagRegex);
     return matches || [];
   }
 
@@ -470,8 +470,8 @@ export class AdvertisingDispatchService {
   private calculateOrganicBoost(engagement: unknown): number {
     // Organic posts typically get 100-300% more engagement per impression than paid ads
     // This is a simplified calculation
-    const _engagementRate = engagement?.engagementRate || 0;
-    const _avgPaidAdEngagementRate = 0?.01; // 1% baseline for paid ads
+    const engagementRate = engagement?.engagementRate || 0;
+    const avgPaidAdEngagementRate = 0.01; // 1% baseline for paid ads
 
     if (engagementRate > avgPaidAdEngagementRate) {
       return (
@@ -492,7 +492,7 @@ export class AdvertisingDispatchService {
   async collectAllActiveEngagement(userId?: string): Promise<void> {
     try {
       // Get all active campaigns
-      const _activeCampaigns = userId
+      const activeCampaigns = userId
         ? await db
             .select()
             .from(adCampaigns)
@@ -536,34 +536,34 @@ export class AdvertisingDispatchService {
     platform: string,
     variant: unknown,
     userId: string,
-    _campaign: unknown,
+    campaign: unknown,
   ): Promise<unknown> {
     try {
       // Prepare content from variant
-      const _content = {
-        text: variant?.content || variant?.normalizedContent || "",
-        body: variant?.content || variant?.normalizedContent || "",
+      const content = {
+        text: variant.content || variant?.normalizedContent || "",
+        body: variant.content || variant?.normalizedContent || "",
         mediaUrl:
           variant?.assetUrls && variant?.assetUrls.length > 0
             ? variant?.assetUrls[0]
             : null,
-        hashtags: this?.extractHashtags(variant?.content || ""),
+        hashtags: this.extractHashtags(variant?.content || ""),
       };
 
       // Post using platformAPI
-      const _results = await platformAPI?.publishContent(
+      const results = await platformAPI?.publishContent(
         content,
         [platform],
         userId,
       );
-      const _result = results[0];
+      const result = results[0];
 
       if (result?.success && result?.postId) {
         // Log success
         await storage?.createAdDeliveryLog({
-          variantId: variant?.id,
-          platform: result?.platform,
-          platformAdId: result?.postId,
+          variantId: variant.id,
+          platform: result.platform,
+          platformAdId: result.postId,
           deliveryStatus: "active",
           platformResponse: {
             type: "organic_post",
@@ -573,7 +573,7 @@ export class AdvertisingDispatchService {
         });
 
         return {
-          id: result?.postId,
+          id: result.postId,
           type: "organic_post",
           status: "published",
           reach_type: "organic",
@@ -586,10 +586,10 @@ export class AdvertisingDispatchService {
     } catch (error: unknown) {
       // Log failure
       await storage?.createAdDeliveryLog({
-        variantId: variant?.id,
+        variantId: variant.id,
         platform,
         deliveryStatus: "failed",
-        errorMessage: error?.message,
+        errorMessage: error.message,
         retryCount: 1,
       });
       throw error;
@@ -597,4 +597,4 @@ export class AdvertisingDispatchService {
   }
 }
 
-export const _advertisingDispatchService = new AdvertisingDispatchService();
+export const advertisingDispatchService = new AdvertisingDispatchService();

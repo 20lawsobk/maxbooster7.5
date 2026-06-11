@@ -1,8 +1,8 @@
-import type { ChunkStore } from "./ChunkStore?.js";
-import type { ChunkId } from "../types?.js";
-import { logger } from "../../../logger?.js";
+import type { ChunkStore } from "./ChunkStore.js";
+import type { ChunkId } from "../types.js";
+import { logger } from "../../../logger.js";
 
-const _CHUNK_KEY_PREFIX = "chunks";
+const CHUNK_KEY_PREFIX = "chunks";
 
 export class PocketDimensionChunkStore implements ChunkStore {
   private pocket: Record<string, unknown> | null = null;
@@ -14,10 +14,10 @@ export class PocketDimensionChunkStore implements ChunkStore {
     if (this?.pocket) return;
     if (this?.initPromise) return this?.initPromise;
 
-    this?.initPromise = (async () => {
-      const { PocketDimensionManager } = await import("../../index?.js");
-      const _manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
-      this?.pocket = await manager?.openPocket(this?.pocketName, {
+    this.initPromise = (async () => {
+      const { PocketDimensionManager } = await import("../../index.js");
+      const manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
+      this.pocket = await manager?.openPocket(this?.pocketName, {
         compression: 9,
         deduplication: true,
         encryption: false,
@@ -42,7 +42,7 @@ export class PocketDimensionChunkStore implements ChunkStore {
 
   async getChunk(chunkId: ChunkId): Promise<Buffer> {
     await this?.ensureOpen();
-    const _data = await this?.pocket.get(this?.chunkKey(chunkId));
+    const data = await this?.pocket.get(this?.chunkKey(chunkId));
     if (!data)
       throw new Error(
         `Chunk ${chunkId} not found in bubble ${this?.pocketName}`,

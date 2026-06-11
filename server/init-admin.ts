@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 import { db } from "./db";
 import {
   users,
@@ -34,10 +34,10 @@ import { DSP_POLICIES } from "./services/dspPolicyChecker";
 
 export async function initializeAdmin() {
   try {
-    const _adminEmail = process?.env.ADMIN_EMAIL || process?.env.Admin_Email;
-    const _adminPassword =
+    const adminEmail = process?.env.ADMIN_EMAIL || process?.env.Admin_Email;
+    const adminPassword =
       process?.env.ADMIN_PASSWORD || process?.env.Admin_Password;
-    const _adminUsername =
+    const adminUsername =
       process?.env.ADMIN_USERNAME || process?.env.Admin_Username;
 
     if (!adminEmail) {
@@ -78,7 +78,7 @@ export async function initializeAdmin() {
       logger?.info(`✅ Admin account exists: ${adminEmail}`);
 
       // Sync password, role, subscription, and ensure onboarding is complete
-      const _hashedPassword = await bcrypt?.hash(adminPassword, 12);
+      const hashedPassword = await bcrypt?.hash(adminPassword, 12);
       await db
         .update(users)
         .set({
@@ -115,7 +115,7 @@ export async function initializeAdmin() {
       logger?.info("🔐 Creating admin account...");
       isNewAdmin = true;
 
-      const _hashedPassword = await bcrypt?.hash(adminPassword, 12);
+      const hashedPassword = await bcrypt?.hash(adminPassword, 12);
 
       admin = await storage?.createUser({
         username: adminUsername,
@@ -185,7 +185,7 @@ async function initializeAdminResources(
     if (!existingStorage) {
       try {
         const { userPocketService } = await import(
-          "./services/userPocketDimensionService?.js"
+          "./services/userPocketDimensionService.js"
         );
         await userPocketService?.initializeUserStorage(adminId, adminEmail);
         logger?.info("   ✓ Admin Pocket Dimension storage initialized");
@@ -207,13 +207,13 @@ async function initializeAdminResources(
     if (!existingTasteProfile) {
       await db?.insert(userTasteProfiles).values({
         userId: adminId,
-        genreScores: { "hip-hop": 0?.8, "r&b": 0?.7, trap: 0?.6, pop: 0?.5 },
-        moodScores: { energetic: 0?.7, chill: 0?.6, dark: 0?.5, uplifting: 0?.5 },
+        genreScores: { "hip-hop": 0.8, "r&b": 0.7, trap: 0.6, pop: 0.5 },
+        moodScores: { energetic: 0.7, chill: 0.6, dark: 0.5, uplifting: 0.5 },
         preferredTempoMin: 80,
         preferredTempoMax: 160,
         preferredKeys: ["C minor", "G minor", "A minor"],
         followedProducers: [],
-        priceSensitivity: 0?.5,
+        priceSensitivity: 0.5,
         totalInteractions: 0,
         purchaseCount: 0,
       });
@@ -229,8 +229,8 @@ async function initializeAdminResources(
       .where(eq(storefronts?.userId, adminId));
 
     if (!existingStorefront) {
-      const _adminUsername = process?.env.ADMIN_USERNAME || "blawz";
-      const _slug = adminUsername?.toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const adminUsername = process?.env.ADMIN_USERNAME || "blawz";
+      const slug = adminUsername?.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
       await db?.insert(storefronts).values({
         userId: adminId,
@@ -248,10 +248,10 @@ async function initializeAdminResources(
           layoutStyle: "grid",
         },
         socialLinks: {
-          instagram: "https://instagram?.com/blawzmusic",
-          twitter: "https://twitter?.com/blawzmusic",
-          youtube: "https://youtube?.com/@blawzmusic",
-          spotify: "https://open?.spotify.com/artist/blawzmusic",
+          instagram: "https://instagram.com/blawzmusic",
+          twitter: "https://twitter.com/blawzmusic",
+          youtube: "https://youtube.com/@blawzmusic",
+          spotify: "https://open.spotify.com/artist/blawzmusic",
         },
         seoSettings: {
           title: "B-Lawz Music - Premium Beats & Instrumentals",
@@ -275,13 +275,13 @@ async function initializeAdminResources(
     }
 
     // 4. Check and initialize default license templates
-    const _existingLicenses = await db
+    const existingLicenses = await db
       .select()
       .from(licenseTemplates)
       .where(eq(licenseTemplates?.userId, adminId));
 
     if (existingLicenses?.length === 0) {
-      const _defaultLicenses = [
+      const defaultLicenses = [
         {
           userId: adminId,
           name: "Basic Lease",
@@ -356,13 +356,13 @@ async function initializeAdminResources(
     }
 
     // 5. Check and initialize default contract templates
-    const _existingContractTemplates = await db
+    const existingContractTemplates = await db
       .select()
       .from(contractTemplates)
       .where(eq(contractTemplates?.userId, adminId));
 
     if (existingContractTemplates?.length === 0) {
-      const _defaultContractTemplates = [
+      const defaultContractTemplates = [
         {
           userId: adminId,
           name: "Non-Exclusive Beat License",
@@ -541,15 +541,15 @@ async function initializeAdminResources(
       .where(eq(storefronts?.userId, adminId));
 
     if (adminStorefront) {
-      const _existingTiers = await db
+      const existingTiers = await db
         .select()
         .from(membershipTiers)
         .where(eq(membershipTiers?.storefrontId, adminStorefront?.id));
 
       if (existingTiers?.length === 0) {
-        const _defaultTiers = [
+        const defaultTiers = [
           {
-            storefrontId: adminStorefront?.id,
+            storefrontId: adminStorefront.id,
             name: "Beat Club",
             description:
               "Access to exclusive beats, 2 free downloads per month, and early access to new releases.",
@@ -566,7 +566,7 @@ async function initializeAdminResources(
             isActive: true,
           },
           {
-            storefrontId: adminStorefront?.id,
+            storefrontId: adminStorefront.id,
             name: "Producer Pro",
             description:
               "Full access to the entire beat catalog with unlimited downloads, stems, and trackouts.",
@@ -585,7 +585,7 @@ async function initializeAdminResources(
             isActive: true,
           },
           {
-            storefrontId: adminStorefront?.id,
+            storefrontId: adminStorefront.id,
             name: "Label Partner",
             description:
               "Enterprise-level access for labels and management companies. Bulk licensing, priority support, and custom terms.",
@@ -625,37 +625,37 @@ async function initializeAdminResources(
 
 async function seedPluginCatalog() {
   try {
-    logger?.info("🎛️ Seeding plugin catalog...");
-    await storage?.seedPluginCatalog();
-    logger?.info("✅ Plugin catalog seeded");
+    logger.info("🎛️ Seeding plugin catalog...");
+    await storage.seedPluginCatalog();
+    logger.info("✅ Plugin catalog seeded");
   } catch (error) {
-    logger?.warn("Plugin catalog seeding skipped");
+    logger.warn("Plugin catalog seeding skipped");
   }
 
   try {
     await seedStudioTemplates();
   } catch (error) {
-    logger?.warn("Template seeding skipped");
+    logger.warn("Template seeding skipped");
   }
 
   try {
     await seedStorefrontTemplates();
   } catch (error) {
-    logger?.warn("Storefront template seeding skipped");
+    logger.warn("Storefront template seeding skipped");
   }
 }
 
 async function seedStudioTemplates() {
   // Check if templates already exist
-  const _existingTemplates = await db?.select().from(studioTemplates).limit(1);
-  if (existingTemplates?.length > 0) {
-    logger?.info("   ✓ Studio templates already seeded");
+  const existingTemplates = await db.select().from(studioTemplates).limit(1);
+  if (existingTemplates.length > 0) {
+    logger.info("   ✓ Studio templates already seeded");
     return;
   }
 
-  logger?.info("📋 Seeding studio templates...");
+  logger.info("📋 Seeding studio templates...");
 
-  const _builtInTemplates = [
+  const builtInTemplates = [
     {
       id: randomBytes(8).toString("hex"),
       name: "Empty Song",
@@ -831,10 +831,10 @@ async function seedStudioTemplates() {
   ];
 
   for (const template of builtInTemplates) {
-    await db?.insert(studioTemplates).values(template);
+    await db.insert(studioTemplates).values(template);
   }
 
-  logger?.info(`   ✓ Seeded ${builtInTemplates?.length} built-in templates`);
+  logger.info(`   ✓ Seeded ${builtInTemplates.length} built-in templates`);
 }
 
 /**
@@ -843,18 +843,18 @@ async function seedStudioTemplates() {
  */
 async function seedStorefrontTemplates() {
   // Check if templates already exist
-  const _existingTemplates = await db
+  const existingTemplates = await db
     .select()
     .from(storefrontTemplates)
     .limit(1);
-  if (existingTemplates?.length > 0) {
-    logger?.info("   ✓ Storefront templates already seeded");
+  if (existingTemplates.length > 0) {
+    logger.info("   ✓ Storefront templates already seeded");
     return;
   }
 
-  logger?.info("🏪 Seeding storefront templates...");
+  logger.info("🏪 Seeding storefront templates...");
 
-  const _marketplaceTemplates = [
+  const marketplaceTemplates = [
     // === PREMIUM TIER (High-Converting, Pro Designs) ===
     {
       id: randomBytes(8).toString("hex"),
@@ -862,8 +862,8 @@ async function seedStorefrontTemplates() {
       slug: "platinum-producer",
       description:
         "Premium dark theme with gold accents. Features prominent audio player, trust badges, and urgency indicators. Optimized for high-ticket beat sales.",
-      thumbnailUrl: "/templates/platinum-producer-thumb?.png",
-      previewUrl: "/templates/platinum-producer-preview?.png",
+      thumbnailUrl: "/templates/platinum-producer-thumb.png",
+      previewUrl: "/templates/platinum-producer-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -909,8 +909,8 @@ async function seedStorefrontTemplates() {
       slug: "midnight-studio",
       description:
         "Sleek dark mode design inspired by professional DAWs. Perfect for trap and hip-hop producers wanting a studio-quality aesthetic.",
-      thumbnailUrl: "/templates/midnight-studio-thumb?.png",
-      previewUrl: "/templates/midnight-studio-preview?.png",
+      thumbnailUrl: "/templates/midnight-studio-thumb.png",
+      previewUrl: "/templates/midnight-studio-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -955,8 +955,8 @@ async function seedStorefrontTemplates() {
       slug: "neon-wave",
       description:
         "Vibrant cyberpunk-inspired design with neon gradients. Eye-catching visuals that stand out in any genre. Great for electronic and trap beats.",
-      thumbnailUrl: "/templates/neon-wave-thumb?.png",
-      previewUrl: "/templates/neon-wave-preview?.png",
+      thumbnailUrl: "/templates/neon-wave-thumb.png",
+      previewUrl: "/templates/neon-wave-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -998,8 +998,8 @@ async function seedStorefrontTemplates() {
       slug: "luxury-gold",
       description:
         "Premium luxury theme with elegant typography and gold accents. Perfect for high-end producers targeting serious artists.",
-      thumbnailUrl: "/templates/luxury-gold-thumb?.png",
-      previewUrl: "/templates/luxury-gold-preview?.png",
+      thumbnailUrl: "/templates/luxury-gold-thumb.png",
+      previewUrl: "/templates/luxury-gold-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -1041,8 +1041,8 @@ async function seedStorefrontTemplates() {
       slug: "studio-pro",
       description:
         "Professional recording studio aesthetic with mixing console elements. Communicates expertise and quality production.",
-      thumbnailUrl: "/templates/studio-pro-thumb?.png",
-      previewUrl: "/templates/studio-pro-preview?.png",
+      thumbnailUrl: "/templates/studio-pro-thumb.png",
+      previewUrl: "/templates/studio-pro-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -1087,8 +1087,8 @@ async function seedStorefrontTemplates() {
       slug: "clean-slate",
       description:
         "Minimalist white theme with bold typography. Maximum focus on your beats with distraction-free browsing experience.",
-      thumbnailUrl: "/templates/clean-slate-thumb?.png",
-      previewUrl: "/templates/clean-slate-preview?.png",
+      thumbnailUrl: "/templates/clean-slate-thumb.png",
+      previewUrl: "/templates/clean-slate-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1126,8 +1126,8 @@ async function seedStorefrontTemplates() {
       slug: "urban-heat",
       description:
         "Bold street-style design with fire gradient accents. High-energy layout perfect for trap, drill, and hip-hop beats.",
-      thumbnailUrl: "/templates/urban-heat-thumb?.png",
-      previewUrl: "/templates/urban-heat-preview?.png",
+      thumbnailUrl: "/templates/urban-heat-thumb.png",
+      previewUrl: "/templates/urban-heat-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1166,8 +1166,8 @@ async function seedStorefrontTemplates() {
       slug: "ocean-breeze",
       description:
         "Calm blue gradient theme. Perfect for R&B, soul, lo-fi, and chill beats. Creates a relaxed shopping experience.",
-      thumbnailUrl: "/templates/ocean-breeze-thumb?.png",
-      previewUrl: "/templates/ocean-breeze-preview?.png",
+      thumbnailUrl: "/templates/ocean-breeze-thumb.png",
+      previewUrl: "/templates/ocean-breeze-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1205,8 +1205,8 @@ async function seedStorefrontTemplates() {
       slug: "monochrome-pro",
       description:
         "Sophisticated grayscale design with subtle gradients. Timeless aesthetic that works across all genres.",
-      thumbnailUrl: "/templates/monochrome-pro-thumb?.png",
-      previewUrl: "/templates/monochrome-pro-preview?.png",
+      thumbnailUrl: "/templates/monochrome-pro-thumb.png",
+      previewUrl: "/templates/monochrome-pro-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1244,8 +1244,8 @@ async function seedStorefrontTemplates() {
       slug: "sunset-vibes",
       description:
         "Warm orange and pink gradient theme. Creates an inviting atmosphere ideal for pop, R&B, and afrobeat producers.",
-      thumbnailUrl: "/templates/sunset-vibes-thumb?.png",
-      previewUrl: "/templates/sunset-vibes-preview?.png",
+      thumbnailUrl: "/templates/sunset-vibes-thumb.png",
+      previewUrl: "/templates/sunset-vibes-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1283,8 +1283,8 @@ async function seedStorefrontTemplates() {
       slug: "matrix-code",
       description:
         "Hacker-inspired green-on-black design. Unique tech aesthetic for electronic, dubstep, and experimental producers.",
-      thumbnailUrl: "/templates/matrix-code-thumb?.png",
-      previewUrl: "/templates/matrix-code-preview?.png",
+      thumbnailUrl: "/templates/matrix-code-thumb.png",
+      previewUrl: "/templates/matrix-code-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1322,8 +1322,8 @@ async function seedStorefrontTemplates() {
       slug: "velvet-night",
       description:
         "Rich purple and burgundy tones. Sophisticated dark theme perfect for moody, atmospheric, and alternative beats.",
-      thumbnailUrl: "/templates/velvet-night-thumb?.png",
-      previewUrl: "/templates/velvet-night-preview?.png",
+      thumbnailUrl: "/templates/velvet-night-thumb.png",
+      previewUrl: "/templates/velvet-night-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1363,8 +1363,8 @@ async function seedStorefrontTemplates() {
       slug: "basic-black",
       description:
         "Simple and effective dark theme. No distractions, just your beats. Perfect for getting started quickly.",
-      thumbnailUrl: "/templates/basic-black-thumb?.png",
-      previewUrl: "/templates/basic-black-preview?.png",
+      thumbnailUrl: "/templates/basic-black-thumb.png",
+      previewUrl: "/templates/basic-black-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1398,8 +1398,8 @@ async function seedStorefrontTemplates() {
       slug: "fresh-start",
       description:
         "Clean white background with simple navigation. Great for new producers building their first store.",
-      thumbnailUrl: "/templates/fresh-start-thumb?.png",
-      previewUrl: "/templates/fresh-start-preview?.png",
+      thumbnailUrl: "/templates/fresh-start-thumb.png",
+      previewUrl: "/templates/fresh-start-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1434,8 +1434,8 @@ async function seedStorefrontTemplates() {
       slug: "street-corner",
       description:
         "Gritty urban design with bold red accents. High-impact visuals for drill, Chicago, and UK rap producers.",
-      thumbnailUrl: "/templates/street-corner-thumb?.png",
-      previewUrl: "/templates/street-corner-preview?.png",
+      thumbnailUrl: "/templates/street-corner-thumb.png",
+      previewUrl: "/templates/street-corner-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1472,8 +1472,8 @@ async function seedStorefrontTemplates() {
       slug: "cloud-nine",
       description:
         "Dreamy pastel gradient design. Soft and inviting for lo-fi, ambient, and bedroom pop producers.",
-      thumbnailUrl: "/templates/cloud-nine-thumb?.png",
-      previewUrl: "/templates/cloud-nine-preview?.png",
+      thumbnailUrl: "/templates/cloud-nine-thumb.png",
+      previewUrl: "/templates/cloud-nine-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1510,8 +1510,8 @@ async function seedStorefrontTemplates() {
       slug: "industry-standard",
       description:
         "Professional layout inspired by major label aesthetics. Commands respect and communicates serious quality.",
-      thumbnailUrl: "/templates/industry-standard-thumb?.png",
-      previewUrl: "/templates/industry-standard-preview?.png",
+      thumbnailUrl: "/templates/industry-standard-thumb.png",
+      previewUrl: "/templates/industry-standard-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -1553,11 +1553,11 @@ async function seedStorefrontTemplates() {
   ];
 
   for (const template of marketplaceTemplates) {
-    await db?.insert(storefrontTemplates).values(template);
+    await db.insert(storefrontTemplates).values(template);
   }
 
-  logger?.info(
-    `   ✓ Seeded ${marketplaceTemplates?.length} storefront templates`,
+  logger.info(
+    `   ✓ Seeded ${marketplaceTemplates.length} storefront templates`,
   );
 }
 
@@ -1570,12 +1570,12 @@ export async function bootstrapAdmin() {
  */
 export async function seedDSPProviders() {
   try {
-    logger?.info("🔧 Syncing DSP providers...");
+    logger.info("🔧 Syncing DSP providers...");
 
-    const _dspList = Object?.entries(DSP_POLICIES).map(([slug, policy]) => ({
+    const dspList = Object.entries(DSP_POLICIES).map(([slug, policy]) => ({
       id: `dsp_${slug}`,
-      name: policy?.name,
-      slug: slug?.toLowerCase(),
+      name: policy.name,
+      slug: slug.toLowerCase(),
       isActive: true,
       metadata: {
         category: getCategoryFromSlug(slug),
@@ -1584,12 +1584,12 @@ export async function seedDSPProviders() {
         requirements: {
           isrc: true,
           upc: true,
-          metadata: policy?.metadata?.requiredFields || ["title", "artist"],
-          audioFormats: policy?.audio?.formats || ["WAV", "FLAC"],
+          metadata: policy.metadata.requiredFields || ["title", "artist"],
+          audioFormats: policy.audio.formats || ["WAV", "FLAC"],
         },
         deliveryMethod: "api",
-        coverArtRequirements: policy?.coverArt,
-        audioRequirements: policy?.audio,
+        coverArtRequirements: policy.coverArt,
+        audioRequirements: policy.audio,
       },
     }));
 
@@ -1598,35 +1598,35 @@ export async function seedDSPProviders() {
         .insert(dspProviders)
         .values(dsp)
         .onConflictDoUpdate({
-          target: dspProviders?.id,
-          set: { isActive: true, name: dsp?.name, metadata: dsp?.metadata },
+          target: dspProviders.id,
+          set: { isActive: true, name: dsp.name, metadata: dsp.metadata },
         });
     }
 
     // Bulk-activate any DSP providers that may have been inserted as inactive
-    // by previous seeding runs (e?.g. via onConflictDoNothing).  This ensures ALL
+    // by previous seeding runs (e.g. via onConflictDoNothing).  This ensures ALL
     // platforms stored in the DB are active and accessible through LabelGrid.
     await db
       .update(dspProviders)
       .set({ isActive: true })
       .where(sql`is_active IS DISTINCT FROM true`);
 
-    logger?.info(`✅ Seeded/activated ${dspList?.length} DSP providers`);
+    logger.info(`✅ Seeded/activated ${dspList.length} DSP providers`);
   } catch (error) {
-    logger?.warn("Failed to seed DSP providers:", error?.message);
+    logger.warn("Failed to seed DSP providers:", error.message);
   }
 }
 
 function getCategoryFromSlug(slug: string): string {
-  const _socialPlatforms = [
+  const socialPlatforms = [
     "tiktok",
     "instagram",
     "snapchat",
     "facebook",
     "youtube",
   ];
-  const _electronicPlatforms = ["beatport", "traxsource", "juno"];
-  const _regionalPlatforms = [
+  const electronicPlatforms = ["beatport", "traxsource", "juno"];
+  const regionalPlatforms = [
     "netease",
     "qq",
     "jiosaavn",
@@ -1637,24 +1637,24 @@ function getCategoryFromSlug(slug: string): string {
     "vk",
   ];
 
-  if (socialPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
+  if (socialPlatforms.some((p) => slug.toLowerCase().includes(p)))
     return "social";
-  if (electronicPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
+  if (electronicPlatforms.some((p) => slug.toLowerCase().includes(p)))
     return "electronic";
-  if (regionalPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
+  if (regionalPlatforms.some((p) => slug.toLowerCase().includes(p)))
     return "regional";
 
   return "streaming";
 }
 
 /**
- * Seed distribution platforms from the comprehensive distributionPlatforms?.ts file
+ * Seed distribution platforms from the comprehensive distributionPlatforms.ts file
  * This provides 100+ DSP platforms matching DistroKid's full offering
  */
 async function seedDistributionPlatformsFromFile() {
   try {
     const { seedDistributionPlatforms } = await import(
-      "./seed/distributionPlatforms?.js"
+      "./seed/distributionPlatforms.js"
     );
     await seedDistributionPlatforms();
   } catch (error) {
@@ -1664,7 +1664,7 @@ async function seedDistributionPlatformsFromFile() {
 
 async function seedAchievementsData() {
   try {
-    const { seedAchievements } = await import("./seed/seedAchievements?.js");
+    const { seedAchievements } = await import("./seed/seedAchievements.js");
     await seedAchievements();
     logger?.info("   ✓ Achievements seeded");
   } catch (error) {
@@ -1675,7 +1675,7 @@ async function seedAchievementsData() {
 async function seedStatusPageServices() {
   try {
     const { statusPageService } = await import(
-      "./services/statusPageService?.js"
+      "./services/statusPageService.js"
     );
     await statusPageService?.initializeDefaultServices();
     logger?.info("   ✓ Status page services initialized");
@@ -1687,15 +1687,15 @@ async function seedStatusPageServices() {
 async function seedAIModels() {
   try {
     const { initializeAIMusicModels } = await import(
-      "./seed/initializeAIMusicModels?.js"
+      "./seed/initializeAIMusicModels.js"
     );
     await initializeAIMusicModels();
     const { initializeAIInsightsModels } = await import(
-      "./seed/initializeAIInsightsModels?.js"
+      "./seed/initializeAIInsightsModels.js"
     );
     await initializeAIInsightsModels();
     const { initializeAIContentModels } = await import(
-      "./seed/initializeAIContentModels?.js"
+      "./seed/initializeAIContentModels.js"
     );
     await initializeAIContentModels();
     logger?.info("   ✓ AI models seeded");
@@ -1706,118 +1706,118 @@ async function seedAIModels() {
 
 async function seedSystemSettings() {
   try {
-    const _existing = await db?.select().from(systemSettings);
+    const existing = await db?.select().from(systemSettings);
     if (existing?.length > 0) {
       logger?.info("   ✓ System settings already seeded");
       return;
     }
 
-    const _defaults = [
+    const defaults = [
       {
         key: "platform_name",
-        value: JSON?.stringify("Max Booster"),
+        value: JSON.stringify("Max Booster"),
         description: "Platform display name",
       },
       {
         key: "maintenance_mode",
-        value: JSON?.stringify(false),
+        value: JSON.stringify(false),
         description: "Enable/disable maintenance mode",
       },
       {
         key: "user_registration_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Allow new user registrations",
       },
       {
         key: "max_upload_size_mb",
-        value: JSON?.stringify(500),
+        value: JSON.stringify(500),
         description: "Maximum file upload size in MB",
       },
       {
         key: "default_currency",
-        value: JSON?.stringify("USD"),
+        value: JSON.stringify("USD"),
         description: "Default platform currency",
       },
       {
         key: "currency_rates",
-        value: JSON?.stringify({
+        value: JSON.stringify({
           USD: 1,
-          EUR: 0?.92,
-          GBP: 0?.79,
-          CAD: 1?.36,
-          AUD: 1?.53,
-          JPY: 149?.5,
+          EUR: 0.92,
+          GBP: 0.79,
+          CAD: 1.36,
+          AUD: 1.53,
+          JPY: 149.5,
         }),
         description: "Currency exchange rates (updated periodically)",
       },
       {
         key: "stripe_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Enable Stripe payment processing",
       },
       {
         key: "email_notifications_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Enable email notifications globally",
       },
       {
         key: "api_rate_limit",
-        value: JSON?.stringify(1000),
+        value: JSON.stringify(1000),
         description: "API rate limit per hour per user",
       },
       {
         key: "max_social_accounts",
-        value: JSON?.stringify(20),
+        value: JSON.stringify(20),
         description: "Maximum connected social accounts per user",
       },
       {
         key: "autopilot_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Enable autopilot posting system",
       },
       {
         key: "distribution_auto_submit",
-        value: JSON?.stringify(false),
+        value: JSON.stringify(false),
         description: "Auto-submit releases after validation",
       },
       {
         key: "default_royalty_rate",
-        value: JSON?.stringify(0?.004),
+        value: JSON.stringify(0.004),
         description: "Default per-stream royalty rate in USD",
       },
       {
         key: "min_payout_threshold",
-        value: JSON?.stringify(10),
+        value: JSON.stringify(10),
         description: "Minimum balance for payout in USD",
       },
       {
         key: "payout_schedule",
-        value: JSON?.stringify("monthly"),
+        value: JSON.stringify("monthly"),
         description: "Default payout schedule (weekly/monthly/quarterly)",
       },
       {
         key: "max_collaborators_per_release",
-        value: JSON?.stringify(20),
+        value: JSON.stringify(20),
         description: "Maximum collaborators per release",
       },
       {
         key: "ai_features_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Enable AI-powered features",
       },
       {
         key: "analytics_retention_days",
-        value: JSON?.stringify(365),
+        value: JSON.stringify(365),
         description: "Days to retain analytics data",
       },
       {
         key: "session_timeout_hours",
-        value: JSON?.stringify(24),
+        value: JSON.stringify(24),
         description: "User session timeout in hours",
       },
       {
         key: "two_factor_required",
-        value: JSON?.stringify(false),
+        value: JSON.stringify(false),
         description: "Require 2FA for all users",
       },
     ];
@@ -1833,13 +1833,13 @@ async function seedSystemSettings() {
 
 async function seedAlertRules() {
   try {
-    const _existing = await db?.select().from(alertRules);
+    const existing = await db?.select().from(alertRules);
     if (existing?.length > 0) {
       logger?.info("   ✓ Alert rules already seeded");
       return;
     }
 
-    const _defaults = [
+    const defaults = [
       {
         name: "High Error Rate",
         condition: "error_rate > threshold",

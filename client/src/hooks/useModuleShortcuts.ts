@@ -42,12 +42,12 @@ export function useModuleShortcuts({
 
       const fullShortcut: ShortcutDefinition = {
         id: `${module}.${shortcut?.id}`,
-        key: shortcut?.key,
-        modifiers: shortcut?.modifiers,
-        description: shortcut?.description,
-        category: shortcut?.category as Record<string, unknown>,
+        key: shortcut.key,
+        modifiers: shortcut.modifiers,
+        description: shortcut.description,
+        category: shortcut.category as Record<string, unknown>,
         context: module,
-        action: shortcut?.handler,
+        action: shortcut.handler,
       };
 
       registerShortcut(fullShortcut);
@@ -59,7 +59,7 @@ export function useModuleShortcuts({
     };
   }, [module, shortcuts, enabled, registerShortcut, unregisterShortcut]);
 
-  const _moduleShortcuts = useMemo(() => {
+  const moduleShortcuts = useMemo(() => {
     return getShortcutsByContext(module);
   }, [module, getShortcutsByContext]);
 
@@ -365,7 +365,7 @@ export const MARKETPLACE_MODULE_SHORTCUTS: ModuleShortcut[] = [
 export function useStudioShortcuts(
   handlers: Partial<Record<string, () => void>> = {},
 ) {
-  const _shortcuts = useMemo(() => {
+  const shortcuts = useMemo(() => {
     return STUDIO_MODULE_SHORTCUTS?.map((s) => ({
       ...s,
       handler: handlers[s?.id] || s?.handler,
@@ -378,7 +378,7 @@ export function useStudioShortcuts(
 export function useAnalyticsShortcuts(
   handlers: Partial<Record<string, () => void>> = {},
 ) {
-  const _shortcuts = useMemo(() => {
+  const shortcuts = useMemo(() => {
     return ANALYTICS_MODULE_SHORTCUTS?.map((s) => ({
       ...s,
       handler: handlers[s?.id] || s?.handler,
@@ -391,7 +391,7 @@ export function useAnalyticsShortcuts(
 export function useSocialShortcuts(
   handlers: Partial<Record<string, () => void>> = {},
 ) {
-  const _shortcuts = useMemo(() => {
+  const shortcuts = useMemo(() => {
     return SOCIAL_MODULE_SHORTCUTS?.map((s) => ({
       ...s,
       handler: handlers[s?.id] || s?.handler,
@@ -404,7 +404,7 @@ export function useSocialShortcuts(
 export function useDistributionShortcuts(
   handlers: Partial<Record<string, () => void>> = {},
 ) {
-  const _shortcuts = useMemo(() => {
+  const shortcuts = useMemo(() => {
     return DISTRIBUTION_MODULE_SHORTCUTS?.map((s) => ({
       ...s,
       handler: handlers[s?.id] || s?.handler,
@@ -417,7 +417,7 @@ export function useDistributionShortcuts(
 export function useMarketplaceShortcuts(
   handlers: Partial<Record<string, () => void>> = {},
 ) {
-  const _shortcuts = useMemo(() => {
+  const shortcuts = useMemo(() => {
     return MARKETPLACE_MODULE_SHORTCUTS?.map((s) => ({
       ...s,
       handler: handlers[s?.id] || s?.handler,

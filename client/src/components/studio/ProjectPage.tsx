@@ -360,7 +360,7 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
       updateMasteringSong(projectId, songId, {
         isProcessing: false,
         masteredFileUrl: `/mastered/${songId}.wav`,
-        loudness: project?.targetLoudness || -14,
+        loudness: project.targetLoudness || -14,
         peakLevel: -1.0,
         lastUpdated: Date.now(),
       });

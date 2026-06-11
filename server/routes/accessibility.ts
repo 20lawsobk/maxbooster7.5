@@ -1,9 +1,9 @@
 import { Router, Request, Response } from "express";
 import { storage } from "../storage";
 import { logger } from "../logger";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 export interface AccessibilityPreferences {
   reducedMotion: boolean | null;
@@ -45,30 +45,30 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     ) {
       errors?.push("reducedMotion must be a boolean or null");
     } else {
-      sanitized?.reducedMotion = preferences?.reducedMotion;
+      sanitized.reducedMotion = preferences?.reducedMotion;
     }
   }
 
   if (preferences?.contrastMode !== undefined) {
-    const _validModes = ["normal", "high", "more", null];
+    const validModes = ["normal", "high", "more", null];
     if (!validModes?.includes(preferences?.contrastMode)) {
       errors?.push("contrastMode must be normal, high, more, or null");
     } else {
-      sanitized?.contrastMode = preferences?.contrastMode;
+      sanitized.contrastMode = preferences?.contrastMode;
     }
   }
 
   if (preferences?.fontSize !== undefined) {
-    const _validSizes = ["small", "medium", "large", "x-large"];
+    const validSizes = ["small", "medium", "large", "x-large"];
     if (!validSizes?.includes(preferences?.fontSize)) {
       errors?.push("fontSize must be small, medium, large, or x-large");
     } else {
-      sanitized?.fontSize = preferences?.fontSize;
+      sanitized.fontSize = preferences?.fontSize;
     }
   }
 
   if (preferences?.colorBlindMode !== undefined) {
-    const _validModes = [
+    const validModes = [
       "none",
       "protanopia",
       "deuteranopia",
@@ -80,7 +80,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
         "colorBlindMode must be none, protanopia, deuteranopia, tritanopia, or achromatopsia",
       );
     } else {
-      sanitized?.colorBlindMode = preferences?.colorBlindMode;
+      sanitized.colorBlindMode = preferences?.colorBlindMode;
     }
   }
 
@@ -92,7 +92,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     ) {
       errors?.push("focusIndicatorWidth must be a number between 1 and 8");
     } else {
-      sanitized?.focusIndicatorWidth = preferences?.focusIndicatorWidth;
+      sanitized.focusIndicatorWidth = preferences?.focusIndicatorWidth;
     }
   }
 
@@ -100,7 +100,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     if (typeof preferences?.screenReaderOptimized !== "boolean") {
       errors?.push("screenReaderOptimized must be a boolean");
     } else {
-      sanitized?.screenReaderOptimized = preferences?.screenReaderOptimized;
+      sanitized.screenReaderOptimized = preferences?.screenReaderOptimized;
     }
   }
 
@@ -108,13 +108,13 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     if (typeof preferences?.keyboardNavigationEnabled !== "boolean") {
       errors?.push("keyboardNavigationEnabled must be a boolean");
     } else {
-      sanitized?.keyboardNavigationEnabled =
+      sanitized.keyboardNavigationEnabled =
         preferences?.keyboardNavigationEnabled;
     }
   }
 
   return {
-    valid: errors?.length === 0,
+    valid: errors.length === 0,
     errors,
     sanitized,
   };
@@ -125,14 +125,14 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _user = await storage?.getUser(userId);
+      const userId = req?.user!.id;
+      const user = await storage?.getUser(userId);
 
       if (!user) {
         return res?.status(404).json({ error: "User not found" });
       }
 
-      const _preferences = user?.accessibilityPreferences || defaultPreferences;
+      const preferences = user?.accessibilityPreferences || defaultPreferences;
 
       return res?.json({
         ...defaultPreferences,
@@ -152,8 +152,8 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _updates = req?.body;
+      const userId = req?.user!.id;
+      const updates = req?.body;
 
       const { valid, errors, sanitized } = validatePreferences(updates);
 
@@ -164,14 +164,14 @@ router?.put(
         });
       }
 
-      const _user = await storage?.getUser(userId);
+      const user = await storage?.getUser(userId);
       if (!user) {
         return res?.status(404).json({ error: "User not found" });
       }
 
-      const _currentPreferences =
+      const currentPreferences =
         user?.accessibilityPreferences || defaultPreferences;
-      const _newPreferences = {
+      const newPreferences = {
         ...currentPreferences,
         ...sanitized,
       };
@@ -200,7 +200,7 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       await storage?.updateUser(userId, {
         accessibilityPreferences: defaultPreferences,

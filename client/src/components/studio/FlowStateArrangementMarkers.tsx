@@ -799,7 +799,7 @@ export function FlowStateArrangementMarkers({
                       const typeInfo = MARKER_TYPES.find((t) => t.type === v);
                       updateMarker({
                         type: v as MarkerType,
-                        color: typeInfo?.color || editingMarker.color,
+                        color: typeInfo.color || editingMarker.color,
                       });
                     }}
                   >

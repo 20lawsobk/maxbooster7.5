@@ -25,9 +25,9 @@ export function fluidClamp(
   minVw: number = 320,
   maxVw: number = 1920,
 ): string {
-  const _slope = (maxPx - minPx) / (maxVw - minVw);
-  const _yAxisIntersection = minPx - slope * minVw;
-  const _preferredValue = `${yAxisIntersection?.toFixed(4)}px + ${(slope * 100).toFixed(4)}vw`;
+  const slope = (maxPx - minPx) / (maxVw - minVw);
+  const yAxisIntersection = minPx - slope * minVw;
+  const preferredValue = `${yAxisIntersection?.toFixed(4)}px + ${(slope * 100).toFixed(4)}vw`;
   return `clamp(${minPx}px, ${preferredValue}, ${maxPx}px)`;
 }
 
@@ -40,11 +40,11 @@ export function fluidValue(
 ): number {
   if (width <= minWidth) return min;
   if (width >= maxWidth) return max;
-  const _ratio = (width - minWidth) / (maxWidth - minWidth);
+  const ratio = (width - minWidth) / (maxWidth - minWidth);
   return min + ratio * (max - min);
 }
 
-export const _fluidSpacing = {
+export const fluidSpacing = {
   xs: fluidClamp(4, 8),
   sm: fluidClamp(8, 16),
   md: fluidClamp(12, 24),
@@ -53,7 +53,7 @@ export const _fluidSpacing = {
   "2xl": fluidClamp(32, 64),
 };
 
-export const _fluidFontSize = {
+export const fluidFontSize = {
   xs: fluidClamp(10, 12),
   sm: fluidClamp(12, 14),
   base: fluidClamp(14, 16),
@@ -64,7 +64,7 @@ export const _fluidFontSize = {
   "4xl": fluidClamp(36, 48),
 };
 
-export const _fluidRadius = {
+export const fluidRadius = {
   sm: fluidClamp(4, 6),
   md: fluidClamp(6, 8),
   lg: fluidClamp(8, 12),
@@ -94,7 +94,7 @@ export function responsiveValue<T>(
   return values?.default;
 }
 
-export const _breakpointWidths = {
+export const breakpointWidths = {
   xs: 0,
   sm: 640,
   md: 768,

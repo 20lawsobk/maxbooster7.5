@@ -26,19 +26,19 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 
-const _prefetchedRoutes = new Set<string>();
-const _prefetchedData = new Set<string>();
+const prefetchedRoutes = new Set<string>();
+const prefetchedData = new Set<string>();
 let _bootstrapped = false;
 
-let _isAuthenticated = false;
+let isAuthenticated = false;
 
 export function setAuthState(isAuthenticated: boolean): void {
-  _isAuthenticated = isAuthenticated;
+  isAuthenticated = isAuthenticated;
 }
 
 function shouldPrefetch(): boolean {
   if (typeof navigator === "undefined") return false;
-  const _conn = (navigator as Record<string, unknown>).connection;
+  const conn = (navigator as Record<string, unknown>).connection;
   if (conn) {
     if (conn?.saveData) return false;
     if (conn?.effectiveType === "2g" || conn?.effectiveType === "slow-2g")
@@ -66,7 +66,7 @@ const routeImportMap: Record<string, () => Promise<unknown>> = {
   "/invoices": () => import("@/pages/Invoices"),
 };
 
-const _publicEndpoints = new Set(["/api/auth/me"]);
+const publicEndpoints = new Set(["/api/auth/me"]);
 
 const routeDataMap: Record<string, string[]> = {
   "/dashboard": ["/api/auth/me", "/api/projects?limit=5"],
@@ -79,7 +79,7 @@ const routeDataMap: Record<string, string[]> = {
 };
 
 export function prefetchRoute(importFn: () => Promise<unknown>) {
-  const _key = importFn?.toString();
+  const key = importFn?.toString();
   if (prefetchedRoutes?.has(key)) return;
   prefetchedRoutes?.add(key);
 
@@ -94,18 +94,18 @@ export function prefetchRoute(importFn: () => Promise<unknown>) {
 
 export function prefetchRouteByPath(path: string) {
   if (!shouldPrefetch()) return;
-  const _normalizedPath = "/" + path?.split("/").filter(Boolean)[0];
+  const normalizedPath = "/" + path?.split("/").filter(Boolean)[0];
 
-  const _importFn = routeImportMap[normalizedPath];
+  const importFn = routeImportMap[normalizedPath];
   if (importFn) {
     prefetchRoute(importFn);
   }
 
-  const _endpoints = routeDataMap[normalizedPath];
+  const endpoints = routeDataMap[normalizedPath];
   if (endpoints) {
     for (const endpoint of endpoints) {
-      const _requiresAuth = !publicEndpoints?.has(endpoint?.split("?")[0]);
-      if (requiresAuth && !_isAuthenticated) continue;
+      const requiresAuth = !publicEndpoints?.has(endpoint?.split("?")[0]);
+      if (requiresAuth && !isAuthenticated) continue;
       if (prefetchedData?.has(endpoint)) continue;
       prefetchedData?.add(endpoint);
       fetch(endpoint, { credentials: "include" })
@@ -122,11 +122,11 @@ export function prefetchRouteByPath(path: string) {
 export function setupLinkPrefetching() {
   let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  const _handlePointerOver = (e: Event) => {
-    const _target = (e?.target as HTMLElement)?.closest("a[href], [data-href]");
+  const handlePointerOver = (e: Event) => {
+    const target = (e?.target as HTMLElement)?.closest("a[href], [data-href]");
     if (!target) return;
 
-    const _href =
+    const href =
       target?.getAttribute("href") || target?.getAttribute("data-href");
     if (!href || href?.startsWith("http") || href?.startsWith("#")) return;
 
@@ -136,7 +136,7 @@ export function setupLinkPrefetching() {
     }, 65);
   };
 
-  const _handlePointerOut = () => {
+  const handlePointerOut = () => {
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       hoverTimeout = null;
@@ -168,9 +168,9 @@ export function prefetchAdjacentRoutes(currentPath: string) {
     "/settings": ["/dashboard"],
   };
 
-  const _normalizedPath =
+  const normalizedPath =
     "/" + (currentPath?.split("/").filter(Boolean)[0] || "");
-  const _adjacentRoutes = adjacencyMap[normalizedPath] || [];
+  const adjacentRoutes = adjacencyMap[normalizedPath] || [];
 
   if ("requestIdleCallback" in window) {
     (window as Record<string, unknown>).requestIdleCallback(
@@ -203,7 +203,7 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
   _bootstrapped = true;
 
   try {
-    const _res = await fetch("/api/bootstrap", { credentials: "include" });
+    const res = await fetch("/api/bootstrap", { credentials: "include" });
     if (!res?.ok) return;
 
     const data: {
@@ -214,8 +214,8 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
       _ts?: number;
     } = await res?.json();
 
-    const _now = Date?.now();
-    const _fresh = { updatedAt: now };
+    const now = Date?.now();
+    const fresh = { updatedAt: now };
 
     if (data?.user) {
       qc?.setQueryData(["/api/auth/me"], data?.user, fresh);
@@ -270,9 +270,9 @@ const ALL_AUTH_CHUNKS: Array<() => Promise<unknown>> = [
 export function prefetchAllAuthChunks(): void {
   if (!shouldPrefetch()) return;
 
-  const _load = () => {
+  const load = () => {
     for (const fn of ALL_AUTH_CHUNKS) {
-      const _key = fn?.toString();
+      const key = fn?.toString();
       if (!prefetchedRoutes?.has(key)) {
         prefetchedRoutes?.add(key);
         fn().catch(() => {});

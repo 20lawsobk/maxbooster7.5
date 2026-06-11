@@ -672,31 +672,31 @@ export default function TrainingDashboard() {
                 {[
                   {
                     label: "HMDB-51 Clips",
-                    value: datasets?.stats?.hmdb51_clips,
+                    value: datasets.stats?.hmdb51_clips,
                     icon: "🎬",
                     color: "text-blue-400",
                   },
                   {
                     label: "UCF-101 Clips",
-                    value: datasets?.stats?.ucf101_clips,
+                    value: datasets.stats?.ucf101_clips,
                     icon: "🎬",
                     color: "text-blue-400",
                   },
                   {
                     label: "MusicCaps Captions",
-                    value: datasets?.stats?.musiccaps_captions,
+                    value: datasets.stats?.musiccaps_captions,
                     icon: "🎵",
                     color: "text-purple-400",
                   },
                   {
                     label: "AudioCaps Captions",
-                    value: datasets?.stats?.audiocaps_captions,
+                    value: datasets.stats?.audiocaps_captions,
                     icon: "🔊",
                     color: "text-teal-400",
                   },
                   {
                     label: "FMA Tracks",
-                    value: datasets?.stats?.fma_tracks,
+                    value: datasets.stats?.fma_tracks,
                     icon: "🎼",
                     color: "text-orange-400",
                   },

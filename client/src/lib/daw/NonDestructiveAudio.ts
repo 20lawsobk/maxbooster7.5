@@ -73,7 +73,7 @@ export class NonDestructiveAudioEngine {
   private previewBuffers: Map<string, AudioBuffer> = new Map();
 
   constructor() {
-    this?.state = {
+    this.state = {
       sources: [],
       events: [],
       clipboard: null,
@@ -84,7 +84,7 @@ export class NonDestructiveAudioEngine {
   }
 
   setAudioContext(ctx: AudioContext): void {
-    this?.audioContext = ctx;
+    this.audioContext = ctx;
   }
 
   getState(): Readonly<NonDestructiveAudioState> {
@@ -96,22 +96,22 @@ export class NonDestructiveAudioEngine {
     name: string,
     audioBuffer?: AudioBuffer,
   ): Promise<string> {
-    const _id = `src_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `src_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
 
     const source: AudioSource = {
       id,
       path,
       name,
-      sampleRate: audioBuffer?.sampleRate ?? 48000,
-      channels: audioBuffer?.numberOfChannels ?? 2,
-      duration: audioBuffer?.duration ?? 0,
+      sampleRate: audioBuffer.sampleRate ?? 48000,
+      channels: audioBuffer.numberOfChannels ?? 2,
+      duration: audioBuffer.duration ?? 0,
       bitDepth: 32,
     };
 
     if (audioBuffer) {
       this?.previewBuffers.set(id, audioBuffer);
-      source?.waveformData = this?.extractWaveform(audioBuffer);
-      source?.peakData = this?.extractPeaks(audioBuffer);
+      source.waveformData = this?.extractWaveform(audioBuffer);
+      source.peakData = this?.extractPeaks(audioBuffer);
     }
 
     this?.state.sources?.push(source);
@@ -123,13 +123,13 @@ export class NonDestructiveAudioEngine {
     buffer: AudioBuffer,
     resolution: number = 1000,
   ): Float32Array {
-    const _data = buffer?.getChannelData(0);
-    const _samplesPerPixel = Math?.floor(data?.length / resolution);
-    const _waveform = new Float32Array(resolution * 2);
+    const data = buffer?.getChannelData(0);
+    const samplesPerPixel = Math?.floor(data?.length / resolution);
+    const waveform = new Float32Array(resolution * 2);
 
     for (let i = 0; i < resolution; i++) {
-      const _start = i * samplesPerPixel;
-      const _end = Math?.min(start + samplesPerPixel, data?.length);
+      const start = i * samplesPerPixel;
+      const end = Math?.min(start + samplesPerPixel, data?.length);
 
       let min = Infinity;
       let max = -Infinity;
@@ -147,15 +147,15 @@ export class NonDestructiveAudioEngine {
   }
 
   private extractPeaks(buffer: AudioBuffer): { min: number; max: number }[] {
-    const _data = buffer?.getChannelData(0);
-    const _peaksPerSecond = 50;
-    const _samplesPerPeak = Math?.floor(buffer?.sampleRate / peaksPerSecond);
-    const _numPeaks = Math?.ceil(data?.length / samplesPerPeak);
+    const data = buffer?.getChannelData(0);
+    const peaksPerSecond = 50;
+    const samplesPerPeak = Math?.floor(buffer?.sampleRate / peaksPerSecond);
+    const numPeaks = Math?.ceil(data?.length / samplesPerPeak);
     const peaks: { min: number; max: number }[] = [];
 
     for (let i = 0; i < numPeaks; i++) {
-      const _start = i * samplesPerPeak;
-      const _end = Math?.min(start + samplesPerPeak, data?.length);
+      const start = i * samplesPerPeak;
+      const end = Math?.min(start + samplesPerPeak, data?.length);
 
       let min = 0;
       let max = 0;
@@ -172,7 +172,7 @@ export class NonDestructiveAudioEngine {
   }
 
   unregisterSource(sourceId: string): void {
-    const _eventsUsingSource = this?.state.events?.filter(
+    const eventsUsingSource = this?.state.events?.filter(
       (e) => e?.sourceId === sourceId,
     );
     if (eventsUsingSource?.length > 0) {
@@ -182,7 +182,7 @@ export class NonDestructiveAudioEngine {
       return;
     }
 
-    this?.state.sources = this?.state.sources?.filter((s) => s?.id !== sourceId);
+    this.state.sources = this?.state.sources?.filter((s) => s?.id !== sourceId);
     this?.previewBuffers.delete(sourceId);
     this?.notify();
   }
@@ -197,10 +197,10 @@ export class NonDestructiveAudioEngine {
     startBeat: number,
     name?: string,
   ): string | null {
-    const _source = this?.state.sources?.find((s) => s?.id === sourceId);
+    const source = this?.state.sources?.find((s) => s?.id === sourceId);
     if (!source) return null;
 
-    const _id = `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
 
     const event: AudioEvent = {
       id,
@@ -212,8 +212,8 @@ export class NonDestructiveAudioEngine {
       sourceStartOffset: 0,
       sourceEndOffset: 0,
       gain: 1,
-      fadeIn: { enabled: false, duration: 0?.1, curve: "linear" },
-      fadeOut: { enabled: false, duration: 0?.1, curve: "linear" },
+      fadeIn: { enabled: false, duration: 0.1, curve: "linear" },
+      fadeOut: { enabled: false, duration: 0.1, curve: "linear" },
       timeStretch: {
         enabled: false,
         ratio: 1,
@@ -239,21 +239,21 @@ export class NonDestructiveAudioEngine {
   }
 
   removeEvent(eventId: string): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    this?.state.events = this?.state.events?.filter((e) => e?.id !== eventId);
-    this?.state.selectedEventIds = this?.state.selectedEventIds?.filter(
+    this.state.events = this?.state.events?.filter((e) => e?.id !== eventId);
+    this.state.selectedEventIds = this?.state.selectedEventIds?.filter(
       (id) => id !== eventId,
     );
     this?.notify();
   }
 
   duplicateEvent(eventId: string, newStartBeat?: number): string | null {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event) return null;
 
-    const _newId = `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const newId = `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
     const newEvent: AudioEvent = {
       ...structuredClone(event),
       id: newId,
@@ -268,11 +268,11 @@ export class NonDestructiveAudioEngine {
   }
 
   moveEvent(eventId: string, newStartBeat: number, newTrackId?: string): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.startBeat = Math?.max(0, newStartBeat);
-    if (newTrackId) event?.trackId = newTrackId;
+    event.startBeat = Math?.max(0, newStartBeat);
+    if (newTrackId) event.trackId = newTrackId;
     this?.notify();
   }
 
@@ -281,48 +281,48 @@ export class NonDestructiveAudioEngine {
     newDuration: number,
     fromStart: boolean = false,
   ): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
     if (fromStart) {
-      const _endBeat = event?.startBeat + event?.durationBeats;
-      const _newStartBeat = endBeat - newDuration;
+      const endBeat = event?.startBeat + event?.durationBeats;
+      const newStartBeat = endBeat - newDuration;
 
       if (newStartBeat >= 0) {
-        const _deltaOffset = event?.startBeat - newStartBeat;
-        event?.startBeat = newStartBeat;
-        event?.sourceStartOffset = Math?.max(
+        const deltaOffset = event?.startBeat - newStartBeat;
+        event.startBeat = newStartBeat;
+        event.sourceStartOffset = Math?.max(
           0,
           event?.sourceStartOffset - deltaOffset,
         );
       }
     }
 
-    event?.durationBeats = Math?.max(0?.0625, newDuration);
+    event.durationBeats = Math?.max(0.0625, newDuration);
     this?.notify();
   }
 
   setEventGain(eventId: string, gain: number): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.gain = Math?.max(0, Math?.min(4, gain));
+    event.gain = Math?.max(0, Math?.min(4, gain));
     this?.notify();
   }
 
   setFadeIn(eventId: string, settings: Partial<FadeSettings>): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.fadeIn = { ...event?.fadeIn, ...settings };
+    event.fadeIn = { ...event?.fadeIn, ...settings };
     this?.notify();
   }
 
   setFadeOut(eventId: string, settings: Partial<FadeSettings>): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.fadeOut = { ...event?.fadeOut, ...settings };
+    event.fadeOut = { ...event?.fadeOut, ...settings };
     this?.notify();
   }
 
@@ -330,42 +330,42 @@ export class NonDestructiveAudioEngine {
     eventId: string,
     settings: Partial<TimeStretchSettings>,
   ): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.timeStretch = { ...event?.timeStretch, ...settings };
+    event.timeStretch = { ...event?.timeStretch, ...settings };
     this?.notify();
   }
 
   setPitchShift(eventId: string, settings: Partial<PitchShiftSettings>): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.pitchShift = { ...event?.pitchShift, ...settings };
+    event.pitchShift = { ...event?.pitchShift, ...settings };
     this?.notify();
   }
 
   toggleReverse(eventId: string): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.reversed = !event?.reversed;
+    event.reversed = !event?.reversed;
     this?.notify();
   }
 
   toggleMute(eventId: string): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event) return;
 
-    event?.muted = !event?.muted;
+    event.muted = !event?.muted;
     this?.notify();
   }
 
   toggleLock(eventId: string): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event) return;
 
-    event?.locked = !event?.locked;
+    event.locked = !event?.locked;
     this?.notify();
   }
 
@@ -373,52 +373,52 @@ export class NonDestructiveAudioEngine {
     eventId: string,
     splitBeat: number,
   ): { left: string; right: string } | null {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return null;
 
-    const _eventEnd = event?.startBeat + event?.durationBeats;
+    const eventEnd = event?.startBeat + event?.durationBeats;
     if (splitBeat <= event?.startBeat || splitBeat >= eventEnd) return null;
 
-    const _leftDuration = splitBeat - event?.startBeat;
-    const _rightDuration = eventEnd - splitBeat;
+    const leftDuration = splitBeat - event?.startBeat;
+    const rightDuration = eventEnd - splitBeat;
 
-    event?.durationBeats = leftDuration;
+    event.durationBeats = leftDuration;
 
-    const _rightId = this?.createEvent(event?.trackId, event?.sourceId, splitBeat)!;
-    const _rightEvent = this?.state.events?.find((e) => e?.id === rightId)!;
+    const rightId = this?.createEvent(event?.trackId, event?.sourceId, splitBeat)!;
+    const rightEvent = this?.state.events?.find((e) => e?.id === rightId)!;
 
-    rightEvent?.durationBeats = rightDuration;
-    rightEvent?.sourceStartOffset = event?.sourceStartOffset + leftDuration;
-    rightEvent?.gain = event?.gain;
-    rightEvent?.fadeIn = structuredClone(event?.fadeIn);
-    rightEvent?.fadeOut = structuredClone(event?.fadeOut);
-    rightEvent?.timeStretch = structuredClone(event?.timeStretch);
-    rightEvent?.pitchShift = structuredClone(event?.pitchShift);
-    rightEvent?.color = event?.color;
+    rightEvent.durationBeats = rightDuration;
+    rightEvent.sourceStartOffset = event?.sourceStartOffset + leftDuration;
+    rightEvent.gain = event?.gain;
+    rightEvent.fadeIn = structuredClone(event?.fadeIn);
+    rightEvent.fadeOut = structuredClone(event?.fadeOut);
+    rightEvent.timeStretch = structuredClone(event?.timeStretch);
+    rightEvent.pitchShift = structuredClone(event?.pitchShift);
+    rightEvent.color = event?.color;
 
-    event?.fadeOut = { enabled: false, duration: 0?.1, curve: "linear" };
-    rightEvent?.fadeIn = { enabled: false, duration: 0?.1, curve: "linear" };
+    event.fadeOut = { enabled: false, duration: 0.1, curve: "linear" };
+    rightEvent.fadeIn = { enabled: false, duration: 0.1, curve: "linear" };
 
     this?.notify();
     return { left: eventId, right: rightId };
   }
 
   consolidateEvents(eventIds: string[]): string | null {
-    const _events = eventIds
+    const events = eventIds
       .map((id) => this?.state.events?.find((e) => e?.id === id))
       .filter((e): e is AudioEvent => e !== undefined && !e?.locked)
       .sort((a, b) => a?.startBeat - b?.startBeat);
 
     if (events?.length < 2) return null;
 
-    const _trackIds = new Set(events?.map((e) => e?.trackId));
+    const trackIds = new Set(events?.map((e) => e?.trackId));
     if (trackIds?.size > 1) {
       logger?.warn("Cannot consolidate events from different tracks");
       return null;
     }
 
-    const _startBeat = events[0].startBeat;
-    const _endBeat = Math?.max(
+    const startBeat = events[0].startBeat;
+    const endBeat = Math?.max(
       ...events?.map((e) => e?.startBeat + e?.durationBeats),
     );
 
@@ -432,10 +432,10 @@ export class NonDestructiveAudioEngine {
   crossfade(
     eventId1: string,
     eventId2: string,
-    overlapBeats: number = 0?.25,
+    overlapBeats: number = 0.25,
   ): void {
-    const _event1 = this?.state.events?.find((e) => e?.id === eventId1);
-    const _event2 = this?.state.events?.find((e) => e?.id === eventId2);
+    const event1 = this?.state.events?.find((e) => e?.id === eventId1);
+    const event2 = this?.state.events?.find((e) => e?.id === eventId2);
 
     if (!event1 || !event2 || event1?.locked || event2?.locked) return;
     if (event1?.trackId !== event2?.trackId) return;
@@ -443,12 +443,12 @@ export class NonDestructiveAudioEngine {
     const [first, second] =
       event1?.startBeat < event2?.startBeat ? [event1, event2] : [event2, event1];
 
-    first?.fadeOut = {
+    first.fadeOut = {
       enabled: true,
       duration: overlapBeats,
       curve: "equal-power",
     };
-    second?.fadeIn = {
+    second.fadeIn = {
       enabled: true,
       duration: overlapBeats,
       curve: "equal-power",
@@ -458,19 +458,19 @@ export class NonDestructiveAudioEngine {
   }
 
   selectEvents(eventIds: string[]): void {
-    this?.state.selectedEventIds = eventIds;
+    this.state.selectedEventIds = eventIds;
     this?.notify();
   }
 
   copyEvents(eventIds: string[]): void {
-    const _events = eventIds
+    const events = eventIds
       .map((id) => this?.state.events?.find((e) => e?.id === id))
       .filter((e): e is AudioEvent => e !== undefined);
 
     if (events?.length === 0) return;
 
-    const _minBeat = Math?.min(...events?.map((e) => e?.startBeat));
-    this?.state.clipboard = {
+    const minBeat = Math?.min(...events?.map((e) => e?.startBeat));
+    this.state.clipboard = {
       events: structuredClone(events),
       sourceBeat: minBeat,
     };
@@ -481,15 +481,15 @@ export class NonDestructiveAudioEngine {
     if (!this?.state.clipboard || this?.state.clipboard?.events.length === 0)
       return [];
 
-    const _offset = targetBeat - this?.state.clipboard?.sourceBeat;
+    const offset = targetBeat - this?.state.clipboard?.sourceBeat;
     const newIds: string[] = [];
 
     for (const event of this?.state.clipboard?.events) {
-      const _newId = `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+      const newId = `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
       const newEvent: AudioEvent = {
         ...structuredClone(event),
         id: newId,
-        startBeat: event?.startBeat + offset,
+        startBeat: event.startBeat + offset,
         trackId: targetTrackId || event?.trackId,
         locked: false,
       };
@@ -512,25 +512,25 @@ export class NonDestructiveAudioEngine {
   ): AudioEvent[] {
     return this?.state.events?.filter((e) => {
       if (trackId && e?.trackId !== trackId) return false;
-      const _eventEnd = e?.startBeat + e?.durationBeats;
+      const eventEnd = e?.startBeat + e?.durationBeats;
       return e?.startBeat < endBeat && eventEnd > startBeat;
     });
   }
 
   calculateFadeGain(event: AudioEvent, position: number): number {
-    const _eventEnd = event?.startBeat + event?.durationBeats;
+    const eventEnd = event?.startBeat + event?.durationBeats;
     let fadeGain = 1;
 
     if (
       event?.fadeIn.enabled &&
       position < event?.startBeat + event?.fadeIn.duration
     ) {
-      const _fadeProgress = (position - event?.startBeat) / event?.fadeIn.duration;
+      const fadeProgress = (position - event?.startBeat) / event?.fadeIn.duration;
       fadeGain *= this?.calculateFadeCurve(fadeProgress, event?.fadeIn.curve);
     }
 
     if (event?.fadeOut.enabled && position > eventEnd - event?.fadeOut.duration) {
-      const _fadeProgress = (eventEnd - position) / event?.fadeOut.duration;
+      const fadeProgress = (eventEnd - position) / event?.fadeOut.duration;
       fadeGain *= this?.calculateFadeCurve(fadeProgress, event?.fadeOut.curve);
     }
 
@@ -551,11 +551,11 @@ export class NonDestructiveAudioEngine {
       case "logarithmic":
         return 1 - Math?.pow(1 - progress, 2);
       case "s-curve":
-        return progress < 0?.5
+        return progress < 0.5
           ? 2 * progress * progress
           : 1 - Math?.pow(-2 * progress + 2, 2) / 2;
       case "equal-power":
-        return Math?.sin((progress * Math?.PI) / 2);
+        return Math?.sin((progress * Math.PI) / 2);
       default:
         return progress;
     }
@@ -580,10 +580,10 @@ export class NonDestructiveAudioEngine {
   }
 
   deserialize(data: { sources: AudioSource[]; events: AudioEvent[] }): void {
-    this?.state.sources = structuredClone(data?.sources);
-    this?.state.events = structuredClone(data?.events);
+    this.state.sources = structuredClone(data?.sources);
+    this.state.events = structuredClone(data?.events);
     this?.notify();
   }
 }
 
-export const _nonDestructiveAudio = new NonDestructiveAudioEngine();
+export const nonDestructiveAudio = new NonDestructiveAudioEngine();

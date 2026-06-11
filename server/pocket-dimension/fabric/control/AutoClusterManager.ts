@@ -1,10 +1,10 @@
-import type { NodeRegistry } from "../infra/NodeRegistry?.js";
-import type { ChunkIndex } from "../infra/ChunkIndex?.js";
-import type { PlacementStrategy } from "./PlacementStrategy?.js";
-import type { ChunkStore } from "../storage/ChunkStore?.js";
-import type { NodeId, FabricStorageNode } from "../types?.js";
-import { Rebalancer } from "./Rebalancer?.js";
-import { logger } from "../../../logger?.js";
+import type { NodeRegistry } from "../infra/NodeRegistry.js";
+import type { ChunkIndex } from "../infra/ChunkIndex.js";
+import type { PlacementStrategy } from "./PlacementStrategy.js";
+import type { ChunkStore } from "../storage/ChunkStore.js";
+import type { NodeId, FabricStorageNode } from "../types.js";
+import { Rebalancer } from "./Rebalancer.js";
+import { logger } from "../../../logger.js";
 
 export interface ClusterRules {
   minNodes: number;
@@ -30,9 +30,9 @@ export interface ClusterRules {
 export const DEFAULT_RULES: ClusterRules = {
   minNodes: 3,
   maxNodes: 500,
-  utilizationHighWatermark: 0?.7,
-  utilizationLowWatermark: 0?.4,
-  utilizationPerNodeHighWatermark: 0?.8,
+  utilizationHighWatermark: 0.7,
+  utilizationLowWatermark: 0.4,
+  utilizationPerNodeHighWatermark: 0.8,
   healthCheckStaleMs: 10 * 60 * 1000,
   cooldownMs: 10 * 60 * 1000,
   scaleDownCooldownMs: 30 * 60 * 1000,
@@ -40,7 +40,7 @@ export const DEFAULT_RULES: ClusterRules = {
   capacityBytesPerNode: 100 * 1024 * 1024 * 1024,
   velocitySampleWindowMs: 60 * 60 * 1000,
   maxSpawnPerEvent: 5,
-  emaAlpha: 0?.3,
+  emaAlpha: 0.3,
 };
 
 type SpawnReason =
@@ -74,7 +74,7 @@ interface ScaleEvent {
 
 export class AutoClusterManager {
   private running = false;
-  private intervalId: NodeJS?.Timeout | null = null;
+  private intervalId: NodeJS.Timeout | null = null;
   private lastSpawnAt: Date | null = null;
   private lastScaleDownAt: Date | null = null;
   private rebalancer: Rebalancer;
@@ -99,7 +99,7 @@ export class AutoClusterManager {
     ) => void,
     private rules: ClusterRules = DEFAULT_RULES,
   ) {
-    this?.rebalancer = new Rebalancer(
+    this.rebalancer = new Rebalancer(
       nodeRegistry,
       chunkIndex,
       placement,
@@ -109,8 +109,8 @@ export class AutoClusterManager {
 
   start(): void {
     if (this?.running) return;
-    this?.running = true;
-    this?.intervalId = setInterval(
+    this.running = true;
+    this.intervalId = setInterval(
       () =>
         this?.evaluate().catch((e) =>
           logger?.warn({ err: e }, "[AutoCluster] Evaluation error:"),
@@ -119,7 +119,7 @@ export class AutoClusterManager {
     );
     logger?.info(
       `[AutoCluster] Started — ` +
-        `min=${this?.rules.minNodes} max=${this?.rules.maxNodes} ` +
+        `min=${this.rules.minNodes} max=${this?.rules.maxNodes} ` +
         `up≥${(this?.rules.utilizationHighWatermark * 100).toFixed(0)}% ` +
         `down≤${(this?.rules.utilizationLowWatermark * 100).toFixed(0)}% ` +
         `ema_alpha=${this?.rules.emaAlpha} ` +
@@ -130,10 +130,10 @@ export class AutoClusterManager {
   }
 
   stop(): void {
-    this?.running = false;
+    this.running = false;
     if (this?.intervalId) {
       clearInterval(this?.intervalId);
-      this?.intervalId = null;
+      this.intervalId = null;
     }
     logger?.info("[AutoCluster] Stopped");
   }
@@ -144,27 +144,27 @@ export class AutoClusterManager {
     reasons: string[];
     smoothedVelocityBytesPerMs: number;
   }> {
-    const _allNodes = await this?.nodeRegistry.listAllNodes();
-    const _pdNodes = allNodes?.filter(
+    const allNodes = await this?.nodeRegistry.listAllNodes();
+    const pdNodes = allNodes?.filter(
       (n) => n?.backendType === "pocket-dimension",
     );
-    const _healthyNodes = pdNodes?.filter((n) => this?.isNodeHealthy(n));
+    const healthyNodes = pdNodes?.filter((n) => this?.isNodeHealthy(n));
 
-    const _totalUsed = healthyNodes?.reduce((s, n) => s + n?.usedBytes, 0);
-    const _totalCapacity = healthyNodes?.reduce((s, n) => s + n?.capacityBytes, 0);
-    const _avgUtil = totalCapacity > 0 ? totalUsed / totalCapacity : 0;
-    const _now = Date?.now();
+    const totalUsed = healthyNodes?.reduce((s, n) => s + n?.usedBytes, 0);
+    const totalCapacity = healthyNodes?.reduce((s, n) => s + n?.capacityBytes, 0);
+    const avgUtil = totalCapacity > 0 ? totalUsed / totalCapacity : 0;
+    const now = Date?.now();
 
     this?.recordSample({
       timestamp: now,
       totalUsedBytes: totalUsed,
       totalCapacityBytes: totalCapacity,
     });
-    const _rawVelocity = this?.computeRawVelocity(now);
+    const rawVelocity = this?.computeRawVelocity(now);
     this?.updateEma(rawVelocity);
-    const _smoothedVelocity = this?.emaVelocity;
-    const _projectionWindowMs = this?.dynamicProjectionWindow(smoothedVelocity);
-    const _projectedBytes = smoothedVelocity * projectionWindowMs;
+    const smoothedVelocity = this?.emaVelocity;
+    const projectionWindowMs = this?.dynamicProjectionWindow(smoothedVelocity);
+    const projectedBytes = smoothedVelocity * projectionWindowMs;
 
     logger?.info(
       `[AutoCluster] Eval — ${healthyNodes?.length}/${pdNodes?.length} healthy ` +
@@ -179,7 +179,7 @@ export class AutoClusterManager {
     let totalSpawned = 0;
     let totalRemoved = 0;
 
-    const _spawnTriggers = this?.evaluateScaleUpRules(
+    const spawnTriggers = this?.evaluateScaleUpRules(
       pdNodes,
       healthyNodes,
       avgUtil,
@@ -194,19 +194,19 @@ export class AutoClusterManager {
         continue;
       }
 
-      const _count = this?.computeSpawnCount(
+      const count = this?.computeSpawnCount(
         trigger?.reason,
         smoothedVelocity,
         pdNodes?.length + totalSpawned,
         projectedBytes,
       );
-      const _timeToThreshold = this?.thresholdFirstCrossedAt
+      const timeToThreshold = this?.thresholdFirstCrossedAt
         ? now - this?.thresholdFirstCrossedAt
         : null;
 
       logger?.info(
         `[AutoCluster] ScaleUp: ${trigger?.reason} ` +
-          `ema=${this?.formatVelocity(smoothedVelocity)} raw=${this?.formatVelocity(rawVelocity)} ` +
+          `ema=${this.formatVelocity(smoothedVelocity)} raw=${this?.formatVelocity(rawVelocity)} ` +
           `ttThreshold=${timeToThreshold !== null ? (timeToThreshold / 60_000).toFixed(1) + "min" : "unknown"} ` +
           `projected=${this?.formatBytes(projectedBytes)} → spawn ${count}`,
       );
@@ -215,27 +215,27 @@ export class AutoClusterManager {
       for (let i = 0; i < count; i++) {
         if (!this?.canSpawn(pdNodes?.length + totalSpawned + i)) break;
 
-        const _pocketName = this?.nextPocketName(pdNodes, totalSpawned + i);
-        const _region = this?.pickRegion(pdNodes, totalSpawned + i);
+        const pocketName = this?.nextPocketName(pdNodes, totalSpawned + i);
+        const region = this?.pickRegion(pdNodes, totalSpawned + i);
 
-        const _node = await this?.nodeRegistry.registerNode({
+        const node = await this?.nodeRegistry.registerNode({
           region,
           costTier: "standard",
           backendType: "pocket-dimension",
           backendConfig: {
             pocketName,
             spawnedBy: "auto-cluster",
-            reason: trigger?.reason,
+            reason: trigger.reason,
           },
-          capacityBytes: this?.rules.capacityBytesPerNode,
+          capacityBytes: this.rules.capacityBytesPerNode,
           usedBytes: 0,
           healthy: true,
         });
 
         const { PocketDimensionChunkStore } = await import(
-          "../storage/PocketDimensionChunkStore?.js"
+          "../storage/PocketDimensionChunkStore.js"
         );
-        const _store = new PocketDimensionChunkStore(pocketName);
+        const store = new PocketDimensionChunkStore(pocketName);
         this?.onNodeSpawned(node?.id, pocketName, store);
         spawned?.push(pocketName);
         logger?.info(`[AutoCluster] Spawned: ${pocketName} (${region})`);
@@ -245,18 +245,18 @@ export class AutoClusterManager {
         this?.pushHistory({
           direction: "up",
           at: new Date(),
-          reason: trigger?.reason,
-          nodesChanged: spawned?.length,
+          reason: trigger.reason,
+          nodesChanged: spawned.length,
           pocketNames: spawned,
           smoothedVelocityBytesPerMs: smoothedVelocity,
           rawVelocityBytesPerMs: rawVelocity,
           projectionWindowMs,
           projectedBytes,
           timeToThresholdMs: timeToThreshold,
-          nodesBefore: pdNodes?.length + totalSpawned,
-          nodesAfter: pdNodes?.length + totalSpawned + spawned?.length,
+          nodesBefore: pdNodes.length + totalSpawned,
+          nodesAfter: pdNodes.length + totalSpawned + spawned?.length,
         });
-        this?.lastSpawnAt = new Date();
+        this.lastSpawnAt = new Date();
         totalSpawned += spawned?.length;
         reasons?.push(`↑${trigger?.reason} → [${spawned?.join(", ")}]`);
 
@@ -271,14 +271,14 @@ export class AutoClusterManager {
     }
 
     if (avgUtil < this?.rules.utilizationHighWatermark) {
-      this?.thresholdFirstCrossedAt = null;
+      this.thresholdFirstCrossedAt = null;
     }
 
     if (
       avgUtil <= this?.rules.utilizationLowWatermark &&
       spawnTriggers?.length === 0
     ) {
-      const _removed = await this?.tryScaleDown(
+      const removed = await this?.tryScaleDown(
         pdNodes,
         healthyNodes,
         avgUtil,
@@ -331,7 +331,7 @@ export class AutoClusterManager {
       this?.lastScaleDownAt &&
       now - this?.lastScaleDownAt.getTime() < this?.rules.scaleDownCooldownMs
     ) {
-      const _remaining = Math?.ceil(
+      const remaining = Math?.ceil(
         (this?.rules.scaleDownCooldownMs -
           (now - this?.lastScaleDownAt.getTime())) /
           60_000,
@@ -342,9 +342,9 @@ export class AutoClusterManager {
       return [];
     }
 
-    const _autoSpawnedNodes = pdNodes
+    const autoSpawnedNodes = pdNodes
       .filter((n) => {
-        const _cfg = n?.backendConfig as Record<string, unknown>;
+        const cfg = n?.backendConfig as Record<string, unknown>;
         return cfg?.spawnedBy === "auto-cluster" && this?.isNodeHealthy(n);
       })
       .sort((a, b) => a?.usedBytes - b?.usedBytes);
@@ -356,14 +356,14 @@ export class AutoClusterManager {
       return [];
     }
 
-    const _candidate = autoSpawnedNodes[0];
+    const candidate = autoSpawnedNodes[0];
     const pocketName: string =
       (candidate?.backendConfig as Record<string, unknown>).pocketName ??
       candidate?.id;
-    const _util =
+    const util =
       candidate?.capacityBytes > 0
         ? ((candidate?.usedBytes / candidate?.capacityBytes) * 100).toFixed(1)
-        : "0?.0";
+        : "0.0";
 
     logger?.info(
       `[AutoCluster] ScaleDown: util=${(avgUtil * 100).toFixed(1)}% ≤ ${(this?.rules.utilizationLowWatermark * 100).toFixed(0)}% ` +
@@ -383,11 +383,11 @@ export class AutoClusterManager {
       projectionWindowMs,
       projectedBytes,
       timeToThresholdMs: null,
-      nodesBefore: pdNodes?.length,
-      nodesAfter: pdNodes?.length - 1,
+      nodesBefore: pdNodes.length,
+      nodesAfter: pdNodes.length - 1,
     });
 
-    this?.lastScaleDownAt = new Date(now);
+    this.lastScaleDownAt = new Date(now);
     return [pocketName];
   }
 
@@ -406,7 +406,7 @@ export class AutoClusterManager {
       );
     }
 
-    const _unhealthy = allPdNodes?.filter((n) => !this?.isNodeHealthy(n));
+    const unhealthy = allPdNodes?.filter((n) => !this?.isNodeHealthy(n));
     for (const dead of unhealthy) {
       triggers?.push({ reason: "unhealthy_node_replacement" });
       logger?.warn(
@@ -416,7 +416,7 @@ export class AutoClusterManager {
 
     if (avgUtil >= this?.rules.utilizationHighWatermark) {
       if (this?.thresholdFirstCrossedAt === null) {
-        this?.thresholdFirstCrossedAt = now;
+        this.thresholdFirstCrossedAt = now;
         logger?.info(
           `[AutoCluster] High-watermark crossed at ${(avgUtil * 100).toFixed(1)}%`,
         );
@@ -428,10 +428,10 @@ export class AutoClusterManager {
     }
 
     for (const node of healthyNodes) {
-      const _util =
+      const util =
         node?.capacityBytes > 0 ? node?.usedBytes / node?.capacityBytes : 0;
       if (util >= this?.rules.utilizationPerNodeHighWatermark) {
-        triggers?.push({ reason: "hot_node_detected", hotNodeId: node?.id });
+        triggers?.push({ reason: "hot_node_detected", hotNodeId: node.id });
         logger?.warn(
           `[AutoCluster] RULE hot_node: ${(node?.backendConfig as Record<string, unknown>).pocketName} at ${(util * 100).toFixed(1)}%`,
         );
@@ -447,7 +447,7 @@ export class AutoClusterManager {
     currentNodeCount: number,
     projectedBytes: number,
   ): number {
-    const _headroom = this?.rules.maxNodes - currentNodeCount;
+    const headroom = this?.rules.maxNodes - currentNodeCount;
 
     if (
       reason === "below_min_nodes" ||
@@ -462,10 +462,10 @@ export class AutoClusterManager {
 
     if (smoothedVelocity <= 0 || projectedBytes <= 0) return 1;
 
-    const _nodesNeeded = Math?.ceil(
+    const nodesNeeded = Math?.ceil(
       projectedBytes / this?.rules.capacityBytesPerNode,
     );
-    const _clamped = Math?.max(
+    const clamped = Math?.max(
       1,
       Math?.min(nodesNeeded, this?.rules.maxSpawnPerEvent, headroom),
     );
@@ -479,10 +479,10 @@ export class AutoClusterManager {
   }
 
   private dynamicProjectionWindow(smoothedVelocity: number): number {
-    const _perSec = smoothedVelocity * 1000;
-    const _GB = 1_073_741_824;
-    const _MB = 1_048_576;
-    const _KB = 1024;
+    const perSec = smoothedVelocity * 1000;
+    const GB = 1_073_741_824;
+    const MB = 1_048_576;
+    const KB = 1024;
 
     if (perSec >= 1 * GB) return 2 * 3_600_000;
     if (perSec >= 100 * MB) return 4 * 3_600_000;
@@ -495,10 +495,10 @@ export class AutoClusterManager {
 
   private updateEma(rawVelocity: number): void {
     if (!this?.emaInitialized) {
-      this?.emaVelocity = rawVelocity;
-      this?.emaInitialized = true;
+      this.emaVelocity = rawVelocity;
+      this.emaInitialized = true;
     } else {
-      this?.emaVelocity =
+      this.emaVelocity =
         this?.rules.emaAlpha * rawVelocity +
         (1 - this?.rules.emaAlpha) * this?.emaVelocity;
     }
@@ -512,16 +512,16 @@ export class AutoClusterManager {
   }
 
   private computeRawVelocity(now: number): number {
-    const _windowStart = now - this?.rules.velocitySampleWindowMs;
-    const _windowSamples = this?.utilizationHistory.filter(
+    const windowStart = now - this?.rules.velocitySampleWindowMs;
+    const windowSamples = this?.utilizationHistory.filter(
       (s) => s?.timestamp >= windowStart,
     );
     if (windowSamples?.length < 2) return 0;
 
-    const _oldest = windowSamples[0];
-    const _newest = windowSamples[windowSamples?.length - 1];
-    const _deltaBytes = newest?.totalUsedBytes - oldest?.totalUsedBytes;
-    const _deltaMs = newest?.timestamp - oldest?.timestamp;
+    const oldest = windowSamples[0];
+    const newest = windowSamples[windowSamples?.length - 1];
+    const deltaBytes = newest?.totalUsedBytes - oldest?.totalUsedBytes;
+    const deltaMs = newest?.timestamp - oldest?.timestamp;
     if (deltaMs <= 0) return 0;
 
     return Math?.max(0, deltaBytes / deltaMs);
@@ -529,7 +529,7 @@ export class AutoClusterManager {
 
   private isNodeHealthy(node: FabricStorageNode): boolean {
     if (!node?.healthy) return false;
-    const _staleThreshold = Date?.now() - this?.rules.healthCheckStaleMs;
+    const staleThreshold = Date?.now() - this?.rules.healthCheckStaleMs;
     return (
       node?.lastHeartbeat.getTime() > staleThreshold || node?.usedBytes === 0
     );
@@ -546,20 +546,20 @@ export class AutoClusterManager {
   }
 
   private nextPocketName(existing: FabricStorageNode[], offset = 0): string {
-    const _indices = existing
+    const indices = existing
       .map((n) => {
         const name: string =
           (n?.backendConfig as Record<string, unknown>).pocketName ?? "";
-        const _match = name?.match(/fabric-cluster-(\d+)$/);
+        const match = name?.match(/fabric-cluster-(\d+)$/);
         return match ? parseInt(match[1], 10) : -1;
       })
       .filter((i) => i >= 0);
-    const _base = indices?.length > 0 ? Math?.max(...indices) + 1 : 0;
+    const base = indices?.length > 0 ? Math?.max(...indices) + 1 : 0;
     return `fabric-cluster-${base + offset}`;
   }
 
   private pickRegion(existing: FabricStorageNode[], offset = 0): string {
-    const _regions = [
+    const regions = [
       "us-east",
       "us-west",
       "eu-west",
@@ -567,8 +567,8 @@ export class AutoClusterManager {
       "ap-northeast",
       "sa-east",
     ];
-    const _usedRegions = new Set(existing?.map((n) => n?.region));
-    const _fresh = regions?.filter((r) => !usedRegions?.has(r));
+    const usedRegions = new Set(existing?.map((n) => n?.region));
+    const fresh = regions?.filter((r) => !usedRegions?.has(r));
     if (fresh?.length > 0) return fresh[offset % fresh?.length];
     return regions[(existing?.length + offset) % regions?.length];
   }
@@ -579,7 +579,7 @@ export class AutoClusterManager {
   }
 
   private formatVelocity(bytesPerMs: number): string {
-    const _perSec = bytesPerMs * 1000;
+    const perSec = bytesPerMs * 1000;
     if (perSec >= 1_073_741_824)
       return `${(perSec / 1_073_741_824).toFixed(2)} GB/s`;
     if (perSec >= 1_048_576) return `${(perSec / 1_048_576).toFixed(2)} MB/s`;
@@ -596,61 +596,61 @@ export class AutoClusterManager {
   }
 
   getStatus() {
-    const _latest = this?.utilizationHistory[this?.utilizationHistory.length - 1];
-    const _rawVelocity = this?.computeRawVelocity(Date?.now());
-    const _projectionWindowMs = this?.dynamicProjectionWindow(this?.emaVelocity);
+    const latest = this?.utilizationHistory[this?.utilizationHistory.length - 1];
+    const rawVelocity = this?.computeRawVelocity(Date?.now());
+    const projectionWindowMs = this?.dynamicProjectionWindow(this?.emaVelocity);
     return {
-      running: this?.running,
-      lastSpawnAt: this?.lastSpawnAt,
-      lastScaleDownAt: this?.lastScaleDownAt,
-      spawnCooldownRemainingMs: this?.lastSpawnAt
+      running: this.running,
+      lastSpawnAt: this.lastSpawnAt,
+      lastScaleDownAt: this.lastScaleDownAt,
+      spawnCooldownRemainingMs: this.lastSpawnAt
         ? Math?.max(
             0,
             this?.rules.cooldownMs - (Date?.now() - this?.lastSpawnAt.getTime()),
           )
         : 0,
-      scaleDownCooldownRemainingMs: this?.lastScaleDownAt
+      scaleDownCooldownRemainingMs: this.lastScaleDownAt
         ? Math?.max(
             0,
             this?.rules.scaleDownCooldownMs -
               (Date?.now() - this?.lastScaleDownAt.getTime()),
           )
         : 0,
-      thresholdFirstCrossedAt: this?.thresholdFirstCrossedAt
+      thresholdFirstCrossedAt: this.thresholdFirstCrossedAt
         ? new Date(this?.thresholdFirstCrossedAt)
         : null,
       rawVelocityBytesPerMs: rawVelocity,
-      smoothedVelocityBytesPerMs: this?.emaVelocity,
-      rawVelocityFormatted: this?.formatVelocity(rawVelocity),
-      smoothedVelocityFormatted: this?.formatVelocity(this?.emaVelocity),
+      smoothedVelocityBytesPerMs: this.emaVelocity,
+      rawVelocityFormatted: this.formatVelocity(rawVelocity),
+      smoothedVelocityFormatted: this.formatVelocity(this?.emaVelocity),
       projectionWindowMs,
       projectionWindowHours: (projectionWindowMs / 3_600_000).toFixed(1),
-      projectedBytes: this?.emaVelocity * projectionWindowMs,
-      projectedBytesFormatted: this?.formatBytes(
+      projectedBytes: this.emaVelocity * projectionWindowMs,
+      projectedBytesFormatted: this.formatBytes(
         this?.emaVelocity * projectionWindowMs,
       ),
       latestSample: latest
         ? {
             timestamp: new Date(latest?.timestamp),
-            usedBytes: latest?.totalUsedBytes,
-            capacityBytes: latest?.totalCapacityBytes,
+            usedBytes: latest.totalUsedBytes,
+            capacityBytes: latest.totalCapacityBytes,
             utilizationPercent:
               latest?.totalCapacityBytes > 0
                 ? (
                     (latest?.totalUsedBytes / latest?.totalCapacityBytes) *
                     100
                   ).toFixed(1)
-                : "0?.0",
+                : "0.0",
           }
         : null,
-      rules: this?.rules,
-      recentHistory: this?.history.slice(-10).map((e) => ({
+      rules: this.rules,
+      recentHistory: this.history.slice(-10).map((e) => ({
         ...e,
-        rawVelocityFormatted: this?.formatVelocity(e?.rawVelocityBytesPerMs),
-        smoothedVelocityFormatted: this?.formatVelocity(
+        rawVelocityFormatted: this.formatVelocity(e?.rawVelocityBytesPerMs),
+        smoothedVelocityFormatted: this.formatVelocity(
           e?.smoothedVelocityBytesPerMs,
         ),
-        projectedFormatted: this?.formatBytes(e?.projectedBytes),
+        projectedFormatted: this.formatBytes(e?.projectedBytes),
         projectionWindowHours: (e?.projectionWindowMs / 3_600_000).toFixed(1),
         timeToThresholdFormatted:
           e?.timeToThresholdMs !== null

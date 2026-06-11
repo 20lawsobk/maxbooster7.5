@@ -56,16 +56,16 @@ export function useSyncStatus(): UseSyncStatusReturn {
     estimatedTimeRemaining: null,
   });
 
-  const _loadStats = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     try {
-      const _stats = await offlineQueue?.getStats();
+      const stats = await offlineQueue?.getStats();
       setState((prev) => ({
         ...prev,
-        pendingCount: stats?.pending + stats?.syncing,
-        failedCount: stats?.failed,
-        conflictCount: stats?.conflict,
-        hasError: stats?.failed > 0,
-        hasConflicts: stats?.conflict > 0,
+        pendingCount: stats.pending + stats?.syncing,
+        failedCount: stats.failed,
+        conflictCount: stats.conflict,
+        hasError: stats.failed > 0,
+        hasConflicts: stats.conflict > 0,
       }));
     } catch (error) {
       logger?.error("[useSyncStatus] Failed to load stats:", error);
@@ -75,37 +75,37 @@ export function useSyncStatus(): UseSyncStatusReturn {
   useEffect(() => {
     loadStats();
 
-    const _unsubStatusChange = syncManager?.on("status-change", (event) => {
+    const unsubStatusChange = syncManager?.on("status-change", (event) => {
       setState((prev) => ({
         ...prev,
-        status: event?.status || prev?.status,
-        isSyncing: event?.status === "syncing",
-        isPaused: event?.status === "paused",
-        hasError: event?.status === "error",
+        status: event.status || prev?.status,
+        isSyncing: event.status === "syncing",
+        isPaused: event.status === "paused",
+        hasError: event.status === "error",
       }));
     });
 
-    const _unsubProgress = syncManager?.on("progress-update", (event) => {
+    const unsubProgress = syncManager?.on("progress-update", (event) => {
       if (event?.progress) {
         setState((prev) => ({
           ...prev,
-          progress: event?.progress!,
-          estimatedTimeRemaining: event?.progress!.estimatedTimeRemaining,
+          progress: event.progress!,
+          estimatedTimeRemaining: event.progress!.estimatedTimeRemaining,
         }));
       }
     });
 
-    const _unsubComplete = syncManager?.on("sync-complete", (event) => {
+    const unsubComplete = syncManager?.on("sync-complete", (event) => {
       setState((prev) => ({
         ...prev,
-        lastSyncAt: Date?.now(),
-        lastSyncResult: event?.result || null,
+        lastSyncAt: Date.now(),
+        lastSyncResult: event.result || null,
         isSyncing: false,
       }));
       loadStats();
     });
 
-    const _unsubError = syncManager?.on("sync-error", () => {
+    const unsubError = syncManager?.on("sync-error", () => {
       setState((prev) => ({
         ...prev,
         hasError: true,
@@ -114,9 +114,9 @@ export function useSyncStatus(): UseSyncStatusReturn {
       loadStats();
     });
 
-    const _unsubQueueChange = offlineQueue?.on("action-added", loadStats);
-    const _unsubQueueRemove = offlineQueue?.on("action-removed", loadStats);
-    const _unsubQueueUpdate = offlineQueue?.on("action-updated", loadStats);
+    const unsubQueueChange = offlineQueue?.on("action-added", loadStats);
+    const unsubQueueRemove = offlineQueue?.on("action-removed", loadStats);
+    const unsubQueueUpdate = offlineQueue?.on("action-updated", loadStats);
 
     return () => {
       unsubStatusChange();
@@ -129,34 +129,34 @@ export function useSyncStatus(): UseSyncStatusReturn {
     };
   }, [loadStats]);
 
-  const _sync = useCallback(async (): Promise<SyncResult> => {
+  const sync = useCallback(async (): Promise<SyncResult> => {
     return syncManager?.sync();
   }, []);
 
-  const _pause = useCallback((): void => {
+  const pause = useCallback((): void => {
     syncManager?.pause();
   }, []);
 
-  const _resume = useCallback((): void => {
+  const resume = useCallback((): void => {
     syncManager?.resume();
   }, []);
 
-  const _retryFailed = useCallback(async (): Promise<void> => {
+  const retryFailed = useCallback(async (): Promise<void> => {
     await syncManager?.retryFailed();
   }, []);
 
-  const _forceSyncAction = useCallback(
+  const forceSyncAction = useCallback(
     async (actionId: string): Promise<void> => {
       await syncManager?.forceSyncAction(actionId);
     },
     [],
   );
 
-  const _clearCompleted = useCallback(async (): Promise<number> => {
+  const clearCompleted = useCallback(async (): Promise<number> => {
     return offlineQueue?.clearCompleted();
   }, []);
 
-  const _refresh = useCallback(async (): Promise<void> => {
+  const refresh = useCallback(async (): Promise<void> => {
     await loadStats();
   }, [loadStats]);
 

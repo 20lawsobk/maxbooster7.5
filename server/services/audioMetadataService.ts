@@ -1,5 +1,5 @@
 import * as musicMetadata from "music-metadata";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface AudioMetadata {
   title?: string;
@@ -48,13 +48,13 @@ export interface AudioFormatInfo {
   quality: "low" | "standard" | "high" | "lossless" | "hi-res";
 }
 
-export const _SUPPORTED_AUDIO_FORMATS = {
+export const SUPPORTED_AUDIO_FORMATS = {
   lossy: ["mp3", "aac", "m4a", "ogg", "opus", "wma", "webm"],
   lossless: ["wav", "flac", "aiff", "alac", "ape", "wv", "dsd"],
   containers: ["mp4", "m4a", "ogg", "webm", "mkv", "avi", "mov"],
 } as const;
 
-export const _QUALITY_THRESHOLDS = {
+export const QUALITY_THRESHOLDS = {
   hiRes: { sampleRate: 96000, bitDepth: 24 },
   lossless: { sampleRate: 44100, bitDepth: 16 },
   high: { bitrate: 256 },
@@ -66,7 +66,7 @@ class AudioMetadataService {
 
   static getInstance(): AudioMetadataService {
     if (!AudioMetadataService?.instance) {
-      AudioMetadataService?.instance = new AudioMetadataService();
+      AudioMetadataService.instance = new AudioMetadataService();
     }
     return AudioMetadataService?.instance;
   }
@@ -76,48 +76,48 @@ class AudioMetadataService {
     mimeType?: string,
   ): Promise<AudioMetadata> {
     try {
-      const _metadata = await musicMetadata?.parseBuffer(buffer, { mimeType });
+      const metadata = await musicMetadata?.parseBuffer(buffer, { mimeType });
       const { format, common } = metadata;
 
-      const _hasCoverArt = common?.picture && common?.picture.length > 0;
+      const hasCoverArt = common?.picture && common?.picture.length > 0;
       let coverArt: AudioMetadata["coverArt"] | undefined;
 
       if (hasCoverArt && common?.picture) {
-        const _pic = common?.picture[0];
+        const pic = common?.picture[0];
         coverArt = {
-          format: pic?.format,
-          type: pic?.type,
-          description: pic?.description,
-          data: pic?.data,
+          format: pic.format,
+          type: pic.type,
+          description: pic.description,
+          data: pic.data,
         };
       }
 
       return {
-        title: common?.title,
-        artist: common?.artist,
-        album: common?.album,
-        year: common?.year,
-        track: common?.track,
-        disk: common?.disk,
-        genre: common?.genre,
-        comment: common?.comment,
-        composer: common?.composer,
-        albumArtist: common?.albumartist,
-        copyright: common?.copyright,
-        label: common?.label?.[0],
-        isrc: common?.isrc?.[0],
-        bpm: common?.bpm,
-        key: common?.key,
-        duration: format?.duration || 0,
-        sampleRate: format?.sampleRate || 44100,
-        bitrate: format?.bitrate,
-        channels: format?.numberOfChannels || 2,
-        codec: format?.codec || "unknown",
-        codecProfile: format?.codecProfile,
-        container: format?.container || "unknown",
-        lossless: format?.lossless || false,
-        bitDepth: format?.bitsPerSample,
-        tagTypes: format?.tagTypes || [],
+        title: common.title,
+        artist: common.artist,
+        album: common.album,
+        year: common.year,
+        track: common.track,
+        disk: common.disk,
+        genre: common.genre,
+        comment: common.comment,
+        composer: common.composer,
+        albumArtist: common.albumartist,
+        copyright: common.copyright,
+        label: common.label?.[0],
+        isrc: common.isrc?.[0],
+        bpm: common.bpm,
+        key: common.key,
+        duration: format.duration || 0,
+        sampleRate: format.sampleRate || 44100,
+        bitrate: format.bitrate,
+        channels: format.numberOfChannels || 2,
+        codec: format.codec || "unknown",
+        codecProfile: format.codecProfile,
+        container: format.container || "unknown",
+        lossless: format.lossless || false,
+        bitDepth: format.bitsPerSample,
+        tagTypes: format.tagTypes || [],
         hasCoverArt,
         coverArt,
       };
@@ -128,39 +128,39 @@ class AudioMetadataService {
   }
 
   async extractFromStream(
-    stream: NodeJS?.ReadableStream,
+    stream: NodeJS.ReadableStream,
     mimeType?: string,
   ): Promise<AudioMetadata> {
     try {
-      const _metadata = await musicMetadata?.parseStream(stream, { mimeType });
+      const metadata = await musicMetadata?.parseStream(stream, { mimeType });
       const { format, common } = metadata;
 
       return {
-        title: common?.title,
-        artist: common?.artist,
-        album: common?.album,
-        year: common?.year,
-        track: common?.track,
-        disk: common?.disk,
-        genre: common?.genre,
-        comment: common?.comment,
-        composer: common?.composer,
-        albumArtist: common?.albumartist,
-        copyright: common?.copyright,
-        label: common?.label?.[0],
-        isrc: common?.isrc?.[0],
-        bpm: common?.bpm,
-        key: common?.key,
-        duration: format?.duration || 0,
-        sampleRate: format?.sampleRate || 44100,
-        bitrate: format?.bitrate,
-        channels: format?.numberOfChannels || 2,
-        codec: format?.codec || "unknown",
-        codecProfile: format?.codecProfile,
-        container: format?.container || "unknown",
-        lossless: format?.lossless || false,
-        bitDepth: format?.bitsPerSample,
-        tagTypes: format?.tagTypes || [],
+        title: common.title,
+        artist: common.artist,
+        album: common.album,
+        year: common.year,
+        track: common.track,
+        disk: common.disk,
+        genre: common.genre,
+        comment: common.comment,
+        composer: common.composer,
+        albumArtist: common.albumartist,
+        copyright: common.copyright,
+        label: common.label?.[0],
+        isrc: common.isrc?.[0],
+        bpm: common.bpm,
+        key: common.key,
+        duration: format.duration || 0,
+        sampleRate: format.sampleRate || 44100,
+        bitrate: format.bitrate,
+        channels: format.numberOfChannels || 2,
+        codec: format.codec || "unknown",
+        codecProfile: format.codecProfile,
+        container: format.container || "unknown",
+        lossless: format.lossless || false,
+        bitDepth: format.bitsPerSample,
+        tagTypes: format.tagTypes || [],
         hasCoverArt: !!(common?.picture && common?.picture.length > 0),
       };
     } catch (error) {
@@ -201,14 +201,14 @@ class AudioMetadataService {
     }
 
     return {
-      format: metadata?.container,
-      codec: metadata?.codec,
-      sampleRate: metadata?.sampleRate,
-      channels: metadata?.channels,
-      bitDepth: metadata?.bitDepth,
-      bitrate: metadata?.bitrate,
-      duration: metadata?.duration,
-      lossless: metadata?.lossless,
+      format: metadata.container,
+      codec: metadata.codec,
+      sampleRate: metadata.sampleRate,
+      channels: metadata.channels,
+      bitDepth: metadata.bitDepth,
+      bitrate: metadata.bitrate,
+      duration: metadata.duration,
+      lossless: metadata.lossless,
       quality,
     };
   }
@@ -221,7 +221,7 @@ class AudioMetadataService {
 
     if (metadata?.sampleRate < 44100) {
       issues?.push(
-        `Sample rate ${metadata?.sampleRate}Hz is below distribution minimum (44?.1kHz)`,
+        `Sample rate ${metadata?.sampleRate}Hz is below distribution minimum (44.1kHz)`,
       );
     }
 
@@ -248,7 +248,7 @@ class AudioMetadataService {
     }
 
     return {
-      ready: issues?.length === 0,
+      ready: issues.length === 0,
       issues,
     };
   }
@@ -270,7 +270,7 @@ class AudioMetadataService {
       instagram: { minSampleRate: 44100, minBitrate: 128000, maxDuration: 60 },
     };
 
-    const _req = requirements[platform?.toLowerCase()];
+    const req = requirements[platform?.toLowerCase()];
     if (!req) {
       return { valid: true, issues: [] };
     }
@@ -298,7 +298,7 @@ class AudioMetadataService {
     }
 
     return {
-      valid: issues?.length === 0,
+      valid: issues.length === 0,
       issues,
     };
   }
@@ -340,4 +340,4 @@ class AudioMetadataService {
   }
 }
 
-export const _audioMetadataService = AudioMetadataService?.getInstance();
+export const audioMetadataService = AudioMetadataService?.getInstance();

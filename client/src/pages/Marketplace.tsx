@@ -1295,7 +1295,7 @@ export default function Marketplace() {
           if (Array.isArray(prev)) {
             queryClient.setQueryData(
               qk,
-              prev.map((b) => (b?.id === id ? { ...b, ...patch } : b)),
+              prev.map((b) => (b.id === id ? { ...b, ...patch } : b)),
             );
           }
         };
@@ -1311,9 +1311,9 @@ export default function Marketplace() {
       _vars: { id: string; data: FormData },
       ctx: { prevMy?: unknown; prevAll?: unknown } | undefined,
     ) => {
-      if (ctx?.prevMy !== undefined)
+      if (ctx.prevMy !== undefined)
         queryClient.setQueryData(["/api/marketplace/my-beats"], ctx.prevMy);
-      if (ctx?.prevAll !== undefined)
+      if (ctx.prevAll !== undefined)
         queryClient.setQueryData(["/api/marketplace/beats"], ctx.prevAll);
       toast({
         title: "Update Failed",
@@ -1339,7 +1339,7 @@ export default function Marketplace() {
             queryClient.setQueryData(
               key,
               prev.map((b) =>
-                b?.id === updated.id ? { ...b, ...updated } : b,
+                b.id === updated.id ? { ...b, ...updated } : b,
               ),
             );
           }
@@ -1353,7 +1353,7 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ["/api/marketplace/beats"] });
       queryClient.invalidateQueries({
         predicate: (q) => {
-          const k = q.queryKey?.[0];
+          const k = q.queryKey.[0];
           return (
             typeof k === "string" &&
             (k === "producer-beats" ||
@@ -1387,7 +1387,7 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ["/api/marketplace/beats"] });
       queryClient.invalidateQueries({
         predicate: (q) => {
-          const k = q.queryKey?.[0];
+          const k = q.queryKey.[0];
           return (
             typeof k === "string" &&
             (k === "producer-beats" ||
@@ -1592,7 +1592,7 @@ export default function Marketplace() {
       price: beat.price || 50,
       licenseType: beat.licenseType || "basic",
       description: beat.description || "",
-      tags: beat.tags?.join(", ") || "",
+      tags: beat.tags.join(", ") || "",
       coverArtFile: null,
       discountPercent: beat.discountPercent || 0,
       discountExpiresAt: beat.discountExpiresAt || "",
@@ -1879,7 +1879,7 @@ export default function Marketplace() {
       toast({
         title: "Rating Failed",
         description:
-          error?.message || "Could not submit your rating. Please try again.",
+          error.message || "Could not submit your rating. Please try again.",
         variant: "destructive",
       });
     },
@@ -1978,7 +1978,7 @@ export default function Marketplace() {
     onError: (error: Error) => {
       toast({
         title: "Update Failed",
-        description: error?.message || "Failed to update contract.",
+        description: error.message || "Failed to update contract.",
         variant: "destructive",
       });
     },
@@ -2006,7 +2006,7 @@ export default function Marketplace() {
     onError: (error: Error) => {
       toast({
         title: "Delete Failed",
-        description: error?.message || "Failed to delete contract.",
+        description: error.message || "Failed to delete contract.",
         variant: "destructive",
       });
     },
@@ -5007,7 +5007,7 @@ export default function Marketplace() {
                         <CardContent className="h-48" />
                       </Card>
                     ))
-                  ) : merchItems?.length === 0 ? (
+                  ) : merchItems.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg bg-muted/10">
                       <Package className="h-12 w-12 text-muted-foreground mb-4" />
                       <h3 className="text-lg font-semibold">
@@ -5113,7 +5113,7 @@ export default function Marketplace() {
                               <TableCell colSpan={5} className="h-12" />
                             </TableRow>
                           ))
-                        ) : merchOrders?.length === 0 ? (
+                        ) : merchOrders.length === 0 ? (
                           <TableRow>
                             <TableCell
                               colSpan={5}
@@ -7911,7 +7911,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Contract Template</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{selectedContract?.name}"? This
+              Are you sure you want to delete "{selectedContract.name}"? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -1,27 +1,27 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
-import { asyncHandler } from "../middleware/errorHandler?.js";
-import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { logger } from "../logger.js";
 import {
   viralScoringService,
   type ContentData,
-} from "../services/viralScoring?.js";
-import { timingOptimizerService } from "../services/timingOptimizer?.js";
-import { contentVariantGeneratorService } from "../services/contentVariantGenerator?.js";
+} from "../services/viralScoring.js";
+import { timingOptimizerService } from "../services/timingOptimizer.js";
+import { contentVariantGeneratorService } from "../services/contentVariantGenerator.js";
 import {
   algorithmIntelligenceService,
   type AlgorithmHealth,
-} from "../services/algorithmIntelligence?.js";
+} from "../services/algorithmIntelligence.js";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 
-const _router = Router();
+const router = Router();
 
-const _contentSchema = z?.object({
-  id: z?.string().optional(),
-  caption: z?.string().min(1, "Caption is required"),
-  hashtags: z?.array(z?.string()).default([]),
-  platform: z?.enum([
+const contentSchema = z.object({
+  id: z.string().optional(),
+  caption: z.string().min(1, "Caption is required"),
+  hashtags: z.array(z.string()).default([]),
+  platform: z.enum([
     "tiktok",
     "instagram",
     "youtube",
@@ -32,18 +32,18 @@ const _contentSchema = z?.object({
   contentType: z
     .enum(["video", "image", "carousel", "text", "story", "reel"])
     .default("video"),
-  mediaUrl: z?.string().optional(),
-  duration: z?.number().optional(),
-  hasAudio: z?.boolean().optional(),
-  musicGenre: z?.string().optional(),
+  mediaUrl: z.string().optional(),
+  duration: z.number().optional(),
+  hasAudio: z.boolean().optional(),
+  musicGenre: z.string().optional(),
   targetAudience: z
     .object({
-      ageRange: z?.string(),
-      interests: z?.array(z?.string()),
-      location: z?.string().optional(),
+      ageRange: z.string(),
+      interests: z.array(z.string()),
+      location: z.string().optional(),
     })
     .optional(),
-  scheduledTime: z?.string().datetime().optional(),
+  scheduledTime: z.string().datetime().optional(),
 });
 
 router?.get(
@@ -72,36 +72,36 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { content } = req?.body;
 
-      const _validatedContent = contentSchema?.parse(content);
+      const validatedContent = contentSchema?.parse(content);
 
       const contentData: ContentData = {
         ...validatedContent,
-        id: validatedContent?.id || randomBytes(8).toString("hex"),
+        id: validatedContent.id || randomBytes(8).toString("hex"),
         userId,
-        scheduledTime: validatedContent?.scheduledTime
+        scheduledTime: validatedContent.scheduledTime
           ? new Date(validatedContent?.scheduledTime)
           : undefined,
       };
 
-      const _score = await viralScoringService?.scoreContent(contentData);
+      const score = await viralScoringService?.scoreContent(contentData);
 
-      const _transformedScore = {
-        overall: score?.overall,
+      const transformedScore = {
+        overall: score.overall,
         breakdown: {
-          emotionalImpact: score?.factors.emotionalResonance,
-          trendAlignment: score?.factors.trendRelevance,
-          formatOptimization: score?.factors.contentStructure,
-          timingScore: score?.factors.timingScore,
-          engagementPotential: score?.factors.engagementHooks,
+          emotionalImpact: score.factors.emotionalResonance,
+          trendAlignment: score.factors.trendRelevance,
+          formatOptimization: score.factors.contentStructure,
+          timingScore: score.factors.timingScore,
+          engagementPotential: score.factors.engagementHooks,
         },
-        recommendations: score?.recommendations,
+        recommendations: score.recommendations,
         predictedReach: {
-          low: Math?.round(score?.predictedEngagement.likes * 0?.5),
-          mid: Math?.round(score?.predictedEngagement.likes),
-          high: Math?.round(score?.predictedEngagement.likes * 2),
+          low: Math.round(score?.predictedEngagement.likes * 0.5),
+          mid: Math.round(score?.predictedEngagement.likes),
+          high: Math.round(score?.predictedEngagement.likes * 2),
         },
       };
 
@@ -121,11 +121,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform } = req?.params;
       const { timezone = "America/New_York" } = req?.query;
 
-      const _validPlatforms = [
+      const validPlatforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -137,23 +137,23 @@ router?.get(
         return res?.status(400).json({ error: "Invalid platform" });
       }
 
-      const _timing = await timingOptimizerService?.getOptimalTiming(
+      const timing = await timingOptimizerService?.getOptimalTiming(
         platform,
         timezone as string,
         userId,
       );
 
-      const _transformedTiming = {
+      const transformedTiming = {
         platform,
-        bestTimes: timing?.bestTimes.map((slot) => ({
-          dayOfWeek: slot?.dayOfWeek,
-          hour: slot?.hour,
-          score: slot?.score,
-          expectedEngagement: Math?.round(
+        bestTimes: timing.bestTimes.map((slot) => ({
+          dayOfWeek: slot.dayOfWeek,
+          hour: slot.hour,
+          score: slot.score,
+          expectedEngagement: Math.round(
             (slot?.audienceActive * slot?.score) / 100,
           ),
         })),
-        avoidTimes: timing?.avoidTimes || [
+        avoidTimes: timing.avoidTimes || [
           { dayOfWeek: 0, hour: 3, reason: "Very low engagement period" },
           { dayOfWeek: 0, hour: 4, reason: "Very low engagement period" },
           { dayOfWeek: 1, hour: 2, reason: "Early morning - low activity" },
@@ -177,10 +177,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { timezone = "America/New_York" } = req?.query;
 
-      const _platforms = ["tiktok", "instagram", "youtube", "twitter"];
+      const platforms = ["tiktok", "instagram", "youtube", "twitter"];
 
       const [healthResults, timingResults] = await Promise?.all([
         Promise?.all(
@@ -198,16 +198,16 @@ router?.get(
         platformHealth[platform] = healthResults[index];
       });
 
-      const _overallHealth = Math?.round(
+      const overallHealth = Math?.round(
         Object?.values(platformHealth).reduce(
           (sum, h) => sum + h?.overallScore,
           0,
         ) / platforms?.length,
       );
 
-      const _reachMultiplier = 1 + (overallHealth - 50) / 100;
+      const reachMultiplier = 1 + (overallHealth - 50) / 100;
 
-      const _allAlerts = Object?.values(platformHealth)
+      const allAlerts = Object?.values(platformHealth)
         .flatMap((h) => h?.alerts)
         .filter((a) => !a?.resolved)
         .sort((a, b) => {
@@ -220,26 +220,26 @@ router?.get(
           return severityOrder[a?.severity] - severityOrder[b?.severity];
         });
 
-      const _allRecommendations = [
+      const allRecommendations = [
         ...new Set(
           Object?.values(platformHealth).flatMap((h) => h?.recommendations),
         ),
       ].slice(0, 10);
 
-      const _moneySaved = {
+      const moneySaved = {
         monthly: null,
         yearly: null,
         paidEquivalent: null,
       };
 
-      const _viralScoreTrends = platforms?.map((platform) => ({
+      const viralScoreTrends = platforms?.map((platform) => ({
         platform,
         current: null,
         previous: null,
         trend: null,
       }));
 
-      const _growthVelocity = {
+      const growthVelocity = {
         daily: null,
         weekly: null,
         monthly: null,
@@ -253,13 +253,13 @@ router?.get(
       }> = [];
 
       for (const platform of platforms) {
-        const _timing = timingResults[platform];
+        const timing = timingResults[platform];
         if (timing) {
           for (const slot of timing?.bestTimes.slice(0, 10)) {
             heatmapData?.push({
-              dayOfWeek: slot?.dayOfWeek,
-              hour: slot?.hour,
-              value: slot?.score,
+              dayOfWeek: slot.dayOfWeek,
+              hour: slot.hour,
+              value: slot.score,
               platform,
             });
           }
@@ -270,7 +270,7 @@ router?.get(
         success: true,
         dashboard: {
           overallHealth,
-          reachMultiplier: Math?.round(reachMultiplier * 100) / 100,
+          reachMultiplier: Math.round(reachMultiplier * 100) / 100,
           platformHealth,
           optimalTiming: timingResults,
           alerts: allAlerts,
@@ -284,7 +284,7 @@ router?.get(
             projected30Days: null,
             projected90Days: null,
           },
-          viralHighlights: platforms?.map((platform) => ({
+          viralHighlights: platforms.map((platform) => ({
             platform,
             topScore: null,
             avgScore: null,
@@ -305,40 +305,40 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { content, count = 5 } = req?.body;
 
-      const _validatedContent = contentSchema?.parse(content);
+      const validatedContent = contentSchema?.parse(content);
 
-      const _contentData = {
+      const contentData = {
         ...validatedContent,
-        id: validatedContent?.id || randomBytes(8).toString("hex"),
+        id: validatedContent.id || randomBytes(8).toString("hex"),
         userId,
       };
 
-      const _variantResult =
+      const variantResult =
         await contentVariantGeneratorService?.generateVariants(
           contentData as Record<string, unknown>,
           count,
         );
-      const _variants = Array?.isArray(variantResult)
+      const variants = Array?.isArray(variantResult)
         ? variantResult
         : variantResult?.variants || [];
 
-      const _variantsWithScores = await Promise?.all(
+      const variantsWithScores = await Promise?.all(
         variants?.map(async (variant: Record<string, unknown>) => {
-          const _score = await viralScoringService?.scoreContent({
+          const score = await viralScoringService?.scoreContent({
             ...contentData,
-            caption: variant?.caption,
-            hashtags: variant?.hashtags,
+            caption: variant.caption,
+            hashtags: variant.hashtags,
           } as ContentData);
           return {
             ...variant,
-            viralScore: score?.overall,
+            viralScore: score.overall,
             predictedReach: {
-              low: Math?.round(score?.predictedEngagement.likes * 0?.5),
-              mid: Math?.round(score?.predictedEngagement.likes),
-              high: Math?.round(score?.predictedEngagement.likes * 2),
+              low: Math.round(score?.predictedEngagement.likes * 0.5),
+              mid: Math.round(score?.predictedEngagement.likes),
+              high: Math.round(score?.predictedEngagement.likes * 2),
             },
           };
         }),
@@ -354,7 +354,7 @@ router?.post(
         success: true,
         variants: variantsWithScores,
         winner: variantsWithScores[0],
-        statisticalConfidence: Math?.min(95, 60 + variants?.length * 7),
+        statisticalConfidence: Math.min(95, 60 + variants?.length * 7),
       });
     } catch (error) {
       logger?.warn("Error in generate-variants:", error?.message);
@@ -368,10 +368,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform = "instagram" } = req?.query;
 
-      const _validPlatforms = [
+      const validPlatforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -398,7 +398,7 @@ router?.get(
         ),
       ]);
 
-      const _platformProfile =
+      const platformProfile =
         await algorithmIntelligenceService?.getPlatformProfile(
           platform as string,
         );
@@ -408,10 +408,10 @@ router?.get(
         insights: {
           platform,
           algorithmHealth: health,
-          contentPreferences: platformProfile?.contentPreferences,
+          contentPreferences: platformProfile.contentPreferences,
           engagementPatterns: patterns,
-          algorithmTips: insights?.tips,
-          benchmarks: insights?.benchmarks,
+          algorithmTips: insights.tips,
+          benchmarks: insights.benchmarks,
           optimizationStrategies: [
             "Post during peak engagement windows",
             "Use 3-5 trending hashtags per post",
@@ -420,13 +420,13 @@ router?.get(
             "Maintain consistent posting schedule",
           ],
           saveShareRatio: {
-            optimal: 0?.15,
+            optimal: 0.15,
             current: null,
             recommendation: "Add more save-worthy educational content",
           },
           commentDepthStrategy: {
-            avgDepth: 2?.3,
-            optimal: 3?.5,
+            avgDepth: 2.3,
+            optimal: 3.5,
             tips: [
               "Ask questions in captions",
               "Reply to every comment",
@@ -447,10 +447,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform } = req?.params;
 
-      const _validPlatforms = [
+      const validPlatforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -462,7 +462,7 @@ router?.get(
         return res?.status(400).json({ error: "Invalid platform" });
       }
 
-      const _insights = await algorithmIntelligenceService?.getAlgorithmInsights(
+      const insights = await algorithmIntelligenceService?.getAlgorithmInsights(
         platform,
         userId,
       );

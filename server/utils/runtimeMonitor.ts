@@ -86,13 +86,13 @@ class RuntimeMonitor {
     };
 
     this?.alerts.push(alert);
-    this?.alertCounts[type]++;
+    this.alertCounts[type]++;
 
     // Log immediately
     console?.warn(`[MONITORING_ALERT] ${type} detected in ${service}.${operation}:`, alert);
 
     // Check if threshold exceeded
-    if (this?.alertCounts[type] >= this?.alertThresholds[type]) {
+    if (this.alertCounts[type] >= this?.alertThresholds[type]) {
       this?.escalateAlert(type, service);
     }
   }
@@ -121,14 +121,14 @@ class RuntimeMonitor {
    * Get alert summary
    */
   public getAlertSummary(): Record<string, number> {
-    return { ...this?.alertCounts };
+    return { ...this.alertCounts };
   }
 
   /**
    * Reset counters
    */
   public resetCounters(): void {
-    this?.alertCounts = {
+    this.alertCounts = {
       NaN: 0,
       Infinity: 0,
       Negative: 0,
@@ -143,8 +143,8 @@ class RuntimeMonitor {
     return JSON?.stringify(
       {
         exportedAt: new Date().toISOString(),
-        summary: this?.getAlertSummary(),
-        alerts: this?.alerts,
+        summary: this.getAlertSummary(),
+        alerts: this.alerts,
       },
       null,
       2
@@ -153,7 +153,7 @@ class RuntimeMonitor {
 }
 
 // Singleton instance
-export const _runtimeMonitor = new RuntimeMonitor();
+export const runtimeMonitor = new RuntimeMonitor();
 
 /**
  * Decorator for automatic monitoring
@@ -166,10 +166,10 @@ export function MonitorNumericOutput(
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
-    const _originalMethod = descriptor?.value;
+    const originalMethod = descriptor?.value;
 
-    descriptor?.value = function (...args: any[]) {
-      const _result = originalMethod?.apply(this, args);
+    descriptor.value = function (...args: any[]) {
+      const result = originalMethod?.apply(this, args);
 
       if (typeof result === "number") {
         runtimeMonitor?.monitorValue(
@@ -205,10 +205,10 @@ export function MonitorAsyncNumericOutput(
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
-    const _originalMethod = descriptor?.value;
+    const originalMethod = descriptor?.value;
 
-    descriptor?.value = async function (...args: any[]) {
-      const _result = await originalMethod?.apply(this, args);
+    descriptor.value = async function (...args: any[]) {
+      const result = await originalMethod?.apply(this, args);
 
       if (typeof result === "number") {
         runtimeMonitor?.monitorValue(
@@ -239,8 +239,8 @@ export function MonitorAsyncNumericOutput(
 export function monitoringMiddleware(req: any, res: any, next: any) {
   if (req?.path === "/_monitoring/alerts") {
     return res?.json({
-      summary: runtimeMonitor?.getAlertSummary(),
-      recentAlerts: runtimeMonitor?.getRecentAlerts(50),
+      summary: runtimeMonitor.getAlertSummary(),
+      recentAlerts: runtimeMonitor.getRecentAlerts(50),
     });
   }
   if (req?.path === "/_monitoring/export") {

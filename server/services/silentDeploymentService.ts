@@ -21,9 +21,9 @@
 import { EventEmitter } from "events";
 import http from "http";
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
-import { selfEvolution } from "../self-evolution-engine?.js";
-import { storage } from "../storage?.js";
+import { logger } from "../logger.js";
+import { selfEvolution } from "../self-evolution-engine.js";
+import { storage } from "../storage.js";
 
 interface DeploymentRecord {
   id: string;
@@ -46,11 +46,11 @@ interface HealthSnapshot {
   checkedAt: Date;
 }
 
-const _GRACE_PERIOD_MS = 30_000;
-const _HEALTH_POLL_MS = 5_000;
-const _HEALTH_TIMEOUT_MS = 60_000;
-const _SLOW_THRESHOLD_MS = 2_000;
-const _PORT = process?.env.PORT || "5000";
+const GRACE_PERIOD_MS = 30_000;
+const HEALTH_POLL_MS = 5_000;
+const HEALTH_TIMEOUT_MS = 60_000;
+const SLOW_THRESHOLD_MS = 2_000;
+const PORT = process?.env.PORT || "5000";
 
 class SilentDeploymentService extends EventEmitter {
   private enabled: boolean = false;
@@ -69,12 +69,12 @@ class SilentDeploymentService extends EventEmitter {
   }
 
   enable(): void {
-    this?.enabled = true;
+    this.enabled = true;
     logger?.info("[SilentDeploy] Silent deployment system ENABLED");
   }
 
   disable(): void {
-    this?.enabled = false;
+    this.enabled = false;
     logger?.info("[SilentDeploy] Silent deployment system DISABLED");
   }
 
@@ -87,21 +87,21 @@ class SilentDeploymentService extends EventEmitter {
   }
 
   getStatus(): Record<string, unknown> {
-    const _last = this?.history[this?.history.length - 1];
+    const last = this?.history[this?.history.length - 1];
     return {
-      enabled: this?.enabled,
-      isDeploying: this?.isDeploying,
-      queueDepth: this?.deploymentQueue.length,
-      totalDeployments: this?.history.length,
-      rolledBack: this?.history.filter((d) => d?.rolledBack).length,
+      enabled: this.enabled,
+      isDeploying: this.isDeploying,
+      queueDepth: this.deploymentQueue.length,
+      totalDeployments: this.history.length,
+      rolledBack: this.history.filter((d) => d?.rolledBack).length,
       lastDeployment: last
         ? {
-            id: last?.id,
-            upgradeType: last?.upgradeType,
-            startedAt: last?.startedAt,
-            completedAt: last?.completedAt,
-            healthCheckPassed: last?.healthCheckPassed,
-            rolledBack: last?.rolledBack,
+            id: last.id,
+            upgradeType: last.upgradeType,
+            startedAt: last.startedAt,
+            completedAt: last.completedAt,
+            healthCheckPassed: last.healthCheckPassed,
+            rolledBack: last.rolledBack,
           }
         : null,
     };
@@ -136,14 +136,14 @@ class SilentDeploymentService extends EventEmitter {
 
   private async processQueue(): Promise<void> {
     if (this?.isDeploying || this?.deploymentQueue.length === 0) return;
-    this?.isDeploying = true;
+    this.isDeploying = true;
 
-    const _item = this?.deploymentQueue.shift()!;
+    const item = this?.deploymentQueue.shift()!;
     const record: DeploymentRecord = {
       id: `sdep-${Date?.now()}-${randomBytes(4).toString("hex")}`,
-      upgradeId: item?.upgradeId,
-      upgradeType: item?.upgradeType,
-      filesModified: item?.filesModified,
+      upgradeId: item.upgradeId,
+      upgradeType: item.upgradeType,
+      filesModified: item.filesModified,
       startedAt: new Date(),
       restartTriggered: false,
       rolledBack: false,
@@ -153,14 +153,14 @@ class SilentDeploymentService extends EventEmitter {
     if (this?.history.length > this?.MAX_HISTORY) this?.history.shift();
 
     try {
-      const _preHealth = await this?.healthCheck();
-      record?.preHealthMs = preHealth?.responseTimeMs;
+      const preHealth = await this?.healthCheck();
+      record.preHealthMs = preHealth?.responseTimeMs;
 
       if (!preHealth?.ok) {
         logger?.warn(
           `[SilentDeploy] Pre-deploy health check failed — aborting silent deployment ${record?.id}`,
         );
-        record?.completedAt = new Date();
+        record.completedAt = new Date();
         await this?.auditRecord(record, "aborted: pre-deploy health failed");
         return;
       }
@@ -171,19 +171,19 @@ class SilentDeploymentService extends EventEmitter {
       await this?.sleep(GRACE_PERIOD_MS);
 
       this?.triggerReload("silent-deploy");
-      record?.restartTriggered = true;
+      record.restartTriggered = true;
 
-      const _postHealth = await this?.watchHealthUntilReady();
-      record?.postHealthMs = postHealth?.responseTimeMs;
-      record?.healthCheckPassed = postHealth?.ok;
-      record?.completedAt = new Date();
+      const postHealth = await this?.watchHealthUntilReady();
+      record.postHealthMs = postHealth?.responseTimeMs;
+      record.healthCheckPassed = postHealth?.ok;
+      record.completedAt = new Date();
 
       if (!postHealth?.ok) {
         logger?.warn(
           `[SilentDeploy] Post-deploy health failed (${postHealth?.responseTimeMs}ms) — initiating rollback`,
         );
-        record?.rolledBack = true;
-        record?.rollbackReason = `Health check failed: ${postHealth?.responseTimeMs}ms response time`;
+        record.rolledBack = true;
+        record.rollbackReason = `Health check failed: ${postHealth?.responseTimeMs}ms response time`;
         await selfEvolution?.triggerRollback();
         await this?.auditRecord(
           record,
@@ -198,12 +198,12 @@ class SilentDeploymentService extends EventEmitter {
 
       this?.emit("deploymentComplete", record);
     } catch (error) {
-      record?.completedAt = new Date();
-      record?.healthCheckPassed = false;
+      record.completedAt = new Date();
+      record.healthCheckPassed = false;
       logger?.warn({ err: error }, "[SilentDeploy] Deployment error:");
       await this?.auditRecord(record, `error: ${(error as Error).message}`);
     } finally {
-      this?.isDeploying = false;
+      this.isDeploying = false;
       if (this?.deploymentQueue.length > 0) {
         setImmediate(() => this?.processQueue());
       }
@@ -211,15 +211,15 @@ class SilentDeploymentService extends EventEmitter {
   }
 
   private triggerReload(reason: string): void {
-    const _isClusterWorker = typeof process?.send === "function";
-    const _isClusterMode =
+    const isClusterWorker = typeof process?.send === "function";
+    const isClusterMode =
       !!process?.env.REPLIT_DEPLOYMENT || process?.env.ENABLE_CLUSTER === "true";
 
     if (isClusterWorker && isClusterMode) {
       logger?.info(
         `[SilentDeploy] Sending SILENT_RELOAD to cluster primary (reason=${reason})`,
       );
-      process?.send!({ type: "SILENT_RELOAD", reason, pid: process?.pid });
+      process?.send!({ type: "SILENT_RELOAD", reason, pid: process.pid });
     } else {
       logger?.info(
         `[SilentDeploy] Single-process mode — scheduling graceful restart (reason=${reason})`,
@@ -234,7 +234,7 @@ class SilentDeploymentService extends EventEmitter {
   }
 
   private async watchHealthUntilReady(): Promise<HealthSnapshot> {
-    const _deadline = Date?.now() + HEALTH_TIMEOUT_MS;
+    const deadline = Date?.now() + HEALTH_TIMEOUT_MS;
     let lastSnapshot: HealthSnapshot = {
       responseTimeMs: 9999,
       ok: false,
@@ -256,15 +256,15 @@ class SilentDeploymentService extends EventEmitter {
   }
 
   private async healthCheck(): Promise<HealthSnapshot> {
-    const _start = Date?.now();
+    const start = Date?.now();
     return new Promise((resolve) => {
-      const _req = http?.get(`http://127?.0.0?.1:${PORT}/api/health`, (res) => {
+      const req = http?.get(`http://127.0.0.1:${PORT}/api/health`, (res) => {
         res?.resume();
         res?.on("end", () => {
-          const _ms = Date?.now() - start;
+          const ms = Date?.now() - start;
           resolve({
             responseTimeMs: ms,
-            ok: res?.statusCode === 200 && ms < SLOW_THRESHOLD_MS,
+            ok: res.statusCode === 200 && ms < SLOW_THRESHOLD_MS,
             checkedAt: new Date(),
           });
         });
@@ -286,29 +286,29 @@ class SilentDeploymentService extends EventEmitter {
     try {
       await storage?.createOptimizationTask({
         taskType: "silent_deployment",
-        status: record?.rolledBack
+        status: record.rolledBack
           ? "rolled_back"
           : record?.healthCheckPassed === false
             ? "failed"
             : "completed",
         description: `Silent deployment ${record?.id} — ${outcome}`,
         metrics: {
-          deploymentId: record?.id,
-          upgradeId: record?.upgradeId,
-          upgradeType: record?.upgradeType,
-          filesModified: record?.filesModified,
-          restartTriggered: record?.restartTriggered,
-          healthCheckPassed: record?.healthCheckPassed,
-          rolledBack: record?.rolledBack,
-          rollbackReason: record?.rollbackReason,
-          preHealthMs: record?.preHealthMs,
-          postHealthMs: record?.postHealthMs,
-          durationMs: record?.completedAt
+          deploymentId: record.id,
+          upgradeId: record.upgradeId,
+          upgradeType: record.upgradeType,
+          filesModified: record.filesModified,
+          restartTriggered: record.restartTriggered,
+          healthCheckPassed: record.healthCheckPassed,
+          rolledBack: record.rolledBack,
+          rollbackReason: record.rollbackReason,
+          preHealthMs: record.preHealthMs,
+          postHealthMs: record.postHealthMs,
+          durationMs: record.completedAt
             ? record?.completedAt.getTime() - record?.startedAt.getTime()
             : null,
         },
-        executedAt: record?.startedAt,
-        completedAt: record?.completedAt ?? new Date(),
+        executedAt: record.startedAt,
+        completedAt: record.completedAt ?? new Date(),
       });
     } catch (e) {
       logger?.warn({ err: e }, "[SilentDeploy] Failed to write audit record:");
@@ -320,4 +320,4 @@ class SilentDeploymentService extends EventEmitter {
   }
 }
 
-export const _silentDeployment = new SilentDeploymentService();
+export const silentDeployment = new SilentDeploymentService();

@@ -6,7 +6,7 @@ import {
   releaseScheduledActions,
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export type ReleaseStatus =
   | "draft"
@@ -87,7 +87,7 @@ class ReleaseWorkflowService {
     currentStatus: ReleaseStatus,
     targetStatus: ReleaseStatus,
   ): boolean {
-    const _validTransitions = VALID_TRANSITIONS[currentStatus];
+    const validTransitions = VALID_TRANSITIONS[currentStatus];
     return validTransitions?.includes(targetStatus) ?? false;
   }
 
@@ -106,7 +106,7 @@ class ReleaseWorkflowService {
     },
   ): Promise<WorkflowTransitionResult> {
     try {
-      const _release = await db
+      const release = await db
         .select()
         .from(releases)
         .where(eq(releases?.id, releaseId))
@@ -121,7 +121,7 @@ class ReleaseWorkflowService {
         };
       }
 
-      const _currentStatus = (release[0].status || "draft") as ReleaseStatus;
+      const currentStatus = (release[0].status || "draft") as ReleaseStatus;
 
       if (!this?.canTransition(currentStatus, targetStatus)) {
         return {
@@ -140,8 +140,8 @@ class ReleaseWorkflowService {
           requestType,
           previousStatus: currentStatus,
           newStatus: targetStatus,
-          reason: options?.reason,
-          metadata: options?.metadata,
+          reason: options.reason,
+          metadata: options.metadata,
           status: "completed",
           processedBy: userId,
           processedAt: new Date(),
@@ -173,7 +173,7 @@ class ReleaseWorkflowService {
         success: true,
         previousStatus: currentStatus,
         newStatus: targetStatus,
-        requestId: request?.id,
+        requestId: request.id,
       };
     } catch (error) {
       logger?.warn({ err: error }, "Error transitioning release:");
@@ -225,7 +225,7 @@ class ReleaseWorkflowService {
     userId: string,
     scheduledDate: Date,
   ): Promise<WorkflowTransitionResult> {
-    const _result = await this?.transition(
+    const result = await this?.transition(
       releaseId,
       userId,
       "scheduled",
@@ -251,7 +251,7 @@ class ReleaseWorkflowService {
     releaseId: string,
     userId: string,
   ): Promise<WorkflowTransitionResult> {
-    const _processingResult = await this?.transition(
+    const processingResult = await this?.transition(
       releaseId,
       userId,
       "processing",
@@ -276,10 +276,10 @@ class ReleaseWorkflowService {
       "takedown_requested",
       "request_takedown",
       {
-        reason: request?.reason,
+        reason: request.reason,
         metadata: {
-          platforms: request?.platforms,
-          effectiveDate: request?.effectiveDate,
+          platforms: request.platforms,
+          effectiveDate: request.effectiveDate,
           requestedAt: new Date(),
         },
       },
@@ -310,9 +310,9 @@ class ReleaseWorkflowService {
       "update_requested",
       "request_update",
       {
-        reason: request?.reason,
+        reason: request.reason,
         metadata: {
-          changes: request?.changes,
+          changes: request.changes,
           requestedAt: new Date(),
         },
       },
@@ -323,7 +323,7 @@ class ReleaseWorkflowService {
     releaseId: string,
     userId: string,
   ): Promise<WorkflowTransitionResult> {
-    const _pendingResult = await this?.transition(
+    const pendingResult = await this?.transition(
       releaseId,
       userId,
       "update_pending",
@@ -367,7 +367,7 @@ class ReleaseWorkflowService {
   }
 
   async getWorkflowHistory(releaseId: string): Promise<any[]> {
-    const _requests = await db
+    const requests = await db
       .select()
       .from(releaseWorkflowRequests)
       .where(eq(releaseWorkflowRequests?.releaseId, releaseId))
@@ -378,7 +378,7 @@ class ReleaseWorkflowService {
   }
 
   async getVersionHistory(releaseId: string): Promise<any[]> {
-    const _versions = await db
+    const versions = await db
       .select()
       .from(releaseVersionHistory)
       .where(eq(releaseVersionHistory?.releaseId, releaseId))
@@ -389,7 +389,7 @@ class ReleaseWorkflowService {
   }
 
   async getPendingRequests(_userId?: string): Promise<any[]> {
-    const _baseQuery = db
+    const baseQuery = db
       .select()
       .from(releaseWorkflowRequests)
       .where(eq(releaseWorkflowRequests?.status, "pending"))
@@ -407,14 +407,14 @@ class ReleaseWorkflowService {
     newData: Record<string, unknown>,
     changeReason?: string,
   ): Promise<void> {
-    const _latestVersion = await db
+    const latestVersion = await db
       .select()
       .from(releaseVersionHistory)
       .where(eq(releaseVersionHistory?.releaseId, releaseId))
       .orderBy(desc(releaseVersionHistory?.version))
       .limit(1);
 
-    const _nextVersion = (latestVersion[0]?.version || 0) + 1;
+    const nextVersion = (latestVersion[0]?.version || 0) + 1;
 
     await db?.insert(releaseVersionHistory).values({
       releaseId,
@@ -434,7 +434,7 @@ class ReleaseWorkflowService {
     reason?: string,
   ): Promise<{ success: boolean; version: number; error?: string }> {
     try {
-      const _release = await db
+      const release = await db
         .select()
         .from(releases)
         .where(eq(releases?.id, releaseId))
@@ -444,7 +444,7 @@ class ReleaseWorkflowService {
         return { success: false, version: 0, error: "Release not found" };
       }
 
-      const _previousData = {
+      const previousData = {
         title: release[0].title,
         artist: release[0].artist,
         metadata: release[0].metadata,
@@ -467,7 +467,7 @@ class ReleaseWorkflowService {
         reason,
       );
 
-      const _latestVersion = await db
+      const latestVersion = await db
         .select()
         .from(releaseVersionHistory)
         .where(eq(releaseVersionHistory?.releaseId, releaseId))
@@ -531,4 +531,4 @@ class ReleaseWorkflowService {
   }
 }
 
-export const _releaseWorkflowService = new ReleaseWorkflowService();
+export const releaseWorkflowService = new ReleaseWorkflowService();

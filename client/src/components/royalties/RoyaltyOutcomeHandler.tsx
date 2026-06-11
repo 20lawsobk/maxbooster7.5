@@ -58,7 +58,7 @@ const outcomeConfig: Record<
   split_created: {
     title: "Split Created Successfully",
     description: (data) =>
-      `Royalty split for "${data?.releaseName || "release"}" has been created.`,
+      `Royalty split for "${data.releaseName || "release"}" has been created.`,
     variant: "default",
     icon: <CheckCircle className="w-5 h-5 text-green-500" />,
   },

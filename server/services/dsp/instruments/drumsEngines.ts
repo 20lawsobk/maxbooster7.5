@@ -16,14 +16,14 @@ class NoiseGenerator {
   }
 
   pink(): number {
-    const _white = this?.white();
-    this?.lastValue = 0?.99 * this?.lastValue + 0?.01 * white;
+    const white = this?.white();
+    this.lastValue = 0.99 * this?.lastValue + 0.01 * white;
     return this?.lastValue * 20;
   }
 
   brown(): number {
-    const _white = this?.white();
-    this?.lastValue = 0?.97 * this?.lastValue + 0?.03 * white;
+    const white = this?.white();
+    this.lastValue = 0.97 * this?.lastValue + 0.03 * white;
     return this?.lastValue * 10;
   }
 }
@@ -48,81 +48,81 @@ export class AcousticDrumsSynth implements SynthesizerEngine {
   private drumType: "kick" | "snare" | "hihat" | "tom" = "kick";
 
   constructor() {
-    this?.kickOsc = new Oscillator();
-    this?.snareOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.kickEnvelope = new ADSR(0?.001, 0?.15, 0, 0?.2, 44100);
-    this?.snareEnvelope = new ADSR(0?.001, 0?.08, 0, 0?.12, 44100);
-    this?.hihatEnvelope = new ADSR(0?.001, 0?.04, 0, 0?.05, 44100);
-    this?.pitchEnvelope = new ADSR(0?.001, 0?.02, 0, 0?.03, 44100);
-    this?.roomDelay = new DelayLine(22050);
-    this?.roomFilter = new BiquadFilter();
-    this?.kickFilter = new BiquadFilter();
-    this?.snareFilter = new BiquadFilter();
-    this?.hihatFilter = new BiquadFilter();
-    this?.bodyFilter = new BiquadFilter();
+    this.kickOsc = new Oscillator();
+    this.snareOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.kickEnvelope = new ADSR(0.001, 0.15, 0, 0.2, 44100);
+    this.snareEnvelope = new ADSR(0.001, 0.08, 0, 0.12, 44100);
+    this.hihatEnvelope = new ADSR(0.001, 0.04, 0, 0.05, 44100);
+    this.pitchEnvelope = new ADSR(0.001, 0.02, 0, 0.03, 44100);
+    this.roomDelay = new DelayLine(22050);
+    this.roomFilter = new BiquadFilter();
+    this.kickFilter = new BiquadFilter();
+    this.snareFilter = new BiquadFilter();
+    this.hihatFilter = new BiquadFilter();
+    this.bodyFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
     if (frequency < 80) {
-      this?.drumType = "kick";
+      this.drumType = "kick";
       this?.kickOsc.setFrequency(55, context?.sampleRate);
-      this?.kickFilter.setLowpass(100, 0?.8, context?.sampleRate);
+      this?.kickFilter.setLowpass(100, 0.8, context?.sampleRate);
       this?.bodyFilter.setPeaking(80, 2, 6, context?.sampleRate);
-      this?.kickEnvelope = new ADSR(
-        0?.001,
-        0?.12 + this?.velocity * 0?.08,
+      this.kickEnvelope = new ADSR(
+        0.001,
+        0.12 + this?.velocity * 0.08,
         0,
-        0?.15,
+        0.15,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.015, 0, 0?.02, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.015, 0, 0.02, context?.sampleRate);
       this?.kickEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 200) {
-      this?.drumType = "snare";
+      this.drumType = "snare";
       this?.snareOsc.setFrequency(180, context?.sampleRate);
       this?.snareFilter.setBandpass(200, 2, context?.sampleRate);
-      this?.snareEnvelope = new ADSR(
-        0?.001,
-        0?.06 + this?.velocity * 0?.04,
-        0?.1,
-        0?.1,
+      this.snareEnvelope = new ADSR(
+        0.001,
+        0.06 + this?.velocity * 0.04,
+        0.1,
+        0.1,
         context?.sampleRate,
       );
       this?.snareEnvelope.trigger();
     } else if (frequency < 1000) {
-      this?.drumType = "tom";
-      this?.kickOsc.setFrequency(frequency * 0?.8, context?.sampleRate);
-      this?.kickFilter.setLowpass(frequency * 2, 0?.6, context?.sampleRate);
-      this?.kickEnvelope = new ADSR(
-        0?.001,
-        0?.1 + this?.velocity * 0?.05,
+      this.drumType = "tom";
+      this?.kickOsc.setFrequency(frequency * 0.8, context?.sampleRate);
+      this?.kickFilter.setLowpass(frequency * 2, 0.6, context?.sampleRate);
+      this.kickEnvelope = new ADSR(
+        0.001,
+        0.1 + this?.velocity * 0.05,
         0,
-        0?.12,
+        0.12,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.02, 0, 0?.025, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.02, 0, 0.025, context?.sampleRate);
       this?.kickEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else {
-      this?.drumType = "hihat";
+      this.drumType = "hihat";
       this?.hihatFilter.setHighpass(6000, 1, context?.sampleRate);
-      this?.hihatEnvelope = new ADSR(
-        0?.001,
-        0?.02 + this?.velocity * 0?.02,
+      this.hihatEnvelope = new ADSR(
+        0.001,
+        0.02 + this?.velocity * 0.02,
         0,
-        0?.03,
+        0.03,
         context?.sampleRate,
       );
       this?.hihatEnvelope.trigger();
     }
 
-    this?.roomFilter.setLowpass(4000, 0?.5, context?.sampleRate);
+    this?.roomFilter.setLowpass(4000, 0.5, context?.sampleRate);
   }
 
   noteOff(_context: DSPContext): void {
@@ -133,51 +133,51 @@ export class AcousticDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 55 + pitchEnv * 100;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 55 + pitchEnv * 100;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
-        sample += this?.noise.brown() * kickEnv * 0?.05;
+        sample += this?.noise.brown() * kickEnv * 0.05;
         sample = this?.kickFilter.process(sample);
         sample = this?.bodyFilter.process(sample);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0?.4;
-        const _noiseComp = this?.noise.white() * 0?.6;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.4;
+        const noiseComp = this?.noise.white() * 0.6;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
       } else if (this?.drumType === "tom") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _tomFreq = this?.frequency * 0?.8 + pitchEnv * this?.frequency * 0?.5;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const tomFreq = this?.frequency * 0.8 + pitchEnv * this?.frequency * 0.5;
         this?.kickOsc.setFrequency(tomFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
-        sample += this?.noise.brown() * kickEnv * 0?.08;
+        sample += this?.noise.brown() * kickEnv * 0.08;
         sample = this?.kickFilter.process(sample);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
       }
 
       sample *= this?.velocity;
       this?.roomDelay.write(sample);
-      const _roomSample = this?.roomDelay.readInterpolated(
+      const roomSample = this?.roomDelay.readInterpolated(
         msToSamples(25, this?.sampleRate),
       );
-      const _roomProcessed = this?.roomFilter.process(roomSample) * 0?.15;
+      const roomProcessed = this?.roomFilter.process(roomSample) * 0.15;
 
-      sample = softClip(sample + roomProcessed, 0?.95);
+      sample = softClip(sample + roomProcessed, 0.95);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -221,64 +221,64 @@ export class ElectronicDrumsSynth implements SynthesizerEngine {
   private drumType: "kick" | "snare" | "hihat" | "clap" = "kick";
 
   constructor() {
-    this?.kickOsc = new Oscillator();
-    this?.snareOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.kickEnvelope = new ADSR(0?.001, 0?.3, 0, 0?.4, 44100);
-    this?.snareEnvelope = new ADSR(0?.001, 0?.1, 0, 0?.15, 44100);
-    this?.hihatEnvelope = new ADSR(0?.001, 0?.05, 0, 0?.06, 44100);
-    this?.pitchEnvelope = new ADSR(0?.001, 0?.03, 0, 0?.04, 44100);
-    this?.kickFilter = new BiquadFilter();
-    this?.snareFilter = new BiquadFilter();
-    this?.hihatFilter = new BiquadFilter();
-    this?.distortionFilter = new BiquadFilter();
+    this.kickOsc = new Oscillator();
+    this.snareOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.kickEnvelope = new ADSR(0.001, 0.3, 0, 0.4, 44100);
+    this.snareEnvelope = new ADSR(0.001, 0.1, 0, 0.15, 44100);
+    this.hihatEnvelope = new ADSR(0.001, 0.05, 0, 0.06, 44100);
+    this.pitchEnvelope = new ADSR(0.001, 0.03, 0, 0.04, 44100);
+    this.kickFilter = new BiquadFilter();
+    this.snareFilter = new BiquadFilter();
+    this.hihatFilter = new BiquadFilter();
+    this.distortionFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
     if (frequency < 80) {
-      this?.drumType = "kick";
+      this.drumType = "kick";
       this?.kickOsc.setFrequency(45, context?.sampleRate);
-      this?.kickFilter.setLowpass(80, 1?.5, context?.sampleRate);
-      this?.kickEnvelope = new ADSR(
-        0?.001,
-        0?.25 + this?.velocity * 0?.15,
+      this?.kickFilter.setLowpass(80, 1.5, context?.sampleRate);
+      this.kickEnvelope = new ADSR(
+        0.001,
+        0.25 + this?.velocity * 0.15,
         0,
-        0?.35,
+        0.35,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.025, 0, 0?.03, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.025, 0, 0.03, context?.sampleRate);
       this?.kickEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 200) {
-      this?.drumType = "snare";
+      this.drumType = "snare";
       this?.snareOsc.setFrequency(200, context?.sampleRate);
       this?.snareFilter.setHighpass(150, 1, context?.sampleRate);
       this?.distortionFilter.setPeaking(1000, 3, 4, context?.sampleRate);
-      this?.snareEnvelope = new ADSR(
-        0?.001,
-        0?.08 + this?.velocity * 0?.04,
-        0?.05,
-        0?.12,
+      this.snareEnvelope = new ADSR(
+        0.001,
+        0.08 + this?.velocity * 0.04,
+        0.05,
+        0.12,
         context?.sampleRate,
       );
       this?.snareEnvelope.trigger();
     } else if (frequency < 500) {
-      this?.drumType = "clap";
+      this.drumType = "clap";
       this?.snareFilter.setBandpass(1200, 2, context?.sampleRate);
-      this?.snareEnvelope = new ADSR(0?.001, 0?.06, 0?.1, 0?.15, context?.sampleRate);
+      this.snareEnvelope = new ADSR(0.001, 0.06, 0.1, 0.15, context?.sampleRate);
       this?.snareEnvelope.trigger();
     } else {
-      this?.drumType = "hihat";
+      this.drumType = "hihat";
       this?.hihatFilter.setHighpass(8000, 2, context?.sampleRate);
-      this?.hihatEnvelope = new ADSR(
-        0?.001,
-        0?.015 + (frequency > 2000 ? 0?.08 : 0),
+      this.hihatEnvelope = new ADSR(
+        0.001,
+        0.015 + (frequency > 2000 ? 0.08 : 0),
         0,
-        0?.02,
+        0.02,
         context?.sampleRate,
       );
       this?.hihatEnvelope.trigger();
@@ -293,45 +293,45 @@ export class ElectronicDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 45 + pitchEnv * 150;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 45 + pitchEnv * 150;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
-        sample = this?.kickOsc.sine() * kickEnv * 1?.4;
+        sample = this?.kickOsc.sine() * kickEnv * 1.4;
         sample = this?.kickFilter.process(sample);
-        sample = softClip(sample * 1?.3, 0?.98);
+        sample = softClip(sample * 1.3, 0.98);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
+        const snareEnv = this?.snareEnvelope.process();
         this?.snareOsc.setFrequency(200 + snareEnv * 50, this?.sampleRate);
-        const _toneComp = this?.snareOsc.sine() * 0?.35;
-        const _noiseComp = this?.noise.white() * 0?.65;
+        const toneComp = this?.snareOsc.sine() * 0.35;
+        const noiseComp = this?.noise.white() * 0.65;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
         sample = this?.distortionFilter.process(sample);
       } else if (this?.drumType === "clap") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _clapNoise = this?.noise.white();
-        const _clapMod = Math?.sin(i * 0?.15) > 0 ? 1 : 0?.3;
+        const snareEnv = this?.snareEnvelope.process();
+        const clapNoise = this?.noise.white();
+        const clapMod = Math?.sin(i * 0.15) > 0 ? 1 : 0.3;
         sample = clapNoise * snareEnv * clapMod;
         sample = this?.snareFilter.process(sample);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
-        sample *= 0?.6;
+        sample *= 0.6;
       }
 
       sample *= this?.velocity;
-      sample = hardClip(sample, 0?.98);
+      sample = hardClip(sample, 0.98);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -374,57 +374,57 @@ export class BreakbeatDrumsSynth implements SynthesizerEngine {
   private drumType: "kick" | "snare" | "hihat" = "kick";
 
   constructor() {
-    this?.kickOsc = new Oscillator();
-    this?.snareOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.kickEnvelope = new ADSR(0?.001, 0?.1, 0, 0?.12, 44100);
-    this?.snareEnvelope = new ADSR(0?.001, 0?.12, 0, 0?.14, 44100);
-    this?.hihatEnvelope = new ADSR(0?.001, 0?.03, 0, 0?.04, 44100);
-    this?.pitchEnvelope = new ADSR(0?.001, 0?.015, 0, 0?.02, 44100);
-    this?.kickFilter = new BiquadFilter();
-    this?.snareFilter = new BiquadFilter();
-    this?.snareBody = new BiquadFilter();
-    this?.hihatFilter = new BiquadFilter();
-    this?.saturationFilter = new BiquadFilter();
+    this.kickOsc = new Oscillator();
+    this.snareOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.kickEnvelope = new ADSR(0.001, 0.1, 0, 0.12, 44100);
+    this.snareEnvelope = new ADSR(0.001, 0.12, 0, 0.14, 44100);
+    this.hihatEnvelope = new ADSR(0.001, 0.03, 0, 0.04, 44100);
+    this.pitchEnvelope = new ADSR(0.001, 0.015, 0, 0.02, 44100);
+    this.kickFilter = new BiquadFilter();
+    this.snareFilter = new BiquadFilter();
+    this.snareBody = new BiquadFilter();
+    this.hihatFilter = new BiquadFilter();
+    this.saturationFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
     if (frequency < 80) {
-      this?.drumType = "kick";
+      this.drumType = "kick";
       this?.kickOsc.setFrequency(60, context?.sampleRate);
-      this?.kickFilter.setLowpass(120, 0?.9, context?.sampleRate);
+      this?.kickFilter.setLowpass(120, 0.9, context?.sampleRate);
       this?.saturationFilter.setPeaking(100, 2, 4, context?.sampleRate);
-      this?.kickEnvelope = new ADSR(
-        0?.001,
-        0?.08 + this?.velocity * 0?.04,
+      this.kickEnvelope = new ADSR(
+        0.001,
+        0.08 + this?.velocity * 0.04,
         0,
-        0?.1,
+        0.1,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.012, 0, 0?.015, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.012, 0, 0.015, context?.sampleRate);
       this?.kickEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 300) {
-      this?.drumType = "snare";
+      this.drumType = "snare";
       this?.snareOsc.setFrequency(185, context?.sampleRate);
-      this?.snareFilter.setHighpass(200, 0?.8, context?.sampleRate);
-      this?.snareBody.setPeaking(800, 2?.5, 5, context?.sampleRate);
-      this?.snareEnvelope = new ADSR(
-        0?.001,
-        0?.1 + this?.velocity * 0?.04,
-        0?.08,
-        0?.12,
+      this?.snareFilter.setHighpass(200, 0.8, context?.sampleRate);
+      this?.snareBody.setPeaking(800, 2.5, 5, context?.sampleRate);
+      this.snareEnvelope = new ADSR(
+        0.001,
+        0.1 + this?.velocity * 0.04,
+        0.08,
+        0.12,
         context?.sampleRate,
       );
       this?.snareEnvelope.trigger();
     } else {
-      this?.drumType = "hihat";
-      this?.hihatFilter.setHighpass(5000, 1?.5, context?.sampleRate);
-      this?.hihatEnvelope = new ADSR(0?.001, 0?.025, 0, 0?.03, context?.sampleRate);
+      this.drumType = "hihat";
+      this?.hihatFilter.setHighpass(5000, 1.5, context?.sampleRate);
+      this.hihatEnvelope = new ADSR(0.001, 0.025, 0, 0.03, context?.sampleRate);
       this?.hihatEnvelope.trigger();
     }
   }
@@ -437,41 +437,41 @@ export class BreakbeatDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 60 + pitchEnv * 80;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 60 + pitchEnv * 80;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
-        sample += this?.noise.brown() * kickEnv * 0?.1;
+        sample += this?.noise.brown() * kickEnv * 0.1;
         sample = this?.kickFilter.process(sample);
         sample = this?.saturationFilter.process(sample);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0?.3;
-        const _noiseComp = this?.noise.white() * 0?.7;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.3;
+        const noiseComp = this?.noise.white() * 0.7;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
         sample = this?.snareBody.process(sample);
-        sample = softClip(sample * 1?.2, 0?.9);
+        sample = softClip(sample * 1.2, 0.9);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
-        sample *= 0?.7;
+        sample *= 0.7;
       }
 
       sample *= this?.velocity;
-      sample = softClip(sample, 0?.92);
+      sample = softClip(sample, 0.92);
 
-      const _stereoWidth = 0?.02;
-      output?.samples[0][i] = sample * (1 + stereoWidth);
-      output?.samples[1][i] = sample * (1 - stereoWidth);
+      const stereoWidth = 0.02;
+      output.samples[0][i] = sample * (1 + stereoWidth);
+      output.samples[1][i] = sample * (1 - stereoWidth);
     }
 
     return output;
@@ -516,69 +516,69 @@ export class TrapDrumsSynth implements SynthesizerEngine {
   private drumType: "kick" | "snare" | "hihat" = "kick";
 
   constructor() {
-    this?.kickOsc = new Oscillator();
-    this?.subOsc = new Oscillator();
-    this?.snareOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.kickEnvelope = new ADSR(0?.001, 0?.4, 0, 0?.5, 44100);
-    this?.subEnvelope = new ADSR(0?.001, 0?.5, 0?.3, 0?.6, 44100);
-    this?.snareEnvelope = new ADSR(0?.001, 0?.15, 0, 0?.18, 44100);
-    this?.hihatEnvelope = new ADSR(0?.001, 0?.03, 0, 0?.04, 44100);
-    this?.pitchEnvelope = new ADSR(0?.001, 0?.04, 0, 0?.05, 44100);
-    this?.kickFilter = new BiquadFilter();
-    this?.subFilter = new OnePoleFilter();
-    this?.snareFilter = new BiquadFilter();
-    this?.hihatFilter = new BiquadFilter();
+    this.kickOsc = new Oscillator();
+    this.subOsc = new Oscillator();
+    this.snareOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.kickEnvelope = new ADSR(0.001, 0.4, 0, 0.5, 44100);
+    this.subEnvelope = new ADSR(0.001, 0.5, 0.3, 0.6, 44100);
+    this.snareEnvelope = new ADSR(0.001, 0.15, 0, 0.18, 44100);
+    this.hihatEnvelope = new ADSR(0.001, 0.03, 0, 0.04, 44100);
+    this.pitchEnvelope = new ADSR(0.001, 0.04, 0, 0.05, 44100);
+    this.kickFilter = new BiquadFilter();
+    this.subFilter = new OnePoleFilter();
+    this.snareFilter = new BiquadFilter();
+    this.hihatFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
     if (frequency < 80) {
-      this?.drumType = "kick";
+      this.drumType = "kick";
       this?.kickOsc.setFrequency(40, context?.sampleRate);
       this?.subOsc.setFrequency(35, context?.sampleRate);
       this?.kickFilter.setLowpass(60, 2, context?.sampleRate);
       this?.subFilter.setLowpass(50, context?.sampleRate);
-      this?.kickEnvelope = new ADSR(
-        0?.001,
-        0?.35 + this?.velocity * 0?.15,
-        0?.1,
-        0?.45,
+      this.kickEnvelope = new ADSR(
+        0.001,
+        0.35 + this?.velocity * 0.15,
+        0.1,
+        0.45,
         context?.sampleRate,
       );
-      this?.subEnvelope = new ADSR(0?.001, 0?.45, 0?.25, 0?.55, context?.sampleRate);
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.035, 0, 0?.045, context?.sampleRate);
+      this.subEnvelope = new ADSR(0.001, 0.45, 0.25, 0.55, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.035, 0, 0.045, context?.sampleRate);
       this?.kickEnvelope.trigger();
       this?.subEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 300) {
-      this?.drumType = "snare";
+      this.drumType = "snare";
       this?.snareOsc.setFrequency(210, context?.sampleRate);
-      this?.snareFilter.setHighpass(180, 1?.2, context?.sampleRate);
-      this?.snareEnvelope = new ADSR(
-        0?.001,
-        0?.12 + this?.velocity * 0?.05,
-        0?.05,
-        0?.15,
+      this?.snareFilter.setHighpass(180, 1.2, context?.sampleRate);
+      this.snareEnvelope = new ADSR(
+        0.001,
+        0.12 + this?.velocity * 0.05,
+        0.05,
+        0.15,
         context?.sampleRate,
       );
       this?.snareEnvelope.trigger();
     } else {
-      this?.drumType = "hihat";
-      const _isRoll = frequency > 1500;
+      this.drumType = "hihat";
+      const isRoll = frequency > 1500;
       this?.hihatFilter.setHighpass(
         isRoll ? 10000 : 7000,
         2,
         context?.sampleRate,
       );
-      this?.hihatEnvelope = new ADSR(
-        0?.001,
-        isRoll ? 0?.01 : 0?.025,
+      this.hihatEnvelope = new ADSR(
+        0.001,
+        isRoll ? 0.01 : 0.025,
         0,
-        isRoll ? 0?.012 : 0?.03,
+        isRoll ? 0.012 : 0.03,
         context?.sampleRate,
       );
       this?.hihatEnvelope.trigger();
@@ -594,47 +594,47 @@ export class TrapDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _subEnv = this?.subEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
+        const kickEnv = this?.kickEnvelope.process();
+        const subEnv = this?.subEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
 
-        const _kickFreq = 40 + pitchEnv * 180;
+        const kickFreq = 40 + pitchEnv * 180;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
-        const _kickSample = this?.kickOsc.sine() * kickEnv * 0?.7;
+        const kickSample = this?.kickOsc.sine() * kickEnv * 0.7;
 
-        const _subFreq = 35 + pitchEnv * 30;
+        const subFreq = 35 + pitchEnv * 30;
         this?.subOsc.setFrequency(subFreq, this?.sampleRate);
-        const _subSample = this?.subOsc.sine() * subEnv * 0?.8;
+        const subSample = this?.subOsc.sine() * subEnv * 0.8;
 
         sample =
           this?.kickFilter.process(kickSample) +
           this?.subFilter.process(subSample);
-        sample = softClip(sample * 1?.4, 0?.98);
+        sample = softClip(sample * 1.4, 0.98);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
+        const snareEnv = this?.snareEnvelope.process();
         this?.snareOsc.setFrequency(210 + snareEnv * 40, this?.sampleRate);
-        const _toneComp = this?.snareOsc.sine() * 0?.3;
-        const _noiseComp = this?.noise.white() * 0?.7;
+        const toneComp = this?.snareOsc.sine() * 0.3;
+        const noiseComp = this?.noise.white() * 0.7;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
-        sample *= 0?.5;
+        sample *= 0.5;
       }
 
       sample *= this?.velocity;
-      sample = hardClip(sample, 0?.98);
+      sample = hardClip(sample, 0.98);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -679,69 +679,69 @@ export class JazzDrumsSynth implements SynthesizerEngine {
   private drumType: "kick" | "snare" | "brush" | "ride" = "kick";
 
   constructor() {
-    this?.kickOsc = new Oscillator();
-    this?.snareOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.kickEnvelope = new ADSR(0?.002, 0?.08, 0, 0?.1, 44100);
-    this?.snareEnvelope = new ADSR(0?.001, 0?.06, 0?.1, 0?.08, 44100);
-    this?.brushEnvelope = new ADSR(0?.003, 0?.12, 0?.2, 0?.15, 44100);
-    this?.rideEnvelope = new ADSR(0?.001, 0?.2, 0?.3, 0?.5, 44100);
-    this?.kickFilter = new BiquadFilter();
-    this?.snareFilter = new BiquadFilter();
-    this?.brushFilter = new BiquadFilter();
-    this?.rideFilter = new BiquadFilter();
-    this?.warmthFilter = new BiquadFilter();
+    this.kickOsc = new Oscillator();
+    this.snareOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.kickEnvelope = new ADSR(0.002, 0.08, 0, 0.1, 44100);
+    this.snareEnvelope = new ADSR(0.001, 0.06, 0.1, 0.08, 44100);
+    this.brushEnvelope = new ADSR(0.003, 0.12, 0.2, 0.15, 44100);
+    this.rideEnvelope = new ADSR(0.001, 0.2, 0.3, 0.5, 44100);
+    this.kickFilter = new BiquadFilter();
+    this.snareFilter = new BiquadFilter();
+    this.brushFilter = new BiquadFilter();
+    this.rideFilter = new BiquadFilter();
+    this.warmthFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
     if (frequency < 80) {
-      this?.drumType = "kick";
+      this.drumType = "kick";
       this?.kickOsc.setFrequency(65, context?.sampleRate);
-      this?.kickFilter.setLowpass(150, 0?.6, context?.sampleRate);
+      this?.kickFilter.setLowpass(150, 0.6, context?.sampleRate);
       this?.warmthFilter.setLowShelf(200, 3, context?.sampleRate);
-      this?.kickEnvelope = new ADSR(
-        0?.002,
-        0?.06 + this?.velocity * 0?.03,
+      this.kickEnvelope = new ADSR(
+        0.002,
+        0.06 + this?.velocity * 0.03,
         0,
-        0?.08,
+        0.08,
         context?.sampleRate,
       );
       this?.kickEnvelope.trigger();
     } else if (frequency < 200) {
-      this?.drumType = "snare";
+      this.drumType = "snare";
       this?.snareOsc.setFrequency(160, context?.sampleRate);
-      this?.snareFilter.setBandpass(350, 1?.5, context?.sampleRate);
-      this?.snareEnvelope = new ADSR(
-        0?.001,
-        0?.05 + this?.velocity * 0?.02,
-        0?.08,
-        0?.07,
+      this?.snareFilter.setBandpass(350, 1.5, context?.sampleRate);
+      this.snareEnvelope = new ADSR(
+        0.001,
+        0.05 + this?.velocity * 0.02,
+        0.08,
+        0.07,
         context?.sampleRate,
       );
       this?.snareEnvelope.trigger();
     } else if (frequency < 500) {
-      this?.drumType = "brush";
-      this?.brushFilter.setBandpass(2000, 0?.8, context?.sampleRate);
-      this?.brushEnvelope = new ADSR(
-        0?.003,
-        0?.1 + this?.velocity * 0?.04,
-        0?.15,
-        0?.12,
+      this.drumType = "brush";
+      this?.brushFilter.setBandpass(2000, 0.8, context?.sampleRate);
+      this.brushEnvelope = new ADSR(
+        0.003,
+        0.1 + this?.velocity * 0.04,
+        0.15,
+        0.12,
         context?.sampleRate,
       );
       this?.brushEnvelope.trigger();
     } else {
-      this?.drumType = "ride";
-      this?.rideFilter.setHighpass(2500, 0?.8, context?.sampleRate);
-      this?.rideEnvelope = new ADSR(
-        0?.001,
-        0?.15 + this?.velocity * 0?.1,
-        0?.25,
-        0?.4,
+      this.drumType = "ride";
+      this?.rideFilter.setHighpass(2500, 0.8, context?.sampleRate);
+      this.rideEnvelope = new ADSR(
+        0.001,
+        0.15 + this?.velocity * 0.1,
+        0.25,
+        0.4,
         context?.sampleRate,
       );
       this?.rideEnvelope.trigger();
@@ -756,42 +756,42 @@ export class JazzDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
+        const kickEnv = this?.kickEnvelope.process();
         sample = this?.kickOsc.sine() * kickEnv;
-        sample += this?.noise.brown() * kickEnv * 0?.04;
+        sample += this?.noise.brown() * kickEnv * 0.04;
         sample = this?.kickFilter.process(sample);
         sample = this?.warmthFilter.process(sample);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0?.35;
-        const _wireComp = this?.noise.pink() * 0?.65;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.35;
+        const wireComp = this?.noise.pink() * 0.65;
         sample = (toneComp + wireComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
       } else if (this?.drumType === "brush") {
-        const _brushEnv = this?.brushEnvelope.process();
+        const brushEnv = this?.brushEnvelope.process();
         sample = this?.noise.pink() * brushEnv;
         sample = this?.brushFilter.process(sample);
-        sample *= 0?.6;
+        sample *= 0.6;
       } else {
-        const _rideEnv = this?.rideEnvelope.process();
-        const _bellTone =
-          Math?.sin((2 * Math?.PI * 3000 * i) / this?.sampleRate) * 0?.2;
-        sample = (this?.noise.white() * 0?.3 + bellTone) * rideEnv;
+        const rideEnv = this?.rideEnvelope.process();
+        const bellTone =
+          Math?.sin((2 * Math.PI * 3000 * i) / this?.sampleRate) * 0.2;
+        sample = (this?.noise.white() * 0.3 + bellTone) * rideEnv;
         sample = this?.rideFilter.process(sample);
-        sample *= 0?.5;
+        sample *= 0.5;
       }
 
-      sample *= this?.velocity * 0?.8;
-      sample = softClip(sample, 0?.85);
+      sample *= this?.velocity * 0.8;
+      sample = softClip(sample, 0.85);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -839,78 +839,78 @@ export class RockDrumsSynth implements SynthesizerEngine {
   private drumType: "kick" | "snare" | "tom" | "crash" = "kick";
 
   constructor() {
-    this?.kickOsc = new Oscillator();
-    this?.snareOsc = new Oscillator();
-    this?.tomOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.kickEnvelope = new ADSR(0?.001, 0?.12, 0, 0?.15, 44100);
-    this?.snareEnvelope = new ADSR(0?.001, 0?.1, 0?.05, 0?.12, 44100);
-    this?.tomEnvelope = new ADSR(0?.001, 0?.15, 0, 0?.18, 44100);
-    this?.crashEnvelope = new ADSR(0?.001, 0?.4, 0?.3, 0?.8, 44100);
-    this?.pitchEnvelope = new ADSR(0?.001, 0?.02, 0, 0?.025, 44100);
-    this?.kickFilter = new BiquadFilter();
-    this?.kickBoost = new BiquadFilter();
-    this?.snareFilter = new BiquadFilter();
-    this?.snareSnap = new BiquadFilter();
-    this?.tomFilter = new BiquadFilter();
-    this?.crashFilter = new BiquadFilter();
+    this.kickOsc = new Oscillator();
+    this.snareOsc = new Oscillator();
+    this.tomOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.kickEnvelope = new ADSR(0.001, 0.12, 0, 0.15, 44100);
+    this.snareEnvelope = new ADSR(0.001, 0.1, 0.05, 0.12, 44100);
+    this.tomEnvelope = new ADSR(0.001, 0.15, 0, 0.18, 44100);
+    this.crashEnvelope = new ADSR(0.001, 0.4, 0.3, 0.8, 44100);
+    this.pitchEnvelope = new ADSR(0.001, 0.02, 0, 0.025, 44100);
+    this.kickFilter = new BiquadFilter();
+    this.kickBoost = new BiquadFilter();
+    this.snareFilter = new BiquadFilter();
+    this.snareSnap = new BiquadFilter();
+    this.tomFilter = new BiquadFilter();
+    this.crashFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
     if (frequency < 80) {
-      this?.drumType = "kick";
+      this.drumType = "kick";
       this?.kickOsc.setFrequency(55, context?.sampleRate);
       this?.kickFilter.setLowpass(140, 1, context?.sampleRate);
       this?.kickBoost.setPeaking(100, 2, 5, context?.sampleRate);
-      this?.kickEnvelope = new ADSR(
-        0?.001,
-        0?.1 + this?.velocity * 0?.05,
+      this.kickEnvelope = new ADSR(
+        0.001,
+        0.1 + this?.velocity * 0.05,
         0,
-        0?.12,
+        0.12,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.018, 0, 0?.022, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.018, 0, 0.022, context?.sampleRate);
       this?.kickEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 200) {
-      this?.drumType = "snare";
+      this.drumType = "snare";
       this?.snareOsc.setFrequency(175, context?.sampleRate);
-      this?.snareFilter.setHighpass(150, 0?.9, context?.sampleRate);
+      this?.snareFilter.setHighpass(150, 0.9, context?.sampleRate);
       this?.snareSnap.setPeaking(4000, 3, 6, context?.sampleRate);
-      this?.snareEnvelope = new ADSR(
-        0?.001,
-        0?.08 + this?.velocity * 0?.04,
-        0?.05,
-        0?.1,
+      this.snareEnvelope = new ADSR(
+        0.001,
+        0.08 + this?.velocity * 0.04,
+        0.05,
+        0.1,
         context?.sampleRate,
       );
       this?.snareEnvelope.trigger();
     } else if (frequency < 800) {
-      this?.drumType = "tom";
-      this?.tomOsc.setFrequency(frequency * 0?.6, context?.sampleRate);
-      this?.tomFilter.setLowpass(frequency * 2, 0?.7, context?.sampleRate);
-      this?.tomEnvelope = new ADSR(
-        0?.001,
-        0?.12 + this?.velocity * 0?.05,
+      this.drumType = "tom";
+      this?.tomOsc.setFrequency(frequency * 0.6, context?.sampleRate);
+      this?.tomFilter.setLowpass(frequency * 2, 0.7, context?.sampleRate);
+      this.tomEnvelope = new ADSR(
+        0.001,
+        0.12 + this?.velocity * 0.05,
         0,
-        0?.15,
+        0.15,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.025, 0, 0?.03, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.025, 0, 0.03, context?.sampleRate);
       this?.tomEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else {
-      this?.drumType = "crash";
+      this.drumType = "crash";
       this?.crashFilter.setHighpass(3000, 1, context?.sampleRate);
-      this?.crashEnvelope = new ADSR(
-        0?.001,
-        0?.35 + this?.velocity * 0?.15,
-        0?.25,
-        0?.7,
+      this.crashEnvelope = new ADSR(
+        0.001,
+        0.35 + this?.velocity * 0.15,
+        0.25,
+        0.7,
         context?.sampleRate,
       );
       this?.crashEnvelope.trigger();
@@ -926,49 +926,49 @@ export class RockDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 55 + pitchEnv * 90;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 55 + pitchEnv * 90;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
-        sample += this?.noise.brown() * kickEnv * 0?.06;
+        sample += this?.noise.brown() * kickEnv * 0.06;
         sample = this?.kickFilter.process(sample);
         sample = this?.kickBoost.process(sample);
-        sample = softClip(sample * 1?.3, 0?.95);
+        sample = softClip(sample * 1.3, 0.95);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0?.35;
-        const _noiseComp = this?.noise.white() * 0?.65;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.35;
+        const noiseComp = this?.noise.white() * 0.65;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
         sample = this?.snareSnap.process(sample);
-        sample = softClip(sample * 1?.2, 0?.92);
+        sample = softClip(sample * 1.2, 0.92);
       } else if (this?.drumType === "tom") {
-        const _tomEnv = this?.tomEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _tomFreq = this?.frequency * 0?.6 + pitchEnv * this?.frequency * 0?.4;
+        const tomEnv = this?.tomEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const tomFreq = this?.frequency * 0.6 + pitchEnv * this?.frequency * 0.4;
         this?.tomOsc.setFrequency(tomFreq, this?.sampleRate);
         sample = this?.tomOsc.sine() * tomEnv;
-        sample += this?.noise.brown() * tomEnv * 0?.1;
+        sample += this?.noise.brown() * tomEnv * 0.1;
         sample = this?.tomFilter.process(sample);
       } else {
-        const _crashEnv = this?.crashEnvelope.process();
+        const crashEnv = this?.crashEnvelope.process();
         sample = this?.noise.white() * crashEnv;
         sample = this?.crashFilter.process(sample);
-        sample *= 0?.6;
+        sample *= 0.6;
       }
 
       sample *= this?.velocity;
-      sample = hardClip(sample, 0?.98);
+      sample = hardClip(sample, 0.98);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1012,67 +1012,67 @@ export class PercussionSynth implements SynthesizerEngine {
     "conga";
 
   constructor() {
-    this?.congaOsc = new Oscillator();
-    this?.bongoOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.envelope = new ADSR(0?.001, 0?.15, 0, 0?.18, 44100);
-    this?.pitchEnvelope = new ADSR(0?.001, 0?.02, 0, 0?.025, 44100);
-    this?.bodyFilter = new BiquadFilter();
-    this?.toneFilter = new BiquadFilter();
-    this?.resonanceFilter = new BiquadFilter();
+    this.congaOsc = new Oscillator();
+    this.bongoOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.envelope = new ADSR(0.001, 0.15, 0, 0.18, 44100);
+    this.pitchEnvelope = new ADSR(0.001, 0.02, 0, 0.025, 44100);
+    this.bodyFilter = new BiquadFilter();
+    this.toneFilter = new BiquadFilter();
+    this.resonanceFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
     if (frequency < 150) {
-      this?.percType = "conga";
+      this.percType = "conga";
       this?.congaOsc.setFrequency(frequency, context?.sampleRate);
       this?.bodyFilter.setPeaking(frequency, 3, 5, context?.sampleRate);
-      this?.toneFilter.setLowpass(frequency * 3, 0?.8, context?.sampleRate);
-      this?.envelope = new ADSR(
-        0?.001,
-        0?.12 + this?.velocity * 0?.05,
+      this?.toneFilter.setLowpass(frequency * 3, 0.8, context?.sampleRate);
+      this.envelope = new ADSR(
+        0.001,
+        0.12 + this?.velocity * 0.05,
         0,
-        0?.15,
+        0.15,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.018, 0, 0?.022, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.018, 0, 0.022, context?.sampleRate);
       this?.envelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 300) {
-      this?.percType = "bongo";
+      this.percType = "bongo";
       this?.bongoOsc.setFrequency(frequency, context?.sampleRate);
-      this?.bodyFilter.setPeaking(frequency, 2?.5, 4, context?.sampleRate);
-      this?.toneFilter.setLowpass(frequency * 4, 0?.7, context?.sampleRate);
-      this?.envelope = new ADSR(
-        0?.001,
-        0?.08 + this?.velocity * 0?.03,
+      this?.bodyFilter.setPeaking(frequency, 2.5, 4, context?.sampleRate);
+      this?.toneFilter.setLowpass(frequency * 4, 0.7, context?.sampleRate);
+      this.envelope = new ADSR(
+        0.001,
+        0.08 + this?.velocity * 0.03,
         0,
-        0?.1,
+        0.1,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.012, 0, 0?.015, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.012, 0, 0.015, context?.sampleRate);
       this?.envelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 600) {
-      this?.percType = "cowbell";
+      this.percType = "cowbell";
       this?.congaOsc.setFrequency(frequency, context?.sampleRate);
-      this?.bongoOsc.setFrequency(frequency * 1?.5, context?.sampleRate);
+      this?.bongoOsc.setFrequency(frequency * 1.5, context?.sampleRate);
       this?.toneFilter.setBandpass(frequency, 4, context?.sampleRate);
-      this?.envelope = new ADSR(0?.001, 0?.08, 0?.15, 0?.15, context?.sampleRate);
+      this.envelope = new ADSR(0.001, 0.08, 0.15, 0.15, context?.sampleRate);
       this?.envelope.trigger();
     } else if (frequency < 1500) {
-      this?.percType = "tambourine";
-      this?.resonanceFilter.setHighpass(4000, 1?.5, context?.sampleRate);
-      this?.envelope = new ADSR(0?.001, 0?.05, 0?.1, 0?.08, context?.sampleRate);
+      this.percType = "tambourine";
+      this?.resonanceFilter.setHighpass(4000, 1.5, context?.sampleRate);
+      this.envelope = new ADSR(0.001, 0.05, 0.1, 0.08, context?.sampleRate);
       this?.envelope.trigger();
     } else {
-      this?.percType = "shaker";
-      this?.resonanceFilter.setBandpass(6000, 1?.2, context?.sampleRate);
-      this?.envelope = new ADSR(0?.001, 0?.04, 0?.05, 0?.05, context?.sampleRate);
+      this.percType = "shaker";
+      this?.resonanceFilter.setBandpass(6000, 1.2, context?.sampleRate);
+      this.envelope = new ADSR(0.001, 0.04, 0.05, 0.05, context?.sampleRate);
       this?.envelope.trigger();
     }
   }
@@ -1083,50 +1083,50 @@ export class PercussionSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
-      const _envValue = this?.envelope.process();
+      const envValue = this?.envelope.process();
 
       if (this?.percType === "conga") {
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _freq = this?.frequency + pitchEnv * this?.frequency * 0?.5;
+        const pitchEnv = this?.pitchEnvelope.process();
+        const freq = this?.frequency + pitchEnv * this?.frequency * 0.5;
         this?.congaOsc.setFrequency(freq, this?.sampleRate);
         sample = this?.congaOsc.sine() * envValue;
-        sample += this?.noise.brown() * envValue * 0?.15;
+        sample += this?.noise.brown() * envValue * 0.15;
         sample = this?.bodyFilter.process(sample);
         sample = this?.toneFilter.process(sample);
       } else if (this?.percType === "bongo") {
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _freq = this?.frequency + pitchEnv * this?.frequency * 0?.6;
+        const pitchEnv = this?.pitchEnvelope.process();
+        const freq = this?.frequency + pitchEnv * this?.frequency * 0.6;
         this?.bongoOsc.setFrequency(freq, this?.sampleRate);
         sample = this?.bongoOsc.sine() * envValue;
-        sample += this?.noise.white() * envValue * 0?.1;
+        sample += this?.noise.white() * envValue * 0.1;
         sample = this?.bodyFilter.process(sample);
         sample = this?.toneFilter.process(sample);
       } else if (this?.percType === "cowbell") {
-        const _tone1 = this?.congaOsc.sine();
-        const _tone2 = this?.bongoOsc.sine();
-        sample = (tone1 * 0?.6 + tone2 * 0?.4) * envValue;
+        const tone1 = this?.congaOsc.sine();
+        const tone2 = this?.bongoOsc.sine();
+        sample = (tone1 * 0.6 + tone2 * 0.4) * envValue;
         sample = this?.toneFilter.process(sample);
-        sample = hardClip(sample * 1?.5, 0?.9);
+        sample = hardClip(sample * 1.5, 0.9);
       } else if (this?.percType === "tambourine") {
-        const _jingle = this?.noise.white();
+        const jingle = this?.noise.white();
         sample = jingle * envValue;
         sample = this?.resonanceFilter.process(sample);
-        sample *= 0?.5;
+        sample *= 0.5;
       } else {
         sample = this?.noise.white() * envValue;
         sample = this?.resonanceFilter.process(sample);
-        sample *= 0?.4;
+        sample *= 0.4;
       }
 
       sample *= this?.velocity;
-      sample = softClip(sample, 0?.92);
+      sample = softClip(sample, 0.92);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1161,67 +1161,67 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
   private hitType: "anvil" | "pipe" | "clang" | "slam" = "anvil";
 
   constructor() {
-    this?.metalOsc1 = new Oscillator();
-    this?.metalOsc2 = new Oscillator();
-    this?.metalOsc3 = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.envelope = new ADSR(0?.001, 0?.3, 0?.1, 0?.4, 44100);
-    this?.hitEnvelope = new ADSR(0?.001, 0?.01, 0, 0?.012, 44100);
-    this?.metalFilter = new BiquadFilter();
-    this?.distortionFilter = new BiquadFilter();
-    this?.resonanceFilter = new BiquadFilter();
+    this.metalOsc1 = new Oscillator();
+    this.metalOsc2 = new Oscillator();
+    this.metalOsc3 = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.envelope = new ADSR(0.001, 0.3, 0.1, 0.4, 44100);
+    this.hitEnvelope = new ADSR(0.001, 0.01, 0, 0.012, 44100);
+    this.metalFilter = new BiquadFilter();
+    this.distortionFilter = new BiquadFilter();
+    this.resonanceFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
     if (frequency < 100) {
-      this?.hitType = "slam";
+      this.hitType = "slam";
       this?.metalOsc1.setFrequency(40, context?.sampleRate);
-      this?.metalFilter.setLowpass(100, 1?.5, context?.sampleRate);
+      this?.metalFilter.setLowpass(100, 1.5, context?.sampleRate);
       this?.distortionFilter.setPeaking(80, 3, 8, context?.sampleRate);
-      this?.envelope = new ADSR(
-        0?.001,
-        0?.2 + this?.velocity * 0?.1,
-        0?.05,
-        0?.25,
+      this.envelope = new ADSR(
+        0.001,
+        0.2 + this?.velocity * 0.1,
+        0.05,
+        0.25,
         context?.sampleRate,
       );
     } else if (frequency < 300) {
-      this?.hitType = "anvil";
-      const _ratios = [1, 1?.47, 2?.09, 2?.56];
+      this.hitType = "anvil";
+      const ratios = [1, 1.47, 2.09, 2.56];
       this?.metalOsc1.setFrequency(frequency * ratios[0], context?.sampleRate);
       this?.metalOsc2.setFrequency(frequency * ratios[1], context?.sampleRate);
       this?.metalOsc3.setFrequency(frequency * ratios[2], context?.sampleRate);
       this?.metalFilter.setBandpass(frequency * 2, 2, context?.sampleRate);
-      this?.envelope = new ADSR(
-        0?.001,
-        0?.25 + this?.velocity * 0?.1,
-        0?.08,
-        0?.35,
+      this.envelope = new ADSR(
+        0.001,
+        0.25 + this?.velocity * 0.1,
+        0.08,
+        0.35,
         context?.sampleRate,
       );
     } else if (frequency < 800) {
-      this?.hitType = "pipe";
-      const _ratios = [1, 2?.76, 5?.4];
+      this.hitType = "pipe";
+      const ratios = [1, 2.76, 5.4];
       this?.metalOsc1.setFrequency(frequency * ratios[0], context?.sampleRate);
       this?.metalOsc2.setFrequency(frequency * ratios[1], context?.sampleRate);
       this?.metalOsc3.setFrequency(frequency * ratios[2], context?.sampleRate);
       this?.resonanceFilter.setPeaking(frequency * 2, 4, 6, context?.sampleRate);
-      this?.envelope = new ADSR(0?.001, 0?.3, 0?.12, 0?.4, context?.sampleRate);
+      this.envelope = new ADSR(0.001, 0.3, 0.12, 0.4, context?.sampleRate);
     } else {
-      this?.hitType = "clang";
-      const _ratios = [1, 1?.32, 1?.87, 2?.43];
+      this.hitType = "clang";
+      const ratios = [1, 1.32, 1.87, 2.43];
       this?.metalOsc1.setFrequency(frequency * ratios[0], context?.sampleRate);
       this?.metalOsc2.setFrequency(frequency * ratios[1], context?.sampleRate);
       this?.metalOsc3.setFrequency(frequency * ratios[2], context?.sampleRate);
-      this?.metalFilter.setHighpass(2000, 1?.5, context?.sampleRate);
-      this?.envelope = new ADSR(0?.001, 0?.2, 0?.1, 0?.3, context?.sampleRate);
+      this?.metalFilter.setHighpass(2000, 1.5, context?.sampleRate);
+      this.envelope = new ADSR(0.001, 0.2, 0.1, 0.3, context?.sampleRate);
     }
 
-    this?.hitEnvelope = new ADSR(0?.001, 0?.008, 0, 0?.01, context?.sampleRate);
+    this.hitEnvelope = new ADSR(0.001, 0.008, 0, 0.01, context?.sampleRate);
     this?.envelope.trigger();
     this?.hitEnvelope.trigger();
   }
@@ -1232,49 +1232,49 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
-      const _envValue = this?.envelope.process();
-      const _hitValue = this?.hitEnvelope.process();
+      const envValue = this?.envelope.process();
+      const hitValue = this?.hitEnvelope.process();
 
       if (this?.hitType === "slam") {
-        sample = this?.metalOsc1.sine() * envValue * 0?.8;
-        sample += this?.noise.brown() * envValue * 0?.4;
-        sample += this?.noise.white() * hitValue * 0?.6;
+        sample = this?.metalOsc1.sine() * envValue * 0.8;
+        sample += this?.noise.brown() * envValue * 0.4;
+        sample += this?.noise.white() * hitValue * 0.6;
         sample = this?.metalFilter.process(sample);
         sample = this?.distortionFilter.process(sample);
-        sample = hardClip(sample * 2, 0?.95);
+        sample = hardClip(sample * 2, 0.95);
       } else if (this?.hitType === "anvil") {
-        const _tone1 = this?.metalOsc1.sine() * 0?.4;
-        const _tone2 = this?.metalOsc2.sine() * 0?.3;
-        const _tone3 = this?.metalOsc3.sine() * 0?.2;
+        const tone1 = this?.metalOsc1.sine() * 0.4;
+        const tone2 = this?.metalOsc2.sine() * 0.3;
+        const tone3 = this?.metalOsc3.sine() * 0.2;
         sample = (tone1 + tone2 + tone3) * envValue;
-        sample += this?.noise.white() * hitValue * 0?.4;
+        sample += this?.noise.white() * hitValue * 0.4;
         sample = this?.metalFilter.process(sample);
-        sample = hardClip(sample * 1?.5, 0?.9);
+        sample = hardClip(sample * 1.5, 0.9);
       } else if (this?.hitType === "pipe") {
-        const _tone1 = this?.metalOsc1.sine() * 0?.5;
-        const _tone2 = this?.metalOsc2.sine() * 0?.25;
-        const _tone3 = this?.metalOsc3.sine() * 0?.15;
+        const tone1 = this?.metalOsc1.sine() * 0.5;
+        const tone2 = this?.metalOsc2.sine() * 0.25;
+        const tone3 = this?.metalOsc3.sine() * 0.15;
         sample = (tone1 + tone2 + tone3) * envValue;
-        sample += this?.noise.white() * hitValue * 0?.3;
+        sample += this?.noise.white() * hitValue * 0.3;
         sample = this?.resonanceFilter.process(sample);
       } else {
-        const _tone1 = this?.metalOsc1.sine() * 0?.35;
-        const _tone2 = this?.metalOsc2.sine() * 0?.3;
-        const _tone3 = this?.metalOsc3.sine() * 0?.25;
+        const tone1 = this?.metalOsc1.sine() * 0.35;
+        const tone2 = this?.metalOsc2.sine() * 0.3;
+        const tone3 = this?.metalOsc3.sine() * 0.25;
         sample = (tone1 + tone2 + tone3) * envValue;
-        sample += this?.noise.white() * hitValue * 0?.35;
+        sample += this?.noise.white() * hitValue * 0.35;
         sample = this?.metalFilter.process(sample);
       }
 
       sample *= this?.velocity;
-      sample = softClip(sample, 0?.95);
+      sample = softClip(sample, 0.95);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1316,62 +1316,62 @@ export class LoFiDrumsSynth implements SynthesizerEngine {
   private crushRate: number = 4;
 
   constructor() {
-    this?.kickOsc = new Oscillator();
-    this?.snareOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.kickEnvelope = new ADSR(0?.002, 0?.1, 0, 0?.12, 44100);
-    this?.snareEnvelope = new ADSR(0?.001, 0?.08, 0, 0?.1, 44100);
-    this?.hihatEnvelope = new ADSR(0?.001, 0?.03, 0, 0?.04, 44100);
-    this?.pitchEnvelope = new ADSR(0?.001, 0?.015, 0, 0?.02, 44100);
-    this?.kickFilter = new BiquadFilter();
-    this?.snareFilter = new BiquadFilter();
-    this?.hihatFilter = new BiquadFilter();
-    this?.lofiFilter = new BiquadFilter();
-    this?.bitcrushFilter = new OnePoleFilter();
+    this.kickOsc = new Oscillator();
+    this.snareOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.kickEnvelope = new ADSR(0.002, 0.1, 0, 0.12, 44100);
+    this.snareEnvelope = new ADSR(0.001, 0.08, 0, 0.1, 44100);
+    this.hihatEnvelope = new ADSR(0.001, 0.03, 0, 0.04, 44100);
+    this.pitchEnvelope = new ADSR(0.001, 0.015, 0, 0.02, 44100);
+    this.kickFilter = new BiquadFilter();
+    this.snareFilter = new BiquadFilter();
+    this.hihatFilter = new BiquadFilter();
+    this.lofiFilter = new BiquadFilter();
+    this.bitcrushFilter = new OnePoleFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
-    this?.lofiFilter.setLowpass(4000, 0?.5, context?.sampleRate);
+    this?.lofiFilter.setLowpass(4000, 0.5, context?.sampleRate);
     this?.bitcrushFilter.setLowpass(8000, context?.sampleRate);
 
     if (frequency < 80) {
-      this?.drumType = "kick";
+      this.drumType = "kick";
       this?.kickOsc.setFrequency(55, context?.sampleRate);
-      this?.kickFilter.setLowpass(120, 0?.8, context?.sampleRate);
-      this?.kickEnvelope = new ADSR(
-        0?.002,
-        0?.08 + this?.velocity * 0?.04,
+      this?.kickFilter.setLowpass(120, 0.8, context?.sampleRate);
+      this.kickEnvelope = new ADSR(
+        0.002,
+        0.08 + this?.velocity * 0.04,
         0,
-        0?.1,
+        0.1,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.012, 0, 0?.015, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.012, 0, 0.015, context?.sampleRate);
       this?.kickEnvelope.trigger();
       this?.pitchEnvelope.trigger();
-      this?.crushRate = 4;
+      this.crushRate = 4;
     } else if (frequency < 300) {
-      this?.drumType = "snare";
+      this.drumType = "snare";
       this?.snareOsc.setFrequency(170, context?.sampleRate);
-      this?.snareFilter.setBandpass(400, 1?.2, context?.sampleRate);
-      this?.snareEnvelope = new ADSR(
-        0?.001,
-        0?.06 + this?.velocity * 0?.03,
-        0?.05,
-        0?.08,
+      this?.snareFilter.setBandpass(400, 1.2, context?.sampleRate);
+      this.snareEnvelope = new ADSR(
+        0.001,
+        0.06 + this?.velocity * 0.03,
+        0.05,
+        0.08,
         context?.sampleRate,
       );
       this?.snareEnvelope.trigger();
-      this?.crushRate = 3;
+      this.crushRate = 3;
     } else {
-      this?.drumType = "hihat";
+      this.drumType = "hihat";
       this?.hihatFilter.setHighpass(5000, 1, context?.sampleRate);
-      this?.hihatEnvelope = new ADSR(0?.001, 0?.02, 0, 0?.025, context?.sampleRate);
+      this.hihatEnvelope = new ADSR(0.001, 0.02, 0, 0.025, context?.sampleRate);
       this?.hihatEnvelope.trigger();
-      this?.crushRate = 2;
+      this.crushRate = 2;
     }
   }
 
@@ -1383,41 +1383,41 @@ export class LoFiDrumsSynth implements SynthesizerEngine {
   }
 
   private bitcrush(sample: number, bits: number): number {
-    const _levels = Math?.pow(2, bits);
+    const levels = Math?.pow(2, bits);
     return Math?.round(sample * levels) / levels;
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 55 + pitchEnv * 70;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 55 + pitchEnv * 70;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
-        sample += this?.noise.brown() * kickEnv * 0?.08;
+        sample += this?.noise.brown() * kickEnv * 0.08;
         sample = this?.kickFilter.process(sample);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0?.35;
-        const _noiseComp = this?.noise.white() * 0?.65;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.35;
+        const noiseComp = this?.noise.white() * 0.65;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
-        sample *= 0?.6;
+        sample *= 0.6;
       }
 
-      this?.sampleCounter++;
+      this.sampleCounter++;
       if (this?.sampleCounter >= this?.crushRate) {
-        this?.sampleHold = sample;
-        this?.sampleCounter = 0;
+        this.sampleHold = sample;
+        this.sampleCounter = 0;
       }
       sample = this?.sampleHold;
 
@@ -1427,10 +1427,10 @@ export class LoFiDrumsSynth implements SynthesizerEngine {
       sample = this?.bitcrushFilter.process(sample);
 
       sample *= this?.velocity;
-      sample = softClip(sample, 0?.88);
+      sample = softClip(sample, 0.88);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1452,8 +1452,8 @@ export class LoFiDrumsSynth implements SynthesizerEngine {
     this?.hihatFilter.clear();
     this?.lofiFilter.clear();
     this?.bitcrushFilter.clear();
-    this?.sampleHold = 0;
-    this?.sampleCounter = 0;
+    this.sampleHold = 0;
+    this.sampleCounter = 0;
   }
 }
 
@@ -1477,72 +1477,72 @@ export class OrchestralDrumsSynth implements SynthesizerEngine {
   private drumType: "timpani" | "bassdrum" | "cymbal" | "triangle" = "timpani";
 
   constructor() {
-    this?.timpaniOsc = new Oscillator();
-    this?.bassDrumOsc = new Oscillator();
-    this?.noise = new NoiseGenerator();
-    this?.timpaniEnvelope = new ADSR(0?.001, 0?.4, 0?.2, 0?.6, 44100);
-    this?.bassDrumEnvelope = new ADSR(0?.002, 0?.25, 0?.1, 0?.35, 44100);
-    this?.cymbalEnvelope = new ADSR(0?.001, 0?.8, 0?.4, 1?.2, 44100);
-    this?.pitchEnvelope = new ADSR(0?.001, 0?.03, 0, 0?.04, 44100);
-    this?.timpaniFilter = new BiquadFilter();
-    this?.bassDrumFilter = new BiquadFilter();
-    this?.cymbalFilter = new BiquadFilter();
-    this?.bodyResonance = new BiquadFilter();
-    this?.roomDelay = new DelayLine(44100);
-    this?.roomFilter = new BiquadFilter();
+    this.timpaniOsc = new Oscillator();
+    this.bassDrumOsc = new Oscillator();
+    this.noise = new NoiseGenerator();
+    this.timpaniEnvelope = new ADSR(0.001, 0.4, 0.2, 0.6, 44100);
+    this.bassDrumEnvelope = new ADSR(0.002, 0.25, 0.1, 0.35, 44100);
+    this.cymbalEnvelope = new ADSR(0.001, 0.8, 0.4, 1.2, 44100);
+    this.pitchEnvelope = new ADSR(0.001, 0.03, 0, 0.04, 44100);
+    this.timpaniFilter = new BiquadFilter();
+    this.bassDrumFilter = new BiquadFilter();
+    this.cymbalFilter = new BiquadFilter();
+    this.bodyResonance = new BiquadFilter();
+    this.roomDelay = new DelayLine(44100);
+    this.roomFilter = new BiquadFilter();
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this?.frequency = frequency;
-    this?.velocity = velocity / 127;
-    this?.sampleRate = context?.sampleRate;
+    this.frequency = frequency;
+    this.velocity = velocity / 127;
+    this.sampleRate = context?.sampleRate;
 
-    this?.roomFilter.setLowpass(3000, 0?.4, context?.sampleRate);
+    this?.roomFilter.setLowpass(3000, 0.4, context?.sampleRate);
 
     if (frequency < 100) {
-      this?.drumType = "bassdrum";
+      this.drumType = "bassdrum";
       this?.bassDrumOsc.setFrequency(45, context?.sampleRate);
-      this?.bassDrumFilter.setLowpass(100, 0?.7, context?.sampleRate);
+      this?.bassDrumFilter.setLowpass(100, 0.7, context?.sampleRate);
       this?.bodyResonance.setPeaking(60, 2, 5, context?.sampleRate);
-      this?.bassDrumEnvelope = new ADSR(
-        0?.002,
-        0?.2 + this?.velocity * 0?.1,
-        0?.08,
-        0?.3,
+      this.bassDrumEnvelope = new ADSR(
+        0.002,
+        0.2 + this?.velocity * 0.1,
+        0.08,
+        0.3,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.025, 0, 0?.03, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.025, 0, 0.03, context?.sampleRate);
       this?.bassDrumEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 300) {
-      this?.drumType = "timpani";
+      this.drumType = "timpani";
       this?.timpaniOsc.setFrequency(frequency, context?.sampleRate);
-      this?.timpaniFilter.setLowpass(frequency * 4, 0?.6, context?.sampleRate);
+      this?.timpaniFilter.setLowpass(frequency * 4, 0.6, context?.sampleRate);
       this?.bodyResonance.setPeaking(frequency, 3, 6, context?.sampleRate);
-      this?.timpaniEnvelope = new ADSR(
-        0?.001,
-        0?.35 + this?.velocity * 0?.15,
-        0?.15,
-        0?.5,
+      this.timpaniEnvelope = new ADSR(
+        0.001,
+        0.35 + this?.velocity * 0.15,
+        0.15,
+        0.5,
         context?.sampleRate,
       );
-      this?.pitchEnvelope = new ADSR(0?.001, 0?.025, 0, 0?.03, context?.sampleRate);
+      this.pitchEnvelope = new ADSR(0.001, 0.025, 0, 0.03, context?.sampleRate);
       this?.timpaniEnvelope.trigger();
       this?.pitchEnvelope.trigger();
     } else if (frequency < 1000) {
-      this?.drumType = "triangle";
+      this.drumType = "triangle";
       this?.timpaniOsc.setFrequency(frequency, context?.sampleRate);
-      this?.timpaniFilter.setHighpass(2000, 0?.8, context?.sampleRate);
-      this?.cymbalEnvelope = new ADSR(0?.001, 0?.5, 0?.3, 0?.8, context?.sampleRate);
+      this?.timpaniFilter.setHighpass(2000, 0.8, context?.sampleRate);
+      this.cymbalEnvelope = new ADSR(0.001, 0.5, 0.3, 0.8, context?.sampleRate);
       this?.cymbalEnvelope.trigger();
     } else {
-      this?.drumType = "cymbal";
+      this.drumType = "cymbal";
       this?.cymbalFilter.setHighpass(3000, 1, context?.sampleRate);
-      this?.cymbalEnvelope = new ADSR(
-        0?.001,
-        0?.7 + this?.velocity * 0?.3,
-        0?.35,
-        1?.0,
+      this.cymbalEnvelope = new ADSR(
+        0.001,
+        0.7 + this?.velocity * 0.3,
+        0.35,
+        1.0,
         context?.sampleRate,
       );
       this?.cymbalEnvelope.trigger();
@@ -1557,66 +1557,66 @@ export class OrchestralDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "bassdrum") {
-        const _envValue = this?.bassDrumEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _freq = 45 + pitchEnv * 30;
+        const envValue = this?.bassDrumEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const freq = 45 + pitchEnv * 30;
         this?.bassDrumOsc.setFrequency(freq, this?.sampleRate);
         sample = this?.bassDrumOsc.sine() * envValue;
-        sample += this?.noise.brown() * envValue * 0?.15;
+        sample += this?.noise.brown() * envValue * 0.15;
         sample = this?.bassDrumFilter.process(sample);
         sample = this?.bodyResonance.process(sample);
       } else if (this?.drumType === "timpani") {
-        const _envValue = this?.timpaniEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _freq = this?.frequency + pitchEnv * this?.frequency * 0?.3;
+        const envValue = this?.timpaniEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const freq = this?.frequency + pitchEnv * this?.frequency * 0.3;
         this?.timpaniOsc.setFrequency(freq, this?.sampleRate);
         sample = this?.timpaniOsc.sine() * envValue;
-        const _overtone =
-          Math?.sin((2 * Math?.PI * freq * 1?.5 * i) / this?.sampleRate) * 0?.2;
+        const overtone =
+          Math?.sin((2 * Math.PI * freq * 1.5 * i) / this?.sampleRate) * 0.2;
         sample += overtone * envValue;
-        sample += this?.noise.brown() * envValue * 0?.08;
+        sample += this?.noise.brown() * envValue * 0.08;
         sample = this?.timpaniFilter.process(sample);
         sample = this?.bodyResonance.process(sample);
       } else if (this?.drumType === "triangle") {
-        const _envValue = this?.cymbalEnvelope.process();
-        const _tone1 = Math?.sin(
-          (2 * Math?.PI * this?.frequency * i) / this?.sampleRate,
+        const envValue = this?.cymbalEnvelope.process();
+        const tone1 = Math?.sin(
+          (2 * Math.PI * this?.frequency * i) / this?.sampleRate,
         );
-        const _tone2 =
+        const tone2 =
           Math?.sin(
-            (2 * Math?.PI * this?.frequency * 2?.13 * i) / this?.sampleRate,
-          ) * 0?.5;
-        const _tone3 =
+            (2 * Math.PI * this?.frequency * 2.13 * i) / this?.sampleRate,
+          ) * 0.5;
+        const tone3 =
           Math?.sin(
-            (2 * Math?.PI * this?.frequency * 3?.47 * i) / this?.sampleRate,
-          ) * 0?.3;
+            (2 * Math.PI * this?.frequency * 3.47 * i) / this?.sampleRate,
+          ) * 0.3;
         sample = (tone1 + tone2 + tone3) * envValue;
         sample = this?.timpaniFilter.process(sample);
-        sample *= 0?.5;
+        sample *= 0.5;
       } else {
-        const _envValue = this?.cymbalEnvelope.process();
+        const envValue = this?.cymbalEnvelope.process();
         sample = this?.noise.white() * envValue;
         sample = this?.cymbalFilter.process(sample);
-        sample *= 0?.5;
+        sample *= 0.5;
       }
 
       this?.roomDelay.write(sample);
-      const _roomSample = this?.roomDelay.readInterpolated(
+      const roomSample = this?.roomDelay.readInterpolated(
         msToSamples(40, this?.sampleRate),
       );
-      const _roomProcessed = this?.roomFilter.process(roomSample) * 0?.2;
+      const roomProcessed = this?.roomFilter.process(roomSample) * 0.2;
 
       sample *= this?.velocity;
-      sample = softClip(sample + roomProcessed, 0?.92);
+      sample = softClip(sample + roomProcessed, 0.92);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;

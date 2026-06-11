@@ -23,25 +23,25 @@
  */
 
 import { spawn, ChildProcess } from "child_process";
-import { PYTHON } from "./pythonPath?.js";
+import { PYTHON } from "./pythonPath.js";
 import path from "path";
 import fs from "fs";
 import os from "os";
 import { fileURLToPath } from "url";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-const ___metaUrl = (import?.meta as Record<string, unknown>)?.url as
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as
   | string
   | undefined;
-const ___filename = __metaUrl
+const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
   : path?.resolve(process?.argv[1] ?? "");
-const ___dirname = path?.dirname(__filename);
+const __dirname = path?.dirname(__filename);
 
-const _SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer?.py");
-const _META_PATH = path?.join(__dirname, "diffusion", "meta?.json");
-const _MEMORY_PATH = path?.join(__dirname, "diffusion", "memory?.json");
-const _STATUS_PATH = path?.join(os?.tmpdir(), "diffusion_bg_status?.json");
+const SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
+const META_PATH = path?.join(__dirname, "diffusion", "meta.json");
+const MEMORY_PATH = path?.join(__dirname, "diffusion", "memory.json");
+const STATUS_PATH = path?.join(os?.tmpdir(), "diffusion_bg_status.json");
 
 const TIER_SEQUENCE: Array<"quick" | "medium" | "deep"> = [
   "quick",
@@ -83,9 +83,9 @@ const state: BgStatus = {
 
 let _proc: ChildProcess | null = null;
 let _stopFlag: boolean = false;
-let _loopTimer: NodeJS?.Timeout | null = null;
+let _loopTimer: NodeJS.Timeout | null = null;
 
-const _MAX_LOG_LINES = 50;
+const MAX_LOG_LINES = 50;
 
 function _appendLog(line: string) {
   state?.logTail.push(line);
@@ -101,15 +101,15 @@ function _getTier(sessionIndex: number): "quick" | "medium" | "deep" {
 function _syncMemoryStats() {
   try {
     if (fs?.existsSync(MEMORY_PATH)) {
-      const _raw = JSON?.parse(fs?.readFileSync(MEMORY_PATH, "utf8"));
-      const _s = raw?.state ?? {};
-      state?.totalSessions = s?.total_sessions ?? state?.totalSessions;
-      state?.totalSteps = s?.total_steps ?? state?.totalSteps;
-      state?.replayBuffer = (raw?.replay_buffer ?? []).length;
+      const raw = JSON?.parse(fs?.readFileSync(MEMORY_PATH, "utf8"));
+      const s = raw?.state ?? {};
+      state.totalSessions = s?.total_sessions ?? state?.totalSessions;
+      state.totalSteps = s?.total_steps ?? state?.totalSteps;
+      state.replayBuffer = (raw?.replay_buffer ?? []).length;
     }
     if (fs?.existsSync(META_PATH)) {
-      const _meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
-      state?.lastLoss = meta?.final_loss ?? state?.lastLoss;
+      const meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
+      state.lastLoss = meta?.final_loss ?? state?.lastLoss;
     }
   } catch {
     /* non-critical */
@@ -135,21 +135,21 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
       return;
     }
 
-    state?.currentTier = tier;
-    state?.startedAt = Date?.now();
+    state.currentTier = tier;
+    state.startedAt = Date?.now();
     _appendLog(
-      `[BgTrainer] Session ${state?.session + 1} starting  tier=${tier}`,
+      `[BgTrainer] Session ${state.session + 1} starting  tier=${tier}`,
     );
     _saveStatus();
 
-    const _args = [SYNTH_SCRIPT, "--train-only", "--tier", tier];
+    const args = [SYNTH_SCRIPT, "--train-only", "--tier", tier];
     _proc = spawn(PYTHON, args, {
       stdio: ["ignore", "pipe", "pipe"],
       detached: false,
     });
 
-    state?.pid = _proc?.pid ?? null;
-    state?.running = true;
+    state.pid = _proc?.pid ?? null;
+    state.running = true;
 
     _proc?.stdout?.on("data", (d: Buffer) => {
       d?.toString()
@@ -176,10 +176,10 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
     });
 
     _proc?.on("close", (code: number | null) => {
-      state?.pid = null;
+      state.pid = null;
       _syncMemoryStats();
       if (code === 0) {
-        state?.session++;
+        state.session++;
         _appendLog(
           `[BgTrainer] Session ${state?.session} complete ✓  ` +
             `loss=${state?.lastLoss?.toFixed(4) ?? "?"}  ` +
@@ -195,7 +195,7 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
 
     _proc?.on("error", (err: Error) => {
       _appendLog(`[BgTrainer] Process error: ${err?.message}`);
-      state?.pid = null;
+      state.pid = null;
       resolve(false);
     });
   });
@@ -209,8 +209,8 @@ async function _trainingLoop() {
   _appendLog("[BgTrainer] Background self-training loop started");
 
   while (!_stopFlag) {
-    const _tier = _getTier(state?.session);
-    const _ok = await _runSession(tier);
+    const tier = _getTier(state?.session);
+    const ok = await _runSession(tier);
 
     if (!ok && !_stopFlag) {
       _appendLog("[BgTrainer] Session failed — retrying in 60s");
@@ -221,8 +221,8 @@ async function _trainingLoop() {
     }
   }
 
-  state?.running = false;
-  state?.paused = false;
+  state.running = false;
+  state.paused = false;
   _saveStatus();
   _appendLog("[BgTrainer] Background training loop stopped");
 }
@@ -238,14 +238,14 @@ function _sleep(ms: number): Promise<void> {
 /** Check whether the MaxCore Diffusion Gateway (port 8008) is responding. */
 async function _isMaxCoreGatewayRunning(): Promise<boolean> {
   try {
-    const _ctrl = new AbortController();
-    const _timer = setTimeout(() => ctrl?.abort(), 4_000);
-    const _res = await fetch("http://localhost:8008/health", {
-      signal: ctrl?.signal,
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl?.abort(), 4_000);
+    const res = await fetch("http://localhost:8008/health", {
+      signal: ctrl.signal,
     });
     clearTimeout(timer);
     if (!res?.ok) return false;
-    const _data = await res?.json().catch(() => null);
+    const data = await res?.json().catch(() => null);
     return !!(data && (data as Record<string, unknown>).status === "ok");
   } catch {
     return false;
@@ -272,7 +272,7 @@ export async function startBackgroundTraining(): Promise<void> {
   // authoritative diffusion training source. If it is online, we yield to it
   // and skip the local synthesizer — running both would conflict on the same
   // weights_v4?.npz file and waste CPU resources.
-  const _gatewayUp = await _isMaxCoreGatewayRunning();
+  const gatewayUp = await _isMaxCoreGatewayRunning();
   if (gatewayUp) {
     logger?.info(
       "[DiffBG] MaxCore Diffusion Gateway detected on port 8008 — " +
@@ -287,8 +287,8 @@ export async function startBackgroundTraining(): Promise<void> {
   );
 
   _stopFlag = false;
-  state?.running = true;
-  state?.paused = false;
+  state.running = true;
+  state.paused = false;
   _syncMemoryStats();
   _trainingLoop().catch((err) =>
     logger?.warn({ err: err }, "[DiffBG] Unhandled loop error:"),
@@ -306,7 +306,7 @@ export function stopBackgroundTraining(): void {
     clearTimeout(_loopTimer);
     _loopTimer = null;
   }
-  state?.paused = true;
+  state.paused = true;
   _saveStatus();
   logger?.info("[DiffBG] Stop requested — will halt after current session");
 }
@@ -326,9 +326,9 @@ export function forceStopBackgroundTraining(): void {
       if (_proc && !_proc?.killed) _proc?.kill("SIGKILL");
     }, 5000);
   }
-  state?.running = false;
-  state?.paused = false;
-  state?.pid = null;
+  state.running = false;
+  state.paused = false;
+  state.pid = null;
   _saveStatus();
   logger?.info("[DiffBG] Force-stopped");
 }
@@ -344,12 +344,12 @@ export function getBackgroundStatus(): BgStatus & { eta: string } {
     medium: 110,
     deep: 275,
   };
-  const _elapsedMin = state?.startedAt
+  const elapsedMin = state?.startedAt
     ? Math?.round((Date?.now() - state?.startedAt) / 60_000)
     : 0;
-  const _totalMin = tierMins[state?.currentTier] ?? 60;
-  const _remaining = Math?.max(0, totalMin - elapsedMin);
-  const _eta = state?.running
+  const totalMin = tierMins[state?.currentTier] ?? 60;
+  const remaining = Math?.max(0, totalMin - elapsedMin);
+  const eta = state?.running
     ? `~${remaining}min remaining in current ${state?.currentTier} session`
     : "not running";
 

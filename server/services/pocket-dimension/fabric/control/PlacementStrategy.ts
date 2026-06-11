@@ -3,8 +3,8 @@ import type {
   ChunkId,
   PocketPolicy,
   FabricStorageNode,
-} from "../types?.js";
-import type { NodeRegistry } from "../infra/NodeRegistry?.js";
+} from "../types.js";
+import type { NodeRegistry } from "../infra/NodeRegistry.js";
 
 export interface PlacementDecision {
   chunkId: ChunkId;
@@ -26,15 +26,15 @@ export class PlacementStrategy {
     }
 
     if (policy?.regionAffinity && policy?.regionAffinity.length > 0) {
-      const _regional = candidates?.filter((n) =>
+      const regional = candidates?.filter((n) =>
         policy?.regionAffinity!.includes(n?.region),
       );
-      if (regional?.length > 0) candidates = regional;
+      if (regional.length > 0) candidates = regional;
     }
 
     if (policy?.costTier) {
-      const _tiered = candidates?.filter((n) => n?.costTier === policy?.costTier);
-      if (tiered?.length > 0) candidates = tiered;
+      const tiered = candidates?.filter((n) => n?.costTier === policy?.costTier);
+      if (tiered.length > 0) candidates = tiered;
     }
 
     candidates = candidates?.filter(
@@ -51,21 +51,21 @@ export class PlacementStrategy {
       (a, b) => a?.usedBytes / a?.capacityBytes - b?.usedBytes / b?.capacityBytes,
     );
 
-    const _replicas = policy?.redundancy ?? 1;
-    const _selected = candidates?.slice(0, replicas).map((n) => n?.id);
+    const replicas = policy?.redundancy ?? 1;
+    const selected = candidates?.slice(0, replicas).map((n) => n?.id);
 
     return { chunkId, nodeIds: selected };
   }
 
   async findRebalanceCandidates(
-    highWatermark = 0?.8,
+    highWatermark = 0.8,
   ): Promise<{ hot: FabricStorageNode[]; cold: FabricStorageNode[] }> {
-    const _nodes = await this?.nodeRegistry.listHealthyNodes();
-    const _hot = nodes?.filter(
+    const nodes = await this?.nodeRegistry.listHealthyNodes();
+    const hot = nodes?.filter(
       (n) => n?.usedBytes / n?.capacityBytes > highWatermark,
     );
-    const _cold = nodes?.filter(
-      (n) => n?.usedBytes / n?.capacityBytes < highWatermark * 0?.6,
+    const cold = nodes?.filter(
+      (n) => n?.usedBytes / n?.capacityBytes < highWatermark * 0.6,
     );
     return { hot, cold };
   }

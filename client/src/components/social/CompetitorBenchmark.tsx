@@ -1346,11 +1346,11 @@ export function CompetitorBenchmark() {
             <DialogTitle className="flex items-center gap-3">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: selectedCompetitor?.color + "30" }}
+                style={{ backgroundColor: selectedCompetitor.color + "30" }}
               >
                 <span
                   className="font-bold"
-                  style={{ color: selectedCompetitor?.color }}
+                  style={{ color: selectedCompetitor.color }}
                 >
                   {selectedCompetitor?.name.charAt(0)}
                 </span>

@@ -1,27 +1,27 @@
 import type { Request, Response, NextFunction } from "express";
 
-// Cloudflare's published IPv4 CIDR ranges (https://www?.cloudflare.com/ips-v4)
+// Cloudflare's published IPv4 CIDR ranges (https://www.cloudflare.com/ips-v4)
 // Last updated: 2024. Cloudflare rarely changes these.
-const _CF_IPV4_RANGES = [
-  "103?.21.244?.0/22",
-  "103?.22.200?.0/22",
-  "103?.31.4?.0/22",
-  "104?.16.0?.0/13",
-  "104?.24.0?.0/14",
-  "108?.162.192?.0/18",
-  "131?.0.72?.0/22",
-  "141?.101.64?.0/18",
-  "162?.158.0?.0/15",
-  "172?.64.0?.0/13",
-  "173?.245.48?.0/20",
-  "188?.114.96?.0/20",
-  "190?.93.240?.0/20",
-  "197?.234.240?.0/22",
-  "198?.41.128?.0/17",
+const CF_IPV4_RANGES = [
+  "103.21.244.0/22",
+  "103.22.200.0/22",
+  "103.31.4.0/22",
+  "104.16.0.0/13",
+  "104.24.0.0/14",
+  "108.162.192.0/18",
+  "131.0.72.0/22",
+  "141.101.64.0/18",
+  "162.158.0.0/15",
+  "172.64.0.0/13",
+  "173.245.48.0/20",
+  "188.114.96.0/20",
+  "190.93.240.0/20",
+  "197.234.240.0/22",
+  "198.41.128.0/17",
 ];
 
-// Cloudflare's published IPv6 CIDR ranges (https://www?.cloudflare.com/ips-v6)
-const _CF_IPV6_RANGES = [
+// Cloudflare's published IPv6 CIDR ranges (https://www.cloudflare.com/ips-v6)
+const CF_IPV6_RANGES = [
   "2400:cb00::/32",
   "2606:4700::/32",
   "2803:f800::/32",
@@ -41,29 +41,29 @@ function ipToInt(ip: string): number {
 
 function cidrToRange(cidr: string): { start: number; end: number } {
   const [ip, prefix] = cidr?.split("/");
-  const _mask = prefix
+  const mask = prefix
     ? ~((1 << (32 - parseInt(prefix, 10))) - 1) >>> 0
     : 0xffffffff;
-  const _start = ipToInt(ip) & mask;
-  const _end = start | (~mask >>> 0);
+  const start = ipToInt(ip) & mask;
+  const end = start | (~mask >>> 0);
   return { start, end };
 }
 
-const _CF_RANGES = CF_IPV4_RANGES?.map(cidrToRange);
+const CF_RANGES = CF_IPV4_RANGES?.map(cidrToRange);
 
 function isCloudflareIP(ip: string): boolean {
   if (!ip) return false;
   // Strip IPv6-mapped IPv4 prefix
-  const _clean = ip?.startsWith("::ffff:") ? ip?.slice(7) : ip;
+  const clean = ip?.startsWith("::ffff:") ? ip?.slice(7) : ip;
   // IPv6 Cloudflare ranges — simple prefix match (full CIDR parsing is not needed for these)
   if (clean?.includes(":")) {
     return CF_IPV6_RANGES?.some((range) => {
-      const _prefix = range?.split("/")[0].replace(/::$/, "");
+      const prefix = range?.split("/")[0].replace(/::$/, "");
       return clean?.startsWith(prefix?.split(":").slice(0, 2).join(":"));
     });
   }
   try {
-    const _num = ipToInt(clean);
+    const num = ipToInt(clean);
     return CF_RANGES?.some((r) => num >= r?.start && num <= r?.end);
   } catch {
     return false;
@@ -97,19 +97,19 @@ export function cloudflareMiddleware(
   res: Response,
   next: NextFunction,
 ) {
-  const _cfRay = req?.headers["cf-ray"] as string | undefined;
-  const _cfConnectingIp = req?.headers["cf-connecting-ip"] as string | undefined;
-  const _connectingIp = (req?.socket.remoteAddress || "").replace("::ffff:", "");
+  const cfRay = req?.headers["cf-ray"] as string | undefined;
+  const cfConnectingIp = req?.headers["cf-connecting-ip"] as string | undefined;
+  const connectingIp = (req?.socket.remoteAddress || "").replace("::ffff:", "");
 
-  const _behindCf = !!(cfRay && cfConnectingIp && isCloudflareIP(connectingIp));
+  const behindCf = !!(cfRay && cfConnectingIp && isCloudflareIP(connectingIp));
 
-  req?.isBehindCloudflare = behindCf;
-  req?.cfRay = cfRay;
+  req.isBehindCloudflare = behindCf;
+  req.cfRay = cfRay;
 
   if (behindCf && cfConnectingIp) {
-    req?.realClientIp = cfConnectingIp;
+    req.realClientIp = cfConnectingIp;
   } else {
-    req?.realClientIp = req?.ip || connectingIp;
+    req.realClientIp = req?.ip || connectingIp;
   }
 
   // Tell Cloudflare what to do with API responses
@@ -133,9 +133,9 @@ export function cloudflareMiddleware(
  */
 export function buildTrustProxyValue(): string[] {
   return [
-    "loopback", // 127?.0.0?.1, ::1
-    "linklocal", // 169?.254.0?.0/16 — Replit internal routing
-    "uniquelocal", // 10?.0.0?.0/8, 172?.16.0?.0/12, 192?.168.0?.0/16
+    "loopback", // 127.0.0.1, ::1
+    "linklocal", // 169.254.0.0/16 — Replit internal routing
+    "uniquelocal", // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
     ...CF_IPV4_RANGES, // Cloudflare IPv4
     ...CF_IPV6_RANGES, // Cloudflare IPv6
   ];

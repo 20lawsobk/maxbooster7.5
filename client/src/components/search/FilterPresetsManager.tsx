@@ -187,7 +187,7 @@ export function FilterPresetsManager({
     savePresetMutation.mutate({
       name: presetName.trim(),
       filters: currentFilters,
-      id: editingPreset?.id,
+      id: editingPreset.id,
     });
   };
 

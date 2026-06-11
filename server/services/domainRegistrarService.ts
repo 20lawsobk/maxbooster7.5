@@ -9,24 +9,24 @@
  * Artist stores   : {name}.max-booster?.com  (wildcard A/CNAME at registrar)
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import dns from "dns";
 
-export const _PLATFORM_DOMAIN = process?.env.BASE_DOMAIN || "max-booster?.com";
-export const _NS = PLATFORM_DOMAIN;
-export const _NS1 = process?.env.NS1 || `ns1.${PLATFORM_DOMAIN}`;
-export const _NS2 = process?.env.NS2 || `ns2.${PLATFORM_DOMAIN}`;
-export const _NS3 = process?.env.NS3 || `ns3.${PLATFORM_DOMAIN}`;
+export const PLATFORM_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
+export const NS = PLATFORM_DOMAIN;
+export const NS1 = process?.env.NS1 || `ns1.${PLATFORM_DOMAIN}`;
+export const NS2 = process?.env.NS2 || `ns2.${PLATFORM_DOMAIN}`;
+export const NS3 = process?.env.NS3 || `ns3.${PLATFORM_DOMAIN}`;
 
 /** All three Max Booster authoritative nameservers. */
-export const _ALL_NS = [NS1, NS2, NS3];
+export const ALL_NS = [NS1, NS2, NS3];
 
 /** Max Booster registrar identity constants. */
-export const _REGISTRAR_NAME = "B-Lawz Music LLC";
-export const _REGISTRAR_BRAND = "Max Booster";
-export const _REGISTRAR_URL = `https://${PLATFORM_DOMAIN}`;
-export const _REGISTRAR_EMAIL = `registrar@${PLATFORM_DOMAIN}`;
-export const _REGISTRAR_ABUSE = `abuse@${PLATFORM_DOMAIN}`;
+export const REGISTRAR_NAME = "B-Lawz Music LLC";
+export const REGISTRAR_BRAND = "Max Booster";
+export const REGISTRAR_URL = `https://${PLATFORM_DOMAIN}`;
+export const REGISTRAR_EMAIL = `registrar@${PLATFORM_DOMAIN}`;
+export const REGISTRAR_ABUSE = `abuse@${PLATFORM_DOMAIN}`;
 
 // ── Domain pricing (internal reference only — domains are FREE to subscribers) ─
 // Not shown in the UI; kept for platform cost-tracking purposes.
@@ -55,7 +55,7 @@ export const DOMAIN_PRICES: Record<
   ".info": { registrationCents: 298, renewalCents: 1498, label: ".info" },
 };
 
-export const _SEARCH_TLDS = Object?.keys(DOMAIN_PRICES);
+export const SEARCH_TLDS = Object?.keys(DOMAIN_PRICES);
 
 // ── Domain availability check via DNS ─────────────────────────────────────────
 
@@ -66,17 +66,17 @@ export interface DomainAvailability {
   isPremium: boolean;
 }
 
-const _dnsResolve = dns?.promises.resolve;
+const dnsResolve = dns?.promises.resolve;
 
 async function dnsAvailable(domain: string): Promise<boolean> {
-  const _timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
+  const timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
     Promise?.race([
       p,
       new Promise<T>((_, r) => setTimeout(() => r(new Error("timeout")), ms)),
     ]);
   for (const type of ["NS", "A"] as const) {
     try {
-      const _records = await timeout(2500, dnsResolve(domain, type));
+      const records = await timeout(2500, dnsResolve(domain, type));
       if (records && records?.length > 0) return false;
     } catch {
       /* ENOTFOUND / timeout = not registered */
@@ -89,10 +89,10 @@ export async function checkDomainAvailability(
   name: string,
   tlds: string[],
 ): Promise<DomainAvailability[]> {
-  const _checks = await Promise?.allSettled(
+  const checks = await Promise?.allSettled(
     tlds?.map(async (tld) => {
-      const _domain = `${name}${tld}`;
-      const _available = await dnsAvailable(domain);
+      const domain = `${name}${tld}`;
+      const available = await dnsAvailable(domain);
       return { domain, tld, available, isPremium: false };
     }),
   );

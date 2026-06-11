@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface CDNConfig {
   enabled: boolean;
@@ -36,21 +36,21 @@ class CDNManager {
   private config: CDNConfig;
 
   private constructor() {
-    this?.config = {
-      enabled: process?.env.CDN_ENABLED === "true",
+    this.config = {
+      enabled: process.env.CDN_ENABLED === "true",
       provider:
         (process?.env.CDN_PROVIDER as Record<string, unknown>) || "cloudflare",
-      baseUrl: process?.env.CDN_BASE_URL || "",
+      baseUrl: process.env.CDN_BASE_URL || "",
       staticAssetPaths: ["/static", "/assets", "/uploads", "/audio"],
       cacheControlRules: DEFAULT_CACHE_RULES,
-      purgeApiKey: process?.env.CDN_PURGE_API_KEY,
-      purgeEndpoint: process?.env.CDN_PURGE_ENDPOINT,
+      purgeApiKey: process.env.CDN_PURGE_API_KEY,
+      purgeEndpoint: process.env.CDN_PURGE_ENDPOINT,
     };
   }
 
   static getInstance(): CDNManager {
     if (!CDNManager?.instance) {
-      CDNManager?.instance = new CDNManager();
+      CDNManager.instance = new CDNManager();
     }
     return CDNManager?.instance;
   }
@@ -66,7 +66,7 @@ class CDNManager {
     const headers: Record<string, string> = {};
 
     for (const rule of this?.config.cacheControlRules) {
-      const _matches =
+      const matches =
         typeof rule?.pattern === "string"
           ? path?.includes(rule?.pattern)
           : rule?.pattern.test(path);
@@ -80,7 +80,7 @@ class CDNManager {
           directives?.push("public");
         }
 
-        directives?.push(`max-age=${rule?.maxAge}`);
+        directives.push(`max-age=${rule?.maxAge}`);
 
         if (rule?.staleWhileRevalidate) {
           directives?.push(
@@ -89,7 +89,7 @@ class CDNManager {
         }
 
         if (rule?.staleIfError) {
-          directives?.push(`stale-if-error=${rule?.staleIfError}`);
+          directives.push(`stale-if-error=${rule?.staleIfError}`);
         }
 
         if (rule?.immutable) {
@@ -115,14 +115,14 @@ class CDNManager {
     }
 
     try {
-      const _response = await fetch(this?.config.purgeEndpoint, {
+      const response = await fetch(this?.config.purgeEndpoint, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this?.config.purgeApiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON?.stringify({ files: paths }),
-        signal: AbortSignal?.timeout(10000),
+        body: JSON.stringify({ files: paths }),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (response?.ok) {
@@ -145,14 +145,14 @@ class CDNManager {
     }
 
     try {
-      const _response = await fetch(this?.config.purgeEndpoint, {
+      const response = await fetch(this?.config.purgeEndpoint, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this?.config.purgeApiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON?.stringify({ purge_everything: true }),
-        signal: AbortSignal?.timeout(10000),
+        body: JSON.stringify({ purge_everything: true }),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (response?.ok) {
@@ -177,14 +177,14 @@ class CDNManager {
   }
 }
 
-export const _cdnManager = CDNManager?.getInstance();
+export const cdnManager = CDNManager?.getInstance();
 
 export function cdnCacheMiddleware(
   req: Request,
   res: Response,
   next: NextFunction,
 ): void {
-  const _headers = cdnManager?.getCacheHeaders(req?.path);
+  const headers = cdnManager?.getCacheHeaders(req?.path);
 
   for (const [key, value] of Object?.entries(headers)) {
     res?.setHeader(key, value);

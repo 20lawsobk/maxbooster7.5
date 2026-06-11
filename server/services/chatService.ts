@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { chatSessions, chatMessages } from "../../shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { randomUUID } from "crypto";
 
 
@@ -16,7 +16,7 @@ interface CreateMessageInput {
 export class ChatService {
   async getOrCreateSession(userId: string): Promise<string> {
     try {
-      const _existingSession = await db
+      const existingSession = await db
         .select()
         .from(chatSessions)
         .where(
@@ -32,8 +32,8 @@ export class ChatService {
         return existingSession[0].id;
       }
 
-      const _sessionToken = randomUUID();
-      const _newSession = await db
+      const sessionToken = randomUUID();
+      const newSession = await db
         .insert(chatSessions)
         .values({
           userId,
@@ -53,11 +53,11 @@ export class ChatService {
   async saveMessage(input: CreateMessageInput): Promise<void> {
     try {
       await db?.insert(chatMessages).values({
-        sessionId: input?.sessionId,
-        userId: input?.userId,
-        message: input?.message,
-        isAI: input?.isAI,
-        isStaff: input?.isStaff || false,
+        sessionId: input.sessionId,
+        userId: input.userId,
+        message: input.message,
+        isAI: input.isAI,
+        isStaff: input.isStaff || false,
       });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error saving chat message:");
@@ -67,13 +67,13 @@ export class ChatService {
 
   async getSessionMessages(sessionId: string, userId: string): Promise<any[]> {
     try {
-      const _messages = await db
+      const messages = await db
         .select({
-          id: chatMessages?.id,
-          message: chatMessages?.message,
-          isAI: chatMessages?.isAI,
-          isStaff: chatMessages?.isStaff,
-          createdAt: chatMessages?.createdAt,
+          id: chatMessages.id,
+          message: chatMessages.message,
+          isAI: chatMessages.isAI,
+          isStaff: chatMessages.isStaff,
+          createdAt: chatMessages.createdAt,
         })
         .from(chatMessages)
         .where(
@@ -93,7 +93,7 @@ export class ChatService {
 
   async getUserChatHistory(userId: string, _limit: number = 50): Promise<any[]> {
     try {
-      const _activeSessions = await db
+      const activeSessions = await db
         .select()
         .from(chatSessions)
         .where(
@@ -133,4 +133,4 @@ export class ChatService {
   }
 }
 
-export const _chatService = new ChatService();
+export const chatService = new ChatService();

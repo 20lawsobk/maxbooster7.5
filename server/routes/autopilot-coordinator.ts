@@ -1,71 +1,71 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { autopilotCoordinatorService } from "../services/autopilotCoordinatorService?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { autopilotCoordinatorService } from "../services/autopilotCoordinatorService.js";
 
-const _router = Router();
+const router = Router();
 
 function parseValidDate(raw: unknown, fallback: Date): Date {
   if (!raw) return fallback;
-  const _d = new Date(raw as string);
+  const d = new Date(raw as string);
   return isNaN(d?.getTime()) ? fallback : d;
 }
 
-const _registerPostSchema = z?.object({
-  autopilotType: z?.enum(["social", "advertising"]),
-  platform: z?.string().min(1),
-  scheduledTime: z?.string().datetime(),
-  content: z?.string().optional(),
+const registerPostSchema = z.object({
+  autopilotType: z.enum(["social", "advertising"]),
+  platform: z.string().min(1),
+  scheduledTime: z.string().datetime(),
+  content: z.string().optional(),
 });
 
-const _updatePostSchema = z?.object({
-  status: z?.enum(["scheduled", "posted", "failed", "cancelled"]),
-  postId: z?.string().optional(),
+const updatePostSchema = z.object({
+  status: z.enum(["scheduled", "posted", "failed", "cancelled"]),
+  postId: z.string().optional(),
   performance: z
     .object({
-      likes: z?.number().int().nonnegative(),
-      comments: z?.number().int().nonnegative(),
-      shares: z?.number().int().nonnegative(),
-      reach: z?.number().int().nonnegative(),
-      engagementRate: z?.number().nonnegative(),
-      impressions: z?.number().int().nonnegative(),
+      likes: z.number().int().nonnegative(),
+      comments: z.number().int().nonnegative(),
+      shares: z.number().int().nonnegative(),
+      reach: z.number().int().nonnegative(),
+      engagementRate: z.number().nonnegative(),
+      impressions: z.number().int().nonnegative(),
     })
     .optional(),
 });
 
-const _shareInsightSchema = z?.object({
-  sourceAutopilot: z?.enum(["social", "advertising"]),
-  insightType: z?.enum([
+const shareInsightSchema = z.object({
+  sourceAutopilot: z.enum(["social", "advertising"]),
+  insightType: z.enum([
     "timing",
     "content",
     "audience",
     "platform",
     "engagement",
   ]),
-  data: z?.record(z?.string(), z?.any()),
+  data: z.record(z.string(), z.any()),
 });
 
-const _scheduleFilterSchema = z?.object({
-  autopilotType: z?.enum(["social", "advertising"]).optional(),
-  platform: z?.string().optional(),
-  status: z?.enum(["scheduled", "posted", "failed", "cancelled"]).optional(),
-  startDate: z?.string().datetime().optional(),
-  endDate: z?.string().datetime().optional(),
+const scheduleFilterSchema = z.object({
+  autopilotType: z.enum(["social", "advertising"]).optional(),
+  platform: z.string().optional(),
+  status: z.enum(["scheduled", "posted", "failed", "cancelled"]).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
 });
 
-const _insightFilterSchema = z?.object({
-  sourceAutopilot: z?.enum(["social", "advertising"]).optional(),
+const insightFilterSchema = z.object({
+  sourceAutopilot: z.enum(["social", "advertising"]).optional(),
   insightType: z
     .enum(["timing", "content", "audience", "platform", "engagement"])
     .optional(),
-  limit: z?.number().int().positive().optional(),
+  limit: z.number().int().positive().optional(),
 });
 
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _status = autopilotCoordinatorService?.getStatus(userId);
+    const userId = req?.user!.id;
+    const status = autopilotCoordinatorService?.getStatus(userId);
 
     res?.json({
       success: true,
@@ -81,17 +81,17 @@ router?.get("/status", requireAuth, async (req, res) => {
 
 router?.get("/schedule", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = scheduleFilterSchema?.parse(req?.query);
+    const userId = req?.user!.id;
+    const parsed = scheduleFilterSchema?.parse(req?.query);
 
     const options: Record<string, unknown> = {};
-    if (parsed?.autopilotType) options?.autopilotType = parsed?.autopilotType;
-    if (parsed?.platform) options?.platform = parsed?.platform;
-    if (parsed?.status) options?.status = parsed?.status;
-    if (parsed?.startDate) options?.startDate = new Date(parsed?.startDate);
-    if (parsed?.endDate) options?.endDate = new Date(parsed?.endDate);
+    if (parsed.autopilotType) options.autopilotType = parsed?.autopilotType;
+    if (parsed.platform) options.platform = parsed?.platform;
+    if (parsed.status) options.status = parsed?.status;
+    if (parsed.startDate) options.startDate = new Date(parsed?.startDate);
+    if (parsed.endDate) options.endDate = new Date(parsed?.endDate);
 
-    const _schedule = autopilotCoordinatorService?.getCoordinatedSchedule(
+    const schedule = autopilotCoordinatorService?.getCoordinatedSchedule(
       userId,
       options,
     );
@@ -100,17 +100,17 @@ router?.get("/schedule", requireAuth, async (req, res) => {
       success: true,
       data: {
         posts: schedule,
-        total: schedule?.length,
+        total: schedule.length,
       },
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error getting coordinated schedule:");
@@ -122,14 +122,14 @@ router?.get("/schedule", requireAuth, async (req, res) => {
 
 router?.post("/sync", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _result = autopilotCoordinatorService?.syncInsights(userId);
+    const userId = req?.user!.id;
+    const result = autopilotCoordinatorService?.syncInsights(userId);
 
     res?.json({
       success: true,
       data: {
-        socialToAdvertising: result?.socialToAdvertising.length,
-        advertisingToSocial: result?.advertisingToSocial.length,
+        socialToAdvertising: result.socialToAdvertising.length,
+        advertisingToSocial: result.advertisingToSocial.length,
         syncedAt: new Date().toISOString(),
       },
     });
@@ -141,10 +141,10 @@ router?.post("/sync", requireAuth, async (req, res) => {
 
 router?.post("/register", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = registerPostSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const parsed = registerPostSchema?.parse(req?.body);
 
-    const _post = autopilotCoordinatorService?.registerPost(
+    const post = autopilotCoordinatorService?.registerPost(
       userId,
       parsed?.autopilotType,
       parsed?.platform,
@@ -164,13 +164,13 @@ router?.post("/register", requireAuth, async (req, res) => {
       data: post,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error registering post:");
@@ -180,11 +180,11 @@ router?.post("/register", requireAuth, async (req, res) => {
 
 router?.put("/posts/:postId", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { postId } = req?.params;
-    const _parsed = updatePostSchema?.parse(req?.body);
+    const parsed = updatePostSchema?.parse(req?.body);
 
-    const _post = autopilotCoordinatorService?.updatePostStatus(
+    const post = autopilotCoordinatorService?.updatePostStatus(
       userId,
       postId,
       parsed?.status,
@@ -201,13 +201,13 @@ router?.put("/posts/:postId", requireAuth, async (req, res) => {
       data: post,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error updating post:");
@@ -217,10 +217,10 @@ router?.put("/posts/:postId", requireAuth, async (req, res) => {
 
 router?.delete("/posts/:postId", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { postId } = req?.params;
 
-    const _cancelled = autopilotCoordinatorService?.cancelPost(userId, postId);
+    const cancelled = autopilotCoordinatorService?.cancelPost(userId, postId);
 
     if (!cancelled) {
       return res
@@ -240,15 +240,15 @@ router?.delete("/posts/:postId", requireAuth, async (req, res) => {
 
 router?.get("/next-slot", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _autopilotType =
+    const userId = req?.user!.id;
+    const autopilotType =
       (req?.query.autopilotType as "social" | "advertising") || "social";
-    const _platform = (req?.query.platform as string) || "twitter";
-    const _preferredTime = req?.query.preferredTime
+    const platform = (req?.query.platform as string) || "twitter";
+    const preferredTime = req?.query.preferredTime
       ? parseValidDate(req?.query.preferredTime, new Date())
       : undefined;
 
-    const _slot = autopilotCoordinatorService?.getNextAvailableSlot(
+    const slot = autopilotCoordinatorService?.getNextAvailableSlot(
       userId,
       autopilotType,
       platform,
@@ -269,10 +269,10 @@ router?.get("/next-slot", requireAuth, async (req, res) => {
 
 router?.post("/insights", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = shareInsightSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const parsed = shareInsightSchema?.parse(req?.body);
 
-    const _insight = autopilotCoordinatorService?.shareInsight(
+    const insight = autopilotCoordinatorService?.shareInsight(
       userId,
       parsed?.sourceAutopilot,
       parsed?.insightType,
@@ -284,13 +284,13 @@ router?.post("/insights", requireAuth, async (req, res) => {
       data: insight,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error sharing insight:");
@@ -300,30 +300,30 @@ router?.post("/insights", requireAuth, async (req, res) => {
 
 router?.get("/insights", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = insightFilterSchema?.parse(req?.query);
+    const userId = req?.user!.id;
+    const parsed = insightFilterSchema?.parse(req?.query);
 
-    const _insights = autopilotCoordinatorService?.getSharedInsights(userId, {
-      sourceAutopilot: parsed?.sourceAutopilot,
-      insightType: parsed?.insightType,
-      limit: parsed?.limit,
+    const insights = autopilotCoordinatorService?.getSharedInsights(userId, {
+      sourceAutopilot: parsed.sourceAutopilot,
+      insightType: parsed.insightType,
+      limit: parsed.limit,
     });
 
     res?.json({
       success: true,
       data: {
         insights,
-        total: insights?.length,
+        total: insights.length,
       },
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error getting insights:");
@@ -333,10 +333,10 @@ router?.get("/insights", requireAuth, async (req, res) => {
 
 router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { platform } = req?.params;
 
-    const _optimalTimes = autopilotCoordinatorService?.getOptimalPostingTimes(
+    const optimalTimes = autopilotCoordinatorService?.getOptimalPostingTimes(
       userId,
       platform,
     );
@@ -358,14 +358,14 @@ router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
 
 router?.get("/conflicts", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _startDate = parseValidDate(req?.query.startDate, new Date());
-    const _endDate = parseValidDate(
+    const userId = req?.user!.id;
+    const startDate = parseValidDate(req?.query.startDate, new Date());
+    const endDate = parseValidDate(
       req?.query.endDate,
       new Date(Date?.now() + 7 * 24 * 60 * 60 * 1000),
     );
 
-    const _conflicts = autopilotCoordinatorService?.getPostingConflicts(
+    const conflicts = autopilotCoordinatorService?.getPostingConflicts(
       userId,
       startDate,
       endDate,
@@ -375,7 +375,7 @@ router?.get("/conflicts", requireAuth, async (req, res) => {
       success: true,
       data: {
         conflicts,
-        total: conflicts?.length,
+        total: conflicts.length,
       },
     });
   } catch (error) {
@@ -388,8 +388,8 @@ router?.get("/conflicts", requireAuth, async (req, res) => {
 
 router?.get("/performance", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _summary = autopilotCoordinatorService?.getPerformanceSummary(userId);
+    const userId = req?.user!.id;
+    const summary = autopilotCoordinatorService?.getPerformanceSummary(userId);
 
     res?.json({
       success: true,
@@ -405,7 +405,7 @@ router?.get("/performance", requireAuth, async (req, res) => {
 
 router?.post("/connect", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { autopilotType } = req?.body;
 
     if (!autopilotType || !["social", "advertising"].includes(autopilotType)) {
@@ -430,7 +430,7 @@ router?.post("/connect", requireAuth, async (req, res) => {
 
 router?.post("/disconnect", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { autopilotType } = req?.body;
 
     if (!autopilotType || !["social", "advertising"].includes(autopilotType)) {

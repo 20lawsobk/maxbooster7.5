@@ -843,7 +843,7 @@ function SongwritingTab() {
     if (!rhymeWord.trim()) return;
     const res = await apiRequest("POST", "/api/songwriting/ai-assist", {
       prompt: rhymeWord,
-      genre: selectedSession?.genre || "hip-hop",
+      genre: selectedSession.genre || "hip-hop",
     });
     const data = await res.json();
     setRhymes(data.rhymes || []);

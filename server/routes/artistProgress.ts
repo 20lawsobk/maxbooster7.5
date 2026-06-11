@@ -5,13 +5,13 @@ import { artistProgressService } from "../services/artistProgressService";
 import { logger } from "../logger";
 import { z } from "zod";
 
-const _router = Router();
+const router = Router();
 
-const _historyQuerySchema = z?.object({
+const historyQuerySchema = z.object({
   days: z
     .string()
     .transform(Number)
-    .pipe(z?.number().min(1).max(365))
+    .pipe(z.number().min(1).max(365))
     .optional(),
 });
 
@@ -20,11 +20,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       logger?.info(`Fetching artist progress dashboard for user ${userId}`);
 
-      const _dashboardData =
+      const dashboardData =
         await artistProgressService?.getDashboardData(userId);
 
       res?.json({
@@ -43,17 +43,17 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { days = "30" } = req?.query as { days?: string };
 
-      const _parsedQuery = historyQuerySchema?.parse({ days });
-      const _daysCount = parsedQuery?.days || 30;
+      const parsedQuery = historyQuerySchema?.parse({ days });
+      const daysCount = parsedQuery?.days || 30;
 
       logger?.info(
         `Fetching progress history for user ${userId}, days=${daysCount}`,
       );
 
-      const _history = await artistProgressService?.getProgressHistory(
+      const history = await artistProgressService?.getProgressHistory(
         userId,
         daysCount,
       );
@@ -63,7 +63,7 @@ router?.get(
         data: history,
         meta: {
           days: daysCount,
-          count: history?.length,
+          count: history.length,
         },
       });
     } catch (error) {
@@ -78,11 +78,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       logger?.info(`Fetching career milestones for user ${userId}`);
 
-      const _milestones =
+      const milestones =
         await artistProgressService?.getCareerMilestones(userId);
 
       res?.json({
@@ -101,11 +101,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       logger?.info(`Fetching growth metrics for user ${userId}`);
 
-      const _growthMetrics =
+      const growthMetrics =
         await artistProgressService?.calculateGrowthMetrics(userId);
 
       res?.json({
@@ -124,7 +124,7 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       logger?.info(`Manually capturing snapshot for user ${userId}`);
 

@@ -7,7 +7,7 @@
  * When the remote is unavailable, callers receive null/empty (no fallback).
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface MaxCoreInferRequest {
   platform?: string;
@@ -46,7 +46,7 @@ export async function maxcoreLocalInfer(
   _req: MaxCoreInferRequest,
 ): Promise<MaxCoreInferResponse | null> {
   logger?.warn(
-    "[MaxCoreLocal] maxcoreLocalInfer() called — local engine removed. Use MaxCoreAIClient?.infer() for 8TB dataset access.",
+    "[MaxCoreLocal] maxcoreLocalInfer() called — local engine removed. Use MaxCoreAIClient.infer() for 8TB dataset access.",
   );
   return null;
 }
@@ -57,9 +57,9 @@ export async function maxcoreLocalInfer(
 export function maxcoreLocalHealth() {
   return {
     status: "ok",
-    version: "3?.0.0",
+    version: "3.0.0",
     source: "remote-only",
     engine: "MaxCoreAI-remote",
-    uptime: process?.uptime(),
+    uptime: process.uptime(),
   };
 }

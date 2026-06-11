@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import type { IStorage } from "../storage";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -10,10 +10,10 @@ let ffmpegAvailable = false;
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
-    const _fluentFfmpeg = await import("fluent-ffmpeg");
+    const fluentFfmpeg = await import("fluent-ffmpeg");
     ffmpeg = fluentFfmpeg?.default;
     try {
-      const _ffmpegStatic = await import("ffmpeg-static");
+      const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic?.default) {
         ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
       }
@@ -32,7 +32,7 @@ async function initializeFfmpeg() {
 }
 
 // Quality presets mapping for different formats and quality levels
-const _qualityPresets = {
+const qualityPresets = {
   low: {
     mp3: 128000,
     aac: 96000,
@@ -62,17 +62,17 @@ const _qualityPresets = {
 };
 
 // Track active FFmpeg processes for cancellation
-const _activeProcesses = new Map<string, any>();
+const activeProcesses = new Map<string, any>();
 
 // Conversion queue (limit to 2 concurrent conversions to prevent CPU overload)
-const _conversionQueue = new Map<string, Promise<void>>();
-const _MAX_CONCURRENT_CONVERSIONS = 2;
+const conversionQueue = new Map<string, Promise<void>>();
+const MAX_CONCURRENT_CONVERSIONS = 2;
 
 /**
  * Sanitize file path to prevent directory traversal attacks
  */
 function sanitizePath(filePath: string): string {
-  const _normalized = path?.normalize(filePath);
+  const normalized = path?.normalize(filePath);
   if (normalized?.includes("..") || path?.isAbsolute(normalized)) {
     throw new Error("Invalid file path");
   }
@@ -86,12 +86,12 @@ function getQualitySettings(
   format: string,
   preset: string,
 ): { bitrate?: number; sampleRate: number } {
-  const _presetConfig = qualityPresets[preset as keyof typeof qualityPresets];
+  const presetConfig = qualityPresets[preset as keyof typeof qualityPresets];
   if (!presetConfig) {
     throw new Error(`Invalid quality preset: ${preset}`);
   }
 
-  const _formatLower = format?.toLowerCase();
+  const formatLower = format?.toLowerCase();
   let bitrate: number | undefined;
 
   if (preset === "lossless") {
@@ -101,7 +101,7 @@ function getQualitySettings(
     bitrate = undefined; // Lossless = no bitrate limit
   } else {
     bitrate = presetConfig[
-      formatLower as keyof typeof presetConfig?.low
+      formatLower as keyof typeof presetConfig.low
     ] as number;
     if (!bitrate) {
       throw new Error(`Format ${format} not supported for preset ${preset}`);
@@ -110,7 +110,7 @@ function getQualitySettings(
 
   return {
     bitrate,
-    sampleRate: presetConfig?.sampleRate,
+    sampleRate: presetConfig.sampleRate,
   };
 }
 
@@ -125,7 +125,7 @@ export async function convertAudioFile(
   projectId: string,
   storage: IStorage,
 ): Promise<string> {
-  const _hasFFmpeg = await initializeFfmpeg();
+  const hasFFmpeg = await initializeFfmpeg();
   if (!hasFFmpeg || !ffmpeg) {
     throw new Error(
       "FFmpeg is not available. Audio conversion features are disabled in this deployment.",
@@ -133,8 +133,8 @@ export async function convertAudioFile(
   }
   try {
     // Sanitize and validate source path
-    const _sanitizedSource = sanitizePath(sourcePath);
-    const _fullSourcePath = path?.join(process?.cwd(), sanitizedSource);
+    const sanitizedSource = sanitizePath(sourcePath);
+    const fullSourcePath = path?.join(process?.cwd(), sanitizedSource);
 
     // Validate source file exists
     if (!existsSync(fullSourcePath)) {
@@ -148,7 +148,7 @@ export async function convertAudioFile(
     );
 
     // Create output directory: uploads/conversions/<projectId>/
-    const _outputDir = path?.join(
+    const outputDir = path?.join(
       process?.cwd(),
       "uploads",
       "conversions",
@@ -157,22 +157,22 @@ export async function convertAudioFile(
     await fs?.mkdir(outputDir, { recursive: true });
 
     // Generate output filename
-    const _sourceBasename = path?.basename(
+    const sourceBasename = path?.basename(
       sanitizedSource,
       path?.extname(sanitizedSource),
     );
-    const _timestamp = Date?.now();
-    const _outputFilename = `${sourceBasename}_${timestamp}.${targetFormat?.toLowerCase()}`;
-    const _outputPath = path?.join(outputDir, outputFilename);
-    const _relativeOutputPath = path?.relative(process?.cwd(), outputPath);
+    const timestamp = Date?.now();
+    const outputFilename = `${sourceBasename}_${timestamp}.${targetFormat?.toLowerCase()}`;
+    const outputPath = path?.join(outputDir, outputFilename);
+    const relativeOutputPath = path?.relative(process?.cwd(), outputPath);
 
     // Configure FFmpeg command
-    const _command = ffmpeg(fullSourcePath)
+    const command = ffmpeg(fullSourcePath)
       .audioFrequency(sampleRate)
       .format(targetFormat?.toLowerCase());
 
     // Apply format-specific settings
-    const _formatLower = targetFormat?.toLowerCase();
+    const formatLower = targetFormat?.toLowerCase();
     if (bitrate) {
       command?.audioBitrate(bitrate / 1000); // FFmpeg expects kbps
     }
@@ -212,7 +212,7 @@ export async function convertAudioFile(
         .on("codecData", (data: unknown) => {
           // Get total duration for progress calculation
           if (data?.duration) {
-            const _timeParts = data?.duration.split(":");
+            const timeParts = data?.duration.split(":");
             duration =
               parseInt(timeParts[0]) * 3600 +
               parseInt(timeParts[1]) * 60 +
@@ -221,12 +221,12 @@ export async function convertAudioFile(
         })
         .on("progress", async (progress: unknown) => {
           if (duration > 0 && progress?.timemark) {
-            const _timeParts = progress?.timemark.split(":");
-            const _currentTime =
+            const timeParts = progress?.timemark.split(":");
+            const currentTime =
               parseInt(timeParts[0]) * 3600 +
               parseInt(timeParts[1]) * 60 +
               parseFloat(timeParts[2]);
-            const _percentage = Math?.min(
+            const percentage = Math?.min(
               Math?.round((currentTime / duration) * 100),
               99,
             );
@@ -264,7 +264,7 @@ export async function convertAudioFile(
           try {
             await storage?.updateConversion(conversionId, {
               status: "failed",
-              errorMessage: err?.message,
+              errorMessage: err.message,
               completedAt: new Date(),
             });
           } catch (updateErr: unknown) {
@@ -298,7 +298,7 @@ export async function processConversion(
 ): Promise<void> {
   try {
     // Get conversion details from database
-    const _conversion = await storage?.getConversion(conversionId);
+    const conversion = await storage?.getConversion(conversionId);
     if (!conversion) {
       throw new Error(`Conversion ${conversionId} not found`);
     }
@@ -352,7 +352,7 @@ export async function enqueueConversion(
   }
 
   // Add to queue and start processing
-  const _promise = processConversion(conversionId, storage);
+  const promise = processConversion(conversionId, storage);
   conversionQueue?.set(conversionId, promise);
 
   // Don't await - let it process in background
@@ -369,7 +369,7 @@ export async function cancelConversion(
   storage: IStorage,
 ): Promise<void> {
   // Kill FFmpeg process if active
-  const _process = activeProcesses?.get(conversionId);
+  const process = activeProcesses?.get(conversionId);
   if (process) {
     try {
       process?.kill("SIGKILL");
@@ -392,10 +392,10 @@ export async function cancelConversion(
   conversionQueue?.delete(conversionId);
 
   // Clean up partial output file if it exists
-  const _conversion = await storage?.getConversion(conversionId);
+  const conversion = await storage?.getConversion(conversionId);
   if (conversion?.outputFilePath) {
     try {
-      const _fullPath = path?.join(process?.cwd(), conversion?.outputFilePath);
+      const fullPath = path?.join(process?.cwd(), conversion?.outputFilePath);
       if (existsSync(fullPath)) {
         await fs?.unlink(fullPath);
       }
@@ -413,7 +413,7 @@ export async function cancelConversion(
  */
 export function getQueueStatus(): { active: number; max: number } {
   return {
-    active: conversionQueue?.size,
+    active: conversionQueue.size,
     max: MAX_CONCURRENT_CONVERSIONS,
   };
 }

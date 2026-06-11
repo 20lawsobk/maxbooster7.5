@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface MemoryMetrics {
   heapUsed: number;
@@ -26,8 +26,8 @@ interface LeakDetection {
 class MemoryManager extends EventEmitter {
   private metrics: MemoryMetrics[] = [];
   private maxMetrics = 1440; // 24 hours at 1-minute intervals
-  private monitoringInterval: NodeJS?.Timeout | null = null;
-  private gcInterval: NodeJS?.Timeout | null = null;
+  private monitoringInterval: NodeJS.Timeout | null = null;
+  private gcInterval: NodeJS.Timeout | null = null;
 
   private thresholds: MemoryThresholds;
 
@@ -45,20 +45,20 @@ class MemoryManager extends EventEmitter {
 
     // Use absolute thresholds to avoid false positives in development
     // In production, these can be adjusted via environment variables
-    const _nodeEnv = process?.env.NODE_ENV || "development";
-    const _isProduction = nodeEnv === "production";
+    const nodeEnv = process?.env.NODE_ENV || "development";
+    const isProduction = nodeEnv === "production";
 
     // Set sensible absolute minimums (MB converted to bytes)
-    const _absoluteWarningMB = isProduction ? 768 : 1024; // 768MB prod, 1GB dev
-    const _absoluteCriticalMB = isProduction ? 1024 : 1536; // 1GB prod, 1?.5GB dev
+    const absoluteWarningMB = isProduction ? 768 : 1024; // 768MB prod, 1GB dev
+    const absoluteCriticalMB = isProduction ? 1024 : 1536; // 1GB prod, 1.5GB dev
 
-    const _warningThreshold = absoluteWarningMB * 1024 * 1024;
-    const _criticalThreshold = absoluteCriticalMB * 1024 * 1024;
+    const warningThreshold = absoluteWarningMB * 1024 * 1024;
+    const criticalThreshold = absoluteCriticalMB * 1024 * 1024;
 
-    this?.thresholds = {
+    this.thresholds = {
       warning: warningThreshold,
       critical: criticalThreshold,
-      forceGC: Math?.floor((warningThreshold + criticalThreshold) / 2),
+      forceGC: Math.floor((warningThreshold + criticalThreshold) / 2),
     };
 
     logger?.info(
@@ -80,7 +80,7 @@ class MemoryManager extends EventEmitter {
     }
 
     // Main monitoring loop
-    this?.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       this?.collectMetrics();
       this?.analyzeMemoryUsage();
       this?.detectMemoryLeaks();
@@ -88,7 +88,7 @@ class MemoryManager extends EventEmitter {
     }, intervalMs);
 
     // Garbage collection schedule (every 5 minutes)
-    this?.gcInterval = setInterval(
+    this.gcInterval = setInterval(
       () => {
         this?.scheduleGarbageCollection();
       },
@@ -101,52 +101,52 @@ class MemoryManager extends EventEmitter {
   stop(): void {
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = null;
+      this.monitoringInterval = null;
     }
 
     if (this?.gcInterval) {
       clearInterval(this?.gcInterval);
-      this?.gcInterval = null;
+      this.gcInterval = null;
     }
 
     logger?.info("🛑 Memory manager stopped");
   }
 
   private collectInitialMetrics(): void {
-    const _usage = process?.memoryUsage();
+    const usage = process?.memoryUsage();
     this?.metrics.push({
-      heapUsed: usage?.heapUsed,
-      heapTotal: usage?.heapTotal,
-      external: usage?.external,
-      rss: usage?.rss,
-      arrayBuffers: usage?.arrayBuffers,
-      timestamp: Date?.now(),
+      heapUsed: usage.heapUsed,
+      heapTotal: usage.heapTotal,
+      external: usage.external,
+      rss: usage.rss,
+      arrayBuffers: usage.arrayBuffers,
+      timestamp: Date.now(),
     });
   }
 
   private collectMetrics(): void {
-    const _usage = process?.memoryUsage();
+    const usage = process?.memoryUsage();
     const metric: MemoryMetrics = {
-      heapUsed: usage?.heapUsed,
-      heapTotal: usage?.heapTotal,
-      external: usage?.external,
-      rss: usage?.rss,
-      arrayBuffers: usage?.arrayBuffers,
-      timestamp: Date?.now(),
+      heapUsed: usage.heapUsed,
+      heapTotal: usage.heapTotal,
+      external: usage.external,
+      rss: usage.rss,
+      arrayBuffers: usage.arrayBuffers,
+      timestamp: Date.now(),
     };
 
     this?.metrics.unshift(metric);
 
     // Limit metrics array size
     if (this?.metrics.length > this?.maxMetrics) {
-      this?.metrics = this?.metrics.slice(0, this?.maxMetrics);
+      this.metrics = this?.metrics.slice(0, this?.maxMetrics);
     }
 
     // Update leak detection samples
     if (this?.leakDetection.enabled) {
       this?.leakDetection.samples?.unshift(metric);
       if (this?.leakDetection.samples?.length > this?.leakDetection.sampleSize) {
-        this?.leakDetection.samples = this?.leakDetection.samples?.slice(
+        this.leakDetection.samples = this?.leakDetection.samples?.slice(
           0,
           this?.leakDetection.sampleSize,
         );
@@ -155,11 +155,11 @@ class MemoryManager extends EventEmitter {
   }
 
   private analyzeMemoryUsage(): void {
-    const _current = this?.metrics[0];
+    const current = this?.metrics[0];
     if (!current) return;
 
-    const _heapUsedMB = Math?.round(current?.heapUsed / 1024 / 1024);
-    const _rssMB = Math?.round(current?.rss / 1024 / 1024);
+    const heapUsedMB = Math?.round(current?.heapUsed / 1024 / 1024);
+    const rssMB = Math?.round(current?.rss / 1024 / 1024);
 
     // Check thresholds
     if (current?.heapUsed > this?.thresholds.critical) {
@@ -169,7 +169,7 @@ class MemoryManager extends EventEmitter {
       this?.emit("memory-critical", {
         heapUsedMB,
         rssMB,
-        threshold: Math?.round(this?.thresholds.critical / 1024 / 1024),
+        threshold: Math.round(this?.thresholds.critical / 1024 / 1024),
       });
 
       // Force immediate cleanup and GC
@@ -180,7 +180,7 @@ class MemoryManager extends EventEmitter {
       this?.emit("memory-warning", {
         heapUsedMB,
         rssMB,
-        threshold: Math?.round(this?.thresholds.warning / 1024 / 1024),
+        threshold: Math.round(this?.thresholds.warning / 1024 / 1024),
       });
     } else {
       // Log normal status every 10 minutes
@@ -200,25 +200,25 @@ class MemoryManager extends EventEmitter {
       return;
     }
 
-    const _samples = this?.leakDetection.samples;
-    const _latest = samples[0];
-    const _oldest = samples[samples?.length - 1];
+    const samples = this?.leakDetection.samples;
+    const latest = samples[0];
+    const oldest = samples[samples?.length - 1];
 
-    const _timeDiffMinutes = (latest?.timestamp - oldest?.timestamp) / (1000 * 60);
-    const _memoryGrowthMB = (latest?.heapUsed - oldest?.heapUsed) / (1024 * 1024);
+    const timeDiffMinutes = (latest?.timestamp - oldest?.timestamp) / (1000 * 60);
+    const memoryGrowthMB = (latest?.heapUsed - oldest?.heapUsed) / (1024 * 1024);
 
     if (timeDiffMinutes > 0) {
-      const _growthRate = memoryGrowthMB / timeDiffMinutes;
+      const growthRate = memoryGrowthMB / timeDiffMinutes;
 
       if (growthRate > this?.leakDetection.growthThreshold) {
         logger?.warn(
           `🚨 MEMORY LEAK DETECTED: ${growthRate?.toFixed(2)}MB/min growth rate`,
         );
         this?.emit("memory-leak-detected", {
-          growthRate: growthRate?.toFixed(2),
-          threshold: this?.leakDetection.growthThreshold,
-          timespan: timeDiffMinutes?.toFixed(1),
-          currentUsageMB: Math?.round(latest?.heapUsed / 1024 / 1024),
+          growthRate: growthRate.toFixed(2),
+          threshold: this.leakDetection.growthThreshold,
+          timespan: timeDiffMinutes.toFixed(1),
+          currentUsageMB: Math.round(latest?.heapUsed / 1024 / 1024),
         });
 
         // Trigger aggressive cleanup
@@ -229,13 +229,13 @@ class MemoryManager extends EventEmitter {
 
   scheduleGarbageCollection(): void {
     if ((global as Record<string, unknown>).gc) {
-      const _beforeMB = Math?.round(process?.memoryUsage().heapUsed / 1024 / 1024);
+      const beforeMB = Math?.round(process?.memoryUsage().heapUsed / 1024 / 1024);
 
       logger?.info("🧹 Scheduling garbage collection...");
       (global as Record<string, unknown>).gc();
 
-      const _afterMB = Math?.round(process?.memoryUsage().heapUsed / 1024 / 1024);
-      const _freedMB = beforeMB - afterMB;
+      const afterMB = Math?.round(process?.memoryUsage().heapUsed / 1024 / 1024);
+      const freedMB = beforeMB - afterMB;
 
       if (freedMB > 0) {
         logger?.info(
@@ -274,7 +274,7 @@ class MemoryManager extends EventEmitter {
 
     // Clear old metrics beyond retention period
     if (this?.metrics.length > this?.maxMetrics) {
-      this?.metrics = this?.metrics.slice(0, this?.maxMetrics);
+      this.metrics = this?.metrics.slice(0, this?.maxMetrics);
     }
   }
 
@@ -304,41 +304,41 @@ class MemoryManager extends EventEmitter {
         external: 0,
         rss: 0,
         arrayBuffers: 0,
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
       }
     );
   }
 
   getUsageHistory(minutes: number = 60): MemoryMetrics[] {
-    const _cutoff = Date?.now() - minutes * 60 * 1000;
+    const cutoff = Date?.now() - minutes * 60 * 1000;
     return this?.metrics.filter((m) => m?.timestamp > cutoff);
   }
 
   getMemorySummary(): Record<string, unknown> {
-    const _current = this?.getCurrentUsage();
-    const _history = this?.getUsageHistory(60);
+    const current = this?.getCurrentUsage();
+    const history = this?.getUsageHistory(60);
 
-    const _avgHeapUsed =
+    const avgHeapUsed =
       history?.reduce((sum, m) => sum + m?.heapUsed, 0) / history?.length;
-    const _maxHeapUsed = Math?.max(...history?.map((m) => m?.heapUsed));
+    const maxHeapUsed = Math?.max(...history?.map((m) => m?.heapUsed));
 
     return {
       current: {
-        heapUsedMB: Math?.round(current?.heapUsed / 1024 / 1024),
-        heapTotalMB: Math?.round(current?.heapTotal / 1024 / 1024),
-        rssMB: Math?.round(current?.rss / 1024 / 1024),
+        heapUsedMB: Math.round(current?.heapUsed / 1024 / 1024),
+        heapTotalMB: Math.round(current?.heapTotal / 1024 / 1024),
+        rssMB: Math.round(current?.rss / 1024 / 1024),
       },
       trend: {
-        avgHeapUsedMB: Math?.round(avgHeapUsed / 1024 / 1024),
-        maxHeapUsedMB: Math?.round(maxHeapUsed / 1024 / 1024),
+        avgHeapUsedMB: Math.round(avgHeapUsed / 1024 / 1024),
+        maxHeapUsedMB: Math.round(maxHeapUsed / 1024 / 1024),
       },
       thresholds: {
-        warningMB: Math?.round(this?.thresholds.warning / 1024 / 1024),
-        criticalMB: Math?.round(this?.thresholds.critical / 1024 / 1024),
+        warningMB: Math.round(this?.thresholds.warning / 1024 / 1024),
+        criticalMB: Math.round(this?.thresholds.critical / 1024 / 1024),
       },
       leakDetection: {
-        enabled: this?.leakDetection.enabled,
-        samplesCollected: this?.leakDetection.samples?.length,
+        enabled: this.leakDetection.enabled,
+        samplesCollected: this.leakDetection.samples?.length,
       },
     };
   }
@@ -350,15 +350,15 @@ class MemoryManager extends EventEmitter {
 
   // Configuration methods
   setThresholds(thresholds: Partial<MemoryThresholds>): void {
-    this?.thresholds = { ...this?.thresholds, ...thresholds };
+    this.thresholds = { ...this?.thresholds, ...thresholds };
     logger?.info("🔧 Memory thresholds updated:", {
-      warningMB: Math?.round(this?.thresholds.warning / 1024 / 1024),
-      criticalMB: Math?.round(this?.thresholds.critical / 1024 / 1024),
+      warningMB: Math.round(this?.thresholds.warning / 1024 / 1024),
+      criticalMB: Math.round(this?.thresholds.critical / 1024 / 1024),
     });
   }
 
   enableLeakDetection(enabled: boolean): void {
-    this?.leakDetection.enabled = enabled;
+    this.leakDetection.enabled = enabled;
     logger?.info(`🔧 Memory leak detection ${enabled ? "enabled" : "disabled"}`);
   }
 
@@ -376,6 +376,6 @@ class MemoryManager extends EventEmitter {
 }
 
 // Global memory manager instance
-export const _memoryManager = new MemoryManager();
+export const memoryManager = new MemoryManager();
 
 export default MemoryManager;

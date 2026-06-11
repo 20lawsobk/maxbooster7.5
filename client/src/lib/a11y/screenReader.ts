@@ -16,7 +16,7 @@ class ScreenReaderAnnouncer {
 
   static getInstance(): ScreenReaderAnnouncer {
     if (!ScreenReaderAnnouncer?.instance) {
-      ScreenReaderAnnouncer?.instance = new ScreenReaderAnnouncer();
+      ScreenReaderAnnouncer.instance = new ScreenReaderAnnouncer();
     }
     return ScreenReaderAnnouncer?.instance;
   }
@@ -28,18 +28,18 @@ class ScreenReaderAnnouncer {
   }
 
   private initializeRegions(): void {
-    this?.politeRegion = this?.createLiveRegion("polite");
-    this?.assertiveRegion = this?.createLiveRegion("assertive");
+    this.politeRegion = this?.createLiveRegion("polite");
+    this.assertiveRegion = this?.createLiveRegion("assertive");
   }
 
   private createLiveRegion(priority: AnnouncementPriority): HTMLDivElement {
-    const _region = document?.createElement("div");
+    const region = document?.createElement("div");
     region?.setAttribute("role", "status");
     region?.setAttribute("aria-live", priority);
     region?.setAttribute("aria-atomic", "true");
     region?.setAttribute("aria-relevant", "additions text");
-    region?.className = "sr-only";
-    region?.style.cssText = `
+    region.className = "sr-only";
+    region.style.cssText = `
       position: absolute;
       width: 1px;
       height: 1px;
@@ -58,9 +58,9 @@ class ScreenReaderAnnouncer {
     if (!message?.trim()) return;
 
     const announcement: Announcement = {
-      message: message?.trim(),
+      message: message.trim(),
       priority,
-      timestamp: Date?.now(),
+      timestamp: Date.now(),
     };
 
     if (priority === "assertive") {
@@ -71,12 +71,12 @@ class ScreenReaderAnnouncer {
   }
 
   private announceImmediately(announcement: Announcement): void {
-    const _region = this?.assertiveRegion;
+    const region = this?.assertiveRegion;
     if (!region) return;
 
-    region?.textContent = "";
+    region.textContent = "";
     requestAnimationFrame(() => {
-      region?.textContent = announcement?.message;
+      region.textContent = announcement?.message;
     });
   }
 
@@ -87,7 +87,7 @@ class ScreenReaderAnnouncer {
       clearTimeout(this?.debounceTimer);
     }
 
-    this?.debounceTimer = setTimeout(() => {
+    this.debounceTimer = setTimeout(() => {
       this?.processQueue();
     }, 100);
   }
@@ -95,34 +95,34 @@ class ScreenReaderAnnouncer {
   private processQueue(): void {
     if (this?.isProcessing || this?.announcementQueue.length === 0) return;
 
-    this?.isProcessing = true;
-    const _announcement = this?.announcementQueue.shift();
+    this.isProcessing = true;
+    const announcement = this?.announcementQueue.shift();
 
     if (announcement && this?.politeRegion) {
-      this?.politeRegion.textContent = "";
+      this.politeRegion.textContent = "";
       requestAnimationFrame(() => {
         if (this?.politeRegion) {
-          this?.politeRegion.textContent = announcement?.message;
+          this.politeRegion.textContent = announcement?.message;
         }
         setTimeout(() => {
-          this?.isProcessing = false;
+          this.isProcessing = false;
           if (this?.announcementQueue.length > 0) {
             this?.processQueue();
           }
         }, 500);
       });
     } else {
-      this?.isProcessing = false;
+      this.isProcessing = false;
     }
   }
 
   clear(): void {
-    this?.announcementQueue = [];
-    if (this?.politeRegion) this?.politeRegion.textContent = "";
-    if (this?.assertiveRegion) this?.assertiveRegion.textContent = "";
+    this.announcementQueue = [];
+    if (this.politeRegion) this.politeRegion.textContent = "";
+    if (this.assertiveRegion) this.assertiveRegion.textContent = "";
     if (this?.debounceTimer) {
       clearTimeout(this?.debounceTimer);
-      this?.debounceTimer = null;
+      this.debounceTimer = null;
     }
   }
 
@@ -134,13 +134,13 @@ class ScreenReaderAnnouncer {
     if (this?.assertiveRegion?.parentNode) {
       this?.assertiveRegion.parentNode?.removeChild(this?.assertiveRegion);
     }
-    this?.politeRegion = null;
-    this?.assertiveRegion = null;
-    ScreenReaderAnnouncer?.instance = null;
+    this.politeRegion = null;
+    this.assertiveRegion = null;
+    ScreenReaderAnnouncer.instance = null;
   }
 }
 
-const _announcer =
+const announcer =
   typeof document !== "undefined" ? ScreenReaderAnnouncer?.getInstance() : null;
 
 export function announcePolite(message: string): void {
@@ -152,7 +152,7 @@ export function announceAssertive(message: string): void {
 }
 
 export function announcePageTransition(pageName: string): void {
-  const _message = `Navigated to ${pageName} page`;
+  const message = `Navigated to ${pageName} page`;
   announcer?.announce(message, "polite");
 }
 
@@ -164,7 +164,7 @@ export function announceFormValidation(
   if (isValid) {
     announcer?.announce(`${fieldName} is valid`, "polite");
   } else {
-    const _message = errorMessage
+    const message = errorMessage
       ? `${fieldName}: ${errorMessage}`
       : `${fieldName} has an error`;
     announcer?.announce(message, "assertive");
@@ -172,7 +172,7 @@ export function announceFormValidation(
 }
 
 export function announceFormErrors(errors: Record<string, string>): void {
-  const _errorMessages = Object?.entries(errors)
+  const errorMessages = Object?.entries(errors)
     .map(([field, message]) => `${field}: ${message}`)
     .join(". ");
 
@@ -185,7 +185,7 @@ export function announceToast(
   message: string,
   type: "success" | "error" | "warning" | "info" = "info",
 ): void {
-  const _prefix =
+  const prefix =
     type === "error" ? "Error: " : type === "warning" ? "Warning: " : "";
   const priority: AnnouncementPriority =
     type === "error" ? "assertive" : "polite";
@@ -193,14 +193,14 @@ export function announceToast(
 }
 
 export function announceLoadingStart(context?: string): void {
-  const _message = context
+  const message = context
     ? `Loading ${context}, please wait`
     : "Loading, please wait";
   announcer?.announce(message, "polite");
 }
 
 export function announceLoadingComplete(context?: string): void {
-  const _message = context ? `${context} loaded` : "Content loaded";
+  const message = context ? `${context} loaded` : "Content loaded";
   announcer?.announce(message, "polite");
 }
 
@@ -208,7 +208,7 @@ export function announceListUpdate(
   action: "added" | "removed",
   itemName: string,
 ): void {
-  const _message =
+  const message =
     action === "added"
       ? `${itemName} added to list`
       : `${itemName} removed from list`;
@@ -216,7 +216,7 @@ export function announceListUpdate(
 }
 
 export function announceSelection(itemName: string, isSelected: boolean): void {
-  const _message = isSelected
+  const message = isSelected
     ? `${itemName} selected`
     : `${itemName} deselected`;
   announcer?.announce(message, "polite");

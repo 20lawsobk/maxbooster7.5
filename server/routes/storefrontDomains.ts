@@ -1,54 +1,54 @@
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
 import dns from "dns";
-import { checkManaged, reserveManaged, listDomains, deleteDomain } from "../modules/domains/domain?.controller.js";
+import { checkManaged, reserveManaged, listDomains, deleteDomain } from "../modules/domains/domain.controller.js";
 import {
   publishStorefront,
   unpublishStorefront,
-} from "../modules/publish/publish?.service.js";
-import { logger } from "../logger?.js";
-import { db, pool } from "../db?.js";
+} from "../modules/publish/publish.service.js";
+import { logger } from "../logger.js";
+import { db, pool } from "../db.js";
 import {
   storefrontDomains,
   storefronts,
   storefrontHosts,
 } from "@shared/schema";
-import { validateFreeDomain } from "@shared/domainValidation?.js";
-import { validateDomain } from "../modules/domains/dnsValidators?.js";
+import { validateFreeDomain } from "@shared/domainValidation.js";
+import { validateDomain } from "../modules/domains/dnsValidators.js";
 
-const _dnsResolve = dns?.promises.resolve;
+const dnsResolve = dns?.promises.resolve;
 
-const _DOMAIN_LIMIT = 2;
+const DOMAIN_LIMIT = 2;
 
 async function getUserDomainUsage(
   userId: string,
 ): Promise<{ zones: number; claimed: number; total: number }> {
-  const _uniqueResult = await pool?.query(
+  const uniqueResult = await pool?.query(
     `SELECT COUNT(DISTINCT domain)::int AS n FROM (
        SELECT domain FROM dns_zones WHERE user_id = $1
        UNION
        SELECT sd?.domain
        FROM storefront_domains sd
-       JOIN storefronts s ON s?.id = sd?.storefront_id
-       WHERE s?.user_id = $1 AND sd?.type = 'platform_subdomain'
+       JOIN storefronts s ON s.id = sd?.storefront_id
+       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
      ) combined`,
     [userId],
   );
-  const _total = uniqueResult?.rows[0]?.n ?? 0;
-  const _zonesResult = await pool?.query(
+  const total = uniqueResult?.rows[0]?.n ?? 0;
+  const zonesResult = await pool?.query(
     "SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1",
     [userId],
   );
-  const _zones = zonesResult?.rows[0]?.n ?? 0;
+  const zones = zonesResult?.rows[0]?.n ?? 0;
   return { zones, claimed: 0, total };
 }
 
 async function userHasActiveSubscription(userId: string): Promise<boolean> {
-  const _result = await pool?.query(
+  const result = await pool?.query(
     `SELECT subscription_status, role FROM users WHERE id = $1 LIMIT 1`,
     [userId],
   );
-  const _user = result?.rows[0];
+  const user = result?.rows[0];
   if (!user) return false;
   if (user?.role === "admin") return true;
   return ["active", "trialing"].includes(user?.subscription_status ?? "");
@@ -60,7 +60,7 @@ async function userHasActiveSubscription(userId: string): Promise<boolean> {
  * A timeout prevents slow lookups from blocking the request.
  */
 async function isDomainRegisteredExternally(domain: string): Promise<boolean> {
-  const _timeout = <T>(ms: number, promise: Promise<T>): Promise<T> =>
+  const timeout = <T>(ms: number, promise: Promise<T>): Promise<T> =>
     Promise?.race([
       promise,
       new Promise<T>((_, reject) =>
@@ -71,7 +71,7 @@ async function isDomainRegisteredExternally(domain: string): Promise<boolean> {
   // Check NS records first — set by registrars even for parked domains
   for (const type of ["NS", "A", "AAAA"] as const) {
     try {
-      const _records = await timeout(3000, dnsResolve(domain, type));
+      const records = await timeout(3000, dnsResolve(domain, type));
       if (records && records?.length > 0) return true;
     } catch {
       // ENOTFOUND / ENODATA / timeout — keep checking next type
@@ -80,17 +80,17 @@ async function isDomainRegisteredExternally(domain: string): Promise<boolean> {
   return false;
 }
 
-const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster?.com";
+const BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
 
-const _router = Router();
+const router = Router();
 
 // Resolve a managed label to its storefront slug (used by client-side /s/:label route)
 router?.get("/resolve/:label", async (req, res) => {
   try {
-    const _label = req?.params.label?.toLowerCase().replace(/[^a-z0-9-]/g, "");
-    const _fqdn = `${label}.${BASE_DOMAIN}`;
+    const label = req?.params.label?.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const fqdn = `${label}.${BASE_DOMAIN}`;
     const [row] = await db
-      .select({ slug: storefronts?.slug, isActive: storefronts?.isActive })
+      .select({ slug: storefronts.slug, isActive: storefronts.isActive })
       .from(storefrontDomains)
       .innerJoin(
         storefronts,
@@ -104,7 +104,7 @@ router?.get("/resolve/:label", async (req, res) => {
       )
       .limit(1);
     if (!row) return res?.status(404).json({ ok: false, error: "Not found." });
-    return res?.json({ ok: true, slug: row?.slug, label });
+    return res?.json({ ok: true, slug: row.slug, label });
   } catch (err) {
     logger?.warn("[domains] resolve error:", err);
     return res?.status(500).json({ ok: false, error: "Internal error." });
@@ -135,11 +135,11 @@ router?.post("/custom/request", async (req, res) => {
         .status(400)
         .json({ ok: false, error: "storefrontId required." });
 
-    const _domResult = validateDomain(rawDomain || "");
+    const domResult = validateDomain(rawDomain || "");
     if (!domResult?.ok) return res?.status(400).json(domResult);
 
     const [sf] = await db
-      .select({ id: storefronts?.id, userId: storefronts?.userId })
+      .select({ id: storefronts.id, userId: storefronts.userId })
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
@@ -151,9 +151,9 @@ router?.post("/custom/request", async (req, res) => {
       return res?.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { attachDomainToStorefront } = await import(
-      "../services/storefrontDnsService?.js"
+      "../services/storefrontDnsService.js"
     );
-    const _result = await attachDomainToStorefront(
+    const result = await attachDomainToStorefront(
       storefrontId,
       (req?.user as Record<string, unknown>).id,
       domResult?.normalized,
@@ -162,18 +162,18 @@ router?.post("/custom/request", async (req, res) => {
     // Return a response the UI understands (domain + verificationToken + rich instructions)
     return res?.status(201).json({
       ok: true,
-      storefrontDomainId: result?.storefrontDomainId,
-      domain: result?.domain,
-      verificationToken: result?.verificationToken,
-      nameservers: result?.nameservers,
-      instructions: result?.instructions,
+      storefrontDomainId: result.storefrontDomainId,
+      domain: result.domain,
+      verificationToken: result.verificationToken,
+      nameservers: result.nameservers,
+      instructions: result.instructions,
       // Legacy-compat fields the old controller used to return
-      platformIp: process?.env.DNS_SERVER_IP || "34?.111.179?.208",
+      platformIp: process.env.DNS_SERVER_IP || "34.111.179.208",
     });
   } catch (err) {
     logger?.warn({ err }, "[storefrontDomains] custom/request error");
     const msg: string = err?.message || "";
-    const _status =
+    const status =
       msg?.includes("already active") ||
       msg?.includes("already being set up") ||
       msg?.includes("DNS zone is already owned")
@@ -208,8 +208,8 @@ router?.post("/custom/verify", async (req, res) => {
       // Ownership check when caller supplies a raw domainId
       const [row] = await db
         .select({
-          id: storefrontDomains?.id,
-          storefrontId: storefrontDomains?.storefrontId,
+          id: storefrontDomains.id,
+          storefrontId: storefrontDomains.storefrontId,
         })
         .from(storefrontDomains)
         .where(eq(storefrontDomains?.id, domainId))
@@ -220,7 +220,7 @@ router?.post("/custom/verify", async (req, res) => {
           .json({ ok: false, verified: false, error: "Domain not found." });
 
       const [sf] = await db
-        .select({ userId: storefronts?.userId })
+        .select({ userId: storefronts.userId })
         .from(storefronts)
         .where(eq(storefronts?.id, row?.storefrontId))
         .limit(1);
@@ -229,11 +229,11 @@ router?.post("/custom/verify", async (req, res) => {
 
       resolvedId = row?.id;
     } else if (domain) {
-      const _normalized = domain?.trim().toLowerCase();
+      const normalized = domain?.trim().toLowerCase();
       const [row] = await db
         .select({
-          id: storefrontDomains?.id,
-          storefrontId: storefrontDomains?.storefrontId,
+          id: storefrontDomains.id,
+          storefrontId: storefrontDomains.storefrontId,
         })
         .from(storefrontDomains)
         .where(eq(storefrontDomains?.domain, normalized))
@@ -245,7 +245,7 @@ router?.post("/custom/verify", async (req, res) => {
 
       // Ownership check
       const [sf] = await db
-        .select({ userId: storefronts?.userId })
+        .select({ userId: storefronts.userId })
         .from(storefronts)
         .where(eq(storefronts?.id, row?.storefrontId))
         .limit(1);
@@ -261,9 +261,9 @@ router?.post("/custom/verify", async (req, res) => {
         .json({ ok: false, error: "domain or domainId required." });
 
     const { verifyStorefrontDomain } = await import(
-      "../services/storefrontDnsService?.js"
+      "../services/storefrontDnsService.js"
     );
-    const _result = await verifyStorefrontDomain(resolvedId);
+    const result = await verifyStorefrontDomain(resolvedId);
 
     return res?.json({
       ok: true,
@@ -277,7 +277,7 @@ router?.post("/custom/verify", async (req, res) => {
       .json({
         ok: false,
         verified: false,
-        error: err?.message || "Internal error.",
+        error: err.message || "Internal error.",
       });
   }
 });
@@ -296,7 +296,7 @@ router?.post("/storefront/:storefrontId/publish", async (req, res) => {
     return res?.json({ ok: true, status: "live" });
   } catch (err) {
     logger?.warn("[storefrontDomains] publish error:", err);
-    const _status =
+    const status =
       err?.message === "Unauthorized."
         ? 403
         : err?.message === "Storefront not found."
@@ -304,7 +304,7 @@ router?.post("/storefront/:storefrontId/publish", async (req, res) => {
           : 500;
     return res
       .status(status)
-      .json({ ok: false, error: err?.message || "Internal error." });
+      .json({ ok: false, error: err.message || "Internal error." });
   }
 });
 
@@ -319,7 +319,7 @@ router?.post("/storefront/:storefrontId/unpublish", async (req, res) => {
     return res?.json({ ok: true, status: "draft" });
   } catch (err) {
     logger?.warn("[storefrontDomains] unpublish error:", err);
-    const _status =
+    const status =
       err?.message === "Unauthorized."
         ? 403
         : err?.message === "Storefront not found."
@@ -327,38 +327,38 @@ router?.post("/storefront/:storefrontId/unpublish", async (req, res) => {
           : 500;
     return res
       .status(status)
-      .json({ ok: false, error: err?.message || "Internal error." });
+      .json({ ok: false, error: err.message || "Internal error." });
   }
 });
 
-// ── Free Platform Domain (user's own full domain, e?.g. mybeats?.com) ─────────
+// ── Free Platform Domain (user's own full domain, e.g. mybeats.com) ─────────
 // Check availability of a full domain name (no auth required).
 // Performs two checks in parallel:
 //   1. Internal DB — is the domain already claimed on Max Booster?
 //   2. Real-world DNS — is the domain already registered globally?
-router?.post("/platform/check", async (req, res) => {
+router.post("/platform/check", async (req, res) => {
   try {
-    const { sld, tld } = req?.body;
-    const _v = validateFreeDomain(sld, tld);
-    if (!v?.valid) {
+    const { sld, tld } = req.body;
+    const v = validateFreeDomain(sld, tld);
+    if (!v.valid) {
       return res
         .status(400)
-        .json({ ok: false, available: false, error: v?.error });
+        .json({ ok: false, available: false, error: v.error });
     }
-    const _domain = v?.domain!;
+    const domain = v.domain!;
 
     // Run DB lookup and external DNS check in parallel for speed
-    const [dbResult, externallyRegistered] = await Promise?.all([
+    const [dbResult, externallyRegistered] = await Promise.all([
       db
-        .select({ id: storefrontDomains?.id })
+        .select({ id: storefrontDomains.id })
         .from(storefrontDomains)
-        .where(eq(storefrontDomains?.domain, domain))
+        .where(eq(storefrontDomains.domain, domain))
         .limit(1),
       isDomainRegisteredExternally(domain),
     ]);
 
-    if (dbResult?.length > 0) {
-      return res?.json({
+    if (dbResult.length > 0) {
+      return res.json({
         ok: true,
         available: false,
         domain,
@@ -366,16 +366,16 @@ router?.post("/platform/check", async (req, res) => {
       });
     }
     if (externallyRegistered) {
-      return res?.json({
+      return res.json({
         ok: true,
         available: false,
         domain,
         reason: "registered_externally",
       });
     }
-    return res?.json({ ok: true, available: true, domain });
+    return res.json({ ok: true, available: true, domain });
   } catch (err) {
-    logger?.warn("[domains] platform check error:", err);
+    logger.warn("[domains] platform check error:", err);
     return res
       .status(500)
       .json({ ok: false, available: false, error: "Internal error." });
@@ -384,75 +384,75 @@ router?.post("/platform/check", async (req, res) => {
 
 // Public registry lookup — lets any external party verify if a domain is claimed on Max Booster.
 // GET /api/storefront-domains/registry/:domain
-router?.get("/registry/:domain", async (req, res) => {
+router.get("/registry/:domain", async (req, res) => {
   try {
-    const _domain = req?.params.domain?.toLowerCase().trim();
+    const domain = req.params.domain.toLowerCase().trim();
     if (!domain || !/^[a-z0-9.-]+$/.test(domain)) {
-      return res?.status(400).json({ ok: false, error: "Invalid domain." });
+      return res.status(400).json({ ok: false, error: "Invalid domain." });
     }
     const [row] = await db
       .select({
-        domain: storefrontDomains?.domain,
-        status: storefrontDomains?.status,
-        claimedAt: storefrontDomains?.createdAt,
+        domain: storefrontDomains.domain,
+        status: storefrontDomains.status,
+        claimedAt: storefrontDomains.createdAt,
       })
       .from(storefrontDomains)
-      .where(eq(storefrontDomains?.domain, domain))
+      .where(eq(storefrontDomains.domain, domain))
       .limit(1);
     if (!row) {
-      return res?.json({ ok: true, claimed: false, domain });
+      return res.json({ ok: true, claimed: false, domain });
     }
-    return res?.json({
+    return res.json({
       ok: true,
       claimed: true,
-      domain: row?.domain,
-      status: row?.status,
-      claimedAt: row?.claimedAt,
+      domain: row.domain,
+      status: row.status,
+      claimedAt: row.claimedAt,
       managedBy: `Max Booster DNS (${BASE_DOMAIN})`,
     });
   } catch (err) {
-    logger?.warn("[domains] registry lookup error:", err);
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn("[domains] registry lookup error:", err);
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 
 // Claim a free full domain — provisioned immediately, managed by Max Booster DNS
 // Subscription required; limit: 2 custom domains per user (shared with Bring Your Own Domain slots)
-router?.post("/platform/claim", async (req, res) => {
+router.post("/platform/claim", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ ok: false, error: "Unauthorized." });
-    const _userId = (req?.user as Record<string, unknown>).id;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ ok: false, error: "Unauthorized." });
+    const userId = (req.user as Record<string, unknown>).id;
 
-    const { sld, tld, storefrontId } = req?.body;
+    const { sld, tld, storefrontId } = req.body;
     if (!storefrontId) {
       return res
         .status(400)
         .json({ ok: false, error: "storefrontId is required." });
     }
-    const _v = validateFreeDomain(sld, tld);
-    if (!v?.valid) {
-      return res?.status(400).json({ ok: false, error: v?.error });
+    const v = validateFreeDomain(sld, tld);
+    if (!v.valid) {
+      return res.status(400).json({ ok: false, error: v.error });
     }
 
-    const _domain = v?.domain!;
+    const domain = v.domain!;
 
     // Verify storefront belongs to this user
     const [sf] = await db
-      .select({ id: storefronts?.id, userId: storefronts?.userId })
+      .select({ id: storefronts.id, userId: storefronts.userId })
       .from(storefronts)
-      .where(eq(storefronts?.id, storefrontId))
+      .where(eq(storefronts.id, storefrontId))
       .limit(1);
-    if (!sf || sf?.userId !== userId) {
+    if (!sf || sf.userId !== userId) {
       return res
         .status(403)
         .json({ ok: false, error: "Storefront not found or access denied." });
     }
 
     // Subscription required
-    const _hasSubscription = await userHasActiveSubscription(userId);
+    const hasSubscription = await userHasActiveSubscription(userId);
     if (!hasSubscription) {
-      return res?.status(403).json({
+      return res.status(403).json({
         ok: false,
         error:
           "An active Max Booster subscription is required to claim free custom domains.",
@@ -463,8 +463,8 @@ router?.post("/platform/claim", async (req, res) => {
     // Check domain isn't taken
     const [existing] = await db
       .select({
-        id: storefrontDomains?.id,
-        storefrontId: storefrontDomains?.storefrontId,
+        id: storefrontDomains.id,
+        storefrontId: storefrontDomains.storefrontId,
       })
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.domain, domain))
@@ -477,7 +477,7 @@ router?.post("/platform/claim", async (req, res) => {
           .insert(storefrontHosts)
           .values({ host: domain, storefrontId, certStatus: "pending" })
           .onConflictDoUpdate({
-            target: storefrontHosts?.host,
+            target: storefrontHosts.host,
             set: { storefrontId, updatedAt: new Date() },
           });
         return res?.json({
@@ -497,26 +497,26 @@ router?.post("/platform/claim", async (req, res) => {
 
     // Enforce 2-domain limit — count BEFORE removing the old one for this storefront
     // so a swap within the same slot doesn't consume an extra slot.
-    const _usage = await getUserDomainUsage(userId);
-    const _claimedForThisStorefront = await db
-      .select({ id: storefrontDomains?.id })
+    const usage = await getUserDomainUsage(userId);
+    const claimedForThisStorefront = await db
+      .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
       .where(
         and(
-          eq(storefrontDomains?.storefrontId, storefrontId),
-          eq(storefrontDomains?.type, "platform_subdomain"),
+          eq(storefrontDomains.storefrontId, storefrontId),
+          eq(storefrontDomains.type, "platform_subdomain"),
         ),
       )
       .limit(1);
     // If this storefront already has a platform domain, the swap won't increase total
-    const _wouldIncrease = claimedForThisStorefront?.length === 0;
+    const wouldIncrease = claimedForThisStorefront?.length === 0;
     if (wouldIncrease && usage?.total >= DOMAIN_LIMIT) {
       return res?.status(403).json({
         ok: false,
         error: `Domain limit reached. Your subscription includes up to ${DOMAIN_LIMIT} custom domains. Remove an existing domain to add a new one.`,
         code: "DOMAIN_LIMIT_REACHED",
         limit: DOMAIN_LIMIT,
-        used: usage?.total,
+        used: usage.total,
       });
     }
 
@@ -525,8 +525,8 @@ router?.post("/platform/claim", async (req, res) => {
     // a divergence (domain written, host missing) is exactly the bug this fixes.
     await db?.transaction(async (tx) => {
       // Fetch the old domain(s) first so we can drop their stale routing rows.
-      const _oldPlatform = await tx
-        .select({ domain: storefrontDomains?.domain })
+      const oldPlatform = await tx
+        .select({ domain: storefrontDomains.domain })
         .from(storefrontDomains)
         .where(
           and(
@@ -551,7 +551,7 @@ router?.post("/platform/claim", async (req, res) => {
       }
 
       // Register — immediately active (provisioned via Max Booster's managed DNS)
-      await tx?.insert(storefrontDomains).values({
+      await tx.insert(storefrontDomains).values({
         storefrontId,
         domain,
         type: "platform_subdomain",
@@ -565,49 +565,49 @@ router?.post("/platform/claim", async (req, res) => {
         .insert(storefrontHosts)
         .values({ host: domain, storefrontId, certStatus: "pending" })
         .onConflictDoUpdate({
-          target: storefrontHosts?.host,
+          target: storefrontHosts.host,
           set: { storefrontId, updatedAt: new Date() },
         });
     });
 
-    logger?.info(
+    logger.info(
       `[domains] Free domain claimed: ${domain} → storefront ${storefrontId}`,
     );
-    return res?.json({ ok: true, domain, url: `https://${domain}` });
+    return res.json({ ok: true, domain, url: `https://${domain}` });
   } catch (err) {
-    logger?.warn("[domains] platform claim error:", err);
+    logger.warn("[domains] platform claim error:", err);
     return res
       .status(500)
-      .json({ ok: false, error: err?.message || "Internal error." });
+      .json({ ok: false, error: err.message || "Internal error." });
   }
 });
 
 // Get current platform subdomain for a storefront
-router?.get("/platform/:storefrontId", async (req, res) => {
+router.get("/platform/:storefrontId", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ ok: false, error: "Unauthorized." });
+    if (!req.isAuthenticated())
+      return res.status(401).json({ ok: false, error: "Unauthorized." });
     const [row] = await db
       .select({
-        domain: storefrontDomains?.domain,
-        status: storefrontDomains?.status,
+        domain: storefrontDomains.domain,
+        status: storefrontDomains.status,
       })
       .from(storefrontDomains)
       .where(
         and(
-          eq(storefrontDomains?.storefrontId, req?.params.storefrontId),
-          eq(storefrontDomains?.type, "platform_subdomain"),
+          eq(storefrontDomains.storefrontId, req.params.storefrontId),
+          eq(storefrontDomains.type, "platform_subdomain"),
         ),
       )
       .limit(1);
-    return res?.json({
+    return res.json({
       ok: true,
-      domain: row?.domain ?? null,
-      status: row?.status ?? null,
+      domain: row.domain ?? null,
+      status: row.status ?? null,
     });
   } catch (err) {
-    logger?.warn("[domains] platform get error:", err);
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn("[domains] platform get error:", err);
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 
@@ -617,7 +617,7 @@ router?.get("/platform/:storefrontId", async (req, res) => {
 // Designed for first-time domain holders discovering what's available.
 router?.get("/search", async (req, res) => {
   try {
-    const _raw = ((req?.query.name as string) || "")
+    const raw = ((req?.query.name as string) || "")
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9-]/g, "");
@@ -630,7 +630,7 @@ router?.get("/search", async (req, res) => {
         });
     }
 
-    const _timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
+    const timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
       Promise?.race([
         p,
         new Promise<T>((_, r) => setTimeout(() => r(new Error("timeout")), ms)),
@@ -639,7 +639,7 @@ router?.get("/search", async (req, res) => {
     async function externalAvailable(domain: string): Promise<boolean> {
       for (const type of ["NS", "A"] as const) {
         try {
-          const _records = await timeout(2500, dnsResolve(domain, type));
+          const records = await timeout(2500, dnsResolve(domain, type));
           if (records && records?.length > 0) return false;
         } catch {
           /* ENOTFOUND = not registered */
@@ -648,19 +648,19 @@ router?.get("/search", async (req, res) => {
       return true;
     }
 
-    const _platformFqdn = `${raw}.${BASE_DOMAIN}`;
+    const platformFqdn = `${raw}.${BASE_DOMAIN}`;
 
     // Check platform subdomain availability in DB
     const [dbRow] = await db
-      .select({ id: storefrontDomains?.id })
+      .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.domain, platformFqdn))
       .limit(1);
 
-    const _platformAvailable = !dbRow;
+    const platformAvailable = !dbRow;
 
     // Check external TLDs in parallel (popular music/creator domain extensions)
-    const _externalTlds = [
+    const externalTlds = [
       ".com",
       ".net",
       ".io",
@@ -670,15 +670,15 @@ router?.get("/search", async (req, res) => {
       ".co",
       ".org",
     ];
-    const _externalChecks = await Promise?.allSettled(
+    const externalChecks = await Promise?.allSettled(
       externalTlds?.map(async (tld) => {
-        const _domain = `${raw}${tld}`;
-        const _available = await externalAvailable(domain);
+        const domain = `${raw}${tld}`;
+        const available = await externalAvailable(domain);
         return { domain, tld, available };
       }),
     );
 
-    const _results = [
+    const results = [
       {
         domain: platformFqdn,
         type: "platform",
@@ -699,16 +699,16 @@ router?.get("/search", async (req, res) => {
           }> => r?.status === "fulfilled",
         )
         .map((r) => ({
-          domain: r?.value.domain,
+          domain: r.value.domain,
           type: "external",
-          tld: r?.value.tld,
-          available: r?.value.available,
+          tld: r.value.tld,
+          available: r.value.available,
           isFree: false,
-          label: r?.value.available
+          label: r.value.available
             ? "Available — purchase from a registrar"
             : "Already registered",
-          registrar: r?.value.available
-            ? `https://www?.namecheap.com/domains/registration/results/?domain=${r?.value.domain}`
+          registrar: r.value.available
+            ? `https://www.namecheap.com/domains/registration/results/?domain=${r.value.domain}`
             : null,
         })),
     ];
@@ -722,16 +722,16 @@ router?.get("/search", async (req, res) => {
 
 // ── DNS propagation check ─────────────────────────────────────────────────────
 /**
- * GET /api/storefront-domains/propagation?domain=mybeats?.com&type=A&expected=34?.x.x?.x
+ * GET /api/storefront-domains/propagation?domain=mybeats.com&type=A&expected=34?.x.x?.x
  *
  * Returns real-time propagation status from 4 global DoH resolvers.
  * Same concept as Vercel's domain propagation checker.
  */
 router?.get("/propagation", async (req, res) => {
   try {
-    const _domain = ((req?.query.domain as string) || "").toLowerCase().trim();
-    const _type = ((req?.query.type as string) || "A").toUpperCase();
-    const _expected = req?.query.expected as string | undefined;
+    const domain = ((req?.query.domain as string) || "").toLowerCase().trim();
+    const type = ((req?.query.type as string) || "A").toUpperCase();
+    const expected = req?.query.expected as string | undefined;
 
     if (!domain || !/^[a-z0-9.-]+$/.test(domain)) {
       return res
@@ -740,20 +740,20 @@ router?.get("/propagation", async (req, res) => {
     }
 
     const { checkPropagation } = await import(
-      "../services/dnsPropagationCheck?.js"
+      "../services/dnsPropagationCheck.js"
     );
-    const _result = await checkPropagation(domain, type, expected);
+    const result = await checkPropagation(domain, type, expected);
     return res?.json({ ok: true, ...result });
   } catch (err) {
     logger?.warn({ err }, "[domains] propagation check error");
     return res
       .status(500)
-      .json({ ok: false, error: err?.message || "Propagation check failed." });
+      .json({ ok: false, error: err.message || "Propagation check failed." });
   }
 });
 
 /**
- * GET /api/storefront-domains/propagation/setup?domain=mybeats?.com&storefrontId=xxx
+ * GET /api/storefront-domains/propagation/setup?domain=mybeats.com&storefrontId=xxx
  *
  * Checks all DNS record types needed for full domain setup (NS, A, www CNAME).
  * Returns a composite propagation report the UI can use to show a progress bar.
@@ -763,8 +763,8 @@ router?.get("/propagation/setup", async (req, res) => {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const _domain = ((req?.query.domain as string) || "").toLowerCase().trim();
-    const _storefrontId = req?.query.storefrontId as string;
+    const domain = ((req?.query.domain as string) || "").toLowerCase().trim();
+    const storefrontId = req?.query.storefrontId as string;
 
     if (!domain || !/^[a-z0-9.-]+$/.test(domain)) {
       return res
@@ -777,14 +777,14 @@ router?.get("/propagation/setup", async (req, res) => {
         .json({ ok: false, error: "storefrontId required." });
     }
 
-    const _platformIp = process?.env.DNS_SERVER_IP || "34?.111.179?.208";
-    const _ns1 = `ns1.${BASE_DOMAIN}`;
-    const _ns2 = `ns2.${BASE_DOMAIN}`;
+    const platformIp = process?.env.DNS_SERVER_IP || "34.111.179.208";
+    const ns1 = `ns1.${BASE_DOMAIN}`;
+    const ns2 = `ns2.${BASE_DOMAIN}`;
 
     const { checkDomainSetupPropagation } = await import(
-      "../services/dnsPropagationCheck?.js"
+      "../services/dnsPropagationCheck.js"
     );
-    const _result = await checkDomainSetupPropagation(
+    const result = await checkDomainSetupPropagation(
       domain,
       platformIp,
       ns1,
@@ -797,7 +797,7 @@ router?.get("/propagation/setup", async (req, res) => {
     logger?.warn({ err }, "[domains] propagation setup check error");
     return res
       .status(500)
-      .json({ ok: false, error: err?.message || "Propagation check failed." });
+      .json({ ok: false, error: err.message || "Propagation check failed." });
   }
 });
 
@@ -811,11 +811,11 @@ router?.get("/domain-status/:domainId", async (req, res) => {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const _domainId = req?.params.domainId;
+    const domainId = req?.params.domainId;
 
     // Ownership check — ensure the domain belongs to a storefront owned by the caller
     const [domainRow] = await db
-      .select({ storefrontId: storefrontDomains?.storefrontId })
+      .select({ storefrontId: storefrontDomains.storefrontId })
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.id, domainId))
       .limit(1);
@@ -823,7 +823,7 @@ router?.get("/domain-status/:domainId", async (req, res) => {
       return res?.status(404).json({ ok: false, error: "Domain not found." });
 
     const [sf] = await db
-      .select({ userId: storefronts?.userId })
+      .select({ userId: storefronts.userId })
       .from(storefronts)
       .where(eq(storefronts?.id, domainRow?.storefrontId))
       .limit(1);
@@ -831,16 +831,16 @@ router?.get("/domain-status/:domainId", async (req, res) => {
       return res?.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { getDomainStatus } = await import(
-      "../services/storefrontDnsService?.js"
+      "../services/storefrontDnsService.js"
     );
-    const _status = await getDomainStatus(domainId);
+    const status = await getDomainStatus(domainId);
     return res?.json({ ok: true, ...status });
   } catch (err) {
     logger?.warn({ err }, "[domains] domain-status error");
-    const _code = err?.message === "Domain not found" ? 404 : 500;
+    const code = err?.message === "Domain not found" ? 404 : 500;
     return res
       .status(code)
-      .json({ ok: false, error: err?.message || "Internal error." });
+      .json({ ok: false, error: err.message || "Internal error." });
   }
 });
 
@@ -850,7 +850,7 @@ router?.get("/dns/status", async (req, res) => {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ ok: false, error: "Unauthorized." });
     const { getDNSInfo, isDNSRunning } = await import(
-      "../services/dnsServer?.js"
+      "../services/dnsServer.js"
     );
     return res?.json({ ok: true, ...getDNSInfo(), running: isDNSRunning() });
   } catch (err) {
@@ -881,12 +881,12 @@ router?.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
       return res?.status(400).json({ ok: false, error: "domain is required." });
     }
 
-    const _domResult = validateDomain(rawDomain);
+    const domResult = validateDomain(rawDomain);
     if (!domResult?.ok) return res?.status(400).json(domResult);
-    const _domain = domResult?.normalized;
+    const domain = domResult?.normalized;
 
     const [sf] = await db
-      .select({ id: storefronts?.id, userId: storefronts?.userId })
+      .select({ id: storefronts.id, userId: storefronts.userId })
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
@@ -898,9 +898,9 @@ router?.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
     }
 
     const { attachDomainToStorefront } = await import(
-      "../services/storefrontDnsService?.js"
+      "../services/storefrontDnsService.js"
     );
-    const _result = await attachDomainToStorefront(
+    const result = await attachDomainToStorefront(
       storefrontId,
       (req?.user as Record<string, unknown>).id,
       domain,
@@ -914,7 +914,7 @@ router?.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
   } catch (err) {
     logger?.warn({ err }, "[storefrontDomains] attach-domain error");
     const msg: string = err?.message || "";
-    const _status =
+    const status =
       msg?.includes("already active") ||
       msg?.includes("already being set up") ||
       msg?.includes("DNS zone is already owned")
@@ -941,7 +941,7 @@ router?.post("/custom/verify-status/:domainId", async (req, res) => {
 
     // Ownership check — ensure the domain belongs to a storefront owned by the caller
     const [domainRow] = await db
-      .select({ storefrontId: storefrontDomains?.storefrontId })
+      .select({ storefrontId: storefrontDomains.storefrontId })
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.id, domainId))
       .limit(1);
@@ -949,7 +949,7 @@ router?.post("/custom/verify-status/:domainId", async (req, res) => {
       return res?.status(404).json({ ok: false, error: "Domain not found." });
 
     const [sf] = await db
-      .select({ userId: storefronts?.userId })
+      .select({ userId: storefronts.userId })
       .from(storefronts)
       .where(eq(storefronts?.id, domainRow?.storefrontId))
       .limit(1);
@@ -957,15 +957,15 @@ router?.post("/custom/verify-status/:domainId", async (req, res) => {
       return res?.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { verifyStorefrontDomain } = await import(
-      "../services/storefrontDnsService?.js"
+      "../services/storefrontDnsService.js"
     );
-    const _result = await verifyStorefrontDomain(domainId);
+    const result = await verifyStorefrontDomain(domainId);
     return res?.json({ ok: true, result });
   } catch (err) {
     logger?.warn({ err }, "[storefrontDomains] verify-status error");
     return res
       .status(500)
-      .json({ ok: false, error: err?.message || "Internal error." });
+      .json({ ok: false, error: err.message || "Internal error." });
   }
 });
 
@@ -984,7 +984,7 @@ router?.delete("/custom/detach/:domainId", async (req, res) => {
 
     // Verify the domain belongs to a storefront owned by the requesting user
     const [domainRow] = await db
-      .select({ storefrontId: storefrontDomains?.storefrontId })
+      .select({ storefrontId: storefrontDomains.storefrontId })
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.id, domainId))
       .limit(1);
@@ -992,7 +992,7 @@ router?.delete("/custom/detach/:domainId", async (req, res) => {
       return res?.status(404).json({ ok: false, error: "Domain not found." });
 
     const [sf] = await db
-      .select({ userId: storefronts?.userId })
+      .select({ userId: storefronts.userId })
       .from(storefronts)
       .where(eq(storefronts?.id, domainRow?.storefrontId))
       .limit(1);
@@ -1001,7 +1001,7 @@ router?.delete("/custom/detach/:domainId", async (req, res) => {
     }
 
     const { detachDomainFromStorefront } = await import(
-      "../services/storefrontDnsService?.js"
+      "../services/storefrontDnsService.js"
     );
     await detachDomainFromStorefront(domainId);
     return res?.json({ ok: true });
@@ -1009,7 +1009,7 @@ router?.delete("/custom/detach/:domainId", async (req, res) => {
     logger?.warn({ err }, "[storefrontDomains] detach error");
     return res
       .status(500)
-      .json({ ok: false, error: err?.message || "Internal error." });
+      .json({ ok: false, error: err.message || "Internal error." });
   }
 });
 
@@ -1025,9 +1025,9 @@ router?.get("/hosts/:host", async (req, res) => {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ ok: false, error: "Unauthorized." });
     const { lookupStorefrontByHost } = await import(
-      "../services/storefrontDnsService?.js"
+      "../services/storefrontDnsService.js"
     );
-    const _storefrontId = await lookupStorefrontByHost(req?.params.host);
+    const storefrontId = await lookupStorefrontByHost(req?.params.host);
     if (!storefrontId)
       return res?.status(404).json({ ok: false, error: "host_not_found" });
     return res?.json({ ok: true, storefrontId });

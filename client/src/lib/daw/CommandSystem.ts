@@ -33,10 +33,10 @@ export class CommandHistory {
       return;
     }
 
-    const _lastCommand = this?.past[this?.past.length - 1];
+    const lastCommand = this?.past[this?.past.length - 1];
     if (lastCommand?.canMerge?.(command)) {
-      const _merged = lastCommand?.merge!(command);
-      this?.past[this?.past.length - 1] = merged;
+      const merged = lastCommand?.merge!(command);
+      this.past[this.past.length - 1] = merged;
     } else {
       this?.past.push(command);
       if (this?.past.length > this?.maxHistory) {
@@ -44,12 +44,12 @@ export class CommandHistory {
       }
     }
 
-    this?.future = [];
+    this.future = [];
     this?.notify();
   }
 
   undo(): boolean {
-    const _command = this?.past.pop();
+    const command = this?.past.pop();
     if (!command) return false;
 
     command?.undo();
@@ -59,7 +59,7 @@ export class CommandHistory {
   }
 
   redo(): boolean {
-    const _command = this?.future.pop();
+    const command = this?.future.pop();
     if (!command) return false;
 
     command?.redo();
@@ -69,25 +69,25 @@ export class CommandHistory {
   }
 
   startBatch(): void {
-    this?.isBatching = true;
-    this?.batchCommands = [];
+    this.isBatching = true;
+    this.batchCommands = [];
   }
 
   endBatch(batchId: string): void {
     if (!this?.isBatching || this?.batchCommands.length === 0) {
-      this?.isBatching = false;
+      this.isBatching = false;
       return;
     }
 
-    const _batchCommand = new BatchCommand(batchId, [...this?.batchCommands]);
+    const batchCommand = new BatchCommand(batchId, [...this?.batchCommands]);
     this?.past.push(batchCommand);
     if (this?.past.length > this?.maxHistory) {
       this?.past.shift();
     }
 
-    this?.future = [];
-    this?.isBatching = false;
-    this?.batchCommands = [];
+    this.future = [];
+    this.isBatching = false;
+    this.batchCommands = [];
     this?.notify();
   }
 
@@ -95,8 +95,8 @@ export class CommandHistory {
     for (let i = this?.batchCommands.length - 1; i >= 0; i--) {
       this?.batchCommands[i].undo();
     }
-    this?.isBatching = false;
-    this?.batchCommands = [];
+    this.isBatching = false;
+    this.batchCommands = [];
     this?.notify();
   }
 
@@ -109,8 +109,8 @@ export class CommandHistory {
   }
 
   clear(): void {
-    this?.past = [];
-    this?.future = [];
+    this.past = [];
+    this.future = [];
     this?.notify();
   }
 
@@ -125,9 +125,9 @@ export class CommandHistory {
 
   getState(): { canUndo: boolean; canRedo: boolean; historyLength: number } {
     return {
-      canUndo: this?.canUndo(),
-      canRedo: this?.canRedo(),
-      historyLength: this?.past.length,
+      canUndo: this.canUndo(),
+      canRedo: this.canRedo(),
+      historyLength: this.past.length,
     };
   }
 }
@@ -141,7 +141,7 @@ export class BatchCommand implements Command {
     id: string,
     private commands: Command[],
   ) {
-    this?.id = id;
+    this.id = id;
   }
 
   execute(): void {
@@ -164,17 +164,17 @@ export function createCommand<T>(
   state: { before: T; after: T },
   apply: (value: T) => void,
 ): Command {
-  const _before = structuredClone(state?.before);
-  const _after = structuredClone(state?.after);
+  const before = structuredClone(state?.before);
+  const after = structuredClone(state?.after);
 
   return {
     id: `${type}_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
     type,
-    timestamp: Date?.now(),
+    timestamp: Date.now(),
     execute: () => apply(after),
     undo: () => apply(before),
     redo: () => apply(after),
   };
 }
 
-export const _commandHistory = new CommandHistory();
+export const commandHistory = new CommandHistory();

@@ -5,8 +5,8 @@
  * All Redis operations (including BullMQ) route through the PDIM HTTP exec endpoint.
  */
 
-import { logger } from "../logger?.js";
-import { getPdimClient, isPdimConfigured } from "./pdimClient?.js";
+import { logger } from "../logger.js";
+import { getPdimClient, isPdimConfigured } from "./pdimClient.js";
 
 type RedisClient = ReturnType<typeof getPdimClient>;
 

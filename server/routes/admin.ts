@@ -1,24 +1,24 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { db, pool } from "../db?.js";
-import { users, projects, releases, analytics, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema?.js";
+import { db, pool } from "../db.js";
+import { users, projects, releases, analytics, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { killSwitch } from "../safety/killSwitch?.js";
+import { logger } from "../logger.js";
+import { killSwitch } from "../safety/killSwitch.js";
 import * as os from "os";
 import rateLimit from "express-rate-limit";
-import { chainErrorAutoFixer } from "../services/chainErrorAutoFixer?.js";
-import { platformAutoFixer } from "../services/platformAutoFixer?.js";
-import { permanentFixRegistry } from "../services/permanentFixRegistry?.js";
-import { env } from "../config/env?.js";
-import { require2FA } from "../middleware/auth?.js";
-import { systemIntelligence } from "../services/systemIntelligence?.js";
+import { chainErrorAutoFixer } from "../services/chainErrorAutoFixer.js";
+import { platformAutoFixer } from "../services/platformAutoFixer.js";
+import { permanentFixRegistry } from "../services/permanentFixRegistry.js";
+import { env } from "../config/env.js";
+import { require2FA } from "../middleware/auth.js";
+import { systemIntelligence } from "../services/systemIntelligence.js";
 
-const _adminRouter = Router();
+const adminRouter = Router();
 
-// 120M req/s system capacity — 7?.2B req/min per authenticated admin user.
+// 120M req/s system capacity — 7.2B req/min per authenticated admin user.
 // The skip() guard already restricts this limiter to authenticated admins only,
 // so the high ceiling does not relax any security boundary.
-const _adminEmailLimiter = rateLimit({
+const adminEmailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 7_200_000_000,
   keyGenerator: (req) =>
@@ -29,16 +29,16 @@ const _adminEmailLimiter = rateLimit({
   skip: (req) => !(req?.user as Record<string, unknown>)?.id,
 });
 
-const _errorCounter = { last24h: 0, last7d: 0 };
+const errorCounter = { last24h: 0, last7d: 0 };
 
 function getRealCpuUsage(): number {
-  const _cpus = os?.cpus();
+  const cpus = os?.cpus();
   if (cpus?.length === 0) return 0;
   let totalUsage = 0;
   for (const cpu of cpus) {
     const { user, nice, sys, idle, irq } = cpu?.times;
-    const _total = user + nice + sys + idle + irq;
-    const _used = user + nice + sys + irq;
+    const total = user + nice + sys + idle + irq;
+    const used = user + nice + sys + irq;
     totalUsage += (used / total) * 100;
   }
   return Math?.round(totalUsage / cpus?.length);
@@ -66,17 +66,17 @@ adminRouter?.get("/dashboard", (req, res) => {
 adminRouter?.get("/users", async (req, res) => {
   try {
     const { page = "1", limit = "20", search = "", status, plan } = req?.query;
-    const _pageNum = Math?.max(1, parseInt(page as string) || 1);
-    const _limitNum = Math?.min(
+    const pageNum = Math?.max(1, parseInt(page as string) || 1);
+    const limitNum = Math?.min(
       Math?.max(1, parseInt(limit as string) || 20),
       200,
     );
-    const _offset = (pageNum - 1) * limitNum;
+    const offset = (pageNum - 1) * limitNum;
     // Cap search string — even admin-authed endpoints should not feed
     // an unbounded pattern into a LIKE scan across 90M user rows.
-    const _safeSearch = typeof search === "string" ? search?.slice(0, 200) : "";
+    const safeSearch = typeof search === "string" ? search?.slice(0, 200) : "";
 
-    const _conditions = [];
+    const conditions = [];
     if (safeSearch) {
       conditions?.push(
         or(
@@ -94,20 +94,20 @@ adminRouter?.get("/users", async (req, res) => {
       conditions?.push(eq(users?.subscriptionTier, plan as string));
     }
 
-    const _whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
+    const whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
 
     const [usersList, totalResult] = await Promise?.all([
       db
         .select({
-          id: users?.id,
-          email: users?.email,
-          username: users?.username,
-          firstName: users?.firstName,
-          lastName: users?.lastName,
-          role: users?.role,
-          subscriptionTier: users?.subscriptionTier,
-          subscriptionStatus: users?.subscriptionStatus,
-          createdAt: users?.createdAt,
+          id: users.id,
+          email: users.email,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          subscriptionTier: users.subscriptionTier,
+          subscriptionStatus: users.subscriptionStatus,
+          createdAt: users.createdAt,
         })
         .from(users)
         .where(whereClause)
@@ -117,7 +117,7 @@ adminRouter?.get("/users", async (req, res) => {
       db?.select({ count: count() }).from(users).where(whereClause),
     ]);
 
-    const _total = totalResult[0]?.count || 0;
+    const total = totalResult[0]?.count || 0;
 
     res?.json({
       users: usersList,
@@ -125,7 +125,7 @@ adminRouter?.get("/users", async (req, res) => {
         total,
         page: pageNum,
         limit: limitNum,
-        totalPages: Math?.ceil(total / limitNum),
+        totalPages: Math.ceil(total / limitNum),
       },
     });
   } catch (error) {
@@ -136,8 +136,8 @@ adminRouter?.get("/users", async (req, res) => {
 
 adminRouter?.get("/users/export", async (req, res) => {
   try {
-    const _pageSize = Math?.min(parseInt(req?.query.limit as string) || 100, 500);
-    const _offset = Math?.min(
+    const pageSize = Math?.min(parseInt(req?.query.limit as string) || 100, 500);
+    const offset = Math?.min(
       Math?.max(parseInt(req?.query.offset as string) || 0, 0),
       100_000,
     );
@@ -145,15 +145,15 @@ adminRouter?.get("/users/export", async (req, res) => {
     const [exportedUsers, totalResult] = await Promise?.all([
       db
         .select({
-          id: users?.id,
-          email: users?.email,
-          username: users?.username,
-          firstName: users?.firstName,
-          lastName: users?.lastName,
-          role: users?.role,
-          subscriptionTier: users?.subscriptionTier,
-          subscriptionStatus: users?.subscriptionStatus,
-          createdAt: users?.createdAt,
+          id: users.id,
+          email: users.email,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          subscriptionTier: users.subscriptionTier,
+          subscriptionStatus: users.subscriptionStatus,
+          createdAt: users.createdAt,
         })
         .from(users)
         .orderBy(desc(users?.createdAt))
@@ -162,7 +162,7 @@ adminRouter?.get("/users/export", async (req, res) => {
       db?.select({ count: count() }).from(users),
     ]);
 
-    const _total = Number(totalResult[0]?.count ?? 0);
+    const total = Number(totalResult[0]?.count ?? 0);
 
     res?.json({
       users: exportedUsers,
@@ -183,18 +183,18 @@ adminRouter?.get("/users/export", async (req, res) => {
 adminRouter?.get("/users/:userId", async (req, res) => {
   try {
     const { userId } = req?.params;
-    const _user = await db
+    const user = await db
       .select({
-        id: users?.id,
-        email: users?.email,
-        username: users?.username,
-        firstName: users?.firstName,
-        lastName: users?.lastName,
-        role: users?.role,
-        subscriptionTier: users?.subscriptionTier,
-        subscriptionStatus: users?.subscriptionStatus,
-        createdAt: users?.createdAt,
-        stripeCustomerId: users?.stripeCustomerId,
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        subscriptionTier: users.subscriptionTier,
+        subscriptionStatus: users.subscriptionStatus,
+        createdAt: users.createdAt,
+        stripeCustomerId: users.stripeCustomerId,
       })
       .from(users)
       .where(eq(users?.id, userId))
@@ -216,9 +216,9 @@ adminRouter?.put("/users/:userId", async (req, res) => {
     const { userId } = req?.params;
     const { role, subscriptionTier, subscriptionStatus } = req?.body;
 
-    const _allowedRoles = ["user", "admin"];
-    const _allowedTiers = ["free", "monthly", "yearly", "lifetime", null];
-    const _allowedStatuses = [
+    const allowedRoles = ["user", "admin"];
+    const allowedTiers = ["free", "monthly", "yearly", "lifetime", null];
+    const allowedStatuses = [
       "active",
       "inactive",
       "cancelled",
@@ -240,11 +240,11 @@ adminRouter?.put("/users/:userId", async (req, res) => {
     }
 
     const updateData: Record<string, any> = {};
-    if (role !== undefined) updateData?.role = role;
+    if (role !== undefined) updateData.role = role;
     if (subscriptionTier !== undefined)
-      updateData?.subscriptionTier = subscriptionTier;
+      updateData.subscriptionTier = subscriptionTier;
     if (subscriptionStatus !== undefined)
-      updateData?.subscriptionStatus = subscriptionStatus;
+      updateData.subscriptionStatus = subscriptionStatus;
 
     if (Object?.keys(updateData).length === 0) {
       return res?.status(400).json({ error: "No valid fields to update" });
@@ -265,7 +265,7 @@ adminRouter?.put("/users/:userId", async (req, res) => {
       setImmediate(async () => {
         try {
           const { revokeUserSessions } = await import(
-            "../middleware/sessionConfig?.js"
+            "../middleware/sessionConfig.js"
           );
           await revokeUserSessions(String(userId));
         } catch (revokeErr: unknown) {
@@ -308,7 +308,7 @@ adminRouter?.post("/users/:userId/suspend", async (req, res) => {
     setImmediate(async () => {
       try {
         const { revokeUserSessions } = await import(
-          "../middleware/sessionConfig?.js"
+          "../middleware/sessionConfig.js"
         );
         await revokeUserSessions(String(userId));
       } catch (revokeErr: unknown) {
@@ -389,20 +389,20 @@ adminRouter?.post("/subscriptions/lifetime", async (req, res) => {
 
 adminRouter?.get("/system-health", async (_req, res) => {
   try {
-    const _memUsage = process?.memoryUsage();
-    const _uptime = process?.uptime();
+    const memUsage = process?.memoryUsage();
+    const uptime = process?.uptime();
 
     let dbStatus = "connected";
     let dbLatency: number | null = null;
     try {
-      const _dbStart = Date?.now();
+      const dbStart = Date?.now();
       await db?.select({ count: count() }).from(users).limit(1);
       dbLatency = Date?.now() - dbStart;
     } catch {
       dbStatus = "disconnected";
     }
 
-    const _pingApi = async (
+    const pingApi = async (
       url: string,
       timeoutMs = 5000,
     ): Promise<{
@@ -410,50 +410,50 @@ adminRouter?.get("/system-health", async (_req, res) => {
       latency: number | null;
     }> => {
       try {
-        const _start = Date?.now();
-        const _controller = new AbortController();
-        const _timer = setTimeout(() => controller?.abort(), timeoutMs);
-        await fetch(url, { method: "HEAD", signal: controller?.signal });
+        const start = Date?.now();
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller?.abort(), timeoutMs);
+        await fetch(url, { method: "HEAD", signal: controller.signal });
         clearTimeout(timer);
-        return { status: "connected", latency: Date?.now() - start };
+        return { status: "connected", latency: Date.now() - start };
       } catch {
         return { status: "disconnected", latency: null };
       }
     };
 
-    const _apiChecks = await Promise?.allSettled([
+    const apiChecks = await Promise?.allSettled([
       env?.STRIPE_SECRET_KEY
-        ? pingApi("https://api?.stripe.com/v1")
+        ? pingApi("https://api.stripe.com/v1")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
       process?.env.LABELGRID_API_TOKEN
-        ? pingApi("https://api?.labelgrid.com")
+        ? pingApi("https://api.labelgrid.com")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
       process?.env.SPOTIFY_CLIENT_ID
-        ? pingApi("https://api?.spotify.com/v1")
+        ? pingApi("https://api.spotify.com/v1")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
-      pingApi("https://api?.music.apple?.com"),
+      pingApi("https://api.music.apple.com"),
       process?.env.YOUTUBE_CLIENT_ID
-        ? pingApi("https://www?.googleapis.com/youtube/v3")
+        ? pingApi("https://www.googleapis.com/youtube/v3")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
       process?.env.TWITTER_API_KEY
-        ? pingApi("https://api?.twitter.com/2")
+        ? pingApi("https://api.twitter.com/2")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
       process?.env.INSTAGRAM_APP_ID
-        ? pingApi("https://graph?.instagram.com")
+        ? pingApi("https://graph.instagram.com")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
       process?.env.TIKTOK_CLIENT_KEY
-        ? pingApi("https://open?.tiktokapis.com")
+        ? pingApi("https://open.tiktokapis.com")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
     ]);
 
-    const _getResult = (
+    const getResult = (
       r: PromiseSettledResult<{ status: string; latency: number | null }>,
     ) =>
       r?.status === "fulfilled"
         ? r?.value
         : { status: "disconnected" as const, latency: null };
 
-    const _externalApis = {
+    const externalApis = {
       stripe: getResult(apiChecks[0]),
       labelgrid: getResult(apiChecks[1]),
       spotify: getResult(apiChecks[2]),
@@ -464,29 +464,29 @@ adminRouter?.get("/system-health", async (_req, res) => {
       tiktok: getResult(apiChecks[7]),
     };
 
-    const _killSwitchState = killSwitch?.getState();
-    const _cpuUsage = getRealCpuUsage();
+    const killSwitchState = killSwitch?.getState();
+    const cpuUsage = getRealCpuUsage();
 
     res?.json({
       server: {
-        uptime: Math?.floor(uptime),
+        uptime: Math.floor(uptime),
         uptimeFormatted: formatUptime(uptime),
         memory: {
-          heapUsed: Math?.round(memUsage?.heapUsed / 1024 / 1024),
-          heapTotal: Math?.round(memUsage?.heapTotal / 1024 / 1024),
-          rss: Math?.round(memUsage?.rss / 1024 / 1024),
-          percentUsed: Math?.round(
+          heapUsed: Math.round(memUsage?.heapUsed / 1024 / 1024),
+          heapTotal: Math.round(memUsage?.heapTotal / 1024 / 1024),
+          rss: Math.round(memUsage?.rss / 1024 / 1024),
+          percentUsed: Math.round(
             (memUsage?.heapUsed / memUsage?.heapTotal) * 100,
           ),
         },
         cpu: cpuUsage,
         disk: (() => {
           try {
-            const _stat =
+            const stat =
               (fs as Record<string, unknown>).statfsSync?.("/") ?? null;
             if (stat) {
-              const _total = stat?.bsize * stat?.blocks;
-              const _free = stat?.bsize * stat?.bfree;
+              const total = stat?.bsize * stat?.blocks;
+              const free = stat?.bsize * stat?.bfree;
               return total > 0 ? Math?.round(((total - free) / total) * 100) : 0;
             }
           } catch {
@@ -510,15 +510,15 @@ adminRouter?.get("/system-health", async (_req, res) => {
       },
       externalApis,
       killSwitch: {
-        globalKilled: killSwitchState?.globalKilled,
-        systemStates: Object?.fromEntries(killSwitchState?.systemStates),
+        globalKilled: killSwitchState.globalKilled,
+        systemStates: Object.fromEntries(killSwitchState?.systemStates),
         lastAction:
           killSwitchState?.lastKillTime || killSwitchState?.lastResumeTime,
       },
       errorTracking: {
-        last24h: errorCounter?.last24h,
-        last7d: errorCounter?.last7d,
-        errorRate: "0?.00%",
+        last24h: errorCounter.last24h,
+        last7d: errorCounter.last7d,
+        errorRate: "0.00%",
       },
       timestamp: new Date().toISOString(),
     });
@@ -531,8 +531,8 @@ adminRouter?.get("/system-health", async (_req, res) => {
 adminRouter?.get("/moderation/reports", async (req, res) => {
   try {
     const { page = "1", limit = "20" } = req?.query;
-    const _pageNum = Math?.max(1, parseInt(page as string) || 1);
-    const _limitNum = Math?.min(
+    const pageNum = Math?.max(1, parseInt(page as string) || 1);
+    const limitNum = Math?.min(
       Math?.max(1, parseInt(limit as string) || 20),
       200,
     );
@@ -562,7 +562,7 @@ adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
     const { reportId } = req?.params;
     const { action, notes } = req?.body;
 
-    const _validActions = [
+    const validActions = [
       "approve",
       "remove_content",
       "warn_user",
@@ -585,7 +585,7 @@ adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
       report: {
         id: reportId,
         status: "reviewed",
-        reviewedBy: req?.user?.email,
+        reviewedBy: req.user?.email,
         reviewedAt: new Date().toISOString(),
         action,
         notes,
@@ -678,12 +678,12 @@ adminRouter?.post("/moderation/users/:userId/ban", async (req, res) => {
 
 adminRouter?.get("/analytics", async (_req, res) => {
   try {
-    const _now = new Date();
-    const _thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const _thisMonthStart = new Date(now?.getFullYear(), now?.getMonth(), 1);
-    const _lastMonthStart = new Date(now?.getFullYear(), now?.getMonth() - 1, 1);
-    const _lastMonthEnd = new Date(
+    const thisMonthStart = new Date(now?.getFullYear(), now?.getMonth(), 1);
+    const lastMonthStart = new Date(now?.getFullYear(), now?.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(
       now?.getFullYear(),
       now?.getMonth(),
       0,
@@ -716,7 +716,7 @@ adminRouter?.get("/analytics", async (_req, res) => {
       db?.select({ count: count() }).from(releases),
       db
         .select({
-          plan: users?.subscriptionTier,
+          plan: users.subscriptionTier,
           count: count(),
         })
         .from(users)
@@ -779,45 +779,45 @@ adminRouter?.get("/analytics", async (_req, res) => {
         .groupBy(sql`DATE(${users?.createdAt})`),
     ]);
 
-    const _totalUsers = totalUsersResult[0]?.count || 0;
-    const _newUsers = newUsersResult[0]?.count || 0;
-    const _totalProjects = totalProjectsResult[0]?.count || 0;
-    const _totalReleases = totalReleasesResult[0]?.count || 0;
-    const _totalRevenue = Number(totalRevenueResult[0]?.total) || 0;
-    const _totalStreams = Number(totalStreamsResult[0]?.total) || 0;
+    const totalUsers = totalUsersResult[0]?.count || 0;
+    const newUsers = newUsersResult[0]?.count || 0;
+    const totalProjects = totalProjectsResult[0]?.count || 0;
+    const totalReleases = totalReleasesResult[0]?.count || 0;
+    const totalRevenue = Number(totalRevenueResult[0]?.total) || 0;
+    const totalStreams = Number(totalStreamsResult[0]?.total) || 0;
 
-    const _thisMonthRevenue = Number(thisMonthRevenueResult[0]?.total) || 0;
-    const _lastMonthRevenue = Number(lastMonthRevenueResult[0]?.total) || 0;
-    const _revenueGrowth =
+    const thisMonthRevenue = Number(thisMonthRevenueResult[0]?.total) || 0;
+    const lastMonthRevenue = Number(lastMonthRevenueResult[0]?.total) || 0;
+    const revenueGrowth =
       lastMonthRevenue > 0
         ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
         : 0;
 
-    const _thisMonthProjects = thisMonthProjectsResult[0]?.count || 0;
-    const _lastMonthProjects = lastMonthProjectsResult[0]?.count || 0;
-    const _projectsGrowth =
+    const thisMonthProjects = thisMonthProjectsResult[0]?.count || 0;
+    const lastMonthProjects = lastMonthProjectsResult[0]?.count || 0;
+    const projectsGrowth =
       lastMonthProjects > 0
         ? ((thisMonthProjects - lastMonthProjects) / lastMonthProjects) * 100
         : 0;
 
-    const _userGrowthRate = totalUsers > 0 ? (newUsers / totalUsers) * 100 : 0;
+    const userGrowthRate = totalUsers > 0 ? (newUsers / totalUsers) * 100 : 0;
 
-    const _subscriptionStats = subscriptionStatsResult?.map((s) => ({
-      plan: s?.plan || "free",
-      count: s?.count,
+    const subscriptionStats = subscriptionStatsResult?.map((s) => ({
+      plan: s.plan || "free",
+      count: s.count,
     }));
 
-    const _userGrowthMap = new Map<string, number>();
+    const userGrowthMap = new Map<string, number>();
     for (const row of userGrowthResult) {
       userGrowthMap?.set(String(row?.date), Number(row?.count));
     }
-    const _userGrowth = [];
+    const userGrowth = [];
     for (let i = 29; i >= 0; i--) {
-      const _date = new Date(now?.getTime() - i * 24 * 60 * 60 * 1000);
-      const _dateStr = date?.toISOString().split("T")[0];
+      const date = new Date(now?.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = date?.toISOString().split("T")[0];
       userGrowth?.push({
         date: dateStr,
-        count: userGrowthMap?.get(dateStr) || 0,
+        count: userGrowthMap.get(dateStr) || 0,
       });
     }
 
@@ -827,10 +827,10 @@ adminRouter?.get("/analytics", async (_req, res) => {
       recentSignups: newUsers,
       totalProjects,
       totalReleases,
-      totalRevenue: Math?.round(totalRevenue * 100) / 100,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
       totalStreams,
-      revenueGrowth: Math?.round(revenueGrowth * 10) / 10,
-      projectsGrowth: Math?.round(projectsGrowth * 10) / 10,
+      revenueGrowth: Math.round(revenueGrowth * 10) / 10,
+      projectsGrowth: Math.round(projectsGrowth * 10) / 10,
       userGrowthRate,
       monthlyGrowth: userGrowthRate,
       subscriptionStats,
@@ -846,7 +846,7 @@ adminRouter?.get("/analytics", async (_req, res) => {
 
 adminRouter?.get("/metrics", async (_req, res) => {
   try {
-    const _memUsage = process?.memoryUsage();
+    const memUsage = process?.memoryUsage();
     process?.uptime();
 
     const [activeUsersResult] = await db
@@ -857,10 +857,10 @@ adminRouter?.get("/metrics", async (_req, res) => {
 
     let diskUsagePercent = 0;
     try {
-      const _stat = (fs as Record<string, unknown>).statfsSync?.("/") ?? null;
+      const stat = (fs as Record<string, unknown>).statfsSync?.("/") ?? null;
       if (stat) {
-        const _total = stat?.bsize * stat?.blocks;
-        const _free = stat?.bsize * stat?.bfree;
+        const total = stat?.bsize * stat?.blocks;
+        const free = stat?.bsize * stat?.bfree;
         diskUsagePercent =
           total > 0 ? Math?.round(((total - free) / total) * 100) : 0;
       }
@@ -870,10 +870,10 @@ adminRouter?.get("/metrics", async (_req, res) => {
 
     res?.json({
       cpu: getRealCpuUsage(),
-      memory: Math?.floor((memUsage?.heapUsed / memUsage?.heapTotal) * 100),
+      memory: Math.floor((memUsage?.heapUsed / memUsage?.heapTotal) * 100),
       disk: diskUsagePercent,
       network: 0,
-      uptime: Math?.floor(process?.uptime()),
+      uptime: Math.floor(process?.uptime()),
       activeUsers: activeUsersResult[0]?.count || 0,
       requestsPerMinute: 0,
       avgResponseTime: 0,
@@ -886,7 +886,7 @@ adminRouter?.get("/metrics", async (_req, res) => {
 
 adminRouter?.get("/settings", async (_req, res) => {
   try {
-    const _settings = await db
+    const settings = await db
       .select()
       .from(systemSettings)
       .where(like(systemSettings?.key, "platform.%"))
@@ -901,7 +901,7 @@ adminRouter?.get("/settings", async (_req, res) => {
     };
 
     settings?.forEach((s) => {
-      const _key = s?.key.replace("platform.", "");
+      const key = s?.key.replace("platform.", "");
       try {
         settingsMap[key] = JSON?.parse(s?.value);
       } catch {
@@ -917,10 +917,10 @@ adminRouter?.get("/settings", async (_req, res) => {
 });
 
 async function updateSetting(key: string, value: Record<string, unknown>) {
-  const _fullKey = `platform.${key}`;
-  const _stringValue = JSON?.stringify(value);
+  const fullKey = `platform.${key}`;
+  const stringValue = JSON?.stringify(value);
 
-  const _existing = await db
+  const existing = await db
     .select()
     .from(systemSettings)
     .where(eq(systemSettings?.key, fullKey))
@@ -973,17 +973,17 @@ adminRouter?.post("/settings/registration", async (req, res) => {
 
 adminRouter?.get("/activity", async (_req, res) => {
   try {
-    const _recentUsers = await db
+    const recentUsers = await db
       .select({
-        id: users?.id,
-        email: users?.email,
-        createdAt: users?.createdAt,
+        id: users.id,
+        email: users.email,
+        createdAt: users.createdAt,
       })
       .from(users)
       .orderBy(desc(users?.createdAt))
       .limit(10);
 
-    const _activities = recentUsers?.map((u) => ({
+    const activities = recentUsers?.map((u) => ({
       type: "success",
       action: `New user registered: ${u?.email}`,
       user: "System",
@@ -1011,8 +1011,8 @@ adminRouter?.post(
           .json({ error: "Subject and message are required" });
       }
 
-      const _targetUser = await db
-        .select({ email: users?.email })
+      const targetUser = await db
+        .select({ email: users.email })
         .from(users)
         .where(eq(users?.id, userId))
         .limit(1);
@@ -1040,11 +1040,11 @@ adminRouter?.post(
 
 function formatTimeAgo(date: Date | null): string {
   if (!date) return "Unknown";
-  const _now = new Date();
-  const _diff = now?.getTime() - new Date(date).getTime();
-  const _minutes = Math?.floor(diff / 60000);
-  const _hours = Math?.floor(diff / 3600000);
-  const _days = Math?.floor(diff / 86400000);
+  const now = new Date();
+  const diff = now?.getTime() - new Date(date).getTime();
+  const minutes = Math?.floor(diff / 60000);
+  const hours = Math?.floor(diff / 3600000);
+  const days = Math?.floor(diff / 86400000);
 
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
@@ -1052,9 +1052,9 @@ function formatTimeAgo(date: Date | null): string {
 }
 
 function formatUptime(seconds: number): string {
-  const _days = Math?.floor(seconds / 86400);
-  const _hours = Math?.floor((seconds % 86400) / 3600);
-  const _mins = Math?.floor((seconds % 3600) / 60);
+  const days = Math?.floor(seconds / 86400);
+  const hours = Math?.floor((seconds % 86400) / 3600);
+  const mins = Math?.floor((seconds % 3600) / 60);
   if (days > 0) return `${days}d ${hours}h ${mins}m`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
@@ -1067,7 +1067,7 @@ function formatUptime(seconds: number): string {
 // GET /api/admin/financial-config/royalty-rates
 adminRouter?.get("/financial-config/royalty-rates", async (_req, res) => {
   try {
-    const _rates = await db
+    const rates = await db
       .select()
       .from(platformRoyaltyRates)
       .orderBy(platformRoyaltyRates?.displayName)
@@ -1082,16 +1082,16 @@ adminRouter?.get("/financial-config/royalty-rates", async (_req, res) => {
 // PATCH /api/admin/financial-config/royalty-rates/:id
 adminRouter?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
   try {
-    const _id = parseInt(req?.params.id, 10);
+    const id = parseInt(req?.params.id, 10);
     if (isNaN(id) || id <= 0)
       return res?.status(400).json({ error: "Invalid rate ID" });
     const { baseRatePerStream, premiumMultiplier, notes } = req?.body;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (baseRatePerStream !== undefined)
-      updates?.baseRatePerStream = parseFloat(baseRatePerStream);
+      updates.baseRatePerStream = parseFloat(baseRatePerStream);
     if (premiumMultiplier !== undefined)
-      updates?.premiumMultiplier = parseFloat(premiumMultiplier);
-    if (notes !== undefined) updates?.notes = notes;
+      updates.premiumMultiplier = parseFloat(premiumMultiplier);
+    if (notes !== undefined) updates.notes = notes;
 
     const [updated] = await db
       .update(platformRoyaltyRates)
@@ -1110,7 +1110,7 @@ adminRouter?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
 // GET /api/admin/financial-config/tax-treaties
 adminRouter?.get("/financial-config/tax-treaties", async (_req, res) => {
   try {
-    const _treaties = await db
+    const treaties = await db
       .select()
       .from(taxTreatyRates)
       .orderBy(taxTreatyRates?.countryName)
@@ -1125,16 +1125,16 @@ adminRouter?.get("/financial-config/tax-treaties", async (_req, res) => {
 // PATCH /api/admin/financial-config/tax-treaties/:id
 adminRouter?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
   try {
-    const _id = parseInt(req?.params.id, 10);
+    const id = parseInt(req?.params.id, 10);
     if (isNaN(id) || id <= 0)
       return res?.status(400).json({ error: "Invalid treaty ID" });
     const { withholdingRate, treatyRate, hasTreaty, notes } = req?.body;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (withholdingRate !== undefined)
-      updates?.withholdingRate = parseFloat(withholdingRate);
-    if (treatyRate !== undefined) updates?.treatyRate = parseFloat(treatyRate);
-    if (hasTreaty !== undefined) updates?.hasTreaty = Boolean(hasTreaty);
-    if (notes !== undefined) updates?.notes = notes;
+      updates.withholdingRate = parseFloat(withholdingRate);
+    if (treatyRate !== undefined) updates.treatyRate = parseFloat(treatyRate);
+    if (hasTreaty !== undefined) updates.hasTreaty = Boolean(hasTreaty);
+    if (notes !== undefined) updates.notes = notes;
 
     const [updated] = await db
       .update(taxTreatyRates)
@@ -1153,7 +1153,7 @@ adminRouter?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
 // GET /api/admin/financial-config/label-settings
 adminRouter?.get("/financial-config/label-settings", async (_req, res) => {
   try {
-    const _settings = await db
+    const settings = await db
       .select()
       .from(labelSettings)
       .orderBy(labelSettings?.key)
@@ -1184,132 +1184,132 @@ adminRouter?.patch("/financial-config/label-settings/:key", async (req, res) => 
         .insert(labelSettings)
         .values({ key, value })
         .returning();
-      return res?.json({ success: true, setting: inserted });
+      return res.json({ success: true, setting: inserted });
     }
-    res?.json({ success: true, setting: updated });
+    res.json({ success: true, setting: updated });
   } catch (err) {
-    logger?.warn({ err: err }, "Error updating label setting:");
-    res?.status(500).json({ error: "Failed to update label setting" });
+    logger.warn({ err: err }, "Error updating label setting:");
+    res.status(500).json({ error: "Failed to update label setting" });
   }
 });
 
 // ─── Chain Error Auto-Fixer ───────────────────────────────────────────────────
 
-adminRouter?.get("/chain-fixer/status", async (_req, res) => {
+adminRouter.get("/chain-fixer/status", async (_req, res) => {
   try {
-    res?.json(chainErrorAutoFixer?.getStatus());
+    res.json(chainErrorAutoFixer.getStatus());
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.post("/chain-fixer/reset/:patternId", async (req, res) => {
+adminRouter.post("/chain-fixer/reset/:patternId", async (req, res) => {
   try {
-    const _ok = chainErrorAutoFixer?.resetPattern(req?.params.patternId);
-    res?.json({ success: ok });
+    const ok = chainErrorAutoFixer.resetPattern(req.params.patternId);
+    res.json({ success: ok });
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.post("/chain-fixer/force-check", async (req, res) => {
+adminRouter.post("/chain-fixer/force-check", async (req, res) => {
   try {
-    const { message } = req?.body;
-    if (!message) return res?.status(400).json({ error: "message is required" });
-    chainErrorAutoFixer?.forceCheck(message);
-    res?.json({ success: true });
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: "message is required" });
+    chainErrorAutoFixer.forceCheck(message);
+    res.json({ success: true });
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ─── Platform Auto-Fixer routes ──────────────────────────────────────────────
 
-adminRouter?.get("/platform-fixer/status", async (_req, res) => {
+adminRouter.get("/platform-fixer/status", async (_req, res) => {
   try {
-    res?.json(platformAutoFixer?.getStatus());
+    res.json(platformAutoFixer.getStatus());
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.get("/platform-fixer/subsystems", async (_req, res) => {
+adminRouter.get("/platform-fixer/subsystems", async (_req, res) => {
   try {
-    res?.json(platformAutoFixer?.getSubsystems());
+    res.json(platformAutoFixer.getSubsystems());
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.get("/platform-fixer/patches", async (_req, res) => {
+adminRouter.get("/platform-fixer/patches", async (_req, res) => {
   try {
-    res?.json(platformAutoFixer?.getPatches());
+    res.json(platformAutoFixer.getPatches());
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.get("/platform-fixer/incidents", async (_req, res) => {
+adminRouter.get("/platform-fixer/incidents", async (_req, res) => {
   try {
-    res?.json(platformAutoFixer?.getIncidents());
+    res.json(platformAutoFixer.getIncidents());
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.post("/platform-fixer/scan", async (_req, res) => {
+adminRouter.post("/platform-fixer/scan", async (_req, res) => {
   try {
-    await platformAutoFixer?.runFullScan();
-    res?.json({ success: true, status: platformAutoFixer?.getStatus() });
+    await platformAutoFixer.runFullScan();
+    res.json({ success: true, status: platformAutoFixer.getStatus() });
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.post("/platform-fixer/probe/:name", async (req, res) => {
+adminRouter.post("/platform-fixer/probe/:name", async (req, res) => {
   try {
-    const _result = await platformAutoFixer?.forceProbe(
-      req?.params.name as Record<string, unknown>,
+    const result = await platformAutoFixer.forceProbe(
+      req.params.name as Record<string, unknown>,
     );
     if (!result)
       return res
         .status(404)
-        .json({ error: `Unknown subsystem: ${req?.params.name}` });
-    res?.json(result);
+        .json({ error: `Unknown subsystem: ${req.params.name}` });
+    res.json(result);
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.post("/platform-fixer/patch/:id/revert", async (req, res) => {
+adminRouter.post("/platform-fixer/patch/:id/revert", async (req, res) => {
   try {
-    const _ok = platformAutoFixer?.revertPatch(req?.params.id, "admin request");
+    const ok = platformAutoFixer.revertPatch(req.params.id, "admin request");
     if (!ok)
       return res
         .status(404)
         .json({ error: "Patch not found or already reverted" });
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
-adminRouter?.get("/platform-fixer/degraded-routes", async (_req, res) => {
+adminRouter.get("/platform-fixer/degraded-routes", async (_req, res) => {
   try {
-    res?.json({ degradedRoutes: platformAutoFixer?.getDegradedRoutes() });
+    res.json({ degradedRoutes: platformAutoFixer.getDegradedRoutes() });
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -1318,84 +1318,84 @@ adminRouter?.get("/platform-fixer/degraded-routes", async (_req, res) => {
 // have been raised, by how much, and why.  This is the record of the codebase
 // getting better over time.
 
-adminRouter?.get("/permanent-fixes", async (_req, res) => {
+adminRouter.get("/permanent-fixes", async (_req, res) => {
   try {
-    res?.json(permanentFixRegistry?.getStatus());
+    res.json(permanentFixRegistry.getStatus());
   } catch (err) {
-    logger?.warn({ err: err }, "Admin route error:");
-    res?.status(500).json({ error: err?.message });
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ─── System Intelligence endpoints ────────────────────────────────────────────
-adminRouter?.get("/intelligence/status", (_req, res) => {
+adminRouter.get("/intelligence/status", (_req, res) => {
   try {
-    res?.json(systemIntelligence?.getStatus());
+    res.json(systemIntelligence.getStatus());
   } catch (err) {
-    logger?.warn({ err }, "[IntelligenceRoute] /status error");
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn({ err }, "[IntelligenceRoute] /status error");
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
-adminRouter?.get("/intelligence/narrative", (_req, res) => {
+adminRouter.get("/intelligence/narrative", (_req, res) => {
   try {
-    res?.json(systemIntelligence?.narrateSystemState());
+    res.json(systemIntelligence.narrateSystemState());
   } catch (err) {
-    logger?.warn({ err }, "[IntelligenceRoute] /narrative error");
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn({ err }, "[IntelligenceRoute] /narrative error");
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
-adminRouter?.get("/intelligence/insights", (_req, res) => {
+adminRouter.get("/intelligence/insights", (_req, res) => {
   try {
-    const _insights = systemIntelligence?.getInsights();
-    res?.json({ insights, count: insights?.length, generatedAt: Date?.now() });
+    const insights = systemIntelligence.getInsights();
+    res.json({ insights, count: insights.length, generatedAt: Date.now() });
   } catch (err) {
-    logger?.warn({ err }, "[IntelligenceRoute] /insights error");
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn({ err }, "[IntelligenceRoute] /insights error");
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
-adminRouter?.get("/intelligence/security", (_req, res) => {
+adminRouter.get("/intelligence/security", (_req, res) => {
   try {
-    res?.json(systemIntelligence?.getSecurityReport());
+    res.json(systemIntelligence.getSecurityReport());
   } catch (err) {
-    logger?.warn({ err }, "[IntelligenceRoute] /security error");
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn({ err }, "[IntelligenceRoute] /security error");
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
-adminRouter?.get("/intelligence/events", (req, res) => {
+adminRouter.get("/intelligence/events", (req, res) => {
   try {
-    const _limit = Math?.min(
+    const limit = Math.min(
       500,
-      Math?.max(10, parseInt(String(req?.query.limit ?? "100"), 10)),
+      Math.max(10, parseInt(String(req.query.limit ?? "100"), 10)),
     );
-    const _events = systemIntelligence?.getEventWindow(limit);
-    res?.json({
+    const events = systemIntelligence.getEventWindow(limit);
+    res.json({
       events,
-      count: events?.length,
+      count: events.length,
       windowMinutes: 10,
-      generatedAt: Date?.now(),
+      generatedAt: Date.now(),
     });
   } catch (err) {
-    logger?.warn({ err }, "[IntelligenceRoute] /events error");
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn({ err }, "[IntelligenceRoute] /events error");
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
-adminRouter?.post("/intelligence/analyze", (req, res) => {
+adminRouter.post("/intelligence/analyze", (req, res) => {
   try {
-    const _body = req?.body as Record<string, unknown>;
-    const _text = typeof body?.text === "string" ? body?.text.slice(0, 2000) : "";
+    const body = req.body as Record<string, unknown>;
+    const text = typeof body.text === "string" ? body.text.slice(0, 2000) : "";
     if (!text) {
       return res
         .status(400)
         .json({ error: 'Provide { "text": "..." } in request body' });
     }
-    const _understandings = systemIntelligence?.analyzeCurrentState();
-    const _narrative = systemIntelligence?.narrateSystemState();
-    const _hintedClass = /pdim.*5\d\d|5\d\d.*pdim/i?.test(text)
+    const understandings = systemIntelligence?.analyzeCurrentState();
+    const narrative = systemIntelligence?.narrateSystemState();
+    const hintedClass = /pdim.*5\d\d|5\d\d.*pdim/i?.test(text)
       ? "pdim_cold_start"
       : /lua.*executor|luaexecutor/i?.test(text)
         ? "lua_executor_saturation"
@@ -1410,16 +1410,16 @@ adminRouter?.post("/intelligence/analyze", (req, res) => {
                 : /\.\.\/|path.*travers/i?.test(text?.toLowerCase())
                   ? "path_traversal"
                   : null;
-    const _hintedUnderstanding = hintedClass
+    const hintedUnderstanding = hintedClass
       ? (understandings?.find((u) => u?.errorClass === hintedClass) ??
         understandings[0])
       : understandings[0];
     res?.json({
-      inputText: text?.slice(0, 200) + (text?.length > 200 ? "…" : ""),
+      inputText: text.slice(0, 200) + (text?.length > 200 ? "…" : ""),
       mostLikelyUnderstanding: hintedUnderstanding ?? null,
       allActiveUnderstandings: understandings,
       narrative,
-      analyzedAt: Date?.now(),
+      analyzedAt: Date.now(),
     });
   } catch (err) {
     logger?.warn({ err }, "[IntelligenceRoute] /analyze error");

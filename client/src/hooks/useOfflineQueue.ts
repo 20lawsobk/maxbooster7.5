@@ -67,9 +67,9 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
   const [failedActions, setFailedActions] = useState<QueuedAction[]>([]);
   const [conflictActions, setConflictActions] = useState<QueuedAction[]>([]);
 
-  const _loadStats = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     try {
-      const _stats = await offlineQueue?.getStats();
+      const stats = await offlineQueue?.getStats();
       setPendingCount(stats?.pending);
       setFailedCount(stats?.failed);
       setConflictCount(stats?.conflict);
@@ -79,7 +79,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     }
   }, []);
 
-  const _loadActions = useCallback(async () => {
+  const loadActions = useCallback(async () => {
     try {
       const [pending, failed, conflict] = await Promise?.all([
         offlineQueue?.getAllPending(),
@@ -94,30 +94,30 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     }
   }, []);
 
-  const _refresh = useCallback(async () => {
+  const refresh = useCallback(async () => {
     await Promise?.all([loadStats(), loadActions()]);
   }, [loadStats, loadActions]);
 
   useEffect(() => {
     refresh();
 
-    const _unsubAdded = offlineQueue?.on("action-added", () => {
+    const unsubAdded = offlineQueue?.on("action-added", () => {
       refresh();
     });
 
-    const _unsubUpdated = offlineQueue?.on("action-updated", () => {
+    const unsubUpdated = offlineQueue?.on("action-updated", () => {
       refresh();
     });
 
-    const _unsubRemoved = offlineQueue?.on("action-removed", () => {
+    const unsubRemoved = offlineQueue?.on("action-removed", () => {
       refresh();
     });
 
-    const _unsubSyncStatus = syncManager?.on("status-change", (event) => {
+    const unsubSyncStatus = syncManager?.on("status-change", (event) => {
       setIsSyncing(event?.status === "syncing");
     });
 
-    const _unsubSyncComplete = syncManager?.on("sync-complete", () => {
+    const unsubSyncComplete = syncManager?.on("sync-complete", () => {
       refresh();
     });
 
@@ -130,23 +130,23 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     };
   }, [refresh]);
 
-  const _enqueue = useCallback(
+  const enqueue = useCallback(
     async <T>(
       type: string,
       payload: T,
       options?: EnqueueOptions,
     ): Promise<QueuedAction<T>> => {
-      const _action = await offlineQueue?.enqueue(type, payload, options);
+      const action = await offlineQueue?.enqueue(type, payload, options);
       return action;
     },
     [],
   );
 
-  const _dequeue = useCallback(async (id: string): Promise<void> => {
+  const dequeue = useCallback(async (id: string): Promise<void> => {
     await offlineQueue?.dequeue(id);
   }, []);
 
-  const _updateAction = useCallback(
+  const updateAction = useCallback(
     async <T>(
       id: string,
       updates: Partial<QueuedAction<T>>,
@@ -156,14 +156,14 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     [],
   );
 
-  const _getAction = useCallback(
+  const getAction = useCallback(
     async <T>(id: string): Promise<QueuedAction<T> | undefined> => {
       return offlineQueue?.getAction<T>(id);
     },
     [],
   );
 
-  const _retryAction = useCallback(async (id: string): Promise<void> => {
+  const retryAction = useCallback(async (id: string): Promise<void> => {
     await offlineQueue?.updateAction(id, {
       status: "pending" as ActionStatus,
       retryCount: 0,
@@ -172,31 +172,31 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     await syncManager?.forceSyncAction(id);
   }, []);
 
-  const _retryAllFailed = useCallback(async (): Promise<void> => {
+  const retryAllFailed = useCallback(async (): Promise<void> => {
     await syncManager?.retryFailed();
   }, []);
 
-  const _clearCompleted = useCallback(async (): Promise<number> => {
+  const clearCompleted = useCallback(async (): Promise<number> => {
     return offlineQueue?.clearCompleted();
   }, []);
 
-  const _clearAll = useCallback(async (): Promise<void> => {
+  const clearAll = useCallback(async (): Promise<void> => {
     await offlineQueue?.clearAll();
   }, []);
 
-  const _sync = useCallback(async (): Promise<void> => {
+  const sync = useCallback(async (): Promise<void> => {
     await syncManager?.sync();
   }, []);
 
-  const _pauseSync = useCallback((): void => {
+  const pauseSync = useCallback((): void => {
     syncManager?.pause();
   }, []);
 
-  const _resumeSync = useCallback((): void => {
+  const resumeSync = useCallback((): void => {
     syncManager?.resume();
   }, []);
 
-  const _getStats = useCallback(async (): Promise<QueueStats> => {
+  const getStats = useCallback(async (): Promise<QueueStats> => {
     return offlineQueue?.getStats();
   }, []);
 

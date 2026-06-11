@@ -1,12 +1,12 @@
 import { RequestHandler, Request, Response, NextFunction } from "express";
-import { logger } from "../logger?.js";
-import { isProductionEnv } from "../lib/envHelpers?.js";
+import { logger } from "../logger.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 // ── Param validation helpers ──────────────────────────────────────────────────
 
-const _UUID_RE =
+const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const _SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
+const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
 
 /**
  * Returns true if `value` is a well-formed UUID v4.
@@ -28,11 +28,11 @@ export function isSafeId(value: unknown): value is string {
  * Express middleware factory: validates that the named route param is a valid UUID.
  * Returns 400 immediately if validation fails.
  *
- * Usage:  router?.get('/:id', requireUUIDParam('id'), handler)
+ * Usage: router.get('/:id', requireUUIDParam('id'), handler)
  */
 export function requireUUIDParam(paramName: string): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
-    const _val = req?.params[paramName];
+    const val = req?.params[paramName];
     if (!isValidUUID(val)) {
       return res?.status(400).json({
         error: "Invalid parameter",
@@ -47,11 +47,11 @@ export function requireUUIDParam(paramName: string): RequestHandler {
  * Express middleware factory: validates that the named route param is a safe ID
  * (alphanumeric, dash, underscore, max 128 chars). Returns 400 if invalid.
  *
- * Usage:  router?.get('/:slug', requireSafeParam('slug'), handler)
+ * Usage: router.get('/:slug', requireSafeParam('slug'), handler)
  */
 export function requireSafeParam(paramName: string): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
-    const _val = req?.params[paramName];
+    const val = req?.params[paramName];
     if (!isSafeId(val)) {
       return res?.status(400).json({
         error: "Invalid parameter",
@@ -62,9 +62,9 @@ export function requireSafeParam(paramName: string): RequestHandler {
   };
 }
 
-const _SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 
-const _EXEMPT_PATH_PREFIXES = [
+const EXEMPT_PATH_PREFIXES = [
   "/api/webhooks/",
   "/api/stripe/webhook",
   "/api/auth/login",
@@ -87,23 +87,23 @@ const _EXEMPT_PATH_PREFIXES = [
 ];
 
 function getAllowedOrigins(req: Request): string[] {
-  const _host = req?.headers.host || "";
-  const _proto =
+  const host = req?.headers.host || "";
+  const proto =
     req?.secure || req?.headers["x-forwarded-proto"] === "https"
       ? "https"
       : "http";
 
   const origins: string[] = [`${proto}://${host}`];
 
-  const _replSlug = process?.env.REPL_SLUG;
-  const _replOwner = process?.env.REPL_OWNER;
+  const replSlug = process?.env.REPL_SLUG;
+  const replOwner = process?.env.REPL_OWNER;
   if (replSlug && replOwner) {
-    origins?.push(`https://${replSlug}.${replOwner}.repl?.co`);
-    origins?.push(`https://${replSlug}--${replOwner}.repl?.co`);
-    origins?.push(`https://${replSlug}.replit?.app`);
+    origins?.push(`https://${replSlug}.${replOwner}.repl.co`);
+    origins?.push(`https://${replSlug}--${replOwner}.repl.co`);
+    origins?.push(`https://${replSlug}.replit.app`);
   }
 
-  const _appUrl = process?.env.APP_URL || process?.env.REPLIT_APP_URL;
+  const appUrl = process?.env.APP_URL || process?.env.REPLIT_APP_URL;
   if (appUrl) {
     try {
       origins?.push(new URL(appUrl).origin);
@@ -111,7 +111,7 @@ function getAllowedOrigins(req: Request): string[] {
   }
 
   // Always allow the platform's own custom domain and artist storefront subdomains.
-  origins?.push("https://max-booster?.com", "https://www?.max-booster?.com");
+  origins?.push("https://max-booster.com", "https://www.max-booster.com");
 
   return origins;
 }
@@ -123,19 +123,19 @@ export const originValidation: RequestHandler = (
 ) => {
   if (SAFE_METHODS?.has(req?.method)) return next();
 
-  const _isExempt = EXEMPT_PATH_PREFIXES?.some((prefix) =>
+  const isExempt = EXEMPT_PATH_PREFIXES?.some((prefix) =>
     req?.path.startsWith(prefix),
   );
   if (isExempt) return next();
 
-  const _origin = req?.headers.origin as string | undefined;
-  const _referer = req?.headers.referer as string | undefined;
+  const origin = req?.headers.origin as string | undefined;
+  const referer = req?.headers.referer as string | undefined;
 
   if (!origin && !referer) {
     if (!isProductionEnv()) return next();
     logger?.warn(`Mutation without Origin: ${req?.method} ${req?.path}`, {
-      ip: req?.ip,
-      userAgent: req?.get("user-agent"),
+      ip: req.ip,
+      userAgent: req.get("user-agent"),
     });
     return next();
   }
@@ -153,12 +153,12 @@ export const originValidation: RequestHandler = (
 
   if (!requestOrigin) return next();
 
-  const _allowed = getAllowedOrigins(req);
+  const allowed = getAllowedOrigins(req);
   if (!allowed?.includes(requestOrigin)) {
     logger?.warn(`Origin blocked: ${req?.method} ${req?.path}`, {
       requestOrigin,
       allowed,
-      ip: req?.ip,
+      ip: req.ip,
     });
     return res?.status(403).json({
       error: "Origin not allowed",

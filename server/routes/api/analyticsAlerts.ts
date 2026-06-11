@@ -9,7 +9,7 @@ interface AuthenticatedRequest {
   query: Record<string, unknown>;
 }
 
-const _router = Router();
+const router = Router();
 
 function getUserId(req: AuthenticatedRequest): string | null {
   return req?.user?.id ?? null;
@@ -17,19 +17,19 @@ function getUserId(req: AuthenticatedRequest): string | null {
 
 router?.get("/alerts", async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const _userId = getUserId(req);
+    const userId = getUserId(req);
     if (!userId) {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
     const { type, priority, unreadOnly } = req?.query;
-    const _rawLimit = parseInt(String(req?.query.limit ?? ""), 10);
-    const _limit =
+    const rawLimit = parseInt(String(req?.query.limit ?? ""), 10);
+    const limit =
       Number?.isFinite(rawLimit) && rawLimit > 0
         ? Math?.min(rawLimit, 500)
         : undefined;
 
-    const _alerts = await analyticsAlertService?.getAlerts(userId, {
+    const alerts = await analyticsAlertService?.getAlerts(userId, {
       type: type as Record<string, unknown>,
       priority: priority as Record<string, unknown>,
       unreadOnly: unreadOnly === "true",
@@ -47,12 +47,12 @@ router?.get(
   "/alerts/summary",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const _summary = await analyticsAlertService?.getAlertSummary(userId);
+      const summary = await analyticsAlertService?.getAlertSummary(userId);
       return res?.json({ success: true, data: summary });
     } catch (error) {
       logger?.warn({ err: error }, "Error fetching alert summary:");
@@ -65,12 +65,12 @@ router?.get(
   "/alerts/unread-count",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const _count = await analyticsAlertService?.getUnreadCount(userId);
+      const count = await analyticsAlertService?.getUnreadCount(userId);
       return res?.json({ success: true, data: { count } });
     } catch (error) {
       logger?.warn({ err: error }, "Error fetching unread count:");
@@ -83,13 +83,13 @@ router?.post(
   "/alerts/:alertId/read",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
       const { alertId } = req?.params;
-      const _success = await analyticsAlertService?.markAlertAsRead(
+      const success = await analyticsAlertService?.markAlertAsRead(
         userId,
         alertId,
       );
@@ -109,13 +109,13 @@ router?.post(
   "/alerts/:alertId/dismiss",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
       const { alertId } = req?.params;
-      const _success = await analyticsAlertService?.dismissAlert(userId, alertId);
+      const success = await analyticsAlertService?.dismissAlert(userId, alertId);
 
       return res?.json({
         success,
@@ -132,18 +132,18 @@ router?.get(
   "/trigger-cities",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
       const { startDate, endDate } = req?.query;
-      const _start = startDate
+      const start = startDate
         ? new Date(startDate as string)
         : new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
-      const _end = endDate ? new Date(endDate as string) : new Date();
+      const end = endDate ? new Date(endDate as string) : new Date();
 
-      const _triggerCities = await analyticsAlertService?.detectTriggerCities(
+      const triggerCities = await analyticsAlertService?.detectTriggerCities(
         userId,
         { start, end },
       );
@@ -159,12 +159,12 @@ router?.get(
   "/trigger-cities/cached",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const _triggerCities =
+      const triggerCities =
         await analyticsAlertService?.getTriggerCities(userId);
       return res?.json({ success: true, data: triggerCities });
     } catch (error) {
@@ -178,12 +178,12 @@ router?.post(
   "/playlist-changes/track",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const _changes = await analyticsAlertService?.trackPlaylistChanges(userId);
+      const changes = await analyticsAlertService?.trackPlaylistChanges(userId);
       return res?.json({ success: true, data: changes });
     } catch (error) {
       logger?.warn({ err: error }, "Error tracking playlist changes:");
@@ -198,7 +198,7 @@ router?.post(
   "/milestones/check",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
@@ -210,7 +210,7 @@ router?.post(
           .json({ error: "Platform and metrics are required" });
       }
 
-      const _milestones = await analyticsAlertService?.checkMilestones(
+      const milestones = await analyticsAlertService?.checkMilestones(
         userId,
         platform,
         metrics,
@@ -227,12 +227,12 @@ router?.get(
   "/cross-platform-comparison",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const _comparison =
+      const comparison =
         await analyticsAlertService?.getCrossPlatformComparison(userId);
       return res?.json({ success: true, data: comparison });
     } catch (error) {
@@ -248,7 +248,7 @@ router?.post(
   "/growth-anomalies/detect",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
@@ -283,7 +283,7 @@ router?.post(
   "/viral-content/detect",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res?.status(401).json({ error: "Unauthorized" });
       }

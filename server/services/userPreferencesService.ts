@@ -254,9 +254,9 @@ class UserPreferencesService {
 
   async getUserPreferences(userId: string): Promise<UserPreferences | null> {
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (redis) {
-        const _cached = await redis?.get(`${this?.CACHE_PREFIX}${userId}`);
+        const cached = await redis?.get(`${this?.CACHE_PREFIX}${userId}`);
         if (cached) {
           return JSON?.parse(cached);
         }
@@ -269,7 +269,7 @@ class UserPreferencesService {
         .limit(1);
       if (!user) return null;
 
-      const _preferences =
+      const preferences =
         (user?.preferences as UserPreferences) ||
         this?.getDefaultPreferences("solo", "emerging");
 
@@ -293,17 +293,17 @@ class UserPreferencesService {
     updates: Partial<UserPreferences>,
   ): Promise<UserPreferences> {
     try {
-      const _current =
+      const current =
         (await this?.getUserPreferences(userId)) ||
         this?.getDefaultPreferences("solo", "emerging");
-      const _updated = this?.deepMerge(current, updates);
+      const updated = this?.deepMerge(current, updates);
 
       await db
         .update(users)
         .set({ preferences: updated as Record<string, unknown> })
         .where(eq(users?.id, userId));
 
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (redis) {
         await redis?.setEx(
           `${this?.CACHE_PREFIX}${userId}`,
@@ -358,8 +358,8 @@ class UserPreferencesService {
       betaFeatures: false,
     };
 
-    const _artistDefaults = ARTIST_TYPE_DEFAULTS[artistType] || {};
-    const _stageModifiers = CAREER_STAGE_MODIFIERS[careerStage] || {};
+    const artistDefaults = ARTIST_TYPE_DEFAULTS[artistType] || {};
+    const stageModifiers = CAREER_STAGE_MODIFIERS[careerStage] || {};
 
     return this?.deepMerge(
       this?.deepMerge(baseDefaults, artistDefaults),
@@ -372,11 +372,11 @@ class UserPreferencesService {
     event: BehaviorEvent,
   ): Promise<void> {
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (!redis) return;
 
-      const _key = `${this?.BEHAVIOR_PREFIX}${userId}:${event?.eventType}`;
-      const _eventData = JSON?.stringify({ ...event, timestamp: new Date() });
+      const key = `${this?.BEHAVIOR_PREFIX}${userId}:${event?.eventType}`;
+      const eventData = JSON?.stringify({ ...event, timestamp: new Date() });
 
       await redis?.lPush(key, eventData);
       await redis?.lTrim(key, 0, 99);
@@ -388,19 +388,19 @@ class UserPreferencesService {
 
   async learnFromBehavior(userId: string): Promise<PreferenceRecommendation[]> {
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (!redis) return [];
 
       const recommendations: PreferenceRecommendation[] = [];
-      const _preferences = await this?.getUserPreferences(userId);
+      const preferences = await this?.getUserPreferences(userId);
       if (!preferences) return [];
 
-      const _featureUsage = await this?.analyzeFeatureUsage(userId, redis);
-      const _timePatterns = await this?.analyzeTimePatterns(userId, redis);
-      const _contentPatterns = await this?.analyzeContentPatterns(userId, redis);
+      const featureUsage = await this?.analyzeFeatureUsage(userId, redis);
+      const timePatterns = await this?.analyzeTimePatterns(userId, redis);
+      const contentPatterns = await this?.analyzeContentPatterns(userId, redis);
 
       if (
-        featureUsage?.studioUsage > 0?.7 &&
+        featureUsage?.studioUsage > 0.7 &&
         preferences?.studioPreferences.autoSave === false
       ) {
         recommendations?.push({
@@ -446,7 +446,7 @@ class UserPreferencesService {
       ) {
         recommendations?.push({
           category: "content",
-          recommendation: `Add "${contentPatterns?.topContentType}" to your content types`,
+          recommendation: `Add "${contentPatterns.topContentType}" to your content types`,
           reason: "This content type performs well based on your activity",
           priority: "medium",
           actionable: true,
@@ -460,7 +460,7 @@ class UserPreferencesService {
       }
 
       if (
-        featureUsage?.aiUsage < 0?.2 &&
+        featureUsage?.aiUsage < 0.2 &&
         preferences?.aiAssistantLevel !== "minimal"
       ) {
         recommendations?.push({
@@ -483,8 +483,8 @@ class UserPreferencesService {
   async getPreferenceRecommendations(
     userId: string,
   ): Promise<PreferenceRecommendation[]> {
-    const _behaviorRecommendations = await this?.learnFromBehavior(userId);
-    const _preferences = await this?.getUserPreferences(userId);
+    const behaviorRecommendations = await this?.learnFromBehavior(userId);
+    const preferences = await this?.getUserPreferences(userId);
     if (!preferences) return behaviorRecommendations;
 
     const generalRecommendations: PreferenceRecommendation[] = [];
@@ -532,7 +532,7 @@ class UserPreferencesService {
   }
 
   async getDashboardLayout(userId: string): Promise<DashboardLayout> {
-    const _preferences = await this?.getUserPreferences(userId);
+    const preferences = await this?.getUserPreferences(userId);
     return (
       preferences?.dashboardLayout || {
         preset: "standard",
@@ -545,13 +545,13 @@ class UserPreferencesService {
     userId: string,
     redis: Record<string, unknown>,
   ): Promise<{ studioUsage: number; aiUsage: number; socialUsage: number }> {
-    const _studioEvents =
+    const studioEvents =
       (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:studio_action`)) || 0;
-    const _aiEvents =
+    const aiEvents =
       (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:ai_action`)) || 0;
-    const _socialEvents =
+    const socialEvents =
       (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:social_action`)) || 0;
-    const _total = studioEvents + aiEvents + socialEvents || 1;
+    const total = studioEvents + aiEvents + socialEvents || 1;
 
     return {
       studioUsage: studioEvents / total,
@@ -564,7 +564,7 @@ class UserPreferencesService {
     userId: string,
     redis: Record<string, unknown>,
   ): Promise<{ peakHour: number | null }> {
-    const _events = await redis?.lRange(
+    const events = await redis?.lRange(
       `${this?.BEHAVIOR_PREFIX}${userId}:login`,
       0,
       -1,
@@ -574,15 +574,15 @@ class UserPreferencesService {
     const hourCounts: Record<number, number> = {};
     for (const eventStr of events) {
       try {
-        const _event = JSON?.parse(eventStr);
-        const _hour = new Date(event?.timestamp).getHours();
+        const event = JSON?.parse(eventStr);
+        const hour = new Date(event?.timestamp).getHours();
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
       } catch {
         /* intentional: malformed event string → skipped */
       }
     }
 
-    const _peakHour = Object?.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+    const peakHour = Object?.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
     return { peakHour: peakHour ? parseInt(peakHour[0]) : null };
   }
 
@@ -590,7 +590,7 @@ class UserPreferencesService {
     userId: string,
     redis: Record<string, unknown>,
   ): Promise<{ topContentType: string | null }> {
-    const _events = await redis?.lRange(
+    const events = await redis?.lRange(
       `${this?.BEHAVIOR_PREFIX}${userId}:content_create`,
       0,
       -1,
@@ -600,9 +600,9 @@ class UserPreferencesService {
     const typeCounts: Record<string, number> = {};
     for (const eventStr of events) {
       try {
-        const _event = JSON?.parse(eventStr);
+        const event = JSON?.parse(eventStr);
         if (event?.context?.contentType) {
-          typeCounts[event?.context.contentType] =
+          typeCounts[event.context.contentType] =
             (typeCounts[event?.context.contentType] || 0) + 1;
         }
       } catch {
@@ -610,7 +610,7 @@ class UserPreferencesService {
       }
     }
 
-    const _topType = Object?.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+    const topType = Object?.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
     return { topContentType: topType ? topType[0] : null };
   }
 
@@ -618,7 +618,7 @@ class UserPreferencesService {
     target: T,
     source: Partial<T>,
   ): T {
-    const _output = { ...target };
+    const output = { ...target };
     for (const key in source) {
       if (
         source[key] &&
@@ -637,4 +637,4 @@ class UserPreferencesService {
   }
 }
 
-export const _userPreferencesService = new UserPreferencesService();
+export const userPreferencesService = new UserPreferencesService();

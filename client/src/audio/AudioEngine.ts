@@ -58,7 +58,7 @@ abstract class BaseAudioEngine {
   abstract processAudio(buffer: Float32Array[]): Float32Array[];
 
   setCallbacks(callbacks: TransportCallbacks) {
-    this?.callbacks = callbacks;
+    this.callbacks = callbacks;
   }
 
   getState(): EngineState {
@@ -70,51 +70,51 @@ abstract class BaseAudioEngine {
       await this?.initialize();
     }
     await this?.context?.resume();
-    this?.state.isRunning = true;
+    this.state.isRunning = true;
     this?.callbacks?.onStateChange(this?.state);
   }
 
   async stop() {
     await this?.context?.suspend();
-    this?.state.isRunning = false;
+    this.state.isRunning = false;
     this?.callbacks?.onStateChange(this?.state);
   }
 
   play() {
-    this?.isPlaying = true;
+    this.isPlaying = true;
     this?.startPositionTimer();
   }
 
   pause() {
-    this?.isPlaying = false;
+    this.isPlaying = false;
     this?.stopPositionTimer();
   }
 
   stopTransport() {
-    this?.isPlaying = false;
-    this?.position = 0;
+    this.isPlaying = false;
+    this.position = 0;
     this?.stopPositionTimer();
     this?.callbacks?.onPositionChange(0);
   }
 
   setPosition(position: number) {
-    this?.position = position;
+    this.position = position;
     this?.callbacks?.onPositionChange(position);
   }
 
   setTempo(tempo: number) {
-    this?.tempo = tempo;
+    this.tempo = tempo;
   }
 
   protected startPositionTimer() {
     if (this?.positionTimerId !== null) return;
 
-    const _intervalMs = 1000 / 60;
-    const _beatsPerMs = this?.tempo / 60000;
+    const intervalMs = 1000 / 60;
+    const beatsPerMs = this?.tempo / 60000;
 
-    this?.positionTimerId = setInterval(() => {
+    this.positionTimerId = setInterval(() => {
       if (this?.isPlaying) {
-        this?.position += beatsPerMs * intervalMs;
+        this.position += beatsPerMs * intervalMs;
         this?.callbacks?.onPositionChange(this?.position);
       }
     }, intervalMs);
@@ -123,7 +123,7 @@ abstract class BaseAudioEngine {
   protected stopPositionTimer() {
     if (this?.positionTimerId !== null) {
       clearInterval(this?.positionTimerId);
-      this?.positionTimerId = null;
+      this.positionTimerId = null;
     }
   }
 }
@@ -140,20 +140,20 @@ export class WebAudioEngine extends BaseAudioEngine {
   private _lastAudioTime: number | null = null;
 
   async initialize(): Promise<void> {
-    this?.context = new AudioContext({
-      sampleRate: this?.state.sampleRate,
+    this.context = new AudioContext({
+      sampleRate: this.state.sampleRate,
       latencyHint: "interactive",
     });
 
-    this?.masterGain = this?.context.createGain();
-    this?.analyser = this?.context.createAnalyser();
-    this?.analyser.fftSize = 2048;
+    this.masterGain = this?.context.createGain();
+    this.analyser = this?.context.createAnalyser();
+    this.analyser.fftSize = 2048;
 
     this?.masterGain.connect(this?.analyser);
     this?.analyser.connect(this?.context.destination);
 
-    this?.state.sampleRate = this?.context.sampleRate;
-    this?.state.latency = this?.context.baseLatency * 1000;
+    this.state.sampleRate = this?.context.sampleRate;
+    this.state.latency = this?.context.baseLatency * 1000;
 
     this?.startMeterUpdates();
   }
@@ -163,7 +163,7 @@ export class WebAudioEngine extends BaseAudioEngine {
     this?.stopMeterUpdates();
     this?.trackNodes.clear();
     this?.context?.close();
-    this?.context = null;
+    this.context = null;
   }
 
   createGraph(graph: AudioGraph): void {
@@ -179,8 +179,8 @@ export class WebAudioEngine extends BaseAudioEngine {
   createTrackChannel(trackId: string): void {
     if (!this?.context || !this?.masterGain) return;
 
-    const _gain = this?.context.createGain();
-    const _pan = this?.context.createStereoPanner();
+    const gain = this?.context.createGain();
+    const pan = this?.context.createStereoPanner();
 
     gain?.connect(pan);
     pan?.connect(this?.masterGain);
@@ -189,7 +189,7 @@ export class WebAudioEngine extends BaseAudioEngine {
   }
 
   removeTrackChannel(trackId: string): void {
-    const _channel = this?.trackNodes.get(trackId);
+    const channel = this?.trackNodes.get(trackId);
     if (channel) {
       channel?.gain.disconnect();
       channel?.pan.disconnect();
@@ -198,27 +198,27 @@ export class WebAudioEngine extends BaseAudioEngine {
   }
 
   setTrackVolume(trackId: string, volumeDb: number): void {
-    const _channel = this?.trackNodes.get(trackId);
+    const channel = this?.trackNodes.get(trackId);
     if (channel && this?.context) {
-      const _gain = Math?.pow(10, volumeDb / 20);
-      channel?.gain.gain?.setTargetAtTime(gain, this?.context.currentTime, 0?.01);
+      const gain = Math?.pow(10, volumeDb / 20);
+      channel?.gain.gain?.setTargetAtTime(gain, this?.context.currentTime, 0.01);
     }
   }
 
   setTrackPan(trackId: string, pan: number): void {
-    const _channel = this?.trackNodes.get(trackId);
+    const channel = this?.trackNodes.get(trackId);
     if (channel && this?.context) {
-      channel?.pan.pan?.setTargetAtTime(pan, this?.context.currentTime, 0?.01);
+      channel?.pan.pan?.setTargetAtTime(pan, this?.context.currentTime, 0.01);
     }
   }
 
   setMasterVolume(volumeDb: number): void {
     if (this?.masterGain && this?.context) {
-      const _gain = Math?.pow(10, volumeDb / 20);
+      const gain = Math?.pow(10, volumeDb / 20);
       this?.masterGain.gain?.setTargetAtTime(
         gain,
         this?.context.currentTime,
-        0?.01,
+        0.01,
       );
     }
   }
@@ -226,9 +226,9 @@ export class WebAudioEngine extends BaseAudioEngine {
   private startMeterUpdates(): void {
     if (!this?.analyser) return;
 
-    const _dataArray = new Float32Array(this?.analyser.fftSize);
+    const dataArray = new Float32Array(this?.analyser.fftSize);
 
-    this?.meterTimerId = setInterval(() => {
+    this.meterTimerId = setInterval(() => {
       if (!this?.analyser) return;
 
       this?.analyser.getFloatTimeDomainData(dataArray);
@@ -237,29 +237,29 @@ export class WebAudioEngine extends BaseAudioEngine {
       for (let i = 0; i < dataArray?.length; i++) {
         sumSquares += dataArray[i] * dataArray[i];
       }
-      const _rms = Math?.sqrt(sumSquares / dataArray?.length);
-      const _db = 20 * Math?.log10(Math?.max(rms, 0?.00001));
+      const rms = Math?.sqrt(sumSquares / dataArray?.length);
+      const db = 20 * Math?.log10(Math?.max(rms, 0.00001));
 
       this?.callbacks?.onMeterUpdate("master", db, db);
 
-      const _cpuTime = performance?.now();
-      const _elapsed = cpuTime - (this?._lastCpuSampleTime ?? cpuTime);
-      const _audioTime = this?.context
+      const cpuTime = performance?.now();
+      const elapsed = cpuTime - (this?._lastCpuSampleTime ?? cpuTime);
+      const audioTime = this?.context
         ? this?.context.currentTime -
           (this?._lastAudioTime ?? this?.context.currentTime)
         : 0;
-      this?._lastCpuSampleTime = cpuTime;
-      this?._lastAudioTime = this?.context?.currentTime ?? 0;
-      const _load =
+      this._lastCpuSampleTime = cpuTime;
+      this._lastAudioTime = this?.context?.currentTime ?? 0;
+      const load =
         elapsed > 0 ? Math?.min(100, (audioTime / (elapsed / 1000)) * 100) : 0;
-      this?.state.cpuUsage = Math?.round(load * 10) / 10;
+      this.state.cpuUsage = Math?.round(load * 10) / 10;
     }, 1000 / 30);
   }
 
   private stopMeterUpdates(): void {
     if (this?.meterTimerId !== null) {
       clearInterval(this?.meterTimerId);
-      this?.meterTimerId = null;
+      this.meterTimerId = null;
     }
   }
 
@@ -273,8 +273,8 @@ export class ElementaryAudioEngine extends BaseAudioEngine {
   private isInitialized: boolean = false;
 
   async initialize(): Promise<void> {
-    this?.context = new AudioContext({
-      sampleRate: this?.state.sampleRate,
+    this.context = new AudioContext({
+      sampleRate: this.state.sampleRate,
       latencyHint: "interactive",
     });
 
@@ -283,16 +283,16 @@ export class ElementaryAudioEngine extends BaseAudioEngine {
       "[ElementaryAudioEngine] Elementary Audio will run DSP at native C++ speeds",
     );
 
-    this?.state.sampleRate = this?.context.sampleRate;
-    this?.state.latency = this?.context.baseLatency * 1000;
-    this?.isInitialized = true;
+    this.state.sampleRate = this?.context.sampleRate;
+    this.state.latency = this?.context.baseLatency * 1000;
+    this.isInitialized = true;
   }
 
   dispose(): void {
     this?.stopPositionTimer();
     this?.context?.close();
-    this?.context = null;
-    this?.isInitialized = false;
+    this.context = null;
+    this.isInitialized = false;
   }
 
   createGraph(graph: AudioGraph): void {
@@ -360,7 +360,7 @@ export class AudioEngineFactory {
 
   static getEngine(): BaseAudioEngine {
     if (!this?.instance) {
-      this?.instance = this?.createEngine(this?.engineType);
+      this.instance = this?.createEngine(this?.engineType);
     }
     return this?.instance;
   }
@@ -368,8 +368,8 @@ export class AudioEngineFactory {
   static setEngineType(type: AudioEngineType): void {
     if (type !== this?.engineType) {
       this?.instance?.dispose();
-      this?.instance = null;
-      this?.engineType = type;
+      this.instance = null;
+      this.engineType = type;
     }
   }
 
@@ -388,16 +388,16 @@ export class AudioEngineFactory {
   }
 
   static async initialize(): Promise<void> {
-    const _engine = this?.getEngine();
+    const engine = this?.getEngine();
     await engine?.initialize();
   }
 
   static dispose(): void {
     this?.instance?.dispose();
-    this?.instance = null;
+    this.instance = null;
   }
 }
 
-export const _audioEngine = AudioEngineFactory;
+export const audioEngine = AudioEngineFactory;
 
 export default audioEngine;

@@ -6,32 +6,32 @@ import {
   fanSubscribers,
 } from "@shared/schema";
 import { and, eq, desc, count, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 import { z } from "zod";
-import { queryCache, createCacheKey } from "../lib/queryCache?.js";
-import { parsePaginationParams } from "../middleware/pagination?.js";
-import { requireUUIDParam } from "../middleware/requestValidation?.js";
+import { queryCache, createCacheKey } from "../lib/queryCache.js";
+import { parsePaginationParams } from "../middleware/pagination.js";
+import { requireUUIDParam } from "../middleware/requestValidation.js";
 
-const _router = Router();
-const _CACHE_TTL = 60;
+const router = Router();
+const CACHE_TTL = 60;
 
-const _updateCampaignSchema = z?.object({
-  name: z?.string().min(1).max(200).optional(),
-  subject: z?.string().min(1).max(500).optional(),
-  body: z?.string().min(1).max(100_000).optional(),
+const updateCampaignSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  subject: z.string().min(1).max(500).optional(),
+  body: z.string().min(1).max(100_000).optional(),
   campaignType: z
     .enum(["newsletter", "announcement", "promotion", "event"])
     .optional(),
-  status: z?.enum(["draft", "scheduled", "sent", "cancelled"]).optional(),
-  segmentFilter: z?.record(z?.string(), z?.unknown()).optional(),
-  scheduledAt: z?.string().datetime().nullable().optional(),
+  status: z.enum(["draft", "scheduled", "sent", "cancelled"]).optional(),
+  segmentFilter: z.record(z.string(), z.unknown()).optional(),
+  scheduledAt: z.string().datetime().nullable().optional(),
 });
 
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _campaigns = await db
+    const campaigns = await db
       .select()
       .from(fanCampaigns)
       .where(eq(fanCampaigns?.userId, req?.user!.id))
@@ -47,10 +47,10 @@ router?.get("/", requireAuth, async (req, res) => {
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _cacheKey = createCacheKey("stats:fanCampaigns", userId);
+    const userId = req?.user!.id;
+    const cacheKey = createCacheKey("stats:fanCampaigns", userId);
 
-    const _stats = await queryCache?.getOrCompute(
+    const stats = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
         const [campaignTotals] = await db
@@ -69,12 +69,12 @@ router?.get("/stats", requireAuth, async (req, res) => {
           .where(eq(fanSubscribers?.userId, userId))
           .limit(1);
 
-        const _totalCampaigns = Number(campaignTotals?.totalCampaigns);
-        const _sentCount = Number(campaignTotals?.sent);
-        const _totalRecipients = Number(campaignTotals?.totalRecipients);
-        const _totalOpens = Number(campaignTotals?.totalOpens);
-        const _totalSubscribers = Number(subscriberCount?.total);
-        const _avgOpenRate =
+        const totalCampaigns = Number(campaignTotals?.totalCampaigns);
+        const sentCount = Number(campaignTotals?.sent);
+        const totalRecipients = Number(campaignTotals?.totalRecipients);
+        const totalOpens = Number(campaignTotals?.totalOpens);
+        const totalSubscribers = Number(subscriberCount?.total);
+        const avgOpenRate =
           totalRecipients > 0
             ? Math?.round((totalOpens / totalRecipients) * 100)
             : 0;
@@ -98,9 +98,9 @@ router?.get("/stats", requireAuth, async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _data = insertFanCampaignSchema?.parse({
+    const data = insertFanCampaignSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
     });
     const [campaign] = await db?.insert(fanCampaigns).values(data).returning();
     await queryCache?.invalidate(
@@ -143,10 +143,10 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
 
 router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(fanCampaigns)
       .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)))
@@ -160,11 +160,11 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       return res?.status(400).json({ error: "Cannot modify a sent campaign" });
     }
 
-    const _parsed = updateCampaignSchema?.safeParse(req?.body);
+    const parsed = updateCampaignSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const [campaign] = await db
@@ -183,10 +183,10 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
 
 router?.post("/:id/send", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(fanCampaigns)
       .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)))
@@ -205,7 +205,7 @@ router?.post("/:id/send", requireAuth, async (req, res) => {
       .from(fanSubscribers)
       .where(eq(fanSubscribers?.userId, userId))
       .limit(1);
-    const _recipientCount = Number(recipientCountRow?.total);
+    const recipientCount = Number(recipientCountRow?.total);
 
     const [campaign] = await db
       .update(fanCampaigns)
@@ -228,10 +228,10 @@ router?.post("/:id/send", requireAuth, async (req, res) => {
 
 router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(fanCampaigns)
       .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)))

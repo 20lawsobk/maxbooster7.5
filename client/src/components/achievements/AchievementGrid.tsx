@@ -75,10 +75,10 @@ export function AchievementGrid() {
       .reduce((sum, a) => sum + a.points, 0) || 0;
 
   const groupedByTier = {
-    platinum: filteredAchievements?.filter((a) => a.tier === "platinum") || [],
-    gold: filteredAchievements?.filter((a) => a.tier === "gold") || [],
-    silver: filteredAchievements?.filter((a) => a.tier === "silver") || [],
-    bronze: filteredAchievements?.filter((a) => a.tier === "bronze") || [],
+    platinum: filteredAchievements.filter((a) => a.tier === "platinum") || [],
+    gold: filteredAchievements.filter((a) => a.tier === "gold") || [],
+    silver: filteredAchievements.filter((a) => a.tier === "silver") || [],
+    bronze: filteredAchievements.filter((a) => a.tier === "bronze") || [],
   };
 
   return (

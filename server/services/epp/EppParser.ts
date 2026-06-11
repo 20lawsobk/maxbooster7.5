@@ -8,22 +8,22 @@
  */
 
 import { XMLParser } from "fast-xml-parser";
-import type { EppResponse } from "./types?.js";
+import type { EppResponse } from "./types.js";
 
-const _parser = new XMLParser({
+const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "@_",
   removeNSPrefix: true,
   parseAttributeValue: true,
   isArray: (_name, jpath) => {
     // Force arrays for fields that may appear once or many times
-    const _ALWAYS_ARRAY = [
-      "epp?.response.result",
-      "epp?.response.resData?.chkData.cd",
-      "epp?.response.resData?.infData.status",
-      "epp?.response.resData?.infData.contact",
-      "epp?.response.resData?.infData.ns?.hostObj",
-      "epp?.greeting.svcMenu?.objURI",
+    const ALWAYS_ARRAY = [
+      "epp.response.result",
+      "epp.response.resData.chkData.cd",
+      "epp.response.resData.infData.status",
+      "epp.response.resData.infData.contact",
+      "epp.response.resData.infData.ns.hostObj",
+      "epp.greeting.svcMenu.objURI",
     ];
     return ALWAYS_ARRAY?.includes(jpath);
   },
@@ -36,8 +36,8 @@ export class EppParser {
    * Parse any EPP XML response (or greeting) into EppResponse.
    */
   static parseResponse(xml: string): EppResponse {
-    const _root = parser?.parse(xml);
-    const _epp = root?.epp;
+    const root = parser?.parse(xml);
+    const epp = root?.epp;
 
     if (!epp)
       throw new Error(`[EPP] Not an EPP document: ${xml?.slice(0, 200)}`);
@@ -47,12 +47,12 @@ export class EppParser {
       return {
         code: 1000,
         msg: "Greeting",
-        trid: { svTRID: epp?.greeting.svID ?? "" },
-        data: epp?.greeting,
+        trid: { svTRID: epp.greeting.svID ?? "" },
+        data: epp.greeting,
       };
     }
 
-    const _resp = epp?.response;
+    const resp = epp?.response;
     if (!resp)
       throw new Error(`[EPP] No <response> element: ${xml?.slice(0, 200)}`);
 
@@ -60,19 +60,19 @@ export class EppParser {
     const resultArr: unknown[] = Array?.isArray(resp?.result)
       ? resp?.result
       : [resp?.result];
-    const _firstResult = resultArr[0] ?? {};
-    const _code = Number(firstResult["@_code"] ?? 0);
+    const firstResult = resultArr[0] ?? {};
+    const code = Number(firstResult["@code"] ?? 0);
     const msg: string = firstResult?.msg ?? "";
 
     return {
       code,
       msg,
       trid: {
-        clTRID: resp?.trID?.clTRID ?? undefined,
-        svTRID: resp?.trID?.svTRID ?? "",
+        clTRID: resp.trID?.clTRID ?? undefined,
+        svTRID: resp.trID?.svTRID ?? "",
       },
-      resData: resp?.resData,
-      extension: resp?.extension,
+      resData: resp.resData,
+      extension: resp.extension,
       data: resp,
     };
   }
@@ -86,8 +86,8 @@ export class EppParser {
   static parseDomainCheck(
     xml: string,
   ): Array<{ fqdn: string; available: boolean; reason?: string }> {
-    const _base = this?.parseResponse(xml);
-    const _chkData = base?.resData?.chkData;
+    const base = this?.parseResponse(xml);
+    const chkData = base?.resData?.chkData;
     if (!chkData) return [];
 
     const cds: unknown[] = Array?.isArray(chkData?.cd)
@@ -95,13 +95,13 @@ export class EppParser {
       : [chkData?.cd];
 
     return cds?.map((cd: Record<string, unknown>) => {
-      const _nameNode = cd?.name;
+      const nameNode = cd?.name;
       const fqdn: string =
         typeof nameNode === "string"
           ? nameNode
           : (nameNode?.["#text"] ?? nameNode?.["$text"] ?? "");
-      const _avail = nameNode?.["@_avail"];
-      const _available =
+      const avail = nameNode?.["@avail"];
+      const available =
         avail === 1 || avail === "1" || avail === true || avail === "true";
       const reason: string | undefined = cd?.reason ?? undefined;
       return { fqdn, available, reason };
@@ -118,12 +118,12 @@ export class EppParser {
     createdAt: Date;
     expiresAt: Date;
   } {
-    const _base = this?.parseResponse(xml);
-    const _creData = base?.resData?.creData;
+    const base = this?.parseResponse(xml);
+    const creData = base?.resData?.creData;
     if (!creData) throw new Error("[EPP] No creData in domain:create response");
 
     return {
-      fqdn: creData?.name ?? "",
+      fqdn: creData.name ?? "",
       createdAt: new Date(creData?.crDate ?? Date?.now()),
       expiresAt: new Date(creData?.exDate ?? Date?.now()),
     };
@@ -144,14 +144,14 @@ export class EppParser {
     expiresAt?: Date;
     updatedAt?: Date;
   } {
-    const _base = this?.parseResponse(xml);
-    const _infData = base?.resData?.infData;
+    const base = this?.parseResponse(xml);
+    const infData = base?.resData?.infData;
     if (!infData) throw new Error("[EPP] No infData in domain:info response");
 
     const rawStatuses: unknown[] = Array?.isArray(infData?.status)
       ? infData?.status
       : [infData?.status];
-    const _statuses = rawStatuses
+    const statuses = rawStatuses
       .map((s: Record<string, unknown>) =>
         typeof s === "string" ? s : (s?.["@_s"] ?? ""),
       )
@@ -165,14 +165,14 @@ export class EppParser {
         : [];
 
     return {
-      fqdn: infData?.name ?? "",
-      registryId: infData?.roid ?? "",
+      fqdn: infData.name ?? "",
+      registryId: infData.roid ?? "",
       statuses,
       nameservers,
-      registrant: infData?.registrant ?? "",
-      createdAt: infData?.crDate ? new Date(infData?.crDate) : undefined,
-      expiresAt: infData?.exDate ? new Date(infData?.exDate) : undefined,
-      updatedAt: infData?.upDate ? new Date(infData?.upDate) : undefined,
+      registrant: infData.registrant ?? "",
+      createdAt: infData.crDate ? new Date(infData?.crDate) : undefined,
+      expiresAt: infData.exDate ? new Date(infData?.exDate) : undefined,
+      updatedAt: infData.upDate ? new Date(infData?.upDate) : undefined,
     };
   }
 
@@ -182,13 +182,13 @@ export class EppParser {
    * Parse <contact:creData> from a contact:create response.
    */
   static parseContactCreate(xml: string): { id: string; createdAt: Date } {
-    const _base = this?.parseResponse(xml);
-    const _creData = base?.resData?.creData;
+    const base = this?.parseResponse(xml);
+    const creData = base?.resData?.creData;
     if (!creData)
       throw new Error("[EPP] No creData in contact:create response");
 
     return {
-      id: creData?.id ?? "",
+      id: creData.id ?? "",
       createdAt: new Date(creData?.crDate ?? Date?.now()),
     };
   }
@@ -205,28 +205,28 @@ export class EppParser {
     acID: string;
     expiresAt?: Date;
   } {
-    const _base = this?.parseResponse(xml);
-    const _trnData = base?.resData?.trnData;
+    const base = this?.parseResponse(xml);
+    const trnData = base?.resData?.trnData;
     if (!trnData)
       throw new Error("[EPP] No trnData in domain:transfer response");
 
     return {
-      fqdn: trnData?.name ?? "",
-      trStatus: trnData?.trStatus ?? "",
-      reID: trnData?.reID ?? "",
-      acID: trnData?.acID ?? "",
-      expiresAt: trnData?.exDate ? new Date(trnData?.exDate) : undefined,
+      fqdn: trnData.name ?? "",
+      trStatus: trnData.trStatus ?? "",
+      reID: trnData.reID ?? "",
+      acID: trnData.acID ?? "",
+      expiresAt: trnData.exDate ? new Date(trnData?.exDate) : undefined,
     };
   }
 
   // ── Domain renew ────────────────────────────────────────────────────────────
 
   static parseDomainRenew(xml: string): { fqdn: string; expiresAt: Date } {
-    const _base = this?.parseResponse(xml);
-    const _renData = base?.resData?.renData;
+    const base = this?.parseResponse(xml);
+    const renData = base?.resData?.renData;
     if (!renData) throw new Error("[EPP] No renData in domain:renew response");
     return {
-      fqdn: renData?.name ?? "",
+      fqdn: renData.name ?? "",
       expiresAt: new Date(renData?.exDate ?? Date?.now()),
     };
   }

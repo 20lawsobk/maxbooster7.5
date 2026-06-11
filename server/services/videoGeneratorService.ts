@@ -28,28 +28,28 @@
  */
 
 import { execFile, execFileSync } from "child_process";
-import { PYTHON, PYTHON_AVAILABLE } from "./pythonPath?.js";
+import { PYTHON, PYTHON_AVAILABLE } from "./pythonPath.js";
 import { promisify } from "util";
 import { mkdirSync, existsSync, unlinkSync } from "fs";
 import os from "os";
 import path from "path";
 import { randomBytes } from "crypto";
-import { contentQualityPipeline } from "./contentQualityPipeline?.js";
-import { logger } from "../logger?.js";
+import { contentQualityPipeline } from "./contentQualityPipeline.js";
+import { logger } from "../logger.js";
 
-const _execFileAsync = promisify(execFile);
+const execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
   if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
   try {
-    const _p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
+    const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
       .trim();
     if (p) return p;
   } catch {
     /* intentional: shell which-lookup fails → falls through to hardcoded candidates */
   }
-  const _candidates = [
+  const candidates = [
     "/run/current-system/sw/bin/ffmpeg",
     "/usr/bin/ffmpeg",
     "/usr/local/bin/ffmpeg",
@@ -61,21 +61,21 @@ function resolveFFmpegPath(): string {
   return "ffmpeg";
 }
 
-const _FFMPEG = resolveFFmpegPath();
-const _OUTPUT_DIR = path?.join(process?.cwd(), "uploads", "videos");
-const _TEMP_DIR = path?.join(process?.cwd(), "uploads", "video_temp");
-const _FONT_DIR = "/usr/share/fonts/truetype/dejavu";
+const FFMPEG = resolveFFmpegPath();
+const OUTPUT_DIR = path?.join(process?.cwd(), "uploads", "videos");
+const TEMP_DIR = path?.join(process?.cwd(), "uploads", "video_temp");
+const FONT_DIR = "/usr/share/fonts/truetype/dejavu";
 path?.join(
   process?.cwd(),
   "server",
   "services",
-  "frameGenerator?.py",
+  "frameGenerator.py",
 );
 
 // Maps legacy FFmpeg bgType names → Python frame generator style names
 
 // ── FONTS ─────────────────────────────────────────────────────────────────────
-const _FONTS = {
+const FONTS = {
   bold: `${FONT_DIR}/DejaVuSans-Bold?.ttf`,
   regular: `${FONT_DIR}/DejaVuSans?.ttf`,
   italic: `${FONT_DIR}/DejaVuSans-Oblique?.ttf`,
@@ -112,7 +112,7 @@ const PLATFORM_RATIOS: Record<string, string> = {
 // Each bg type produces a geq= filter expression rendering at half-resolution
 // (iW × iH) for performance, then lanczos-upscaled to the final output size.
 // Expressions are designed to always stay in [0,255] — sin²() is always ≥ 0
-// and amplitude weights sum to ≤ 1?.0 so peak = base + full_amplitude.
+// and amplitude weights sum to ≤ 1.0 so peak = base + full_amplitude.
 // "galaxy" and "hologram" use FFmpeg geq built-ins: hypot(), atan().
 // "solid" uses a lavfi color source (fastest, no geq needed).
 type BgType =
@@ -148,8 +148,8 @@ function getBgVfPrefix(
   iH: number,
   ac?: string,
 ): string {
-  const _parseHex = (s: string) => {
-    const _h = s?.replace("0x", "").replace("#", "");
+  const parseHex = (s: string) => {
+    const h = s?.replace("0x", "").replace("#", "");
     return [
       parseInt(h?.slice(0, 2), 16),
       parseInt(h?.slice(2, 4), 16),
@@ -158,16 +158,16 @@ function getBgVfPrefix(
   };
   const [R, G, B] = parseHex(bg);
   const [AR, AG, AB] = ac ? parseHex(ac) : [255, 255, 255];
-  const _aR = AR - R;
-  const _aG = AG - G;
-  const _aB = AB - B;
+  const aR = AR - R;
+  const aG = AG - G;
+  const aB = AB - B;
 
   // Spatial frequency divisors (pixels per full sine cycle ÷ 2π)
-  const _dX1 = Math?.round(iW / 6?.28); // 1 cycle across width
-  const _dX2 = Math?.round(iW / 12?.57); // 2 cycles across width
-  const _dY1 = Math?.round(iH / 6?.28); // 1 cycle across height
-  const _dY2 = Math?.round(iH / 12?.57); // 2 cycles across height
-  const _dD1 = Math?.round(Math?.hypot(iW, iH) / 6?.28); // 1 cycle across diagonal
+  const dX1 = Math?.round(iW / 6.28); // 1 cycle across width
+  const dX2 = Math?.round(iW / 12.57); // 2 cycles across width
+  const dY1 = Math?.round(iH / 6.28); // 1 cycle across height
+  const dY2 = Math?.round(iH / 12.57); // 2 cycles across height
+  const dD1 = Math?.round(Math?.hypot(iW, iH) / 6.28); // 1 cycle across diagonal
 
   switch (bgType) {
     case "plasma": {
@@ -175,22 +175,22 @@ function getBgVfPrefix(
       // Each channel gets 3 waves: major axis, counter-diagonal, minor cross-axis.
       return (
         `geq=` +
-        `r='${R}+${aR}*(0?.55*sin(X/${dX1}+T*1?.1)*sin(X/${dX1}+T*1?.1)+0?.35*sin((X-Y)/${dD1}+T*0?.7)*sin((X-Y)/${dD1}+T*0?.7)+0?.10*sin(Y/${dY2}*0?.5-T*1?.5)*sin(Y/${dY2}*0?.5-T*1?.5))':` +
-        `g='${G}+${aG}*(0?.50*sin(Y/${dY2}-T*0?.9)*sin(Y/${dY2}-T*0?.9)+0?.35*sin((X+Y)/${dD1}+T*0?.6)*sin((X+Y)/${dD1}+T*0?.6)+0?.15*sin(X/${dX2}+T*1?.2)*sin(X/${dX2}+T*1?.2))':` +
-        `b='${B}+${aB}*(0?.55*sin(X/${dX2}+Y/${dY1}+T*0?.7)*sin(X/${dX2}+Y/${dY1}+T*0?.7)+0?.35*sin(Y/${dY1}+T*1?.0)*sin(Y/${dY1}+T*1?.0)+0?.10*sin(X/${dX1}-T*1?.3)*sin(X/${dX1}-T*1?.3))'`
+        `r='${R}+${aR}*(0.55*sin(X/${dX1}+T*1.1)*sin(X/${dX1}+T*1.1)+0.35*sin((X-Y)/${dD1}+T*0.7)*sin((X-Y)/${dD1}+T*0.7)+0.10*sin(Y/${dY2}*0.5-T*1.5)*sin(Y/${dY2}*0.5-T*1.5))':` +
+        `g='${G}+${aG}*(0.50*sin(Y/${dY2}-T*0.9)*sin(Y/${dY2}-T*0.9)+0.35*sin((X+Y)/${dD1}+T*0.6)*sin((X+Y)/${dD1}+T*0.6)+0.15*sin(X/${dX2}+T*1.2)*sin(X/${dX2}+T*1.2))':` +
+        `b='${B}+${aB}*(0.55*sin(X/${dX2}+Y/${dY1}+T*0.7)*sin(X/${dX2}+Y/${dY1}+T*0.7)+0.35*sin(Y/${dY1}+T*1.0)*sin(Y/${dY1}+T*1.0)+0.10*sin(X/${dX1}-T*1.3)*sin(X/${dX1}-T*1.3))'`
       );
     }
 
     case "aurora": {
       // Tall horizontal curtains with luminance shimmer and subtle R accent.
-      const _gAmp = Math?.min(aG, 180);
-      const _bAmp = Math?.min(aB, 200);
-      const _rAmp = Math?.min(aR, 60);
+      const gAmp = Math?.min(aG, 180);
+      const bAmp = Math?.min(aB, 200);
+      const rAmp = Math?.min(aR, 60);
       return (
         `geq=` +
-        `r='${R}+${rAmp}*(0?.65*sin(X/${dX1}+T*0?.3)*sin(X/${dX1}+T*0?.3)*sin(Y/${dY2}*0?.3)*sin(Y/${dY2}*0?.3)+0?.35*sin(Y/${dY1}+T*0?.2)*sin(Y/${dY1}+T*0?.2))':` +
-        `g='${G}+${gAmp}*(0?.60*sin(Y/${dY1}+X/${dX2}*0?.15+T*0?.5)*sin(Y/${dY1}+X/${dX2}*0?.15+T*0?.5)+0?.30*sin(Y/${dY2}+T*0?.3)*sin(Y/${dY2}+T*0?.3)+0?.10*sin(X/${dX1}+T*0?.2)*sin(X/${dX1}+T*0?.2))':` +
-        `b='${B}+${bAmp}*(0?.60*sin(X/${dX1}*0?.8+Y/${dY2}*0?.25+T*0?.4)*sin(X/${dX1}*0?.8+Y/${dY2}*0?.25+T*0?.4)+0?.35*sin(Y/${dY1}+T*0?.6)*sin(Y/${dY1}+T*0?.6)+0?.05*sin(X/${dX2}+T*0?.3)*sin(X/${dX2}+T*0?.3))'`
+        `r='${R}+${rAmp}*(0.65*sin(X/${dX1}+T*0.3)*sin(X/${dX1}+T*0.3)*sin(Y/${dY2}*0.3)*sin(Y/${dY2}*0.3)+0.35*sin(Y/${dY1}+T*0.2)*sin(Y/${dY1}+T*0.2))':` +
+        `g='${G}+${gAmp}*(0.60*sin(Y/${dY1}+X/${dX2}*0.15+T*0.5)*sin(Y/${dY1}+X/${dX2}*0.15+T*0.5)+0.30*sin(Y/${dY2}+T*0.3)*sin(Y/${dY2}+T*0.3)+0.10*sin(X/${dX1}+T*0.2)*sin(X/${dX1}+T*0.2))':` +
+        `b='${B}+${bAmp}*(0.60*sin(X/${dX1}*0.8+Y/${dY2}*0.25+T*0.4)*sin(X/${dX1}*0.8+Y/${dY2}*0.25+T*0.4)+0.35*sin(Y/${dY1}+T*0.6)*sin(Y/${dY1}+T*0.6)+0.05*sin(X/${dX2}+T*0.3)*sin(X/${dX2}+T*0.3))'`
       );
     }
 
@@ -198,9 +198,9 @@ function getBgVfPrefix(
       // Electric grid with cross-diagonal interference and sub-harmonic depth.
       return (
         `geq=` +
-        `r='${R}+${aR}*(0?.55*sin(X/${dX2}+T*2?.0)*sin(X/${dX2}+T*2?.0)+0?.30*sin(Y/${dY1}+T*1?.5)*sin(Y/${dY1}+T*1?.5)+0?.15*sin((X+Y)/${dD1}+T*2?.5)*sin((X+Y)/${dD1}+T*2?.5))':` +
-        `g='${G}+${aG}*(0?.55*sin(Y/${dY2}+T*1?.6)*sin(Y/${dY2}+T*1?.6)+0?.35*sin(X/${dX1}+T*2?.2)*sin(X/${dX1}+T*2?.2)+0?.10*sin((X-Y)/${dD1}+T*1?.8)*sin((X-Y)/${dD1}+T*1?.8))':` +
-        `b='${B}+${aB}*(0?.50*sin(X/${dX1}+Y/${dY1}+T*2?.4)*sin(X/${dX1}+Y/${dY1}+T*2?.4)+0?.35*sin(X/${dX2}+T*1?.9)*sin(X/${dX2}+T*1?.9)+0?.15*sin(Y/${dY2}+T*2?.8)*sin(Y/${dY2}+T*2?.8))'`
+        `r='${R}+${aR}*(0.55*sin(X/${dX2}+T*2.0)*sin(X/${dX2}+T*2.0)+0.30*sin(Y/${dY1}+T*1.5)*sin(Y/${dY1}+T*1.5)+0.15*sin((X+Y)/${dD1}+T*2.5)*sin((X+Y)/${dD1}+T*2.5))':` +
+        `g='${G}+${aG}*(0.55*sin(Y/${dY2}+T*1.6)*sin(Y/${dY2}+T*1.6)+0.35*sin(X/${dX1}+T*2.2)*sin(X/${dX1}+T*2.2)+0.10*sin((X-Y)/${dD1}+T*1.8)*sin((X-Y)/${dD1}+T*1.8))':` +
+        `b='${B}+${aB}*(0.50*sin(X/${dX1}+Y/${dY1}+T*2.4)*sin(X/${dX1}+Y/${dY1}+T*2.4)+0.35*sin(X/${dX2}+T*1.9)*sin(X/${dX2}+T*1.9)+0.15*sin(Y/${dY2}+T*2.8)*sin(Y/${dY2}+T*2.8))'`
       );
     }
 
@@ -208,9 +208,9 @@ function getBgVfPrefix(
       // Slow diagonal editorial sweep with counter-rotating secondary wave.
       return (
         `geq=` +
-        `r='${R}+${aR}*(0?.55*Y/${iH}+0?.35*sin(X/${dX1}+T*0?.4)*sin(X/${dX1}+T*0?.4)+0?.10*sin((X+Y)/${dD1}+T*0?.3)*sin((X+Y)/${dD1}+T*0?.3))':` +
-        `g='${G}+${aG}*(0?.45*X/${iW}+0?.40*sin(Y/${dY1}+T*0?.3)*sin(Y/${dY1}+T*0?.3)+0?.15*sin((X-Y)/${dD1}+T*0?.5)*sin((X-Y)/${dD1}+T*0?.5))':` +
-        `b='${B}+${aB}*(0?.50*sin(X/${dD1}+Y/${dD1}+T*0?.5)*sin(X/${dD1}+Y/${dD1}+T*0?.5)+0?.35*sin(Y/${dY1}+T*0?.2)*sin(Y/${dY1}+T*0?.2)+0?.15*(1-X/${iW}))'`
+        `r='${R}+${aR}*(0.55*Y/${iH}+0.35*sin(X/${dX1}+T*0.4)*sin(X/${dX1}+T*0.4)+0.10*sin((X+Y)/${dD1}+T*0.3)*sin((X+Y)/${dD1}+T*0.3))':` +
+        `g='${G}+${aG}*(0.45*X/${iW}+0.40*sin(Y/${dY1}+T*0.3)*sin(Y/${dY1}+T*0.3)+0.15*sin((X-Y)/${dD1}+T*0.5)*sin((X-Y)/${dD1}+T*0.5))':` +
+        `b='${B}+${aB}*(0.50*sin(X/${dD1}+Y/${dD1}+T*0.5)*sin(X/${dD1}+Y/${dD1}+T*0.5)+0.35*sin(Y/${dY1}+T*0.2)*sin(Y/${dY1}+T*0.2)+0.15*(1-X/${iW}))'`
       );
     }
 
@@ -218,21 +218,21 @@ function getBgVfPrefix(
       // Multi-directional liquid interference — light-on-water feel.
       return (
         `geq=` +
-        `r='${R}+${aR}*(0?.50*sin(Y/${dY2}+X/${dX1}*0?.3+T*1?.4)*sin(Y/${dY2}+X/${dX1}*0?.3+T*1?.4)+0?.35*sin(Y/${dY1}+T*0?.8)*sin(Y/${dY1}+T*0?.8)+0?.15*sin(X/${dX1}+T*1?.0)*sin(X/${dX1}+T*1?.0))':` +
-        `g='${G}+${aG}*(0?.55*sin(Y/${dY1}+T*1?.0)*sin(Y/${dY1}+T*1?.0)+0?.30*sin(X/${dX2}+Y/${dY2}*0?.4+T*0?.7)*sin(X/${dX2}+Y/${dY2}*0?.4+T*0?.7)+0?.15*sin((X+Y)/${dD1}+T*1?.2)*sin((X+Y)/${dD1}+T*1?.2))':` +
-        `b='${B}+${aB}*(0?.55*sin(X/${dX2}-T*1?.2)*sin(X/${dX2}-T*1?.2)+0?.35*sin(Y/${dY2}+X/${dX1}*0?.2+T*0?.9)*sin(Y/${dY2}+X/${dX1}*0?.2+T*0?.9)+0?.10*sin(Y/${dY1}+T*1?.5)*sin(Y/${dY1}+T*1?.5))'`
+        `r='${R}+${aR}*(0.50*sin(Y/${dY2}+X/${dX1}*0.3+T*1.4)*sin(Y/${dY2}+X/${dX1}*0.3+T*1.4)+0.35*sin(Y/${dY1}+T*0.8)*sin(Y/${dY1}+T*0.8)+0.15*sin(X/${dX1}+T*1.0)*sin(X/${dX1}+T*1.0))':` +
+        `g='${G}+${aG}*(0.55*sin(Y/${dY1}+T*1.0)*sin(Y/${dY1}+T*1.0)+0.30*sin(X/${dX2}+Y/${dY2}*0.4+T*0.7)*sin(X/${dX2}+Y/${dY2}*0.4+T*0.7)+0.15*sin((X+Y)/${dD1}+T*1.2)*sin((X+Y)/${dD1}+T*1.2))':` +
+        `b='${B}+${aB}*(0.55*sin(X/${dX2}-T*1.2)*sin(X/${dX2}-T*1.2)+0.35*sin(Y/${dY2}+X/${dX1}*0.2+T*0.9)*sin(Y/${dY2}+X/${dX1}*0.2+T*0.9)+0.10*sin(Y/${dY1}+T*1.5)*sin(Y/${dY1}+T*1.5))'`
       );
     }
 
     case "fire": {
       // Upward rolling heat with multiple hot columns — orange inferno.
-      const _rAmp = Math?.min(220, 255 - R);
-      const _gAmp = Math?.min(80, 255 - G);
+      const rAmp = Math?.min(220, 255 - R);
+      const gAmp = Math?.min(80, 255 - G);
       return (
         `geq=` +
-        `r='${R}+${rAmp}*(0?.55*sin(X/${dX2}+T*3?.2)*sin(X/${dX2}+T*3?.2)+0?.30*sin(X/${dX1}*1?.3+T*2?.8)*sin(X/${dX1}*1?.3+T*2?.8)+0?.15*sin(X/${dX2}*1?.7+T*3?.8)*sin(X/${dX2}*1?.7+T*3?.8))*(${iH}-Y)/${iH}':` +
-        `g='${G}+${gAmp}*(0?.50*sin(X/${dX2}+T*3?.0)*sin(X/${dX2}+T*3?.0)+0?.35*sin(X/${dX1}+T*2?.5)*sin(X/${dX1}+T*2?.5)+0?.15*sin(X/${dX2}*1?.5+T*3?.5)*sin(X/${dX2}*1?.5+T*3?.5))*(${iH}-Y*1?.15)/${iH}':` +
-        `b='${B}+15*sin(T*4?.0)*sin(T*4?.0)*(1-Y/${iH})*0?.5'`
+        `r='${R}+${rAmp}*(0.55*sin(X/${dX2}+T*3.2)*sin(X/${dX2}+T*3.2)+0.30*sin(X/${dX1}*1.3+T*2.8)*sin(X/${dX1}*1.3+T*2.8)+0.15*sin(X/${dX2}*1.7+T*3.8)*sin(X/${dX2}*1.7+T*3.8))*(${iH}-Y)/${iH}':` +
+        `g='${G}+${gAmp}*(0.50*sin(X/${dX2}+T*3.0)*sin(X/${dX2}+T*3.0)+0.35*sin(X/${dX1}+T*2.5)*sin(X/${dX1}+T*2.5)+0.15*sin(X/${dX2}*1.5+T*3.5)*sin(X/${dX2}*1.5+T*3.5))*(${iH}-Y*1.15)/${iH}':` +
+        `b='${B}+15*sin(T*4.0)*sin(T*4.0)*(1-Y/${iH})*0.5'`
       );
     }
 
@@ -240,22 +240,22 @@ function getBgVfPrefix(
       // Orbital colour rotation with layered spiral feel — cosmic/sci-fi.
       return (
         `geq=` +
-        `r='${R}+${aR}*(0?.55*sin(X/${dX1}-Y/${dY2}+T*1?.5)*sin(X/${dX1}-Y/${dY2}+T*1?.5)+0?.35*sin(X/${dX2}+Y/${dY1}*0?.5+T*1?.0)*sin(X/${dX2}+Y/${dY1}*0?.5+T*1?.0)+0?.10*sin((X-Y)/${dD1}+T*2?.0)*sin((X-Y)/${dD1}+T*2?.0))':` +
-        `g='${G}+${aG}*(0?.50*sin(X/${dX2}+Y/${dY1}+T*1?.0)*sin(X/${dX2}+Y/${dY1}+T*1?.0)+0?.35*sin(Y/${dY2}-T*0?.8)*sin(Y/${dY2}-T*0?.8)+0?.15*sin((X+Y)/${dD1}+T*1?.3)*sin((X+Y)/${dD1}+T*1?.3))':` +
-        `b='${B}+${aB}*(0?.55*sin(Y/${dY1}-T*1?.8)*sin(Y/${dY1}-T*1?.8)+0?.35*sin(X/${dX1}+Y/${dY2}*0?.3+T*1?.5)*sin(X/${dX1}+Y/${dY2}*0?.3+T*1?.5)+0?.10*sin(X/${dX2}-T*2?.2)*sin(X/${dX2}-T*2?.2))'`
+        `r='${R}+${aR}*(0.55*sin(X/${dX1}-Y/${dY2}+T*1.5)*sin(X/${dX1}-Y/${dY2}+T*1.5)+0.35*sin(X/${dX2}+Y/${dY1}*0.5+T*1.0)*sin(X/${dX2}+Y/${dY1}*0.5+T*1.0)+0.10*sin((X-Y)/${dD1}+T*2.0)*sin((X-Y)/${dD1}+T*2.0))':` +
+        `g='${G}+${aG}*(0.50*sin(X/${dX2}+Y/${dY1}+T*1.0)*sin(X/${dX2}+Y/${dY1}+T*1.0)+0.35*sin(Y/${dY2}-T*0.8)*sin(Y/${dY2}-T*0.8)+0.15*sin((X+Y)/${dD1}+T*1.3)*sin((X+Y)/${dD1}+T*1.3))':` +
+        `b='${B}+${aB}*(0.55*sin(Y/${dY1}-T*1.8)*sin(Y/${dY1}-T*1.8)+0.35*sin(X/${dX1}+Y/${dY2}*0.3+T*1.5)*sin(X/${dX1}+Y/${dY2}*0.3+T*1.5)+0.10*sin(X/${dX2}-T*2.2)*sin(X/${dX2}-T*2.2))'`
       );
     }
 
     case "galaxy": {
       // Radial vortex from center — cosmic swirl with depth layers.
       // hypot(a,b) = sqrt(a²+b²) is native to FFmpeg's geq evaluator.
-      const _cx = Math?.round(iW / 2);
-      const _cy = Math?.round(iH / 2);
+      const cx = Math.round(iW / 2);
+      const cy = Math.round(iH / 2);
       return (
         `geq=` +
-        `r='${R}+${aR}*(0?.60*sin(hypot(X-${cx},Y-${cy})/${dD1}*3-T*1?.2)*sin(hypot(X-${cx},Y-${cy})/${dD1}*3-T*1?.2)+0?.30*sin((X-${cx})/${dX1}+(Y-${cy})/${dY1}+T*0?.8)*sin((X-${cx})/${dX1}+(Y-${cy})/${dY1}+T*0?.8)+0?.10*sin(T*2?.0)*sin(T*2?.0))':` +
-        `g='${G}+${aG}*(0?.50*sin(hypot(X-${cx},Y-${cy})/${dD1}*2?.5-T*1?.0)*sin(hypot(X-${cx},Y-${cy})/${dD1}*2?.5-T*1?.0)+0?.35*sin((X-${cx})/${dX2}-(Y-${cy})/${dY2}+T*0?.6)*sin((X-${cx})/${dX2}-(Y-${cy})/${dY2}+T*0?.6)+0?.15*sin(T*1?.5)*sin(T*1?.5))':` +
-        `b='${B}+${aB}*(0?.55*sin(hypot(X-${cx},Y-${cy})/${dD1}*2-T*0?.8)*sin(hypot(X-${cx},Y-${cy})/${dD1}*2-T*0?.8)+0?.40*sin((Y-${cy})/${dY1}-(X-${cx})/${dX1}+T*0?.5)*sin((Y-${cy})/${dY1}-(X-${cx})/${dX1}+T*0?.5)+0?.05*sin(T*1?.0)*sin(T*1?.0))'`
+        `r='${R}+${aR}*(0.60*sin(hypot(X-${cx},Y-${cy})/${dD1}*3-T*1.2)*sin(hypot(X-${cx},Y-${cy})/${dD1}*3-T*1.2)+0.30*sin((X-${cx})/${dX1}+(Y-${cy})/${dY1}+T*0.8)*sin((X-${cx})/${dX1}+(Y-${cy})/${dY1}+T*0.8)+0.10*sin(T*2.0)*sin(T*2.0))':` +
+        `g='${G}+${aG}*(0.50*sin(hypot(X-${cx},Y-${cy})/${dD1}*2.5-T*1.0)*sin(hypot(X-${cx},Y-${cy})/${dD1}*2.5-T*1.0)+0.35*sin((X-${cx})/${dX2}-(Y-${cy})/${dY2}+T*0.6)*sin((X-${cx})/${dX2}-(Y-${cy})/${dY2}+T*0.6)+0.15*sin(T*1.5)*sin(T*1.5))':` +
+        `b='${B}+${aB}*(0.55*sin(hypot(X-${cx},Y-${cy})/${dD1}*2-T*0.8)*sin(hypot(X-${cx},Y-${cy})/${dD1}*2-T*0.8)+0.40*sin((Y-${cy})/${dY1}-(X-${cx})/${dX1}+T*0.5)*sin((Y-${cy})/${dY1}-(X-${cx})/${dX1}+T*0.5)+0.05*sin(T*1.0)*sin(T*1.0))'`
       );
     }
 
@@ -264,37 +264,37 @@ function getBgVfPrefix(
       // sin²(X)*sin²(Y) peaks at grid intersections, drops between them.
       return (
         `geq=` +
-        `r='${R}+${aR}*(0?.50*sin(X/${dX2}+T*0?.8)*sin(X/${dX2}+T*0?.8)*sin(Y/${dY2}+T*0?.5)*sin(Y/${dY2}+T*0?.5)+0?.30*sin(Y*0?.8+T*2?.0)*sin(Y*0?.8+T*2?.0)*0?.5+0?.20*sin((X+Y)/${dD1}+T*0?.3)*sin((X+Y)/${dD1}+T*0?.3))':` +
-        `g='${G}+${aG}*(0?.65*sin(X/${dX2}+T*0?.9)*sin(X/${dX2}+T*0?.9)*sin(Y/${dY2}+T*0?.4)*sin(Y/${dY2}+T*0?.4)+0?.25*sin(Y*1?.2+T*2?.5)*sin(Y*1?.2+T*2?.5)*0?.5+0?.10*sin(X/${dX1}+T*0?.5)*sin(X/${dX1}+T*0?.5))':` +
-        `b='${B}+${aB}*(0?.55*sin(X/${dX2}+T*0?.7)*sin(X/${dX2}+T*0?.7)*sin(Y/${dY2}+T*0?.6)*sin(Y/${dY2}+T*0?.6)+0?.35*sin((X-Y)/${dD1}+T*0?.4)*sin((X-Y)/${dD1}+T*0?.4)+0?.10*sin(T*3?.0)*sin(T*3?.0))'`
+        `r='${R}+${aR}*(0.50*sin(X/${dX2}+T*0.8)*sin(X/${dX2}+T*0.8)*sin(Y/${dY2}+T*0.5)*sin(Y/${dY2}+T*0.5)+0.30*sin(Y*0.8+T*2.0)*sin(Y*0.8+T*2.0)*0.5+0.20*sin((X+Y)/${dD1}+T*0.3)*sin((X+Y)/${dD1}+T*0.3))':` +
+        `g='${G}+${aG}*(0.65*sin(X/${dX2}+T*0.9)*sin(X/${dX2}+T*0.9)*sin(Y/${dY2}+T*0.4)*sin(Y/${dY2}+T*0.4)+0.25*sin(Y*1.2+T*2.5)*sin(Y*1.2+T*2.5)*0.5+0.10*sin(X/${dX1}+T*0.5)*sin(X/${dX1}+T*0.5))':` +
+        `b='${B}+${aB}*(0.55*sin(X/${dX2}+T*0.7)*sin(X/${dX2}+T*0.7)*sin(Y/${dY2}+T*0.6)*sin(Y/${dY2}+T*0.6)+0.35*sin((X-Y)/${dD1}+T*0.4)*sin((X-Y)/${dD1}+T*0.4)+0.10*sin(T*3.0)*sin(T*3.0))'`
       );
     }
 
     case "chromatic": {
-      // Prismatic rainbow sweep — hue channels staggered by 120° (2?.09 rad).
+      // Prismatic rainbow sweep — hue channels staggered by 120° (2.09 rad).
       // Each channel sweeps through the full amplitude independently.
       // bg is treated as a dark offset; rainbow pop is amplitude-driven.
-      const _amp = 185;
-      const _wave = `X/${dX1}+Y/${dY1}*0?.3+T*0?.55`;
+      const amp = 185;
+      const wave = `X/${dX1}+Y/${dY1}*0.3+T*0.55`;
       return (
         `geq=` +
         `r='${R}+${amp}*sin(${wave})*sin(${wave})':` +
-        `g='${G}+${amp}*sin(${wave}+2?.09)*sin(${wave}+2?.09)':` +
-        `b='${B}+${amp}*sin(${wave}+4?.19)*sin(${wave}+4?.19)'`
+        `g='${G}+${amp}*sin(${wave}+2.09)*sin(${wave}+2.09)':` +
+        `b='${B}+${amp}*sin(${wave}+4.19)*sin(${wave}+4.19)'`
       );
     }
 
     case "sunrise": {
       // Warm upward gradient: deep red/orange at bottom → purple twilight at top.
       // Subtle cloud variation via horizontal sine on G channel.
-      const _rAmp = Math?.min(210, 255 - R);
-      const _gAmp = Math?.min(110, 255 - G);
-      const _bAmp = Math?.min(90, 255 - B);
+      const rAmp = Math.min(210, 255 - R);
+      const gAmp = Math.min(110, 255 - G);
+      const bAmp = Math.min(90, 255 - B);
       return (
         `geq=` +
-        `r='${R}+${rAmp}*(${iH}-Y)/${iH}+${Math?.floor(rAmp * 0?.2)}*sin(X/${dX1}+T*0?.25)*sin(X/${dX1}+T*0?.25)':` +
-        `g='${G}+${gAmp}*(${iH}-Y)*(${iH}-Y)/(${iH}*${iH})+${Math?.floor(gAmp * 0?.3)}*sin(X/${dX1}*0?.7+T*0?.20)*sin(X/${dX1}*0?.7+T*0?.20)*(${iH}-Y)/${iH}':` +
-        `b='${B}+${bAmp}*sin(X/${dX1}+Y/${dY1}*0?.5+T*0?.18)*sin(X/${dX1}+Y/${dY1}*0?.5+T*0?.18)*(1-0?.9*(${iH}-Y)/${iH})'`
+        `r='${R}+${rAmp}*(${iH}-Y)/${iH}+${Math?.floor(rAmp * 0.2)}*sin(X/${dX1}+T*0.25)*sin(X/${dX1}+T*0.25)':` +
+        `g='${G}+${gAmp}*(${iH}-Y)*(${iH}-Y)/(${iH}*${iH})+${Math?.floor(gAmp * 0.3)}*sin(X/${dX1}*0.7+T*0.20)*sin(X/${dX1}*0.7+T*0.20)*(${iH}-Y)/${iH}':` +
+        `b='${B}+${bAmp}*sin(X/${dX1}+Y/${dY1}*0.5+T*0.18)*sin(X/${dX1}+Y/${dY1}*0.5+T*0.18)*(1-0.9*(${iH}-Y)/${iH})'`
       );
     }
 
@@ -333,153 +333,153 @@ interface AudioProfile {
 export const AUDIO_PROFILES: Record<string, AudioProfile> = {
   "hip-hop": {
     // 90 BPM — deep 808 sub, punchy kick envelope, Cm chord pad
-    bps: 1?.5,
+    bps: 1.5,
     pw: 8,
-    bass: "0?.22*sin(2*PI*55*t)+0?.14*sin(2*PI*110*t)+0?.07*sin(2*PI*165*t)+0?.04*sin(2*PI*220*t)",
-    beat: "0?.40*abs(sin(PI*1?.5*t))^8*sin(2*PI*55*t)+0?.12*abs(sin(PI*3?.0*t))^10*sin(2*PI*220*t)",
-    pad: "0?.05*sin(2*PI*261?.63*t)+0?.04*sin(2*PI*311?.13*t)+0?.04*sin(2*PI*392?.00*t)+0?.03*sin(2*PI*523?.25*t)",
+    bass: "0.22*sin(2*PI*55*t)+0.14*sin(2*PI*110*t)+0.07*sin(2*PI*165*t)+0.04*sin(2*PI*220*t)",
+    beat: "0.40*abs(sin(PI*1.5*t))^8*sin(2*PI*55*t)+0.12*abs(sin(PI*3.0*t))^10*sin(2*PI*220*t)",
+    pad: "0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*311.13*t)+0.04*sin(2*PI*392.00*t)+0.03*sin(2*PI*523.25*t)",
     filters:
-      "equalizer=f=60:width_type=o:width=1?.5:g=5,equalizer=f=200:width_type=o:width=2:g=3,lowpass=f=8000,acompressor=threshold=0?.3:ratio=5:attack=3:release=40,bass=g=4,dynaudnorm=p=0?.95",
+      "equalizer=f=60:width_type=o:width=1.5:g=5,equalizer=f=200:width_type=o:width=2:g=3,lowpass=f=8000,acompressor=threshold=0.3:ratio=5:attack=3:release=40,bass=g=4,dynaudnorm=p=0.95",
   },
   trap: {
     // 70 BPM half-time — booming 808, tight hi-hat rolls, minimal chord
-    bps: 1?.167,
+    bps: 1.167,
     pw: 10,
-    bass: "0?.28*sin(2*PI*41?.2*t)+0?.18*sin(2*PI*82?.4*t)+0?.08*sin(2*PI*123?.6*t)+0?.04*sin(2*PI*164?.8*t)",
-    beat: "0?.50*abs(sin(PI*1?.167*t))^10*sin(2*PI*41?.2*t)+0?.08*abs(sin(PI*7?.0*t))^14*(sin(2*PI*6000*t)+sin(2*PI*6273*t))",
-    pad: "0?.04*sin(2*PI*220*t)+0?.03*sin(2*PI*261?.63*t)+0?.025*sin(2*PI*329?.63*t)",
+    bass: "0.28*sin(2*PI*41.2*t)+0.18*sin(2*PI*82.4*t)+0.08*sin(2*PI*123.6*t)+0.04*sin(2*PI*164.8*t)",
+    beat: "0.50*abs(sin(PI*1.167*t))^10*sin(2*PI*41.2*t)+0.08*abs(sin(PI*7.0*t))^14*(sin(2*PI*6000*t)+sin(2*PI*6273*t))",
+    pad: "0.04*sin(2*PI*220*t)+0.03*sin(2*PI*261.63*t)+0.025*sin(2*PI*329.63*t)",
     filters:
-      "equalizer=f=45:width_type=o:width=1:g=7,equalizer=f=160:width_type=o:width=2:g=4,lowpass=f=6000,acompressor=threshold=0?.25:ratio=8:attack=1:release=25,bass=g=6,dynaudnorm=p=0?.95",
+      "equalizer=f=45:width_type=o:width=1:g=7,equalizer=f=160:width_type=o:width=2:g=4,lowpass=f=6000,acompressor=threshold=0.25:ratio=8:attack=1:release=25,bass=g=6,dynaudnorm=p=0.95",
   },
   "r&b": {
     // 80 BPM — smooth Am7 chord, soft kick, silky pad
-    bps: 1?.333,
+    bps: 1.333,
     pw: 6,
-    bass: "0?.18*sin(2*PI*110*t)+0?.12*sin(2*PI*138?.59*t)+0?.09*sin(2*PI*164?.81*t)+0?.06*sin(2*PI*220*t)+0?.04*sin(2*PI*277?.18*t)",
-    beat: "0?.30*abs(sin(PI*1?.333*t))^6*sin(2*PI*110*t)+0?.08*abs(sin(PI*2?.667*t))^8*sin(2*PI*330*t)",
-    pad: "0?.06*sin(2*PI*220*t)+0?.05*sin(2*PI*261?.63*t)+0?.04*sin(2*PI*329?.63*t)+0?.04*sin(2*PI*440*t)",
+    bass: "0.18*sin(2*PI*110*t)+0.12*sin(2*PI*138.59*t)+0.09*sin(2*PI*164.81*t)+0.06*sin(2*PI*220*t)+0.04*sin(2*PI*277.18*t)",
+    beat: "0.30*abs(sin(PI*1.333*t))^6*sin(2*PI*110*t)+0.08*abs(sin(PI*2.667*t))^8*sin(2*PI*330*t)",
+    pad: "0.06*sin(2*PI*220*t)+0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.04*sin(2*PI*440*t)",
     filters:
-      "equalizer=f=80:width_type=o:width=2:g=3,equalizer=f=3000:width_type=o:width=3:g=-2,treble=g=-1,lowpass=f=12000,acompressor=threshold=0?.35:ratio=4:attack=5:release=60,dynaudnorm=p=0?.90",
+      "equalizer=f=80:width_type=o:width=2:g=3,equalizer=f=3000:width_type=o:width=3:g=-2,treble=g=-1,lowpass=f=12000,acompressor=threshold=0.35:ratio=4:attack=5:release=60,dynaudnorm=p=0.90",
   },
   pop: {
     // 120 BPM — bright C major, tight 4-on-the-floor kick, sparkly pad
-    bps: 2?.0,
+    bps: 2.0,
     pw: 8,
-    bass: "0?.18*sin(2*PI*65?.41*t)+0?.12*sin(2*PI*130?.81*t)+0?.07*sin(2*PI*196*t)+0?.04*sin(2*PI*261?.63*t)",
-    beat: "0?.38*abs(sin(PI*2?.0*t))^8*sin(2*PI*65?.41*t)+0?.10*abs(sin(PI*4?.0*t))^10*sin(2*PI*392*t)",
-    pad: "0?.07*sin(2*PI*261?.63*t)+0?.06*sin(2*PI*329?.63*t)+0?.06*sin(2*PI*392*t)+0?.04*sin(2*PI*523?.25*t)+0?.03*sin(2*PI*659?.26*t)",
+    bass: "0.18*sin(2*PI*65.41*t)+0.12*sin(2*PI*130.81*t)+0.07*sin(2*PI*196*t)+0.04*sin(2*PI*261.63*t)",
+    beat: "0.38*abs(sin(PI*2.0*t))^8*sin(2*PI*65.41*t)+0.10*abs(sin(PI*4.0*t))^10*sin(2*PI*392*t)",
+    pad: "0.07*sin(2*PI*261.63*t)+0.06*sin(2*PI*329.63*t)+0.06*sin(2*PI*392*t)+0.04*sin(2*PI*523.25*t)+0.03*sin(2*PI*659.26*t)",
     filters:
-      "equalizer=f=100:width_type=o:width=2:g=2,treble=g=3,equalizer=f=8000:width_type=o:width=2:g=2,acompressor=threshold=0?.3:ratio=4:attack=3:release=35,dynaudnorm=p=0?.92",
+      "equalizer=f=100:width_type=o:width=2:g=2,treble=g=3,equalizer=f=8000:width_type=o:width=2:g=2,acompressor=threshold=0.3:ratio=4:attack=3:release=35,dynaudnorm=p=0.92",
   },
   electronic: {
     // 128 BPM EDM — pounding kick, saw-like bass, supersawpad chord
-    bps: 2?.133,
+    bps: 2.133,
     pw: 10,
-    bass: "0?.24*sin(2*PI*55*t)+0?.16*sin(2*PI*110*t)+0?.10*sin(2*PI*165*t)+0?.06*sin(2*PI*220*t)+0?.03*sin(2*PI*275*t)",
-    beat: "0?.50*abs(sin(PI*2?.133*t))^10*sin(2*PI*55*t)+0?.12*abs(sin(PI*2?.133*t))^12*(sin(2*PI*440*t)+sin(2*PI*443*t))",
-    pad: "0?.05*(sin(2*PI*440*t)+sin(2*PI*441?.5*t))+0?.04*(sin(2*PI*523?.25*t)+sin(2*PI*524?.8*t))+0?.03*sin(2*PI*659?.26*t)",
+    bass: "0.24*sin(2*PI*55*t)+0.16*sin(2*PI*110*t)+0.10*sin(2*PI*165*t)+0.06*sin(2*PI*220*t)+0.03*sin(2*PI*275*t)",
+    beat: "0.50*abs(sin(PI*2.133*t))^10*sin(2*PI*55*t)+0.12*abs(sin(PI*2.133*t))^12*(sin(2*PI*440*t)+sin(2*PI*443*t))",
+    pad: "0.05*(sin(2*PI*440*t)+sin(2*PI*441.5*t))+0.04*(sin(2*PI*523.25*t)+sin(2*PI*524.8*t))+0.03*sin(2*PI*659.26*t)",
     filters:
-      "equalizer=f=60:width_type=o:width=1:g=6,treble=g=4,equalizer=f=200:width_type=o:width=2:g=3,acompressor=threshold=0?.2:ratio=8:attack=1:release=20,bass=g=5,dynaudnorm=p=0?.95",
+      "equalizer=f=60:width_type=o:width=1:g=6,treble=g=4,equalizer=f=200:width_type=o:width=2:g=3,acompressor=threshold=0.2:ratio=8:attack=1:release=20,bass=g=5,dynaudnorm=p=0.95",
   },
   afrobeats: {
     // 95 BPM — warm Am tonality, syncopated feel, tropical percussive pad
-    bps: 1?.583,
+    bps: 1.583,
     pw: 7,
-    bass: "0?.20*sin(2*PI*110*t)+0?.14*sin(2*PI*146?.83*t)+0?.10*sin(2*PI*164?.81*t)+0?.06*sin(2*PI*220*t)",
-    beat: "0?.35*abs(sin(PI*1?.583*t))^7*sin(2*PI*110*t)+0?.12*abs(sin(PI*3?.167*t))^8*sin(2*PI*349?.23*t)",
-    pad: "0?.06*sin(2*PI*220*t)+0?.05*sin(2*PI*261?.63*t)+0?.04*sin(2*PI*329?.63*t)+0?.04*sin(2*PI*440*t)",
+    bass: "0.20*sin(2*PI*110*t)+0.14*sin(2*PI*146.83*t)+0.10*sin(2*PI*164.81*t)+0.06*sin(2*PI*220*t)",
+    beat: "0.35*abs(sin(PI*1.583*t))^7*sin(2*PI*110*t)+0.12*abs(sin(PI*3.167*t))^8*sin(2*PI*349.23*t)",
+    pad: "0.06*sin(2*PI*220*t)+0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.04*sin(2*PI*440*t)",
     filters:
-      "equalizer=f=90:width_type=o:width=2:g=4,treble=g=2,lowpass=f=14000,acompressor=threshold=0?.32:ratio=4:attack=4:release=45,dynaudnorm=p=0?.90",
+      "equalizer=f=90:width_type=o:width=2:g=4,treble=g=2,lowpass=f=14000,acompressor=threshold=0.32:ratio=4:attack=4:release=45,dynaudnorm=p=0.90",
   },
   latin: {
     // 100 BPM — bright Dm tonality, salsa-inflected rhythm, treble-forward
-    bps: 1?.667,
+    bps: 1.667,
     pw: 7,
-    bass: "0?.18*sin(2*PI*73?.42*t)+0?.13*sin(2*PI*146?.83*t)+0?.09*sin(2*PI*195?.99*t)+0?.05*sin(2*PI*293?.66*t)",
-    beat: "0?.36*abs(sin(PI*1?.667*t))^7*sin(2*PI*73?.42*t)+0?.14*abs(sin(PI*3?.333*t))^9*sin(2*PI*392*t)",
-    pad: "0?.06*sin(2*PI*293?.66*t)+0?.05*sin(2*PI*349?.23*t)+0?.04*sin(2*PI*440*t)+0?.04*sin(2*PI*587?.33*t)",
+    bass: "0.18*sin(2*PI*73.42*t)+0.13*sin(2*PI*146.83*t)+0.09*sin(2*PI*195.99*t)+0.05*sin(2*PI*293.66*t)",
+    beat: "0.36*abs(sin(PI*1.667*t))^7*sin(2*PI*73.42*t)+0.14*abs(sin(PI*3.333*t))^9*sin(2*PI*392*t)",
+    pad: "0.06*sin(2*PI*293.66*t)+0.05*sin(2*PI*349.23*t)+0.04*sin(2*PI*440*t)+0.04*sin(2*PI*587.33*t)",
     filters:
-      "treble=g=3,equalizer=f=100:width_type=o:width=2:g=3,lowpass=f=16000,acompressor=threshold=0?.3:ratio=4:attack=3:release=35,dynaudnorm=p=0?.92",
+      "treble=g=3,equalizer=f=100:width_type=o:width=2:g=3,lowpass=f=16000,acompressor=threshold=0.3:ratio=4:attack=3:release=35,dynaudnorm=p=0.92",
   },
   country: {
     // 90 BPM — G major, warm twangy chord, steady kick
-    bps: 1?.5,
+    bps: 1.5,
     pw: 6,
-    bass: "0?.16*sin(2*PI*98*t)+0?.12*sin(2*PI*130?.81*t)+0?.08*sin(2*PI*196*t)+0?.05*sin(2*PI*261?.63*t)",
-    beat: "0?.32*abs(sin(PI*1?.5*t))^6*sin(2*PI*98*t)+0?.10*abs(sin(PI*3?.0*t))^7*sin(2*PI*392*t)",
-    pad: "0?.06*sin(2*PI*196*t)+0?.05*sin(2*PI*246?.94*t)+0?.05*sin(2*PI*293?.66*t)+0?.04*sin(2*PI*392*t)",
+    bass: "0.16*sin(2*PI*98*t)+0.12*sin(2*PI*130.81*t)+0.08*sin(2*PI*196*t)+0.05*sin(2*PI*261.63*t)",
+    beat: "0.32*abs(sin(PI*1.5*t))^6*sin(2*PI*98*t)+0.10*abs(sin(PI*3.0*t))^7*sin(2*PI*392*t)",
+    pad: "0.06*sin(2*PI*196*t)+0.05*sin(2*PI*246.94*t)+0.05*sin(2*PI*293.66*t)+0.04*sin(2*PI*392*t)",
     filters:
-      "treble=g=2,equalizer=f=120:width_type=o:width=2:g=2,lowpass=f=12000,acompressor=threshold=0?.35:ratio=3:attack=5:release=50,dynaudnorm=p=0?.88",
+      "treble=g=2,equalizer=f=120:width_type=o:width=2:g=2,lowpass=f=12000,acompressor=threshold=0.35:ratio=3:attack=5:release=50,dynaudnorm=p=0.88",
   },
   rock: {
     // 120 BPM — power chord E5, distorted edge via harmonics, driving beat
-    bps: 2?.0,
+    bps: 2.0,
     pw: 8,
-    bass: "0?.22*sin(2*PI*82?.41*t)+0?.15*sin(2*PI*164?.81*t)+0?.09*sin(2*PI*247?.22*t)+0?.06*sin(2*PI*329?.63*t)+0?.04*sin(2*PI*412?.04*t)",
-    beat: "0?.45*abs(sin(PI*2?.0*t))^8*sin(2*PI*82?.41*t)+0?.12*abs(sin(PI*4?.0*t))^10*(sin(2*PI*440*t)+sin(2*PI*880*t))*0?.5",
-    pad: "0?.05*(sin(2*PI*329?.63*t)+sin(2*PI*493?.88*t)+sin(2*PI*659?.26*t))",
+    bass: "0.22*sin(2*PI*82.41*t)+0.15*sin(2*PI*164.81*t)+0.09*sin(2*PI*247.22*t)+0.06*sin(2*PI*329.63*t)+0.04*sin(2*PI*412.04*t)",
+    beat: "0.45*abs(sin(PI*2.0*t))^8*sin(2*PI*82.41*t)+0.12*abs(sin(PI*4.0*t))^10*(sin(2*PI*440*t)+sin(2*PI*880*t))*0.5",
+    pad: "0.05*(sin(2*PI*329.63*t)+sin(2*PI*493.88*t)+sin(2*PI*659.26*t))",
     filters:
-      "bass=g=5,treble=g=3,equalizer=f=250:width_type=o:width=2:g=3,equalizer=f=5000:width_type=o:width=2:g=2,acompressor=threshold=0?.25:ratio=6:attack=2:release=30,dynaudnorm=p=0?.95",
+      "bass=g=5,treble=g=3,equalizer=f=250:width_type=o:width=2:g=3,equalizer=f=5000:width_type=o:width=2:g=2,acompressor=threshold=0.25:ratio=6:attack=2:release=30,dynaudnorm=p=0.95",
   },
   jazz: {
     // 120 BPM swing — Dm7 chord, walking-bass feel, mellow
-    bps: 2?.0,
+    bps: 2.0,
     pw: 5,
-    bass: "0?.15*sin(2*PI*73?.42*t)+0?.11*sin(2*PI*110*t)+0?.08*sin(2*PI*146?.83*t)+0?.06*sin(2*PI*220*t)",
-    beat: "0?.25*abs(sin(PI*2?.0*t))^5*sin(2*PI*73?.42*t)+0?.08*abs(sin(PI*3?.0*t))^6*sin(2*PI*349?.23*t)",
-    pad: "0?.05*sin(2*PI*220*t)+0?.04*sin(2*PI*261?.63*t)+0?.04*sin(2*PI*311?.13*t)+0?.04*sin(2*PI*392*t)+0?.03*sin(2*PI*466?.16*t)",
+    bass: "0.15*sin(2*PI*73.42*t)+0.11*sin(2*PI*110*t)+0.08*sin(2*PI*146.83*t)+0.06*sin(2*PI*220*t)",
+    beat: "0.25*abs(sin(PI*2.0*t))^5*sin(2*PI*73.42*t)+0.08*abs(sin(PI*3.0*t))^6*sin(2*PI*349.23*t)",
+    pad: "0.05*sin(2*PI*220*t)+0.04*sin(2*PI*261.63*t)+0.04*sin(2*PI*311.13*t)+0.04*sin(2*PI*392*t)+0.03*sin(2*PI*466.16*t)",
     filters:
-      "equalizer=f=150:width_type=o:width=2:g=2,treble=g=-1,lowpass=f=10000,acompressor=threshold=0?.4:ratio=3:attack=8:release=80,dynaudnorm=p=0?.85",
+      "equalizer=f=150:width_type=o:width=2:g=2,treble=g=-1,lowpass=f=10000,acompressor=threshold=0.4:ratio=3:attack=8:release=80,dynaudnorm=p=0.85",
   },
   reggae: {
     // 80 BPM — off-beat skank feel, warm C# minor bass, bright mids
-    bps: 1?.333,
+    bps: 1.333,
     pw: 5,
-    bass: "0?.20*sin(2*PI*69?.3*t)+0?.14*sin(2*PI*92?.5*t)+0?.09*sin(2*PI*138?.59*t)+0?.05*sin(2*PI*185?.0*t)",
-    beat: "0?.25*abs(sin(PI*1?.333*t+PI*0?.5))^5*sin(2*PI*69?.3*t)+0?.14*abs(sin(PI*2?.667*t+PI*0?.5))^6*sin(2*PI*311?.13*t)",
-    pad: "0?.07*sin(2*PI*207?.65*t)+0?.06*sin(2*PI*261?.63*t)+0?.05*sin(2*PI*311?.13*t)+0?.05*sin(2*PI*415?.30*t)",
+    bass: "0.20*sin(2*PI*69.3*t)+0.14*sin(2*PI*92.5*t)+0.09*sin(2*PI*138.59*t)+0.05*sin(2*PI*185.0*t)",
+    beat: "0.25*abs(sin(PI*1.333*t+PI*0.5))^5*sin(2*PI*69.3*t)+0.14*abs(sin(PI*2.667*t+PI*0.5))^6*sin(2*PI*311.13*t)",
+    pad: "0.07*sin(2*PI*207.65*t)+0.06*sin(2*PI*261.63*t)+0.05*sin(2*PI*311.13*t)+0.05*sin(2*PI*415.30*t)",
     filters:
-      "equalizer=f=80:width_type=o:width=2:g=4,treble=g=2,equalizer=f=2500:width_type=o:width=2:g=2,lowpass=f=14000,acompressor=threshold=0?.35:ratio=4:attack=5:release=55,dynaudnorm=p=0?.88",
+      "equalizer=f=80:width_type=o:width=2:g=4,treble=g=2,equalizer=f=2500:width_type=o:width=2:g=2,lowpass=f=14000,acompressor=threshold=0.35:ratio=4:attack=5:release=55,dynaudnorm=p=0.88",
   },
   metal: {
     // 160 BPM — aggressive power chord riff, double-kick, saturated harmonics
-    bps: 2?.667,
+    bps: 2.667,
     pw: 12,
-    bass: "0?.26*sin(2*PI*82?.41*t)+0?.18*sin(2*PI*164?.81*t)+0?.12*sin(2*PI*247?.22*t)+0?.08*sin(2*PI*329?.63*t)+0?.05*sin(2*PI*412?.04*t)+0?.03*sin(2*PI*494?.45*t)",
-    beat: "0?.55*abs(sin(PI*2?.667*t))^12*sin(2*PI*82?.41*t)+0?.15*abs(sin(PI*5?.333*t))^12*sin(2*PI*164?.81*t)+0?.08*abs(sin(PI*10?.667*t))^14*(sin(2*PI*8000*t)+sin(2*PI*9000*t))*0?.5",
-    pad: "0?.04*(sin(2*PI*329?.63*t)+sin(2*PI*392?.00*t)+sin(2*PI*493?.88*t)+sin(2*PI*587?.33*t))",
+    bass: "0.26*sin(2*PI*82.41*t)+0.18*sin(2*PI*164.81*t)+0.12*sin(2*PI*247.22*t)+0.08*sin(2*PI*329.63*t)+0.05*sin(2*PI*412.04*t)+0.03*sin(2*PI*494.45*t)",
+    beat: "0.55*abs(sin(PI*2.667*t))^12*sin(2*PI*82.41*t)+0.15*abs(sin(PI*5.333*t))^12*sin(2*PI*164.81*t)+0.08*abs(sin(PI*10.667*t))^14*(sin(2*PI*8000*t)+sin(2*PI*9000*t))*0.5",
+    pad: "0.04*(sin(2*PI*329.63*t)+sin(2*PI*392.00*t)+sin(2*PI*493.88*t)+sin(2*PI*587.33*t))",
     filters:
-      "bass=g=6,treble=g=4,equalizer=f=250:width_type=o:width=2:g=4,equalizer=f=4000:width_type=o:width=2:g=3,equalizer=f=8000:width_type=o:width=2:g=2,acompressor=threshold=0?.2:ratio=10:attack=1:release=20,dynaudnorm=p=0?.95",
+      "bass=g=6,treble=g=4,equalizer=f=250:width_type=o:width=2:g=4,equalizer=f=4000:width_type=o:width=2:g=3,equalizer=f=8000:width_type=o:width=2:g=2,acompressor=threshold=0.2:ratio=10:attack=1:release=20,dynaudnorm=p=0.95",
   },
   blues: {
     // 85 BPM — walking blues bass (E7 feel), swing shuffle, warm and raw
-    bps: 1?.417,
+    bps: 1.417,
     pw: 5,
-    bass: "0?.18*sin(2*PI*82?.41*t)+0?.12*sin(2*PI*110*t)+0?.09*sin(2*PI*164?.81*t)+0?.07*sin(2*PI*220*t)+0?.05*sin(2*PI*329?.63*t)",
-    beat: "0?.28*abs(sin(PI*1?.417*t))^5*sin(2*PI*82?.41*t)+0?.10*abs(sin(PI*2?.833*t+PI*0?.3))^6*sin(2*PI*246?.94*t)",
-    pad: "0?.06*sin(2*PI*329?.63*t)+0?.05*sin(2*PI*392?.00*t)+0?.04*sin(2*PI*493?.88*t)+0?.04*sin(2*PI*587?.33*t)",
+    bass: "0.18*sin(2*PI*82.41*t)+0.12*sin(2*PI*110*t)+0.09*sin(2*PI*164.81*t)+0.07*sin(2*PI*220*t)+0.05*sin(2*PI*329.63*t)",
+    beat: "0.28*abs(sin(PI*1.417*t))^5*sin(2*PI*82.41*t)+0.10*abs(sin(PI*2.833*t+PI*0.3))^6*sin(2*PI*246.94*t)",
+    pad: "0.06*sin(2*PI*329.63*t)+0.05*sin(2*PI*392.00*t)+0.04*sin(2*PI*493.88*t)+0.04*sin(2*PI*587.33*t)",
     filters:
-      "equalizer=f=120:width_type=o:width=2:g=3,equalizer=f=3000:width_type=o:width=2:g=2,treble=g=1,lowpass=f=12000,acompressor=threshold=0?.38:ratio=3:attack=6:release=60,dynaudnorm=p=0?.87",
+      "equalizer=f=120:width_type=o:width=2:g=3,equalizer=f=3000:width_type=o:width=2:g=2,treble=g=1,lowpass=f=12000,acompressor=threshold=0.38:ratio=3:attack=6:release=60,dynaudnorm=p=0.87",
   },
   classical: {
     // 100 BPM — orchestral-inspired, lush string-like pad, gentle and refined
-    bps: 1?.667,
+    bps: 1.667,
     pw: 4,
-    bass: "0?.12*sin(2*PI*130?.81*t)+0?.09*sin(2*PI*164?.81*t)+0?.07*sin(2*PI*196?.00*t)+0?.05*sin(2*PI*261?.63*t)",
-    beat: "0?.18*abs(sin(PI*1?.667*t))^4*sin(2*PI*130?.81*t)+0?.06*abs(sin(PI*3?.333*t))^5*sin(2*PI*392?.00*t)",
-    pad: "0?.07*sin(2*PI*261?.63*t)+0?.06*sin(2*PI*329?.63*t)+0?.05*sin(2*PI*392?.00*t)+0?.05*sin(2*PI*523?.25*t)+0?.04*sin(2*PI*659?.26*t)+0?.03*sin(2*PI*783?.99*t)",
+    bass: "0.12*sin(2*PI*130.81*t)+0.09*sin(2*PI*164.81*t)+0.07*sin(2*PI*196.00*t)+0.05*sin(2*PI*261.63*t)",
+    beat: "0.18*abs(sin(PI*1.667*t))^4*sin(2*PI*130.81*t)+0.06*abs(sin(PI*3.333*t))^5*sin(2*PI*392.00*t)",
+    pad: "0.07*sin(2*PI*261.63*t)+0.06*sin(2*PI*329.63*t)+0.05*sin(2*PI*392.00*t)+0.05*sin(2*PI*523.25*t)+0.04*sin(2*PI*659.26*t)+0.03*sin(2*PI*783.99*t)",
     filters:
-      "equalizer=f=200:width_type=o:width=2:g=2,treble=g=1,equalizer=f=6000:width_type=o:width=2:g=1,lowpass=f=16000,acompressor=threshold=0?.45:ratio=3:attack=10:release=100,dynaudnorm=p=0?.82",
+      "equalizer=f=200:width_type=o:width=2:g=2,treble=g=1,equalizer=f=6000:width_type=o:width=2:g=1,lowpass=f=16000,acompressor=threshold=0.45:ratio=3:attack=10:release=100,dynaudnorm=p=0.82",
   },
   default: {
     // 100 BPM — neutral Am chord, gentle beat, balanced
-    bps: 1?.667,
+    bps: 1.667,
     pw: 7,
-    bass: "0?.09*sin(2*PI*110*t)+0?.06*sin(2*PI*138?.59*t)+0?.04*sin(2*PI*164?.81*t)+0?.03*sin(2*PI*220*t)",
-    beat: "0?.16*abs(sin(PI*1?.667*t))^7*sin(2*PI*110*t)+0?.05*abs(sin(PI*3?.333*t))^8*sin(2*PI*330*t)",
-    pad: "0?.04*sin(2*PI*220*t)+0?.03*sin(2*PI*261?.63*t)+0?.03*sin(2*PI*329?.63*t)+0?.02*sin(2*PI*440*t)",
+    bass: "0.09*sin(2*PI*110*t)+0.06*sin(2*PI*138.59*t)+0.04*sin(2*PI*164.81*t)+0.03*sin(2*PI*220*t)",
+    beat: "0.16*abs(sin(PI*1.667*t))^7*sin(2*PI*110*t)+0.05*abs(sin(PI*3.333*t))^8*sin(2*PI*330*t)",
+    pad: "0.04*sin(2*PI*220*t)+0.03*sin(2*PI*261.63*t)+0.03*sin(2*PI*329.63*t)+0.02*sin(2*PI*440*t)",
     filters:
-      "highpass=f=80,lowpass=f=12000,acompressor=threshold=0?.4:ratio=3:attack=5:release=50,dynaudnorm=p=0?.60",
+      "highpass=f=80,lowpass=f=12000,acompressor=threshold=0.4:ratio=3:attack=5:release=50,dynaudnorm=p=0.60",
   },
 };
 
@@ -797,7 +797,7 @@ export const TEMPLATE_STYLES: Record<string, TemplateStyle> = {
  * single quotes/apostrophes, and pipe chars. Collapses extra whitespace.
  */
 function sanitizeVideoText(text: string, maxLen = 120): string {
-  const _clean = text
+  const clean = text
     .replace(/https?:\/\/\S+/g, "") // strip URLs
     .replace(/#\w+/g, "") // strip hashtags
     .replace(/@\w+/g, "") // strip @mentions
@@ -806,7 +806,7 @@ function sanitizeVideoText(text: string, maxLen = 120): string {
     .replace(/[|]/g, "-") // replace pipes with dashes
     .replace(/\s+/g, " ") // collapse whitespace
     .trim();
-  return clean?.length > maxLen ? clean?.slice(0, maxLen).trim() : clean;
+  return clean.length > maxLen ? clean.slice(0, maxLen).trim() : clean;
 }
 
 function escFFmpeg(text: string): string {
@@ -823,38 +823,38 @@ function escFFmpeg(text: string): string {
 }
 
 function wrap(text: string, maxChars = 28): string {
-  const _words = text?.split(/\s+/);
+  const words = text.split(/\s+/);
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
-    if (cur && cur?.length + w?.length + 1 > maxChars) {
-      lines?.push(cur);
+    if (cur && cur.length + w.length + 1 > maxChars) {
+      lines.push(cur);
       cur = w;
     } else {
       cur = cur ? `${cur} ${w}` : w;
     }
   }
-  if (cur) lines?.push(cur);
-  return lines?.join("\n");
+  if (cur) lines.push(cur);
+  return lines.join("\n");
 }
 
 function scaleFonts(style: TemplateStyle, width: number, platform?: string) {
   let s = width >= 1080 ? 1 : width / 1080;
   // TikTok & Reels: 12% larger hook text — thumb-stopping impact
-  const _hookBoost =
-    platform === "tiktok" || platform === "instagram_reels" ? 1?.12 : 1?.0;
+  const hookBoost =
+    platform === "tiktok" || platform === "instagram_reels" ? 1.12 : 1.0;
   // LinkedIn & YouTube: slightly smaller, more professional
-  const _shrink = platform === "linkedin" ? 0?.94 : 1?.0;
+  const shrink = platform === "linkedin" ? 0.94 : 1.0;
   s *= shrink;
   return {
-    hs: Math?.floor(style?.hs * s * hookBoost),
-    bs: Math?.floor(style?.bs * s),
-    cs: Math?.floor(style?.cs * s),
+    hs: Math.floor(style.hs * s * hookBoost),
+    bs: Math.floor(style.bs * s),
+    cs: Math.floor(style.cs * s),
   };
 }
 
 function tempPath(tag: string): string {
-  return path?.join(
+  return path.join(
     TEMP_DIR,
     `tmp_${tag}_${randomBytes(4).toString("hex")}.mp4`,
   );
@@ -903,120 +903,120 @@ async function renderScene(spec: SceneSpec): Promise<void> {
     outPath,
     platform,
   } = spec;
-  ((spec?.genre || "default").toLowerCase());
-  const _mc = Math?.max(16, Math?.floor(width / (style?.bs * 0?.58)));
+  ((spec.genre || "default").toLowerCase());
+  const mc = Math.max(16, Math.floor(width / (style.bs * 0.58)));
   const { hs, bs, cs } = scaleFonts(style, width, platform);
-  const _font = FONTS[style?.font];
-  const _barH = Math?.floor(height * 0?.085);
-  const _isSolid = style?.bgType === "solid";
+  const font = FONTS[style.font];
+  const barH = Math.floor(height * 0.085);
+  const isSolid = style.bgType === "solid";
 
   // Build text/graphics VF parts (independent of background source)
   const textVfParts: string[] = [];
 
   // ── Accent bars (top + bottom) ─────────────────────────────────────────────
-  textVfParts?.push(
-    `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style?.ac}@0?.30:t=fill`,
+  textVfParts.push(
+    `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style.ac}@0.30:t=fill`,
   );
-  textVfParts?.push(
-    `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style?.ac}@0?.30:t=fill`,
+  textVfParts.push(
+    `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style.ac}@0.30:t=fill`,
   );
 
   // ── Artist name (uppercase, monospace, accent-colored) ─────────────────────
   if (artistName) {
-    const _at = escFFmpeg(sanitizeVideoText(artistName).toUpperCase());
-    const _atSize = Math?.floor(bs * 0?.62);
+    const at = escFFmpeg(sanitizeVideoText(artistName).toUpperCase());
+    const atSize = Math.floor(bs * 0.62);
     // Shadow layer for artist name
-    textVfParts?.push(
-      `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=black@0?.45:fontsize=${atSize}` +
-        `:x=(w-text_w)/2+3:y=h*0?.05+3:alpha='min(1\\,t*5)'`,
+    textVfParts.push(
+      `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=black@0.45:fontsize=${atSize}` +
+        `:x=(w-text_w)/2+3:y=h*0.05+3:alpha='min(1\\,t*5)'`,
     );
-    textVfParts?.push(
-      `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=${style?.ac}:fontsize=${atSize}` +
-        `:x=(w-text_w)/2:y=h*0?.05:alpha='min(1\\,t*5)'`,
+    textVfParts.push(
+      `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=${style.ac}:fontsize=${atSize}` +
+        `:x=(w-text_w)/2:y=h*0.05:alpha='min(1\\,t*5)'`,
     );
   }
 
-  switch (spec?.type) {
+  switch (spec.type) {
     case "hook": {
-      const _ht = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc));
-      const _yBase = `(h-text_h)/4`;
+      const ht = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc));
+      const yBase = `(h-text_h)/4`;
       // Slide-up: text drops in 30px and slides up as it fades
-      const _slideY = `(${yBase})+30*(1-min(1\\,t*3))`;
+      const slideY = `(${yBase})+30*(1-min(1\\,t*3))`;
       // Drop shadow on hook text
-      textVfParts?.push(
-        `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0?.50:fontsize=${hs}` +
+      textVfParts.push(
+        `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0.50:fontsize=${hs}` +
           `:x=(w-text_w)/2+4:y=${slideY}+4:alpha='min(1\\,t*3)'`,
       );
       // Main hook text with outline
-      textVfParts?.push(
-        `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style?.tc}:fontsize=${hs}` +
+      textVfParts.push(
+        `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style.tc}:fontsize=${hs}` +
           `:x=(w-text_w)/2:y=${slideY}:alpha='min(1\\,t*3)'` +
-          `:bordercolor=${style?.ac}:borderw=2`,
+          `:bordercolor=${style.ac}:borderw=2`,
       );
-      // Animated accent line that expands from center (width grows 0→50% over 0?.6s)
-      const _acLineY = Math?.floor(height * 0?.44);
-      textVfParts?.push(
-        `drawbox=x=(iw-iw*min(1\\,max(0\\,(t-0?.3)*2?.5))*0?.50)/2` +
-          `:y=${acLineY}:w=iw*min(1\\,max(0\\,(t-0?.3)*2?.5))*0?.50:h=4` +
-          `:color=${style?.ac}:t=fill:enable='gte(t\\,0?.3)'`,
+      // Animated accent line that expands from center (width grows 0→50% over 0.6s)
+      const acLineY = Math.floor(height * 0.44);
+      textVfParts.push(
+        `drawbox=x=(iw-iw*min(1\\,max(0\\,(t-0.3)*2.5))*0.50)/2` +
+          `:y=${acLineY}:w=iw*min(1\\,max(0\\,(t-0.3)*2.5))*0.50:h=4` +
+          `:color=${style.ac}:t=fill:enable='gte(t\\,0.3)'`,
       );
       break;
     }
     case "body": {
-      const _bt = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 4));
-      const _yBase = `(h-text_h)/2`;
-      const _slideY = `(${yBase})+25*(1-min(1\\,t*3))`;
+      const bt = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 4));
+      const yBase = `(h-text_h)/2`;
+      const slideY = `(${yBase})+25*(1-min(1\\,t*3))`;
       // Shadow
-      textVfParts?.push(
-        `drawtext=fontfile=${font}:text='${bt}':fontcolor=black@0?.40:fontsize=${bs}` +
+      textVfParts.push(
+        `drawtext=fontfile=${font}:text='${bt}':fontcolor=black@0.40:fontsize=${bs}` +
           `:x=(w-text_w)/2+3:y=${slideY}+3:alpha='min(1\\,t*3)'`,
       );
       // Main body text
-      textVfParts?.push(
-        `drawtext=fontfile=${font}:text='${bt}':fontcolor=${style?.tc}:fontsize=${bs}` +
+      textVfParts.push(
+        `drawtext=fontfile=${font}:text='${bt}':fontcolor=${style.tc}:fontsize=${bs}` +
           `:x=(w-text_w)/2:y=${slideY}:alpha='min(1\\,t*3)'`,
       );
       if (secondaryText) {
-        const _st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 8));
-        const _stSlide = `h*0?.66+20*(1-min(1\\,max(0\\,(t-0?.4)*3)))`;
-        textVfParts?.push(
-          `drawtext=fontfile=${FONTS?.regular}:text='${st}':fontcolor=${style?.tc}@0?.72:fontsize=${Math?.floor(bs * 0?.72)}` +
-            `:x=(w-text_w)/2:y=${stSlide}:alpha='min(1\\,max(0\\,(t-0?.4)*3))'`,
+        const st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 8));
+        const stSlide = `h*0.66+20*(1-min(1\\,max(0\\,(t-0.4)*3)))`;
+        textVfParts.push(
+          `drawtext=fontfile=${FONTS.regular}:text='${st}':fontcolor=${style.tc}@0.72:fontsize=${Math.floor(bs * 0.72)}` +
+            `:x=(w-text_w)/2:y=${stSlide}:alpha='min(1\\,max(0\\,(t-0.4)*3))'`,
         );
       }
       break;
     }
     case "cta": {
-      const _boxW = Math?.floor(width * 0?.82);
-      const _boxX = Math?.floor((width - boxW) / 2);
-      const _boxY = Math?.floor(height * 0?.68);
-      const _boxH = cs + 44;
-      const _ct = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 2));
+      const boxW = Math.floor(width * 0.82);
+      const boxX = Math.floor((width - boxW) / 2);
+      const boxY = Math.floor(height * 0.68);
+      const boxH = cs + 44;
+      const ct = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 2));
       // CTA pill box with dual accent stripes (top + bottom)
-      textVfParts?.push(
-        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style?.cta_bg}@0?.94:t=fill` +
-          `:enable='gte(t\\,0?.2)'`,
+      textVfParts.push(
+        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style.cta_bg}@0.94:t=fill` +
+          `:enable='gte(t\\,0.2)'`,
       );
-      textVfParts?.push(
-        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style?.ac}:t=fill` +
-          `:enable='gte(t\\,0?.2)'`,
+      textVfParts.push(
+        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style.ac}:t=fill` +
+          `:enable='gte(t\\,0.2)'`,
       );
-      textVfParts?.push(
-        `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style?.ac}@0?.55:t=fill` +
-          `:enable='gte(t\\,0?.2)'`,
+      textVfParts.push(
+        `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style.ac}@0.55:t=fill` +
+          `:enable='gte(t\\,0.2)'`,
       );
       // CTA text (slide-up + fast fade-in)
-      const _ctSlide = `h*0?.70+20*(1-min(1\\,t*5))`;
-      textVfParts?.push(
+      const ctSlide = `h*0.70+20*(1-min(1\\,t*5))`;
+      textVfParts.push(
         `drawtext=fontfile=${font}:text='${ct}':fontcolor=white:fontsize=${cs}` +
           `:x=(w-text_w)/2:y=${ctSlide}:alpha='min(1\\,t*5)'`,
       );
       if (secondaryText) {
-        const _st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 4));
-        const _stSlide = `(h-text_h)/2+22*(1-min(1\\,max(0\\,(t-0?.3)*3)))`;
-        textVfParts?.push(
-          `drawtext=fontfile=${FONTS?.regular}:text='${st}':fontcolor=${style?.tc}:fontsize=${bs}` +
-            `:x=(w-text_w)/2:y=${stSlide}:alpha='min(1\\,max(0\\,(t-0?.3)*3))'`,
+        const st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 4));
+        const stSlide = `(h-text_h)/2+22*(1-min(1\\,max(0\\,(t-0.3)*3)))`;
+        textVfParts.push(
+          `drawtext=fontfile=${FONTS.regular}:text='${st}':fontcolor=${style.tc}:fontsize=${bs}` +
+            `:x=(w-text_w)/2:y=${stSlide}:alpha='min(1\\,max(0\\,(t-0.3)*3))'`,
         );
       }
       break;
@@ -1026,7 +1026,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
 
   if (isSolid) {
     // Solid background — fast FFmpeg color source, add vignette for cinematic depth
-    const _vf = [
+    const vf = [
       "format=yuv420p",
       "vignette=angle=PI/5:mode=forward:eval=init",
       ...textVfParts,
@@ -1038,7 +1038,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
         "-f",
         "lavfi",
         "-i",
-        `color=c=${style?.bg}:s=${width}x${height}:d=${dur}:r=30`,
+        `color=c=${style.bg}:s=${width}x${height}:d=${dur}:r=30`,
         "-vf",
         vf,
         "-c:v",
@@ -1060,10 +1060,10 @@ async function renderScene(spec: SceneSpec): Promise<void> {
     );
   } else {
     // Animated background — pure FFmpeg geq at half-res, lanczos upscale, then vignette
-    const _iW = Math?.floor(width / 2);
-    const _iH = Math?.floor(height / 2);
-    const _bgGeq = getBgVfPrefix(style?.bgType, style?.bg, iW, iH, style?.ac);
-    const _vf = [
+    const iW = Math.floor(width / 2);
+    const iH = Math.floor(height / 2);
+    const bgGeq = getBgVfPrefix(style.bgType, style.bg, iW, iH, style.ac);
+    const vf = [
       bgGeq,
       `scale=${width}:${height}:flags=lanczos`,
       "format=yuv420p",
@@ -1106,30 +1106,30 @@ async function combineScenes(
   sceneDurations: number[],
   outputPath: string,
   transition: string,
-  transitionDur = 0?.4,
+  transitionDur = 0.4,
 ): Promise<void> {
-  if (scenePaths?.length === 1) {
+  if (scenePaths.length === 1) {
     await execFileAsync("cp", [scenePaths[0], outputPath]);
     return;
   }
 
-  const _inputs = scenePaths?.flatMap((p) => ["-i", p]);
+  const inputs = scenePaths.flatMap((p) => ["-i", p]);
 
   // Build xfade filter chain — accumulate offsets accounting for overlap
   let filterComplex = "";
   let prevLabel = "[0:v]";
   let cumOffset = 0;
 
-  for (let i = 0; i < scenePaths?.length - 1; i++) {
+  for (let i = 0; i < scenePaths.length - 1; i++) {
     cumOffset += sceneDurations[i] - transitionDur;
-    const _nextIn = `[${i + 1}:v]`;
-    const _outLbl = i === scenePaths?.length - 2 ? "[vout]" : `[v${i}]`;
-    filterComplex += `${prevLabel}${nextIn}xfade=transition=${transition}:duration=${transitionDur}:offset=${cumOffset?.toFixed(2)}${outLbl};`;
+    const nextIn = `[${i + 1}:v]`;
+    const outLbl = i === scenePaths.length - 2 ? "[vout]" : `[v${i}]`;
+    filterComplex += `${prevLabel}${nextIn}xfade=transition=${transition}:duration=${transitionDur}:offset=${cumOffset.toFixed(2)}${outLbl};`;
     prevLabel = outLbl;
   }
-  filterComplex = filterComplex?.replace(/;$/, "");
+  filterComplex = filterComplex.replace(/;$/, "");
 
-  const _ffmpegArgs = [
+  const ffmpegArgs = [
     "-y",
     ...inputs,
     "-filter_complex",
@@ -1163,7 +1163,7 @@ async function generateVoiceover(
   totalDur: number,
 ): Promise<string | null> {
   try {
-    const _spoken = [hook, body, cta]
+    const spoken = [hook, body, cta]
       .map((t) => sanitizeVideoText(t, 300))
       .map((t) =>
         t
@@ -1174,8 +1174,8 @@ async function generateVoiceover(
       .filter(Boolean)
       .join(" ... ");
 
-    const _outPath = path?.join(
-      os?.tmpdir(),
+    const outPath = path.join(
+      os.tmpdir(),
       `vo_${randomBytes(6).toString("hex")}.wav`,
     );
 
@@ -1186,9 +1186,9 @@ async function generateVoiceover(
         "-f",
         "lavfi",
         "-i",
-        `flite=text='${spoken?.replace(/'/g, "")}':voice=kal16`,
+        `flite=text='${spoken.replace(/'/g, "")}':voice=kal16`,
         "-af",
-        "highpass=f=120,acompressor=threshold=0?.4:ratio=3:attack=5:release=50,volume=1?.3",
+        "highpass=f=120,acompressor=threshold=0.4:ratio=3:attack=5:release=50,volume=1.3",
         "-t",
         String(totalDur),
         "-ar",
@@ -1202,8 +1202,8 @@ async function generateVoiceover(
 
     return existsSync(outPath) ? outPath : null;
   } catch (e) {
-    const _msg = e?.stderr || e?.message || String(e);
-    logger?.warn(`[VideoGen] Voiceover generation failed, skipping: ${msg}`);
+    const msg = e.stderr || e.message || String(e);
+    logger.warn(`[VideoGen] Voiceover generation failed, skipping: ${msg}`);
     return null;
   }
 }
@@ -1217,35 +1217,35 @@ async function applyAudioAndLogo(
   userAudioPath?: string,
   voiceoverText?: { hook: string; body: string; cta: string },
 ): Promise<void> {
-  const _fadeDur = Math?.min(1?.5, totalDur * 0?.1);
-  const _fadeOut = Math?.max(0, totalDur - fadeDur);
-  const _fd = fadeDur?.toFixed(2);
-  const _fo = fadeOut?.toFixed(2);
+  const fadeDur = Math.min(1.5, totalDur * 0.1);
+  const fadeOut = Math.max(0, totalDur - fadeDur);
+  const fd = fadeDur.toFixed(2);
+  const fo = fadeOut.toFixed(2);
 
   // ── Three lavfi sources for layered synthesis ──────────────────────────────
-  const _src1 = `aevalsrc=${audioProfile?.bass}|${audioProfile?.bass}:sample_rate=44100:channel_layout=stereo`;
-  const _src2 = `aevalsrc=${audioProfile?.beat}|${audioProfile?.beat}:sample_rate=44100:channel_layout=stereo`;
-  const _src3 = `aevalsrc=${audioProfile?.pad}|${audioProfile?.pad}:sample_rate=44100:channel_layout=stereo`;
+  const src1 = `aevalsrc=${audioProfile.bass}|${audioProfile.bass}:sample_rate=44100:channel_layout=stereo`;
+  const src2 = `aevalsrc=${audioProfile.beat}|${audioProfile.beat}:sample_rate=44100:channel_layout=stereo`;
+  const src3 = `aevalsrc=${audioProfile.pad}|${audioProfile.pad}:sample_rate=44100:channel_layout=stereo`;
 
-  const _hasLogo = !!(logoPath && existsSync(logoPath));
-  const _hasUser = !!(userAudioPath && existsSync(userAudioPath));
+  const hasLogo = !!(logoPath && existsSync(logoPath));
+  const hasUser = !!(userAudioPath && existsSync(userAudioPath));
 
   let voiceoverPath: string | null = null;
   if (voiceoverText) {
     voiceoverPath = await generateVoiceover(
-      voiceoverText?.hook,
-      voiceoverText?.body,
-      voiceoverText?.cta,
+      voiceoverText.hook,
+      voiceoverText.body,
+      voiceoverText.cta,
       totalDur,
     );
   }
-  const _hasVoiceover = !!(voiceoverPath && existsSync(voiceoverPath));
+  const hasVoiceover = !!(voiceoverPath && existsSync(voiceoverPath));
 
   // Build input list: [0]=video, [1]=bass, [2]=beat, [3]=pad, [4?]=logo, [5?]=user audio, [6?]=voiceover
   const inputs: string[] = ["-i", videoPath];
-  inputs?.push("-f", "lavfi", "-i", src1);
-  inputs?.push("-f", "lavfi", "-i", src2);
-  inputs?.push("-f", "lavfi", "-i", src3);
+  inputs.push("-f", "lavfi", "-i", src1);
+  inputs.push("-f", "lavfi", "-i", src2);
+  inputs.push("-f", "lavfi", "-i", src3);
 
   let logoIdx = -1;
   let userIdx = -1;
@@ -1254,15 +1254,15 @@ async function applyAudioAndLogo(
 
   if (hasLogo) {
     logoIdx = nextIdx++;
-    inputs?.push("-i", logoPath!);
+    inputs.push("-i", logoPath!);
   }
   if (hasUser) {
     userIdx = nextIdx++;
-    inputs?.push("-i", userAudioPath!);
+    inputs.push("-i", userAudioPath!);
   }
   if (hasVoiceover) {
     voIdx = nextIdx++;
-    inputs?.push("-i", voiceoverPath!);
+    inputs.push("-i", voiceoverPath!);
   }
 
   // ── filter_complex ─────────────────────────────────────────────────────────
@@ -1272,61 +1272,61 @@ async function applyAudioAndLogo(
 
   // Video chain — only needed when overlaying the logo
   if (hasLogo) {
-    parts?.push(
-      `[${logoIdx}:v]scale=iw*0?.14:ih*0?.14[logo]`,
+    parts.push(
+      `[${logoIdx}:v]scale=iw*0.14:ih*0.14[logo]`,
       `[0:v][logo]overlay=W-w-24:24:enable='between(t\\,0\\,${totalDur})'[vfinal]`,
     );
   }
 
   // Procedural synth mix (bass=1, beat=2, pad=3)
-  // amix weights: bass at 1?.25 (dominant), beat at 1?.0, pad at 0?.55
-  parts?.push(
-    `[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1?.25 1?.0 0?.55[synth_raw]`,
+  // amix weights: bass at 1.25 (dominant), beat at 1.0, pad at 0.55
+  parts.push(
+    `[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1.25 1.0 0.55[synth_raw]`,
   );
   // Full EQ + stereo widening chain
-  parts?.push(
-    `[synth_raw]${audioProfile?.filters},` +
-      `extrastereo=m=1?.4,` +
+  parts.push(
+    `[synth_raw]${audioProfile.filters},` +
+      `extrastereo=m=1.4,` +
       `afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[synth]`,
   );
 
   if (hasVoiceover && hasUser) {
-    parts?.push(
+    parts.push(
       `[${voIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
-        `volume=1?.1,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[vo_a]`,
+        `volume=1.1,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[vo_a]`,
     );
-    parts?.push(
+    parts.push(
       `[${userIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
-        `volume=0?.55,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
+        `volume=0.55,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
     );
-    parts?.push(
-      `[vo_a][user_a][synth]amix=inputs=3:normalize=0:weights=1?.1 0?.55 0?.18[afinal]`,
+    parts.push(
+      `[vo_a][user_a][synth]amix=inputs=3:normalize=0:weights=1.1 0.55 0.18[afinal]`,
     );
   } else if (hasVoiceover) {
-    parts?.push(
+    parts.push(
       `[${voIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
-        `volume=1?.2,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[vo_a]`,
+        `volume=1.2,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[vo_a]`,
     );
-    parts?.push(
-      `[vo_a][synth]amix=inputs=2:normalize=0:weights=1?.2 0?.20[afinal]`,
+    parts.push(
+      `[vo_a][synth]amix=inputs=2:normalize=0:weights=1.2 0.20[afinal]`,
     );
   } else if (hasUser) {
-    parts?.push(
+    parts.push(
       `[${userIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
-        `volume=0?.88,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
+        `volume=0.88,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
     );
-    parts?.push(
-      `[user_a][synth]amix=inputs=2:normalize=0:weights=1?.0 0?.22[afinal]`,
+    parts.push(
+      `[user_a][synth]amix=inputs=2:normalize=0:weights=1.0 0.22[afinal]`,
     );
   } else {
-    parts?.push(`[synth]volume=1?.0[afinal]`);
+    parts.push(`[synth]volume=1.0[afinal]`);
   }
 
-  const _ffmpegArgs = [
+  const ffmpegArgs = [
     "-y",
     ...inputs,
     "-filter_complex",
-    parts?.join(";"),
+    parts.join(";"),
     ...outputLabels,
     "-c:v",
     hasLogo ? "libx264" : "copy",
@@ -1349,33 +1349,33 @@ async function applyAudioAndLogo(
   } catch (ffmpegErr) {
     // Some FFmpeg builds don't support equalizer/extrastereo/dynaudnorm.
     // Retry with a safe filter chain (volume + afade only) so audio is always present.
-    const _errMsg =
-      ffmpegErr instanceof Error ? ffmpegErr?.message : String(ffmpegErr);
+    const errMsg =
+      ffmpegErr instanceof Error ? ffmpegErr.message : String(ffmpegErr);
     if (
-      /No such filter|Invalid option|filter.*not found|option.*not found/i?.test(
+      /No such filter|Invalid option|filter.*not found|option.*not found/i.test(
         errMsg,
       )
     ) {
-      logger?.warn(
+      logger.warn(
         "[VideoGen] Complex audio filters unavailable, retrying with safe fallback chain:",
-        errMsg?.slice(0, 120),
+        errMsg.slice(0, 120),
       );
-      const _safeParts = parts?.map((p) =>
+      const safeParts = parts.map((p) =>
         p
           .replace(
-            `[synth_raw]${audioProfile?.filters},extrastereo=m=1?.4,`,
-            "[synth_raw]volume=0?.9,",
+            `[synth_raw]${audioProfile.filters},extrastereo=m=1.4,`,
+            "[synth_raw]volume=0.9,",
           )
           .replace(
-            `[synth_raw]${audioProfile?.filters},`,
-            "[synth_raw]volume=0?.9,",
+            `[synth_raw]${audioProfile.filters},`,
+            "[synth_raw]volume=0.9,",
           ),
       );
-      const _safeArgs = [
+      const safeArgs = [
         "-y",
         ...inputs,
         "-filter_complex",
-        safeParts?.join(";"),
+        safeParts.join(";"),
         ...outputLabels,
         "-c:v",
         hasLogo ? "libx264" : "copy",
@@ -1456,20 +1456,20 @@ export interface VideoGenResult {
 export async function generateVideo(
   opts: VideoGenOptions,
 ): Promise<VideoGenResult> {
-  const _startMs = Date?.now();
+  const startMs = Date.now();
 
   mkdirSync(OUTPUT_DIR, { recursive: true });
   mkdirSync(TEMP_DIR, { recursive: true });
 
-  const _platform = opts?.platform || "tiktok";
-  const _templateKey =
-    opts?.template && TEMPLATE_STYLES[opts?.template]
-      ? opts?.template
+  const platform = opts.platform || "tiktok";
+  const templateKey =
+    opts.template && TEMPLATE_STYLES[opts.template]
+      ? opts.template
       : "cinematic_promo";
-  const _baseStyle = TEMPLATE_STYLES[templateKey];
-  const _normalizeHex = (c?: string) => (c ? c?.replace(/^#/, "0x") : undefined);
-  const _customBg = normalizeHex(opts?.bg_color);
-  const _customAc = normalizeHex(opts?.accent_color);
+  const baseStyle = TEMPLATE_STYLES[templateKey];
+  const normalizeHex = (c?: string) => (c ? c.replace(/^#/, "0x") : undefined);
+  const customBg = normalizeHex(opts.bg_color);
+  const customAc = normalizeHex(opts.accent_color);
   const style: TemplateStyle =
     customBg || customAc
       ? {
@@ -1478,94 +1478,94 @@ export async function generateVideo(
           ...(customAc ? { ac: customAc } : {}),
         }
       : baseStyle;
-  const _ratio = opts?.aspect_ratio || PLATFORM_RATIOS[platform] || "9:16";
+  const ratio = opts.aspect_ratio || PLATFORM_RATIOS[platform] || "9:16";
   const [width, height] = ASPECT_RATIOS[ratio] || [1080, 1920];
-  const _totalDur = Math?.max(6, Math?.min(opts?.duration || 15, 30));
-  const _genre = (opts?.genre || "default").toLowerCase();
-  const _audioProfile = AUDIO_PROFILES[genre] || AUDIO_PROFILES?.default;
+  const totalDur = Math.max(6, Math.min(opts.duration || 15, 30));
+  const genre = (opts.genre || "default").toLowerCase();
+  const audioProfile = AUDIO_PROFILES[genre] || AUDIO_PROFILES.default;
 
-  const _scenePrompt =
-    opts?.scene_prompt?.trim() ||
-    (opts?.topic ? `${opts?.topic} ${genre} music` : undefined);
+  const scenePrompt =
+    opts.scene_prompt.trim() ||
+    (opts.topic ? `${opts.topic} ${genre} music` : undefined);
 
   // ── AI content generation via Advanced Content Pipeline ──────────────────
-  let hook = opts?.hook || "";
-  let body = opts?.body || "";
-  let cta = opts?.cta || "";
+  let hook = opts.hook || "";
+  let body = opts.body || "";
+  let cta = opts.cta || "";
   let aiSource = "provided";
 
-  if (!hook && !body && !cta && opts?.topic) {
+  if (!hook && !body && !cta && opts.topic) {
     try {
-      const _userId = opts?.userId || "anonymous";
-      const _pipelineResult =
-        await contentQualityPipeline?.generateWithAdvancedAI(
+      const userId = opts.userId || "anonymous";
+      const pipelineResult =
+        await contentQualityPipeline.generateWithAdvancedAI(
           userId,
           {
-            topic: opts?.topic,
+            topic: opts.topic,
             platform,
             genre: genre !== "default" ? genre : undefined,
-            artistName: opts?.artist_name || "",
-            tone: opts?.tone || "energetic",
+            artistName: opts.artist_name || "",
+            tone: opts.tone || "energetic",
             objective:
-              opts?.goal === "sales" || opts?.goal === "traffic"
+              opts.goal === "sales" || opts.goal === "traffic"
                 ? "conversions"
-                : opts?.goal === "viral"
+                : opts.goal === "viral"
                   ? "viral"
                   : "engagement",
           },
           5,
         );
-      const _best = pipelineResult?.selected;
+      const best = pipelineResult.selected;
       if (best) {
-        hook = best?.headline.slice(0, 80);
-        body = best?.content.split("\n")[0].slice(0, 120);
-        cta = best?.callToAction.slice(0, 60);
-        const _score = best?.scores.overall;
-        aiSource = `pipeline_${score?.toFixed(0)}`;
-        logger?.info(
-          `[VideoGen] Pipeline content — score=${score?.toFixed(1)} ` +
-            `algoAlign=${(best?.scores.algorithmAlignment ?? 0).toFixed(1)} ` +
+        hook = best.headline.slice(0, 80);
+        body = best.content.split("\n")[0].slice(0, 120);
+        cta = best.callToAction.slice(0, 60);
+        const score = best.scores.overall;
+        aiSource = `pipeline_${score.toFixed(0)}`;
+        logger.info(
+          `[VideoGen] Pipeline content — score=${score.toFixed(1)} ` +
+            `algoAlign=${(best.scores.algorithmAlignment ?? 0).toFixed(1)} ` +
             `${score < 81 ? "⚠ below 81 threshold" : "✅ gate passed"}`,
         );
       }
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { err: e },
         "[VideoGen] Pipeline content generation failed, using defaults:",
       );
     }
   }
 
-  if (!hook) hook = opts?.topic?.slice(0, 60) || "New Music Drop";
+  if (!hook) hook = opts.topic.slice(0, 60) || "New Music Drop";
   if (!body) body = "Stream now on all platforms";
   if (!cta) cta = "Follow for more";
 
   // ── Scene duration split ──────────────────────────────────────────────────
   // Multi-scene: hook 40% | body 35% | CTA 25%  (minimum 3s per scene)
-  const _multiScene = totalDur >= 9;
-  const _sceneDurations = multiScene
+  const multiScene = totalDur >= 9;
+  const sceneDurations = multiScene
     ? [
-        Math?.max(3, Math?.round(totalDur * 0?.4)),
-        Math?.max(3, Math?.round(totalDur * 0?.35)),
-        Math?.max(3, Math?.round(totalDur * 0?.25)),
+        Math.max(3, Math.round(totalDur * 0.4)),
+        Math.max(3, Math.round(totalDur * 0.35)),
+        Math.max(3, Math.round(totalDur * 0.25)),
       ]
     : [totalDur];
 
-  const _renderStart = Date?.now();
+  const renderStart = Date.now();
   const tempFiles: string[] = [];
 
   try {
     if (multiScene) {
       // ── Render 3 scenes sequentially ──────────────────────────────────────
-      const _hookPath = tempPath("hook");
-      const _bodyPath = tempPath("body");
-      const _ctaPath = tempPath("cta");
-      tempFiles?.push(hookPath, bodyPath, ctaPath);
+      const hookPath = tempPath("hook");
+      const bodyPath = tempPath("body");
+      const ctaPath = tempPath("cta");
+      tempFiles.push(hookPath, bodyPath, ctaPath);
 
       await renderScene({
         type: "hook",
         primaryText: hook,
-        artistName: opts?.artist_name,
+        artistName: opts.artist_name,
         duration: sceneDurations[0],
         style,
         width,
@@ -1578,7 +1578,7 @@ export async function generateVideo(
       await renderScene({
         type: "body",
         primaryText: body,
-        artistName: opts?.artist_name,
+        artistName: opts.artist_name,
         duration: sceneDurations[1],
         style,
         width,
@@ -1592,7 +1592,7 @@ export async function generateVideo(
         type: "cta",
         primaryText: cta,
         secondaryText: body,
-        artistName: opts?.artist_name,
+        artistName: opts.artist_name,
         duration: sceneDurations[2],
         style,
         width,
@@ -1604,36 +1604,36 @@ export async function generateVideo(
       });
 
       // ── Combine with xfade ────────────────────────────────────────────────
-      const _combinedPath = tempPath("combined");
-      tempFiles?.push(combinedPath);
+      const combinedPath = tempPath("combined");
+      tempFiles.push(combinedPath);
       await combineScenes(
         [hookPath, bodyPath, ctaPath],
         sceneDurations,
         combinedPath,
-        style?.transition,
+        style.transition,
       );
 
       // ── Add audio (+ logo if provided) ────────────────────────────────────
-      const _filename = `video_${randomBytes(6).toString("hex")}.mp4`;
-      const _finalPath = path?.join(OUTPUT_DIR, filename);
-      const _transitionDur = 0?.4;
-      const _combinedDur =
-        sceneDurations?.reduce((a, b) => a + b, 0) - 2 * transitionDur;
+      const filename = `video_${randomBytes(6).toString("hex")}.mp4`;
+      const finalPath = path.join(OUTPUT_DIR, filename);
+      const transitionDur = 0.4;
+      const combinedDur =
+        sceneDurations.reduce((a, b) => a + b, 0) - 2 * transitionDur;
       await applyAudioAndLogo(
         combinedPath,
         finalPath,
         combinedDur,
         audioProfile,
-        opts?.logo_path,
-        opts?.user_audio_path,
-        opts?.voiceover ? { hook, body, cta } : undefined,
+        opts.logo_path,
+        opts.user_audio_path,
+        opts.voiceover ? { hook, body, cta } : undefined,
       );
 
-      const _renderMs = Date?.now() - renderStart;
+      const renderMs = Date.now() - renderStart;
       cleanup(...tempFiles);
 
-      logger?.info(
-        `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | 3 scenes | ${style?.bgType} bg | ${genre} audio | ${renderMs}ms`,
+      logger.info(
+        `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | 3 scenes | ${style.bgType} bg | ${genre} audio | ${renderMs}ms`,
       );
 
       return {
@@ -1642,14 +1642,14 @@ export async function generateVideo(
         filename,
         width,
         height,
-        duration: Math?.round(combinedDur),
+        duration: Math.round(combinedDur),
         hook,
         body,
         cta,
         template: templateKey,
-        template_name: style?.name,
+        template_name: style.name,
         scenes_rendered: 3,
-        processing_time_ms: Date?.now() - startMs,
+        processing_time_ms: Date.now() - startMs,
         render_time_ms: renderMs,
         source: aiSource,
         quality: "cinematic",
@@ -1661,98 +1661,98 @@ export async function generateVideo(
           "multi_scene",
           "audio_track",
           "multi_font",
-          ...(opts?.logo_path ? ["logo_overlay"] : []),
+          ...(opts.logo_path ? ["logo_overlay"] : []),
         ],
       };
     } else {
       // ── Single-scene (short videos < 9s) ──────────────────────────────────
-      const _scenePath = tempPath("single");
-      tempFiles?.push(scenePath);
+      const scenePath = tempPath("single");
+      tempFiles.push(scenePath);
 
-      const _mc = Math?.max(16, Math?.floor(width / (style?.bs * 0?.58)));
+      const mc = Math.max(16, Math.floor(width / (style.bs * 0.58)));
       const { hs, bs, cs } = scaleFonts(style, width, platform);
-      const _font = FONTS[style?.font];
-      const _barH = Math?.floor(height * 0?.085);
-      const _hookEnd = totalDur * 0?.45;
-      const _bodyStart = totalDur * 0?.25;
-      const _bodyEnd = totalDur * 0?.75;
-      const _ctaStart = totalDur * 0?.62;
-      const _boxW = Math?.floor(width * 0?.82);
-      const _boxX = Math?.floor((width - boxW) / 2);
-      const _boxY = Math?.floor(height * 0?.7);
-      const _boxH = cs + 44;
+      const font = FONTS[style.font];
+      const barH = Math.floor(height * 0.085);
+      const hookEnd = totalDur * 0.45;
+      const bodyStart = totalDur * 0.25;
+      const bodyEnd = totalDur * 0.75;
+      const ctaStart = totalDur * 0.62;
+      const boxW = Math.floor(width * 0.82);
+      const boxX = Math.floor((width - boxW) / 2);
+      const boxY = Math.floor(height * 0.7);
+      const boxH = cs + 44;
 
       const vfParts: string[] = [];
 
       // Accent bars
-      vfParts?.push(
-        `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style?.ac}@0?.30:t=fill`,
+      vfParts.push(
+        `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style.ac}@0.30:t=fill`,
       );
-      vfParts?.push(
-        `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style?.ac}@0?.30:t=fill`,
+      vfParts.push(
+        `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style.ac}@0.30:t=fill`,
       );
 
-      if (opts?.artist_name) {
-        const _at = escFFmpeg(sanitizeVideoText(opts?.artist_name).toUpperCase());
-        const _atSize = Math?.floor(bs * 0?.62);
-        vfParts?.push(
-          `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=black@0?.40:fontsize=${atSize}` +
-            `:x=(w-text_w)/2+3:y=h*0?.05+3`,
+      if (opts.artist_name) {
+        const at = escFFmpeg(sanitizeVideoText(opts.artist_name).toUpperCase());
+        const atSize = Math.floor(bs * 0.62);
+        vfParts.push(
+          `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=black@0.40:fontsize=${atSize}` +
+            `:x=(w-text_w)/2+3:y=h*0.05+3`,
         );
-        vfParts?.push(
-          `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=${style?.ac}:fontsize=${atSize}` +
-            `:x=(w-text_w)/2:y=h*0?.05`,
+        vfParts.push(
+          `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=${style.ac}:fontsize=${atSize}` +
+            `:x=(w-text_w)/2:y=h*0.05`,
         );
       }
 
       // Hook text with shadow + slide-up
-      const _ht = escFFmpeg(wrap(sanitizeVideoText(hook), mc));
-      vfParts?.push(
-        `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0?.45:fontsize=${hs}` +
+      const ht = escFFmpeg(wrap(sanitizeVideoText(hook), mc));
+      vfParts.push(
+        `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0.45:fontsize=${hs}` +
           `:x=(w-text_w)/2+4:y=(h-text_h)/4+4` +
-          `:enable='between(t\\,0?.3\\,${hookEnd?.toFixed(1)})'` +
-          `:alpha='if(lt(t\\,0?.8)\\,min(1\\,(t-0?.3)*2)\\,if(gt(t\\,${(hookEnd - 0?.5).toFixed(1)})\\,max(0\\,(${hookEnd?.toFixed(1)}-t)*2)\\,1))'`,
+          `:enable='between(t\\,0.3\\,${hookEnd.toFixed(1)})'` +
+          `:alpha='if(lt(t\\,0.8)\\,min(1\\,(t-0.3)*2)\\,if(gt(t\\,${(hookEnd - 0.5).toFixed(1)})\\,max(0\\,(${hookEnd.toFixed(1)}-t)*2)\\,1))'`,
       );
-      vfParts?.push(
-        `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style?.tc}:fontsize=${hs}` +
+      vfParts.push(
+        `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style.tc}:fontsize=${hs}` +
           `:x=(w-text_w)/2:y=(h-text_h)/4` +
-          `:enable='between(t\\,0?.3\\,${hookEnd?.toFixed(1)})'` +
-          `:alpha='if(lt(t\\,0?.8)\\,min(1\\,(t-0?.3)*2)\\,if(gt(t\\,${(hookEnd - 0?.5).toFixed(1)})\\,max(0\\,(${hookEnd?.toFixed(1)}-t)*2)\\,1))'` +
-          `:bordercolor=${style?.ac}:borderw=2`,
+          `:enable='between(t\\,0.3\\,${hookEnd.toFixed(1)})'` +
+          `:alpha='if(lt(t\\,0.8)\\,min(1\\,(t-0.3)*2)\\,if(gt(t\\,${(hookEnd - 0.5).toFixed(1)})\\,max(0\\,(${hookEnd.toFixed(1)}-t)*2)\\,1))'` +
+          `:bordercolor=${style.ac}:borderw=2`,
       );
 
       // Body text
-      const _bt = escFFmpeg(wrap(sanitizeVideoText(body), mc));
-      vfParts?.push(
-        `drawtext=fontfile=${FONTS?.regular}:text='${bt}':fontcolor=${style?.tc}:fontsize=${bs}` +
+      const bt = escFFmpeg(wrap(sanitizeVideoText(body), mc));
+      vfParts.push(
+        `drawtext=fontfile=${FONTS.regular}:text='${bt}':fontcolor=${style.tc}:fontsize=${bs}` +
           `:x=(w-text_w)/2:y=(h-text_h)/2` +
-          `:enable='between(t\\,${bodyStart?.toFixed(1)}\\,${bodyEnd?.toFixed(1)})'` +
-          `:alpha='if(lt(t\\,${(bodyStart + 0?.5).toFixed(1)})\\,min(1\\,(t-${bodyStart?.toFixed(1)})*2)\\,if(gt(t\\,${(bodyEnd - 0?.5).toFixed(1)})\\,max(0\\,(${bodyEnd?.toFixed(1)}-t)*2)\\,1))'`,
+          `:enable='between(t\\,${bodyStart.toFixed(1)}\\,${bodyEnd.toFixed(1)})'` +
+          `:alpha='if(lt(t\\,${(bodyStart + 0.5).toFixed(1)})\\,min(1\\,(t-${bodyStart.toFixed(1)})*2)\\,if(gt(t\\,${(bodyEnd - 0.5).toFixed(1)})\\,max(0\\,(${bodyEnd.toFixed(1)}-t)*2)\\,1))'`,
       );
 
       // CTA pill with dual accent lines
-      vfParts?.push(
-        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style?.cta_bg}@0?.94:t=fill` +
-          `:enable='between(t\\,${ctaStart?.toFixed(1)}\\,${totalDur})'`,
+      vfParts.push(
+        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style.cta_bg}@0.94:t=fill` +
+          `:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'`,
       );
-      vfParts?.push(
-        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style?.ac}:t=fill` +
-          `:enable='between(t\\,${ctaStart?.toFixed(1)}\\,${totalDur})'`,
+      vfParts.push(
+        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style.ac}:t=fill` +
+          `:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'`,
       );
-      vfParts?.push(
-        `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style?.ac}@0?.55:t=fill` +
-          `:enable='between(t\\,${ctaStart?.toFixed(1)}\\,${totalDur})'`,
+      vfParts.push(
+        `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style.ac}@0.55:t=fill` +
+          `:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'`,
       );
-      const _ct = escFFmpeg(wrap(sanitizeVideoText(cta), mc));
-      vfParts?.push(
+      const ct = escFFmpeg(wrap(sanitizeVideoText(cta), mc));
+      vfParts.push(
         `drawtext=fontfile=${font}:text='${ct}':fontcolor=white:fontsize=${cs}` +
-          `:x=(w-text_w)/2:y=h*0?.72` +
-          `:enable='between(t\\,${ctaStart?.toFixed(1)}\\,${totalDur})'` +
-          `:alpha='if(lt(t\\,${(ctaStart + 0?.3).toFixed(1)})\\,min(1\\,(t-${ctaStart?.toFixed(1)})*3)\\,1)'`,
+          `:x=(w-text_w)/2:y=h*0.72` +
+          `:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'` +
+          `:alpha='if(lt(t\\,${(ctaStart + 0.3).toFixed(1)})\\,min(1\\,(t-${ctaStart.toFixed(1)})*3)\\,1)'`,
       );
 
-      if (style?.bgType === "solid") {
-        const _vf = [
+      if (style.bgType === "solid") {
+        const vf = [
           "format=yuv420p",
           "vignette=angle=PI/5:mode=forward:eval=init",
           ...vfParts,
@@ -1764,7 +1764,7 @@ export async function generateVideo(
             "-f",
             "lavfi",
             "-i",
-            `color=c=${style?.bg}:s=${width}x${height}:d=${totalDur}:r=30`,
+            `color=c=${style.bg}:s=${width}x${height}:d=${totalDur}:r=30`,
             "-vf",
             vf,
             "-c:v",
@@ -1785,10 +1785,10 @@ export async function generateVideo(
           { timeout: 300_000 },
         );
       } else {
-        const _iW = Math?.floor(width / 2);
-        const _iH = Math?.floor(height / 2);
-        const _bgGeq = getBgVfPrefix(style?.bgType, style?.bg, iW, iH, style?.ac);
-        const _vfAnim = [
+        const iW = Math.floor(width / 2);
+        const iH = Math.floor(height / 2);
+        const bgGeq = getBgVfPrefix(style.bgType, style.bg, iW, iH, style.ac);
+        const vfAnim = [
           bgGeq,
           `scale=${width}:${height}:flags=lanczos`,
           "format=yuv420p",
@@ -1824,23 +1824,23 @@ export async function generateVideo(
         );
       }
 
-      const _filename = `video_${randomBytes(6).toString("hex")}.mp4`;
-      const _finalPath = path?.join(OUTPUT_DIR, filename);
+      const filename = `video_${randomBytes(6).toString("hex")}.mp4`;
+      const finalPath = path.join(OUTPUT_DIR, filename);
       await applyAudioAndLogo(
         scenePath,
         finalPath,
         totalDur,
         audioProfile,
-        opts?.logo_path,
-        opts?.user_audio_path,
-        opts?.voiceover ? { hook, body, cta } : undefined,
+        opts.logo_path,
+        opts.user_audio_path,
+        opts.voiceover ? { hook, body, cta } : undefined,
       );
 
-      const _renderMs = Date?.now() - renderStart;
+      const renderMs = Date.now() - renderStart;
       cleanup(...tempFiles);
 
-      logger?.info(
-        `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | single scene | ${style?.bgType} bg | ${genre} audio | ${renderMs}ms`,
+      logger.info(
+        `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | single scene | ${style.bgType} bg | ${genre} audio | ${renderMs}ms`,
       );
 
       return {
@@ -1854,9 +1854,9 @@ export async function generateVideo(
         body,
         cta,
         template: templateKey,
-        template_name: style?.name,
+        template_name: style.name,
         scenes_rendered: 1,
-        processing_time_ms: Date?.now() - startMs,
+        processing_time_ms: Date.now() - startMs,
         render_time_ms: renderMs,
         source: aiSource,
         quality: "cinematic",
@@ -1867,16 +1867,16 @@ export async function generateVideo(
           "text_outline",
           "audio_track",
           "multi_font",
-          ...(opts?.logo_path ? ["logo_overlay"] : []),
+          ...(opts.logo_path ? ["logo_overlay"] : []),
         ],
       };
     }
   } catch (err) {
     cleanup(...tempFiles);
-    logger?.warn("[VideoGen] Render failed:", err?.stderr || err?.message);
+    logger.warn("[VideoGen] Render failed:", err.stderr || err.message);
     return {
       success: false,
-      error: `Video render failed: ${err?.message || "FFmpeg error"}`,
+      error: `Video render failed: ${err.message || "FFmpeg error"}`,
     };
   }
 }

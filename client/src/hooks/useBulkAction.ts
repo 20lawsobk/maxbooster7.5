@@ -78,7 +78,7 @@ export function useBulkAction(
 ): UseBulkActionResult {
   const { onSuccess, onError, onProgress } = options;
   const { toast } = useToast();
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   const [status, setStatus] = useState<BulkActionStatus>("idle");
   const [progress, setProgress] = useState<BulkActionProgress>(defaultProgress);
@@ -88,13 +88,13 @@ export function useBulkAction(
     null,
   );
 
-  const _abortControllerRef = useRef<AbortController | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const _updateProgress = useCallback(
+  const updateProgress = useCallback(
     (update: Partial<BulkActionProgress>) => {
       setProgress((prev) => {
-        const _next = { ...prev, ...update };
-        next?.percentage =
+        const next = { ...prev, ...update };
+        next.percentage =
           next?.total > 0 ? Math?.round((next?.current / next?.total) * 100) : 0;
         onProgress?.(next);
         return next;
@@ -103,7 +103,7 @@ export function useBulkAction(
     [onProgress],
   );
 
-  const _execute = useCallback(
+  const execute = useCallback(
     async (config: BulkActionConfig): Promise<BulkActionResult> => {
       const {
         resource,
@@ -115,11 +115,11 @@ export function useBulkAction(
         invalidateQueries,
       } = config;
 
-      abortControllerRef?.current = new AbortController();
+      abortControllerRef.current = new AbortController();
       setStatus("processing");
       setError(null);
       setResult(null);
-      updateProgress({ current: 0, total: ids?.length, currentItem: undefined });
+      updateProgress({ current: 0, total: ids.length, currentItem: undefined });
 
       try {
         let endpoint: string;
@@ -167,17 +167,17 @@ export function useBulkAction(
             throw new Error(`Unknown action: ${action}`);
         }
 
-        const _response = await apiRequest(method, endpoint, body);
+        const response = await apiRequest(method, endpoint, body);
 
         const actionResult: BulkActionResult = {
-          success: response?.success || ids,
-          failed: response?.failed || [],
-          totalRequested: ids?.length,
-          totalSucceeded: response?.success?.length ?? ids?.length,
-          totalFailed: response?.failed?.length ?? 0,
+          success: response.success || ids,
+          failed: response.failed || [],
+          totalRequested: ids.length,
+          totalSucceeded: response.success?.length ?? ids?.length,
+          totalFailed: response.failed?.length ?? 0,
         };
 
-        updateProgress({ current: ids?.length, total: ids?.length });
+        updateProgress({ current: ids.length, total: ids.length });
         setResult(actionResult);
 
         if (actionResult?.totalFailed === 0) {
@@ -212,32 +212,32 @@ export function useBulkAction(
 
         return actionResult;
       } catch (err) {
-        const _error = err instanceof Error ? err : new Error("Unknown error");
+        const error = err instanceof Error ? err : new Error("Unknown error");
         setError(error);
         setStatus("failed");
 
         toast({
           title: errorMessage || "Operation failed",
-          description: error?.message,
+          description: error.message,
           variant: "destructive",
         });
 
         onError?.(error);
         throw error;
       } finally {
-        abortControllerRef?.current = null;
+        abortControllerRef.current = null;
         setPendingConfig(null);
       }
     },
     [toast, queryClient, onSuccess, onError, updateProgress],
   );
 
-  const _confirm = useCallback((config: BulkActionConfig) => {
+  const confirm = useCallback((config: BulkActionConfig) => {
     setPendingConfig(config);
     setStatus("confirming");
   }, []);
 
-  const _cancel = useCallback(() => {
+  const cancel = useCallback(() => {
     if (abortControllerRef?.current) {
       abortControllerRef?.current.abort();
     }
@@ -245,7 +245,7 @@ export function useBulkAction(
     setStatus("idle");
   }, []);
 
-  const _reset = useCallback(() => {
+  const reset = useCallback(() => {
     setStatus("idle");
     setProgress(defaultProgress);
     setResult(null);
@@ -271,9 +271,9 @@ export function useBulkDelete(
   resource: string,
   options: UseBulkActionOptions = {},
 ) {
-  const _bulkAction = useBulkAction(options);
+  const bulkAction = useBulkAction(options);
 
-  const _deleteItems = useCallback(
+  const deleteItems = useCallback(
     async (ids: string[]) => {
       return bulkAction?.execute({
         resource,
@@ -295,9 +295,9 @@ export function useBulkUpdate(
   resource: string,
   options: UseBulkActionOptions = {},
 ) {
-  const _bulkAction = useBulkAction(options);
+  const bulkAction = useBulkAction(options);
 
-  const _updateItems = useCallback(
+  const updateItems = useCallback(
     async (ids: string[], data: Record<string, any>) => {
       return bulkAction?.execute({
         resource,
@@ -319,9 +319,9 @@ export function useBulkExport(
   resource: string,
   options: UseBulkActionOptions = {},
 ) {
-  const _bulkAction = useBulkAction(options);
+  const bulkAction = useBulkAction(options);
 
-  const _exportItems = useCallback(
+  const exportItems = useCallback(
     async (ids: string[], format: string = "csv") => {
       return bulkAction?.execute({
         resource,
@@ -342,9 +342,9 @@ export function useBulkStatusChange(
   resource: string,
   options: UseBulkActionOptions = {},
 ) {
-  const _bulkAction = useBulkAction(options);
+  const bulkAction = useBulkAction(options);
 
-  const _changeStatus = useCallback(
+  const changeStatus = useCallback(
     async (ids: string[], status: string) => {
       return bulkAction?.execute({
         resource,

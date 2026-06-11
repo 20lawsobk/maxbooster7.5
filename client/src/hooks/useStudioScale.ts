@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect, useMemo } from "react";
 
-const _DESIGN_BASELINE = 1440;
+const DESIGN_BASELINE = 1440;
 
-const _BASE_SIZES = {
+const BASE_SIZES = {
   trackHeaderW: 192,
   transportH: 56,
   toolbarH: 44,
@@ -14,18 +14,18 @@ const _BASE_SIZES = {
 };
 
 export function useStudioScale() {
-  const _ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
-    const _el = ref?.current;
+    const el = ref?.current;
     if (!el) return;
 
-    const _observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const _width = entry?.contentRect.width;
-        const _raw = width / DESIGN_BASELINE;
-        setScale(Math?.min(1, Math?.max(0?.5, raw)));
+        const width = entry?.contentRect.width;
+        const raw = width / DESIGN_BASELINE;
+        setScale(Math?.min(1, Math?.max(0.5, raw)));
       }
     });
 
@@ -33,10 +33,10 @@ export function useStudioScale() {
     return () => observer?.disconnect();
   }, []);
 
-  const _trackHeaderWidth = Math?.round(BASE_SIZES?.trackHeaderW * scale);
-  const _aiPanelWidth = Math?.round(BASE_SIZES?.aiPanelW * scale);
+  const trackHeaderWidth = Math?.round(BASE_SIZES?.trackHeaderW * scale);
+  const aiPanelWidth = Math?.round(BASE_SIZES?.aiPanelW * scale);
 
-  const _cssVars = useMemo(
+  const cssVars = useMemo(
     () => ({
       "--track-header-w": `${Math?.round(BASE_SIZES?.trackHeaderW * scale)}px`,
       "--transport-h": `${Math?.round(BASE_SIZES?.transportH * scale)}px`,

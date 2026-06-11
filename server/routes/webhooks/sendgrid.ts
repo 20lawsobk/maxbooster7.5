@@ -1,8 +1,8 @@
 import { Router, raw } from "express";
-import { emailTrackingService } from "../../services/emailTrackingService?.js";
-import { logger } from "../../logger?.js";
+import { emailTrackingService } from "../../services/emailTrackingService.js";
+import { logger } from "../../logger.js";
 
-const _router = Router();
+const router = Router();
 
 /**
  * SendGrid Event Webhook
@@ -11,13 +11,13 @@ const _router = Router();
  */
 router?.post("/", raw({ type: "application/json" }), async (req, res) => {
   try {
-    const _signature = req?.headers[
+    const signature = req?.headers[
       "x-twilio-email-event-webhook-signature"
     ] as string;
-    const _timestamp = req?.headers[
+    const timestamp = req?.headers[
       "x-twilio-email-event-webhook-timestamp"
     ] as string;
-    const _rawBody = req?.body?.toString("utf-8") || "";
+    const rawBody = req?.body?.toString("utf-8") || "";
 
     if (
       (process?.env.NODE_ENV === "production" ||
@@ -42,7 +42,7 @@ router?.post("/", raw({ type: "application/json" }), async (req, res) => {
         return res?.status(401).json({ error: "Missing signature headers" });
       }
 
-      const _isValid = emailTrackingService?.verifySendGridSignature(
+      const isValid = emailTrackingService?.verifySendGridSignature(
         rawBody,
         signature,
         timestamp,
@@ -54,8 +54,8 @@ router?.post("/", raw({ type: "application/json" }), async (req, res) => {
       }
     }
 
-    const _payload = JSON?.parse(rawBody);
-    const _events = Array?.isArray(payload) ? payload : [payload];
+    const payload = JSON?.parse(rawBody);
+    const events = Array?.isArray(payload) ? payload : [payload];
 
     for (const event of events) {
       const {

@@ -713,7 +713,7 @@ export function ServerVideoGenerator({
         PLATFORM_DEFAULT_TEMPLATE[platform] || "cinematic_promo";
       const chosenTemplate = initialTemplate || platformTemplate;
       callGenerateVideo({
-        topic: topicProp?.trim() || initialHook?.trim(),
+        topic: topicProp.trim() || initialHook?.trim(),
         hook: initialHook || undefined,
         body: initialBody || undefined,
         cta: initialCta || undefined,

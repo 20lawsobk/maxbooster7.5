@@ -1,4 +1,4 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface ModelCacheMetrics {
   socialAutopilot: {
@@ -83,60 +83,60 @@ class AIModelTelemetry {
     socialMaxSize: number,
     advertisingMaxSize: number,
   ): ModelCacheMetrics {
-    const _recentLoads = this?.loadEvents.filter(
+    const recentLoads = this?.loadEvents.filter(
       (e) => Date?.now() - e?.timestamp.getTime() < 300000,
     );
 
-    const _socialLoads = recentLoads?.filter((e) => e?.modelType === "social");
-    const _advertisingLoads = recentLoads?.filter(
+    const socialLoads = recentLoads?.filter((e) => e?.modelType === "social");
+    const advertisingLoads = recentLoads?.filter(
       (e) => e?.modelType === "advertising",
     );
 
-    const _socialHits = socialLoads?.filter((e) => e?.cacheHit).length;
-    const _advertisingHits = advertisingLoads?.filter((e) => e?.cacheHit).length;
+    const socialHits = socialLoads?.filter((e) => e?.cacheHit).length;
+    const advertisingHits = advertisingLoads?.filter((e) => e?.cacheHit).length;
 
-    const _socialHitRate =
+    const socialHitRate =
       socialLoads?.length > 0 ? socialHits / socialLoads?.length : 0;
-    const _advertisingHitRate =
+    const advertisingHitRate =
       advertisingLoads?.length > 0
         ? advertisingHits / advertisingLoads?.length
         : 0;
 
-    const _socialAvgLoadTime =
+    const socialAvgLoadTime =
       socialLoads?.length > 0
         ? socialLoads?.reduce((sum, e) => sum + e?.loadTimeMs, 0) /
           socialLoads?.length
         : 0;
-    const _advertisingAvgLoadTime =
+    const advertisingAvgLoadTime =
       advertisingLoads?.length > 0
         ? advertisingLoads?.reduce((sum, e) => sum + e?.loadTimeMs, 0) /
           advertisingLoads?.length
         : 0;
 
-    const _recentEvictions = this?.evictionEvents.filter(
+    const recentEvictions = this?.evictionEvents.filter(
       (e) => Date?.now() - e?.timestamp.getTime() < 300000,
     );
 
-    const _socialEvictions = recentEvictions?.filter(
+    const socialEvictions = recentEvictions?.filter(
       (e) => e?.modelType === "social",
     );
-    const _advertisingEvictions = recentEvictions?.filter(
+    const advertisingEvictions = recentEvictions?.filter(
       (e) => e?.modelType === "advertising",
     );
 
-    const _estimatedModelSizeMB = 50;
-    const _totalModels = socialCache?.size + advertisingCache?.size;
+    const estimatedModelSizeMB = 50;
+    const totalModels = socialCache?.size + advertisingCache?.size;
 
-    const _usedMemory = process?.memoryUsage();
-    const _usedMB = Math?.round(usedMemory?.heapUsed / 1024 / 1024);
+    const usedMemory = process?.memoryUsage();
+    const usedMB = Math?.round(usedMemory?.heapUsed / 1024 / 1024);
 
     const metrics: ModelCacheMetrics = {
       socialAutopilot: {
-        currentSize: socialCache?.size,
+        currentSize: socialCache.size,
         maxSize: socialMaxSize,
-        totalLoads: this?.loadEvents.filter((e) => e?.modelType === "social")
+        totalLoads: this.loadEvents.filter((e) => e?.modelType === "social")
           .length,
-        totalEvictions: this?.evictionEvents.filter(
+        totalEvictions: this.evictionEvents.filter(
           (e) => e?.modelType === "social",
         ).length,
         cacheHitRate: socialHitRate,
@@ -147,11 +147,11 @@ class AIModelTelemetry {
             : undefined,
       },
       advertisingAutopilot: {
-        currentSize: advertisingCache?.size,
+        currentSize: advertisingCache.size,
         maxSize: advertisingMaxSize,
-        totalLoads: this?.loadEvents.filter((e) => e?.modelType === "advertising")
+        totalLoads: this.loadEvents.filter((e) => e?.modelType === "advertising")
           .length,
-        totalEvictions: this?.evictionEvents.filter(
+        totalEvictions: this.evictionEvents.filter(
           (e) => e?.modelType === "advertising",
         ).length,
         cacheHitRate: advertisingHitRate,
@@ -185,7 +185,7 @@ class AIModelTelemetry {
 
     if (
       metrics?.socialAutopilot.currentSize >=
-      metrics?.socialAutopilot.maxSize * 0?.9
+      metrics?.socialAutopilot.maxSize * 0.9
     ) {
       alerts?.push(
         `⚠️ Social autopilot cache near capacity: ${metrics?.socialAutopilot.currentSize}/${metrics?.socialAutopilot.maxSize}`,
@@ -194,7 +194,7 @@ class AIModelTelemetry {
 
     if (
       metrics?.advertisingAutopilot.currentSize >=
-      metrics?.advertisingAutopilot.maxSize * 0?.9
+      metrics?.advertisingAutopilot.maxSize * 0.9
     ) {
       alerts?.push(
         `⚠️ Advertising autopilot cache near capacity: ${metrics?.advertisingAutopilot.currentSize}/${metrics?.advertisingAutopilot.maxSize}`,
@@ -202,7 +202,7 @@ class AIModelTelemetry {
     }
 
     if (
-      metrics?.socialAutopilot.cacheHitRate < 0?.5 &&
+      metrics?.socialAutopilot.cacheHitRate < 0.5 &&
       metrics?.socialAutopilot.totalLoads > 20
     ) {
       alerts?.push(
@@ -211,7 +211,7 @@ class AIModelTelemetry {
     }
 
     if (
-      metrics?.advertisingAutopilot.cacheHitRate < 0?.5 &&
+      metrics?.advertisingAutopilot.cacheHitRate < 0.5 &&
       metrics?.advertisingAutopilot.totalLoads > 20
     ) {
       alerts?.push(
@@ -254,20 +254,20 @@ class AIModelTelemetry {
     avgCacheHitRate: number;
     avgLoadTime: number;
   } {
-    const _allLoads = this?.loadEvents;
-    const _cacheHits = allLoads?.filter((e) => e?.cacheHit).length;
-    const _avgLoadTime =
+    const allLoads = this?.loadEvents;
+    const cacheHits = allLoads?.filter((e) => e?.cacheHit).length;
+    const avgLoadTime =
       allLoads?.length > 0
         ? allLoads?.reduce((sum, e) => sum + e?.loadTimeMs, 0) / allLoads?.length
         : 0;
 
     return {
-      totalLoads: allLoads?.length,
-      totalEvictions: this?.evictionEvents.length,
-      avgCacheHitRate: allLoads?.length > 0 ? cacheHits / allLoads?.length : 0,
+      totalLoads: allLoads.length,
+      totalEvictions: this.evictionEvents.length,
+      avgCacheHitRate: allLoads.length > 0 ? cacheHits / allLoads?.length : 0,
       avgLoadTime,
     };
   }
 }
 
-export const _aiModelTelemetry = new AIModelTelemetry();
+export const aiModelTelemetry = new AIModelTelemetry();

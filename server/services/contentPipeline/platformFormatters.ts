@@ -134,7 +134,7 @@ export const PLATFORM_SPECS: Record<SupportedPlatform, PlatformSpec> = {
     videoAspectRatios: ["9:16", "4:5", "1:1", "16:9"],
     videoMaxDurationSeconds: 90,
     videoMinDurationSeconds: 3,
-    imageAspectRatios: ["1:1", "4:5", "1?.91:1"],
+    imageAspectRatios: ["1:1", "4:5", "1.91:1"],
     supportedSlots: [
       "short_video",
       "static_post",
@@ -310,7 +310,7 @@ export const PLATFORM_SPECS: Record<SupportedPlatform, PlatformSpec> = {
     videoAspectRatios: ["16:9", "1:1", "9:16"],
     videoMaxDurationSeconds: 600,
     videoMinDurationSeconds: 3,
-    imageAspectRatios: ["1?.91:1", "1:1"],
+    imageAspectRatios: ["1.91:1", "1:1"],
     supportedSlots: [
       "text_post",
       "static_post",
@@ -377,11 +377,11 @@ export function enforceCharLimit(
   text: string,
   platform: SupportedPlatform,
 ): string {
-  const _spec = PLATFORM_SPECS[platform];
+  const spec = PLATFORM_SPECS[platform];
   if (spec?.captionMaxChars === 0) return "";
   if (text?.length <= spec?.captionMaxChars) return text;
-  const _truncated = text?.slice(0, spec?.captionMaxChars - 3);
-  const _lastSpace = truncated?.lastIndexOf(" ");
+  const truncated = text?.slice(0, spec?.captionMaxChars - 3);
+  const lastSpace = truncated?.lastIndexOf(" ");
   return (lastSpace > 0 ? truncated?.slice(0, lastSpace) : truncated) + "...";
 }
 
@@ -392,10 +392,10 @@ export function enforceHashtagLimit(
   hashtags: string[],
   platform: SupportedPlatform,
 ): string[] {
-  const _spec = PLATFORM_SPECS[platform];
-  const _capped = hashtags?.slice(0, spec?.hashtagMaxCount);
+  const spec = PLATFORM_SPECS[platform];
+  const capped = hashtags?.slice(0, spec?.hashtagMaxCount);
   return capped?.map((tag) => {
-    const _clean = tag?.replace(/^#+/, "").trim();
+    const clean = tag?.replace(/^#+/, "").trim();
     return `${spec?.hashtagFormat.replace("tag", clean)}`;
   });
 }
@@ -408,9 +408,9 @@ export function assembleCaption(
   hashtags: string[],
   platform: SupportedPlatform,
 ): { caption: string; firstComment?: string } {
-  const _spec = PLATFORM_SPECS[platform];
-  const _limitedTags = enforceHashtagLimit(hashtags, platform);
-  const _tagString = limitedTags?.join(" ");
+  const spec = PLATFORM_SPECS[platform];
+  const limitedTags = enforceHashtagLimit(hashtags, platform);
+  const tagString = limitedTags?.join(" ");
 
   if (spec?.hashtagPosition === "first_comment") {
     return {
@@ -419,7 +419,7 @@ export function assembleCaption(
     };
   }
 
-  const _combined =
+  const combined =
     spec?.hashtagPosition === "end" ? `${body}\n\n${tagString}` : body;
 
   return { caption: enforceCharLimit(combined, platform) };
@@ -433,9 +433,9 @@ export function getVisualSpec(
   slot: ContentSlot,
   colorPalette: string[] = ["#1a1a2e", "#16213e", "#0f3460", "#e94560"],
 ): VisualSpec {
-  const _spec = PLATFORM_SPECS[platform];
+  const spec = PLATFORM_SPECS[platform];
 
-  const _isVertical =
+  const isVertical =
     ["tiktok", "instagram", "threads"].includes(platform) ||
     slot === "story" ||
     slot === "short_video";

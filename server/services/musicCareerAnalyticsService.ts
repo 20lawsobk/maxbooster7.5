@@ -66,14 +66,14 @@ export async function predictCareerGrowth(
   metric: "streams" | "followers" | "engagement",
   timeline: "30d" | "90d" | "180d" = "30d",
 ): Promise<CareerGrowthPrediction> {
-  const _days = timeline === "30d" ? 30 : timeline === "90d" ? 90 : 180;
-  const _startDate = new Date();
+  const days = timeline === "30d" ? 30 : timeline === "90d" ? 90 : 180;
+  const startDate = new Date();
   startDate?.setDate(startDate?.getDate() - days);
 
   // Get historical streaming data
-  const _historicalData = await db
+  const historicalData = await db
     .select({
-      date: analytics?.date,
+      date: analytics.date,
       streams: sql<number>`CAST(COALESCE(SUM(${analytics?.totalStreams}), 0) AS INTEGER)`,
       listeners: sql<number>`CAST(COALESCE(SUM(${analytics?.totalListeners}), 0) AS INTEGER)`,
     })
@@ -97,18 +97,18 @@ export async function predictCareerGrowth(
 
     // Calculate growth rate
     if (historicalData?.length >= 2) {
-      const _firstPeriod = historicalData?.slice(
+      const firstPeriod = historicalData?.slice(
         0,
         Math?.floor(historicalData?.length / 2),
       );
-      const _secondPeriod = historicalData?.slice(
+      const secondPeriod = historicalData?.slice(
         Math?.floor(historicalData?.length / 2),
       );
 
-      const _firstPeriodAvg =
+      const firstPeriodAvg =
         firstPeriod?.reduce((sum, d) => sum + Number(d?.streams), 0) /
         firstPeriod?.length;
-      const _secondPeriodAvg =
+      const secondPeriodAvg =
         secondPeriod?.reduce((sum, d) => sum + Number(d?.streams), 0) /
         secondPeriod?.length;
 
@@ -119,7 +119,7 @@ export async function predictCareerGrowth(
     }
   }
 
-  const _predictedValue = Math?.round(currentValue * (1 + growthRate / 100));
+  const predictedValue = Math?.round(currentValue * (1 + growthRate / 100));
 
   // Generate music career recommendations
   const recommendations: string[] = [];
@@ -159,7 +159,7 @@ export async function predictCareerGrowth(
       "You're in the growth phase - invest in music videos and PR to reach the next level.",
     );
   } else {
-    recommendations?.push(
+    recommendations.push(
       "You've built significant traction - consider touring or merchandise to monetize your fanbase.",
     );
   }
@@ -171,7 +171,7 @@ export async function predictCareerGrowth(
     growthRate: Number(growthRate?.toFixed(2)),
     timeline,
     recommendations,
-    confidence: Math?.min(0?.95, 0?.6 + historicalData?.length / 100),
+    confidence: Math.min(0.95, 0.6 + historicalData?.length / 100),
   };
 }
 
@@ -179,7 +179,7 @@ export async function generateReleaseStrategy(
   userId: string,
 ): Promise<ReleaseStrategyInsight> {
   // Analyze past release performance
-  const _releases = await db
+  const releases = await db
     .select()
     .from(distroReleases)
     .where(eq(distroReleases?.userId, userId))
@@ -239,10 +239,10 @@ export async function generateReleaseStrategy(
 }
 
 export async function analyzeFanbase(userId: string): Promise<FanbaseInsight> {
-  const _thirtyDaysAgo = new Date();
+  const thirtyDaysAgo = new Date();
   thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-  const _recentAnalytics = await db
+  const recentAnalytics = await db
     .select({
       totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics?.totalStreams}), 0) AS INTEGER)`,
       totalListeners: sql<number>`CAST(COALESCE(SUM(${analytics?.totalListeners}), 0) AS INTEGER)`,
@@ -253,13 +253,13 @@ export async function analyzeFanbase(userId: string): Promise<FanbaseInsight> {
       and(eq(analytics?.userId, userId), gte(analytics?.date, thirtyDaysAgo)),
     );
 
-  const _stats = recentAnalytics[0] || {
+  const stats = recentAnalytics[0] || {
     totalStreams: 0,
     totalListeners: 0,
     engagement: 0,
   };
 
-  const _engagementRate = Number(stats?.engagement) || 3?.5;
+  const engagementRate = Number(stats?.engagement) || 3.5;
 
   const growthOpportunities: string[] = [];
 
@@ -293,7 +293,7 @@ export async function analyzeFanbase(userId: string): Promise<FanbaseInsight> {
 
   return {
     totalFans: Number(stats?.totalListeners) || 0,
-    activeListeners: Math?.round((Number(stats?.totalListeners) || 0) * 0?.6),
+    activeListeners: Math.round((Number(stats?.totalListeners) || 0) * 0.6),
     engagementRate: Number(engagementRate?.toFixed(2)),
     topPlatforms: [
       { platform: "Spotify", percentage: 45 },
@@ -318,7 +318,7 @@ export async function analyzeFanbase(userId: string): Promise<FanbaseInsight> {
 export async function getCareerMilestones(
   userId: string,
 ): Promise<CareerMilestone[]> {
-  const _analyticsData = await db
+  const analyticsData = await db
     .select({
       totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics?.totalStreams}), 0) AS INTEGER)`,
       totalListeners: sql<number>`CAST(COALESCE(SUM(${analytics?.totalListeners}), 0) AS INTEGER)`,
@@ -327,13 +327,13 @@ export async function getCareerMilestones(
     .from(analytics)
     .where(eq(analytics?.userId, userId));
 
-  const _stats = analyticsData[0] || {
+  const stats = analyticsData[0] || {
     totalStreams: 0,
     totalListeners: 0,
     totalRevenue: 0,
   };
 
-  const _releases = await db
+  const releases = await db
     .select({ count: count() })
     .from(distroReleases)
     .where(eq(distroReleases?.userId, userId));
@@ -343,8 +343,8 @@ export async function getCareerMilestones(
   const milestones: CareerMilestone[] = [];
 
   // Streams milestone
-  const _currentStreams = Number(stats?.totalStreams);
-  const _nextStreamMilestone =
+  const currentStreams = Number(stats?.totalStreams);
+  const nextStreamMilestone =
     currentStreams < 1000
       ? 1000
       : currentStreams < 10000
@@ -370,8 +370,8 @@ export async function getCareerMilestones(
   });
 
   // Followers milestone
-  const _currentFollowers = Number(stats?.totalListeners);
-  const _nextFollowerMilestone =
+  const currentFollowers = Number(stats?.totalListeners);
+  const nextFollowerMilestone =
     currentFollowers < 100
       ? 100
       : currentFollowers < 1000

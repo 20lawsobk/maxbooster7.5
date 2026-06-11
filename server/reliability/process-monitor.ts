@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface ProcessHealth {
   pid: number;
   uptime: number;
-  memoryUsage: NodeJS?.MemoryUsage;
-  cpuUsage: NodeJS?.CpuUsage;
+  memoryUsage: NodeJS.MemoryUsage;
+  cpuUsage: NodeJS.CpuUsage;
   activeConnections: number;
   restartCount: number;
   lastRestart?: Date;
@@ -22,7 +22,7 @@ interface ProcessAlert {
 
 class ProcessMonitor extends EventEmitter {
   private health: ProcessHealth;
-  private monitoringInterval: NodeJS?.Timeout | null = null;
+  private monitoringInterval: NodeJS.Timeout | null = null;
   private alerts: ProcessAlert[] = [];
   private maxAlerts = 1000;
 
@@ -47,11 +47,11 @@ class ProcessMonitor extends EventEmitter {
 
   constructor() {
     super();
-    this?.health = {
-      pid: process?.pid,
+    this.health = {
+      pid: process.pid,
       uptime: 0,
-      memoryUsage: process?.memoryUsage(),
-      cpuUsage: process?.cpuUsage(),
+      memoryUsage: process.memoryUsage(),
+      cpuUsage: process.cpuUsage(),
       activeConnections: 0,
       restartCount: 0,
       status: "healthy",
@@ -67,7 +67,7 @@ class ProcessMonitor extends EventEmitter {
       clearInterval(this?.monitoringInterval);
     }
 
-    this?.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       this?.collectMetrics();
       this?.analyzeHealth();
       this?.emitHealthStatus();
@@ -81,7 +81,7 @@ class ProcessMonitor extends EventEmitter {
   stop(): void {
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = null;
+      this.monitoringInterval = null;
     }
     logger?.info("🛑 Process monitoring stopped");
   }
@@ -89,8 +89,8 @@ class ProcessMonitor extends EventEmitter {
   private setupProcessHandlers(): void {
     // Track process restarts
     process?.on("SIGTERM", () => {
-      this?.health.restartCount++;
-      this?.health.lastRestart = new Date();
+      this.health.restartCount++;
+      this.health.lastRestart = new Date();
       this?.addAlert({
         type: "restart",
         severity: "medium",
@@ -100,8 +100,8 @@ class ProcessMonitor extends EventEmitter {
     });
 
     process?.on("SIGINT", () => {
-      this?.health.restartCount++;
-      this?.health.lastRestart = new Date();
+      this.health.restartCount++;
+      this.health.lastRestart = new Date();
       this?.addAlert({
         type: "restart",
         severity: "medium",
@@ -113,7 +113,7 @@ class ProcessMonitor extends EventEmitter {
     // Track uncaught exceptions (should be rare with our error handling)
     process?.on("uncaughtException", (error) => {
       // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e?.g. FFmpeg exits mid-render)
-      const _code = (error as NodeJS?.ErrnoException).code;
+      const code = (error as NodeJS.ErrnoException).code;
       if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED")
         return;
       this?.addAlert({
@@ -126,7 +126,7 @@ class ProcessMonitor extends EventEmitter {
     });
 
     process?.on("unhandledRejection", (reason: Record<string, unknown>) => {
-      const _msg = reason?.message || String(reason);
+      const msg = reason?.message || String(reason);
       // Filter out all known transient / expected rejections so they don't clutter
       // the alert list with false-positive critical entries.
       if (
@@ -146,18 +146,18 @@ class ProcessMonitor extends EventEmitter {
   }
 
   private collectMetrics(): void {
-    const _now = Date?.now();
+    const now = Date?.now();
 
-    this?.health = {
+    this.health = {
       ...this?.health,
       uptime: now - (process?.uptime() * 1000 - now),
-      memoryUsage: process?.memoryUsage(),
-      cpuUsage: process?.cpuUsage(this?.health.cpuUsage),
+      memoryUsage: process.memoryUsage(),
+      cpuUsage: process.cpuUsage(this?.health.cpuUsage),
     };
 
     // Update connection count from active sockets (if available)
     if ((global as Record<string, unknown>).activeConnections !== undefined) {
-      this?.health.activeConnections = (
+      this.health.activeConnections = (
         global as Record<string, unknown>
       ).activeConnections;
     }
@@ -168,7 +168,7 @@ class ProcessMonitor extends EventEmitter {
     let severity: "healthy" | "warning" | "critical" = "healthy";
 
     // Memory analysis
-    const _memUsage = this?.health.memoryUsage?.heapUsed;
+    const memUsage = this?.health.memoryUsage?.heapUsed;
     if (memUsage > this?.thresholds.memory?.critical) {
       issues?.push(
         `Critical memory usage: ${Math?.round(memUsage / 1024 / 1024)}MB`,
@@ -179,7 +179,7 @@ class ProcessMonitor extends EventEmitter {
         severity: "critical",
         message: `Critical memory usage: ${Math?.round(memUsage / 1024 / 1024)}MB`,
         timestamp: new Date(),
-        metrics: this?.health.memoryUsage,
+        metrics: this.health.memoryUsage,
       });
     } else if (memUsage > this?.thresholds.memory?.warning) {
       issues?.push(`High memory usage: ${Math?.round(memUsage / 1024 / 1024)}MB`);
@@ -189,7 +189,7 @@ class ProcessMonitor extends EventEmitter {
         severity: "medium",
         message: `High memory usage: ${Math?.round(memUsage / 1024 / 1024)}MB`,
         timestamp: new Date(),
-        metrics: this?.health.memoryUsage,
+        metrics: this.health.memoryUsage,
       });
     }
 
@@ -218,7 +218,7 @@ class ProcessMonitor extends EventEmitter {
       if (severity === "healthy") severity = "warning";
     }
 
-    this?.health.status = severity;
+    this.health.status = severity;
 
     // Log health status periodically
     if (issues?.length > 0) {
@@ -243,7 +243,7 @@ class ProcessMonitor extends EventEmitter {
 
     // Limit alerts array size
     if (this?.alerts.length > this?.maxAlerts) {
-      this?.alerts = this?.alerts.slice(0, this?.maxAlerts);
+      this.alerts = this?.alerts.slice(0, this?.maxAlerts);
     }
 
     // Emit alert event
@@ -269,21 +269,21 @@ class ProcessMonitor extends EventEmitter {
   }
 
   getHealthSummary(): Record<string, unknown> {
-    const _recentAlerts = this?.alerts.filter(
+    const recentAlerts = this?.alerts.filter(
       (alert) => Date?.now() - alert?.timestamp.getTime() < 24 * 60 * 60 * 1000, // Last 24 hours
     );
 
     return {
-      status: this?.health.status,
-      uptime: this?.health.uptime,
+      status: this.health.status,
+      uptime: this.health.uptime,
       uptimeHours:
         Math?.round((this?.health.uptime / (1000 * 60 * 60)) * 100) / 100,
-      memoryUsageMB: Math?.round(this?.health.memoryUsage?.heapUsed / 1024 / 1024),
-      activeConnections: this?.health.activeConnections,
-      restartCount: this?.health.restartCount,
-      lastRestart: this?.health.lastRestart,
-      recentAlerts: recentAlerts?.length,
-      criticalAlerts: recentAlerts?.filter((a) => a?.severity === "critical")
+      memoryUsageMB: Math.round(this?.health.memoryUsage?.heapUsed / 1024 / 1024),
+      activeConnections: this.health.activeConnections,
+      restartCount: this.health.restartCount,
+      lastRestart: this.health.lastRestart,
+      recentAlerts: recentAlerts.length,
+      criticalAlerts: recentAlerts.filter((a) => a?.severity === "critical")
         .length,
     };
   }
@@ -309,6 +309,6 @@ class ProcessMonitor extends EventEmitter {
 }
 
 // Global process monitor instance
-export const _processMonitor = new ProcessMonitor();
+export const processMonitor = new ProcessMonitor();
 
 export default ProcessMonitor;

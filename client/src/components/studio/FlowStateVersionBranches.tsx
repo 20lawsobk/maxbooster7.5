@@ -205,7 +205,7 @@ export function FlowStateVersionBranches({
       isFavorite: false,
       createdAt: new Date(),
       lastModified: new Date(),
-      parentBranchId: activeBranch?.id,
+      parentBranchId: activeBranch.id,
       color: BRANCH_COLORS[branches.length % BRANCH_COLORS.length],
       tags: [],
       commits: [
@@ -236,7 +236,7 @@ export function FlowStateVersionBranches({
       switchBranch("main");
     }
     setBranches((prev) => prev.filter((b) => b.id !== branchId));
-    toast({ title: `Branch "${branch?.name}" deleted` });
+    toast({ title: `Branch "${branch.name}" deleted` });
   };
 
   const toggleFavorite = (branchId: string) => {

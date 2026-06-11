@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 
 import { logger } from "../logger";
-import { unifiedAIController } from "./unifiedAIController?.js";
+import { unifiedAIController } from "./unifiedAIController.js";
 
 export interface ContentRecommendation {
   id: string;
@@ -253,7 +253,7 @@ class SocialStrategyAIService {
       options;
     const recommendations: ContentRecommendation[] = [];
 
-    const _contentIdeas = [
+    const contentIdeas = [
       {
         title: "Studio Session Behind the Scenes",
         type: "reel",
@@ -317,32 +317,32 @@ class SocialStrategyAIService {
     ];
 
     for (let i = 0; i < Math?.min(count, contentIdeas?.length); i++) {
-      const _idea = contentIdeas[i];
-      const _platform = platforms[i % platforms?.length];
-      const _nextDate = new Date();
+      const idea = contentIdeas[i];
+      const platform = platforms[i % platforms?.length];
+      const nextDate = new Date();
       nextDate?.setDate(nextDate?.getDate() + Math?.floor(i / platforms?.length));
-      const _optimalHours = this?.platformOptimalTimes[platform]?.[
+      const optimalHours = this?.platformOptimalTimes[platform]?.[
         this?.getDayName(nextDate)
       ] || [12];
       nextDate?.setHours(optimalHours[0] || 12, 0, 0, 0);
 
-      const _suggestedContent = await this?.generateSuggestedContentAsync(
+      const suggestedContent = await this?.generateSuggestedContentAsync(
         idea?.title,
         platform,
       );
       recommendations?.push({
         id: randomBytes(8).toString("hex"),
-        type: idea?.type as Record<string, unknown>,
+        type: idea.type as Record<string, unknown>,
         platform,
-        title: idea?.title,
+        title: idea.title,
         description: `Create a ${idea?.type} about ${idea?.title.toLowerCase()} to engage your audience.`,
         suggestedContent,
-        hashtags: this?.generateHashtags(idea?.pillar, platform),
+        hashtags: this.generateHashtags(idea?.pillar, platform),
         bestTime: nextDate,
-        expectedEngagement: Math?.floor(Math?.random() * 5000) + 1000,
+        expectedEngagement: Math.floor(Math?.random() * 5000) + 1000,
         priority: i < 3 ? "high" : i < 6 ? "medium" : "low",
-        reasoning: `This content aligns with the "${idea?.trend}" trend and your "${idea?.pillar}" content pillar.`,
-        trendAlignment: idea?.trend,
+        reasoning: `This content aligns with the "${idea.trend}" trend and your "${idea.pillar}" content pillar.`,
+        trendAlignment: idea.trend,
         contentPillars: [idea?.pillar],
       });
     }
@@ -368,7 +368,7 @@ class SocialStrategyAIService {
   ): Promise<string> {
     // Priority 1: full advanced AI pipeline (MaxCore → Python AI → in-house JS)
     try {
-      const _aiResult = await unifiedAIController?.generateContent({
+      const aiResult = await unifiedAIController?.generateContent({
         platform: platform as Record<string, unknown>,
         tone: "energetic" as Record<string, unknown>,
         topic: title,
@@ -377,8 +377,8 @@ class SocialStrategyAIService {
         includeEmojis: true,
       });
       if (aiResult?.success && aiResult?.data) {
-        const _d = aiResult?.data as Record<string, unknown>;
-        const _caption =
+        const d = aiResult?.data as Record<string, unknown>;
+        const caption =
           d?.caption || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
         if (caption) return caption;
       }
@@ -403,8 +403,8 @@ class SocialStrategyAIService {
     return templates[platform] || templates?.instagram;
   }
 
-  private generateHashtags(pillar: string, _platform: string): string[] {
-    const _baseHashtags = ["music", "artist", "newmusic", "musicproducer"];
+  private generateHashtags(pillar: string, platform: string): string[] {
+    const baseHashtags = ["music", "artist", "newmusic", "musicproducer"];
     const pillarHashtags: Record<string, string[]> = {
       Educational: ["tutorial", "tips", "howto", "learn"],
       Entertainment: ["fun", "viral", "trending", "entertainment"],
@@ -430,8 +430,8 @@ class SocialStrategyAIService {
   ): Promise<CampaignRecommendation[]> {
     const {  budget = 500, duration = 14 } = options;
 
-    const _startDate = new Date();
-    const _endDate = new Date();
+    const startDate = new Date();
+    const endDate = new Date();
     endDate?.setDate(endDate?.getDate() + duration);
 
     const recommendations: CampaignRecommendation[] = [
@@ -441,7 +441,7 @@ class SocialStrategyAIService {
         objective: "awareness",
         duration: { start: startDate, end: endDate },
         platforms: ["instagram", "tiktok", "twitter"],
-        budget: { recommended: budget, min: budget * 0?.5, max: budget * 2 },
+        budget: { recommended: budget, min: budget * 0.5, max: budget * 2 },
         contentMix: [
           { type: "reel", percentage: 40, count: 8 },
           { type: "story", percentage: 30, count: 15 },
@@ -469,7 +469,7 @@ class SocialStrategyAIService {
           { metric: "Pre-saves", target: 1000 },
           { metric: "New Followers", target: 500 },
         ],
-        timeline: this?.generateCampaignTimeline(startDate, duration),
+        timeline: this.generateCampaignTimeline(startDate, duration),
         expectedResults: {
           reach: 100000,
           engagement: 15000,
@@ -486,9 +486,9 @@ class SocialStrategyAIService {
         duration: { start: startDate, end: endDate },
         platforms: ["instagram", "tiktok"],
         budget: {
-          recommended: budget * 0?.8,
-          min: budget * 0?.4,
-          max: budget * 1?.5,
+          recommended: budget * 0.8,
+          min: budget * 0.4,
+          max: budget * 1.5,
         },
         contentMix: [
           { type: "reel", percentage: 50, count: 10 },
@@ -515,7 +515,7 @@ class SocialStrategyAIService {
           { metric: "Engagement Rate", target: 7 },
           { metric: "Story Views", target: 5000 },
         ],
-        timeline: this?.generateCampaignTimeline(startDate, duration),
+        timeline: this.generateCampaignTimeline(startDate, duration),
         expectedResults: {
           reach: 80000,
           engagement: 12000,
@@ -535,7 +535,7 @@ class SocialStrategyAIService {
   ): Array<{ date: Date; action: string; platform: string }> {
     const timeline: Array<{ date: Date; action: string; platform: string }> =
       [];
-    const _actions = [
+    const actions = [
       { day: 0, action: "Teaser post announcement", platform: "instagram" },
       { day: 1, action: "Behind the scenes story", platform: "instagram" },
       { day: 2, action: "Countdown begins", platform: "twitter" },
@@ -557,9 +557,9 @@ class SocialStrategyAIService {
 
     for (const item of actions) {
       if (item?.day <= duration) {
-        const _date = new Date(startDate);
+        const date = new Date(startDate);
         date?.setDate(date?.getDate() + item?.day);
-        timeline?.push({ date, action: item?.action, platform: item?.platform });
+        timeline?.push({ date, action: item.action, platform: item.platform });
       }
     }
 
@@ -638,7 +638,7 @@ class SocialStrategyAIService {
           hashtags: ["#NewMusic", "#NowPlaying", "#MusicTwitter"],
         },
       ],
-      themes: this?.generateMonthlyThemes(period),
+      themes: this.generateMonthlyThemes(period),
       goals: [
         {
           metric: "Followers",
@@ -648,7 +648,7 @@ class SocialStrategyAIService {
         },
         {
           metric: "Engagement Rate",
-          current: 3?.5,
+          current: 3.5,
           target: 5,
           timeframe: period,
         },
@@ -671,7 +671,7 @@ class SocialStrategyAIService {
   private generateMonthlyThemes(
     _period: string,
   ): Array<{ week: number; theme: string; contentIdeas: string[] }> {
-    const _themes = [
+    const themes = [
       {
         week: 1,
         theme: "Artist Journey",
@@ -709,7 +709,7 @@ class SocialStrategyAIService {
     platforms: string[] = ["instagram", "twitter", "tiktok"],
   ): Promise<PostingTimeRecommendation[]> {
     const recommendations: PostingTimeRecommendation[] = [];
-    const _days = [
+    const days = [
       "monday",
       "tuesday",
       "wednesday",
@@ -720,7 +720,7 @@ class SocialStrategyAIService {
     ];
 
     for (const platform of platforms) {
-      const _platformTimes =
+      const platformTimes =
         this?.platformOptimalTimes[platform] ||
         this?.platformOptimalTimes.instagram;
       let bestDay = "wednesday";
@@ -729,9 +729,9 @@ class SocialStrategyAIService {
 
 
       for (const day of days) {
-        const _hours = platformTimes[day] || [];
+        const hours = platformTimes[day] || [];
         hours?.map((hour) => {
-          const _score = Math?.random() * 30 + 70;
+          const score = Math?.random() * 30 + 70;
           if (score > maxScore) {
             maxScore = score;
             bestDay = day;
@@ -739,9 +739,9 @@ class SocialStrategyAIService {
           }
           return {
             hour,
-            score: Math?.round(score),
-            audienceActivity: Math?.round(Math?.random() * 30 + 60),
-            competitorActivity: Math?.round(Math?.random() * 40 + 30),
+            score: Math.round(score),
+            audienceActivity: Math.round(Math?.random() * 30 + 60),
+            competitorActivity: Math.round(Math?.random() * 40 + 30),
             reasoning: `${Math?.round(score)}% of your audience is typically active at this time`,
           };
         });
@@ -750,19 +750,19 @@ class SocialStrategyAIService {
       recommendations?.push({
         platform,
         dayOfWeek: "all",
-        times: Object?.entries(platformTimes).flatMap(([day, hours]) =>
+        times: Object.entries(platformTimes).flatMap(([day, hours]) =>
           hours?.map((hour) => ({
             hour,
-            score: Math?.round(Math?.random() * 30 + 70),
-            audienceActivity: Math?.round(Math?.random() * 30 + 60),
-            competitorActivity: Math?.round(Math?.random() * 40 + 30),
+            score: Math.round(Math?.random() * 30 + 70),
+            audienceActivity: Math.round(Math?.random() * 30 + 60),
+            competitorActivity: Math.round(Math?.random() * 40 + 30),
             reasoning: `High engagement potential on ${day} at ${hour}:00`,
           })),
         ),
         overallBest: {
           day: bestDay,
           hour: bestHour,
-          expectedEngagement: Math?.floor(Math?.random() * 2000) + 1000,
+          expectedEngagement: Math.floor(Math?.random() * 2000) + 1000,
         },
       });
     }
@@ -777,20 +777,20 @@ class SocialStrategyAIService {
     const predictions: GrowthPrediction[] = [];
 
     for (const platform of platforms) {
-      const _currentFollowers = Math?.floor(Math?.random() * 50000) + 5000;
-      const _monthlyGrowth = Math?.random() * 0?.15 + 0?.02;
+      const currentFollowers = Math?.floor(Math?.random() * 50000) + 5000;
+      const monthlyGrowth = Math?.random() * 0.15 + 0.02;
 
       const futurePredictions: GrowthPrediction["predictions"] = [];
       let followers = currentFollowers;
 
       for (let month = 1; month <= 12; month++) {
-        const _date = new Date();
+        const date = new Date();
         date?.setMonth(date?.getMonth() + month);
         followers = Math?.floor(followers * (1 + monthlyGrowth));
         futurePredictions?.push({
           date,
           followers,
-          confidence: Math?.max(0?.5, 0?.95 - month * 0?.03),
+          confidence: Math.max(0.5, 0.95 - month * 0.03),
         });
       }
 
@@ -816,12 +816,12 @@ class SocialStrategyAIService {
           "Collaborate with similar creators",
         ],
         scenarios: {
-          conservative: Math?.floor(
-            currentFollowers * (1 + monthlyGrowth * 0?.5) ** 12,
+          conservative: Math.floor(
+            currentFollowers * (1 + monthlyGrowth * 0.5) ** 12,
           ),
-          moderate: Math?.floor(currentFollowers * (1 + monthlyGrowth) ** 12),
-          optimistic: Math?.floor(
-            currentFollowers * (1 + monthlyGrowth * 1?.5) ** 12,
+          moderate: Math.floor(currentFollowers * (1 + monthlyGrowth) ** 12),
+          optimistic: Math.floor(
+            currentFollowers * (1 + monthlyGrowth * 1.5) ** 12,
           ),
         },
       });
@@ -973,7 +973,7 @@ class SocialStrategyAIService {
     } = options;
 
     const posts: ContentPlan["posts"] = [];
-    const _pillars = [
+    const pillars = [
       "Educational",
       "Behind the Scenes",
       "Promotional",
@@ -986,25 +986,25 @@ class SocialStrategyAIService {
       tiktok: ["video", "duet", "trend"],
     };
 
-    const _daysBetween = Math?.ceil(
+    const daysBetween = Math?.ceil(
       (endDate?.getTime() - startDate?.getTime()) / (24 * 60 * 60 * 1000),
     );
-    const _totalPosts = Math?.ceil((daysBetween / 7) * postsPerWeek);
+    const totalPosts = Math?.ceil((daysBetween / 7) * postsPerWeek);
 
     for (let i = 0; i < totalPosts; i++) {
-      const _platform = platforms[i % platforms?.length];
-      const _postDate = new Date(startDate);
+      const platform = platforms[i % platforms?.length];
+      const postDate = new Date(startDate);
       postDate?.setDate(postDate?.getDate() + Math?.floor(i / platforms?.length));
-      const _dayName = this?.getDayName(postDate);
-      const _optimalHours = this?.platformOptimalTimes[platform]?.[dayName] || [
+      const dayName = this?.getDayName(postDate);
+      const optimalHours = this?.platformOptimalTimes[platform]?.[dayName] || [
         12,
       ];
-      const _hour = optimalHours[i % optimalHours?.length] || 12;
+      const hour = optimalHours[i % optimalHours?.length] || 12;
       postDate?.setHours(hour, 0, 0, 0);
 
-      const _pillar = pillars[i % pillars?.length];
-      const _platformTypes = types[platform] || types?.instagram;
-      const _type = platformTypes[i % platformTypes?.length];
+      const pillar = pillars[i % pillars?.length];
+      const platformTypes = types[platform] || types?.instagram;
+      const type = platformTypes[i % platformTypes?.length];
 
       posts?.push({
         id: randomBytes(8).toString("hex"),
@@ -1012,8 +1012,8 @@ class SocialStrategyAIService {
         time: `${hour}:00`,
         platform,
         type,
-        content: this?.generateSuggestedContent(pillar, platform),
-        hashtags: this?.generateHashtags(pillar, platform),
+        content: this.generateSuggestedContent(pillar, platform),
+        hashtags: this.generateHashtags(pillar, platform),
         mediaDescription:
           type === "reel" || type === "video"
             ? "Short-form video content"
@@ -1028,9 +1028,9 @@ class SocialStrategyAIService {
     const byPillar: Record<string, number> = {};
 
     posts?.forEach((post) => {
-      byPlatform[post?.platform] = (byPlatform[post?.platform] || 0) + 1;
-      byType[post?.type] = (byType[post?.type] || 0) + 1;
-      byPillar[post?.pillar] = (byPillar[post?.pillar] || 0) + 1;
+      byPlatform[post.platform] = (byPlatform[post?.platform] || 0) + 1;
+      byType[post.type] = (byType[post?.type] || 0) + 1;
+      byPillar[post.pillar] = (byPillar[post?.pillar] || 0) + 1;
     });
 
     return {
@@ -1039,7 +1039,7 @@ class SocialStrategyAIService {
       period: { start: startDate, end: endDate },
       posts,
       stats: {
-        totalPosts: posts?.length,
+        totalPosts: posts.length,
         byPlatform,
         byType,
         byPillar,
@@ -1077,7 +1077,7 @@ class SocialStrategyAIService {
         title: "Engagement Rate Declining",
         description:
           "Your engagement rate dropped 15% this week. Review recent content performance.",
-        data: { previousRate: 4?.5, currentRate: 3?.8 },
+        data: { previousRate: 4.5, currentRate: 3.8 },
         actionRequired: true,
         priority: "high",
         createdAt: new Date(),
@@ -1097,4 +1097,4 @@ class SocialStrategyAIService {
   }
 }
 
-export const _socialStrategyAIService = new SocialStrategyAIService();
+export const socialStrategyAIService = new SocialStrategyAIService();

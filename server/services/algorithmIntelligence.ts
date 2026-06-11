@@ -1,9 +1,9 @@
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   getRedisClient,
   RedisClientType,
-} from "../lib/redisConnectionFactory?.js";
+} from "../lib/redisConnectionFactory.js";
 
 export interface AlgorithmHealth {
   platform: string;
@@ -99,37 +99,37 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "completion_rate",
-          weight: 0?.32,
+          weight: 0.32,
           description:
             "Watch-through rate — TikTok prioritizes videos people finish or replay",
         },
         {
           factor: "engagement_velocity",
-          weight: 0?.24,
+          weight: 0.24,
           description:
             "Speed of likes, comments, and shares in the first 30-60 minutes after posting",
         },
         {
           factor: "shares_and_reposts",
-          weight: 0?.18,
+          weight: 0.18,
           description:
             "Shares to DM and reposts — strongest signal of content resonance",
         },
         {
           factor: "audio_usage",
-          weight: 0?.14,
+          weight: 0.14,
           description:
             "Using trending sounds boosts placement in the sound discovery graph",
         },
         {
           factor: "profile_converts",
-          weight: 0?.08,
+          weight: 0.08,
           description:
             "Viewers who visit profile then follow — indicates strong brand pull",
         },
         {
           factor: "comment_threads",
-          weight: 0?.04,
+          weight: 0.04,
           description:
             "Deep comment conversations signal highly engaging content",
         },
@@ -168,37 +168,37 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "saves",
-          weight: 0?.3,
+          weight: 0.3,
           description:
             "Saves are the highest-weight signal — content people want to return to",
         },
         {
           factor: "shares_to_stories_dm",
-          weight: 0?.26,
+          weight: 0.26,
           description:
             'DM shares and "add to story" reshares — Instagram prioritizes these heavily',
         },
         {
           factor: "comments_quality",
-          weight: 0?.18,
+          weight: 0.18,
           description:
             "Meaningful comments (multi-word) weighted over single-emoji responses",
         },
         {
           factor: "reels_completion",
-          weight: 0?.14,
+          weight: 0.14,
           description:
             "Reels watch-through rate — Instagram Reels uses same model as TikTok",
         },
         {
           factor: "profile_actions",
-          weight: 0?.08,
+          weight: 0.08,
           description:
             "Follows, story taps, link clicks — signals audience investment",
         },
         {
           factor: "likes_velocity",
-          weight: 0?.04,
+          weight: 0.04,
           description:
             "Likes in first 30 minutes matter, but less than saves/shares",
         },
@@ -237,31 +237,31 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "watch_time_and_session",
-          weight: 0?.35,
+          weight: 0.35,
           description:
             "Total watch time AND whether your video keeps viewers on YouTube overall",
         },
         {
           factor: "click_through_rate",
-          weight: 0?.28,
+          weight: 0.28,
           description:
             "CTR from thumbnail + title — industry benchmark: 2-10%, top creators: 10%+",
         },
         {
           factor: "engagement_signals",
-          weight: 0?.18,
+          weight: 0.18,
           description:
             "Likes, comments, shares — weighted by velocity and depth of comment discussion",
         },
         {
           factor: "audience_retention_curve",
-          weight: 0?.12,
+          weight: 0.12,
           description:
             "Where viewers drop off — spikes in the graph (replays) strongly boost ranking",
         },
         {
           factor: "post_frequency_consistency",
-          weight: 0?.07,
+          weight: 0.07,
           description:
             "Consistent upload schedule trains the algorithm to surface your content",
         },
@@ -300,37 +300,37 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "replies_and_conversations",
-          weight: 0?.28,
+          weight: 0.28,
           description:
             "Replies and quote tweets — X algorithm prioritizes content that sparks discussion",
         },
         {
           factor: "engagement_velocity",
-          weight: 0?.25,
+          weight: 0.25,
           description:
             "Engagement speed in first 15-30 minutes — X timeline has a short half-life",
         },
         {
           factor: "reposts_quote_tweets",
-          weight: 0?.22,
+          weight: 0.22,
           description:
             "Reposts amplify reach; quote tweets spark further discussion (double boost)",
         },
         {
           factor: "dwell_time",
-          weight: 0?.14,
+          weight: 0.14,
           description:
             "Time spent reading long tweets or watching embedded media",
         },
         {
           factor: "link_clicks",
-          weight: 0?.06,
+          weight: 0.06,
           description:
             "External link clicks — X/Twitter has been deprioritizing external links",
         },
         {
           factor: "follows_from_tweet",
-          weight: 0?.05,
+          weight: 0.05,
           description:
             "New followers gained from a single post — indicates discovery-driven growth",
         },
@@ -369,31 +369,31 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "meaningful_interactions",
-          weight: 0?.32,
+          weight: 0.32,
           description:
             "Comments, replies, and shares — Facebook prioritizes content people discuss",
         },
         {
           factor: "video_watch_time",
-          weight: 0?.25,
+          weight: 0.25,
           description:
             "Native video completion rate — Facebook Reels uses watch-time model",
         },
         {
           factor: "saves_and_shares",
-          weight: 0?.2,
+          weight: 0.2,
           description:
             "Saving a post or sharing to feed/story/DM — strong distribution signal",
         },
         {
           factor: "reactions_diversity",
-          weight: 0?.12,
+          weight: 0.12,
           description:
             'Multiple reaction types (love, wow, haha) weighted higher than just "like"',
         },
         {
           factor: "page_interactions",
-          weight: 0?.11,
+          weight: 0.11,
           description:
             "How often followers engage with the Page overall (loyalty signal)",
         },
@@ -430,31 +430,31 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "early_engagement",
-          weight: 0?.35,
+          weight: 0.35,
           description:
             "Comments and likes in first 1-2 hours — LinkedIn algorithm window is narrow",
         },
         {
           factor: "comment_depth",
-          weight: 0?.28,
+          weight: 0.28,
           description:
             "Multi-word comments and reply conversations signal high-value content",
         },
         {
           factor: "dwell_time_on_post",
-          weight: 0?.18,
+          weight: 0.18,
           description:
             "LinkedIn tracks how long users pause on a post — longer = more distribution",
         },
         {
           factor: "shares_reposts",
-          weight: 0?.12,
+          weight: 0.12,
           description:
             "Reposts with commentary weight higher than silent shares",
         },
         {
           factor: "profile_follows_from_post",
-          weight: 0?.07,
+          weight: 0.07,
           description:
             "New followers gained from a post — signals content-to-audience match",
         },
@@ -491,31 +491,31 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "playlist_adds",
-          weight: 0?.3,
+          weight: 0.3,
           description:
             "User and editorial playlist adds — primary signal for algorithmic playlist consideration (Discover Weekly, Release Radar)",
         },
         {
           factor: "stream_completion_rate",
-          weight: 0?.26,
+          weight: 0.26,
           description:
             "Stream completion rate — Spotify counts a stream after 30s; replay rate signals quality to editorial team",
         },
         {
           factor: "save_to_library",
-          weight: 0?.22,
+          weight: 0.22,
           description:
             "Saving a track is the strongest individual user endorsement signal in Spotify's algorithm",
         },
         {
           factor: "follower_to_listener_ratio",
-          weight: 0?.12,
+          weight: 0.12,
           description:
             "Monthly listeners who convert to profile followers — indicates sticky, returning audience",
         },
         {
           factor: "release_velocity",
-          weight: 0?.1,
+          weight: 0.1,
           description:
             "Consistent release cadence keeps Release Radar and Discover Weekly placements active",
         },
@@ -552,25 +552,25 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "editorial_pitching",
-          weight: 0?.35,
+          weight: 0.35,
           description:
             "Apple Music editorial is human-curated — getting onto New Music Daily or genre playlists drives exponential growth",
         },
         {
           factor: "add_to_library",
-          weight: 0?.28,
+          weight: 0.28,
           description:
             "Users adding a track to their library is the strongest demand signal Apple Music tracks",
         },
         {
           factor: "playlist_adds",
-          weight: 0?.22,
+          weight: 0.22,
           description:
             'Both editorial and user playlist adds amplify algorithmic New Music and "Listen Now" recommendations',
         },
         {
           factor: "play_completion",
-          weight: 0?.15,
+          weight: 0.15,
           description:
             "Full track plays vs. partial plays — completion rate signals quality to Apple's recommendation engine",
         },
@@ -606,31 +606,31 @@ class AlgorithmIntelligenceService {
       keyFactors: [
         {
           factor: "plays_and_reposts",
-          weight: 0?.28,
+          weight: 0.28,
           description:
             'Total plays and reposts drive SoundCloud algorithm ranking in the "Suggested" and "Similar Artists" sections',
         },
         {
           factor: "likes_to_plays_ratio",
-          weight: 0?.25,
+          weight: 0.25,
           description:
             "Likes as a proportion of total plays — indicates content resonance quality, not just volume",
         },
         {
           factor: "timed_comments",
-          weight: 0?.22,
+          weight: 0.22,
           description:
             "Timestamped comments are unique to SoundCloud — they signal deep listening engagement at specific moments",
         },
         {
           factor: "follower_engagement",
-          weight: 0?.15,
+          weight: 0.15,
           description:
             'Engagement rate from existing followers affects "New Tracks from People You Follow" feed distribution',
         },
         {
           factor: "curator_reposts",
-          weight: 0?.1,
+          weight: 0.1,
           description:
             "Reposts from verified curators and popular accounts amplify discovery exponentially",
         },
@@ -677,162 +677,162 @@ class AlgorithmIntelligenceService {
   private readonly engagementPatterns: Record<string, EngagementPattern> = {
     tiktok: {
       platform: "tiktok",
-      optimalPostFrequency: 2?.5, // 2-3x per day is optimal for growth phase
-      engagementDecayRate: 0?.12, // TikTok keeps pushing good content for days
+      optimalPostFrequency: 2.5, // 2-3x per day is optimal for growth phase
+      engagementDecayRate: 0.12, // TikTok keeps pushing good content for days
       peakEngagementWindow: 3, // 3-hour peak window
       recommendedGapBetweenPosts: 5, // 5 hours minimum between posts
       contentTypePerformance: {
-        music_preview: 1?.45, // New music snippets perform extremely well
-        trending_sound: 1?.38,
-        original_sound: 1?.15, // Artists with original sounds get extra push
-        studio_bts: 1?.3, // Studio behind-the-scenes very popular
-        duet: 1?.25,
-        stitch: 1?.2,
-        tutorial: 1?.18,
-        day_in_life: 1?.12,
-        challenge: 1?.22,
-        reaction: 1?.08,
-        text_only: 0?.75,
+        music_preview: 1.45, // New music snippets perform extremely well
+        trending_sound: 1.38,
+        original_sound: 1.15, // Artists with original sounds get extra push
+        studio_bts: 1.3, // Studio behind-the-scenes very popular
+        duet: 1.25,
+        stitch: 1.2,
+        tutorial: 1.18,
+        day_in_life: 1.12,
+        challenge: 1.22,
+        reaction: 1.08,
+        text_only: 0.75,
       },
     },
     instagram: {
       platform: "instagram",
-      optimalPostFrequency: 1?.2, // 1 Reel/day + Stories throughout
-      engagementDecayRate: 0?.22,
-      peakEngagementWindow: 1?.5,
+      optimalPostFrequency: 1.2, // 1 Reel/day + Stories throughout
+      engagementDecayRate: 0.22,
+      peakEngagementWindow: 1.5,
       recommendedGapBetweenPosts: 12,
       contentTypePerformance: {
-        carousel: 1?.45, // Highest save rate = highest reach
-        reel_original_audio: 1?.4, // Artist original audio — massive potential
-        reel_trending_audio: 1?.32,
-        collab_post: 1?.38,
-        studio_bts: 1?.25,
-        single_image: 0?.92,
-        story_interactive: 1?.15,
-        broadcast_channel: 1?.1,
-        live: 1?.2,
+        carousel: 1.45, // Highest save rate = highest reach
+        reel_original_audio: 1.4, // Artist original audio — massive potential
+        reel_trending_audio: 1.32,
+        collab_post: 1.38,
+        studio_bts: 1.25,
+        single_image: 0.92,
+        story_interactive: 1.15,
+        broadcast_channel: 1.1,
+        live: 1.2,
       },
     },
     youtube: {
       platform: "youtube",
-      optimalPostFrequency: 0?.5, // 1 long-form per 2 weeks + Shorts daily
-      engagementDecayRate: 0?.04, // YouTube content lives for months/years
+      optimalPostFrequency: 0.5, // 1 long-form per 2 weeks + Shorts daily
+      engagementDecayRate: 0.04, // YouTube content lives for months/years
       peakEngagementWindow: 72, // 72-hour main engagement window
       recommendedGapBetweenPosts: 96, // 4 days minimum between long-form
       contentTypePerformance: {
-        music_video_official: 1?.5,
-        premiere: 1?.35,
-        behind_the_scenes: 1?.25,
-        long_form_vlog: 1?.2,
-        tutorial_producer: 1?.22,
-        live_performance: 1?.18,
-        shorts_music: 1?.28, // Shorts for music previews cross-feed
-        lyric_video: 1?.15,
-        reaction: 1?.12,
-        community_post: 0?.85,
+        music_video_official: 1.5,
+        premiere: 1.35,
+        behind_the_scenes: 1.25,
+        long_form_vlog: 1.2,
+        tutorial_producer: 1.22,
+        live_performance: 1.18,
+        shorts_music: 1.28, // Shorts for music previews cross-feed
+        lyric_video: 1.15,
+        reaction: 1.12,
+        community_post: 0.85,
       },
     },
     twitter: {
       platform: "twitter",
       optimalPostFrequency: 4, // 3-5 posts/day for music artist growth
-      engagementDecayRate: 0?.45, // Twitter content decays fastest (30-min half-life)
-      peakEngagementWindow: 0?.5, // 30-minute window
+      engagementDecayRate: 0.45, // Twitter content decays fastest (30-min half-life)
+      peakEngagementWindow: 0.5, // 30-minute window
       recommendedGapBetweenPosts: 2, // Minimum 2 hours between posts
       contentTypePerformance: {
-        thread: 1?.45,
-        hot_take: 1?.4,
-        behind_scenes_image: 1?.3,
-        music_clip: 1?.28,
-        quote_tweet: 1?.25,
-        poll: 1?.2,
-        text_opinion: 1?.15,
-        pure_promo: 0?.75, // Pure promo without engagement hook tanks
-        external_link: 0?.68,
+        thread: 1.45,
+        hot_take: 1.4,
+        behind_scenes_image: 1.3,
+        music_clip: 1.28,
+        quote_tweet: 1.25,
+        poll: 1.2,
+        text_opinion: 1.15,
+        pure_promo: 0.75, // Pure promo without engagement hook tanks
+        external_link: 0.68,
       },
     },
     facebook: {
       platform: "facebook",
-      optimalPostFrequency: 0?.75, // 5x/week for music Pages
-      engagementDecayRate: 0?.18,
+      optimalPostFrequency: 0.75, // 5x/week for music Pages
+      engagementDecayRate: 0.18,
       peakEngagementWindow: 3,
       recommendedGapBetweenPosts: 20,
       contentTypePerformance: {
-        native_reel: 1?.4,
-        live_video: 1?.5,
-        native_video: 1?.3,
-        event: 1?.25,
-        story: 1?.15,
-        photo_album: 1?.1,
-        long_text: 1?.05,
-        external_link: 0?.55, // Facebook aggressively suppresses external links
+        native_reel: 1.4,
+        live_video: 1.5,
+        native_video: 1.3,
+        event: 1.25,
+        story: 1.15,
+        photo_album: 1.1,
+        long_text: 1.05,
+        external_link: 0.55, // Facebook aggressively suppresses external links
       },
     },
     linkedin: {
       platform: "linkedin",
-      optimalPostFrequency: 0?.75, // 3-5x/week
-      engagementDecayRate: 0?.15, // LinkedIn content has longer half-life than Twitter
+      optimalPostFrequency: 0.75, // 3-5x/week
+      engagementDecayRate: 0.15, // LinkedIn content has longer half-life than Twitter
       peakEngagementWindow: 2,
       recommendedGapBetweenPosts: 24,
       contentTypePerformance: {
-        personal_story: 1?.5,
-        industry_insight: 1?.4,
-        document_carousel: 1?.38,
-        native_video: 1?.25,
-        text_post: 1?.2,
-        poll: 1?.15,
-        article: 1?.1,
-        pure_promotion: 0?.65,
+        personal_story: 1.5,
+        industry_insight: 1.4,
+        document_carousel: 1.38,
+        native_video: 1.25,
+        text_post: 1.2,
+        poll: 1.15,
+        article: 1.1,
+        pure_promotion: 0.65,
       },
     },
     spotify: {
       platform: "spotify",
-      optimalPostFrequency: 1?.5, // 1-2 singles/EPs per month is the sweet spot
-      engagementDecayRate: 0?.015, // Streaming catalogue has very long shelf life (years)
+      optimalPostFrequency: 1.5, // 1-2 singles/EPs per month is the sweet spot
+      engagementDecayRate: 0.015, // Streaming catalogue has very long shelf life (years)
       peakEngagementWindow: 168, // 7-day new release window is the primary push period
       recommendedGapBetweenPosts: 168, // Minimum 1 week between major releases for Release Radar
       contentTypePerformance: {
-        new_single: 1?.65, // New singles get highest Release Radar + Discover Weekly boost
-        ep_release: 1?.55,
-        album: 1?.5,
-        remix: 1?.4, // Remixes get a separate Release Radar push
-        spotify_session: 1?.45, // Spotify Singles / Spotify Sessions get platform promotion
-        acoustic_version: 1?.35, // Alternate versions recycle the Release Radar slot
-        live_version: 1?.25,
-        feature_credit: 1?.3, // Being featured on another artist's track — dual-profile boost
+        new_single: 1.65, // New singles get highest Release Radar + Discover Weekly boost
+        ep_release: 1.55,
+        album: 1.5,
+        remix: 1.4, // Remixes get a separate Release Radar push
+        spotify_session: 1.45, // Spotify Singles / Spotify Sessions get platform promotion
+        acoustic_version: 1.35, // Alternate versions recycle the Release Radar slot
+        live_version: 1.25,
+        feature_credit: 1.3, // Being featured on another artist's track — dual-profile boost
       },
     },
     apple_music: {
       platform: "apple_music",
-      optimalPostFrequency: 1?.5, // Similar cadence to Spotify
-      engagementDecayRate: 0?.015,
+      optimalPostFrequency: 1.5, // Similar cadence to Spotify
+      engagementDecayRate: 0.015,
       peakEngagementWindow: 168,
       recommendedGapBetweenPosts: 168,
       contentTypePerformance: {
-        spatial_audio_mix: 1?.75, // Dolby Atmos tracks get dedicated Apple Music marketing
-        new_single: 1?.6,
-        ep_release: 1?.5,
-        album: 1?.48,
-        music_video: 1?.4, // Music videos get separate browse placement
-        remix: 1?.32,
-        acoustic_version: 1?.25,
-        feature_credit: 1?.22,
+        spatial_audio_mix: 1.75, // Dolby Atmos tracks get dedicated Apple Music marketing
+        new_single: 1.6,
+        ep_release: 1.5,
+        album: 1.48,
+        music_video: 1.4, // Music videos get separate browse placement
+        remix: 1.32,
+        acoustic_version: 1.25,
+        feature_credit: 1.22,
       },
     },
     soundcloud: {
       platform: "soundcloud",
       optimalPostFrequency: 3, // 3x/week is acceptable; community expects frequent uploads
-      engagementDecayRate: 0?.08, // Faster decay than DSPs but slower than social media
+      engagementDecayRate: 0.08, // Faster decay than DSPs but slower than social media
       peakEngagementWindow: 48, // 48-hour peak window for new tracks in followers' feeds
       recommendedGapBetweenPosts: 24, // Minimum 24 hours between uploads
       contentTypePerformance: {
-        full_track: 1?.55,
-        free_download: 1?.5, // Free downloads drive massive repost sharing
-        remix: 1?.4,
-        demo_wip: 1?.3, // SoundCloud community uniquely appreciates WIP content
-        bootleg_remix: 1?.22,
-        live_set: 1?.18,
-        podcast_mix: 1?.1,
-        clip_preview: 0?.8, // Short clips perform poorly; full tracks strongly preferred
+        full_track: 1.55,
+        free_download: 1.5, // Free downloads drive massive repost sharing
+        remix: 1.4,
+        demo_wip: 1.3, // SoundCloud community uniquely appreciates WIP content
+        bootleg_remix: 1.22,
+        live_set: 1.18,
+        podcast_mix: 1.1,
+        clip_preview: 0.8, // Short clips perform poorly; full tracks strongly preferred
       },
     },
   };
@@ -844,19 +844,19 @@ class AlgorithmIntelligenceService {
     string,
     { userAvg: number; good: number; topCreators: number }
   > = {
-    tiktok: { userAvg: 5?.8, good: 8?.5, topCreators: 14?.0 },
-    instagram: { userAvg: 2?.8, good: 5?.0, topCreators: 9?.5 },
-    youtube: { userAvg: 2?.2, good: 4?.0, topCreators: 7?.0 },
-    twitter: { userAvg: 1?.5, good: 3?.0, topCreators: 6?.5 },
-    facebook: { userAvg: 1?.2, good: 2?.5, topCreators: 5?.0 },
-    linkedin: { userAvg: 2?.0, good: 4?.5, topCreators: 8?.0 },
-    spotify: { userAvg: 28?.0, good: 50?.0, topCreators: 72?.0 }, // Stream completion % benchmark
-    apple_music: { userAvg: 30?.0, good: 52?.0, topCreators: 74?.0 }, // Stream completion % benchmark
-    soundcloud: { userAvg: 3?.5, good: 7?.0, topCreators: 14?.0 }, // Likes-to-plays % benchmark
+    tiktok: { userAvg: 5.8, good: 8.5, topCreators: 14.0 },
+    instagram: { userAvg: 2.8, good: 5.0, topCreators: 9.5 },
+    youtube: { userAvg: 2.2, good: 4.0, topCreators: 7.0 },
+    twitter: { userAvg: 1.5, good: 3.0, topCreators: 6.5 },
+    facebook: { userAvg: 1.2, good: 2.5, topCreators: 5.0 },
+    linkedin: { userAvg: 2.0, good: 4.5, topCreators: 8.0 },
+    spotify: { userAvg: 28.0, good: 50.0, topCreators: 72.0 }, // Stream completion % benchmark
+    apple_music: { userAvg: 30.0, good: 52.0, topCreators: 74.0 }, // Stream completion % benchmark
+    soundcloud: { userAvg: 3.5, good: 7.0, topCreators: 14.0 }, // Likes-to-plays % benchmark
   };
 
   constructor() {
-    logger?.info("✅ Algorithm Intelligence service initialized");
+    logger.info("✅ Algorithm Intelligence service initialized");
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
@@ -873,38 +873,38 @@ class AlgorithmIntelligenceService {
       hashtagReach: number[];
     },
   ): Promise<AlgorithmHealth> {
-    const _cacheKey = `${this?.CACHE_PREFIX}health:${platform}:${userId}`;
+    const cacheKey = `${this.CACHE_PREFIX}health:${platform}:${userId}`;
 
-    const _redis = await this?.getRedis();
+    const redis = await this.getRedis();
     if (redis) {
       try {
-        const _cached = await redis?.get(cacheKey);
-        if (cached) return JSON?.parse(cached);
+        const cached = await redis.get(cacheKey);
+        if (cached) return JSON.parse(cached);
       } catch {
         /* intentional: Redis cache miss → falls through to live calculation */
       }
     }
 
-    const _metrics = this?.analyzeMetrics(platform, recentMetrics);
-    const _alerts = await this?.detectAlerts(platform, metrics, userId);
-    const _status = this?.determineStatus(metrics, alerts);
-    const _recommendations = this?.generateRecommendations(
+    const metrics = this.analyzeMetrics(platform, recentMetrics);
+    const alerts = await this.detectAlerts(platform, metrics, userId);
+    const status = this.determineStatus(metrics, alerts);
+    const recommendations = this.generateRecommendations(
       platform,
       metrics,
       alerts,
     );
-    const _overallScore = this?.calculateHealthScore(metrics, alerts, platform);
+    const overallScore = this.calculateHealthScore(metrics, alerts, platform);
 
     const result: AlgorithmHealth = {
       platform,
       overallScore,
       status,
       metrics: {
-        reachTrend: metrics?.reachTrend,
-        engagementRate: metrics?.engagementRate,
-        impressionRatio: metrics?.impressionRatio,
-        followerGrowth: metrics?.followerGrowth,
-        hashtagReach: metrics?.hashtagReach,
+        reachTrend: metrics.reachTrend,
+        engagementRate: metrics.engagementRate,
+        impressionRatio: metrics.impressionRatio,
+        followerGrowth: metrics.followerGrowth,
+        hashtagReach: metrics.hashtagReach,
       },
       alerts,
       recommendations,
@@ -913,13 +913,13 @@ class AlgorithmIntelligenceService {
 
     if (redis) {
       try {
-        await redis?.setEx(cacheKey, this?.REDIS_TTL, JSON?.stringify(result));
+        await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
       } catch {
         /* intentional: best-effort Redis cache write */
       }
     }
 
-    logger?.info(
+    logger.info(
       `🔍 Algorithm health check: ${platform} — Score: ${overallScore}/100 — Status: ${status}`,
     );
     return result;
@@ -936,7 +936,7 @@ class AlgorithmIntelligenceService {
       searchVisibility: number;
     },
   ): Promise<ShadowBanCheck> {
-    const _metrics = recentMetrics || {
+    const metrics = recentMetrics || {
       hashtagReach: 58,
       exploreReach: 38,
       nonFollowerReach: 48,
@@ -944,33 +944,33 @@ class AlgorithmIntelligenceService {
       searchVisibility: 65,
     };
 
-    const _indicators = {
-      hashtagVisibility: metrics?.hashtagReach,
-      explorePageReach: metrics?.exploreReach,
-      nonFollowerReach: metrics?.nonFollowerReach,
-      engagementFromNew: metrics?.newEngagement,
-      searchVisibility: metrics?.searchVisibility,
+    const indicators = {
+      hashtagVisibility: metrics.hashtagReach,
+      explorePageReach: metrics.exploreReach,
+      nonFollowerReach: metrics.nonFollowerReach,
+      engagementFromNew: metrics.newEngagement,
+      searchVisibility: metrics.searchVisibility,
     };
 
     const { shadowbanIndicators } = this;
-    const _lowFlags = [
-      indicators?.hashtagVisibility <
-        shadowbanIndicators?.hashtagVisibilityThreshold,
-      indicators?.explorePageReach < shadowbanIndicators?.exploreReachThreshold,
-      indicators?.nonFollowerReach <
-        shadowbanIndicators?.nonFollowerReachThreshold,
-      indicators?.engagementFromNew < shadowbanIndicators?.newEngagementThreshold,
-      indicators?.searchVisibility <
-        shadowbanIndicators?.searchVisibilityThreshold,
+    const lowFlags = [
+      indicators.hashtagVisibility <
+        shadowbanIndicators.hashtagVisibilityThreshold,
+      indicators.explorePageReach < shadowbanIndicators.exploreReachThreshold,
+      indicators.nonFollowerReach <
+        shadowbanIndicators.nonFollowerReachThreshold,
+      indicators.engagementFromNew < shadowbanIndicators.newEngagementThreshold,
+      indicators.searchVisibility <
+        shadowbanIndicators.searchVisibilityThreshold,
     ];
 
-    const _lowCount = lowFlags?.filter(Boolean).length;
+    const lowCount = lowFlags.filter(Boolean).length;
 
     // Require 3+ low flags for shadowban diagnosis (reduces false positives for niche artists)
-    const _isShadowbanned = lowCount >= 3;
+    const isShadowbanned = lowCount >= 3;
 
     // Confidence scales with number of low indicators (calibrated: 3 flags = 65%, 5 flags = 95%)
-    const _confidence =
+    const confidence =
       lowCount === 0
         ? 5
         : lowCount === 1
@@ -987,70 +987,70 @@ class AlgorithmIntelligenceService {
     const remediation: string[] = [];
 
     if (
-      indicators?.hashtagVisibility <
-      shadowbanIndicators?.hashtagVisibilityThreshold
+      indicators.hashtagVisibility <
+      shadowbanIndicators.hashtagVisibilityThreshold
     ) {
-      possibleCauses?.push(
+      possibleCauses.push(
         "Banned, flagged, or overused hashtags limiting discovery reach",
       );
-      remediation?.push(
+      remediation.push(
         "Audit your hashtags — remove any banned tags and rotate to fresh niche hashtags",
       );
     }
     if (
-      indicators?.explorePageReach < shadowbanIndicators?.exploreReachThreshold
+      indicators.explorePageReach < shadowbanIndicators.exploreReachThreshold
     ) {
-      possibleCauses?.push(
+      possibleCauses.push(
         "Content not meeting platform discovery quality threshold",
       );
-      remediation?.push(
+      remediation.push(
         "Increase save-worthy value: tutorials, how-tos, music tips outperform pure promos",
       );
     }
     if (
-      indicators?.nonFollowerReach <
-      shadowbanIndicators?.nonFollowerReachThreshold
+      indicators.nonFollowerReach <
+      shadowbanIndicators.nonFollowerReachThreshold
     ) {
-      possibleCauses?.push(
+      possibleCauses.push(
         "Algorithm has limited distribution — likely from recent content policy signal",
       );
-      remediation?.push(
+      remediation.push(
         "Increase authentic engagement quality (reply to comments, start genuine conversations)",
       );
     }
     if (
-      indicators?.engagementFromNew < shadowbanIndicators?.newEngagementThreshold
+      indicators.engagementFromNew < shadowbanIndicators.newEngagementThreshold
     ) {
-      possibleCauses?.push(
+      possibleCauses.push(
         "Content not resonating with discovery audiences — hook may need strengthening",
       );
-      remediation?.push(
+      remediation.push(
         "A/B test 3 different hook styles — POV, curiosity gap, and question format",
       );
     }
     if (
-      indicators?.searchVisibility <
-      shadowbanIndicators?.searchVisibilityThreshold
+      indicators.searchVisibility <
+      shadowbanIndicators.searchVisibilityThreshold
     ) {
-      possibleCauses?.push(
+      possibleCauses.push(
         "Account or content metadata flagged in search index",
       );
-      remediation?.push(
+      remediation.push(
         "Update bio, ensure no banned terms in profile, and submit account review if available",
       );
     }
 
     if (isShadowbanned) {
-      remediation?.push(
+      remediation.push(
         "Take a 48-72 hour posting break — activity pause often resets distribution limits",
       );
-      remediation?.push(
+      remediation.push(
         "Remove and disconnect any suspicious third-party apps from account settings",
       );
-      remediation?.push(
+      remediation.push(
         "Avoid all engagement pods, mass DM campaigns, or automation tools for 2 weeks",
       );
-      remediation?.push(
+      remediation.push(
         "Post 3-5 pieces of high-quality, policy-compliant content after the break",
       );
     }
@@ -1070,7 +1070,7 @@ class AlgorithmIntelligenceService {
     _userId: string,
   ): Promise<EngagementPattern> {
     return (
-      this?.engagementPatterns[platform] || this?.engagementPatterns.instagram
+      this.engagementPatterns[platform] || this.engagementPatterns.instagram
     );
   }
 
@@ -1080,41 +1080,41 @@ class AlgorithmIntelligenceService {
   ): Promise<AlgorithmChange[]> {
     const changes: AlgorithmChange[] = [];
 
-    if (!historicalData || historicalData?.length < 7) {
-      return this?.getRecentPlatformChanges(platform);
+    if (!historicalData || historicalData.length < 7) {
+      return this.getRecentPlatformChanges(platform);
     }
 
-    const _recentReach = this?.calculateAverage(
-      historicalData?.slice(-7).map((d) => d?.reach),
+    const recentReach = this.calculateAverage(
+      historicalData.slice(-7).map((d) => d.reach),
     );
-    const _previousReach = this?.calculateAverage(
-      historicalData?.slice(-14, -7).map((d) => d?.reach),
+    const previousReach = this.calculateAverage(
+      historicalData.slice(-14, -7).map((d) => d.reach),
     );
-    const _recentEngagement = this?.calculateAverage(
-      historicalData?.slice(-7).map((d) => d?.engagement),
+    const recentEngagement = this.calculateAverage(
+      historicalData.slice(-7).map((d) => d.engagement),
     );
-    const _previousEngagement = this?.calculateAverage(
-      historicalData?.slice(-14, -7).map((d) => d?.engagement),
+    const previousEngagement = this.calculateAverage(
+      historicalData.slice(-14, -7).map((d) => d.engagement),
     );
 
-    const _reachChangePercent =
+    const reachChangePercent =
       previousReach > 0
         ? ((recentReach - previousReach) / previousReach) * 100
         : 0;
-    const _engagementChangePercent =
+    const engagementChangePercent =
       previousEngagement > 0
         ? ((recentEngagement - previousEngagement) / previousEngagement) * 100
         : 0;
 
     // Significant reach change detection (threshold: 15% — meaningful but not noise)
-    if (Math?.abs(reachChangePercent) > 15) {
-      changes?.push({
+    if (Math.abs(reachChangePercent) > 15) {
+      changes.push({
         id: randomBytes(8).toString("hex"),
         platform,
         detectedAt: new Date(),
         changeType: "reach",
         impact: reachChangePercent > 0 ? "positive" : "negative",
-        description: `Reach ${reachChangePercent > 0 ? "increased" : "decreased"} ${Math?.abs(reachChangePercent).toFixed(1)}% over the last 7 days vs prior week`,
+        description: `Reach ${reachChangePercent > 0 ? "increased" : "decreased"} ${Math.abs(reachChangePercent).toFixed(1)}% over the last 7 days vs prior week`,
         adaptations:
           reachChangePercent < 0
             ? [
@@ -1133,14 +1133,14 @@ class AlgorithmIntelligenceService {
     }
 
     // Significant engagement change detection
-    if (Math?.abs(engagementChangePercent) > 20) {
-      changes?.push({
+    if (Math.abs(engagementChangePercent) > 20) {
+      changes.push({
         id: randomBytes(8).toString("hex"),
         platform,
         detectedAt: new Date(),
         changeType: "engagement",
         impact: engagementChangePercent > 0 ? "positive" : "negative",
-        description: `Engagement ${engagementChangePercent > 0 ? "up" : "down"} ${Math?.abs(engagementChangePercent).toFixed(1)}% vs prior week`,
+        description: `Engagement ${engagementChangePercent > 0 ? "up" : "down"} ${Math.abs(engagementChangePercent).toFixed(1)}% vs prior week`,
         adaptations:
           engagementChangePercent < 0
             ? [
@@ -1162,7 +1162,7 @@ class AlgorithmIntelligenceService {
     platform: string,
   ): Promise<PlatformAlgorithmProfile> {
     return (
-      this?.platformAlgorithms[platform] || this?.platformAlgorithms.instagram
+      this.platformAlgorithms[platform] || this.platformAlgorithms.instagram
     );
   }
 
@@ -1176,30 +1176,30 @@ class AlgorithmIntelligenceService {
     const strategies: string[] = [];
     let priority: "immediate" | "short_term" | "long_term" = "short_term";
 
-    if (change?.impact === "negative") {
+    if (change.impact === "negative") {
       priority = "immediate";
-      strategies?.push(
+      strategies.push(
         "Pause scheduled content for 24 hours to analyze the shift",
       );
-      strategies?.push(
+      strategies.push(
         "Pull your last 7 days of analytics — identify the first post that underperformed",
       );
-      strategies?.push("Review hashtag health via platform insights");
-      strategies?.push(
+      strategies.push("Review hashtag health via platform insights");
+      strategies.push(
         "Increase direct audience engagement: reply to every comment and DM today",
       );
-      strategies?.push(
+      strategies.push(
         'Create a high-quality "reset" piece of content to re-establish algorithm trust',
       );
     } else {
       priority = "short_term";
-      strategies?.push(
+      strategies.push(
         "Increase posting frequency 20-25% for the next 2 weeks while algorithm favor is high",
       );
-      strategies?.push(
+      strategies.push(
         "Repurpose top-performing content across formats (video → carousel → thread)",
       );
-      strategies?.push(
+      strategies.push(
         "Launch a series based on what's working — algorithm rewards consistent formats",
       );
       strategies?.push(
@@ -1223,11 +1223,11 @@ class AlgorithmIntelligenceService {
     }>;
     benchmarks: { userAvg: number; platformAvg: number; topCreators: number };
   }> {
-    const _health = await this?.checkAlgorithmHealth(platform, userId);
-    const _benchmarks = this?.platformBenchmarks[platform] || {
-      userAvg: 2?.5,
-      good: 5?.0,
-      topCreators: 9?.0,
+    const health = await this?.checkAlgorithmHealth(platform, userId);
+    const benchmarks = this?.platformBenchmarks[platform] || {
+      userAvg: 2.5,
+      good: 5.0,
+      topCreators: 9.0,
     };
 
     const topActions: Array<{
@@ -1273,7 +1273,7 @@ class AlgorithmIntelligenceService {
     ];
 
     // Sort by impact-to-effort ratio (ROI sort)
-    const _effortScore = { low: 1, medium: 2, high: 3 };
+    const effortScore = { low: 1, medium: 2, high: 3 };
     topActions?.sort(
       (a, b) =>
         b?.expectedImpact / effortScore[b?.effort] -
@@ -1282,12 +1282,12 @@ class AlgorithmIntelligenceService {
 
     return {
       currentState: health,
-      optimizationScore: health?.overallScore,
+      optimizationScore: health.overallScore,
       topActions,
       benchmarks: {
-        userAvg: health?.metrics.engagementRate,
-        platformAvg: benchmarks?.userAvg,
-        topCreators: benchmarks?.topCreators,
+        userAvg: health.metrics.engagementRate,
+        platformAvg: benchmarks.userAvg,
+        topCreators: benchmarks.topCreators,
       },
     };
   }
@@ -1307,18 +1307,18 @@ class AlgorithmIntelligenceService {
     followerGrowth: number;
     hashtagReach: number;
   } {
-    const _benchmark = this?.platformBenchmarks[platform] || {
-      userAvg: 3?.0,
-      good: 5?.0,
-      topCreators: 9?.0,
+    const benchmark = this?.platformBenchmarks[platform] || {
+      userAvg: 3.0,
+      good: 5.0,
+      topCreators: 9.0,
     };
 
     if (!recentMetrics) {
       return {
         reachTrend: "stable",
-        engagementRate: benchmark?.userAvg,
+        engagementRate: benchmark.userAvg,
         impressionRatio: 62,
-        followerGrowth: 0?.6,
+        followerGrowth: 0.6,
         hashtagReach: 48,
       };
     }
@@ -1326,22 +1326,22 @@ class AlgorithmIntelligenceService {
     const { impressions, engagement, followers, hashtagReach } = recentMetrics;
 
     // Compare recent half vs earlier half for trend
-    const _mid = Math?.floor(impressions?.length / 2);
-    const _recentImp = this?.calculateAverage(impressions?.slice(mid));
-    const _previousImp = this?.calculateAverage(impressions?.slice(0, mid));
-    const _impChange =
+    const mid = Math?.floor(impressions?.length / 2);
+    const recentImp = this?.calculateAverage(impressions?.slice(mid));
+    const previousImp = this?.calculateAverage(impressions?.slice(0, mid));
+    const impChange =
       previousImp > 0 ? ((recentImp - previousImp) / previousImp) * 100 : 0;
 
     let reachTrend: "increasing" | "stable" | "declining" = "stable";
     if (impChange > 8) reachTrend = "increasing";
     else if (impChange < -8) reachTrend = "declining";
 
-    const _totalImp = this?.calculateSum(impressions);
-    const _totalEng = this?.calculateSum(engagement);
-    const _engagementRate =
+    const totalImp = this?.calculateSum(impressions);
+    const totalEng = this?.calculateSum(engagement);
+    const engagementRate =
       totalImp > 0 ? Math?.round((totalEng / totalImp) * 1000) / 10 : 0;
 
-    const _followerGrowth =
+    const followerGrowth =
       followers?.length >= 2
         ? Math?.round(
             ((followers[followers?.length - 1] - followers[0]) /
@@ -1353,27 +1353,27 @@ class AlgorithmIntelligenceService {
     return {
       reachTrend,
       engagementRate,
-      impressionRatio: Math?.min(
+      impressionRatio: Math.min(
         95,
         Math?.round(
           55 + (recentImp / Math?.max(1, totalImp / impressions?.length)) * 20,
         ),
       ),
       followerGrowth,
-      hashtagReach: this?.calculateAverage(hashtagReach),
+      hashtagReach: this.calculateAverage(hashtagReach),
     };
   }
 
   private async detectAlerts(
     platform: string,
-    metrics: ReturnType<typeof this?.analyzeMetrics>,
+    metrics: ReturnType<typeof this.analyzeMetrics>,
     _userId: string,
   ): Promise<AlgorithmAlert[]> {
     const alerts: AlgorithmAlert[] = [];
-    const _benchmark = this?.platformBenchmarks[platform] || {
-      userAvg: 3?.0,
-      good: 5?.0,
-      topCreators: 9?.0,
+    const benchmark = this?.platformBenchmarks[platform] || {
+      userAvg: 3.0,
+      good: 5.0,
+      topCreators: 9.0,
     };
 
     if (metrics?.reachTrend === "declining") {
@@ -1390,23 +1390,23 @@ class AlgorithmIntelligenceService {
     }
 
     // Platform-specific engagement thresholds — music artists have lower baseline on some platforms
-    const _lowEngagementThreshold =
+    const lowEngagementThreshold =
       platform === "facebook"
-        ? 1?.0
+        ? 1.0
         : platform === "twitter"
-          ? 1?.2
+          ? 1.2
           : platform === "linkedin"
-            ? 1?.5
+            ? 1.5
             : platform === "youtube"
-              ? 1?.8
-              : 2?.0;
+              ? 1.8
+              : 2.0;
 
     if (metrics?.engagementRate < lowEngagementThreshold) {
       alerts?.push({
         id: randomBytes(8).toString("hex"),
         type: "engagement_drop",
         severity:
-          metrics?.engagementRate < lowEngagementThreshold * 0?.5
+          metrics?.engagementRate < lowEngagementThreshold * 0.5
             ? "critical"
             : "high",
         message: `Engagement rate ${metrics?.engagementRate}% is below platform baseline of ${benchmark?.userAvg}%`,
@@ -1423,7 +1423,7 @@ class AlgorithmIntelligenceService {
       alerts?.push({
         id: randomBytes(8).toString("hex"),
         type: "shadowban",
-        severity: metrics?.hashtagReach < 15 ? "critical" : "high",
+        severity: metrics.hashtagReach < 15 ? "critical" : "high",
         message: `Hashtag visibility at ${Math?.round(metrics?.hashtagReach)}% — possible reach restriction active`,
         detectedAt: new Date(),
         suggestedAction:
@@ -1432,7 +1432,7 @@ class AlgorithmIntelligenceService {
       });
     }
 
-    if (metrics?.followerGrowth < -0?.5) {
+    if (metrics?.followerGrowth < -0.5) {
       alerts?.push({
         id: randomBytes(8).toString("hex"),
         type: "reach_decline",
@@ -1449,14 +1449,14 @@ class AlgorithmIntelligenceService {
   }
 
   private determineStatus(
-    metrics: ReturnType<typeof this?.analyzeMetrics>,
+    metrics: ReturnType<typeof this.analyzeMetrics>,
     alerts: AlgorithmAlert[],
   ): AlgorithmHealth["status"] {
-    const _criticalAlerts = alerts?.filter(
+    const criticalAlerts = alerts?.filter(
       (a) => a?.severity === "critical",
     ).length;
-    const _highAlerts = alerts?.filter((a) => a?.severity === "high").length;
-    const _shadowbanAlert = alerts?.find((a) => a?.type === "shadowban");
+    const highAlerts = alerts?.filter((a) => a?.severity === "high").length;
+    const shadowbanAlert = alerts?.find((a) => a?.type === "shadowban");
 
     if (
       shadowbanAlert &&
@@ -1472,17 +1472,17 @@ class AlgorithmIntelligenceService {
 
   private generateRecommendations(
     platform: string,
-    metrics: ReturnType<typeof this?.analyzeMetrics>,
+    metrics: ReturnType<typeof this.analyzeMetrics>,
     alerts: AlgorithmAlert[],
   ): string[] {
     const recommendations: string[] = [];
-    const _profile = this?.platformAlgorithms[platform];
-    const _benchmark = this?.platformBenchmarks[platform] || {
-      userAvg: 3?.0,
-      good: 5?.0,
-      topCreators: 9?.0,
+    const profile = this?.platformAlgorithms[platform];
+    const benchmark = this?.platformBenchmarks[platform] || {
+      userAvg: 3.0,
+      good: 5.0,
+      topCreators: 9.0,
     };
-    const _hasShadowbanAlert = alerts?.some((a) => a?.type === "shadowban");
+    const hasShadowbanAlert = alerts?.some((a) => a?.type === "shadowban");
 
     // === Reach trend recommendations ===
     if (metrics?.reachTrend === "declining") {
@@ -1490,32 +1490,32 @@ class AlgorithmIntelligenceService {
         "Pull your last 10 posts' analytics — find the exact first post that underperformed and identify what changed (hook, format, length, time posted)",
       );
       if (platform === "tiktok") {
-        recommendations?.push(
+        recommendations.push(
           "Shift from promo content to authentic BTS (behind-the-scenes studio, songwriting process) — these outperform music promo 2:1 when reach drops",
         );
       } else if (platform === "instagram") {
-        recommendations?.push(
+        recommendations.push(
           "Switch to carousel format for your next 3 posts — Instagram resurfaces carousels to non-engagers, doubling impressions during a reach dip",
         );
       } else if (platform === "youtube") {
-        recommendations?.push(
+        recommendations.push(
           "Publish a Community tab post and a Short this week to rebuild algorithm signals without committing to a full long-form upload",
         );
       } else if (platform === "spotify" || platform === "apple_music") {
-        recommendations?.push(
+        recommendations.push(
           "Release an acoustic, remix, or live version of an existing track — this triggers a fresh Release Radar cycle and revives catalogue streams",
         );
       } else {
-        recommendations?.push(
+        recommendations.push(
           "Temporarily shift from promotional content to value-first content (tips, BTS, personal story) to rebuild engagement signals",
         );
       }
     }
 
     // === Low engagement recommendations ===
-    if (metrics?.engagementRate < benchmark?.userAvg) {
+    if (metrics.engagementRate < benchmark.userAvg) {
       if (platform === "tiktok") {
-        recommendations?.push(
+        recommendations.push(
           'Strengthen your hook: the first 1-2 seconds decide 75% of watch-through. Try "Here\'s why your favorite song sounds like this" over "New music out now"',
         );
         recommendations?.push(
@@ -1529,11 +1529,11 @@ class AlgorithmIntelligenceService {
           "Post a poll or question sticker in Stories immediately after publishing a Reel — warm followers push up the Reel's engagement rate",
         );
       } else if (platform === "twitter" || platform === "linkedin") {
-        recommendations?.push(
+        recommendations.push(
           'Start your next post with a polarizing or curiosity-gap opener — first line determines whether readers hit "See more" which drives dwell-time signals',
         );
       } else if (platform === "soundcloud") {
-        recommendations?.push(
+        recommendations.push(
           "Ask listeners to leave a timestamped comment at their favorite moment — SoundCloud's timed comments uniquely amplify discovery for that track",
         );
       } else {
@@ -1558,7 +1558,7 @@ class AlgorithmIntelligenceService {
       recommendations?.push(
         "Growth momentum detected — now is the ideal time to test a new content format. The algorithm gives preference to growing accounts when they experiment",
       );
-    } else if (metrics?.followerGrowth < -0?.5) {
+    } else if (metrics?.followerGrowth < -0.5) {
       recommendations?.push(
         "Net follower loss detected — shift focus from promotional posts to value content that showcases personality and artistry, not just releases",
       );
@@ -1566,7 +1566,7 @@ class AlgorithmIntelligenceService {
 
     // === Platform-specific boost opportunities (always include top 2) ===
     if (profile) {
-      const _boosts = profile?.boostOpportunities.slice(0, 2);
+      const boosts = profile?.boostOpportunities.slice(0, 2);
       recommendations?.push(...boosts);
     }
 
@@ -1585,15 +1585,15 @@ class AlgorithmIntelligenceService {
   }
 
   private calculateHealthScore(
-    metrics: ReturnType<typeof this?.analyzeMetrics>,
+    metrics: ReturnType<typeof this.analyzeMetrics>,
     alerts: AlgorithmAlert[],
     platform: string,
   ): number {
     let score = 65; // Start at 65 (above baseline, room to go both ways)
-    const _benchmark = this?.platformBenchmarks[platform] || {
-      userAvg: 3?.0,
-      good: 5?.0,
-      topCreators: 9?.0,
+    const benchmark = this?.platformBenchmarks[platform] || {
+      userAvg: 3.0,
+      good: 5.0,
+      topCreators: 9.0,
     };
 
     // Reach trend impact
@@ -1601,20 +1601,20 @@ class AlgorithmIntelligenceService {
     else if (metrics?.reachTrend === "declining") score -= 18;
 
     // Engagement rate scoring (relative to platform benchmark)
-    if (metrics?.engagementRate >= benchmark?.topCreators) score += 20;
-    else if (metrics?.engagementRate >= benchmark?.good) score += 12;
-    else if (metrics?.engagementRate >= benchmark?.userAvg) score += 5;
-    else if (metrics?.engagementRate >= benchmark?.userAvg * 0?.5) score -= 8;
+    if (metrics?.engagementRate >= benchmark.topCreators) score += 20;
+    else if (metrics?.engagementRate >= benchmark.good) score += 12;
+    else if (metrics?.engagementRate >= benchmark.userAvg) score += 5;
+    else if (metrics?.engagementRate >= benchmark.userAvg * 0.5) score -= 8;
     else score -= 15;
 
     // Follower growth impact
-    if (metrics?.followerGrowth > 3) score += 10;
-    else if (metrics?.followerGrowth > 1) score += 6;
-    else if (metrics?.followerGrowth > 0) score += 2;
-    else if (metrics?.followerGrowth < -1) score -= 8;
+    if (metrics.followerGrowth > 3) score += 10;
+    else if (metrics.followerGrowth > 1) score += 6;
+    else if (metrics.followerGrowth > 0) score += 2;
+    else if (metrics.followerGrowth < -1) score -= 8;
 
     // Hashtag reach
-    if (metrics?.hashtagReach > 60) score += 6;
+    if (metrics.hashtagReach > 60) score += 6;
     else if (
       metrics?.hashtagReach < this?.shadowbanIndicators.hashtagVisibilityThreshold
     )
@@ -1654,7 +1654,7 @@ class AlgorithmIntelligenceService {
           changeType: "engagement",
           impact: "positive",
           description:
-            "TikTok 2026: Watch-through replays now weighted 2× more than a single full view; comment reply threads from the creator get 1?.5× distribution multiplier.",
+            "TikTok 2026: Watch-through replays now weighted 2× more than a single full view; comment reply threads from the creator get 1.5× distribution multiplier.",
           adaptations: [
             "Create loopable content (last-frame hooks back to first-frame) to drive replays",
             "Reply to top comments with video replies — separate distribution slot in For You",
@@ -1770,7 +1770,7 @@ class AlgorithmIntelligenceService {
           changeType: "ranking",
           impact: "positive",
           description:
-            "Spotify 2025 Q4: Canvas completion rate now factored into Release Radar distribution — tracks whose Canvas is watched to completion get 1?.2× Radar boost.",
+            "Spotify 2025 Q4: Canvas completion rate now factored into Release Radar distribution — tracks whose Canvas is watched to completion get 1.2× Radar boost.",
           adaptations: [
             "Create a Canvas for every new release — prioritize loopable, visually striking 8-second clips",
             "Ensure Canvas does not require sound (many listeners see it on mute)",
@@ -1821,4 +1821,4 @@ class AlgorithmIntelligenceService {
   }
 }
 
-export const _algorithmIntelligenceService = new AlgorithmIntelligenceService();
+export const algorithmIntelligenceService = new AlgorithmIntelligenceService();

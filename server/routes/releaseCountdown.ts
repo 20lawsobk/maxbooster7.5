@@ -5,28 +5,28 @@ import { releaseCountdownService } from "../services/releaseCountdownService";
 import { logger } from "../logger";
 import { z } from "zod";
 
-const _router = Router();
+const router = Router();
 
-const _createCountdownSchema = z?.object({
-  title: z?.string().min(1, "Title is required"),
-  releaseDate: z?.string().transform((val) => new Date(val)),
-  releaseId: z?.string().optional(),
-  artworkUrl: z?.string().optional(),
-  presaveUrl: z?.string().optional(),
+const createCountdownSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  releaseDate: z.string().transform((val) => new Date(val)),
+  releaseId: z.string().optional(),
+  artworkUrl: z.string().optional(),
+  presaveUrl: z.string().optional(),
 });
 
-const _addTaskSchema = z?.object({
-  task: z?.string().min(1, "Task description is required"),
+const addTaskSchema = z.object({
+  task: z.string().min(1, "Task description is required"),
   dueDate: z
     .string()
     .transform((val) => new Date(val))
     .optional(),
-  category: z?.string().optional(),
+  category: z.string().optional(),
 });
 
-const _updateTaskSchema = z?.object({
-  completed: z?.boolean().optional(),
-  task: z?.string().optional(),
+const updateTaskSchema = z.object({
+  completed: z.boolean().optional(),
+  task: z.string().optional(),
   dueDate: z
     .string()
     .transform((val) => new Date(val))
@@ -38,7 +38,7 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { status } = req?.query;
 
       logger?.info(`Fetching countdowns for user ${userId}`);
@@ -50,14 +50,14 @@ router?.get(
         countdowns = await releaseCountdownService?.getAllCountdowns(userId);
       }
 
-      const _countdownIds = countdowns?.map((c) => c?.id);
-      const _tasksByCountdown =
+      const countdownIds = countdowns?.map((c) => c?.id);
+      const tasksByCountdown =
         await releaseCountdownService?.getTasksForCountdowns(countdownIds);
 
-      const _countdownsWithProgress = countdowns?.map((countdown) => {
-        const _tasks = tasksByCountdown?.get(countdown?.id) ?? [];
-        const _progress = releaseCountdownService?.calculateProgress(tasks);
-        const _timeRemaining = releaseCountdownService?.calculateTimeRemaining(
+      const countdownsWithProgress = countdowns?.map((countdown) => {
+        const tasks = tasksByCountdown?.get(countdown?.id) ?? [];
+        const progress = releaseCountdownService?.calculateProgress(tasks);
+        const timeRemaining = releaseCountdownService?.calculateTimeRemaining(
           new Date(countdown?.releaseDate),
         );
 
@@ -65,7 +65,7 @@ router?.get(
           ...countdown,
           progress,
           timeRemaining,
-          taskCount: tasks?.length,
+          taskCount: tasks.length,
         };
       });
 
@@ -85,16 +85,16 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _data = createCountdownSchema?.parse(req?.body);
+      const userId = req?.user!.id;
+      const data = createCountdownSchema?.parse(req?.body);
 
       logger?.info(`Creating countdown for user ${userId}: ${data?.title}`);
 
-      const _countdown = await releaseCountdownService?.createCountdown(
+      const countdown = await releaseCountdownService?.createCountdown(
         userId,
         data,
       );
-      const _tasks = await releaseCountdownService?.getTasks(countdown?.id);
+      const tasks = await releaseCountdownService?.getTasks(countdown?.id);
 
       res?.status(201).json({
         success: true,
@@ -115,12 +115,12 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _countdownId = req?.params.id;
+      const userId = req?.user!.id;
+      const countdownId = req?.params.id;
 
       logger?.info(`Fetching countdown ${countdownId} for user ${userId}`);
 
-      const _result = await releaseCountdownService?.getCountdownWithTasks(
+      const result = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
       );
@@ -132,18 +132,18 @@ router?.get(
         });
       }
 
-      const _progress = releaseCountdownService?.calculateProgress(result?.tasks);
-      const _timeRemaining = releaseCountdownService?.calculateTimeRemaining(
+      const progress = releaseCountdownService?.calculateProgress(result?.tasks);
+      const timeRemaining = releaseCountdownService?.calculateTimeRemaining(
         new Date(result?.countdown.releaseDate),
       );
-      const _analytics =
+      const analytics =
         await releaseCountdownService?.getAnalyticsSummary(countdownId);
 
       res?.json({
         success: true,
         data: {
           ...result?.countdown,
-          tasks: result?.tasks,
+          tasks: result.tasks,
           progress,
           timeRemaining,
           analytics,
@@ -161,12 +161,12 @@ router?.patch(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _countdownId = req?.params.id;
+      const userId = req?.user!.id;
+      const countdownId = req?.params.id;
 
       logger?.info(`Updating countdown ${countdownId} for user ${userId}`);
 
-      const _countdown = await releaseCountdownService?.updateCountdown(
+      const countdown = await releaseCountdownService?.updateCountdown(
         countdownId,
         userId,
         req?.body,
@@ -188,9 +188,9 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _countdownId = req?.params.id;
-      const _ownership = await releaseCountdownService?.getCountdownWithTasks(
+      const userId = req?.user!.id;
+      const countdownId = req?.params.id;
+      const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
       );
@@ -198,11 +198,11 @@ router?.post(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const _data = addTaskSchema?.parse(req?.body);
+      const data = addTaskSchema?.parse(req?.body);
 
       logger?.info(`Adding task to countdown ${countdownId}`);
 
-      const _task = await releaseCountdownService?.addTask(countdownId, data);
+      const task = await releaseCountdownService?.addTask(countdownId, data);
 
       res?.status(201).json({
         success: true,
@@ -220,9 +220,9 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _countdownId = req?.params.id;
-      const _ownership = await releaseCountdownService?.getCountdownWithTasks(
+      const userId = req?.user!.id;
+      const countdownId = req?.params.id;
+      const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
       );
@@ -233,8 +233,8 @@ router?.get(
 
       logger?.info(`Fetching tasks for countdown ${countdownId}`);
 
-      const _tasks = await releaseCountdownService?.getTasks(countdownId);
-      const _progress = releaseCountdownService?.calculateProgress(tasks);
+      const tasks = await releaseCountdownService?.getTasks(countdownId);
+      const progress = releaseCountdownService?.calculateProgress(tasks);
 
       res?.json({
         success: true,
@@ -255,10 +255,10 @@ router?.patch(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _countdownId = req?.params.id;
-      const _taskId = req?.params.taskId;
-      const _ownership = await releaseCountdownService?.getCountdownWithTasks(
+      const userId = req?.user!.id;
+      const countdownId = req?.params.id;
+      const taskId = req?.params.taskId;
+      const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
       );
@@ -266,7 +266,7 @@ router?.patch(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const _data = updateTaskSchema?.parse(req?.body);
+      const data = updateTaskSchema?.parse(req?.body);
 
       logger?.info(`Updating task ${taskId} for countdown ${countdownId}`);
 
@@ -303,9 +303,9 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _countdownId = req?.params.id;
-      const _ownership = await releaseCountdownService?.getCountdownWithTasks(
+      const userId = req?.user!.id;
+      const countdownId = req?.params.id;
+      const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
       );
@@ -316,7 +316,7 @@ router?.get(
 
       logger?.info(`Fetching analytics for countdown ${countdownId}`);
 
-      const _analytics =
+      const analytics =
         await releaseCountdownService?.getAnalyticsSummary(countdownId);
 
       res?.json({
@@ -335,9 +335,9 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _countdownId = req?.params.id;
-      const _ownership = await releaseCountdownService?.getCountdownWithTasks(
+      const userId = req?.user!.id;
+      const countdownId = req?.params.id;
+      const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
       );
@@ -349,7 +349,7 @@ router?.post(
 
       logger?.info(`Recording analytics for countdown ${countdownId}`);
 
-      const _analytics = await releaseCountdownService?.recordAnalytics(
+      const analytics = await releaseCountdownService?.recordAnalytics(
         countdownId,
         {
           presaves,
@@ -374,9 +374,9 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _countdownId = req?.params.id;
-      const _ownership = await releaseCountdownService?.getCountdownWithTasks(
+      const userId = req?.user!.id;
+      const countdownId = req?.params.id;
+      const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
       );
@@ -388,12 +388,12 @@ router?.post(
 
       logger?.info(`Generating AI checklist for countdown ${countdownId}`);
 
-      const _tasks = await releaseCountdownService?.generateAISuggestedTasks(
+      const tasks = await releaseCountdownService?.generateAISuggestedTasks(
         countdownId,
         genre,
         targetAudience,
       );
-      const _addedTasks = await releaseCountdownService?.bulkAddTasks(
+      const addedTasks = await releaseCountdownService?.bulkAddTasks(
         countdownId,
         tasks,
       );

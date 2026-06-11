@@ -195,11 +195,11 @@ function getActivityDescription(activity: ActivityItem): string {
     case "member.role_changed":
       return `${userName} changed ${metadata?.memberName || "member"}'s role from ${previousValues?.role} to ${newValues?.role}`;
     case "role.created":
-      return `${userName} created the "${newValues?.name}" role`;
+      return `${userName} created the "${newValues.name}" role`;
     case "role.updated":
-      return `${userName} updated the "${newValues?.name || previousValues?.name}" role`;
+      return `${userName} updated the "${newValues.name || previousValues.name}" role`;
     case "role.deleted":
-      return `${userName} deleted the "${previousValues?.name}" role`;
+      return `${userName} deleted the "${previousValues.name}" role`;
     case "project.shared":
       return `${userName} shared a project`;
     case "project.unshared":

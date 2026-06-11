@@ -285,7 +285,7 @@ export function BulkCreateDialog({
           return {
             ...item,
             status: failed ? "error" : "success",
-            error: failed?.error,
+            error: failed.error,
           };
         }),
       );

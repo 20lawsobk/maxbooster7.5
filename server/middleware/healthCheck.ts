@@ -4,7 +4,7 @@ import {
   getCachedHealthCheck,
   getLivenessProbe,
   getReadinessProbe,
-} from "../lib/cachedHealthCheck?.js";
+} from "../lib/cachedHealthCheck.js";
 
 interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
@@ -43,20 +43,20 @@ function checkCPU(): {
   status: "healthy" | "degraded" | "unhealthy";
   loadAverage: number[];
 } {
-  const _loadAverage = os?.loadavg();
-  const _cpuCount = os?.cpus().length;
-  const _normalizedLoad = loadAverage[0] / cpuCount;
+  const loadAverage = os?.loadavg();
+  const cpuCount = os?.cpus().length;
+  const normalizedLoad = loadAverage[0] / cpuCount;
 
   let status: "healthy" | "degraded" | "unhealthy" = "healthy";
-  if (normalizedLoad > 0?.9) {
+  if (normalizedLoad > 0.9) {
     status = "unhealthy";
-  } else if (normalizedLoad > 0?.7) {
+  } else if (normalizedLoad > 0.7) {
     status = "degraded";
   }
 
   return {
     status,
-    loadAverage: loadAverage?.map(
+    loadAverage: loadAverage.map(
       (load: number) => Math?.round(load * 100) / 100,
     ),
   };
@@ -65,61 +65,61 @@ function checkCPU(): {
 // Comprehensive health check (cached for 30 seconds to reduce DB load)
 export async function healthCheck(_req: Request, res: Response): Promise<void> {
   try {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Use cached health check to reduce database load
-    const _cachedHealth = await getCachedHealthCheck(30);
+    const cachedHealth = await getCachedHealthCheck(30);
 
     // CPU check is fast, run it fresh
-    const _cpuCheck = checkCPU();
+    const cpuCheck = checkCPU();
 
-    const _databaseCheck = {
-      status: cachedHealth?.database.connected
+    const databaseCheck = {
+      status: cachedHealth.database.connected
         ? ("healthy" as const)
         : ("unhealthy" as const),
       responseTime: 0, // Cached, no fresh query
     };
 
-    const _memoryCheck = {
+    const memoryCheck = {
       status:
         cachedHealth?.memory.heapUsed < 1500
           ? ("healthy" as const)
           : cachedHealth?.memory.heapUsed < 1800
             ? ("degraded" as const)
             : ("unhealthy" as const),
-      usage: cachedHealth?.memory,
+      usage: cachedHealth.memory,
     };
 
     const health: HealthStatus = {
       status: "healthy",
       timestamp: new Date().toISOString(),
-      uptime: Math?.floor(process?.uptime()),
-      version: process?.env.npm_package_version || "1?.0.0",
+      uptime: Math.floor(process?.uptime()),
+      version: process.env.npm_package_version || "1.0.0",
       services: {
         database: databaseCheck,
         memory: memoryCheck,
         cpu: cpuCheck,
       },
-      environment: process?.env.NODE_ENV || "development",
+      environment: process.env.NODE_ENV || "development",
     };
 
     // Determine overall status
-    const _services = [
+    const services = [
       databaseCheck?.status,
       memoryCheck?.status,
       cpuCheck?.status,
     ];
     if (services?.includes("unhealthy")) {
-      health?.status = "unhealthy";
+      health.status = "unhealthy";
     } else if (services?.includes("degraded")) {
-      health?.status = "degraded";
+      health.status = "degraded";
     }
 
-    const _responseTime = Date?.now() - startTime;
+    const responseTime = Date?.now() - startTime;
     res?.set("X-Response-Time", `${responseTime}ms`);
 
     // Set appropriate HTTP status
-    const _httpStatus =
+    const httpStatus =
       health?.status === "healthy"
         ? 200
         : health?.status === "degraded"
@@ -143,19 +143,19 @@ export async function readinessCheck(
   res: Response,
 ): Promise<void> {
   try {
-    const _probe = await getReadinessProbe();
+    const probe = await getReadinessProbe();
 
     if (probe?.ready) {
       res?.status(200).json({
         status: "ready",
         timestamp: new Date().toISOString(),
-        checks: probe?.checks,
+        checks: probe.checks,
       });
     } else {
       res?.status(503).json({
         status: "not-ready",
         timestamp: new Date().toISOString(),
-        checks: probe?.checks,
+        checks: probe.checks,
       });
     }
   } catch (error: unknown) {
@@ -169,10 +169,10 @@ export async function readinessCheck(
 
 // Simple liveness check (no caching - always fresh)
 export function livenessCheck(_req: Request, res: Response): void {
-  const _probe = getLivenessProbe();
+  const probe = getLivenessProbe();
   res?.status(200).json({
-    status: probe?.status,
+    status: probe.status,
     timestamp: new Date().toISOString(),
-    uptime: Math?.floor(probe?.uptime),
+    uptime: Math.floor(probe?.uptime),
   });
 }

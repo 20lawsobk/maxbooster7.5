@@ -1184,7 +1184,7 @@ export default function AdminDashboard() {
                   </Alert>
                 ) : usersLoading ? (
                   <Skeleton className="h-96 w-full" />
-                ) : usersData?.users && usersData.users.length > 0 ? (
+                ) : usersData.users && usersData.users.length > 0 ? (
                   <div className="space-y-4">
                     <div className="rounded-md border">
                       <Table>
@@ -1979,7 +1979,7 @@ function BeatMoneyLoopTab() {
       toast({
         title,
         description,
-        variant: r?.status === "failed" ? "destructive" : "default",
+        variant: r.status === "failed" ? "destructive" : "default",
       });
       refetch();
     },

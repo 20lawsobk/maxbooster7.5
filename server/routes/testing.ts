@@ -1,13 +1,13 @@
 import { Router, type RequestHandler } from "express";
-import { require2FA } from "../middleware/auth?.js";
+import { require2FA } from "../middleware/auth.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { db } from "../db?.js";
-import { users, projects, releases } from "../../shared/schema?.js";
+import { db } from "../db.js";
+import { users, projects, releases } from "../../shared/schema.js";
 import { count, eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 /**
  * POST /api/testing/setup-stripe-customer
@@ -50,11 +50,11 @@ router?.get("/user-tier", async (req, res) => {
     return res?.status(401).json({ error: "Authentication required" });
   }
   const [row] = await db
-    .select({ subscriptionTier: users?.subscriptionTier })
+    .select({ subscriptionTier: users.subscriptionTier })
     .from(users)
     .where(eq(users?.id, req?.user.id))
     .limit(1);
-  return res?.json({ tier: row?.subscriptionTier ?? "free" });
+  return res?.json({ tier: row.subscriptionTier ?? "free" });
 });
 
 const requireAdmin: RequestHandler = (req, res, next) => {
@@ -90,12 +90,12 @@ interface TestRunArtifact {
   };
 }
 
-const _RESULTS_PATH = path?.resolve(process?.cwd(), "logs", "test-results?.json");
+const RESULTS_PATH = path?.resolve(process?.cwd(), "logs", "test-results.json");
 
 async function loadStoredRun(): Promise<TestRunArtifact | null> {
   try {
-    const _raw = await fs?.readFile(RESULTS_PATH, "utf-8");
-    const _parsed = JSON?.parse(raw) as TestRunArtifact;
+    const raw = await fs?.readFile(RESULTS_PATH, "utf-8");
+    const parsed = JSON?.parse(raw) as TestRunArtifact;
     if (
       !parsed ||
       typeof parsed !== "object" ||
@@ -111,7 +111,7 @@ async function loadStoredRun(): Promise<TestRunArtifact | null> {
 
 router?.get("/results", async (_req, res) => {
   try {
-    const _stored = await loadStoredRun();
+    const stored = await loadStoredRun();
 
     if (!stored) {
       const [{ value: userCount }] = await db
@@ -132,7 +132,7 @@ router?.get("/results", async (_req, res) => {
           passed: 0,
           failed: 0,
           skipped: 0,
-          duration: "0?.0",
+          duration: "0.0",
         },
         testSuites: [],
         coverage: null,
@@ -142,21 +142,21 @@ router?.get("/results", async (_req, res) => {
           releases: releaseCount,
         },
         message:
-          "No test runs recorded yet. Use POST /api/testing/run to trigger a suite, or write a TestRunArtifact JSON to logs/test-results?.json from your CI pipeline.",
+          "No test runs recorded yet. Use POST /api/testing/run to trigger a suite, or write a TestRunArtifact JSON to logs/test-results.json from your CI pipeline.",
       });
     }
 
-    const _totalPassed = stored?.suites.reduce((sum, s) => sum + s?.passed, 0);
-    const _totalFailed = stored?.suites.reduce((sum, s) => sum + s?.failed, 0);
-    const _totalSkipped = stored?.suites.reduce((sum, s) => sum + s?.skipped, 0);
-    const _totalTests = totalPassed + totalFailed + totalSkipped;
-    const _totalDuration = stored?.suites.reduce((sum, s) => sum + s?.duration, 0);
-    const _overallScore =
+    const totalPassed = stored?.suites.reduce((sum, s) => sum + s?.passed, 0);
+    const totalFailed = stored?.suites.reduce((sum, s) => sum + s?.failed, 0);
+    const totalSkipped = stored?.suites.reduce((sum, s) => sum + s?.skipped, 0);
+    const totalTests = totalPassed + totalFailed + totalSkipped;
+    const totalDuration = stored?.suites.reduce((sum, s) => sum + s?.duration, 0);
+    const overallScore =
       totalTests > 0 ? Math?.round((totalPassed / totalTests) * 100) : 0;
 
     return res?.json({
       overallScore,
-      lastRunDate: stored?.ranAt,
+      lastRunDate: stored.ranAt,
       summary: {
         total: totalTests,
         passed: totalPassed,
@@ -164,8 +164,8 @@ router?.get("/results", async (_req, res) => {
         skipped: totalSkipped,
         duration: (totalDuration / 1000).toFixed(1),
       },
-      testSuites: stored?.suites,
-      coverage: stored?.coverage ?? null,
+      testSuites: stored.suites,
+      coverage: stored.coverage ?? null,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching test results");
@@ -176,11 +176,11 @@ router?.get("/results", async (_req, res) => {
 router?.post("/run", async (req, res) => {
   try {
     const { suite } = req?.body ?? {};
-    const _requested =
+    const requested =
       typeof suite === "string" && suite?.length > 0 ? suite : "all";
 
     logger?.info(
-      { requested, requestedBy: req?.user?.id },
+      { requested, requestedBy: req.user?.id },
       "Test run requested via admin API",
     );
 
@@ -188,7 +188,7 @@ router?.post("/run", async (req, res) => {
       accepted: true,
       suite: requested,
       message:
-        "Test runs are not executed by the API server. Trigger your CI pipeline (e?.g. GitHub Actions test-runner?.yml) and write logs/test-results?.json on completion to surface results in this dashboard.",
+        "Test runs are not executed by the API server. Trigger your CI pipeline (e.g. GitHub Actions test-runner.yml) and write logs/test-results.json on completion to surface results in this dashboard.",
       docsUrl: "/docs/testing",
     });
   } catch (error) {

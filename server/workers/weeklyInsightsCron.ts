@@ -1,7 +1,7 @@
 import cron from "node-cron";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-let weeklyInsightsTask: cron?.ScheduledTask | null = null;
+let weeklyInsightsTask: cron.ScheduledTask | null = null;
 
 export function initializeWeeklyInsightsCron(): void {
   if (weeklyInsightsTask) {
@@ -15,9 +15,9 @@ export function initializeWeeklyInsightsCron(): void {
 
       try {
         const { weeklyInsightsService } = await import(
-          "../services/weeklyInsightsService?.js"
+          "../services/weeklyInsightsService.js"
         );
-        const _result = await weeklyInsightsService?.sendWeeklyInsights();
+        const result = await weeklyInsightsService?.sendWeeklyInsights();
 
         logger?.info(
           `📧 Weekly insights complete: ${result?.sent} sent, ${result?.failed} failed`,
@@ -52,21 +52,21 @@ export function getWeeklyInsightsStatus(): {
     return { running: false, nextRun: null };
   }
 
-  const _now = new Date();
-  const _dayOfWeek = now?.getDay();
-  const _daysUntilMonday =
+  const now = new Date();
+  const dayOfWeek = now?.getDay();
+  const daysUntilMonday =
     dayOfWeek === 0
       ? 1
       : dayOfWeek === 1 && now?.getHours() < 9
         ? 0
         : 8 - dayOfWeek;
 
-  const _nextRun = new Date(now);
+  const nextRun = new Date(now);
   nextRun?.setDate(now?.getDate() + daysUntilMonday);
   nextRun?.setHours(9, 0, 0, 0);
 
   return {
     running: true,
-    nextRun: nextRun?.toISOString(),
+    nextRun: nextRun.toISOString(),
   };
 }

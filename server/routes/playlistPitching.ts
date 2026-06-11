@@ -3,173 +3,173 @@ import { db } from "../db";
 import { playlistPitches, insertPlaylistPitchSchema } from "@shared/schema";
 import { and, eq, desc, sql } from "drizzle-orm";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { queryCache, createCacheKey } from "../lib/queryCache?.js";
-import { parsePaginationParams } from "../middleware/pagination?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { queryCache, createCacheKey } from "../lib/queryCache.js";
+import { parsePaginationParams } from "../middleware/pagination.js";
 
-const _router = Router();
+const router = Router();
 
-const _CURATORS = [
+const CURATORS = [
   {
     id: "1",
     name: "Indie Mono",
     genre: "Indie, Pop",
-    followers: "1?.2M",
-    submissionUrl: "https://indiemono?.com/submit-music/",
-    email: "submissions@indiemono?.com",
+    followers: "1.2M",
+    submissionUrl: "https://indiemono.com/submit-music/",
+    email: "submissions@indiemono.com",
   },
   {
     id: "2",
     name: "Soundplate",
     genre: "Electronic, House",
     followers: "500K",
-    submissionUrl: "https://soundplate?.com/submit-music/",
-    email: "info@soundplate?.com",
+    submissionUrl: "https://soundplate.com/submit-music/",
+    email: "info@soundplate.com",
   },
   {
     id: "3",
     name: "SubmitHub",
     genre: "All Genres",
     followers: "5M+",
-    submissionUrl: "https://www?.submithub.com/",
-    email: "support@submithub?.com",
+    submissionUrl: "https://www.submithub.com/",
+    email: "support@submithub.com",
   },
   {
     id: "4",
     name: "Daily Playlists",
     genre: "All Genres",
     followers: "2M",
-    submissionUrl: "https://dailyplaylists?.com/",
-    email: "hello@dailyplaylists?.com",
+    submissionUrl: "https://dailyplaylists.com/",
+    email: "hello@dailyplaylists.com",
   },
   {
     id: "5",
     name: "Work Hard Playlist Hard",
     genre: "Pop, Rock, Hip-Hop",
     followers: "150K",
-    submissionUrl: "https://workhardplaylisthard?.com/submit/",
-    email: "info@workhardplaylisthard?.com",
+    submissionUrl: "https://workhardplaylisthard.com/submit/",
+    email: "info@workhardplaylisthard.com",
   },
   {
     id: "6",
     name: "CloudKid",
     genre: "Electronic, Trap, Pop",
     followers: "5M",
-    submissionUrl: "https://cldkid?.com/submit",
-    email: "hello@cldkid?.com",
+    submissionUrl: "https://cldkid.com/submit",
+    email: "hello@cldkid.com",
   },
   {
     id: "7",
     name: "Chillhop Music",
     genre: "Lofi, Chillhop",
     followers: "3M",
-    submissionUrl: "https://chillhop?.com/submit/",
-    email: "info@chillhop?.com",
+    submissionUrl: "https://chillhop.com/submit/",
+    email: "info@chillhop.com",
   },
   {
     id: "8",
     name: "Majestic Casual",
     genre: "Electronic, Indie, R&B",
     followers: "4M",
-    submissionUrl: "https://www?.majesticcasual.com/submit",
-    email: "majestic@casual?.com",
+    submissionUrl: "https://www.majesticcasual.com/submit",
+    email: "majestic@casual.com",
   },
   {
     id: "9",
     name: "The Vibe Guide",
     genre: "House, Pop",
     followers: "1M",
-    submissionUrl: "https://thevibeguide?.net/submit",
-    email: "info@thevibeguide?.net",
+    submissionUrl: "https://thevibeguide.net/submit",
+    email: "info@thevibeguide.net",
   },
   {
     id: "10",
-    name: "Birp?.fm",
+    name: "Birp.fm",
     genre: "Indie",
     followers: "200K",
-    submissionUrl: "https://www?.birp.fm/submit",
-    email: "hello@birp?.fm",
+    submissionUrl: "https://www.birp.fm/submit",
+    email: "hello@birp.fm",
   },
   {
     id: "11",
     name: "Lofi Girl",
     genre: "Lofi Hip Hop",
     followers: "12M",
-    submissionUrl: "https://lofigirl?.com/pages/submit-your-music",
-    email: "hello@lofigirl?.com",
+    submissionUrl: "https://lofigirl.com/pages/submit-your-music",
+    email: "hello@lofigirl.com",
   },
   {
     id: "12",
     name: "Spinnin Records Playlists",
     genre: "EDM, Dance",
     followers: "10M",
-    submissionUrl: "https://spinninrecords?.com/talentpool/",
-    email: "talentpool@spinninrecords?.com",
+    submissionUrl: "https://spinninrecords.com/talentpool/",
+    email: "talentpool@spinninrecords.com",
   },
   {
     id: "13",
     name: "Selected.",
     genre: "Deep House, House",
     followers: "2M",
-    submissionUrl: "https://www?.selected-music?.com/demo",
-    email: "demo@selected-music?.com",
+    submissionUrl: "https://www.selected-music.com/demo",
+    email: "demo@selected-music.com",
   },
   {
     id: "14",
     name: "Trap Nation",
     genre: "Trap, EDM",
     followers: "30M",
-    submissionUrl: "https://nations?.io/submit",
-    email: "submissions@trapnation?.io",
+    submissionUrl: "https://nations.io/submit",
+    email: "submissions@trapnation.io",
   },
   {
     id: "15",
     name: "Proximity",
     genre: "EDM, Progressive House",
     followers: "8M",
-    submissionUrl: "https://proximity?.wetransfer.com/",
-    email: "proximity@proximity?.com",
+    submissionUrl: "https://proximity.wetransfer.com/",
+    email: "proximity@proximity.com",
   },
   {
     id: "16",
     name: "Colors x Studios",
     genre: "Alternative, R&B, Hip Hop",
     followers: "6M",
-    submissionUrl: "https://colorsxstudios?.com/contact",
-    email: "info@colorsxstudios?.com",
+    submissionUrl: "https://colorsxstudios.com/contact",
+    email: "info@colorsxstudios.com",
   },
   {
     id: "17",
     name: "Nice Guys",
     genre: "Indie, Dream Pop",
     followers: "100K",
-    submissionUrl: "https://niceguys?.fm/submit",
-    email: "hello@niceguys?.fm",
+    submissionUrl: "https://niceguys.fm/submit",
+    email: "hello@niceguys.fm",
   },
   {
     id: "18",
     name: "The Jazz Hop Café",
     genre: "Jazz Hop, Lofi",
     followers: "1M",
-    submissionUrl: "https://thejazzhopcafe?.com/submissions",
-    email: "jazz@hopcafe?.com",
+    submissionUrl: "https://thejazzhopcafe.com/submissions",
+    email: "jazz@hopcafe.com",
   },
   {
     id: "19",
     name: "AlexRainbirdMusic",
     genre: "Indie Rock, Folk",
-    followers: "1?.2M",
-    submissionUrl: "https://www?.alexrainbirdmusic.com/submit",
-    email: "alex@rainbirdmusic?.com",
+    followers: "1.2M",
+    submissionUrl: "https://www.alexrainbirdmusic.com/submit",
+    email: "alex@rainbirdmusic.com",
   },
   {
     id: "20",
     name: "Eton Messy",
     genre: "House, Electronic",
     followers: "500K",
-    submissionUrl: "https://etonmessy?.com/submit",
-    email: "info@etonmessy?.com",
+    submissionUrl: "https://etonmessy.com/submit",
+    email: "info@etonmessy.com",
   },
 ];
 
@@ -180,7 +180,7 @@ router?.get("/curators", (_req, res) => {
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _pitches = await db
+    const pitches = await db
       .select()
       .from(playlistPitches)
       .where(eq(playlistPitches?.userId, req?.user!.id))
@@ -196,9 +196,9 @@ router?.get("/", requireAuth, async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _validatedData = insertPlaylistPitchSchema?.parse({
+    const validatedData = insertPlaylistPitchSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
     });
     const [newPitch] = await db
       .insert(playlistPitches)
@@ -210,10 +210,10 @@ router?.post("/", requireAuth, async (req, res) => {
     res?.status(201).json(newPitch);
   } catch (error) {
     logger?.warn({ err: error }, "[PlaylistPitching] Failed to create pitch:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.flatten() });
+        .json({ error: "Validation error", details: error.flatten() });
     }
     res?.status(500).json({ error: "Failed to create playlist pitch" });
   }
@@ -221,7 +221,7 @@ router?.post("/", requireAuth, async (req, res) => {
 
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const _validatedData = insertPlaylistPitchSchema
+    const validatedData = insertPlaylistPitchSchema
       .partial()
       .omit({ userId: true })
       .parse(req?.body);
@@ -244,10 +244,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
     res?.json(updatedPitch);
   } catch (error) {
     logger?.warn({ err: error }, "[PlaylistPitching] Failed to update pitch:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.flatten() });
+        .json({ error: "Validation error", details: error.flatten() });
     }
     res?.status(500).json({ error: "Failed to update playlist pitch" });
   }
@@ -256,10 +256,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
 // PATCH /api/playlist-pitching/:id/status — record pitch outcome (placed, rejected, etc.)
 router?.patch("/:id/status", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
-    const _statusSchema = z?.object({
-      status: z?.enum([
+    const statusSchema = z.object({
+      status: z.enum([
         "draft",
         "submitted",
         "under_review",
@@ -268,7 +268,7 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
         "placed",
         "following_up",
       ]),
-      responseNote: z?.string().max(2000).optional(),
+      responseNote: z.string().max(2000).optional(),
     });
     const { status, responseNote } = statusSchema?.parse(req?.body);
 
@@ -276,10 +276,10 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
       status,
       updatedAt: new Date(),
     };
-    if (responseNote !== undefined) setFields?.responseNote = responseNote;
+    if (responseNote !== undefined) setFields.responseNote = responseNote;
     if (["accepted", "rejected", "placed"].includes(status))
-      setFields?.responseAt = new Date();
-    if (status === "submitted") setFields?.submittedAt = new Date();
+      setFields.responseAt = new Date();
+    if (status === "submitted") setFields.submittedAt = new Date();
 
     const [updated] = await db
       .update(playlistPitches)
@@ -296,10 +296,10 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
     res?.json(updated);
   } catch (error) {
     logger?.warn({ err: error }, "[PlaylistPitching] Failed to update status:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.flatten() });
+        .json({ error: "Validation error", details: error.flatten() });
     }
     res?.status(500).json({ error: "Failed to update pitch status" });
   }
@@ -331,22 +331,22 @@ router?.delete("/:id", requireAuth, async (req, res) => {
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _cacheKey = createCacheKey("stats:playlistPitches", userId);
+    const userId = req?.user!.id;
+    const cacheKey = createCacheKey("stats:playlistPitches", userId);
 
-    const _result = await queryCache?.getOrCompute(
+    const result = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
-        const _stats = await db
+        const stats = await db
           .select({
-            status: playlistPitches?.status,
+            status: playlistPitches.status,
             count: sql<number>`count(*)`,
           })
           .from(playlistPitches)
           .where(eq(playlistPitches?.userId, userId))
           .groupBy(playlistPitches?.status);
 
-        const _r = {
+        const r = {
           total: 0,
           accepted: 0,
           placed: 0,
@@ -355,20 +355,20 @@ router?.get("/stats", requireAuth, async (req, res) => {
           conversionRate: 0,
         };
         stats?.forEach((s) => {
-          r?.total += Number(s?.count);
-          if (s?.status === "accepted") r?.accepted = Number(s?.count);
-          if (s?.status === "placed") r?.placed = Number(s?.count);
+          r.total += Number(s?.count);
+          if (s?.status === "accepted") r.accepted = Number(s?.count);
+          if (s?.status === "placed") r.placed = Number(s?.count);
           if (
             s?.status === "submitted" ||
             s?.status === "under_review" ||
             s?.status === "following_up"
           )
-            r?.pending += Number(s?.count);
-          if (s?.status === "rejected") r?.rejected = Number(s?.count);
+            r.pending += Number(s?.count);
+          if (s?.status === "rejected") r.rejected = Number(s?.count);
         });
         // Conversion = accepted + placed (both represent successful pitches)
-        const _converted = r?.accepted + r?.placed;
-        if (r?.total > 0) r?.conversionRate = (converted / r?.total) * 100;
+        const converted = r?.accepted + r?.placed;
+        if (r.total > 0) r.conversionRate = (converted / r?.total) * 100;
         return r;
       },
       300,

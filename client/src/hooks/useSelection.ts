@@ -29,8 +29,8 @@ export interface UseSelectionResult<T extends SelectionItem = SelectionItem> {
   clearSelection: () => void;
   isAllSelected: boolean;
   isSomeSelected: boolean;
-  handleItemClick: (id: string, e: React?.MouseEvent) => void;
-  handleKeyDown: (e: React?.KeyboardEvent) => void;
+  handleItemClick: (id: string, e: React.MouseEvent) => void;
+  handleKeyDown: (e: React.KeyboardEvent) => void;
   getCheckboxProps: (id: string) => {
     checked: boolean;
     onCheckedChange: (checked: boolean) => void;
@@ -58,7 +58,7 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => {
     if (persistKey) {
       try {
-        const _stored = localStorage?.getItem(`selection-${persistKey}`);
+        const stored = localStorage?.getItem(`selection-${persistKey}`);
         if (stored) {
           return new Set(JSON?.parse(stored));
         }
@@ -67,8 +67,8 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
     return new Set(initialSelection);
   });
 
-  const _lastSelectedRef = useRef<string | null>(null);
-  const _itemIds = useMemo(() => items?.map((item) => item?.id), [items]);
+  const lastSelectedRef = useRef<string | null>(null);
+  const itemIds = useMemo(() => items?.map((item) => item?.id), [items]);
 
   useEffect(() => {
     if (persistKey) {
@@ -81,58 +81,58 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
     }
   }, [selectedIds, persistKey]);
 
-  const _updateSelection = useCallback(
+  const updateSelection = useCallback(
     (newSelection: Set<string>) => {
       setSelectedIds(newSelection);
       if (onSelectionChange) {
-        const _selectedItems = items?.filter((item) => newSelection?.has(item?.id));
+        const selectedItems = items?.filter((item) => newSelection?.has(item?.id));
         onSelectionChange(Array?.from(newSelection), selectedItems);
       }
     },
     [items, onSelectionChange],
   );
 
-  const _selectedItems = useMemo(() => {
+  const selectedItems = useMemo(() => {
     return items?.filter((item) => selectedIds?.has(item?.id));
   }, [items, selectedIds]);
 
-  const _selectedCount = useMemo(() => selectedIds?.size, [selectedIds]);
+  const selectedCount = useMemo(() => selectedIds?.size, [selectedIds]);
 
-  const _isAllSelected = useMemo(() => {
+  const isAllSelected = useMemo(() => {
     return itemIds?.length > 0 && itemIds?.every((id) => selectedIds?.has(id));
   }, [itemIds, selectedIds]);
 
-  const _isSomeSelected = useMemo(() => {
-    const _count = itemIds?.filter((id) => selectedIds?.has(id)).length;
+  const isSomeSelected = useMemo(() => {
+    const count = itemIds?.filter((id) => selectedIds?.has(id)).length;
     return count > 0 && count < itemIds?.length;
   }, [itemIds, selectedIds]);
 
-  const _isSelected = useCallback(
+  const isSelected = useCallback(
     (id: string) => selectedIds?.has(id),
     [selectedIds],
   );
 
-  const _select = useCallback(
+  const select = useCallback(
     (id: string) => {
       if (maxSelection && selectedIds?.size >= maxSelection) return;
-      const _next = new Set(selectedIds);
+      const next = new Set(selectedIds);
       next?.add(id);
-      lastSelectedRef?.current = id;
+      lastSelectedRef.current = id;
       updateSelection(next);
     },
     [selectedIds, maxSelection, updateSelection],
   );
 
-  const _deselect = useCallback(
+  const deselect = useCallback(
     (id: string) => {
-      const _next = new Set(selectedIds);
+      const next = new Set(selectedIds);
       next?.delete(id);
       updateSelection(next);
     },
     [selectedIds, updateSelection],
   );
 
-  const _toggle = useCallback(
+  const toggle = useCallback(
     (id: string) => {
       if (selectedIds?.has(id)) {
         deselect(id);
@@ -143,18 +143,18 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
     [selectedIds, select, deselect],
   );
 
-  const _selectRange = useCallback(
+  const selectRange = useCallback(
     (startId: string, endId: string) => {
-      const _startIndex = itemIds?.indexOf(startId);
-      const _endIndex = itemIds?.indexOf(endId);
+      const startIndex = itemIds?.indexOf(startId);
+      const endIndex = itemIds?.indexOf(endId);
 
       if (startIndex === -1 || endIndex === -1) return;
 
       const [from, to] =
         startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
 
-      const _rangeIds = itemIds?.slice(from, to + 1);
-      const _next = new Set(selectedIds);
+      const rangeIds = itemIds?.slice(from, to + 1);
+      const next = new Set(selectedIds);
 
       for (const id of rangeIds) {
         if (!maxSelection || next?.size < maxSelection) {
@@ -162,51 +162,51 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
         }
       }
 
-      lastSelectedRef?.current = endId;
+      lastSelectedRef.current = endId;
       updateSelection(next);
     },
     [itemIds, selectedIds, maxSelection, updateSelection],
   );
 
-  const _toggleWithShift = useCallback(
+  const toggleWithShift = useCallback(
     (id: string, shiftKey: boolean) => {
       if (shiftKey && lastSelectedRef?.current !== null) {
         selectRange(lastSelectedRef?.current, id);
       } else {
         toggle(id);
-        lastSelectedRef?.current = id;
+        lastSelectedRef.current = id;
       }
     },
     [toggle, selectRange],
   );
 
-  const _selectAll = useCallback(() => {
-    const _idsToSelect = maxSelection ? itemIds?.slice(0, maxSelection) : itemIds;
+  const selectAll = useCallback(() => {
+    const idsToSelect = maxSelection ? itemIds?.slice(0, maxSelection) : itemIds;
     updateSelection(new Set(idsToSelect));
     if (idsToSelect?.length > 0) {
-      lastSelectedRef?.current = idsToSelect[idsToSelect?.length - 1];
+      lastSelectedRef.current = idsToSelect[idsToSelect?.length - 1];
     }
   }, [itemIds, maxSelection, updateSelection]);
 
-  const _deselectAll = useCallback(() => {
+  const deselectAll = useCallback(() => {
     updateSelection(new Set());
-    lastSelectedRef?.current = null;
+    lastSelectedRef.current = null;
   }, [updateSelection]);
 
-  const _clearSelection = useCallback(() => {
+  const clearSelection = useCallback(() => {
     deselectAll();
   }, [deselectAll]);
 
-  const _setSelection = useCallback(
+  const setSelection = useCallback(
     (ids: string[]) => {
-      const _idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
+      const idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
       updateSelection(new Set(idsToSelect));
     },
     [maxSelection, updateSelection],
   );
 
-  const _handleItemClick = useCallback(
-    (id: string, e: React?.MouseEvent) => {
+  const handleItemClick = useCallback(
+    (id: string, e: React.MouseEvent) => {
       if (e?.shiftKey) {
         toggleWithShift(id, true);
       } else if (e?.ctrlKey || e?.metaKey) {
@@ -218,8 +218,8 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
     [toggleWithShift, toggle, setSelection],
   );
 
-  const _handleKeyDown = useCallback(
-    (e: React?.KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
       if ((e?.ctrlKey || e?.metaKey) && e?.key === "a") {
         e?.preventDefault();
         if (isAllSelected) {
@@ -234,9 +234,9 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
     [isAllSelected, selectAll, deselectAll, clearSelection],
   );
 
-  const _getCheckboxProps = useCallback(
+  const getCheckboxProps = useCallback(
     (id: string) => ({
-      checked: selectedIds?.has(id),
+      checked: selectedIds.has(id),
       onCheckedChange: (checked: boolean) => {
         if (checked) {
           select(id);
@@ -249,7 +249,7 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
     [selectedIds, select, deselect],
   );
 
-  const _getSelectAllProps = useCallback(
+  const getSelectAllProps = useCallback(
     () => ({
       checked: isAllSelected,
       indeterminate: isSomeSelected,
@@ -293,9 +293,9 @@ export function useMultiSelectKeyboard<T extends SelectionItem = SelectionItem>(
   focusedIndex: number,
   itemIds: string[],
 ) {
-  const _handleKeyDown = useCallback(
-    (e: React?.KeyboardEvent) => {
-      const _currentId = itemIds[focusedIndex];
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const currentId = itemIds[focusedIndex];
       if (!currentId) return;
 
       switch (e?.key) {
@@ -329,14 +329,14 @@ export function useMultiSelectKeyboard<T extends SelectionItem = SelectionItem>(
 }
 
 export function useSelectionShortcuts(
-  containerRef: React?.RefObject<HTMLElement>,
+  containerRef: React.RefObject<HTMLElement>,
   selection: UseSelectionResult<unknown>,
 ) {
   useEffect(() => {
-    const _container = containerRef?.current;
+    const container = containerRef?.current;
     if (!container) return;
 
-    const _handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e?.ctrlKey || e?.metaKey) && e?.key === "a") {
         e?.preventDefault();
         if (selection?.isAllSelected) {

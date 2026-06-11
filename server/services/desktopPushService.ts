@@ -18,8 +18,8 @@ import webpush from "web-push";
 import { db } from "../db";
 import { pushSubscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import type { RichPushPayload } from "./pushNotificationTypes?.js";
+import { logger } from "../logger.js";
+import type { RichPushPayload } from "./pushNotificationTypes.js";
 
 export interface DesktopPushPayload {
   title: string;
@@ -50,7 +50,7 @@ interface SubscriptionRecord {
   updatedAt: Date | null;
 }
 
-const _DESKTOP_UA_PATTERNS = [
+const DESKTOP_UA_PATTERNS = [
   /Windows NT/i,
   /Macintosh; Intel Mac OS/i,
   /X11; Linux/i,
@@ -59,7 +59,7 @@ const _DESKTOP_UA_PATTERNS = [
   /X11; CrOS/i,
 ];
 
-const _MOBILE_UA_PATTERNS = [
+const MOBILE_UA_PATTERNS = [
   /Android/i,
   /iPhone/i,
   /iPad/i,
@@ -98,10 +98,10 @@ class DesktopPushService {
   }
 
   private initialize() {
-    const _publicKey = process?.env.VAPID_PUBLIC_KEY;
-    const _privateKey = process?.env.VAPID_PRIVATE_KEY;
-    const _subject =
-      process?.env.VAPID_SUBJECT || "mailto:notifications@maxbooster?.ai";
+    const publicKey = process?.env.VAPID_PUBLIC_KEY;
+    const privateKey = process?.env.VAPID_PRIVATE_KEY;
+    const subject =
+      process?.env.VAPID_SUBJECT || "mailto:notifications@maxbooster.ai";
 
     if (!publicKey || !privateKey) {
       logger?.warn(
@@ -112,7 +112,7 @@ class DesktopPushService {
 
     try {
       webpush?.setVapidDetails(subject, publicKey, privateKey);
-      this?.initialized = true;
+      this.initialized = true;
       logger?.info("🖥️ Desktop Push Service initialized (VAPID / Web Push)");
     } catch (error) {
       logger?.warn({ err: error }, "🖥️ Desktop Push Service: VAPID init error:");
@@ -139,29 +139,29 @@ class DesktopPushService {
   }
 
   async getDesktopSubscriptions(userId: string): Promise<SubscriptionRecord[]> {
-    const _all = await this?.getAllUserSubscriptions(userId);
+    const all = await this?.getAllUserSubscriptions(userId);
     return all?.filter((s) => isDesktopUserAgent(s?.userAgent));
   }
 
   async getMobileWebSubscriptions(
     userId: string,
   ): Promise<SubscriptionRecord[]> {
-    const _all = await this?.getAllUserSubscriptions(userId);
+    const all = await this?.getAllUserSubscriptions(userId);
     return all?.filter((s) => isMobileUserAgent(s?.userAgent));
   }
 
   async getSubscriptionBreakdown(userId: string) {
-    const _all = await this?.getAllUserSubscriptions(userId);
-    const _desktop = all?.filter((s) => isDesktopUserAgent(s?.userAgent));
-    const _mobile = all?.filter((s) => isMobileUserAgent(s?.userAgent));
+    const all = await this?.getAllUserSubscriptions(userId);
+    const desktop = all?.filter((s) => isDesktopUserAgent(s?.userAgent));
+    const mobile = all?.filter((s) => isMobileUserAgent(s?.userAgent));
     return {
-      total: all?.length,
-      desktop: desktop?.length,
-      mobileWeb: mobile?.length,
-      desktopBrowsers: desktop?.map((s) => ({
-        id: s?.id,
+      total: all.length,
+      desktop: desktop.length,
+      mobileWeb: mobile.length,
+      desktopBrowsers: desktop.map((s) => ({
+        id: s.id,
         browser: detectBrowser(s?.userAgent),
-        createdAt: s?.createdAt,
+        createdAt: s.createdAt,
       })),
     };
   }
@@ -179,8 +179,8 @@ class DesktopPushService {
       try {
         await webpush?.sendNotification(
           {
-            endpoint: sub?.endpoint,
-            keys: { p256dh: sub?.p256dh, auth: sub?.auth },
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
           },
           serialized,
         );
@@ -213,31 +213,31 @@ class DesktopPushService {
   ): Promise<{ sent: number; failed: number }> {
     if (!this?.initialized) return { sent: 0, failed: 0 };
 
-    const _subs = await this?.getDesktopSubscriptions(userId);
+    const subs = await this?.getDesktopSubscriptions(userId);
     if (subs?.length === 0) return { sent: 0, failed: 0 };
 
-    const _serialized = JSON?.stringify({
-      title: payload?.title,
-      body: payload?.body,
-      url: payload?.url || "/",
-      icon: payload?.icon || "/icons/icon-192x192?.png",
-      badge: payload?.badge || "/icons/icon-72x72?.png",
-      image: payload?.image,
-      tag: payload?.tag,
-      category: payload?.category,
-      actions: payload?.actions || [
+    const serialized = JSON?.stringify({
+      title: payload.title,
+      body: payload.body,
+      url: payload.url || "/",
+      icon: payload.icon || "/icons/icon-192x192.png",
+      badge: payload.badge || "/icons/icon-72x72.png",
+      image: payload.image,
+      tag: payload.tag,
+      category: payload.category,
+      actions: payload.actions || [
         { action: "open", title: "Open" },
         { action: "dismiss", title: "Dismiss" },
       ],
-      requireInteraction: payload?.requireInteraction ?? false,
-      renotify: payload?.renotify ?? false,
-      silent: payload?.silent ?? false,
-      vibrate: payload?.vibrate || [100, 50, 100],
-      timestamp: payload?.timestamp || Date?.now(),
-      data: { ...payload?.data, url: payload?.url || "/" },
+      requireInteraction: payload.requireInteraction ?? false,
+      renotify: payload.renotify ?? false,
+      silent: payload.silent ?? false,
+      vibrate: payload.vibrate || [100, 50, 100],
+      timestamp: payload.timestamp || Date?.now(),
+      data: { ...payload?.data, url: payload.url || "/" },
     });
 
-    const _result = await this?.deliverToSubscriptions(subs, serialized);
+    const result = await this?.deliverToSubscriptions(subs, serialized);
 
     if (result?.sent > 0) {
       logger?.info(
@@ -253,21 +253,21 @@ class DesktopPushService {
     richPayload: RichPushPayload,
   ): Promise<{ sent: number; failed: number }> {
     const desktopPayload: DesktopPushPayload = {
-      title: richPayload?.title,
-      body: richPayload?.body,
-      url: richPayload?.url,
-      icon: richPayload?.icon,
-      badge: richPayload?.badge,
-      image: richPayload?.image,
-      tag: richPayload?.tag,
-      category: richPayload?.category,
-      actions: this?.desktopActions(richPayload),
-      requireInteraction: richPayload?.requireInteraction,
-      renotify: richPayload?.renotify,
-      silent: richPayload?.silent,
-      vibrate: richPayload?.vibrate,
-      timestamp: richPayload?.timestamp,
-      data: richPayload?.data,
+      title: richPayload.title,
+      body: richPayload.body,
+      url: richPayload.url,
+      icon: richPayload.icon,
+      badge: richPayload.badge,
+      image: richPayload.image,
+      tag: richPayload.tag,
+      category: richPayload.category,
+      actions: this.desktopActions(richPayload),
+      requireInteraction: richPayload.requireInteraction,
+      renotify: richPayload.renotify,
+      silent: richPayload.silent,
+      vibrate: richPayload.vibrate,
+      timestamp: richPayload.timestamp,
+      data: richPayload.data,
     };
 
     return this?.sendToDesktop(userId, desktopPayload);
@@ -320,4 +320,4 @@ class DesktopPushService {
   }
 }
 
-export const _desktopPushService = new DesktopPushService();
+export const desktopPushService = new DesktopPushService();

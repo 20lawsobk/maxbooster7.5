@@ -22,7 +22,7 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
   }
 
   const types: FilePickerAcceptType[] = [];
-  const _parts = accept?.split(",").map((p) => p?.trim());
+  const parts = accept?.split(",").map((p) => p?.trim());
 
   const audioExtensions: string[] = [];
   const mimeTypes: Record<string, string[]> = {};
@@ -36,7 +36,7 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
         mimeTypes[part] = [];
       }
       if (category === "audio") {
-        const _ext = part?.split("/")[1];
+        const ext = part?.split("/")[1];
         if (ext && ext !== "*") {
           mimeTypes[part].push(`.${ext}`);
         }
@@ -74,24 +74,24 @@ export function useFullscreenFileUpload(
   options: UseFullscreenFileUploadOptions = {},
 ) {
   const { onFilesSelected, accept = "*", multiple = true } = options;
-  const _fileInputRef = useRef<HTMLInputElement | null>(null);
-  const _wasFullscreenRef = useRef(false);
-  const _fullscreenElementRef = useRef<Element | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const wasFullscreenRef = useRef(false);
+  const fullscreenElementRef = useRef<Element | null>(null);
 
   useEffect(() => {
     if (!fileInputRef?.current) {
-      const _input = document?.createElement("input");
-      input?.type = "file";
-      input?.style.display = "none";
-      input?.accept = accept;
-      input?.multiple = multiple;
+      const input = document?.createElement("input");
+      input.type = "file";
+      input.style.display = "none";
+      input.accept = accept;
+      input.multiple = multiple;
       document?.body.appendChild(input);
-      fileInputRef?.current = input;
+      fileInputRef.current = input;
     }
 
-    const _input = fileInputRef?.current;
+    const input = fileInputRef?.current;
 
-    const _handleChange = () => {
+    const handleChange = () => {
       if (input?.files && input?.files.length > 0) {
         onFilesSelected?.(Array?.from(input?.files));
       }
@@ -103,12 +103,12 @@ export function useFullscreenFileUpload(
           } catch (e) {
             logger?.warn("Could not re-enter fullscreen:", e);
           }
-          wasFullscreenRef?.current = false;
-          fullscreenElementRef?.current = null;
+          wasFullscreenRef.current = false;
+          fullscreenElementRef.current = null;
         }, 100);
       }
 
-      input?.value = "";
+      input.value = "";
     };
 
     input?.addEventListener("change", handleChange);
@@ -118,21 +118,21 @@ export function useFullscreenFileUpload(
     };
   }, [accept, multiple, onFilesSelected]);
 
-  const _openFilePicker = useCallback(async () => {
-    const _isInFullscreen = isInFullscreenMode();
+  const openFilePicker = useCallback(async () => {
+    const isInFullscreen = isInFullscreenMode();
 
     if (supportsFileSystemAccess() && isInFullscreen) {
       try {
-        const _fileTypes = parseAcceptToFileTypes(accept);
-        const _handles = await window?.showOpenFilePicker({
+        const fileTypes = parseAcceptToFileTypes(accept);
+        const handles = await window?.showOpenFilePicker({
           multiple,
-          types: fileTypes?.length > 0 ? fileTypes : undefined,
+          types: fileTypes.length > 0 ? fileTypes : undefined,
           excludeAcceptAllOption: false,
         });
 
         const files: File[] = [];
         for (const handle of handles) {
-          const _file = await handle?.getFile();
+          const file = await handle?.getFile();
           files?.push(file);
         }
 
@@ -151,8 +151,8 @@ export function useFullscreenFileUpload(
     if (!fileInputRef?.current) return;
 
     if (isInFullscreen) {
-      wasFullscreenRef?.current = true;
-      fullscreenElementRef?.current = document?.fullscreenElement;
+      wasFullscreenRef.current = true;
+      fullscreenElementRef.current = document?.fullscreenElement;
 
       try {
         if (document?.exitFullscreen) {
@@ -176,10 +176,10 @@ export function useFullscreenFileUpload(
     }
   }, [accept, multiple, onFilesSelected]);
 
-  const _cleanup = useCallback(() => {
+  const cleanup = useCallback(() => {
     if (fileInputRef?.current && document?.body.contains(fileInputRef?.current)) {
       document?.body.removeChild(fileInputRef?.current);
-      fileInputRef?.current = null;
+      fileInputRef.current = null;
     }
   }, []);
 
@@ -204,7 +204,7 @@ export function isInFullscreenMode(): boolean {
 }
 
 export async function exitFullscreenForUpload(): Promise<Element | null> {
-  const _fullscreenElement =
+  const fullscreenElement =
     document?.fullscreenElement ||
     document?.webkitFullscreenElement ||
     document?.mozFullScreenElement ||
@@ -257,16 +257,16 @@ export async function openFilePickerInFullscreen(options: {
 
   if (supportsFileSystemAccess()) {
     try {
-      const _fileTypes = parseAcceptToFileTypes(accept);
-      const _handles = await window?.showOpenFilePicker({
+      const fileTypes = parseAcceptToFileTypes(accept);
+      const handles = await window?.showOpenFilePicker({
         multiple,
-        types: fileTypes?.length > 0 ? fileTypes : undefined,
+        types: fileTypes.length > 0 ? fileTypes : undefined,
         excludeAcceptAllOption: false,
       });
 
       const files: File[] = [];
       for (const handle of handles) {
-        const _file = await handle?.getFile();
+        const file = await handle?.getFile();
         files?.push(file);
       }
       return files;

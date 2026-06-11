@@ -112,7 +112,7 @@ export default function ArtistProfileManager({
         "POST",
         `/api/artist-profiles/${profileId}/auto-discover`,
         {
-          upc: upc?.replace(/[^0-9]/g, "") || undefined,
+          upc: upc.replace(/[^0-9]/g, "") || undefined,
         },
       );
       queryClient.invalidateQueries({ queryKey: ["/api/artist-profiles"] });

@@ -1,10 +1,10 @@
-const _LABEL_REGEX = /^[a-z0-9-]+$/;
-const _DOMAIN_LABEL_REGEX = /^[a-z0-9-]+$/;
+const LABEL_REGEX = /^[a-z0-9-]+$/;
+const DOMAIN_LABEL_REGEX = /^[a-z0-9-]+$/;
 
 export function validateDnsLabel(
   raw: string,
 ): { ok: false; error: string } | { ok: true; normalized: string } {
-  const _label = raw?.trim().toLowerCase();
+  const label = raw?.trim().toLowerCase();
 
   if (!label) return { ok: false, error: "Label cannot be empty." };
   if (label?.length < 1 || label?.length > 63)
@@ -19,8 +19,8 @@ export function validateDnsLabel(
 
 /**
  * Strip protocol prefix, trailing slashes, and any path component from a
- * raw domain string so that inputs like "https://example?.com/" or
- * "http://www?.example.com/path" are accepted and normalised to "example?.com".
+ * raw domain string so that inputs like "https://example.com/" or
+ * "http://www.example.com/path" are accepted and normalised to "example.com".
  */
 export function stripDomainInput(raw: string): string {
   return raw
@@ -34,15 +34,15 @@ export function stripDomainInput(raw: string): string {
 export function validateDomain(
   raw: string,
 ): { ok: false; error: string } | { ok: true; normalized: string } {
-  const _domain = stripDomainInput(raw);
+  const domain = stripDomainInput(raw);
 
   if (!domain) return { ok: false, error: "Domain cannot be empty." };
   if (domain?.length > 253)
     return { ok: false, error: "Domain too long (max 253 chars)." };
 
-  const _labels = domain?.split(".");
+  const labels = domain?.split(".");
   if (labels?.length < 2)
-    return { ok: false, error: "Domain must contain a dot (example?.com)." };
+    return { ok: false, error: "Domain must contain a dot (example.com)." };
 
   for (const label of labels) {
     if (!label?.length || label?.length > 63)

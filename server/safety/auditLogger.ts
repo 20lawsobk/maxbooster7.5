@@ -7,7 +7,7 @@
 
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -49,9 +49,9 @@ export interface AuditEntry {
 }
 
 // Write-ahead log for critical events
-const _WAL_PATH = path?.join(process?.cwd(), ".audit-wal");
+const WAL_PATH = path?.join(process?.cwd(), ".audit-wal");
 const walBuffer: AuditEntry[] = [];
-let walFlushTimer: NodeJS?.Timeout | null = null;
+let walFlushTimer: NodeJS.Timeout | null = null;
 
 /**
  * Initialize audit logger
@@ -82,7 +82,7 @@ export async function audit(
   entry: Omit<AuditEntry, "id" | "timestamp">,
 ): Promise<string> {
   const fullEntry: AuditEntry = {
-    id: crypto?.randomUUID(),
+    id: crypto.randomUUID(),
     timestamp: new Date(),
     ...entry,
   };
@@ -96,7 +96,7 @@ export async function audit(
   walBuffer?.push(fullEntry);
 
   // Log to console for immediate visibility
-  const _logLevel =
+  const logLevel =
     entry?.severity === "critical"
       ? "error"
       : entry?.severity === "warning"
@@ -106,9 +106,9 @@ export async function audit(
   logger[logLevel](
     `[AUDIT] [${entry?.category}] ${entry?.action} - ${entry?.success ? "SUCCESS" : "FAILED"}`,
     {
-      userId: entry?.userId,
-      targetId: entry?.targetId,
-      details: entry?.details,
+      userId: entry.userId,
+      targetId: entry.targetId,
+      details: entry.details,
     },
   );
 
@@ -125,7 +125,7 @@ export async function audit(
  */
 async function writeToWAL(entry: AuditEntry): Promise<void> {
   try {
-    const _walFile = path?.join(WAL_PATH, `${entry?.id}.json`);
+    const walFile = path?.join(WAL_PATH, `${entry?.id}.json`);
     await fs?.promises.writeFile(walFile, JSON?.stringify(entry), "utf8");
   } catch (error) {
     logger?.warn({ err: error }, "[Audit] Failed to write to WAL:");
@@ -138,8 +138,8 @@ async function writeToWAL(entry: AuditEntry): Promise<void> {
 async function flushWAL(): Promise<void> {
   if (walBuffer?.length === 0) return;
 
-  const _entries = [...walBuffer];
-  walBuffer?.length = 0;
+  const entries = [...walBuffer];
+  walBuffer.length = 0;
 
   try {
     // Batch insert to database
@@ -178,7 +178,7 @@ async function flushWAL(): Promise<void> {
  */
 function removeFromWAL(entryId: string): void {
   try {
-    const _walFile = path?.join(WAL_PATH, `${entryId}.json`);
+    const walFile = path?.join(WAL_PATH, `${entryId}.json`);
     if (fs?.existsSync(walFile)) {
       fs?.unlinkSync(walFile);
     }
@@ -199,7 +199,7 @@ async function recoverWAL(): Promise<void> {
       return;
     }
 
-    const _files = (await fs?.promises.readdir(WAL_PATH)).filter((f) =>
+    const files = (await fs?.promises.readdir(WAL_PATH)).filter((f) =>
       f?.endsWith(".json"),
     );
 
@@ -211,11 +211,11 @@ async function recoverWAL(): Promise<void> {
 
     for (const file of files) {
       try {
-        const _content = await fs?.promises.readFile(
+        const content = await fs?.promises.readFile(
           path?.join(WAL_PATH, file),
           "utf8",
         );
-        const _entry = JSON?.parse(content) as AuditEntry;
+        const entry = JSON?.parse(content) as AuditEntry;
         walBuffer?.push(entry);
       } catch (error) {
         logger?.warn(
@@ -237,7 +237,7 @@ async function recoverWAL(): Promise<void> {
 /**
  * Convenience methods for common audit events
  */
-export const _auditAuth = {
+export const auditAuth = {
   login: (userId: string, ip: string, success: boolean, error?: string) =>
     audit({
       category: "auth",
@@ -283,7 +283,7 @@ export const _auditAuth = {
     }),
 };
 
-export const _auditPayment = {
+export const auditPayment = {
   charge: (
     userId: string,
     amount: number,
@@ -351,7 +351,7 @@ export const _auditPayment = {
     }),
 };
 
-export const _auditSecurity = {
+export const auditSecurity = {
   suspiciousActivity: (
     userId: string | undefined,
     ip: string,
@@ -393,7 +393,7 @@ export const _auditSecurity = {
     }),
 };
 
-export const _auditAutonomous = {
+export const auditAutonomous = {
   actionBlocked: (systemName: string, action: string, reason: string) =>
     audit({
       category: "autonomous",
@@ -429,15 +429,15 @@ export async function getAuditLog(params: {
   offset?: number;
 }): Promise<AuditEntry[]> {
   try {
-    const _limit = Math?.min(params?.limit || 100, 1000);
-    const _offset = params?.offset || 0;
+    const limit = Math?.min(params?.limit || 100, 1000);
+    const offset = params?.offset || 0;
 
-    const _result = await db?.execute(sql`
+    const result = await db?.execute(sql`
       SELECT * FROM audit_log
       WHERE 1=1
-        ${params?.userId ? sql`AND user_id = ${params?.userId}` : sql``}
-        ${params?.category ? sql`AND category = ${params?.category}` : sql``}
-        ${params?.severity ? sql`AND severity = ${params?.severity}` : sql``}
+        ${params.userId ? sql`AND user_id = ${params?.userId}` : sql``}
+        ${params.category ? sql`AND category = ${params?.category}` : sql``}
+        ${params.severity ? sql`AND severity = ${params?.severity}` : sql``}
         ${params?.startDate ? sql`AND timestamp >= ${params?.startDate}` : sql``}
         ${params?.endDate ? sql`AND timestamp <= ${params?.endDate}` : sql``}
       ORDER BY timestamp DESC
@@ -459,19 +459,19 @@ export async function cleanupAuditLog(
   retentionDays: number = 90,
 ): Promise<number> {
   try {
-    const _cutoffDate = new Date(
+    const cutoffDate = new Date(
       Date?.now() - retentionDays * 24 * 60 * 60 * 1000,
     );
 
     // Keep critical entries for longer
-    const _result = await db?.execute(sql`
+    const result = await db?.execute(sql`
       DELETE FROM audit_log
       WHERE timestamp < ${cutoffDate}
         AND severity != 'critical'
       RETURNING id
     `);
 
-    const _deleted = result?.rows.length;
+    const deleted = result?.rows.length;
     if (deleted > 0) {
       logger?.info(`[Audit] Cleaned up ${deleted} old audit entries`);
     }

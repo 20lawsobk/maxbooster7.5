@@ -21,7 +21,7 @@ export interface ShortcutPreferences {
 }
 
 async function fetchUserShortcuts(): Promise<ShortcutPreferences | null> {
-  const _response = await fetch("/api/shortcuts/user", {
+  const response = await fetch("/api/shortcuts/user", {
     credentials: "include",
   });
   if (!response?.ok) {
@@ -34,31 +34,31 @@ async function fetchUserShortcuts(): Promise<ShortcutPreferences | null> {
 async function saveUserShortcuts(
   shortcuts: CustomShortcut[],
 ): Promise<ShortcutPreferences> {
-  const _csrfToken = getCsrfTokenFromCookie();
-  const _response = await fetch("/api/shortcuts/user", {
+  const csrfToken = getCsrfTokenFromCookie();
+  const response = await fetch("/api/shortcuts/user", {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
     },
     credentials: "include",
-    body: JSON?.stringify({ shortcuts }),
+    body: JSON.stringify({ shortcuts }),
   });
   if (!response?.ok) throw new Error("Failed to save shortcuts");
   return response?.json();
 }
 
 async function fetchDefaultShortcuts(): Promise<CustomShortcut[]> {
-  const _response = await fetch("/api/shortcuts/defaults", {
+  const response = await fetch("/api/shortcuts/defaults", {
     credentials: "include",
   });
   if (!response?.ok) throw new Error("Failed to fetch defaults");
-  const _data = await response?.json();
+  const data = await response?.json();
   return data?.shortcuts;
 }
 
 export function useShortcutCustomization() {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const { shortcutManager } = useShortcuts();
   const [pendingChanges, setPendingChanges] = useState<
     Map<string, Partial<ShortcutConfig>>
@@ -82,7 +82,7 @@ export function useShortcutCustomization() {
     staleTime: 24 * 60 * 60 * 1000,
   });
 
-  const _saveMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: saveUserShortcuts,
     onSuccess: (data) => {
       queryClient?.setQueryData(["/api/shortcuts/user"], data);
@@ -94,32 +94,32 @@ export function useShortcutCustomization() {
     if (userShortcuts?.shortcuts && shortcutManager) {
       userShortcuts?.shortcuts.forEach((config) => {
         shortcutManager?.customize(config?.id, {
-          key: config?.key,
-          modifiers: config?.modifiers,
-          enabled: config?.enabled,
+          key: config.key,
+          modifiers: config.modifiers,
+          enabled: config.enabled,
         });
       });
     }
   }, [userShortcuts, shortcutManager]);
 
-  const _customizeShortcut = useCallback(
+  const customizeShortcut = useCallback(
     (id: string, config: Partial<ShortcutConfig>) => {
       if (!shortcutManager) return;
 
-      const _existing = shortcutManager?.getShortcut(id);
+      const existing = shortcutManager?.getShortcut(id);
       if (!existing) return;
 
-      const _newKey = config?.key || existing?.key;
-      const _newModifiers = config?.modifiers || existing?.modifiers || [];
+      const newKey = config?.key || existing?.key;
+      const newModifiers = config?.modifiers || existing?.modifiers || [];
 
-      const _allShortcuts = shortcutManager?.getAllShortcuts();
-      const _conflicting = allShortcuts?.filter((s) => {
+      const allShortcuts = shortcutManager?.getAllShortcuts();
+      const conflicting = allShortcuts?.filter((s) => {
         if (s?.id === id) return false;
-        const _sameKey = s?.key.toLowerCase() === newKey?.toLowerCase();
-        const _sameMods =
+        const sameKey = s?.key.toLowerCase() === newKey?.toLowerCase();
+        const sameMods =
           (s?.modifiers || []).length === newModifiers?.length &&
           (s?.modifiers || []).every((m) => newModifiers?.includes(m));
-        const _sameContext =
+        const sameContext =
           s?.context === existing?.context ||
           s?.context === "global" ||
           existing?.context === "global";
@@ -130,7 +130,7 @@ export function useShortcutCustomization() {
         setConflicts([
           {
             shortcutId: id,
-            conflictsWith: conflicting?.map((c) => c?.id),
+            conflictsWith: conflicting.map((c) => c?.id),
             key: newKey,
             modifiers: newModifiers,
           },
@@ -141,7 +141,7 @@ export function useShortcutCustomization() {
       setConflicts([]);
       shortcutManager?.customize(id, config);
       setPendingChanges((prev) => {
-        const _next = new Map(prev);
+        const next = new Map(prev);
         next?.set(id, { ...prev?.get(id), ...config });
         return next;
       });
@@ -151,23 +151,23 @@ export function useShortcutCustomization() {
     [shortcutManager],
   );
 
-  const _resetShortcut = useCallback(
+  const resetShortcut = useCallback(
     (id: string) => {
       if (!shortcutManager) return;
 
-      const _defaultConfig = defaultShortcuts?.find((s) => s?.id === id);
+      const defaultConfig = defaultShortcuts?.find((s) => s?.id === id);
       if (defaultConfig) {
         shortcutManager?.customize(id, {
-          key: defaultConfig?.key,
-          modifiers: defaultConfig?.modifiers,
-          enabled: defaultConfig?.enabled,
+          key: defaultConfig.key,
+          modifiers: defaultConfig.modifiers,
+          enabled: defaultConfig.enabled,
         });
       } else {
         shortcutManager?.resetShortcut(id);
       }
 
       setPendingChanges((prev) => {
-        const _next = new Map(prev);
+        const next = new Map(prev);
         next?.delete(id);
         return next;
       });
@@ -176,7 +176,7 @@ export function useShortcutCustomization() {
     [shortcutManager, defaultShortcuts],
   );
 
-  const _resetAllShortcuts = useCallback(() => {
+  const resetAllShortcuts = useCallback(() => {
     if (!shortcutManager) return;
     shortcutManager?.resetAllShortcuts();
     setPendingChanges(new Map());
@@ -184,10 +184,10 @@ export function useShortcutCustomization() {
     queryClient?.setQueryData(["/api/shortcuts/user"], null);
   }, [shortcutManager, queryClient]);
 
-  const _saveChanges = useCallback(async () => {
+  const saveChanges = useCallback(async () => {
     if (!shortcutManager || pendingChanges?.size === 0) return;
 
-    const _allShortcuts = shortcutManager?.getAllShortcuts();
+    const allShortcuts = shortcutManager?.getAllShortcuts();
     const customized: CustomShortcut[] = allShortcuts
       .filter(
         (s) =>
@@ -195,23 +195,23 @@ export function useShortcutCustomization() {
           userShortcuts?.shortcuts?.some((us) => us?.id === s?.id),
       )
       .map((s) => ({
-        id: s?.id,
-        key: s?.key,
-        modifiers: s?.modifiers || [],
-        enabled: s?.enabled !== false,
+        id: s.id,
+        key: s.key,
+        modifiers: s.modifiers || [],
+        enabled: s.enabled !== false,
       }));
 
     await saveMutation?.mutateAsync(customized);
   }, [shortcutManager, pendingChanges, userShortcuts, saveMutation]);
 
-  const _discardChanges = useCallback(() => {
+  const discardChanges = useCallback(() => {
     if (!shortcutManager || !userShortcuts?.shortcuts) return;
 
     userShortcuts?.shortcuts.forEach((config) => {
       shortcutManager?.customize(config?.id, {
-        key: config?.key,
-        modifiers: config?.modifiers,
-        enabled: config?.enabled,
+        key: config.key,
+        modifiers: config.modifiers,
+        enabled: config.enabled,
       });
     });
 
@@ -219,12 +219,12 @@ export function useShortcutCustomization() {
     setConflicts([]);
   }, [shortcutManager, userShortcuts]);
 
-  const _hasUnsavedChanges = pendingChanges?.size > 0;
-  const _isLoading = isLoadingUser || isLoadingDefaults;
-  const _isSaving = saveMutation?.isPending;
+  const hasUnsavedChanges = pendingChanges?.size > 0;
+  const isLoading = isLoadingUser || isLoadingDefaults;
+  const isSaving = saveMutation?.isPending;
 
   return {
-    userShortcuts: userShortcuts?.shortcuts || [],
+    userShortcuts: userShortcuts.shortcuts || [],
     defaultShortcuts: defaultShortcuts || [],
     customizeShortcut,
     resetShortcut,

@@ -6,7 +6,7 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 /**
  * Custom metrics interface for APM integration
@@ -40,7 +40,7 @@ class MetricsCollector implements CustomMetrics {
   private metrics: Map<string, number> = new Map();
 
   private increment(key: string, value: number = 1): void {
-    const _current = this?.metrics.get(key) || 0;
+    const current = this?.metrics.get(key) || 0;
     this?.metrics.set(key, current + value);
   }
 
@@ -56,7 +56,7 @@ class MetricsCollector implements CustomMetrics {
   }
 
   trackSocialPost(platform: string, success: boolean): void {
-    const _status = success ? "success" : "failed";
+    const status = success ? "success" : "failed";
     this?.increment(`social.${platform}.${status}`);
     logger?.info("📱 Social post tracked", { platform, success });
   }
@@ -89,7 +89,7 @@ class MetricsCollector implements CustomMetrics {
   }
 
   trackCacheHit(cacheType: string, hit: boolean): void {
-    const _status = hit ? "hit" : "miss";
+    const status = hit ? "hit" : "miss";
     this?.increment(`cache.${cacheType}.${status}`);
   }
 
@@ -124,7 +124,7 @@ class MetricsCollector implements CustomMetrics {
 }
 
 // Singleton instance
-export const _metrics = new MetricsCollector();
+export const metrics = new MetricsCollector();
 
 /**
  * Express middleware for automatic request tracking
@@ -134,22 +134,22 @@ export function metricsMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  const _start = Date?.now();
+  const start = Date?.now();
 
   // Track response
   res?.on("finish", () => {
-    const _duration = Date?.now() - start;
-    const _endpoint = req?.route?.path || req?.path;
+    const duration = Date?.now() - start;
+    const endpoint = req?.route?.path || req?.path;
 
     metrics?.trackAPICall(endpoint, duration, res?.statusCode);
 
     // Log slow requests
     if (duration > 3000) {
       logger?.warn("🐌 Slow request", {
-        method: req?.method,
+        method: req.method,
         endpoint,
         duration,
-        statusCode: res?.statusCode,
+        statusCode: res.statusCode,
       });
     }
   });
@@ -164,11 +164,11 @@ export function getHealthStatus(): {
   status: "healthy" | "degraded" | "unhealthy";
   timestamp: string;
   uptime: number;
-  memory: NodeJS?.MemoryUsage;
+  memory: NodeJS.MemoryUsage;
   metrics: Record<string, number>;
 } {
-  const _memUsage = process?.memoryUsage();
-  const _heapUsedMB = memUsage?.heapUsed / 1024 / 1024;
+  const memUsage = process?.memoryUsage();
+  const heapUsedMB = memUsage?.heapUsed / 1024 / 1024;
 
   // Determine health status
   let status: "healthy" | "degraded" | "unhealthy" = "healthy";
@@ -182,9 +182,9 @@ export function getHealthStatus(): {
   return {
     status,
     timestamp: new Date().toISOString(),
-    uptime: process?.uptime(),
+    uptime: process.uptime(),
     memory: memUsage,
-    metrics: metrics?.getMetrics(),
+    metrics: metrics.getMetrics(),
   };
 }
 
@@ -209,7 +209,7 @@ export function getHealthStatus(): {
  * import tracer from 'dd-trace';
  * tracer?.init();
  *
- * const _span = tracer?.startSpan('payment?.process');
+ * const span = tracer?.startSpan('payment.process');
  * span?.setTag('amount', amount);
  * span?.finish();
  */

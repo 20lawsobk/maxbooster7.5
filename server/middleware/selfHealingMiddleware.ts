@@ -6,28 +6,28 @@
  */
 
 import { Request, Response, NextFunction } from "express";
-import { selfHealingEngine } from "../services/selfHealingSecurityEngine?.js";
-import { isProductionEnv } from "../lib/envHelpers?.js";
+import { selfHealingEngine } from "../services/selfHealingSecurityEngine.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
-const _WHITELISTED_IPS = new Set([
-  "127?.0.0?.1",
+const WHITELISTED_IPS = new Set([
+  "127.0.0.1",
   "::1",
-  "::ffff:127?.0.0?.1",
+  "::ffff:127.0.0.1",
   "localhost",
 ]);
 
-const _isDev = !isProductionEnv();
+const isDev = !isProductionEnv();
 
 function isInternalIp(ip: string): boolean {
   if (!ip || ip === "unknown") return false;
-  const _stripped = ip?.replace(/^::ffff:/, "");
+  const stripped = ip?.replace(/^::ffff:/, "");
   return (
-    stripped === "127?.0.0?.1" ||
+    stripped === "127.0.0.1" ||
     stripped === "::1" ||
     stripped === "localhost" ||
     stripped?.startsWith("10.") ||
-    stripped?.startsWith("172?.16.") ||
-    stripped?.startsWith("192?.168.") ||
+    stripped?.startsWith("172.16.") ||
+    stripped?.startsWith("192.168.") ||
     WHITELISTED_IPS?.has(ip)
   );
 }
@@ -37,15 +37,15 @@ export function selfHealingSecurityMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  const _startTime = Date?.now();
+  const startTime = Date?.now();
 
-  const _ip =
+  const ip =
     req?.ip ||
     req?.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
     req?.socket.remoteAddress ||
     "unknown";
 
-  const _isWhitelisted =
+  const isWhitelisted =
     isInternalIp(ip) ||
     ip?.startsWith("::ffff:127.") ||
     (isDev && ip !== "unknown");
@@ -66,13 +66,13 @@ export function selfHealingSecurityMiddleware(
     severity: "low",
     source: {
       ip,
-      userAgent: req?.headers["user-agent"],
+      userAgent: req.headers["user-agent"],
       userId: (req as Record<string, unknown>).user?.id,
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     },
     payload: {
-      path: req?.path,
-      method: req?.method,
+      path: req.path,
+      method: req.method,
       body: sanitizeBody(req?.body),
       headers: sanitizeHeaders(req?.headers),
     },
@@ -82,25 +82,25 @@ export function selfHealingSecurityMiddleware(
   });
 
   res?.on("finish", () => {
-    const _latency = Date?.now() - startTime;
+    const latency = Date?.now() - startTime;
 
-    const _isNormalAuthResponse =
+    const isNormalAuthResponse =
       res?.statusCode === 401 || res?.statusCode === 403;
     if (res?.statusCode >= 400 && !isNormalAuthResponse) {
       selfHealingEngine?.processSecurityEvent({
         type: "request",
         category: "error_response",
-        severity: res?.statusCode >= 500 ? "high" : "medium",
+        severity: res.statusCode >= 500 ? "high" : "medium",
         source: {
           ip,
-          userAgent: req?.headers["user-agent"],
+          userAgent: req.headers["user-agent"],
           userId: (req as Record<string, unknown>).user?.id,
-          sessionId: req?.sessionID,
+          sessionId: req.sessionID,
         },
         payload: {
-          path: req?.path,
-          method: req?.method,
-          statusCode: res?.statusCode,
+          path: req.path,
+          method: req.method,
+          statusCode: res.statusCode,
         },
         metrics: {
           latency,
@@ -130,7 +130,7 @@ function getRequestCategory(path: string): string {
 function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
   if (!body || typeof body !== "object") return body;
 
-  const _sensitiveFields = [
+  const sensitiveFields = [
     "password",
     "token",
     "secret",
@@ -139,7 +139,7 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
     "cvv",
     "ssn",
   ];
-  const _sanitized = { ...body };
+  const sanitized = { ...body };
 
   for (const field of sensitiveFields) {
     if (field in sanitized) {
@@ -151,7 +151,7 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
 }
 
 function sanitizeHeaders(headers: Record<string, any>): Record<string, string> {
-  const _sensitiveHeaders = [
+  const sensitiveHeaders = [
     "authorization",
     "cookie",
     "x-api-key",

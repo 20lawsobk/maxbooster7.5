@@ -30,9 +30,9 @@ parentPort?.on(
     }
 
     try {
-      const _tfLib = await loadTF();
+      const tfLib = await loadTF();
 
-      const _inputTensor = tfLib?.tensor(inputData, inputShape);
+      const inputTensor = tfLib?.tensor(inputData, inputShape);
 
       let model = modelCache?.get(modelId);
       if (!model) {
@@ -44,17 +44,17 @@ parentPort?.on(
         return;
       }
 
-      const _start = Date?.now();
-      const _output = model?.predict(inputTensor) as Record<string, unknown>;
-      const _result = await output?.data();
-      const _durationMs = Date?.now() - start;
+      const start = Date?.now();
+      const output = model?.predict(inputTensor) as Record<string, unknown>;
+      const result = await output?.data();
+      const durationMs = Date?.now() - start;
 
       inputTensor?.dispose();
       output?.dispose();
 
-      parentPort!.postMessage({ id, result: Array?.from(result), durationMs });
+      parentPort!.postMessage({ id, result: Array.from(result), durationMs });
     } catch (err) {
-      parentPort!.postMessage({ id, error: err?.message || String(err) });
+      parentPort!.postMessage({ id, error: err.message || String(err) });
     }
   },
 );

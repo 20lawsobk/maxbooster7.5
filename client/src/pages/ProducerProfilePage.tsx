@@ -125,7 +125,7 @@ export default function ProducerProfilePage() {
       } else {
         toast({
           title: "Purchase Successful!",
-          description: `You've successfully purchased "${purchaseBeat?.title}". Check your purchases for the download link.`,
+          description: `You've successfully purchased "${purchaseBeat.title}". Check your purchases for the download link.`,
         });
         setPurchaseBeat(null);
         queryClient.invalidateQueries({
@@ -136,7 +136,7 @@ export default function ProducerProfilePage() {
     onError: (err: Error) => {
       toast({
         title: "Purchase Failed",
-        description: err?.message || "Something went wrong. Please try again.",
+        description: err.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     },
@@ -168,8 +168,8 @@ export default function ProducerProfilePage() {
       });
       queryClient.invalidateQueries({ queryKey: ["producer", producerId] });
       toast({
-        title: followStatus?.isFollowing ? "Unfollowed" : "Following!",
-        description: followStatus?.isFollowing
+        title: followStatus.isFollowing ? "Unfollowed" : "Following!",
+        description: followStatus.isFollowing
           ? "You unfollowed this producer"
           : "You are now following this producer",
       });
@@ -231,11 +231,11 @@ export default function ProducerProfilePage() {
     enabled: !!producerId,
     staleTime: 5 * 60 * 1000,
   });
-  const allProducers = allProducersData?.producers || [];
+  const allProducers = allProducersData.producers || [];
 
   const handlePlayBeat = (beat: Beat) => {
     if (playingBeatId === beat.id) {
-      audioRef.current?.pause();
+      audioRef.current.pause();
       setPlayingBeatId(null);
     } else {
       if (audioRef.current) {
@@ -261,10 +261,10 @@ export default function ProducerProfilePage() {
   };
 
   const getLicensePrice = (beat: Beat, licenseType: string) => {
-    const opt = beat.licenseOptions?.find((o) => o.licenseType === licenseType);
+    const opt = beat.licenseOptions.find((o) => o.licenseType === licenseType);
     if (opt) return opt.priceCents / 100;
     const def = DEFAULT_LICENSES.find((l) => l.licenseType === licenseType);
-    return beat.price * (def?.multiplier || 1);
+    return beat.price * (def.multiplier || 1);
   };
 
   if (authLoading || producerLoading) {
@@ -320,8 +320,8 @@ export default function ProducerProfilePage() {
                 ) : (
                   <div className="w-32 h-32 rounded-full border-4 border-background bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold shadow-xl">
                     {(producer.name || producer.username)
-                      ?.substring(0, 2)
-                      ?.toUpperCase() || "PR"}
+                      .substring(0, 2)
+                      .toUpperCase() || "PR"}
                   </div>
                 )}
                 {producer.verified && (
@@ -374,13 +374,13 @@ export default function ProducerProfilePage() {
               <div className="flex gap-2">
                 <Button
                   className={
-                    followStatus?.isFollowing
+                    followStatus.isFollowing
                       ? ""
                       : "bg-gradient-to-r from-blue-600 to-purple-600"
                   }
-                  variant={followStatus?.isFollowing ? "outline" : "default"}
+                  variant={followStatus.isFollowing ? "outline" : "default"}
                   onClick={() =>
-                    followStatus?.isFollowing
+                    followStatus.isFollowing
                       ? unfollowMutation.mutate()
                       : followMutation.mutate()
                   }
@@ -388,7 +388,7 @@ export default function ProducerProfilePage() {
                     followMutation.isPending || unfollowMutation.isPending
                   }
                 >
-                  {followStatus?.isFollowing ? (
+                  {followStatus.isFollowing ? (
                     <>
                       <UserCheck className="w-4 h-4 mr-2" /> Following
                     </>

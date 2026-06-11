@@ -1,24 +1,24 @@
 import { Router, Request, Response } from "express";
-import { createHardenedUpload } from "../middleware/uploadHandler?.js";
+import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { randomUUID } from "crypto";
-import { storageService } from "../services/storageService?.js";
-import { hybridStorageService } from "../services/hybridStorageService?.js";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { storageService } from "../services/storageService.js";
+import { hybridStorageService } from "../services/hybridStorageService.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 import path from "path";
-import { db } from "../db?.js";
-import { userStorageFiles, users } from "../../shared/schema?.js";
+import { db } from "../db.js";
+import { userStorageFiles, users } from "../../shared/schema.js";
 import { eq, and, isNull, lt, isNotNull, sql, sum } from "drizzle-orm";
-import { notificationService } from "../services/notificationService?.js";
+import { notificationService } from "../services/notificationService.js";
 
-const _router = Router();
+const router = Router();
 
-const _audioCache = new Map<string, { buffer: Buffer; timestamp: number }>();
-const _AUDIO_CACHE_MAX_SIZE = 5;
-const _AUDIO_CACHE_TTL = 300000;
+const audioCache = new Map<string, { buffer: Buffer; timestamp: number }>();
+const AUDIO_CACHE_MAX_SIZE = 5;
+const AUDIO_CACHE_TTL = 300000;
 
 function getCachedAudio(key: string): Buffer | null {
-  const _entry = audioCache?.get(key);
+  const entry = audioCache?.get(key);
   if (entry && Date?.now() - entry?.timestamp < AUDIO_CACHE_TTL) {
     return entry?.buffer;
   }
@@ -28,21 +28,21 @@ function getCachedAudio(key: string): Buffer | null {
 
 function setCachedAudio(key: string, buffer: Buffer) {
   if (audioCache?.size >= AUDIO_CACHE_MAX_SIZE) {
-    const _oldest = audioCache?.keys().next().value;
+    const oldest = audioCache?.keys().next().value;
     if (oldest) audioCache?.delete(oldest);
   }
-  audioCache?.set(key, { buffer, timestamp: Date?.now() });
+  audioCache?.set(key, { buffer, timestamp: Date.now() });
 }
 
 // Cleanup soft-deleted files older than 30 days (permanent deletion)
-const _PERMANENT_DELETE_DAYS = 30;
+const PERMANENT_DELETE_DAYS = 30;
 
 async function cleanupOldDeletedFiles() {
   try {
-    const _cutoffDate = new Date();
+    const cutoffDate = new Date();
     cutoffDate?.setDate(cutoffDate?.getDate() - PERMANENT_DELETE_DAYS);
 
-    const _oldDeletedFiles = await db
+    const oldDeletedFiles = await db
       .select()
       .from(userStorageFiles)
       .where(
@@ -87,7 +87,7 @@ setInterval(cleanupOldDeletedFiles, 60 * 60 * 1000);
 // Run cleanup on startup
 cleanupOldDeletedFiles();
 
-const _ALLOWED_AUDIO_TYPES = [
+const ALLOWED_AUDIO_TYPES = [
   "audio/wav",
   "audio/x-wav",
   "audio/wave",
@@ -103,7 +103,7 @@ const _ALLOWED_AUDIO_TYPES = [
   "audio/mp4",
 ];
 
-const _ALLOWED_IMAGE_TYPES = [
+const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/gif",
@@ -111,18 +111,18 @@ const _ALLOWED_IMAGE_TYPES = [
   "image/svg+xml",
 ];
 
-const _ALLOWED_VIDEO_TYPES = [
+const ALLOWED_VIDEO_TYPES = [
   "video/mp4",
   "video/webm",
   "video/ogg",
   "video/quicktime",
 ];
 
-const _MAX_FILE_SIZE = 500 * 1024 * 1024;
-const _MAX_CHUNK_SIZE = 10 * 1024 * 1024;
-const _CHUNK_TTL = 24 * 60 * 60 * 1000;
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const MAX_CHUNK_SIZE = 10 * 1024 * 1024;
+const CHUNK_TTL = 24 * 60 * 60 * 1000;
 
-const _ALLOWED_CATEGORIES = new Set([
+const ALLOWED_CATEGORIES = new Set([
   "audio",
   "tracks",
   "beats",
@@ -137,12 +137,12 @@ const _ALLOWED_CATEGORIES = new Set([
 ]);
 
 function sanitizeCategory(raw: unknown): string {
-  const _cat = typeof raw === "string" ? raw?.toLowerCase() : "files";
+  const cat = typeof raw === "string" ? raw?.toLowerCase() : "files";
   return ALLOWED_CATEGORIES?.has(cat) ? cat : "files";
 }
 
 function sanitizeFileName(raw: unknown): string {
-  const _name = typeof raw === "string" ? raw : "upload";
+  const name = typeof raw === "string" ? raw : "upload";
   return (
     path
       .basename(name)
@@ -164,11 +164,11 @@ interface ChunkInfo {
   createdAt: number;
 }
 
-const _chunkUploads = new Map<string, ChunkInfo>();
+const chunkUploads = new Map<string, ChunkInfo>();
 
 setInterval(
   () => {
-    const _now = Date?.now();
+    const now = Date?.now();
     for (const [fileId, info] of chunkUploads?.entries()) {
       if (now - info?.createdAt > CHUNK_TTL) {
         cleanupChunks(fileId);
@@ -179,14 +179,14 @@ setInterval(
 );
 
 function cleanupChunks(fileId: string): void {
-  const _info = chunkUploads?.get(fileId);
+  const info = chunkUploads?.get(fileId);
   if (info) {
     info?.chunkBuffers.clear();
   }
   chunkUploads?.delete(fileId);
 }
 
-const _upload = createHardenedUpload({
+const upload = createHardenedUpload({
   maxFileSize: MAX_FILE_SIZE,
   maxFiles: 1,
   allowedMimes: [
@@ -197,7 +197,7 @@ const _upload = createHardenedUpload({
   label: "storage upload",
 });
 
-const _chunkUpload = createHardenedUpload({
+const chunkUpload = createHardenedUpload({
   maxFileSize: MAX_CHUNK_SIZE,
   maxFiles: 1,
   label: "storage chunk",
@@ -214,15 +214,15 @@ router?.post(
       }
 
       const { fileId } = req?.body;
-      const _category = sanitizeCategory(req?.body.category);
-      const _safeFileName = sanitizeFileName(req?.file.originalname);
-      const _userId = req?.user!.id;
+      const category = sanitizeCategory(req?.body.category);
+      const safeFileName = sanitizeFileName(req?.file.originalname);
+      const userId = req?.user!.id;
 
       if (!userId) {
         return res?.status(401).json({ error: "User not authenticated" });
       }
 
-      const _key = await storageService?.uploadFile(
+      const key = await storageService?.uploadFile(
         req?.file.buffer,
         `users/${userId}/${category}`,
         safeFileName,
@@ -231,12 +231,12 @@ router?.post(
 
       logger?.info(`File uploaded: ${key} by user ${userId}`);
 
-      const _responseFile = {
+      const responseFile = {
         id: fileId || randomUUID(),
         key,
         name: safeFileName,
-        size: req?.file.size,
-        type: req?.file.mimetype,
+        size: req.file.size,
+        type: req.file.mimetype,
         url: await storageService?.getDownloadUrl(key),
       };
 
@@ -244,7 +244,7 @@ router?.post(
 
       setImmediate(async () => {
         try {
-          const _category = req?.file!.mimetype?.startsWith("audio/")
+          const category = req?.file!.mimetype?.startsWith("audio/")
             ? "track"
             : "file";
           await notificationService?.sendUploadCompleteNotification(
@@ -253,8 +253,8 @@ router?.post(
             category,
           );
 
-          const _PLATFORM_QUOTA_GB = 1000;
-          const _usageResult = await db
+          const PLATFORM_QUOTA_GB = 1000;
+          const usageResult = await db
             .select({ totalBytes: sum(userStorageFiles?.sizeBytes) })
             .from(userStorageFiles)
             .where(
@@ -263,9 +263,9 @@ router?.post(
                 isNull(userStorageFiles?.deletedAt),
               ),
             );
-          const _usedBytes = Number(usageResult[0]?.totalBytes ?? 0);
-          const _usedGB = usedBytes / 1024 ** 3;
-          const _usedPercent = Math?.round((usedGB / PLATFORM_QUOTA_GB) * 100);
+          const usedBytes = Number(usageResult[0]?.totalBytes ?? 0);
+          const usedGB = usedBytes / 1024 ** 3;
+          const usedPercent = Math?.round((usedGB / PLATFORM_QUOTA_GB) * 100);
           if (usedPercent >= 75) {
             await notificationService?.sendStorageQuotaNotification(
               userId,
@@ -310,9 +310,9 @@ router?.post(
         fileSize,
         mimeType,
       } = req?.body;
-      const _category = sanitizeCategory(req?.body.category);
-      const _fileName = sanitizeFileName(rawFileName);
-      const _userId = req?.user!.id;
+      const category = sanitizeCategory(req?.body.category);
+      const fileName = sanitizeFileName(rawFileName);
+      const userId = req?.user!.id;
 
       if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
         return res
@@ -323,9 +323,9 @@ router?.post(
           });
       }
 
-      const _chunkIdx = parseInt(chunkIndex, 10);
-      const _totalChunksNum = parseInt(totalChunks, 10);
-      const _fileSizeNum = parseInt(fileSize, 10);
+      const chunkIdx = parseInt(chunkIndex, 10);
+      const totalChunksNum = parseInt(totalChunks, 10);
+      const fileSizeNum = parseInt(fileSize, 10);
 
       if (isNaN(chunkIdx) || isNaN(totalChunksNum) || isNaN(fileSizeNum)) {
         return res?.status(400).json({ error: "Invalid chunk parameters" });
@@ -351,7 +351,7 @@ router?.post(
           chunkBuffers: new Map(),
           category,
           userId,
-          createdAt: Date?.now(),
+          createdAt: Date.now(),
         };
         chunkUploads?.set(fileId, chunkInfo);
       } else if (chunkInfo?.userId !== userId) {
@@ -370,13 +370,13 @@ router?.post(
       if (chunkInfo?.uploadedChunks.size === totalChunksNum) {
         const chunks: Buffer[] = [];
         for (let i = 0; i < totalChunksNum; i++) {
-          const _chunk = chunkInfo?.chunkBuffers.get(i);
+          const chunk = chunkInfo?.chunkBuffers.get(i);
           if (!chunk) throw new Error(`Missing chunk ${i} for file ${fileId}`);
           chunks?.push(chunk);
         }
-        const _completeFile = Buffer?.concat(chunks);
+        const completeFile = Buffer?.concat(chunks);
 
-        const _key = await storageService?.uploadFile(
+        const key = await storageService?.uploadFile(
           completeFile,
           `users/${userId}/${category}`,
           fileName,
@@ -387,7 +387,7 @@ router?.post(
 
         logger?.info(`Chunked upload complete: ${key} by user ${userId}`);
 
-        const _chunkResponseFile = {
+        const chunkResponseFile = {
           id: fileId,
           key,
           name: fileName,
@@ -400,7 +400,7 @@ router?.post(
 
         setImmediate(async () => {
           try {
-            const _fileCategory = (mimeType as string).startsWith("audio/")
+            const fileCategory = (mimeType as string).startsWith("audio/")
               ? "track"
               : "file";
             await notificationService?.sendUploadCompleteNotification(
@@ -409,8 +409,8 @@ router?.post(
               fileCategory,
             );
 
-            const _PLATFORM_QUOTA_GB = 1000;
-            const _chunkUsageResult = await db
+            const PLATFORM_QUOTA_GB = 1000;
+            const chunkUsageResult = await db
               .select({ totalBytes: sum(userStorageFiles?.sizeBytes) })
               .from(userStorageFiles)
               .where(
@@ -419,9 +419,9 @@ router?.post(
                   isNull(userStorageFiles?.deletedAt),
                 ),
               );
-            const _chunkUsedBytes = Number(chunkUsageResult[0]?.totalBytes ?? 0);
-            const _usedGB = chunkUsedBytes / 1024 ** 3;
-            const _usedPercent = Math?.round((usedGB / PLATFORM_QUOTA_GB) * 100);
+            const chunkUsedBytes = Number(chunkUsageResult[0]?.totalBytes ?? 0);
+            const usedGB = chunkUsedBytes / 1024 ** 3;
+            const usedPercent = Math?.round((usedGB / PLATFORM_QUOTA_GB) * 100);
             if (usedPercent >= 75) {
               await notificationService?.sendStorageQuotaNotification(
                 userId,
@@ -449,7 +449,7 @@ router?.post(
       res?.json({
         success: true,
         complete: false,
-        uploaded: chunkInfo?.uploadedChunks.size,
+        uploaded: chunkInfo.uploadedChunks.size,
         total: totalChunksNum,
       });
     } catch (error) {
@@ -467,9 +467,9 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const { fileId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _chunkInfo = chunkUploads?.get(fileId);
+      const chunkInfo = chunkUploads?.get(fileId);
       if (chunkInfo && chunkInfo?.userId !== userId) {
         return res?.status(403).json({ error: "Not authorized" });
       }
@@ -491,11 +491,11 @@ router?.delete(
 router?.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
   try {
     const { key } = req?.params;
-    const _requestingUserId = req?.user!.id;
+    const requestingUserId = req?.user!.id;
 
     if (key?.startsWith("users/")) {
-      const _parts = key?.split("/");
-      const _fileOwnerId = parts[1];
+      const parts = key?.split("/");
+      const fileOwnerId = parts[1];
       if (fileOwnerId !== requestingUserId) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -504,7 +504,7 @@ router?.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
     let buffer = getCachedAudio(key);
     if (!buffer) {
       buffer = await storageService?.downloadFile(key);
-      const _ext = path?.extname(key).toLowerCase();
+      const ext = path?.extname(key).toLowerCase();
       if (
         [
           ".wav",
@@ -522,7 +522,7 @@ router?.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    const _ext = path?.extname(key).toLowerCase();
+    const ext = path?.extname(key).toLowerCase();
     const mimeTypes: Record<string, string> = {
       ".wav": "audio/wav",
       ".mp3": "audio/mpeg",
@@ -540,21 +540,21 @@ router?.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
       ".webp": "image/webp",
     };
 
-    const _contentType = mimeTypes[ext] || "application/octet-stream";
-    const _total = buffer?.length;
+    const contentType = mimeTypes[ext] || "application/octet-stream";
+    const total = buffer?.length;
 
     res?.setHeader("Accept-Ranges", "bytes");
     res?.setHeader("Content-Type", contentType);
-    res?.setHeader("Cache-Control", "private, max-age=3600");
+    res.setHeader("Cache-Control", "private, max-age=3600");
 
-    const _range = req?.headers.range;
+    const range = req?.headers.range;
     if (range) {
-      const _parts = range?.replace(/bytes=/, "").split("-");
-      const _start = parseInt(parts[0], 10);
-      const _end = parts[1]
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1]
         ? parseInt(parts[1], 10)
         : Math?.min(start + 1024 * 1024 - 1, total - 1);
-      const _chunkSize = end - start + 1;
+      const chunkSize = end - start + 1;
 
       res?.status(206);
       res?.setHeader("Content-Range", `bytes ${start}-${end}/${total}`);
@@ -584,7 +584,7 @@ router?.get("/public/*key", async (req: Request, res: Response) => {
         .json({ error: "Only storefront assets are publicly accessible" });
     }
 
-    const _ext = path?.extname(key).toLowerCase();
+    const ext = path?.extname(key).toLowerCase();
     const allowedImageExts: Record<string, string> = {
       ".jpg": "image/jpeg",
       ".jpeg": "image/jpeg",
@@ -599,10 +599,10 @@ router?.get("/public/*key", async (req: Request, res: Response) => {
         .json({ error: "Only image files are publicly accessible" });
     }
 
-    const _buffer = await storageService?.downloadFile(key);
-    const _contentType = allowedImageExts[ext];
+    const buffer = await storageService?.downloadFile(key);
+    const contentType = allowedImageExts[ext];
     res?.setHeader("Content-Type", contentType);
-    res?.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Cache-Control", "public, max-age=86400");
     res?.setHeader("Content-Length", buffer?.length);
     res?.send(buffer);
   } catch (error) {
@@ -617,7 +617,7 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const { key } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { permanent } = req?.query;
 
       if (!key?.includes(`users/${userId}/`)) {
@@ -684,7 +684,7 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { key } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       // Find the soft-deleted file in database
       const [deletedFile] = await db
@@ -706,7 +706,7 @@ router?.post(
       }
 
       // Check if the file is older than 30 days (should have been cleaned up)
-      const _cutoffDate = new Date();
+      const cutoffDate = new Date();
       cutoffDate?.setDate(cutoffDate?.getDate() - PERMANENT_DELETE_DAYS);
       if (deletedFile?.deletedAt && deletedFile?.deletedAt < cutoffDate) {
         return res?.status(410).json({
@@ -728,9 +728,9 @@ router?.post(
         message: "File restored successfully",
         file: {
           key,
-          name: deletedFile?.fileName,
-          size: deletedFile?.sizeBytes,
-          type: deletedFile?.mimeType,
+          name: deletedFile.fileName,
+          size: deletedFile.sizeBytes,
+          type: deletedFile.mimeType,
         },
       });
     } catch (error) {
@@ -744,29 +744,29 @@ router?.post(
 
 router?.get("/quota", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     // Get user's subscription tier for quota limit
     const [userRow] = await db
-      .select({ subscriptionTier: users?.subscriptionTier })
+      .select({ subscriptionTier: users.subscriptionTier })
       .from(users)
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _rawTier = userRow?.subscriptionTier || "free";
+    const rawTier = userRow?.subscriptionTier || "free";
     const quotaLimits: Record<string, number> = {
       free: 5 * 1024 * 1024 * 1024,
       pro: 50 * 1024 * 1024 * 1024,
       studio: 200 * 1024 * 1024 * 1024,
       enterprise: 1024 * 1024 * 1024 * 1024,
     };
-    const _userTier = quotaLimits[rawTier] ? rawTier : "free";
-    const _limit = quotaLimits[userTier];
+    const userTier = quotaLimits[rawTier] ? rawTier : "free";
+    const limit = quotaLimits[userTier];
 
     // Get actual storage usage from the database, grouped by mime type
-    const _usageRows = await db
+    const usageRows = await db
       .select({
-        mimeType: userStorageFiles?.mimeType,
+        mimeType: userStorageFiles.mimeType,
         totalBytes: sql<number>`COALESCE(SUM(${userStorageFiles?.sizeBytes}), 0)`,
       })
       .from(userStorageFiles)
@@ -783,17 +783,17 @@ router?.get("/quota", requireAuth, async (req: Request, res: Response) => {
       videoBytes = 0,
       otherBytes = 0;
     for (const row of usageRows) {
-      const _bytes = Number(row?.totalBytes) || 0;
-      const _mime = row?.mimeType || "";
-      if (mime?.startsWith("audio/")) audioBytes += bytes;
-      else if (mime?.startsWith("image/")) imageBytes += bytes;
-      else if (mime?.startsWith("video/")) videoBytes += bytes;
+      const bytes = Number(row?.totalBytes) || 0;
+      const mime = row?.mimeType || "";
+      if (mime.startsWith("audio/")) audioBytes += bytes;
+      else if (mime.startsWith("image/")) imageBytes += bytes;
+      else if (mime.startsWith("video/")) videoBytes += bytes;
       else otherBytes += bytes;
     }
 
-    const _used = audioBytes + imageBytes + videoBytes + otherBytes;
+    const used = audioBytes + imageBytes + videoBytes + otherBytes;
 
-    const _categories = [
+    const categories = [
       { name: "Audio", used: audioBytes, icon: "audio", color: "bg-blue-500" },
       {
         name: "Images",
@@ -813,7 +813,7 @@ router?.get("/quota", requireAuth, async (req: Request, res: Response) => {
     res?.json({
       used,
       limit,
-      available: Math?.max(0, limit - used),
+      available: Math.max(0, limit - used),
       percentage: limit > 0 ? Math?.min(100, (used / limit) * 100) : 0,
       tier: userTier,
       categories,
@@ -829,7 +829,7 @@ router?.get("/quota", requireAuth, async (req: Request, res: Response) => {
 router?.post("/rename", requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId, newName } = req?.body;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     if (!fileId || !newName) {
       return res?.status(400).json({ error: "fileId and newName are required" });
@@ -855,7 +855,7 @@ router?.post("/rename", requireAuth, async (req: Request, res: Response) => {
 router?.post("/move", requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId, folderId } = req?.body;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     if (!fileId || !folderId) {
       return res
@@ -885,13 +885,13 @@ router?.post("/move", requireAuth, async (req: Request, res: Response) => {
 router?.post("/duplicate", requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId } = req?.body;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     if (!fileId) {
       return res?.status(400).json({ error: "fileId is required" });
     }
 
-    const _newFileId = randomUUID();
+    const newFileId = randomUUID();
 
     logger?.info(`File duplicated: ${fileId} to ${newFileId} by user ${userId}`);
 
@@ -923,7 +923,7 @@ router?.post("/validate", async (req: Request, res: Response) => {
       value?: string;
     }[] = [];
 
-    const _maxSize = options?.maxSize || MAX_FILE_SIZE;
+    const maxSize = options?.maxSize || MAX_FILE_SIZE;
     if (fileSize > maxSize) {
       errors?.push(
         `File size (${formatBytes(fileSize)}) exceeds maximum (${formatBytes(maxSize)})`,
@@ -943,7 +943,7 @@ router?.post("/validate", async (req: Request, res: Response) => {
       });
     }
 
-    const _allowedTypes = [
+    const allowedTypes = [
       ...ALLOWED_AUDIO_TYPES,
       ...ALLOWED_IMAGE_TYPES,
       ...ALLOWED_VIDEO_TYPES,
@@ -966,7 +966,7 @@ router?.post("/validate", async (req: Request, res: Response) => {
     }
 
     res?.json({
-      valid: errors?.length === 0,
+      valid: errors.length === 0,
       errors,
       warnings,
       details,
@@ -1004,9 +1004,9 @@ router?.post("/scan", requireAuth, async (req: Request, res: Response) => {
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
-  const _k = 1024;
-  const _sizes = ["B", "KB", "MB", "GB"];
-  const _i = Math?.floor(Math?.log(bytes) / Math?.log(k));
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math?.floor(Math?.log(bytes) / Math?.log(k));
   return parseFloat((bytes / Math?.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
@@ -1021,9 +1021,9 @@ router?.post(
       }
 
       const { folder, forceTier, isPublic } = req?.body;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _result = await hybridStorageService?.upload(
+      const result = await hybridStorageService?.upload(
         userId,
         req?.file.originalname,
         req?.file.buffer,
@@ -1032,7 +1032,7 @@ router?.post(
           folder,
           forceTier: forceTier as "hot" | "cold" | undefined,
           isPublic: isPublic === "true",
-          metadata: req?.body.metadata
+          metadata: req.body.metadata
             ? (() => {
                 try {
                   return JSON?.parse(req?.body.metadata);
@@ -1051,13 +1051,13 @@ router?.post(
       res?.json({
         success: true,
         file: {
-          key: result?.key,
-          tier: result?.tier,
-          size: result?.sizeBytes,
-          compressedSize: result?.compressedSize,
-          contentHash: result?.contentHash,
-          isDeduplicated: result?.isDeduplicated,
-          compressionRatio: result?.compressionRatio,
+          key: result.key,
+          tier: result.tier,
+          size: result.sizeBytes,
+          compressedSize: result.compressedSize,
+          contentHash: result.contentHash,
+          isDeduplicated: result.isDeduplicated,
+          compressionRatio: result.compressionRatio,
           url: `/api/storage/hybrid/file/${encodeURIComponent(result?.key)}`,
         },
       });
@@ -1076,12 +1076,12 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { key } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _buffer = await hybridStorageService?.read(userId, key);
-      const _metadata = hybridStorageService?.getMetadata(key);
+      const buffer = await hybridStorageService?.read(userId, key);
+      const metadata = hybridStorageService?.getMetadata(key);
 
-      const _ext = path?.extname(key).toLowerCase();
+      const ext = path?.extname(key).toLowerCase();
       const mimeTypes: Record<string, string> = {
         ".wav": "audio/wav",
         ".mp3": "audio/mpeg",
@@ -1114,9 +1114,9 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const { key } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _success = await hybridStorageService?.delete(userId, key);
+      const success = await hybridStorageService?.delete(userId, key);
 
       if (success) {
         logger?.info(`[HybridStorage] Deleted: ${key}`);
@@ -1135,10 +1135,10 @@ router?.delete(
 
 router?.get("/hybrid/list", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { tier, folder, includePublic } = req?.query;
 
-    const _files = hybridStorageService?.listFiles(userId, {
+    const files = hybridStorageService?.listFiles(userId, {
       tier: tier as "hot" | "cold" | undefined,
       folder: folder as string | undefined,
       includePublic: includePublic === "true",
@@ -1146,18 +1146,18 @@ router?.get("/hybrid/list", requireAuth, async (req: Request, res: Response) => 
 
     res?.json({
       success: true,
-      files: files?.map((f) => ({
-        key: f?.key,
-        name: f?.originalName,
-        tier: f?.tier,
-        size: f?.sizeBytes,
-        compressedSize: f?.compressedSize,
-        mimeType: f?.mimeType,
-        accessCount: f?.accessCount,
-        lastAccessed: f?.lastAccessed,
-        createdAt: f?.createdAt,
-        isDeduplicated: f?.isDeduplicated,
-        isPublic: f?.isPublic,
+      files: files.map((f) => ({
+        key: f.key,
+        name: f.originalName,
+        tier: f.tier,
+        size: f.sizeBytes,
+        compressedSize: f.compressedSize,
+        mimeType: f.mimeType,
+        accessCount: f.accessCount,
+        lastAccessed: f.lastAccessed,
+        createdAt: f.createdAt,
+        isDeduplicated: f.isDeduplicated,
+        isPublic: f.isPublic,
       })),
     });
   } catch (error) {
@@ -1173,8 +1173,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _analytics = await hybridStorageService?.getAnalytics(userId);
+      const userId = req?.user!.id;
+      const analytics = await hybridStorageService?.getAnalytics(userId);
 
       res?.json(analytics);
     } catch (error) {
@@ -1191,8 +1191,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _breakdown = await hybridStorageService?.getTierBreakdown(userId);
+      const userId = req?.user!.id;
+      const breakdown = await hybridStorageService?.getTierBreakdown(userId);
 
       res?.json(breakdown);
     } catch (error) {
@@ -1212,8 +1212,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _stats = await hybridStorageService?.getDeduplicationStats(userId);
+      const userId = req?.user!.id;
+      const stats = await hybridStorageService?.getDeduplicationStats(userId);
 
       res?.json(stats);
     } catch (error) {
@@ -1237,14 +1237,14 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { key } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _metadata = hybridStorageService?.getMetadata(key);
+      const metadata = hybridStorageService?.getMetadata(key);
       if (!metadata || metadata?.userId !== userId) {
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _success = await hybridStorageService?.tierDown(key);
+      const success = await hybridStorageService?.tierDown(key);
 
       if (success) {
         logger?.info(`[HybridStorage] Tiered down: ${key}`);
@@ -1266,7 +1266,7 @@ router?.post(
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      const _result = await hybridStorageService?.runAutoTiering();
+      const result = await hybridStorageService?.runAutoTiering();
 
       logger?.info(
         `[HybridStorage] Auto-tiering: ${result?.tieredDown} down, ${result?.tieredUp} up`,
@@ -1274,8 +1274,8 @@ router?.post(
 
       res?.json({
         success: true,
-        tieredDown: result?.tieredDown,
-        tieredUp: result?.tieredUp,
+        tieredDown: result.tieredDown,
+        tieredUp: result.tieredUp,
         message: `Moved ${result?.tieredDown} files to cold storage, ${result?.tieredUp} files to hot storage`,
       });
     } catch (error) {
@@ -1293,9 +1293,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { key } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _metadata = hybridStorageService?.getMetadata(key);
+      const metadata = hybridStorageService?.getMetadata(key);
       if (!metadata) {
         return res?.status(404).json({ error: "File not found" });
       }
@@ -1305,19 +1305,19 @@ router?.get(
       }
 
       res?.json({
-        key: metadata?.key,
-        name: metadata?.originalName,
-        tier: metadata?.tier,
-        size: metadata?.sizeBytes,
-        compressedSize: metadata?.compressedSize,
-        mimeType: metadata?.mimeType,
-        contentHash: metadata?.contentHash,
-        accessCount: metadata?.accessCount,
-        lastAccessed: metadata?.lastAccessed,
-        createdAt: metadata?.createdAt,
-        isDeduplicated: metadata?.isDeduplicated,
-        isPublic: metadata?.isPublic,
-        compressionRatio: metadata?.sizeBytes / metadata?.compressedSize,
+        key: metadata.key,
+        name: metadata.originalName,
+        tier: metadata.tier,
+        size: metadata.sizeBytes,
+        compressedSize: metadata.compressedSize,
+        mimeType: metadata.mimeType,
+        contentHash: metadata.contentHash,
+        accessCount: metadata.accessCount,
+        lastAccessed: metadata.lastAccessed,
+        createdAt: metadata.createdAt,
+        isDeduplicated: metadata.isDeduplicated,
+        isPublic: metadata.isPublic,
+        compressionRatio: metadata.sizeBytes / metadata?.compressedSize,
       });
     } catch (error) {
       logger?.warn({ err: error }, "[HybridStorage] Metadata fetch failed:");

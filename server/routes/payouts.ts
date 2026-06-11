@@ -11,15 +11,15 @@ import {
   disputeMessages,
 } from "@shared/schema";
 import { z } from "zod";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { eq, and, desc, gte, inArray, lte, sql, sum } from "drizzle-orm";
-import { getBaseUrl } from "../config/defaults?.js";
-import { requireAuth } from "../middleware/auth?.js";
-import { payoutsRateLimiter } from "../middleware/rateLimiter?.js";
-import { stripeService } from "../services/stripeService?.js";
+import { getBaseUrl } from "../config/defaults.js";
+import { requireAuth } from "../middleware/auth.js";
+import { payoutsRateLimiter } from "../middleware/rateLimiter.js";
+import { stripeService } from "../services/stripeService.js";
 
-const _router = Router();
+const router = Router();
 
 router?.use(requireAuth);
 router?.use(payoutsRateLimiter);
@@ -58,21 +58,21 @@ router?.get("/", async (req, res) => {
  * GET /api/payouts/balance
  * Get user's available balance for payouts
  */
-router?.get("/balance", async (req, res) => {
+router.get("/balance", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const _balance = await instantPayoutService?.calculateAvailableBalance(
-      req?.user.id,
+    const balance = await instantPayoutService.calculateAvailableBalance(
+      req.user.id,
     );
-    res?.json(balance);
+    res.json(balance);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching payout balance:");
-    const _message =
-      error instanceof Error ? error?.message : "Failed to fetch balance";
-    res?.status(500).json({ error: message });
+    logger.warn({ err: error }, "Error fetching payout balance:");
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch balance";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -80,48 +80,48 @@ router?.get("/balance", async (req, res) => {
  * POST /api/payouts/instant
  * Request instant payout (T+0 settlement)
  */
-router?.post("/instant", async (req, res) => {
+router.post("/instant", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     // Validate request body
-    const _validatedData = requestInstantPayoutSchema?.parse(req?.body);
+    const validatedData = requestInstantPayoutSchema.parse(req.body);
 
     // Convert amountCents to dollars for the service
-    const _amountDollars = validatedData?.amountCents / 100;
+    const amountDollars = validatedData.amountCents / 100;
 
     // Request instant payout
-    const _result = await instantPayoutService?.requestInstantPayout(
-      req?.user.id,
+    const result = await instantPayoutService.requestInstantPayout(
+      req.user.id,
       amountDollars,
-      validatedData?.currency,
+      validatedData.currency,
     );
 
-    if (!result?.success) {
-      return res?.status(400).json({
-        error: result?.error,
-        riskScore: result?.riskScore,
+    if (!result.success) {
+      return res.status(400).json({
+        error: result.error,
+        riskScore: result.riskScore,
       });
     }
 
-    res?.json({
+    res.json({
       success: true,
-      payoutId: result?.payoutId,
-      amount: result?.amount,
-      estimatedArrival: result?.estimatedArrival,
-      riskScore: result?.riskScore,
+      payoutId: result.payoutId,
+      amount: result.amount,
+      estimatedArrival: result.estimatedArrival,
+      riskScore: result.riskScore,
       message:
         "Payout initiated successfully. Funds will arrive within minutes.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error requesting instant payout:");
+    logger.warn({ err: error }, "Error requesting instant payout:");
 
-    if (error instanceof z?.ZodError) {
-      return res?.status(400).json({
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
         error: "Invalid request data",
-        details: error?.issues,
+        details: error.issues,
       });
     }
 
@@ -141,13 +141,13 @@ router?.get("/history", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-    const _offset = Math?.min(
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+    const offset = Math?.min(
       Math?.max(parseInt(req?.query.offset as string) || 0, 0),
       100_000,
     );
 
-    const _payouts = await instantPayoutService?.getPayoutHistory(
+    const payouts = await instantPayoutService?.getPayoutHistory(
       req?.user.id,
       limit,
       offset,
@@ -158,12 +158,12 @@ router?.get("/history", async (req, res) => {
       pagination: {
         limit,
         offset,
-        total: payouts?.length,
+        total: payouts.length,
       },
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching payout history:");
-    const _message =
+    const message =
       error instanceof Error ? error?.message : "Failed to fetch payout history";
     res?.status(500).json({ error: message });
   }
@@ -181,7 +181,7 @@ router?.get("/status/:payoutId", async (req, res) => {
 
     const { payoutId } = req?.params;
 
-    const _payout = await instantPayoutService?.getPayoutStatus(payoutId);
+    const payout = await instantPayoutService?.getPayoutStatus(payoutId);
 
     // Verify the payout belongs to the requesting user
     if (payout?.userId !== req?.user.id) {
@@ -191,7 +191,7 @@ router?.get("/status/:payoutId", async (req, res) => {
     res?.json(payout);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching payout status:");
-    const _message =
+    const message =
       error instanceof Error ? error?.message : "Failed to fetch payout status";
 
     if (message === "Payout not found") {
@@ -212,13 +212,13 @@ router?.post("/setup", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _baseUrl = getBaseUrl();
+    const baseUrl = getBaseUrl();
 
-    const _refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;
-    const _returnUrl = `${baseUrl}/marketplace?tab=payouts&setup=complete`;
+    const refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;
+    const returnUrl = `${baseUrl}/marketplace?tab=payouts&setup=complete`;
 
     // Create Stripe account link
-    const _accountLinkUrl = await instantPayoutService?.createAccountLink(
+    const accountLinkUrl = await instantPayoutService?.createAccountLink(
       req?.user.id,
       refreshUrl,
       returnUrl,
@@ -227,7 +227,7 @@ router?.post("/setup", async (req, res) => {
     res?.json({ url: accountLinkUrl });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error setting up payout account:");
-    const _message =
+    const message =
       error instanceof Error ? error?.message : "Failed to setup payout account";
     res?.status(500).json({ error: message });
   }
@@ -243,8 +243,8 @@ router?.get("/verify", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _user = req?.user as Record<string, unknown>;
-    const _prefs =
+    const user = req?.user as Record<string, unknown>;
+    const prefs =
       ((user?.preferences as Record<string, unknown> | undefined)?.payout as
         | Record<string, unknown>
         | undefined) ?? {};
@@ -257,7 +257,7 @@ router?.get("/verify", async (req, res) => {
     )
       methods?.push("bank_transfer");
 
-    const _stripeVerification = await instantPayoutService?.verifyStripeAccount(
+    const stripeVerification = await instantPayoutService?.verifyStripeAccount(
       req?.user.id,
     );
     if (stripeVerification?.verified) methods?.push("stripe");
@@ -275,7 +275,7 @@ router?.get("/verify", async (req, res) => {
     res?.json(stripeVerification);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error verifying payout account:");
-    const _message =
+    const message =
       error instanceof Error ? error?.message : "Failed to verify account";
     res?.status(500).json({ error: message });
   }
@@ -291,16 +291,16 @@ router?.get("/preferences", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _user = req?.user as Record<string, unknown>;
-    const _prefs =
+    const user = req?.user as Record<string, unknown>;
+    const prefs =
       ((user?.preferences as Record<string, unknown> | undefined)?.payout as
         | Record<string, unknown>
         | undefined) ?? {};
     res?.json({
-      paypalEmail: prefs?.paypalEmail ?? null,
-      bankDetails: prefs?.bankDetails ?? null,
+      paypalEmail: prefs.paypalEmail ?? null,
+      bankDetails: prefs.bankDetails ?? null,
       stripeConnected: !!user?.stripeConnectedAccountId,
-      preferredMethod: prefs?.bankDetails
+      preferredMethod: prefs.bankDetails
         ? "bank_transfer"
         : prefs?.paypalEmail
           ? "paypal"
@@ -327,10 +327,10 @@ router?.post("/preferences/paypal", async (req, res) => {
       return res?.status(400).json({ error: "Valid PayPal email required" });
     }
 
-    const _user = req?.user as Record<string, unknown>;
-    const _currentPrefs =
+    const user = req?.user as Record<string, unknown>;
+    const currentPrefs =
       (user?.preferences as Record<string, unknown> | undefined) ?? {};
-    const _updatedPrefs = {
+    const updatedPrefs = {
       ...currentPrefs,
       payout: {
         ...((currentPrefs?.payout as Record<string, unknown> | undefined) ?? {}),
@@ -374,7 +374,7 @@ router?.post("/preferences/bank", async (req, res) => {
       return res?.status(400).json({ error: "All bank details required" });
     }
 
-    const _bankDetailsData = {
+    const bankDetailsData = {
       accountHolderName,
       bankName,
       accountNumber: accountNumber
@@ -388,10 +388,10 @@ router?.post("/preferences/bank", async (req, res) => {
       addedAt: new Date().toISOString(),
     };
 
-    const _user = req?.user as Record<string, unknown>;
-    const _currentPrefs =
+    const user = req?.user as Record<string, unknown>;
+    const currentPrefs =
       (user?.preferences as Record<string, unknown> | undefined) ?? {};
-    const _updatedPrefs = {
+    const updatedPrefs = {
       ...currentPrefs,
       payout: {
         ...((currentPrefs?.payout as Record<string, unknown> | undefined) ?? {}),
@@ -409,7 +409,7 @@ router?.post("/preferences/bank", async (req, res) => {
       success: true,
       method: "bank_transfer",
       bankName,
-      accountNumber: bankDetailsData?.accountNumber,
+      accountNumber: bankDetailsData.accountNumber,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error configuring bank:");
@@ -427,18 +427,18 @@ router?.get("/dashboard", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _result = await instantPayoutService?.getExpressDashboardLink(
+    const result = await instantPayoutService?.getExpressDashboardLink(
       req?.user.id,
     );
 
     if (result?.error) {
-      return res?.status(400).json({ error: result?.error });
+      return res?.status(400).json({ error: result.error });
     }
 
-    res?.json({ url: result?.url });
+    res?.json({ url: result.url });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error getting dashboard link:");
-    const _message =
+    const message =
       error instanceof Error ? error?.message : "Failed to get dashboard link";
     res?.status(500).json({ error: message });
   }
@@ -454,11 +454,11 @@ router?.get("/earnings", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _earnings = await instantPayoutService?.getEarningsSummary(req?.user.id);
+    const earnings = await instantPayoutService?.getEarningsSummary(req?.user.id);
     res?.json(earnings);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error getting earnings summary:");
-    const _message =
+    const message =
       error instanceof Error ? error?.message : "Failed to get earnings summary";
     res?.status(500).json({ error: message });
   }
@@ -482,7 +482,7 @@ router?.post("/split", async (req, res) => {
         .json({ error: "orderId, totalAmount, and splits array required" });
     }
 
-    const _result = await instantPayoutService?.createSplitPayment(
+    const result = await instantPayoutService?.createSplitPayment(
       orderId,
       totalAmount,
       splits,
@@ -492,13 +492,13 @@ router?.post("/split", async (req, res) => {
     if (!result?.success) {
       return res
         .status(400)
-        .json({ error: "Split payment failed", errors: result?.errors });
+        .json({ error: "Split payment failed", errors: result.errors });
     }
 
     res?.json({
       success: true,
-      transfers: result?.transfers,
-      errors: result?.errors,
+      transfers: result.transfers,
+      errors: result.errors,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error creating split payment:");
@@ -528,7 +528,7 @@ router?.post("/split-enhanced", async (req, res) => {
         .json({ error: "orderId, totalAmount, and splits array required" });
     }
 
-    const _result = await instantPayoutService?.createEnhancedSplitPayment(
+    const result = await instantPayoutService?.createEnhancedSplitPayment(
       orderId,
       totalAmount,
       splits,
@@ -538,14 +538,14 @@ router?.post("/split-enhanced", async (req, res) => {
     if (!result?.success) {
       return res
         .status(400)
-        .json({ error: "Split payment failed", errors: result?.errors });
+        .json({ error: "Split payment failed", errors: result.errors });
     }
 
     res?.json({
       success: true,
-      splitPaymentIds: result?.splitPaymentIds,
-      transfers: result?.transfers,
-      errors: result?.errors,
+      splitPaymentIds: result.splitPaymentIds,
+      transfers: result.transfers,
+      errors: result.errors,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error creating enhanced split payment:");
@@ -567,21 +567,21 @@ router?.get("/report", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _parseDate = (raw: unknown, fallback: Date): Date => {
+    const parseDate = (raw: unknown, fallback: Date): Date => {
       if (!raw) return fallback;
-      const _d = new Date(raw as string);
+      const d = new Date(raw as string);
       return isNaN(d?.getTime()) ? fallback : d;
     };
-    const _startDate = parseDate(
+    const startDate = parseDate(
       req?.query.startDate,
       new Date(Date?.now() - 365 * 24 * 60 * 60 * 1000),
     );
-    const _endDate = parseDate(req?.query.endDate, new Date());
+    const endDate = parseDate(req?.query.endDate, new Date());
     if (endDate < startDate) {
       return res?.status(400).json({ error: "endDate must be after startDate" });
     }
 
-    const _report = await instantPayoutService?.generatePayoutReport(
+    const report = await instantPayoutService?.generatePayoutReport(
       req?.user.id,
       startDate,
       endDate,
@@ -606,14 +606,14 @@ router?.get("/risk-assessment", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _amount = parseFloat(req?.query.amount as string);
+    const amount = parseFloat(req?.query.amount as string);
     if (isNaN(amount) || amount <= 0) {
       return res
         .status(400)
         .json({ error: "Valid positive amount is required" });
     }
 
-    const _assessment = await instantPayoutService?.assessPayoutRisk(
+    const assessment = await instantPayoutService?.assessPayoutRisk(
       req?.user.id,
       amount,
     );
@@ -637,13 +637,13 @@ router?.get("/ledger", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-    const _offset = Math?.min(
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+    const offset = Math?.min(
       Math?.max(parseInt(req?.query.offset as string) || 0, 0),
       100_000,
     );
 
-    const _entries = await instantPayoutService?.getLedgerHistory(
+    const entries = await instantPayoutService?.getLedgerHistory(
       req?.user.id,
       limit,
       offset,
@@ -651,7 +651,7 @@ router?.get("/ledger", async (req, res) => {
 
     res?.json({
       entries,
-      pagination: { limit, offset, total: entries?.length },
+      pagination: { limit, offset, total: entries.length },
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching ledger history:");
@@ -673,14 +673,14 @@ router?.get("/tax-form/:year", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _taxYear = parseInt(req?.params.year);
-    const _currentYear = new Date().getFullYear();
+    const taxYear = parseInt(req?.params.year);
+    const currentYear = new Date().getFullYear();
 
     if (isNaN(taxYear) || taxYear < 2020 || taxYear > currentYear) {
       return res?.status(400).json({ error: "Invalid tax year" });
     }
 
-    const _formData = await stripeService?.generateTaxFormData(
+    const formData = await stripeService?.generateTaxFormData(
       req?.user.id,
       taxYear,
     );
@@ -706,7 +706,7 @@ router?.get("/tax-forms", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _forms = await db
+    const forms = await db
       .select()
       .from(taxForms)
       .where(eq(taxForms?.userId, req?.user.id))
@@ -751,15 +751,15 @@ router?.post("/tax-form/submit", async (req, res) => {
       return res?.status(400).json({ error: "Missing required fields" });
     }
 
-    const _now = new Date();
+    const now = new Date();
 
     const [inserted] = await db
       .insert(taxForms)
       .values({
-        userId: req?.user.id,
+        userId: req.user.id,
         formType,
         status: "pending_review",
-        taxYear: now?.getFullYear(),
+        taxYear: now.getFullYear(),
         formData: {
           name,
           businessName: businessName || null,
@@ -770,7 +770,7 @@ router?.post("/tax-form/submit", async (req, res) => {
           claimTreatyBenefits: claimTreatyBenefits || false,
           treatyCountry: treatyCountry || null,
           signature,
-          signatureDate: now?.toISOString(),
+          signatureDate: now.toISOString(),
         },
         submittedAt: now,
         createdAt: now,
@@ -779,7 +779,7 @@ router?.post("/tax-form/submit", async (req, res) => {
 
     res?.json({
       success: true,
-      formId: inserted?.id,
+      formId: inserted.id,
       status: "pending_review",
       message:
         "Tax form submitted for review. You will be notified once it is approved.",
@@ -802,7 +802,7 @@ router?.get("/statements", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _statements = await db
+    const statements = await db
       .select()
       .from(royaltyStatements)
       .where(eq(royaltyStatements?.userId, req?.user.id))
@@ -810,16 +810,16 @@ router?.get("/statements", async (req, res) => {
       .limit(100);
 
     res?.json({
-      statements: statements?.map((s) => ({
-        id: s?.id,
+      statements: statements.map((s) => ({
+        id: s.id,
         label:
           s?.label ||
           `${new Date(s?.periodStart).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`,
-        startDate: s?.periodStart,
-        endDate: s?.periodEnd,
+        startDate: s.periodStart,
+        endDate: s.periodEnd,
         earnings: parseFloat(s?.totalEarnings || "0"),
-        status: s?.status,
-        downloadUrl: s?.downloadUrl,
+        status: s.status,
+        downloadUrl: s.downloadUrl,
       })),
     });
   } catch (error: unknown) {
@@ -848,8 +848,8 @@ router?.post("/statements/generate", async (req, res) => {
       return res?.status(400).json({ error: "startDate and endDate required" });
     }
 
-    const _start = new Date(startDate);
-    const _end = new Date(endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
     if (start >= end) {
       return res
@@ -857,7 +857,7 @@ router?.post("/statements/generate", async (req, res) => {
         .json({ error: "startDate must be before endDate" });
     }
 
-    const _earningsResult = await db
+    const earningsResult = await db
       .select({ total: sum(royaltyTransactions?.amount) })
       .from(royaltyTransactions)
       .where(
@@ -868,14 +868,14 @@ router?.post("/statements/generate", async (req, res) => {
         ),
       );
 
-    const _totalEarnings = earningsResult[0]?.total || "0";
+    const totalEarnings = earningsResult[0]?.total || "0";
 
-    const _label = `${start?.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+    const label = `${start?.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 
     const [stmt] = await db
       .insert(royaltyStatements)
       .values({
-        userId: req?.user.id,
+        userId: req.user.id,
         periodStart: start,
         periodEnd: end,
         totalEarnings,
@@ -888,7 +888,7 @@ router?.post("/statements/generate", async (req, res) => {
     res?.json({
       success: true,
       statement: {
-        id: stmt?.id,
+        id: stmt.id,
         label,
         startDate: start,
         endDate: end,
@@ -935,7 +935,7 @@ router?.get("/statements/:id/download", async (req, res) => {
 
     res?.json({
       success: true,
-      downloadUrl: statement?.downloadUrl || `/api/payouts/statements/${id}/pdf`,
+      downloadUrl: statement.downloadUrl || `/api/payouts/statements/${id}/pdf`,
       filename: `statement-${statement?.label?.replace(/\s+/g, "-").toLowerCase()}.pdf`,
     });
   } catch (error: unknown) {
@@ -958,15 +958,15 @@ router?.get("/disputes", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _disputes = await db
+    const disputes = await db
       .select()
       .from(royaltyDisputes)
       .where(eq(royaltyDisputes?.userId, req?.user.id))
       .orderBy(desc(royaltyDisputes?.createdAt))
       .limit(50);
 
-    const _disputeIds = disputes?.map((d) => d?.id);
-    const _allMessages =
+    const disputeIds = disputes?.map((d) => d?.id);
+    const allMessages =
       disputeIds?.length > 0
         ? await db
             .select()
@@ -976,34 +976,34 @@ router?.get("/disputes", async (req, res) => {
             .limit(500)
         : [];
 
-    const _messagesByDispute = new Map<string, typeof allMessages>();
+    const messagesByDispute = new Map<string, typeof allMessages>();
     for (const m of allMessages) {
-      const _arr = messagesByDispute?.get(m?.disputeId) ?? [];
+      const arr = messagesByDispute?.get(m?.disputeId) ?? [];
       arr?.push(m);
       messagesByDispute?.set(m?.disputeId, arr);
     }
 
-    const _disputesWithMessages = disputes?.map((dispute) => {
-      const _messages = messagesByDispute?.get(dispute?.id) ?? [];
+    const disputesWithMessages = disputes?.map((dispute) => {
+      const messages = messagesByDispute?.get(dispute?.id) ?? [];
       return {
-        id: dispute?.id,
-        type: dispute?.type,
-        status: dispute?.status,
-        subject: dispute?.subject,
-        description: dispute?.description,
-        amount: dispute?.amount ? parseFloat(dispute?.amount) : undefined,
-        period: dispute?.period,
-        createdAt: dispute?.createdAt,
-        updatedAt: dispute?.updatedAt,
-        resolution: dispute?.resolution,
-        outcome: dispute?.outcome,
-        evidenceCount: dispute?.evidenceCount || 0,
-        messages: messages?.map((m) => ({
-          id: m?.id,
-          sender: m?.sender,
-          content: m?.content,
-          timestamp: m?.createdAt,
-          attachments: m?.attachments,
+        id: dispute.id,
+        type: dispute.type,
+        status: dispute.status,
+        subject: dispute.subject,
+        description: dispute.description,
+        amount: dispute.amount ? parseFloat(dispute?.amount) : undefined,
+        period: dispute.period,
+        createdAt: dispute.createdAt,
+        updatedAt: dispute.updatedAt,
+        resolution: dispute.resolution,
+        outcome: dispute.outcome,
+        evidenceCount: dispute.evidenceCount || 0,
+        messages: messages.map((m) => ({
+          id: m.id,
+          sender: m.sender,
+          content: m.content,
+          timestamp: m.createdAt,
+          attachments: m.attachments,
         })),
       };
     });
@@ -1035,12 +1035,12 @@ router?.post("/disputes", async (req, res) => {
         .json({ error: "type, subject, and description are required" });
     }
 
-    const _now = new Date();
+    const now = new Date();
 
     const [newDispute] = await db
       .insert(royaltyDisputes)
       .values({
-        userId: req?.user.id,
+        userId: req.user.id,
         type,
         status: "open",
         subject,
@@ -1055,7 +1055,7 @@ router?.post("/disputes", async (req, res) => {
 
     res?.json({
       success: true,
-      disputeId: newDispute?.id,
+      disputeId: newDispute.id,
       status: "open",
       message:
         "Dispute filed successfully. We will review within 5 business days.",
@@ -1100,7 +1100,7 @@ router?.post("/disputes/:id/evidence", async (req, res) => {
       return res?.status(404).json({ error: "Dispute not found" });
     }
 
-    const _now = new Date();
+    const now = new Date();
 
     await db?.insert(disputeMessages).values({
       disputeId: id,
@@ -1162,7 +1162,7 @@ router?.post("/disputes/:id/message", async (req, res) => {
       return res?.status(404).json({ error: "Dispute not found" });
     }
 
-    const _now = new Date();
+    const now = new Date();
 
     await db?.insert(disputeMessages).values({
       disputeId: id,
@@ -1178,7 +1178,7 @@ router?.post("/disputes/:id/message", async (req, res) => {
 
     res?.json({
       success: true,
-      messageId: crypto?.randomUUID(),
+      messageId: crypto.randomUUID(),
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error sending message:");
@@ -1200,18 +1200,18 @@ router?.post("/retry/:payoutId", async (req, res) => {
 
     const { payoutId } = req?.params;
 
-    const _result = await instantPayoutService?.retryFailedPayout(
+    const result = await instantPayoutService?.retryFailedPayout(
       req?.user.id,
       payoutId,
     );
 
     if (!result?.success) {
-      return res?.status(400).json({ error: result?.error });
+      return res?.status(400).json({ error: result.error });
     }
 
     res?.json({
       success: true,
-      newPayoutId: result?.payoutId,
+      newPayoutId: result.payoutId,
       message: "Payout retry initiated successfully.",
     });
   } catch (error: unknown) {
@@ -1232,16 +1232,16 @@ router?.get("/instant-fee", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _amount = parseFloat(req?.query.amount as string);
+    const amount = parseFloat(req?.query.amount as string);
     if (isNaN(amount) || amount <= 0) {
       return res
         .status(400)
         .json({ error: "Valid positive amount is required" });
     }
 
-    const _feePercentage = 1?.5;
-    const _fee = amount * (feePercentage / 100);
-    const _netAmount = amount - fee;
+    const feePercentage = 1.5;
+    const fee = amount * (feePercentage / 100);
+    const netAmount = amount - fee;
 
     res?.json({
       amount,
@@ -1263,7 +1263,7 @@ router?.get("/instant-fee", async (req, res) => {
  */
 router?.get("/currencies", async (_req, res) => {
   try {
-    const _currencies = [
+    const currencies = [
       {
         code: "USD",
         name: "US Dollar",

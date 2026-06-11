@@ -36,7 +36,7 @@ const DEFAULT_CONFIG: FluidLayoutConfig = {
 export function useFluidLayout(
   config: FluidLayoutConfig = {},
 ): FluidLayoutResult {
-  const _containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(
     typeof window !== "undefined" ? window?.innerWidth : 1200,
   );
@@ -46,7 +46,7 @@ export function useFluidLayout(
 
   const { mobileMax, tabletMax, desktopMax } = { ...DEFAULT_CONFIG, ...config };
 
-  const _calculateLayoutMode = useCallback(
+  const calculateLayoutMode = useCallback(
     (width: number): LayoutMode => {
       if (width < mobileMax!) return "mobile";
       if (width < tabletMax!) return "tablet";
@@ -61,9 +61,9 @@ export function useFluidLayout(
   );
 
   useEffect(() => {
-    const _container = containerRef?.current;
+    const container = containerRef?.current;
 
-    const _updateDimensions = (width: number, height: number) => {
+    const updateDimensions = (width: number, height: number) => {
       if (width > 0 && height > 0) {
         setContainerWidth(width);
         setContainerHeight(height);
@@ -72,7 +72,7 @@ export function useFluidLayout(
     };
 
     if (container) {
-      const _resizeObserver = new ResizeObserver((entries) => {
+      const resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const { width, height } = entry?.contentRect;
           updateDimensions(width, height);
@@ -81,7 +81,7 @@ export function useFluidLayout(
       resizeObserver?.observe(container);
       return () => resizeObserver?.disconnect();
     } else {
-      const _handleResize = () => {
+      const handleResize = () => {
         updateDimensions(window?.innerWidth, window?.innerHeight);
       };
       handleResize();
@@ -149,7 +149,7 @@ export function getFluidTextSize(
   layoutMode: LayoutMode,
   base: "sm" | "base" | "lg" | "xl" = "base",
 ): string {
-  const _sizeMap = {
+  const sizeMap = {
     sm: {
       mobile: "text-xs",
       tablet: "text-sm",

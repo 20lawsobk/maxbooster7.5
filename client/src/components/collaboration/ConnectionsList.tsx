@@ -140,7 +140,7 @@ export function ConnectionsList() {
       >
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src={user?.avatarUrl || undefined} alt={displayName} />
+            <AvatarImage src={user.avatarUrl || undefined} alt={displayName} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div>
@@ -239,7 +239,7 @@ export function ConnectionsList() {
           <TabsContent value="connections" className="mt-4">
             {connectionsLoading ? (
               renderSkeletons()
-            ) : connections?.length > 0 ? (
+            ) : connections.length > 0 ? (
               <div className="space-y-3">
                 {connections.map((conn: Record<string, unknown>) =>
                   renderConnectionCard(conn, false),
@@ -257,7 +257,7 @@ export function ConnectionsList() {
           <TabsContent value="pending" className="mt-4">
             {pendingLoading ? (
               renderSkeletons()
-            ) : pendingRequests?.length > 0 ? (
+            ) : pendingRequests.length > 0 ? (
               <div className="space-y-3">
                 {pendingRequests.map((req: Record<string, unknown>) =>
                   renderConnectionCard(req, true),

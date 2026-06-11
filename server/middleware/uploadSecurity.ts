@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import path from "path";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export type UploadCategory = "avatar" | "artwork" | "audio" | "document";
 
@@ -106,7 +106,7 @@ const EXTENSION_TO_MIME: Record<string, string[]> = {
   ".pdf": ["application/pdf"],
 };
 
-const _BLOCKED_EXTENSIONS = [
+const BLOCKED_EXTENSIONS = [
   ".svg",
   ".html",
   ".htm",
@@ -126,10 +126,10 @@ export interface UploadValidationResult {
 }
 
 export function sanitizeFilename(filename: string): string {
-  const _basename = path?.basename(filename);
-  const _ext = path?.extname(basename).toLowerCase();
-  const _name = path?.basename(basename, ext);
-  const _sanitizedName = name
+  const basename = path?.basename(filename);
+  const ext = path?.extname(basename).toLowerCase();
+  const name = path?.basename(basename, ext);
+  const sanitizedName = name
     .replace(/\.\./g, "")
     .replace(/[\/\\:*?"<>|]/g, "")
     .replace(/[^\w\s.-]/g, "_")
@@ -139,13 +139,13 @@ export function sanitizeFilename(filename: string): string {
     .replace(/[._-]+$/, "")
     .substring(0, 200);
 
-  const _safeName = sanitizedName || `file_${Date?.now()}`;
+  const safeName = sanitizedName || `file_${Date.now()}`;
   return `${safeName}${ext}`;
 }
 
 // Helper to detect if buffer contains a valid image format
 function isValidImageBuffer(buffer: Buffer): boolean {
-  if (buffer?.length < 4) return false;
+  if (buffer.length < 4) return false;
 
   // Check for PNG: 89 50 4E 47
   if (
@@ -163,13 +163,13 @@ function isValidImageBuffer(buffer: Buffer): boolean {
   }
 
   // Check for WebP: RIFF....WEBP
-  if (buffer?.length >= 12) {
-    const _isRiff =
+  if (buffer.length >= 12) {
+    const isRiff =
       buffer[0] === 0x52 &&
       buffer[1] === 0x49 &&
       buffer[2] === 0x46 &&
       buffer[3] === 0x46;
-    const _isWebp =
+    const isWebp =
       buffer[8] === 0x57 &&
       buffer[9] === 0x45 &&
       buffer[10] === 0x42 &&
@@ -189,17 +189,17 @@ export function verifyMagicBytes(
   buffer: Buffer,
   expectedMimeType: string,
 ): boolean {
-  if (!buffer || buffer?.length < 4) {
+  if (!buffer || buffer.length < 4) {
     return false;
   }
 
   // For image types, be flexible - allow any valid image format since we'll convert it
-  // This handles cases where file extension doesn't match actual content (e?.g., PNG saved as .jpeg)
-  if (expectedMimeType?.startsWith("image/")) {
+  // This handles cases where file extension doesn't match actual content (e.g., PNG saved as .jpeg)
+  if (expectedMimeType.startsWith("image/")) {
     return isValidImageBuffer(buffer);
   }
 
-  const _magicBytes = MAGIC_BYTES[expectedMimeType];
+  const magicBytes = MAGIC_BYTES[expectedMimeType];
   if (!magicBytes) {
     if (expectedMimeType === "audio/mpeg") {
       if (buffer[0] === 0x49 && buffer[1] === 0x44 && buffer[2] === 0x33) {
@@ -210,22 +210,22 @@ export function verifyMagicBytes(
       }
       return false;
     }
-    logger?.warn(`No magic bytes defined for MIME type: ${expectedMimeType}`);
+    logger.warn(`No magic bytes defined for MIME type: ${expectedMimeType}`);
     return true;
   }
 
   if (
-    expectedMimeType?.startsWith("audio/wav") ||
+    expectedMimeType.startsWith("audio/wav") ||
     expectedMimeType === "audio/x-wav" ||
     expectedMimeType === "audio/wave"
   ) {
-    if (buffer?.length >= 12) {
-      const _isRiff =
+    if (buffer.length >= 12) {
+      const isRiff =
         buffer[0] === 0x52 &&
         buffer[1] === 0x49 &&
         buffer[2] === 0x46 &&
         buffer[3] === 0x46;
-      const _isWave =
+      const isWave =
         buffer[8] === 0x57 &&
         buffer[9] === 0x41 &&
         buffer[10] === 0x56 &&
@@ -235,7 +235,7 @@ export function verifyMagicBytes(
     return false;
   }
 
-  for (let i = 0; i < magicBytes?.length; i++) {
+  for (let i = 0; i < magicBytes.length; i++) {
     if (buffer[i] !== magicBytes[i]) {
       return false;
     }
@@ -248,22 +248,22 @@ export function validateExtension(
   filename: string,
   allowedMimeTypes: string[],
 ): boolean {
-  const _ext = path?.extname(filename).toLowerCase();
-  if (BLOCKED_EXTENSIONS?.includes(ext)) {
+  const ext = path.extname(filename).toLowerCase();
+  if (BLOCKED_EXTENSIONS.includes(ext)) {
     return false;
   }
-  const _mimeTypesForExt = EXTENSION_TO_MIME[ext];
+  const mimeTypesForExt = EXTENSION_TO_MIME[ext];
   if (!mimeTypesForExt) {
     return false;
   }
-  return mimeTypesForExt?.some((mime) => allowedMimeTypes?.includes(mime));
+  return mimeTypesForExt.some((mime) => allowedMimeTypes.includes(mime));
 }
 
 export function validateMimeType(
   mimeType: string,
   allowedMimeTypes: string[],
 ): boolean {
-  return allowedMimeTypes?.includes(mimeType);
+  return allowedMimeTypes.includes(mimeType);
 }
 
 export function validateFileSize(size: number, maxSize: number): boolean {
@@ -276,7 +276,7 @@ export function isSvgBlocked(
   category: UploadCategory,
 ): boolean {
   if (category === "avatar" || category === "artwork") {
-    const _ext = path?.extname(filename).toLowerCase();
+    const ext = path.extname(filename).toLowerCase();
     if (ext === ".svg" || mimeType === "image/svg+xml") {
       return true;
     }
@@ -285,19 +285,19 @@ export function isSvgBlocked(
 }
 
 export function validateUpload(
-  file: Express?.Multer.File,
+  file: Express.Multer.File,
   category: UploadCategory,
 ): UploadValidationResult {
-  const _limits = UPLOAD_LIMITS[category];
+  const limits = UPLOAD_LIMITS[category];
   if (!limits) {
     return { valid: false, error: `Unknown upload category: ${category}` };
   }
 
-  const _sanitizedFilename = sanitizeFilename(file?.originalname);
+  const sanitizedFilename = sanitizeFilename(file.originalname);
 
-  if (isSvgBlocked(file?.mimetype, file?.originalname, category)) {
-    logger?.warn(`Blocked SVG upload attempt for ${category}`, {
-      filename: file?.originalname,
+  if (isSvgBlocked(file.mimetype, file.originalname, category)) {
+    logger.warn(`Blocked SVG upload attempt for ${category}`, {
+      filename: file.originalname,
     });
     return {
       valid: false,
@@ -305,34 +305,34 @@ export function validateUpload(
     };
   }
 
-  if (!validateExtension(file?.originalname, limits?.allowedTypes)) {
+  if (!validateExtension(file.originalname, limits.allowedTypes)) {
     return {
       valid: false,
-      error: `Invalid file extension. Allowed types: ${limits?.allowedTypes.join(", ")}`,
+      error: `Invalid file extension. Allowed types: ${limits.allowedTypes.join(", ")}`,
     };
   }
 
-  if (!validateMimeType(file?.mimetype, limits?.allowedTypes)) {
+  if (!validateMimeType(file.mimetype, limits.allowedTypes)) {
     return {
       valid: false,
-      error: `Invalid MIME type: ${file?.mimetype}. Allowed: ${limits?.allowedTypes.join(", ")}`,
+      error: `Invalid MIME type: ${file.mimetype}. Allowed: ${limits.allowedTypes.join(", ")}`,
     };
   }
 
-  if (!validateFileSize(file?.size, limits?.maxSize)) {
-    const _maxSizeMB = (limits?.maxSize / (1024 * 1024)).toFixed(1);
+  if (!validateFileSize(file.size, limits.maxSize)) {
+    const maxSizeMB = (limits.maxSize / (1024 * 1024)).toFixed(1);
     return {
       valid: false,
       error: `File too large. Maximum size: ${maxSizeMB}MB`,
     };
   }
 
-  if (file?.buffer && file?.buffer.length > 0) {
-    if (!verifyMagicBytes(file?.buffer, file?.mimetype)) {
-      logger?.warn("Magic bytes verification failed", {
-        filename: file?.originalname,
-        mimetype: file?.mimetype,
-        bufferStart: file?.buffer.slice(0, 16).toString("hex"),
+  if (file.buffer && file.buffer.length > 0) {
+    if (!verifyMagicBytes(file.buffer, file.mimetype)) {
+      logger.warn("Magic bytes verification failed", {
+        filename: file.originalname,
+        mimetype: file.mimetype,
+        bufferStart: file.buffer.slice(0, 16).toString("hex"),
       });
       return {
         valid: false,
@@ -345,37 +345,37 @@ export function validateUpload(
   return {
     valid: true,
     sanitizedFilename,
-    detectedMime: file?.mimetype,
+    detectedMime: file.mimetype,
   };
 }
 
 export function createUploadValidator(category: UploadCategory) {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req?.file && !req?.files) {
+    if (!req.file && !req.files) {
       return next();
     }
 
-    const _files = req?.file
-      ? [req?.file]
-      : (req?.files as Express?.Multer.File[]) || [];
+    const files = req.file
+      ? [req.file]
+      : (req.files as Express.Multer.File[]) || [];
 
     for (const file of files) {
-      const _result = validateUpload(file, category);
-      if (!result?.valid) {
-        logger?.warn("Upload validation failed", {
+      const result = validateUpload(file, category);
+      if (!result.valid) {
+        logger.warn("Upload validation failed", {
           category,
-          filename: file?.originalname,
-          error: result?.error,
-          userId: (req as Record<string, unknown>).user?.id,
+          filename: file.originalname,
+          error: result.error,
+          userId: (req as Record<string, unknown>).user.id,
         });
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
-          error: result?.error,
+          error: result.error,
           code: "UPLOAD_VALIDATION_FAILED",
         });
       }
       (file as Record<string, unknown>).sanitizedFilename =
-        result?.sanitizedFilename;
+        result.sanitizedFilename;
     }
 
     next();
@@ -392,12 +392,12 @@ export async function validateFileBuffer(
   mimeType: string,
   category: UploadCategory,
 ): Promise<UploadValidationResult> {
-  const _limits = UPLOAD_LIMITS[category];
+  const limits = UPLOAD_LIMITS[category];
   if (!limits) {
     return { valid: false, error: `Unknown upload category: ${category}` };
   }
 
-  const _sanitizedFilename = sanitizeFilename(filename);
+  const sanitizedFilename = sanitizeFilename(filename);
 
   if (isSvgBlocked(mimeType, filename, category)) {
     return {
@@ -406,22 +406,22 @@ export async function validateFileBuffer(
     };
   }
 
-  if (!validateExtension(filename, limits?.allowedTypes)) {
+  if (!validateExtension(filename, limits.allowedTypes)) {
     return {
       valid: false,
-      error: `Invalid file extension. Allowed types: ${limits?.allowedTypes.join(", ")}`,
+      error: `Invalid file extension. Allowed types: ${limits.allowedTypes.join(", ")}`,
     };
   }
 
-  if (!validateMimeType(mimeType, limits?.allowedTypes)) {
+  if (!validateMimeType(mimeType, limits.allowedTypes)) {
     return {
       valid: false,
-      error: `Invalid MIME type: ${mimeType}. Allowed: ${limits?.allowedTypes.join(", ")}`,
+      error: `Invalid MIME type: ${mimeType}. Allowed: ${limits.allowedTypes.join(", ")}`,
     };
   }
 
-  if (!validateFileSize(buffer?.length, limits?.maxSize)) {
-    const _maxSizeMB = (limits?.maxSize / (1024 * 1024)).toFixed(1);
+  if (!validateFileSize(buffer.length, limits.maxSize)) {
+    const maxSizeMB = (limits.maxSize / (1024 * 1024)).toFixed(1);
     return {
       valid: false,
       error: `File too large. Maximum size: ${maxSizeMB}MB`,
@@ -429,10 +429,10 @@ export async function validateFileBuffer(
   }
 
   if (!verifyMagicBytes(buffer, mimeType)) {
-    logger?.warn("Magic bytes verification failed", {
+    logger.warn("Magic bytes verification failed", {
       filename,
       mimetype: mimeType,
-      bufferStart: buffer?.slice(0, 16).toString("hex"),
+      bufferStart: buffer.slice(0, 16).toString("hex"),
     });
     return {
       valid: false,

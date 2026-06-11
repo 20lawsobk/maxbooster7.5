@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 interface AutonomousSocialState {
   isRunning: boolean;
@@ -21,12 +21,12 @@ const autonomousStates: Map<string, AutonomousSocialState> = new Map();
 const autonomousStateLastAccessed: Map<string, number> = new Map();
 // At 90M users, even 1% using autonomous social = 900K entries × ~300B each ≈ 270MB.
 // Evict entries inactive for >24h; hard-cap at 50K to prevent runaway growth on spikes.
-const _AUTONOMOUS_STATE_MAX = 50_000;
-const _AUTONOMOUS_STATE_TTL_MS = 24 * 60 * 60 * 1000;
+const AUTONOMOUS_STATE_MAX = 50_000;
+const AUTONOMOUS_STATE_TTL_MS = 24 * 60 * 60 * 1000;
 
 setInterval(
   () => {
-    const _cutoff = Date?.now() - AUTONOMOUS_STATE_TTL_MS;
+    const cutoff = Date?.now() - AUTONOMOUS_STATE_TTL_MS;
     for (const [uid, ts] of autonomousStateLastAccessed) {
       if (ts < cutoff) {
         autonomousStates?.delete(uid);
@@ -35,7 +35,7 @@ setInterval(
     }
     // Hard size cap: if still over limit, evict oldest entries first.
     if (autonomousStates?.size > AUTONOMOUS_STATE_MAX) {
-      const _sorted = [...autonomousStateLastAccessed?.entries()].sort(
+      const sorted = [...autonomousStateLastAccessed?.entries()].sort(
         (a, b) => a[1] - b[1],
       );
       for (const [uid] of sorted) {
@@ -68,8 +68,8 @@ function getState(userId: string): AutonomousSocialState {
 
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _state = getState(userId);
+    const userId = req?.user!.id;
+    const state = getState(userId);
 
     res?.json(state);
   } catch (error) {
@@ -80,11 +80,11 @@ router?.get("/status", requireAuth, async (req, res) => {
 
 router?.post("/start", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _state = getState(userId);
+    const userId = req?.user!.id;
+    const state = getState(userId);
 
-    state?.isRunning = true;
-    state?.config.enabled = true;
+    state.isRunning = true;
+    state.config.enabled = true;
 
     logger?.info(`✅ Autonomous social mode started for user ${userId}`);
 
@@ -101,11 +101,11 @@ router?.post("/start", requireAuth, async (req, res) => {
 
 router?.post("/stop", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _state = getState(userId);
+    const userId = req?.user!.id;
+    const state = getState(userId);
 
-    state?.isRunning = false;
-    state?.config.enabled = false;
+    state.isRunning = false;
+    state.config.enabled = false;
 
     logger?.info(`⏸️ Autonomous social mode stopped for user ${userId}`);
 

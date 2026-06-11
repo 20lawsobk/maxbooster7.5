@@ -47,23 +47,23 @@ export function useSmartDefaults() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const _getDefault = (
+  const getDefault = (
     category: string,
     key: string,
   ): SmartDefault | undefined => {
     return defaults?.find((d) => d?.category === category && d?.key === key);
   };
 
-  const _getDefaultValue = <T>(
+  const getDefaultValue = <T>(
     category: string,
     key: string,
     fallback: T,
   ): T => {
-    const _def = getDefault(category, key);
+    const def = getDefault(category, key);
     return def ? def?.value : fallback;
   };
 
-  const _getCategoryDefaults = (category: string): SmartDefault[] => {
+  const getCategoryDefaults = (category: string): SmartDefault[] => {
     return defaults?.filter((d) => d?.category === category) || [];
   };
 
@@ -87,17 +87,17 @@ export function useSchedulingSuggestions() {
     staleTime: 30 * 60 * 1000,
   });
 
-  const _getSuggestionsByPlatform = (
+  const getSuggestionsByPlatform = (
     platform: string,
   ): SchedulingSuggestion[] => {
     return suggestions?.filter((s) => s?.platform === platform) || [];
   };
 
-  const _getSuggestionsByDay = (day: string): SchedulingSuggestion[] => {
+  const getSuggestionsByDay = (day: string): SchedulingSuggestion[] => {
     return suggestions?.filter((s) => s?.day === day) || [];
   };
 
-  const _getTopSuggestions = (count: number = 5): SchedulingSuggestion[] => {
+  const getTopSuggestions = (count: number = 5): SchedulingSuggestion[] => {
     return suggestions?.slice(0, count) || [];
   };
 
@@ -121,15 +121,15 @@ export function usePlatformRecommendations() {
     staleTime: 30 * 60 * 1000,
   });
 
-  const _getPrimaryPlatforms = (): PlatformRecommendation[] => {
+  const getPrimaryPlatforms = (): PlatformRecommendation[] => {
     return recommendations?.filter((r) => r?.priority === "primary") || [];
   };
 
-  const _getSecondaryPlatforms = (): PlatformRecommendation[] => {
+  const getSecondaryPlatforms = (): PlatformRecommendation[] => {
     return recommendations?.filter((r) => r?.priority === "secondary") || [];
   };
 
-  const _getEmergingPlatforms = (): PlatformRecommendation[] => {
+  const getEmergingPlatforms = (): PlatformRecommendation[] => {
     return recommendations?.filter((r) => r?.priority === "emerging") || [];
   };
 
@@ -177,7 +177,7 @@ export function useArtistTypeDefaults(
   genres?: string[],
   careerStage?: CareerStage,
 ) {
-  const _genreParam = genres?.join(",") || "";
+  const genreParam = genres?.join(",") || "";
   const {
     data: defaults,
     isLoading,

@@ -1,4 +1,4 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import {
   users,
   analytics,
@@ -8,12 +8,12 @@ import {
   achievements,
   socialCampaigns,
   careerCoachRecommendations,
-} from "../../shared/schema?.js";
+} from "../../shared/schema.js";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { Resend } from "resend";
-import { logger } from "../logger?.js";
-import { notificationService } from "./notificationService?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { notificationService } from "./notificationService.js";
+import { env } from "../config/env.js";
 
 interface WeeklyReport {
   userId: string;
@@ -50,8 +50,8 @@ class WeeklyInsightsService {
   private initialize() {
     if (!this?.isInitialized && env?.RESEND_API_KEY) {
       try {
-        this?.resend = new Resend(env?.RESEND_API_KEY);
-        this?.isInitialized = true;
+        this.resend = new Resend(env?.RESEND_API_KEY);
+        this.isInitialized = true;
         logger?.info("✅ Weekly Insights Service initialized");
       } catch (error) {
         logger?.warn(
@@ -71,14 +71,14 @@ class WeeklyInsightsService {
         .limit(1);
       if (!user) return null;
 
-      const _now = new Date();
-      const _thisWeekStart = new Date(now);
+      const now = new Date();
+      const thisWeekStart = new Date(now);
       thisWeekStart?.setDate(now?.getDate() - 7);
 
-      const _lastWeekStart = new Date(thisWeekStart);
+      const lastWeekStart = new Date(thisWeekStart);
       lastWeekStart?.setDate(lastWeekStart?.getDate() - 7);
 
-      const _thisWeekAnalytics = await db
+      const thisWeekAnalytics = await db
         .select({
           totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
           totalRevenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
@@ -89,7 +89,7 @@ class WeeklyInsightsService {
           and(eq(analytics?.userId, userId), gte(analytics?.date, thisWeekStart)),
         );
 
-      const _lastWeekAnalytics = await db
+      const lastWeekAnalytics = await db
         .select({
           totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
         })
@@ -102,17 +102,17 @@ class WeeklyInsightsService {
           ),
         );
 
-      const _streamsThisWeek = Number(thisWeekAnalytics[0]?.totalStreams || 0);
-      const _streamsLastWeek = Number(lastWeekAnalytics[0]?.totalStreams || 0);
-      const _streamsChange = streamsThisWeek - streamsLastWeek;
-      const _streamsChangePercent =
+      const streamsThisWeek = Number(thisWeekAnalytics[0]?.totalStreams || 0);
+      const streamsLastWeek = Number(lastWeekAnalytics[0]?.totalStreams || 0);
+      const streamsChange = streamsThisWeek - streamsLastWeek;
+      const streamsChangePercent =
         streamsLastWeek > 0
           ? Math?.round((streamsChange / streamsLastWeek) * 100)
           : streamsThisWeek > 0
             ? 100
             : 0;
 
-      const _topTrackData = await db
+      const topTrackData = await db
         .select({
           title: sql<string>`COALESCE((${analytics?.metadata}->>'trackTitle')::text, 'Unknown Track')`,
           streams: sql<number>`SUM(${analytics?.streams})`,
@@ -125,7 +125,7 @@ class WeeklyInsightsService {
         .orderBy(desc(sql`SUM(${analytics?.streams})`))
         .limit(1);
 
-      const _topTrack =
+      const topTrack =
         topTrackData[0] && topTrackData[0].streams > 0
           ? {
               title: topTrackData[0].title,
@@ -133,11 +133,11 @@ class WeeklyInsightsService {
             }
           : null;
 
-      const _recentAchievements = await db
+      const recentAchievements = await db
         .select({
-          name: achievements?.name,
-          description: achievements?.description,
-          icon: achievements?.icon,
+          name: achievements.name,
+          description: achievements.description,
+          icon: achievements.icon,
         })
         .from(userAchievements)
         .innerJoin(
@@ -152,7 +152,7 @@ class WeeklyInsightsService {
         )
         .limit(3);
 
-      const _aiRecommendationData = await db
+      const aiRecommendationData = await db
         .select()
         .from(careerCoachRecommendations)
         .where(
@@ -165,14 +165,14 @@ class WeeklyInsightsService {
         .orderBy(desc(careerCoachRecommendations?.priority))
         .limit(1);
 
-      const _aiRecommendation = aiRecommendationData[0]
+      const aiRecommendation = aiRecommendationData[0]
         ? {
             title: aiRecommendationData[0].title,
             description: aiRecommendationData[0].description,
           }
         : null;
 
-      const _upcomingPostsData = await db
+      const upcomingPostsData = await db
         .select()
         .from(socialCampaigns)
         .where(
@@ -185,9 +185,9 @@ class WeeklyInsightsService {
         .orderBy(socialCampaigns?.scheduledAt)
         .limit(3);
 
-      const _upcomingPosts = upcomingPostsData?.map((post) => ({
-        platform: post?.platform,
-        scheduledAt: post?.scheduledAt!,
+      const upcomingPosts = upcomingPostsData?.map((post) => ({
+        platform: post.platform,
+        scheduledAt: post.scheduledAt!,
         content:
           post?.content?.substring(0, 100) +
             (post?.content && post?.content.length > 100 ? "..." : "") || "",
@@ -195,8 +195,8 @@ class WeeklyInsightsService {
 
       return {
         userId,
-        userName: user?.firstName || user?.username || "Artist",
-        userEmail: user?.email,
+        userName: user.firstName || user?.username || "Artist",
+        userEmail: user.email,
         streamsThisWeek,
         streamsLastWeek,
         streamsChange,
@@ -204,10 +204,10 @@ class WeeklyInsightsService {
         topTrack,
         newFollowers: Number(thisWeekAnalytics[0]?.totalFollowers || 0),
         revenueEarned: Number(thisWeekAnalytics[0]?.totalRevenue || 0),
-        achievementsUnlocked: recentAchievements?.map((a) => ({
-          name: a?.name,
-          description: a?.description || "",
-          icon: a?.icon || "🏆",
+        achievementsUnlocked: recentAchievements.map((a) => ({
+          name: a.name,
+          description: a.description || "",
+          icon: a.icon || "🏆",
         })),
         aiRecommendation,
         upcomingPosts,
@@ -226,9 +226,9 @@ class WeeklyInsightsService {
     let failed = 0;
 
     try {
-      const _optedInUsers = await db
+      const optedInUsers = await db
         .select({
-          userId: emailPreferences?.userId,
+          userId: emailPreferences.userId,
         })
         .from(emailPreferences)
         .where(
@@ -244,9 +244,9 @@ class WeeklyInsightsService {
 
       for (const { userId } of optedInUsers) {
         try {
-          const _report = await this?.generateWeeklyReport(userId);
+          const report = await this?.generateWeeklyReport(userId);
           if (report) {
-            const _success = await this?.sendWeeklyEmail(report);
+            const success = await this?.sendWeeklyEmail(report);
             if (success) {
               sent++;
             } else {
@@ -279,61 +279,61 @@ class WeeklyInsightsService {
     const [sentEmailRecord] = await db
       .insert(sentEmails)
       .values({
-        userId: report?.userId,
+        userId: report.userId,
         emailType: "weekly_insights",
         subject: `📊 Your Week in Music - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
-        recipientEmail: report?.userEmail,
+        recipientEmail: report.userEmail,
         metadata: {
-          streamsThisWeek: report?.streamsThisWeek,
-          revenueEarned: report?.revenueEarned,
+          streamsThisWeek: report.streamsThisWeek,
+          revenueEarned: report.revenueEarned,
         },
       })
       .returning();
 
-    const _emailId = sentEmailRecord?.id;
-    const _baseUrl = process?.env.APP_URL || "https://maxbooster?.ai";
-    const _trackingPixel = `${baseUrl}/api/emails/track/${emailId}/open`;
-    const _clickTrackUrl = `${baseUrl}/api/emails/track/${emailId}/click`;
+    const emailId = sentEmailRecord?.id;
+    const baseUrl = process?.env.APP_URL || "https://maxbooster.ai";
+    const trackingPixel = `${baseUrl}/api/emails/track/${emailId}/open`;
+    const clickTrackUrl = `${baseUrl}/api/emails/track/${emailId}/click`;
 
-    const _html = this?.generateEmailTemplate(
+    const html = this?.generateEmailTemplate(
       report,
       trackingPixel,
       clickTrackUrl,
     );
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     try {
       await this?.resend!.emails?.send({
-        to: report?.userEmail,
+        to: report.userEmail,
         from: fromEmail,
         subject: `📊 Your Week in Music - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
         html,
-        text: this?.generatePlainTextEmail(report),
+        text: this.generatePlainTextEmail(report),
       });
 
       logger?.info(`📧 Weekly insights email sent to ${report?.userEmail}`);
 
-      const _changeLabel =
+      const changeLabel =
         report?.streamsChange >= 0
           ? `+${report?.streamsChangePercent}% vs last week`
           : `${report?.streamsChangePercent}% vs last week`;
-      const _topTrackLine = report?.topTrack
-        ? ` Top track: "${report?.topTrack.title}" with ${report?.topTrack.streams?.toLocaleString()} streams.`
+      const topTrackLine = report?.topTrack
+        ? ` Top track: "${report.topTrack.title}" with ${report?.topTrack.streams?.toLocaleString()} streams.`
         : "";
 
       await notificationService
         .send({
-          userId: report?.userId,
+          userId: report.userId,
           type: "engagement_digest",
           title: "📊 Your Weekly Music Report is Ready",
           message: `This week: ${report?.streamsThisWeek.toLocaleString()} streams (${changeLabel}), $${report?.revenueEarned.toFixed(2)} revenue, +${report?.newFollowers} followers.${topTrackLine}`,
           link: "/analytics",
           metadata: {
-            streamsThisWeek: report?.streamsThisWeek,
-            streamsChangePercent: report?.streamsChangePercent,
-            revenueEarned: report?.revenueEarned,
-            newFollowers: report?.newFollowers,
-            achievementsCount: report?.achievementsUnlocked.length,
+            streamsThisWeek: report.streamsThisWeek,
+            streamsChangePercent: report.streamsChangePercent,
+            revenueEarned: report.revenueEarned,
+            newFollowers: report.newFollowers,
+            achievementsCount: report.achievementsUnlocked.length,
           },
         })
         .catch((err) =>
@@ -358,72 +358,72 @@ class WeeklyInsightsService {
     trackingPixel: string,
     clickTrackUrl: string,
   ): string {
-    const _changeIndicator = report?.streamsChange >= 0 ? "📈" : "📉";
-    const _changeColor = report?.streamsChange >= 0 ? "#10b981" : "#ef4444";
+    const changeIndicator = report?.streamsChange >= 0 ? "📈" : "📉";
+    const changeColor = report?.streamsChange >= 0 ? "#10b981" : "#ef4444";
 
     return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1?.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f3f4f6;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🎵 Max Booster</h1>
-      <p style="margin: 10px 0 0; color: rgba(255,255,255,0?.9); font-size: 16px;">Your Weekly Music Career Insights</p>
+      <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Your Weekly Music Career Insights</p>
     </div>
     
-    <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0?.05);">
+    <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
       <p style="font-size: 18px; color: #374151; margin: 0 0 20px;">Hey ${report?.userName}! 👋</p>
-      <p style="font-size: 15px; color: #6b7280; margin: 0 0 30px; line-height: 1?.6;">Here's how your music performed this week. Keep pushing forward!</p>
+      <p style="font-size: 15px; color: #6b7280; margin: 0 0 30px; line-height: 1.6;">Here's how your music performed this week. Keep pushing forward!</p>
       
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
         <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; text-align: center;">
-          <div style="font-size: 28px; font-weight: 700; color: #0369a1;">${report?.streamsThisWeek.toLocaleString()}</div>
+          <div style="font-size: 28px; font-weight: 700; color: #0369a1;">${report.streamsThisWeek.toLocaleString()}</div>
           <div style="font-size: 13px; color: #64748b; margin-top: 5px;">Streams This Week</div>
-          <div style="font-size: 12px; color: ${changeColor}; margin-top: 4px;">${changeIndicator} ${report?.streamsChangePercent >= 0 ? "+" : ""}${report?.streamsChangePercent}% vs last week</div>
+          <div style="font-size: 12px; color: ${changeColor}; margin-top: 4px;">${changeIndicator} ${report.streamsChangePercent >= 0 ? "+" : ""}${report.streamsChangePercent}% vs last week</div>
         </div>
         <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 20px; border-radius: 12px; text-align: center;">
-          <div style="font-size: 28px; font-weight: 700; color: #15803d;">$${report?.revenueEarned.toFixed(2)}</div>
+          <div style="font-size: 28px; font-weight: 700; color: #15803d;">$${report.revenueEarned.toFixed(2)}</div>
           <div style="font-size: 13px; color: #64748b; margin-top: 5px;">Revenue Earned</div>
         </div>
         <div style="background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); padding: 20px; border-radius: 12px; text-align: center;">
-          <div style="font-size: 28px; font-weight: 700; color: #a21caf;">+${report?.newFollowers}</div>
+          <div style="font-size: 28px; font-weight: 700; color: #a21caf;">+${report.newFollowers}</div>
           <div style="font-size: 13px; color: #64748b; margin-top: 5px;">New Followers</div>
         </div>
         <div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); padding: 20px; border-radius: 12px; text-align: center;">
-          <div style="font-size: 28px; font-weight: 700; color: #ca8a04;">${report?.achievementsUnlocked.length}</div>
+          <div style="font-size: 28px; font-weight: 700; color: #ca8a04;">${report.achievementsUnlocked.length}</div>
           <div style="font-size: 13px; color: #64748b; margin-top: 5px;">Achievements Unlocked</div>
         </div>
       </div>
       
       ${
-        report?.topTrack
+        report.topTrack
           ? `
       <div style="background-color: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
         <h3 style="margin: 0 0 10px; color: #374151; font-size: 15px;">🎤 Top Performing Track</h3>
-        <p style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">${report?.topTrack.title}</p>
-        <p style="margin: 5px 0 0; color: #6b7280; font-size: 14px;">${report?.topTrack.streams?.toLocaleString()} streams this week</p>
+        <p style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">${report.topTrack.title}</p>
+        <p style="margin: 5px 0 0; color: #6b7280; font-size: 14px;">${report.topTrack.streams.toLocaleString()} streams this week</p>
       </div>
       `
           : ""
       }
       
       ${
-        report?.achievementsUnlocked.length > 0
+        report.achievementsUnlocked.length > 0
           ? `
       <div style="background-color: #fffbeb; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
         <h3 style="margin: 0 0 15px; color: #374151; font-size: 15px;">🏆 Achievements Unlocked</h3>
-        ${report?.achievementsUnlocked
+        ${report.achievementsUnlocked
           .map(
             (a) => `
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <span style="font-size: 24px; margin-right: 12px;">${a?.icon}</span>
+            <span style="font-size: 24px; margin-right: 12px;">${a.icon}</span>
             <div>
-              <div style="font-weight: 600; color: #1f2937;">${a?.name}</div>
-              <div style="font-size: 13px; color: #6b7280;">${a?.description}</div>
+              <div style="font-weight: 600; color: #1f2937;">${a.name}</div>
+              <div style="font-size: 13px; color: #6b7280;">${a.description}</div>
             </div>
           </div>
         `,
@@ -435,31 +435,31 @@ class WeeklyInsightsService {
       }
       
       ${
-        report?.aiRecommendation
+        report.aiRecommendation
           ? `
       <div style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
         <h3 style="margin: 0 0 10px; color: #5b21b6; font-size: 15px;">🤖 AI Recommendation of the Week</h3>
-        <p style="margin: 0; color: #1f2937; font-size: 16px; font-weight: 600;">${report?.aiRecommendation.title}</p>
-        <p style="margin: 10px 0 0; color: #4c1d95; font-size: 14px; line-height: 1?.5;">${report?.aiRecommendation.description}</p>
+        <p style="margin: 0; color: #1f2937; font-size: 16px; font-weight: 600;">${report.aiRecommendation.title}</p>
+        <p style="margin: 10px 0 0; color: #4c1d95; font-size: 14px; line-height: 1.5;">${report.aiRecommendation.description}</p>
       </div>
       `
           : ""
       }
       
       ${
-        report?.upcomingPosts.length > 0
+        report.upcomingPosts.length > 0
           ? `
       <div style="background-color: #f0f9ff; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
         <h3 style="margin: 0 0 15px; color: #374151; font-size: 15px;">📅 Upcoming Scheduled Posts</h3>
-        ${report?.upcomingPosts
+        ${report.upcomingPosts
           .map(
             (post) => `
           <div style="padding: 12px 0; border-bottom: 1px solid #e0f2fe;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-weight: 600; color: #1f2937; text-transform: capitalize;">${post?.platform}</span>
-              <span style="font-size: 12px; color: #64748b;">${new Date(post?.scheduledAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+              <span style="font-weight: 600; color: #1f2937; text-transform: capitalize;">${post.platform}</span>
+              <span style="font-size: 12px; color: #64748b;">${new Date(post.scheduledAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
             </div>
-            <p style="margin: 5px 0 0; font-size: 13px; color: #6b7280;">${post?.content}</p>
+            <p style="margin: 5px 0 0; font-size: 13px; color: #6b7280;">${post.content}</p>
           </div>
         `,
           )
@@ -470,7 +470,7 @@ class WeeklyInsightsService {
       }
       
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${clickTrackUrl}?redirect=${encodeURIComponent("https://maxbooster?.ai/dashboard")}" 
+        <a href="${clickTrackUrl}?redirect=${encodeURIComponent("https://maxbooster.ai/dashboard")}" 
            style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
           Log in to see more →
         </a>
@@ -479,8 +479,8 @@ class WeeklyInsightsService {
       <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
         <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
           You're receiving this because you opted in to weekly insights.<br>
-          <a href="${clickTrackUrl}?redirect=${encodeURIComponent("https://maxbooster?.ai/settings")}" style="color: #6b7280;">Manage email preferences</a> | 
-          <a href="${clickTrackUrl}?redirect=${encodeURIComponent("https://maxbooster?.ai/api/email-preferences/unsubscribe")}" style="color: #6b7280;">Unsubscribe</a>
+          <a href="${clickTrackUrl}?redirect=${encodeURIComponent("https://maxbooster.ai/settings")}" style="color: #6b7280;">Manage email preferences</a> | 
+          <a href="${clickTrackUrl}?redirect=${encodeURIComponent("https://maxbooster.ai/api/email-preferences/unsubscribe")}" style="color: #6b7280;">Unsubscribe</a>
         </p>
       </div>
     </div>
@@ -531,11 +531,11 @@ ${report?.upcomingPosts.map((p) => `- ${p?.platform}: ${new Date(p?.scheduledAt)
     : ""
 }
 
-Log in to see more: https://maxbooster?.ai/dashboard
+Log in to see more: https://maxbooster.ai/dashboard
 
 ---
-Manage preferences: https://maxbooster?.ai/settings
-Unsubscribe: https://maxbooster?.ai/api/email-preferences/unsubscribe
+Manage preferences: https://maxbooster.ai/settings
+Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
 `;
   }
 
@@ -602,7 +602,7 @@ Unsubscribe: https://maxbooster?.ai/api/email-preferences/unsubscribe
       revenueAlerts: boolean;
     }>,
   ) {
-    const _existing = await this?.getEmailPreferences(userId);
+    const existing = await this?.getEmailPreferences(userId);
 
     const [updated] = await db
       .update(emailPreferences)
@@ -633,4 +633,4 @@ Unsubscribe: https://maxbooster?.ai/api/email-preferences/unsubscribe
   }
 }
 
-export const _weeklyInsightsService = new WeeklyInsightsService();
+export const weeklyInsightsService = new WeeklyInsightsService();

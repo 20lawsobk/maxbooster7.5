@@ -96,20 +96,20 @@ export interface UnifiedStoreState {
 }
 
 export function useUnifiedStore(): UnifiedStoreState {
-  const _newStore = useNewStore();
-  const _legacyStore = useLegacyStore();
+  const newStore = useNewStore();
+  const legacyStore = useLegacyStore();
 
   useEffect(() => {
-    const _unsubscribe = useNewStore?.subscribe(
+    const unsubscribe = useNewStore?.subscribe(
       (state) => ({
-        isPlaying: state?.transport.isPlaying,
-        position: state?.transport.position,
+        isPlaying: state.transport.isPlaying,
+        position: state.transport.position,
       }),
       ({ isPlaying, position }) => {
         if (legacyStore?.isPlaying !== isPlaying) {
           legacyStore?.setIsPlaying(isPlaying);
         }
-        if (Math?.abs(legacyStore?.currentTime - position) > 0?.1) {
+        if (Math?.abs(legacyStore?.currentTime - position) > 0.1) {
           legacyStore?.setCurrentTime(position);
         }
       },
@@ -118,7 +118,7 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const _unsubscribe = useNewStore?.subscribe(
+    const unsubscribe = useNewStore?.subscribe(
       (state) => state?.transport.tempo,
       (tempo) => {
         if (legacyStore?.tempo !== tempo) {
@@ -130,7 +130,7 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const _unsubscribe = useNewStore?.subscribe(
+    const unsubscribe = useNewStore?.subscribe(
       (state) => state?.transport.isLooping,
       (isLooping) => {
         if (legacyStore?.loopEnabled !== isLooping) {
@@ -142,10 +142,10 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const _unsubscribe = useNewStore?.subscribe(
+    const unsubscribe = useNewStore?.subscribe(
       (state) => ({
-        loopStart: state?.transport.loopStart,
-        loopEnd: state?.transport.loopEnd,
+        loopStart: state.transport.loopStart,
+        loopEnd: state.transport.loopEnd,
       }),
       ({ loopStart, loopEnd }) => {
         if (
@@ -160,7 +160,7 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const _unsubscribe = useNewStore?.subscribe(
+    const unsubscribe = useNewStore?.subscribe(
       (state) => state?.transport.metronomeEnabled,
       (metronomeEnabled) => {
         if (legacyStore?.metronomeOn !== metronomeEnabled) {
@@ -172,7 +172,7 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const _unsubscribe = useNewStore?.subscribe(
+    const unsubscribe = useNewStore?.subscribe(
       (state) => state?.selection?.trackIds ?? [],
       (selectedTrackIds) => {
         if (
@@ -185,32 +185,32 @@ export function useUnifiedStore(): UnifiedStoreState {
     return unsubscribe;
   }, [legacyStore]);
 
-  const _tracks = useMemo<UnifiedTrack[]>(() => {
+  const tracks = useMemo<UnifiedTrack[]>(() => {
     return newStore?.tracks.map((track) => ({
       ...track,
-      muted: track?.muted,
+      muted: track.muted,
     }));
   }, [newStore?.tracks]);
 
-  const _masterTrack = useMemo<UnifiedTrack>(
+  const masterTrack = useMemo<UnifiedTrack>(
     () => ({
       ...newStore?.masterTrack,
     }),
     [newStore?.masterTrack],
   );
 
-  const _transport = useMemo<UnifiedTransport>(
+  const transport = useMemo<UnifiedTransport>(
     () => ({
-      isPlaying: newStore?.transport.isPlaying,
-      isRecording: newStore?.transport.isRecording,
-      isPaused: newStore?.transport.isPaused,
-      isLooping: newStore?.transport.isLooping,
-      position: newStore?.transport.position,
-      loopStart: newStore?.transport.loopStart,
-      loopEnd: newStore?.transport.loopEnd,
-      tempo: newStore?.transport.tempo,
+      isPlaying: newStore.transport.isPlaying,
+      isRecording: newStore.transport.isRecording,
+      isPaused: newStore.transport.isPaused,
+      isLooping: newStore.transport.isLooping,
+      position: newStore.transport.position,
+      loopStart: newStore.transport.loopStart,
+      loopEnd: newStore.transport.loopEnd,
+      tempo: newStore.transport.tempo,
       timeSignature: `${newStore?.transport.timeSignatureNumerator}/${newStore?.transport.timeSignatureDenominator}`,
-      metronomeEnabled: newStore?.transport.metronomeEnabled,
+      metronomeEnabled: newStore.transport.metronomeEnabled,
     }),
     [
       newStore?.transport.isPlaying,
@@ -227,57 +227,57 @@ export function useUnifiedStore(): UnifiedStoreState {
     ],
   );
 
-  const _view = useMemo(() => newStore?.view, [newStore?.view]);
+  const view = useMemo(() => newStore?.view, [newStore?.view]);
 
-  const _project = useMemo(
+  const project = useMemo(
     () => ({
-      id: newStore?.project.id,
-      name: newStore?.project.name,
-      isDirty: newStore?.project.isDirty,
-      sampleRate: newStore?.project.sampleRate,
-      bitDepth: newStore?.project.bitDepth,
+      id: newStore.project.id,
+      name: newStore.project.name,
+      isDirty: newStore.project.isDirty,
+      sampleRate: newStore.project.sampleRate,
+      bitDepth: newStore.project.bitDepth,
     }),
     [newStore?.project],
   );
 
-  const _play = useCallback(() => {
+  const play = useCallback(() => {
     newStore?.play();
   }, [newStore]);
 
-  const _pause = useCallback(() => {
+  const pause = useCallback(() => {
     newStore?.pause();
   }, [newStore]);
 
-  const _stop = useCallback(() => {
+  const stop = useCallback(() => {
     newStore?.stop();
     legacyStore?.setIsPlaying(false);
     legacyStore?.setCurrentTime(0);
   }, [newStore, legacyStore]);
 
-  const _record = useCallback(() => {
+  const record = useCallback(() => {
     newStore?.record();
   }, [newStore]);
 
-  const _toggleLoop = useCallback(() => {
+  const toggleLoop = useCallback(() => {
     newStore?.toggleLoop();
   }, [newStore]);
 
-  const _setPosition = useCallback(
+  const setPosition = useCallback(
     (position: number) => {
       newStore?.setPosition(position);
     },
     [newStore],
   );
 
-  const _setTempo = useCallback(
+  const setTempo = useCallback(
     (tempo: number) => {
       newStore?.setTempo(tempo);
     },
     [newStore],
   );
 
-  const _canUndo = newStore?.historyIndex > 0;
-  const _canRedo = newStore?.historyIndex < newStore?.history.length - 1;
+  const canUndo = newStore?.historyIndex > 0;
+  const canRedo = newStore?.historyIndex < newStore?.history.length - 1;
 
   return {
     tracks,
@@ -294,53 +294,53 @@ export function useUnifiedStore(): UnifiedStoreState {
     setPosition,
     setTempo,
 
-    addTrack: newStore?.addTrack,
-    removeTrack: newStore?.removeTrack,
-    updateTrack: newStore?.updateTrack,
-    duplicateTrack: newStore?.duplicateTrack,
-    reorderTracks: newStore?.reorderTracks,
+    addTrack: newStore.addTrack,
+    removeTrack: newStore.removeTrack,
+    updateTrack: newStore.updateTrack,
+    duplicateTrack: newStore.duplicateTrack,
+    reorderTracks: newStore.reorderTracks,
 
-    addAudioClip: newStore?.addAudioClip,
-    updateAudioClip: newStore?.updateAudioClip,
-    removeAudioClip: newStore?.removeAudioClip,
+    addAudioClip: newStore.addAudioClip,
+    updateAudioClip: newStore.updateAudioClip,
+    removeAudioClip: newStore.removeAudioClip,
 
-    setTrackVolume: newStore?.setTrackVolume,
-    setTrackPan: newStore?.setTrackPan,
-    toggleTrackMute: newStore?.toggleTrackMute,
-    toggleTrackSolo: newStore?.toggleTrackSolo,
-    toggleTrackArm: newStore?.toggleTrackArm,
-    setTrackMeterLevel: newStore?.setTrackMeterLevel,
+    setTrackVolume: newStore.setTrackVolume,
+    setTrackPan: newStore.setTrackPan,
+    toggleTrackMute: newStore.toggleTrackMute,
+    toggleTrackSolo: newStore.toggleTrackSolo,
+    toggleTrackArm: newStore.toggleTrackArm,
+    setTrackMeterLevel: newStore.setTrackMeterLevel,
 
-    addPlugin: newStore?.addPlugin,
-    removePlugin: newStore?.removePlugin,
-    togglePluginBypass: newStore?.togglePluginBypass,
+    addPlugin: newStore.addPlugin,
+    removePlugin: newStore.removePlugin,
+    togglePluginBypass: newStore.togglePluginBypass,
 
-    selectTracks: newStore?.selectTracks,
-    selectClips: newStore?.selectClips,
-    clearSelection: newStore?.clearSelection,
+    selectTracks: newStore.selectTracks,
+    selectClips: newStore.selectClips,
+    clearSelection: newStore.clearSelection,
 
-    setZoom: newStore?.setZoom,
-    setScroll: newStore?.setScroll,
+    setZoom: newStore.setZoom,
+    setScroll: newStore.setScroll,
 
-    undo: newStore?.undo,
-    redo: newStore?.redo,
+    undo: newStore.undo,
+    redo: newStore.redo,
     canUndo,
     canRedo,
   };
 }
 
 export function useLegacyStoreSync() {
-  const _legacyStore = useLegacyStore();
-  const _newStore = useNewStore();
+  const legacyStore = useLegacyStore();
+  const newStore = useNewStore();
 
   useEffect(() => {
     if (legacyStore?.tracks && Array?.isArray(legacyStore?.tracks)) {
       legacyStore?.tracks.forEach((legacyTrack) => {
-        const _existingTrack = newStore?.tracks.find(
+        const existingTrack = newStore?.tracks.find(
           (t) => t?.id === legacyTrack?.id,
         );
         if (!existingTrack) {
-          const _trackType = (legacyTrack?.trackType || "audio") as TrackType;
+          const trackType = (legacyTrack?.trackType || "audio") as TrackType;
           newStore?.addTrack(trackType, legacyTrack?.name);
         }
       });
@@ -358,7 +358,7 @@ export function useLegacyStoreSync() {
   }, [legacyStore?.isPlaying, newStore]);
 
   useEffect(() => {
-    if (Math?.abs(legacyStore?.currentTime - newStore?.transport.position) > 0?.1) {
+    if (Math?.abs(legacyStore?.currentTime - newStore?.transport.position) > 0.1) {
       newStore?.setPosition(legacyStore?.currentTime);
     }
   }, [legacyStore?.currentTime, newStore]);

@@ -59,8 +59,8 @@ export function useSyncStatus(): {
 } {
   const context = useContext(OfflineContext);
   return {
-    status: context?.syncStatus ?? "idle",
-    progress: context?.syncProgress ?? {
+    status: context.syncStatus ?? "idle",
+    progress: context.syncProgress ?? {
       total: 0,
       completed: 0,
       failed: 0,
@@ -68,8 +68,8 @@ export function useSyncStatus(): {
       startedAt: null,
       estimatedTimeRemaining: null,
     },
-    isSyncing: context?.isSyncing ?? false,
-    lastSyncAt: context?.lastSyncAt ?? null,
+    isSyncing: context.isSyncing ?? false,
+    lastSyncAt: context.lastSyncAt ?? null,
   };
 }
 

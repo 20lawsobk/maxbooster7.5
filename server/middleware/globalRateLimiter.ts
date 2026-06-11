@@ -17,12 +17,12 @@ import rateLimit, {
   type IncrementResponse,
 } from "express-rate-limit";
 import type { Request, Response } from "express";
-import { config } from "../config/defaults?.js";
-import { logger } from "../logger?.js";
-import { getRedisClient } from "../lib/redisClient?.js";
-import { SLIDING_WINDOW_LUA } from "./slidingWindowLua?.js";
+import { config } from "../config/defaults.js";
+import { logger } from "../logger.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { SLIDING_WINDOW_LUA } from "./slidingWindowLua.js";
 
-const _RL_PREFIX = "glrl:";
+const RL_PREFIX = "glrl:";
 
 interface MemEntry {
   hits: number;
@@ -36,49 +36,49 @@ class RedisRateLimitStore implements Store {
   private fallbackPrunedAt = Date?.now();
 
   constructor(windowMs: number, maxRequests: number) {
-    this?.windowMs = windowMs;
-    this?.maxRequests = maxRequests;
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
   }
 
   init(options: Options): void {
-    this?.windowMs = options?.windowMs;
-    this?.maxRequests =
+    this.windowMs = options?.windowMs;
+    this.maxRequests =
       typeof options?.max === "number" ? options?.max : this?.maxRequests;
   }
 
   private fallbackIncrement(key: string): IncrementResponse {
-    const _now = Date?.now();
+    const now = Date?.now();
     if (now - this?.fallbackPrunedAt > 60_000) {
       for (const [k, v] of this?.fallbackStore) {
         if (now > v?.resetAt) this?.fallbackStore.delete(k);
       }
-      this?.fallbackPrunedAt = now;
+      this.fallbackPrunedAt = now;
     }
-    const _entry = this?.fallbackStore.get(key);
+    const entry = this?.fallbackStore.get(key);
     if (!entry || now > entry?.resetAt) {
-      const _resetAt = now + this?.windowMs;
+      const resetAt = now + this?.windowMs;
       this?.fallbackStore.set(key, { hits: 1, resetAt });
       return { totalHits: 1, resetTime: new Date(resetAt) };
     }
-    entry?.hits += 1;
-    return { totalHits: entry?.hits, resetTime: new Date(entry?.resetAt) };
+    entry.hits += 1;
+    return { totalHits: entry.hits, resetTime: new Date(entry?.resetAt) };
   }
 
   async increment(key: string): Promise<IncrementResponse> {
-    const _rKey = `${RL_PREFIX}${key}`;
-    const _now = Date?.now();
-    const _windowStart = now - this?.windowMs;
-    const _entryId = `${now}:${Math?.random().toString(36).slice(2, 9)}`;
-    const _windowExpireSecs = Math?.ceil(this?.windowMs / 1000) + 60;
+    const rKey = `${RL_PREFIX}${key}`;
+    const now = Date?.now();
+    const windowStart = now - this?.windowMs;
+    const entryId = `${now}:${Math?.random().toString(36).slice(2, 9)}`;
+    const windowExpireSecs = Math?.ceil(this?.windowMs / 1000) + 60;
 
     try {
-      const _redis = getRedisClient();
+      const redis = getRedisClient();
       // Atomic sliding-window check via EVAL — single PDIM round-trip, no race window.
       // Falls back to sequential ZSET ops if EVAL is unsupported (HTTP 400).
-      const _totalHits = await Promise?.race([
+      const totalHits = await Promise?.race([
         (async () => {
           try {
-            const _raw = await redis?.eval(
+            const raw = await redis?.eval(
               SLIDING_WINDOW_LUA,
               1,
               rKey,
@@ -91,9 +91,9 @@ class RedisRateLimitStore implements Store {
             // Lua returns [{isLimited: 0|1}, {remaining}]; convert to totalHits.
             // express-rate-limit blocks when totalHits > max, so a limited request
             // must produce a value STRICTLY greater than maxRequests.
-            const _arr = Array?.isArray(raw) ? raw : [];
-            const _isLimited = Number(arr[0] ?? 0) === 1;
-            const _remaining = Number(arr[1] ?? 0);
+            const arr = Array?.isArray(raw) ? raw : [];
+            const isLimited = Number(arr[0] ?? 0) === 1;
+            const remaining = Number(arr[1] ?? 0);
             if (isLimited) return this?.maxRequests + 1; // force the limiter to block
             return this?.maxRequests - remaining;
           } catch {
@@ -123,7 +123,7 @@ class RedisRateLimitStore implements Store {
           ),
         ),
       ]);
-      const _resetTime = new Date(now + this?.windowMs);
+      const resetTime = new Date(now + this?.windowMs);
       return { totalHits, resetTime };
     } catch {
       logger?.warn(
@@ -137,20 +137,20 @@ class RedisRateLimitStore implements Store {
     // With ZSET, undo an increment by removing the most-recently-added member
     // (highest score = most recent timestamp). ZREMRANGEBYRANK -1 -1 pops the top.
     // Single atomic command — no race window.
-    const _rKey = `${RL_PREFIX}${key}`;
+    const rKey = `${RL_PREFIX}${key}`;
     try {
-      const _redis = getRedisClient();
+      const redis = getRedisClient();
       await redis?.zremrangebyrank(rKey, -1, -1);
     } catch {
-      const _entry = this?.fallbackStore.get(key);
-      if (entry && entry?.hits > 0) entry?.hits--;
+      const entry = this?.fallbackStore.get(key);
+      if (entry && entry?.hits > 0) entry.hits--;
     }
   }
 
   async resetKey(key: string): Promise<void> {
     this?.fallbackStore.delete(key);
     try {
-      const _redis = getRedisClient();
+      const redis = getRedisClient();
       await redis?.del(`${RL_PREFIX}${key}`);
     } catch {
       // Redis unavailable — in-memory fallback already cleared above
@@ -158,18 +158,18 @@ class RedisRateLimitStore implements Store {
   }
 }
 
-const _globalStore = new RedisRateLimitStore(
+const globalStore = new RedisRateLimitStore(
   config?.rateLimiting.windowMs,
   config?.rateLimiting.maxRequests,
 );
-const _criticalStore = new RedisRateLimitStore(
+const criticalStore = new RedisRateLimitStore(
   config?.rateLimiting.windowMs,
   config?.rateLimiting.criticalMax,
 );
 
-export const _globalRateLimiter = rateLimit({
-  windowMs: config?.rateLimiting.windowMs,
-  max: config?.rateLimiting.maxRequests,
+export const globalRateLimiter = rateLimit({
+  windowMs: config.rateLimiting.windowMs,
+  max: config.rateLimiting.maxRequests,
   store: globalStore,
   message: {
     error: "Too many requests",
@@ -181,24 +181,24 @@ export const _globalRateLimiter = rateLimit({
   legacyHeaders: false,
   validate: { trustProxy: false },
   skip: (req: Request) => {
-    const _isDevelopment =
+    const isDevelopment =
       process?.env.NODE_ENV !== "production" && !process?.env.REPLIT_DEPLOYMENT;
-    const _isMonitoringEndpoint =
+    const isMonitoringEndpoint =
       req?.path.startsWith("/api/monitoring/") ||
       req?.path.startsWith("/api/system/");
-    const _isStaticAsset =
+    const isStaticAsset =
       req?.path.startsWith("/@fs/") ||
       req?.path.startsWith("/src/") ||
       req?.path.startsWith("/node_modules/") ||
       req?.path.startsWith("/@vite/") ||
       req?.path.startsWith("/@react-refresh") ||
       req?.path.startsWith("/@replit/");
-    const _isLocalhost =
-      req?.ip === "127?.0.0?.1" ||
+    const isLocalhost =
+      req?.ip === "127.0.0.1" ||
       req?.ip === "::1" ||
-      req?.ip === "::ffff:127?.0.0?.1" ||
+      req?.ip === "::ffff:127.0.0.1" ||
       (typeof req?.ip === "string" && req?.ip.startsWith("10."));
-    const _isSessionMaintenance =
+    const isSessionMaintenance =
       req?.path === "/api/auth/refresh-token" ||
       req?.path === "/api/auth/me" ||
       req?.path === "/api/auth/heartbeat";
@@ -215,14 +215,14 @@ export const _globalRateLimiter = rateLimit({
       error: "Too many requests",
       message:
         "You have exceeded the request limit. Please slow down and try again later.",
-      retryAfter: Math?.ceil(config?.rateLimiting.windowMs / 1000),
+      retryAfter: Math.ceil(config?.rateLimiting.windowMs / 1000),
     });
   },
 });
 
-export const _criticalEndpointLimiter = rateLimit({
-  windowMs: config?.rateLimiting.windowMs,
-  max: config?.rateLimiting.criticalMax,
+export const criticalEndpointLimiter = rateLimit({
+  windowMs: config.rateLimiting.windowMs,
+  max: config.rateLimiting.criticalMax,
   store: criticalStore,
   message: {
     error: "Too many requests to critical endpoint",
@@ -231,9 +231,9 @@ export const _criticalEndpointLimiter = rateLimit({
   validate: { trustProxy: false },
   skip: (req: Request) => {
     return (
-      req?.ip === "127?.0.0?.1" ||
+      req?.ip === "127.0.0.1" ||
       req?.ip === "::1" ||
-      req?.ip === "::ffff:127?.0.0?.1" ||
+      req?.ip === "::ffff:127.0.0.1" ||
       (typeof req?.ip === "string" && req?.ip.startsWith("10."))
     );
   },

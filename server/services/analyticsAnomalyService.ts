@@ -1,9 +1,9 @@
-import { storage } from "../storage?.js";
-import { notificationService } from "./notificationService?.js";
-import { loggingService } from "./loggingService?.js";
+import { storage } from "../storage.js";
+import { notificationService } from "./notificationService.js";
+import { loggingService } from "./loggingService.js";
 import type { InsertAnalyticsAnomaly } from "@shared/schema";
-import { queueService } from "./queueService?.js";
-import type { AnalyticsJobData } from "./queueService?.js";
+import { queueService } from "./queueService.js";
+import type { AnalyticsJobData } from "./queueService.js";
 
 export interface JobResponse {
   jobId: string;
@@ -33,14 +33,14 @@ export class AnalyticsAnomalyService {
 
   calculateMean(values: number[]): number {
     if (values?.length === 0) return 0;
-    const _sum = values?.reduce((acc, val) => acc + val, 0);
+    const sum = values?.reduce((acc, val) => acc + val, 0);
     return sum / values?.length;
   }
 
   calculateStdDev(values: number[], mean: number): number {
     if (values?.length === 0) return 0;
-    const _squaredDiffs = values?.map((val) => Math?.pow(val - mean, 2));
-    const _variance =
+    const squaredDiffs = values?.map((val) => Math?.pow(val - mean, 2));
+    const variance =
       squaredDiffs?.reduce((acc, val) => acc + val, 0) / values?.length;
     return Math?.sqrt(variance);
   }
@@ -51,7 +51,7 @@ export class AnalyticsAnomalyService {
   }
 
   determineSeverity(zScore: number): "low" | "medium" | "high" | "critical" {
-    const _absZScore = Math?.abs(zScore);
+    const absZScore = Math?.abs(zScore);
 
     if (absZScore > 5) return "critical";
     if (absZScore > 4) return "high";
@@ -64,7 +64,7 @@ export class AnalyticsAnomalyService {
   determineAnomalyType(
     zScore: number,
     _value: number,
-    _mean: number,
+    mean: number,
   ): "spike" | "drop" | "unusual_pattern" {
     if (zScore > 2) return "spike";
     if (zScore < -2) return "drop";
@@ -80,19 +80,19 @@ export class AnalyticsAnomalyService {
       return null;
     }
 
-    const _values = metricData?.map((d) => d?.value);
-    const _mean = this?.calculateMean(values);
-    const _stdDev = this?.calculateStdDev(values, mean);
-    const _zScore = this?.calculateZScore(currentValue, mean, stdDev);
+    const values = metricData?.map((d) => d?.value);
+    const mean = this?.calculateMean(values);
+    const stdDev = this?.calculateStdDev(values, mean);
+    const zScore = this?.calculateZScore(currentValue, mean, stdDev);
 
-    const _absZScore = Math?.abs(zScore);
+    const absZScore = Math?.abs(zScore);
     if (absZScore < 2) {
       return null;
     }
 
-    const _severity = this?.determineSeverity(zScore);
-    const _anomalyType = this?.determineAnomalyType(zScore, currentValue, mean);
-    const _deviationPercentage =
+    const severity = this?.determineSeverity(zScore);
+    const anomalyType = this?.determineAnomalyType(zScore, currentValue, mean);
+    const deviationPercentage =
       mean !== 0 ? ((currentValue - mean) / mean) * 100 : 0;
 
     return {
@@ -112,10 +112,10 @@ export class AnalyticsAnomalyService {
     days: number,
   ): Promise<MetricData[]> {
     new Date();
-    const _startDate = new Date();
+    const startDate = new Date();
     startDate?.setDate(startDate?.getDate() - days);
 
-    const _analyticsData = await storage?.getStreamsAnalytics(userId, days);
+    const analyticsData = await storage?.getStreamsAnalytics(userId, days);
 
     const metricData: MetricData[] = [];
 
@@ -130,10 +130,10 @@ export class AnalyticsAnomalyService {
           value = Number(data?.revenue) || 0;
           break;
         case "listeners":
-          value = Number(data?.streams) / 1?.5 || 0;
+          value = Number(data?.streams) / 1.5 || 0;
           break;
         case "engagement":
-          value = Number(data?.streams) * 0?.8 || 0;
+          value = Number(data?.streams) * 0.8 || 0;
           break;
       }
 
@@ -147,14 +147,14 @@ export class AnalyticsAnomalyService {
   }
 
   async detectAnomalies(userId: string): Promise<JobResponse> {
-    const _job = await queueService?.addAnalyticsJob("anomaly-detection", {
+    const job = await queueService?.addAnalyticsJob("anomaly-detection", {
       userId,
       type: "anomaly-detection",
       params: { userId },
     });
 
     return {
-      jobId: job?.id!,
+      jobId: job.id!,
       status: "processing",
       statusUrl: `/api/jobs/analytics/${job?.id}`,
     };
@@ -177,13 +177,13 @@ export class AnalyticsAnomalyService {
       > = ["streams", "revenue", "listeners", "engagement"];
 
       for (const metricType of metricTypes) {
-        const _shortBaselineData = await this?.getMetricDataForUser(
+        const shortBaselineData = await this?.getMetricDataForUser(
           userId,
           metricType,
           this?.SHORT_BASELINE_DAYS,
         );
 
-        const _longBaselineData = await this?.getMetricDataForUser(
+        const longBaselineData = await this?.getMetricDataForUser(
           userId,
           metricType,
           this?.LONG_BASELINE_DAYS,
@@ -193,14 +193,14 @@ export class AnalyticsAnomalyService {
           continue;
         }
 
-        const _currentValue =
+        const currentValue =
           shortBaselineData[shortBaselineData?.length - 1]?.value || 0;
-        const _baselineData =
+        const baselineData =
           longBaselineData?.length >= this?.MIN_DATA_POINTS
             ? longBaselineData?.slice(0, -1)
             : shortBaselineData?.slice(0, -1);
 
-        const _anomaly = await this?.detectAnomaly(
+        const anomaly = await this?.detectAnomaly(
           baselineData,
           currentValue,
           this?.LONG_BASELINE_DAYS,
@@ -239,13 +239,13 @@ export class AnalyticsAnomalyService {
       > = ["streams", "revenue", "listeners", "engagement"];
 
       for (const metricType of metricTypes) {
-        const _shortBaselineData = await this?.getMetricDataForUser(
+        const shortBaselineData = await this?.getMetricDataForUser(
           userId,
           metricType,
           this?.SHORT_BASELINE_DAYS,
         );
 
-        const _longBaselineData = await this?.getMetricDataForUser(
+        const longBaselineData = await this?.getMetricDataForUser(
           userId,
           metricType,
           this?.LONG_BASELINE_DAYS,
@@ -255,14 +255,14 @@ export class AnalyticsAnomalyService {
           continue;
         }
 
-        const _currentValue =
+        const currentValue =
           shortBaselineData[shortBaselineData?.length - 1]?.value || 0;
-        const _baselineData =
+        const baselineData =
           longBaselineData?.length >= this?.MIN_DATA_POINTS
             ? longBaselineData?.slice(0, -1)
             : shortBaselineData?.slice(0, -1);
 
-        const _anomaly = await this?.detectAnomaly(
+        const anomaly = await this?.detectAnomaly(
           baselineData,
           currentValue,
           this?.LONG_BASELINE_DAYS,
@@ -296,9 +296,9 @@ export class AnalyticsAnomalyService {
     anomaly: AnomalyDetectionResult,
   ): Promise<void> {
     try {
-      const _recentAnomalies = await storage?.getUnacknowledgedAnomalies(userId);
+      const recentAnomalies = await storage?.getUnacknowledgedAnomalies(userId);
 
-      const _similarAnomaly = recentAnomalies?.find(
+      const similarAnomaly = recentAnomalies?.find(
         (a) =>
           a?.metricType === metricType &&
           a?.anomalyType === anomaly?.anomalyType &&
@@ -313,31 +313,31 @@ export class AnalyticsAnomalyService {
         userId,
         projectId: null,
         metricType,
-        anomalyType: anomaly?.anomalyType,
-        severity: anomaly?.severity,
-        baselineValue: anomaly?.baselineValue.toString(),
-        actualValue: anomaly?.actualValue.toString(),
-        deviationPercentage: anomaly?.deviationPercentage.toString(),
+        anomalyType: anomaly.anomalyType,
+        severity: anomaly.severity,
+        baselineValue: anomaly.baselineValue.toString(),
+        actualValue: anomaly.actualValue.toString(),
+        deviationPercentage: anomaly.deviationPercentage.toString(),
         acknowledgedAt: null,
         notificationSent: false,
       };
 
-      const _createdAnomaly =
+      const createdAnomaly =
         await storage?.createAnalyticsAnomaly(anomalyRecord);
 
-      const _shouldNotify =
+      const shouldNotify =
         anomaly?.severity === "critical" ||
         anomaly?.severity === "high" ||
         anomaly?.severity === "medium";
 
       if (shouldNotify) {
-        const _anomalyEmoji =
+        const anomalyEmoji =
           anomaly?.anomalyType === "spike"
             ? "📈"
             : anomaly?.anomalyType === "drop"
               ? "📉"
               : "⚠️";
-        const _metricLabel =
+        const metricLabel =
           metricType === "streams"
             ? "Streams"
             : metricType === "revenue"
@@ -345,13 +345,13 @@ export class AnalyticsAnomalyService {
               : metricType === "listeners"
                 ? "Listeners"
                 : "Engagement";
-        const _typeLabel =
+        const typeLabel =
           anomaly?.anomalyType === "spike"
             ? "spike detected"
             : anomaly?.anomalyType === "drop"
               ? "drop detected"
               : "unusual pattern";
-        const _severityLabel =
+        const severityLabel =
           anomaly?.severity === "critical"
             ? "Critical"
             : anomaly?.severity === "high"
@@ -365,16 +365,16 @@ export class AnalyticsAnomalyService {
           message: `Your ${metricLabel?.toLowerCase()} deviated ${anomaly?.deviationPercentage.toFixed(1)}% from its baseline. Current: ${anomaly?.actualValue.toFixed(0)}, Expected: ~${anomaly?.baselineValue.toFixed(0)}.`,
           link: `/analytics?tab=anomalies&id=${createdAnomaly?.id}`,
           metadata: {
-            anomalyId: createdAnomaly?.id,
+            anomalyId: createdAnomaly.id,
             metricType,
-            anomalyType: anomaly?.anomalyType,
-            severity: anomaly?.severity,
-            deviationPercentage: anomaly?.deviationPercentage,
+            anomalyType: anomaly.anomalyType,
+            severity: anomaly.severity,
+            deviationPercentage: anomaly.deviationPercentage,
           },
         });
       }
 
-      const _logMethod =
+      const logMethod =
         anomaly?.severity === "critical"
           ? loggingService?.logError
           : loggingService?.logWarn;
@@ -385,12 +385,12 @@ export class AnalyticsAnomalyService {
         {
           userId,
           metricType,
-          anomalyType: anomaly?.anomalyType,
-          severity: anomaly?.severity,
-          baselineValue: anomaly?.baselineValue,
-          actualValue: anomaly?.actualValue,
-          deviationPercentage: anomaly?.deviationPercentage,
-          zScore: anomaly?.zScore,
+          anomalyType: anomaly.anomalyType,
+          severity: anomaly.severity,
+          baselineValue: anomaly.baselineValue,
+          actualValue: anomaly.actualValue,
+          deviationPercentage: anomaly.deviationPercentage,
+          zScore: anomaly.zScore,
         },
         userId,
       );
@@ -407,7 +407,7 @@ export class AnalyticsAnomalyService {
 
   async detectAnomaliesForAllUsers(): Promise<void> {
     try {
-      const _allUsers = await storage?.getAllUsers({ page: 1, limit: 1000 });
+      const allUsers = await storage?.getAllUsers({ page: 1, limit: 1000 });
 
       for (const user of allUsers?.data) {
         await this?.detectAnomaliesForUser(user?.id);
@@ -416,7 +416,7 @@ export class AnalyticsAnomalyService {
       await loggingService?.logInfo(
         "anomaly_detection",
         `Anomaly detection completed for ${allUsers?.data.length} users`,
-        { userCount: allUsers?.data.length },
+        { userCount: allUsers.data.length },
       );
     } catch (error: unknown) {
       await loggingService?.logError(
@@ -429,4 +429,4 @@ export class AnalyticsAnomalyService {
   }
 }
 
-export const _analyticsAnomalyService = new AnalyticsAnomalyService();
+export const analyticsAnomalyService = new AnalyticsAnomalyService();

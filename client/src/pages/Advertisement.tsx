@@ -2324,7 +2324,7 @@ function PressKitTabContent() {
       ...data,
       genres,
       socialLinks,
-      isPublic: pressKit?.isPublic ?? false,
+      isPublic: pressKit.isPublic ?? false,
     });
   };
 

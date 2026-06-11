@@ -2,7 +2,7 @@ import { execFileSync } from "child_process";
 import path from "path";
 import fs from "fs";
 
-const _CWD = process?.cwd();
+const CWD = process?.cwd();
 
 function probe(p: string): boolean {
   try {
@@ -14,7 +14,7 @@ function probe(p: string): boolean {
 }
 
 function resolvePython(): string | null {
-  const _candidates = [
+  const candidates = [
     path?.join(CWD, "python_runtime", "bin", "python3"),
     path?.join(CWD, "python_runtime", "bin", "python"),
     path?.join(CWD, ".venv", "bin", "python3"),
@@ -32,7 +32,7 @@ function resolvePython(): string | null {
   return null;
 }
 
-const _resolved = resolvePython();
+const resolved = resolvePython();
 
 export const PYTHON: string = resolved ?? "python3";
 export const PYTHON_AVAILABLE: boolean = resolved !== null;
@@ -44,8 +44,8 @@ if (!PYTHON_AVAILABLE) {
 }
 
 export function ensureVenv(): void {
-  const _venvPy = path?.join(CWD, ".venv", "bin", "python3");
-  const _reqFile = path?.join(CWD, "requirements?.txt");
+  const venvPy = path?.join(CWD, ".venv", "bin", "python3");
+  const reqFile = path?.join(CWD, "requirements.txt");
 
   if (!fs?.existsSync(venvPy) && fs?.existsSync(reqFile)) {
     try {

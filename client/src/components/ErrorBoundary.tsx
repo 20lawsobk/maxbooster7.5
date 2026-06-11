@@ -346,9 +346,9 @@ export class ErrorBoundary extends Component<Props, State> {
     const { error, errorInfo } = this.state;
 
     errorService.addBreadcrumb("error-boundary-report", {
-      error: error?.message,
-      stack: error?.stack,
-      componentStack: errorInfo?.componentStack,
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
     });
 
     errorService.captureException(error || new Error("Unknown error"), {
