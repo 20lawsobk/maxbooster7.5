@@ -5,14 +5,18 @@
 # Handles every known error category introduced by the git corruption commit.
 #
 # Phases:
+#   0  — dependency scan         (detect missing npm modules; suggest installs)
 #   1  — esbuild syntax errors   (boot-blocking; fixed by iterative esbuild scan)
 #   2  — TypeScript type errors  (fixed from tcc workflow output in /tmp/tc_*.txt)
+#   3  — pipeline stages         (format → lint → security → tests)
 #   all (default)
 #
 # Usage:
 #   bash scripts/auto-fix-all-errors.sh            # all phases
+#   bash scripts/auto-fix-all-errors.sh --phase 0  # only dependency scan
 #   bash scripts/auto-fix-all-errors.sh --phase 1  # only syntax
 #   bash scripts/auto-fix-all-errors.sh --phase 2  # only tsc
+#   bash scripts/auto-fix-all-errors.sh --phase 3  # only pipeline stages
 #   bash scripts/auto-fix-all-errors.sh --dry-run  # show diffs, don't write
 #
 # Exit codes: 0 = clean, 1 = unfixed errors remain, 2 = internal failure
@@ -38,6 +42,16 @@ TSC_OUTPUT_SERVER="/tmp/tc_server.txt"
 TSC_OUTPUT_CLIENT="/tmp/tc_client.txt"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# ─── LANGUAGE PROFILE (Node / TypeScript) ────────────────────────────────────
+# Mirrors LANGUAGES["node"] in universal_self_heal.py.
+# Stage commands are invoked by Phase 3.
+LP_ENTRY_CMD="npx tsx server/index.ts"
+LP_FORMAT_CMDS=("npx prettier --check .")
+LP_LINT_CMDS=("npx eslint . --max-warnings=0")
+LP_TYPES_CMDS=("npm run check")
+LP_SECURITY_CMDS=("npm audit --audit-level=high")
+LP_TEST_CMDS=("npm run test:unit" "npm run test:integration" "npm run test:security")
 
 bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
 ok()    { printf '  \033[32m✓\033[0m %s\n' "$*"; }
@@ -89,6 +103,68 @@ apply_perl_global() {
 
 # ─── HELPER: hash a file (for change detection) ─────────────────────────────
 file_hash() { md5sum "$1" | cut -d' ' -f1; }
+
+# ─── HELPER: suggest a shell command ─────────────────────────────────────────
+# Mirrors suggest_cmd() from universal_self_heal.py / auto_install_dependency().
+# In non-interactive / dry-run environments the command is only printed.
+suggest_cmd() {
+  printf '  \033[35m⟹\033[0m  Suggested: %s\n' "$*"
+  if ! $DRY_RUN && [[ -t 0 ]]; then
+    printf '  \033[35m→\033[0m  Run it now? [y/N] '
+    read -r -t 5 _answer 2>/dev/null || _answer="n"
+    if [[ "${_answer,,}" == "y" ]]; then
+      eval "$*" && ok "Command succeeded" || warn "Command exited non-zero"
+    fi
+  fi
+}
+
+# ─── HELPER: apply a unified diff patch ──────────────────────────────────────
+# Mirrors apply_patch() from universal_self_heal.py.
+# $1 = path to .patch file (or "-" to read from stdin)
+apply_patch() {
+  local patchfile="${1:--}"
+  if $DRY_RUN; then
+    info "[DRY-RUN] Would apply patch: $patchfile"
+    [[ "$patchfile" != "-" ]] && head -30 "$patchfile" || true
+    return 0
+  fi
+  if command -v patch &>/dev/null; then
+    patch -p1 < "$patchfile" && ok "Patch applied: $patchfile" \
+      || warn "patch failed — inspect manually or: git apply $patchfile"
+  else
+    warn "'patch' binary not found — apply manually: git apply $patchfile"
+  fi
+}
+
+# ─── HELPER: AI fix hint for unhandled errors ────────────────────────────────
+# Mirrors ai_auto_fix() placeholder from universal_self_heal.py.
+# Formats error context pointing to MaxCore / chainErrorAutoFixer.
+ai_fix_hint() {
+  local file="$1" lineno="$2" code="$3" detail="$4"
+  printf '\n  \033[36m[AI HINT]\033[0m Unhandled %s @ %s:%s\n' "$code" "$file" "$lineno"
+  printf '           Detail  : %s\n' "$detail"
+  printf '           MaxCore : POST /api/ai/chain-error-fix  { file, line, code, detail }\n'
+  printf '           Local   : server/services/chainErrorAutoFixer.ts → fixError()\n\n'
+}
+
+# ─── HELPER: run a named pipeline stage ──────────────────────────────────────
+# Mirrors the stages dict in LANGUAGES["node"] from universal_self_heal.py.
+# $1 = stage label, remaining args = command to run
+run_stage() {
+  local label="$1"; shift
+  info "Stage [$label]: $*"
+  if $DRY_RUN; then
+    warn "[DRY-RUN] Would run: $*"
+    return 0
+  fi
+  if bash -c "$*" 2>&1 | tail -8; then
+    ok "Stage [$label] passed"
+    return 0
+  else
+    warn "Stage [$label] reported issues (see output above)"
+    return 1
+  fi
+}
 
 # ─── TSX ESBUILD SCAN (uses tsx's own esbuild — authoritative, catches all errors) ──
 # IMPORTANT: esbuild --bundle=false MISSES errors inside generic type args
@@ -210,6 +286,104 @@ fix_esbuild_error() {
   after=$(file_hash "$file")
   [[ "$before" != "$after" ]] && return 0 || return 1
 }
+
+# ────────────────────────────────────────────────────────────────────────────
+#  PHASE 0 — MISSING DEPENDENCY SCAN
+#  Mirrors the generic_missing_dependency ErrorPattern from universal_self_heal.py
+#  and the auto_install_dependency() handler (node branch).
+# ────────────────────────────────────────────────────────────────────────────
+PHASE0_SUGGESTIONS=0
+
+if [[ "$PHASE" == "all" || "$PHASE" == "0" ]]; then
+  echo ""
+  bold "═══ Phase 0: Missing Dependency Scan ═══"
+  echo ""
+
+  # ── 0a: scan import statements vs node_modules ───────────────────────────
+  info "Scanning TS/TSX import statements for modules absent from node_modules..."
+
+  # Node.js built-in modules (no install needed)
+  _node_builtins="assert|async_hooks|buffer|child_process|cluster|console|constants|crypto|dgram|diagnostics_channel|dns|domain|events|fs|http|http2|https|inspector|module|net|os|path|perf_hooks|process|punycode|querystring|readline|repl|stream|string_decoder|sys|timers|tls|trace_events|tty|url|util|v8|vm|wasi|worker_threads|zlib"
+
+  missing_modules=()
+  while IFS= read -r imp; do
+    [[ "$imp" == .* ]] && continue          # skip relative imports
+    [[ "$imp" == node:* ]] && continue      # skip node: protocol built-ins
+    [[ "$imp" == \$* ]] && continue         # skip template-literal false positives
+    if [[ "$imp" == @* ]]; then
+      pkg=$(echo "$imp" | cut -d'/' -f1-2)  # scoped: @scope/name
+    else
+      pkg=$(echo "$imp" | cut -d'/' -f1)    # bare: pkg or pkg/sub
+    fi
+    [[ -z "$pkg" ]] && continue
+    # Skip Node.js built-ins
+    [[ "$pkg" =~ ^($_node_builtins)$ ]] && continue
+    # Skip Vite/TS path aliases (@/, @plugins/, etc.) — these are tsconfig paths, not npm packages
+    [[ "$pkg" =~ ^@/|^@plugins/|^@components/|^@hooks/|^@lib/|^@utils/ ]] && continue
+    [[ -d "$ROOT/node_modules/$pkg" ]] && continue
+    missing_modules+=("$pkg")
+  done < <(
+    grep -rhoP "(?<=from ['\"])[^'\"]+(?=['\"])" \
+      "$ROOT/server" "$ROOT/client/src" "$ROOT/shared" \
+      --include="*.ts" --include="*.tsx" 2>/dev/null \
+    | grep -v '^[./]' | sort -u
+  )
+
+  if [[ ${#missing_modules[@]} -gt 0 ]]; then
+    mapfile -t missing_modules < <(printf '%s\n' "${missing_modules[@]}" | sort -u)
+    warn "Modules missing from node_modules (${#missing_modules[@]}):"
+    for pkg in "${missing_modules[@]}"; do
+      PHASE0_SUGGESTIONS=$((PHASE0_SUGGESTIONS + 1))
+      suggest_cmd "npm install $pkg"
+    done
+  else
+    ok "All imported modules appear to be installed."
+  fi
+
+  # ── 0b: parse tsc output for TS2307 (Cannot find module) ─────────────────
+  echo ""
+  if [[ -f "$TSC_OUTPUT_SERVER" || -f "$TSC_OUTPUT_CLIENT" ]]; then
+    info "Scanning tsc output for TS2307 (Cannot find module / missing type declarations)..."
+    ts2307_pkgs=()
+    for tsf in "$TSC_OUTPUT_SERVER" "$TSC_OUTPUT_CLIENT"; do
+      [[ -f "$tsf" ]] || continue
+      while IFS= read -r tscline; do
+        pkg=$(echo "$tscline" | perl -ne "/Cannot find module '([^']+)'/ and print \$1")
+        [[ -z "$pkg" ]] && \
+          pkg=$(echo "$tscline" | perl -ne "/Could not find a declaration file for module '([^']+)'/ and print \$1")
+        [[ -z "$pkg" || "$pkg" == .* ]] && continue
+        if [[ "$pkg" == @* ]]; then
+          pkg=$(echo "$pkg" | cut -d'/' -f1-2)
+        else
+          pkg=$(echo "$pkg" | cut -d'/' -f1)
+        fi
+        ts2307_pkgs+=("$pkg")
+      done < <(grep "error TS2307" "$tsf" 2>/dev/null)
+    done
+
+    if [[ ${#ts2307_pkgs[@]} -gt 0 ]]; then
+      mapfile -t ts2307_pkgs < <(printf '%s\n' "${ts2307_pkgs[@]}" | sort -u)
+      warn "TS2307 missing-module packages (${#ts2307_pkgs[@]} unique):"
+      for pkg in "${ts2307_pkgs[@]}"; do
+        PHASE0_SUGGESTIONS=$((PHASE0_SUGGESTIONS + 1))
+        if [[ ! -d "$ROOT/node_modules/$pkg" ]]; then
+          suggest_cmd "npm install $pkg"
+        else
+          # Package exists but type declarations are missing
+          bare="${pkg##@*/}"  # strip scope for @types lookup
+          suggest_cmd "npm install --save-dev @types/${bare}"
+        fi
+      done
+    else
+      ok "No TS2307 (missing module) errors found in tsc output."
+    fi
+  else
+    info "No tsc output found — run the 'tccap' workflow first for TS2307 scan."
+  fi
+
+  echo ""
+  bold "Phase 0 done: $PHASE0_SUGGESTIONS suggestion(s) emitted"
+fi
 
 # ────────────────────────────────────────────────────────────────────────────
 #  PHASE 1 — ESBUILD SYNTAX ERRORS
@@ -354,9 +528,12 @@ if [[ "$PHASE" == "all" || "$PHASE" == "2" ]]; then
     bold "Applying auto-fixable type corrections..."
     echo ""
 
+    # Store the regex in a variable: [[:space:]] inside an inline =~ pattern can
+    # produce a ]] token that confuses bash's [[...]] tokenizer on some versions.
+    _tsc_err_re='^([^(]+\.tsx?)\(([0-9]+),[0-9]+\)[[:space:]]*error[[:space:]]+(TS[0-9]+):[[:space:]]*(.*)'
     while IFS= read -r line; do
       # Format:  path/file.ts(LINE,COL): error TSxxxx: message
-      if [[ "$line" =~ ^([^(]+\.tsx?)\(([0-9]+),[0-9]+\):[[:space:]]*error[[:space:]]+(TS[0-9]+):[[:space:]]*(.*) ]]; then
+      if [[ "$line" =~ $_tsc_err_re ]]; then
         file="${BASH_REMATCH[1]}"
         lineno="${BASH_REMATCH[2]}"
         code="${BASH_REMATCH[3]}"
@@ -383,6 +560,30 @@ if [[ "$PHASE" == "all" || "$PHASE" == "2" ]]; then
             type_name=$(echo "$detail" | perl -ne "/on type '([^']+)'/ and print \$1")
             fix_ts2339 "$file" "$lineno" "$prop" "$type_name"
             ;;
+          TS2307)
+            # Cannot find module 'X' or its corresponding type declarations.
+            # Mirrors generic_missing_dependency pattern (node branch) from
+            # universal_self_heal.py — auto_install_dependency().
+            pkg=$(echo "$detail" | perl -ne "/Cannot find module '([^']+)'/ and print \$1")
+            [[ -z "$pkg" ]] && \
+              pkg=$(echo "$detail" | perl -ne "/declaration file for module '([^']+)'/ and print \$1")
+            if [[ -n "$pkg" ]] && [[ "$pkg" != .* ]]; then
+              if [[ "$pkg" == @* ]]; then
+                short_pkg=$(echo "$pkg" | cut -d'/' -f1-2)
+              else
+                short_pkg=$(echo "$pkg" | cut -d'/' -f1)
+              fi
+              if [[ ! -d "$ROOT/node_modules/$short_pkg" ]]; then
+                warn "TS2307: '$pkg' not installed @ $file:$lineno"
+                suggest_cmd "npm install $short_pkg"
+              else
+                bare="${short_pkg##@*/}"
+                warn "TS2307: '$pkg' needs type declarations @ $file:$lineno"
+                suggest_cmd "npm install --save-dev @types/${bare}"
+              fi
+              PHASE2_TOTAL_FIXES=$((PHASE2_TOTAL_FIXES + 1))
+            fi
+            ;;
           *)
             ;;
         esac
@@ -398,16 +599,60 @@ if [[ "$PHASE" == "all" || "$PHASE" == "2" ]]; then
   fi
 fi
 
+# ────────────────────────────────────────────────────────────────────────────
+#  PHASE 3 — PIPELINE STAGES  (format → lint → types → security → tests)
+#  Mirrors the stages dict from LANGUAGES["node"] in universal_self_heal.py
+# ────────────────────────────────────────────────────────────────────────────
+PHASE3_PASSED=0
+PHASE3_FAILED=0
+
+if [[ "$PHASE" == "all" || "$PHASE" == "3" ]]; then
+  echo ""
+  bold "═══ Phase 3: Pipeline Stages ═══"
+  echo ""
+
+  # Stage definitions — mirrors LANGUAGES["node"].stages
+  declare -a STAGE_LABELS=("format" "lint" "types" "security" "unit_tests" "integration_tests" "security_tests")
+  declare -A STAGE_CMDS=(
+    [format]="${LP_FORMAT_CMDS[0]}"
+    [lint]="${LP_LINT_CMDS[0]}"
+    [types]="${LP_TYPES_CMDS[0]}"
+    [security]="${LP_SECURITY_CMDS[0]}"
+    [unit_tests]="${LP_TEST_CMDS[0]}"
+    [integration_tests]="${LP_TEST_CMDS[1]}"
+    [security_tests]="${LP_TEST_CMDS[2]}"
+  )
+
+  for stage in "${STAGE_LABELS[@]}"; do
+    if run_stage "$stage" "${STAGE_CMDS[$stage]}"; then
+      PHASE3_PASSED=$((PHASE3_PASSED + 1))
+    else
+      PHASE3_FAILED=$((PHASE3_FAILED + 1))
+      # If the types stage fails, subsequent test stages are unreliable — stop.
+      if [[ "$stage" == "types" ]]; then
+        warn "Types stage failed — stopping further pipeline stages."
+        break
+      fi
+    fi
+    echo ""
+  done
+
+  bold "Phase 3 done: $PHASE3_PASSED stage(s) passed, $PHASE3_FAILED stage(s) failed"
+fi
+
 # ─── FINAL SUMMARY ──────────────────────────────────────────────────────────
 echo ""
-bold "══════════════════════════════════"
-bold "  Total fixes applied:"
-bold "    Phase 1 (syntax): $PHASE1_TOTAL_FIXES"
-bold "    Phase 2 (types):  $PHASE2_TOTAL_FIXES"
-bold "    Grand total:      $((PHASE1_TOTAL_FIXES + PHASE2_TOTAL_FIXES))"
-bold "══════════════════════════════════"
+bold "══════════════════════════════════════════"
+bold "  Max Booster Auto-Fixer — Summary"
+bold "  Phase 0 (deps):     $PHASE0_SUGGESTIONS suggestion(s)"
+bold "  Phase 1 (syntax):   $PHASE1_TOTAL_FIXES fix(es) applied"
+bold "  Phase 2 (types):    $PHASE2_TOTAL_FIXES fix(es) applied"
+bold "  Phase 3 (pipeline): $PHASE3_PASSED passed / $PHASE3_FAILED failed"
+bold "  Grand fixes:        $((PHASE1_TOTAL_FIXES + PHASE2_TOTAL_FIXES))"
+bold "══════════════════════════════════════════"
 echo ""
 
-if (( PHASE1_TOTAL_FIXES + PHASE2_TOTAL_FIXES == 0 )) && [[ "$PHASE" != "2" ]]; then
+if (( PHASE1_TOTAL_FIXES + PHASE2_TOTAL_FIXES == 0 )) \
+  && [[ "$PHASE" != "2" ]] && [[ "$PHASE" != "3" ]]; then
   info "Nothing to fix — codebase looks clean for the covered patterns."
 fi
