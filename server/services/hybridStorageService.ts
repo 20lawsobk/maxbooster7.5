@@ -131,7 +131,7 @@ export class HybridStorageService {
 
   static getInstance(): HybridStorageService {
     if (!HybridStorageService?.instance) {
-      HybridStorageService?.instance = new HybridStorageService();
+      HybridStorageService.instance = new HybridStorageService();
     }
     return HybridStorageService?.instance;
   }
@@ -142,11 +142,11 @@ export class HybridStorageService {
     try {
       // PDIM-only: Replit Object Storage is intentionally disabled.
       // All storage routes through Pocket Dimension → PDIM.
-      this?.replitClient = null;
+      this.replitClient = null;
 
       // Sole storage tier: Pocket Dimension (PDIM-backed, 32 MB chunks)
       try {
-        this?.coldPocket = await pocketManager?.openPocket(
+        this.coldPocket = await pocketManager?.openPocket(
           "hybrid-cold-storage",
           {
             compressionLevel: 9,
@@ -162,11 +162,11 @@ export class HybridStorageService {
         logger?.warn(
           `[HybridStorage] Pocket Dimension unavailable: ${e?.message}`,
         );
-        this?.coldPocket = null;
+        this.coldPocket = null;
       }
 
       await this?.loadIndex();
-      this?.initialized = true;
+      this.initialized = true;
 
       logger?.info(
         "[HybridStorage] Storage service initialized — PDIM-only mode (Pocket Dimension)",
@@ -183,7 +183,7 @@ export class HybridStorageService {
       if (!raw) throw new Error("No index in PDIM");
       const _index = JSON?.parse(raw);
 
-      this?.fileIndex = new Map(
+      this.fileIndex = new Map(
         Object?.entries(index?.files || {}).map(([k, v]: [string, any]) => [
           k,
           {
@@ -194,10 +194,10 @@ export class HybridStorageService {
           },
         ]),
       );
-      this?.contentHashIndex = new Map(
+      this.contentHashIndex = new Map(
         Object?.entries(index?.contentHashes || {}),
       );
-      this?.publicContentHashes = new Map(
+      this.publicContentHashes = new Map(
         Object?.entries(index?.publicHashes || {}),
       );
 
@@ -205,9 +205,9 @@ export class HybridStorageService {
         `[HybridStorage] Loaded index from PDIM with ${this?.fileIndex.size} entries`,
       );
     } catch {
-      this?.fileIndex = new Map();
-      this?.contentHashIndex = new Map();
-      this?.publicContentHashes = new Map();
+      this.fileIndex = new Map();
+      this.contentHashIndex = new Map();
+      this.publicContentHashes = new Map();
     }
   }
 
@@ -219,7 +219,7 @@ export class HybridStorageService {
           `[HybridStorage] fileIndex at capacity (${size} entries) — evicting oldest 10% by lastAccessed. ` +
             "Architectural migration to per-key PDIM storage is required.",
         );
-        const _evictCount = Math?.ceil(size * 0?.1);
+        const _evictCount = Math?.ceil(size * 0.1);
         const _sorted = [...this?.fileIndex.entries()].sort(
           ([, a], [, b]) => a?.lastAccessed.getTime() - b?.lastAccessed.getTime(),
         );
@@ -505,14 +505,14 @@ export class HybridStorageService {
     if (entry?.isDeduplicated && entry?.deduplicationRef) {
       const _refEntry = this?.fileIndex.get(entry?.deduplicationRef);
       if (refEntry) {
-        entry?.accessCount++;
-        entry?.lastAccessed = new Date();
+        entry.accessCount++;
+        entry.lastAccessed = new Date();
         return this?.readFromStorage(refEntry);
       }
     }
 
-    entry?.accessCount++;
-    entry?.lastAccessed = new Date();
+    entry.accessCount++;
+    entry.lastAccessed = new Date();
 
     const _data = await this?.readFromStorage(entry);
 
@@ -571,8 +571,8 @@ export class HybridStorageService {
         const _newPrimary = hashKeys[0];
         const _newPrimaryEntry = this?.fileIndex.get(newPrimary);
         if (newPrimaryEntry) {
-          newPrimaryEntry?.isDeduplicated = false;
-          newPrimaryEntry?.deduplicationRef = undefined;
+          newPrimaryEntry.isDeduplicated = false;
+          newPrimaryEntry.deduplicationRef = undefined;
         }
 
         if (entry?.isPublic) {
@@ -596,8 +596,8 @@ export class HybridStorageService {
 
     try {
       // PDIM-only: file is already in pocket-dimension; just update the index entry.
-      entry?.tier = "cold";
-      entry?.location = "pocket-dimension";
+      entry.tier = "cold";
+      entry.location = "pocket-dimension";
       await this?.saveIndex();
 
       logger?.info(
@@ -679,65 +679,65 @@ export class HybridStorageService {
       if (userId && entry?.userId !== userId) continue;
 
       entries?.push(entry);
-      analytics?.totalFiles++;
-      analytics?.totalSizeBytes += entry?.sizeBytes;
+      analytics.totalFiles++;
+      analytics.totalSizeBytes += entry?.sizeBytes;
       logicalTotal += entry?.sizeBytes;
 
       if (entry?.isDeduplicated) {
-        analytics?.deduplication.totalDuplicates++;
-        analytics?.deduplication.spaceSaved += entry?.sizeBytes;
+        analytics.deduplication.totalDuplicates++;
+        analytics.deduplication.spaceSaved += entry?.sizeBytes;
 
         if (entry?.deduplicationRef) {
           const _refEntry = this?.fileIndex.get(entry?.deduplicationRef);
           if (refEntry && refEntry?.userId !== entry?.userId) {
-            analytics?.deduplication.crossUserDuplicates++;
+            analytics.deduplication.crossUserDuplicates++;
           }
         }
       } else {
-        analytics?.physicalSizeBytes += entry?.compressedSize;
+        analytics.physicalSizeBytes += entry?.compressedSize;
 
         if (entry?.tier === "hot") {
-          analytics?.tierBreakdown.hot?.count++;
-          analytics?.tierBreakdown.hot?.sizeBytes += entry?.sizeBytes;
+          analytics.tierBreakdown.hot.count++;
+          analytics.tierBreakdown.hot.sizeBytes += entry?.sizeBytes;
           analytics?.tierBreakdown.hot?.files.push(entry?.key);
         } else {
-          analytics?.tierBreakdown.cold?.count++;
-          analytics?.tierBreakdown.cold?.sizeBytes += entry?.sizeBytes;
-          analytics?.tierBreakdown.cold?.compressedSize += entry?.compressedSize;
+          analytics.tierBreakdown.cold.count++;
+          analytics.tierBreakdown.cold.sizeBytes += entry?.sizeBytes;
+          analytics.tierBreakdown.cold.compressedSize += entry?.compressedSize;
           analytics?.tierBreakdown.cold?.files.push(entry?.key);
         }
       }
     }
 
     if (analytics?.tierBreakdown.cold?.compressedSize > 0) {
-      analytics?.tierBreakdown.cold?.compressionRatio =
+      analytics.tierBreakdown.cold.compressionRatio =
         analytics?.tierBreakdown.cold?.sizeBytes /
         analytics?.tierBreakdown.cold?.compressedSize;
     }
 
     if (logicalTotal > 0) {
-      analytics?.deduplication.savingsPercent =
+      analytics.deduplication.savingsPercent =
         (analytics?.deduplication.spaceSaved / logicalTotal) * 100;
     }
 
     if (analytics?.physicalSizeBytes > 0) {
-      analytics?.overallCompressionRatio =
+      analytics.overallCompressionRatio =
         analytics?.totalSizeBytes / analytics?.physicalSizeBytes;
     }
 
     if (analytics?.totalSizeBytes > 0) {
-      analytics?.costSavingsPercent =
+      analytics.costSavingsPercent =
         ((analytics?.totalSizeBytes - analytics?.physicalSizeBytes) /
           analytics?.totalSizeBytes) *
         100;
     }
 
-    analytics?.recommendations = this?.generateRecommendations(entries);
+    analytics.recommendations = this?.generateRecommendations(entries);
 
     const _sorted = [...entries].sort((a, b) => b?.accessCount - a?.accessCount);
-    analytics?.accessPatterns.mostAccessed = sorted?.slice(0, 10);
-    analytics?.accessPatterns.leastAccessed = sorted?.slice(-10).reverse();
-    analytics?.accessPatterns.recentlyAccessed = [...entries]
+    analytics.accessPatterns.mostAccessed = sorted?.slice(0, 10);
+    analytics.accessPatterns.leastAccessed = sorted?.slice(-10).reverse();
+    analytics.accessPatterns.recentlyAccessed = [...entries]
       .sort((a, b) => b?.lastAccessed.getTime() - a?.lastAccessed.getTime())
       .slice(0, 10);
 
@@ -765,7 +765,7 @@ export class HybridStorageService {
     if (tierDownCandidates?.length > 0) {
       const _potentialSavings = tierDownCandidates?.reduce((sum, key) => {
         const _entry = this?.fileIndex.get(key)!;
-        return sum + entry?.sizeBytes * 0?.6;
+        return sum + entry?.sizeBytes * 0.6;
       }, 0);
 
       recommendations?.push({
@@ -868,19 +868,19 @@ export class HybridStorageService {
       if (entry?.isDeduplicated) continue;
 
       if (entry?.tier === "hot") {
-        breakdown?.hot.count++;
-        breakdown?.hot.sizeBytes += entry?.sizeBytes;
+        breakdown.hot.count++;
+        breakdown.hot.sizeBytes += entry?.sizeBytes;
         breakdown?.hot.files?.push(entry?.key);
       } else {
-        breakdown?.cold.count++;
-        breakdown?.cold.sizeBytes += entry?.sizeBytes;
-        breakdown?.cold.compressedSize += entry?.compressedSize;
+        breakdown.cold.count++;
+        breakdown.cold.sizeBytes += entry?.sizeBytes;
+        breakdown.cold.compressedSize += entry?.compressedSize;
         breakdown?.cold.files?.push(entry?.key);
       }
     }
 
     if (breakdown?.cold.compressedSize > 0) {
-      breakdown?.cold.compressionRatio =
+      breakdown.cold.compressionRatio =
         breakdown?.cold.sizeBytes / breakdown?.cold.compressedSize;
     }
 
@@ -905,20 +905,20 @@ export class HybridStorageService {
       totalSize += entry?.sizeBytes;
 
       if (entry?.isDeduplicated) {
-        stats?.totalDuplicates++;
-        stats?.spaceSaved += entry?.sizeBytes;
+        stats.totalDuplicates++;
+        stats.spaceSaved += entry?.sizeBytes;
 
         if (entry?.deduplicationRef) {
           const _refEntry = this?.fileIndex.get(entry?.deduplicationRef);
           if (refEntry && refEntry?.userId !== entry?.userId) {
-            stats?.crossUserDuplicates++;
+            stats.crossUserDuplicates++;
           }
         }
       }
     }
 
     if (totalSize > 0) {
-      stats?.savingsPercent = (stats?.spaceSaved / totalSize) * 100;
+      stats.savingsPercent = (stats?.spaceSaved / totalSize) * 100;
     }
 
     return stats;
@@ -950,9 +950,9 @@ export class HybridStorageService {
     try {
       const _data = await this?.readFromStorage(entry);
       const _pocketEntry = await this?.coldPocket!.write(`storage/${key}`, data);
-      entry?.location = "pocket-dimension";
-      entry?.tier = "cold";
-      entry?.compressedSize = pocketEntry?.compressedSize;
+      entry.location = "pocket-dimension";
+      entry.tier = "cold";
+      entry.compressedSize = pocketEntry?.compressedSize;
 
       await this?.saveIndex();
       logger?.info(
@@ -988,8 +988,8 @@ export class HybridStorageService {
       const _primary = group[0];
       for (let i = 1; i < group?.length; i++) {
         const _dup = group[i];
-        dup?.isDeduplicated = true;
-        dup?.deduplicationRef = primary?.key;
+        dup.isDeduplicated = true;
+        dup.deduplicationRef = primary?.key;
         deduplicated++;
       }
     }
