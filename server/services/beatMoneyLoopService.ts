@@ -56,6 +56,7 @@ import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
 import fsPromises from "fs/promises";
+import { randomBytes } from "crypto";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -252,13 +253,13 @@ class BeatMoneyLoopService {
       );
 
       // 2. GENERATE
-      const { audioRelUrl, audioAbsPath, title } =
+      const { audioRelUrl, audioAbsPath, title, audioGenBackend } =
         await this._generateBeat(scan);
       await db
         .update(beatMoneyLoopCycles)
         .set({
           status: "uploading",
-          audioGenBackend: "ts-native",
+          audioGenBackend,
           beatTitle: title,
         })
         .where(eq(beatMoneyLoopCycles.id, cycleId));
@@ -406,38 +407,151 @@ class BeatMoneyLoopService {
   }
 
   /**
-   * Generate a beat WAV using the TS-native music engine.
-   * parseTextToParameters() internally pulls trending genre/mood from the same
-   * context filter as fallback, so passing a rich prompt biases generation strongly.
+   * Call MaxCore /generate/audio directly.
+   * Mode C = MaxCore AI backend (8 TB music dataset, highest quality).
+   * Mode B = HD DSP fallback (plate reverb + stereo widening, release quality).
+   * Returns decoded WAV bytes + optional musical metadata from MaxCore.
+   */
+  private async _maxcoreAudio(
+    scan: {
+      genre: string;
+      mood: string;
+      tempo: number;
+      productionStyles: string[];
+      hooks: string[];
+    },
+    mode: "C" | "B",
+  ): Promise<{
+    wavBytes: Buffer;
+    mcKey?: string;
+    mcBpm?: number;
+    backend: string;
+  }> {
+    const base = (
+      process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
+    ).replace(/\/api\/?$/, "");
+    const key = process.env.AI_SERVER_KEY || "";
+    const body: Record<string, unknown> = {
+      genre: scan.genre,
+      bpm: scan.tempo,
+      mood: scan.mood,
+      duration: 30,
+      energy: 0.8,
+      mode,
+    };
+    if (scan.productionStyles.length > 0)
+      body.style = scan.productionStyles.slice(0, 3).join(", ");
+    if (scan.hooks.length > 0)
+      body.context = scan.hooks.slice(0, 3).join("; ");
+
+    const res = await fetch(`${base}/api/generate/audio`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(key
+          ? { Authorization: `Bearer ${key}`, "X-API-Key": key }
+          : {}),
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(mode === "C" ? 30_000 : 20_000),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `MaxCore /generate/audio HTTP ${res.status}: ${text.slice(0, 200)}`,
+      );
+    }
+    const data = (await res.json()) as {
+      wav_b64?: string;
+      mc_key?: string;
+      mc_bpm?: number;
+      backend?: string;
+    };
+    if (!data.wav_b64) throw new Error("MaxCore returned no wav_b64");
+    return {
+      wavBytes: Buffer.from(data.wav_b64, "base64"),
+      mcKey: data.mc_key,
+      mcBpm: data.mc_bpm,
+      backend: data.backend ?? (mode === "C" ? "maxcore" : "dsp_b"),
+    };
+  }
+
+  /**
+   * Generate a beat WAV.
+   * Tier 1: MaxCore Mode C  — AI audio from 8 TB music dataset.
+   * Tier 2: MaxCore Mode B  — HD DSP (plate reverb, stereo, release quality).
+   * Tier 3: TS synthesizer  — local fallback when MaxCore is unreachable.
+   *
+   * The industry scan (genre / mood / tempo / production styles / viral hooks)
+   * is forwarded to MaxCore so generation is biased toward what's trending.
    */
   private async _generateBeat(scan: {
     genre: string;
     mood: string;
     tempo: number;
     productionStyles: string[];
-  }): Promise<{ audioRelUrl: string; audioAbsPath: string; title: string }> {
+    hooks: string[];
+  }): Promise<{ audioRelUrl: string; audioAbsPath: string; title: string; audioGenBackend: string }> {
+    const outputDir = path.join(
+      process.cwd(),
+      "public",
+      "generated-content",
+      "audio",
+    );
+    await fsPromises.mkdir(outputDir, { recursive: true });
+
+    const titleAdj =
+      scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1);
+    const titleGenre =
+      scan.genre.charAt(0).toUpperCase() + scan.genre.slice(1);
+    const stamp = new Date().toISOString().slice(5, 10).replace("-", "/");
+
+    // ── Tier 1 & 2: MaxCore ──────────────────────────────────────────────────
+    for (const mode of ["C", "B"] as const) {
+      try {
+        const mc = await this._maxcoreAudio(scan, mode);
+        const filename = `beat_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
+        const audioAbsPath = path.join(outputDir, filename);
+        await fsPromises.writeFile(audioAbsPath, mc.wavBytes);
+        const audioRelUrl = `/generated-content/audio/${filename}`;
+        const keyStr = mc.mcKey ? ` (${mc.mcKey})` : "";
+        const title = `${titleAdj} ${titleGenre} Type Beat${keyStr} — ${stamp}`;
+        logger.info(
+          `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend})`,
+        );
+        return { audioRelUrl, audioAbsPath, title, audioGenBackend: mc.backend };
+      } catch (err) {
+        logger.warn(
+          `[BeatMoneyLoop] MaxCore mode ${mode} unavailable — ${(err as Error).message}`,
+        );
+      }
+    }
+
+    // ── Tier 3: TS sine synthesizer (offline fallback) ───────────────────────
+    logger.warn(
+      "[BeatMoneyLoop] MaxCore unreachable — falling back to TS synthesizer",
+    );
     const styleText =
       scan.productionStyles.length > 0
         ? ` ${scan.productionStyles.join(" ")}`
         : "";
     const prompt = `${scan.mood} ${scan.genre} beat at ${scan.tempo} bpm${styleText}`;
     const params = parseTextToParameters(prompt);
-    // Force tempo from scan (parseText might override)
     params.tempo = scan.tempo;
     const chords = generateChordProgression(params);
     const notes = generateMelody(params, chords);
     if (chords.length === 0 || notes.length === 0) {
       throw new Error("Music engine returned empty chord/melody arrays");
     }
-    const audioRelUrl = await synthesizeToWAV(notes, chords, params);
-    // synthesizeToWAV returns "/generated-content/audio/<file>.wav"
-    const audioAbsPath = path.join(process.cwd(), "public", audioRelUrl);
-    // Title: capitalize first letter of mood + genre
-    const titleAdj = scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1);
-    const titleGenre = scan.genre.charAt(0).toUpperCase() + scan.genre.slice(1);
-    const stamp = new Date().toISOString().slice(5, 10).replace("-", "/");
+    const fallbackRelUrl = await synthesizeToWAV(notes, chords, params);
+    const fallbackAbsPath = path.join(process.cwd(), "public", fallbackRelUrl);
     const title = `${titleAdj} ${titleGenre} Type Beat — ${stamp}`;
-    return { audioRelUrl, audioAbsPath, title };
+    return {
+      audioRelUrl: fallbackRelUrl,
+      audioAbsPath: fallbackAbsPath,
+      title,
+      audioGenBackend: "ts-native",
+    };
   }
 
   /**
