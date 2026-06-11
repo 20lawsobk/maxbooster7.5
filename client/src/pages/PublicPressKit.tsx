@@ -2,20 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  Loader2,
-  Mail,
-  Globe,
-  Instagram,
-  Twitter,
-  Youtube,
-  Facebook,
-  Music,
-  Download,
-  ExternalLink,
-  User,
-  AlertCircle,
-} from "lucide-react";
+import { Loader2, Mail, Globe, Instagram, Twitter, Youtube, Facebook, Music, Download, ExternalLink, User, AlertCircle } from "lucide-react";
 
 export default function PublicPressKit() {
   const params = useParams<{ slug: string }>();

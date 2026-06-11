@@ -27,20 +27,20 @@
  */
 
 import { Router, type Request, type Response } from "express";
-import { logger } from "../logger.js";
-import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth?.js";
 import {
   unifiedContentOrchestrator,
   type UnifiedContentInput,
   type BoostSheetInput,
   type ArtistContextInput,
-} from "../services/unifiedContentOrchestrator.js";
+} from "../services/unifiedContentOrchestrator?.js";
 import {
   PLATFORM_SPECS,
   ALL_PLATFORMS,
   type SupportedPlatform,
-} from "../services/contentPipeline/platformFormatters.js";
-import { MAX_BOOSTER_FEATURES } from "../services/contentPipeline/maxBoosterContentStrategy.js";
+} from "../services/contentPipeline/platformFormatters?.js";
+import { MAX_BOOSTER_FEATURES } from "../services/contentPipeline/maxBoosterContentStrategy?.js";
 
 const _router = Router();
 
@@ -161,10 +161,12 @@ router?.post("/", requireAuth, async (req: Request, res: Response) => {
     logger?.warn(`[UnifiedContent] Pipeline error: ${(err as Error).message}`, {
       stack: (err as Error).stack,
     });
-    res.status(500).json({
-      error: "Content generation pipeline failed",
-      detail: (err as Error).message,
-    });
+    res
+      .status(500)
+      .json({
+        error: "Content generation pipeline failed",
+        detail: (err as Error).message,
+      });
   }
 });
 
@@ -264,10 +266,12 @@ router?.post(
       logger?.warn(
         `[UnifiedContent/platform/${platform}] ${(err as Error).message}`,
       );
-      res.status(500).json({
-        error: `Platform bundle generation failed for ${platform}`,
-        detail: (err as Error).message,
-      });
+      res
+        .status(500)
+        .json({
+          error: `Platform bundle generation failed for ${platform}`,
+          detail: (err as Error).message,
+        });
     }
   },
 );

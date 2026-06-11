@@ -1,13 +1,13 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { eq, desc, sql, inArray } from "drizzle-orm";
 import {
   assistantConversations,
   assistantMessages,
-} from "../../shared/schema.js";
-import { generateMaxResponse } from "../services/maxAssistantService.js";
-import { logger } from "../logger.js";
-import { aiRateLimiter } from "../middleware/rateLimiter.js";
+} from "../../shared/schema?.js";
+import { generateMaxResponse } from "../services/maxAssistantService?.js";
+import { logger } from "../logger?.js";
+import { aiRateLimiter } from "../middleware/rateLimiter?.js";
 import rateLimit from "express-rate-limit";
 
 // Unauthenticated callers get a tighter IP-based cap.

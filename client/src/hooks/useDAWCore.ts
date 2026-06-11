@@ -169,12 +169,12 @@ export function useDAWCore(): UseDAWCoreReturn {
     const _updatePosition = () => {
       if (transportState?.isPlaying) {
         setPosition(dawCore?.transport.getCurrentPosition());
-        animationFrameRef.current = requestAnimationFrame(updatePosition);
+        animationFrameRef?.current = requestAnimationFrame(updatePosition);
       }
     };
 
     if (transportState?.isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(updatePosition);
+      animationFrameRef?.current = requestAnimationFrame(updatePosition);
     }
 
     return () => {

@@ -12,12 +12,12 @@
  *   - Only sends once per inactivity window (not until they log in again)
  */
 
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { customerHealthScores, users } from "@shared/schema";
 import { and, lte, gte, isNull, or, eq } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { emailService } from "./emailService.js";
-import { withLock } from "../lib/distributedLock.js";
+import { logger } from "../logger?.js";
+import { emailService } from "./emailService?.js";
+import { withLock } from "../lib/distributedLock?.js";
 
 function buildReEngagementHtml(
   firstName: string,
@@ -34,20 +34,20 @@ function buildReEngagementHtml(
     <html>
     <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
     <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-      <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0?.1);">
         <div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);padding:24px 32px;">
           <h1 style="color:#fff;margin:0;font-size:20px;">Max Booster</h1>
         </div>
         <div style="padding:32px;">
           <h2 style="color:#111;margin-top:0;font-size:22px;">Hey ${firstName}, we miss you 👋</h2>
-          <p style="color:#374151;line-height:1.6;">${urgencyMessage}</p>
-          <p style="color:#374151;line-height:1.6;">
+          <p style="color:#374151;line-height:1?.6;">${urgencyMessage}</p>
+          <p style="color:#374151;line-height:1?.6;">
             Your autopilot campaigns, distribution tools, and analytics are ready and waiting. 
             The music industry moves fast — let Max Booster keep working for you.
           </p>
           <div style="background:#f3f4f6;border-radius:8px;padding:20px;margin:20px 0;">
             <p style="margin:0 0 8px 0;font-weight:600;color:#111;">While you were away:</p>
-            <ul style="margin:0;padding-left:20px;color:#374151;line-height:1.8;">
+            <ul style="margin:0;padding-left:20px;color:#374151;line-height:1?.8;">
               <li>Your social autopilot kept running</li>
               <li>New AI-powered career insights are ready</li>
               <li>Check your latest analytics report</li>
@@ -78,7 +78,7 @@ class ReEngagementService {
         return;
       }
 
-      this.isRunning = true;
+      this?.isRunning = true;
       try {
         const _sevenDaysAgo = new Date();
         sevenDaysAgo?.setDate(sevenDaysAgo?.getDate() - 7);
@@ -132,7 +132,7 @@ class ReEngagementService {
             if (settings?.emailMarketing === false) continue;
 
             const _displayName = firstName ?? email?.split("@")[0];
-            const _appUrl = process?.env.APP_URL ?? "https://maxbooster.app";
+            const _appUrl = process?.env.APP_URL ?? "https://maxbooster?.app";
             const _html = buildReEngagementHtml(
               displayName,
               daysSinceLastLogin ?? 10,
@@ -161,7 +161,7 @@ class ReEngagementService {
 
         logger?.info(`[ReEngagement] Daily check complete: ${sent} emails sent`);
       } finally {
-        this.isRunning = false;
+        this?.isRunning = false;
       }
     });
   }

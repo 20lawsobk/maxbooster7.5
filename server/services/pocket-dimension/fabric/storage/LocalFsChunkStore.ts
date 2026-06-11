@@ -1,5 +1,5 @@
-import type { ChunkStore } from "./ChunkStore.js";
-import type { ChunkId } from "../types.js";
+import type { ChunkStore } from "./ChunkStore?.js";
+import type { ChunkId } from "../types?.js";
 import fs from "fs/promises";
 import path from "path";
 

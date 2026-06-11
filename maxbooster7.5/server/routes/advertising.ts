@@ -107,10 +107,12 @@ router.patch(
         !action ||
         !["refresh", "pause", "resume", "archive"].includes(action)
       ) {
-        return res.status(400).json({
-          error:
-            "Invalid action. Must be one of: refresh, pause, resume, archive",
-        });
+        return res
+          .status(400)
+          .json({
+            error:
+              "Invalid action. Must be one of: refresh, pause, resume, archive",
+          });
       }
 
       const [existing] = await db
@@ -366,10 +368,12 @@ router.post(
         return res.status(400).json({ error: "Campaign name is required" });
       }
       if (!platform || typeof platform !== "string") {
-        return res.status(400).json({
-          error:
-            "Platform is required — select at least one platform in the targeting section",
-        });
+        return res
+          .status(400)
+          .json({
+            error:
+              "Platform is required — select at least one platform in the targeting section",
+          });
       }
 
       const platforms =
@@ -464,10 +468,12 @@ router.post(
       const userId = req.user!.id;
       const file = req.file;
       if (!file) {
-        return res.status(400).json({
-          error:
-            'Image file required. Send as multipart/form-data with field name "image".',
-        });
+        return res
+          .status(400)
+          .json({
+            error:
+              'Image file required. Send as multipart/form-data with field name "image".',
+          });
       }
       const { url, key } = await storeUploadedFile(file, userId, "images");
       res.json({ success: true, url, key });
@@ -1218,10 +1224,12 @@ router.post(
       });
 
       if (!result.success) {
-        return res.status(500).json({
-          success: false,
-          message: result.error || "Video generation failed",
-        });
+        return res
+          .status(500)
+          .json({
+            success: false,
+            message: result.error || "Video generation failed",
+          });
       }
 
       logger.info(

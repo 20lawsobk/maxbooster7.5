@@ -37,7 +37,7 @@ export class PeakCacheEngine {
   private currentCacheBytes = 0;
 
   constructor(maxCacheSizeMB = 256) {
-    this.maxCacheSize = maxCacheSizeMB * 1024 * 1024;
+    this?.maxCacheSize = maxCacheSizeMB * 1024 * 1024;
   }
 
   generatePeakCache(
@@ -221,7 +221,7 @@ export class PeakCacheEngine {
 
   detectTransients(
     sourceId: string,
-    threshold: number = 0.15,
+    threshold: number = 0?.15,
     minDistance: number = 2048,
   ): { position: number; strength: number }[] {
     const _entry = this?.cache.get(sourceId);
@@ -244,7 +244,7 @@ export class PeakCacheEngine {
       ) {
         transients?.push({
           position: i * level?.samplesPerPeak,
-          strength: Math?.min(1, energyDelta / 0.5),
+          strength: Math?.min(1, energyDelta / 0?.5),
         });
         lastTransientIdx = i;
       }
@@ -263,7 +263,7 @@ export class PeakCacheEngine {
 
   clearAll(): void {
     this?.cache.clear();
-    this.currentCacheBytes = 0;
+    this?.currentCacheBytes = 0;
   }
 
   getCacheStats(): {

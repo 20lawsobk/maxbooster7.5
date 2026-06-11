@@ -19,51 +19,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Search,
-  Mic,
-  Music,
-  Speaker,
-  Guitar,
-  Waves,
-  Piano,
-  Sparkles,
-  Layers,
-  Settings,
-  Check,
-  Plus,
-  Save,
-  Trash2,
-  Edit3,
-  Download,
-  Upload,
-  Undo,
-  Sliders,
-  X,
-  Copy,
-  Lock,
-  ArrowRight,
-  ArrowRightLeft,
-} from "lucide-react";
-import {
-  TrackPreset,
-  PresetCategory,
-  PresetEffect,
-  StudioTrackSnapshot,
-  PresetUndoState,
-  CATEGORY_INFO,
-  getAllPresets,
-  getUserPresets,
-  saveUserPreset,
-  updateUserPreset,
-  deleteUserPreset,
-  filterPresets,
-  getPresetPreview,
-  exportPresets,
-  importPresets,
-  saveUndoState,
-  createPresetFromTrack,
-} from "@/lib/trackPresets";
+import { Search, Mic, Music, Speaker, Guitar, Waves, Piano, Sparkles, Layers, Settings, Check, Plus, Save, Trash2, Edit3, Download, Upload, Undo, Sliders, X, Copy, Lock, ArrowRight, ArrowRightLeft } from "lucide-react";
+import { TrackPreset, PresetCategory, PresetEffect, StudioTrackSnapshot, PresetUndoState, CATEGORY_INFO, getAllPresets, getUserPresets, saveUserPreset, updateUserPreset, deleteUserPreset, filterPresets, getPresetPreview, exportPresets, importPresets, saveUndoState, createPresetFromTrack } from "@/lib/trackPresets";
 
 interface TrackPresetManagerProps {
   open: boolean;

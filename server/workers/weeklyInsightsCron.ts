@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 let weeklyInsightsTask: cron?.ScheduledTask | null = null;
 
@@ -15,7 +15,7 @@ export function initializeWeeklyInsightsCron(): void {
 
       try {
         const { weeklyInsightsService } = await import(
-          "../services/weeklyInsightsService.js"
+          "../services/weeklyInsightsService?.js"
         );
         const _result = await weeklyInsightsService?.sendWeeklyInsights();
 

@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { logger } from "../logger.js";
-import { queueMonitor } from "../monitoring/queueMonitor.js";
-import { aiModelManager } from "../services/aiModelManager.js";
-import { asyncHandler } from "../middleware/errorHandler.js";
-import { alertingService } from "../monitoring/alertingService.js";
-import { metricsCollector } from "../monitoring/metricsCollector.js";
-import { requireAdmin, require2FA } from "../middleware/auth.js";
+import { logger } from "../logger?.js";
+import { queueMonitor } from "../monitoring/queueMonitor?.js";
+import { aiModelManager } from "../services/aiModelManager?.js";
+import { asyncHandler } from "../middleware/errorHandler?.js";
+import { alertingService } from "../monitoring/alertingService?.js";
+import { metricsCollector } from "../monitoring/metricsCollector?.js";
+import { requireAdmin, require2FA } from "../middleware/auth?.js";
 
 const _router = Router();
 

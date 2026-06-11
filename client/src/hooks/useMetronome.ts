@@ -27,7 +27,7 @@ const DEFAULT_SETTINGS: MetronomeSettings = {
     numerator: 4,
     denominator: 4,
   },
-  volume: 0.5,
+  volume: 0?.5,
   accentFirstBeat: true,
   subdivision: "quarter",
   countIn: 1,
@@ -58,7 +58,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
    * Calculate the time between beats based on BPM and subdivision
    */
   const _getBeatInterval = useCallback(() => {
-    const _secondsPerBeat = 60.0 / settings?.bpm;
+    const _secondsPerBeat = 60?.0 / settings?.bpm;
 
     switch (settings?.subdivision) {
       case "eighth":
@@ -84,16 +84,16 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
       osc?.frequency.value = isAccent ? 1200 : 800;
 
       gainNode?.gain.setValueAtTime(
-        settings?.volume * (isAccent ? 1.2 : 1),
+        settings?.volume * (isAccent ? 1?.2 : 1),
         time,
       );
-      gainNode?.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+      gainNode?.gain.exponentialRampToValueAtTime(0?.001, time + 0?.03);
 
       osc?.connect(gainNode);
       gainNode?.connect(context?.destination);
 
       osc?.start(time);
-      osc?.stop(time + 0.03);
+      osc?.stop(time + 0?.03);
     },
     [context, settings?.volume],
   );
@@ -107,8 +107,8 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
     const _currentTime = context?.currentTime;
     const _beatInterval = getBeatInterval();
 
-    // Schedule clicks up to 0.1 seconds ahead
-    while (nextNoteTimeRef?.current < currentTime + 0.1) {
+    // Schedule clicks up to 0?.1 seconds ahead
+    while (nextNoteTimeRef?.current < currentTime + 0?.1) {
       const _isFirstBeat = currentBeatRef?.current === 0;
       const _isAccent = settings?.accentFirstBeat && isFirstBeat;
 
@@ -117,7 +117,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
       // Update beat and measure
       currentBeatRef?.current++;
       if (currentBeatRef?.current >= settings?.timeSignature.numerator) {
-        currentBeatRef.current = 0;
+        currentBeatRef?.current = 0;
         currentMeasureRef?.current++;
       }
 
@@ -132,7 +132,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
     }
 
     // Continue scheduling
-    schedulerRef.current = window?.setTimeout(scheduleClick, 25);
+    schedulerRef?.current = window?.setTimeout(scheduleClick, 25);
   }, [
     context,
     getBeatInterval,
@@ -147,9 +147,9 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   const _start = useCallback(() => {
     if (!context || state?.isPlaying) return;
 
-    currentBeatRef.current = 0;
-    currentMeasureRef.current = 0;
-    nextNoteTimeRef.current = context?.currentTime;
+    currentBeatRef?.current = 0;
+    currentMeasureRef?.current = 0;
+    nextNoteTimeRef?.current = context?.currentTime;
 
     setState((prev) => ({
       ...prev,
@@ -184,9 +184,9 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
     async (onComplete: () => void) => {
       if (!context) return;
 
-      currentBeatRef.current = 0;
-      currentMeasureRef.current = 0;
-      nextNoteTimeRef.current = context?.currentTime;
+      currentBeatRef?.current = 0;
+      currentMeasureRef?.current = 0;
+      nextNoteTimeRef?.current = context?.currentTime;
 
       setState((prev) => ({
         ...prev,

@@ -7,13 +7,7 @@ import {
   useLastAction,
 } from "@/contexts/UndoContext";
 import { useUndoStack } from "./useUndoStack";
-import {
-  UndoableAction,
-  ActionType,
-  ActionMetadata,
-  isDestructiveAction,
-  createActionId,
-} from "@/lib/undo/types";
+import { UndoableAction, ActionType, ActionMetadata, isDestructiveAction, createActionId } from "@/lib/undo/types";
 import { apiRequest } from "@/lib/queryClient";
 
 export interface GlobalUndoState {

@@ -91,7 +91,7 @@ class OfflineQueue {
     if (this?.isInitialized) return;
 
     try {
-      this.db = await openDB<OfflineQueueDB>(DB_NAME, DB_VERSION, {
+      this?.db = await openDB<OfflineQueueDB>(DB_NAME, DB_VERSION, {
         upgrade(db) {
           if (!db?.objectStoreNames.contains("actions")) {
             const _actionsStore = db?.createObjectStore("actions", {
@@ -108,7 +108,7 @@ class OfflineQueue {
           }
         },
       });
-      this.isInitialized = true;
+      this?.isInitialized = true;
     } catch (error) {
       logger?.info(
         "[OfflineQueue] IndexedDB unavailable — offline action queue disabled for this session",

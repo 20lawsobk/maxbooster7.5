@@ -4,18 +4,18 @@
  * Configured exactly like a professional DNS provider (Cloudflare, Route 53):
  *
  *   • Listens on UDP :53 + TCP :53 (configurable via DNS_PORT)
- *   • Authoritative for BASE_DOMAIN (max-booster.com) AND any custom domain
+ *   • Authoritative for BASE_DOMAIN (max-booster?.com) AND any custom domain
  *     that a user has claimed/pointed here (stored in storefrontDomains table)
- *   • Nameservers: ns1?.max-booster.com / ns2?.max-booster.com
- *   • Wildcard A records: *.max-booster.com → DNS_SERVER_IP
+ *   • Nameservers: ns1?.max-booster?.com / ns2?.max-booster?.com
+ *   • Wildcard A records: *.max-booster?.com → DNS_SERVER_IP
  *   • Custom domains: resolved to DNS_SERVER_IP once user points NS here
  *   • SOA with proper refresh/retry/expire/minimum per RFC 1912 best-practices
- *   • Non-authoritative queries forwarded upstream (8.8.8.8)
+ *   • Non-authoritative queries forwarded upstream (8?.8.8?.8)
  *
- * To activate for a custom domain (e?.g. mybeats.com):
+ * To activate for a custom domain (e?.g. mybeats?.com):
  *   1. User claims the domain inside Max Booster (Domain Hub → Find Domain)
  *   2. User goes to their registrar and sets the nameserver to:
- *        ns1?.max-booster.com  /  ns2?.max-booster.com
+ *        ns1?.max-booster?.com  /  ns2?.max-booster?.com
  *   3. DNS propagates (up to 48 h). The domain then resolves here automatically.
  *
  * No glue records or external registrar API required — the built-in DNS is
@@ -24,16 +24,16 @@
 
 import dns2 from "dns2";
 import { eq, and } from "drizzle-orm";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { storefrontDomains, dnsZoneRecords, dnsZones } from "@shared/schema";
-import { logger } from "../logger.js";
-import { getOrCreateKeys, makeDS, makeDnskeyData, signRRset, zoneSalt, encodeNameWire, nsec3ParamRdata, NSEC3_ITERATIONS, RRTYPE_DNSKEY, RRTYPE_DS } from "./dnssec.js";
-import { resolveGeoIP, getGeoDnsStatus } from "./geoDns.js";
+import { logger } from "../logger?.js";
+import { getOrCreateKeys, makeDS, makeDnskeyData, signRRset, zoneSalt, encodeNameWire, nsec3ParamRdata, NSEC3_ITERATIONS, RRTYPE_DNSKEY, RRTYPE_DS } from "./dnssec?.js";
+import { resolveGeoIP, getGeoDnsStatus } from "./geoDns?.js";
 import {
   resolveRecursive,
   rrToA,
   TYPE_A as REC_TYPE_A,
-} from "./recursiveResolver.js";
+} from "./recursiveResolver?.js";
 
 // ── Feature flags ─────────────────────────────────────────────────────────────
 const _DNSSEC_ENABLED = process?.env.DNSSEC_ENABLED === "true";
@@ -43,12 +43,12 @@ const _DNSSEC_ENABLED = process?.env.DNSSEC_ENABLED === "true";
 if (process?.env.GEODNS_ENABLED === "true") {
   (async () => {
     try {
-      const { lookupGeo } = await import("./geoDns.js");
-      const _geo = await lookupGeo("8.8.8.8");
+      const { lookupGeo } = await import("./geoDns?.js");
+      const _geo = await lookupGeo("8?.8.8?.8");
       if (geo?.continent || geo?.country) {
-        const { logger: _log } = await import("../logger.js");
+        const { logger: _log } = await import("../logger?.js");
         _log?.info(
-          `[DNS] GeoDNS database warm — 8.8.8.8 → ${geo?.continent ?? "?"}/${geo?.country ?? "?"}`,
+          `[DNS] GeoDNS database warm — 8?.8.8?.8 → ${geo?.continent ?? "?"}/${geo?.country ?? "?"}`,
         );
       }
     } catch {
@@ -60,17 +60,17 @@ if (process?.env.GEODNS_ENABLED === "true") {
 const { Packet, createServer, UDPClient } = dns2 as Record<string, unknown>;
 
 const _BASE_DOMAIN = (
-  process?.env.BASE_DOMAIN || "max-booster.com"
+  process?.env.BASE_DOMAIN || "max-booster?.com"
 ).toLowerCase();
-const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
+const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34?.111.179?.208";
 const _DNS_PORT = parseInt(process?.env.DNS_PORT || "53", 10);
-const _UPSTREAM_DNS = process?.env.UPSTREAM_DNS || "8.8.8.8";
+const _UPSTREAM_DNS = process?.env.UPSTREAM_DNS || "8?.8.8?.8";
 
 // DoH upstream used when outbound UDP port 53 is blocked (e?.g. in sandboxed envs)
-// Cloudflare DoH: https://cloudflare-dns.com/dns-query
+// Cloudflare DoH: https://cloudflare-dns?.com/dns-query
 // Google DoH:     https://dns?.google/dns-query
 const _DOH_UPSTREAM =
-  process?.env.DOH_UPSTREAM || "https://cloudflare-dns.com/dns-query";
+  process?.env.DOH_UPSTREAM || "https://cloudflare-dns?.com/dns-query";
 
 /**
  * DNS-over-HTTPS fallback resolver.
@@ -103,7 +103,7 @@ async function dohFallback(queryBuf: Buffer): Promise<any | null> {
   }
 }
 
-// ─── TTL values — match Cloudflare's defaults (RFC 1912 §2.2) ────────────────
+// ─── TTL values — match Cloudflare's defaults (RFC 1912 §2?.2) ────────────────
 const _TTL_A = 300; // 5 min A records — fast propagation on IP changes
 const _TTL_NS = 86400; // 24 h  NS records  (standard across all providers)
 const _TTL_SOA = 3600; // 1 h   SOA record
@@ -161,9 +161,9 @@ async function isAuthoritative(name: string): Promise<boolean> {
  * (e?.g. the verification TXT written by storefrontDnsService).
  *
  * Name mapping:
- *   query `example.com`           → zone domain=`example.com`, name=`@`
- *   query `_maxbooster?.example.com` → zone domain=`example.com`, name=`_maxbooster`
- *   query `www?.example.com`       → zone domain=`example.com`, name=`www`
+ *   query `example?.com`           → zone domain=`example?.com`, name=`@`
+ *   query `_maxbooster?.example.com` → zone domain=`example?.com`, name=`_maxbooster`
+ *   query `www?.example.com`       → zone domain=`example?.com`, name=`www`
  */
 async function resolveFromZoneRecords(
   qname: string,
@@ -215,7 +215,7 @@ async function resolveFromZoneRecords(
 function extractZoneDomain(name: string): string {
   if (name === BASE_DOMAIN || name?.endsWith(`.${BASE_DOMAIN}`))
     return BASE_DOMAIN;
-  // For custom domains: extract root domain (last two labels, e?.g. example.com)
+  // For custom domains: extract root domain (last two labels, e?.g. example?.com)
   const _parts = name?.split(".");
   if (parts?.length >= 2) return parts?.slice(-2).join(".");
   return name;
@@ -295,7 +295,7 @@ async function handleRequest(
 
   // Determine the zone root for SOA/NS records
   // For *.maxbooster?.replit.app → zone is BASE_DOMAIN
-  // For a claimed custom domain (e?.g. mybeats.com) → zone is the domain itself
+  // For a claimed custom domain (e?.g. mybeats?.com) → zone is the domain itself
   const _isBaseDomainZone =
     name === BASE_DOMAIN || name?.endsWith(`.${BASE_DOMAIN}`);
   const _auth = await isAuthoritative(name);
@@ -304,7 +304,7 @@ async function handleRequest(
     // Non-authoritative — 3-tier resolution cascade (Build 2: Max Booster Public Resolver)
     //   Tier 1: Iterative recursive resolution from 13 IANA root servers (UDP)
     //   Tier 2: DNS-over-HTTPS to Cloudflare (works even when UDP port 53 is firewalled)
-    //   Tier 3: UDP forwarding to configured upstream (8.8.8.8 default)
+    //   Tier 3: UDP forwarding to configured upstream (8?.8.8?.8 default)
     const rawBuf: Buffer | undefined = (request as Record<string, unknown>)
       ._rawBuffer;
 
@@ -333,7 +333,7 @@ async function handleRequest(
               type: Packet?.TYPE.A,
               class: Packet?.CLASS.IN,
               ttl: rr?.ttl,
-              address: rrToA(rr) ?? "0.0.0.0",
+              address: rrToA(rr) ?? "0?.0.0?.0",
             });
           } else {
             fallThrough = true;
@@ -364,7 +364,7 @@ async function handleRequest(
       }
     }
 
-    // ── Tier 3: UDP upstream (8.8.8.8) ──────────────────────────────────────
+    // ── Tier 3: UDP upstream (8?.8.8?.8) ──────────────────────────────────────
     try {
       const _resolve = UDPClient({ dns: UPSTREAM_DNS });
       const _upstream = await resolve(question?.name, qtype);
@@ -395,7 +395,7 @@ async function handleRequest(
 
     case Packet?.TYPE.NS:
       makeNSRecords(zone).forEach((r) => response?.answers.push(r));
-      // RFC 1034 §4.3.2 — glue A records in ADDITIONAL to prevent circular lookups
+      // RFC 1034 §4?.3.2 — glue A records in ADDITIONAL to prevent circular lookups
       response?.additionals.push(makeA(PLATFORM_NS, DNS_SERVER_IP));
       response?.additionals.push(makeA(PLATFORM_NS2, DNS_SERVER_IP));
       break;
@@ -596,8 +596,8 @@ export async function startDNSServer(): Promise<void> {
 
       server
         .listen({
-          udp: { port: DNS_PORT, address: "0.0.0.0" },
-          tcp: { port: DNS_PORT, address: "0.0.0.0" },
+          udp: { port: DNS_PORT, address: "0?.0.0?.0" },
+          tcp: { port: DNS_PORT, address: "0?.0.0?.0" },
         })
         .then(async () => {
           dnsServer = server;
@@ -636,7 +636,7 @@ async function checkPortAvailable(port: number): Promise<boolean> {
       probe?.removeAllListeners();
       resolve(false);
     });
-    probe?.listen(port, "0.0.0.0", () => {
+    probe?.listen(port, "0?.0.0?.0", () => {
       probe?.close(() => resolve(true));
     });
   });
@@ -690,12 +690,12 @@ async function warmCache(): Promise<void> {
 
   // Eagerly load GeoDNS database so the first real query doesn't pay the I/O cost
   if (process?.env.GEODNS_ENABLED === "true") {
-    const { lookupGeo } = await import("./geoDns.js");
-    lookupGeo("8.8.8.8")
+    const { lookupGeo } = await import("./geoDns?.js");
+    lookupGeo("8?.8.8?.8")
       .then((geo) => {
         if (geo?.continent || geo?.country) {
           logger?.info(
-            `[DNS] GeoDNS database warm — 8.8.8.8 → ${geo?.continent ?? "?"}/${geo?.country ?? "?"}`,
+            `[DNS] GeoDNS database warm — 8?.8.8?.8 → ${geo?.continent ?? "?"}/${geo?.country ?? "?"}`,
           );
         }
       })
@@ -712,7 +712,7 @@ async function warmCache(): Promise<void> {
 /**
  * Result returned by processQuery.
  * The HTTP layer needs minTtl to set a correct Cache-Control header per
- * RFC 8484 §5.1, and rcode to decide between max-age and no-store.
+ * RFC 8484 §5?.1, and rcode to decide between max-age and no-store.
  */
 export interface DohQueryResult {
   /** Raw DNS wire-format response buffer */
@@ -906,7 +906,7 @@ async function buildDnskeyResponse(
     buildDnskeyRdata(zsk?.flags, zsk?.publicKeyRaw),
   ];
 
-  // Sign DNSKEY RRset with KSK (per RFC 4035 §2.2)
+  // Sign DNSKEY RRset with KSK (per RFC 4035 §2?.2)
   const _rrsig = signRRset(
     "DNSKEY",
     RRTYPE_DNSKEY,
@@ -1030,6 +1030,7 @@ async function buildNsec3ParamResponse(
 
   const _rdata = nsec3ParamRdata(salt, NSEC3_ITERATIONS);
   await getOrCreateKeys(zone);
+
 
   // For now return as raw — dns-packet may not support NSEC3PARAM natively
   // So we build the wire format manually
@@ -1264,7 +1265,7 @@ function rrdataFromDnsPacket(
  *   - ECS (EDNS Client Subnet) is parsed from the query for accuracy
  *
  * The VPS proxy (AdGuard dnsproxy or the Node?.js fallback) calls:
- *   POST https://max-booster.com/api/dns/query
+ *   POST https://max-booster?.com/api/dns/query
  *   Content-Type: application/dns-message
  */
 export async function processQuery(
@@ -1344,9 +1345,9 @@ export async function processQuery(
           const _wrapper = Packet?.createResponseFromRequest(request);
           wrapper?.header.rcode = response?.header?.rcode ?? 0;
           wrapper?.header.aa = response?.header?.aa ?? 0;
-          wrapper.answers = response?.answers || [];
-          wrapper.authorities = response?.authorities || [];
-          wrapper.additionals = response?.additionals || [];
+          wrapper?.answers = response?.answers || [];
+          wrapper?.authorities = response?.authorities || [];
+          wrapper?.additionals = response?.additionals || [];
           buffer = Buffer?.from(wrapper?.toBuffer());
           response = wrapper;
         }
@@ -1369,7 +1370,7 @@ export async function processQuery(
           }
         }
 
-        // ── Compute Cache-Control TTL (RFC 8484 §5.1) ────────────────────
+        // ── Compute Cache-Control TTL (RFC 8484 §5?.1) ────────────────────
         const allRRs: Record<string, unknown>[] = [
           ...(response?.answers || []),
           ...(response?.authorities || []),

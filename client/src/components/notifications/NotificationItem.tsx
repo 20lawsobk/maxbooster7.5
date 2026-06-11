@@ -1,36 +1,12 @@
 import { memo } from "react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import {
-  Bell,
-  Users,
-  DollarSign,
-  Music2,
-  Heart,
-  Megaphone,
-  Shield,
-  AlertTriangle,
-  Gift,
-  TrendingUp,
-  Check,
-  Trash2,
-  ExternalLink,
-  MessageSquare,
-  ShoppingBag,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  Info,
-} from "lucide-react";
+import { Bell, Users, DollarSign, Music2, Heart, Megaphone, Shield, AlertTriangle, Gift, TrendingUp, Check, Trash2, ExternalLink, MessageSquare, ShoppingBag, Clock, AlertCircle, CheckCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { UnreadIndicator } from "./NotificationBadge";
-import type {
-  Notification,
-  NotificationType,
-  NotificationPriority,
-} from "./types";
+import type { Notification, NotificationType, NotificationPriority } from "./types";
 
 interface NotificationItemProps {
   notification: Notification;

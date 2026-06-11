@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import fs from "fs";
 import { writeFile as fsWriteFile } from "fs/promises";
 import path from "path";
@@ -140,7 +140,7 @@ async function httpPeer(
     };
     if (MBS_KEY) headers["Authorization"] = `Bearer ${MBS_KEY}`;
     const opts: RequestInit = { method, signal: controller?.signal, headers };
-    if (body !== undefined) opts.body = JSON?.stringify(body);
+    if (body !== undefined) opts?.body = JSON?.stringify(body);
     const _res = await fetch(`${cfg?.baseUrl}${p}`, opts);
     const _data = await res?.json().catch(() => null);
     return { ok: res?.ok, status: res?.status, data };

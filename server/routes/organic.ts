@@ -1,17 +1,17 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
-import { asyncHandler } from "../middleware/errorHandler.js";
-import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { asyncHandler } from "../middleware/errorHandler?.js";
+import { logger } from "../logger?.js";
 import {
   viralScoringService,
   type ContentData,
-} from "../services/viralScoring.js";
-import { timingOptimizerService } from "../services/timingOptimizer.js";
-import { contentVariantGeneratorService } from "../services/contentVariantGenerator.js";
+} from "../services/viralScoring?.js";
+import { timingOptimizerService } from "../services/timingOptimizer?.js";
+import { contentVariantGeneratorService } from "../services/contentVariantGenerator?.js";
 import {
   algorithmIntelligenceService,
   type AlgorithmHealth,
-} from "../services/algorithmIntelligence.js";
+} from "../services/algorithmIntelligence?.js";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 
@@ -99,7 +99,7 @@ router?.post(
         },
         recommendations: score?.recommendations,
         predictedReach: {
-          low: Math?.round(score?.predictedEngagement.likes * 0.5),
+          low: Math?.round(score?.predictedEngagement.likes * 0?.5),
           mid: Math?.round(score?.predictedEngagement.likes),
           high: Math?.round(score?.predictedEngagement.likes * 2),
         },
@@ -336,7 +336,7 @@ router?.post(
             ...variant,
             viralScore: score?.overall,
             predictedReach: {
-              low: Math?.round(score?.predictedEngagement.likes * 0.5),
+              low: Math?.round(score?.predictedEngagement.likes * 0?.5),
               mid: Math?.round(score?.predictedEngagement.likes),
               high: Math?.round(score?.predictedEngagement.likes * 2),
             },
@@ -420,13 +420,13 @@ router?.get(
             "Maintain consistent posting schedule",
           ],
           saveShareRatio: {
-            optimal: 0.15,
+            optimal: 0?.15,
             current: null,
             recommendation: "Add more save-worthy educational content",
           },
           commentDepthStrategy: {
-            avgDepth: 2.3,
-            optimal: 3.5,
+            avgDepth: 2?.3,
+            optimal: 3?.5,
             tips: [
               "Ask questions in captions",
               "Reply to every comment",

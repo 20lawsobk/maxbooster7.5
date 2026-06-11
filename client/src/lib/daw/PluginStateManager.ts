@@ -52,7 +52,7 @@ export class PluginStateManager {
   private saveTimer: number | null = null;
 
   constructor() {
-    this.state = {
+    this?.state = {
       plugins: [],
       presets: [],
       automationBindings: new Map(),
@@ -119,7 +119,7 @@ export class PluginStateManager {
     if (!plugin) return;
 
     plugin?.parameters[parameterId] = value;
-    plugin.currentPresetId = null;
+    plugin?.currentPresetId = null;
 
     this?.emitParameterChange(instanceId, parameterId, value);
     this?.scheduleSave();
@@ -138,7 +138,7 @@ export class PluginStateManager {
       this?.emitParameterChange(instanceId, parameterId, value);
     }
 
-    plugin.currentPresetId = null;
+    plugin?.currentPresetId = null;
     this?.scheduleSave();
     this?.notify();
   }
@@ -161,7 +161,7 @@ export class PluginStateManager {
   setBypass(instanceId: string, bypassed: boolean): void {
     const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin.bypassed = bypassed;
+      plugin?.bypassed = bypassed;
       this?.notify();
     }
   }
@@ -169,7 +169,7 @@ export class PluginStateManager {
   setLatency(instanceId: string, latency: number): void {
     const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin.latency = latency;
+      plugin?.latency = latency;
       this?.notify();
     }
   }
@@ -177,8 +177,8 @@ export class PluginStateManager {
   reportError(instanceId: string, errorMessage: string): void {
     const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin.hasError = true;
-      plugin.errorMessage = errorMessage;
+      plugin?.hasError = true;
+      plugin?.errorMessage = errorMessage;
       if (!this?.state.failedPlugins?.includes(instanceId)) {
         this?.state.failedPlugins?.push(instanceId);
       }
@@ -189,8 +189,8 @@ export class PluginStateManager {
   clearError(instanceId: string): void {
     const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin.hasError = false;
-      plugin.errorMessage = null;
+      plugin?.hasError = false;
+      plugin?.errorMessage = null;
       this?.state.failedPlugins = this?.state.failedPlugins?.filter(
         (id) => id !== instanceId,
       );
@@ -214,7 +214,7 @@ export class PluginStateManager {
     };
 
     this?.state.presets?.push(preset);
-    plugin.currentPresetId = id;
+    plugin?.currentPresetId = id;
     this?.notify();
     return id;
   }
@@ -226,8 +226,8 @@ export class PluginStateManager {
     if (!plugin || !preset) return false;
     if (plugin?.pluginId !== preset?.pluginId) return false;
 
-    plugin.parameters = { ...preset?.parameters };
-    plugin.currentPresetId = presetId;
+    plugin?.parameters = { ...preset?.parameters };
+    plugin?.currentPresetId = presetId;
 
     for (const [parameterId, value] of Object?.entries(preset?.parameters)) {
       this?.emitParameterChange(instanceId, parameterId, value);
@@ -246,12 +246,12 @@ export class PluginStateManager {
     if (!preset || preset?.isFactory) return false;
 
     if (newParameters) {
-      preset.parameters = { ...newParameters };
+      preset?.parameters = { ...newParameters };
     }
     if (newName) {
-      preset.name = newName;
+      preset?.name = newName;
     }
-    preset.modifiedAt = Date?.now();
+    preset?.modifiedAt = Date?.now();
 
     this?.notify();
     return true;
@@ -266,7 +266,7 @@ export class PluginStateManager {
 
     for (const plugin of this?.state.plugins) {
       if (plugin?.currentPresetId === presetId) {
-        plugin.currentPresetId = null;
+        plugin?.currentPresetId = null;
       }
     }
 
@@ -384,7 +384,7 @@ export class PluginStateManager {
   movePlugin(instanceId: string, newTrackId: string): void {
     const _plugin = this?.state.plugins?.find((p) => p?.instanceId === instanceId);
     if (plugin) {
-      plugin.trackId = newTrackId;
+      plugin?.trackId = newTrackId;
       this?.notify();
     }
   }
@@ -414,8 +414,8 @@ export class PluginStateManager {
     if (this?.saveTimer !== null) {
       clearTimeout(this?.saveTimer);
     }
-    this.saveTimer = window?.setTimeout(() => {
-      this.saveTimer = null;
+    this?.saveTimer = window?.setTimeout(() => {
+      this?.saveTimer = null;
     }, 1000);
   }
 

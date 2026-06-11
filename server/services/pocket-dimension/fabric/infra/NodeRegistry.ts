@@ -1,4 +1,4 @@
-import { db } from "../../../db.js";
+import { db } from "../../../db?.js";
 import { fabricStorageNodes } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -7,7 +7,7 @@ import type {
   NodeId,
   BackendType,
   CostTier,
-} from "../types.js";
+} from "../types?.js";
 
 export class NodeRegistry {
   async registerNode(
@@ -37,10 +37,10 @@ export class NodeRegistry {
   ): Promise<void> {
     const values: Record<string, any> = {};
     if (patch?.usedBytes !== undefined)
-      values.usedBytes = String(patch?.usedBytes);
-    if (patch?.healthy !== undefined) values.healthy = patch?.healthy;
+      values?.usedBytes = String(patch?.usedBytes);
+    if (patch?.healthy !== undefined) values?.healthy = patch?.healthy;
     if (patch?.lastHeartbeat !== undefined)
-      values.lastHeartbeat = patch?.lastHeartbeat;
+      values?.lastHeartbeat = patch?.lastHeartbeat;
     if (Object?.keys(values).length > 0) {
       await db
         .update(fabricStorageNodes)

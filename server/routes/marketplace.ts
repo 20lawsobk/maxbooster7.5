@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import { createHardenedUpload } from "../middleware/uploadHandler?.js";
 import path from "path";
 import crypto from "crypto";
 import fs from "fs";
@@ -10,9 +10,9 @@ import { discoveryAlgorithmService } from "../services/discoveryAlgorithmService
 import { marketplaceService } from "../services/marketplaceService";
 import { storage } from "../storage";
 import { storageService } from "../services/storageService";
-import { storeUploadedFile } from "../middleware/uploadHandler.js";
+import { storeUploadedFile } from "../middleware/uploadHandler?.js";
 import { notificationService } from "../services/notificationService";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { db } from "../db";
 import {
   orders,
@@ -29,11 +29,11 @@ import {
   beatInteractions,
 } from "@shared/schema";
 import { eq, and, gte, sql, desc, asc, or, inArray } from "drizzle-orm";
-import { getBaseUrl } from "../config/defaults.js";
-import { requireAuth } from "../middleware/auth.js";
-import { processUploadedBeat } from "../services/audioSeparatorService.js";
-import { distributedCache } from "../infrastructure/distributedCache.js";
-import { pythonAIService } from "../services/pythonAIService.js";
+import { getBaseUrl } from "../config/defaults?.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { processUploadedBeat } from "../services/audioSeparatorService?.js";
+import { distributedCache } from "../infrastructure/distributedCache?.js";
+import { pythonAIService } from "../services/pythonAIService?.js";
 
 const _router = Router();
 
@@ -387,33 +387,33 @@ router?.get("/producer-analytics", async (req: Request, res: Response) => {
           trafficSources: [
             {
               source: "Direct",
-              visits: Math?.floor(totalViews * 0.33),
-              conversions: Math?.floor(totalSales * 0.35),
-              percentage: 33.3,
+              visits: Math?.floor(totalViews * 0?.33),
+              conversions: Math?.floor(totalSales * 0?.35),
+              percentage: 33?.3,
             },
             {
               source: "Social Media",
-              visits: Math?.floor(totalViews * 0.28),
-              conversions: Math?.floor(totalSales * 0.25),
-              percentage: 28.1,
+              visits: Math?.floor(totalViews * 0?.28),
+              conversions: Math?.floor(totalSales * 0?.25),
+              percentage: 28?.1,
             },
             {
               source: "Search",
-              visits: Math?.floor(totalViews * 0.21),
-              conversions: Math?.floor(totalSales * 0.22),
-              percentage: 20.8,
+              visits: Math?.floor(totalViews * 0?.21),
+              conversions: Math?.floor(totalSales * 0?.22),
+              percentage: 20?.8,
             },
             {
               source: "Referral",
-              visits: Math?.floor(totalViews * 0.11),
-              conversions: Math?.floor(totalSales * 0.12),
-              percentage: 11.2,
+              visits: Math?.floor(totalViews * 0?.11),
+              conversions: Math?.floor(totalSales * 0?.12),
+              percentage: 11?.2,
             },
             {
               source: "Email",
-              visits: Math?.floor(totalViews * 0.07),
-              conversions: Math?.floor(totalSales * 0.06),
-              percentage: 6.6,
+              visits: Math?.floor(totalViews * 0?.07),
+              conversions: Math?.floor(totalSales * 0?.06),
+              percentage: 6?.6,
             },
           ],
         };
@@ -848,7 +848,7 @@ router?.get("/for-you", async (req: Request, res: Response) => {
         title: "For You",
         description: "Beats curated based on your listening history",
         beats: personalizedBeats
-          .filter((b) => b?.discoveryScore > 0.5)
+          .filter((b) => b?.discoveryScore > 0?.5)
           .slice(0, 8),
         type: "personalized",
       },
@@ -925,7 +925,7 @@ router?.get("/ai-recommendations", async (req: Request, res: Response) => {
       type: "genre_match",
       title: `${genre} Beats For You`,
       description: `Based on your listening history, you love ${genre} beats`,
-      confidence: insights?.topGenres[index]?.score || 0.5,
+      confidence: insights?.topGenres[index]?.score || 0?.5,
       action: "browse",
       metadata: { genre },
     }));
@@ -1523,7 +1523,7 @@ router?.post(
       const {
         title,
         genre,
-
+        
         tempo,
         key,
         price,
@@ -1614,9 +1614,9 @@ router?.post(
               if (analysis?.success && analysis?.data) {
                 const updateData: Record<string, unknown> = {};
                 if (!tempo && analysis?.data.bpm)
-                  updateData.bpm = Math?.round(analysis?.data.bpm);
+                  updateData?.bpm = Math?.round(analysis?.data.bpm);
                 if (!key && analysis?.data.key)
-                  updateData.key = analysis?.data.key;
+                  updateData?.key = analysis?.data.key;
                 if (Object?.keys(updateData).length > 0) {
                   await db
                     .update(listings)
@@ -1943,15 +1943,15 @@ router?.put(
       const _files = req?.files as { [fieldname: string]: Express?.Multer.File[] };
 
       const updateData: Record<string, unknown> = {};
-      if (title) updateData.title = title;
-      if (description !== undefined) updateData.description = description;
-      if (genre) updateData.genre = genre;
-      if (mood) updateData.mood = mood;
-      if (tempo) updateData.bpm = parseInt(tempo);
-      if (key) updateData.key = key;
-      if (price) updateData.price = parseFloat(price);
-      if (licenseType) updateData.licenseType = licenseType;
-      if (tags) updateData.tags = tags?.split(",").map((t: string) => t?.trim());
+      if (title) updateData?.title = title;
+      if (description !== undefined) updateData?.description = description;
+      if (genre) updateData?.genre = genre;
+      if (mood) updateData?.mood = mood;
+      if (tempo) updateData?.bpm = parseInt(tempo);
+      if (key) updateData?.key = key;
+      if (price) updateData?.price = parseFloat(price);
+      if (licenseType) updateData?.licenseType = licenseType;
+      if (tags) updateData?.tags = tags?.split(",").map((t: string) => t?.trim());
 
       if (files?.audio?.[0]) {
         const _audioFile = files?.audio[0];
@@ -1963,7 +1963,7 @@ router?.put(
           filename,
           audioFile?.mimetype,
         );
-        updateData.audioUrl = `/api/marketplace/audio/${audioKey}`;
+        updateData?.audioUrl = `/api/marketplace/audio/${audioKey}`;
       }
 
       if (files?.artwork?.[0]) {
@@ -1973,7 +1973,7 @@ router?.put(
           req?.user!.id,
           "artwork",
         );
-        updateData.artworkUrl = result?.url;
+        updateData?.artworkUrl = result?.url;
         logger?.info(
           `Artwork updated via storeUploadedFile: ${result?.key} (processed: ${result?.processed})`,
         );
@@ -1982,7 +1982,7 @@ router?.put(
         typeof req?.body.artworkUrl === "string"
       ) {
         // Cover art pre-uploaded separately — use the URL directly
-        updateData.artworkUrl = req?.body.artworkUrl;
+        updateData?.artworkUrl = req?.body.artworkUrl;
       }
 
       const _updatedListing = await marketplaceService?.updateListing(
@@ -2640,7 +2640,7 @@ router?.get(
         name: "Stem",
         type: "wav",
         duration: 180,
-        price: 29.99,
+        price: 29?.99,
         downloadUrl: null,
       });
     } catch (error) {

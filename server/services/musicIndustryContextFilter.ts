@@ -24,8 +24,8 @@
 import {
   industryMonitor,
   type LiveIndustryChange,
-} from "./industryMonitorService.js";
-import { logger } from "../logger.js";
+} from "./industryMonitorService?.js";
+import { logger } from "../logger?.js";
 
 // ─── Public types ──────────────────────────────────────────────────────────────
 
@@ -77,75 +77,75 @@ interface KW<T extends string> {
 }
 
 const GENRE_KW: KW<string>[] = [
-  { pattern: /\btrap\b/i, value: "trap", weight: 2.0 },
-  { pattern: /\bphonk\b/i, value: "phonk", weight: 2.0 },
-  { pattern: /\bafrobeats?\b/i, value: "afrobeats", weight: 2.0 },
-  { pattern: /\bamapiano\b/i, value: "amapiano", weight: 2.0 },
-  { pattern: /\bdrill\b/i, value: "drill", weight: 2.0 },
-  { pattern: /\bhyperpop\b/i, value: "hyperpop", weight: 2.0 },
-  { pattern: /\blo[.\s-]?fi\b/i, value: "lo-fi", weight: 2.0 },
-  { pattern: /\bbedroom pop\b/i, value: "bedroom pop", weight: 2.0 },
-  { pattern: /\bk[.\s-]?pop\b/i, value: "K-pop", weight: 2.0 },
-  { pattern: /\bneo[.\s-]?soul\b/i, value: "neo-soul", weight: 2.0 },
-  { pattern: /\balt[.\s-]?pop\b/i, value: "alt-pop", weight: 1.5 },
-  { pattern: /\breggaeton\b/i, value: "reggaeton", weight: 2.0 },
-  { pattern: /\bcloud rap\b/i, value: "cloud rap", weight: 2.0 },
-  { pattern: /\bsynthwave\b/i, value: "synthwave", weight: 2.0 },
-  { pattern: /\bvaporwave\b/i, value: "vaporwave", weight: 2.0 },
-  { pattern: /\bindietronica\b/i, value: "indietronica", weight: 1.5 },
-  { pattern: /\bpop[.\s-]?punk\b/i, value: "pop punk", weight: 2.0 },
-  { pattern: /\br&b\b/i, value: "R&B", weight: 1.5 },
-  { pattern: /\bhip[.\s-]?hop\b/i, value: "hip-hop", weight: 1.5 },
-  { pattern: /\bhouse\b/i, value: "house", weight: 1.0 },
-  { pattern: /\btechno\b/i, value: "techno", weight: 1.0 },
-  { pattern: /\bambient\b/i, value: "ambient", weight: 1.5 },
-  { pattern: /\bedm\b/i, value: "EDM", weight: 1.0 },
-  { pattern: /\blatin\b/i, value: "latin", weight: 1.5 },
-  { pattern: /\bindies?\b/i, value: "indie", weight: 1.0 },
-  { pattern: /\belectronic\b/i, value: "electronic", weight: 0.8 },
-  { pattern: /\bpop\b/i, value: "pop", weight: 0.5 },
+  { pattern: /\btrap\b/i, value: "trap", weight: 2?.0 },
+  { pattern: /\bphonk\b/i, value: "phonk", weight: 2?.0 },
+  { pattern: /\bafrobeats?\b/i, value: "afrobeats", weight: 2?.0 },
+  { pattern: /\bamapiano\b/i, value: "amapiano", weight: 2?.0 },
+  { pattern: /\bdrill\b/i, value: "drill", weight: 2?.0 },
+  { pattern: /\bhyperpop\b/i, value: "hyperpop", weight: 2?.0 },
+  { pattern: /\blo[.\s-]?fi\b/i, value: "lo-fi", weight: 2?.0 },
+  { pattern: /\bbedroom pop\b/i, value: "bedroom pop", weight: 2?.0 },
+  { pattern: /\bk[.\s-]?pop\b/i, value: "K-pop", weight: 2?.0 },
+  { pattern: /\bneo[.\s-]?soul\b/i, value: "neo-soul", weight: 2?.0 },
+  { pattern: /\balt[.\s-]?pop\b/i, value: "alt-pop", weight: 1?.5 },
+  { pattern: /\breggaeton\b/i, value: "reggaeton", weight: 2?.0 },
+  { pattern: /\bcloud rap\b/i, value: "cloud rap", weight: 2?.0 },
+  { pattern: /\bsynthwave\b/i, value: "synthwave", weight: 2?.0 },
+  { pattern: /\bvaporwave\b/i, value: "vaporwave", weight: 2?.0 },
+  { pattern: /\bindietronica\b/i, value: "indietronica", weight: 1?.5 },
+  { pattern: /\bpop[.\s-]?punk\b/i, value: "pop punk", weight: 2?.0 },
+  { pattern: /\br&b\b/i, value: "R&B", weight: 1?.5 },
+  { pattern: /\bhip[.\s-]?hop\b/i, value: "hip-hop", weight: 1?.5 },
+  { pattern: /\bhouse\b/i, value: "house", weight: 1?.0 },
+  { pattern: /\btechno\b/i, value: "techno", weight: 1?.0 },
+  { pattern: /\bambient\b/i, value: "ambient", weight: 1?.5 },
+  { pattern: /\bedm\b/i, value: "EDM", weight: 1?.0 },
+  { pattern: /\blatin\b/i, value: "latin", weight: 1?.5 },
+  { pattern: /\bindies?\b/i, value: "indie", weight: 1?.0 },
+  { pattern: /\belectronic\b/i, value: "electronic", weight: 0?.8 },
+  { pattern: /\bpop\b/i, value: "pop", weight: 0?.5 },
 ];
 
 const MOOD_KW: KW<string>[] = [
-  { pattern: /\bmelanchol\w*\b/i, value: "melancholic", weight: 2.0 },
-  { pattern: /\beuphori\w*\b/i, value: "euphoric", weight: 2.0 },
-  { pattern: /\bnostalgic\b/i, value: "nostalgic", weight: 2.0 },
-  { pattern: /\bdark\b/i, value: "dark", weight: 1.0 },
-  { pattern: /\buplifting\b/i, value: "uplifting", weight: 1.5 },
-  { pattern: /\benergetic\b/i, value: "energetic", weight: 1.5 },
-  { pattern: /\brelax\w*\b/i, value: "relaxed", weight: 1.0 },
-  { pattern: /\bcalm\b/i, value: "calm", weight: 1.0 },
-  { pattern: /\baggressive\b/i, value: "aggressive", weight: 1.5 },
-  { pattern: /\bvulnerab\w*\b/i, value: "vulnerable", weight: 2.0 },
-  { pattern: /\bempow\w*\b/i, value: "empowering", weight: 2.0 },
-  { pattern: /\bmotivational\b/i, value: "motivational", weight: 1.5 },
-  { pattern: /\bchill\b/i, value: "chill", weight: 1.0 },
-  { pattern: /\braw\b/i, value: "raw", weight: 1.0 },
-  { pattern: /\bintense\b/i, value: "intense", weight: 1.5 },
-  { pattern: /\bsoulful\b/i, value: "soulful", weight: 1.5 },
-  { pattern: /\bplayful\b/i, value: "playful", weight: 1.5 },
-  { pattern: /\bdriven\b/i, value: "driven", weight: 1.0 },
+  { pattern: /\bmelanchol\w*\b/i, value: "melancholic", weight: 2?.0 },
+  { pattern: /\beuphori\w*\b/i, value: "euphoric", weight: 2?.0 },
+  { pattern: /\bnostalgic\b/i, value: "nostalgic", weight: 2?.0 },
+  { pattern: /\bdark\b/i, value: "dark", weight: 1?.0 },
+  { pattern: /\buplifting\b/i, value: "uplifting", weight: 1?.5 },
+  { pattern: /\benergetic\b/i, value: "energetic", weight: 1?.5 },
+  { pattern: /\brelax\w*\b/i, value: "relaxed", weight: 1?.0 },
+  { pattern: /\bcalm\b/i, value: "calm", weight: 1?.0 },
+  { pattern: /\baggressive\b/i, value: "aggressive", weight: 1?.5 },
+  { pattern: /\bvulnerab\w*\b/i, value: "vulnerable", weight: 2?.0 },
+  { pattern: /\bempow\w*\b/i, value: "empowering", weight: 2?.0 },
+  { pattern: /\bmotivational\b/i, value: "motivational", weight: 1?.5 },
+  { pattern: /\bchill\b/i, value: "chill", weight: 1?.0 },
+  { pattern: /\braw\b/i, value: "raw", weight: 1?.0 },
+  { pattern: /\bintense\b/i, value: "intense", weight: 1?.5 },
+  { pattern: /\bsoulful\b/i, value: "soulful", weight: 1?.5 },
+  { pattern: /\bplayful\b/i, value: "playful", weight: 1?.5 },
+  { pattern: /\bdriven\b/i, value: "driven", weight: 1?.0 },
 ];
 
 const PRODUCTION_KW: KW<string>[] = [
-  { pattern: /\b808\b/i, value: "808 bass", weight: 2.0 },
-  { pattern: /\bspatial audio\b/i, value: "spatial audio", weight: 2.0 },
-  { pattern: /\bdolby atmos\b/i, value: "Dolby Atmos", weight: 2.0 },
-  { pattern: /\bstem separat\w*\b/i, value: "stem separation", weight: 2.0 },
-  { pattern: /\bai mast\w*\b/i, value: "AI mastering", weight: 2.0 },
-  { pattern: /\bai mix\w*\b/i, value: "AI mixing", weight: 2.0 },
-  { pattern: /\blo[.\s-]?fi\b/i, value: "lo-fi aesthetic", weight: 2.0 },
-  { pattern: /\blossless\b/i, value: "lossless audio", weight: 1.5 },
-  { pattern: /\bcinematic\b/i, value: "cinematic", weight: 1.5 },
-  { pattern: /\bminimalist\b/i, value: "minimalist", weight: 1.5 },
-  { pattern: /\bvintage\b/i, value: "vintage", weight: 1.0 },
-  { pattern: /\bretro\b/i, value: "retro", weight: 1.0 },
-  { pattern: /\blayered\b/i, value: "layered", weight: 1.0 },
-  { pattern: /\braw production\b/i, value: "raw production", weight: 2.0 },
+  { pattern: /\b808\b/i, value: "808 bass", weight: 2?.0 },
+  { pattern: /\bspatial audio\b/i, value: "spatial audio", weight: 2?.0 },
+  { pattern: /\bdolby atmos\b/i, value: "Dolby Atmos", weight: 2?.0 },
+  { pattern: /\bstem separat\w*\b/i, value: "stem separation", weight: 2?.0 },
+  { pattern: /\bai mast\w*\b/i, value: "AI mastering", weight: 2?.0 },
+  { pattern: /\bai mix\w*\b/i, value: "AI mixing", weight: 2?.0 },
+  { pattern: /\blo[.\s-]?fi\b/i, value: "lo-fi aesthetic", weight: 2?.0 },
+  { pattern: /\blossless\b/i, value: "lossless audio", weight: 1?.5 },
+  { pattern: /\bcinematic\b/i, value: "cinematic", weight: 1?.5 },
+  { pattern: /\bminimalist\b/i, value: "minimalist", weight: 1?.5 },
+  { pattern: /\bvintage\b/i, value: "vintage", weight: 1?.0 },
+  { pattern: /\bretro\b/i, value: "retro", weight: 1?.0 },
+  { pattern: /\blayered\b/i, value: "layered", weight: 1?.0 },
+  { pattern: /\braw production\b/i, value: "raw production", weight: 2?.0 },
   {
     pattern: /\bhigh[.\s-]?fidelity\b|\bhi[.\s-]?fi\b/i,
     value: "hi-fi",
-    weight: 1.5,
+    weight: 1?.5,
   },
 ];
 
@@ -320,7 +320,7 @@ class MusicIndustryContextFilterService {
   }
 
   clearCache(): void {
-    this.cache = null;
+    this?.cache = null;
   }
 
   // ── Internal ───────────────────────────────────────────────────────────────
@@ -331,7 +331,7 @@ class MusicIndustryContextFilterService {
     }
     const _signals = await industryMonitor?.fetchLiveChanges();
     const _ctx = this?.build(signals);
-    this.cache = { ctx, builtAt: Date?.now() };
+    this?.cache = { ctx, builtAt: Date?.now() };
     logger?.info(
       `[IndustryFilter] Built context from ${signals?.length} signals — ` +
         `confidence=${ctx?.confidence.toFixed(2)} ` +
@@ -354,12 +354,12 @@ class MusicIndustryContextFilterService {
       const _age = this?.recencyFactor(sig?.detectedAt);
       const _boost =
         sig?.urgency === "critical"
-          ? 1.4
+          ? 1?.4
           : sig?.urgency === "high"
-            ? 1.2
+            ? 1?.2
             : sig?.urgency === "medium"
-              ? 1.0
-              : 0.8;
+              ? 1?.0
+              : 0?.8;
 
       for (const kw of GENRE_KW) {
         if (kw?.pattern.test(text)) {
@@ -450,7 +450,7 @@ class MusicIndustryContextFilterService {
     ctx: MusicIndustryContext,
     mode: GenerationMode,
   ): MusicIndustryContext {
-    if (ctx?.confidence < 0.05 || ctx?.signalCount === 0) {
+    if (ctx?.confidence < 0?.05 || ctx?.signalCount === 0) {
       return { ...ctx, contextString: "" };
     }
 
@@ -579,17 +579,17 @@ class MusicIndustryContextFilterService {
 
   /**
    * Recency decay:
-   *   ≤ 24 h  → 1.0   (freshest signal, full weight)
-   *   ≤ 72 h  → 0.8
-   *   ≤ 168 h → 0.5
-   *   older   → 0.2
+   *   ≤ 24 h  → 1?.0   (freshest signal, full weight)
+   *   ≤ 72 h  → 0?.8
+   *   ≤ 168 h → 0?.5
+   *   older   → 0?.2
    */
   private recencyFactor(date: Date): number {
     const _h = (Date?.now() - date?.getTime()) / 3_600_000;
-    if (h <= 24) return 1.0;
-    if (h <= 72) return 0.8;
-    if (h <= 168) return 0.5;
-    return 0.2;
+    if (h <= 24) return 1?.0;
+    if (h <= 72) return 0?.8;
+    if (h <= 168) return 0?.5;
+    return 0?.2;
   }
 
   private empty(): MusicIndustryContext {

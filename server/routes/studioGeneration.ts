@@ -1,24 +1,24 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { z } from "zod";
-import { logger } from "../logger.js";
-import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import { logger } from "../logger?.js";
+import { createHardenedUpload } from "../middleware/uploadHandler?.js";
 import { randomBytes } from "crypto";
 import {
   generateFromText,
   generateFromReference,
-} from "../services/aiAudioGeneratorService.js";
+} from "../services/aiAudioGeneratorService?.js";
 import {
   melodyPatternService,
   GenerationParams,
 } from "../services/melodyPatternService";
-import { db } from "../db.js";
-import { studioSamples } from "../../shared/schema.js";
+import { db } from "../db?.js";
+import { studioSamples } from "../../shared/schema?.js";
 import os from "os";
 import path from "path";
 import fsPromises from "fs/promises";
 import { execFile } from "child_process";
-import { aiRateLimiter } from "../middleware/rateLimiter.js";
+import { aiRateLimiter } from "../middleware/rateLimiter?.js";
 import { promisify } from "util";
 
 const _execFileAsync = promisify(execFile);
@@ -396,9 +396,9 @@ const _patternGenerationSchema = z?.object({
   scale: z?.string().min(1).default("minor"),
   tempo: z?.number().min(20).max(300).default(120),
   bars: z?.number().min(1).max(64).default(4),
-  complexity: z?.number().min(0).max(1).default(0.5),
+  complexity: z?.number().min(0).max(1).default(0?.5),
   swing: z?.number().min(0).max(1).default(0),
-  humanize: z?.number().min(0).max(1).default(0.2),
+  humanize: z?.number().min(0).max(1).default(0?.2),
 });
 
 router?.get("/pattern/instruments", requireAuth, async (_req, res) => {
@@ -632,7 +632,7 @@ router?.post(
       try {
         const _out = await execFileAsync(
           "python3",
-          ["server/services/audioAnalyzer.py", tmpPath, "pitch_track"],
+          ["server/services/audioAnalyzer?.py", tmpPath, "pitch_track"],
           { timeout: 45_000 },
         );
         stdout = out?.stdout;
@@ -688,7 +688,7 @@ router?.post(
           noteName: NOTES[n?.midi % 12] + n?.octave,
           duration: n?.duration_beats,
           syllable: "",
-          stress: n?.position_beats % 1 < 0.1,
+          stress: n?.position_beats % 1 < 0?.1,
         }),
       );
 

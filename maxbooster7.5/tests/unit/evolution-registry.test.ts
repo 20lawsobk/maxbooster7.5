@@ -205,8 +205,9 @@ describe("Self-Evolution → autopilot posting-window selection (integration-sty
   });
 
   it("a generated posting_optimization optimalHours override changes the real autopilot getOptimalTimesForPlatform result when no learned timing exists", async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     const engine = new AutopilotEngine("test-user") as unknown as {
       getOptimalTimesForPlatform(platform: string): Promise<number[]>;
     };
@@ -245,8 +246,9 @@ describe("Self-Evolution → autopilot posting-window selection (integration-sty
   });
 
   it("an advisory (non-effective) posting_optimization payload does NOT change autopilot selection", async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     const engine = new AutopilotEngine("test-user-2") as unknown as {
       getOptimalTimesForPlatform(platform: string): Promise<number[]>;
     };
@@ -299,8 +301,9 @@ describe("Self-Evolution → autopilot content-format & engagement targeting (in
   };
 
   it("a contentFormatPriority override biases the real selectContentType pick toward the prioritized format, and reverts on rollback", async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     // Default config contentTypes: ['tips','insights','questions','announcements'].
     // Affinities: tips/insights→carousel, questions→text, announcements→image.
     const engine = new AutopilotEngine(
@@ -347,8 +350,9 @@ describe("Self-Evolution → autopilot content-format & engagement targeting (in
   });
 
   it('an engagementTargeting=high override steers the real generation objective to "engagement", and reverts on rollback', async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     const engine = new AutopilotEngine(
       "engagement-user-1",
     ) as unknown as FormatEngine;
@@ -450,8 +454,9 @@ describe("Self-Evolution → autopilot content generation (integration-style)", 
   };
 
   it("generates with the static defaults (variantCount=3, includeEmojis=true) when no content_optimization override exists", async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     const engine = new AutopilotEngine(
       "content-user-1",
     ) as unknown as ContentEngine;
@@ -465,8 +470,9 @@ describe("Self-Evolution → autopilot content generation (integration-style)", 
   });
 
   it("a generated content_optimization override (variantCount + visualPriority) changes the real generator inputs, and reverts on rollback", async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     const engine = new AutopilotEngine(
       "content-user-2",
     ) as unknown as ContentEngine;
@@ -511,8 +517,9 @@ describe("Self-Evolution → autopilot content generation (integration-style)", 
   });
 
   it("baseline: hashtagStrategy / captionLength / callToActionStrength are undefined when no override exists", async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     const engine = new AutopilotEngine(
       "content-user-3",
     ) as unknown as ContentEngine;
@@ -525,8 +532,9 @@ describe("Self-Evolution → autopilot content generation (integration-style)", 
   });
 
   it("a generated content_optimization override (hashtagStrategy + captionLength + callToActionStrength) reaches the real generator inputs, and reverts on rollback", async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     const engine = new AutopilotEngine(
       "content-user-4",
     ) as unknown as ContentEngine;
@@ -568,8 +576,9 @@ describe("Self-Evolution → autopilot content generation (integration-style)", 
   });
 
   it("each newly-wired knob is independently honored (hashtagStrategy only)", async () => {
-    const { AutopilotEngine } =
-      await import("../../server/autopilot-engine.js");
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     const engine = new AutopilotEngine(
       "content-user-5",
     ) as unknown as ContentEngine;

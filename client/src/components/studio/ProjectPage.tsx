@@ -33,24 +33,7 @@ import {
   type MasteringSong,
 } from "@/lib/studioStore";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Disc3,
-  Music,
-  Play,
-  Pause,
-  Plus,
-  Trash2,
-  GripVertical,
-  Volume2,
-  Activity,
-  Download,
-  Loader2,
-  RefreshCw,
-  AudioWaveform,
-  Gauge,
-  Settings2,
-  Sparkles,
-} from "lucide-react";
+import { Disc3, Music, Play, Pause, Plus, Trash2, GripVertical, Volume2, Activity, Download, Loader2, RefreshCw, AudioWaveform, Gauge, Settings2, Sparkles } from "lucide-react";
 
 interface ProjectPageProps {
   isOpen: boolean;
@@ -103,6 +86,7 @@ function getLoudnessColor(lufs: number): string {
   return "#22c55e";
 }
 
+
 function MockWaveform({
   color = "#3b82f6",
   height = 40,
@@ -127,6 +111,7 @@ function MockWaveform({
     </div>
   );
 }
+
 
 function SongRow({
   song,
@@ -297,13 +282,13 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
   const {
     masteringProjects,
     activeMasteringProjectId,
-
+    
     createMasteringProject,
-
+    
     setActiveMasteringProject,
     addSongToProject,
     removeSongFromProject,
-
+    
     updateMasteringSettings,
     updateMasteringSong,
     setMasteringProcessing,

@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface TranslatedContent {
   language: string;
@@ -614,6 +614,7 @@ class AITranslationService {
 
     return Math?.min(confidence, 95);
   }
+
 
   getSupportedLanguages(): {
     code: string;

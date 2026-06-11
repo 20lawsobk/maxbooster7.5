@@ -1,11 +1,11 @@
 import { storage } from "../storage";
 import { aiContentService } from "./aiContentService";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { socialAccounts, socialCampaigns } from "@shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 
 import type { InsertAdCampaign, AdCampaign } from "@shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // Timeout-guarded fetch (10 s default)
 const _timedFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
@@ -261,7 +261,7 @@ export class SocialService {
       } else if (platform === "facebook") {
         const _pageId = process?.env.FACEBOOK_PAGE_ID || "me";
         const _res = await timedFetch(
-          `https://graph?.facebook.com/v18.0/${pageId}/feed`,
+          `https://graph?.facebook.com/v18?.0/${pageId}/feed`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -281,9 +281,9 @@ export class SocialService {
           caption: content,
           access_token: token,
         };
-        if (mediaUrls?.length > 0) mediaPayload.image_url = mediaUrls[0];
+        if (mediaUrls?.length > 0) mediaPayload?.image_url = mediaUrls[0];
         const _createRes = await timedFetch(
-          `https://graph?.instagram.com/v18.0/${igId}/media`,
+          `https://graph?.instagram.com/v18?.0/${igId}/media`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -294,7 +294,7 @@ export class SocialService {
           const _container = await createRes?.json();
           if (container?.id) {
             await timedFetch(
-              `https://graph?.instagram.com/v18.0/${igId}/media_publish`,
+              `https://graph?.instagram.com/v18?.0/${igId}/media_publish`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -350,7 +350,7 @@ export class SocialService {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              "X-Restli-Protocol-Version": "2.0.0",
+              "X-Restli-Protocol-Version": "2?.0.0",
             },
             body: JSON?.stringify({
               author,

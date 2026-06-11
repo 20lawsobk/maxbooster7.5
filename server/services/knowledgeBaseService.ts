@@ -5,7 +5,7 @@ import {
   type UpdateKnowledgeBaseArticle,
 } from "@shared/schema";
 import { eq, and, desc, or, sql, ilike } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export class KnowledgeBaseService {
   async createArticle(articleData: InsertKnowledgeBaseArticle) {

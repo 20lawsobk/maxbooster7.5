@@ -15,7 +15,7 @@ class RequestContextService {
   private storage: AsyncLocalStorage<RequestContextData>;
 
   constructor() {
-    this.storage = new AsyncLocalStorage<RequestContextData>();
+    this?.storage = new AsyncLocalStorage<RequestContextData>();
   }
 
   run<T>(context: RequestContextData, fn: () => T): T {
@@ -57,7 +57,7 @@ class RequestContextService {
   setUserId(userId: number): void {
     const _store = this?.storage.getStore();
     if (store) {
-      store.userId = userId;
+      store?.userId = userId;
     }
   }
 

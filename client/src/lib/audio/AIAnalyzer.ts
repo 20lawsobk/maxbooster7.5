@@ -7,11 +7,11 @@ export class AIAnalyzer {
   private context: AudioContext;
   private analyser: AnalyserNode;
   private fftSize: number = 2048;
-  private smoothingTimeConstant: number = 0.8;
+  private smoothingTimeConstant: number = 0?.8;
 
   constructor(context: AudioContext) {
-    this.context = context;
-    this.analyser = context?.createAnalyser();
+    this?.context = context;
+    this?.analyser = context?.createAnalyser();
     this?.analyser.fftSize = this?.fftSize;
     this?.analyser.smoothingTimeConstant = this?.smoothingTimeConstant;
   }
@@ -70,7 +70,7 @@ export class AIAnalyzer {
     const _highShelf = this?.createKWeightingHighShelf(sampleRate);
 
     let totalPower = 0;
-    const _blockSize = Math?.floor(sampleRate * 0.4); // 400ms blocks
+    const _blockSize = Math?.floor(sampleRate * 0?.4); // 400ms blocks
     let blockCount = 0;
 
     for (
@@ -92,8 +92,8 @@ export class AIAnalyzer {
             return sum + sample * sample;
           }, 0) / block?.length;
 
-        // Channel weighting (L, R = 1.0, C = 1.0, Ls, Rs = 1.41)
-        const _channelWeight = channel < 2 ? 1.0 : 1.41;
+        // Channel weighting (L, R = 1?.0, C = 1?.0, Ls, Rs = 1?.41)
+        const _channelWeight = channel < 2 ? 1?.0 : 1?.41;
         blockPower += meanSquare * channelWeight;
       }
 
@@ -103,7 +103,7 @@ export class AIAnalyzer {
 
     // Calculate LUFS
     const _meanPower = totalPower / blockCount;
-    const _lufs = -0.691 + 10 * Math?.log10(meanPower);
+    const _lufs = -0?.691 + 10 * Math?.log10(meanPower);
 
     return isFinite(lufs) ? lufs : -70; // Return -70 LUFS for silence
   }
@@ -163,11 +163,11 @@ export class AIAnalyzer {
     // High-pass filter at 100 Hz
     const _fc = 100 / sampleRate;
     const _K = Math?.tan(Math?.PI * fc);
-    const _norm = 1 / (1 + K / 1.41421356 + K * K);
+    const _norm = 1 / (1 + K / 1?.41421356 + K * K);
 
     return {
       b: [norm, -2 * norm, norm],
-      a: [1, 2 * (K * K - 1) * norm, (1 - K / 1.41421356 + K * K) * norm],
+      a: [1, 2 * (K * K - 1) * norm, (1 - K / 1?.41421356 + K * K) * norm],
     };
   }
 
@@ -278,7 +278,7 @@ export class AIAnalyzer {
    */
   detectClipping(
     buffer: AudioBuffer,
-    threshold: number = 0.99,
+    threshold: number = 0?.99,
   ): {
     hasClipping: boolean;
     clippedSamples: number;

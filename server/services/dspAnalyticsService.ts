@@ -8,7 +8,7 @@ import {
   DspUserPlatformStatus,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { labelGridService } from "./labelgrid-service";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
@@ -166,7 +166,7 @@ class DSPAnalyticsService {
     ],
     [
       "apple",
-      { apiBaseUrl: "https://api?.music.apple.com/v1", rateLimitPerMinute: 80 },
+      { apiBaseUrl: "https://api?.music.apple?.com/v1", rateLimitPerMinute: 80 },
     ],
     [
       "youtube",
@@ -202,7 +202,7 @@ class DSPAnalyticsService {
     [
       "instagram",
       {
-        apiBaseUrl: "https://graph?.instagram.com/v18.0",
+        apiBaseUrl: "https://graph?.instagram.com/v18?.0",
         rateLimitPerMinute: 60,
       },
     ],
@@ -354,7 +354,7 @@ class DSPAnalyticsService {
 
       return {
         plays: recentPlayCount,
-        listeners: Math?.floor(librarySongTotal * 0.1), // conservative listener proxy
+        listeners: Math?.floor(librarySongTotal * 0?.1), // conservative listener proxy
         downloads: librarySongTotal,
         shares: 0,
         playlistAdds: playlistCount,
@@ -734,14 +734,14 @@ class DSPAnalyticsService {
       platform: "tiktok",
       period: { start: startDate, end: endDate },
       streams: data?.views,
-      listeners: Math?.floor(data?.views * 0.35),
+      listeners: Math?.floor(data?.views * 0?.35),
       saves: data?.likes,
       playlistAdds: data?.soundUsages,
       shares: data?.shares,
       skips,
       completionRate,
       avgListenDuration: data?.avgWatchTime,
-      revenue: data?.views * 0.00003,
+      revenue: data?.views * 0?.00003,
       sourceBreakdown: {
         playlist: 8,
         search: 12,
@@ -767,20 +767,20 @@ class DSPAnalyticsService {
     endDate: Date,
   ): NormalizedDSPAnalytics {
     const _totalViews = data?.reelsViews + data?.storiesViews;
-    const _skipRate = 0.35;
+    const _skipRate = 0?.35;
     const _completionRate = Math?.max(0, Math?.min(1, 1 - skipRate));
     return {
       platform: "instagram",
       period: { start: startDate, end: endDate },
       streams: totalViews,
-      listeners: Math?.floor(data?.reach * 0.45),
+      listeners: Math?.floor(data?.reach * 0?.45),
       saves: data?.saves,
-      playlistAdds: Math?.floor(data?.saves * 0.25),
+      playlistAdds: Math?.floor(data?.saves * 0?.25),
       shares: data?.shares,
       skips: Math?.floor(data?.impressions * skipRate),
       completionRate,
       avgListenDuration: 18,
-      revenue: data?.impressions * 0.00005,
+      revenue: data?.impressions * 0?.00005,
       sourceBreakdown: {
         playlist: 5,
         search: 22,
@@ -820,7 +820,7 @@ class DSPAnalyticsService {
       else demographics?.gender.other += d?.percentage;
     });
 
-    demographics.ageGroups = Object?.entries(ageGroupMap).map(
+    demographics?.ageGroups = Object?.entries(ageGroupMap).map(
       ([range, percentage]) => ({
         range,
         percentage,
@@ -832,24 +832,24 @@ class DSPAnalyticsService {
       cities: data?.topCities.map((c) => ({
         name: c?.city,
         country: c?.country,
-        streams: Math?.floor(c?.listeners * 2.5),
+        streams: Math?.floor(c?.listeners * 2?.5),
         listeners: c?.listeners,
       })),
     };
 
-    const _spotifySkipRate = 0.22;
+    const _spotifySkipRate = 0?.22;
     return {
       platform: "spotify",
       period: { start: startDate, end: endDate },
       streams: data?.streams,
       listeners: data?.listeners,
       saves: data?.saves,
-      playlistAdds: Math?.floor(data?.saves * 0.28),
-      shares: Math?.floor(data?.saves * 0.08),
+      playlistAdds: Math?.floor(data?.saves * 0?.28),
+      shares: Math?.floor(data?.saves * 0?.08),
       skips: Math?.floor(data?.streams * spotifySkipRate),
       completionRate: Math?.max(0, Math?.min(1, 1 - spotifySkipRate)),
       avgListenDuration: 162,
-      revenue: data?.streams * 0.004,
+      revenue: data?.streams * 0?.004,
       demographics,
       geography,
       sourceBreakdown: {
@@ -876,7 +876,7 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): NormalizedDSPAnalytics {
-    const _appleSkipRate = 0.12;
+    const _appleSkipRate = 0?.12;
     return {
       platform: "apple",
       period: { start: startDate, end: endDate },
@@ -888,7 +888,7 @@ class DSPAnalyticsService {
       skips: Math?.floor(data?.plays * appleSkipRate),
       completionRate: Math?.max(0, Math?.min(1, 1 - appleSkipRate)),
       avgListenDuration: 188,
-      revenue: data?.plays * 0.008,
+      revenue: data?.plays * 0?.008,
       sourceBreakdown: {
         playlist: 33,
         search: 27,
@@ -925,14 +925,14 @@ class DSPAnalyticsService {
       platform: "youtube",
       period: { start: startDate, end: endDate },
       streams: data?.views,
-      listeners: Math?.floor(data?.views * 0.55),
+      listeners: Math?.floor(data?.views * 0?.55),
       saves: data?.likes,
-      playlistAdds: Math?.floor(data?.likes * 0.18),
-      shares: data?.comments > 0 ? Math?.floor(data?.comments * 0.4) : 0,
+      playlistAdds: Math?.floor(data?.likes * 0?.18),
+      shares: data?.comments > 0 ? Math?.floor(data?.comments * 0?.4) : 0,
       skips: data?.views > 0 ? Math?.floor(data?.views * (1 - completionRate)) : 0,
       completionRate,
       avgListenDuration: data?.averageViewDuration,
-      revenue: data?.views * 0.00069,
+      revenue: data?.views * 0?.00069,
       sourceBreakdown: {
         playlist: 23,
         search: 42,
@@ -967,26 +967,26 @@ class DSPAnalyticsService {
     };
 
     data?.deviceBreakdown.forEach((d) => {
-      if (d?.deviceType === "Echo") deviceBreakdown.smartSpeaker = d?.percentage;
-      else if (d?.deviceType === "Mobile") deviceBreakdown.mobile = d?.percentage;
+      if (d?.deviceType === "Echo") deviceBreakdown?.smartSpeaker = d?.percentage;
+      else if (d?.deviceType === "Mobile") deviceBreakdown?.mobile = d?.percentage;
       else if (d?.deviceType === "Web" || d?.deviceType === "Desktop")
         deviceBreakdown?.desktop += d?.percentage;
-      else deviceBreakdown.other = d?.percentage;
+      else deviceBreakdown?.other = d?.percentage;
     });
 
-    const _amazonSkipRate = 0.15;
+    const _amazonSkipRate = 0?.15;
     return {
       platform: "amazon",
       period: { start: startDate, end: endDate },
       streams: data?.streams,
       listeners: data?.listeners,
-      saves: Math?.floor(data?.streams * 0.018),
-      playlistAdds: Math?.floor(data?.streams * 0.009),
-      shares: Math?.floor(data?.streams * 0.004),
+      saves: Math?.floor(data?.streams * 0?.018),
+      playlistAdds: Math?.floor(data?.streams * 0?.009),
+      shares: Math?.floor(data?.streams * 0?.004),
       skips: Math?.floor(data?.streams * amazonSkipRate),
       completionRate: Math?.max(0, Math?.min(1, 1 - amazonSkipRate)),
       avgListenDuration: 195,
-      revenue: data?.streams * 0.00402,
+      revenue: data?.streams * 0?.00402,
       deviceBreakdown,
       sourceBreakdown: {
         playlist: 28,
@@ -1503,7 +1503,7 @@ class DSPAnalyticsService {
     const _totalListeners =
       countries?.reduce((sum, c) => sum + c?.listeners, 0) || 1;
     countries?.forEach(
-      (c) => (c.percentage = (c?.listeners / totalListeners) * 100),
+      (c) => (c?.percentage = (c?.listeners / totalListeners) * 100),
     );
 
     return {

@@ -1,4 +1,4 @@
-import { requestContext } from "./requestContext.js";
+import { requestContext } from "./requestContext?.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -64,11 +64,11 @@ class StructuredLogger {
   private isProduction: boolean;
 
   constructor(options: LoggerOptions = {}) {
-    this.service = options?.service;
-    this.defaultMetadata = options?.defaultMetadata;
-    this.isProduction =
+    this?.service = options?.service;
+    this?.defaultMetadata = options?.defaultMetadata;
+    this?.isProduction =
       process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
-    this.minLevel =
+    this?.minLevel =
       (process?.env.LOG_LEVEL as LogLevel) ||
       (this?.isProduction ? "info" : "debug");
   }

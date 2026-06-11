@@ -185,25 +185,25 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
       retryCount: 0,
       isOffline: !navigator?.onLine,
     });
-    lastOperationRef.current = null;
+    lastOperationRef?.current = null;
   }, []);
 
   const _cancel = useCallback(() => {
     if (abortControllerRef?.current) {
       abortControllerRef?.current.abort();
-      abortControllerRef.current = null;
+      abortControllerRef?.current = null;
     }
     if (retryTimeoutRef?.current) {
       clearTimeout(retryTimeoutRef?.current);
-      retryTimeoutRef.current = null;
+      retryTimeoutRef?.current = null;
     }
     setState((prev) => ({ ...prev, isRetrying: false }));
   }, []);
 
   const _execute = useCallback(
     async <T>(fn: () => Promise<T>): Promise<T | null> => {
-      lastOperationRef.current = fn;
-      abortControllerRef.current = new AbortController();
+      lastOperationRef?.current = fn;
+      abortControllerRef?.current = new AbortController();
 
       try {
         if (state?.isOffline) {
@@ -270,7 +270,7 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
           onRetry?.(currentRetry + 1);
 
           return new Promise((resolve) => {
-            retryTimeoutRef.current = setTimeout(async () => {
+            retryTimeoutRef?.current = setTimeout(async () => {
               setState((prev) => ({
                 ...prev,
                 retryCount: prev?.retryCount + 1,
@@ -455,7 +455,7 @@ export function useCancelableRequest<T>() {
         abortControllerRef?.current.abort();
       }
 
-      abortControllerRef.current = new AbortController();
+      abortControllerRef?.current = new AbortController();
       setIsLoading(true);
       setProgress(0);
 
@@ -478,7 +478,7 @@ export function useCancelableRequest<T>() {
         throw error;
       } finally {
         setIsLoading(false);
-        abortControllerRef.current = null;
+        abortControllerRef?.current = null;
       }
     },
     [],
@@ -487,7 +487,7 @@ export function useCancelableRequest<T>() {
   const _cancel = useCallback(() => {
     if (abortControllerRef?.current) {
       abortControllerRef?.current.abort();
-      abortControllerRef.current = null;
+      abortControllerRef?.current = null;
       setIsLoading(false);
       setProgress(0);
     }

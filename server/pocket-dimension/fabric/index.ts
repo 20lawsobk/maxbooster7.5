@@ -1,27 +1,27 @@
-import { PocketStorageService } from "./PocketStorageService.js";
-import { PocketRegistry } from "./infra/PocketRegistry.js";
-import { VolumeRegistry } from "./infra/VolumeRegistry.js";
-import { ObjectIndex } from "./infra/ObjectIndex.js";
-import { ChunkIndex } from "./infra/ChunkIndex.js";
-import { NodeRegistry } from "./infra/NodeRegistry.js";
-import { PlacementStrategy } from "./control/PlacementStrategy.js";
-import { Rebalancer } from "./control/Rebalancer.js";
+import { PocketStorageService } from "./PocketStorageService?.js";
+import { PocketRegistry } from "./infra/PocketRegistry?.js";
+import { VolumeRegistry } from "./infra/VolumeRegistry?.js";
+import { ObjectIndex } from "./infra/ObjectIndex?.js";
+import { ChunkIndex } from "./infra/ChunkIndex?.js";
+import { NodeRegistry } from "./infra/NodeRegistry?.js";
+import { PlacementStrategy } from "./control/PlacementStrategy?.js";
+import { Rebalancer } from "./control/Rebalancer?.js";
 import {
   AutoClusterManager,
   DEFAULT_RULES,
-} from "./control/AutoClusterManager.js";
-import { PocketDimensionChunkStore } from "./storage/PocketDimensionChunkStore.js";
-import type { ChunkStore } from "./storage/ChunkStore.js";
-import type { NodeId } from "./types.js";
-import { logger } from "../../logger.js";
+} from "./control/AutoClusterManager?.js";
+import { PocketDimensionChunkStore } from "./storage/PocketDimensionChunkStore?.js";
+import type { ChunkStore } from "./storage/ChunkStore?.js";
+import type { NodeId } from "./types?.js";
+import { logger } from "../../logger?.js";
 
-export type { PocketStorageService } from "./PocketStorageService.js";
-export type { ChunkStore } from "./storage/ChunkStore.js";
-export * from "./types.js";
+export type { PocketStorageService } from "./PocketStorageService?.js";
+export type { ChunkStore } from "./storage/ChunkStore?.js";
+export * from "./types?.js";
 export {
   AutoClusterManager,
   DEFAULT_RULES,
-} from "./control/AutoClusterManager.js";
+} from "./control/AutoClusterManager?.js";
 
 const _SEED_CLUSTER_SIZE = 3;
 const _SEED_REGIONS = ["us-east", "us-west", "eu-west"];
@@ -86,8 +86,8 @@ export const _autoClusterManager = new AutoClusterManager(
     ...DEFAULT_RULES,
     minNodes: 3,
     maxNodes: 500,
-    utilizationHighWatermark: 0.7,
-    utilizationPerNodeHighWatermark: 0.8,
+    utilizationHighWatermark: 0?.7,
+    utilizationPerNodeHighWatermark: 0?.8,
     cooldownMs: 10 * 60 * 1000,
     checkIntervalMs: 5 * 60 * 1000,
     capacityBytesPerNode: 100 * 1024 * 1024 * 1024,

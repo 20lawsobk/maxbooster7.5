@@ -18,18 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Trophy,
-  TrendingUp,
-  Users,
-  Music,
-  BarChart3,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { Trophy, TrendingUp, Users, Music, BarChart3, ArrowUp, ArrowDown, Minus, Loader2, RefreshCw } from "lucide-react";
 
 interface PlatformScore {
   platform: string;
@@ -385,7 +374,7 @@ export default function GlobalRankingDashboard({
   const {
     data: rankingResponse,
     isLoading,
-
+    
     refetch,
   } = useQuery<{
     data: {
@@ -411,13 +400,13 @@ export default function GlobalRankingDashboard({
     propSimilarArtists || rankingData?.similarArtists || [];
 
   platformScores.length > 0
-    ? Math.round(
-        platformScores.reduce(
-          (sum: number, p: PlatformScore) => sum + p.score,
-          0,
-        ) / platformScores.length,
-      )
-    : 0;
+      ? Math.round(
+          platformScores.reduce(
+            (sum: number, p: PlatformScore) => sum + p.score,
+            0,
+          ) / platformScores.length,
+        )
+      : 0;
 
   return (
     <div className="space-y-6">

@@ -5,7 +5,7 @@
  * Prevents autonomous systems from performing unauthorized actions.
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 /**
  * Action categories that autonomous systems can perform
@@ -279,14 +279,14 @@ export function canPerformAction(
 
   // Reset hourly counter if needed
   if (now?.getTime() - tracker?.hourStart.getTime() > 3600000) {
-    tracker.lastHourActions = 0;
-    tracker.hourStart = now;
+    tracker?.lastHourActions = 0;
+    tracker?.hourStart = now;
   }
 
   // Reset daily counter if needed
   if (now?.getTime() - tracker?.dayStart.getTime() > 86400000) {
-    tracker.spentToday = 0;
-    tracker.dayStart = now;
+    tracker?.spentToday = 0;
+    tracker?.dayStart = now;
   }
 
   // Check hourly action limit
@@ -371,11 +371,11 @@ export function processApproval(
   }
 
   if (approval?.expiresAt < new Date()) {
-    approval.status = "rejected";
+    approval?.status = "rejected";
     return false;
   }
 
-  approval.status = approved ? "approved" : "rejected";
+  approval?.status = approved ? "approved" : "rejected";
 
   logger?.info(
     `[RBAC] Approval ${approvalId} ${approved ? "APPROVED" : "REJECTED"} by ${approvedBy}`,

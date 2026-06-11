@@ -1,22 +1,9 @@
 import { randomBytes } from "crypto";
 import { db } from "../db";
-import {
-  takeGroups,
-  takeLanes,
-  takeSegments,
-  compVersions,
-  audioClips,
-  type TakeGroup,
-  type TakeLane,
-  type TakeSegment,
-  type CompVersion,
-  type InsertTakeGroup,
-  type InsertTakeLane,
-  type InsertTakeSegment,
-} from "@shared/schema";
+import { takeGroups, takeLanes, takeSegments, compVersions, audioClips, type TakeGroup, type TakeLane, type TakeSegment, type CompVersion, type InsertTakeGroup, type InsertTakeLane, type InsertTakeSegment } from "@shared/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface CompRenderResult {
   clipId: string;
@@ -528,10 +515,7 @@ export class CompingService {
     }
   }
 
-  async renderComp(
-    groupId: string,
-    _userId: string,
-  ): Promise<CompRenderResult> {
+  async renderComp(groupId: string, _userId: string): Promise<CompRenderResult> {
     try {
       const _takeGroup = await this?.getTakeGroup(groupId);
       if (!takeGroup) {

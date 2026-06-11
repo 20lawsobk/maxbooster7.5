@@ -14,7 +14,7 @@
  */
 
 import { logger } from "./logger";
-import { PocketDimension, pocketManager } from "./pocket-dimension/index.js";
+import { PocketDimension, pocketManager } from "./pocket-dimension/index?.js";
 import { EventEmitter } from "events";
 import crypto from "crypto";
 
@@ -109,19 +109,19 @@ class InfiniteCache extends EventEmitter {
   private readonly maxMemoryItems = 1000;
   private readonly pocketId = "infinite-cache-v1";
   private initialized = false;
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: NodeJS?.Timeout | null = null;
 
   async initialize(): Promise<void> {
     if (this?.initialized) return;
 
     try {
-      this.pocket = await pocketManager?.openPocket(this?.pocketId, {
+      this?.pocket = await pocketManager?.openPocket(this?.pocketId, {
         name: "Infinite Cache Storage",
         compressionLevel: 9,
         enableDeduplication: true,
       });
       await this?.loadTagIndex();
-      this.initialized = true;
+      this?.initialized = true;
       logger?.info(
         "[CACHE] Infinite Cache System initialized with Pocket Dimension backing",
       );
@@ -131,7 +131,7 @@ class InfiniteCache extends EventEmitter {
     }
 
     // Start TTL cleanup every 5 minutes
-    this.cleanupInterval = setInterval(
+    this?.cleanupInterval = setInterval(
       () => this?.cleanupExpiredEntries(),
       5 * 60 * 1000,
     );
@@ -142,7 +142,7 @@ class InfiniteCache extends EventEmitter {
     try {
       const _indexBuffer = await this?.pocket.read("__tag_index__");
       const _index = JSON?.parse(indexBuffer?.toString());
-      this.tagIndex = new Map(
+      this?.tagIndex = new Map(
         Object?.entries(index).map(([tag, keys]) => [
           tag,
           new Set(keys as string[]),
@@ -407,7 +407,7 @@ class InfiniteCache extends EventEmitter {
   async close(): Promise<void> {
     if (this?.cleanupInterval) {
       clearInterval(this?.cleanupInterval);
-      this.cleanupInterval = null;
+      this?.cleanupInterval = null;
     }
     if (this?.pocket) {
       await this?.saveTagIndex();
@@ -430,7 +430,7 @@ class VersionInfinity extends EventEmitter {
     if (this?.initialized) return;
 
     try {
-      this.pocket = await pocketManager?.openPocket(this?.pocketId, {
+      this?.pocket = await pocketManager?.openPocket(this?.pocketId, {
         name: "Infinite Version History",
         compressionLevel: 9,
         enableDeduplication: true,
@@ -440,13 +440,13 @@ class VersionInfinity extends EventEmitter {
       try {
         const _indexBuffer = await this?.pocket.read("__index__");
         const _index = JSON?.parse(indexBuffer?.toString());
-        this.versionIndex = new Map(Object?.entries(index));
+        this?.versionIndex = new Map(Object?.entries(index));
         logger?.info("[VERSION] Version Infinity System loaded existing data");
       } catch {
         logger?.info("[VERSION] Version Infinity System created new");
       }
 
-      this.initialized = true;
+      this?.initialized = true;
     } catch (error) {
       logger?.warn({ err: error }, "[VERSION] Failed to initialize:");
       throw error;
@@ -607,7 +607,7 @@ class AIModelVault extends EventEmitter {
     if (this?.initialized) return;
 
     try {
-      this.pocket = await pocketManager?.openPocket(this?.pocketId, {
+      this?.pocket = await pocketManager?.openPocket(this?.pocketId, {
         name: "AI Model Vault",
         compressionLevel: 9,
         enableDeduplication: true,
@@ -616,8 +616,8 @@ class AIModelVault extends EventEmitter {
       try {
         const _indexBuffer = await this?.pocket.read("__model_index__");
         const _index = JSON?.parse(indexBuffer?.toString());
-        this.modelIndex = new Map(Object?.entries(index?.models || {}));
-        this.trainingDataIndex = new Map(
+        this?.modelIndex = new Map(Object?.entries(index?.models || {}));
+        this?.trainingDataIndex = new Map(
           Object?.entries(index?.trainingData || {}),
         );
         logger?.info("[AI-VAULT] AI Model Vault loaded existing data");
@@ -625,7 +625,7 @@ class AIModelVault extends EventEmitter {
         logger?.info("[AI-VAULT] AI Model Vault created new");
       }
 
-      this.initialized = true;
+      this?.initialized = true;
     } catch (error) {
       logger?.warn({ err: error }, "[AI-VAULT] Failed to initialize:");
       throw error;
@@ -775,12 +775,12 @@ class AudioQualityMaximizer extends EventEmitter {
     if (this?.initialized) return;
 
     try {
-      this.pocket = await pocketManager?.openPocket(this?.pocketId, {
+      this?.pocket = await pocketManager?.openPocket(this?.pocketId, {
         name: "Lossless Audio Vault",
         compressionLevel: 9,
         enableDeduplication: true,
       });
-      this.initialized = true;
+      this?.initialized = true;
       logger?.info("[AUDIO] Audio Quality Maximizer initialized");
     } catch (error) {
       logger?.warn({ err: error }, "[AUDIO] Failed to initialize:");
@@ -904,7 +904,7 @@ class PredictivePreloader extends EventEmitter {
 
   constructor(cache: InfiniteCache) {
     super();
-    this.cache = cache;
+    this?.cache = cache;
   }
 
   recordAccess(userId: string, resourceId: string, context: string[]): void {
@@ -971,7 +971,7 @@ class PredictivePreloader extends EventEmitter {
   private async runPreloadQueue(
     loader: (id: string) => Promise<Buffer>,
   ): Promise<void> {
-    this.isPreloading = true;
+    this?.isPreloading = true;
 
     while (this?.preloadQueue.size > 0) {
       const _id = Array?.from(this?.preloadQueue)[0];
@@ -986,7 +986,7 @@ class PredictivePreloader extends EventEmitter {
       }
     }
 
-    this.isPreloading = false;
+    this?.isPreloading = false;
   }
 
   getStats(): { queueSize: number; patternsTracked: number } {
@@ -1022,7 +1022,7 @@ export class UltraQualityEngine extends EventEmitter {
   constructor(config?: Partial<QualityConfig>) {
     super();
 
-    this.config = {
+    this?.config = {
       audioQuality: "lossless",
       imageQuality: "4k",
       videoQuality: "ultra",
@@ -1033,11 +1033,11 @@ export class UltraQualityEngine extends EventEmitter {
       ...config,
     };
 
-    this.cache = new InfiniteCache();
-    this.versions = new VersionInfinity();
-    this.aiVault = new AIModelVault();
-    this.audioMaximizer = new AudioQualityMaximizer();
-    this.preloader = new PredictivePreloader(this?.cache);
+    this?.cache = new InfiniteCache();
+    this?.versions = new VersionInfinity();
+    this?.aiVault = new AIModelVault();
+    this?.audioMaximizer = new AudioQualityMaximizer();
+    this?.preloader = new PredictivePreloader(this?.cache);
 
     this?.setupEventListeners();
   }
@@ -1062,7 +1062,7 @@ export class UltraQualityEngine extends EventEmitter {
       this?.audioMaximizer.initialize(),
     ]);
 
-    this.initialized = true;
+    this?.initialized = true;
     logger?.info("[QUALITY] Ultra-Quality Engine fully initialized");
     logger?.info("[QUALITY] All systems operating at MAXIMUM QUALITY");
     this?.emit("initialized");
@@ -1085,7 +1085,7 @@ export class UltraQualityEngine extends EventEmitter {
     const _cacheStats = this?.cache.getStats();
     this?.preloader.getStats();
 
-    this.metrics = {
+    this?.metrics = {
       ...this?.metrics,
       cacheHitRate: cacheStats?.hitRate,
     };

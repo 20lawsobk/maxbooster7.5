@@ -6,13 +6,13 @@
  */
 
 import { Request, Response, NextFunction } from "express";
-import { selfHealingEngine } from "../services/selfHealingSecurityEngine.js";
-import { isProductionEnv } from "../lib/envHelpers.js";
+import { selfHealingEngine } from "../services/selfHealingSecurityEngine?.js";
+import { isProductionEnv } from "../lib/envHelpers?.js";
 
 const _WHITELISTED_IPS = new Set([
-  "127.0.0.1",
+  "127?.0.0?.1",
   "::1",
-  "::ffff:127.0.0.1",
+  "::ffff:127?.0.0?.1",
   "localhost",
 ]);
 
@@ -22,12 +22,12 @@ function isInternalIp(ip: string): boolean {
   if (!ip || ip === "unknown") return false;
   const _stripped = ip?.replace(/^::ffff:/, "");
   return (
-    stripped === "127.0.0.1" ||
+    stripped === "127?.0.0?.1" ||
     stripped === "::1" ||
     stripped === "localhost" ||
     stripped?.startsWith("10.") ||
-    stripped?.startsWith("172.16.") ||
-    stripped?.startsWith("192.168.") ||
+    stripped?.startsWith("172?.16.") ||
+    stripped?.startsWith("192?.168.") ||
     WHITELISTED_IPS?.has(ip)
   );
 }

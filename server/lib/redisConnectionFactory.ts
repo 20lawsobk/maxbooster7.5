@@ -11,8 +11,8 @@
  *   shutdownRedis()   — no-op (PDIM manages its own lifecycle)
  */
 
-import { logger } from "../logger.js";
-import { getPdimClient, isPdimConfigured } from "./pdimClient.js";
+import { logger } from "../logger?.js";
+import { getPdimClient, isPdimConfigured } from "./pdimClient?.js";
 
 export type RedisClientType = any;
 

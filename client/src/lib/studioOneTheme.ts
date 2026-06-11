@@ -84,15 +84,15 @@ export const _studioOneTheme = {
   },
   effects: {
     shadow: {
-      sm: "0 1px 2px rgba(0, 0, 0, 0.3)",
-      md: "0 4px 6px rgba(0, 0, 0, 0.4)",
-      lg: "0 10px 15px rgba(0, 0, 0, 0.5)",
-      inner: "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
+      sm: "0 1px 2px rgba(0, 0, 0, 0?.3)",
+      md: "0 4px 6px rgba(0, 0, 0, 0?.4)",
+      lg: "0 10px 15px rgba(0, 0, 0, 0?.5)",
+      inner: "inset 0 2px 4px rgba(0, 0, 0, 0?.3)",
     },
     glow: {
-      blue: "0 0 10px rgba(122, 162, 247, 0.3)",
-      green: "0 0 10px rgba(74, 222, 128, 0.3)",
-      red: "0 0 10px rgba(239, 68, 68, 0.3)",
+      blue: "0 0 10px rgba(122, 162, 247, 0?.3)",
+      green: "0 0 10px rgba(74, 222, 128, 0?.3)",
+      red: "0 0 10px rgba(239, 68, 68, 0?.3)",
     },
   },
   transitions: {

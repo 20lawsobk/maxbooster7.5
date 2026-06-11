@@ -1,6 +1,6 @@
 import { Router, type RequestHandler } from "express";
-import { require2FA } from "../middleware/auth.js";
-import { logger } from "../logger.js";
+import { require2FA } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 

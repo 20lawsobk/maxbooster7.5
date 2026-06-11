@@ -31,7 +31,7 @@ export function OfflineModeWarning({
   const {
     isUnavailable,
     isPartiallyCapable,
-
+    
     unavailableFeatures,
   } = useOfflineCapable();
 

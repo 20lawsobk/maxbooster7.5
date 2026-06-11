@@ -1,11 +1,11 @@
-import { storage } from "../storage.js";
+import { storage } from "../storage?.js";
 import { randomBytes } from "crypto";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import axios from "axios";
-import type { User } from "../../shared/schema.js";
-import { socialOAuth } from "./socialOAuthService.js";
-import { autopilotLearningService } from "./autopilotLearningService.js";
-import { detectHookPattern } from "./postingUtils.js";
+import type { User } from "../../shared/schema?.js";
+import { socialOAuth } from "./socialOAuthService?.js";
+import { autopilotLearningService } from "./autopilotLearningService?.js";
+import { detectHookPattern } from "./postingUtils?.js";
 
 /**
  * Auto-Posting Service (V1 — OAuth direct, pause/resume control)
@@ -58,12 +58,12 @@ class AutoPostingService {
   }
 
   pause(): void {
-    this.paused = true;
+    this?.paused = true;
     logger?.info("[AutoPostingService V1] Paused by kill switch");
   }
 
   resume(): void {
-    this.paused = false;
+    this?.paused = false;
     logger?.info("[AutoPostingService V1] Resumed");
   }
 
@@ -233,15 +233,15 @@ class AutoPostingService {
       };
 
       if (content?.link) {
-        postData.link = content?.link;
+        postData?.link = content?.link;
       }
 
       if (content?.mediaUrl && content?.mediaType === "image") {
-        postData.url = content?.mediaUrl;
+        postData?.url = content?.mediaUrl;
       }
 
       const _response = await axios?.post(
-        "https://graph?.facebook.com/v18.0/me/feed",
+        "https://graph?.facebook.com/v18?.0/me/feed",
         postData,
       );
 
@@ -249,7 +249,7 @@ class AutoPostingService {
         platform: "facebook",
         success: true,
         postId: response?.data.id,
-        postUrl: `https://facebook.com/${response?.data.id}`,
+        postUrl: `https://facebook?.com/${response?.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -285,7 +285,7 @@ class AutoPostingService {
       };
 
       const _containerResponse = await axios?.post(
-        "https://graph?.facebook.com/v18.0/me/media",
+        "https://graph?.facebook.com/v18?.0/me/media",
         containerData,
       );
 
@@ -293,7 +293,7 @@ class AutoPostingService {
 
       // Step 2: Publish the media
       const _publishResponse = await axios?.post(
-        "https://graph?.facebook.com/v18.0/me/media_publish",
+        "https://graph?.facebook.com/v18?.0/me/media_publish",
         {
           creation_id: creationId,
           access_token: token,
@@ -304,7 +304,7 @@ class AutoPostingService {
         platform: "instagram",
         success: true,
         postId: publishResponse?.data.id,
-        postUrl: `https://instagram.com/p/${publishResponse?.data.id}`,
+        postUrl: `https://instagram?.com/p/${publishResponse?.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -333,7 +333,7 @@ class AutoPostingService {
       if (content?.mediaUrl) {
         // Upload media first
         const _mediaId = await this?.uploadTwitterMedia(token, content?.mediaUrl);
-        tweetData.media = { media_ids: [mediaId] };
+        tweetData?.media = { media_ids: [mediaId] };
       }
 
       const _response = await axios?.post(
@@ -351,7 +351,7 @@ class AutoPostingService {
         platform: "twitter",
         success: true,
         postId: response?.data.data?.id,
-        postUrl: `https://twitter.com/i/web/status/${response?.data.data?.id}`,
+        postUrl: `https://twitter?.com/i/web/status/${response?.data.data?.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -460,7 +460,7 @@ class AutoPostingService {
         platform: "youtube",
         success: true,
         postId: response?.data.id,
-        postUrl: `https://youtube.com/post/${response?.data.id}`,
+        postUrl: `https://youtube?.com/post/${response?.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -530,7 +530,7 @@ class AutoPostingService {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-            "X-Restli-Protocol-Version": "2.0.0",
+            "X-Restli-Protocol-Version": "2?.0.0",
           },
         },
       );
@@ -539,7 +539,7 @@ class AutoPostingService {
         platform: "linkedin",
         success: true,
         postId: response?.data.id,
-        postUrl: `https://linkedin.com/feed/update/${response?.data.id}`,
+        postUrl: `https://linkedin?.com/feed/update/${response?.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -567,12 +567,12 @@ class AutoPostingService {
       };
 
       if (content?.mediaUrl) {
-        postData.media_url = content?.mediaUrl;
-        postData.media_type = content?.mediaType?.toUpperCase();
+        postData?.media_url = content?.mediaUrl;
+        postData?.media_type = content?.mediaType?.toUpperCase();
       }
 
       const _response = await axios?.post(
-        "https://graph?.threads.net/v1.0/me/threads",
+        "https://graph?.threads.net/v1?.0/me/threads",
         postData,
       );
 
@@ -580,7 +580,7 @@ class AutoPostingService {
         platform: "threads",
         success: true,
         postId: response?.data.id,
-        postUrl: `https://threads.net/t/${response?.data.id}`,
+        postUrl: `https://threads?.net/t/${response?.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -608,7 +608,7 @@ class AutoPostingService {
       };
 
       if (content?.mediaUrl && content?.mediaType === "image") {
-        postData.media = [
+        postData?.media = [
           {
             mediaFormat: "PHOTO",
             sourceUrl: content?.mediaUrl,
@@ -660,7 +660,7 @@ class AutoPostingService {
 
     // Upload to Twitter
     const _uploadResponse = await axios?.post(
-      "https://upload?.twitter.com/1.1/media/upload.json",
+      "https://upload?.twitter.com/1?.1/media/upload?.json",
       {
         media_data: mediaBuffer?.toString("base64"),
       },
@@ -774,7 +774,7 @@ class AutoPostingService {
     setInterval(async () => {
       if (this?.paused || this?.isProcessing) return;
 
-      this.isProcessing = true;
+      this?.isProcessing = true;
 
       try {
         const _now = new Date();
@@ -788,7 +788,7 @@ class AutoPostingService {
             logger?.info(`Processing scheduled post ${postId}`);
 
             // Update status
-            scheduledPost.status = "posting";
+            scheduledPost?.status = "posting";
             await storage?.updateScheduledPostStatus(postId, "posting");
 
             try {
@@ -801,8 +801,8 @@ class AutoPostingService {
               );
 
               // Update status
-              scheduledPost.status = "completed";
-              scheduledPost.results = results;
+              scheduledPost?.status = "completed";
+              scheduledPost?.results = results;
               await storage?.updateScheduledPostStatus(
                 postId,
                 "completed",
@@ -855,7 +855,7 @@ class AutoPostingService {
               }
             } catch (error) {
               logger?.warn({ err: error }, `Failed scheduled post ${postId}:`);
-              scheduledPost.status = "failed";
+              scheduledPost?.status = "failed";
               await storage?.updateScheduledPostStatus(postId, "failed");
             }
 
@@ -866,7 +866,7 @@ class AutoPostingService {
       } catch (error) {
         logger?.warn({ err: error }, "Queue processor error:");
       } finally {
-        this.isProcessing = false;
+        this?.isProcessing = false;
       }
     }, 60000); // Check every minute
 

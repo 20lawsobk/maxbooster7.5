@@ -88,7 +88,7 @@ class ErrorService {
 
   static getInstance(): ErrorService {
     if (!ErrorService?.instance) {
-      ErrorService.instance = new ErrorService();
+      ErrorService?.instance = new ErrorService();
     }
     return ErrorService?.instance;
   }
@@ -126,7 +126,7 @@ class ErrorService {
 
     // Track console errors
     const _originalConsoleError = console?.error;
-    console.error = (...args) => {
+    console?.error = (...args) => {
       originalConsoleError?.apply(console, args);
       this?.addBreadcrumb("console?.error", { args });
     };
@@ -150,7 +150,7 @@ class ErrorService {
 
     // Keep only the last N breadcrumbs
     if (this?.breadcrumbs.length > this?.maxBreadcrumbs) {
-      this.breadcrumbs = this?.breadcrumbs.slice(-this?.maxBreadcrumbs);
+      this?.breadcrumbs = this?.breadcrumbs.slice(-this?.maxBreadcrumbs);
     }
   }
 
@@ -389,8 +389,8 @@ class ErrorService {
   private checkRateLimit(): boolean {
     const _now = Date?.now();
     if (now - this?.lastErrorResetTime > this?.errorRateLimit.windowMs) {
-      this.errorCount = 0;
-      this.lastErrorResetTime = now;
+      this?.errorCount = 0;
+      this?.lastErrorResetTime = now;
     }
 
     this?.errorCount++;
@@ -510,9 +510,9 @@ class ErrorService {
   private async reportErrorsBatch() {
     if (this?.isReporting || this?.errorQueue.length === 0) return;
 
-    this.isReporting = true;
+    this?.isReporting = true;
     const _errors = [...this?.errorQueue];
-    this.errorQueue = [];
+    this?.errorQueue = [];
 
     try {
       const { getCsrfTokenFromCookie: _getCsrf } = await import(
@@ -542,16 +542,16 @@ class ErrorService {
 
       if (!response?.ok) {
         const _retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
-        retriable?.forEach((e) => (e.retryCount = (e?.retryCount || 0) + 1));
+        retriable?.forEach((e) => (e?.retryCount = (e?.retryCount || 0) + 1));
         this?.errorQueue.push(...retriable);
       }
     } catch (error: unknown) {
       const _retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
-      retriable?.forEach((e) => (e.retryCount = (e?.retryCount || 0) + 1));
+      retriable?.forEach((e) => (e?.retryCount = (e?.retryCount || 0) + 1));
       this?.errorQueue.push(...retriable);
       logger?.error("Failed to report errors to backend:", error);
     } finally {
-      this.isReporting = false;
+      this?.isReporting = false;
     }
   }
 
@@ -609,8 +609,8 @@ Please describe what you were doing when the error occurred:
 
   // Method to clear error history
   clearErrors() {
-    this.errorQueue = [];
-    this.breadcrumbs = [];
+    this?.errorQueue = [];
+    this?.breadcrumbs = [];
   }
 
   // Get current error stats

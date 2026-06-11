@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { idempotencyService } from "../services/idempotencyService.js";
-import { logger } from "../logger.js";
+import { idempotencyService } from "../services/idempotencyService?.js";
+import { logger } from "../logger?.js";
 
 export interface IdempotencyMiddlewareOptions {
   ttl?: number;
@@ -146,14 +146,14 @@ export function idempotencyMiddleware(
         }
       };
 
-      res.json = function (body: unknown) {
+      res?.json = function (body: unknown) {
         captureAndCache(body).catch((err) => {
           logger?.warn({ err: err }, "Error caching idempotency response:");
         });
         return originalJson(body);
       };
 
-      res.send = function (body: unknown) {
+      res?.send = function (body: unknown) {
         if (typeof body === "object") {
           captureAndCache(body).catch((err) => {
             logger?.warn({ err: err }, "Error caching idempotency response:");

@@ -100,7 +100,7 @@ export class ZstdEngine {
   }
 
   private buildDict(combined: Buffer, samples: Buffer[]): Buffer {
-    const _target = Math?.min(DICT_SIZE, Math?.floor(combined?.length * 0.02));
+    const _target = Math?.min(DICT_SIZE, Math?.floor(combined?.length * 0?.02));
     const _chunkSize = Math?.floor(target / samples?.length);
     const chunks: Buffer[] = [];
 

@@ -1,11 +1,11 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { autopilotLearningData, autopilotInsights } from "@shared/schema";
 import { eq, and, desc, gte, sql, avg, count } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { pushTrainingFeedback } from "./maxcoreSync.js";
-import { contentQualityGate } from "./contentQualityGate.js";
+import { logger } from "../logger?.js";
+import { pushTrainingFeedback } from "./maxcoreSync?.js";
+import { contentQualityGate } from "./contentQualityGate?.js";
 
-const _CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3.0;
+const _CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3?.0;
 
 export interface PostData {
   platform: string;
@@ -242,8 +242,8 @@ class AutopilotLearningService {
   // selection toward patterns that have historically driven higher engagement
   // for this specific artist and platform.
   //
-  // Return format: { 'curiosity gap': 1.6, 'release': 1.2, 'organic': 1.0 }
-  // A weight of 1.0 = baseline. >1.0 = this hook type outperforms average.
+  // Return format: { 'curiosity gap': 1?.6, 'release': 1?.2, 'organic': 1?.0 }
+  // A weight of 1?.0 = baseline. >1?.0 = this hook type outperforms average.
   async getContentPatternWeights(
     userId: string,
     platform?: string,
@@ -283,8 +283,8 @@ class AutopilotLearningService {
       const weights: Record<string, number> = {};
       for (const row of populated) {
         const _eng = parseFloat(String(row?.avgEngagement)) || 0;
-        const _relativeWeight = globalAvg > 0 ? eng / globalAvg : 1.0;
-        weights[row?.hookType!] = Math?.max(0.5, Math?.min(2.5, relativeWeight));
+        const _relativeWeight = globalAvg > 0 ? eng / globalAvg : 1?.0;
+        weights[row?.hookType!] = Math?.max(0?.5, Math?.min(2?.5, relativeWeight));
       }
 
       return weights;
@@ -322,7 +322,7 @@ class AutopilotLearningService {
           type: "timing",
           title: "Optimal Posting Time",
           description: `Your content performs best on ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00 with ${bestTime?.avgEngagement.toFixed(2)}% engagement rate.`,
-          confidence: Math?.min(0.95, 0.5 + optimalTimes?.length * 0.05),
+          confidence: Math?.min(0?.95, 0?.5 + optimalTimes?.length * 0?.05),
           priority: 1,
           actionable: true,
           suggestedAction: `Schedule your next post for ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00`,
@@ -337,7 +337,7 @@ class AutopilotLearningService {
           type: "content",
           title: "Top Performing Content Type",
           description: `${bestType?.contentType} content generates ${bestType?.avgEngagement.toFixed(2)}% engagement on average.`,
-          confidence: Math?.min(0.9, 0.4 + bestType?.count * 0.1),
+          confidence: Math?.min(0?.9, 0?.4 + bestType?.count * 0?.1),
           priority: 2,
           actionable: true,
           suggestedAction: `Create more ${bestType?.contentType} content to maximize engagement`,
@@ -365,7 +365,7 @@ class AutopilotLearningService {
           type: insight?.insightType as Recommendation["type"],
           title: insightData?.title || `${insight?.insightType} Insight`,
           description: insightData?.description || "AI-generated insight",
-          confidence: insight?.confidence || 0.5,
+          confidence: insight?.confidence || 0?.5,
           priority: insight?.priority || 5,
           actionable: insightData?.actionable || false,
           suggestedAction: insightData?.suggestedAction,
@@ -406,7 +406,7 @@ class AutopilotLearningService {
         recentData?.reduce((sum, d) => sum + (d?.engagementRate || 0), 0) /
         recentData?.length;
       const _highPerformers = recentData?.filter(
-        (d) => (d?.engagementRate || 0) > avgEngagement * 1.5,
+        (d) => (d?.engagementRate || 0) > avgEngagement * 1?.5,
       );
 
       if (highPerformers?.length >= 3) {
@@ -432,7 +432,7 @@ class AutopilotLearningService {
                 .filter((d) => d?.hookType === topHook[0])
                 .reduce((sum, d) => sum + (d?.engagementRate || 0), 0) /
               topHook[1],
-            confidence: Math?.min(0.85, 0.5 + topHook[1] * 0.1),
+            confidence: Math?.min(0?.85, 0?.5 + topHook[1] * 0?.1),
           });
         }
 
@@ -460,7 +460,7 @@ class AutopilotLearningService {
                 (sum, d) => sum + (d?.engagementRate || 0),
                 0,
               ) / morningPosts?.length,
-            confidence: 0.7,
+            confidence: 0?.7,
           });
         } else if (
           eveningPosts?.length > morningPosts?.length &&
@@ -476,7 +476,7 @@ class AutopilotLearningService {
                 (sum, d) => sum + (d?.engagementRate || 0),
                 0,
               ) / eveningPosts?.length,
-            confidence: 0.7,
+            confidence: 0?.7,
           });
         }
 
@@ -504,8 +504,8 @@ class AutopilotLearningService {
             pattern: "hashtag_success",
             description: `Top performing hashtags: ${topHashtags?.map((h) => `#${h[0]}`).join(", ")}`,
             frequency: topHashtags?.reduce((sum, h) => sum + h[1], 0),
-            avgEngagement: avgEngagement * 1.5,
-            confidence: 0.65,
+            avgEngagement: avgEngagement * 1?.5,
+            confidence: 0?.65,
           });
         }
       }
@@ -591,7 +591,7 @@ class AutopilotLearningService {
         insights?.push({
           type: "optimal_timing",
           data: { times: optimalTimes?.slice(0, 10) },
-          confidence: Math?.min(0.9, 0.5 + optimalTimes?.length * 0.04),
+          confidence: Math?.min(0?.9, 0?.5 + optimalTimes?.length * 0?.04),
           priority: 1,
         });
       }
@@ -601,8 +601,8 @@ class AutopilotLearningService {
           type: "content_performance",
           data: { contentTypes: topContentTypes },
           confidence: Math?.min(
-            0.85,
-            0.4 + topContentTypes?.reduce((sum, t) => sum + t?.count, 0) * 0.02,
+            0?.85,
+            0?.4 + topContentTypes?.reduce((sum, t) => sum + t?.count, 0) * 0?.02,
           ),
           priority: 2,
         });
@@ -622,7 +622,7 @@ class AutopilotLearningService {
           type: "platform_stats",
           platform: stat?.platform,
           data: stat,
-          confidence: 0.9,
+          confidence: 0?.9,
           priority: 4,
         });
       }
@@ -752,7 +752,7 @@ class AutopilotLearningService {
         hasCallToAction: false,
       }));
 
-      const { aiModelManager } = await import("./aiModelManager.js");
+      const { aiModelManager } = await import("./aiModelManager?.js");
       const _socialModel = await aiModelManager?.getSocialAutopilot(userId);
       await socialModel?.trainOnUserEngagementData(posts);
       await aiModelManager?.saveSocialModel(userId);
@@ -805,7 +805,7 @@ class AutopilotLearningService {
             actionable: true,
             suggestedAction: `Schedule posts for ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00`,
           },
-          confidence: Math?.min(0.9, 0.5 + optimalTimes?.length * 0.05),
+          confidence: Math?.min(0?.9, 0?.5 + optimalTimes?.length * 0?.05),
           priority: 1,
           isActive: true,
         });
@@ -822,7 +822,7 @@ class AutopilotLearningService {
             actionable: true,
             suggestedAction: `Focus on creating more ${topContentTypes[0].contentType} content`,
           },
-          confidence: Math?.min(0.85, 0.4 + topContentTypes[0].count * 0.1),
+          confidence: Math?.min(0?.85, 0?.4 + topContentTypes[0].count * 0?.1),
           priority: 2,
           isActive: true,
         });

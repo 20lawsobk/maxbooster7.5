@@ -1,13 +1,7 @@
 import { db } from "../db";
-import {
-  ssoConfigs,
-  workspaceMembers,
-  users,
-  workspaceAuditLog,
-  type SSOConfig,
-} from "@shared/schema";
+import { ssoConfigs, workspaceMembers, users, workspaceAuditLog, type SSOConfig } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 
 export type SSOProvider = "saml" | "oidc";
@@ -680,7 +674,7 @@ export class SSOService {
       return {
         success: true,
         user: {
-          schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
+          schemas: ["urn:ietf:params:scim:schemas:core:2?.0:User"],
           id: newUser?.id,
           userName: email,
           name: {
@@ -728,10 +722,10 @@ export class SSOService {
       }
 
       const updates: Record<string, unknown> = {};
-      if (scimUser?.name?.givenName) updates.firstName = scimUser?.name.givenName;
+      if (scimUser?.name?.givenName) updates?.firstName = scimUser?.name.givenName;
       if (scimUser?.name?.familyName)
-        updates.lastName = scimUser?.name.familyName;
-      if (scimUser?.emails?.[0]?.value) updates.email = scimUser?.emails[0].value;
+        updates?.lastName = scimUser?.name.familyName;
+      if (scimUser?.emails?.[0]?.value) updates?.email = scimUser?.emails[0].value;
 
       if (Object?.keys(updates).length > 0) {
         await db
@@ -775,7 +769,7 @@ export class SSOService {
       return {
         success: true,
         user: {
-          schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
+          schemas: ["urn:ietf:params:scim:schemas:core:2?.0:User"],
           id: updatedUser?.id,
           userName: updatedUser?.email,
           name: {
@@ -866,7 +860,7 @@ export class SSOService {
         .limit(1);
 
       const _resources = members?.map((member) => ({
-        schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
+        schemas: ["urn:ietf:params:scim:schemas:core:2?.0:User"],
         id: member?.id,
         userName: member?.email,
         name: {
@@ -922,7 +916,9 @@ export class SSOService {
     }
   }
 
-  async getIdPMetadata(workspaceId: string): Promise<{
+  async getIdPMetadata(
+    workspaceId: string,
+  ): Promise<{
     success: boolean;
     metadata?: Record<string, unknown>;
     error?: string;

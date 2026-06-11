@@ -81,12 +81,12 @@ export function useFullscreenFileUpload(
   useEffect(() => {
     if (!fileInputRef?.current) {
       const _input = document?.createElement("input");
-      input.type = "file";
+      input?.type = "file";
       input?.style.display = "none";
-      input.accept = accept;
-      input.multiple = multiple;
+      input?.accept = accept;
+      input?.multiple = multiple;
       document?.body.appendChild(input);
-      fileInputRef.current = input;
+      fileInputRef?.current = input;
     }
 
     const _input = fileInputRef?.current;
@@ -103,12 +103,12 @@ export function useFullscreenFileUpload(
           } catch (e) {
             logger?.warn("Could not re-enter fullscreen:", e);
           }
-          wasFullscreenRef.current = false;
-          fullscreenElementRef.current = null;
+          wasFullscreenRef?.current = false;
+          fullscreenElementRef?.current = null;
         }, 100);
       }
 
-      input.value = "";
+      input?.value = "";
     };
 
     input?.addEventListener("change", handleChange);
@@ -151,8 +151,8 @@ export function useFullscreenFileUpload(
     if (!fileInputRef?.current) return;
 
     if (isInFullscreen) {
-      wasFullscreenRef.current = true;
-      fullscreenElementRef.current = document?.fullscreenElement;
+      wasFullscreenRef?.current = true;
+      fullscreenElementRef?.current = document?.fullscreenElement;
 
       try {
         if (document?.exitFullscreen) {
@@ -179,7 +179,7 @@ export function useFullscreenFileUpload(
   const _cleanup = useCallback(() => {
     if (fileInputRef?.current && document?.body.contains(fileInputRef?.current)) {
       document?.body.removeChild(fileInputRef?.current);
-      fileInputRef.current = null;
+      fileInputRef?.current = null;
     }
   }, []);
 

@@ -56,7 +56,7 @@ export class VideoExportError extends Error {
     public readonly details?: unknown,
   ) {
     super(message);
-    this.name = "VideoExportError";
+    this?.name = "VideoExportError";
   }
 }
 
@@ -77,7 +77,7 @@ function getMimeType(format: VideoFormat): string {
       "video/webm;codecs=vp8,opus",
       "video/webm",
     ],
-    mp4: ["video/mp4;codecs=avc1.42E01E,mp4a?.40.2", "video/mp4"],
+    mp4: ["video/mp4;codecs=avc1?.42E01E,mp4a?.40.2", "video/mp4"],
   };
 
   for (const mimeType of mimeTypes[format]) {
@@ -134,10 +134,10 @@ export class VideoExporter {
       );
     }
 
-    this.isExporting = true;
-    this.aborted = false;
-    this.recordedChunks = [];
-    this.startTime = performance?.now();
+    this?.isExporting = true;
+    this?.aborted = false;
+    this?.recordedChunks = [];
+    this?.startTime = performance?.now();
 
     const _resolution = RESOLUTION_PRESETS[options?.resolution];
     const { frameRate, format } = options;
@@ -160,11 +160,11 @@ export class VideoExporter {
         elapsedTime: 0,
       });
 
-      this.canvas = document?.createElement("canvas");
+      this?.canvas = document?.createElement("canvas");
       this?.canvas.width = resolution?.width;
       this?.canvas.height = resolution?.height;
 
-      this.stream = this?.canvas.captureStream(frameRate);
+      this?.stream = this?.canvas.captureStream(frameRate);
       if (!this?.stream) {
         throw new VideoExportError(
           "Failed to capture canvas stream",
@@ -180,10 +180,10 @@ export class VideoExporter {
       };
 
       if (options?.audioBitrate) {
-        recorderOptions.audioBitsPerSecond = options?.audioBitrate;
+        recorderOptions?.audioBitsPerSecond = options?.audioBitrate;
       }
 
-      this.mediaRecorder = new MediaRecorder(this?.stream, recorderOptions);
+      this?.mediaRecorder = new MediaRecorder(this?.stream, recorderOptions);
 
       const _videoBlob = await this?.recordFrames(
         project,
@@ -359,20 +359,20 @@ export class VideoExporter {
       );
 
       const _source = offlineContext?.createBufferSource();
-      source.buffer = audioBuffer;
+      source?.buffer = audioBuffer;
       source?.connect(offlineContext?.destination);
       source?.start();
 
       const _renderedBuffer = await offlineContext?.startRendering();
 
       const _canvas = document?.createElement("canvas");
-      canvas.width = 1;
-      canvas.height = 1;
+      canvas?.width = 1;
+      canvas?.height = 1;
       const _stream = canvas?.captureStream(1);
 
       const _audioDestination = audioContext?.createMediaStreamDestination();
       const _bufferSource = audioContext?.createBufferSource();
-      bufferSource.buffer = renderedBuffer;
+      bufferSource?.buffer = renderedBuffer;
       bufferSource?.connect(audioDestination);
 
       for (const track of audioDestination?.stream.getAudioTracks()) {
@@ -391,16 +391,16 @@ export class VideoExporter {
       });
 
       const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => {
+      recorder?.ondataavailable = (e) => {
         if (e?.data.size > 0) chunks?.push(e?.data);
       };
 
       return new Promise((resolve, reject) => {
-        recorder.onstop = () => {
+        recorder?.onstop = () => {
           audioContext?.close();
           resolve(new Blob([videoBlob, ...chunks], { type: mimeType }));
         };
-        recorder.onerror = (e) => {
+        recorder?.onerror = (e) => {
           audioContext?.close();
           reject(
             new VideoExportError("Audio muxing failed", "MUXING_FAILED", e),
@@ -426,7 +426,7 @@ export class VideoExporter {
   }
 
   abort(): void {
-    this.aborted = true;
+    this?.aborted = true;
     if (this?.mediaRecorder && this?.mediaRecorder.state !== "inactive") {
       this?.mediaRecorder.stop();
     }
@@ -434,18 +434,18 @@ export class VideoExporter {
   }
 
   private cleanup(): void {
-    this.isExporting = false;
+    this?.isExporting = false;
 
     if (this?.stream) {
       for (const track of this?.stream.getTracks()) {
         track?.stop();
       }
-      this.stream = null;
+      this?.stream = null;
     }
 
-    this.mediaRecorder = null;
-    this.canvas = null;
-    this.recordedChunks = [];
+    this?.mediaRecorder = null;
+    this?.canvas = null;
+    this?.recordedChunks = [];
   }
 
   private reportProgress(
@@ -494,8 +494,8 @@ export async function exportToFile(
 
   const _url = URL?.createObjectURL(result?.blob);
   const _link = document?.createElement("a");
-  link.href = url;
-  link.download = filename ?? `export_${Date?.now()}.${options?.format}`;
+  link?.href = url;
+  link?.download = filename ?? `export_${Date?.now()}.${options?.format}`;
   document?.body.appendChild(link);
   link?.click();
   document?.body.removeChild(link);

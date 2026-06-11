@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import DatabaseOptimizer from "../database/optimize-database";
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 
 async function main() {
   logger?.info("🎯 Max Booster Database Optimization Script");

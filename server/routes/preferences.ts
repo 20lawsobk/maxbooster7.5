@@ -6,7 +6,7 @@ import {
 } from "../services/userPreferencesService";
 import { smartDefaultsEngine } from "../services/smartDefaultsEngine";
 import { logger } from "../logger";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 
 const _router = Router();
 

@@ -28,8 +28,8 @@ class ShortcutManagerImpl {
   private options: ShortcutManagerOptions;
 
   constructor(options: ShortcutManagerOptions = {}) {
-    this.options = options;
-    this.handleKeyDown = this?.onKeyDown.bind(this);
+    this?.options = options;
+    this?.handleKeyDown = this?.onKeyDown.bind(this);
 
     if (typeof window !== "undefined") {
       this?.loadCustomConfigs();
@@ -115,7 +115,7 @@ class ShortcutManagerImpl {
   }
 
   setContext(context: ShortcutContext): void {
-    this.currentContext = context;
+    this?.currentContext = context;
   }
 
   getContext(): ShortcutContext {
@@ -123,7 +123,7 @@ class ShortcutManagerImpl {
   }
 
   setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+    this?.enabled = enabled;
   }
 
   isEnabled(): boolean {
@@ -205,7 +205,7 @@ class ShortcutManagerImpl {
   }
 
   removeListener(id: string): void {
-    this.listeners = this?.listeners.filter((l) => l?.id !== id);
+    this?.listeners = this?.listeners.filter((l) => l?.id !== id);
   }
 
   private onKeyDown(event: KeyboardEvent): void {
@@ -262,7 +262,7 @@ class ShortcutManagerImpl {
     }
     this?.shortcuts.clear();
     this?.customConfigs.clear();
-    this.listeners = [];
+    this?.listeners = [];
   }
 }
 

@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { randomBytes } from "crypto";
 import crypto from "crypto";
 import fs from "fs";
@@ -79,17 +79,17 @@ export interface FingerprintOptions {
 }
 
 const _SIMILARITY_THRESHOLDS = {
-  exact: 0.98,
-  nearDuplicate: 0.9,
-  similar: 0.75,
-  partial: 0.5,
+  exact: 0?.98,
+  nearDuplicate: 0?.9,
+  similar: 0?.75,
+  partial: 0?.5,
 };
 
 const _PLAGIARISM_THRESHOLDS = {
-  critical: 0.95,
-  high: 0.85,
-  medium: 0.7,
-  low: 0.55,
+  critical: 0?.95,
+  high: 0?.85,
+  medium: 0?.7,
+  low: 0?.55,
 };
 
 export class AudioFingerprintService {
@@ -303,7 +303,7 @@ export class AudioFingerprintService {
   }
 
   private calculateSimilarity(hash1: string, hash2: string): number {
-    if (hash1 === hash2) return 1.0;
+    if (hash1 === hash2) return 1?.0;
 
     let matchingChars = 0;
     const _minLength = Math?.min(hash1?.length, hash2?.length);
@@ -329,7 +329,7 @@ export class AudioFingerprintService {
     const _blockSimilarity =
       matchingBlocks / Math?.max(blocks1?.length, blocks2?.length);
 
-    return baseSimilarity * 0.4 + blockSimilarity * 0.6;
+    return baseSimilarity * 0?.4 + blockSimilarity * 0?.6;
   }
 
   private splitIntoBlocks(str: string, blockSize: number): string[] {

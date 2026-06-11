@@ -2,19 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Search,
-  Lightbulb,
-  TrendingUp,
-  Music,
-  Sparkles,
-  RefreshCw,
-  ArrowRight,
-  Frown,
-  HelpCircle,
-  Filter,
-  Zap,
-} from "lucide-react";
+import { Search, Lightbulb, TrendingUp, Music, Sparkles, RefreshCw, ArrowRight, Frown, HelpCircle, Filter, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NoResultsStateProps {

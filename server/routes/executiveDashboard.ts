@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { logger } from "../logger.js";
-import { queueMonitor } from "../monitoring/queueMonitor.js";
-import { aiModelManager } from "../services/aiModelManager.js";
-import { metricsCollector } from "../monitoring/metricsCollector.js";
-import { asyncHandler } from "../middleware/errorHandler.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { logger } from "../logger?.js";
+import { queueMonitor } from "../monitoring/queueMonitor?.js";
+import { aiModelManager } from "../services/aiModelManager?.js";
+import { metricsCollector } from "../monitoring/metricsCollector?.js";
+import { asyncHandler } from "../middleware/errorHandler?.js";
+import { requireAdmin } from "../middleware/auth?.js";
 
 const _router = Router();
 
@@ -98,7 +98,7 @@ router?.get(
         },
 
         keyIndicators: {
-          platformAvailability: queueHealth?.healthy ? "99.9%" : "98.0%",
+          platformAvailability: queueHealth?.healthy ? "99?.9%" : "98?.0%",
           avgProcessingTime: `${dashboard?.summary.queue?.avgLatency.toFixed(0)}ms`,
           activeUsers: "N/A",
           postsToday: queueMetrics?.completed || 0,

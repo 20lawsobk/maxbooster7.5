@@ -251,13 +251,15 @@ export async function reserveManaged(req: Request, res: Response) {
     logger.info(
       `[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`,
     );
-    return res.status(201).json({
-      ok: true,
-      domain: record.domain,
-      id: record.id,
-      publicUrl: publicShortUrl,
-      label,
-    });
+    return res
+      .status(201)
+      .json({
+        ok: true,
+        domain: record.domain,
+        id: record.id,
+        publicUrl: publicShortUrl,
+        label,
+      });
   } catch (err) {
     // Use pino's (object, message) signature so the full error is captured in logs.
     logger.warn({ err }, "[domains] reserveManaged error");

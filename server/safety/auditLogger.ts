@@ -7,7 +7,7 @@
 
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -51,7 +51,7 @@ export interface AuditEntry {
 // Write-ahead log for critical events
 const _WAL_PATH = path?.join(process?.cwd(), ".audit-wal");
 const walBuffer: AuditEntry[] = [];
-let walFlushTimer: NodeJS.Timeout | null = null;
+let walFlushTimer: NodeJS?.Timeout | null = null;
 
 /**
  * Initialize audit logger
@@ -139,7 +139,7 @@ async function flushWAL(): Promise<void> {
   if (walBuffer?.length === 0) return;
 
   const _entries = [...walBuffer];
-  walBuffer.length = 0;
+  walBuffer?.length = 0;
 
   try {
     // Batch insert to database

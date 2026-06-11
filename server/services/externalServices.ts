@@ -4,9 +4,9 @@ import {
   withTimeout,
   CircuitBreakerError,
   TimeoutError,
-} from "./circuitBreaker.js";
-import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
+} from "./circuitBreaker?.js";
+import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory?.js";
 
 const _CACHE_PREFIX = "circuit_breaker:cache:";
 const _CACHE_TTL = 300;

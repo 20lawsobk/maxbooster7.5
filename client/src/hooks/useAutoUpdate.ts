@@ -20,12 +20,12 @@ export function useAutoUpdate() {
         const _currentId = data?.buildId as string;
 
         if (knownBuildId?.current === null) {
-          knownBuildId.current = currentId;
+          knownBuildId?.current = currentId;
           return;
         }
 
         if (knownBuildId?.current !== currentId) {
-          knownBuildId.current = currentId;
+          knownBuildId?.current = currentId;
           window?.location.reload();
         }
       } catch {}

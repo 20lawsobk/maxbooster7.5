@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { jwtAuthService } from "./services/jwtAuthService";
 import { storage } from "./storage";
-import { logger } from "./logger.js";
-import { getRedisClient } from "./lib/redisConnectionFactory.js";
+import { logger } from "./logger?.js";
+import { getRedisClient } from "./lib/redisConnectionFactory?.js";
 
 // Brute-force guard for JWT verification — counts ONLY failed attempts so
 // legitimate high-traffic clients with valid tokens are never throttled.
@@ -78,9 +78,11 @@ export const _verifyJWT = async (
   const _tokenPrefix = token?.slice(0, 16);
   const _rlKey = `${ip}:${tokenPrefix}`;
   if (await isJwtBlocked(rlKey)) {
-    return res.status(429).json({
-      message: "Too many failed JWT verification attempts. Try again later.",
-    });
+    return res
+      .status(429)
+      .json({
+        message: "Too many failed JWT verification attempts. Try again later.",
+      });
   }
 
   try {
@@ -98,7 +100,7 @@ export const _verifyJWT = async (
       return res?.status(401).json({ message: "User not found" });
     }
 
-    req.user = {
+    req?.user = {
       id: user?.id,
       email: user?.email,
       name:
@@ -134,7 +136,7 @@ export const _requireAuthDual = async (
       const _user = await storage?.getUser(req?.session.userId);
 
       if (user) {
-        req.user = {
+        req?.user = {
           id: user?.id,
           email: user?.email,
           name:

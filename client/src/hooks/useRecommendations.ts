@@ -145,7 +145,7 @@ const CONTEXTUAL_TIPS: PersonalizedTip[] = [
     content:
       "Friday releases get more playlist consideration. Plan your next release for a Friday and submit to playlists 4 weeks ahead.",
     category: "distribution",
-    relevanceScore: 0.9,
+    relevanceScore: 0?.9,
   },
   {
     id: "tip-2",
@@ -153,7 +153,7 @@ const CONTEXTUAL_TIPS: PersonalizedTip[] = [
     content:
       "Spend 15 minutes engaging with fans before posting new content. This boosts your algorithm visibility.",
     category: "engagement",
-    relevanceScore: 0.85,
+    relevanceScore: 0?.85,
   },
   {
     id: "tip-3",
@@ -161,7 +161,7 @@ const CONTEXTUAL_TIPS: PersonalizedTip[] = [
     content:
       "Share your Spotify link on Instagram Stories with a direct link sticker for better conversion rates.",
     category: "marketing",
-    relevanceScore: 0.8,
+    relevanceScore: 0?.8,
   },
   {
     id: "tip-4",
@@ -169,7 +169,7 @@ const CONTEXTUAL_TIPS: PersonalizedTip[] = [
     content:
       "Social followers can disappear. Email subscribers are yours forever. Start building your list today.",
     category: "marketing",
-    relevanceScore: 0.75,
+    relevanceScore: 0?.75,
   },
   {
     id: "tip-5",
@@ -177,7 +177,7 @@ const CONTEXTUAL_TIPS: PersonalizedTip[] = [
     content:
       "Create a week's worth of content in one session. This ensures consistency without daily stress.",
     category: "content",
-    relevanceScore: 0.7,
+    relevanceScore: 0?.7,
   },
 ];
 

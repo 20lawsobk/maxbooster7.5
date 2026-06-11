@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 /**
  * Autonomous Upgrade System Simulation
  * Comprehensive simulation to verify auto-update algorithms stay ahead of competition
@@ -7,7 +7,7 @@ import { logger } from "../logger.js";
 class SeededRandom {
   private seed: number;
   constructor(seed: number) {
-    this.seed = seed;
+    this?.seed = seed;
   }
   random(): number {
     const _x = Math?.sin(this?.seed++) * 10000;
@@ -70,8 +70,8 @@ function simulateDetection(
 
   // Add some realistic variance (±20%)
   const _baseTime = baseDetectionTimes[severity];
-  const _variance = baseTime * 0.2;
-  const _actualTime = baseTime + (rng?.random() - 0.5) * 2 * variance;
+  const _variance = baseTime * 0?.2;
+  const _actualTime = baseTime + (rng?.random() - 0?.5) * 2 * variance;
 
   return Math?.max(0, actualTime);
 }
@@ -92,10 +92,10 @@ function simulateUpgrade(
 } {
   // Upgrade complexity factors
   const _complexityFactors = {
-    algorithm: 1.0,
-    platform: 1.5,
-    competitor: 1.2,
-    trend: 0.8,
+    algorithm: 1?.0,
+    platform: 1?.5,
+    competitor: 1?.2,
+    trend: 0?.8,
   };
 
   // Base upgrade times
@@ -107,11 +107,11 @@ function simulateUpgrade(
 
   const _complexity = complexityFactors[changeType];
   const _baseTime = baseUpgradeTimes[severity] * complexity;
-  const _variance = baseTime * 0.15;
-  const _upgradeTime = baseTime + (rng?.random() - 0.5) * 2 * variance;
+  const _variance = baseTime * 0?.15;
+  const _upgradeTime = baseTime + (rng?.random() - 0?.5) * 2 * variance;
 
   // Success rate: 97% for autonomous system (exceeds 95% requirement)
-  const _success = rng?.random() < 0.97;
+  const _success = rng?.random() < 0?.97;
 
   // Algorithm quality: autonomous systems typically achieve 102-110% of manual quality
   // due to faster iteration and A/B testing
@@ -592,7 +592,7 @@ export async function simulateLongTermAdaptation(
   const _adaptationRate = upgradeSuccessRate;
   const _competitiveDegradation = lostCount / longTermScenarios?.length;
   const _continuousAdaptation =
-    upgradeSuccessRate >= 95 && competitiveDegradation < 0.05;
+    upgradeSuccessRate >= 95 && competitiveDegradation < 0?.05;
 
   return {
     totalScenarios: longTermScenarios?.length,

@@ -2,8 +2,8 @@ import { randomBytes } from "crypto";
 
 import fsPromises from "fs/promises";
 import path from "path";
-import { logger } from "../logger.js";
-import { db } from "../db.js";
+import { logger } from "../logger?.js";
+import { db } from "../db?.js";
 import { sql } from "drizzle-orm";
 
 export interface AuditLog {
@@ -278,9 +278,9 @@ export class SecurityService {
         throw new Error("Incident not found");
       }
 
-      incident.status = "resolved";
-      incident.resolvedAt = new Date();
-      incident.resolvedBy = resolvedBy;
+      incident?.status = "resolved";
+      incident?.resolvedAt = new Date();
+      incident?.resolvedBy = resolvedBy;
 
       this?.incidents.set(incidentId, incident);
 
@@ -443,7 +443,7 @@ export class SecurityService {
     const _logDir = path?.join(process?.cwd(), "logs");
     await fsPromises?.mkdir(logDir, { recursive: true });
 
-    const _logFile = path?.join(logDir, "audit.log");
+    const _logFile = path?.join(logDir, "audit?.log");
     const _logEntry = `${log?.timestamp.toISOString()} | ${log?.userId} | ${log?.action} | ${log?.resource} | ${JSON?.stringify(log?.metadata)}\n`;
 
     await fsPromises?.appendFile(logFile, logEntry);
@@ -453,7 +453,7 @@ export class SecurityService {
     const _logDir = path?.join(process?.cwd(), "logs");
     await fsPromises?.mkdir(logDir, { recursive: true });
 
-    const _logFile = path?.join(logDir, "security.log");
+    const _logFile = path?.join(logDir, "security?.log");
     const _logEntry = `${incident?.createdAt.toISOString()} | ${incident?.severity} | ${incident?.title} | ${incident?.description}\n`;
 
     await fsPromises?.appendFile(logFile, logEntry);

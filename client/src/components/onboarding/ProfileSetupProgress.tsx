@@ -12,23 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-import {
-  User,
-  Music,
-  Camera,
-  FileText,
-  Share2,
-  CheckCircle,
-  ArrowRight,
-  Sparkles,
-  Trophy,
-  Star,
-  AlertCircle,
-  Clock,
-  Mail,
-  Shield,
-  Zap,
-} from "lucide-react";
+import { User, Music, Camera, FileText, Share2, CheckCircle, ArrowRight, Sparkles, Trophy, Star, AlertCircle, Clock, Mail, Shield, Zap } from "lucide-react";
 
 export type ProfileSetupStep =
   | "verify_email"

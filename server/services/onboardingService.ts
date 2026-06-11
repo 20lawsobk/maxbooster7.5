@@ -1,12 +1,12 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import {
   userOnboarding,
   onboardingTasks,
   users,
   userStreaks,
-} from "../../shared/schema.js";
+} from "../../shared/schema?.js";
 import { eq, asc, and } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface OnboardingProgress {
   userId: string;

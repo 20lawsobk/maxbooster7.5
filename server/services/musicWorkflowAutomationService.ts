@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import {
   musicWorkflowAutomations,
   musicWorkflowExecutionLogs,
@@ -8,12 +8,12 @@ import {
   syncSubmissions,
   publishingRights,
   venueContacts,
-} from "../../shared/schema.js";
+} from "../../shared/schema?.js";
 import { eq, and, sql } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { notificationService } from "./notificationService.js";
-import { emailService } from "./emailService.js";
-import { unifiedAIController } from "./unifiedAIController.js";
+import { logger } from "../logger?.js";
+import { notificationService } from "./notificationService?.js";
+import { emailService } from "./emailService?.js";
+import { unifiedAIController } from "./unifiedAIController?.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1213,7 +1213,7 @@ class MusicWorkflowAutomationService {
     if (config?.generateISRC) {
       try {
         const { codeGenerationService } = await import(
-          "./codeGenerationService.js"
+          "./codeGenerationService?.js"
         );
         const _result = await codeGenerationService?.generateISRC(
           userId,
@@ -1795,7 +1795,7 @@ class MusicWorkflowAutomationService {
           proName: pro,
           copyrightYear: new Date().getFullYear(),
           status: "pending",
-          notes: `Auto-created by workflow. Register this track at ${pro === "ASCAP" ? "ascap.com" : pro === "BMI" ? "bmi.com" : "sesac.com"}.`,
+          notes: `Auto-created by workflow. Register this track at ${pro === "ASCAP" ? "ascap?.com" : pro === "BMI" ? "bmi?.com" : "sesac?.com"}.`,
         });
         actions?.push(
           `Publishing rights record created for "${trackName}" (${pro})`,
@@ -1826,10 +1826,10 @@ class MusicWorkflowAutomationService {
     if (config?.sendReminder) {
       const _registrationUrl =
         pro === "ASCAP"
-          ? "ascap.com/register"
+          ? "ascap?.com/register"
           : pro === "BMI"
-            ? "bmi.com/register"
-            : "sesac.com/register";
+            ? "bmi?.com/register"
+            : "sesac?.com/register";
 
       await notificationService?.send({
         userId,
@@ -2168,36 +2168,36 @@ class MusicWorkflowAutomationService {
     const syncTargets: Array<{ name: string; email?: string; type: string }> = [
       {
         name: "Music Supervision Hub",
-        email: "submissions@musicsupervisionhub.com",
+        email: "submissions@musicsupervisionhub?.com",
         type: "Film & TV",
       },
-      { name: "Musicbed", email: "licensing@musicbed.com", type: "Commercial" },
-      { name: "Artlist", email: "submissions@artlist.io", type: "Commercial" },
+      { name: "Musicbed", email: "licensing@musicbed?.com", type: "Commercial" },
+      { name: "Artlist", email: "submissions@artlist?.io", type: "Commercial" },
       {
         name: "Epidemic Sound",
-        email: "licensing@epidemicsound.com",
+        email: "licensing@epidemicsound?.com",
         type: "Commercial",
       },
-      { name: "Musicvine", email: "sync@musicvine.com", type: "Film & TV" },
-      { name: "TAXI Music", email: "submissions@taxi.com", type: "Film & TV" },
+      { name: "Musicvine", email: "sync@musicvine?.com", type: "Film & TV" },
+      { name: "TAXI Music", email: "submissions@taxi?.com", type: "Film & TV" },
       {
         name: "Crucial Music",
-        email: "sync@crucialmusic.com",
+        email: "sync@crucialmusic?.com",
         type: "Advertising",
       },
       {
         name: "Pump Audio",
-        email: "licensing@pumpaudio.com",
+        email: "licensing@pumpaudio?.com",
         type: "Broadcast",
       },
       {
         name: "Audio Network",
-        email: "licensing@audionetwork.com",
+        email: "licensing@audionetwork?.com",
         type: "Broadcast",
       },
       {
         name: "Jingle Punks",
-        email: "sync@jinglepunks.com",
+        email: "sync@jinglepunks?.com",
         type: "Advertising",
       },
     ].slice(0, maxPitches);

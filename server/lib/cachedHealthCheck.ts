@@ -9,8 +9,8 @@
  * - Reduces slow query warnings from frequent health checks
  */
 
-import { db, pool } from "../db.js";
-import { queryCache, createCacheKey } from "./queryCache.js";
+import { db, pool } from "../db?.js";
+import { queryCache, createCacheKey } from "./queryCache?.js";
 
 interface HealthCheckResult {
   database: {
@@ -27,8 +27,8 @@ interface HealthCheckResult {
   };
   process: {
     uptime: number;
-    cpuUsage: NodeJS.CpuUsage;
-    memoryUsage: NodeJS.MemoryUsage;
+    cpuUsage: NodeJS?.CpuUsage;
+    memoryUsage: NodeJS?.MemoryUsage;
   };
   timestamp: number;
 }
@@ -133,7 +133,7 @@ export async function getReadinessProbe(): Promise<{
   const _health = await getCachedHealthCheck(10); // 10 second cache
 
   return {
-    ready: health?.database.connected && health?.memory.heapUsed < 1500, // < 1.5GB
+    ready: health?.database.connected && health?.memory.heapUsed < 1500, // < 1?.5GB
     checks: {
       database: health?.database.connected ? "ok" : "failed",
       memory: health?.memory.heapUsed < 1500 ? "ok" : "high",

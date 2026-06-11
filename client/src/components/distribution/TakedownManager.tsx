@@ -21,14 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -40,27 +33,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Trash2,
-  Plus,
-  Search,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Clock,
-  RefreshCw,
-  FileText,
-  Shield,
-  AlertTriangle,
-  Send,
-  Flag,
-  Scale,
-  Upload,
-  Eye,
-  RotateCcw,
-  Ban,
-  Gavel,
-} from "lucide-react";
+import { Trash2, Plus, Search, CheckCircle, XCircle, AlertCircle, Clock, RefreshCw, FileText, Shield, AlertTriangle, Send, Flag, Scale, Upload, Eye, RotateCcw, Ban, Gavel } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -213,21 +186,28 @@ export function TakedownManager() {
     supportingDocs: [] as string[],
   });
 
-  const { data: takedowns = [] } = useQuery<TakedownRequest[]>({
+  const { data: takedowns = [] } = useQuery<
+    TakedownRequest[]
+  >({
     queryKey: ["/api/distribution/takedowns"],
   });
 
-  const { data: claims = [] } = useQuery<CopyrightClaim[]>({
+  const { data: claims = [] } = useQuery<
+    CopyrightClaim[]
+  >({
     queryKey: ["/api/distribution/claims"],
   });
 
-  const { data: disputes = [] } = useQuery<Dispute[]>({
+  const { data: disputes = [] } = useQuery<
+    Dispute[]
+  >({
     queryKey: ["/api/distribution/disputes"],
   });
 
-  const { data: reinstatements = [] } = useQuery<ReinstatementRequest[]>({
-    queryKey: ["/api/distribution/reinstatements"],
-  });
+  const { data: reinstatements = [] } =
+    useQuery<ReinstatementRequest[]>({
+      queryKey: ["/api/distribution/reinstatements"],
+    });
 
   const submitTakedownMutation = useMutation({
     mutationFn: async (data: typeof newTakedown) => {

@@ -1,15 +1,15 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { selfEvolution } from "../self-evolution-engine.js";
-import { evolutionRegistry } from "../services/evolutionRegistry.js";
-import { silentDeployment } from "../services/silentDeploymentService.js";
-import { industryMonitor } from "../services/industryMonitorService.js";
+import { requireAuth, requireAdmin } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { selfEvolution } from "../self-evolution-engine?.js";
+import { evolutionRegistry } from "../services/evolutionRegistry?.js";
+import { silentDeployment } from "../services/silentDeploymentService?.js";
+import { industryMonitor } from "../services/industryMonitorService?.js";
 import {
   simulateAutonomousUpgrade,
   simulateLongTermAdaptation,
   generateSimulationReport,
-} from "../simulations/autonomousUpgradeSimulation.js";
+} from "../simulations/autonomousUpgradeSimulation?.js";
 
 const _router = Router();
 

@@ -17,7 +17,7 @@
  */
 
 import { logger } from "../logger";
-import { pocketManager, PocketDimension } from "./index.js";
+import { pocketManager, PocketDimension } from "./index?.js";
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
@@ -125,7 +125,7 @@ class PlatformCapsuleBuilder {
   private pocket: PocketDimension | null = null;
 
   constructor(projectRoot: string = process?.cwd()) {
-    this.projectRoot = projectRoot;
+    this?.projectRoot = projectRoot;
   }
 
   /**
@@ -139,7 +139,7 @@ class PlatformCapsuleBuilder {
     logger?.info(`   Source: ${this?.projectRoot}\n`);
 
     // Create the pocket dimension for this capsule
-    this.pocket = await pocketManager?.openPocket(capsuleId, {
+    this?.pocket = await pocketManager?.openPocket(capsuleId, {
       encryptionKey: options?.encrypt ? options?.encryptionKey : undefined,
       compressionLevel: 9,
       enableDeduplication: true,
@@ -177,7 +177,7 @@ class PlatformCapsuleBuilder {
 
     // Write manifest
     await this?.pocket.write(
-      "__capsule__/manifest.json",
+      "__capsule__/manifest?.json",
       Buffer?.from(manifestJson),
     );
 
@@ -214,7 +214,7 @@ class PlatformCapsuleBuilder {
 
     // Write metadata
     await this?.pocket.write(
-      "__capsule__/metadata.json",
+      "__capsule__/metadata?.json",
       Buffer?.from(JSON?.stringify(metadata, null, 2)),
     );
 
@@ -232,7 +232,7 @@ class PlatformCapsuleBuilder {
 
     // CRITICAL: Close the pocket to persist all data to disk
     await this?.pocket.close();
-    this.pocket = null;
+    this?.pocket = null;
 
     return metadata;
   }
@@ -276,7 +276,7 @@ class PlatformCapsuleBuilder {
     }
 
     if (!options?.includeTests) {
-      excludePatterns?.push("tests", "__tests__", "*.test.ts", "*.spec.ts");
+      excludePatterns?.push("tests", "__tests__", "*.test?.ts", "*.spec?.ts");
     }
 
     // Recursive file collection
@@ -422,7 +422,7 @@ class PlatformCapsuleBuilder {
     let packageJson: Record<string, unknown> = {};
     try {
       const _content = await fs?.readFile(
-        path?.join(this?.projectRoot, "package.json"),
+        path?.join(this?.projectRoot, "package?.json"),
         "utf-8",
       );
       packageJson = JSON?.parse(content);
@@ -443,7 +443,7 @@ class PlatformCapsuleBuilder {
         type: f?.type as "source" | "asset" | "config" | "data" | "binary",
       })),
       directories,
-      entryPoint: packageJson?.main || "server/index.ts",
+      entryPoint: packageJson?.main || "server/index?.ts",
       buildCommand: packageJson?.scripts?.build,
       startCommand: packageJson?.scripts?.start || "npm start",
       environment: {
@@ -470,7 +470,7 @@ class PlatformCapsuleLoader {
   private storagePath: string;
 
   constructor() {
-    this.storagePath = path?.join(process?.cwd(), "pocket-dimensions");
+    this?.storagePath = path?.join(process?.cwd(), "pocket-dimensions");
   }
 
   /**
@@ -483,11 +483,11 @@ class PlatformCapsuleLoader {
     const _pocket = await pocketManager?.openPocket(capsuleId);
 
     // Read metadata
-    const _metadataBuffer = await pocket?.read("__capsule__/metadata.json");
+    const _metadataBuffer = await pocket?.read("__capsule__/metadata?.json");
     const metadata: CapsuleMetadata = JSON?.parse(metadataBuffer?.toString());
 
     // Read manifest
-    const _manifestBuffer = await pocket?.read("__capsule__/manifest.json");
+    const _manifestBuffer = await pocket?.read("__capsule__/manifest?.json");
     const manifest: CapsuleManifest = JSON?.parse(manifestBuffer?.toString());
 
     // Verify integrity
@@ -541,7 +541,7 @@ class PlatformCapsuleLoader {
     const _pocket = await pocketManager?.openPocket(capsuleId);
 
     // Read manifest
-    const _manifestBuffer = await pocket?.read("__capsule__/manifest.json");
+    const _manifestBuffer = await pocket?.read("__capsule__/manifest?.json");
     const manifest: CapsuleManifest = JSON?.parse(manifestBuffer?.toString());
 
     return new VirtualCapsuleFS(pocket, manifest);
@@ -552,7 +552,7 @@ class PlatformCapsuleLoader {
    */
   async getMetadata(capsuleId: string): Promise<CapsuleMetadata> {
     const _pocket = await pocketManager?.openPocket(capsuleId);
-    const _metadataBuffer = await pocket?.read("__capsule__/metadata.json");
+    const _metadataBuffer = await pocket?.read("__capsule__/metadata?.json");
     return JSON?.parse(metadataBuffer?.toString());
   }
 
@@ -587,14 +587,14 @@ class PlatformCapsuleLoader {
             path?.join(
               this?.storagePath,
               dir,
-              "metadata.json",
+              "metadata?.json",
             );
 
             // Check if this is a capsule by looking for capsule metadata in the pocket
             const _pocket = await pocketManager?.openPocket(dir);
             try {
               const _metadataBuffer = await pocket?.read(
-                "__capsule__/metadata.json",
+                "__capsule__/metadata?.json",
               );
               const metadata: CapsuleMetadata = JSON?.parse(
                 metadataBuffer?.toString(),
@@ -648,8 +648,8 @@ class VirtualCapsuleFS {
   private cache: Map<string, Buffer> = new Map();
 
   constructor(pocket: PocketDimension, manifest: CapsuleManifest) {
-    this.pocket = pocket;
-    this.manifest = manifest;
+    this?.pocket = pocket;
+    this?.manifest = manifest;
   }
 
   async readFile(filePath: string): Promise<Buffer> {

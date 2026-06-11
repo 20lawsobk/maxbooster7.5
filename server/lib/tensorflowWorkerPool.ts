@@ -3,15 +3,15 @@ import path from "path";
 import os from "os";
 import { existsSync } from "fs";
 import { randomBytes } from "crypto";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // Resolve worker path for both dev (tsx/source) and prod (esbuild/dist) environments
 function resolveWorkerPath(): string {
   const _cwd = process?.cwd();
   const _candidates = [
-    path?.join(cwd, "server/workers/tfWorkerThread.cjs"),
-    path?.join(cwd, "dist/workers/tfWorkerThread.cjs"),
-    path?.join(cwd, "dist/workers/tfWorkerThread.js"),
+    path?.join(cwd, "server/workers/tfWorkerThread?.cjs"),
+    path?.join(cwd, "dist/workers/tfWorkerThread?.cjs"),
+    path?.join(cwd, "dist/workers/tfWorkerThread?.js"),
   ];
   for (const p of candidates) {
     if (existsSync(p)) return p;
@@ -28,13 +28,14 @@ interface InferenceRequest {
   reject: (err: Error) => void;
 }
 
+
 interface WorkerState {
   worker: Worker;
   busy: boolean;
 }
 
 // Worker pool sizing for @tensorflow/tfjs (pure-JS CPU backend).
-// Unlike tfjs-node (which needed ~2.5 GB/worker for native ops), the pure-JS
+// Unlike tfjs-node (which needed ~2?.5 GB/worker for native ops), the pure-JS
 // backend uses ~150-300 MB per worker.  We cap at 2 workers at startup:
 //   • No trained models exist at cold-start ("idle until models are trained").
 //   • CPU-bound JS inference doesn't scale linearly beyond 2 workers on the
@@ -54,7 +55,7 @@ class TensorFlowWorkerPool {
   private readonly poolSize: number;
 
   constructor(poolSize?: number) {
-    this.poolSize = poolSize ?? DEFAULT_POOL_SIZE;
+    this?.poolSize = poolSize ?? DEFAULT_POOL_SIZE;
   }
 
   getQueueDepth(): number {
@@ -103,7 +104,7 @@ class TensorFlowWorkerPool {
           const _req = this?.pendingRequests.get(msg?.id);
           if (!req) return;
           this?.pendingRequests.delete(msg?.id);
-          state.busy = false;
+          state?.busy = false;
 
           if (msg?.error) {
             req?.reject(new Error(msg?.error));
@@ -134,10 +135,10 @@ class TensorFlowWorkerPool {
       });
 
     try {
-      this.workers = await Promise?.all(
+      this?.workers = await Promise?.all(
         Array?.from({ length: this?.poolSize }, (_, i) => startWorker(i)),
       );
-      this.initialized = true;
+      this?.initialized = true;
       logger?.info(
         `✅ [TFWorkerPool] ${this?.poolSize} TensorFlow inference worker(s) ready — event loop isolated`,
       );
@@ -271,7 +272,7 @@ class TensorFlowWorkerPool {
     if (!idle) return;
 
     const _req = this?.queue.shift()!;
-    idle.busy = true;
+    idle?.busy = true;
     this?.pendingRequests.set(req?.id, req);
 
     idle?.worker.postMessage({
@@ -289,8 +290,8 @@ class TensorFlowWorkerPool {
 
   async shutdown(): Promise<void> {
     await Promise?.all(this?.workers.map((w) => w?.worker.terminate()));
-    this.workers = [];
-    this.initialized = false;
+    this?.workers = [];
+    this?.initialized = false;
   }
 }
 

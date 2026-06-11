@@ -1,4 +1,4 @@
-import type { ContentClass } from "./types.js";
+import type { ContentClass } from "./types?.js";
 
 export interface ArchiveResult {
   data: Buffer;
@@ -156,9 +156,9 @@ export class SemanticArchiver {
         min: sorted[0],
         max: sorted[sorted?.length - 1],
         mean: sum / values?.length,
-        p50: sorted[Math?.floor(values?.length * 0.5)],
-        p95: sorted[Math?.floor(values?.length * 0.95)],
-        p99: sorted[Math?.floor(values?.length * 0.99)],
+        p50: sorted[Math?.floor(values?.length * 0?.5)],
+        p95: sorted[Math?.floor(values?.length * 0?.95)],
+        p99: sorted[Math?.floor(values?.length * 0?.99)],
         last: values[values?.length - 1],
       };
     }

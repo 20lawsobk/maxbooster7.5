@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface ModelCacheMetrics {
   socialAutopilot: {
@@ -185,7 +185,7 @@ class AIModelTelemetry {
 
     if (
       metrics?.socialAutopilot.currentSize >=
-      metrics?.socialAutopilot.maxSize * 0.9
+      metrics?.socialAutopilot.maxSize * 0?.9
     ) {
       alerts?.push(
         `⚠️ Social autopilot cache near capacity: ${metrics?.socialAutopilot.currentSize}/${metrics?.socialAutopilot.maxSize}`,
@@ -194,7 +194,7 @@ class AIModelTelemetry {
 
     if (
       metrics?.advertisingAutopilot.currentSize >=
-      metrics?.advertisingAutopilot.maxSize * 0.9
+      metrics?.advertisingAutopilot.maxSize * 0?.9
     ) {
       alerts?.push(
         `⚠️ Advertising autopilot cache near capacity: ${metrics?.advertisingAutopilot.currentSize}/${metrics?.advertisingAutopilot.maxSize}`,
@@ -202,7 +202,7 @@ class AIModelTelemetry {
     }
 
     if (
-      metrics?.socialAutopilot.cacheHitRate < 0.5 &&
+      metrics?.socialAutopilot.cacheHitRate < 0?.5 &&
       metrics?.socialAutopilot.totalLoads > 20
     ) {
       alerts?.push(
@@ -211,7 +211,7 @@ class AIModelTelemetry {
     }
 
     if (
-      metrics?.advertisingAutopilot.cacheHitRate < 0.5 &&
+      metrics?.advertisingAutopilot.cacheHitRate < 0?.5 &&
       metrics?.advertisingAutopilot.totalLoads > 20
     ) {
       alerts?.push(

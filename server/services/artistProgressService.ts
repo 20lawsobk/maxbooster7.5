@@ -495,8 +495,8 @@ class ArtistProgressService {
     const _streamScore = Math?.min(30, Math?.log10(streams + 1) * 5);
     const _followerScore = Math?.min(25, Math?.log10(followers + 1) * 4);
     const _revenueScore = Math?.min(20, Math?.log10(revenue + 1) * 4);
-    const _engagementScore = Math?.min(15, engagement * 0.15);
-    const _velocityScore = Math?.min(10, velocity * 0.5);
+    const _engagementScore = Math?.min(15, engagement * 0?.15);
+    const _velocityScore = Math?.min(10, velocity * 0?.5);
 
     return Math?.round(
       streamScore +

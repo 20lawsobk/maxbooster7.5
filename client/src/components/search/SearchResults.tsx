@@ -5,19 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Music,
-  User,
-  Folder,
-  Disc,
-  ChevronLeft,
-  ChevronRight,
-  Grid,
-  List,
-  Play,
-  Heart,
-  MoreHorizontal,
-} from "lucide-react";
+import { Music, User, Folder, Disc, ChevronLeft, ChevronRight, Grid, List, Play, Heart, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchEmptyState } from "./SearchEmptyState";
 
@@ -87,6 +75,7 @@ export function SearchResults({
     enabled: query.length >= 2,
     staleTime: 60000,
   });
+
 
   const getCategoryCount = (category: string) => {
     if (!searchData?.categories) return 0;

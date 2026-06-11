@@ -50,52 +50,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Upload,
-  Music,
-  Globe,
-  Calendar as CalendarIcon,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Play,
-  Download,
-  BarChart3,
-  DollarSign,
-  Users,
-  TrendingUp,
-  Eye,
-  Plus,
-  Link2,
-  X,
-  Share2,
-  Edit,
-  Trash2,
-  ExternalLink,
-  Music2,
-  Disc,
-  FileAudio,
-  Settings,
-  CreditCard,
-  Banknote,
-  PieChart,
-  Target,
-  Zap,
-  Shield,
-  Crown,
-  MapPin,
-  ListMusic,
-  Ticket,
-  Film,
-  Briefcase,
-  Video,
-  ShieldCheck,
-  Wand2,
-  Loader2,
-  ImagePlus,
-  Mic,
-} from "lucide-react";
+import { Upload, Music, Globe, Calendar as CalendarIcon, Clock, CheckCircle, XCircle, AlertCircle, Play, Download, BarChart3, DollarSign, Users, TrendingUp, Eye, Plus, Link2, X, Share2, Edit, Trash2, ExternalLink, Music2, Disc, FileAudio, Settings, CreditCard, Banknote, PieChart, Target, Zap, Shield, Crown, MapPin, ListMusic, Ticket, Film, Briefcase, Video, ShieldCheck, Wand2, Loader2, ImagePlus, Mic } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -485,10 +440,7 @@ interface PlatformData {
 
 interface DistroPlatform extends PlatformData {
   id: string;
-  icon: React.ComponentType<{
-    className?: string;
-    style?: React.CSSProperties;
-  }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string;
   earnings: number;
 }
@@ -1570,7 +1522,9 @@ export default function Distribution() {
     enabled: !!user,
   });
 
-  const { data: comprehensiveAnalytics } = useQuery<ComprehensiveAnalytics>({
+  const {
+    data: comprehensiveAnalytics,
+  } = useQuery<ComprehensiveAnalytics>({
     queryKey: ["/api/analytics/dashboard"],
     enabled: !!user,
   });
@@ -2722,8 +2676,9 @@ export default function Distribution() {
                                   className="text-xs capitalize"
                                 >
                                   {
-                                    (release.metadata as ReleaseMetadata)
-                                      .releaseType
+                                    (
+                                      release.metadata as ReleaseMetadata
+                                    ).releaseType
                                   }
                                 </Badge>
                               )}
@@ -2731,8 +2686,9 @@ export default function Distribution() {
                                 ?.primaryGenre && (
                                 <Badge variant="outline" className="text-xs">
                                   {
-                                    (release.metadata as ReleaseMetadata)
-                                      .primaryGenre
+                                    (
+                                      release.metadata as ReleaseMetadata
+                                    ).primaryGenre
                                   }
                                 </Badge>
                               )}
@@ -2811,8 +2767,9 @@ export default function Distribution() {
                                 setEditReleaseForm({
                                   title: release.title,
                                   artistName:
-                                    (release.metadata as ReleaseMetadata)
-                                      ?.artistName ||
+                                    (
+                                      release.metadata as ReleaseMetadata
+                                    )?.artistName ||
                                     release.artistName ||
                                     "",
                                   releaseDate: release.releaseDate
@@ -2821,8 +2778,9 @@ export default function Distribution() {
                                         .split("T")[0]
                                     : "",
                                   primaryGenre:
-                                    (release.metadata as ReleaseMetadata)
-                                      ?.primaryGenre || "",
+                                    (
+                                      release.metadata as ReleaseMetadata
+                                    )?.primaryGenre || "",
                                 });
                                 setShowEditRelease(true);
                               }}
@@ -3150,46 +3108,44 @@ export default function Distribution() {
                   <CardContent>
                     <div className="space-y-3">
                       {streamingTrends.length > 0 ? (
-                        streamingTrends.map(
-                          (week: StreamingTrend, index: number) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between"
-                            >
-                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {week.date}
-                              </span>
-                              <div className="flex items-center space-x-3">
-                                <div className="w-32">
-                                  <Progress
-                                    value={
-                                      (week.streams /
-                                        Math.max(
-                                          ...streamingTrends.map(
-                                            (w: StreamingTrend) => w.streams,
-                                          ),
-                                          1,
-                                        )) *
-                                      100
-                                    }
-                                    className="h-2"
-                                  />
-                                </div>
-                                <span className="text-sm font-semibold text-gray-900 dark:text-white w-16 text-right">
-                                  {week.streams.toLocaleString()}
-                                </span>
-                                <Badge
-                                  variant="outline"
-                                  className="border-green-200 text-green-700 bg-green-50"
-                                >
-                                  {week.change > 0
-                                    ? `+${week.change}%`
-                                    : `${week.change}%`}
-                                </Badge>
+                        streamingTrends.map((week: StreamingTrend, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between"
+                          >
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {week.date}
+                            </span>
+                            <div className="flex items-center space-x-3">
+                              <div className="w-32">
+                                <Progress
+                                  value={
+                                    (week.streams /
+                                      Math.max(
+                                        ...streamingTrends.map(
+                                          (w: StreamingTrend) => w.streams,
+                                        ),
+                                        1,
+                                      )) *
+                                    100
+                                  }
+                                  className="h-2"
+                                />
                               </div>
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white w-16 text-right">
+                                {week.streams.toLocaleString()}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="border-green-200 text-green-700 bg-green-50"
+                              >
+                                {week.change > 0
+                                  ? `+${week.change}%`
+                                  : `${week.change}%`}
+                              </Badge>
                             </div>
-                          ),
-                        )
+                          </div>
+                        ))
                       ) : (
                         <div className="flex flex-col items-center justify-center py-10 text-center">
                           <BarChart3 className="w-10 h-10 mb-3 text-gray-300" />
@@ -3256,28 +3212,26 @@ export default function Distribution() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {geographicData.length > 0 ? (
-                      geographicData.map(
-                        (region: GeographicData, index: number) => (
-                          <div
-                            key={index}
-                            className="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
-                          >
-                            <p className="font-semibold text-gray-900 dark:text-white mb-1">
-                              {region.region}
-                            </p>
-                            <p className="text-2xl font-bold text-blue-600">
-                              {region.streams.toLocaleString()}
-                            </p>
-                            <Progress
-                              value={region.percentage}
-                              className="h-1 mt-2"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              {region.percentage}% of total
-                            </p>
-                          </div>
-                        ),
-                      )
+                      geographicData.map((region: GeographicData, index: number) => (
+                        <div
+                          key={index}
+                          className="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+                        >
+                          <p className="font-semibold text-gray-900 dark:text-white mb-1">
+                            {region.region}
+                          </p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {region.streams.toLocaleString()}
+                          </p>
+                          <Progress
+                            value={region.percentage}
+                            className="h-1 mt-2"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            {region.percentage}% of total
+                          </p>
+                        </div>
+                      ))
                     ) : (
                       <div className="col-span-full flex flex-col items-center justify-center py-10 text-center">
                         <MapPin className="w-10 h-10 mb-3 text-gray-300" />
@@ -3515,46 +3469,44 @@ export default function Distribution() {
                 <CardContent>
                   <div className="space-y-4">
                     {payoutHistory.length > 0 ? (
-                      payoutHistory.map(
-                        (payout: PayoutHistory, index: number) => (
-                          <div
-                            key={payout.id || index}
-                            className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                                <Banknote className="w-5 h-5 text-green-600 dark:text-green-400" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-gray-900 dark:text-white">
-                                  {new Date(payout.date).toLocaleDateString(
-                                    "en-US",
-                                    {
-                                      year: "numeric",
-                                      month: "long",
-                                      day: "numeric",
-                                    },
-                                  )}
-                                </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  {payout.method}
-                                </p>
-                              </div>
+                      payoutHistory.map((payout: PayoutHistory, index: number) => (
+                        <div
+                          key={payout.id || index}
+                          className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                              <Banknote className="w-5 h-5 text-green-600 dark:text-green-400" />
                             </div>
-                            <div className="text-right">
-                              <p className="text-lg font-bold text-green-600">
-                                ${payout.amount.toFixed(2)}
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {new Date(payout.date).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  },
+                                )}
                               </p>
-                              <Badge
-                                variant="default"
-                                className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              >
-                                {payout.status}
-                              </Badge>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {payout.method}
+                              </p>
                             </div>
                           </div>
-                        ),
-                      )
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-green-600">
+                              ${payout.amount.toFixed(2)}
+                            </p>
+                            <Badge
+                              variant="default"
+                              className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            >
+                              {payout.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))
                     ) : (
                       <div className="flex flex-col items-center justify-center py-10 text-center">
                         <Banknote className="w-10 h-10 mb-3 text-gray-300" />
@@ -5320,7 +5272,8 @@ export default function Distribution() {
                       </div>
                     </div>
                   )}
-                  {(selectedRelease.metadata as ReleaseMetadata)?.labelName && (
+                  {(selectedRelease.metadata as ReleaseMetadata)
+                    ?.labelName && (
                     <div>
                       <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">
                         Label
@@ -6303,7 +6256,9 @@ function MusicVideosContent() {
   const [enableVoice, setEnableVoice] = useState(false);
 
   const [jobId, setJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<MusicVideoJobStatus | null>(null);
+  const [jobStatus, setJobStatus] = useState<MusicVideoJobStatus | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedVideoUrl, setCompletedVideoUrl] = useState<string | null>(
     null,

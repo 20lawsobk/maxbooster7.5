@@ -4,7 +4,6 @@ description: "Property X does not exist on {row shape}" is ambiguous; one fix is
 ---
 
 ## Rule
-
 A TS2339 of the form `Property 'X' does not exist on type '{ ...drizzle row literal... }'` is **ambiguous** and splits into two cases that need OPPOSITE handling. Before editing `shared/schema.ts`, query the real app DB (`NEON_DATABASE_URL`, NOT the managed `DATABASE_URL`) for that table's columns:
 
 1. **True schema drift** — the DB column EXISTS but the Drizzle table def is missing it. Fix = add the column to the schema table. Safe + behavior-preserving (types catch up to reality).

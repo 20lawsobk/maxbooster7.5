@@ -3,7 +3,7 @@ import { posts, approvalHistory, users } from "@shared/schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";
 import { notificationService } from "./notificationService";
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export type ApprovalStatus =
   | "draft"

@@ -471,7 +471,7 @@ export async function syncPlatformData(
         }
       } else if (p === "twitter") {
         const _userRes = await timedFetch(
-          "https://api?.twitter.com/2/users/me?user.fields=public_metrics,profile_image_url,description",
+          "https://api?.twitter.com/2/users/me?user?.fields=public_metrics,profile_image_url,description",
           { headers: { Authorization: `Bearer ${accessToken}` } },
         );
         const _userData = await userRes?.json();
@@ -480,7 +480,7 @@ export async function syncPlatformData(
           syncedFollowerCount =
             userData?.data.public_metrics?.followers_count || 0;
           syncedPlatformUserId = userData?.data.id || syncedPlatformUserId;
-          syncedProfileUrl = `https://x.com/${userData?.data.username}`;
+          syncedProfileUrl = `https://x?.com/${userData?.data.username}`;
           syncedMetadata = {
             ...syncedMetadata,
             followingCount: userData?.data.public_metrics?.following_count || 0,
@@ -602,7 +602,7 @@ export async function syncPlatformData(
           };
         }
 
-        // Try to get connection count via OAuth 2.0 — LinkedIn exposes this through
+        // Try to get connection count via OAuth 2?.0 — LinkedIn exposes this through
         // multiple endpoints depending on which scopes were granted at connect-time.
         // Skip if the app itself returned an error (disabled, 401, etc.)
         if (syncedPlatformUserId && !liErr) {
@@ -641,7 +641,7 @@ export async function syncPlatformData(
                   `[SocialSync] LinkedIn company followers (r_organization_social): ${networkData?.firstDegreeSize}`,
                 );
               } else {
-                // LinkedIn OAuth 2.0 does not expose connection/follower counts without
+                // LinkedIn OAuth 2?.0 does not expose connection/follower counts without
                 // r_network or r_organization_social scope — 0 is correct until re-auth with those scopes.
                 logger?.debug(
                   `[SocialSync] LinkedIn: no connection count accessible with current OAuth scopes — ${JSON?.stringify(connectionsData).slice(0, 150)}`,

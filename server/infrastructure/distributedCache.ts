@@ -1,7 +1,7 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import type { Redis } from "ioredis";
-import { applyIoredisCompatShim } from "../lib/redisCompat.js";
-import { getPdimClient } from "../lib/pdimClient.js";
+import { applyIoredisCompatShim } from "../lib/redisCompat?.js";
+import { getPdimClient } from "../lib/pdimClient?.js";
 
 interface CacheConfig {
   defaultTTL: number;
@@ -47,7 +47,7 @@ export class DistributedCache {
       for (const [k, v] of this?.l1) {
         if (now > v?.expiresAt) this?.l1.delete(k);
       }
-      this.l1PrunedAt = now;
+      this?.l1PrunedAt = now;
     }
     if (this?.l1.size >= this?.L1_MAX) {
       const _oldest = this?.l1.keys().next().value;
@@ -61,7 +61,7 @@ export class DistributedCache {
   }
 
   private constructor(config: Partial<CacheConfig> = {}) {
-    this.config = {
+    this?.config = {
       defaultTTL: config?.defaultTTL || 300,
       maxMemoryMB: config?.maxMemoryMB || 512,
       enableCompression: config?.enableCompression ?? true,
@@ -70,13 +70,13 @@ export class DistributedCache {
 
   static getInstance(config?: Partial<CacheConfig>): DistributedCache {
     if (!DistributedCache?.instance) {
-      DistributedCache.instance = new DistributedCache(config);
+      DistributedCache?.instance = new DistributedCache(config);
     }
     return DistributedCache?.instance;
   }
 
   async connect(): Promise<void> {
-    this.redis = getPdimClient() as Record<string, unknown>;
+    this?.redis = getPdimClient() as Record<string, unknown>;
     applyIoredisCompatShim(this?.redis);
     logger?.info("✅ [DistributedCache] Connected (PDIM)");
   }
@@ -298,7 +298,7 @@ export class DistributedCache {
   getStats(): CacheStats & { mode: string; hitRate: string } {
     const _total = this?.stats.hits + this?.stats.misses;
     const _hitRate =
-      total > 0 ? ((this?.stats.hits / total) * 100).toFixed(2) : "0.00";
+      total > 0 ? ((this?.stats.hits / total) * 100).toFixed(2) : "0?.00";
     return {
       ...this?.stats,
       mode: "pdim",

@@ -970,9 +970,11 @@ router.post(
       });
 
       if (!campaign) {
-        return res.status(500).json({
-          error: "Failed to create campaign - database insert returned null",
-        });
+        return res
+          .status(500)
+          .json({
+            error: "Failed to create campaign - database insert returned null",
+          });
       }
 
       res.json(campaign);
@@ -1495,10 +1497,12 @@ router.get(
 
       const tracks = await storage.getDistroTracks(id);
       if (!tracks || tracks.length === 0) {
-        return res.status(400).json({
-          error:
-            "Release has no tracks. Add tracks before downloading a DDEX package.",
-        });
+        return res
+          .status(400)
+          .json({
+            error:
+              "Release has no tracks. Add tracks before downloading a DDEX package.",
+          });
       }
 
       const metadata = (release.metadata as Record<string, unknown>) || {};
@@ -1553,10 +1557,12 @@ router.get(
         );
       } catch (packageError) {
         logger.warn("Error generating DDEX package content:", packageError);
-        return res.status(500).json({
-          error:
-            "Failed to generate DDEX package. Some required track files may be missing.",
-        });
+        return res
+          .status(500)
+          .json({
+            error:
+              "Failed to generate DDEX package. Some required track files may be missing.",
+          });
       }
 
       res.download(
@@ -2948,9 +2954,11 @@ router.post(
       } else if (extension === ".xml") {
         fileType = "ddex";
       } else {
-        return res.status(400).json({
-          error: "Unsupported file format. Use CSV, XLSX, or DDEX XML",
-        });
+        return res
+          .status(400)
+          .json({
+            error: "Unsupported file format. Use CSV, XLSX, or DDEX XML",
+          });
       }
 
       const jobId = await catalogImporter.createImportJob(
@@ -4149,10 +4157,12 @@ router.post(
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error uploading distribution release:");
-      res.status(500).json({
-        error:
-          error instanceof Error ? error.message : "Failed to upload release",
-      });
+      res
+        .status(500)
+        .json({
+          error:
+            error instanceof Error ? error.message : "Failed to upload release",
+        });
     }
   },
 );
@@ -7000,8 +7010,9 @@ router.post(
       if (!artistName || !artistName.trim()) {
         return res.status(400).json({ error: "artistName is required" });
       }
-      const { buildMigrationPayload } =
-        await import("../services/catalogMigrationService.js");
+      const { buildMigrationPayload } = await import(
+        "../services/catalogMigrationService.js"
+      );
       const payload = await buildMigrationPayload(artistName.trim(), user?.id);
       res.json(payload);
     } catch (error: unknown) {

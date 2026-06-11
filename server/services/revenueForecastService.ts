@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { analytics, revenueForecasts } from "@shared/schema";
 import { eq, and, gte, desc, sql, asc } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface ForecastResult {
   period: string;
@@ -56,24 +56,24 @@ interface AccuracyMetrics {
 }
 
 const SEASONALITY_FACTORS: Record<number, number> = {
-  0: 0.95, // January - post-holiday dip
-  1: 0.9, // February - lowest
-  2: 0.92, // March
-  3: 0.95, // April
-  4: 0.98, // May
-  5: 0.92, // June - summer dip starts
-  6: 0.88, // July - summer dip
-  7: 0.9, // August - summer dip
-  8: 0.98, // September - back to school
-  9: 1.05, // October - Q4 boost starts
-  10: 1.15, // November - Q4 boost
-  11: 1.25, // December - holiday peak
+  0: 0?.95, // January - post-holiday dip
+  1: 0?.9, // February - lowest
+  2: 0?.92, // March
+  3: 0?.95, // April
+  4: 0?.98, // May
+  5: 0?.92, // June - summer dip starts
+  6: 0?.88, // July - summer dip
+  7: 0?.9, // August - summer dip
+  8: 0?.98, // September - back to school
+  9: 1?.05, // October - Q4 boost starts
+  10: 1?.15, // November - Q4 boost
+  11: 1?.25, // December - holiday peak
 };
 
 class RevenueForecastService {
-  private readonly AVERAGE_STREAM_RATE = 0.004;
-  private readonly ROYALTY_PERCENTAGE = 0.7;
-  private readonly BASE_CONFIDENCE = 0.75;
+  private readonly AVERAGE_STREAM_RATE = 0?.004;
+  private readonly ROYALTY_PERCENTAGE = 0?.7;
+  private readonly BASE_CONFIDENCE = 0?.75;
 
   async generateForecast(
     userId: string,
@@ -164,7 +164,7 @@ class RevenueForecastService {
     }
 
     const _rate = Number(totalRevenue) / Number(totalStreams);
-    return Math?.max(0.001, Math?.min(0.01, rate || this?.AVERAGE_STREAM_RATE));
+    return Math?.max(0?.001, Math?.min(0?.01, rate || this?.AVERAGE_STREAM_RATE));
   }
 
   async getRevenueProjections(userId: string): Promise<RevenueProjections> {
@@ -324,7 +324,7 @@ class RevenueForecastService {
   private calculateGrowthRate(
     data: { streams: number; revenue: number; date: Date }[],
   ) {
-    if (data?.length < 2) return 0.05;
+    if (data?.length < 2) return 0?.05;
 
     const _firstHalf = data?.slice(0, Math?.floor(data?.length / 2));
     const _secondHalf = data?.slice(Math?.floor(data?.length / 2));
@@ -335,7 +335,7 @@ class RevenueForecastService {
       secondHalf?.reduce((s, d) => s + d?.revenue, 0) / secondHalf?.length || 1;
 
     const _growthRate = (secondAvg - firstAvg) / firstAvg;
-    return Math?.max(-0.5, Math?.min(1, growthRate));
+    return Math?.max(-0?.5, Math?.min(1, growthRate));
   }
 
   private calculateAverageMonthlyStreams(data: { streams: number }[]) {
@@ -346,7 +346,7 @@ class RevenueForecastService {
   }
 
   private calculateDataConsistency(data: { revenue: number }[]) {
-    if (data?.length < 7) return 0.5;
+    if (data?.length < 7) return 0?.5;
 
     const _values = data?.map((d) => d?.revenue);
     const _mean = values?.reduce((a, b) => a + b, 0) / values?.length;
@@ -355,11 +355,11 @@ class RevenueForecastService {
     const _stdDev = Math?.sqrt(variance);
     const _cv = mean > 0 ? stdDev / mean : 1;
 
-    return Math?.max(0.3, 1 - cv);
+    return Math?.max(0?.3, 1 - cv);
   }
 
   private calculateVolatility(data: { revenue: number }[]) {
-    if (data?.length < 2) return 0.3;
+    if (data?.length < 2) return 0?.3;
 
     const _values = data?.map((d) => d?.revenue);
     const _mean = values?.reduce((a, b) => a + b, 0) / values?.length;
@@ -367,7 +367,7 @@ class RevenueForecastService {
       values?.reduce((sum, v) => sum + Math?.pow(v - mean, 2), 0) / values?.length;
     const _stdDev = Math?.sqrt(variance);
 
-    return mean > 0 ? Math?.min(0.5, stdDev / mean) : 0.3;
+    return mean > 0 ? Math?.min(0?.5, stdDev / mean) : 0?.3;
   }
 
   private calculateConfidence(
@@ -376,14 +376,14 @@ class RevenueForecastService {
     dataPoints: number,
   ) {
     const _baseConfidence = this?.BASE_CONFIDENCE;
-    const _dataBonus = Math?.min(0.15, dataPoints / 1000);
-    const _consistencyBonus = consistency * 0.1;
-    const _timeDecay = Math?.pow(0.98, months);
+    const _dataBonus = Math?.min(0?.15, dataPoints / 1000);
+    const _consistencyBonus = consistency * 0?.1;
+    const _timeDecay = Math?.pow(0?.98, months);
 
     return Math?.max(
-      0.4,
+      0?.4,
       Math?.min(
-        0.95,
+        0?.95,
         (baseConfidence + dataBonus + consistencyBonus) * timeDecay,
       ),
     );

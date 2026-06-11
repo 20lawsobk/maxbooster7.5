@@ -15,15 +15,7 @@ import ReactFlow, {
   NodeProps,
   Panel,
 } from "reactflow";
-import {
-  Volume2,
-  Headphones,
-  Music,
-  Radio,
-  Sliders,
-  Plus,
-  X,
-} from "lucide-react";
+import { Volume2, Headphones, Music, Radio, Sliders, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUnifiedStore } from "@/stores/unifiedStoreAdapter";
 import { cn } from "@/lib/utils";
@@ -38,6 +30,7 @@ interface RoutingNode {
   muted: boolean;
   solo: boolean;
 }
+
 
 const NODE_TYPE_ICONS: Record<string, React.ReactNode> = {
   track: <Music className="w-4 h-4" />,

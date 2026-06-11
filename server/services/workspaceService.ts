@@ -1,21 +1,7 @@
 import { db } from "../db";
-import {
-  workspaces,
-  workspaceMembers,
-  workspaceRoles,
-  workspaceInvitations,
-  workspaceCatalogs,
-  workspaceAuditLog,
-  users,
-  type Workspace,
-  type WorkspaceMember,
-  type WorkspaceRole,
-  type WorkspaceInvitation,
-  type InsertWorkspace,
-  type InsertWorkspaceAuditLog,
-} from "@shared/schema";
+import { workspaces, workspaceMembers, workspaceRoles, workspaceInvitations, workspaceCatalogs, workspaceAuditLog, users, type Workspace, type WorkspaceMember, type WorkspaceRole, type WorkspaceInvitation, type InsertWorkspace, type InsertWorkspaceAuditLog } from "@shared/schema";
 import { eq, and, desc, count } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 
 export type WorkspaceType = "artist" | "label" | "agency" | "management";
@@ -44,6 +30,7 @@ interface WorkspaceBranding {
   colors?: { primary: string; secondary: string };
   customDomain?: string;
 }
+
 
 interface CreateWorkspaceParams {
   name: string;
@@ -560,7 +547,9 @@ export class WorkspaceService {
     }
   }
 
-  async inviteMember(params: InviteMemberParams): Promise<{
+  async inviteMember(
+    params: InviteMemberParams,
+  ): Promise<{
     success: boolean;
     invitation?: WorkspaceInvitation;
     error?: string;
@@ -987,7 +976,7 @@ export class WorkspaceService {
   }> {
     try {
       const _token = crypto?.randomBytes(16).toString("hex");
-      const _baseUrl = process?.env.BASE_URL || "https://maxbooster.app";
+      const _baseUrl = process?.env.BASE_URL || "https://maxbooster?.app";
 
       let expiresAt = null;
       if (params?.expirationDays) {

@@ -18,13 +18,13 @@
  *   stopDomainVerificationWorker()   — clears the interval (used in tests / graceful shutdown)
  */
 
-import { pool } from "../db.js";
+import { pool } from "../db?.js";
 import {
   verifyStorefrontDomain,
   runDomainHealthSweep,
-} from "../services/storefrontDnsService.js";
-import { logger } from "../logger.js";
-import { pMap } from "../lib/concurrencyPool.js";
+} from "../services/storefrontDnsService?.js";
+import { logger } from "../logger?.js";
+import { pMap } from "../lib/concurrencyPool?.js";
 
 const _POLL_INTERVAL_MS = parseInt(
   process?.env.DOMAIN_VERIFY_INTERVAL_MS ?? "60000",

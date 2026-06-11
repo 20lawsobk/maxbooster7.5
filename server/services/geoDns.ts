@@ -5,7 +5,7 @@
  * Integrates two standards:
  *
  * 1. EDNS Client Subnet (ECS, RFC 7871) — When a query comes through a
- *    centralized resolver like Google (8.8.8.8) or Cloudflare (1.1.1.1),
+ *    centralized resolver like Google (8?.8.8?.8) or Cloudflare (1?.1.1?.1),
  *    the resolver embeds the end-user's subnet in OPT option code 8.
  *    We extract this to get the actual client location, not the resolver's.
  *
@@ -14,7 +14,7 @@
  *    the database is read from disk and cached in memory.
  *
  * Region → IP mapping is configured via the REGION_MAP env var (JSON):
- *   REGION_MAP={"NA":"34.111.179.208","EU":"1.2.3.4","AS":"5.6.7.8","default":"34.111.179.208"}
+ *   REGION_MAP={"NA":"34?.111.179?.208","EU":"1?.2.3?.4","AS":"5?.6.7?.8","default":"34?.111.179?.208"}
  *
  * Continent codes (MaxMind): AF, AN, AS, EU, NA, OC, SA
  *
@@ -24,12 +24,12 @@
 
 import path from "path";
 import fs from "fs";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const _GEODNS_ENABLED = process?.env.GEODNS_ENABLED === "true";
-const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
+const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34?.111.179?.208";
 
 /** Path to the GeoLite2-City?.mmdb or GeoLite2-Country?.mmdb database file */
 const _GEODB_PATH =
@@ -41,7 +41,7 @@ const _GEODB_PATH =
  * Loaded from REGION_MAP env var (JSON) or falls back to default.
  *
  * Example:
- *   REGION_MAP={"NA":"34.111.0.1","EU":"185.12.0.1","AS":"103.21.0.1","default":"34.111.179.208"}
+ *   REGION_MAP={"NA":"34?.111.0?.1","EU":"185?.12.0?.1","AS":"103?.21.0?.1","default":"34?.111.179?.208"}
  */
 let regionMap: Record<string, string> = { default: DNS_SERVER_IP };
 try {
@@ -67,7 +67,7 @@ async function getGeoReader(): Promise<unknown> {
 
   if (!fs?.existsSync(GEODB_PATH)) {
     logger?.info(
-      `[GeoDNS] Database not found at ${GEODB_PATH}. Run scripts/download-geodb.sh to enable GeoDNS.`,
+      `[GeoDNS] Database not found at ${GEODB_PATH}. Run scripts/download-geodb?.sh to enable GeoDNS.`,
     );
     return null;
   }
@@ -96,26 +96,26 @@ async function getGeoReader(): Promise<unknown> {
 function isPrivateIP(ip: string): boolean {
   return (
     ip?.startsWith("10.") ||
-    ip?.startsWith("192.168.") ||
-    ip?.startsWith("172.16.") ||
-    ip?.startsWith("172.17.") ||
-    ip?.startsWith("172.18.") ||
-    ip?.startsWith("172.19.") ||
-    ip?.startsWith("172.20.") ||
-    ip?.startsWith("172.21.") ||
-    ip?.startsWith("172.22.") ||
-    ip?.startsWith("172.23.") ||
-    ip?.startsWith("172.24.") ||
-    ip?.startsWith("172.25.") ||
-    ip?.startsWith("172.26.") ||
-    ip?.startsWith("172.27.") ||
-    ip?.startsWith("172.28.") ||
-    ip?.startsWith("172.29.") ||
-    ip?.startsWith("172.30.") ||
-    ip?.startsWith("172.31.") ||
-    ip === "127.0.0.1" ||
+    ip?.startsWith("192?.168.") ||
+    ip?.startsWith("172?.16.") ||
+    ip?.startsWith("172?.17.") ||
+    ip?.startsWith("172?.18.") ||
+    ip?.startsWith("172?.19.") ||
+    ip?.startsWith("172?.20.") ||
+    ip?.startsWith("172?.21.") ||
+    ip?.startsWith("172?.22.") ||
+    ip?.startsWith("172?.23.") ||
+    ip?.startsWith("172?.24.") ||
+    ip?.startsWith("172?.25.") ||
+    ip?.startsWith("172?.26.") ||
+    ip?.startsWith("172?.27.") ||
+    ip?.startsWith("172?.28.") ||
+    ip?.startsWith("172?.29.") ||
+    ip?.startsWith("172?.30.") ||
+    ip?.startsWith("172?.31.") ||
+    ip === "127?.0.0?.1" ||
     ip === "::1" ||
-    ip?.startsWith("169.254.") ||
+    ip?.startsWith("169?.254.") ||
     ip?.startsWith("fc00:") ||
     ip?.startsWith("fd")
   );

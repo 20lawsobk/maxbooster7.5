@@ -1,7 +1,7 @@
 import { google } from "googleapis";
 import axios from "axios";
 import { TwitterApi } from "twitter-api-v2";
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 
 // Initialize Google APIs
 const _youtube = google?.youtube({
@@ -63,7 +63,7 @@ export class SocialMediaService {
 
       const _accessToken = `${process?.env.FACEBOOK_APP_ID}|${process?.env.FACEBOOK_APP_SECRET}`;
       const _response = await axios?.get(
-        `https://graph?.facebook.com/v18.0/me/accounts`,
+        `https://graph?.facebook.com/v18?.0/me/accounts`,
         {
           params: {
             access_token: accessToken,
@@ -313,7 +313,7 @@ export class SocialMediaService {
       }
 
       // Fetch Threads user profile and metrics
-      await axios?.get(`https://graph?.threads.net/v1.0/me`, {
+      await axios?.get(`https://graph?.threads.net/v1?.0/me`, {
         params: {
           fields: "id,username,threads_profile_picture_url,threads_biography",
           access_token: process?.env.THREADS_ACCESS_TOKEN,
@@ -322,7 +322,7 @@ export class SocialMediaService {
 
       // Fetch Threads insights (follower count, engagement)
       const _insightsResponse = await axios?.get(
-        `https://graph?.threads.net/v1.0/me/threads_insights`,
+        `https://graph?.threads.net/v1?.0/me/threads_insights`,
         {
           params: {
             metric: "followers_count,profile_views,likes,replies,reposts",
@@ -388,7 +388,7 @@ export class SocialMediaService {
     accessToken: string,
   ): Promise<{ videoId: string; url: string } | null> {
     try {
-      const _auth = new google.auth.OAuth2();
+      const _auth = new google?.auth.OAuth2();
       auth?.setCredentials({ access_token: accessToken });
 
       const _youtube = google?.youtube({
@@ -618,7 +618,7 @@ export class SocialMediaService {
       }
     }
 
-    results.success = results?.errors?.length === 0;
+    results?.success = results?.errors?.length === 0;
     return results;
   }
 
@@ -633,7 +633,7 @@ export class SocialMediaService {
 
     const _accessToken = `${process?.env.FACEBOOK_APP_ID}|${process?.env.FACEBOOK_APP_SECRET}`;
 
-    await axios?.post(`https://graph?.facebook.com/v18.0/me/feed`, {
+    await axios?.post(`https://graph?.facebook.com/v18?.0/me/feed`, {
       message: content,
       link: mediaUrl,
       access_token: accessToken,
@@ -754,7 +754,7 @@ export class SocialMediaService {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
-          "X-Restli-Protocol-Version": "2.0.0",
+          "X-Restli-Protocol-Version": "2?.0.0",
         },
       },
     );
@@ -870,7 +870,7 @@ export class SocialMediaService {
       if (mediaUrl) {
         // Create Threads media post with image/video
         const _mediaResponse = await axios?.post(
-          `https://graph?.threads.net/v1.0/me/threads`,
+          `https://graph?.threads.net/v1?.0/me/threads`,
           {
             media_type: "IMAGE", // or VIDEO based on mediaUrl type
             image_url: mediaUrl,
@@ -880,14 +880,14 @@ export class SocialMediaService {
         );
 
         // Publish the Threads post
-        await axios?.post(`https://graph?.threads.net/v1.0/me/threads_publish`, {
+        await axios?.post(`https://graph?.threads.net/v1?.0/me/threads_publish`, {
           creation_id: mediaResponse?.data.id,
           access_token: process?.env.THREADS_ACCESS_TOKEN,
         });
       } else {
         // Create text-only Threads post
         const _textResponse = await axios?.post(
-          `https://graph?.threads.net/v1.0/me/threads`,
+          `https://graph?.threads.net/v1?.0/me/threads`,
           {
             media_type: "TEXT",
             text: content,
@@ -896,7 +896,7 @@ export class SocialMediaService {
         );
 
         // Publish the Threads post
-        await axios?.post(`https://graph?.threads.net/v1.0/me/threads_publish`, {
+        await axios?.post(`https://graph?.threads.net/v1?.0/me/threads_publish`, {
           creation_id: textResponse?.data.id,
           access_token: process?.env.THREADS_ACCESS_TOKEN,
         });

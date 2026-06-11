@@ -203,8 +203,9 @@ class QueueMonitor {
       const firstQueue = allMetrics.values().next().value;
       if (firstQueue) {
         try {
-          const { aiModelManager } =
-            await import("../services/aiModelManager.js");
+          const { aiModelManager } = await import(
+            "../services/aiModelManager.js"
+          );
           const aiMetrics = aiModelManager.getMetrics();
 
           const memUsage = process.memoryUsage();

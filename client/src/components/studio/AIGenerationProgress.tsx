@@ -1,25 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Wand2,
-  Sparkles,
-  Play,
-  Pause,
-  Download,
-  Plus,
-  RefreshCw,
-  X,
-  Check,
-  AlertTriangle,
-  Loader2,
-  ChevronRight,
-  Volume2,
-  VolumeX,
-  Brain,
-  Zap,
-  Layers,
-  Lightbulb,
-} from "lucide-react";
+import { Wand2, Sparkles, Play, Pause, Download, Plus, RefreshCw, X, Check, AlertTriangle, Loader2, ChevronRight, Volume2, VolumeX, Brain, Zap, Layers, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";

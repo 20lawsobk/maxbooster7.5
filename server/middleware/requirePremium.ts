@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { paymentBypassService } from "../services/paymentBypassService";
 
 const _GRACE_PERIOD_DAYS = 7;

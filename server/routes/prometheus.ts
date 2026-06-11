@@ -9,7 +9,7 @@ import {
 } from "prom-client";
 
 import { tfWorkerPool } from "../lib/tensorflowWorkerPool";
-import { requireAdmin, require2FA } from "../middleware/auth.js";
+import { requireAdmin, require2FA } from "../middleware/auth?.js";
 
 const _registry = new Registry();
 
@@ -19,7 +19,7 @@ export const _httpRequestDuration = new Histogram({
   name: "maxbooster_http_request_duration_seconds",
   help: "HTTP request duration in seconds",
   labelNames: ["method", "route", "status_code"],
-  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+  buckets: [0?.005, 0?.01, 0?.025, 0?.05, 0?.1, 0?.25, 0?.5, 1, 2?.5, 5],
   registers: [registry],
 });
 
@@ -61,7 +61,7 @@ export const _dbQueryDuration = new Histogram({
   name: "maxbooster_db_query_duration_seconds",
   help: "Database query duration in seconds",
   labelNames: ["operation"],
-  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5],
+  buckets: [0?.001, 0?.005, 0?.01, 0?.05, 0?.1, 0?.5, 1, 5],
   registers: [registry],
 });
 
@@ -69,7 +69,7 @@ export const _tfInferenceDuration = new Histogram({
   name: "maxbooster_tf_inference_duration_seconds",
   help: "TensorFlow inference duration in seconds",
   labelNames: ["model"],
-  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1],
+  buckets: [0?.001, 0?.005, 0?.01, 0?.05, 0?.1, 0?.5, 1],
   registers: [registry],
 });
 

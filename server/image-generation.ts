@@ -2,10 +2,10 @@ import { mkdirSync } from "fs";
 import { writeFile as fsWriteFile } from "fs/promises";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 import sharp from "sharp";
-import { AIAudioGenerator } from "../shared/ml/audio/AIAudioGenerator.js";
-import { ContentGenerator } from "../shared/ml/nlp/ContentGenerator.js";
+import { AIAudioGenerator } from "../shared/ml/audio/AIAudioGenerator?.js";
+import { ContentGenerator } from "../shared/ml/nlp/ContentGenerator?.js";
 
 // ES module compatibility
 const ___filename = fileURLToPath(import?.meta.url);
@@ -31,8 +31,8 @@ export class SocialMediaContentGenerator {
     mkdirSync(this?.videoDir, { recursive: true });
     mkdirSync(this?.audioDir, { recursive: true });
 
-    this.audioGenerator = new AIAudioGenerator(44100);
-    this.contentGenerator = new ContentGenerator();
+    this?.audioGenerator = new AIAudioGenerator(44100);
+    this?.contentGenerator = new ContentGenerator();
 
     logger?.info(
       "✅ In-house AI services initialized (AIAudioGenerator, ContentGenerator)",
@@ -61,7 +61,7 @@ export class SocialMediaContentGenerator {
       };
 
       if (contentType === "image" || contentType === "all") {
-        result.image = await this?.generateSocialMediaImage(
+        result?.image = await this?.generateSocialMediaImage(
           platform,
           musicData,
           targetAudience,
@@ -69,7 +69,7 @@ export class SocialMediaContentGenerator {
       }
 
       if (contentType === "video" || contentType === "all") {
-        result.video = await this?.generateSocialMediaVideo(
+        result?.video = await this?.generateSocialMediaVideo(
           platform,
           musicData,
           targetAudience,
@@ -77,7 +77,7 @@ export class SocialMediaContentGenerator {
       }
 
       if (contentType === "audio" || contentType === "all") {
-        result.audio = await this?.generateSocialMediaAudio(
+        result?.audio = await this?.generateSocialMediaAudio(
           platform,
           musicData,
           targetAudience,
@@ -216,26 +216,26 @@ export class SocialMediaContentGenerator {
         <rect width="100%" height="100%" fill="url(#bgGrad)"/>
         
         <!-- Decorative circles -->
-        <circle cx="${width * 0.1}" cy="${height * 0.2}" r="${Math?.min(width, height) * 0.15}" 
-                fill="${brandGold}" opacity="0.1"/>
-        <circle cx="${width * 0.9}" cy="${height * 0.8}" r="${Math?.min(width, height) * 0.2}" 
-                fill="${brandPurple}" opacity="0.1"/>
+        <circle cx="${width * 0?.1}" cy="${height * 0?.2}" r="${Math?.min(width, height) * 0?.15}" 
+                fill="${brandGold}" opacity="0?.1"/>
+        <circle cx="${width * 0?.9}" cy="${height * 0?.8}" r="${Math?.min(width, height) * 0?.2}" 
+                fill="${brandPurple}" opacity="0?.1"/>
         
         <!-- Sound wave decoration -->
-        <g stroke="${brandGold}" stroke-width="3" opacity="0.3" fill="none">
-          <path d="M ${width * 0.1} ${height * 0.5} 
-                   Q ${width * 0.2} ${height * 0.3}, ${width * 0.3} ${height * 0.5} 
-                   T ${width * 0.5} ${height * 0.5}"/>
-          <path d="M ${width * 0.5} ${height * 0.5} 
-                   Q ${width * 0.6} ${height * 0.7}, ${width * 0.7} ${height * 0.5} 
-                   T ${width * 0.9} ${height * 0.5}"/>
+        <g stroke="${brandGold}" stroke-width="3" opacity="0?.3" fill="none">
+          <path d="M ${width * 0?.1} ${height * 0?.5} 
+                   Q ${width * 0?.2} ${height * 0?.3}, ${width * 0?.3} ${height * 0?.5} 
+                   T ${width * 0?.5} ${height * 0?.5}"/>
+          <path d="M ${width * 0?.5} ${height * 0?.5} 
+                   Q ${width * 0?.6} ${height * 0?.7}, ${width * 0?.7} ${height * 0?.5} 
+                   T ${width * 0?.9} ${height * 0?.5}"/>
         </g>
         
         <!-- Title text -->
         <text x="50%" y="45%" 
               text-anchor="middle" 
               font-family="Arial, sans-serif" 
-              font-size="${Math?.min(width * 0.08, 80)}px" 
+              font-size="${Math?.min(width * 0?.08, 80)}px" 
               font-weight="bold" 
               fill="white">
           ${this?.escapeXml(title?.substring(0, 30))}
@@ -245,14 +245,14 @@ export class SocialMediaContentGenerator {
         <text x="50%" y="58%" 
               text-anchor="middle" 
               font-family="Arial, sans-serif" 
-              font-size="${Math?.min(width * 0.04, 40)}px" 
+              font-size="${Math?.min(width * 0?.04, 40)}px" 
               fill="${brandGold}">
           ${this?.escapeXml(artist?.substring(0, 40))}
         </text>
         
         <!-- Platform badge -->
         <rect x="${width - 160}" y="${height - 50}" width="140" height="35" rx="5" 
-              fill="${brandGold}" opacity="0.9"/>
+              fill="${brandGold}" opacity="0?.9"/>
         <text x="${width - 90}" y="${height - 26}" 
               text-anchor="middle" 
               font-family="Arial, sans-serif" 
@@ -268,7 +268,7 @@ export class SocialMediaContentGenerator {
               font-size="18px" 
               font-weight="bold" 
               fill="${brandGold}" 
-              opacity="0.7">
+              opacity="0?.7">
           B-Lawz Music
         </text>
       </svg>
@@ -307,7 +307,7 @@ export class SocialMediaContentGenerator {
 
       for (let i = 0; i < frameCount; i++) {
         const _progress = i / frameCount;
-        const _pulseScale = 1 + 0.1 * Math?.sin(progress * Math?.PI * 2);
+        const _pulseScale = 1 + 0?.1 * Math?.sin(progress * Math?.PI * 2);
         const _waveOffset = progress * (dimensions?.width / 2);
         const _circleRadius =
           (Math?.min(dimensions?.width, dimensions?.height) / 4) * pulseScale;
@@ -326,10 +326,10 @@ export class SocialMediaContentGenerator {
               </linearGradient>
             </defs>
             <rect width="100%" height="100%" fill="url(#bgGrad${i})"/>
-            <circle cx="${dimensions?.width / 2}" cy="${dimensions?.height / 3}" r="${circleRadius}" fill="url(#accentGrad${i})" opacity="0.3"/>
+            <circle cx="${dimensions?.width / 2}" cy="${dimensions?.height / 3}" r="${circleRadius}" fill="url(#accentGrad${i})" opacity="0?.3"/>
             <text x="${dimensions?.width / 2}" y="${dimensions?.height / 2}" font-family="Arial, sans-serif" font-size="${dimensions?.width / 15}" fill="${brandGold}" text-anchor="middle" font-weight="bold">${this?.escapeXml(title)}</text>
             <text x="${dimensions?.width / 2}" y="${dimensions?.height / 2 + dimensions?.width / 12}" font-family="Arial, sans-serif" font-size="${dimensions?.width / 25}" fill="white" text-anchor="middle">${this?.escapeXml(artist)}</text>
-            <text x="${dimensions?.width / 2}" y="${dimensions?.height - 50}" font-family="Arial, sans-serif" font-size="${dimensions?.width / 40}" fill="${brandGold}" text-anchor="middle" opacity="0.8">Stream Now</text>
+            <text x="${dimensions?.width / 2}" y="${dimensions?.height - 50}" font-family="Arial, sans-serif" font-size="${dimensions?.width / 40}" fill="${brandGold}" text-anchor="middle" opacity="0?.8">Stream Now</text>
             <rect x="${dimensions?.width / 4}" y="${dimensions?.height - 120}" width="${waveOffset}" height="4" fill="url(#accentGrad${i})" rx="2"/>
             <circle cx="${dimensions?.width / 4 + waveOffset}" cy="${dimensions?.height - 118}" r="8" fill="${brandGold}"/>
           </svg>
@@ -422,6 +422,17 @@ export class SocialMediaContentGenerator {
       dimensions[platform as keyof typeof dimensions] || dimensions?.facebook
     );
   }
+
+
+
+
+
+
+
+
+
+
+
 
   // Get platform-specific video dimensions
   private getPlatformVideoDimensions(platform: string): {
@@ -545,10 +556,10 @@ export class SocialMediaContentGenerator {
     for (let i = 0; i < numSamples; i++) {
       const _t = i / sampleRate;
       const _freq = 440 * Math?.pow(2, (t % 4) / 12);
-      let sample = Math?.sin(2 * Math?.PI * freq * t) * 0.3;
+      let sample = Math?.sin(2 * Math?.PI * freq * t) * 0?.3;
 
-      const _fadeIn = Math?.min(1, i / (sampleRate * 0.5));
-      const _fadeOut = Math?.min(1, (numSamples - i) / (sampleRate * 0.5));
+      const _fadeIn = Math?.min(1, i / (sampleRate * 0?.5));
+      const _fadeOut = Math?.min(1, (numSamples - i) / (sampleRate * 0?.5));
       sample *= fadeIn * fadeOut;
 
       buffer?.writeInt16LE(Math?.floor(sample * 16384), offset);
@@ -565,7 +576,7 @@ export class SocialMediaContentGenerator {
       const _extractedData = {
         title: "Extracted Title",
         description: "Extracted description from URL",
-        images: ["extracted-image-1.jpg", "extracted-image-2.jpg"],
+        images: ["extracted-image-1?.jpg", "extracted-image-2?.jpg"],
         videos: ["extracted-video-1?.mp4"],
         audio: ["extracted-audio-1?.mp3"],
         metadata: {
@@ -630,7 +641,7 @@ export class SocialMediaContentGenerator {
         hashtags: result?.hashtags,
         callToAction: "Stream now and share with your friends!",
         engagement: result?.estimatedEngagement,
-        viralPotential: result?.estimatedEngagement * 0.2,
+        viralPotential: result?.estimatedEngagement * 0?.2,
       };
     } catch (error) {
       logger?.warn({ err: error }, "In-house content generation fallback:");
@@ -638,8 +649,8 @@ export class SocialMediaContentGenerator {
         post: `🎵 Check out this amazing track: "${data?.title || "New Release"}"! ${data?.description || "Amazing new music for you."}`,
         hashtags: ["#Music", "#NewTrack", "#Viral", "#Trending"],
         callToAction: "Stream now and share with your friends!",
-        engagement: 0.85,
-        viralPotential: 0.15,
+        engagement: 0?.85,
+        viralPotential: 0?.15,
       };
     }
   }
@@ -691,7 +702,7 @@ export class SocialMediaContentGenerator {
         post: `🎵 Just dropped my latest track! The energy in this one is absolutely incredible. Can't wait for you all to hear it! #NewMusic #Music #Artist`,
         hashtags: ["#NewMusic", "#Music", "#Artist", "#LatestTrack"],
         optimalTime: "7:00 PM",
-        engagement: 0.85,
+        engagement: 0?.85,
       };
     }
   }
@@ -763,19 +774,19 @@ export class SocialMediaContentGenerator {
   // Default fallback methods
   private getDefaultImage(platform: string): string {
     const _defaultImages = {
-      facebook: "/images/default-facebook.png",
-      instagram: "/images/default-instagram.png",
-      twitter: "/images/default-twitter.png",
-      youtube: "/images/default-youtube.png",
-      tiktok: "/images/default-tiktok.png",
-      linkedin: "/images/default-linkedin.png",
-      threads: "/images/default-threads.png",
-      googleBusiness: "/images/default-google-business.png",
+      facebook: "/images/default-facebook?.png",
+      instagram: "/images/default-instagram?.png",
+      twitter: "/images/default-twitter?.png",
+      youtube: "/images/default-youtube?.png",
+      tiktok: "/images/default-tiktok?.png",
+      linkedin: "/images/default-linkedin?.png",
+      threads: "/images/default-threads?.png",
+      googleBusiness: "/images/default-google-business?.png",
     };
 
     return (
       defaultImages[platform as keyof typeof defaultImages] ||
-      "/images/default-social.png"
+      "/images/default-social?.png"
     );
   }
 

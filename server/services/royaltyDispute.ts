@@ -1,9 +1,9 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { royaltyDisputes, royaltyStatements, users, type RoyaltyDispute, type InsertRoyaltyDispute } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
-import { emailService } from "./emailService.js";
+import { emailService } from "./emailService?.js";
 
 export interface CreateDisputeInput {
   userId: string;
@@ -242,19 +242,19 @@ export class RoyaltyDisputeService {
     };
 
     if (input?.status) {
-      updates.status = input?.status;
+      updates?.status = input?.status;
 
       if (input?.status === "resolved" || input?.status === "rejected") {
-        updates.resolvedAt = new Date();
+        updates?.resolvedAt = new Date();
       }
     }
 
     if (input?.priority) {
-      updates.priority = input?.priority;
+      updates?.priority = input?.priority;
     }
 
     if (input?.assignedTo) {
-      updates.assignedTo = input?.assignedTo;
+      updates?.assignedTo = input?.assignedTo;
     }
 
     if (input?.internalNote) {
@@ -264,7 +264,7 @@ export class RoyaltyDisputeService {
           addedBy: string;
           addedAt: string;
         }>) || [];
-      updates.internalNotes = [
+      updates?.internalNotes = [
         ...existingNotes,
         {
           note: input?.internalNote.note,
@@ -275,16 +275,16 @@ export class RoyaltyDisputeService {
     }
 
     if (input?.resolution) {
-      updates.resolution = {
+      updates?.resolution = {
         ...input?.resolution,
         resolvedAt: new Date().toISOString(),
       };
-      updates.status =
+      updates?.status =
         input?.resolution.outcome === "approved" ||
         input?.resolution.outcome === "partial"
           ? "resolved"
           : "rejected";
-      updates.resolvedAt = new Date();
+      updates?.resolvedAt = new Date();
     }
 
     const [updated] = await db
@@ -743,7 +743,7 @@ export class RoyaltyDisputeService {
     };
 
     if (!this?._holdCleanupStarted) {
-      this._holdCleanupStarted = true;
+      this?._holdCleanupStarted = true;
       this?.startFundHoldCleanup();
     }
     if (this?.fundHolds.size >= RoyaltyDisputeService?.MAX_ACTIVE_FUND_HOLDS) {
@@ -790,8 +790,8 @@ export class RoyaltyDisputeService {
       return null;
     }
 
-    hold.status = "released";
-    hold.releasedAt = new Date();
+    hold?.status = "released";
+    hold?.releasedAt = new Date();
     this?.fundHolds.set(holdId, hold);
 
     await this?.addSystemMessage(
@@ -814,8 +814,8 @@ export class RoyaltyDisputeService {
       return null;
     }
 
-    hold.status = "forfeited";
-    hold.releasedAt = new Date();
+    hold?.status = "forfeited";
+    hold?.releasedAt = new Date();
     this?.fundHolds.set(holdId, hold);
 
     await this?.addSystemMessage(

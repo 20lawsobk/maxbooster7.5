@@ -14,8 +14,8 @@
  * still runs the compute on cache failure.
  */
 
-import { getRedisClient } from "./redisConnectionFactory.js";
-import { logger } from "../logger.js";
+import { getRedisClient } from "./redisConnectionFactory?.js";
+import { logger } from "../logger?.js";
 
 const _DEFAULT_TTL = 60; // 60 seconds
 

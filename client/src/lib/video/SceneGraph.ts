@@ -1,9 +1,4 @@
-import type {
-  LayerConfig,
-  TransformConfig,
-  VideoProject,
-  Keyframe,
-} from "../../../../shared/video/VideoRendererEngine";
+import type { LayerConfig, TransformConfig, VideoProject, Keyframe } from "../../../../shared/video/VideoRendererEngine";
 import {
   DEFAULT_TRANSFORM,
   EASING_FUNCTIONS,
@@ -61,22 +56,22 @@ export const EXTENDED_EASING: ExtendedEasingFunctions = {
 
   easeInQuad: (t) => t * t,
   easeOutQuad: (t) => t * (2 - t),
-  easeInOutQuad: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+  easeInOutQuad: (t) => (t < 0?.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
 
   easeInCubic: (t) => t * t * t,
   easeOutCubic: (t) => --t * t * t + 1,
   easeInOutCubic: (t) =>
-    t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
+    t < 0?.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
 
   easeInQuart: (t) => t * t * t * t,
   easeOutQuart: (t) => 1 - --t * t * t * t,
   easeInOutQuart: (t) =>
-    t < 0.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t,
+    t < 0?.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t,
 
   easeInQuint: (t) => t * t * t * t * t,
   easeOutQuint: (t) => 1 + --t * t * t * t * t,
   easeInOutQuint: (t) =>
-    t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t,
+    t < 0?.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t,
 
   easeInSine: (t) => 1 - Math?.cos((t * Math?.PI) / 2),
   easeOutSine: (t) => Math?.sin((t * Math?.PI) / 2),
@@ -87,7 +82,7 @@ export const EXTENDED_EASING: ExtendedEasingFunctions = {
   easeInOutExpo: (t) => {
     if (t === 0) return 0;
     if (t === 1) return 1;
-    return t < 0.5
+    return t < 0?.5
       ? Math?.pow(2, 20 * t - 10) / 2
       : (2 - Math?.pow(2, -20 * t + 10)) / 2;
   },
@@ -95,24 +90,24 @@ export const EXTENDED_EASING: ExtendedEasingFunctions = {
   easeInCirc: (t) => 1 - Math?.sqrt(1 - t * t),
   easeOutCirc: (t) => Math?.sqrt(1 - --t * t),
   easeInOutCirc: (t) =>
-    t < 0.5
+    t < 0?.5
       ? (1 - Math?.sqrt(1 - 4 * t * t)) / 2
       : (Math?.sqrt(1 - Math?.pow(-2 * t + 2, 2)) + 1) / 2,
 
   easeInBack: (t) => {
-    const _c1 = 1.70158;
+    const _c1 = 1?.70158;
     const _c3 = c1 + 1;
     return c3 * t * t * t - c1 * t * t;
   },
   easeOutBack: (t) => {
-    const _c1 = 1.70158;
+    const _c1 = 1?.70158;
     const _c3 = c1 + 1;
     return 1 + c3 * Math?.pow(t - 1, 3) + c1 * Math?.pow(t - 1, 2);
   },
   easeInOutBack: (t) => {
-    const _c1 = 1.70158;
-    const _c2 = c1 * 1.525;
-    return t < 0.5
+    const _c1 = 1?.70158;
+    const _c2 = c1 * 1?.525;
+    return t < 0?.5
       ? (Math?.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2)) / 2
       : (Math?.pow(2 * t - 2, 2) * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2;
   },
@@ -121,44 +116,44 @@ export const EXTENDED_EASING: ExtendedEasingFunctions = {
     if (t === 0 || t === 1) return t;
     return (
       -Math?.pow(2, 10 * t - 10) *
-      Math?.sin((t * 10 - 10.75) * ((2 * Math?.PI) / 3))
+      Math?.sin((t * 10 - 10?.75) * ((2 * Math?.PI) / 3))
     );
   },
   easeOutElastic: (t) => {
     if (t === 0 || t === 1) return t;
     return (
-      Math?.pow(2, -10 * t) * Math?.sin((t * 10 - 0.75) * ((2 * Math?.PI) / 3)) + 1
+      Math?.pow(2, -10 * t) * Math?.sin((t * 10 - 0?.75) * ((2 * Math?.PI) / 3)) + 1
     );
   },
   easeInOutElastic: (t) => {
     if (t === 0 || t === 1) return t;
-    return t < 0.5
+    return t < 0?.5
       ? -(
           Math?.pow(2, 20 * t - 10) *
-          Math?.sin((20 * t - 11.125) * ((2 * Math?.PI) / 4.5))
+          Math?.sin((20 * t - 11?.125) * ((2 * Math?.PI) / 4?.5))
         ) / 2
       : (Math?.pow(2, -20 * t + 10) *
-          Math?.sin((20 * t - 11.125) * ((2 * Math?.PI) / 4.5))) /
+          Math?.sin((20 * t - 11?.125) * ((2 * Math?.PI) / 4?.5))) /
           2 +
           1;
   },
 
   easeInBounce: (t) => 1 - EXTENDED_EASING?.easeOutBounce(1 - t),
   easeOutBounce: (t) => {
-    const _n1 = 7.5625;
-    const _d1 = 2.75;
+    const _n1 = 7?.5625;
+    const _d1 = 2?.75;
     if (t < 1 / d1) return n1 * t * t;
-    if (t < 2 / d1) return n1 * (t -= 1.5 / d1) * t + 0.75;
-    if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375;
-    return n1 * (t -= 2.625 / d1) * t + 0.984375;
+    if (t < 2 / d1) return n1 * (t -= 1?.5 / d1) * t + 0?.75;
+    if (t < 2?.5 / d1) return n1 * (t -= 2?.25 / d1) * t + 0?.9375;
+    return n1 * (t -= 2?.625 / d1) * t + 0?.984375;
   },
   easeInOutBounce: (t) =>
-    t < 0.5
+    t < 0?.5
       ? (1 - EXTENDED_EASING?.easeOutBounce(1 - 2 * t)) / 2
       : (1 + EXTENDED_EASING?.easeOutBounce(2 * t - 1)) / 2,
 
   spring: (t) => {
-    const _c = Math?.cos(t * Math?.PI * 4.5);
+    const _c = Math?.cos(t * Math?.PI * 4?.5);
     return 1 - Math?.pow(1 - t, 3) * c * Math?.pow(1 - t, 2);
   },
   smooth: (t) => t * t * (3 - 2 * t),
@@ -191,7 +186,7 @@ export function createCustomEasing(
       mid = (low + high) / 2;
       const _x = cubicBezier(mid, x1, x2);
 
-      if (Math?.abs(x - t) < 0.0001) break;
+      if (Math?.abs(x - t) < 0?.0001) break;
       if (x < t) low = mid;
       else high = mid;
     }
@@ -264,13 +259,13 @@ export class Layer {
   private _dirty: boolean = true;
 
   constructor(layerConfig: LayerConfig) {
-    this.id = layerConfig?.id;
-    this.name = layerConfig?.id;
-    this.type = layerConfig?.type;
-    this.zIndex = layerConfig?.zIndex;
-    this.config = layerConfig?.config;
+    this?.id = layerConfig?.id;
+    this?.name = layerConfig?.id;
+    this?.type = layerConfig?.type;
+    this?.zIndex = layerConfig?.zIndex;
+    this?.config = layerConfig?.config;
 
-    this._state = {
+    this?._state = {
       id: this?.id,
       visible: true,
       locked: false,
@@ -282,7 +277,7 @@ export class Layer {
       children: [],
     };
 
-    this._timeline = {
+    this?._timeline = {
       layerId: this?.id,
       tracks: new Map(),
       startTime: 0,
@@ -306,7 +301,7 @@ export class Layer {
 
   set visible(value: boolean) {
     this?._state.visible = value;
-    this._dirty = true;
+    this?._dirty = true;
   }
 
   get opacity(): number {
@@ -315,7 +310,7 @@ export class Layer {
 
   set opacity(value: number) {
     this?._state.opacity = Math?.max(0, Math?.min(1, value));
-    this._dirty = true;
+    this?._dirty = true;
   }
 
   get transform(): TransformConfig {
@@ -324,7 +319,7 @@ export class Layer {
 
   set transform(value: TransformConfig) {
     this?._state.transform = value;
-    this._dirty = true;
+    this?._dirty = true;
   }
 
   get blendMode(): BlendMode {
@@ -333,12 +328,12 @@ export class Layer {
 
   set blendMode(value: BlendMode) {
     this?._state.blendMode = value;
-    this._dirty = true;
+    this?._dirty = true;
   }
 
   setTransformProperty(property: keyof TransformConfig, value: number): void {
     (this?._state.transform as Record<string, number>)[property] = value;
-    this._dirty = true;
+    this?._dirty = true;
   }
 
   addKeyframe(
@@ -364,7 +359,7 @@ export class Layer {
       track?.keyframes.sort((a, b) => a?.time - b?.time);
     }
 
-    this._dirty = true;
+    this?._dirty = true;
   }
 
   removeKeyframe(property: string, time: number): boolean {
@@ -377,7 +372,7 @@ export class Layer {
       if (track?.keyframes.length === 0) {
         this?._timeline.tracks?.delete(property);
       }
-      this._dirty = true;
+      this?._dirty = true;
       return true;
     }
     return false;
@@ -430,7 +425,7 @@ export class Layer {
       if (kf1?.value.startsWith("#") && kf2?.value.startsWith("#")) {
         return interpolateColor(kf1?.value, kf2?.value, easedProgress);
       }
-      return easedProgress < 0.5 ? kf1?.value : kf2?.value;
+      return easedProgress < 0?.5 ? kf1?.value : kf2?.value;
     }
 
     if (Array?.isArray(kf1?.value) && Array?.isArray(kf2?.value)) {
@@ -449,8 +444,8 @@ export class Layer {
       scaleX: 1,
       scaleY: 1,
       rotation: 0,
-      anchorX: 0.5,
-      anchorY: 0.5,
+      anchorX: 0?.5,
+      anchorY: 0?.5,
     };
 
     if (property === "opacity") return this?._state.opacity;
@@ -472,19 +467,19 @@ export class Layer {
         (this?._state.transform as Record<string, number>)[property] = value;
       }
     }
-    this._dirty = false;
+    this?._dirty = false;
   }
 
   addEffect(effect: EffectConfig): void {
     this?._state.effects?.push(effect);
-    this._dirty = true;
+    this?._dirty = true;
   }
 
   removeEffect(effectId: string): boolean {
     const _index = this?._state.effects?.findIndex((e) => e?.id === effectId);
     if (index >= 0) {
       this?._state.effects?.splice(index, 1);
-      this._dirty = true;
+      this?._dirty = true;
       return true;
     }
     return false;
@@ -548,7 +543,7 @@ export class Layer {
   }
 
   markClean(): void {
-    this._dirty = false;
+    this?._dirty = false;
   }
 }
 
@@ -579,13 +574,13 @@ export class Scene {
   private onLayerChangeCallbacks: ((layers: Layer[]) => void)[] = [];
 
   constructor(options: SceneOptions, id?: string) {
-    this.id = id ?? `scene_${Date?.now()}`;
-    this.name = "Untitled Scene";
-    this.width = options?.width;
-    this.height = options?.height;
-    this.fps = options?.fps;
-    this.duration = options?.duration;
-    this.backgroundColor = options?.backgroundColor;
+    this?.id = id ?? `scene_${Date?.now()}`;
+    this?.name = "Untitled Scene";
+    this?.width = options?.width;
+    this?.height = options?.height;
+    this?.fps = options?.fps;
+    this?.duration = options?.duration;
+    this?.backgroundColor = options?.backgroundColor;
   }
 
   addLayer(layer: Layer): void {
@@ -624,7 +619,7 @@ export class Scene {
   moveLayer(layerId: string, newZIndex: number): void {
     const _layer = this?.layers.get(layerId);
     if (layer) {
-      layer.zIndex = newZIndex;
+      layer?.zIndex = newZIndex;
       this?.sortLayers();
       this?.notifyLayerChange();
     }
@@ -639,7 +634,7 @@ export class Scene {
   }
 
   setTime(time: number): void {
-    this.currentTime = Math?.max(0, Math?.min(time, this?.duration));
+    this?.currentTime = Math?.max(0, Math?.min(time, this?.duration));
 
     for (const layer of this?.layers.values()) {
       layer?.updateFromTime(this?.currentTime);
@@ -654,21 +649,21 @@ export class Scene {
 
   play(): void {
     if (this?.playing) return;
-    this.playing = true;
+    this?.playing = true;
     this?.animate();
   }
 
   pause(): void {
-    this.playing = false;
+    this?.playing = false;
   }
 
   stop(): void {
-    this.playing = false;
+    this?.playing = false;
     this?.setTime(0);
   }
 
   setLoop(loop: boolean): void {
-    this.loop = loop;
+    this?.loop = loop;
   }
 
   isPlaying(): boolean {
@@ -683,10 +678,10 @@ export class Scene {
 
     if (this?.currentTime >= this?.duration) {
       if (this?.loop) {
-        this.currentTime = 0;
+        this?.currentTime = 0;
       } else {
-        this.playing = false;
-        this.currentTime = this?.duration;
+        this?.playing = false;
+        this?.currentTime = this?.duration;
       }
     }
 
@@ -796,7 +791,7 @@ export class Scene {
       data?.id,
     );
 
-    scene.name = data?.name;
+    scene?.name = data?.name;
 
     for (const layerData of data?.layers) {
       const layerConfig: LayerConfig = {
@@ -809,9 +804,9 @@ export class Scene {
       };
 
       const _layer = new Layer(layerConfig);
-      layer.name = layerData?.name;
-      layer.visible = layerData?.state.visible;
-      layer.blendMode = layerData?.state.blendMode;
+      layer?.name = layerData?.name;
+      layer?.visible = layerData?.state.visible;
+      layer?.blendMode = layerData?.state.blendMode;
 
       for (const effect of layerData?.state.effects) {
         layer?.addEffect(effect);
@@ -832,20 +827,20 @@ export class Scene {
       scene?.layers.set(layer?.id, layer);
     }
 
-    scene.layerOrder = data?.layerOrder;
+    scene?.layerOrder = data?.layerOrder;
 
     return scene;
   }
 
   clone(): Scene {
     const _data = this?.serialize();
-    data.id = `${this?.id}_copy_${Date?.now()}`;
-    data.name = `${this?.name} (Copy)`;
+    data?.id = `${this?.id}_copy_${Date?.now()}`;
+    data?.name = `${this?.name} (Copy)`;
 
     for (const layer of data?.layers) {
-      layer.id = `${layer?.id}_copy_${Date?.now()}`;
+      layer?.id = `${layer?.id}_copy_${Date?.now()}`;
     }
-    data.layerOrder = data?.layers.map((l) => l?.id);
+    data?.layerOrder = data?.layers.map((l) => l?.id);
 
     return Scene?.deserialize(data);
   }
@@ -897,7 +892,7 @@ export class Scene {
       project?.id,
     );
 
-    scene.name = project?.name;
+    scene?.name = project?.name;
 
     for (const layerConfig of project?.layers) {
       const _layer = new Layer(layerConfig);
@@ -979,14 +974,14 @@ export class Timeline {
   addScene(scene: Scene): void {
     this?.scenes.set(scene?.id, scene);
     if (!this?.currentSceneId) {
-      this.currentSceneId = scene?.id;
+      this?.currentSceneId = scene?.id;
     }
   }
 
   removeScene(sceneId: string): boolean {
     if (this?.scenes.delete(sceneId)) {
       if (this?.currentSceneId === sceneId) {
-        this.currentSceneId = this?.scenes.keys().next().value ?? null;
+        this?.currentSceneId = this?.scenes.keys().next().value ?? null;
       }
       return true;
     }
@@ -1001,7 +996,7 @@ export class Timeline {
 
   setCurrentScene(sceneId: string): boolean {
     if (this?.scenes.has(sceneId)) {
-      this.currentSceneId = sceneId;
+      this?.currentSceneId = sceneId;
       return true;
     }
     return false;

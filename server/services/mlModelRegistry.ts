@@ -13,12 +13,12 @@
 import * as fs from "fs";
 import * as path from "path";
 import { randomBytes } from "crypto";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import type {
   ModelMetadata,
   EvaluationMetrics,
-} from "../../shared/ml/types.js";
-import type { BaseModel } from "../../shared/ml/models/BaseModel.js";
+} from "../../shared/ml/types?.js";
+import type { BaseModel } from "../../shared/ml/models/BaseModel?.js";
 
 // ============================================================================
 // Type Definitions
@@ -162,13 +162,13 @@ export class MLModelRegistry {
   private readonly MAX_PREDICTIONS_PER_MODEL = 10000;
 
   private constructor() {
-    this.storageDir = path?.join(process?.cwd(), "uploads", "models");
-    this.metadataFile = path?.join(this?.storageDir, "registry.json");
+    this?.storageDir = path?.join(process?.cwd(), "uploads", "models");
+    this?.metadataFile = path?.join(this?.storageDir, "registry?.json");
   }
 
   public static getInstance(): MLModelRegistry {
     if (!MLModelRegistry?.instance) {
-      MLModelRegistry.instance = new MLModelRegistry();
+      MLModelRegistry?.instance = new MLModelRegistry();
     }
     return MLModelRegistry?.instance;
   }
@@ -182,7 +182,7 @@ export class MLModelRegistry {
     try {
       await this?.ensureStorageDirectory();
       await this?.loadPersistedData();
-      this.initialized = true;
+      this?.initialized = true;
       logger?.info("ML Model Registry initialized successfully", {
         modelsLoaded: this?.models.size,
         storageDir: this?.storageDir,
@@ -197,7 +197,7 @@ export class MLModelRegistry {
     try {
       await fs?.promises.mkdir(this?.storageDir, { recursive: true });
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+      if ((error as NodeJS?.ErrnoException).code !== "EEXIST") {
         throw error;
       }
     }
@@ -216,9 +216,9 @@ export class MLModelRegistry {
 
       if (parsed?.models) {
         for (const model of parsed?.models) {
-          model.createdAt = new Date(model?.createdAt);
-          model.lastTrained = new Date(model?.lastTrained);
-          model.updatedAt = new Date(model?.updatedAt);
+          model?.createdAt = new Date(model?.createdAt);
+          model?.lastTrained = new Date(model?.lastTrained);
+          model?.updatedAt = new Date(model?.updatedAt);
           this?.models.set(model?.id, model);
         }
       }
@@ -238,11 +238,11 @@ export class MLModelRegistry {
       if (parsed?.abTests) {
         for (const [experimentId, config] of Object?.entries(parsed?.abTests)) {
           const _processedConfig = config as ABTestConfig;
-          processedConfig.startDate = new Date(processedConfig?.startDate);
+          processedConfig?.startDate = new Date(processedConfig?.startDate);
           if (processedConfig?.endDate) {
-            processedConfig.endDate = new Date(processedConfig?.endDate);
+            processedConfig?.endDate = new Date(processedConfig?.endDate);
           }
-          processedConfig.variants = processedConfig?.variants.map((v) => ({
+          processedConfig?.variants = processedConfig?.variants.map((v) => ({
             ...v,
             createdAt: new Date(v?.createdAt),
           }));
@@ -344,11 +344,11 @@ export class MLModelRegistry {
     this?.modelInstances.set(model?.id, instance);
 
     const _modelPath = path?.join(this?.storageDir, model?.id);
-    model.filePath = modelPath;
+    model?.filePath = modelPath;
 
     try {
       await instance?.save(`file://${modelPath}`);
-      model.status = "active";
+      model?.status = "active";
       await this?.persistData();
       logger?.info("Model instance saved to disk", {
         modelId: model?.id,
@@ -452,8 +452,8 @@ export class MLModelRegistry {
     }
 
     const _previousStatus = model?.status;
-    model.status = status;
-    model.updatedAt = new Date();
+    model?.status = status;
+    model?.updatedAt = new Date();
 
     await this?.persistData();
 
@@ -485,17 +485,17 @@ export class MLModelRegistry {
       throw new Error(`Model ${modelId} not found`);
     }
 
-    if (updates?.accuracy !== undefined) model.accuracy = updates?.accuracy;
-    if (updates?.loss !== undefined) model.loss = updates?.loss;
+    if (updates?.accuracy !== undefined) model?.accuracy = updates?.accuracy;
+    if (updates?.loss !== undefined) model?.loss = updates?.loss;
     if (updates?.metrics)
-      model.metrics = { ...model?.metrics, ...updates?.metrics };
+      model?.metrics = { ...model?.metrics, ...updates?.metrics };
     if (updates?.parameters)
-      model.parameters = { ...model?.parameters, ...updates?.parameters };
-    if (updates?.tags) model.tags = updates?.tags;
+      model?.parameters = { ...model?.parameters, ...updates?.parameters };
+    if (updates?.tags) model?.tags = updates?.tags;
     if (updates?.description !== undefined)
-      model.description = updates?.description;
+      model?.description = updates?.description;
 
-    model.updatedAt = new Date();
+    model?.updatedAt = new Date();
 
     await this?.persistData();
 
@@ -521,11 +521,11 @@ export class MLModelRegistry {
       throw new Error(`Model ${modelId} not found`);
     }
 
-    model.lastTrained = new Date();
-    model.updatedAt = new Date();
-    model.accuracy = metrics?.accuracy;
-    model.loss = metrics?.mse;
-    model.metrics = {
+    model?.lastTrained = new Date();
+    model?.updatedAt = new Date();
+    model?.accuracy = metrics?.accuracy;
+    model?.loss = metrics?.mse;
+    model?.metrics = {
       ...model?.metrics,
       precision: metrics?.precision || 0,
       recall: metrics?.recall || 0,
@@ -535,7 +535,7 @@ export class MLModelRegistry {
     };
 
     if (model?.status === "pending") {
-      model.status = "active";
+      model?.status = "active";
     }
 
     await this?.persistData();
@@ -613,7 +613,7 @@ export class MLModelRegistry {
       (sum, v) => sum + v?.trafficWeight,
       0,
     );
-    if (Math?.abs(totalWeight - 1) > 0.01) {
+    if (Math?.abs(totalWeight - 1) > 0?.01) {
       throw new Error("Traffic weights must sum to 1");
     }
 
@@ -650,7 +650,7 @@ export class MLModelRegistry {
       endDate: options?.endDate,
       status: "running",
       minSampleSize: options?.minSampleSize || 1000,
-      confidenceLevel: options?.confidenceLevel || 0.95,
+      confidenceLevel: options?.confidenceLevel || 0?.95,
     };
 
     this?.abTests.set(experimentId, abTest);
@@ -786,11 +786,11 @@ export class MLModelRegistry {
       throw new Error(`Experiment ${experimentId} not found`);
     }
 
-    experiment.status = status;
-    experiment.endDate = new Date();
+    experiment?.status = status;
+    experiment?.endDate = new Date();
 
     for (const variant of experiment?.variants) {
-      variant.status = "archived";
+      variant?.status = "archived";
     }
 
     await this?.persistData();
@@ -861,16 +861,16 @@ export class MLModelRegistry {
     }
 
     const _n = metrics?.totalPredictions;
-    metrics.averageLatency =
+    metrics?.averageLatency =
       (metrics?.averageLatency * (n - 1) + prediction?.latencyMs) / n;
 
     const _avgConfidence =
       prediction?.confidence.reduce((a, b) => a + b, 0) /
       prediction?.confidence.length;
-    metrics.averageConfidence =
+    metrics?.averageConfidence =
       (metrics?.averageConfidence * (n - 1) + avgConfidence) / n;
 
-    metrics.errorRate =
+    metrics?.errorRate =
       1 - metrics?.successfulPredictions / metrics?.totalPredictions;
   }
 
@@ -1007,8 +1007,8 @@ export class MLModelRegistry {
 
     await model?.save(`file://${modelPath}`);
 
-    registeredModel.filePath = modelPath;
-    registeredModel.updatedAt = new Date();
+    registeredModel?.filePath = modelPath;
+    registeredModel?.updatedAt = new Date();
 
     this?.modelInstances.set(modelId, model);
     await this?.persistData();
@@ -1107,6 +1107,7 @@ export class MLModelRegistry {
     const _index = Math?.ceil((p / 100) * sortedArray?.length) - 1;
     return sortedArray[Math?.max(0, Math?.min(index, sortedArray?.length - 1))];
   }
+
 
   /**
    * Get registry statistics

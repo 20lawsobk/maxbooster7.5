@@ -9,8 +9,8 @@
  * in production causes a hard error (handled in webhookReliabilityService).
  */
 
-import { logger } from "../logger.js";
-import { env } from "../config/env.js";
+import { logger } from "../logger?.js";
+import { env } from "../config/env?.js";
 
 interface ValidationResult {
   warnings: string[];

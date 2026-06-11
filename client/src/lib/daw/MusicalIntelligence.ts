@@ -113,7 +113,7 @@ export class MusicalIntelligenceEngine {
   private listeners: Set<() => void> = new Set();
 
   constructor() {
-    this.state = {
+    this?.state = {
       currentKey: "C",
       currentMode: "major",
       currentScale: SCALE_PATTERNS?.major,
@@ -166,7 +166,7 @@ export class MusicalIntelligenceEngine {
     }
 
     const _totalNotes = notes?.length;
-    const _confidence = Math?.min(1, bestScore / (totalNotes * 1.5));
+    const _confidence = Math?.min(1, bestScore / (totalNotes * 1?.5));
 
     this?.state.currentKey = NOTE_NAMES[bestKey];
     this?.state.currentMode = bestMode;
@@ -267,14 +267,14 @@ export class MusicalIntelligenceEngine {
     let currentBeat = 0;
 
     while (currentBeat < totalBeats) {
-      const _rhythmPatterns = [0.25, 0.5, 0.5, 1, 1, 2];
+      const _rhythmPatterns = [0?.25, 0?.5, 0?.5, 1, 1, 2];
       const _duration =
         rhythmPatterns[Math?.floor(Math?.random() * rhythmPatterns?.length)];
 
       if (currentBeat + duration > totalBeats) break;
 
       const _scaleIndex = Math?.floor(Math?.random() * scale?.length);
-      const _octaveOffset = Math?.floor(Math?.random() * 2) - 0.5;
+      const _octaveOffset = Math?.floor(Math?.random() * 2) - 0?.5;
       const _pitch =
         rootNote +
         scale[scaleIndex] +
@@ -285,7 +285,7 @@ export class MusicalIntelligenceEngine {
         pitch,
         velocity: 80 + Math?.floor(Math?.random() * 40),
         startBeat: currentBeat,
-        durationBeats: duration * 0.9,
+        durationBeats: duration * 0?.9,
         channel: 0,
         selected: false,
         muted: false,
@@ -325,7 +325,7 @@ export class MusicalIntelligenceEngine {
           pitch,
           velocity: beat === 0 ? 100 : 80,
           startBeat: currentBeat + beat,
-          durationBeats: 0.9,
+          durationBeats: 0?.9,
           channel: 0,
           selected: false,
           muted: false,
@@ -350,17 +350,17 @@ export class MusicalIntelligenceEngine {
     const _SNARE = 38;
     const _HIHAT = 42;
 
-    for (let beat = 0; beat < totalBeats; beat += 0.25) {
+    for (let beat = 0; beat < totalBeats; beat += 0?.25) {
       const _beatInBar = beat % 4;
       const _sixteenth = (beat * 4) % 4;
 
-      if (beatInBar === 0 || beatInBar === 2.5) {
+      if (beatInBar === 0 || beatInBar === 2?.5) {
         notes?.push({
           id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
           pitch: KICK,
           velocity: 100,
           startBeat: beat,
-          durationBeats: 0.25,
+          durationBeats: 0?.25,
           channel: 9,
           selected: false,
           muted: false,
@@ -373,7 +373,7 @@ export class MusicalIntelligenceEngine {
           pitch: SNARE,
           velocity: 100,
           startBeat: beat,
-          durationBeats: 0.25,
+          durationBeats: 0?.25,
           channel: 9,
           selected: false,
           muted: false,
@@ -387,7 +387,7 @@ export class MusicalIntelligenceEngine {
             pitch: HIHAT,
             velocity: sixteenth === 0 ? 90 : 70,
             startBeat: beat,
-            durationBeats: 0.2,
+            durationBeats: 0?.2,
             channel: 9,
             selected: false,
             muted: false,
@@ -399,7 +399,7 @@ export class MusicalIntelligenceEngine {
           pitch: HIHAT,
           velocity: 70 + Math?.floor(Math?.random() * 30),
           startBeat: beat,
-          durationBeats: 0.2,
+          durationBeats: 0?.2,
           channel: 9,
           selected: false,
           muted: false,
@@ -417,13 +417,13 @@ export class MusicalIntelligenceEngine {
 
     for (const track of tracks) {
       if (track?.type === "drums" || track?.type === "bass") {
-        if (Math?.abs(track?.pan) > 0.2) {
+        if (Math?.abs(track?.pan) > 0?.2) {
           suggestions?.push({
             type: "pan",
             trackId: track?.id,
             description: `Consider centering the ${track?.type} track for a more balanced mix`,
             parameters: { pan: 0 },
-            confidence: 0.8,
+            confidence: 0?.8,
           });
         }
       }
@@ -434,7 +434,7 @@ export class MusicalIntelligenceEngine {
           trackId: track?.id,
           description: `Track volume is above unity. Consider reducing to prevent clipping`,
           parameters: { volume: 0 },
-          confidence: 0.7,
+          confidence: 0?.7,
         });
       }
     }

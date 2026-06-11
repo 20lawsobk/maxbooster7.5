@@ -933,8 +933,9 @@ class SystemIntelligenceEngine extends EventEmitter {
     }
 
     try {
-      const { selfHealingEngine } =
-        await import("./selfHealingSecurityEngine.js");
+      const { selfHealingEngine } = await import(
+        "./selfHealingSecurityEngine.js"
+      );
       selfHealingEngine.on(
         "threat_detected",
         (assessment: {

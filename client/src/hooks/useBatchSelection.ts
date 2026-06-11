@@ -99,7 +99,7 @@ export function useBatchSelection<T = string>(
 
       const _next = new Set(selectedIds);
       next?.add(id);
-      lastSelectedRef.current = id;
+      lastSelectedRef?.current = id;
       updateSelection(next, [...selectionOrder, id]);
     },
     [selectedIds, maxSelection, updateSelection, selectionOrder],
@@ -151,7 +151,7 @@ export function useBatchSelection<T = string>(
         }
       }
 
-      lastSelectedRef.current = endId;
+      lastSelectedRef?.current = endId;
       updateSelection(next, newOrder);
     },
     [selectedIds, maxSelection, updateSelection, selectionOrder],
@@ -163,7 +163,7 @@ export function useBatchSelection<T = string>(
         selectRange(lastSelectedRef?.current, id, allIds);
       } else {
         toggle(id);
-        lastSelectedRef.current = id;
+        lastSelectedRef?.current = id;
       }
     },
     [toggle, selectRange],
@@ -174,7 +174,7 @@ export function useBatchSelection<T = string>(
       const _idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
       updateSelection(new Set(idsToSelect), idsToSelect);
       if (idsToSelect?.length > 0) {
-        lastSelectedRef.current = idsToSelect[idsToSelect?.length - 1];
+        lastSelectedRef?.current = idsToSelect[idsToSelect?.length - 1];
       }
     },
     [maxSelection, updateSelection],
@@ -182,7 +182,7 @@ export function useBatchSelection<T = string>(
 
   const _deselectAll = useCallback(() => {
     updateSelection(new Set(), []);
-    lastSelectedRef.current = null;
+    lastSelectedRef?.current = null;
   }, [updateSelection]);
 
   const _clearSelection = useCallback(() => {

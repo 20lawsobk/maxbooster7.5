@@ -1,6 +1,6 @@
 import { storage } from "../storage";
 import { stripeService } from "./stripeService";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export class BeatService {
   async purchaseBeat(

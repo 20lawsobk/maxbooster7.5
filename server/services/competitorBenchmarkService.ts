@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { db } from "../db";
 import { competitorProfiles, posts } from "@shared/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface CompetitorMetrics {
   id: string;
@@ -182,7 +182,7 @@ export class CompetitorBenchmarkService {
           metric: "Total Followers",
           yourValue: yourStats?.totalFollowers,
           competitorAvg: competitorAvgFollowers,
-          industryAvg: competitorAvgFollowers * 0.8,
+          industryAvg: competitorAvgFollowers * 0?.8,
           percentile: this?.calculatePercentile(
             yourStats?.totalFollowers,
             competitorAvgFollowers,
@@ -198,7 +198,7 @@ export class CompetitorBenchmarkService {
           metric: "Engagement Rate",
           yourValue: yourStats?.engagementRate,
           competitorAvg: competitorAvgEngagement,
-          industryAvg: 3.5,
+          industryAvg: 3?.5,
           percentile: this?.calculatePercentile(
             yourStats?.engagementRate,
             competitorAvgEngagement,
@@ -261,7 +261,7 @@ export class CompetitorBenchmarkService {
           mentions: 0, // Requires social listening API
           percentage: Math?.round(yourSharePct * 10) / 10,
           reach: yourReach,
-          sentiment: 0.65,
+          sentiment: 0?.65,
         },
         competitors: competitors?.slice(0, 5).map((c) => {
           const _compShare =
@@ -294,12 +294,12 @@ export class CompetitorBenchmarkService {
 
       if (competitors?.length > 0) {
         const _topCompetitor = competitors[0];
-        if (topCompetitor?.avgEngagementRate > yourStats?.engagementRate * 1.5) {
+        if (topCompetitor?.avgEngagementRate > yourStats?.engagementRate * 1?.5) {
           insights?.push({
             id: randomBytes(8).toString("hex"),
             type: "opportunity",
             title: "Engagement Gap Detected",
-            description: `${topCompetitor?.name} has ${Math?.round((topCompetitor?.avgEngagementRate / Math?.max(yourStats?.engagementRate, 0.1) - 1) * 100)}% higher engagement rate. Analyze their content strategy for improvements.`,
+            description: `${topCompetitor?.name} has ${Math?.round((topCompetitor?.avgEngagementRate / Math?.max(yourStats?.engagementRate, 0?.1) - 1) * 100)}% higher engagement rate. Analyze their content strategy for improvements.`,
             competitorId: topCompetitor?.id,
             competitorName: topCompetitor?.name,
             actionable: true,
@@ -398,8 +398,8 @@ export class CompetitorBenchmarkService {
 
       return {
         totalFollowers: 10000,
-        followersGrowth: 2.5,
-        engagementRate: 3.2,
+        followersGrowth: 2?.5,
+        engagementRate: 3?.2,
         postsPerWeek,
         avgLikes,
         avgComments,
@@ -459,10 +459,10 @@ export class CompetitorBenchmarkService {
     if (competitorAvg === 0) return 50;
     const _ratio = yourValue / competitorAvg;
     if (ratio >= 2) return 95;
-    if (ratio >= 1.5) return 85;
+    if (ratio >= 1?.5) return 85;
     if (ratio >= 1) return 70;
-    if (ratio >= 0.75) return 50;
-    if (ratio >= 0.5) return 35;
+    if (ratio >= 0?.75) return 50;
+    if (ratio >= 0?.5) return 35;
     return 20;
   }
 }

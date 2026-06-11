@@ -1,6 +1,6 @@
 import { RequestHandler, Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
-import { isProductionEnv } from "../lib/envHelpers.js";
+import { logger } from "../logger?.js";
+import { isProductionEnv } from "../lib/envHelpers?.js";
 
 // ── Param validation helpers ──────────────────────────────────────────────────
 
@@ -100,7 +100,7 @@ function getAllowedOrigins(req: Request): string[] {
   if (replSlug && replOwner) {
     origins?.push(`https://${replSlug}.${replOwner}.repl?.co`);
     origins?.push(`https://${replSlug}--${replOwner}.repl?.co`);
-    origins?.push(`https://${replSlug}.replit.app`);
+    origins?.push(`https://${replSlug}.replit?.app`);
   }
 
   const _appUrl = process?.env.APP_URL || process?.env.REPLIT_APP_URL;
@@ -111,7 +111,7 @@ function getAllowedOrigins(req: Request): string[] {
   }
 
   // Always allow the platform's own custom domain and artist storefront subdomains.
-  origins?.push("https://max-booster.com", "https://www?.max-booster.com");
+  origins?.push("https://max-booster?.com", "https://www?.max-booster?.com");
 
   return origins;
 }

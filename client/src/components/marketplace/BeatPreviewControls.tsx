@@ -57,12 +57,12 @@ export function BeatPreviewControls({
     targetBpm,
     targetKey,
     volume,
-
+    
     pitchShift,
     loadBeat,
     play,
     pause,
-
+    
     setTargetBpm,
     setTargetKey,
     setVolume,

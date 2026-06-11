@@ -15565,40 +15565,42 @@ function Ms({
                           "div",
                           {
                             className: "flex flex-wrap gap-1 mt-2",
-                            children: n.slice(0, 3).map((o, p) =>
-                              e.jsxDEV(
-                                C,
-                                {
-                                  variant: "outline",
-                                  className: "text-xs",
-                                  children: [
-                                    e.jsxDEV(
-                                      T,
-                                      { className: "h-3 w-3 mr-1" },
-                                      void 0,
-                                      !1,
-                                      {
-                                        fileName:
-                                          "/home/runner/workspace/client/src/components/collaboration/CollaboratorCard.tsx",
-                                        lineNumber: 157,
-                                        columnNumber: 21,
-                                      },
-                                      this,
-                                    ),
-                                    o,
-                                  ],
-                                },
-                                p,
-                                !0,
-                                {
-                                  fileName:
-                                    "/home/runner/workspace/client/src/components/collaboration/CollaboratorCard.tsx",
-                                  lineNumber: 156,
-                                  columnNumber: 19,
-                                },
-                                this,
+                            children: n
+                              .slice(0, 3)
+                              .map((o, p) =>
+                                e.jsxDEV(
+                                  C,
+                                  {
+                                    variant: "outline",
+                                    className: "text-xs",
+                                    children: [
+                                      e.jsxDEV(
+                                        T,
+                                        { className: "h-3 w-3 mr-1" },
+                                        void 0,
+                                        !1,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/components/collaboration/CollaboratorCard.tsx",
+                                          lineNumber: 157,
+                                          columnNumber: 21,
+                                        },
+                                        this,
+                                      ),
+                                      o,
+                                    ],
+                                  },
+                                  p,
+                                  !0,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/components/collaboration/CollaboratorCard.tsx",
+                                    lineNumber: 156,
+                                    columnNumber: 19,
+                                  },
+                                  this,
+                                ),
                               ),
-                            ),
                           },
                           void 0,
                           !1,

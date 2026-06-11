@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { storage } from "../storage";
 import { logger } from "../logger";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 
 const _router = Router();
 
@@ -45,7 +45,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     ) {
       errors?.push("reducedMotion must be a boolean or null");
     } else {
-      sanitized.reducedMotion = preferences?.reducedMotion;
+      sanitized?.reducedMotion = preferences?.reducedMotion;
     }
   }
 
@@ -54,7 +54,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     if (!validModes?.includes(preferences?.contrastMode)) {
       errors?.push("contrastMode must be normal, high, more, or null");
     } else {
-      sanitized.contrastMode = preferences?.contrastMode;
+      sanitized?.contrastMode = preferences?.contrastMode;
     }
   }
 
@@ -63,7 +63,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     if (!validSizes?.includes(preferences?.fontSize)) {
       errors?.push("fontSize must be small, medium, large, or x-large");
     } else {
-      sanitized.fontSize = preferences?.fontSize;
+      sanitized?.fontSize = preferences?.fontSize;
     }
   }
 
@@ -80,7 +80,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
         "colorBlindMode must be none, protanopia, deuteranopia, tritanopia, or achromatopsia",
       );
     } else {
-      sanitized.colorBlindMode = preferences?.colorBlindMode;
+      sanitized?.colorBlindMode = preferences?.colorBlindMode;
     }
   }
 
@@ -92,7 +92,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     ) {
       errors?.push("focusIndicatorWidth must be a number between 1 and 8");
     } else {
-      sanitized.focusIndicatorWidth = preferences?.focusIndicatorWidth;
+      sanitized?.focusIndicatorWidth = preferences?.focusIndicatorWidth;
     }
   }
 
@@ -100,7 +100,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     if (typeof preferences?.screenReaderOptimized !== "boolean") {
       errors?.push("screenReaderOptimized must be a boolean");
     } else {
-      sanitized.screenReaderOptimized = preferences?.screenReaderOptimized;
+      sanitized?.screenReaderOptimized = preferences?.screenReaderOptimized;
     }
   }
 
@@ -108,7 +108,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
     if (typeof preferences?.keyboardNavigationEnabled !== "boolean") {
       errors?.push("keyboardNavigationEnabled must be a boolean");
     } else {
-      sanitized.keyboardNavigationEnabled =
+      sanitized?.keyboardNavigationEnabled =
         preferences?.keyboardNavigationEnabled;
     }
   }

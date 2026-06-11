@@ -12,7 +12,7 @@
  *   • Results are cached for 30 s per domain+type to avoid DoH rate limits.
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // ─── Resolvers ────────────────────────────────────────────────────────────────
 
@@ -27,16 +27,16 @@ const RESOLVERS: DoHResolver[] = [
   {
     name: "Cloudflare",
     region: "Global",
-    url: "https://cloudflare-dns.com/dns-query",
+    url: "https://cloudflare-dns?.com/dns-query",
   },
   {
     name: "Cloudflare Alt",
     region: "Global",
-    url: "https://1.1.1.1/dns-query",
+    url: "https://1?.1.1?.1/dns-query",
   },
   // Google DoH — reliable, cloud-friendly
   { name: "Google", region: "Global", url: "https://dns?.google/resolve" },
-  { name: "Google Alt", region: "Global", url: "https://8.8.8.8/resolve" },
+  { name: "Google Alt", region: "Global", url: "https://8?.8.8?.8/resolve" },
 ];
 
 const DNS_TYPE_NUMS: Record<string, number> = {
@@ -160,7 +160,7 @@ async function queryResolver(
  * Queries all four public resolvers in parallel for the given domain/type.
  * Returns a full propagation report including per-resolver results.
  *
- * @param domain     The domain name to query (e?.g. "mybeats.com")
+ * @param domain     The domain name to query (e?.g. "mybeats?.com")
  * @param type       DNS record type (A, CNAME, NS, TXT, MX, AAAA, CAA)
  * @param expected   Optional expected value — resolvers are marked as
  *                   "propagated" only if they return this value.

@@ -2,8 +2,8 @@ import { randomBytes } from "crypto";
 
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { logger } from "../logger.js";
-import { db } from "../db.js";
+import { logger } from "../logger?.js";
+import { db } from "../db?.js";
 import { taxTreatyRates } from "@shared/schema";
 
 export type TaxFormType =
@@ -164,7 +164,7 @@ class TaxFormService {
           map[row?.countryCode] = row?.treatyRate;
         }
       }
-      this._treatyCache = { data: map, expiresAt: now + 3600_000 };
+      this?._treatyCache = { data: map, expiresAt: now + 3600_000 };
       return map;
     } catch (err) {
       logger?.warn(
@@ -176,7 +176,7 @@ class TaxFormService {
   }
 
   invalidateTreatyCache() {
-    this._treatyCache = null;
+    this?._treatyCache = null;
   }
 
   async calculateWithholdingAsync(
@@ -493,10 +493,10 @@ class TaxFormService {
       throw new Error("Tax form not found");
     }
 
-    form.status = "signed";
-    form.signatureDate = new Date();
-    form.signatureHash = signatureHash;
-    form.updatedAt = new Date();
+    form?.status = "signed";
+    form?.signatureDate = new Date();
+    form?.signatureHash = signatureHash;
+    form?.updatedAt = new Date();
 
     this?.cacheTaxForm(formId, form);
     logger?.info(`Tax form ${formId} signed`);
@@ -576,7 +576,7 @@ class TaxFormService {
     );
     y += 10;
 
-    doc?.setLineWidth(0.5);
+    doc?.setLineWidth(0?.5);
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
@@ -627,7 +627,7 @@ class TaxFormService {
       const _isChecked = info?.taxClassification === cls?.value;
       doc?.rect(margin, y - 3, 4, 4);
       if (isChecked) {
-        doc?.text("X", margin + 0.8, y);
+        doc?.text("X", margin + 0?.8, y);
       }
       doc?.text(cls?.label, margin + 8, y);
       y += 6;
@@ -649,7 +649,7 @@ class TaxFormService {
     doc?.text(cityStateZip, margin, y);
     y += 15;
 
-    doc?.setLineWidth(0.5);
+    doc?.setLineWidth(0?.5);
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
@@ -761,7 +761,7 @@ class TaxFormService {
     });
     y += 10;
 
-    doc?.setLineWidth(0.5);
+    doc?.setLineWidth(0?.5);
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
@@ -821,7 +821,7 @@ class TaxFormService {
     }
 
     y += 5;
-    doc?.setLineWidth(0.5);
+    doc?.setLineWidth(0?.5);
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
@@ -855,7 +855,7 @@ class TaxFormService {
     }
 
     y += 5;
-    doc?.setLineWidth(0.5);
+    doc?.setLineWidth(0?.5);
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
@@ -927,7 +927,7 @@ class TaxFormService {
     doc?.text("Copy B - For Recipient", margin, y);
     y += 10;
 
-    doc?.setLineWidth(0.5);
+    doc?.setLineWidth(0?.5);
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
@@ -991,7 +991,7 @@ class TaxFormService {
     }
     y += 15;
 
-    doc?.setLineWidth(0.5);
+    doc?.setLineWidth(0?.5);
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 

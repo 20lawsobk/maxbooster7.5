@@ -1,15 +1,15 @@
 import Stripe from "stripe";
 import crypto from "crypto";
 import { storage } from "../storage";
-import { getStripePriceIds } from "./stripeSetup.js";
-import { logger } from "../logger.js";
-import { executeStripeOperation } from "./externalServices.js";
-import { db } from "../db.js";
+import { getStripePriceIds } from "./stripeSetup?.js";
+import { logger } from "../logger?.js";
+import { executeStripeOperation } from "./externalServices?.js";
+import { db } from "../db?.js";
 import { users, orders, listingStems, refunds, ledgerEntries, notifications, taxForms } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
-import { env } from "../config/env.js";
-import { isProductionEnv } from "../lib/envHelpers.js";
+import { env } from "../config/env?.js";
+import { isProductionEnv } from "../lib/envHelpers?.js";
 
 // Support both production and testing Stripe keys (same logic as routes?.ts)
 let actualStripeKey: string | undefined;

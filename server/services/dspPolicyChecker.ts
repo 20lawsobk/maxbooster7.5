@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import fs from "fs";
 
 // Optional sharp support with graceful fallback

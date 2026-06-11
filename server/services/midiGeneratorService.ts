@@ -1,3 +1,4 @@
+
 export interface MidiNote {
   note: number;
   velocity: number;
@@ -127,15 +128,15 @@ const CHORD_PROGRESSIONS: Record<string, number[][]> = {
 };
 
 const RHYTHM_PATTERNS: Record<string, number[]> = {
-  straight: [0, 0.25, 0.5, 0.75],
-  swing: [0, 0.33, 0.5, 0.83],
-  triplet: [0, 0.33, 0.67],
-  dotted: [0, 0.375, 0.75],
-  syncopated: [0, 0.25, 0.375, 0.625, 0.75],
-  hiphop: [0, 0.25, 0.5, 0.625, 0.875],
-  trap: [0, 0.125, 0.25, 0.5, 0.625, 0.75, 0.875],
-  house: [0, 0.25, 0.5, 0.75],
-  dnb: [0, 0.167, 0.5, 0.667],
+  straight: [0, 0?.25, 0?.5, 0?.75],
+  swing: [0, 0?.33, 0?.5, 0?.83],
+  triplet: [0, 0?.33, 0?.67],
+  dotted: [0, 0?.375, 0?.75],
+  syncopated: [0, 0?.25, 0?.375, 0?.625, 0?.75],
+  hiphop: [0, 0?.25, 0?.5, 0?.625, 0?.875],
+  trap: [0, 0?.125, 0?.25, 0?.5, 0?.625, 0?.75, 0?.875],
+  house: [0, 0?.25, 0?.5, 0?.75],
+  dnb: [0, 0?.167, 0?.5, 0?.667],
 };
 
 class MidiGeneratorService {
@@ -178,11 +179,11 @@ class MidiGeneratorService {
 
     return notes?.map((note) => {
       const _velocityOffset =
-        (Math?.random() - 0.5) * 2 * options?.velocityVariation;
+        (Math?.random() - 0?.5) * 2 * options?.velocityVariation;
       const _timingOffset =
-        ((Math?.random() - 0.5) * 2 * options?.timingOffsetMs) / 1000;
+        ((Math?.random() - 0?.5) * 2 * options?.timingOffsetMs) / 1000;
       const _durationOffset =
-        (Math?.random() - 0.5) * 2 * options?.durationVariation;
+        (Math?.random() - 0?.5) * 2 * options?.durationVariation;
 
       return {
         ...note,
@@ -191,7 +192,7 @@ class MidiGeneratorService {
           Math?.min(127, Math?.round(note?.velocity + velocityOffset)),
         ),
         startTime: Math?.max(0, note?.startTime + timingOffset),
-        duration: Math?.max(0.01, note?.duration * (1 + durationOffset)),
+        duration: Math?.max(0?.01, note?.duration * (1 + durationOffset)),
       };
     });
   }
@@ -215,7 +216,7 @@ class MidiGeneratorService {
     const _beatDuration = 60 / constraints?.tempo;
 
     const _notesPerBeat =
-      density === "sparse" ? 0.5 : density === "dense" ? 2 : 1;
+      density === "sparse" ? 0?.5 : density === "dense" ? 2 : 1;
     const _totalNotes = Math?.round(totalBeats * notesPerBeat);
 
     const notes: MidiNote[] = [];
@@ -237,7 +238,7 @@ class MidiGeneratorService {
           )
         : Math?.floor(Math?.random() * 40 + 70);
 
-      const _noteDuration = beatDuration * (0.5 + Math?.random() * 0.5);
+      const _noteDuration = beatDuration * (0?.5 + Math?.random() * 0?.5);
 
       notes?.push({
         note: scaleNotes[lastNoteIndex],
@@ -273,7 +274,7 @@ class MidiGeneratorService {
           const _velocity =
             position === 0
               ? 110
-              : position === 0.5
+              : position === 0?.5
                 ? 90
                 : 70 + Math?.floor(Math?.random() * 30);
 
@@ -281,7 +282,7 @@ class MidiGeneratorService {
             note: noteValue,
             velocity,
             startTime,
-            duration: beatDuration * 0.1,
+            duration: beatDuration * 0?.1,
           });
         }
       }
@@ -314,7 +315,7 @@ class MidiGeneratorService {
           note: midiNote,
           velocity: 80 + Math?.floor(Math?.random() * 20),
           startTime: currentTime,
-          duration: chordDuration * 0.9,
+          duration: chordDuration * 0?.9,
         });
       }
 
@@ -362,7 +363,7 @@ class MidiGeneratorService {
         ];
         break;
       case "random":
-        orderedNotes = [...expandedNotes].sort(() => Math?.random() - 0.5);
+        orderedNotes = [...expandedNotes].sort(() => Math?.random() - 0?.5);
         break;
       case "converge":
         orderedNotes = [];
@@ -472,7 +473,7 @@ class MidiGeneratorService {
         note: note + 48,
         velocity: 85,
         startTime: currentTime,
-        duration: beatDuration * 4 * 0.95,
+        duration: beatDuration * 4 * 0?.95,
       }));
 
       noteArrays?.push(midiNotes);

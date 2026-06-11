@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs/promises";
 import { randomBytes } from "crypto";
-import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
+import { musicIndustryContextFilter } from "./musicIndustryContextFilter?.js";
 import wavefilePkg from "wavefile";
 const _WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
@@ -98,7 +98,7 @@ const _genreTemplates = {
     ],
     complexity: "complex",
     chordTypes: ["major7", "minor7", "dom7"],
-    swingFactor: 0.6,
+    swingFactor: 0?.6,
   },
   rock: {
     progressions: [
@@ -108,7 +108,7 @@ const _genreTemplates = {
     ],
     complexity: "simple",
     chordTypes: ["major", "minor"],
-    swingFactor: 0.5,
+    swingFactor: 0?.5,
   },
   pop: {
     progressions: [
@@ -118,13 +118,13 @@ const _genreTemplates = {
     ],
     complexity: "simple",
     chordTypes: ["major", "minor"],
-    swingFactor: 0.5,
+    swingFactor: 0?.5,
   },
   blues: {
     progressions: [[1, 1, 1, 1, 4, 4, 1, 1, 5, 4, 1, 5]],
     complexity: "simple",
     chordTypes: ["dom7", "major"],
-    swingFactor: 0.67,
+    swingFactor: 0?.67,
   },
   classical: {
     progressions: [
@@ -133,7 +133,7 @@ const _genreTemplates = {
     ],
     complexity: "complex",
     chordTypes: ["major", "minor", "dim"],
-    swingFactor: 0.5,
+    swingFactor: 0?.5,
   },
   electronic: {
     progressions: [
@@ -142,29 +142,29 @@ const _genreTemplates = {
     ],
     complexity: "simple",
     chordTypes: ["major", "minor"],
-    swingFactor: 0.5,
+    swingFactor: 0?.5,
   },
 };
 
 // Musical note frequencies (A4 = 440Hz)
 const NOTE_FREQUENCIES: Record<string, number> = {
-  C: 261.63,
-  "C#": 277.18,
-  Db: 277.18,
-  D: 293.66,
-  "D#": 311.13,
-  Eb: 311.13,
-  E: 329.63,
-  F: 349.23,
-  "F#": 369.99,
-  Gb: 369.99,
-  G: 392.0,
-  "G#": 415.3,
-  Ab: 415.3,
-  A: 440.0,
-  "A#": 466.16,
-  Bb: 466.16,
-  B: 493.88,
+  C: 261?.63,
+  "C#": 277?.18,
+  Db: 277?.18,
+  D: 293?.66,
+  "D#": 311?.13,
+  Eb: 311?.13,
+  E: 329?.63,
+  F: 349?.23,
+  "F#": 369?.99,
+  Gb: 369?.99,
+  G: 392?.0,
+  "G#": 415?.3,
+  Ab: 415?.3,
+  A: 440?.0,
+  "A#": 466?.16,
+  Bb: 466?.16,
+  B: 493?.88,
 };
 
 // ============================================================================
@@ -208,7 +208,7 @@ class SeededRandom {
   private seed: number;
 
   constructor(seed: number) {
-    this.seed = seed;
+    this?.seed = seed;
   }
 
   next(): number {
@@ -370,8 +370,8 @@ export function generateMelody(
   // Rhythmic patterns (in beats)
   const _rhythmPatterns = [
     [1, 1, 1, 1], // Quarter notes
-    [0.5, 0.5, 0.5, 0.5, 1, 1], // Mixed
-    [1, 0.5, 0.5, 1, 1], // Syncopated
+    [0?.5, 0?.5, 0?.5, 0?.5, 1, 1], // Mixed
+    [1, 0?.5, 0?.5, 1, 1], // Syncopated
     [2, 1, 1], // Half + quarters
   ];
 
@@ -389,7 +389,7 @@ export function generateMelody(
     );
 
     // Generate pitch with constraints
-    const _direction = seed?.next() > 0.5 ? 1 : -1;
+    const _direction = seed?.next() > 0?.5 ? 1 : -1;
     const _interval = seed?.nextInt(0, 2); // Stepwise motion preferred
     currentPitchIndex = Math?.max(
       0,
@@ -428,10 +428,10 @@ function getNoteFrequency(note: string, octave: number): number {
 function generateADSREnvelope(
   sampleCount: number,
   sampleRate: number,
-  attack: number = 0.05,
-  decay: number = 0.1,
-  sustain: number = 0.7,
-  release: number = 0.2,
+  attack: number = 0?.05,
+  decay: number = 0?.1,
+  sustain: number = 0?.7,
+  release: number = 0?.2,
 ): Float32Array {
   const _envelope = new Float32Array(sampleCount);
   const _attackSamples = Math?.floor(attack * sampleRate);
@@ -497,7 +497,7 @@ export async function synthesizeToWAV(
       i++
     ) {
       const _t = i / sampleRate;
-      const _sample = Math?.sin(2 * Math?.PI * freq * t) * envelope[i] * 0.3;
+      const _sample = Math?.sin(2 * Math?.PI * freq * t) * envelope[i] * 0?.3;
       audioBuffer[startSample + i] += sample;
     }
   }
@@ -509,7 +509,7 @@ export async function synthesizeToWAV(
   }
   if (maxAmplitude > 0) {
     for (let i = 0; i < totalSamples; i++) {
-      audioBuffer[i] = (audioBuffer[i] / maxAmplitude) * 0.8;
+      audioBuffer[i] = (audioBuffer[i] / maxAmplitude) * 0?.8;
     }
   }
 
@@ -556,7 +556,7 @@ export async function analyzeAudioForGeneration(
 
     // Read and analyze the audio file
     const _audioBuffer = await fsPromises?.readFile(audioPath);
-    const _wav = new WaveFile.WaveFile(audioBuffer);
+    const _wav = new WaveFile?.WaveFile(audioBuffer);
 
     // Get audio samples for analysis
     const _samplesData = wav?.getSamples(true) as Record<string, unknown>;
@@ -591,14 +591,14 @@ export async function analyzeAudioForGeneration(
       else highFreqEnergy += val;
     }
 
-    const _energyRatio = highFreqEnergy / (lowFreqEnergy + 0.001);
+    const _energyRatio = highFreqEnergy / (lowFreqEnergy + 0?.001);
     const _mood =
-      energyRatio > 1.2 ? "energetic" : energyRatio < 0.8 ? "calm" : "balanced";
+      energyRatio > 1?.2 ? "energetic" : energyRatio < 0?.8 ? "calm" : "balanced";
 
     // Determine genre based on tempo and energy characteristics
     let genre = "pop";
-    if (estimatedTempo > 140 && energyRatio > 1.1) genre = "electronic";
-    else if (estimatedTempo < 90 && energyRatio < 0.9) genre = "ballad";
+    if (estimatedTempo > 140 && energyRatio > 1?.1) genre = "electronic";
+    else if (estimatedTempo < 90 && energyRatio < 0?.9) genre = "ballad";
     else if (estimatedTempo > 100 && estimatedTempo < 130) genre = "rock";
 
     // Detect key using spectral analysis (simplified)

@@ -42,17 +42,22 @@ router.post("/ai/predict-metric", async (req: Request, res: Response) => {
       "engagement",
     ];
     if (!metric || !ALLOWED_METRICS.includes(metric)) {
-      return res.status(400).json({
-        error: "Invalid metric. Must be one of: " + ALLOWED_METRICS.join(", "),
-      });
+      return res
+        .status(400)
+        .json({
+          error:
+            "Invalid metric. Must be one of: " + ALLOWED_METRICS.join(", "),
+        });
     }
 
     // Validate timeframe format and cap to prevent heavy DB scans
     const timeframeMatch = /^(\d+)d$/.exec(String(timeframe));
     if (!timeframeMatch) {
-      return res.status(400).json({
-        error: "Invalid timeframe format. Expected format: 30d, 90d, etc.",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Invalid timeframe format. Expected format: 30d, 90d, etc.",
+        });
     }
     const requestedDays = parseInt(timeframeMatch[1], 10);
     if (requestedDays < 1 || requestedDays > 365) {
@@ -497,16 +502,21 @@ router.post("/music/career-growth", async (req: Request, res: Response) => {
       "engagement",
     ];
     if (metric && !ALLOWED_METRICS.includes(metric)) {
-      return res.status(400).json({
-        error: "Invalid metric. Must be one of: " + ALLOWED_METRICS.join(", "),
-      });
+      return res
+        .status(400)
+        .json({
+          error:
+            "Invalid metric. Must be one of: " + ALLOWED_METRICS.join(", "),
+        });
     }
 
     const timelineMatch = /^(\d+)d$/.exec(String(timeline));
     if (!timelineMatch) {
-      return res.status(400).json({
-        error: "Invalid timeline format. Expected format: 30d, 90d, etc.",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Invalid timeline format. Expected format: 30d, 90d, etc.",
+        });
     }
     const requestedDays = parseInt(timelineMatch[1], 10);
     if (requestedDays < 1 || requestedDays > 365) {

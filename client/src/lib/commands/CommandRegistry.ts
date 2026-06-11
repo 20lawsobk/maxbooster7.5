@@ -46,7 +46,7 @@ class CommandRegistryImpl {
     try {
       const _stored = localStorage?.getItem(HISTORY_STORAGE_KEY);
       if (stored) {
-        this.history = JSON?.parse(stored);
+        this?.history = JSON?.parse(stored);
       }
     } catch (e) {
       logger?.warn("Failed to load command history:", e);
@@ -101,7 +101,7 @@ class CommandRegistryImpl {
   }
 
   setContext(context: string): void {
-    this.currentContext = context;
+    this?.currentContext = context;
   }
 
   getContext(): string {
@@ -136,13 +136,13 @@ class CommandRegistryImpl {
   }
 
   private addToHistory(commandId: string): void {
-    this.history = this?.history.filter((h) => h?.commandId !== commandId);
+    this?.history = this?.history.filter((h) => h?.commandId !== commandId);
     this?.history.unshift({
       commandId,
       timestamp: Date?.now(),
     });
     if (this?.history.length > MAX_HISTORY_SIZE) {
-      this.history = this?.history.slice(0, MAX_HISTORY_SIZE);
+      this?.history = this?.history.slice(0, MAX_HISTORY_SIZE);
     }
     this?.saveHistory();
   }
@@ -159,7 +159,7 @@ class CommandRegistryImpl {
   }
 
   clearHistory(): void {
-    this.history = [];
+    this?.history = [];
     this?.saveHistory();
   }
 

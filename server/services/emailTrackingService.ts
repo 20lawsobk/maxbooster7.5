@@ -1,4 +1,4 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import {
   emailMessages,
   emailEvents,
@@ -7,7 +7,7 @@ import {
 } from "@shared/schema";
 import { eq, desc, sql, gte } from "drizzle-orm";
 import nacl from "tweetnacl";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export class EmailTrackingService {
   /**
@@ -79,12 +79,12 @@ export class EmailTrackingService {
       };
 
       eventCounts?.forEach((row) => {
-        if (row?.eventType === "delivered") stats.delivered = row?.count;
-        if (row?.eventType === "bounce") stats.bounced = row?.count;
-        if (row?.eventType === "spam") stats.spam = row?.count;
-        if (row?.eventType === "unsubscribe") stats.unsubscribed = row?.count;
-        if (row?.eventType === "open") stats.opened = row?.count;
-        if (row?.eventType === "click") stats.clicked = row?.count;
+        if (row?.eventType === "delivered") stats?.delivered = row?.count;
+        if (row?.eventType === "bounce") stats?.bounced = row?.count;
+        if (row?.eventType === "spam") stats?.spam = row?.count;
+        if (row?.eventType === "unsubscribe") stats?.unsubscribed = row?.count;
+        if (row?.eventType === "open") stats?.opened = row?.count;
+        if (row?.eventType === "click") stats?.clicked = row?.count;
       });
 
       return stats;

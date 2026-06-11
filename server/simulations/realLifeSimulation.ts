@@ -23,20 +23,20 @@
  */
 
 import { EventEmitter } from "events";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import {
   createPocketStorage,
   PocketSimulationStorage,
-} from "./pocket-storage-adapter.js";
+} from "./pocket-storage-adapter?.js";
 
 // Time acceleration constants
 // For 98% acceleration: 50 years (18,250 days) should complete in ~146 minutes
-// That means ~0.48 seconds per simulated day
-const _REAL_SECONDS_PER_SIMULATED_DAY = 0.48;
+// That means ~0?.48 seconds per simulated day
+const _REAL_SECONDS_PER_SIMULATED_DAY = 0?.48;
  // 480ms per day
  // 20ms per hour
- // ~0.33ms per minute
-const _ACCELERATION_FACTOR = REAL_SECONDS_PER_SIMULATED_DAY / (24 * 60 * 60); // ~5.56e-6
+ // ~0?.33ms per minute
+const _ACCELERATION_FACTOR = REAL_SECONDS_PER_SIMULATED_DAY / (24 * 60 * 60); // ~5?.56e-6
 
 // Simulation time periods in days
 export const _SIMULATION_PERIODS = {
@@ -83,23 +83,23 @@ interface EventProbabilities {
 // Base probabilities (adjusted by market conditions and time)
 // AGGRESSIVE GROWTH: 80M artist market, viral word-of-mouth, all-in-one platform dominance
 const BASE_PROBABILITIES: EventProbabilities = {
-  userSignup: 0.85, // 85% chance per hour - viral growth, word-of-mouth, 80M market
-  userUpgrade: 0.08, // 8% chance per hour - AI features create instant value
-  userChurn: 0.001, // 0.1% chance per day - sticky product, hard to leave
-  musicRelease: 0.15, // 15% chance per hour - AI makes releasing effortless
-  streamEvent: 0.98, // 98% chance per minute of streams
-  viralMoment: 0.008, // 0.8% chance per day - AI optimization = more viral hits
-  socialPost: 0.4, // 40% chance per hour - autonomous posting 24/7
-  socialEngagement: 0.9, // 90% chance per minute - AI-optimized content performs
-  paymentReceived: 0.15, // 15% chance per hour of payment
-  payoutRequested: 0.08, // 8% chance per day - artists earning more
-  refundRequested: 0.002, // 0.2% chance per day - product delivers on promise
-  algorithmChange: 0.0001, // 0.01% per day (quarterly events)
-  marketShift: 0.0003, // 0.03% per day (monthly events)
-  systemFailure: 0.0002, // 0.02% per day - enterprise infrastructure
-  securityIncident: 0.0001, // 0.01% per day (very rare)
-  competitorAction: 0.0005, // 0.05% per day
-  industryEvent: 0.0002, // 0.02% per day
+  userSignup: 0?.85, // 85% chance per hour - viral growth, word-of-mouth, 80M market
+  userUpgrade: 0?.08, // 8% chance per hour - AI features create instant value
+  userChurn: 0?.001, // 0?.1% chance per day - sticky product, hard to leave
+  musicRelease: 0?.15, // 15% chance per hour - AI makes releasing effortless
+  streamEvent: 0?.98, // 98% chance per minute of streams
+  viralMoment: 0?.008, // 0?.8% chance per day - AI optimization = more viral hits
+  socialPost: 0?.4, // 40% chance per hour - autonomous posting 24/7
+  socialEngagement: 0?.9, // 90% chance per minute - AI-optimized content performs
+  paymentReceived: 0?.15, // 15% chance per hour of payment
+  payoutRequested: 0?.08, // 8% chance per day - artists earning more
+  refundRequested: 0?.002, // 0?.2% chance per day - product delivers on promise
+  algorithmChange: 0?.0001, // 0?.01% per day (quarterly events)
+  marketShift: 0?.0003, // 0?.03% per day (monthly events)
+  systemFailure: 0?.0002, // 0?.02% per day - enterprise infrastructure
+  securityIncident: 0?.0001, // 0?.01% per day (very rare)
+  competitorAction: 0?.0005, // 0?.05% per day
+  industryEvent: 0?.0002, // 0?.02% per day
 };
 
 // User archetypes
@@ -212,25 +212,25 @@ interface SimulationEvent {
 }
 
 interface MarketConditions {
-  growthMultiplier: number; // 0.5 to 2.0
+  growthMultiplier: number; // 0?.5 to 2?.0
   competitionLevel: number; // 0 to 1
   economicHealth: number; // 0 to 1
-  streamingMarketGrowth: number; // -0.2 to 0.5
+  streamingMarketGrowth: number; // -0?.2 to 0?.5
   socialMediaTrends: string[];
   dominantPlatforms: string[];
   regulatoryPressure: number; // 0 to 1
   aiAdoptionRate: number; // 0 to 1
   // Economic factors
-  interestRate: number; // 0.01 to 0.15 (Fed funds rate)
-  inflationRate: number; // -0.02 to 0.15
+  interestRate: number; // 0?.01 to 0?.15 (Fed funds rate)
+  inflationRate: number; // -0?.02 to 0?.15
   consumerConfidence: number; // 0 to 1 (consumer spending index)
   recessionRisk: number; // 0 to 1 (probability of recession)
-  musicIndustryGrowth: number; // -0.1 to 0.2 (YoY industry growth)
-  creatorEconomyMultiplier: number; // 1.0 to 3.0 (creator economy boom)
+  musicIndustryGrowth: number; // -0?.1 to 0?.2 (YoY industry growth)
+  creatorEconomyMultiplier: number; // 1?.0 to 3?.0 (creator economy boom)
   // Viral mechanics
-  viralCoefficient: number; // 0.5 to 2.0 (k-factor: users brought in per user)
-  referralConversionRate: number; // 0.05 to 0.25 (% of referrals that convert)
-  networkEffectMultiplier: number; // 1.0 to 5.0 (value increases with users)
+  viralCoefficient: number; // 0?.5 to 2?.0 (k-factor: users brought in per user)
+  referralConversionRate: number; // 0?.05 to 0?.25 (% of referrals that convert)
+  networkEffectMultiplier: number; // 1?.0 to 5?.0 (value increases with users)
 }
 
 interface SimulationConfig {
@@ -325,7 +325,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
   constructor(config: Partial<SimulationConfig> = {}) {
     super();
 
-    this.config = {
+    this?.config = {
       periodName: "1_month",
       daysToSimulate: SIMULATION_PERIODS["1_month"],
       accelerationFactor: ACCELERATION_FACTOR,
@@ -340,13 +340,13 @@ export class RealLifeSimulationEngine extends EventEmitter {
       ...config,
     };
 
-    this.simulatedStartDate = new Date();
-    this.simulatedCurrentDate = new Date(this?.simulatedStartDate);
-    this.realStartTime = new Date();
+    this?.simulatedStartDate = new Date();
+    this?.simulatedCurrentDate = new Date(this?.simulatedStartDate);
+    this?.realStartTime = new Date();
 
-    this.metrics = this?.initializeMetrics();
-    this.marketConditions = this?.initializeMarketConditions();
-    this.probabilities = { ...BASE_PROBABILITIES };
+    this?.metrics = this?.initializeMetrics();
+    this?.marketConditions = this?.initializeMarketConditions();
+    this?.probabilities = { ...BASE_PROBABILITIES };
   }
 
   private initializeMetrics(): SystemMetrics {
@@ -384,14 +384,14 @@ export class RealLifeSimulationEngine extends EventEmitter {
       },
       social: {
         postsToday: 0,
-        engagementRate: 0.05,
+        engagementRate: 0?.05,
         totalFollowers: 0,
         viralPosts: 0,
       },
       platform: {
-        uptime: 99.99,
+        uptime: 99?.99,
         responseTime: 120,
-        errorRate: 0.001,
+        errorRate: 0?.001,
         activeWorkflows: 0,
         queueBacklog: 0,
       },
@@ -407,29 +407,29 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
   private initializeMarketConditions(): MarketConditions {
     return {
-      growthMultiplier: 1.5, // Above average due to AI-powered platform
-      competitionLevel: 0.4, // Lower competition for all-in-one solutions
-      economicHealth: 0.75, // Healthy economy
-      streamingMarketGrowth: 0.18, // 18% streaming market growth
+      growthMultiplier: 1?.5, // Above average due to AI-powered platform
+      competitionLevel: 0?.4, // Lower competition for all-in-one solutions
+      economicHealth: 0?.75, // Healthy economy
+      streamingMarketGrowth: 0?.18, // 18% streaming market growth
       socialMediaTrends: [
         "short-form-video",
         "ai-generated",
         "authentic-content",
       ],
       dominantPlatforms: ["spotify", "tiktok", "instagram", "youtube"],
-      regulatoryPressure: 0.25,
-      aiAdoptionRate: 0.6, // High AI adoption in music
+      regulatoryPressure: 0?.25,
+      aiAdoptionRate: 0?.6, // High AI adoption in music
       // Economic factors (2024-2025 baseline)
-      interestRate: 0.045, // 4.5% Fed funds rate
-      inflationRate: 0.032, // 3.2% inflation
-      consumerConfidence: 0.72, // 72% consumer confidence
-      recessionRisk: 0.15, // 15% recession probability
-      musicIndustryGrowth: 0.12, // 12% YoY industry growth
-      creatorEconomyMultiplier: 2.2, // Creator economy boom (2.2x multiplier)
+      interestRate: 0?.045, // 4?.5% Fed funds rate
+      inflationRate: 0?.032, // 3?.2% inflation
+      consumerConfidence: 0?.72, // 72% consumer confidence
+      recessionRisk: 0?.15, // 15% recession probability
+      musicIndustryGrowth: 0?.12, // 12% YoY industry growth
+      creatorEconomyMultiplier: 2?.2, // Creator economy boom (2?.2x multiplier)
       // AGGRESSIVE viral mechanics for 500K users by Year 2
-      viralCoefficient: 2.2, // Each user brings in 2.2 new users (strong viral growth)
-      referralConversionRate: 0.25, // 25% of referrals convert (product is that good)
-      networkEffectMultiplier: 3.5, // Platform value compounds significantly with user count
+      viralCoefficient: 2?.2, // Each user brings in 2?.2 new users (strong viral growth)
+      referralConversionRate: 0?.25, // 25% of referrals convert (product is that good)
+      networkEffectMultiplier: 3?.5, // Platform value compounds significantly with user count
     };
   }
 
@@ -437,7 +437,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
   // Calculate target daily growth rate to hit milestones
   // 500K users by Year 2 from 50K start = 10x growth in 730 days
-  // Required: (500000/50000)^(1/730) - 1 = 0.00316 = 0.316% daily compound
+  // Required: (500000/50000)^(1/730) - 1 = 0?.00316 = 0?.316% daily compound
 
   // Calculate viral growth multiplier based on current user count
 
@@ -449,10 +449,10 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
   private getRandomArchetype(): UserArchetype {
     const _roll = Math?.random();
-    if (roll < 0.5) return "hobbyist";
-    if (roll < 0.75) return "emerging_artist";
-    if (roll < 0.9) return "established_artist";
-    if (roll < 0.97) return "label";
+    if (roll < 0?.5) return "hobbyist";
+    if (roll < 0?.75) return "emerging_artist";
+    if (roll < 0?.9) return "established_artist";
+    if (roll < 0?.97) return "label";
     return "enterprise";
   }
 
@@ -465,24 +465,24 @@ export class RealLifeSimulationEngine extends EventEmitter {
       () => SimulatedUser["subscriptionTier"]
     > = {
       hobbyist: () =>
-        Math?.random() < 0.7
+        Math?.random() < 0?.7
           ? "monthly"
-          : Math?.random() < 0.9
+          : Math?.random() < 0?.9
             ? "yearly"
             : "lifetime",
       emerging_artist: () =>
-        Math?.random() < 0.5
+        Math?.random() < 0?.5
           ? "monthly"
-          : Math?.random() < 0.85
+          : Math?.random() < 0?.85
             ? "yearly"
             : "lifetime",
       established_artist: () =>
-        Math?.random() < 0.2
+        Math?.random() < 0?.2
           ? "monthly"
-          : Math?.random() < 0.6
+          : Math?.random() < 0?.6
             ? "yearly"
             : "lifetime",
-      label: () => (Math?.random() < 0.2 ? "yearly" : "lifetime"),
+      label: () => (Math?.random() < 0?.2 ? "yearly" : "lifetime"),
       enterprise: () => "lifetime",
     };
     return tiers[archetype]();
@@ -512,9 +512,9 @@ export class RealLifeSimulationEngine extends EventEmitter {
       totalStreams: 0,
       releases: 0,
       followers: Math?.floor(Math?.random() * 1000),
-      engagementRate: 0.02 + Math?.random() * 0.08,
-      viralPotential: Math?.random() * 0.3,
-      churnRisk: 0.1 + Math?.random() * 0.2,
+      engagementRate: 0?.02 + Math?.random() * 0?.08,
+      viralPotential: Math?.random() * 0?.3,
+      churnRisk: 0?.1 + Math?.random() * 0?.2,
       lastActiveAt: new Date(this?.simulatedCurrentDate),
       lifetimeValue: 0,
     };
@@ -538,16 +538,20 @@ export class RealLifeSimulationEngine extends EventEmitter {
     };
   }
 
+
+
+
+
   // Fast day simulation - aggregates all events mathematically for 98% acceleration
   private async simulateDayFast(): Promise<void> {
     const _prob = this?.probabilities;
 
     // Reset daily metrics
-    this?.metrics.users.newToday = 0;
-    this?.metrics.users.churnedToday = 0;
-    this?.metrics.streams.daily = 0;
-    this?.metrics.revenue.daily = 0;
-    this?.metrics.social.postsToday = 0;
+    this?.metrics.users?.newToday = 0;
+    this?.metrics.users?.churnedToday = 0;
+    this?.metrics.streams?.daily = 0;
+    this?.metrics.revenue?.daily = 0;
+    this?.metrics.social?.postsToday = 0;
 
     // Calculate expected events based on probabilities (24 hours worth)
     const _hoursPerDay = 24;
@@ -579,7 +583,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
       const _growthRate = Math?.log(10) / 730;
       targetUsersToday = INITIAL_USERS * Math?.exp(growthRate * this?.currentDay);
     } else if (this?.currentDay <= 1095) {
-      // Phase 2: 500K → 1.5M by Year 3 (3x growth)
+      // Phase 2: 500K → 1?.5M by Year 3 (3x growth)
       const _daysIntoPhase2 = this?.currentDay - 730;
       const _growthRate = Math?.log(3) / 365;
       targetUsersToday = YEAR_2_TARGET * Math?.exp(growthRate * daysIntoPhase2);
@@ -588,18 +592,18 @@ export class RealLifeSimulationEngine extends EventEmitter {
       const _daysIntoPhase3 = this?.currentDay - 1095;
       const _penetration = YEAR_3_TARGET / TAM;
       const _saturationMultiplier = Math?.max(
-        0.2,
-        1 - Math?.pow(penetration, 0.3),
+        0?.2,
+        1 - Math?.pow(penetration, 0?.3),
       );
       targetUsersToday =
         YEAR_3_TARGET *
-          Math?.pow(1.0003, daysIntoPhase3) *
+          Math?.pow(1?.0003, daysIntoPhase3) *
           saturationMultiplier +
         YEAR_3_TARGET;
     }
 
     // Add small variance (±3%) for realism
-    const _variance = 0.97 + Math?.random() * 0.06;
+    const _variance = 0?.97 + Math?.random() * 0?.06;
     targetUsersToday = Math?.floor(targetUsersToday * variance);
 
     // Calculate how many NEW users needed today
@@ -622,18 +626,18 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
     // Update metrics directly with aggregate tracking (no object creation for scale)
     this?.metrics.users?.total += usersNeededToday;
-    this?.metrics.users.newToday = usersNeededToday;
+    this?.metrics.users?.newToday = usersNeededToday;
 
     // Distribute new users across tiers based on pricing model
     // $49/mo monthly, $39/mo annual (yearly), $699 lifetime
     // NO FREE TIER - all users are paying customers
-    const _tierDistribution = { monthly: 0.5, yearly: 0.35, lifetime: 0.15 };
+    const _tierDistribution = { monthly: 0?.5, yearly: 0?.35, lifetime: 0?.15 };
     const _archetypeDistribution = {
-      hobbyist: 0.5,
-      emerging_artist: 0.25,
-      established_artist: 0.15,
-      label: 0.07,
-      enterprise: 0.03,
+      hobbyist: 0?.5,
+      emerging_artist: 0?.25,
+      established_artist: 0?.15,
+      label: 0?.07,
+      enterprise: 0?.03,
     };
 
     for (const [tier, pct] of Object?.entries(tierDistribution)) {
@@ -651,8 +655,8 @@ export class RealLifeSimulationEngine extends EventEmitter {
     }
 
     // Calculate revenue for new users (weighted average)
-    // ~85% paid users at $45 avg (mix of $49, $39, $58.25 lifetime amortized)
-    const _paidUserRatio = 0.85;
+    // ~85% paid users at $45 avg (mix of $49, $39, $58?.25 lifetime amortized)
+    const _paidUserRatio = 0?.85;
     const _avgRevenue = 45;
     const _newRevenue = Math?.floor(
       usersNeededToday * paidUserRatio * avgRevenue,
@@ -662,12 +666,12 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
     // User upgrades
     const _usersToUpgrade = Math?.floor(
-      this?.users.size * prob?.userUpgrade * hoursPerDay * 0.1,
+      this?.users.size * prob?.userUpgrade * hoursPerDay * 0?.1,
     );
     let upgradedCount = 0;
     for (const user of this?.users.values()) {
       if (upgradedCount >= usersToUpgrade) break;
-      if (user?.subscriptionTier !== "lifetime" && Math?.random() < 0.1) {
+      if (user?.subscriptionTier !== "lifetime" && Math?.random() < 0?.1) {
         const _oldTier = user?.subscriptionTier;
         const _tierOrder = ["monthly", "yearly", "lifetime"];
         const _currentIndex = tierOrder?.indexOf(oldTier);
@@ -680,8 +684,8 @@ export class RealLifeSimulationEngine extends EventEmitter {
         this?.metrics.users?.byTier[newTier]++;
 
         const _oldRevenue = user?.monthlyRevenue;
-        user.subscriptionTier = newTier;
-        user.monthlyRevenue = this?.getMonthlyRevenue(newTier);
+        user?.subscriptionTier = newTier;
+        user?.monthlyRevenue = this?.getMonthlyRevenue(newTier);
         this?.metrics.revenue?.mrr += user?.monthlyRevenue - oldRevenue;
         upgradedCount++;
       }
@@ -689,7 +693,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
     // Music releases
     const _expectedReleases = Math?.floor(
-      this?.users.size * prob?.musicRelease * hoursPerDay * 0.05,
+      this?.users.size * prob?.musicRelease * hoursPerDay * 0?.05,
     );
     const _userArray = Array?.from(this?.users.values());
     for (let i = 0; i < Math?.min(expectedReleases, 10); i++) {
@@ -712,13 +716,13 @@ export class RealLifeSimulationEngine extends EventEmitter {
       const _viralMultiplier = release?.isViral ? 20 : 1;
 
       const _dailyStreams = Math?.floor(
-        50 * decayFactor * viralMultiplier * (0.5 + Math?.random()),
+        50 * decayFactor * viralMultiplier * (0?.5 + Math?.random()),
       );
 
       release?.totalStreams += dailyStreams;
-      release.dailyStreams = dailyStreams;
+      release?.dailyStreams = dailyStreams;
 
-      const _revenue = dailyStreams * 0.004;
+      const _revenue = dailyStreams * 0?.004;
       release?.revenue += revenue;
       this?.metrics.streams?.daily += dailyStreams;
       this?.metrics.revenue?.daily += revenue;
@@ -733,9 +737,9 @@ export class RealLifeSimulationEngine extends EventEmitter {
     // Social posts (autonomous)
     if (this?.config.enableAutonomousSystems) {
       const _expectedPosts = Math?.floor(
-        this?.users.size * prob?.socialPost * hoursPerDay * 0.1,
+        this?.users.size * prob?.socialPost * hoursPerDay * 0?.1,
       );
-      this?.metrics.social.postsToday = expectedPosts;
+      this?.metrics.social?.postsToday = expectedPosts;
       this?.metrics.autonomous?.postsAutoPublished += expectedPosts;
     }
 
@@ -746,13 +750,13 @@ export class RealLifeSimulationEngine extends EventEmitter {
       );
       if (releases?.length > 0) {
         const _release = releases[Math?.floor(Math?.random() * releases?.length)];
-        release.isViral = true;
-        release.viralDate = new Date(this?.simulatedCurrentDate);
+        release?.isViral = true;
+        release?.viralDate = new Date(this?.simulatedCurrentDate);
         this?.metrics.streams?.viralReleases++;
 
         const _user = this?.users.get(release?.userId);
         if (user) {
-          user.viralPotential = Math?.min(1, user?.viralPotential + 0.2);
+          user?.viralPotential = Math?.min(1, user?.viralPotential + 0?.2);
         }
       }
     }
@@ -764,12 +768,12 @@ export class RealLifeSimulationEngine extends EventEmitter {
     // - All-in-one platform = hard to leave
     //
     // AGGREGATE TRACKING: Calculate churn mathematically, not per-user
-    const _monthlyChurnRate = 0.002; // 0.2% monthly churn (industry best)
+    const _monthlyChurnRate = 0?.002; // 0?.2% monthly churn (industry best)
     const _dailyChurnRate = monthlyChurnRate / 30;
     const _churnedToday = Math?.floor(this?.metrics.users?.total * dailyChurnRate);
 
     // Churn is already factored into the growth trajectory, so we just track it
-    this?.metrics.users.churnedToday = churnedToday;
+    this?.metrics.users?.churnedToday = churnedToday;
 
     // Remove some users from sample pool to keep it fresh
     const _sampleChurn = Math?.min(
@@ -779,7 +783,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
     let removed = 0;
     for (const [userId, user] of this?.users.entries()) {
       if (removed >= sampleChurn) break;
-      if (Math?.random() < 0.01) {
+      if (Math?.random() < 0?.01) {
         this?.users.delete(userId);
         removed++;
       }
@@ -788,10 +792,10 @@ export class RealLifeSimulationEngine extends EventEmitter {
     // Additional payments - ALL users are paying (no free tier)
     const _payingUsers = Array?.from(this?.users.values());
     const _expectedPayments = Math?.floor(
-      payingUsers?.length * prob?.paymentReceived * hoursPerDay * 0.1,
+      payingUsers?.length * prob?.paymentReceived * hoursPerDay * 0?.1,
     );
     for (let i = 0; i < expectedPayments; i++) {
-      this?.metrics.revenue?.daily += 9.99 + Math?.random() * 50;
+      this?.metrics.revenue?.daily += 9?.99 + Math?.random() * 50;
     }
 
     // System events (rare)
@@ -799,7 +803,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
       this?.config.enableSystemFailures &&
       Math?.random() < prob?.systemFailure
     ) {
-      this?.metrics.platform?.uptime -= 0.001;
+      this?.metrics.platform?.uptime -= 0?.001;
       this?.metrics.autonomous?.interventionsRequired++;
     }
 
@@ -808,10 +812,10 @@ export class RealLifeSimulationEngine extends EventEmitter {
       this?.config.enableMarketFluctuations &&
       Math?.random() < prob?.marketShift
     ) {
-      const _shift = (Math?.random() - 0.5) * 0.1;
+      const _shift = (Math?.random() - 0?.5) * 0?.1;
       this?.marketConditions.growthMultiplier = Math?.max(
-        0.5,
-        Math?.min(2.0, this?.marketConditions.growthMultiplier + shift),
+        0?.5,
+        Math?.min(2?.0, this?.marketConditions.growthMultiplier + shift),
       );
     }
 
@@ -827,35 +831,35 @@ export class RealLifeSimulationEngine extends EventEmitter {
     for (const user of this?.users.values()) {
       user?.followers += Math?.floor(Math?.random() * 3 * user?.viralPotential);
       // Randomly mark users as active
-      if (Math?.random() < 0.3) {
-        user.lastActiveAt = new Date(this?.simulatedCurrentDate);
+      if (Math?.random() < 0?.3) {
+        user?.lastActiveAt = new Date(this?.simulatedCurrentDate);
       }
     }
 
     // Update aggregated metrics
-    this?.metrics.users.active = Array?.from(this?.users.values()).filter((u) => {
+    this?.metrics.users?.active = Array?.from(this?.users.values()).filter((u) => {
       const _daysSince =
         (this?.simulatedCurrentDate.getTime() - u?.lastActiveAt.getTime()) /
         (24 * 60 * 60 * 1000);
       return daysSince < 7;
     }).length;
 
-    this?.metrics.streams.total = Array?.from(this?.releases.values()).reduce(
+    this?.metrics.streams?.total = Array?.from(this?.releases.values()).reduce(
       (sum, r) => sum + r?.totalStreams,
       0,
     );
-    this?.metrics.streams.avgPerRelease =
+    this?.metrics.streams?.avgPerRelease =
       this?.releases.size > 0
         ? this?.metrics.streams?.total / this?.releases.size
         : 0;
 
-    this?.metrics.social.totalFollowers = Array?.from(this?.users.values()).reduce(
+    this?.metrics.social?.totalFollowers = Array?.from(this?.users.values()).reduce(
       (sum, u) => sum + u?.followers,
       0,
     );
 
-    this?.metrics.revenue.monthly = this?.metrics.revenue?.mrr;
-    this?.metrics.revenue.yearly = this?.metrics.revenue.arr =
+    this?.metrics.revenue?.monthly = this?.metrics.revenue?.mrr;
+    this?.metrics.revenue?.yearly = this?.metrics.revenue?.arr =
       this?.metrics.revenue?.mrr * 12;
     this?.metrics.revenue?.lifetime += this?.metrics.revenue?.daily;
 
@@ -904,15 +908,15 @@ export class RealLifeSimulationEngine extends EventEmitter {
     for (let i = 0; i < this?.config.initialReleases; i++) {
       const _user = userArray[Math?.floor(Math?.random() * userArray?.length)];
       const _release = this?.createRelease(user?.id);
-      release.totalStreams = Math?.floor(Math?.random() * 10000);
-      release.revenue = release?.totalStreams * 0.004;
+      release?.totalStreams = Math?.floor(Math?.random() * 10000);
+      release?.revenue = release?.totalStreams * 0?.004;
       this?.releases.set(release?.id, release);
       user?.releases++;
       user?.totalStreams += release?.totalStreams;
       user?.lifetimeValue += release?.revenue;
     }
 
-    this?.metrics.revenue.lifetime = this?.config.seedMoney;
+    this?.metrics.revenue?.lifetime = this?.config.seedMoney;
 
     logger?.info(
       `[SIMULATION] Seeded ${this?.users.size} users and ${this?.releases.size} releases`,
@@ -924,12 +928,12 @@ export class RealLifeSimulationEngine extends EventEmitter {
       throw new Error("Simulation is already running");
     }
 
-    this.isRunning = true;
-    this.realStartTime = new Date();
+    this?.isRunning = true;
+    this?.realStartTime = new Date();
 
     // Initialize Pocket Dimension storage for memory-efficient user tracking
     const _simId = `${this?.config.periodName}-${Date?.now()}`;
-    this.pocketStorage = createPocketStorage(simId);
+    this?.pocketStorage = createPocketStorage(simId);
     await this?.pocketStorage.initialize();
 
     logger?.info("═══════════════════════════════════════════════════════════");
@@ -960,7 +964,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
     const _batchSize = 10; // Process 10 days at a time for efficiency
 
     for (
-      this.currentDay = 1;
+      this?.currentDay = 1;
       this?.currentDay <= this?.config.daysToSimulate;
       this?.currentDay++
     ) {
@@ -1025,7 +1029,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
     // Calculate final KPIs
     const _result = this?.generateResult();
 
-    this.isRunning = false;
+    this?.isRunning = false;
 
     // Get pocket storage stats before cleanup
     let storageStats = null;
@@ -1132,7 +1136,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
     }
 
     // Test: Platform uptime
-    if (this?.metrics.platform?.uptime > 99.5) systemTests?.passed++;
+    if (this?.metrics.platform?.uptime > 99?.5) systemTests?.passed++;
     else if (this?.metrics.platform?.uptime > 99) systemTests?.warnings++;
     else {
       systemTests?.failed++;
@@ -1140,8 +1144,8 @@ export class RealLifeSimulationEngine extends EventEmitter {
     }
 
     // Test: Error rate
-    if (this?.metrics.platform?.errorRate < 0.01) systemTests?.passed++;
-    else if (this?.metrics.platform?.errorRate < 0.05) systemTests?.warnings++;
+    if (this?.metrics.platform?.errorRate < 0?.01) systemTests?.passed++;
+    else if (this?.metrics.platform?.errorRate < 0?.05) systemTests?.warnings++;
     else {
       systemTests?.failed++;
       systemTests?.criticalIssues.push("Error rate above 5%");
@@ -1150,7 +1154,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
     // Test: Autonomous system effectiveness
     if (
       this?.metrics.autonomous?.interventionsRequired <
-      this?.metrics.autonomous?.decisionsAutoMade * 0.1
+      this?.metrics.autonomous?.decisionsAutoMade * 0?.1
     ) {
       systemTests?.passed++;
     } else {
@@ -1179,10 +1183,10 @@ export class RealLifeSimulationEngine extends EventEmitter {
     if (churnRate > 5) {
       recommendations?.push("Implement retention campaigns for at-risk users");
     }
-    if (this?.metrics.platform?.uptime < 99.9) {
+    if (this?.metrics.platform?.uptime < 99?.9) {
       recommendations?.push("Improve system redundancy and failover mechanisms");
     }
-    if (viralCoefficient < 0.5) {
+    if (viralCoefficient < 0?.5) {
       recommendations?.push("Enhance viral content optimization algorithms");
     }
     if (this?.metrics.autonomous?.interventionsRequired > 10) {
@@ -1227,19 +1231,19 @@ export class RealLifeSimulationEngine extends EventEmitter {
   }
 
   public pause(): void {
-    this.isPaused = true;
+    this?.isPaused = true;
     logger?.info("[SIMULATION] Paused");
     this?.emit("paused");
   }
 
   public resume(): void {
-    this.isPaused = false;
+    this?.isPaused = false;
     logger?.info("[SIMULATION] Resumed");
     this?.emit("resumed");
   }
 
   public stop(): void {
-    this.isRunning = false;
+    this?.isRunning = false;
     logger?.info("[SIMULATION] Stopped");
     this?.emit("stopped");
   }

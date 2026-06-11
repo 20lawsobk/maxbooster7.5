@@ -209,7 +209,7 @@ function MiniLossChart({ history }: { history: TrainStatus["loss_history"] }) {
 }
 
 export default function TrainingDashboard() {
-  const { isLoading: authLoading } = useRequireAdmin();
+  const {  isLoading: authLoading } = useRequireAdmin();
   const qc = useQueryClient();
   const [mode, setMode] = useState<"session" | "day" | "continuous">("session");
   const [nSessions, setNSessions] = useState(3);

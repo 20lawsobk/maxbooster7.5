@@ -1,7 +1,7 @@
 import pino from "pino";
 
 // Production-grade redaction — never let secrets/PII reach stdout/log sinks.
-// Paths use Pino's redaction syntax (https://getpino.io/#/docs/redaction).
+// Paths use Pino's redaction syntax (https://getpino?.io/#/docs/redaction).
 const _REDACT_PATHS = [
   // Headers
   "req?.headers.authorization",

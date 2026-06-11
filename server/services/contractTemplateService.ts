@@ -2,8 +2,8 @@ import { randomBytes } from "crypto";
 
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { logger } from "../logger.js";
-import { db } from "../db.js";
+import { logger } from "../logger?.js";
+import { db } from "../db?.js";
 import { generatedContracts } from "@shared/schema";
 
 export type ContractType =
@@ -269,7 +269,7 @@ class ContractTemplateService {
   }
 
   constructor() {
-    this.dbInitPromise = this?.loadFromDatabase().catch((err) => {
+    this?.dbInitPromise = this?.loadFromDatabase().catch((err) => {
       logger?.warn("Failed to load contracts from DB on startup:", err);
     });
   }
@@ -504,7 +504,7 @@ Artist may NOT:
 - Use for more than one (1) song
 
 5. PAYMENT
-License Fee: ${currency} ${vars?.purchasePrice?.toLocaleString() || "0.00"}
+License Fee: ${currency} ${vars?.purchasePrice?.toLocaleString() || "0?.00"}
 Payment is due upon execution of this Agreement.
 
 6. CREDIT
@@ -579,7 +579,7 @@ Artist receives:
 ${vars?.royaltyPercentage ? `Producer shall receive ${vars?.royaltyPercentage}% of net profits from the New Song.` : "No ongoing royalties are owed to Producer beyond the purchase price."}
 
 6. PAYMENT
-Exclusive Purchase Price: ${currency} ${vars?.purchasePrice?.toLocaleString() || "0.00"}
+Exclusive Purchase Price: ${currency} ${vars?.purchasePrice?.toLocaleString() || "0?.00"}
 Payment Terms: Full payment due upon execution
 
 7. CREDIT
@@ -748,7 +748,7 @@ Musician agrees to provide professional musical services including:
 - Re-recording if reasonably requested
 
 3. COMPENSATION
-Session Rate: ${currency} ${vars?.sessionRate?.toLocaleString() || "0.00"} per hour
+Session Rate: ${currency} ${vars?.sessionRate?.toLocaleString() || "0?.00"} per hour
 Estimated Hours: ${vars?.sessionHours || 1}
 Total Estimated Payment: ${currency} ${totalPayment?.toLocaleString()}
 
@@ -835,8 +835,8 @@ MASTERING SERVICES (if applicable):
 - Up to ${vars?.revisions || 2} rounds of revisions
 
 3. COMPENSATION
-Mixing Fee: ${currency} ${vars?.mixingFee?.toLocaleString() || "0.00"}
-Mastering Fee: ${currency} ${vars?.masteringFee?.toLocaleString() || "0.00"}
+Mixing Fee: ${currency} ${vars?.mixingFee?.toLocaleString() || "0?.00"}
+Mastering Fee: ${currency} ${vars?.masteringFee?.toLocaleString() || "0?.00"}
 Total: ${currency} ${totalFee?.toLocaleString()}
 
 Payment Schedule:
@@ -849,7 +849,7 @@ Payment Schedule:
 - Revision requests must be submitted within 7 days of delivery
 
 5. DELIVERY
-- Format: WAV (24-bit/44.1kHz or higher) + MP3
+- Format: WAV (24-bit/44?.1kHz or higher) + MP3
 - Delivery method: Secure file transfer
 - Estimated turnaround: [TURNAROUND TIME]
 
@@ -1238,9 +1238,9 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     const _someSigned = contract?.signatures.some((s) => s?.signedAt);
 
     if (allSigned) {
-      contract.status = "fully_executed";
+      contract?.status = "fully_executed";
     } else if (someSigned) {
-      contract.status = "partially_signed";
+      contract?.status = "partially_signed";
     }
 
     this?.cacheContract(contractId, contract);
@@ -1402,7 +1402,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
         (sum, s) => sum + s?.percentage,
         0,
       );
-      if (Math?.abs(totalSplit - 100) > 0.01) {
+      if (Math?.abs(totalSplit - 100) > 0?.01) {
         errors?.push(
           `Split percentages must total 100%, got ${totalSplit?.toFixed(2)}%`,
         );
@@ -1469,7 +1469,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
       throw new Error("Contract must be in draft status to send for signature");
     }
 
-    contract.status = "pending_signature";
+    contract?.status = "pending_signature";
     this?.cacheContract(contractId, contract);
     this?.persistToDb(contract);
     logger?.info(`Contract ${contractId} sent for signature`);
@@ -1493,7 +1493,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
       throw new Error("Party not found in contract");
     }
 
-    contract.status = "voided";
+    contract?.status = "voided";
     this?.cacheContract(contractId, contract);
     this?.persistToDb(contract);
     logger?.info(
@@ -1512,7 +1512,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
       throw new Error("Cannot void a fully executed contract");
     }
 
-    contract.status = "voided";
+    contract?.status = "voided";
     this?.cacheContract(contractId, contract);
     this?.persistToDb(contract);
     logger?.info(`Contract ${contractId} voided. Reason: ${reason}`);

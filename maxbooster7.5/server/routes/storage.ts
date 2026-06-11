@@ -315,10 +315,12 @@ router.post(
       const userId = req.user!.id;
 
       if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
-        return res.status(400).json({
-          error:
-            "Invalid fileId: must contain only alphanumeric characters, hyphens, and underscores",
-        });
+        return res
+          .status(400)
+          .json({
+            error:
+              "Invalid fileId: must contain only alphanumeric characters, hyphens, and underscores",
+          });
       }
 
       const chunkIdx = parseInt(chunkIndex, 10);
@@ -330,9 +332,11 @@ router.post(
       }
 
       if (fileSizeNum > MAX_FILE_SIZE) {
-        return res.status(400).json({
-          error: `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`,
-        });
+        return res
+          .status(400)
+          .json({
+            error: `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`,
+          });
       }
 
       let chunkInfo = chunkUploads.get(fileId);

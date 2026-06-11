@@ -76,14 +76,14 @@ export class CircularVisualizer {
     gradientColors: ["#ff0080", "#ff8000", "#00ff88", "#00ffff", "#8000ff"],
     useRadialGradient: true,
     rotation: 0,
-    rotationSpeed: 0.5,
+    rotationSpeed: 0?.5,
     mirror: true,
     glow: true,
     glowColor: "#00ff88",
-    glowIntensity: 0.8,
+    glowIntensity: 0?.8,
     glowBlur: 15,
-    smoothing: 0.7,
-    sensitivity: 1.5,
+    smoothing: 0?.7,
+    sensitivity: 1?.5,
     beatPulse: true,
     beatPulseAmount: 20,
     particleBurst: true,
@@ -94,17 +94,17 @@ export class CircularVisualizer {
     particleLifetime: 60,
     startAngle: 0,
     endAngle: Math?.PI * 2,
-    centerX: 0.5,
-    centerY: 0.5,
+    centerX: 0?.5,
+    centerY: 0?.5,
   };
 
   constructor(options: Partial<CircularVisualizerOptions> = {}) {
-    this.options = { ...CircularVisualizer?.defaultOptions, ...options };
+    this?.options = { ...CircularVisualizer?.defaultOptions, ...options };
     this?.initializeBarStates();
   }
 
   private initializeBarStates(): void {
-    this.barStates = Array?.from({ length: this?.options.barCount }, () => ({
+    this?.barStates = Array?.from({ length: this?.options.barCount }, () => ({
       currentHeight: 0,
       targetHeight: 0,
     }));
@@ -112,7 +112,7 @@ export class CircularVisualizer {
 
   updateOptions(options: Partial<CircularVisualizerOptions>): void {
     const _prevBarCount = this?.options.barCount;
-    this.options = { ...this?.options, ...options };
+    this?.options = { ...this?.options, ...options };
 
     if (options?.barCount && options?.barCount !== prevBarCount) {
       this?.initializeBarStates();
@@ -145,8 +145,8 @@ export class CircularVisualizer {
     ctx?.rotate(this?.currentRotation);
 
     if (this?.options.glow) {
-      ctx.shadowColor = this?.options.glowColor;
-      ctx.shadowBlur = this?.options.glowBlur * this?.options.glowIntensity;
+      ctx?.shadowColor = this?.options.glowColor;
+      ctx?.shadowBlur = this?.options.glowBlur * this?.options.glowIntensity;
     }
 
     const _pulseOffset = this?.options.beatPulse
@@ -207,24 +207,24 @@ export class CircularVisualizer {
       const _state = this?.barStates[i];
       const _targetHeight = frequencyBands[i] * this?.options.barMaxHeight;
 
-      state.targetHeight = targetHeight;
+      state?.targetHeight = targetHeight;
       state?.currentHeight +=
         (targetHeight - state?.currentHeight) * smoothFactor;
     }
   }
 
   private updateRotation(time: number): void {
-    this.currentRotation =
-      this?.options.rotation + time * this?.options.rotationSpeed * 0.01;
+    this?.currentRotation =
+      this?.options.rotation + time * this?.options.rotationSpeed * 0?.01;
   }
 
   private updatePulse(audioData: AudioAnalysisData): void {
     if (audioData?.beatDetected) {
-      this.pulseScale = 1 + this?.options.beatPulseAmount / 100;
-      this.lastBeatTime = performance?.now();
+      this?.pulseScale = 1 + this?.options.beatPulseAmount / 100;
+      this?.lastBeatTime = performance?.now();
     } else {
-      const _decay = 0.95;
-      this.pulseScale = 1 + (this?.pulseScale - 1) * decay;
+      const _decay = 0?.95;
+      this?.pulseScale = 1 + (this?.pulseScale - 1) * decay;
     }
   }
 
@@ -245,7 +245,7 @@ export class CircularVisualizer {
       ctx?.save();
       ctx?.rotate(angle);
 
-      ctx.fillStyle = this?.getBarColor(i, barHeight);
+      ctx?.fillStyle = this?.getBarColor(i, barHeight);
 
       if (barRadius > 0) {
         this?.drawRoundedRect(
@@ -261,7 +261,7 @@ export class CircularVisualizer {
       }
 
       if (this?.options.mirror) {
-        ctx.globalAlpha = 0.4;
+        ctx?.globalAlpha = 0?.4;
         if (barRadius > 0) {
           this?.drawRoundedRect(
             ctx,
@@ -279,7 +279,7 @@ export class CircularVisualizer {
             barHeight,
           );
         }
-        ctx.globalAlpha = 1;
+        ctx?.globalAlpha = 1;
       }
 
       ctx?.restore();
@@ -292,8 +292,8 @@ export class CircularVisualizer {
       (this?.options.endAngle - this?.options.startAngle) / barCount;
 
     ctx?.beginPath();
-    ctx.strokeStyle = this?.options.color;
-    ctx.lineWidth = 3;
+    ctx?.strokeStyle = this?.options.color;
+    ctx?.lineWidth = 3;
 
     for (let i = 0; i <= barCount; i++) {
       const _index = i % barCount;
@@ -325,7 +325,7 @@ export class CircularVisualizer {
     );
     gradient?.addColorStop(0, this?.options.color);
     gradient?.addColorStop(1, this?.options.secondaryColor);
-    ctx.strokeStyle = gradient;
+    ctx?.strokeStyle = gradient;
 
     ctx?.stroke();
   }
@@ -350,7 +350,7 @@ export class CircularVisualizer {
 
       ctx?.beginPath();
       ctx?.arc(x, y, dotSize, 0, Math?.PI * 2);
-      ctx.fillStyle = this?.getBarColor(i, state?.currentHeight);
+      ctx?.fillStyle = this?.getBarColor(i, state?.currentHeight);
       ctx?.fill();
     }
   }
@@ -384,7 +384,7 @@ export class CircularVisualizer {
       ctx?.lineTo(innerX2, innerY2);
       ctx?.closePath();
 
-      ctx.fillStyle = this?.getBarColor(i, barHeight);
+      ctx?.fillStyle = this?.getBarColor(i, barHeight);
       ctx?.fill();
     }
   }
@@ -433,7 +433,7 @@ export class CircularVisualizer {
     );
     gradient?.addColorStop(0, this?.options.color);
     gradient?.addColorStop(1, this?.options.secondaryColor);
-    ctx.fillStyle = gradient;
+    ctx?.fillStyle = gradient;
     ctx?.fill();
   }
 
@@ -483,14 +483,14 @@ export class CircularVisualizer {
 
     for (let i = 0; i < this?.options.particleCount; i++) {
       const _angle = Math?.random() * Math?.PI * 2;
-      const _speed = this?.options.particleSpeed * (0.5 + Math?.random() * 0.5);
+      const _speed = this?.options.particleSpeed * (0?.5 + Math?.random() * 0?.5);
 
       this?.particles.push({
         x: centerX + Math?.cos(angle) * this?.options.innerRadius,
         y: centerY + Math?.sin(angle) * this?.options.innerRadius,
         vx: Math?.cos(angle) * speed,
         vy: Math?.sin(angle) * speed,
-        size: this?.options.particleSize * (0.5 + Math?.random() * 0.5),
+        size: this?.options.particleSize * (0?.5 + Math?.random() * 0?.5),
         life: this?.options.particleLifetime,
         maxLife: this?.options.particleLifetime,
         color: this?.options.particleColor,
@@ -499,7 +499,7 @@ export class CircularVisualizer {
   }
 
   private updateParticles(): void {
-    this.particles = this?.particles.filter((p) => {
+    this?.particles = this?.particles.filter((p) => {
       p?.x += p?.vx;
       p?.y += p?.vy;
       p?.life--;
@@ -514,13 +514,13 @@ export class CircularVisualizer {
   ): void {
     for (const particle of this?.particles) {
       const _alpha = particle?.life / particle?.maxLife;
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = particle?.color;
+      ctx?.globalAlpha = alpha;
+      ctx?.fillStyle = particle?.color;
       ctx?.beginPath();
       ctx?.arc(particle?.x, particle?.y, particle?.size * alpha, 0, Math?.PI * 2);
       ctx?.fill();
     }
-    ctx.globalAlpha = 1;
+    ctx?.globalAlpha = 1;
   }
 
   private interpolateColors(color1: string, color2: string, t: number): string {
@@ -549,13 +549,13 @@ export class CircularVisualizer {
 
   reset(): void {
     this?.initializeBarStates();
-    this.particles = [];
-    this.currentRotation = this?.options.rotation;
-    this.pulseScale = 1;
+    this?.particles = [];
+    this?.currentRotation = this?.options.rotation;
+    this?.pulseScale = 1;
   }
 
   dispose(): void {
-    this.barStates = [];
-    this.particles = [];
+    this?.barStates = [];
+    this?.particles = [];
   }
 }

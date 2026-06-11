@@ -1,14 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Mic,
-  Settings,
-  Volume2,
-  RefreshCw,
-  CheckCircle,
-  AlertCircle,
-  Play,
-  Square,
-} from "lucide-react";
+import { Mic, Settings, Volume2, RefreshCw, CheckCircle, AlertCircle, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

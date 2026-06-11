@@ -69,6 +69,7 @@ const QUICK_SUGGESTIONS = [
   },
 ];
 
+
 function welcomeMessage(username?: string): Message {
   return {
     id: "welcome",

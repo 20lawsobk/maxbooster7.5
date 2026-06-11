@@ -15,31 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Play,
-  Square,
-  Shield,
-  Cpu,
-  Activity,
-  Zap,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  RefreshCw,
-  FlaskConical,
-  Radio,
-  Globe,
-  Music,
-  BarChart3,
-  PowerOff,
-  Power,
-  Loader2,
-  Wrench,
-  Bug,
-  HeartPulse,
-  Server,
-} from "lucide-react";
+import { Play, Square, Shield, Cpu, Activity, Zap, TrendingUp, AlertTriangle, CheckCircle, Clock, RefreshCw, FlaskConical, Radio, Globe, Music, BarChart3, PowerOff, Power, Loader2, Wrench, Bug, HeartPulse, Server } from "lucide-react";
 
 const URGENCY_COLORS: Record<string, string> = {
   critical: "bg-red-100 text-red-700 border-red-200",
@@ -226,12 +202,11 @@ export default function AdminAutonomy() {
   const autopilotKey = ["/api/autopilot/status"];
   const autonomousKey = ["/api/auto/social/status"];
 
-  const { data: status, isLoading: statusLoading } = useQuery<AutoUpdateStatus>(
-    {
+  const { data: status, isLoading: statusLoading } =
+    useQuery<AutoUpdateStatus>({
       queryKey: updatesKey,
       refetchInterval: 30000,
-    },
-  );
+    });
   useQuery<Record<string, unknown>>({
     queryKey: changesKey,
   });
@@ -344,13 +319,11 @@ export default function AdminAutonomy() {
     refetchInterval: 10000,
     enabled: !!user,
   });
-  const { data: selfHealingMetricsData } = useQuery<SelfHealingMetricsResponse>(
-    {
-      queryKey: selfHealingMetricsKey,
-      refetchInterval: 10000,
-      enabled: !!user,
-    },
-  );
+  const { data: selfHealingMetricsData } = useQuery<SelfHealingMetricsResponse>({
+    queryKey: selfHealingMetricsKey,
+    refetchInterval: 10000,
+    enabled: !!user,
+  });
 
   const forceChainCheck = useMutation({
     mutationFn: async () =>
@@ -606,28 +579,31 @@ export default function AdminAutonomy() {
                           {[...auditLog]
                             .reverse()
                             .slice(0, 10)
-                            .map((entry: AuditLogEntry, i: number) => (
-                              <div
-                                key={i}
-                                className="flex items-center gap-2 text-xs text-muted-foreground"
-                              >
-                                <span
-                                  className={`font-medium shrink-0 ${entry.action.includes("KILL") ? "text-red-600" : "text-green-700"}`}
+                            .map(
+                              (entry: AuditLogEntry, i: number) => (
+                                <div
+                                  key={i}
+                                  className="flex items-center gap-2 text-xs text-muted-foreground"
                                 >
-                                  {entry.action}
-                                </span>
-                                <span className="truncate">
-                                  {entry.system ?? "all"} — {entry.triggeredBy}
-                                </span>
-                                <span className="shrink-0">
-                                  {entry.timestamp
-                                    ? new Date(
-                                        entry.timestamp,
-                                      ).toLocaleTimeString()
-                                    : ""}
-                                </span>
-                              </div>
-                            ))}
+                                  <span
+                                    className={`font-medium shrink-0 ${entry.action.includes("KILL") ? "text-red-600" : "text-green-700"}`}
+                                  >
+                                    {entry.action}
+                                  </span>
+                                  <span className="truncate">
+                                    {entry.system ?? "all"} —{" "}
+                                    {entry.triggeredBy}
+                                  </span>
+                                  <span className="shrink-0">
+                                    {entry.timestamp
+                                      ? new Date(
+                                          entry.timestamp,
+                                        ).toLocaleTimeString()
+                                      : ""}
+                                  </span>
+                                </div>
+                              ),
+                            )}
                         </div>
                       </ScrollArea>
                     </div>
@@ -872,56 +848,59 @@ export default function AdminAutonomy() {
                 ) : (
                   <ScrollArea className="h-64">
                     <div className="space-y-2 pr-2">
-                      {recentUpgrades.map((upgrade: Upgrade) => (
-                        <div
-                          key={upgrade.id}
-                          className="p-3 border rounded-lg text-sm space-y-1"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium capitalize">
-                              {upgrade.type?.replace(/_/g, " ")}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              {upgrade.applied === true ? (
-                                <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">
-                                  applied (live)
-                                </span>
-                              ) : upgrade.status === "deployed" ? (
-                                <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">
-                                  advisory
-                                </span>
-                              ) : (
-                                <span
-                                  className={`text-xs px-2 py-0.5 rounded ${STATUS_COLORS[upgrade.status] ?? "bg-gray-100 text-gray-600"}`}
-                                >
-                                  {upgrade.status}
-                                </span>
-                              )}
+                      {recentUpgrades.map(
+                        (upgrade: Upgrade) => (
+                          <div
+                            key={upgrade.id}
+                            className="p-3 border rounded-lg text-sm space-y-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium capitalize">
+                                {upgrade.type?.replace(/_/g, " ")}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                {upgrade.applied === true ? (
+                                  <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">
+                                    applied (live)
+                                  </span>
+                                ) : upgrade.status === "deployed" ? (
+                                  <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">
+                                    advisory
+                                  </span>
+                                ) : (
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded ${STATUS_COLORS[upgrade.status] ?? "bg-gray-100 text-gray-600"}`}
+                                  >
+                                    {upgrade.status}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          {upgrade.enhancementCategory && (
-                            <p className="text-xs text-muted-foreground">
-                              Category:{" "}
-                              {String(upgrade.enhancementCategory).replace(
-                                /_/g,
-                                " ",
-                              )}
-                            </p>
-                          )}
-                          {upgrade.applied !== true &&
-                            upgrade.notAppliedReason && (
-                              <p className="text-xs text-amber-600 truncate">
-                                Not applied: {String(upgrade.notAppliedReason)}
+                            {upgrade.enhancementCategory && (
+                              <p className="text-xs text-muted-foreground">
+                                Category:{" "}
+                                {String(upgrade.enhancementCategory).replace(
+                                  /_/g,
+                                  " ",
+                                )}
                               </p>
                             )}
-                          {upgrade.createdAt && (
-                            <p className="text-xs text-muted-foreground">
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              {new Date(upgrade.createdAt).toLocaleString()}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                            {upgrade.applied !== true &&
+                              upgrade.notAppliedReason && (
+                                <p className="text-xs text-amber-600 truncate">
+                                  Not applied:{" "}
+                                  {String(upgrade.notAppliedReason)}
+                                </p>
+                              )}
+                            {upgrade.createdAt && (
+                              <p className="text-xs text-muted-foreground">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                {new Date(upgrade.createdAt).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        ),
+                      )}
                     </div>
                   </ScrollArea>
                 )}
@@ -1330,17 +1309,19 @@ export default function AdminAutonomy() {
                       {patches.length > 0 && (
                         <ScrollArea className="h-16">
                           <div className="space-y-1 pr-1">
-                            {patches.slice(0, 3).map((p: Patch, i: number) => (
-                              <div
-                                key={i}
-                                className="text-xs text-muted-foreground truncate"
-                              >
-                                <span className="text-violet-600 font-medium">
-                                  patch
-                                </span>{" "}
-                                {p.name ?? p.subsystem}
-                              </div>
-                            ))}
+                            {patches
+                              .slice(0, 3)
+                              .map((p: Patch, i: number) => (
+                                <div
+                                  key={i}
+                                  className="text-xs text-muted-foreground truncate"
+                                >
+                                  <span className="text-violet-600 font-medium">
+                                    patch
+                                  </span>{" "}
+                                  {p.name ?? p.subsystem}
+                                </div>
+                              ))}
                           </div>
                         </ScrollArea>
                       )}

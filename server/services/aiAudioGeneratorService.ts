@@ -9,9 +9,9 @@ const _WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 import { randomBytes } from "crypto";
 
-import { AIAudioGenerator, type GenerationType } from "../../shared/ml/audio/AIAudioGenerator.js";
-import { logger } from "../logger.js";
-import { storageService } from "./storageService.js";
+import { AIAudioGenerator, type GenerationType } from "../../shared/ml/audio/AIAudioGenerator?.js";
+import { logger } from "../logger?.js";
+import { storageService } from "./storageService?.js";
 
 // Initialize generator
 const _audioGenerator = new AIAudioGenerator(48000);
@@ -164,9 +164,9 @@ export async function generateFromText(
                 generatedNotes?.push({
                   note: drumType?.toUpperCase(),
                   octave: 0,
-                  time: i * 0.25,
-                  duration: 0.25,
-                  velocity: step?.velocity || 0.8,
+                  time: i * 0?.25,
+                  duration: 0?.25,
+                  velocity: step?.velocity || 0?.8,
                 });
               }
             }

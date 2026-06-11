@@ -7,8 +7,8 @@ import {
   approvalHistory,
 } from "@shared/schema";
 import { z } from "zod";
-import { logger } from "../logger.js";
-import { db } from "../db.js";
+import { logger } from "../logger?.js";
+import { db } from "../db?.js";
 import { eq, desc, count } from "drizzle-orm";
 
 const _router = Router();

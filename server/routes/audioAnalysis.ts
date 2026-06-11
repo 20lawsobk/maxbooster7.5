@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
 import crypto from "crypto";
-import { LOUDNESS_TARGETS } from "../services/audioNormalizationService.js";
-import { audioMetadataService } from "../services/audioMetadataService.js";
-import { waveformCacheService } from "../services/waveformCacheService.js";
-import { logger } from "../logger.js";
-import { audioUpload } from "../middleware/uploadHandler.js";
-import { requireAuth } from "../middleware/auth.js";
+import { LOUDNESS_TARGETS } from "../services/audioNormalizationService?.js";
+import { audioMetadataService } from "../services/audioMetadataService?.js";
+import { waveformCacheService } from "../services/waveformCacheService?.js";
+import { logger } from "../logger?.js";
+import { audioUpload } from "../middleware/uploadHandler?.js";
+import { requireAuth } from "../middleware/auth?.js";
 
 function generateContentHash(buffer: Buffer): string {
   return crypto
@@ -90,15 +90,15 @@ router?.post(
       let estimatedLufs: number;
       if (metadata?.lossless) {
         estimatedLufs =
-          -14 + (sampleRate > 48000 ? -1.0 : 0) + (channels > 2 ? -0.5 : 0);
+          -14 + (sampleRate > 48000 ? -1?.0 : 0) + (channels > 2 ? -0?.5 : 0);
       } else {
         const _compressionPenalty =
-          bitrateKbps < 192 ? 2.0 : bitrateKbps < 256 ? 1.0 : 0.5;
-        estimatedLufs = -12 + compressionPenalty + (channels > 2 ? -0.5 : 0);
+          bitrateKbps < 192 ? 2?.0 : bitrateKbps < 256 ? 1?.0 : 0?.5;
+        estimatedLufs = -12 + compressionPenalty + (channels > 2 ? -0?.5 : 0);
       }
 
       const _gainNeeded = targetLufs - estimatedLufs;
-      const _estimatedTruePeak = metadata?.lossless ? -1.5 : -0.5;
+      const _estimatedTruePeak = metadata?.lossless ? -1?.5 : -0?.5;
 
       res?.json({
         success: true,
@@ -355,7 +355,7 @@ router?.get("/supported-formats", (_req: Request, res: Response) => {
     maxFileSize: "500MB",
     recommendations: {
       distribution:
-        "Use WAV or FLAC at 44.1kHz/16-bit minimum for distribution",
+        "Use WAV or FLAC at 44?.1kHz/16-bit minimum for distribution",
       production: "Use WAV at 48kHz/24-bit or higher for production",
       mastering: "Use WAV at 96kHz/32-bit float for mastering",
     },

@@ -32,27 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
 import { StudioProjectDialog } from "@/components/studio/StudioProjectDialog";
-import {
-  Music,
-  Upload,
-  Play,
-  Pause,
-  Loader2,
-  MoreVertical,
-  Edit,
-  Trash2,
-  TrendingUp,
-  Calendar,
-  Clock,
-  FileAudio,
-  Sparkles,
-  Mic2,
-  PenLine,
-  Plus,
-  Lightbulb,
-  ChevronRight,
-  Target,
-} from "lucide-react";
+import { Music, Upload, Play, Pause, Loader2, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Clock, FileAudio, Sparkles, Mic2, PenLine, Plus, Lightbulb, ChevronRight, Target } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

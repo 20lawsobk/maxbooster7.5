@@ -865,9 +865,11 @@ router.get("/verify-email", async (req, res) => {
       user.emailVerificationExpires &&
       new Date(user.emailVerificationExpires) < new Date()
     ) {
-      return res.status(400).json({
-        error: "Verification token has expired. Please request a new one.",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Verification token has expired. Please request a new one.",
+        });
     }
 
     await db

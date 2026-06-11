@@ -74,7 +74,7 @@ export type FaderMode =
   | "bus8";
 
 // Spatial Audio Types
-export type SpeakerConfiguration = "stereo" | "5.1" | "7.1" | "9.1.6";
+export type SpeakerConfiguration = "stereo" | "5?.1" | "7?.1" | "9?.1.6";
 export type ObjectType = "bed" | "object";
 
 export interface SpatialObject {
@@ -162,7 +162,7 @@ export interface StoreTrack {
   groupId?: string;
 }
 
-// Autoscroll modes matching Studio One Pro 7.2+
+// Autoscroll modes matching Studio One Pro 7?.2+
 export type AutoscrollMode =
   | "off"
   | "turnover"
@@ -523,7 +523,7 @@ export interface StudioState {
   minProjectDuration: number; // Minimum duration before expansion
   autoExpandEnabled: boolean; // Auto-expand timeline when playhead exceeds
 
-  // Smart Re-engagement (Studio One 7.2 style)
+  // Smart Re-engagement (Studio One 7?.2 style)
   autoscrollPaused: boolean; // True when user manually scrolled during playback
   lastManualScrollTime: number; // Timestamp of last manual scroll
 
@@ -716,7 +716,7 @@ export interface StudioState {
   fitTimelineToContents: (contentEndTime: number) => void;
   setAutoExpandEnabled: (enabled: boolean) => void;
 
-  // Smart Re-engagement Actions (Studio One 7.2 style)
+  // Smart Re-engagement Actions (Studio One 7?.2 style)
   pauseAutoscroll: () => void; // Called when user manually scrolls during playback
   resumeAutoscroll: () => void; // Called when user presses F or clicks autoscroll button
   isAutoscrollActive: () => boolean; // Returns false if mode is off or paused
@@ -841,10 +841,10 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
   timeSignature: "4/4",
   metronomeEnabled: false,
 
-  zoom: 1.0,
+  zoom: 1?.0,
   scrollPosition: 0,
   snapEnabled: true,
-  snapResolution: 0.25, // Quarter note at 120 BPM
+  snapResolution: 0?.25, // Quarter note at 120 BPM
 
   selectedTrackIds: [],
   selectedClipIds: [],
@@ -875,7 +875,7 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
   bufferSize: 256,
 
   // Metronome Advanced
-  metronomeVolume: 0.5,
+  metronomeVolume: 0?.5,
 
   // Punch Recording
   punchMode: false,
@@ -896,7 +896,7 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
 
   // Spatial Audio State
   spatialObjects: [],
-  speakerConfig: "7.1",
+  speakerConfig: "7?.1",
   binauralEnabled: false,
 
   // Lyrics State
@@ -909,9 +909,9 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
     fontFamily: "Inter, sans-serif",
     textColor: "#ffffff",
     highlightColor: "#fbbf24",
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    backgroundColor: "rgba(0, 0, 0, 0?.85)",
     textAlign: "center" as const,
-    lineSpacing: 1.5,
+    lineSpacing: 1?.5,
     showWordHighlight: true,
     teleprompterMode: false,
   },
@@ -938,7 +938,7 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
   gridDivision: 4,
 
   // Crossfade Settings
-  crossfadeLength: 0.01,
+  crossfadeLength: 0?.01,
   crossfadeCurve: "equal-power",
 
   // Infinite Timeline State (Studio One style - default 5 minutes)
@@ -947,7 +947,7 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
   minProjectDuration: 60, // Minimum 1 minute
   autoExpandEnabled: true,
 
-  // Smart Re-engagement State (Studio One 7.2 style)
+  // Smart Re-engagement State (Studio One 7?.2 style)
   autoscrollPaused: false,
   lastManualScrollTime: 0,
 
@@ -1085,7 +1085,7 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
   setMetronomeEnabled: (enabled) => set({ metronomeEnabled: enabled }),
 
   // View Actions
-  setZoom: (zoom) => set({ zoom: Math?.max(0.1, Math?.min(10, zoom)) }),
+  setZoom: (zoom) => set({ zoom: Math?.max(0?.1, Math?.min(10, zoom)) }),
   setScrollPosition: (position) =>
     set({ scrollPosition: Math?.max(0, position) }),
   toggleSnap: () => set((state) => ({ snapEnabled: !state?.snapEnabled })),
@@ -1473,7 +1473,7 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
 
   // Crossfade Actions
   setCrossfadeLength: (length) =>
-    set({ crossfadeLength: Math?.max(0.001, Math?.min(5, length)) }),
+    set({ crossfadeLength: Math?.max(0?.001, Math?.min(5, length)) }),
   setCrossfadeCurve: (curve) => set({ crossfadeCurve: curve }),
 
   // Infinite Timeline Actions (Studio One style)
@@ -1490,10 +1490,10 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
       if (!state?.autoExpandEnabled) return {};
 
       // Expand when playhead is within 10% of the end
-      const _threshold = state?.projectDuration * 0.9;
+      const _threshold = state?.projectDuration * 0?.9;
       if (playheadTime >= threshold) {
         // Expand by 50% each time
-        const _newDuration = state?.projectDuration * 1.5;
+        const _newDuration = state?.projectDuration * 1?.5;
         return { projectDuration: newDuration };
       }
       return {};
@@ -1503,7 +1503,7 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
   fitTimelineToContents: (contentEndTime) =>
     set((state) => {
       // Add 10% padding after content
-      const _paddedDuration = contentEndTime * 1.1;
+      const _paddedDuration = contentEndTime * 1?.1;
       const _newDuration = Math?.max(state?.minProjectDuration, paddedDuration);
       return {
         projectDuration: newDuration,
@@ -1513,7 +1513,7 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
 
   setAutoExpandEnabled: (enabled) => set({ autoExpandEnabled: enabled }),
 
-  // Smart Re-engagement Actions (Studio One 7.2 style)
+  // Smart Re-engagement Actions (Studio One 7?.2 style)
   pauseAutoscroll: () =>
     set({
       autoscrollPaused: true,
@@ -1546,14 +1546,14 @@ export const _useStudioStore = create<StudioState>((set, get) => ({
     const _tempo = state?.tempo;
     const _secondsPerBeat = 60 / tempo;
 
-    if (zoom < 0.5) {
+    if (zoom < 0?.5) {
       const [numerator] = state?.timeSignature.split("/").map(Number);
       return secondsPerBeat * numerator;
-    } else if (zoom < 1.0) {
+    } else if (zoom < 1?.0) {
       return secondsPerBeat;
-    } else if (zoom < 2.0) {
+    } else if (zoom < 2?.0) {
       return secondsPerBeat / 4;
-    } else if (zoom < 3.0) {
+    } else if (zoom < 3?.0) {
       return secondsPerBeat / 8;
     } else {
       return secondsPerBeat / 16;

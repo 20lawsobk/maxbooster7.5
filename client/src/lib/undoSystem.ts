@@ -59,7 +59,7 @@ export class UndoStack {
   private listeners: Set<() => void> = new Set();
 
   constructor(config: Partial<UndoStackConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    this?.config = { ...DEFAULT_CONFIG, ...config };
     this?.loadFromStorage();
   }
 
@@ -70,8 +70,8 @@ export class UndoStack {
       const _stored = sessionStorage?.getItem(this?.config.storageKey);
       if (stored) {
         const _parsed = JSON?.parse(stored);
-        this.history = parsed?.history || [];
-        this.redoStack = parsed?.redoStack || [];
+        this?.history = parsed?.history || [];
+        this?.redoStack = parsed?.redoStack || [];
       }
     } catch (error) {
       logger?.warn("Failed to load undo stack from storage:", error);
@@ -146,7 +146,7 @@ export class UndoStack {
         this?.history.shift();
       }
 
-      this.redoStack = [];
+      this?.redoStack = [];
       this?.config.onPush?.(fullAction);
       this?.notify();
 
@@ -210,15 +210,15 @@ export class UndoStack {
       isUndone: false,
     };
     this?.groups.set(groupId, group);
-    this.currentGroupId = groupId;
+    this?.currentGroupId = groupId;
     return groupId;
   }
 
   endGroup(groupId?: string): void {
     if (groupId && this?.currentGroupId === groupId) {
-      this.currentGroupId = null;
+      this?.currentGroupId = null;
     } else if (!groupId) {
-      this.currentGroupId = null;
+      this?.currentGroupId = null;
     }
   }
 
@@ -236,7 +236,7 @@ export class UndoStack {
       }
     }
 
-    group.isUndone = true;
+    group?.isUndone = true;
     this?.notify();
   }
 
@@ -300,10 +300,10 @@ export class UndoStack {
   }
 
   clear(): void {
-    this.history = [];
-    this.redoStack = [];
+    this?.history = [];
+    this?.redoStack = [];
     this?.groups.clear();
-    this.currentGroupId = null;
+    this?.currentGroupId = null;
 
     if (this?.config.persistToStorage) {
       sessionStorage?.removeItem(this?.config.storageKey);
@@ -337,7 +337,7 @@ export class UndoStack {
   }
 
   setConfig(config: Partial<UndoStackConfig>): void {
-    this.config = { ...this?.config, ...config };
+    this?.config = { ...this?.config, ...config };
   }
 }
 

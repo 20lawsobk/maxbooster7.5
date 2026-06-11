@@ -366,8 +366,8 @@ export function useTemplateLibrary() {
     const _blob = await response?.blob();
     const _url = URL?.createObjectURL(blob);
     const _a = document?.createElement("a");
-    a.href = url;
-    a.download = `template-${id}.json`;
+    a?.href = url;
+    a?.download = `template-${id}.json`;
     a?.click();
     URL?.revokeObjectURL(url);
   };

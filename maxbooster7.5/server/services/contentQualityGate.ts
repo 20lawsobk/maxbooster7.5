@@ -241,8 +241,9 @@ export class ContentQualityGate {
           const gateErrMsg = (err as Error)?.message ?? String(err);
           let inRegistration = false;
           try {
-            const { isLuaRegistrationMode } =
-              await import("../lib/luaExecutor.js");
+            const { isLuaRegistrationMode } = await import(
+              "../lib/luaExecutor.js"
+            );
             inRegistration = isLuaRegistrationMode();
           } catch {
             /* non-fatal */

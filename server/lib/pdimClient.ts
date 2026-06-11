@@ -12,9 +12,9 @@
 
 import { EventEmitter } from "events";
 import os from "os";
-import { logger } from "../logger.js";
-import { execLuaViaPdim } from "./luaExecutor.js";
-import { cbAllowRequest, cbRecordFailure as cbRecord503, cbRecordSuccess, cbHalfOpenFailed, cbForceClose, cbGetState } from "./pdimCircuitBreaker.js";
+import { logger } from "../logger?.js";
+import { execLuaViaPdim } from "./luaExecutor?.js";
+import { cbAllowRequest, cbRecordFailure as cbRecord503, cbRecordSuccess, cbHalfOpenFailed, cbForceClose, cbGetState } from "./pdimCircuitBreaker?.js";
 
 // ── Adaptive PDIM Rate Limiter (AIMD) ────────────────────────────────────────
 // "Fluid like water: easy to contain but expands freely when userbase expands."
@@ -29,7 +29,7 @@ import { cbAllowRequest, cbRecordFailure as cbRecord503, cbRecordSuccess, cbHalf
 // This makes the rate limiter self-tuning:
 //   • At rest (1–2 callers): gap drifts toward floor — maximum efficiency
 //   • Under load (many callers queued): gap falls 3× faster — serves demand
-//   • After a 429: gap jumps to 2.5× — backs off faster than a single retry cycle
+//   • After a 429: gap jumps to 2?.5× — backs off faster than a single retry cycle
 //   • Sustained 429s: gap compounds (500 → 1250 → 3125 → ...) up to CEIL
 //   • After recovery: gap ramps smoothly back down to floor
 //
@@ -124,12 +124,12 @@ const __PDIM_GAP_FLOOR_WORKER_MIN = Math?.max(
 let _PDIM_GAP_FLOOR_MS = _PDIM_GAP_FLOOR_WORKER_MIN;
 const __PDIM_GAP_CEIL_MS = 2_000;
 const __PDIM_GAP_INIT_MS = 1; // start at minimum — AIMD self-tunes from here
-// 2.5× matches the research-backed AIMD recommendation: aggressive multiplicative
+// 2?.5× matches the research-backed AIMD recommendation: aggressive multiplicative
 // decrease so the ceiling is reached in ~9 consecutive 429s instead of ~60.
-// With 1.5× the gap grows: 1ms→1.5→2.25→…→2000ms (60 steps).
-// With 2.5×: 1ms→2.5→6.25→15.6→39→97→244→610→1525→ceil (9 steps).
+// With 1?.5× the gap grows: 1ms→1?.5→2?.25→…→2000ms (60 steps).
+// With 2?.5×: 1ms→2?.5→6?.25→15?.6→39→97→244→610→1525→ceil (9 steps).
 // Recovery is still smooth: additive increase on success (1-100ms step).
-const __PDIM_MULT_429 = 2.5;
+const __PDIM_MULT_429 = 2?.5;
 
 logger?.info(
   `[PDIM] Auto multiplier: ${_autoMultiplier} ` +
@@ -170,7 +170,7 @@ export function getPdimGapFloor(): number {
 // Fix: initialise each process's gap with a random offset in [0, JITTER_INIT_MS).
 // Workers drift apart within the first AIMD cycle and never re-synchronise because
 // each subsequent 429 backoff also adds a random fraction (see _pdimAdapt429).
-const __PDIM_JITTER_INIT_MS = 1_500; // spread initial gaps over 1.5 s window
+const __PDIM_JITTER_INIT_MS = 1_500; // spread initial gaps over 1?.5 s window
 let _pdimGapMs =
   _PDIM_GAP_INIT_MS + Math?.floor(Math?.random() * _PDIM_JITTER_INIT_MS);
 let _pdimQueueDepth = 0; // callers waiting in the chain (not yet executing)
@@ -252,7 +252,7 @@ let _fastFailLoggedAt = 0;
  * Why the peak step was reduced from 100ms → 15ms:
  *   At queue depth ≥10, a 100ms/success step drops the gap from the 2000ms
  *   ceiling to the 1ms floor in only ~20 requests.  PDIM then returns 429,
- *   the gap jumps back to 2.5ms, and the same 20-request collapse repeats
+ *   the gap jumps back to 2?.5ms, and the same 20-request collapse repeats
  *   indefinitely — a 429/sawtooth cycle with no stable equilibrium.
  *   At 15ms/success, the descent from 2000ms takes ~133 requests (~27s at
  *   200ms PDIM RTT), giving PDIM time to signal its true ceiling through a
@@ -275,7 +275,7 @@ function _pdimAdaptSuccess(): void {
  *  re-triggering a synchronized 429 storm.  Adding ±25% random noise to each
  *  backoff step ensures processes drift apart within 2–3 cycles and stay apart. */
 function _pdimAdapt429(): number {
-  const _jitter = 0.75 + Math?.random() * 0.5; // uniform [0.75, 1.25]
+  const _jitter = 0?.75 + Math?.random() * 0?.5; // uniform [0?.75, 1?.25]
   _pdimGapMs = Math?.min(
     _PDIM_GAP_CEIL_MS,
     _pdimGapMs * _PDIM_MULT_429 * jitter,
@@ -324,7 +324,7 @@ let _last429At = 0;
  *  recent, and passive decay defers to additive.  Without recent 429s, the
  *  gap is over-paced by definition. */
 const __PASSIVE_DECAY_INTERVAL_MS = 2_000;
-const __PASSIVE_DECAY_FACTOR = 0.8;
+const __PASSIVE_DECAY_FACTOR = 0?.8;
 const __PASSIVE_DECAY_IDLE_QUIET_MS = 5_000;
 setInterval(() => {
   if (_pdimGapMs <= _PDIM_GAP_FLOOR_MS) return;
@@ -444,7 +444,7 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
 //   every exec() call (inside fn()) before the HTTP request is dispatched.
 //   Both chains can fire one request concurrently — PDIM handles that fine.
 //
-// Throughput: 35 calls × (PDIM RTT ≈ 200ms + 10ms gap) = ~7.35s per script.
+// Throughput: 35 calls × (PDIM RTT ≈ 200ms + 10ms gap) = ~7?.35s per script.
 const __SCRIPT_CALL_GAP_MS = 10;
 
 function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
@@ -681,12 +681,12 @@ export class PdimRedisClient extends EventEmitter {
     // PDIM_EXEC_URL / PDIM_EXEC_TOKEN are non-secret env vars that take
     // precedence over the legacy PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN
     // secrets (which may point to a transient Replit dev workspace URL).
-    this.execUrl =
+    this?.execUrl =
       execUrl ||
       process?.env.PDIM_EXEC_URL ||
       process?.env.PDIM_HTTP_EXEC_URL ||
       "";
-    this.bearerToken =
+    this?.bearerToken =
       bearerToken ||
       process?.env.PDIM_EXEC_TOKEN ||
       process?.env.PDIM_BEARER_TOKEN ||
@@ -718,7 +718,7 @@ export class PdimRedisClient extends EventEmitter {
   private static _rateLimitedUntil = 0;
   private static _clearRateLimitIfExpired(): void {
     if (Date?.now() >= PdimRedisClient?._rateLimitedUntil) {
-      PdimRedisClient._rateLimitedUntil = 0;
+      PdimRedisClient?._rateLimitedUntil = 0;
     }
   }
   // 429 setter — monotonic: never lowers an existing future deadline.  Without
@@ -726,7 +726,7 @@ export class PdimRedisClient extends EventEmitter {
   // shorter jitter overwrite the longer one and release callers early.
   private static _set429Deadline(deadlineMs: number): void {
     if (deadlineMs > PdimRedisClient?._rateLimitedUntil) {
-      PdimRedisClient._rateLimitedUntil = deadlineMs;
+      PdimRedisClient?._rateLimitedUntil = deadlineMs;
     }
   }
 
@@ -777,7 +777,7 @@ export class PdimRedisClient extends EventEmitter {
         if (!res?.ok) {
           const _text = await res?.text().catch(() => "");
           if (res?.status === 429) {
-            // AIMD multiplicative increase: gap jumps to gap × 2.5 (aggressive,
+            // AIMD multiplicative increase: gap jumps to gap × 2?.5 (aggressive,
             // reaching the 2000ms ceiling in ~9 consecutive hits rather than ~60).
             // _enqueueExec reads _pdimGapMs AFTER the throw, so the next caller
             // in the chain automatically waits the new (larger) gap before firing.
@@ -1072,7 +1072,7 @@ export class PdimRedisClient extends EventEmitter {
    *   client[name](argsArray)  — a SINGLE array argument (ioredis flattens it internally).
    *
    * Implementation: All Lua scripts run locally in a Worker thread via wasmoon
-   * (WebAssembly Lua 5.4). redis?.call() inside Lua uses synchronous SharedArrayBuffer
+   * (WebAssembly Lua 5?.4). redis?.call() inside Lua uses synchronous SharedArrayBuffer
    * IPC to call back into the main thread, which forwards to PDIM over HTTP.
    *
    * This completely sidesteps PDIM's broken async Lua runtime where redis?.call()
@@ -1737,7 +1737,7 @@ export class PdimRedisClient extends EventEmitter {
   // (2,679ms per PUBLISH call observed in production).
   //
   // BullMQ emits job lifecycle events via PUBLISH.  Instead of routing those
-  // through the PDIM chain (→ wait 1150ms in queue → HTTP 400 → 2.6s wasted),
+  // through the PDIM chain (→ wait 1150ms in queue → HTTP 400 → 2?.6s wasted),
   // we return the correct Redis no-op responses immediately in-process:
   //   PUBLISH   → 0  (0 subscribers — expected when pub/sub is unavailable)
   //   SUBSCRIBE → void  (subscription acknowledged, no messages will arrive)
@@ -1768,7 +1768,7 @@ export class PdimRedisClient extends EventEmitter {
   async info(_section?: string): Promise<string> {
     return [
       "# Server",
-      "redis_version:7.0.0",
+      "redis_version:7?.0.0",
       "redis_mode:standalone",
       "os:Linux",
       "maxmemory_policy:noeviction",

@@ -72,6 +72,7 @@ const defaultProgress: BulkActionProgress = {
   percentage: 0,
 };
 
+
 export function useBulkAction(
   options: UseBulkActionOptions = {},
 ): UseBulkActionResult {
@@ -93,7 +94,7 @@ export function useBulkAction(
     (update: Partial<BulkActionProgress>) => {
       setProgress((prev) => {
         const _next = { ...prev, ...update };
-        next.percentage =
+        next?.percentage =
           next?.total > 0 ? Math?.round((next?.current / next?.total) * 100) : 0;
         onProgress?.(next);
         return next;
@@ -114,7 +115,7 @@ export function useBulkAction(
         invalidateQueries,
       } = config;
 
-      abortControllerRef.current = new AbortController();
+      abortControllerRef?.current = new AbortController();
       setStatus("processing");
       setError(null);
       setResult(null);
@@ -224,7 +225,7 @@ export function useBulkAction(
         onError?.(error);
         throw error;
       } finally {
-        abortControllerRef.current = null;
+        abortControllerRef?.current = null;
         setPendingConfig(null);
       }
     },

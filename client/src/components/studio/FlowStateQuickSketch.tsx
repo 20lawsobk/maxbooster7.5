@@ -1,23 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Zap,
-  Mic,
-  Play,
-  Pause,
-  Square,
-  Plus,
-  Trash2,
-  Save,
-  Music,
-  Drum,
-  Piano,
-  Guitar,
-  Volume2,
-  Clock,
-  ArrowRight,
-  Layers,
-} from "lucide-react";
+import { Zap, Mic, Play, Pause, Square, Plus, Trash2, Save, Music, Drum, Piano, Guitar, Volume2, Clock, ArrowRight, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

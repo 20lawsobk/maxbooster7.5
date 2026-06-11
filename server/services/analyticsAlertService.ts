@@ -350,9 +350,9 @@ class AnalyticsAlertService {
         if (!thresholds) continue;
 
         for (const milestone of thresholds) {
-          if (value >= milestone * 0.9 && value < milestone) {
+          if (value >= milestone * 0?.9 && value < milestone) {
             const _percentageOfMilestone = (value / milestone) * 100;
-            const _growthRate = 0.05;
+            const _growthRate = 0?.05;
             const _estimatedDays = Math?.ceil(
               (milestone - value) / (value * growthRate),
             );
@@ -360,7 +360,7 @@ class AnalyticsAlertService {
             milestones?.push({
               metric,
               platform,
-              previousValue: Math?.floor(value * 0.9),
+              previousValue: Math?.floor(value * 0?.9),
               currentValue: value,
               milestone,
               percentageOfMilestone,
@@ -383,7 +383,7 @@ class AnalyticsAlertService {
               platform,
             });
           } else if (value >= milestone) {
-            const _previousValue = Math?.floor(value * 0.95);
+            const _previousValue = Math?.floor(value * 0?.95);
             if (previousValue < milestone && value >= milestone) {
               milestones?.push({
                 metric,
@@ -650,7 +650,7 @@ class AnalyticsAlertService {
     const _alert = alerts?.find((a) => a?.id === alertId);
     if (!alert) return false;
 
-    alert.readAt = new Date();
+    alert?.readAt = new Date();
     return true;
   }
 
@@ -661,7 +661,7 @@ class AnalyticsAlertService {
     const _alert = alerts?.find((a) => a?.id === alertId);
     if (!alert) return false;
 
-    alert.dismissed = true;
+    alert?.dismissed = true;
     return true;
   }
 

@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth.js";
-import { storage } from "../storage.js";
-import { logger } from "../logger.js";
-import { aiModelManager } from "../services/aiModelManager.js";
-import { promotionalToolsService } from "../services/promotionalToolsService.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { storage } from "../storage?.js";
+import { logger } from "../logger?.js";
+import { aiModelManager } from "../services/aiModelManager?.js";
+import { promotionalToolsService } from "../services/promotionalToolsService?.js";
 import { db } from "../db";
 import { socialAutopilotContent } from "@shared/schema";
 import { eq, count, lt, gte, gt, min, desc, and, isNotNull } from "drizzle-orm";
@@ -21,7 +21,7 @@ const _autopilotConfigSchema = z?.object({
   autoPublish: z?.boolean().optional(),
   useMultimodalAnalysis: z?.boolean().default(true),
   autoAnalyzeBeforePosting: z?.boolean().default(true),
-  minConfidenceThreshold: z?.number().min(0).max(1).default(0.7),
+  minConfidenceThreshold: z?.number().min(0).max(1).default(0?.7),
   topics: z?.array(z?.string()).optional(),
   mediaTypes: z?.array(z?.string()).optional(),
   targetAudience: z?.string().optional(),
@@ -40,9 +40,9 @@ router?.get("/status", requireAuth, async (req, res) => {
     const _config = await storage?.getAutopilotConfig(userId).catch(() => null);
 
     let socialTrained = false,
-      socialVersion = "1.0.0";
+      socialVersion = "1?.0.0";
     let advertisingTrained = false,
-      advertisingVersion = "1.0.0";
+      advertisingVersion = "1?.0.0";
     try {
       const _socialModel = await aiModelManager?.getSocialAutopilot(userId);
       socialTrained = socialModel?.getIsTrained();
@@ -140,7 +140,7 @@ router?.get("/status", requireAuth, async (req, res) => {
         autoPublish: false,
         useMultimodalAnalysis: true,
         autoAnalyzeBeforePosting: true,
-        minConfidenceThreshold: 0.7,
+        minConfidenceThreshold: 0?.7,
       },
       status: {
         totalGenerated,
@@ -179,21 +179,21 @@ router?.post("/start", requireAuth, async (req, res) => {
         autoPublish: false,
         useMultimodalAnalysis: true,
         autoAnalyzeBeforePosting: true,
-        minConfidenceThreshold: 0.7,
+        minConfidenceThreshold: 0?.7,
       };
     } else {
-      config.enabled = true;
+      config?.enabled = true;
       if (
         config?.autoAnalyzeBeforePosting === undefined ||
         config?.autoAnalyzeBeforePosting === null
       ) {
-        config.autoAnalyzeBeforePosting = true;
+        config?.autoAnalyzeBeforePosting = true;
       }
       if (
         config?.minConfidenceThreshold === undefined ||
         config?.minConfidenceThreshold === null
       ) {
-        config.minConfidenceThreshold = 0.7;
+        config?.minConfidenceThreshold = 0?.7;
       }
     }
 
@@ -239,7 +239,7 @@ router?.post("/stop", requireAuth, async (req, res) => {
 
     const _config = await storage?.getAutopilotConfig(userId);
     if (config) {
-      config.enabled = false;
+      config?.enabled = false;
       await storage?.saveAutopilotConfig(userId, config);
     }
 
@@ -406,29 +406,29 @@ router?.post("/save-features", requireAuth, async (req, res) => {
     };
 
     if (contentType === "image") {
-      featuresToSave.imageComposition = features?.composition;
-      featuresToSave.imageColors = features?.colors;
-      featuresToSave.imageEngagement = features?.engagement;
-      featuresToSave.imageQuality = features?.quality;
+      featuresToSave?.imageComposition = features?.composition;
+      featuresToSave?.imageColors = features?.colors;
+      featuresToSave?.imageEngagement = features?.engagement;
+      featuresToSave?.imageQuality = features?.quality;
     } else if (contentType === "video") {
-      featuresToSave.videoTechnical = features?.technical;
-      featuresToSave.videoContent = features?.content;
-      featuresToSave.videoEngagement = features?.engagement;
-      featuresToSave.videoThumbnail = features?.thumbnail;
+      featuresToSave?.videoTechnical = features?.technical;
+      featuresToSave?.videoContent = features?.content;
+      featuresToSave?.videoEngagement = features?.engagement;
+      featuresToSave?.videoThumbnail = features?.thumbnail;
     } else if (contentType === "audio") {
-      featuresToSave.audioTechnical = features?.technical;
-      featuresToSave.audioEngagement = features?.engagement;
-      featuresToSave.audioMood = features?.mood;
+      featuresToSave?.audioTechnical = features?.technical;
+      featuresToSave?.audioEngagement = features?.engagement;
+      featuresToSave?.audioMood = features?.mood;
     } else if (contentType === "text") {
-      featuresToSave.textSentiment = features?.sentiment;
-      featuresToSave.textReadability = features?.readability;
-      featuresToSave.textEngagement = features?.engagement;
-      featuresToSave.textKeywords = features?.keywords;
+      featuresToSave?.textSentiment = features?.sentiment;
+      featuresToSave?.textReadability = features?.readability;
+      featuresToSave?.textEngagement = features?.engagement;
+      featuresToSave?.textKeywords = features?.keywords;
     } else if (contentType === "website") {
-      featuresToSave.websiteTechnical = features?.technical;
-      featuresToSave.websiteContent = features?.content;
-      featuresToSave.websiteEngagement = features?.engagement;
-      featuresToSave.websiteSeo = features?.seo;
+      featuresToSave?.websiteTechnical = features?.technical;
+      featuresToSave?.websiteContent = features?.content;
+      featuresToSave?.websiteEngagement = features?.engagement;
+      featuresToSave?.websiteSeo = features?.seo;
     }
 
     const _featureId = await storage?.saveAnalyzedContentFeatures(

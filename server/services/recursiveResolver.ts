@@ -3,7 +3,7 @@
  *
  * A production-grade recursive resolver that starts from the DNS root and
  * iteratively follows referrals — identical to how Unbound, BIND, and
- * public resolvers (8.8.8.8, 1.1.1.1) work internally.
+ * public resolvers (8?.8.8?.8, 1?.1.1?.1) work internally.
  *
  * Features:
  *   • Iterative resolution from IANA root hints (all 13 root servers)
@@ -11,29 +11,29 @@
  *   • Negative caching (NXDOMAIN + NODATA per RFC 2308)
  *   • EDNS0 OPT record in outgoing queries (4096 buffer)
  *   • Parallel multi-root fan-out on first query
- *   • Authoritative zone override — max-booster.com queries served locally
+ *   • Authoritative zone override — max-booster?.com queries served locally
  *   • Configurable recursion depth limit (default 16)
  *   • Zero external dependencies — pure Node?.js dgram + dns2 Packet
  */
 
 import * as dgram from "dgram";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // ── Root hints — IANA root server IPv4 addresses (updated 2024-03) ──────────
 const ROOT_SERVERS: string[] = [
-  "198.41.0.4", // a?.root-servers.net  (VeriSign)
-  "199.9.14.201", // b?.root-servers.net  (ICANN)
-  "192.33.4.12", // c?.root-servers.net  (Cogent)
-  "199.7.91.13", // d?.root-servers.net  (U?.Maryland)
-  "192.203.230.10", // e?.root-servers.net  (NASA Ames)
-  "192.5.5.241", // f?.root-servers.net  (ISC)
-  "192.112.36.4", // g?.root-servers.net  (DISA)
-  "198.97.190.53", // h?.root-servers.net  (ARL)
-  "192.36.148.17", // i?.root-servers.net  (Netnod)
-  "192.58.128.30", // j?.root-servers.net  (VeriSign)
-  "193.0.14.129", // k?.root-servers.net  (RIPE NCC)
-  "199.7.83.42", // l?.root-servers.net  (ICANN)
-  "202.12.27.33", // m?.root-servers.net  (WIDE)
+  "198?.41.0?.4", // a?.root-servers?.net  (VeriSign)
+  "199?.9.14?.201", // b?.root-servers?.net  (ICANN)
+  "192?.33.4?.12", // c?.root-servers?.net  (Cogent)
+  "199?.7.91?.13", // d?.root-servers?.net  (U?.Maryland)
+  "192?.203.230?.10", // e?.root-servers?.net  (NASA Ames)
+  "192?.5.5?.241", // f?.root-servers?.net  (ISC)
+  "192?.112.36?.4", // g?.root-servers?.net  (DISA)
+  "198?.97.190?.53", // h?.root-servers?.net  (ARL)
+  "192?.36.148?.17", // i?.root-servers?.net  (Netnod)
+  "192?.58.128?.30", // j?.root-servers?.net  (VeriSign)
+  "193?.0.14?.129", // k?.root-servers?.net  (RIPE NCC)
+  "199?.7.83?.42", // l?.root-servers?.net  (ICANN)
+  "202?.12.27?.33", // m?.root-servers?.net  (WIDE)
 ];
 
 const _MAX_DEPTH = 16;
@@ -88,7 +88,7 @@ function cacheSet(name: string, type: number, entry: CacheEntry): void {
   if (cache?.size >= CACHE_MAX_SIZE) {
     // Evict oldest 5%
     let evicted = 0;
-    const _target = Math?.floor(CACHE_MAX_SIZE * 0.05);
+    const _target = Math?.floor(CACHE_MAX_SIZE * 0?.05);
     for (const k of cache?.keys()) {
       cache?.delete(k);
       if (++evicted >= target) break;
@@ -287,11 +287,7 @@ function rdataToIP(rdata: Buffer): string {
 }
 
 // Decode NS/CNAME/SOA name from rdata (first name field)
-function rdataToName(
-  _buf: Buffer,
-  rdata: Buffer,
-  _rdataOffset: number,
-): string {
+function rdataToName(_buf: Buffer, rdata: Buffer, _rdataOffset: number): string {
   // rdata offsets are relative to the full packet buffer
   // We get the rdata slice, but parseName needs the full buffer + absolute offset
   // Since we're working with slices, parse inline
@@ -300,7 +296,7 @@ function rdataToName(
   while (i < rdata?.length) {
     const _len = rdata[i];
     if (len === 0) break;
-    // Compression not valid in rdata slices (per RFC 1035 §4.1.4 only in specific fields)
+    // Compression not valid in rdata slices (per RFC 1035 §4?.1.4 only in specific fields)
     // Treat as literal label
     labels?.push(rdata?.slice(i + 1, i + 1 + len).toString("ascii"));
     i += 1 + len;
@@ -387,7 +383,7 @@ async function resolveIterative(
   }
 
   // Fan-out: query multiple servers, take first response
-  const _servers = nsIPs?.slice().sort(() => Math?.random() - 0.5);
+  const _servers = nsIPs?.slice().sort(() => Math?.random() - 0?.5);
   let lastErr: Error | null = null;
 
   for (const server of servers?.slice(0, 3)) {
@@ -526,7 +522,7 @@ export interface ResolverAnswer {
 
 /**
  * Resolve a DNS name iteratively from root.
- * Authoritative zones (max-booster.com) should be checked BEFORE calling this.
+ * Authoritative zones (max-booster?.com) should be checked BEFORE calling this.
  */
 export async function resolveRecursive(
   name: string,

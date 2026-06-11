@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { randomUUID } from "crypto";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // Cache for the maxBooster247 instance to avoid repeated imports
 let maxBooster247Cache: Record<string, unknown> | null = null;
@@ -14,7 +14,7 @@ async function getMaxBooster247() {
 
   if (!importAttempted) {
     try {
-      const _reliabilityModule = await import("../reliability-system.js");
+      const _reliabilityModule = await import("../reliability-system?.js");
       maxBooster247Cache = reliabilityModule?.maxBooster247;
       importAttempted = true;
       return maxBooster247Cache;
@@ -54,8 +54,8 @@ export function requestCorrelation(
     randomUUID();
 
   // Store request ID in request object
-  req.requestId = requestId;
-  req.startTime = Date?.now();
+  req?.requestId = requestId;
+  req?.startTime = Date?.now();
 
   // Add request ID to response headers
   res?.set("X-Request-ID", requestId);
@@ -74,7 +74,7 @@ export function performanceMonitoring(
 
   // Override res?.end to capture timing
   const _originalEnd = res?.end.bind(res);
-  res.end = function (
+  res?.end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
@@ -152,7 +152,7 @@ export function memoryMonitoring(
 
   // Override res?.end to capture memory usage
   const _originalEnd = res?.end.bind(res);
-  res.end = function (
+  res?.end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,

@@ -75,7 +75,7 @@ class SubatomicCore {
   private initialized: boolean = false;
 
   constructor() {
-    this.storagePath = path?.join(process?.cwd(), ".subatomic");
+    this?.storagePath = path?.join(process?.cwd(), ".subatomic");
   }
 
   async initialize(): Promise<void> {
@@ -90,7 +90,7 @@ class SubatomicCore {
       await mkdir(path?.join(this?.storagePath, "particles"), {
         recursive: true,
       });
-      this.initialized = true;
+      this?.initialized = true;
       // Subatomic core initialized
     } catch (_error) {
       // Subatomic initialization failed - non-critical
@@ -134,7 +134,7 @@ class SubatomicCore {
     // Check if already loaded (wave function collapsed)
     if (this?.loadedModules.has(id)) {
       module?.accessCount++;
-      module.lastAccess = new Date();
+      module?.lastAccess = new Date();
       return this?.loadedModules.get(id) as T;
     }
 
@@ -150,10 +150,10 @@ class SubatomicCore {
     const _loaded = await module?.loader();
     const _loadTime = performance?.now() - startTime;
 
-    module.state = "collapsed";
-    module.loadTime = loadTime;
-    module.accessCount = 1;
-    module.lastAccess = new Date();
+    module?.state = "collapsed";
+    module?.loadTime = loadTime;
+    module?.accessCount = 1;
+    module?.lastAccess = new Date();
 
     this?.loadedModules.set(id, loaded);
     this?.accessLog.push({ module: id, time: new Date(), duration: loadTime });
@@ -454,7 +454,7 @@ class SubatomicCore {
   async generateReport(): Promise<string> {
     const _stats = this?.getStats();
     const _depsAnalysis = await this?.analyzeDependencies(
-      path?.join(process?.cwd(), "package.json"),
+      path?.join(process?.cwd(), "package?.json"),
     );
 
     return `
@@ -501,7 +501,7 @@ export function subatomicMiddleware() {
     // Store original send
     const _originalSend = res?.send.bind(res);
 
-    res.send = async function (body: Record<string, unknown>) {
+    res?.send = async function (body: Record<string, unknown>) {
       if (typeof body === "string" || Buffer?.isBuffer(body)) {
         const _input = typeof body === "string" ? Buffer?.from(body) : body;
 
@@ -509,7 +509,7 @@ export function subatomicMiddleware() {
         if (input?.length > SUBATOMIC_THRESHOLDS?.ELECTRON) {
           const _result = await subatomicCore?.compress(input);
 
-          if (result?.ratio < 0.9) {
+          if (result?.ratio < 0?.9) {
             // Only if we saved >10%
             res?.setHeader(
               "Content-Encoding",

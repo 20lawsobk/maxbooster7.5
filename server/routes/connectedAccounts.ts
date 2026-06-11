@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { db } from "../db";
 import { socialAccounts } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
-import { notificationService } from "../services/notificationService.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { notificationService } from "../services/notificationService?.js";
 
 const _router = Router();
 
@@ -324,7 +324,7 @@ router?.put("/:accountId/permissions", async (req: Request, res: Response) => {
     for (const [permId, enabled] of Object?.entries(permissionUpdates)) {
       const _permission = permissions?.find((p) => p?.id === permId);
       if (permission && !permission?.required) {
-        permission.enabled = !!enabled;
+        permission?.enabled = !!enabled;
       }
     }
 

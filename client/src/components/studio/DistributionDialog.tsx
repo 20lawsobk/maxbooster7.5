@@ -115,10 +115,11 @@ export function DistributionDialog({
     },
   });
 
-  const { data: existingPackage } = useQuery<DistributionPackage>({
-    queryKey: [`/api/distribution/packages/${projectId}`],
-    enabled: open && !!projectId,
-  });
+  const { data: existingPackage } =
+    useQuery<DistributionPackage>({
+      queryKey: [`/api/distribution/packages/${projectId}`],
+      enabled: open && !!projectId,
+    });
 
   const { data: packageTracks = [], isLoading: tracksLoading } = useQuery<
     DistributionTrack[]

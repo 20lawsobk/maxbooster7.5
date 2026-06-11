@@ -1,4 +1,4 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import {
   users,
   analytics,
@@ -8,12 +8,12 @@ import {
   achievements,
   socialCampaigns,
   careerCoachRecommendations,
-} from "../../shared/schema.js";
+} from "../../shared/schema?.js";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { Resend } from "resend";
-import { logger } from "../logger.js";
-import { notificationService } from "./notificationService.js";
-import { env } from "../config/env.js";
+import { logger } from "../logger?.js";
+import { notificationService } from "./notificationService?.js";
+import { env } from "../config/env?.js";
 
 interface WeeklyReport {
   userId: string;
@@ -50,8 +50,8 @@ class WeeklyInsightsService {
   private initialize() {
     if (!this?.isInitialized && env?.RESEND_API_KEY) {
       try {
-        this.resend = new Resend(env?.RESEND_API_KEY);
-        this.isInitialized = true;
+        this?.resend = new Resend(env?.RESEND_API_KEY);
+        this?.isInitialized = true;
         logger?.info("✅ Weekly Insights Service initialized");
       } catch (error) {
         logger?.warn(
@@ -300,7 +300,7 @@ class WeeklyInsightsService {
       trackingPixel,
       clickTrackUrl,
     );
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
 
     try {
       await this?.resend!.emails?.send({
@@ -366,18 +366,18 @@ class WeeklyInsightsService {
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1?.0">
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f3f4f6;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🎵 Max Booster</h1>
-      <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Your Weekly Music Career Insights</p>
+      <p style="margin: 10px 0 0; color: rgba(255,255,255,0?.9); font-size: 16px;">Your Weekly Music Career Insights</p>
     </div>
     
-    <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0?.05);">
       <p style="font-size: 18px; color: #374151; margin: 0 0 20px;">Hey ${report?.userName}! 👋</p>
-      <p style="font-size: 15px; color: #6b7280; margin: 0 0 30px; line-height: 1.6;">Here's how your music performed this week. Keep pushing forward!</p>
+      <p style="font-size: 15px; color: #6b7280; margin: 0 0 30px; line-height: 1?.6;">Here's how your music performed this week. Keep pushing forward!</p>
       
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
         <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; text-align: center;">
@@ -440,7 +440,7 @@ class WeeklyInsightsService {
       <div style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
         <h3 style="margin: 0 0 10px; color: #5b21b6; font-size: 15px;">🤖 AI Recommendation of the Week</h3>
         <p style="margin: 0; color: #1f2937; font-size: 16px; font-weight: 600;">${report?.aiRecommendation.title}</p>
-        <p style="margin: 10px 0 0; color: #4c1d95; font-size: 14px; line-height: 1.5;">${report?.aiRecommendation.description}</p>
+        <p style="margin: 10px 0 0; color: #4c1d95; font-size: 14px; line-height: 1?.5;">${report?.aiRecommendation.description}</p>
       </div>
       `
           : ""

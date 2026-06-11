@@ -110,8 +110,8 @@ router?.post("/undo/:actionId", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "Action already undone" });
     }
 
-    action.isUndone = true;
-    action.undoneAt = new Date();
+    action?.isUndone = true;
+    action?.undoneAt = new Date();
 
     return res?.json({
       success: true,
@@ -148,8 +148,8 @@ router?.post("/redo/:actionId", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "Action has not been undone" });
     }
 
-    action.isUndone = false;
-    action.undoneAt = undefined;
+    action?.isUndone = false;
+    action?.undoneAt = undefined;
 
     return res?.json({
       success: true,
@@ -364,8 +364,8 @@ router?.post("/revert/:actionId", async (req: Request, res: Response) => {
         .json({ error: "Action has already been reverted" });
     }
 
-    action.isUndone = true;
-    action.undoneAt = new Date();
+    action?.isUndone = true;
+    action?.undoneAt = new Date();
 
     return res?.json({
       success: true,
@@ -677,8 +677,8 @@ router?.post("/restore/:pointId", async (req: Request, res: Response) => {
         action?.createdAt > restorePointAction?.createdAt
       ) {
         if (!action?.isUndone) {
-          action.isUndone = true;
-          action.undoneAt = new Date();
+          action?.isUndone = true;
+          action?.undoneAt = new Date();
           undoneActions?.push(action?.id);
         }
       }
@@ -799,8 +799,8 @@ router?.post("/recover/:itemId", async (req: Request, res: Response) => {
 
     const _action = actionCache?.get(deletedItem?.actionId);
     if (action) {
-      action.isUndone = true;
-      action.undoneAt = new Date();
+      action?.isUndone = true;
+      action?.undoneAt = new Date();
     }
 
     deletedItemCache?.delete(itemId);

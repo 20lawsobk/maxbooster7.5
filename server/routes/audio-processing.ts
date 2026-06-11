@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
 import { z } from "zod";
 
 const _router = Router();
@@ -28,7 +28,7 @@ const _processAudioSchema = z?.object({
 });
 
 function calculateLUFS(samples: number[], sampleRate: number): number {
-  const _blockSize = Math?.floor(sampleRate * 0.4);
+  const _blockSize = Math?.floor(sampleRate * 0?.4);
   if (samples?.length < blockSize) return -70;
 
   let totalPower = 0;
@@ -47,7 +47,7 @@ function calculateLUFS(samples: number[], sampleRate: number): number {
 
   if (blockCount === 0) return -70;
   const _meanPower = totalPower / blockCount;
-  const _lufs = -0.691 + 10 * Math?.log10(meanPower);
+  const _lufs = -0?.691 + 10 * Math?.log10(meanPower);
   return isFinite(lufs) ? Math?.round(lufs * 100) / 100 : -70;
 }
 
@@ -93,7 +93,7 @@ function calculateDynamicRange(samples: number[]): {
 
 function detectClipping(
   samples: number[],
-  threshold: number = 0.99,
+  threshold: number = 0?.99,
 ): {
   hasClipping: boolean;
   clippedSamples: number;
@@ -287,7 +287,7 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
 
     const {
       sampleRate,
-
+      
       samples,
       leftChannel,
       rightChannel,
@@ -323,8 +323,8 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
         case "compressor":
           const _threshold = processor?.parameters.threshold ?? -24;
           const _ratio = processor?.parameters.ratio ?? 4;
-          const _attack = processor?.parameters.attack ?? 0.003;
-          const _release = processor?.parameters.release ?? 0.1;
+          const _attack = processor?.parameters.attack ?? 0?.003;
+          const _release = processor?.parameters.release ?? 0?.1;
           processedSamples = applyCompressor(
             processedSamples,
             threshold,
@@ -336,7 +336,7 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
           break;
 
         case "limiter":
-          const _ceiling = processor?.parameters.ceiling ?? -0.3;
+          const _ceiling = processor?.parameters.ceiling ?? -0?.3;
           processedSamples = applyLimiter(processedSamples, ceiling);
           break;
 
@@ -377,9 +377,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 100, gain: -3, q: 0.7 },
-                  { frequency: 3000, gain: 3, q: 1.0 },
-                  { frequency: 8000, gain: 2, q: 0.7 },
+                  { frequency: 100, gain: -3, q: 0?.7 },
+                  { frequency: 3000, gain: 3, q: 1?.0 },
+                  { frequency: 8000, gain: 2, q: 0?.7 },
                 ],
               },
             },
@@ -388,8 +388,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -18,
                 ratio: 3,
-                attack: 0.01,
-                release: 0.15,
+                attack: 0?.01,
+                release: 0?.15,
               },
             },
           ],
@@ -403,9 +403,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 80, gain: 4, q: 0.8 },
-                  { frequency: 200, gain: 2, q: 0.7 },
-                  { frequency: 2000, gain: -2, q: 1.0 },
+                  { frequency: 80, gain: 4, q: 0?.8 },
+                  { frequency: 200, gain: 2, q: 0?.7 },
+                  { frequency: 2000, gain: -2, q: 1?.0 },
                 ],
               },
             },
@@ -414,8 +414,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -20,
                 ratio: 4,
-                attack: 0.005,
-                release: 0.1,
+                attack: 0?.005,
+                release: 0?.1,
               },
             },
           ],
@@ -429,9 +429,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 60, gain: 3, q: 1.0 },
-                  { frequency: 800, gain: -2, q: 0.7 },
-                  { frequency: 4000, gain: 3, q: 0.8 },
+                  { frequency: 60, gain: 3, q: 1?.0 },
+                  { frequency: 800, gain: -2, q: 0?.7 },
+                  { frequency: 4000, gain: 3, q: 0?.8 },
                 ],
               },
             },
@@ -440,8 +440,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -15,
                 ratio: 4,
-                attack: 0.001,
-                release: 0.08,
+                attack: 0?.001,
+                release: 0?.08,
               },
             },
           ],
@@ -455,9 +455,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 80, gain: -4, q: 0.7 },
-                  { frequency: 200, gain: -2, q: 0.7 },
-                  { frequency: 5000, gain: 2, q: 0.8 },
+                  { frequency: 80, gain: -4, q: 0?.7 },
+                  { frequency: 200, gain: -2, q: 0?.7 },
+                  { frequency: 5000, gain: 2, q: 0?.8 },
                 ],
               },
             },
@@ -465,9 +465,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "compressor",
               parameters: {
                 threshold: -22,
-                ratio: 2.5,
-                attack: 0.015,
-                release: 0.2,
+                ratio: 2?.5,
+                attack: 0?.015,
+                release: 0?.2,
               },
             },
           ],
@@ -484,9 +484,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 30, gain: -2, q: 0.7 },
-                  { frequency: 60, gain: 1, q: 0.7 },
-                  { frequency: 10000, gain: 1, q: 0.7 },
+                  { frequency: 30, gain: -2, q: 0?.7 },
+                  { frequency: 60, gain: 1, q: 0?.7 },
+                  { frequency: 10000, gain: 1, q: 0?.7 },
                 ],
               },
             },
@@ -495,11 +495,11 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -12,
                 ratio: 2,
-                attack: 0.02,
-                release: 0.2,
+                attack: 0?.02,
+                release: 0?.2,
               },
             },
-            { type: "limiter", parameters: { ceiling: -1, release: 0.05 } },
+            { type: "limiter", parameters: { ceiling: -1, release: 0?.05 } },
           ],
         },
         {
@@ -512,9 +512,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 50, gain: 2, q: 0.8 },
-                  { frequency: 3000, gain: 1, q: 0.7 },
-                  { frequency: 12000, gain: 2, q: 0.7 },
+                  { frequency: 50, gain: 2, q: 0?.8 },
+                  { frequency: 3000, gain: 1, q: 0?.7 },
+                  { frequency: 12000, gain: 2, q: 0?.7 },
                 ],
               },
             },
@@ -523,11 +523,11 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -8,
                 ratio: 3,
-                attack: 0.01,
-                release: 0.15,
+                attack: 0?.01,
+                release: 0?.15,
               },
             },
-            { type: "limiter", parameters: { ceiling: -0.3, release: 0.03 } },
+            { type: "limiter", parameters: { ceiling: -0?.3, release: 0?.03 } },
           ],
         },
         {
@@ -540,8 +540,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 30, gain: -6, q: 0.5 },
-                  { frequency: 15000, gain: -3, q: 0.7 },
+                  { frequency: 30, gain: -6, q: 0?.5 },
+                  { frequency: 15000, gain: -3, q: 0?.7 },
                 ],
               },
             },
@@ -550,11 +550,11 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -15,
                 ratio: 2,
-                attack: 0.03,
-                release: 0.25,
+                attack: 0?.03,
+                release: 0?.25,
               },
             },
-            { type: "limiter", parameters: { ceiling: -3, release: 0.1 } },
+            { type: "limiter", parameters: { ceiling: -3, release: 0?.1 } },
           ],
         },
         {
@@ -567,8 +567,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 80, gain: -2, q: 0.7 },
-                  { frequency: 8000, gain: -1, q: 0.7 },
+                  { frequency: 80, gain: -2, q: 0?.7 },
+                  { frequency: 8000, gain: -1, q: 0?.7 },
                 ],
               },
             },
@@ -577,11 +577,11 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -20,
                 ratio: 2,
-                attack: 0.02,
-                release: 0.3,
+                attack: 0?.02,
+                release: 0?.3,
               },
             },
-            { type: "limiter", parameters: { ceiling: -3, release: 0.1 } },
+            { type: "limiter", parameters: { ceiling: -3, release: 0?.1 } },
           ],
         },
       ],
@@ -595,9 +595,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "reverb",
               parameters: {
                 type: "plate",
-                decay: 0.6,
-                mix: 0.25,
-                damping: 0.4,
+                decay: 0?.6,
+                mix: 0?.25,
+                damping: 0?.4,
               },
             },
           ],
@@ -609,7 +609,7 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
           processingChain: [
             {
               type: "reverb",
-              parameters: { type: "room", decay: 0.3, mix: 0.15, damping: 0.6 },
+              parameters: { type: "room", decay: 0?.3, mix: 0?.15, damping: 0?.6 },
             },
           ],
         },
@@ -620,7 +620,7 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
           processingChain: [
             {
               type: "reverb",
-              parameters: { type: "hall", decay: 0.8, mix: 0.3, damping: 0.3 },
+              parameters: { type: "hall", decay: 0?.8, mix: 0?.3, damping: 0?.3 },
             },
           ],
         },
@@ -705,7 +705,7 @@ router?.post(
         return res?.status(400).json({ error: "filePath is required" });
       }
       const { pythonAIService } = await import(
-        "../services/pythonAIService.js"
+        "../services/pythonAIService?.js"
       );
       const _available = await pythonAIService?.isAvailable();
       if (!available) {
@@ -736,7 +736,7 @@ router?.post(
  */
 router?.get("/analysis-features", async (_req: Request, res: Response) => {
   try {
-    const { pythonAIService } = await import("../services/pythonAIService.js");
+    const { pythonAIService } = await import("../services/pythonAIService?.js");
     const _result = await pythonAIService?.getAudioFeatureInfo();
     return res?.json(result?.data ?? { available: false });
   } catch (error) {
@@ -756,7 +756,7 @@ router?.post("/transcribe", requireAuth, async (req: Request, res: Response) => 
     if (!filePath || typeof filePath !== "string") {
       return res?.status(400).json({ error: "filePath is required" });
     }
-    const { pythonAIService } = await import("../services/pythonAIService.js");
+    const { pythonAIService } = await import("../services/pythonAIService?.js");
     const _available = await pythonAIService?.isAvailable();
     if (!available) {
       return res

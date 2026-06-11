@@ -6,16 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  X,
-  ArrowRight,
-  ArrowLeft,
-  Lightbulb,
-  HelpCircle,
-  Check,
-  SkipForward,
-  RotateCcw,
-} from "lucide-react";
+import { X, ArrowRight, ArrowLeft, Lightbulb, HelpCircle, Check, SkipForward, RotateCcw } from "lucide-react";
 
 export interface TooltipStep {
   id: string;
@@ -43,6 +34,7 @@ interface FeatureDiscoveryTooltipProps {
   onShowAgain?: () => void;
   initialStep?: number;
 }
+
 
 export default function FeatureDiscoveryTooltip({
   tutorial,

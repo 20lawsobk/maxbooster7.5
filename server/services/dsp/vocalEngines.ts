@@ -1,19 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  LFO,
-  Oscillator,
-  msToSamples,
-  dbToLinear,
-  linearToDb,
-  clamp,
-  softClip,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, DelayLine, LFO, Oscillator, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
 
 export class AutoTuneProcessor implements DSPProcessor {
   private phaseAccumulator: number = 0;
@@ -24,8 +9,8 @@ export class AutoTuneProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.pitchBuffer = new Float32Array(4096);
-    this.correlationBuffer = new Float32Array(2048);
+    this?.pitchBuffer = new Float32Array(4096);
+    this?.correlationBuffer = new Float32Array(2048);
   }
 
   process(
@@ -34,7 +19,7 @@ export class AutoTuneProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _speed = (params?.speed as number) ?? 50;
     const _amount = (params?.amount as number) ?? 100;
@@ -43,13 +28,13 @@ export class AutoTuneProcessor implements DSPProcessor {
     const _detune = (params?.detune as number) ?? 0;
     const _mix = (params?.mix as number) ?? 1;
 
-    const _speedFactor = 1 - (speed / 100) * 0.99;
+    const _speedFactor = 1 - (speed / 100) * 0?.99;
     const _amountFactor = amount / 100;
 
     const _scaleNotes = this?.getScaleNotes(key, scale);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _inputSample = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
+      const _inputSample = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
 
       this?.pitchBuffer[this?.bufferIndex] = inputSample;
 
@@ -69,7 +54,7 @@ export class AutoTuneProcessor implements DSPProcessor {
             ? pitchRatio
             : this?.lastPitch * speedFactor + pitchRatio * (1 - speedFactor);
 
-        this.lastPitch = smoothedRatio;
+        this?.lastPitch = smoothedRatio;
 
         const _correctedRatio = 1 + (smoothedRatio - 1) * amountFactor;
 
@@ -88,7 +73,7 @@ export class AutoTuneProcessor implements DSPProcessor {
         output?.samples[1][i] = input?.samples[1][i];
       }
 
-      this.bufferIndex = (this?.bufferIndex + 1) % this?.pitchBuffer.length;
+      this?.bufferIndex = (this?.bufferIndex + 1) % this?.pitchBuffer.length;
     }
 
     return output;
@@ -113,8 +98,8 @@ export class AutoTuneProcessor implements DSPProcessor {
         energy += buffer[idx1] * buffer[idx1];
       }
 
-      if (energy > 0.001) {
-        correlation /= Math?.sqrt(energy) + 0.0001;
+      if (energy > 0?.001) {
+        correlation /= Math?.sqrt(energy) + 0?.0001;
 
         if (correlation > bestCorrelation) {
           bestCorrelation = correlation;
@@ -123,7 +108,7 @@ export class AutoTuneProcessor implements DSPProcessor {
       }
     }
 
-    if (bestCorrelation > 0.5 && bestPeriod > 0) {
+    if (bestCorrelation > 0?.5 && bestPeriod > 0) {
       return this?.sampleRate / bestPeriod;
     }
 
@@ -190,10 +175,10 @@ export class AutoTuneProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.phaseAccumulator = 0;
-    this.lastPitch = 0;
+    this?.phaseAccumulator = 0;
+    this?.lastPitch = 0;
     this?.pitchBuffer.fill(0);
-    this.bufferIndex = 0;
+    this?.bufferIndex = 0;
   }
 }
 
@@ -216,7 +201,7 @@ export class HarmonyProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _voice1Interval = (params?.voice1 as number) ?? 4;
     const _voice2Interval = (params?.voice2 as number) ?? 7;
@@ -225,7 +210,7 @@ export class HarmonyProcessor implements DSPProcessor {
     const _dryLevel = (params?.dryLevel as number) ?? 0;
     const _detune = (params?.detune as number) ?? 10;
     const _pan = (params?.pan as number) ?? 50;
-    const _mix = (params?.mix as number) ?? 0.5;
+    const _mix = (params?.mix as number) ?? 0?.5;
 
     const _voice1Ratio = Math?.pow(2, voice1Interval / 12);
     const _voice2Ratio = Math?.pow(2, voice2Interval / 12);
@@ -236,7 +221,7 @@ export class HarmonyProcessor implements DSPProcessor {
     const _panAmount = pan / 100;
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
 
       for (let v = 0; v < 2; v++) {
         this?.delayLines[v].write(mono);
@@ -245,7 +230,7 @@ export class HarmonyProcessor implements DSPProcessor {
       const _shiftVoice = (voiceIdx: number, ratio: number): number => {
         const _phase = this?.phases[voiceIdx];
         const _window =
-          0.5 - 0.5 * Math?.cos((2 * Math?.PI * phase) / this?.grainSize);
+          0?.5 - 0?.5 * Math?.cos((2 * Math?.PI * phase) / this?.grainSize);
 
         const _readPos = this?.grainSize * (1 - ratio);
         const _grain1 = this?.delayLines[voiceIdx].readInterpolated(
@@ -304,7 +289,7 @@ export class VocalDoublerProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _delay = (params?.delay as number) ?? 20;
     const _variation = (params?.variation as number) ?? 30;
@@ -312,20 +297,20 @@ export class VocalDoublerProcessor implements DSPProcessor {
     const _spread = (params?.spread as number) ?? 80;
     const _voices = Math?.floor((params?.voices as number) ?? 2);
     const _toneColor = (params?.tone as number) ?? 5000;
-    const _mix = (params?.mix as number) ?? 0.5;
+    const _mix = (params?.mix as number) ?? 0?.5;
 
     const _baseDelay = msToSamples(delay, this?.sampleRate);
     const _variationSamples = msToSamples(variation, this?.sampleRate);
-    const _pitchModDepth = msToSamples(pitchVar * 0.1, this?.sampleRate);
+    const _pitchModDepth = msToSamples(pitchVar * 0?.1, this?.sampleRate);
     const _spreadAmount = spread / 100;
 
     for (let v = 0; v < voices; v++) {
-      this?.lfos[v].setFrequency(0.3 + v * 0.2, this?.sampleRate);
+      this?.lfos[v].setFrequency(0?.3 + v * 0?.2, this?.sampleRate);
       this?.lpFilters[v].setLowpass(toneColor, this?.sampleRate);
     }
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
 
       let doubleL = 0;
       let doubleR = 0;
@@ -334,18 +319,18 @@ export class VocalDoublerProcessor implements DSPProcessor {
         this?.delayLines[v].write(mono);
 
         const _lfoVal = this?.lfos[v].sine();
-        const _timeModulation = lfoVal * variationSamples * 0.5;
+        const _timeModulation = lfoVal * variationSamples * 0?.5;
         const _pitchModulation = this?.lfos[v].triangle() * pitchModDepth;
 
         const _voiceDelay =
-          baseDelay * (1 + v * 0.3) + timeModulation + pitchModulation;
+          baseDelay * (1 + v * 0?.3) + timeModulation + pitchModulation;
         const _delayed = this?.delayLines[v].readInterpolated(voiceDelay);
         const _filtered = this?.lpFilters[v].process(delayed);
 
         const _panPos =
           (v / (voices - 1 || 1)) * spreadAmount * 2 - spreadAmount;
-        const _gainL = Math?.cos((panPos + 1) * Math?.PI * 0.25);
-        const _gainR = Math?.sin((panPos + 1) * Math?.PI * 0.25);
+        const _gainL = Math?.cos((panPos + 1) * Math?.PI * 0?.25);
+        const _gainR = Math?.sin((panPos + 1) * Math?.PI * 0?.25);
 
         doubleL += filtered * gainL;
         doubleR += filtered * gainR;
@@ -388,7 +373,7 @@ export class FormantShifterProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _shift = (params?.shift as number) ?? 0;
     const _gender = (params?.gender as number) ?? 0;
@@ -399,7 +384,7 @@ export class FormantShifterProcessor implements DSPProcessor {
 
     const _shiftRatio = Math?.pow(2, shift / 12);
     const _genderRatio = Math?.pow(2, gender / 24);
-    const _q = 0.5 + (resonance / 100) * 4;
+    const _q = 0?.5 + (resonance / 100) * 4;
 
     for (let f = 0; f < 5; f++) {
       const _originalFreq = formantFreqs[f];
@@ -416,7 +401,7 @@ export class FormantShifterProcessor implements DSPProcessor {
     for (let i = 0; i < input?.samples[0].length; i++) {
       const _inputL = input?.samples[0][i];
       const _inputR = input?.samples[1][i];
-      const _mono = (inputL + inputR) * 0.5;
+      const _mono = (inputL + inputR) * 0?.5;
 
       let processedMono = 0;
 
@@ -426,7 +411,7 @@ export class FormantShifterProcessor implements DSPProcessor {
         processedMono += shiftedSignal;
       }
 
-      processedMono *= 0.5;
+      processedMono *= 0?.5;
 
       output?.samples[0][i] = inputL * (1 - mix) + processedMono * mix;
       output?.samples[1][i] = inputR * (1 - mix) + processedMono * mix;
@@ -451,10 +436,10 @@ export class VocalCompressorProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilterL = new BiquadFilter();
-    this.hpFilterR = new BiquadFilter();
-    this.lpFilterL = new OnePoleFilter();
-    this.lpFilterR = new OnePoleFilter();
+    this?.hpFilterL = new BiquadFilter();
+    this?.hpFilterR = new BiquadFilter();
+    this?.lpFilterL = new OnePoleFilter();
+    this?.lpFilterR = new OnePoleFilter();
   }
 
   process(
@@ -463,7 +448,7 @@ export class VocalCompressorProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _threshold = (params?.threshold as number) ?? -18;
     const _ratio = (params?.ratio as number) ?? 4;
@@ -482,8 +467,8 @@ export class VocalCompressorProcessor implements DSPProcessor {
     const _kneeWidth = knee / 2;
     const _warmthAmount = warmth / 100;
 
-    this?.hpFilterL.setHighpass(hpFreq, 0.707, this?.sampleRate);
-    this?.hpFilterR.setHighpass(hpFreq, 0.707, this?.sampleRate);
+    this?.hpFilterL.setHighpass(hpFreq, 0?.707, this?.sampleRate);
+    this?.hpFilterR.setHighpass(hpFreq, 0?.707, this?.sampleRate);
     this?.lpFilterL.setLowpass(12000, this?.sampleRate);
     this?.lpFilterR.setLowpass(12000, this?.sampleRate);
 
@@ -494,7 +479,7 @@ export class VocalCompressorProcessor implements DSPProcessor {
       const _inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
 
       const _coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      this?.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
 
       const _inputDb = linearToDb(this?.envelope);
       let gainReduction = 0;
@@ -514,10 +499,10 @@ export class VocalCompressorProcessor implements DSPProcessor {
       if (warmthAmount > 0) {
         processedL =
           processedL * (1 - warmthAmount) +
-          Math?.tanh(processedL * 1.5) * warmthAmount;
+          Math?.tanh(processedL * 1?.5) * warmthAmount;
         processedR =
           processedR * (1 - warmthAmount) +
-          Math?.tanh(processedR * 1.5) * warmthAmount;
+          Math?.tanh(processedR * 1?.5) * warmthAmount;
       }
 
       processedL = this?.lpFilterL.process(processedL);
@@ -531,8 +516,8 @@ export class VocalCompressorProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
-    this.saturationState = 0;
+    this?.envelope = 0;
+    this?.saturationState = 0;
     this?.hpFilterL.clear();
     this?.hpFilterR.clear();
     this?.lpFilterL.clear();
@@ -558,20 +543,20 @@ export class VocalEQProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilterL = new BiquadFilter();
-    this.hpFilterR = new BiquadFilter();
-    this.lowShelfL = new BiquadFilter();
-    this.lowShelfR = new BiquadFilter();
-    this.lowMidL = new BiquadFilter();
-    this.lowMidR = new BiquadFilter();
-    this.midPeakL = new BiquadFilter();
-    this.midPeakR = new BiquadFilter();
-    this.presenceL = new BiquadFilter();
-    this.presenceR = new BiquadFilter();
-    this.airL = new BiquadFilter();
-    this.airR = new BiquadFilter();
-    this.deEssL = new BiquadFilter();
-    this.deEssR = new BiquadFilter();
+    this?.hpFilterL = new BiquadFilter();
+    this?.hpFilterR = new BiquadFilter();
+    this?.lowShelfL = new BiquadFilter();
+    this?.lowShelfR = new BiquadFilter();
+    this?.lowMidL = new BiquadFilter();
+    this?.lowMidR = new BiquadFilter();
+    this?.midPeakL = new BiquadFilter();
+    this?.midPeakR = new BiquadFilter();
+    this?.presenceL = new BiquadFilter();
+    this?.presenceR = new BiquadFilter();
+    this?.airL = new BiquadFilter();
+    this?.airR = new BiquadFilter();
+    this?.deEssL = new BiquadFilter();
+    this?.deEssR = new BiquadFilter();
   }
 
   process(
@@ -580,7 +565,7 @@ export class VocalEQProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _hpFreq = (params?.hpFreq as number) ?? 80;
     const _lowGain = (params?.low as number) ?? 0;
@@ -593,16 +578,16 @@ export class VocalEQProcessor implements DSPProcessor {
     const _deEssAmount = (params?.deEss as number) ?? 0;
     const _outputGain = (params?.output as number) ?? 0;
 
-    this?.hpFilterL.setHighpass(hpFreq, 0.707, this?.sampleRate);
-    this?.hpFilterR.setHighpass(hpFreq, 0.707, this?.sampleRate);
+    this?.hpFilterL.setHighpass(hpFreq, 0?.707, this?.sampleRate);
+    this?.hpFilterR.setHighpass(hpFreq, 0?.707, this?.sampleRate);
     this?.lowShelfL.setLowShelf(200, lowGain, this?.sampleRate);
     this?.lowShelfR.setLowShelf(200, lowGain, this?.sampleRate);
-    this?.lowMidL.setPeaking(lowMidFreq, 1.5, lowMidGain, this?.sampleRate);
-    this?.lowMidR.setPeaking(lowMidFreq, 1.5, lowMidGain, this?.sampleRate);
+    this?.lowMidL.setPeaking(lowMidFreq, 1?.5, lowMidGain, this?.sampleRate);
+    this?.lowMidR.setPeaking(lowMidFreq, 1?.5, lowMidGain, this?.sampleRate);
     this?.midPeakL.setPeaking(midFreq, 2, midGain, this?.sampleRate);
     this?.midPeakR.setPeaking(midFreq, 2, midGain, this?.sampleRate);
-    this?.presenceL.setPeaking(4000, 1.5, presenceGain, this?.sampleRate);
-    this?.presenceR.setPeaking(4000, 1.5, presenceGain, this?.sampleRate);
+    this?.presenceL.setPeaking(4000, 1?.5, presenceGain, this?.sampleRate);
+    this?.presenceR.setPeaking(4000, 1?.5, presenceGain, this?.sampleRate);
     this?.airL.setHighShelf(10000, airGain, this?.sampleRate);
     this?.airR.setHighShelf(10000, airGain, this?.sampleRate);
     this?.deEssL.setPeaking(6500, 3, -deEssAmount, this?.sampleRate);
@@ -670,8 +655,8 @@ export class DeBreathProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilter = new BiquadFilter();
-    this.breathFilter = new BiquadFilter();
+    this?.hpFilter = new BiquadFilter();
+    this?.breathFilter = new BiquadFilter();
   }
 
   process(
@@ -680,7 +665,7 @@ export class DeBreathProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _threshold = (params?.threshold as number) ?? -35;
     const _reduction = (params?.reduction as number) ?? -20;
@@ -696,13 +681,13 @@ export class DeBreathProcessor implements DSPProcessor {
     const _releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, this?.sampleRate));
     const _sensitivityFactor = sensitivity / 100;
 
-    this?.hpFilter.setHighpass(80, 0.707, this?.sampleRate);
+    this?.hpFilter.setHighpass(80, 0?.707, this?.sampleRate);
     this?.breathFilter.setBandpass(breathFreq, 2, this?.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const _inputL = input?.samples[0][i];
       const _inputR = input?.samples[1][i];
-      const _mono = (inputL + inputR) * 0.5;
+      const _mono = (inputL + inputR) * 0?.5;
 
       const _filtered = this?.hpFilter.process(mono);
       const _inputLevel = Math?.abs(filtered);
@@ -711,15 +696,15 @@ export class DeBreathProcessor implements DSPProcessor {
       const _breathLevel = Math?.abs(breathBand);
 
       const _envCoeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * envCoeff + inputLevel * (1 - envCoeff);
+      this?.envelope = this?.envelope * envCoeff + inputLevel * (1 - envCoeff);
 
       const _breathCoeff =
         breathLevel > this?.breathEnvelope ? attackCoeff : releaseCoeff;
-      this.breathEnvelope =
+      this?.breathEnvelope =
         this?.breathEnvelope * breathCoeff + breathLevel * (1 - breathCoeff);
 
       const _breathRatio =
-        this?.envelope > 0.0001 ? this?.breathEnvelope / this?.envelope : 0;
+        this?.envelope > 0?.0001 ? this?.breathEnvelope / this?.envelope : 0;
 
       let gain = 1;
       if (this?.envelope < thresholdLin && breathRatio > sensitivityFactor) {
@@ -738,8 +723,8 @@ export class DeBreathProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
-    this.breathEnvelope = 0;
+    this?.envelope = 0;
+    this?.breathEnvelope = 0;
     this?.hpFilter.clear();
     this?.breathFilter.clear();
   }
@@ -754,8 +739,8 @@ export class VocalExciterProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.hpFilterL = new BiquadFilter();
-    this.hpFilterR = new BiquadFilter();
+    this?.hpFilterL = new BiquadFilter();
+    this?.hpFilterR = new BiquadFilter();
     for (let i = 0; i < 3; i++) {
       this?.bandFiltersL.push(new BiquadFilter());
       this?.bandFiltersR.push(new BiquadFilter());
@@ -769,7 +754,7 @@ export class VocalExciterProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _presence = (params?.presence as number) ?? 50;
     const _clarity = (params?.clarity as number) ?? 50;
@@ -778,14 +763,14 @@ export class VocalExciterProcessor implements DSPProcessor {
     const _outputGain = (params?.output as number) ?? 0;
     const _mix = (params?.mix as number) ?? 1;
 
-    this?.hpFilterL.setHighpass(2000, 0.707, this?.sampleRate);
-    this?.hpFilterR.setHighpass(2000, 0.707, this?.sampleRate);
-    this?.bandFiltersL[0].setPeaking(3500, 2, presence * 0.12, this?.sampleRate);
-    this?.bandFiltersR[0].setPeaking(3500, 2, presence * 0.12, this?.sampleRate);
-    this?.bandFiltersL[1].setPeaking(6000, 2, clarity * 0.1, this?.sampleRate);
-    this?.bandFiltersR[1].setPeaking(6000, 2, clarity * 0.1, this?.sampleRate);
-    this?.bandFiltersL[2].setHighShelf(10000, air * 0.1, this?.sampleRate);
-    this?.bandFiltersR[2].setHighShelf(10000, air * 0.1, this?.sampleRate);
+    this?.hpFilterL.setHighpass(2000, 0?.707, this?.sampleRate);
+    this?.hpFilterR.setHighpass(2000, 0?.707, this?.sampleRate);
+    this?.bandFiltersL[0].setPeaking(3500, 2, presence * 0?.12, this?.sampleRate);
+    this?.bandFiltersR[0].setPeaking(3500, 2, presence * 0?.12, this?.sampleRate);
+    this?.bandFiltersL[1].setPeaking(6000, 2, clarity * 0?.1, this?.sampleRate);
+    this?.bandFiltersR[1].setPeaking(6000, 2, clarity * 0?.1, this?.sampleRate);
+    this?.bandFiltersL[2].setHighShelf(10000, air * 0?.1, this?.sampleRate);
+    this?.bandFiltersR[2].setHighShelf(10000, air * 0?.1, this?.sampleRate);
 
     const _harmonicsAmount = harmonics / 100;
     const _outGainLin = dbToLinear(outputGain);
@@ -803,10 +788,10 @@ export class VocalExciterProcessor implements DSPProcessor {
       if (harmonicsAmount > 0) {
         saturatedL =
           Math?.tanh(highL * (1 + harmonicsAmount * 3)) *
-          (1 - harmonicsAmount * 0.3);
+          (1 - harmonicsAmount * 0?.3);
         saturatedR =
           Math?.tanh(highR * (1 + harmonicsAmount * 3)) *
-          (1 - harmonicsAmount * 0.3);
+          (1 - harmonicsAmount * 0?.3);
 
         saturatedL =
           saturatedL * harmonicsAmount + highL * (1 - harmonicsAmount);
@@ -814,8 +799,8 @@ export class VocalExciterProcessor implements DSPProcessor {
           saturatedR * harmonicsAmount + highR * (1 - harmonicsAmount);
       }
 
-      let processedL = inputL + saturatedL * 0.5;
-      let processedR = inputR + saturatedR * 0.5;
+      let processedL = inputL + saturatedL * 0?.5;
+      let processedR = inputR + saturatedR * 0?.5;
 
       for (let f = 0; f < this?.bandFiltersL.length; f++) {
         processedL = this?.bandFiltersL[f].process(processedL);
@@ -853,7 +838,7 @@ export class VocalRiderProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _target = (params?.target as number) ?? -12;
     const _range = (params?.range as number) ?? 12;
@@ -869,22 +854,22 @@ export class VocalRiderProcessor implements DSPProcessor {
     const _minGain = dbToLinear(-range);
     const _attackCoeff = Math?.exp(-1 / msToSamples(attack, this?.sampleRate));
     const _releaseCoeff = Math?.exp(-1 / msToSamples(release, this?.sampleRate));
-    const _rideSpeed = 0.0001 * speed;
+    const _rideSpeed = 0?.0001 * speed;
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const _inputL = input?.samples[0][i];
       const _inputR = input?.samples[1][i];
-      const _inputLevel = (Math?.abs(inputL) + Math?.abs(inputR)) * 0.5;
+      const _inputLevel = (Math?.abs(inputL) + Math?.abs(inputR)) * 0?.5;
 
       const _coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      this?.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
 
       if (this?.envelope > sensitivityLin) {
-        this.targetGain = targetLin / Math?.max(this?.envelope, 0.0001);
-        this.targetGain = clamp(this?.targetGain, minGain, maxGain);
+        this?.targetGain = targetLin / Math?.max(this?.envelope, 0?.0001);
+        this?.targetGain = clamp(this?.targetGain, minGain, maxGain);
       }
 
-      this.currentGain =
+      this?.currentGain =
         this?.currentGain * (1 - rideSpeed) + this?.targetGain * rideSpeed;
 
       const _processedL = inputL * this?.currentGain;
@@ -898,9 +883,9 @@ export class VocalRiderProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
-    this.targetGain = 1;
-    this.currentGain = 1;
+    this?.envelope = 0;
+    this?.targetGain = 1;
+    this?.currentGain = 1;
   }
 }
 
@@ -913,8 +898,8 @@ export class VocoderProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.carrierOsc = new Oscillator();
-    this.envelopes = new Array(this?.numBands).fill(0);
+    this?.carrierOsc = new Oscillator();
+    this?.envelopes = new Array(this?.numBands).fill(0);
 
     for (let i = 0; i < this?.numBands; i++) {
       this?.analysisFilters.push(new BiquadFilter());
@@ -928,7 +913,7 @@ export class VocoderProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _carrierFreq = (params?.carrierFreq as number) ?? 100;
     const _carrierType = (params?.carrierType as string) ?? "saw";
@@ -948,7 +933,7 @@ export class VocoderProcessor implements DSPProcessor {
 
     for (let b = 0; b < bands; b++) {
       const _freq = lowFreq * Math?.pow(freqRatio, b);
-      const _q = 4 + b * 0.5;
+      const _q = 4 + b * 0?.5;
       this?.analysisFilters[b].setBandpass(freq, q, this?.sampleRate);
       this?.synthesisFilters[b].setBandpass(freq, q, this?.sampleRate);
     }
@@ -956,7 +941,7 @@ export class VocoderProcessor implements DSPProcessor {
     this?.carrierOsc.setFrequency(carrierFreq, this?.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _modulator = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
+      const _modulator = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
 
       let carrier: number;
       switch (carrierType) {
@@ -964,10 +949,10 @@ export class VocoderProcessor implements DSPProcessor {
           carrier = this?.carrierOsc.square();
           break;
         case "noise":
-          carrier = (Math?.random() * 2 - 1) * 0.5;
+          carrier = (Math?.random() * 2 - 1) * 0?.5;
           break;
         case "pulse":
-          carrier = this?.carrierOsc.pulse(0.25);
+          carrier = this?.carrierOsc.pulse(0?.25);
           break;
         case "saw":
         default:
@@ -990,7 +975,7 @@ export class VocoderProcessor implements DSPProcessor {
         vocodedSignal += carrierBand * this?.envelopes[b] * 2;
       }
 
-      vocodedSignal = softClip(vocodedSignal, 0.9);
+      vocodedSignal = softClip(vocodedSignal, 0?.9);
 
       output?.samples[0][i] =
         input?.samples[0][i] * (1 - mix) + vocodedSignal * mix;

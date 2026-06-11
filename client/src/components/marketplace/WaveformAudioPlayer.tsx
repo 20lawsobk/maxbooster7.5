@@ -4,19 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Heart,
-  Share2,
-  Download,
-  Loader2,
-} from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Repeat, Heart, Share2, Download, Loader2 } from "lucide-react";
 
 interface WaveformAudioPlayerProps {
   audioUrl: string;
@@ -215,14 +203,14 @@ export function WaveformAudioPlayer({
     }
   };
 
-  (value: number[]) => {
+  ((value: number[]) => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const newTime = (value[0] / 100) * duration;
     audio.currentTime = newTime;
     setCurrentTime(newTime);
-  };
+  });
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

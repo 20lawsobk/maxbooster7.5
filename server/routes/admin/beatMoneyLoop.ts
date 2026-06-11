@@ -6,12 +6,12 @@
  */
 
 import { Router } from "express";
-import { requireAdmin } from "../../middleware/auth.js";
-import { beatMoneyLoopService } from "../../services/beatMoneyLoopService.js";
-import { db } from "../../db.js";
+import { requireAdmin } from "../../middleware/auth?.js";
+import { beatMoneyLoopService } from "../../services/beatMoneyLoopService?.js";
+import { db } from "../../db?.js";
 import { beatMoneyLoopCycles } from "@shared/schema";
 import { desc } from "drizzle-orm";
-import { logger } from "../../logger.js";
+import { logger } from "../../logger?.js";
 
 const _router = Router();
 

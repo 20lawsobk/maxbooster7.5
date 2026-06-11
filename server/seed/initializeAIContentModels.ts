@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { aiModels, aiModelVersions } from "../../shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export async function initializeAIContentModels() {
   logger?.info("🚀 Initializing AI Content Models...");
@@ -13,7 +13,7 @@ export async function initializeAIContentModels() {
         modelType: "content_generation",
         description:
           "Multi-language content generation with cultural adaptations. Supports 10+ languages including English, Spanish, French, German, Italian, Portuguese, Chinese, Japanese, Korean, and Arabic.",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: [
           "multilingual",
@@ -37,14 +37,14 @@ export async function initializeAIContentModels() {
           culturalAdaptations: true,
           deterministic: true,
         },
-        performance: { accuracy: 0.88, latency: 250, supportedLanguages: 10 },
+        performance: { accuracy: 0?.88, latency: 250, supportedLanguages: 10 },
       },
       {
         modelName: "brand_voice_analyzer_v1",
         modelType: "content_generation",
         description:
           "Analyzes historical posts to extract brand voice characteristics including tone, emoji usage, hashtag patterns, sentence structure, and vocabulary complexity.",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: [
           "voice_analysis",
@@ -57,14 +57,14 @@ export async function initializeAIContentModels() {
           toneDetection: "keyword-based",
           deterministic: true,
         },
-        performance: { accuracy: 0.82, latency: 150 },
+        performance: { accuracy: 0?.82, latency: 150 },
       },
       {
         modelName: "trend_detector_v1",
         modelType: "content_generation",
         description:
           "Detects trending topics based on temporal patterns, platform-specific trends, and cultural events.",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: [
           "trend_detection",
@@ -89,14 +89,14 @@ export async function initializeAIContentModels() {
           ],
           deterministic: true,
         },
-        performance: { accuracy: 0.87, latency: 100, platformCoverage: 6 },
+        performance: { accuracy: 0?.87, latency: 100, platformCoverage: 6 },
       },
       {
         modelName: "hashtag_optimizer_v1",
         modelType: "content_generation",
         description:
           "Optimizes hashtag selection based on goal (reach, engagement, niche), platform-specific limits, and hashtag effectiveness metrics.",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: [
           "hashtag_optimization",
@@ -115,7 +115,7 @@ export async function initializeAIContentModels() {
           },
           deterministic: true,
         },
-        performance: { accuracy: 0.92, latency: 200, platformCoverage: 6 },
+        performance: { accuracy: 0?.92, latency: 200, platformCoverage: 6 },
       },
     ];
 

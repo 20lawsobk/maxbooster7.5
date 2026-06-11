@@ -6,7 +6,7 @@ import {
   dspAnalytics,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export type PlaylistType =
   | "editorial"
@@ -329,7 +329,7 @@ class PlaylistAttributionService {
     });
 
     if (pitchMetrics?.totalPitches > 0) {
-      pitchMetrics.acceptanceRate =
+      pitchMetrics?.acceptanceRate =
         (pitchMetrics?.accepted /
           (pitchMetrics?.accepted + pitchMetrics?.rejected)) *
           100 || 0;
@@ -391,8 +391,8 @@ class PlaylistAttributionService {
       date?.setDate(date?.getDate() - i);
 
       const _dailyStreams = Math?.floor(Math?.random() * 500) + 50;
-      const _dailyListeners = Math?.floor(dailyStreams * 0.6);
-      const _dailySaves = Math?.floor(dailyStreams * 0.05);
+      const _dailyListeners = Math?.floor(dailyStreams * 0?.6);
+      const _dailySaves = Math?.floor(dailyStreams * 0?.05);
 
       cumulativeStreams += dailyStreams;
       cumulativeListeners += dailyListeners;

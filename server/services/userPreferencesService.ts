@@ -400,7 +400,7 @@ class UserPreferencesService {
       const _contentPatterns = await this?.analyzeContentPatterns(userId, redis);
 
       if (
-        featureUsage?.studioUsage > 0.7 &&
+        featureUsage?.studioUsage > 0?.7 &&
         preferences?.studioPreferences.autoSave === false
       ) {
         recommendations?.push({
@@ -460,7 +460,7 @@ class UserPreferencesService {
       }
 
       if (
-        featureUsage?.aiUsage < 0.2 &&
+        featureUsage?.aiUsage < 0?.2 &&
         preferences?.aiAssistantLevel !== "minimal"
       ) {
         recommendations?.push({

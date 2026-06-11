@@ -4,7 +4,7 @@ import { db } from "../db";
 import { publishingRights } from "@shared/schema";
 import { eq, and, desc, count, sql } from "drizzle-orm";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 

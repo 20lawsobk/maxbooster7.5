@@ -27,28 +27,7 @@ import {
 import { useStudioStore } from "@/lib/studioStore";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Settings2,
-  ChevronDown,
-  ChevronUp,
-  Layout,
-  Palette,
-  Keyboard,
-  Save,
-  RotateCcw,
-  GripVertical,
-  Eye,
-  EyeOff,
-  Layers,
-  ZoomIn,
-  Activity,
-  Mic,
-  Sliders,
-  Headphones,
-  Trash2,
-  Plus,
-  Check,
-} from "lucide-react";
+import { Settings2, ChevronDown, ChevronUp, Layout, Palette, Keyboard, Save, RotateCcw, GripVertical, Eye, EyeOff, Layers, ZoomIn, Activity, Mic, Sliders, Headphones, Trash2, Plus, Check } from "lucide-react";
 import {
   DndContext,
   closestCenter,

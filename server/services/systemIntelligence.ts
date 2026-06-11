@@ -26,8 +26,8 @@
  */
 
 import { EventEmitter } from "events";
-import { addLogTransport, type LogEntry } from "./structuredLogger.js";
-import { logger } from "../logger.js";
+import { addLogTransport, type LogEntry } from "./structuredLogger?.js";
+import { logger } from "../logger?.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -213,11 +213,11 @@ const INFERENCE_RULES: InferenceRule[] = [
     matches: (s) =>
       s?.pdim5xxCount > 0 && !s?.pdimHadFirstSuccess && s?.uptimeMs < 120_000,
     confidence: (s) => {
-      let c = 0.7;
-      if (s?.uptimeMs < 60_000) c += 0.15;
-      if (!s?.pdimCircuitOpen) c += 0.1; // slow-lane, not open = expected
-      if (s?.seedingFailCount > 0) c += 0.05;
-      return Math?.min(c, 0.97);
+      let c = 0?.7;
+      if (s?.uptimeMs < 60_000) c += 0?.15;
+      if (!s?.pdimCircuitOpen) c += 0?.1; // slow-lane, not open = expected
+      if (s?.seedingFailCount > 0) c += 0?.05;
+      return Math?.min(c, 0?.97);
     },
     explain: (s) => ({
       what: "PDIM (the key-value store) is still waking up after restart.",
@@ -261,11 +261,11 @@ const INFERENCE_RULES: InferenceRule[] = [
       s?.uptimeMs >= 120_000 &&
       s?.uptimeMs < 780_000,
     confidence: (s) => {
-      let c = 0.65;
-      if (s?.luaSaturationCount > 0) c += 0.15;
-      if (s?.seedingFailCount > 0) c += 0.1;
-      if (s?.uptimeMs < 480_000) c += 0.05;
-      return Math?.min(c, 0.92);
+      let c = 0?.65;
+      if (s?.luaSaturationCount > 0) c += 0?.15;
+      if (s?.seedingFailCount > 0) c += 0?.1;
+      if (s?.uptimeMs < 480_000) c += 0?.05;
+      return Math?.min(c, 0?.92);
     },
     explain: (s) => ({
       what: "Multiple services are contending for PDIM connections during the slow-lane phase.",
@@ -310,11 +310,11 @@ const INFERENCE_RULES: InferenceRule[] = [
     matches: (s) =>
       s?.pdim5xxCount > 5 && s?.pdimCircuitOpen && s?.uptimeMs > 600_000,
     confidence: (s) => {
-      let c = 0.6;
-      if (s?.uptimeMs > 900_000) c += 0.15; // well past warm-up
-      if (s?.pdim5xxCount > 20) c += 0.1;
-      if (s?.incidentCount > 0) c += 0.1;
-      return Math?.min(c, 0.88);
+      let c = 0?.6;
+      if (s?.uptimeMs > 900_000) c += 0?.15; // well past warm-up
+      if (s?.pdim5xxCount > 20) c += 0?.1;
+      if (s?.incidentCount > 0) c += 0?.1;
+      return Math?.min(c, 0?.88);
     },
     explain: (s) => ({
       what: "PDIM is experiencing an unexpected outage after successful warm-up.",
@@ -361,10 +361,10 @@ const INFERENCE_RULES: InferenceRule[] = [
     name: "LuaExecutor Saturation",
     matches: (s) => s?.luaSaturationCount > 0 && s?.luaMaxQueued >= 3,
     confidence: (s) => {
-      let c = 0.75;
-      if (s?.pdim5xxCount > 0) c += 0.1; // common concurrent cause
-      if (s?.luaMaxQueued >= 5) c += 0.1;
-      return Math?.min(c, 0.92);
+      let c = 0?.75;
+      if (s?.pdim5xxCount > 0) c += 0?.1; // common concurrent cause
+      if (s?.luaMaxQueued >= 5) c += 0?.1;
+      return Math?.min(c, 0?.92);
     },
     explain: (s) => ({
       what: `LuaExecutor is congested — up to ${s?.luaMaxQueued} operations queued behind 1 active slot.`,
@@ -404,10 +404,10 @@ const INFERENCE_RULES: InferenceRule[] = [
     name: "BullMQ Lock Race",
     matches: (s) => s?.bullmqLockCount > 0,
     confidence: (s) => {
-      let c = 0.8;
-      if (s?.luaSaturationCount > 0) c += 0.1;
-      if (s?.pdim5xxCount > 0) c += 0.05;
-      return Math?.min(c, 0.93);
+      let c = 0?.8;
+      if (s?.luaSaturationCount > 0) c += 0?.1;
+      if (s?.pdim5xxCount > 0) c += 0?.05;
+      return Math?.min(c, 0?.93);
     },
     explain: (s) => ({
       what: "BullMQ job locks are expiring before jobs complete.",
@@ -445,8 +445,8 @@ const INFERENCE_RULES: InferenceRule[] = [
     name: "Memory Pressure",
     matches: (s) => s?.memHeapPct > 80 || s?.memPressureEvents > 0,
     confidence: (s) => {
-      let c = 0.85;
-      if (s?.memHeapPct > 92) c = 0.95;
+      let c = 0?.85;
+      if (s?.memHeapPct > 92) c = 0?.95;
       return c;
     },
     explain: (s) => ({
@@ -497,7 +497,7 @@ const INFERENCE_RULES: InferenceRule[] = [
     id: "database_slow",
     name: "Database Slow / Timeout",
     matches: (s) => s?.dbSlowCount > 2,
-    confidence: (s) => Math?.min(0.7 + s?.dbSlowCount * 0.03, 0.9),
+    confidence: (s) => Math?.min(0?.7 + s?.dbSlowCount * 0?.03, 0?.9),
     explain: (s) => ({
       what: `Database is responding slowly — ${s?.dbSlowCount} slow-query or timeout event(s) in the last 10 minutes.`,
       why: "Possible causes: Neon PostgreSQL cold-start (serverless wake-up), table lock contention, a long-running transaction, or a missing index on a newly-queried column.",
@@ -528,7 +528,7 @@ const INFERENCE_RULES: InferenceRule[] = [
     name: "Self-Healing Active",
     matches: (s) =>
       s?.chainFixerFires > 0 && s?.pdim5xxCount === 0 && !s?.pdimCircuitOpen,
-    confidence: (_s) => 0.9,
+    confidence: (_s) => 0?.9,
     explain: (s) => ({
       what: "The self-healing system applied automated fixes during this window.",
       why: `ChainFixer triggered ${s?.chainFixerFires} fix action(s): ${s?.chainFixerPatterns.join(", ")}. These patterns matched known error signatures and their recovery routines ran automatically.`,
@@ -560,7 +560,7 @@ const INFERENCE_RULES: InferenceRule[] = [
     id: "unknown_pattern",
     name: "Novel Error Pattern",
     matches: (s) => s?.unknownErrorCount > 0,
-    confidence: (_s) => 0.55,
+    confidence: (_s) => 0?.55,
     explain: (s) => ({
       what: `${s?.unknownErrorCount} error(s) did not match any known recovery pattern.`,
       why: `These errors have no corresponding auto-fix rule. They may represent new failure modes, third-party API changes, or code regressions. Samples: ${s?.unknownErrors.slice(0, 2).join(" | ")}`,
@@ -611,8 +611,8 @@ const SECURITY_RULES: SecurityRule[] = [
           : "Semi-targeted: lower volume suggests credential rotation or CAPTCHA evasion.",
       predictedNextMove:
         "Will iterate through more username/password variants. If not blocked, may pivot to password-reset flow or OAuth.",
-      falsePositiveLikelihood: threatLevel < 0.7 ? 0.2 : 0.05,
-      reasoning: `${indicators?.length} authentication-failure indicators observed. Request volume (${requestCount}) and failure pattern suggests automated tooling rather than a legitimate user with a forgotten password. Threat level ${(threatLevel * 100).toFixed(0)}%. The self-healing engine has ${threatLevel > 0.85 ? "blocked this IP and terminated active sessions" : "rate-limited this IP"}.`,
+      falsePositiveLikelihood: threatLevel < 0?.7 ? 0?.2 : 0?.05,
+      reasoning: `${indicators?.length} authentication-failure indicators observed. Request volume (${requestCount}) and failure pattern suggests automated tooling rather than a legitimate user with a forgotten password. Threat level ${(threatLevel * 100).toFixed(0)}%. The self-healing engine has ${threatLevel > 0?.85 ? "blocked this IP and terminated active sessions" : "rate-limited this IP"}.`,
       countermeasures: [
         {
           priority: "immediate",
@@ -651,7 +651,7 @@ const SECURITY_RULES: SecurityRule[] = [
         "Automated scanner probing for common web vulnerabilities and misconfigurations.",
       predictedNextMove:
         "Having mapped the attack surface, attacker will likely pivot to exploitation of discovered endpoints or attempt injection attacks.",
-      falsePositiveLikelihood: 0.1,
+      falsePositiveLikelihood: 0?.1,
       reasoning: `${requestCount} probing requests observed, hitting ${indicators?.length} known reconnaissance paths (admin panels, config files, backup endpoints). Threat level ${(threatLevel * 100).toFixed(0)}%. This is a standard automated scan — the server returns appropriate 404s for non-existent endpoints, so no data was exposed.`,
       countermeasures: [
         {
@@ -696,7 +696,7 @@ const SECURITY_RULES: SecurityRule[] = [
         : "Automated: pattern matches a standard SQLmap or similar scanner.",
       predictedNextMove:
         "If injection is possible, attacker will enumerate tables, extract user credentials, and potentially attempt privilege escalation.",
-      falsePositiveLikelihood: 0.03,
+      falsePositiveLikelihood: 0?.03,
       reasoning: `SQL injection payloads detected with threat level ${(threatLevel * 100).toFixed(0)}%. The application uses Drizzle ORM with parameterised queries for all database access, which provides strong protection against injection. The payload was blocked before reaching the database layer.`,
       countermeasures: [
         {
@@ -729,7 +729,7 @@ const SECURITY_RULES: SecurityRule[] = [
         "Automated XSS probe — likely a scanner testing for reflected or stored XSS.",
       predictedNextMove:
         "If successful, would attempt to steal session cookies, redirect users, or deliver malware. CSP headers prevent execution.",
-      falsePositiveLikelihood: 0.05,
+      falsePositiveLikelihood: 0?.05,
       reasoning: `XSS payload detected with threat level ${(threatLevel * 100).toFixed(0)}%. The application serves strict Content-Security-Policy headers that prevent inline script execution. DOMPurify sanitises user-supplied HTML on the client. The payload was sanitised and blocked.`,
       countermeasures: [
         {
@@ -761,7 +761,7 @@ const SECURITY_RULES: SecurityRule[] = [
         "Automated scanner testing for directory traversal vulnerabilities.",
       predictedNextMove:
         "If successful, would attempt to read /etc/passwd, .env files, or application secrets.",
-      falsePositiveLikelihood: 0.02,
+      falsePositiveLikelihood: 0?.02,
       reasoning: `Path traversal payload detected with threat level ${(threatLevel * 100).toFixed(0)}%. Static file serving is path-safe (Express static middleware normalises paths). Environment variables are never served as static files.`,
       countermeasures: [
         {
@@ -786,7 +786,7 @@ const SECURITY_RULES: SecurityRule[] = [
       sophisticationLabel: `${requestCount} requests in rate window — ${requestCount > 500 ? "high-volume automated flood" : "moderate rate — may be aggressive scraping"}.`,
       predictedNextMove:
         "Will likely continue to increase request rate or rotate IPs if current IP is blocked.",
-      falsePositiveLikelihood: 0.15,
+      falsePositiveLikelihood: 0?.15,
       reasoning: `High request rate (${requestCount} req/window) from this source with threat level ${(threatLevel * 100).toFixed(0)}%. Distributed rate limiter and admission control are active. Excess requests are being queued and rejected with 429.`,
       countermeasures: [
         {
@@ -818,7 +818,7 @@ const SECURITY_RULES: SecurityRule[] = [
       sophisticationLabel:
         "Behaviour is anomalous but does not fit known attack signatures.",
       predictedNextMove: "Unknown — monitoring continues.",
-      falsePositiveLikelihood: 0.35,
+      falsePositiveLikelihood: 0?.35,
       reasoning: `Threat level ${(threatLevel * 100).toFixed(0)}% with no matching pattern. May be a novel attack vector, a misconfigured legitimate client, or a false positive. The self-healing engine continues monitoring this source.`,
       countermeasures: [
         {
@@ -857,8 +857,8 @@ class SystemIntelligenceEngine extends EventEmitter {
 
   initialize(): void {
     if (this?._initialized) return;
-    this._initialized = true;
-    this._startedAt = Date?.now();
+    this?._initialized = true;
+    this?._startedAt = Date?.now();
 
     // Hook into structured logger to build event window
     addLogTransport((entry) => {
@@ -884,14 +884,14 @@ class SystemIntelligenceEngine extends EventEmitter {
 
     // Cache circuit-breaker accessor to avoid require() in hot path
     try {
-      const _cbMod = await import("../lib/pdimCircuitBreaker.js");
-      this._cbIsOpen = cbMod?.cbIsOpen;
+      const _cbMod = await import("../lib/pdimCircuitBreaker?.js");
+      this?._cbIsOpen = cbMod?.cbIsOpen;
     } catch {
       /* non-fatal — cbIsOpen defaults to false */
     }
 
     try {
-      const { chainErrorAutoFixer } = await import("./chainErrorAutoFixer.js");
+      const { chainErrorAutoFixer } = await import("./chainErrorAutoFixer?.js");
       chainErrorAutoFixer?.on(
         "fixed",
         (ev: { patternId: string; attempt: number }) => {
@@ -908,7 +908,7 @@ class SystemIntelligenceEngine extends EventEmitter {
     }
 
     try {
-      const { platformAutoFixer } = await import("./platformAutoFixer.js");
+      const { platformAutoFixer } = await import("./platformAutoFixer?.js");
       platformAutoFixer?.on(
         "incident:opened",
         (inc: { severity: string; title: string }) => {
@@ -931,7 +931,7 @@ class SystemIntelligenceEngine extends EventEmitter {
 
     try {
       const { selfHealingEngine } = await import(
-        "./selfHealingSecurityEngine.js"
+        "./selfHealingSecurityEngine?.js"
       );
       selfHealingEngine?.on(
         "threat_detected",
@@ -954,12 +954,12 @@ class SystemIntelligenceEngine extends EventEmitter {
             this?.recentSecurityUnderstandings.pop();
 
           if (
-            understanding?.falsePositiveLikelihood < 0.3 &&
-            assessment?.threatLevel > 0.7
+            understanding?.falsePositiveLikelihood < 0?.3 &&
+            assessment?.threatLevel > 0?.7
           ) {
             this?._addInsight({
               id: `threat_${assessment?.id}`,
-              priority: assessment?.threatLevel > 0.9 ? "critical" : "high",
+              priority: assessment?.threatLevel > 0?.9 ? "critical" : "high",
               title: `Security: ${understanding?.intentLabel.split("—")[0].trim()}`,
               detail: understanding?.reasoning,
               action:
@@ -991,7 +991,7 @@ class SystemIntelligenceEngine extends EventEmitter {
       (entry?.message.includes("PDIM first success") ||
         entry?.message.includes("[PDIM] Circuit CLOSED"))
     ) {
-      this._firstPdimSuccessAt = now;
+      this?._firstPdimSuccessAt = now;
     }
 
     this?.eventWindow.push({
@@ -1114,7 +1114,7 @@ class SystemIntelligenceEngine extends EventEmitter {
     for (const rule of INFERENCE_RULES) {
       if (!rule?.matches(signals)) continue;
       const _confidence = rule?.confidence(signals);
-      if (confidence < 0.4) continue;
+      if (confidence < 0?.4) continue;
 
       results?.push({
         errorClass: rule?.id,
@@ -1233,8 +1233,8 @@ class SystemIntelligenceEngine extends EventEmitter {
         e?.ts > Date?.now() - 5 * 60_000 &&
         /PDIM HTTP 5/i?.test(e?.message),
     ).length;
-    if (recentPdim < olderPdim * 0.7) trend = "improving";
-    else if (recentPdim > olderPdim * 1.4) trend = "degrading";
+    if (recentPdim < olderPdim * 0?.7) trend = "improving";
+    else if (recentPdim > olderPdim * 1?.4) trend = "degrading";
 
     // Headline
     const _topUnderstanding = understandings[0];
@@ -1409,7 +1409,7 @@ class SystemIntelligenceEngine extends EventEmitter {
 
     // Prune resolved insights older than 1 hour
     const _cutoff = Date?.now() - 60 * 60_000;
-    this.insights = this?.insights.filter((i) => i?.since > cutoff);
+    this?.insights = this?.insights.filter((i) => i?.since > cutoff);
   }
 
   getInsights(): Insight[] {

@@ -1,39 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStudioStore } from "@/lib/studioStore";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  Repeat,
-  Headphones,
-  Wand2,
-  Sparkles,
-  Brain,
-  Layers,
-  Music,
-  Mic,
-  Scissors,
-  Copy,
-  Trash2,
-  Undo,
-  Redo,
-  Save,
-  Download,
-  Share2,
-  Grid3X3,
-  TrendingUp,
-  PanelRightOpen,
-  PanelRightClose,
-  Waves,
-  Timer,
-  Flag,
-  GitBranch,
-  FolderOpen,
-  MoreHorizontal,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, Repeat, Headphones, Wand2, Sparkles, Brain, Layers, Music, Mic, Scissors, Copy, Trash2, Undo, Redo, Save, Download, Share2, Grid3X3, TrendingUp, PanelRightOpen, PanelRightClose, Waves, Timer, Flag, GitBranch, FolderOpen, MoreHorizontal } from "lucide-react";
 import "./FlowStateTheme.css";
 import { FlowStateAISidebar } from "./FlowStateAISidebar";
 import { FlowStateSmartToolbar } from "./FlowStateSmartToolbar";

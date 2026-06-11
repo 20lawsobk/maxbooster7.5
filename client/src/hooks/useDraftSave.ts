@@ -53,7 +53,7 @@ export function useDraftSave<T = unknown>({
           setDraft(existingDraft);
           setLastSaved(existingDraft?.updatedAt);
         }
-        isInitialized.current = true;
+        isInitialized?.current = true;
       } catch (error) {
         logger?.error("[useDraftSave] Init error:", error);
       }
@@ -68,7 +68,7 @@ export function useDraftSave<T = unknown>({
     if (dataStr === lastDataRef?.current) return;
     if (!debouncedData || dataStr === "{}" || dataStr === "null") return;
 
-    lastDataRef.current = dataStr;
+    lastDataRef?.current = dataStr;
 
     const _saveDraft = async () => {
       setIsSaving(true);
@@ -132,7 +132,7 @@ export function useDraftSave<T = unknown>({
       setHasDraft(false);
       setDraft(null);
       setLastSaved(null);
-      lastDataRef.current = "";
+      lastDataRef?.current = "";
     } catch (error) {
       logger?.error("[useDraftSave] Discard error:", error);
       onError?.(error as Error);

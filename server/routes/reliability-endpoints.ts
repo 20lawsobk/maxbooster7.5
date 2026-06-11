@@ -5,7 +5,7 @@ import { databaseResilience } from "../reliability/database-resilience";
 import { memoryManager } from "../reliability/memory-manager";
 import { maxBooster247 } from "../reliability-system";
 import { getQueryTelemetry } from "../db";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import {
   getCircuitHealthSummary,
   getCircuitStats,
@@ -13,9 +13,9 @@ import {
   resetAllCircuits,
   getRetryQueue,
   clearRetryQueue,
-} from "../services/externalServices.js";
-import { apiCache } from "../middleware/apiCache.js";
-import { isSchedulerLeader } from "../services/autonomousJobScheduler.js";
+} from "../services/externalServices?.js";
+import { apiCache } from "../middleware/apiCache?.js";
+import { isSchedulerLeader } from "../services/autonomousJobScheduler?.js";
 
 // Enhanced health check endpoints for 24/7 monitoring
 export function setupReliabilityEndpoints(

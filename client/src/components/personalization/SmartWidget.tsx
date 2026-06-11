@@ -12,20 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  MoreVertical,
-  Maximize2,
-  Minimize2,
-  EyeOff,
-  RefreshCw,
-  Pin,
-  PinOff,
-  Sparkles,
-  Clock,
-  ArrowUp,
-  ArrowDown,
-  GripVertical,
-} from "lucide-react";
+import { MoreVertical, Maximize2, Minimize2, EyeOff, RefreshCw, Pin, PinOff, Sparkles, Clock, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type WidgetSize = "small" | "medium" | "large";

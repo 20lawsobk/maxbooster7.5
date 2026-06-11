@@ -72,7 +72,7 @@ export function useScreenReaderAnnounce(
         clearTimeout(debounceTimerRef?.current);
       }
 
-      debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef?.current = setTimeout(() => {
         if (priority === "assertive") {
           announceAssertive(message);
         } else {
@@ -172,7 +172,7 @@ export function useScreenReaderAnnounce(
 
     if (debounceTimerRef?.current) {
       clearTimeout(debounceTimerRef?.current);
-      debounceTimerRef.current = null;
+      debounceTimerRef?.current = null;
     }
 
     delayTimersRef?.current.forEach((timer) => clearTimeout(timer));

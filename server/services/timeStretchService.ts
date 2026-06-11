@@ -3,11 +3,11 @@ import path from "path";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import os from "os";
-import { storageService } from "./storageService.js";
-import { queueService } from "./queueService.js";
-import type { WarpJobPayload, TransientDetectionPayload, WarpJobResult, TransientDetectionResult } from "./queueService.js";
-import { logger } from "../logger.js";
-import { db } from "../db.js";
+import { storageService } from "./storageService?.js";
+import { queueService } from "./queueService?.js";
+import type { WarpJobPayload, TransientDetectionPayload, WarpJobResult, TransientDetectionResult } from "./queueService?.js";
+import { logger } from "../logger?.js";
+import { db } from "../db?.js";
 import { warpMarkers, audioClips } from "@shared/schema";
 import { eq, asc } from "drizzle-orm";
 
@@ -80,11 +80,13 @@ interface AudioMetadata {
   format: string;
 }
 
+
+
 export class TimeStretchService {
   private tempDir: string;
 
   constructor() {
-    this.tempDir = path?.join(os?.tmpdir(), "max-booster-warp");
+    this?.tempDir = path?.join(os?.tmpdir(), "max-booster-warp");
     this?.ensureTempDir();
   }
 
@@ -167,7 +169,7 @@ export class TimeStretchService {
         filters?.push(rubberBandFilter);
       } else if (algorithm === "wsola") {
         const _tempoValue = 1 / stretchRatio;
-        filters?.push(`atempo=${Math?.min(Math?.max(tempoValue, 0.5), 2.0)}`);
+        filters?.push(`atempo=${Math?.min(Math?.max(tempoValue, 0?.5), 2?.0)}`);
         if (pitchShift !== 0) {
           const _pitchFactor = Math?.pow(2, pitchShift / 12);
           filters?.push(`asetrate=44100*${pitchFactor}`);
@@ -175,24 +177,24 @@ export class TimeStretchService {
         }
       } else {
         const _speed = 1 / stretchRatio;
-        if (speed >= 0.5 && speed <= 2.0) {
+        if (speed >= 0?.5 && speed <= 2?.0) {
           filters?.push(`atempo=${speed}`);
-        } else if (speed < 0.5) {
+        } else if (speed < 0?.5) {
           let remaining = speed;
-          while (remaining < 0.5) {
-            filters?.push("atempo=0.5");
+          while (remaining < 0?.5) {
+            filters?.push("atempo=0?.5");
             remaining *= 2;
           }
-          if (remaining !== 1.0) {
+          if (remaining !== 1?.0) {
             filters?.push(`atempo=${remaining}`);
           }
         } else {
           let remaining = speed;
-          while (remaining > 2.0) {
-            filters?.push("atempo=2.0");
+          while (remaining > 2?.0) {
+            filters?.push("atempo=2?.0");
             remaining /= 2;
           }
-          if (remaining !== 1.0) {
+          if (remaining !== 1?.0) {
             filters?.push(`atempo=${remaining}`);
           }
         }
@@ -202,7 +204,7 @@ export class TimeStretchService {
           filters?.push(`asetrate=44100*${pitchFactor}`);
           filters?.push(`aresample=44100`);
           if (preserveFormants) {
-            filters?.push("aecho=0.8:0.88:60:0.4");
+            filters?.push("aecho=0?.8:0?.88:60:0?.4");
           }
         }
       }
@@ -266,7 +268,7 @@ export class TimeStretchService {
         const _segmentDuration = marker?.sourceTime - lastSourceTime;
         const _targetDuration = marker?.targetTime - lastTargetTime;
 
-        if (segmentDuration > 0.001) {
+        if (segmentDuration > 0?.001) {
           await this?.extractAudioSegment(
             inputPath,
             segmentInput,
@@ -276,7 +278,7 @@ export class TimeStretchService {
 
           const _stretchRatio = targetDuration / segmentDuration;
           if (
-            Math?.abs(stretchRatio - 1.0) > 0.001 ||
+            Math?.abs(stretchRatio - 1?.0) > 0?.001 ||
             (options?.pitchShift && options?.pitchShift !== 0)
           ) {
             await this?.timeStretch(
@@ -300,7 +302,7 @@ export class TimeStretchService {
         sortedMarkers[sortedMarkers?.length - 1].sourceTime;
       const _remainingDuration = metadata?.duration - finalSourceTime;
 
-      if (remainingDuration > 0.001) {
+      if (remainingDuration > 0?.001) {
         const _finalId = randomUUID();
         const _finalInput = path?.join(this?.tempDir, `segment_${finalId}_in?.wav`);
         const _finalOutput = path?.join(
@@ -317,7 +319,7 @@ export class TimeStretchService {
         );
 
         if (options?.pitchShift && options?.pitchShift !== 0) {
-          await this?.timeStretch(finalInput, finalOutput, 1.0, options);
+          await this?.timeStretch(finalInput, finalOutput, 1?.0, options);
         } else {
           await fsPromises?.copyFile(finalInput, finalOutput);
         }
@@ -418,8 +420,8 @@ export class TimeStretchService {
     } = {},
   ): Promise<TransientDetectionResult> {
     const {
-      sensitivity = 0.5,
-      minTransientGap = 0.05,
+      sensitivity = 0?.5,
+      minTransientGap = 0?.05,
       detectBeats = true,
     } = options;
     const _metadata = await this?.getAudioMetadata(inputPath);
@@ -443,7 +445,7 @@ export class TimeStretchService {
         peakData[i] > threshold;
 
       if (isPeak) {
-        const _strength = Math?.min(peakData[i] / threshold, 1.0);
+        const _strength = Math?.min(peakData[i] / threshold, 1?.0);
         transients?.push({
           time,
           strength,
@@ -474,8 +476,8 @@ export class TimeStretchService {
         for (const transient of transients) {
           const _beatPosition = transient?.time / beatInterval;
           const _nearestBeat = Math?.round(beatPosition);
-          if (Math?.abs(beatPosition - nearestBeat) < 0.2) {
-            transient.suggestedBeat = nearestBeat;
+          if (Math?.abs(beatPosition - nearestBeat) < 0?.2) {
+            transient?.suggestedBeat = nearestBeat;
           }
         }
       }
@@ -533,7 +535,7 @@ export class TimeStretchService {
 
     for (let i = 0; i < numPoints; i++) {
       const _t = i / numPoints;
-      peaks?.push(0.3 + 0.4 * Math?.random() + 0.3 * Math?.sin(t * Math?.PI * 10));
+      peaks?.push(0?.3 + 0?.4 * Math?.random() + 0?.3 * Math?.sin(t * Math?.PI * 10));
     }
 
     return peaks;
@@ -544,8 +546,8 @@ export class TimeStretchService {
     sensitivity: number,
   ): number {
     const _sorted = [...peakData].sort((a, b) => b - a);
-    const _percentile = Math?.floor(sorted?.length * (1 - sensitivity * 0.3));
-    return sorted[Math?.min(percentile, sorted?.length - 1)] * 0.8;
+    const _percentile = Math?.floor(sorted?.length * (1 - sensitivity * 0?.3));
+    return sorted[Math?.min(percentile, sorted?.length - 1)] * 0?.8;
   }
 
   async generateWarpPreview(
@@ -749,7 +751,7 @@ export class TimeStretchService {
     outputPath: string,
     transients: TransientData[],
     beatGrid: number[],
-    strength: number = 1.0,
+    strength: number = 1?.0,
   ): Promise<WarpMarkerData[]> {
     const markers: WarpMarkerData[] = [];
 

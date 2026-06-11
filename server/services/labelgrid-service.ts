@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from "axios";
 import { storage } from "../storage";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { CircuitBreaker } from "../infrastructure/circuitBreaker";
 
 export interface LabelGridRelease {
@@ -265,13 +265,13 @@ class LabelGridService {
   private circuitBreaker: CircuitBreaker;
 
   constructor() {
-    this.apiToken = process?.env.LABELGRID_API_TOKEN;
-    this.baseUrl = process?.env.LABELGRID_API_URL || "https://api?.labelgrid.com";
-    this.webhookSecret = process?.env.LABELGRID_WEBHOOK_SECRET;
-    this.endpoints = {};
-    this.authHeaderFormat = "Bearer {token}";
+    this?.apiToken = process?.env.LABELGRID_API_TOKEN;
+    this?.baseUrl = process?.env.LABELGRID_API_URL || "https://api?.labelgrid.com";
+    this?.webhookSecret = process?.env.LABELGRID_WEBHOOK_SECRET;
+    this?.endpoints = {};
+    this?.authHeaderFormat = "Bearer {token}";
 
-    this.circuitBreaker = new CircuitBreaker("labelgrid-api", {
+    this?.circuitBreaker = new CircuitBreaker("labelgrid-api", {
       failureThreshold: 5,
       successThreshold: 2,
       timeout: 30000,
@@ -286,11 +286,11 @@ class LabelGridService {
         "   Set LABELGRID_API_TOKEN in your environment to enable real distribution.",
       );
     } else {
-      this.isConfigured = true;
+      this?.isConfigured = true;
       logger?.info("✅ LabelGrid API client initialized");
     }
 
-    this.client = axios?.create({
+    this?.client = axios?.create({
       baseURL: this?.baseUrl,
       timeout: 30000,
       headers: {
@@ -311,7 +311,7 @@ class LabelGridService {
     // automatically protected — opens after 5 consecutive failures, resets after 60s.
     const _originalAdapter = this?.client.defaults?.adapter;
     const _cb = this?.circuitBreaker;
-    this?.client.defaults.adapter = async (config: Record<string, unknown>) => {
+    this?.client.defaults?.adapter = async (config: Record<string, unknown>) => {
       return cb?.execute(
         () => (originalAdapter as Record<string, unknown>)(config),
         async () => {
@@ -334,19 +334,19 @@ class LabelGridService {
 
       if (provider) {
         // Use actual fields from the schema
-        this.baseUrl =
+        this?.baseUrl =
           provider?.apiBase || this?.baseUrl || "https://api?.labelgrid.com";
-        this.endpoints = provider?.requirements?.endpoints || {};
-        this.authHeaderFormat =
+        this?.endpoints = provider?.requirements?.endpoints || {};
+        this?.authHeaderFormat =
           provider?.authType === "api_key"
             ? "X-API-Key: {token}"
             : "Bearer {token}";
-        this.webhookSecret =
+        this?.webhookSecret =
           provider?.requirements?.webhookSecret || this?.webhookSecret;
-        this.configLoaded = true;
+        this?.configLoaded = true;
 
         // Update axios client base URL
-        this?.client.defaults.baseURL = this?.baseUrl;
+        this?.client.defaults?.baseURL = this?.baseUrl;
 
         logger?.info("✅ LabelGrid configuration loaded from database");
         logger?.info(`   Base URL: ${this?.baseUrl}`);
@@ -355,11 +355,11 @@ class LabelGridService {
         );
       } else {
         // Fallback to environment variables (expected until provider is configured)
-        this.baseUrl =
+        this?.baseUrl =
           process?.env.LABELGRID_API_URL || "https://api?.labelgrid.com";
-        this.endpoints = {};
-        this.authHeaderFormat = "Bearer {token}";
-        this.configLoaded = true;
+        this?.endpoints = {};
+        this?.authHeaderFormat = "Bearer {token}";
+        this?.configLoaded = true;
         // Silent fallback - provider will be added when distribution is configured
       }
     } catch (error: unknown) {
@@ -367,10 +367,10 @@ class LabelGridService {
         { err: error },
         "Failed to load LabelGrid config from database:",
       );
-      this.baseUrl =
+      this?.baseUrl =
         process?.env.LABELGRID_API_URL || "https://api?.labelgrid.com";
-      this.endpoints = {};
-      this.authHeaderFormat = "Bearer {token}";
+      this?.endpoints = {};
+      this?.authHeaderFormat = "Bearer {token}";
     }
   }
 
@@ -524,6 +524,7 @@ class LabelGridService {
       return { total: 0, active: 0, inactive: 0 };
     }
   }
+
 
   /**
    * Retrieve all releases in the authenticated user's LabelGrid catalog.

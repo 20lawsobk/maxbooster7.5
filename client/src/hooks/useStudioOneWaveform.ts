@@ -50,8 +50,8 @@ export function useStudioOneWaveform(
       });
 
       engine?.initialize(canvas);
-      engineRef.current = engine;
-      canvasRef.current = canvas;
+      engineRef?.current = engine;
+      canvasRef?.current = canvas;
       setIsInitialized(true);
 
       if (autoStart) {
@@ -79,7 +79,7 @@ export function useStudioOneWaveform(
     return () => {
       if (engineRef?.current) {
         engineRef?.current.destroy();
-        engineRef.current = null;
+        engineRef?.current = null;
       }
     };
   }, []);
@@ -118,12 +118,12 @@ export function useStudioOneWaveform(
 
   const _zoomIn = useCallback((factor?: number) => {
     engineRef?.current?.zoomIn(factor);
-    setCurrentZoom((prev) => prev * (factor || 1.5));
+    setCurrentZoom((prev) => prev * (factor || 1?.5));
   }, []);
 
   const _zoomOut = useCallback((factor?: number) => {
     engineRef?.current?.zoomOut(factor);
-    setCurrentZoom((prev) => prev / (factor || 1.5));
+    setCurrentZoom((prev) => prev / (factor || 1?.5));
   }, []);
 
   const _setVerticalScale = useCallback((scale: number) => {

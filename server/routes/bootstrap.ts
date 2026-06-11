@@ -11,16 +11,16 @@
  */
 
 import { Router, Request, Response } from "express";
-import { db, dbRead } from "../db.js";
+import { db, dbRead } from "../db?.js";
 import {
   users,
   projects,
   notifications,
   releases,
-} from "../../shared/schema.js";
+} from "../../shared/schema?.js";
 import { eq, desc, and } from "drizzle-orm";
-import { requireAuthOnly } from "../middleware/auth.js";
-import { logger } from "../logger.js";
+import { requireAuthOnly } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 

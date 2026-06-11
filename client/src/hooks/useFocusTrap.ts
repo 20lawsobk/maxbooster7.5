@@ -7,13 +7,13 @@ export function useFocusTrap(enabled = true) {
 
   useEffect(() => {
     if (enabled && containerRef?.current) {
-      cleanupRef.current = trapFocus(containerRef?.current);
+      cleanupRef?.current = trapFocus(containerRef?.current);
     }
 
     return () => {
       if (cleanupRef?.current) {
         cleanupRef?.current();
-        cleanupRef.current = null;
+        cleanupRef?.current = null;
       }
     };
   }, [enabled]);

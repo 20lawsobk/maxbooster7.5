@@ -7,14 +7,14 @@
  */
 
 import { Router } from "express";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { npsResponses, cancellationFeedback, customerHealthScores } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { customerHealthScoreService } from "../services/customerHealthScoreService.js";
-import { pushFeatureEvent } from "../services/featureEventBuffer.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { customerHealthScoreService } from "../services/customerHealthScoreService?.js";
+import { pushFeatureEvent } from "../services/featureEventBuffer?.js";
 
 const _router = Router();
 

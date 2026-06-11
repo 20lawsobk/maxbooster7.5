@@ -16,10 +16,10 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { existsSync, readFileSync } from "fs";
-import { db } from "./db.js";
+import { db } from "./db?.js";
 import { sql } from "drizzle-orm";
-import { logger } from "./logger.js";
-import { isProductionEnv } from "./lib/envHelpers.js";
+import { logger } from "./logger?.js";
+import { isProductionEnv } from "./lib/envHelpers?.js";
 
 const ___metaUrl = (import?.meta as Record<string, unknown>)?.url as
   | string
@@ -48,10 +48,10 @@ interface StartupStatus {
 class StartupProbeManager {
   private status: StartupStatus;
   private readyResolvers: Array<() => void> = [];
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: NodeJS?.Timeout | null = null;
 
   constructor() {
-    this.status = {
+    this?.status = {
       phase: "initializing",
       startTime: new Date(),
       readyTime: null,
@@ -63,7 +63,7 @@ class StartupProbeManager {
         },
         redis: { name: "Redis Cache", status: "pending", lastCheck: null },
         tensorflow: {
-          name: "TensorFlow.js",
+          name: "TensorFlow?.js",
           status: "pending",
           lastCheck: null,
         },
@@ -130,7 +130,7 @@ class StartupProbeManager {
 
     try {
       const { getRedisClient } = await import(
-        "./lib/redisConnectionFactory.js"
+        "./lib/redisConnectionFactory?.js"
       );
       const _client = await getRedisClient();
 
@@ -254,7 +254,7 @@ class StartupProbeManager {
     for (const resolver of this?.readyResolvers) {
       resolver();
     }
-    this.readyResolvers = [];
+    this?.readyResolvers = [];
 
     return true;
   }
@@ -288,7 +288,7 @@ class StartupProbeManager {
   shutdown(): void {
     if (this?.checkInterval) {
       clearInterval(this?.checkInterval);
-      this.checkInterval = null;
+      this?.checkInterval = null;
     }
   }
 }
@@ -313,19 +313,19 @@ export function setupStartupEndpoints(app: import("express").Express): void {
     res?.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // Root route: serves the React app's index.html immediately so the Replit
+  // Root route: serves the React app's index?.html immediately so the Replit
   // deployment health check (which always hits /) gets a 200 from the moment
   // the process starts — not after the 2-minute async init window.
   // In development Vite handles /, so this only runs in production.
   //
   // IMPORTANT: the built SPA shell lives in <repo>/dist/public/index?.html, NOT
   // in <repo>/server/public/index?.html.  An earlier version of this code used
-  // resolve(__dirname, 'public', 'index.html'), which always missed the file
+  // resolve(__dirname, 'public', 'index?.html'), which always missed the file
   // and registered an empty `app?.get('/')` handler — causing GET / to return
   // a zero-byte body in production.  Resolve the path against process?.cwd()
   // so it works whether we run via tsx (dev), node dist/ (built), or cluster.
   if (isProductionEnv()) {
-    const _indexPath = resolve(process?.cwd(), "dist", "public", "index.html");
+    const _indexPath = resolve(process?.cwd(), "dist", "public", "index?.html");
     if (existsSync(indexPath)) {
       const _html = readFileSync(indexPath, "utf8");
       app?.get("/", (_req, res) => {

@@ -11,18 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Search,
-  Mic,
-  X,
-  TrendingUp,
-  Music,
-  User,
-  Disc,
-  Loader2,
-  History,
-  Trash2,
-} from "lucide-react";
+import { Search, Mic, X, TrendingUp, Music, User, Disc, Loader2, History, Trash2 } from "lucide-react";
 import { useDebounce } from "@/hooks";
 import { cn } from "@/lib/utils";
 

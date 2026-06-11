@@ -1,7 +1,7 @@
 import Redis from "ioredis";
-import { logger } from "../logger.js";
-import { isPdimConfigured, getPdimClient } from "../lib/pdimClient.js";
-import { env } from "../config/env.js";
+import { logger } from "../logger?.js";
+import { isPdimConfigured, getPdimClient } from "../lib/pdimClient?.js";
+import { env } from "../config/env?.js";
 
 const _CHANNEL_USER = "ws:user:notify";
 const _CHANNEL_BROADCAST = "ws:broadcast";

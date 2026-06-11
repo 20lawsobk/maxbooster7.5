@@ -834,8 +834,9 @@ async function buildFromLinkedProfiles(
   allItunesAlbums: iTunesAlbumEntry[],
 ): Promise<MigrationRelease[]> {
   // Lazy-import to avoid circular deps at module load time.
-  const { distributionDataTransferService } =
-    await import("./distributionDataTransferService.js");
+  const { distributionDataTransferService } = await import(
+    "./distributionDataTransferService.js"
+  );
 
   const linkedProfiles =
     await distributionDataTransferService.getLinkedProfiles(userId);

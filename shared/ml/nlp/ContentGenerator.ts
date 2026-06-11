@@ -6,10 +6,7 @@
  */
 
 import type { BrandVoiceProfile } from "../types.js";
-import {
-  SOCIAL_MEDIA_MUSIC_PATTERNS,
-  VIRAL_CONTENT_CORPUS_FLAT,
-} from "../training/musicIndustryTrainingData.js";
+import { SOCIAL_MEDIA_MUSIC_PATTERNS, VIRAL_CONTENT_CORPUS_FLAT } from "../training/musicIndustryTrainingData.js";
 
 export type ContentTone =
   | "professional"
@@ -183,6 +180,8 @@ const TONE_PHRASES: Record<ContentTone, Record<string, string[]>> = {
     ],
   },
 };
+
+
 
 const CONTENT_TEMPLATES: Record<string, Record<ContentTone, string[]>> = {
   release: {
@@ -497,6 +496,11 @@ export class ContentGenerator {
     };
   }
 
+
+
+
+
+
   /**
    * Parse the topic string (which may contain enriched URL context) into structured fields.
    * Mirrors the Python _parse_topic() logic so both engines behave consistently.
@@ -633,10 +637,10 @@ export class ContentGenerator {
       );
     const isRelease = Boolean(
       quoted.length ||
-      trackTitle ||
-      /\b(single|track|song|album|ep|mixtape|release|drop|out\s*now)\b/i.test(
-        cleanFull,
-      ),
+        trackTitle ||
+        /\b(single|track|song|album|ep|mixtape|release|drop|out\s*now)\b/i.test(
+          cleanFull,
+        ),
     );
 
     // ── Release phase detection ────────────────────────────────────────────────
@@ -1442,6 +1446,7 @@ export class ContentGenerator {
     );
     return `${hook}\n\n${body}\n\n${cta}`;
   }
+
 
   private weightedRandomChoice(
     options: Map<string, number>,

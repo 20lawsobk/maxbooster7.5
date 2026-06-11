@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { aiHelpDeskService } from "../services/aiHelpDeskService";
 import { BUSINESS_CONFIG } from "../config/businessConfig";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 import { z } from "zod";
 

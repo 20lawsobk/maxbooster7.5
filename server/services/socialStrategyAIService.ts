@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 
 import { logger } from "../logger";
-import { unifiedAIController } from "./unifiedAIController.js";
+import { unifiedAIController } from "./unifiedAIController?.js";
 
 export interface ContentRecommendation {
   id: string;
@@ -192,6 +192,7 @@ export interface AIInsight {
 }
 
 class SocialStrategyAIService {
+
   private platformOptimalTimes: Record<string, Record<string, number[]>> = {
     instagram: {
       monday: [11, 14, 19],
@@ -427,7 +428,7 @@ class SocialStrategyAIService {
       duration?: number;
     } = {},
   ): Promise<CampaignRecommendation[]> {
-    const { budget = 500, duration = 14 } = options;
+    const {  budget = 500, duration = 14 } = options;
 
     const _startDate = new Date();
     const _endDate = new Date();
@@ -440,7 +441,7 @@ class SocialStrategyAIService {
         objective: "awareness",
         duration: { start: startDate, end: endDate },
         platforms: ["instagram", "tiktok", "twitter"],
-        budget: { recommended: budget, min: budget * 0.5, max: budget * 2 },
+        budget: { recommended: budget, min: budget * 0?.5, max: budget * 2 },
         contentMix: [
           { type: "reel", percentage: 40, count: 8 },
           { type: "story", percentage: 30, count: 15 },
@@ -485,9 +486,9 @@ class SocialStrategyAIService {
         duration: { start: startDate, end: endDate },
         platforms: ["instagram", "tiktok"],
         budget: {
-          recommended: budget * 0.8,
-          min: budget * 0.4,
-          max: budget * 1.5,
+          recommended: budget * 0?.8,
+          min: budget * 0?.4,
+          max: budget * 1?.5,
         },
         contentMix: [
           { type: "reel", percentage: 50, count: 10 },
@@ -647,7 +648,7 @@ class SocialStrategyAIService {
         },
         {
           metric: "Engagement Rate",
-          current: 3.5,
+          current: 3?.5,
           target: 5,
           timeframe: period,
         },
@@ -726,6 +727,7 @@ class SocialStrategyAIService {
       let bestHour = 12;
       let maxScore = 0;
 
+
       for (const day of days) {
         const _hours = platformTimes[day] || [];
         hours?.map((hour) => {
@@ -776,7 +778,7 @@ class SocialStrategyAIService {
 
     for (const platform of platforms) {
       const _currentFollowers = Math?.floor(Math?.random() * 50000) + 5000;
-      const _monthlyGrowth = Math?.random() * 0.15 + 0.02;
+      const _monthlyGrowth = Math?.random() * 0?.15 + 0?.02;
 
       const futurePredictions: GrowthPrediction["predictions"] = [];
       let followers = currentFollowers;
@@ -788,7 +790,7 @@ class SocialStrategyAIService {
         futurePredictions?.push({
           date,
           followers,
-          confidence: Math?.max(0.5, 0.95 - month * 0.03),
+          confidence: Math?.max(0?.5, 0?.95 - month * 0?.03),
         });
       }
 
@@ -815,11 +817,11 @@ class SocialStrategyAIService {
         ],
         scenarios: {
           conservative: Math?.floor(
-            currentFollowers * (1 + monthlyGrowth * 0.5) ** 12,
+            currentFollowers * (1 + monthlyGrowth * 0?.5) ** 12,
           ),
           moderate: Math?.floor(currentFollowers * (1 + monthlyGrowth) ** 12),
           optimistic: Math?.floor(
-            currentFollowers * (1 + monthlyGrowth * 1.5) ** 12,
+            currentFollowers * (1 + monthlyGrowth * 1?.5) ** 12,
           ),
         },
       });
@@ -1075,7 +1077,7 @@ class SocialStrategyAIService {
         title: "Engagement Rate Declining",
         description:
           "Your engagement rate dropped 15% this week. Review recent content performance.",
-        data: { previousRate: 4.5, currentRate: 3.8 },
+        data: { previousRate: 4?.5, currentRate: 3?.8 },
         actionRequired: true,
         priority: "high",
         createdAt: new Date(),

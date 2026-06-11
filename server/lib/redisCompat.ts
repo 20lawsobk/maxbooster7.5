@@ -1,3 +1,4 @@
+
 /**
  * Applies node-redis v4 camelCase method aliases onto an ioredis client.
  *
@@ -73,14 +74,14 @@ export function applyIoredisCompatShim(
   // doing Object?.entries(result).
   if (typeof client?.hgetall === "function") {
     const _origHgetall = client?.hgetall.bind(client);
-    client.hGetAll = async (...args: unknown[]) => {
+    client?.hGetAll = async (...args: unknown[]) => {
       const _result = await origHgetall(...args);
       return result ?? {};
     };
     // Also ensure lowercase stays consistent with the above
-    client.hgetall = client?.hGetAll;
+    client?.hgetall = client?.hGetAll;
   }
 
-  client.__ioreidsCompatApplied = true;
+  client?.__ioreidsCompatApplied = true;
   return client;
 }

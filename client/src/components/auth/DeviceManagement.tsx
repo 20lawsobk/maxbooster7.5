@@ -23,20 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Smartphone,
-  Monitor,
-  Tablet,
-  Globe,
-  Clock,
-  Shield,
-  ShieldCheck,
-  LogOut,
-  Loader2,
-  AlertTriangle,
-  CheckCircle,
-  Trash2,
-} from "lucide-react";
+import { Smartphone, Monitor, Tablet, Globe, Clock, Shield, ShieldCheck, LogOut, Loader2, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
 
 export type DeviceOutcome =
   | "device_trusted"

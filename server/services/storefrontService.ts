@@ -10,7 +10,7 @@ import {
 import { eq, and, desc, sql } from "drizzle-orm";
 import Stripe from "stripe";
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _stripe = process?.env.STRIPE_SECRET_KEY?.startsWith("sk_")
   ? new Stripe(process?.env.STRIPE_SECRET_KEY, {
@@ -407,7 +407,7 @@ export class StorefrontService {
         .returning();
 
       logger?.info(
-        `Created storefront ${storefront?.id} for user ${input?.userId} at ${autoSubdomain}.maxbooster.app`,
+        `Created storefront ${storefront?.id} for user ${input?.userId} at ${autoSubdomain}.maxbooster?.app`,
       );
       return storefront;
     } catch (error: unknown) {
@@ -551,39 +551,39 @@ export class StorefrontService {
       };
 
       if (updates?.name !== undefined) {
-        sanitizedUpdates.name = sanitizeString(updates?.name);
+        sanitizedUpdates?.name = sanitizeString(updates?.name);
       }
       if (updates?.slug !== undefined) {
-        sanitizedUpdates.slug = updates?.slug.toLowerCase();
+        sanitizedUpdates?.slug = updates?.slug.toLowerCase();
       }
       if (updates?.subdomain !== undefined) {
-        sanitizedUpdates.subdomain = updates?.subdomain?.toLowerCase();
+        sanitizedUpdates?.subdomain = updates?.subdomain?.toLowerCase();
       }
       if (updates?.customDomain !== undefined) {
-        sanitizedUpdates.customDomain = updates?.customDomain;
+        sanitizedUpdates?.customDomain = updates?.customDomain;
       }
       if (updates?.isSubdomainActive !== undefined) {
-        sanitizedUpdates.isSubdomainActive = updates?.isSubdomainActive;
+        sanitizedUpdates?.isSubdomainActive = updates?.isSubdomainActive;
       }
       if (updates?.isCustomDomainActive !== undefined) {
-        sanitizedUpdates.isCustomDomainActive = updates?.isCustomDomainActive;
+        sanitizedUpdates?.isCustomDomainActive = updates?.isCustomDomainActive;
       }
       if (updates?.templateId !== undefined) {
-        sanitizedUpdates.templateId = updates?.templateId;
+        sanitizedUpdates?.templateId = updates?.templateId;
       }
       if (updates?.customization !== undefined) {
-        sanitizedUpdates.customization = sanitizeCustomization(
+        sanitizedUpdates?.customization = sanitizeCustomization(
           updates?.customization,
         );
       }
       if (updates?.seo !== undefined) {
-        sanitizedUpdates.seo = sanitizeSEO(updates?.seo);
+        sanitizedUpdates?.seo = sanitizeSEO(updates?.seo);
       }
       if (updates?.isActive !== undefined) {
-        sanitizedUpdates.isActive = updates?.isActive;
+        sanitizedUpdates?.isActive = updates?.isActive;
       }
       if (updates?.isPublic !== undefined) {
-        sanitizedUpdates.isPublic = updates?.isPublic;
+        sanitizedUpdates?.isPublic = updates?.isPublic;
       }
 
       const [updatedStorefront] = await db
@@ -641,7 +641,7 @@ export class StorefrontService {
         // Lazy-seed built-in templates so they are always available without a
         // separate migration step.
         const { seedStorefrontTemplates } = await import(
-          "../seed/seedStorefrontTemplates.js"
+          "../seed/seedStorefrontTemplates?.js"
         );
         await seedStorefrontTemplates();
         return db
@@ -1569,7 +1569,7 @@ export class StorefrontService {
     customDomain?: string | null;
     isCustomDomainActive?: boolean;
   }): string {
-    const _baseDomain = process?.env.BASE_DOMAIN || "max-booster.com";
+    const _baseDomain = process?.env.BASE_DOMAIN || "max-booster?.com";
     const _slugUrl = `https://${baseDomain}/storefront/${storefront?.slug}`;
 
     if (process?.env.STOREFRONT_URL_FORMAT === "slug") {

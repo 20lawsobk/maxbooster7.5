@@ -1,9 +1,9 @@
 // Real platform API implementation with OAuth token integration
 import axios from "axios";
 import { TwitterApi } from "twitter-api-v2";
-import { storage } from "./storage.js";
-import { logger } from "./logger.js";
-import { executeSocialApiOperation } from "./services/externalServices.js";
+import { storage } from "./storage?.js";
+import { logger } from "./logger?.js";
+import { executeSocialApiOperation } from "./services/externalServices?.js";
 
 axios?.defaults.timeout = 10000;
 
@@ -321,7 +321,7 @@ export const _platformAPI = {
       "facebook",
       async () => {
         const _response = await axios?.post(
-          `https://graph?.facebook.com/v18.0/me/feed`,
+          `https://graph?.facebook.com/v18?.0/me/feed`,
           {
             message: text,
             link: mediaUrl || undefined,
@@ -442,7 +442,7 @@ export const _platformAPI = {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              "X-Restli-Protocol-Version": "2.0.0",
+              "X-Restli-Protocol-Version": "2?.0.0",
             },
           },
         );
@@ -514,7 +514,7 @@ export const _platformAPI = {
       if (mediaUrl) {
         // Create Threads post with media
         creationResponse = await axios?.post(
-          `https://graph?.threads.net/v1.0/me/threads`,
+          `https://graph?.threads.net/v1?.0/me/threads`,
           {
             media_type: "IMAGE",
             image_url: mediaUrl,
@@ -525,7 +525,7 @@ export const _platformAPI = {
       } else {
         // Create text-only Threads post
         creationResponse = await axios?.post(
-          `https://graph?.threads.net/v1.0/me/threads`,
+          `https://graph?.threads.net/v1?.0/me/threads`,
           {
             media_type: "TEXT",
             text: text,
@@ -538,7 +538,7 @@ export const _platformAPI = {
 
       // Publish the Threads post
       const _publishResponse = await axios?.post(
-        `https://graph?.threads.net/v1.0/me/threads_publish`,
+        `https://graph?.threads.net/v1?.0/me/threads_publish`,
         {
           creation_id: creationId,
           access_token: token,
@@ -603,7 +603,7 @@ export const _platformAPI = {
   ): Promise<EngagementData> {
     try {
       const _response = await axios?.get(
-        `https://graph?.facebook.com/v18.0/${postId}`,
+        `https://graph?.facebook.com/v18?.0/${postId}`,
         {
           params: {
             fields:
@@ -709,7 +709,7 @@ export const _platformAPI = {
   ): Promise<EngagementData> {
     try {
       const _response = await axios?.get(
-        `https://graph?.threads.net/v1.0/${mediaId}/insights`,
+        `https://graph?.threads.net/v1?.0/${mediaId}/insights`,
         {
           params: {
             metric: "likes,replies,reposts,views",

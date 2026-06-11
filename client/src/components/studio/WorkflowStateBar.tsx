@@ -8,19 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Mic,
-  Scissors,
-  Sliders,
-  Disc,
-  ChevronRight,
-  Check,
-  Clock,
-  Settings2,
-  FileOutput,
-  X,
-  ChevronDown,
-} from "lucide-react";
+import { Mic, Scissors, Sliders, Disc, ChevronRight, Check, Clock, Settings2, FileOutput, X, ChevronDown } from "lucide-react";
 
 export type WorkflowState =
   | "setup"

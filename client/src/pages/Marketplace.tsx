@@ -75,80 +75,8 @@ import type {
   LicenseTierInfo,
 } from "@/components/marketplace/MarketplaceBeatCard";
 import type { MerchItem, MerchOrder } from "@shared/schema";
-import {
-  BeatGridSkeleton,
-  PurchaseHistorySkeleton,
-  NoBeatsFoundEmptyState,
-  EmptyCartState,
-  NoPurchasesState,
-  NoMyBeatsState,
-  NoEscrowTransactionsState,
-  NoContractsState,
-  NoCollaborationsState,
-  FilterResultsHeader,
-} from "@/components/marketplace";
-import {
-  Music,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Share2,
-  Download,
-  Upload,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  Grid,
-  List,
-  Star,
-  Trophy,
-  TrendingUp,
-  Users,
-  Eye,
-  DollarSign,
-  CreditCard,
-  ShoppingCart,
-  Package,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  MapPin,
-  Shield,
-  Sparkles,
-  Brain,
-  Target,
-  BarChart3,
-  PieChart,
-  Activity,
-  Loader2,
-  X,
-  Check,
-  ChevronDown,
-  UserPlus,
-  UserCheck,
-  MessageCircle,
-  Image as ImageIcon,
-  FileText,
-  FileAudio,
-  Save,
-  RefreshCw,
-  Link2,
-  Handshake,
-  FileSignature,
-  Wallet,
-  Banknote,
-  SkipBack,
-  SkipForward,
-  Layers,
-  UploadCloud,
-  FolderUp,
-  Lightbulb,
-  Percent,
-  Receipt,
-  ScrollText,
-} from "lucide-react";
+import { BeatGridSkeleton, PurchaseHistorySkeleton, NoBeatsFoundEmptyState, EmptyCartState, NoPurchasesState, NoMyBeatsState, NoEscrowTransactionsState, NoContractsState, NoCollaborationsState, FilterResultsHeader } from "@/components/marketplace";
+import { Music, Play, Pause, Volume2, VolumeX, Share2, Download, Upload, Plus, Edit, Trash2, Search, Grid, List, Star, Trophy, TrendingUp, Users, Eye, DollarSign, CreditCard, ShoppingCart, Package, CheckCircle, AlertCircle, Clock, MapPin, Shield, Sparkles, Brain, Target, BarChart3, PieChart, Activity, Loader2, X, Check, ChevronDown, UserPlus, UserCheck, MessageCircle, Image as ImageIcon, FileText, FileAudio, Save, RefreshCw, Link2, Handshake, FileSignature, Wallet, Banknote, SkipBack, SkipForward, Layers, UploadCloud, FolderUp, Lightbulb, Percent, Receipt, ScrollText } from "lucide-react";
 
 // BeatStars Clone Interfaces
 interface LicenseTier {
@@ -1119,10 +1047,11 @@ export default function Marketplace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: producersData } = useQuery<ProducersResponse>({
-    queryKey: ["/api/marketplace/producers"],
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: producersData } =
+    useQuery<ProducersResponse>({
+      queryKey: ["/api/marketplace/producers"],
+      staleTime: 5 * 60 * 1000,
+    });
 
   const producers = producersData?.producers || [];
 
@@ -1134,11 +1063,12 @@ export default function Marketplace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: salesAnalytics } = useQuery<SalesAnalytics>({
-    queryKey: ["/api/marketplace/sales-analytics"],
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: salesAnalytics } =
+    useQuery<SalesAnalytics>({
+      queryKey: ["/api/marketplace/sales-analytics"],
+      enabled: !!user,
+      staleTime: 5 * 60 * 1000,
+    });
 
   const { data: myBeats = [], isLoading: myBeatsLoading } = useQuery<Beat[]>({
     queryKey: ["/api/marketplace/my-beats"],

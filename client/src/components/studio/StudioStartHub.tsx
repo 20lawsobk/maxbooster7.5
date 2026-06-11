@@ -20,36 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import {
-  Plus,
-  Music,
-  Star,
-  Clock,
-  Layout,
-  Mic,
-  AudioWaveform,
-  Disc3,
-  Layers,
-  Sparkles,
-  ChevronRight,
-  Search,
-  Grid3X3,
-  List,
-  MoreVertical,
-  Trash2,
-  Copy,
-  Edit3,
-  Play,
-  Settings,
-  HelpCircle,
-  BookOpen,
-  Sliders,
-  Radio,
-  FileAudio,
-  Headphones,
-  Crown,
-  Zap,
-} from "lucide-react";
+import { Plus, Music, Star, Clock, Layout, Mic, AudioWaveform, Disc3, Layers, Sparkles, ChevronRight, Search, Grid3X3, List, MoreVertical, Trash2, Copy, Edit3, Play, Settings, HelpCircle, BookOpen, Sliders, Radio, FileAudio, Headphones, Crown, Zap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

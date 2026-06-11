@@ -1,63 +1,8 @@
 import { logger } from "./logger";
 import { randomBytes } from "crypto";
-import {
-  users,
-  dspProviders,
-  projects,
-  releases,
-  posts,
-  socialAccounts,
-  socialCampaigns,
-  adCampaigns,
-  adCreatives,
-  contentCalendar,
-  aiModels,
-  notifications,
-  analytics,
-  pluginCatalog,
-  pluginPresets,
-  distroReleases,
-  distroTracks,
-  instantPayouts,
-  royaltyTransactions,
-  hyperFollowPages,
-  jwtTokens,
-  refreshTokens,
-  listings,
-  listingLicenseTiers,
-  sessions,
-  collabSnapshots,
-  orders,
-  autopilotLearningData,
-  inferenceRuns,
-  socialKeywords,
-  socialMentions,
-  socialAutopilotContent,
-  systemSettings,
-  workspaceAuditLog,
-  contractTemplates,
-  type User,
-  type InsertUser,
-  type DSPProvider,
-  type InsertProject,
-  type CollabSnapshot,
-  type InsertCollabSnapshot,
-} from "@shared/schema";
+import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot } from "@shared/schema";
 import { db, dbRead } from "./db";
-import {
-  eq,
-  and,
-  desc,
-  gte,
-  lte,
-  sql,
-  inArray,
-  ilike,
-  or,
-  asc,
-  lt,
-  isNotNull,
-} from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
 type Release = typeof releases.$inferSelect;
@@ -200,7 +145,7 @@ export class DatabaseStorage implements IStorage {
 
     // Initialize Pocket Dimension storage for new user — fire-and-forget so
     // PDIM congestion never blocks or fails the user-creation response.
-    import("./services/userPocketDimensionService.js")
+    import("./services/userPocketDimensionService?.js")
       .then(({ userPocketService }) =>
         userPocketService?.initializeUserStorage(user?.id, user?.email),
       )
@@ -290,7 +235,7 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users?.id, userId));
     const _prefs = (user?.preferences as Record<string, unknown>) || {};
-    prefs.autopilotConfig = config;
+    prefs?.autopilotConfig = config;
     await db
       .update(users)
       .set({ preferences: prefs })
@@ -323,7 +268,7 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users?.id, userId));
     const _prefs = (user?.preferences as Record<string, unknown>) || {};
-    prefs.advertisingAutopilotConfig = config;
+    prefs?.advertisingAutopilotConfig = config;
     await db
       .update(users)
       .set({ preferences: prefs })
@@ -446,8 +391,13 @@ export class DatabaseStorage implements IStorage {
   async createScheduledPost(
     post: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
-    const { platforms, content, scheduledTime, viralPrediction, createdBy } =
-      post;
+    const {
+      platforms,
+      content,
+      scheduledTime,
+      viralPrediction,
+      createdBy
+    } = post;
     const [newPost] = await db
       .insert(posts)
       .values({
@@ -511,19 +461,19 @@ export class DatabaseStorage implements IStorage {
       ...(rest as Record<string, unknown>),
     };
     if (platforms)
-      updateValues.platform = Array?.isArray(platforms)
+      updateValues?.platform = Array?.isArray(platforms)
         ? platforms[0]
         : platforms;
     if (content !== undefined)
-      updateValues.content =
+      updateValues?.content =
         typeof content === "string" ? content : JSON?.stringify(content);
-    if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime);
-    if (results !== undefined) updateValues.engagement = results;
+    if (scheduledTime) updateValues?.scheduledAt = new Date(scheduledTime);
+    if (results !== undefined) updateValues?.engagement = results;
     if (
       updateValues?.status === "completed" ||
       updateValues?.status === "published"
     ) {
-      updateValues.publishedAt = new Date();
+      updateValues?.publishedAt = new Date();
     }
     const [updated] = await db
       .update(posts)
@@ -539,9 +489,9 @@ export class DatabaseStorage implements IStorage {
     results?: unknown[],
   ): Promise<void> {
     const updateValues: Record<string, unknown> = { status };
-    if (results !== undefined) updateValues.engagement = results;
+    if (results !== undefined) updateValues?.engagement = results;
     if (status === "completed" || status === "published")
-      updateValues.publishedAt = new Date();
+      updateValues?.publishedAt = new Date();
     await db?.update(posts).set(updateValues).where(eq(posts?.id, id));
   }
 
@@ -1045,7 +995,7 @@ export class DatabaseStorage implements IStorage {
         100,
         daysSinceCreated * 2 +
           (impressions > 10000 ? 30 : 0) +
-          (ctr < 0.5 && impressions > 1000 ? 20 : 0),
+          (ctr < 0?.5 && impressions > 1000 ? 20 : 0),
       );
       return {
         id: c?.id,
@@ -1257,9 +1207,9 @@ export class DatabaseStorage implements IStorage {
         campaignName: c?.name,
         platform: c?.platform,
         currentRoas: roas,
-        forecastedRoas: roas * 1.1,
+        forecastedRoas: roas * 1?.1,
         spend,
-        forecastedRevenue: spend * roas * 1.1,
+        forecastedRevenue: spend * roas * 1?.1,
         confidence: perf ? "medium" : "low",
       };
     });
@@ -1289,9 +1239,9 @@ export class DatabaseStorage implements IStorage {
         currentBudget: spend,
         recommendedBudget:
           recommendation === "increase"
-            ? spend * 1.2
+            ? spend * 1?.2
             : recommendation === "decrease"
-              ? spend * 0.7
+              ? spend * 0?.7
               : spend,
         roas,
         efficiency,
@@ -1702,7 +1652,7 @@ export class DatabaseStorage implements IStorage {
   async seedPluginCatalog(): Promise<void> {
     const { ALL_PLUGINS } = await import("./services/plugins/index");
     const { buildFactoryPresetRows } = await import(
-      "./services/plugins/pluginEnrichment.js"
+      "./services/plugins/pluginEnrichment?.js"
     );
 
     // Bumped whenever the enrichment layer ships new reference parameters or
@@ -1886,17 +1836,17 @@ export class DatabaseStorage implements IStorage {
         LEFT JOIN LATERAL (
           SELECT COUNT(*) AS followers_count
           FROM storefront_follows sf2
-          JOIN storefronts s ON sf2.storefront_id = s?.id
-          WHERE s.user_id = u?.id
+          JOIN storefronts s ON sf2?.storefront_id = s?.id
+          WHERE s?.user_id = u?.id
         ) sf ON true
         LEFT JOIN LATERAL (
           SELECT COALESCE(AVG(sr2?.rating), 0) AS avg_rating
           FROM storefront_ratings sr2
-          JOIN storefronts s ON sr2.storefront_id = s?.id
-          WHERE s.user_id = u?.id
+          JOIN storefronts s ON sr2?.storefront_id = s?.id
+          WHERE s?.user_id = u?.id
         ) sr ON true
         WHERE l?.beats_count > 0
-           OR EXISTS (SELECT 1 FROM storefronts st WHERE st.user_id = u?.id)
+           OR EXISTS (SELECT 1 FROM storefronts st WHERE st?.user_id = u?.id)
         ORDER BY l?.beats_count DESC, o?.sales_count DESC
         LIMIT 50
       `);
@@ -2155,11 +2105,13 @@ export class DatabaseStorage implements IStorage {
         .set({ value: dispatches, updatedAt: new Date() })
         .where(eq(systemSettings?.key, key));
     } else {
-      await db.insert(systemSettings).values({
-        key,
-        value: dispatches,
-        description: `Distribution dispatches for release ${releaseId}`,
-      });
+      await db
+        .insert(systemSettings)
+        .values({
+          key,
+          value: dispatches,
+          description: `Distribution dispatches for release ${releaseId}`,
+        });
     }
   }
 

@@ -571,7 +571,9 @@ export class WorkspaceService {
     }
   }
 
-  async inviteMember(params: InviteMemberParams): Promise<{
+  async inviteMember(
+    params: InviteMemberParams,
+  ): Promise<{
     success: boolean;
     invitation?: WorkspaceInvitation;
     error?: string;

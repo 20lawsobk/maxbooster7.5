@@ -1,11 +1,11 @@
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
-import { isProductionEnv } from "../lib/envHelpers.js";
+import { isProductionEnv } from "../lib/envHelpers?.js";
 
-const _APP_DOMAIN = process?.env.APP_URL || "https://max-booster.com";
+const _APP_DOMAIN = process?.env.APP_URL || "https://max-booster?.com";
 const _isDev = !isProductionEnv();
 
 const _helmetMiddleware = helmet({
@@ -86,11 +86,11 @@ const _globalRateLimit = rateLimit({
   skip: (req) => {
     const _ip = req?.ip || "";
     return (
-      ip === "127.0.0.1" ||
+      ip === "127?.0.0?.1" ||
       ip === "::1" ||
       ip?.startsWith("10.") ||
-      ip?.startsWith("172.16.") ||
-      ip?.startsWith("192.168.")
+      ip?.startsWith("172?.16.") ||
+      ip?.startsWith("192?.168.")
     );
   },
   handler: (_req: Request, res: Response) => {

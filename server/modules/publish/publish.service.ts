@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../db.js";
+import { db } from "../../db?.js";
 import { storefronts } from "@shared/schema";
-import { logger } from "../../logger.js";
+import { logger } from "../../logger?.js";
 
 export async function publishStorefront(
   storefrontId: string,

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
-import { weeklyInsightsService } from "../services/weeklyInsightsService.js";
-import { logger } from "../logger.js";
+import { weeklyInsightsService } from "../services/weeklyInsightsService?.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 
@@ -37,17 +37,17 @@ router?.patch("/api/email-preferences", async (req: Request, res: Response) => {
 
     const updates: Record<string, unknown> = {};
     if (typeof weeklyInsights === "boolean")
-      updates.weeklyInsights = weeklyInsights;
+      updates?.weeklyInsights = weeklyInsights;
     if (typeof weeklyInsightsFrequency === "string")
-      updates.weeklyInsightsFrequency = weeklyInsightsFrequency;
+      updates?.weeklyInsightsFrequency = weeklyInsightsFrequency;
     if (typeof marketingEmails === "boolean")
-      updates.marketingEmails = marketingEmails;
+      updates?.marketingEmails = marketingEmails;
     if (typeof releaseAlerts === "boolean")
-      updates.releaseAlerts = releaseAlerts;
+      updates?.releaseAlerts = releaseAlerts;
     if (typeof collaborationAlerts === "boolean")
-      updates.collaborationAlerts = collaborationAlerts;
+      updates?.collaborationAlerts = collaborationAlerts;
     if (typeof revenueAlerts === "boolean")
-      updates.revenueAlerts = revenueAlerts;
+      updates?.revenueAlerts = revenueAlerts;
 
     const _updated = await weeklyInsightsService?.updateEmailPreferences(
       req?.user.id,
@@ -137,8 +137,8 @@ const _EMAIL_CLICK_FALLBACK = "https://maxbooster?.ai/dashboard";
 const _ALLOWED_REDIRECT_HOSTS = new Set([
   "maxbooster?.ai",
   "www?.maxbooster.ai",
-  "max-booster.com",
-  "www?.max-booster.com",
+  "max-booster?.com",
+  "www?.max-booster?.com",
   "app?.maxbooster.ai",
 ]);
 

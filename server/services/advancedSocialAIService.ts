@@ -1,5 +1,5 @@
 /**
- * Advanced Social AI Service - Server-side GPT-5.2 Level Content Generation
+ * Advanced Social AI Service - Server-side GPT-5?.2 Level Content Generation
  *
  * Integrates the AdvancedSocialAI engine with Max Booster's content generation
  * pipeline for sophisticated social media post creation and autopilot capabilities.
@@ -16,12 +16,12 @@
  * 100% in-house, no external APIs
  */
 
-import { logger } from "../logger.js";
-import { db } from "../db.js";
+import { logger } from "../logger?.js";
+import { db } from "../db?.js";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { MaxCoreAIClient } from "./unifiedAIController.js";
-import { evolutionRegistry } from "./evolutionRegistry.js";
+import { MaxCoreAIClient } from "./unifiedAIController?.js";
+import { evolutionRegistry } from "./evolutionRegistry?.js";
 
 // ============================================================================
 // SEEDED PRNG HELPER
@@ -31,7 +31,7 @@ import { evolutionRegistry } from "./evolutionRegistry.js";
 // ============================================================================
 
 // seededGate: deterministic probability gate — replaces Math?.random() < threshold.
-// Same seed → same true/false outcome every time. threshold range: 0.0–1.0.
+// Same seed → same true/false outcome every time. threshold range: 0?.0–1?.0.
 
 // ============================================================================
 // MAX BOOSTER PLATFORM KNOWLEDGE
@@ -585,7 +585,7 @@ export interface AudienceResonance {
 }
 
 // ============================================================================
-// KNOWLEDGE BASES (GPT-5.2 LEVEL)
+// KNOWLEDGE BASES (GPT-5?.2 LEVEL)
 // ============================================================================
 
 const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
@@ -597,13 +597,13 @@ const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
     emojiRange: { min: 0, max: 2 },
     peakHours: [8, 12, 17, 21],
     bestDays: [1, 2, 3, 4],
-    hookWeight: 0.9,
-    ctaWeight: 0.6,
-    hashtagWeight: 0.15,
-    viralMultiplier: 0.85,
+    hookWeight: 0?.9,
+    ctaWeight: 0?.6,
+    hashtagWeight: 0?.15,
+    viralMultiplier: 0?.85,
     audienceDemo: { minAge: 18, maxAge: 49 },
     contentTypes: ["text", "image", "video", "poll", "thread"],
-    tonePreference: 0.4,
+    tonePreference: 0?.4,
   },
   instagram: {
     id: "instagram",
@@ -613,13 +613,13 @@ const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
     emojiRange: { min: 2, max: 5 },
     peakHours: [11, 13, 19, 21],
     bestDays: [3, 4, 5, 6],
-    hookWeight: 0.7,
-    ctaWeight: 0.8,
-    hashtagWeight: 0.35,
-    viralMultiplier: 0.75,
+    hookWeight: 0?.7,
+    ctaWeight: 0?.8,
+    hashtagWeight: 0?.35,
+    viralMultiplier: 0?.75,
     audienceDemo: { minAge: 18, maxAge: 34 },
     contentTypes: ["image", "carousel", "reel", "story", "live"],
-    tonePreference: 0.3,
+    tonePreference: 0?.3,
   },
   tiktok: {
     id: "tiktok",
@@ -629,13 +629,13 @@ const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
     emojiRange: { min: 1, max: 3 },
     peakHours: [12, 15, 19, 22],
     bestDays: [4, 5, 6, 0],
-    hookWeight: 0.95,
-    ctaWeight: 0.5,
-    hashtagWeight: 0.4,
-    viralMultiplier: 0.95,
+    hookWeight: 0?.95,
+    ctaWeight: 0?.5,
+    hashtagWeight: 0?.4,
+    viralMultiplier: 0?.95,
     audienceDemo: { minAge: 16, maxAge: 30 },
     contentTypes: ["video", "duet", "stitch", "live"],
-    tonePreference: 0.2,
+    tonePreference: 0?.2,
   },
   facebook: {
     id: "facebook",
@@ -645,13 +645,13 @@ const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
     emojiRange: { min: 1, max: 3 },
     peakHours: [9, 13, 16, 20],
     bestDays: [3, 4, 5],
-    hookWeight: 0.6,
-    ctaWeight: 0.7,
-    hashtagWeight: 0.1,
-    viralMultiplier: 0.6,
+    hookWeight: 0?.6,
+    ctaWeight: 0?.7,
+    hashtagWeight: 0?.1,
+    viralMultiplier: 0?.6,
     audienceDemo: { minAge: 25, maxAge: 54 },
     contentTypes: ["text", "image", "video", "link", "event", "live"],
-    tonePreference: 0.5,
+    tonePreference: 0?.5,
   },
   linkedin: {
     id: "linkedin",
@@ -661,13 +661,13 @@ const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
     emojiRange: { min: 0, max: 2 },
     peakHours: [7, 10, 12, 17],
     bestDays: [1, 2, 3, 4],
-    hookWeight: 0.8,
-    ctaWeight: 0.7,
-    hashtagWeight: 0.25,
-    viralMultiplier: 0.5,
+    hookWeight: 0?.8,
+    ctaWeight: 0?.7,
+    hashtagWeight: 0?.25,
+    viralMultiplier: 0?.5,
     audienceDemo: { minAge: 25, maxAge: 55 },
     contentTypes: ["text", "image", "video", "article", "poll", "document"],
-    tonePreference: 0.8,
+    tonePreference: 0?.8,
   },
   youtube: {
     id: "youtube",
@@ -677,13 +677,13 @@ const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
     emojiRange: { min: 1, max: 3 },
     peakHours: [14, 17, 20, 22],
     bestDays: [4, 5, 6, 0],
-    hookWeight: 0.95,
-    ctaWeight: 0.9,
-    hashtagWeight: 0.2,
-    viralMultiplier: 0.7,
+    hookWeight: 0?.95,
+    ctaWeight: 0?.9,
+    hashtagWeight: 0?.2,
+    viralMultiplier: 0?.7,
     audienceDemo: { minAge: 18, maxAge: 44 },
     contentTypes: ["video", "short", "live", "community"],
-    tonePreference: 0.4,
+    tonePreference: 0?.4,
   },
 };
 
@@ -706,11 +706,11 @@ interface PlatformProfile {
 
 const TONE_PROFILES: Record<string, ToneProfile> = {
   professional: {
-    formality: 0.8,
-    energy: 0.5,
-    emotionality: 0.3,
-    humor: 0.1,
-    authority: 0.8,
+    formality: 0?.8,
+    energy: 0?.5,
+    emotionality: 0?.3,
+    humor: 0?.1,
+    authority: 0?.8,
     vocabulary: [
       "announce",
       "introducing",
@@ -722,11 +722,11 @@ const TONE_PROFILES: Record<string, ToneProfile> = {
     emojiStyle: "minimal",
   },
   casual: {
-    formality: 0.3,
-    energy: 0.7,
-    emotionality: 0.6,
-    humor: 0.5,
-    authority: 0.3,
+    formality: 0?.3,
+    energy: 0?.7,
+    emotionality: 0?.6,
+    humor: 0?.5,
+    authority: 0?.3,
     vocabulary: [
       "hey",
       "check this out",
@@ -740,11 +740,11 @@ const TONE_PROFILES: Record<string, ToneProfile> = {
     emojiStyle: "moderate",
   },
   energetic: {
-    formality: 0.2,
-    energy: 0.95,
-    emotionality: 0.8,
-    humor: 0.4,
-    authority: 0.4,
+    formality: 0?.2,
+    energy: 0?.95,
+    emotionality: 0?.8,
+    humor: 0?.4,
+    authority: 0?.4,
     vocabulary: [
       "LET'S GO",
       "HUGE",
@@ -758,11 +758,11 @@ const TONE_PROFILES: Record<string, ToneProfile> = {
     emojiStyle: "heavy",
   },
   inspirational: {
-    formality: 0.5,
-    energy: 0.7,
-    emotionality: 0.9,
-    humor: 0.2,
-    authority: 0.6,
+    formality: 0?.5,
+    energy: 0?.7,
+    emotionality: 0?.9,
+    humor: 0?.2,
+    authority: 0?.6,
     vocabulary: [
       "dream",
       "journey",
@@ -777,11 +777,11 @@ const TONE_PROFILES: Record<string, ToneProfile> = {
     emojiStyle: "moderate",
   },
   humorous: {
-    formality: 0.1,
-    energy: 0.8,
-    emotionality: 0.7,
-    humor: 0.95,
-    authority: 0.2,
+    formality: 0?.1,
+    energy: 0?.8,
+    emotionality: 0?.7,
+    humor: 0?.95,
+    authority: 0?.2,
     vocabulary: [
       "ngl",
       "fr fr",
@@ -795,11 +795,11 @@ const TONE_PROFILES: Record<string, ToneProfile> = {
     emojiStyle: "heavy",
   },
   storytelling: {
-    formality: 0.4,
-    energy: 0.5,
-    emotionality: 0.85,
-    humor: 0.3,
-    authority: 0.5,
+    formality: 0?.4,
+    energy: 0?.5,
+    emotionality: 0?.85,
+    humor: 0?.3,
+    authority: 0?.5,
     vocabulary: [
       "let me tell you",
       "here's the story",
@@ -828,13 +828,13 @@ const AUDIENCE_PROFILES: Record<string, AudienceProfile> = {
     name: "Gen Z Music Fans",
     ageRange: { min: 16, max: 26 },
     interests: ["music", "concerts", "streaming", "tiktok", "gaming", "memes"],
-    preferredTone: 0.2,
+    preferredTone: 0?.2,
     preferredLength: "short",
-    visualPreference: 0.9,
-    interactivity: 0.8,
+    visualPreference: 0?.9,
+    interactivity: 0?.8,
     peakDays: [4, 5, 6],
     peakHours: [15, 18, 21, 23],
-    responseRate: 0.12,
+    responseRate: 0?.12,
     values: ["authenticity", "creativity", "social-justice", "sustainability"],
     motivations: [
       "self-expression",
@@ -854,13 +854,13 @@ const AUDIENCE_PROFILES: Record<string, AudienceProfile> = {
       "industry",
       "gear",
     ],
-    preferredTone: 0.5,
+    preferredTone: 0?.5,
     preferredLength: "medium",
-    visualPreference: 0.7,
-    interactivity: 0.6,
+    visualPreference: 0?.7,
+    interactivity: 0?.6,
     peakDays: [1, 2, 3, 4],
     peakHours: [10, 14, 20, 22],
-    responseRate: 0.08,
+    responseRate: 0?.08,
     values: ["craftsmanship", "innovation", "community", "growth"],
     motivations: ["skill-development", "networking", "recognition", "income"],
   },
@@ -874,13 +874,13 @@ const AUDIENCE_PROFILES: Record<string, AudienceProfile> = {
       "live-shows",
       "collaboration",
     ],
-    preferredTone: 0.4,
+    preferredTone: 0?.4,
     preferredLength: "medium",
-    visualPreference: 0.8,
-    interactivity: 0.7,
+    visualPreference: 0?.8,
+    interactivity: 0?.7,
     peakDays: [3, 4, 5, 6],
     peakHours: [12, 18, 21],
-    responseRate: 0.15,
+    responseRate: 0?.15,
     values: [
       "independence",
       "artistry",
@@ -893,13 +893,13 @@ const AUDIENCE_PROFILES: Record<string, AudienceProfile> = {
     name: "Casual Music Listeners",
     ageRange: { min: 18, max: 45 },
     interests: ["playlists", "discovery", "concerts", "lifestyle", "streaming"],
-    preferredTone: 0.3,
+    preferredTone: 0?.3,
     preferredLength: "short",
-    visualPreference: 0.7,
-    interactivity: 0.5,
+    visualPreference: 0?.7,
+    interactivity: 0?.5,
     peakDays: [5, 6, 0],
     peakHours: [12, 18, 21],
-    responseRate: 0.03,
+    responseRate: 0?.03,
     values: ["entertainment", "convenience", "mood-enhancement"],
     motivations: ["background-music", "event-discovery", "social-sharing"],
   },
@@ -933,8 +933,8 @@ const _VIRAL_PATTERNS = [
       "fight me",
     ],
     emotionalHooks: ["surprise", "disagreement", "validation"],
-    shareMultiplier: 1.8,
-    riskLevel: 0.6,
+    shareMultiplier: 1?.8,
+    riskLevel: 0?.6,
   },
   {
     id: "relatable",
@@ -949,8 +949,8 @@ const _VIRAL_PATTERNS = [
       "not me",
     ],
     emotionalHooks: ["recognition", "humor", "connection"],
-    shareMultiplier: 1.5,
-    riskLevel: 0.1,
+    shareMultiplier: 1?.5,
+    riskLevel: 0?.1,
   },
   {
     id: "transformation",
@@ -966,8 +966,8 @@ const _VIRAL_PATTERNS = [
       "look at me now",
     ],
     emotionalHooks: ["inspiration", "hope", "motivation"],
-    shareMultiplier: 1.4,
-    riskLevel: 0.05,
+    shareMultiplier: 1?.4,
+    riskLevel: 0?.05,
   },
   {
     id: "exclusive",
@@ -981,8 +981,8 @@ const _VIRAL_PATTERNS = [
       "you don't usually see",
     ],
     emotionalHooks: ["curiosity", "fomo", "connection"],
-    shareMultiplier: 1.3,
-    riskLevel: 0.1,
+    shareMultiplier: 1?.3,
+    riskLevel: 0?.1,
   },
   {
     id: "challenge",
@@ -997,8 +997,8 @@ const _VIRAL_PATTERNS = [
       "react to this",
     ],
     emotionalHooks: ["competition", "belonging", "excitement"],
-    shareMultiplier: 1.6,
-    riskLevel: 0.1,
+    shareMultiplier: 1?.6,
+    riskLevel: 0?.1,
   },
   {
     id: "breaking",
@@ -1012,8 +1012,8 @@ const _VIRAL_PATTERNS = [
       "just announced",
     ],
     emotionalHooks: ["urgency", "fomo", "importance"],
-    shareMultiplier: 1.7,
-    riskLevel: 0.2,
+    shareMultiplier: 1?.7,
+    riskLevel: 0?.2,
   },
   {
     id: "milestone",
@@ -1029,8 +1029,8 @@ const _VIRAL_PATTERNS = [
       "gold",
     ],
     emotionalHooks: ["celebration", "pride", "community"],
-    shareMultiplier: 1.45,
-    riskLevel: 0.05,
+    shareMultiplier: 1?.45,
+    riskLevel: 0?.05,
   },
   {
     id: "vulnerability",
@@ -1045,8 +1045,8 @@ const _VIRAL_PATTERNS = [
       "real with you",
     ],
     emotionalHooks: ["empathy", "connection", "inspiration"],
-    shareMultiplier: 1.65,
-    riskLevel: 0.15,
+    shareMultiplier: 1?.65,
+    riskLevel: 0?.15,
   },
   {
     id: "discovery",
@@ -1059,8 +1059,8 @@ const _VIRAL_PATTERNS = [
       "hidden gem",
     ],
     emotionalHooks: ["curiosity", "discovery", "fomo"],
-    shareMultiplier: 1.5,
-    riskLevel: 0.05,
+    shareMultiplier: 1?.5,
+    riskLevel: 0?.05,
   },
   {
     id: "industry_truth",
@@ -1074,8 +1074,8 @@ const _VIRAL_PATTERNS = [
       "the truth about",
     ],
     emotionalHooks: ["validation", "anger", "empowerment"],
-    shareMultiplier: 1.75,
-    riskLevel: 0.3,
+    shareMultiplier: 1?.75,
+    riskLevel: 0?.3,
   },
   {
     id: "process_reveal",
@@ -1089,8 +1089,8 @@ const _VIRAL_PATTERNS = [
       "producer cam",
     ],
     emotionalHooks: ["curiosity", "admiration", "inspiration"],
-    shareMultiplier: 1.35,
-    riskLevel: 0.05,
+    shareMultiplier: 1?.35,
+    riskLevel: 0?.05,
   },
   {
     id: "replay_bait",
@@ -1105,8 +1105,8 @@ const _VIRAL_PATTERNS = [
       "goosebumps",
     ],
     emotionalHooks: ["curiosity", "fomo", "social_proof"],
-    shareMultiplier: 1.55,
-    riskLevel: 0.05,
+    shareMultiplier: 1?.55,
+    riskLevel: 0?.05,
   },
   {
     id: "community_love",
@@ -1120,8 +1120,8 @@ const _VIRAL_PATTERNS = [
       "real ones",
     ],
     emotionalHooks: ["gratitude", "belonging", "pride"],
-    shareMultiplier: 1.3,
-    riskLevel: 0.0,
+    shareMultiplier: 1?.3,
+    riskLevel: 0?.0,
   },
   {
     id: "curiosity_gap",
@@ -1135,8 +1135,8 @@ const _VIRAL_PATTERNS = [
       "crazy story",
     ],
     emotionalHooks: ["curiosity", "anticipation", "surprise"],
-    shareMultiplier: 1.72,
-    riskLevel: 0.15,
+    shareMultiplier: 1?.72,
+    riskLevel: 0?.15,
   },
 ];
 
@@ -1144,76 +1144,76 @@ const SEMANTIC_WORD_WEIGHTS: Record<
   string,
   { engagement: number; virality: number; sentiment: number }
 > = {
-  new: { engagement: 0.7, virality: 0.6, sentiment: 0.7 },
-  exclusive: { engagement: 0.85, virality: 0.75, sentiment: 0.8 },
-  breaking: { engagement: 0.9, virality: 0.9, sentiment: 0.6 },
-  finally: { engagement: 0.8, virality: 0.7, sentiment: 0.8 },
-  amazing: { engagement: 0.75, virality: 0.65, sentiment: 0.95 },
-  insane: { engagement: 0.85, virality: 0.8, sentiment: 0.85 },
-  fire: { engagement: 0.9, virality: 0.85, sentiment: 0.9 },
-  drop: { engagement: 0.8, virality: 0.75, sentiment: 0.7 },
-  stream: { engagement: 0.7, virality: 0.5, sentiment: 0.6 },
-  listen: { engagement: 0.65, virality: 0.45, sentiment: 0.65 },
-  love: { engagement: 0.85, virality: 0.7, sentiment: 0.95 },
-  viral: { engagement: 0.9, virality: 1.0, sentiment: 0.7 },
-  trending: { engagement: 0.85, virality: 0.9, sentiment: 0.7 },
-  limited: { engagement: 0.75, virality: 0.65, sentiment: 0.6 },
-  free: { engagement: 0.9, virality: 0.75, sentiment: 0.85 },
-  win: { engagement: 0.9, virality: 0.8, sentiment: 0.9 },
-  giveaway: { engagement: 0.95, virality: 0.85, sentiment: 0.85 },
-  secret: { engagement: 0.85, virality: 0.8, sentiment: 0.6 },
-  reveal: { engagement: 0.8, virality: 0.75, sentiment: 0.7 },
-  collab: { engagement: 0.8, virality: 0.7, sentiment: 0.75 },
-  banger: { engagement: 0.9, virality: 0.85, sentiment: 0.9 },
-  heat: { engagement: 0.85, virality: 0.8, sentiment: 0.85 },
-  slaps: { engagement: 0.88, virality: 0.82, sentiment: 0.88 },
-  dope: { engagement: 0.82, virality: 0.76, sentiment: 0.85 },
-  legendary: { engagement: 0.87, virality: 0.82, sentiment: 0.92 },
-  iconic: { engagement: 0.86, virality: 0.81, sentiment: 0.9 },
-  goated: { engagement: 0.88, virality: 0.84, sentiment: 0.92 },
-  authentic: { engagement: 0.78, virality: 0.68, sentiment: 0.88 },
-  real: { engagement: 0.72, virality: 0.65, sentiment: 0.82 },
-  honest: { engagement: 0.75, virality: 0.67, sentiment: 0.85 },
-  vulnerable: { engagement: 0.82, virality: 0.76, sentiment: 0.88 },
-  emotional: { engagement: 0.83, virality: 0.77, sentiment: 0.82 },
-  milestone: { engagement: 0.78, virality: 0.72, sentiment: 0.8 },
-  charted: { engagement: 0.82, virality: 0.78, sentiment: 0.82 },
-  playlisted: { engagement: 0.79, virality: 0.74, sentiment: 0.8 },
-  debut: { engagement: 0.77, virality: 0.7, sentiment: 0.78 },
-  unreleased: { engagement: 0.86, virality: 0.82, sentiment: 0.75 },
-  acoustic: { engagement: 0.72, virality: 0.62, sentiment: 0.82 },
-  studio: { engagement: 0.71, virality: 0.6, sentiment: 0.72 },
-  recording: { engagement: 0.7, virality: 0.58, sentiment: 0.7 },
-  session: { engagement: 0.68, virality: 0.6, sentiment: 0.7 },
-  beat: { engagement: 0.76, virality: 0.72, sentiment: 0.75 },
-  bars: { engagement: 0.8, virality: 0.75, sentiment: 0.8 },
-  hook: { engagement: 0.75, virality: 0.7, sentiment: 0.75 },
-  chorus: { engagement: 0.72, virality: 0.66, sentiment: 0.76 },
-  movement: { engagement: 0.8, virality: 0.78, sentiment: 0.82 },
-  journey: { engagement: 0.75, virality: 0.68, sentiment: 0.82 },
-  story: { engagement: 0.77, virality: 0.7, sentiment: 0.82 },
-  chapter: { engagement: 0.72, virality: 0.64, sentiment: 0.78 },
-  raw: { engagement: 0.78, virality: 0.72, sentiment: 0.78 },
-  powerful: { engagement: 0.8, virality: 0.73, sentiment: 0.88 },
-  massive: { engagement: 0.83, virality: 0.78, sentiment: 0.82 },
-  crazy: { engagement: 0.82, virality: 0.78, sentiment: 0.8 },
-  wild: { engagement: 0.8, virality: 0.76, sentiment: 0.78 },
-  epic: { engagement: 0.83, virality: 0.79, sentiment: 0.88 },
-  playlist: { engagement: 0.75, virality: 0.68, sentiment: 0.72 },
-  spotify: { engagement: 0.72, virality: 0.64, sentiment: 0.7 },
-  certified: { engagement: 0.78, virality: 0.73, sentiment: 0.78 },
-  gold: { engagement: 0.82, virality: 0.76, sentiment: 0.84 },
-  platinum: { engagement: 0.86, virality: 0.82, sentiment: 0.88 },
-  independent: { engagement: 0.74, virality: 0.68, sentiment: 0.8 },
-  unsigned: { engagement: 0.72, virality: 0.66, sentiment: 0.78 },
-  underrated: { engagement: 0.8, virality: 0.76, sentiment: 0.75 },
-  replay: { engagement: 0.82, virality: 0.78, sentiment: 0.82 },
-  earworm: { engagement: 0.83, virality: 0.8, sentiment: 0.82 },
-  chills: { engagement: 0.85, virality: 0.79, sentiment: 0.88 },
-  goosebumps: { engagement: 0.86, virality: 0.8, sentiment: 0.88 },
-  therapy: { engagement: 0.82, virality: 0.76, sentiment: 0.88 },
-  healing: { engagement: 0.8, virality: 0.74, sentiment: 0.9 },
-  breakthrough: { engagement: 0.82, virality: 0.76, sentiment: 0.84 },
+  new: { engagement: 0?.7, virality: 0?.6, sentiment: 0?.7 },
+  exclusive: { engagement: 0?.85, virality: 0?.75, sentiment: 0?.8 },
+  breaking: { engagement: 0?.9, virality: 0?.9, sentiment: 0?.6 },
+  finally: { engagement: 0?.8, virality: 0?.7, sentiment: 0?.8 },
+  amazing: { engagement: 0?.75, virality: 0?.65, sentiment: 0?.95 },
+  insane: { engagement: 0?.85, virality: 0?.8, sentiment: 0?.85 },
+  fire: { engagement: 0?.9, virality: 0?.85, sentiment: 0?.9 },
+  drop: { engagement: 0?.8, virality: 0?.75, sentiment: 0?.7 },
+  stream: { engagement: 0?.7, virality: 0?.5, sentiment: 0?.6 },
+  listen: { engagement: 0?.65, virality: 0?.45, sentiment: 0?.65 },
+  love: { engagement: 0?.85, virality: 0?.7, sentiment: 0?.95 },
+  viral: { engagement: 0?.9, virality: 1?.0, sentiment: 0?.7 },
+  trending: { engagement: 0?.85, virality: 0?.9, sentiment: 0?.7 },
+  limited: { engagement: 0?.75, virality: 0?.65, sentiment: 0?.6 },
+  free: { engagement: 0?.9, virality: 0?.75, sentiment: 0?.85 },
+  win: { engagement: 0?.9, virality: 0?.8, sentiment: 0?.9 },
+  giveaway: { engagement: 0?.95, virality: 0?.85, sentiment: 0?.85 },
+  secret: { engagement: 0?.85, virality: 0?.8, sentiment: 0?.6 },
+  reveal: { engagement: 0?.8, virality: 0?.75, sentiment: 0?.7 },
+  collab: { engagement: 0?.8, virality: 0?.7, sentiment: 0?.75 },
+  banger: { engagement: 0?.9, virality: 0?.85, sentiment: 0?.9 },
+  heat: { engagement: 0?.85, virality: 0?.8, sentiment: 0?.85 },
+  slaps: { engagement: 0?.88, virality: 0?.82, sentiment: 0?.88 },
+  dope: { engagement: 0?.82, virality: 0?.76, sentiment: 0?.85 },
+  legendary: { engagement: 0?.87, virality: 0?.82, sentiment: 0?.92 },
+  iconic: { engagement: 0?.86, virality: 0?.81, sentiment: 0?.9 },
+  goated: { engagement: 0?.88, virality: 0?.84, sentiment: 0?.92 },
+  authentic: { engagement: 0?.78, virality: 0?.68, sentiment: 0?.88 },
+  real: { engagement: 0?.72, virality: 0?.65, sentiment: 0?.82 },
+  honest: { engagement: 0?.75, virality: 0?.67, sentiment: 0?.85 },
+  vulnerable: { engagement: 0?.82, virality: 0?.76, sentiment: 0?.88 },
+  emotional: { engagement: 0?.83, virality: 0?.77, sentiment: 0?.82 },
+  milestone: { engagement: 0?.78, virality: 0?.72, sentiment: 0?.8 },
+  charted: { engagement: 0?.82, virality: 0?.78, sentiment: 0?.82 },
+  playlisted: { engagement: 0?.79, virality: 0?.74, sentiment: 0?.8 },
+  debut: { engagement: 0?.77, virality: 0?.7, sentiment: 0?.78 },
+  unreleased: { engagement: 0?.86, virality: 0?.82, sentiment: 0?.75 },
+  acoustic: { engagement: 0?.72, virality: 0?.62, sentiment: 0?.82 },
+  studio: { engagement: 0?.71, virality: 0?.6, sentiment: 0?.72 },
+  recording: { engagement: 0?.7, virality: 0?.58, sentiment: 0?.7 },
+  session: { engagement: 0?.68, virality: 0?.6, sentiment: 0?.7 },
+  beat: { engagement: 0?.76, virality: 0?.72, sentiment: 0?.75 },
+  bars: { engagement: 0?.8, virality: 0?.75, sentiment: 0?.8 },
+  hook: { engagement: 0?.75, virality: 0?.7, sentiment: 0?.75 },
+  chorus: { engagement: 0?.72, virality: 0?.66, sentiment: 0?.76 },
+  movement: { engagement: 0?.8, virality: 0?.78, sentiment: 0?.82 },
+  journey: { engagement: 0?.75, virality: 0?.68, sentiment: 0?.82 },
+  story: { engagement: 0?.77, virality: 0?.7, sentiment: 0?.82 },
+  chapter: { engagement: 0?.72, virality: 0?.64, sentiment: 0?.78 },
+  raw: { engagement: 0?.78, virality: 0?.72, sentiment: 0?.78 },
+  powerful: { engagement: 0?.8, virality: 0?.73, sentiment: 0?.88 },
+  massive: { engagement: 0?.83, virality: 0?.78, sentiment: 0?.82 },
+  crazy: { engagement: 0?.82, virality: 0?.78, sentiment: 0?.8 },
+  wild: { engagement: 0?.8, virality: 0?.76, sentiment: 0?.78 },
+  epic: { engagement: 0?.83, virality: 0?.79, sentiment: 0?.88 },
+  playlist: { engagement: 0?.75, virality: 0?.68, sentiment: 0?.72 },
+  spotify: { engagement: 0?.72, virality: 0?.64, sentiment: 0?.7 },
+  certified: { engagement: 0?.78, virality: 0?.73, sentiment: 0?.78 },
+  gold: { engagement: 0?.82, virality: 0?.76, sentiment: 0?.84 },
+  platinum: { engagement: 0?.86, virality: 0?.82, sentiment: 0?.88 },
+  independent: { engagement: 0?.74, virality: 0?.68, sentiment: 0?.8 },
+  unsigned: { engagement: 0?.72, virality: 0?.66, sentiment: 0?.78 },
+  underrated: { engagement: 0?.8, virality: 0?.76, sentiment: 0?.75 },
+  replay: { engagement: 0?.82, virality: 0?.78, sentiment: 0?.82 },
+  earworm: { engagement: 0?.83, virality: 0?.8, sentiment: 0?.82 },
+  chills: { engagement: 0?.85, virality: 0?.79, sentiment: 0?.88 },
+  goosebumps: { engagement: 0?.86, virality: 0?.8, sentiment: 0?.88 },
+  therapy: { engagement: 0?.82, virality: 0?.76, sentiment: 0?.88 },
+  healing: { engagement: 0?.8, virality: 0?.74, sentiment: 0?.9 },
+  breakthrough: { engagement: 0?.82, virality: 0?.76, sentiment: 0?.84 },
 };
 
 // ============================================================================
@@ -1231,7 +1231,7 @@ const SEMANTIC_WORD_WEIGHTS: Record<
 // ─── EMOTIONAL ARC TEMPLATES ───────────────────────────────────────────────────
 // Each content type has an optimal emotional arc structure.
 // Scientifically, content following Hook → Context → Tension → Resolution → CTA
-// outperforms flat content by 2.8x in average watch/read time.
+// outperforms flat content by 2?.8x in average watch/read time.
 
 // ─── CURIOSITY GAP PATTERNS ───────────────────────────────────────────────────
 // Specific linguistic constructions that create information gaps — forcing
@@ -1247,9 +1247,9 @@ class AdvancedSocialAIService {
 
   async initialize(): Promise<void> {
     if (this?.initialized) return;
-    this.initialized = true;
+    this?.initialized = true;
     logger?.info(
-      "[AdvancedSocialAI] GPT-5.2 level social AI engine initialized",
+      "[AdvancedSocialAI] GPT-5?.2 level social AI engine initialized",
     );
   }
 
@@ -1311,7 +1311,7 @@ class AdvancedSocialAIService {
         posting?.engagementTargeting === "high" &&
         request?.objective !== "engagement"
       ) {
-        patch.objective = "engagement";
+        patch?.objective = "engagement";
       }
 
       if (
@@ -1324,7 +1324,7 @@ class AdvancedSocialAIService {
               ? CONTENT_FORMAT_TO_TYPE[fmt?.toLowerCase()]
               : undefined;
           if (mapped) {
-            patch.contentType = mapped;
+            patch?.contentType = mapped;
             break;
           }
         }
@@ -1546,6 +1546,11 @@ class AdvancedSocialAIService {
     }
   }
 
+
+
+
+
+
   /**
    * Reshape the hashtag set per the Self-Evolution `hashtagStrategy` knob.
    *  - niche   → fewer, more targeted tags (down to the platform minimum).
@@ -1606,7 +1611,7 @@ class AdvancedSocialAIService {
     const _sliced = text?.slice(0, cap - 1);
     const _lastSpace = sliced?.lastIndexOf(" ");
     return (
-      (lastSpace > cap * 0.6 ? sliced?.slice(0, lastSpace) : sliced).trimEnd() +
+      (lastSpace > cap * 0?.6 ? sliced?.slice(0, lastSpace) : sliced).trimEnd() +
       "…"
     );
   }
@@ -1661,7 +1666,7 @@ class AdvancedSocialAIService {
 
     selected?.push(...emojiSets?.music.slice(0, 1));
 
-    if (tone?.energy > 0.7) {
+    if (tone?.energy > 0?.7) {
       selected?.push(...emojiSets?.fire.slice(0, 1));
     }
 
@@ -1825,9 +1830,9 @@ class AdvancedSocialAIService {
       }
     });
 
-    const _avgEngagement = wordCount > 0 ? engagementSum / wordCount : 0.5;
-    const _avgVirality = wordCount > 0 ? viralitySum / wordCount : 0.5;
-    const _avgSentiment = wordCount > 0 ? sentimentSum / wordCount : 0.5;
+    const _avgEngagement = wordCount > 0 ? engagementSum / wordCount : 0?.5;
+    const _avgVirality = wordCount > 0 ? viralitySum / wordCount : 0?.5;
+    const _avgSentiment = wordCount > 0 ? sentimentSum / wordCount : 0?.5;
 
     const _hookStrength = this?.calculateHookStrength(content, platform);
     const _ctaEffectiveness = this?.calculateCTAEffectiveness(
@@ -1837,11 +1842,11 @@ class AdvancedSocialAIService {
     const _platformOpt = this?.calculatePlatformOptimization(content, platform);
 
     const _engagement =
-      (avgEngagement * 0.4 + hookStrength * 0.3 + ctaEffectiveness * 0.3) * 100;
+      (avgEngagement * 0?.4 + hookStrength * 0?.3 + ctaEffectiveness * 0?.3) * 100;
     const _virality = avgVirality * 100 * platform?.viralMultiplier;
-    const _clarity = Math?.max(40, 100 - words?.length * 0.3);
+    const _clarity = Math?.max(40, 100 - words?.length * 0?.3);
     const _sentiment = avgSentiment * 100;
-    const _brandAlignment = (1 - Math?.abs(tone?.formality - 0.5)) * 100;
+    const _brandAlignment = (1 - Math?.abs(tone?.formality - 0?.5)) * 100;
 
     const _audienceMatch =
       (1 - Math?.abs(audience?.preferredTone - tone?.formality)) * 100;
@@ -1856,16 +1861,16 @@ class AdvancedSocialAIService {
     );
 
     const _overall =
-      engagement * 0.2 +
-      virality * 0.15 +
-      clarity * 0.1 +
-      sentiment * 0.1 +
-      brandAlignment * 0.1 +
-      hookStrength * 100 * 0.1 +
-      ctaEffectiveness * 100 * 0.1 +
-      platformOpt * 100 * 0.05 +
-      audienceMatch * 0.05 +
-      originality * 0.05;
+      engagement * 0?.2 +
+      virality * 0?.15 +
+      clarity * 0?.1 +
+      sentiment * 0?.1 +
+      brandAlignment * 0?.1 +
+      hookStrength * 100 * 0?.1 +
+      ctaEffectiveness * 100 * 0?.1 +
+      platformOpt * 100 * 0?.05 +
+      audienceMatch * 0?.05 +
+      originality * 0?.05;
 
     return {
       overall: Math?.min(100, Math?.max(0, overall)),
@@ -1888,13 +1893,13 @@ class AdvancedSocialAIService {
     platform: PlatformProfile,
   ): number {
     const _firstLine = content?.split("\n")[0] || "";
-    let strength = 0.5;
+    let strength = 0?.5;
 
-    if (/^[🔥💥⚡🚀✨🎵🎶🚨]/.test(firstLine)) strength += 0.15;
-    if (/^[A-Z]{2,}/.test(firstLine)) strength += 0.1;
-    if (firstLine?.endsWith("?")) strength += 0.1;
-    if (firstLine?.length < 50) strength += 0.1;
-    if (/(!|🔥)/.test(firstLine)) strength += 0.05;
+    if (/^[🔥💥⚡🚀✨🎵🎶🚨]/.test(firstLine)) strength += 0?.15;
+    if (/^[A-Z]{2,}/.test(firstLine)) strength += 0?.1;
+    if (firstLine?.endsWith("?")) strength += 0?.1;
+    if (firstLine?.length < 50) strength += 0?.1;
+    if (/(!|🔥)/.test(firstLine)) strength += 0?.05;
 
     return Math?.min(1, strength) * platform?.hookWeight;
   }
@@ -1904,18 +1909,18 @@ class AdvancedSocialAIService {
     objective: string,
   ): number {
     const _lowerContent = content?.toLowerCase();
-    let effectiveness = 0.3;
+    let effectiveness = 0?.3;
 
     const _ctaPatterns = [
-      { pattern: /link in bio/, boost: 0.15 },
-      { pattern: /check it out/, boost: 0.1 },
-      { pattern: /stream now|listen now/, boost: 0.12 },
-      { pattern: /tap the link|click/, boost: 0.1 },
-      { pattern: /share|comment|tag someone/, boost: 0.12 },
-      { pattern: /follow|subscribe/, boost: 0.1 },
-      { pattern: /save this/, boost: 0.1 },
-      { pattern: /let me know|drop.*below/, boost: 0.1 },
-      { pattern: /don't miss/, boost: 0.08 },
+      { pattern: /link in bio/, boost: 0?.15 },
+      { pattern: /check it out/, boost: 0?.1 },
+      { pattern: /stream now|listen now/, boost: 0?.12 },
+      { pattern: /tap the link|click/, boost: 0?.1 },
+      { pattern: /share|comment|tag someone/, boost: 0?.12 },
+      { pattern: /follow|subscribe/, boost: 0?.1 },
+      { pattern: /save this/, boost: 0?.1 },
+      { pattern: /let me know|drop.*below/, boost: 0?.1 },
+      { pattern: /don't miss/, boost: 0?.08 },
     ];
 
     ctaPatterns?.forEach(({ pattern, boost }) => {
@@ -1923,10 +1928,10 @@ class AdvancedSocialAIService {
     });
 
     const objectiveMultipliers: Record<string, number> = {
-      conversions: 1.2,
-      engagement: 1.1,
-      viral: 0.9,
-      awareness: 1.0,
+      conversions: 1?.2,
+      engagement: 1?.1,
+      viral: 0?.9,
+      awareness: 1?.0,
     };
 
     return Math?.min(1, effectiveness * (objectiveMultipliers[objective] || 1));
@@ -1936,12 +1941,12 @@ class AdvancedSocialAIService {
     content: string,
     platform: PlatformProfile,
   ): number {
-    let optimization = 0.5;
+    let optimization = 0?.5;
 
     if (content?.length <= platform?.maxChars) {
-      optimization += 0.25;
+      optimization += 0?.25;
     } else {
-      optimization -= 0.3;
+      optimization -= 0?.3;
     }
 
     const _hashtagCount = (content?.match(/#\w+/g) || []).length;
@@ -1949,7 +1954,7 @@ class AdvancedSocialAIService {
       hashtagCount >= platform?.hashtagRange.min &&
       hashtagCount <= platform?.hashtagRange.max
     ) {
-      optimization += 0.15;
+      optimization += 0?.15;
     }
 
     const _emojiRegex =
@@ -1959,7 +1964,7 @@ class AdvancedSocialAIService {
       emojiCount >= platform?.emojiRange.min &&
       emojiCount <= platform?.emojiRange.max
     ) {
-      optimization += 0.1;
+      optimization += 0?.1;
     }
 
     return Math?.min(1, Math?.max(0, optimization));
@@ -2079,7 +2084,7 @@ class AdvancedSocialAIService {
       bestDays,
       bestHours,
       timezone: "UTC",
-      confidence: overlappingHours?.length > 0 ? 0.85 : 0.65,
+      confidence: overlappingHours?.length > 0 ? 0?.85 : 0?.65,
       reasoning: `Based on ${audience?.name} activity patterns and ${platforms?.join(", ")} peak hours`,
       audienceBased: true,
     };
@@ -2101,12 +2106,12 @@ class AdvancedSocialAIService {
       platform?.contentTypes.includes("reel")
     ) {
       if (platform?.id === "tiktok" || platform?.id === "instagram") {
-        guidance.recommendedType = "video";
-        guidance.specifications = {
+        guidance?.recommendedType = "video";
+        guidance?.specifications = {
           aspectRatio: "9:16",
           duration: "15-30 seconds",
         };
-        guidance.styleNotes = [
+        guidance?.styleNotes = [
           "Vertical format for mobile-first viewing",
           "Hook within first 3 seconds",
           "Text overlays for sound-off viewers",
@@ -2133,7 +2138,7 @@ class AdvancedSocialAIService {
     }
 
     if (platform?.contentTypes.includes("carousel")) {
-      guidance.recommendedType = "carousel";
+      guidance?.recommendedType = "carousel";
       guidance?.specifications.slideCount = 5;
       guidance?.styleNotes.push("First slide must grab attention");
       guidance?.styleNotes.push("Last slide should contain CTA");
@@ -2230,11 +2235,11 @@ class AdvancedSocialAIService {
       )
         return 1;
       if (audience?.preferredLength === "long" && wordCount >= 80) return 1;
-      return 0.5;
+      return 0?.5;
     })();
 
     const _resonanceScore =
-      (interestMatch * 0.4 + valueMatch * 0.3 + lengthMatch * 0.3) * 100;
+      (interestMatch * 0?.4 + valueMatch * 0?.3 + lengthMatch * 0?.3) * 100;
 
     const _secondarySegments = Object?.entries(AUDIENCE_PROFILES)
       .filter(
@@ -2307,22 +2312,22 @@ class AdvancedSocialAIService {
     ).length;
     const _signalScore =
       signalHits > 0
-        ? Math?.min(1, signalHits / Math?.max(targetSignals?.length * 0.15, 1))
-        : 0.5;
+        ? Math?.min(1, signalHits / Math?.max(targetSignals?.length * 0?.15, 1))
+        : 0?.5;
 
     // Content complexity alignment: shorter + simpler → Gen Z; longer + richer → Gen X
     const _complexityAlignment =
       ageMid < 27
         ? wordCount < 50 && avgWordLen < 5
-          ? 1.0
-          : 0.65
+          ? 1?.0
+          : 0?.65
         : ageMid < 44
           ? wordCount >= 30 && wordCount < 100
-            ? 1.0
-            : 0.72
+            ? 1?.0
+            : 0?.72
           : wordCount >= 50 && avgWordLen >= 5
-            ? 1.0
-            : 0.72;
+            ? 1?.0
+            : 0?.72;
 
     // Composite: base 55 + vocabulary signal (0-20) + interest overlap (0-15) + complexity (0-10)
     const _demographicMatch = Math?.min(
@@ -2376,10 +2381,10 @@ class AdvancedSocialAIService {
       }
     });
 
-    const _avgEngagement = count > 0 ? totalEngagement / count : 0.5;
+    const _avgEngagement = count > 0 ? totalEngagement / count : 0?.5;
     return Math?.min(
       100,
-      Math?.max(0, (avgEngagement * 0.5 + hookStrength * 0.5) * 100),
+      Math?.max(0, (avgEngagement * 0?.5 + hookStrength * 0?.5) * 100),
     );
   }
 }

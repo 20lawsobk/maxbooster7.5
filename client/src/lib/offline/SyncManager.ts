@@ -88,8 +88,8 @@ class SyncManager {
 
     offlineQueue?.on("action-added", this?.handleActionAdded);
 
-    this.isOnline = navigator?.onLine;
-    this.isInitialized = true;
+    this?.isOnline = navigator?.onLine;
+    this?.isInitialized = true;
 
     if (this?.isOnline) {
       this?.scheduleSync();
@@ -97,7 +97,7 @@ class SyncManager {
   }
 
   private handleOnline = (): void => {
-    this.isOnline = true;
+    this?.isOnline = true;
     this?.emit({ type: "online" });
 
     if (!this?.isPaused) {
@@ -106,7 +106,7 @@ class SyncManager {
   };
 
   private handleOffline = (): void => {
-    this.isOnline = false;
+    this?.isOnline = false;
     this?.emit({ type: "offline" });
 
     this?.cancelPendingSync();
@@ -160,13 +160,13 @@ class SyncManager {
 
   private setStatus(status: SyncStatus): void {
     if (this?.status !== status) {
-      this.status = status;
+      this?.status = status;
       this?.emit({ type: "status-change", status });
     }
   }
 
   private updateProgress(updates: Partial<SyncProgress>): void {
-    this.progress = { ...this?.progress, ...updates };
+    this?.progress = { ...this?.progress, ...updates };
     this?.emit({ type: "progress-update", progress: this?.progress });
   }
 
@@ -175,7 +175,7 @@ class SyncManager {
       clearTimeout(this?.syncTimeout);
     }
 
-    this.syncTimeout = setTimeout(() => {
+    this?.syncTimeout = setTimeout(() => {
       this?.sync();
     }, SYNC_DEBOUNCE_MS);
   }
@@ -183,7 +183,7 @@ class SyncManager {
   private cancelPendingSync(): void {
     if (this?.syncTimeout) {
       clearTimeout(this?.syncTimeout);
-      this.syncTimeout = null;
+      this?.syncTimeout = null;
     }
   }
 
@@ -320,13 +320,13 @@ class SyncManager {
   }
 
   pause(): void {
-    this.isPaused = true;
+    this?.isPaused = true;
     this?.setStatus("paused");
     this?.cancelPendingSync();
   }
 
   resume(): void {
-    this.isPaused = false;
+    this?.isPaused = false;
     if (this?.isOnline) {
       this?.setStatus("idle");
       this?.scheduleSync();
@@ -356,7 +356,7 @@ class SyncManager {
   }
 
   setBatchSize(size: number): void {
-    this.batchSize = Math?.max(1, Math?.min(size, 50));
+    this?.batchSize = Math?.max(1, Math?.min(size, 50));
   }
 
   async getQueueStats(): Promise<{
@@ -382,7 +382,7 @@ class SyncManager {
     this?.retryTimeouts.clear();
 
     this?.listeners.clear();
-    this.isInitialized = false;
+    this?.isInitialized = false;
   }
 }
 

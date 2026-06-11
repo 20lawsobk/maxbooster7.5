@@ -18,15 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CountdownTimer } from "./CountdownTimer";
 import { ReleaseChecklist } from "./ReleaseChecklist";
 import { PresaveTracker } from "./PresaveTracker";
-import {
-  Plus,
-  Rocket,
-  Calendar,
-  ListTodo,
-  BarChart3,
-  Sparkles,
-  Music,
-} from "lucide-react";
+import { Plus, Rocket, Calendar, ListTodo, BarChart3, Sparkles, Music } from "lucide-react";
 
 interface Countdown {
   id: string;

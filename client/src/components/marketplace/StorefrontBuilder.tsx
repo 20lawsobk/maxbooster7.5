@@ -34,33 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
-import {
-  Store,
-  Upload,
-  Plus,
-  Trash2,
-  Edit,
-  Eye,
-  Save,
-  Check,
-  CheckCircle,
-  AlertCircle,
-  Sparkles,
-  DollarSign,
-  Users,
-  Crown,
-  ExternalLink,
-  Music,
-  Instagram,
-  Twitter,
-  Youtube,
-  Globe,
-  EyeOff,
-  Video,
-  Megaphone,
-  Shuffle,
-  Copy,
-} from "lucide-react";
+import { Store, Upload, Plus, Trash2, Edit, Eye, Save, Check, CheckCircle, AlertCircle, Sparkles, DollarSign, Users, Crown, ExternalLink, Music, Instagram, Twitter, Youtube, Globe, EyeOff, Video, Megaphone, Shuffle, Copy } from "lucide-react";
 import { BogoPromotionsManager } from "./BogoPromotionsManager";
 import { StorefrontDnsZoneManager } from "./StorefrontDnsZoneManager";
 import { validateFreeDomain, SUPPORTED_TLDS } from "@shared/domainValidation";
@@ -434,7 +408,9 @@ export default function StorefrontBuilder() {
     enabled: !!user,
   });
 
-  const { data: tiers = [] } = useQuery<MembershipTier[]>({
+  const { data: tiers = [] } = useQuery<
+    MembershipTier[]
+  >({
     queryKey: ["/api/storefront", selectedStorefront?.id, "tiers"],
     enabled: !!selectedStorefront,
     queryFn: async () => {

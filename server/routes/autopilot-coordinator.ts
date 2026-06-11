@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { autopilotCoordinatorService } from "../services/autopilotCoordinatorService.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { autopilotCoordinatorService } from "../services/autopilotCoordinatorService?.js";
 
 const _router = Router();
 
@@ -85,11 +85,11 @@ router?.get("/schedule", requireAuth, async (req, res) => {
     const _parsed = scheduleFilterSchema?.parse(req?.query);
 
     const options: Record<string, unknown> = {};
-    if (parsed?.autopilotType) options.autopilotType = parsed?.autopilotType;
-    if (parsed?.platform) options.platform = parsed?.platform;
-    if (parsed?.status) options.status = parsed?.status;
-    if (parsed?.startDate) options.startDate = new Date(parsed?.startDate);
-    if (parsed?.endDate) options.endDate = new Date(parsed?.endDate);
+    if (parsed?.autopilotType) options?.autopilotType = parsed?.autopilotType;
+    if (parsed?.platform) options?.platform = parsed?.platform;
+    if (parsed?.status) options?.status = parsed?.status;
+    if (parsed?.startDate) options?.startDate = new Date(parsed?.startDate);
+    if (parsed?.endDate) options?.endDate = new Date(parsed?.endDate);
 
     const _schedule = autopilotCoordinatorService?.getCoordinatedSchedule(
       userId,

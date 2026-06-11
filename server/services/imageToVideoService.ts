@@ -32,22 +32,22 @@ import { promisify } from "util";
 import { existsSync, mkdirSync, unlinkSync } from "fs";
 import path from "path";
 import { randomBytes } from "crypto";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import {
   analyzeAudio,
   getBeatAlignedCuts,
   cutsToSceneDurations,
-} from "./beatSyncService.js";
-import type { BeatAnalysis } from "./beatSyncService.js";
+} from "./beatSyncService?.js";
+import type { BeatAnalysis } from "./beatSyncService?.js";
 import {
   AUDIO_PROFILES,
   TEMPLATE_STYLES,
   type VideoGenResult,
-} from "./videoGeneratorService.js";
+} from "./videoGeneratorService?.js";
 import {
   checkDiffusionAvailable,
   renderDiffusionScene,
-} from "./maxcoreDiffusionSceneService.js";
+} from "./maxcoreDiffusionSceneService?.js";
 
 const _execFileAsync = promisify(execFile);
 
@@ -125,49 +125,49 @@ interface KenBurnsMotion {
 const KEN_BURNS_MOTIONS: KenBurnsMotion[] = [
   {
     id: "zoom_in_center",
-    z: (d) => `1.0+0.08*on/${d * 25}`,
+    z: (d) => `1?.0+0?.08*on/${d * 25}`,
     x: (iw, ow) => `(${iw}/2-${ow}/2)`,
     y: (ih, oh) => `(${ih}/2-${oh}/2)`,
   },
   {
     id: "zoom_out_center",
-    z: (d) => `1.08-0.08*on/${d * 25}`,
+    z: (d) => `1?.08-0?.08*on/${d * 25}`,
     x: (iw, ow) => `(${iw}/2-${ow}/2)`,
     y: (ih, oh) => `(${ih}/2-${oh}/2)`,
   },
   {
     id: "pan_left",
-    z: () => `1.04`,
+    z: () => `1?.04`,
     x: (iw, ow, d) => `(${iw}-${ow})*on/${d * 25}`,
     y: (ih, oh) => `(${ih}/2-${oh}/2)`,
   },
   {
     id: "pan_right",
-    z: () => `1.04`,
+    z: () => `1?.04`,
     x: (iw, ow, d) => `(${iw}-${ow})*(1-on/${d * 25})`,
     y: (ih, oh) => `(${ih}/2-${oh}/2)`,
   },
   {
     id: "zoom_in_top_left",
-    z: (d) => `1.0+0.10*on/${d * 25}`,
+    z: (d) => `1?.0+0?.10*on/${d * 25}`,
     x: () => `0`,
     y: () => `0`,
   },
   {
     id: "zoom_in_bottom_right",
-    z: (d) => `1.0+0.10*on/${d * 25}`,
+    z: (d) => `1?.0+0?.10*on/${d * 25}`,
     x: (iw, ow) => `${iw}-${ow}`,
     y: (ih, oh) => `${ih}-${oh}`,
   },
   {
     id: "tilt_up",
-    z: () => `1.04`,
+    z: () => `1?.04`,
     x: (iw, ow) => `(${iw}/2-${ow}/2)`,
     y: (ih, oh, d) => `(${ih}-${oh})*(1-on/${d * 25})`,
   },
   {
     id: "tilt_down",
-    z: () => `1.04`,
+    z: () => `1?.04`,
     x: (iw, ow) => `(${iw}/2-${ow}/2)`,
     y: (ih, oh, d) => `(${ih}-${oh})*on/${d * 25}`,
   },
@@ -212,12 +212,12 @@ async function renderImageWithKenBurns(
 
   // Scale intensity: zoom range multiplier
   const _intensityScale =
-    intensity === "subtle" ? 0.5 : intensity === "dramatic" ? 1.6 : 1.0;
+    intensity === "subtle" ? 0?.5 : intensity === "dramatic" ? 1?.6 : 1?.0;
 
   // zoompan: zoom in/out + pan within source image
   // Output is at output resolution (width x height), source scaled from input image.
   // We render at full resolution — the zoompan filter handles the motion.
-  `pmax(${1.0},${1.0 + parseFloat(motion?.z(durationSec).match(/0\.\d+/)?.[0] ?? "0.08") * intensityScale * 0 + 1}*(${motion?.z(durationSec)}-1)+1)`;
+  `pmax(${1?.0},${1?.0 + parseFloat(motion?.z(durationSec).match(/0\.\d+/)?.[0] ?? "0?.08") * intensityScale * 0 + 1}*(${motion?.z(durationSec)}-1)+1)`;
   // Simpler and more reliable zoompan expression:
   const _zBasic = motion?.z(durationSec);
   const _xBasic = motion?.x(width, width, durationSec);
@@ -227,7 +227,7 @@ async function renderImageWithKenBurns(
   const _gradeFilter = buildColorGrade(colorGrade);
 
   // Vignette for cinematic depth
-  const _vignetteFilter = "vignette=angle=PI/4.5:mode=forward:eval=init";
+  const _vignetteFilter = "vignette=angle=PI/4?.5:mode=forward:eval=init";
 
   // Build complete filter chain
   const _filterParts = [
@@ -273,13 +273,13 @@ async function renderImageWithKenBurns(
 function buildColorGrade(grade: string): string {
   switch (grade) {
     case "warm":
-      return "curves=r=0/0.1 1/1:g=0/0 1/0.95:b=0/0 1/0.88,eq=brightness=0.05:saturation=1.2";
+      return "curves=r=0/0?.1 1/1:g=0/0 1/0?.95:b=0/0 1/0?.88,eq=brightness=0?.05:saturation=1?.2";
     case "cool":
-      return "curves=r=0/0 1/0.90:g=0/0 1/0.95:b=0/0.1 1/1,eq=brightness=0.02:saturation=1.1";
+      return "curves=r=0/0 1/0?.90:g=0/0 1/0?.95:b=0/0?.1 1/1,eq=brightness=0?.02:saturation=1?.1";
     case "cinematic":
-      return "curves=r=0/0.05 1/0.95:g=0/0.02 1/0.93:b=0/0.08 1/0.92,eq=contrast=1.12:saturation=0.92,vignette=angle=PI/4:mode=forward:eval=init";
+      return "curves=r=0/0?.05 1/0?.95:g=0/0?.02 1/0?.93:b=0/0?.08 1/0?.92,eq=contrast=1?.12:saturation=0?.92,vignette=angle=PI/4:mode=forward:eval=init";
     case "neon":
-      return "curves=r=0/0 1/1:g=0/0 0.5/0.7 1/1:b=0/0 0.5/0.8 1/1,eq=saturation=1.4:contrast=1.05";
+      return "curves=r=0/0 1/1:g=0/0 0?.5/0?.7 1/1:b=0/0 0?.5/0?.8 1/1,eq=saturation=1?.4:contrast=1?.05";
     default:
       return "";
   }
@@ -298,7 +298,7 @@ async function applyAudioToVideo(
   const audioProfiles: Record<string, any> = AUDIO_PROFILES;
   const _audioProfile = audioProfiles[genre] || audioProfiles?.default;
 
-  const _fadeDur = Math?.min(1.5, totalDur * 0.1);
+  const _fadeDur = Math?.min(1?.5, totalDur * 0?.1);
   const _fadeOut = Math?.max(0, totalDur - fadeDur);
   const _fd = fadeDur?.toFixed(2);
   const _fo = fadeOut?.toFixed(2);
@@ -340,17 +340,17 @@ async function applyAudioToVideo(
 
   if (hasLogo) {
     parts?.push(
-      `[${logoIdx}:v]scale=iw*0.14:ih*0.14[logo]`,
+      `[${logoIdx}:v]scale=iw*0?.14:ih*0?.14[logo]`,
       `[0:v][logo]overlay=W-w-24:24:enable='between(t\\,0\\,${totalDur})'[vfinal]`,
     );
   }
 
   // Synth bed
   parts?.push(
-    `[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1.25 1.0 0.55[synth_raw]`,
+    `[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1?.25 1?.0 0?.55[synth_raw]`,
   );
   parts?.push(
-    `[synth_raw]${audioProfile?.filters},extrastereo=m=1.4,` +
+    `[synth_raw]${audioProfile?.filters},extrastereo=m=1?.4,` +
       `afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[synth]`,
   );
 
@@ -358,35 +358,35 @@ async function applyAudioToVideo(
     // User audio + voice narration over synth bed
     parts?.push(
       `[${audioIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
-        `volume=0.85,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
+        `volume=0?.85,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
     );
     parts?.push(
       `[${voiceIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
-        `volume=1.1,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[voice_a]`,
+        `volume=1?.1,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[voice_a]`,
     );
     parts?.push(
-      `[user_a][voice_a][synth]amix=inputs=3:normalize=0:weights=1.0 1.1 0.15[afinal]`,
+      `[user_a][voice_a][synth]amix=inputs=3:normalize=0:weights=1?.0 1?.1 0?.15[afinal]`,
     );
   } else if (hasAudio) {
     // User audio (music) is dominant, synth bed very low
     parts?.push(
       `[${audioIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
-        `volume=0.92,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
+        `volume=0?.92,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
     );
     parts?.push(
-      `[user_a][synth]amix=inputs=2:normalize=0:weights=1.0 0.08[afinal]`,
+      `[user_a][synth]amix=inputs=2:normalize=0:weights=1?.0 0?.08[afinal]`,
     );
   } else if (hasVoice) {
     // Voice narration + synth bed
     parts?.push(
       `[${voiceIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
-        `volume=1.2,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[voice_a]`,
+        `volume=1?.2,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[voice_a]`,
     );
     parts?.push(
-      `[voice_a][synth]amix=inputs=2:normalize=0:weights=1.2 0.22[afinal]`,
+      `[voice_a][synth]amix=inputs=2:normalize=0:weights=1?.2 0?.22[afinal]`,
     );
   } else {
-    parts?.push(`[synth]volume=1.0[afinal]`);
+    parts?.push(`[synth]volume=1?.0[afinal]`);
   }
 
   const _ffmpegArgs = [
@@ -422,12 +422,12 @@ async function applyAudioToVideo(
       const _safeParts = parts?.map((p) =>
         p
           .replace(
-            `[synth_raw]${audioProfile?.filters},extrastereo=m=1.4,`,
-            "[synth_raw]volume=0.9,",
+            `[synth_raw]${audioProfile?.filters},extrastereo=m=1?.4,`,
+            "[synth_raw]volume=0?.9,",
           )
           .replace(
             `[synth_raw]${audioProfile?.filters},`,
-            "[synth_raw]volume=0.9,",
+            "[synth_raw]volume=0?.9,",
           ),
       );
       const _safeArgs = [
@@ -464,7 +464,7 @@ async function combineImageScenes(
   sceneDurations: number[],
   outputPath: string,
   transition: string,
-  transitionDur = 0.4,
+  transitionDur = 0?.4,
 ): Promise<void> {
   if (scenePaths?.length === 1) {
     await execFileAsync("cp", [scenePaths[0], outputPath]);
@@ -522,7 +522,7 @@ function buildTextOverlays(
   artistName?: string,
 ): string[] {
   const overlays: string[] = [];
-  const _barH = Math?.floor(height * 0.085);
+  const _barH = Math?.floor(height * 0?.085);
   const _hs = style?.hs || 64;
   const _bs = style?.bs || 42;
   const _cs = style?.cs || 48;
@@ -530,18 +530,18 @@ function buildTextOverlays(
 
   // Accent bars
   overlays?.push(
-    `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style?.ac}@0.28:t=fill`,
+    `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style?.ac}@0?.28:t=fill`,
   );
   overlays?.push(
-    `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style?.ac}@0.28:t=fill`,
+    `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style?.ac}@0?.28:t=fill`,
   );
 
   // Artist name
   if (artistName) {
     const _at = sanitize(artistName).toUpperCase();
     overlays?.push(
-      `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=${style?.ac}:fontsize=${Math?.floor(bs * 0.62)}` +
-        `:x=(w-text_w)/2:y=h*0.05:alpha='min(1\\,t*5)':bordercolor=black@0.4:borderw=2`,
+      `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=${style?.ac}:fontsize=${Math?.floor(bs * 0?.62)}` +
+        `:x=(w-text_w)/2:y=h*0?.05:alpha='min(1\\,t*5)':bordercolor=black@0?.4:borderw=2`,
     );
   }
 
@@ -549,7 +549,7 @@ function buildTextOverlays(
     const _ht = sanitize(hook);
     // Shadow
     overlays?.push(
-      `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0.50:fontsize=${hs}` +
+      `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0?.50:fontsize=${hs}` +
         `:x=(w-text_w)/2+4:y=(h-text_h)/4+4+30*(1-min(1\\,t*3)):alpha='min(1\\,t*3)'`,
     );
     // Main + outline
@@ -559,11 +559,11 @@ function buildTextOverlays(
         `:bordercolor=${style?.ac}:borderw=2`,
     );
     // Expanding accent line
-    const _acLineY = Math?.floor(height * 0.44);
+    const _acLineY = Math?.floor(height * 0?.44);
     overlays?.push(
-      `drawbox=x=(iw-iw*min(1\\,max(0\\,(t-0.3)*2.5))*0.50)/2` +
-        `:y=${acLineY}:w=iw*min(1\\,max(0\\,(t-0.3)*2.5))*0.50:h=4` +
-        `:color=${style?.ac}:t=fill:enable='gte(t\\,0.3)'`,
+      `drawbox=x=(iw-iw*min(1\\,max(0\\,(t-0?.3)*2?.5))*0?.50)/2` +
+        `:y=${acLineY}:w=iw*min(1\\,max(0\\,(t-0?.3)*2?.5))*0?.50:h=4` +
+        `:color=${style?.ac}:t=fill:enable='gte(t\\,0?.3)'`,
     );
   }
 
@@ -579,22 +579,22 @@ function buildTextOverlays(
 
   if (sceneType === "cta" || sceneType === "all") {
     const _ct = sanitize(cta);
-    const _boxW = Math?.floor(width * 0.82);
+    const _boxW = Math?.floor(width * 0?.82);
     const _boxX = Math?.floor((width - boxW) / 2);
-    const _boxY = Math?.floor(height * 0.68);
+    const _boxY = Math?.floor(height * 0?.68);
     const _boxH = cs + 44;
     overlays?.push(
-      `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style?.cta_bg}@0.94:t=fill:enable='gte(t\\,0.2)'`,
+      `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style?.cta_bg}@0?.94:t=fill:enable='gte(t\\,0?.2)'`,
     );
     overlays?.push(
-      `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style?.ac}:t=fill:enable='gte(t\\,0.2)'`,
+      `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style?.ac}:t=fill:enable='gte(t\\,0?.2)'`,
     );
     overlays?.push(
-      `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style?.ac}@0.55:t=fill:enable='gte(t\\,0.2)'`,
+      `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style?.ac}@0?.55:t=fill:enable='gte(t\\,0?.2)'`,
     );
     overlays?.push(
       `drawtext=fontfile=${font}:text='${ct}':fontcolor=white:fontsize=${cs}` +
-        `:x=(w-text_w)/2:y=h*0.70+20*(1-min(1\\,t*5)):alpha='min(1\\,t*5)'`,
+        `:x=(w-text_w)/2:y=h*0?.70+20*(1-min(1\\,t*5)):alpha='min(1\\,t*5)'`,
     );
   }
 
@@ -647,7 +647,7 @@ export async function imageToMusicVideo(
   const _intensity = opts?.kenBurnsIntensity || "moderate";
   const _colorGrade =
     opts?.colorGrade || (style?.bgType === "solid" ? "cinematic" : "none");
-  const _transitionDur = 0.4;
+  const _transitionDur = 0?.4;
 
   const _hook = opts?.hook || "New Music Drop";
   const _body = opts?.body || "Stream now on all platforms";
@@ -690,8 +690,8 @@ export async function imageToMusicVideo(
       sceneDurations = imagePaths?.map(() => perScene);
     }
 
-    // Ensure each scene is at least 1.5 seconds
-    const _minDur = 1.5;
+    // Ensure each scene is at least 1?.5 seconds
+    const _minDur = 1?.5;
     sceneDurations = sceneDurations?.map((d) => Math?.max(d, minDur));
 
     // ── Render each image — Tier 1: PyTorch diffusion → Tier 2: Ken Burns ───

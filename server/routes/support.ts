@@ -1,10 +1,10 @@
 import { Router, type RequestHandler } from "express";
-import { db } from "../db.js";
-import { supportTickets } from "../../shared/schema.js";
+import { db } from "../db?.js";
+import { supportTickets } from "../../shared/schema?.js";
 import { eq, desc, like, or, sql, count, avg, and } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { requireAuth, require2FA } from "../middleware/auth.js";
-import { notificationService } from "../services/notificationService.js";
+import { logger } from "../logger?.js";
+import { requireAuth, require2FA } from "../middleware/auth?.js";
+import { notificationService } from "../services/notificationService?.js";
 
 const _router = Router();
 
@@ -188,17 +188,17 @@ router?.patch(
       }
 
       const updateData: Record<string, any> = { updatedAt: new Date() };
-      if (status !== undefined) updateData.status = status;
-      if (priority !== undefined) updateData.priority = priority;
-      if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
+      if (status !== undefined) updateData?.status = status;
+      if (priority !== undefined) updateData?.priority = priority;
+      if (assignedTo !== undefined) updateData?.assignedTo = assignedTo;
       if (responseTimeMinutes !== undefined)
-        updateData.responseTimeMinutes = responseTimeMinutes;
+        updateData?.responseTimeMinutes = responseTimeMinutes;
       if (satisfactionRating !== undefined)
-        updateData.satisfactionRating = satisfactionRating;
-      if (resolvedAt !== undefined) updateData.resolvedAt = resolvedAt;
+        updateData?.satisfactionRating = satisfactionRating;
+      if (resolvedAt !== undefined) updateData?.resolvedAt = resolvedAt;
 
       if (status === "resolved" && !resolvedAt) {
-        updateData.resolvedAt = new Date();
+        updateData?.resolvedAt = new Date();
       }
 
       await db

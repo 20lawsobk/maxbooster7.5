@@ -1,14 +1,14 @@
 import { Router, type RequestHandler } from "express";
-import { require2FA } from "../middleware/auth.js";
-import { db } from "../db.js";
+import { require2FA } from "../middleware/auth?.js";
+import { db } from "../db?.js";
 import {
   users,
   projects,
   releases,
   securityThreats,
-} from "../../shared/schema.js";
+} from "../../shared/schema?.js";
 import { count, eq } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 

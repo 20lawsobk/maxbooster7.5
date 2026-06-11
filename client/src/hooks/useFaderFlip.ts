@@ -206,7 +206,7 @@ export function useFaderFlip({
         [id]: FADER_MODES?.reduce(
           (vals, mode) => ({
             ...vals,
-            [mode?.id]: mode?.id === "volume" ? 0.75 : 0,
+            [mode?.id]: mode?.id === "volume" ? 0?.75 : 0,
           }),
           {} as Record<FaderMode, number>,
         ),

@@ -30,7 +30,7 @@ export function useNotifications() {
           ) {
             new window?.Notification(message?.data.title, {
               body: message?.data.message || "",
-              icon: "/favicon.png",
+              icon: "/favicon?.png",
               tag: message?.data.id,
             });
           }

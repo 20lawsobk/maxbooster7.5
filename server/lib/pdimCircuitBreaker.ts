@@ -21,7 +21,7 @@
  *   tight 5→10→20s cycling when PDIM is unstable.
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 type CbState = "CLOSED" | "OPEN" | "HALF_OPEN";
 

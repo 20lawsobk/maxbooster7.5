@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth.js";
-import { autopilotLearningService } from "../services/autopilotLearningService.js";
-import { hyperLearningEngine } from "../services/hyperLearningEngine.js";
-import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { autopilotLearningService } from "../services/autopilotLearningService?.js";
+import { hyperLearningEngine } from "../services/hyperLearningEngine?.js";
+import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory?.js";
 
 async function getPdimArtistLearningData(artistId: string) {
   try {

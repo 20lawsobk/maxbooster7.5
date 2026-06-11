@@ -1,8 +1,8 @@
 import { randomBytes } from "crypto";
-import { AIAdvertisingEngine } from "../ai-advertising.js";
-import { AutonomousAutopilot } from "../autonomous-autopilot.js";
-import { storage } from "../storage.js";
-import { logger } from "../logger.js";
+import { AIAdvertisingEngine } from "../ai-advertising?.js";
+import { AutonomousAutopilot } from "../autonomous-autopilot?.js";
+import { storage } from "../storage?.js";
+import { logger } from "../logger?.js";
 import { randomBytes } from "crypto";
 
 /**
@@ -279,8 +279,8 @@ export class SocialAmplificationService {
   private readonly PERFORMANCE_CACHE_TTL = 600;
 
   constructor() {
-    this.aiEngine = new AIAdvertisingEngine();
-    this.autopilot = AutonomousAutopilot?.createForSocialAndAds(
+    this?.aiEngine = new AIAdvertisingEngine();
+    this?.autopilot = AutonomousAutopilot?.createForSocialAndAds(
       "social_amplification",
     ) as unknown as AutonomousAutopilotInterface;
   }
@@ -365,7 +365,7 @@ export class SocialAmplificationService {
 
     const content: Record<string, OrganicContent> = {};
 
-    content.instagram = {
+    content?.instagram = {
       caption: await this?.generateOrganicCaption(musicData, "instagram"),
       hashtags: this?.generateViralHashtags(musicData, "instagram"),
       contentType: "organic_post",
@@ -376,7 +376,7 @@ export class SocialAmplificationService {
       },
     };
 
-    content.tiktok = {
+    content?.tiktok = {
       caption: await this?.generateOrganicCaption(musicData, "tiktok"),
       hashtags: this?.generateViralHashtags(musicData, "tiktok"),
       contentType: "short_form_video",
@@ -387,7 +387,7 @@ export class SocialAmplificationService {
       },
     };
 
-    content.twitter = {
+    content?.twitter = {
       caption: await this?.generateOrganicCaption(musicData, "twitter"),
       hashtags: this?.generateViralHashtags(musicData, "twitter"),
       contentType: "thread",
@@ -398,7 +398,7 @@ export class SocialAmplificationService {
       },
     };
 
-    content.facebook = {
+    content?.facebook = {
       caption: await this?.generateOrganicCaption(musicData, "facebook"),
       hashtags: this?.generateViralHashtags(musicData, "facebook"),
       contentType: "community_post",
@@ -409,7 +409,7 @@ export class SocialAmplificationService {
       },
     };
 
-    content.youtube = {
+    content?.youtube = {
       caption: await this?.generateOrganicCaption(musicData, "youtube"),
       hashtags: this?.generateViralHashtags(musicData, "youtube"),
       contentType: "community_post",
@@ -420,7 +420,7 @@ export class SocialAmplificationService {
       },
     };
 
-    content.linkedin = {
+    content?.linkedin = {
       caption: await this?.generateOrganicCaption(musicData, "linkedin"),
       hashtags: this?.generateViralHashtags(musicData, "linkedin"),
       contentType: "thought_leadership",
@@ -585,28 +585,28 @@ export class SocialAmplificationService {
       string,
       { baseReach: number; engagementRate: number; shareRate: number }
     > = {
-      instagram: { baseReach: 15000, engagementRate: 0.042, shareRate: 0.008 },
-      tiktok: { baseReach: 35000, engagementRate: 0.059, shareRate: 0.015 },
-      twitter: { baseReach: 12000, engagementRate: 0.035, shareRate: 0.012 },
-      facebook: { baseReach: 18000, engagementRate: 0.031, shareRate: 0.006 },
-      youtube: { baseReach: 25000, engagementRate: 0.038, shareRate: 0.009 },
-      linkedin: { baseReach: 8000, engagementRate: 0.027, shareRate: 0.004 },
-      threads: { baseReach: 10000, engagementRate: 0.033, shareRate: 0.007 },
+      instagram: { baseReach: 15000, engagementRate: 0?.042, shareRate: 0?.008 },
+      tiktok: { baseReach: 35000, engagementRate: 0?.059, shareRate: 0?.015 },
+      twitter: { baseReach: 12000, engagementRate: 0?.035, shareRate: 0?.012 },
+      facebook: { baseReach: 18000, engagementRate: 0?.031, shareRate: 0?.006 },
+      youtube: { baseReach: 25000, engagementRate: 0?.038, shareRate: 0?.009 },
+      linkedin: { baseReach: 8000, engagementRate: 0?.027, shareRate: 0?.004 },
+      threads: { baseReach: 10000, engagementRate: 0?.033, shareRate: 0?.007 },
     };
 
     const _baseline =
       platformBaselines[platform?.toLowerCase()] || platformBaselines?.instagram;
 
-    const _varianceMultiplier = 0.8 + Math?.random() * 0.4;
+    const _varianceMultiplier = 0?.8 + Math?.random() * 0?.4;
 
     const _reach = Math?.round(baseline?.baseReach * varianceMultiplier);
     const _engagementRate = baseline?.engagementRate * varianceMultiplier;
     const _engagements = Math?.round(reach * engagementRate);
     const _shares = Math?.round(reach * baseline?.shareRate * varianceMultiplier);
-    const _clickRate = 0.015 + Math?.random() * 0.01;
+    const _clickRate = 0?.015 + Math?.random() * 0?.01;
     const _clicks = Math?.round(reach * clickRate);
 
-    const _impressionMultiplier = 1.5 + Math?.random() * 1.0;
+    const _impressionMultiplier = 1?.5 + Math?.random() * 1?.0;
     const _impressions = Math?.round(reach * impressionMultiplier);
 
     return {
@@ -623,11 +623,11 @@ export class SocialAmplificationService {
     baseMetrics: PerformanceMetrics,
   ): PerformanceMetrics {
     const _growthPhases = [
-      { hours: 0, multiplier: 0.3 },
-      { hours: 6, multiplier: 0.6 },
-      { hours: 12, multiplier: 0.85 },
-      { hours: 24, multiplier: 1.0 },
-      { hours: 48, multiplier: 1.15 },
+      { hours: 0, multiplier: 0?.3 },
+      { hours: 6, multiplier: 0?.6 },
+      { hours: 12, multiplier: 0?.85 },
+      { hours: 24, multiplier: 1?.0 },
+      { hours: 48, multiplier: 1?.15 },
     ];
 
     const _currentPhase =
@@ -653,7 +653,7 @@ export class SocialAmplificationService {
   }
 
   private calculateOrganicBoost(organicEngagementRate: number): number {
-    const _paidAdEngagementRate = 0.0009;
+    const _paidAdEngagementRate = 0?.0009;
     const _boost = Math?.round(
       ((organicEngagementRate - paidAdEngagementRate) / paidAdEngagementRate) *
         100,
@@ -663,16 +663,16 @@ export class SocialAmplificationService {
 
   private calculateCostSavings(reach: number, platform: string): number {
     const platformCPM: Record<string, number> = {
-      instagram: 7.91,
-      tiktok: 9.99,
-      twitter: 6.46,
-      facebook: 7.19,
-      youtube: 10.5,
-      linkedin: 6.75,
-      threads: 7.0,
+      instagram: 7?.91,
+      tiktok: 9?.99,
+      twitter: 6?.46,
+      facebook: 7?.19,
+      youtube: 10?.5,
+      linkedin: 6?.75,
+      threads: 7?.0,
     };
 
-    const _cpm = platformCPM[platform?.toLowerCase()] || 7.19;
+    const _cpm = platformCPM[platform?.toLowerCase()] || 7?.19;
     const _costSavings = (reach / 1000) * cpm;
 
     return costSavings;
@@ -683,16 +683,16 @@ export class SocialAmplificationService {
     _targetAudience: Record<string, unknown>,
   ): Promise<{ boostPercentage: number; costSavings: number }> {
     const _paidAdBenchmarks = {
-      avgCPM: 7.19,
-      avgCPC: 1.72,
-      avgEngagementRate: 0.09,
+      avgCPM: 7?.19,
+      avgCPC: 1?.72,
+      avgEngagementRate: 0?.09,
       avgReach: 10000,
     };
 
     const _organicBenchmarks = {
-      avgEngagementRate: 3.5,
+      avgEngagementRate: 3?.5,
       avgReach: 25000,
-      avgViralityMultiplier: 2.5,
+      avgViralityMultiplier: 2?.5,
     };
 
     const _platformCount = organicPosts?.length;
@@ -761,20 +761,20 @@ export class SocialAmplificationService {
     const _organicAvgEngagement =
       organicTotalReach > 0
         ? organicTotalEngagement / organicTotalReach
-        : 0.035;
+        : 0?.035;
 
     const _totalCostSavings = organicPosts?.reduce(
       (sum, p) => sum + p?.costSavings,
       0,
     );
 
-    const _paidCPM = 7.19;
+    const _paidCPM = 7?.19;
     const _paidCost =
-      organicTotalReach > 0 ? (organicTotalReach / 1000) * paidCPM : 359.5;
+      organicTotalReach > 0 ? (organicTotalReach / 1000) * paidCPM : 359?.5;
 
-    const _paidEstimatedEngagement = organicTotalReach * 0.0009;
+    const _paidEstimatedEngagement = organicTotalReach * 0?.0009;
 
-    const _paidEngagementRate = 0.0009;
+    const _paidEngagementRate = 0?.0009;
     const _performanceBoost =
       organicAvgEngagement > 0
         ? Math?.round(
@@ -788,7 +788,7 @@ export class SocialAmplificationService {
         totalReach: organicTotalReach || 50000,
         totalEngagement: organicTotalEngagement || 1750,
         totalShares: organicTotalShares || 125,
-        avgEngagementRate: organicAvgEngagement || 0.035,
+        avgEngagementRate: organicAvgEngagement || 0?.035,
         totalCost: 0,
       },
       paidAdEquivalent: {
@@ -798,7 +798,7 @@ export class SocialAmplificationService {
         avgEngagementRate: paidEngagementRate,
       },
       performanceBoost: Math?.max(performanceBoost, 250),
-      costSavings: totalCostSavings || paidCost || 359.5,
+      costSavings: totalCostSavings || paidCost || 359?.5,
       roi: "INFINITE (no ad spend)",
     };
   }
@@ -910,11 +910,11 @@ export class SocialAmplificationService {
         this?.detectFakeFollowers(platformMetrics);
 
       const _influencerScore = Math?.round(
-        followerScore * 0.2 +
-          engagementScore * 0.3 +
-          contentQualityScore * 0.2 +
-          nicheAuthorityScore * 0.15 +
-          authenticityScore * 0.15,
+        followerScore * 0?.2 +
+          engagementScore * 0?.3 +
+          contentQualityScore * 0?.2 +
+          nicheAuthorityScore * 0?.15 +
+          authenticityScore * 0?.15,
       );
 
       const _collaborationSuggestions = this?.generateCollaborationSuggestions(
@@ -1130,9 +1130,9 @@ export class SocialAmplificationService {
           contentQuality,
           networkStructure,
         ),
-        reach: contentQuality?.score * 0.7 + networkStructure * 0.3,
+        reach: contentQuality?.score * 0?.7 + networkStructure * 0?.3,
         timing: timingScore,
-        depth: networkStructure * 0.8 + platformScore * 0.2,
+        depth: networkStructure * 0?.8 + platformScore * 0?.2,
       };
 
       const _visualizationData =
@@ -1327,7 +1327,7 @@ export class SocialAmplificationService {
       const _templates = this?.generateOutreachTemplates(goal, userProfile);
 
       const _successMetrics = {
-        averageResponseRate: 0.28,
+        averageResponseRate: 0?.28,
         bestTimeToReach: this?.calculateBestOutreachTime(goal),
         recommendedFollowUpDays: goal?.includes("influencer") ? 7 : 3,
       };
@@ -1381,7 +1381,7 @@ export class SocialAmplificationService {
         inferenceType: "prediction",
         inputData,
         outputData,
-        confidenceScore: outputData?.confidence || 0.85,
+        confidenceScore: outputData?.confidence || 0?.85,
         executionTimeMs: 150,
         success: true,
       });
@@ -1397,9 +1397,9 @@ export class SocialAmplificationService {
     const _baseFollowers = 5000 + Math?.random() * 45000;
     return {
       followerCount: Math?.round(baseFollowers),
-      totalReach: Math?.round(baseFollowers * (1.2 + Math?.random() * 0.8)),
+      totalReach: Math?.round(baseFollowers * (1?.2 + Math?.random() * 0?.8)),
       totalEngagement: Math?.round(
-        baseFollowers * (0.03 + Math?.random() * 0.07),
+        baseFollowers * (0?.03 + Math?.random() * 0?.07),
       ),
       posts: Math?.round(50 + Math?.random() * 200),
       engagementByPost: Array?.from({ length: 30 }, () => Math?.random() * 1000),
@@ -1453,12 +1453,12 @@ export class SocialAmplificationService {
     }
 
     const _engagementRate = metrics?.totalEngagement / metrics?.totalReach;
-    if (metrics?.followerCount > 100000 && engagementRate < 0.01) {
+    if (metrics?.followerCount > 100000 && engagementRate < 0?.01) {
       anomalyPatterns?.push("Low engagement for follower count");
       suspicionScore += 30;
     }
 
-    const _fakeFollowerPercentage = Math?.min(suspicionScore / 100, 0.3);
+    const _fakeFollowerPercentage = Math?.min(suspicionScore / 100, 0?.3);
     const _authenticityScore = Math?.max((1 - fakeFollowerPercentage) * 100, 50);
 
     return {
@@ -1536,10 +1536,10 @@ export class SocialAmplificationService {
         Math?.max(tracking?.totalShares || 1, 1)
       : 0;
 
-    if (growthRate > 0.5) return "viral";
-    if (growthRate > 0.2) return "growth";
+    if (growthRate > 0?.5) return "viral";
+    if (growthRate > 0?.2) return "growth";
     if (growthRate > 0) return "initial";
-    if (growthRate > -0.1) return "plateau";
+    if (growthRate > -0?.1) return "plateau";
     return "decline";
   }
 
@@ -1556,8 +1556,8 @@ export class SocialAmplificationService {
   ): string {
     if (!tracking) return "rising";
     const _prevCoefficient = tracking?.viralCoefficient || 0;
-    if (currentCoefficient > prevCoefficient * 1.2) return "rising";
-    if (currentCoefficient < prevCoefficient * 0.8) return "declining";
+    if (currentCoefficient > prevCoefficient * 1?.2) return "rising";
+    if (currentCoefficient < prevCoefficient * 0?.8) return "declining";
     return "plateauing";
   }
 
@@ -1580,17 +1580,17 @@ export class SocialAmplificationService {
   }
 
   private async analyzeNetworkStructure(_userId: string): Promise<number> {
-    return 0.6 + Math?.random() * 0.35;
+    return 0?.6 + Math?.random() * 0?.35;
   }
 
   private analyzePostTiming(scheduledTime: Date): number {
     const _hour = scheduledTime?.getHours();
-    if (hour >= 18 && hour <= 21) return 0.9 + Math?.random() * 0.1;
+    if (hour >= 18 && hour <= 21) return 0?.9 + Math?.random() * 0?.1;
     if ((hour >= 12 && hour <= 14) || (hour >= 17 && hour <= 18))
-      return 0.7 + Math?.random() * 0.15;
+      return 0?.7 + Math?.random() * 0?.15;
     if ((hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 17))
-      return 0.5 + Math?.random() * 0.15;
-    return 0.3 + Math?.random() * 0.15;
+      return 0?.5 + Math?.random() * 0?.15;
+    return 0?.3 + Math?.random() * 0?.15;
   }
 
   private calculatePlatformAffinityScore(
@@ -1598,13 +1598,13 @@ export class SocialAmplificationService {
     contentType: string,
   ): number {
     const affinityMap: Record<string, Record<string, number>> = {
-      instagram: { image: 0.9, video: 0.85, carousel: 0.8, story: 0.75 },
-      tiktok: { video: 0.95, image: 0.5 },
-      twitter: { text: 0.8, image: 0.7, video: 0.65 },
-      facebook: { video: 0.8, image: 0.75, text: 0.6 },
+      instagram: { image: 0?.9, video: 0?.85, carousel: 0?.8, story: 0?.75 },
+      tiktok: { video: 0?.95, image: 0?.5 },
+      twitter: { text: 0?.8, image: 0?.7, video: 0?.65 },
+      facebook: { video: 0?.8, image: 0?.75, text: 0?.6 },
     };
 
-    return affinityMap[platform]?.[contentType] || 0.6;
+    return affinityMap[platform]?.[contentType] || 0?.6;
   }
 
   private calculateBasePrediction(
@@ -1622,7 +1622,7 @@ export class SocialAmplificationService {
       totalReach,
       cascadeDepth: Math?.floor(2 + multiplier * 4),
       timeToPeak: Math?.round(6 + (1 - multiplier) * 18),
-      plateauPoint: Math?.round(totalReach * 0.85),
+      plateauPoint: Math?.round(totalReach * 0?.85),
     };
   }
 
@@ -1631,8 +1631,8 @@ export class SocialAmplificationService {
     networkStructure: number,
   ): number {
     return Math?.min(
-      (contentQuality?.score / 100) * 0.6 + networkStructure * 0.4,
-      0.95,
+      (contentQuality?.score / 100) * 0?.6 + networkStructure * 0?.4,
+      0?.95,
     );
   }
 
@@ -1648,17 +1648,17 @@ export class SocialAmplificationService {
       let reach: number;
 
       if (progress < 1) {
-        reach = prediction?.totalReach * progress ** 1.5;
+        reach = prediction?.totalReach * progress ** 1?.5;
       } else {
         const _declineProgress = progress - 1;
         reach =
-          prediction?.totalReach * Math?.max(0.5, 1 - declineProgress * 0.1);
+          prediction?.totalReach * Math?.max(0?.5, 1 - declineProgress * 0?.1);
       }
 
       dataPoints?.push({
         hour: h,
         reach: Math?.round(reach),
-        shares: Math?.round(reach * 0.02),
+        shares: Math?.round(reach * 0?.02),
       });
     }
 
@@ -1698,22 +1698,22 @@ export class SocialAmplificationService {
   }
 
   private calculateClusteringCoefficient(_networkData: NetworkData): number {
-    return 0.3 + Math?.random() * 0.4;
+    return 0?.3 + Math?.random() * 0?.4;
   }
 
   private calculateBetweennessCentrality(
     _userId: string,
     _networkData: NetworkData,
   ): number {
-    return 0.2 + Math?.random() * 0.6;
+    return 0?.2 + Math?.random() * 0?.6;
   }
 
   private calculateReachMultiplier(_networkData: NetworkData): number {
-    return 1.5 + Math?.random() * 2.5;
+    return 1?.5 + Math?.random() * 2?.5;
   }
 
   private calculateEigenvectorCentrality(_networkData: NetworkData): number {
-    return 0.4 + Math?.random() * 0.5;
+    return 0?.4 + Math?.random() * 0?.5;
   }
 
   private generateConnectionStrategies(
@@ -1753,7 +1753,7 @@ export class SocialAmplificationService {
   ): Array<{ userId: string; bridgeScore: number }> {
     return networkData?.nodes
       .filter(
-        (node: NetworkNode) => node?.connections > networkData?.connections * 0.1,
+        (node: NetworkNode) => node?.connections > networkData?.connections * 0?.1,
       )
       .slice(0, 10)
       .map((node: NetworkNode) => ({
@@ -1770,7 +1770,7 @@ export class SocialAmplificationService {
   }
 
   private async calculateGrowthRate(_userId: string): Promise<number> {
-    return 0.05 + Math?.random() * 0.15;
+    return 0?.05 + Math?.random() * 0?.15;
   }
 
   private projectNetworkValue(
@@ -1793,7 +1793,7 @@ export class SocialAmplificationService {
       username: user?.username || "user",
       niche: "music",
       followerCount: 5000 + Math?.random() * 45000,
-      engagementRate: 0.03 + Math?.random() * 0.05,
+      engagementRate: 0?.03 + Math?.random() * 0?.05,
     };
   }
 
@@ -1807,21 +1807,21 @@ export class SocialAmplificationService {
 
     return Array?.from({ length: numProspects }, (_, i) => {
       const _audienceOverlap = Math?.random();
-      const _engagementCompatibility = 0.7 + Math?.random() * 0.3;
-      const _nicheAlignment = 0.6 + Math?.random() * 0.4;
+      const _engagementCompatibility = 0?.7 + Math?.random() * 0?.3;
+      const _nicheAlignment = 0?.6 + Math?.random() * 0?.4;
 
       const _matchScore = Math?.round(
-        (audienceOverlap * 0.4 +
-          engagementCompatibility * 0.3 +
-          nicheAlignment * 0.3) *
+        (audienceOverlap * 0?.4 +
+          engagementCompatibility * 0?.3 +
+          nicheAlignment * 0?.3) *
           100,
       );
 
       const reasons: string[] = [];
-      if (audienceOverlap > 0.6) reasons?.push("High audience overlap");
-      if (engagementCompatibility > 0.8)
+      if (audienceOverlap > 0?.6) reasons?.push("High audience overlap");
+      if (engagementCompatibility > 0?.8)
         reasons?.push("Compatible engagement rates");
-      if (nicheAlignment > 0.75) reasons?.push("Strong niche alignment");
+      if (nicheAlignment > 0?.75) reasons?.push("Strong niche alignment");
       if (matchScore > 75) reasons?.push("Excellent collaboration potential");
 
       return {
@@ -1845,7 +1845,7 @@ export class SocialAmplificationService {
       templates?.push({
         template: `Hey {name}! I've been following your work and love what you're doing with {their_niche}. I'm ${userProfile?.username} and I think there's a great opportunity for us to collaborate on something that would benefit both our audiences. Would you be open to a quick chat about potential ideas?`,
         personalization: ["name", "their_niche", "specific_content_reference"],
-        expectedResponseRate: 0.32,
+        expectedResponseRate: 0?.32,
       });
     }
 
@@ -1853,7 +1853,7 @@ export class SocialAmplificationService {
       templates?.push({
         template: `Hi {name}! Your content on {topic} really resonates with my audience. I think we could create something amazing together through cross-promotion. I have about ${Math?.round(userProfile?.followerCount / 1000)}K engaged followers who would love your content. Interested in exploring this?`,
         personalization: ["name", "topic", "specific_post_reference"],
-        expectedResponseRate: 0.28,
+        expectedResponseRate: 0?.28,
       });
     }
 
@@ -1861,7 +1861,7 @@ export class SocialAmplificationService {
       templates?.push({
         template: `Hello {name}! I represent ${userProfile?.username} and we're huge fans of your authentic approach to {their_niche}. We'd love to discuss a potential partnership that aligns with your values and audience. Would you be available for a brief call this week?`,
         personalization: ["name", "their_niche", "brand_alignment_point"],
-        expectedResponseRate: 0.25,
+        expectedResponseRate: 0?.25,
       });
     }
 
@@ -1869,7 +1869,7 @@ export class SocialAmplificationService {
       templates?.push({
         template: `Hi {name}! I'm ${userProfile?.username} and I've been impressed by your work in {their_niche}. I'd love to connect and explore ways we might be able to work together. Let me know if you're interested!`,
         personalization: ["name", "their_niche"],
-        expectedResponseRate: 0.22,
+        expectedResponseRate: 0?.22,
       });
     }
 

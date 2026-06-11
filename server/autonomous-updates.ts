@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 import { storage } from "./storage";
 import { customAI } from "./custom-ai-engine";
-import { logger } from "./logger.js";
-import { getPdimClient, isPdimConfigured } from "./lib/pdimClient.js";
+import { logger } from "./logger?.js";
+import { getPdimClient, isPdimConfigured } from "./lib/pdimClient?.js";
 
 const _AUTONOMOUS_STATUS_KEY = "autonomous:orchestrator:status";
 
@@ -122,7 +122,7 @@ interface AutopilotEmitter {
 
 export class AutonomousUpdatesOrchestrator extends EventEmitter {
   private config: AutoUpdatesConfig;
-  private timer: NodeJS.Timeout | null = null;
+  private timer: NodeJS?.Timeout | null = null;
   private running: boolean = false;
   private status: AutoUpdatesStatus = {
     isRunning: false,
@@ -134,7 +134,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
   constructor() {
     super();
-    this.config = this?.defaultConfig();
+    this?.config = this?.defaultConfig();
     this?.initializeBaselines();
   }
 
@@ -211,31 +211,31 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   private async initializeBaselines(): Promise<void> {
-    this?.performanceBaseline.set("avg_engagement_rate", 0.05);
-    this?.performanceBaseline.set("avg_content_quality", 0.7);
+    this?.performanceBaseline.set("avg_engagement_rate", 0?.05);
+    this?.performanceBaseline.set("avg_content_quality", 0?.7);
     this?.performanceBaseline.set("avg_db_query_time", 100);
     this?.performanceBaseline.set("avg_ai_response_time", 500);
-    this?.performanceBaseline.set("mixing_quality_score", 0.82);
-    this?.performanceBaseline.set("mastering_loudness_accuracy", 0.95);
-    this?.performanceBaseline.set("bpm_detection_accuracy", 0.94);
-    this?.performanceBaseline.set("key_detection_accuracy", 0.89);
-    this?.performanceBaseline.set("stem_separation_quality", 0.78);
-    this?.performanceBaseline.set("dsp_delivery_success_rate", 0.97);
-    this?.performanceBaseline.set("metadata_compliance_rate", 0.93);
-    this?.performanceBaseline.set("royalty_calculation_accuracy", 0.995);
-    this?.performanceBaseline.set("marketplace_conversion_rate", 0.032);
-    this?.performanceBaseline.set("search_relevance_score", 0.85);
-    this?.performanceBaseline.set("fraud_detection_precision", 0.92);
-    this?.performanceBaseline.set("prediction_model_accuracy", 0.84);
-    this?.performanceBaseline.set("anomaly_detection_precision", 0.88);
-    this?.performanceBaseline.set("forecast_accuracy", 0.81);
-    this?.performanceBaseline.set("security_threat_detection_rate", 0.96);
-    this?.performanceBaseline.set("audit_log_coverage", 0.98);
-    this?.performanceBaseline.set("compliance_score", 0.94);
-    this?.performanceBaseline.set("cache_hit_rate", 0.85);
+    this?.performanceBaseline.set("mixing_quality_score", 0?.82);
+    this?.performanceBaseline.set("mastering_loudness_accuracy", 0?.95);
+    this?.performanceBaseline.set("bpm_detection_accuracy", 0?.94);
+    this?.performanceBaseline.set("key_detection_accuracy", 0?.89);
+    this?.performanceBaseline.set("stem_separation_quality", 0?.78);
+    this?.performanceBaseline.set("dsp_delivery_success_rate", 0?.97);
+    this?.performanceBaseline.set("metadata_compliance_rate", 0?.93);
+    this?.performanceBaseline.set("royalty_calculation_accuracy", 0?.995);
+    this?.performanceBaseline.set("marketplace_conversion_rate", 0?.032);
+    this?.performanceBaseline.set("search_relevance_score", 0?.85);
+    this?.performanceBaseline.set("fraud_detection_precision", 0?.92);
+    this?.performanceBaseline.set("prediction_model_accuracy", 0?.84);
+    this?.performanceBaseline.set("anomaly_detection_precision", 0?.88);
+    this?.performanceBaseline.set("forecast_accuracy", 0?.81);
+    this?.performanceBaseline.set("security_threat_detection_rate", 0?.96);
+    this?.performanceBaseline.set("audit_log_coverage", 0?.98);
+    this?.performanceBaseline.set("compliance_score", 0?.94);
+    this?.performanceBaseline.set("cache_hit_rate", 0?.85);
     this?.performanceBaseline.set("api_response_time_p95", 150);
-    this?.performanceBaseline.set("cpu_utilization_avg", 0.45);
-    this?.performanceBaseline.set("memory_utilization_avg", 0.62);
+    this?.performanceBaseline.set("cpu_utilization_avg", 0?.45);
+    this?.performanceBaseline.set("memory_utilization_avg", 0?.62);
   }
 
   private hashObject(obj: unknown): number {
@@ -279,26 +279,26 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
   private calculateAccuracyFromParams(params: unknown): number {
     const _hash = this?.hashObject(params);
-    const _base = 0.75 + (hash % 20) / 100;
-    return Math?.min(base, 0.95);
+    const _base = 0?.75 + (hash % 20) / 100;
+    return Math?.min(base, 0?.95);
   }
 
   private calculatePrecisionFromParams(params: unknown): number {
     const _hash = this?.hashObject(params);
-    const _base = 0.72 + (hash % 23) / 100;
-    return Math?.min(base, 0.94);
+    const _base = 0?.72 + (hash % 23) / 100;
+    return Math?.min(base, 0?.94);
   }
 
   private calculateRecallFromParams(params: unknown): number {
     const _hash = this?.hashObject(params);
-    const _base = 0.7 + (hash % 25) / 100;
-    return Math?.min(base, 0.95);
+    const _base = 0?.7 + (hash % 25) / 100;
+    return Math?.min(base, 0?.95);
   }
 
   private calculateF1FromParams(params: unknown): number {
     const _hash = this?.hashObject(params);
-    const _base = 0.73 + (hash % 22) / 100;
-    return Math?.min(base, 0.95);
+    const _base = 0?.73 + (hash % 22) / 100;
+    return Math?.min(base, 0?.95);
   }
 
   private estimateLatencyFromParams(params: unknown): number {
@@ -318,7 +318,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   async configure(
     updates: Partial<AutoUpdatesConfig>,
   ): Promise<AutoUpdatesConfig> {
-    this.config = { ...this?.config, ...updates };
+    this?.config = { ...this?.config, ...updates };
     this?.emit("configUpdated", this?.config);
     if (this?.config.enabled && !this?.running) await this?.start();
     if (!this?.config.enabled && this?.running) await this?.stop();
@@ -330,7 +330,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     // Restore persisted run history from PDIM before first run so the counter
     // and lastRunAt continue from where they left off across server restarts.
     await this?._restoreStatus();
-    this.running = true;
+    this?.running = true;
     this?.status.isRunning = true;
     this?.scheduleNextRun();
     this?.emit("started");
@@ -340,11 +340,11 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
   async stop(): Promise<void> {
     if (!this?.running) return;
-    this.running = false;
+    this?.running = false;
     this?.status.isRunning = false;
     if (this?.timer) {
       clearTimeout(this?.timer);
-      this.timer = null;
+      this?.timer = null;
     }
     this?.emit("stopped");
     if (!this?.config.silentMode) {
@@ -369,7 +369,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const _next = new Date(now + delay);
     this?.status.nextRunAt = next?.toISOString();
     if (this?.timer) clearTimeout(this?.timer);
-    this.timer = setTimeout(() => {
+    this?.timer = setTimeout(() => {
       this?.runOnce()
         .catch(() => void 0)
         .finally(() => {
@@ -535,7 +535,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       metadata: {
         genre: randomGenre,
         trendType,
-        confidence: this?.deterministicValue(timestamp, 0.7, 1.0),
+        confidence: this?.deterministicValue(timestamp, 0?.7, 1?.0),
         dataPoints: Math?.floor(
           this?.deterministicValue(timestamp + 2, 1000, 6000),
         ),
@@ -571,8 +571,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
         changeType,
         engagementShift: this?.deterministicValue(
           timestamp + 2,
-          -0.25,
-          0.25,
+          -0?.25,
+          0?.25,
         ).toFixed(3),
         affectedContentTypes:
           contentTypes[
@@ -585,19 +585,19 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
   private async detectAlgorithmChanges(): Promise<TrendEvent> {
     const _avgEngagement =
-      this?.performanceBaseline.get("avg_engagement_rate") || 0.05;
+      this?.performanceBaseline.get("avg_engagement_rate") || 0?.05;
 
     const _timestamp = Date?.now();
-    const _currentEngagement = this?.deterministicValue(timestamp, 0.04, 0.12);
+    const _currentEngagement = this?.deterministicValue(timestamp, 0?.04, 0?.12);
     const _changePercent = (
       ((currentEngagement - avgEngagement) / avgEngagement) *
       100
     ).toFixed(1);
 
     const _impact =
-      Math?.abs(currentEngagement - avgEngagement) > 0.02
+      Math?.abs(currentEngagement - avgEngagement) > 0?.02
         ? "high"
-        : Math?.abs(currentEngagement - avgEngagement) > 0.01
+        : Math?.abs(currentEngagement - avgEngagement) > 0?.01
           ? "medium"
           : "low";
 
@@ -613,7 +613,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
         sampleSize: Math?.floor(
           this?.deterministicValue(timestamp + 1, 500, 2000),
         ),
-        confidence: this?.deterministicValue(timestamp + 2, 0.65, 0.9),
+        confidence: this?.deterministicValue(timestamp + 2, 0?.65, 0?.9),
       },
     };
   }
@@ -638,7 +638,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       impact: "medium",
       metadata: {
         insightType: insight,
-        successRate: this?.deterministicValue(timestamp + 1, 0.5, 1.0).toFixed(
+        successRate: this?.deterministicValue(timestamp + 1, 0?.5, 1?.0).toFixed(
           2,
         ),
         sampleSize: Math?.floor(this?.deterministicValue(timestamp + 2, 50, 200)),
@@ -675,19 +675,19 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       await storage?.getActiveModelVersion("content_generation");
 
     const _baseParams = currentVersion?.parameters || {
-      temperature: 0.7,
+      temperature: 0?.7,
       maxTokens: 150,
-      topP: 0.9,
-      frequencyPenalty: 0.3,
-      presencePenalty: 0.2,
+      topP: 0?.9,
+      frequencyPenalty: 0?.3,
+      presencePenalty: 0?.2,
       templates: ["engaging", "professional", "casual"],
     };
 
     const _engagementBoost =
-      recentTrends?.filter((t) => t?.impact === "high").length * 0.05;
+      recentTrends?.filter((t) => t?.impact === "high").length * 0?.05;
     const _newParams = {
       ...baseParams,
-      temperature: Math?.min(0.95, baseParams?.temperature + engagementBoost),
+      temperature: Math?.min(0?.95, baseParams?.temperature + engagementBoost),
       adaptiveBoost: engagementBoost,
       trendContext: recentTrends?.slice(0, 5).map((t) => t?.eventType),
     };
@@ -699,8 +699,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       parameters: newParams,
       performanceMetrics: {
         expectedImprovement: performanceImprovement?.toFixed(2) + "%",
-        baselineEngagement: 0.05,
-        projectedEngagement: (0.05 * (1 + engagementBoost)).toFixed(4),
+        baselineEngagement: 0?.05,
+        projectedEngagement: (0?.05 * (1 + engagementBoost)).toFixed(4),
         trendsConsidered: recentTrends?.length,
       },
       isActive: false,
@@ -736,9 +736,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
     const _baseParams = currentVersion?.parameters || {
       bpmTolerance: 2,
-      keyConfidenceThreshold: 0.7,
+      keyConfidenceThreshold: 0?.7,
       genreClassificationDepth: 3,
-      moodDetectionSensitivity: 0.8,
+      moodDetectionSensitivity: 0?.8,
     };
 
     const _musicTrends = await storage?.getTrendEvents(
@@ -806,7 +806,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const _baseParams = currentVersion?.parameters || {
       optimalPostingTimes: [9, 12, 15, 18, 21],
       hashtagDensity: 5,
-      contentMixRatio: { video: 0.4, image: 0.4, text: 0.2 },
+      contentMixRatio: { video: 0?.4, image: 0?.4, text: 0?.2 },
       engagementHooks: ["question", "cta", "teaser"],
     };
 
@@ -983,7 +983,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const _seed = Date?.now();
     const _underutilizedFeatures = features?.filter((feature, idx) => {
       const _featureSeed = `${feature}_${seed}_${idx}`;
-      return this?.deterministicValue(featureSeed, 0, 1) > 0.6;
+      return this?.deterministicValue(featureSeed, 0, 1) > 0?.6;
     });
 
     if (underutilizedFeatures?.length > 0) {
@@ -1038,8 +1038,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   private updateEngagementBaseline(data: AutopilotEventData): void {
     if (data?.engagement) {
       const _current =
-        this?.performanceBaseline.get("avg_engagement_rate") || 0.05;
-      const _newAvg = current * 0.9 + data?.engagement * 0.1;
+        this?.performanceBaseline.get("avg_engagement_rate") || 0?.05;
+      const _newAvg = current * 0?.9 + data?.engagement * 0?.1;
       this?.performanceBaseline.set("avg_engagement_rate", newAvg);
     }
   }
@@ -1206,8 +1206,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       targetPercentage: 100,
       canaryUsers: userSegment,
       successCriteria: {
-        errorRateThreshold: 0.01,
-        latencyDegradationThreshold: 0.15,
+        errorRateThreshold: 0?.01,
+        latencyDegradationThreshold: 0?.15,
         minSampleSize: 100,
       },
       status: "active",
@@ -1271,7 +1271,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       errorRate: this?.deterministicValue(
         `${modelId}_${versionId}_canary`,
         0,
-        0.005,
+        0?.005,
       ),
       avgLatency: this?.deterministicValue(
         `${modelId}_${versionId}_lat`,
@@ -1285,25 +1285,25 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       ),
       userSatisfaction: this?.deterministicValue(
         `${modelId}_${versionId}_sat`,
-        0.92,
-        0.99,
+        0?.92,
+        0?.99,
       ),
     };
 
     const _controlMetrics = {
-      errorRate: this?.deterministicValue(`${modelId}_baseline_err`, 0, 0.008),
+      errorRate: this?.deterministicValue(`${modelId}_baseline_err`, 0, 0?.008),
       avgLatency: this?.deterministicValue(`${modelId}_baseline_lat`, 90, 125),
       throughput: this?.deterministicValue(`${modelId}_baseline_thr`, 420, 510),
       userSatisfaction: this?.deterministicValue(
         `${modelId}_baseline_sat`,
-        0.89,
-        0.97,
+        0?.89,
+        0?.97,
       ),
     };
 
     const _performanceImproved =
-      canaryMetrics?.errorRate < controlMetrics?.errorRate * 1.2 &&
-      canaryMetrics?.avgLatency < controlMetrics?.avgLatency * 1.15;
+      canaryMetrics?.errorRate < controlMetrics?.errorRate * 1?.2 &&
+      canaryMetrics?.avgLatency < controlMetrics?.avgLatency * 1?.15;
 
     if (performanceImproved) {
       this?.silentLog(
@@ -1353,16 +1353,16 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       triggerType,
       frequency,
       performanceThreshold: config?.performanceThreshold || {
-        accuracy: 0.85,
-        f1Score: 0.8,
+        accuracy: 0?.85,
+        f1Score: 0?.8,
       },
-      driftThreshold: config?.driftThreshold || 0.15,
+      driftThreshold: config?.driftThreshold || 0?.15,
       isActive: true,
       retrainingConfig: {
         batchSize: 32,
         epochs: 10,
-        learningRate: 0.001,
-        validationSplit: 0.2,
+        learningRate: 0?.001,
+        validationSplit: 0?.2,
       },
       nextRunAt: this?.calculateNextRun(frequency),
     });
@@ -1456,24 +1456,24 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     modelId: string,
   ): Promise<void> {
     ({
-      finalLoss: this?.deterministicValue(`${modelId}_loss`, 0.08, 0.12),
+      finalLoss: this?.deterministicValue(`${modelId}_loss`, 0?.08, 0?.12),
       finalAccuracy: this?.deterministicValue(
         `${modelId}_train_acc`,
-        0.88,
-        0.96,
+        0?.88,
+        0?.96,
       ),
       trainingTime: this?.deterministicValue(`${modelId}_time`, 3600, 5400),
     });
 
     const _validationMetrics = {
-      accuracy: this?.deterministicValue(`${modelId}_val_acc`, 0.86, 0.95),
-      precision: this?.deterministicValue(`${modelId}_prec`, 0.84, 0.94),
-      recall: this?.deterministicValue(`${modelId}_recall`, 0.82, 0.94),
-      f1Score: this?.deterministicValue(`${modelId}_f1`, 0.85, 0.95),
+      accuracy: this?.deterministicValue(`${modelId}_val_acc`, 0?.86, 0?.95),
+      precision: this?.deterministicValue(`${modelId}_prec`, 0?.84, 0?.94),
+      recall: this?.deterministicValue(`${modelId}_recall`, 0?.82, 0?.94),
+      f1Score: this?.deterministicValue(`${modelId}_f1`, 0?.85, 0?.95),
     };
 
     const _qualityChecksPassed =
-      validationMetrics?.accuracy > 0.85 && validationMetrics?.f1Score > 0.8;
+      validationMetrics?.accuracy > 0?.85 && validationMetrics?.f1Score > 0?.8;
     const _status = qualityChecksPassed ? "completed" : "failed";
 
     this?.silentLog(`${qualityChecksPassed ? "✅" : "❌"} Retraining ${status}`);
@@ -1523,7 +1523,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       current: number;
       degradation: number;
     }> = [];
-    const _threshold = 0.1;
+    const _threshold = 0?.1;
 
     for (const [metric, currentValue] of Object?.entries(currentMetrics)) {
       const _baselineKey = `${modelId}_${metric}`;
@@ -1573,13 +1573,13 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
     for (let i = 0; i < windowDays; i++) {
       const _date = new Date(now - i * dayMs);
-      const _baseValue = 0.85;
+      const _baseValue = 0?.85;
       const _noise = this?.deterministicValue(
         `${modelId}_${metricName}_${i}`,
-        -0.025,
-        0.025,
+        -0?.025,
+        0?.025,
       );
-      const _trend = -0.001 * i;
+      const _trend = -0?.001 * i;
 
       dataPoints?.push({
         date,
@@ -1616,8 +1616,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
     const _change = (avgLast - avgFirst) / avgFirst;
 
-    if (change > 0.05) return "improving";
-    if (change < -0.05) return "degrading";
+    if (change > 0?.05) return "improving";
+    if (change < -0?.05) return "degrading";
     return "stable";
   }
 
@@ -1702,6 +1702,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return deployment;
   }
 
+
   private async runPreDeploymentChecks(
     modelId: string,
     versionId: string,
@@ -1720,8 +1721,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const _checks = {
       versionExists: true,
       parametersValid: true,
-      metricsAboveThreshold: checkValue1 > 0.1,
-      noRegressions: checkValue2 > 0.15,
+      metricsAboveThreshold: checkValue1 > 0?.1,
+      noRegressions: checkValue2 > 0?.15,
       securityScanPassed: true,
     };
 
@@ -1756,9 +1757,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
     const _checks = {
       healthCheckPassed: true,
-      latencyWithinBounds: checkValue1 > 0.05,
-      errorRateAcceptable: checkValue2 > 0.1,
-      throughputMaintained: checkValue3 > 0.1,
+      latencyWithinBounds: checkValue1 > 0?.05,
+      errorRateAcceptable: checkValue2 > 0?.1,
+      throughputMaintained: checkValue3 > 0?.1,
     };
 
     const _passed = Object?.values(checks).every(Boolean);
@@ -1833,7 +1834,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       requiresRetraining: false,
       performanceChange: {
         latency: "+5-10ms",
-        accuracy: "-0.5-1.0%",
+        accuracy: "-0?.5-1?.0%",
         throughput: "minimal impact",
       },
       risks: [
@@ -1856,9 +1857,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       rollback?.targetVersionId,
     );
 
-    rollback.status = "completed";
-    rollback.rollbackCompletedAt = new Date();
-    rollback.verificationResults = {
+    rollback?.status = "completed";
+    rollback?.rollbackCompletedAt = new Date();
+    rollback?.verificationResults = {
       healthCheckPassed: true,
       performanceWithinExpected: true,
       noErrorSpikes: true,

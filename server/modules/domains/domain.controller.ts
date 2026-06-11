@@ -2,17 +2,17 @@ import crypto from "node:crypto";
 import dns from "node:dns/promises";
 import { Request, Response } from "express";
 import { eq, and } from "drizzle-orm";
-import { db } from "../../db.js";
+import { db } from "../../db?.js";
 import {
   storefrontDomains,
   storefronts,
   storefrontHosts,
 } from "@shared/schema";
-import { validateDnsLabel, validateDomain } from "./dnsValidators.js";
-import { logger } from "../../logger.js";
+import { validateDnsLabel, validateDomain } from "./dnsValidators?.js";
+import { logger } from "../../logger?.js";
 
-const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
-const _PLATFORM_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
+const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster?.com";
+const _PLATFORM_IP = process?.env.DNS_SERVER_IP || "34?.111.179?.208";
 
 const _SUBDOMAIN_MIN = 3;
 const _SUBDOMAIN_MAX = 30;
@@ -244,7 +244,7 @@ export async function reserveManaged(req: Request, res: Response) {
       });
 
     // The canonical public URL for the store is the platform subdomain.
-    // Requests to {label}.max-booster.com reach the Express server via the
+    // Requests to {label}.max-booster?.com reach the Express server via the
     // wildcard A/CNAME record and are routed by the Host-header middleware.
     const _publicShortUrl = `https://${label}.${BASE_DOMAIN}`;
 

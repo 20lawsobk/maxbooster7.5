@@ -87,7 +87,8 @@ export function StudioOneConsole({
   selectedTrackId,
   onTrackSelect,
 }: StudioOneConsoleProps) {
-  const { consolePanel, setPanelHeight } = useStudioLayoutStore();
+  const { consolePanel, setPanelHeight } =
+    useStudioLayoutStore();
   const [isResizing, setIsResizing] = useState(false);
   const [startY, setStartY] = useState(0);
   const [startHeight, setStartHeight] = useState(0);

@@ -397,7 +397,9 @@ export const _studioApi = {
       );
     },
 
-    async getSupportedFormats(projectId: number): Promise<{
+    async getSupportedFormats(
+      projectId: number,
+    ): Promise<{
       formats: string[];
       sampleRates: number[];
       bitDepths: number[];

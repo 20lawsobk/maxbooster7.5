@@ -3,17 +3,17 @@ import { type Server } from "http";
 import crypto from "crypto";
 import { execSync } from "child_process";
 import fs from "fs";
-import { isProductionEnv } from "./lib/envHelpers.js";
-import { storage } from "./storage.js";
-import { db } from "./db.js";
+import { isProductionEnv } from "./lib/envHelpers?.js";
+import { storage } from "./storage?.js";
+import { db } from "./db?.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements } from "../shared/schema.js";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements } from "../shared/schema?.js";
 import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { getCsrfToken } from "./middleware/csrf.js";
+import { getCsrfToken } from "./middleware/csrf?.js";
 import Stripe from "stripe";
-import { getStripePriceIds } from "./services/stripeSetup.js";
-import { getBaseUrl } from "./config/defaults.js";
+import { getStripePriceIds } from "./services/stripeSetup?.js";
+import { getBaseUrl } from "./config/defaults?.js";
 import {
   generateSecret as otpGenerateSecret,
   verifySync,
@@ -23,13 +23,13 @@ import {
   loginRateLimiter,
   registerRateLimiter,
   forgotPasswordRateLimiter,
-} from "./middleware/rateLimiter.js";
-import { criticalEndpointLimiter } from "./middleware/globalRateLimiter.js";
-import { requestIdMiddleware } from "./middleware/requestId.js";
+} from "./middleware/rateLimiter?.js";
+import { criticalEndpointLimiter } from "./middleware/globalRateLimiter?.js";
+import { requestIdMiddleware } from "./middleware/requestId?.js";
 import {
   cacheMiddleware,
   invalidateCacheOnMutation,
-} from "./middleware/apiCache.js";
+} from "./middleware/apiCache?.js";
 
 const _authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -39,13 +39,13 @@ const _authenticator = {
     verifySync({ token, secret, strategy: "totp", epochTolerance: 1 }),
 };
 import QRCode from "qrcode";
-import { emailService } from "./services/emailService.js";
-import { upload, createHardenedUpload } from "./middleware/uploadHandler.js";
-import { logger } from "./logger.js";
-import { achievementService } from "./services/achievementService.js";
-import { notificationService } from "./services/notificationService.js";
-import { jwtAuthService } from "./services/jwtAuthService.js";
-import { artistProfileService } from "./services/artistProfileService.js";
+import { emailService } from "./services/emailService?.js";
+import { upload, createHardenedUpload } from "./middleware/uploadHandler?.js";
+import { logger } from "./logger?.js";
+import { achievementService } from "./services/achievementService?.js";
+import { notificationService } from "./services/notificationService?.js";
+import { jwtAuthService } from "./services/jwtAuthService?.js";
+import { artistProfileService } from "./services/artistProfileService?.js";
 
 const _log = (msg: string) => logger?.info(msg);
 
@@ -127,9 +127,9 @@ async function safeLoadRoute(
 declare global {
   namespace Express {
     interface Request {
-      user?: import("../shared/schema.js").User;
+      user?: import("../shared/schema?.js").User;
       isAuthenticated(): this is Request & {
-        user: import("../shared/schema.js").User;
+        user: import("../shared/schema?.js").User;
       };
     }
   }
@@ -141,7 +141,7 @@ declare global {
 // cache expiry within 30 s — acceptable for non-critical reads.
 // The cache is keyed by userId (UUID string) and bounded to 2 000 entries.
 interface _UserCacheEntry {
-  user: import("../shared/schema.js").User;
+  user: import("../shared/schema?.js").User;
   expiresAt: number;
 }
 const __userCache = new Map<string, _UserCacheEntry>();
@@ -150,7 +150,7 @@ const __USER_CACHE_MAX = 2_000;
 
 function _userCacheGet(
   userId: string,
-): import("../shared/schema.js").User | undefined {
+): import("../shared/schema?.js").User | undefined {
   const _e = _userCache?.get(userId);
   if (!e) return undefined;
   if (Date?.now() > e?.expiresAt) {
@@ -159,7 +159,7 @@ function _userCacheGet(
   }
   return e?.user;
 }
-function _userCacheSet(user: import("../shared/schema.js").User): void {
+function _userCacheSet(user: import("../shared/schema?.js").User): void {
   if (_userCache?.size >= _USER_CACHE_MAX) {
     const _oldest = _userCache?.keys().next().value;
     if (oldest) _userCache?.delete(oldest);
@@ -181,11 +181,11 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
       // same user — critical when background tasks hold DB connections.
       const _cached = _userCacheGet(req?.session.userId);
       if (cached) {
-        req.user = cached;
+        req?.user = cached;
       } else {
         const _user = await storage?.getUser(req?.session.userId);
         if (user) {
-          req.user = user;
+          req?.user = user;
           _userCacheSet(user);
         } else if (isProduction && isApiRoute) {
           logger?.info(
@@ -212,8 +212,8 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
   }
 
   // Add isAuthenticated method
-  req.isAuthenticated = function (): this is Request & {
-    user: import("../shared/schema.js").User;
+  req?.isAuthenticated = function (): this is Request & {
+    user: import("../shared/schema?.js").User;
   } {
     return !!this?.user;
   };
@@ -314,7 +314,7 @@ export async function registerRoutes(
         ...safeUser
       } = req?.user!;
       if (safeUser?.email === "demo@maxbooster?.ai") {
-        safeUser.isDemo = true;
+        safeUser?.isDemo = true;
       }
       return res?.json(safeUser);
     }
@@ -423,7 +423,7 @@ export async function registerRoutes(
         // Pre-warm the per-process user cache so the very next requests (profile,
         // sessions, login-history) don't need a DB round-trip while background
         // tasks from register/login still hold Neon connections.
-        _userCacheSet(user as import("../shared/schema.js").User);
+        _userCacheSet(user as import("../shared/schema?.js").User);
 
         emailService
           .sendWelcomeEmail({
@@ -740,18 +740,18 @@ export async function registerRoutes(
         const updateData: Record<string, any> = {};
 
         if (hasCompletedOnboarding !== undefined) {
-          updateData.onboardingCompleted = hasCompletedOnboarding;
+          updateData?.onboardingCompleted = hasCompletedOnboarding;
         } else if (completed !== undefined) {
-          updateData.onboardingCompleted = completed;
+          updateData?.onboardingCompleted = completed;
         }
 
         if (step !== undefined) {
-          updateData.onboardingStep = step;
+          updateData?.onboardingStep = step;
         }
 
         // Store onboarding preferences if provided
         if (onboardingData) {
-          updateData.onboardingData = onboardingData;
+          updateData?.onboardingData = onboardingData;
         }
 
         await storage?.updateUser(req?.user.id, updateData);
@@ -1027,7 +1027,7 @@ export async function registerRoutes(
         // Also try to delete from Redis if available
         try {
           const { getRedisClient } = await import(
-            "./lib/redisConnectionFactory.js"
+            "./lib/redisConnectionFactory?.js"
           );
           const _redisClient = await getRedisClient();
           if (redisClient) {
@@ -1068,7 +1068,7 @@ export async function registerRoutes(
               terminatedCount++;
               try {
                 const { getRedisClient } = await import(
-                  "./lib/redisConnectionFactory.js"
+                  "./lib/redisConnectionFactory?.js"
                 );
                 const _redisClient = await getRedisClient();
                 if (redisClient) {
@@ -1116,7 +1116,7 @@ export async function registerRoutes(
               terminatedCount++;
               try {
                 const { getRedisClient } = await import(
-                  "./lib/redisConnectionFactory.js"
+                  "./lib/redisConnectionFactory?.js"
                 );
                 const _redisClient = await getRedisClient();
                 if (redisClient) {
@@ -1147,7 +1147,7 @@ export async function registerRoutes(
     }
     try {
       // Get login events from security threats table
-      const { securityThreats } = await import("../shared/schema.js");
+      const { securityThreats } = await import("../shared/schema?.js");
       const _thirtyDaysAgo = new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
 
       const _loginEvents = await db
@@ -1390,7 +1390,7 @@ export async function registerRoutes(
               // Also try to delete from Redis if available
               try {
                 const { getRedisClient } = await import(
-                  "./lib/redisConnectionFactory.js"
+                  "./lib/redisConnectionFactory?.js"
                 );
                 const _redisClient = await getRedisClient();
                 if (redisClient) {
@@ -1423,7 +1423,7 @@ export async function registerRoutes(
         // will now get a revocation signal on next request.
         try {
           const { revokeUserSessions } = await import(
-            "./middleware/sessionConfig.js"
+            "./middleware/sessionConfig?.js"
           );
           await revokeUserSessions(String(req?.user.id));
         } catch (revokeErr: unknown) {
@@ -1480,7 +1480,7 @@ export async function registerRoutes(
       // Dynamically import avatar upload middleware and storage
       try {
         const { avatarUpload, storeUploadedFile } = await import(
-          "./middleware/uploadHandler.js"
+          "./middleware/uploadHandler?.js"
         );
 
         // Handle multipart upload
@@ -1519,7 +1519,7 @@ export async function registerRoutes(
                 "[Avatar] Object Storage unavailable, falling back to data URL",
               );
               const { processAvatarImage } = await import(
-                "./middleware/uploadHandler.js"
+                "./middleware/uploadHandler?.js"
               );
               const _processed = await processAvatarImage(req?.file!.buffer);
               avatarUrl = `data:${processed?.mimeType};base64,${processed?.buffer.toString("base64")}`;
@@ -1628,9 +1628,9 @@ export async function registerRoutes(
         return res?.status(400).json({ message: "File key is required" });
       }
 
-      const { storageService } = await import("./services/storageService.js");
+      const { storageService } = await import("./services/storageService?.js");
       const { hybridStorageService } = await import(
-        "./services/hybridStorageService.js"
+        "./services/hybridStorageService?.js"
       );
 
       let fileBuffer: Buffer | null = null;
@@ -1748,7 +1748,7 @@ export async function registerRoutes(
 
   // Auth: 2FA verify - Verify TOTP code and enable 2FA
   // SECURITY: Rate limited to prevent brute-force attacks on 2FA codes
-  const { twoFactorRateLimiter } = await import("./middleware/rateLimiter.js");
+  const { twoFactorRateLimiter } = await import("./middleware/rateLimiter?.js");
   app?.post(
     "/api/auth/2fa/verify",
     twoFactorRateLimiter,
@@ -1926,9 +1926,11 @@ export async function registerRoutes(
       return res?.redirect(307, "/api/auth/google");
     }
     // For other platforms the caller should use POST /api/social/connect/:platform
-    return res.status(400).json({
-      message: `Use POST /api/social/connect/${platform} for this platform`,
-    });
+    return res
+      .status(400)
+      .json({
+        message: `Use POST /api/social/connect/${platform} for this platform`,
+      });
   });
 
   // Auth: OAuth callback alias — GET /api/auth/oauth/callback?platform=X&[code&state | error]
@@ -2051,7 +2053,7 @@ export async function registerRoutes(
             passwordResetExpires: expires,
           });
 
-          const _baseUrl = process?.env.APP_URL || "https://max-booster.com";
+          const _baseUrl = process?.env.APP_URL || "https://max-booster?.com";
           const _resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
 
           await emailService?.sendPasswordResetEmail(
@@ -2129,7 +2131,7 @@ export async function registerRoutes(
         // are rejected across all pods within ≤5 s (REVOKE_L1_TTL_ACTIVE_MS).
         try {
           const { revokeUserSessions } = await import(
-            "./middleware/sessionConfig.js"
+            "./middleware/sessionConfig?.js"
           );
           await revokeUserSessions(String(user?.id));
         } catch (revokeErr: unknown) {
@@ -2190,7 +2192,7 @@ export async function registerRoutes(
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
-    const _baseUrl = process?.env.APP_URL || "https://max-booster.com";
+    const _baseUrl = process?.env.APP_URL || "https://max-booster?.com";
     const _redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     const _params = new URLSearchParams({
@@ -2239,7 +2241,7 @@ export async function registerRoutes(
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
-    const _baseUrl = process?.env.APP_URL || "https://max-booster.com";
+    const _baseUrl = process?.env.APP_URL || "https://max-booster?.com";
     const _redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     try {
@@ -2869,7 +2871,7 @@ export async function registerRoutes(
       try {
         const { token } = req?.body;
         const { mobilePushService } = await import(
-          "./services/mobilePushService.js"
+          "./services/mobilePushService?.js"
         );
         if (token) {
           await mobilePushService?.deactivateToken(token);
@@ -3017,7 +3019,7 @@ export async function registerRoutes(
       // Broadcast via WebSocket if available
       if (
         typeof (
-          global as NodeJS.Global & {
+          global as NodeJS?.Global & {
             broadcastNotification?: (
               userId: string,
               data: Record<string, unknown>,
@@ -3026,7 +3028,7 @@ export async function registerRoutes(
         ).broadcastNotification === "function"
       ) {
         (
-          global as NodeJS.Global & {
+          global as NodeJS?.Global & {
             broadcastNotification?: (
               userId: string,
               data: Record<string, unknown>,
@@ -3402,7 +3404,7 @@ export async function registerRoutes(
       }
       try {
         const { notificationDispatcher } = await import(
-          "./services/notificationDispatcher.js"
+          "./services/notificationDispatcher?.js"
         );
         const _result = await notificationDispatcher?.sendTestToUser(req?.user.id);
         return res?.json({
@@ -3476,7 +3478,7 @@ export async function registerRoutes(
             to: e164Phone,
             channel: "sms",
           };
-          if (verifyTemplateSid) verifyParams.templateSid = verifyTemplateSid;
+          if (verifyTemplateSid) verifyParams?.templateSid = verifyTemplateSid;
 
           const _verification = await client?.verify.v2
             .services(verifyServiceSid)
@@ -3487,10 +3489,12 @@ export async function registerRoutes(
               { status: verification?.status },
               "[SMS] Unexpected Verify status",
             );
-            return res.status(502).json({
-              message:
-                "Failed to send your Max Booster verification code. Please try again.",
-            });
+            return res
+              .status(502)
+              .json({
+                message:
+                  "Failed to send your Max Booster verification code. Please try again.",
+              });
           }
 
           // Store the normalized phone number (code is managed by Twilio — no DB storage needed)
@@ -3592,15 +3596,19 @@ export async function registerRoutes(
           code?: number;
         };
         if (twilioErr?.status === 429 || twilioErr?.code === 60203) {
-          return res.status(429).json({
-            message:
-              "Too many attempts. Please wait before requesting another code.",
-          });
+          return res
+            .status(429)
+            .json({
+              message:
+                "Too many attempts. Please wait before requesting another code.",
+            });
         }
         if (twilioErr?.code === 60200) {
-          return res.status(400).json({
-            message: "Invalid phone number. Please check and try again.",
-          });
+          return res
+            .status(400)
+            .json({
+              message: "Invalid phone number. Please check and try again.",
+            });
         }
         logger?.warn({ err: error }, "SMS verify error");
         return res
@@ -3637,9 +3645,11 @@ export async function registerRoutes(
         const _toPhone = (phoneNumber as string | undefined) || storedPhone;
 
         if (!toPhone) {
-          return res.status(400).json({
-            message: "Phone number not found. Please restart verification.",
-          });
+          return res
+            .status(400)
+            .json({
+              message: "Phone number not found. Please restart verification.",
+            });
         }
 
         if (twilioSid && twilioToken && verifyServiceSid) {
@@ -3708,9 +3718,11 @@ export async function registerRoutes(
       } catch (error: unknown) {
         const _twilioErr = error as { status?: number; code?: number };
         if (twilioErr?.code === 60202) {
-          return res.status(400).json({
-            message: "Max check attempts reached. Please request a new code.",
-          });
+          return res
+            .status(400)
+            .json({
+              message: "Max check attempts reached. Please request a new code.",
+            });
         }
         logger?.warn({ err: error }, "SMS confirm error");
         return res
@@ -3728,13 +3740,13 @@ export async function registerRoutes(
         return res?.status(401).json({ message: "Not authenticated" });
       try {
         const { notificationDispatcher } = await import(
-          "./services/notificationDispatcher.js"
+          "./services/notificationDispatcher?.js"
         );
         const { desktopPushService } = await import(
-          "./services/desktopPushService.js"
+          "./services/desktopPushService?.js"
         );
         const { mobilePushService } = await import(
-          "./services/mobilePushService.js"
+          "./services/mobilePushService?.js"
         );
         const [breakdown, mobileStatus, serviceStatus] = await Promise?.all([
           desktopPushService?.getSubscriptionBreakdown(req?.user.id),
@@ -3768,7 +3780,7 @@ export async function registerRoutes(
             .json({ error: "Platform must be android or ios" });
         }
         const { mobilePushService } = await import(
-          "./services/mobilePushService.js"
+          "./services/mobilePushService?.js"
         );
         await mobilePushService?.registerToken(
           req?.user.id,
@@ -3802,7 +3814,7 @@ export async function registerRoutes(
         return res?.status(401).json({ message: "Not authenticated" });
       try {
         const { mobilePushService } = await import(
-          "./services/mobilePushService.js"
+          "./services/mobilePushService?.js"
         );
         const _status = await mobilePushService?.getUserTokenStatus(req?.user.id);
         return res?.json(status);
@@ -3824,7 +3836,7 @@ export async function registerRoutes(
       try {
         const { reason = "feed_refresh" } = req?.body;
         const { notificationDispatcher } = await import(
-          "./services/notificationDispatcher.js"
+          "./services/notificationDispatcher?.js"
         );
         const _result = await notificationDispatcher?.dispatchSilent(
           req?.user.id,
@@ -3913,7 +3925,7 @@ export async function registerRoutes(
         if (req?.file) {
           // Direct file upload (≤ proxy limit)
           const { storeUploadedFile } = await import(
-            "./middleware/uploadHandler.js"
+            "./middleware/uploadHandler?.js"
           );
           const _storedFile = await storeUploadedFile(
             req?.file,
@@ -4548,7 +4560,7 @@ export async function registerRoutes(
         const _prev = Number(metricsData[i - 1].streams);
         const _curr = Number(metricsData[i].streams);
 
-        if (prev > 0 && curr < prev * 0.5) {
+        if (prev > 0 && curr < prev * 0?.5) {
           anomalies?.push({
             id: `anomaly-streams-${i}`,
             metricType: "streams",
@@ -4696,7 +4708,7 @@ export async function registerRoutes(
 
   // Accessibility preferences endpoints
   try {
-    const _accessibilityRouter = (await import("./routes/accessibility.js"))
+    const _accessibilityRouter = (await import("./routes/accessibility?.js"))
       .default;
     app?.use("/api/user", accessibilityRouter);
     log("Accessibility routes registered");
@@ -4840,7 +4852,7 @@ export async function registerRoutes(
       }
       try {
         const { audioUpload, storeUploadedFile, handleUploadError } =
-          await import("./middleware/uploadHandler.js");
+          await import("./middleware/uploadHandler?.js");
 
         audioUpload?.single("assetFile")(req, res, async (err: unknown) => {
           if (err) {
@@ -5925,7 +5937,7 @@ export async function registerRoutes(
               ? "1 Year"
               : `${months} Months`,
         projected: parseFloat((monthlyAvg * months).toFixed(2)),
-        growthRate: 0.05,
+        growthRate: 0?.05,
         confidence: months <= 3 ? "high" : months <= 6 ? "medium" : "low",
       }));
       const byPlatform: Record<string, number> = {};
@@ -5987,9 +5999,11 @@ export async function registerRoutes(
             code: "STRIPE_CONNECT_NOT_ENABLED",
           });
         }
-        return res.status(500).json({
-          message: "Failed to connect bank account. Please try again.",
-        });
+        return res
+          .status(500)
+          .json({
+            message: "Failed to connect bank account. Please try again.",
+          });
       }
     },
   );
@@ -6003,10 +6017,12 @@ export async function registerRoutes(
       }
 
       if (!stripe) {
-        return res.status(503).json({
-          message: "Payment service unavailable",
-          code: "STRIPE_NOT_CONFIGURED",
-        });
+        return res
+          .status(503)
+          .json({
+            message: "Payment service unavailable",
+            code: "STRIPE_NOT_CONFIGURED",
+          });
       }
 
       // Accept either planName (preferred) or a raw priceId (legacy)
@@ -6055,7 +6071,7 @@ export async function registerRoutes(
         resolvedPriceId === getStripePriceIds().lifetime
       ) {
         const _paymentIntent = await stripe?.paymentIntents.create({
-          amount: 69900, // $699.00 in cents
+          amount: 69900, // $699?.00 in cents
           currency: "usd",
           customer: customerId,
           automatic_payment_methods: { enabled: true },
@@ -6126,9 +6142,11 @@ export async function registerRoutes(
 
       const { uploadId, chunkIndex, totalChunks } = req?.body;
       if (!uploadId || chunkIndex === undefined || !totalChunks) {
-        return res.status(400).json({
-          message: "uploadId, chunkIndex and totalChunks are required",
-        });
+        return res
+          .status(400)
+          .json({
+            message: "uploadId, chunkIndex and totalChunks are required",
+          });
       }
 
       // Sanitise uploadId — only allow alphanumeric + hyphens
@@ -6202,7 +6220,7 @@ export async function registerRoutes(
       const _destCategory = category || "audio";
       const _userId = req?.user!.id;
 
-      const { storageService } = await import("./services/storageService.js");
+      const { storageService } = await import("./services/storageService?.js");
       const _finalKey = await storageService?.uploadFile(
         assembled,
         `${destCategory}/${userId}`,
@@ -6236,7 +6254,7 @@ export async function registerRoutes(
       }
 
       const { hybridStorageService } = await import(
-        "./services/hybridStorageService.js"
+        "./services/hybridStorageService?.js"
       );
 
       const _ext = format || "wav";
@@ -6291,30 +6309,30 @@ export async function registerRoutes(
     { default: batchRouter },
     { default: distributionRouter },
   ] = await Promise?.all([
-    import("./routes/admin.js"),
-    import("./routes/paid.js"),
-    import("./routes/artistProgress.js"),
-    import("./routes/artistProfiles.js"),
-    import("./routes/revenueForecast.js"),
-    import("./routes/files.js"),
-    import("./routes/preferences.js"),
-    import("./routes/shortcuts.js"),
-    import("./routes/undo.js"),
-    import("./routes/batch.js"),
-    import("./routes/distribution.js"),
+    import("./routes/admin?.js"),
+    import("./routes/paid?.js"),
+    import("./routes/artistProgress?.js"),
+    import("./routes/artistProfiles?.js"),
+    import("./routes/revenueForecast?.js"),
+    import("./routes/files?.js"),
+    import("./routes/preferences?.js"),
+    import("./routes/shortcuts?.js"),
+    import("./routes/undo?.js"),
+    import("./routes/batch?.js"),
+    import("./routes/distribution?.js"),
   ]);
   const { aiServiceProxyRouter, boosterstateProxyRouter } = await import(
-    "./routes/internalProxy.js"
+    "./routes/internalProxy?.js"
   );
   app?.use("/api/ai-service", aiServiceProxyRouter);
   app?.use("/api/boosterstate", boosterstateProxyRouter);
 
   app?.use("/api/admin", adminRouter);
   app?.use("/api/distribution", distributionRouter);
-  const { default: trainingRouter } = await import("./routes/training.js");
+  const { default: trainingRouter } = await import("./routes/training?.js");
   app?.use("/api/training", trainingRouter);
 
-  const { default: maxcoreRouter } = await import("./routes/maxcore.js");
+  const { default: maxcoreRouter } = await import("./routes/maxcore?.js");
   app?.use("/api/maxcore", maxcoreRouter);
   app?.use("/api/paid", paidRouter);
   app?.use("/api/artist-progress", artistProgressRouter);
@@ -6386,7 +6404,7 @@ export async function registerRoutes(
   // Eagerly importing + mounting here guarantees the router is always present.
   try {
     const { default: socialMediaRouter } = await import(
-      "./routes/socialMedia.js"
+      "./routes/socialMedia?.js"
     );
     if (
       socialMediaRouter &&
@@ -6804,7 +6822,7 @@ export async function registerRoutes(
       loader: () => import("./routes/paymentBypass"),
     },
 
-    // SEO (sitemap.xml + robots.txt — mounted at root)
+    // SEO (sitemap?.xml + robots?.txt — mounted at root)
     { path: "", name: "seo", loader: () => import("./routes/seo") },
 
     // Self-Healing Security System
@@ -7036,10 +7054,10 @@ export async function registerRoutes(
         .trim();
     } catch {
       try {
-        const _pkg = JSON?.parse(fs?.readFileSync("./package.json", "utf8"));
+        const _pkg = JSON?.parse(fs?.readFileSync("./package?.json", "utf8"));
         return crypto
           .createHash("sha1")
-          .update(pkg?.version || "1.0.0")
+          .update(pkg?.version || "1?.0.0")
           .digest("hex")
           .slice(0, 8);
       } catch {
@@ -7076,7 +7094,7 @@ export async function registerRoutes(
   const _readinessHandler = async (_req: Request, res: Response) => {
     res?.set("Cache-Control", "no-cache, no-store, must-revalidate");
     try {
-      const { healthRegistry } = await import("./lib/healthRegistry.js");
+      const { healthRegistry } = await import("./lib/healthRegistry?.js");
       const _result = await healthRegistry?.checkAll();
       const _code = result?.status === "down" ? 503 : 200;
       res?.status(code).json({
@@ -7278,9 +7296,11 @@ export async function registerRoutes(
         }
 
         if (!tosAccepted || !privacyAccepted) {
-          return res.status(400).json({
-            error: "You must accept the Terms of Service and Privacy Policy",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "You must accept the Terms of Service and Privacy Policy",
+            });
         }
 
         if (password?.length < 8) {
@@ -7307,9 +7327,11 @@ export async function registerRoutes(
         const _tier = session?.metadata?.tier || "monthly";
 
         if (!email || !username) {
-          return res.status(400).json({
-            error: "Session metadata missing. Please contact support.",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "Session metadata missing. Please contact support.",
+            });
         }
 
         // Check if user already exists (prevent duplicate registration)
@@ -7379,9 +7401,11 @@ export async function registerRoutes(
             { err: sessionErr },
             "[PostPayment] Session operation failed after retries",
           );
-          return res.status(500).json({
-            error: "Account created but login failed - please sign in.",
-          });
+          return res
+            .status(500)
+            .json({
+              error: "Account created but login failed - please sign in.",
+            });
         }
       } catch (error) {
         logger?.warn(
@@ -7395,9 +7419,11 @@ export async function registerRoutes(
             .json({ error: "Invalid payment session. Please try again." });
         }
 
-        return res.status(500).json({
-          error: "Failed to complete registration. Please contact support.",
-        });
+        return res
+          .status(500)
+          .json({
+            error: "Failed to complete registration. Please contact support.",
+          });
       }
     },
   );
@@ -7429,7 +7455,7 @@ export async function registerRoutes(
   // Infrastructure scaling routes
   try {
     const { scalingMetricsRouter, getInfrastructureStatus } = await import(
-      "./infrastructure/index.js"
+      "./infrastructure/index?.js"
     );
     app?.use("/api/infrastructure", scalingMetricsRouter);
     app?.get("/api/infrastructure/status", (req, res) => {
@@ -7440,10 +7466,12 @@ export async function registerRoutes(
         const _status = getInfrastructureStatus();
         res?.json({ success: true, ...status });
       } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: "Failed to get infrastructure status",
-        });
+        res
+          .status(500)
+          .json({
+            success: false,
+            error: "Failed to get infrastructure status",
+          });
       }
     });
     log("Infrastructure scaling routes registered");
@@ -7455,7 +7483,7 @@ export async function registerRoutes(
 
   // Unified Content Generation Pipeline — social + ad content for artist AND Max Booster
   try {
-    const _unifiedContentRouter = (await import("./routes/unifiedContent.js"))
+    const _unifiedContentRouter = (await import("./routes/unifiedContent?.js"))
       .default;
     app?.use("/api/content/generate-unified", unifiedContentRouter);
     log("Loaded route: unifiedContent");
@@ -7467,7 +7495,7 @@ export async function registerRoutes(
 
   // AdvancedCreativeModel pipeline — music-synced short-form video creative generation
   try {
-    const _creativeModelRouter = (await import("./routes/creativeModel.js"))
+    const _creativeModelRouter = (await import("./routes/creativeModel?.js"))
       .default;
     app?.use("/api/content/creative-model", creativeModelRouter);
     log("Loaded route: creativeModel");
@@ -7479,7 +7507,7 @@ export async function registerRoutes(
 
   // Collaboration routes
   try {
-    const _collaborationRouter = (await import("./routes/collaboration.js"))
+    const _collaborationRouter = (await import("./routes/collaboration?.js"))
       .default;
     app?.use("/api/collaboration", collaborationRouter);
     log("Collaboration routes registered");
@@ -7492,7 +7520,7 @@ export async function registerRoutes(
   // Music Workflow Automations routes
   try {
     const _musicWorkflowRouter = (
-      await import("./routes/musicWorkflowAutomations.js")
+      await import("./routes/musicWorkflowAutomations?.js")
     ).default;
     app?.use("/api/music-workflow-automations", musicWorkflowRouter);
     log("Loaded route: musicWorkflowAutomations");
@@ -7503,7 +7531,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _fabricRouter = (await import("./routes/fabric.js")).default;
+    const _fabricRouter = (await import("./routes/fabric?.js")).default;
     app?.use("/api/fabric", fabricRouter);
     log("Loaded route: fabric");
   } catch (error) {
@@ -7514,7 +7542,7 @@ export async function registerRoutes(
 
   try {
     const _labelSubmissionsRouter = (
-      await import("./routes/labelSubmissions.js")
+      await import("./routes/labelSubmissions?.js")
     ).default;
     app?.use("/api/label-submissions", labelSubmissionsRouter);
     log("Loaded route: labelSubmissions");
@@ -7525,7 +7553,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _radioPitchesRouter = (await import("./routes/radioPitches.js"))
+    const _radioPitchesRouter = (await import("./routes/radioPitches?.js"))
       .default;
     app?.use("/api/radio-pitches", radioPitchesRouter);
     log("Loaded route: radioPitches");
@@ -7536,7 +7564,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _venuesRouter = (await import("./routes/venues.js")).default;
+    const _venuesRouter = (await import("./routes/venues?.js")).default;
     app?.use("/api/venues", venuesRouter);
     log("Loaded route: venues");
   } catch (error) {
@@ -7546,7 +7574,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _projectBudgetsRouter = (await import("./routes/projectBudgets.js"))
+    const _projectBudgetsRouter = (await import("./routes/projectBudgets?.js"))
       .default;
     app?.use("/api/project-budgets", projectBudgetsRouter);
     log("Loaded route: projectBudgets");
@@ -7558,7 +7586,7 @@ export async function registerRoutes(
 
   try {
     const _sampleClearancesRouter = (
-      await import("./routes/sampleClearances.js")
+      await import("./routes/sampleClearances?.js")
     ).default;
     app?.use("/api/sample-clearances", sampleClearancesRouter);
     log("Loaded route: sampleClearances");
@@ -7569,7 +7597,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _musicVideosRouter = (await import("./routes/musicVideos.js")).default;
+    const _musicVideosRouter = (await import("./routes/musicVideos?.js")).default;
     app?.use("/api/music-videos", musicVideosRouter);
     log("Loaded route: musicVideos");
   } catch (error) {
@@ -7579,7 +7607,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _songwritingRouter = (await import("./routes/songwriting.js")).default;
+    const _songwritingRouter = (await import("./routes/songwriting?.js")).default;
     app?.use("/api/songwriting", songwritingRouter);
     log("Loaded route: songwriting");
   } catch (error) {
@@ -7589,7 +7617,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _fanCampaignsRouter = (await import("./routes/fanCampaigns.js"))
+    const _fanCampaignsRouter = (await import("./routes/fanCampaigns?.js"))
       .default;
     app?.use("/api/fan-campaigns", fanCampaignsRouter);
     log("Loaded route: fanCampaigns");
@@ -7600,7 +7628,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _customWorkflowsRouter = (await import("./routes/customWorkflows.js"))
+    const _customWorkflowsRouter = (await import("./routes/customWorkflows?.js"))
       .default;
     app?.use("/api/custom-workflows", customWorkflowsRouter);
     log("Loaded route: customWorkflows");
@@ -7611,7 +7639,7 @@ export async function registerRoutes(
   }
 
   try {
-    const _assistantRouter = (await import("./routes/assistant.js")).default;
+    const _assistantRouter = (await import("./routes/assistant?.js")).default;
     app?.use("/api/assistant", assistantRouter);
     log("Loaded route: assistant");
   } catch (error) {
@@ -7624,7 +7652,7 @@ export async function registerRoutes(
     // Warm the Self-Evolution registry from persisted state so the autopilot
     // timing/content consumers see active enhancements immediately on boot.
     const { evolutionRegistry } = await import(
-      "./services/evolutionRegistry.js"
+      "./services/evolutionRegistry?.js"
     );
     await evolutionRegistry?.load(true);
     const _stats = evolutionRegistry?.getStats();
@@ -7639,7 +7667,7 @@ export async function registerRoutes(
 
   try {
     const { silentDeployment } = await import(
-      "./services/silentDeploymentService.js"
+      "./services/silentDeploymentService?.js"
     );
     if (process?.env.ENABLE_SELF_EVOLUTION === "true") {
       silentDeployment?.enable();

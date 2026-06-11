@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { db } from "../db";
 import { projects, markers } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 
