@@ -1112,10 +1112,10 @@ export class ContentGenerator {
       );
     const isRelease = Boolean(
       quoted.length ||
-        trackTitle ||
-        /\b(single|track|song|album|ep|mixtape|release|drop|out\s*now)\b/i.test(
-          cleanFull,
-        ),
+      trackTitle ||
+      /\b(single|track|song|album|ep|mixtape|release|drop|out\s*now)\b/i.test(
+        cleanFull,
+      ),
     );
 
     // ── Release phase detection ────────────────────────────────────────────────

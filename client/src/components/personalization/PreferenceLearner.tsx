@@ -7,7 +7,17 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
-import { Brain, TrendingUp, Clock, CheckCircle, Lightbulb, RotateCcw, Eye, MousePointerClick, Timer } from "lucide-react";
+import {
+  Brain,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  Lightbulb,
+  RotateCcw,
+  Eye,
+  MousePointerClick,
+  Timer,
+} from "lucide-react";
 
 export interface InteractionPattern {
   id: string;

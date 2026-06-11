@@ -363,9 +363,7 @@ export class TransportEngine {
       const deltaMs = now - this.lastTickTime;
       this.lastTickTime = now;
 
-      this.getTempoAtTime(
-        this.state.currentSample / this.state.sampleRate,
-      );
+      this.getTempoAtTime(this.state.currentSample / this.state.sampleRate);
       const samplesPerMs = this.state.sampleRate / 1000;
       const deltaSamples = Math.round(deltaMs * samplesPerMs);
 

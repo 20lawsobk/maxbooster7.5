@@ -1,6 +1,21 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plug, Settings, Save, Check, AlertTriangle, Loader2, ChevronRight, Search, Star, Trash2, RotateCcw, Plus, Sliders, Sparkles } from "lucide-react";
+import {
+  Plug,
+  Settings,
+  Save,
+  Check,
+  AlertTriangle,
+  Loader2,
+  ChevronRight,
+  Search,
+  Star,
+  Trash2,
+  RotateCcw,
+  Plus,
+  Sliders,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

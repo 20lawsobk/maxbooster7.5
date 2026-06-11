@@ -606,9 +606,8 @@ async function trainMusicGenerator(): Promise<boolean> {
     logger.info(
       "[BaseTrainer] Music generator uses embedded theory data — loading genre taxonomy and BPM ranges...",
     );
-    const { AdvancedMusicAI } = await import(
-      "../../shared/ml/audio/AdvancedMusicAI.js"
-    );
+    const { AdvancedMusicAI } =
+      await import("../../shared/ml/audio/AdvancedMusicAI.js");
     const musicAI = new AdvancedMusicAI();
     logger.info(
       "[BaseTrainer] Music generator initialized with full harmonic/rhythmic knowledge base",
@@ -1035,9 +1034,8 @@ async function trainCreativePlannerBase(): Promise<boolean> {
       );
       return true;
     }
-    const { CreativePlannerModel } = await import(
-      "../../shared/ml/models/CreativePlannerModel.js"
-    );
+    const { CreativePlannerModel } =
+      await import("../../shared/ml/models/CreativePlannerModel.js");
     logger.info(
       "[BaseTrainer] Training CreativePlannerModel (500 synthetic briefs)...",
     );
@@ -1076,9 +1074,8 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
       );
       return true;
     }
-    const { BeatSyncAlignmentModel } = await import(
-      "../../shared/ml/models/BeatSyncAlignmentModel.js"
-    );
+    const { BeatSyncAlignmentModel } =
+      await import("../../shared/ml/models/BeatSyncAlignmentModel.js");
     logger.info(
       "[BaseTrainer] Training BeatSyncAlignmentModel (600 synthetic beat sequences)...",
     );
@@ -1117,9 +1114,8 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
       );
       return true;
     }
-    const { VideoCreativeScorer } = await import(
-      "../../shared/ml/models/VideoCreativeScorer.js"
-    );
+    const { VideoCreativeScorer } =
+      await import("../../shared/ml/models/VideoCreativeScorer.js");
     logger.info(
       "[BaseTrainer] Training VideoCreativeScorer (800 synthetic creative packages)...",
     );
@@ -1158,9 +1154,8 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
       );
       return true;
     }
-    const { KeyframeStyleSelector } = await import(
-      "../../shared/ml/models/KeyframeStyleSelector.js"
-    );
+    const { KeyframeStyleSelector } =
+      await import("../../shared/ml/models/KeyframeStyleSelector.js");
     logger.info(
       "[BaseTrainer] Training KeyframeStyleSelector (700 synthetic keyframe–style pairs)...",
     );

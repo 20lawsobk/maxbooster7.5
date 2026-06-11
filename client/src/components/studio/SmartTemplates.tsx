@@ -21,8 +21,34 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Search, Mic, Music, Sliders, Gauge, Podcast, Film, Star, Users, Clock, Layers, Check, Plus, Save, ChevronRight, Sparkles, Download, TrendingUp, Zap } from "lucide-react";
-import { StudioTemplate, TemplateTrack, BUILT_IN_TEMPLATES, CATEGORY_INFO, filterTemplates } from "@/lib/studioTemplates";
+import {
+  Search,
+  Mic,
+  Music,
+  Sliders,
+  Gauge,
+  Podcast,
+  Film,
+  Star,
+  Users,
+  Clock,
+  Layers,
+  Check,
+  Plus,
+  Save,
+  ChevronRight,
+  Sparkles,
+  Download,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import {
+  StudioTemplate,
+  TemplateTrack,
+  BUILT_IN_TEMPLATES,
+  CATEGORY_INFO,
+  filterTemplates,
+} from "@/lib/studioTemplates";
 
 interface SmartTemplatesProps {
   open: boolean;

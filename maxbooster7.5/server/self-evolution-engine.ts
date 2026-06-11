@@ -2712,9 +2712,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     return this.industryChanges.slice(-limit);
   }
 
-  getUpgradeHistory(
-    limit: number = 50,
-  ): Array<
+  getUpgradeHistory(limit: number = 50): Array<
     Omit<CodeUpgrade, "generatedCode"> & {
       generatedCode: Record<string, string>;
     }

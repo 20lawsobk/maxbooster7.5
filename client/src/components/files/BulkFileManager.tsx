@@ -25,7 +25,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Download, FolderInput, Copy, CheckCircle2, AlertCircle, Loader2, FileAudio, FileImage, File, X, Undo2 } from "lucide-react";
+import {
+  Trash2,
+  Download,
+  FolderInput,
+  Copy,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  FileAudio,
+  FileImage,
+  File,
+  X,
+  Undo2,
+} from "lucide-react";
 
 export type BulkOperationType =
   | "delete"

@@ -219,8 +219,8 @@ function DashboardContent({ user }: { user: Record<string, unknown> }) {
   // Check if user has paid subscription
   const hasPaidSubscription = Boolean(
     user.subscriptionTier &&
-      user.subscriptionTier !== "" &&
-      user.subscriptionTier !== "trial",
+    user.subscriptionTier !== "" &&
+    user.subscriptionTier !== "trial",
   );
 
   // Check onboarding status

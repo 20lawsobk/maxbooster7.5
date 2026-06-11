@@ -29,7 +29,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
-import { GripVertical, Eye, EyeOff, Plus, Save, RotateCcw, LayoutDashboard, Sparkles, Copy } from "lucide-react";
+import {
+  GripVertical,
+  Eye,
+  EyeOff,
+  Plus,
+  Save,
+  RotateCcw,
+  LayoutDashboard,
+  Sparkles,
+  Copy,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WidgetSize, SmartWidgetConfig } from "./SmartWidget";
 

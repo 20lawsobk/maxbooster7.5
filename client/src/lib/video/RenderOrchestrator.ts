@@ -1,5 +1,16 @@
 import { logger } from "../logger";
-import type { VideoProject, LayerConfig, TransformConfig, RenderProgress, BackgroundConfig, VisualizerConfig, TextConfig, ImageConfig, ShapeConfig, ParticleConfig } from "../../../../shared/video/VideoRendererEngine";
+import type {
+  VideoProject,
+  LayerConfig,
+  TransformConfig,
+  RenderProgress,
+  BackgroundConfig,
+  VisualizerConfig,
+  TextConfig,
+  ImageConfig,
+  ShapeConfig,
+  ParticleConfig,
+} from "../../../../shared/video/VideoRendererEngine";
 import { DEFAULT_TRANSFORM } from "../../../../shared/video/VideoRendererEngine";
 import { Scene, Layer, type EasingName } from "./SceneGraph";
 import {

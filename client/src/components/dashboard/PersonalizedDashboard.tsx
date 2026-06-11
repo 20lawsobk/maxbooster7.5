@@ -137,8 +137,7 @@ export function PersonalizedDashboard({
   const {
     layout,
     isLoading,
-    
-    
+
     reorderWidgets,
     setPreset,
     isSaving,
@@ -257,9 +256,8 @@ export function PersonalizedDashboard({
     );
   }
 
-  layout?.widgets
-      .filter((w) => w.visible)
-      .sort((a, b) => a.order - b.order) || [];
+  layout?.widgets.filter((w) => w.visible).sort((a, b) => a.order - b.order) ||
+    [];
 
   return (
     <div className="space-y-4">

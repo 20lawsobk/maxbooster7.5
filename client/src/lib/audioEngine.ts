@@ -24,7 +24,13 @@ import type {
   BufferSize,
   AudioFormat,
 } from "../../../shared/audioConstants";
-import { SAMPLE_RATES, BUFFER_SIZES, TRACK_LIMITS, PERFORMANCE_GUARANTEES, calculateLatencyMs } from "../../../shared/audioConstants";
+import {
+  SAMPLE_RATES,
+  BUFFER_SIZES,
+  TRACK_LIMITS,
+  PERFORMANCE_GUARANTEES,
+  calculateLatencyMs,
+} from "../../../shared/audioConstants";
 import { logger } from "@/lib/logger";
 
 export type ExtendedSampleRate = 44100 | 48000 | 88200 | 96000 | 192000;

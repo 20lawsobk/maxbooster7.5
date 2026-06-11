@@ -32,7 +32,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { MoreVertical, Pencil, FolderInput, Trash2, Copy, Download, Link, Share2, Info, Loader2, CheckCircle2, Undo2, FileAudio, FileImage, File } from "lucide-react";
+import {
+  MoreVertical,
+  Pencil,
+  FolderInput,
+  Trash2,
+  Copy,
+  Download,
+  Link,
+  Share2,
+  Info,
+  Loader2,
+  CheckCircle2,
+  Undo2,
+  FileAudio,
+  FileImage,
+  File,
+} from "lucide-react";
 
 export interface FileItem {
   id: string;

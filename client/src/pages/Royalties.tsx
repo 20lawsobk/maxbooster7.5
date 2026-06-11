@@ -23,7 +23,30 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, Download, TrendingUp, Clock, CheckCircle, AlertCircle, Users, Music, Play, RefreshCw, Banknote, PieChart, Scale, Zap, Copyright, Calculator, Receipt, BarChart3, Plus, Wallet, Music2, Loader2 } from "lucide-react";
+import {
+  DollarSign,
+  Download,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Users,
+  Music,
+  Play,
+  RefreshCw,
+  Banknote,
+  PieChart,
+  Scale,
+  Zap,
+  Copyright,
+  Calculator,
+  Receipt,
+  BarChart3,
+  Plus,
+  Wallet,
+  Music2,
+  Loader2,
+} from "lucide-react";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
@@ -763,9 +786,7 @@ export default function Royalties() {
     (sum: number, r: Royalty) => sum + r.amount,
     0,
   );
-  royalties.filter(
-    (r: Royalty) => r.payoutStatus === "paid",
-  );
+  royalties.filter((r: Royalty) => r.payoutStatus === "paid");
   const totalStreams = royalties.reduce(
     (sum: number, royalty: Royalty) => sum + royalty.streams,
     0,

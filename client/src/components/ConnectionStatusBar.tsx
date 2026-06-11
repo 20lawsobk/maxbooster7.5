@@ -1,7 +1,15 @@
 import { useNetworkStatus, NetworkStatus } from "@/hooks/useNetworkStatus";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Wifi, WifiOff, Loader2, RefreshCw, X, Signal, SignalLow } from "lucide-react";
+import {
+  Wifi,
+  WifiOff,
+  Loader2,
+  RefreshCw,
+  X,
+  Signal,
+  SignalLow,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface ConnectionStatusBarProps {

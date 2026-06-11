@@ -291,9 +291,7 @@ export default function Storefront() {
   const isOwnerPreview =
     !!user && !!storefront && storefront.userId === user.id;
 
-  const { data: tiers = [] } = useQuery<
-    MembershipTier[]
-  >({
+  const { data: tiers = [] } = useQuery<MembershipTier[]>({
     queryKey: [`/api/storefront/${storefront?.id}/membership-tiers/public`],
     enabled: !!storefront?.id,
     queryFn: async () => {
@@ -305,9 +303,7 @@ export default function Storefront() {
     },
   });
 
-  const { data: listings = [] } = useQuery<
-    MarketplaceListing[]
-  >({
+  const { data: listings = [] } = useQuery<MarketplaceListing[]>({
     queryKey: [`/api/storefront/${storefront?.id}/listings`],
     enabled: !!storefront?.id,
     queryFn: async () => {

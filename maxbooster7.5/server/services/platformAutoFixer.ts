@@ -561,9 +561,8 @@ class PlatformAutoFixer extends EventEmitter {
       }
 
       // Check circuit breaker state first — no HTTP call needed if OPEN.
-      const { cbIsOpen, cbGetState, cbForceClose } = await import(
-        "../lib/pdimCircuitBreaker.js"
-      );
+      const { cbIsOpen, cbGetState, cbForceClose } =
+        await import("../lib/pdimCircuitBreaker.js");
       const cbStateBeforeProbe = cbGetState();
       if (cbIsOpen()) {
         return this._result(
@@ -664,9 +663,8 @@ class PlatformAutoFixer extends EventEmitter {
         const inBootGraceP = Date.now() - this._bootTs < 120_000;
         let inRegistrationP = false;
         try {
-          const { isLuaRegistrationMode: isRegModeP } = await import(
-            "../lib/luaExecutor.js"
-          );
+          const { isLuaRegistrationMode: isRegModeP } =
+            await import("../lib/luaExecutor.js");
           inRegistrationP = isRegModeP();
         } catch {
           /* non-fatal */
@@ -759,9 +757,8 @@ class PlatformAutoFixer extends EventEmitter {
     let details: Record<string, unknown> = {};
 
     try {
-      const { getLuaExecutorStats, isLuaRegistrationMode } = await import(
-        "../lib/luaExecutor.js"
-      );
+      const { getLuaExecutorStats, isLuaRegistrationMode } =
+        await import("../lib/luaExecutor.js");
       const stats = getLuaExecutorStats();
       details = { active: stats.active, queued: stats.queued, max: stats.max };
 
@@ -849,9 +846,8 @@ class PlatformAutoFixer extends EventEmitter {
           const inBootGrace = Date.now() - this._bootTs < 120_000;
           let inRegistration = false;
           try {
-            const { isLuaRegistrationMode } = await import(
-              "../lib/luaExecutor.js"
-            );
+            const { isLuaRegistrationMode } =
+              await import("../lib/luaExecutor.js");
             inRegistration = isLuaRegistrationMode();
           } catch {
             /* non-fatal */
@@ -1140,9 +1136,8 @@ class PlatformAutoFixer extends EventEmitter {
           action: async () => {
             if (typeof global.gc === "function") global.gc();
             try {
-              const { distributedCache } = await import(
-                "./distributedCacheService.js"
-              );
+              const { distributedCache } =
+                await import("./distributedCacheService.js");
               await (
                 distributedCache as Record<string, unknown>
               )?.evictExpired?.();
@@ -1165,9 +1160,8 @@ class PlatformAutoFixer extends EventEmitter {
             runtimeEffect: "Distributed cache fully flushed",
             action: async () => {
               try {
-                const { distributedCache } = await import(
-                  "./distributedCacheService.js"
-                );
+                const { distributedCache } =
+                  await import("./distributedCacheService.js");
                 await (distributedCache as Record<string, unknown>)?.flush?.();
                 logger.warn(
                   `[PlatformAutoFixer] EXTREME heap pressure (${heapRatio}%) — full cache flush executed`,
@@ -1190,9 +1184,8 @@ class PlatformAutoFixer extends EventEmitter {
         triggeredBy: result.message,
         runtimeEffect: "All LuaExecutor semaphore slots released",
         action: async () => {
-          const { resetLuaExecutorSemaphore } = await import(
-            "../lib/luaExecutor.js"
-          );
+          const { resetLuaExecutorSemaphore } =
+            await import("../lib/luaExecutor.js");
           const released = resetLuaExecutorSemaphore();
           logger.info(
             `[PlatformAutoFixer] LuaExecutor semaphore reset — released ${released} slot(s)`,
@@ -1596,9 +1589,8 @@ class PlatformAutoFixer extends EventEmitter {
         // WARN is gated to once per 2 min so it doesn't flood in critical mode
         // (health-check fires every 5 s when critical).
         try {
-          const { resetLuaExecutorSemaphore } = await import(
-            "../lib/luaExecutor.js"
-          );
+          const { resetLuaExecutorSemaphore } =
+            await import("../lib/luaExecutor.js");
           resetLuaExecutorSemaphore();
           const _nowP = Date.now();
           if (_nowP - this._lastLuaPreemptiveWarnMs >= TWO_MINUTES_MS) {
@@ -1608,9 +1600,8 @@ class PlatformAutoFixer extends EventEmitter {
             const inBootGraceOff = _nowP - this._bootTs < 120_000;
             let inRegistrationOff = false;
             try {
-              const { isLuaRegistrationMode: isRegModeOff } = await import(
-                "../lib/luaExecutor.js"
-              );
+              const { isLuaRegistrationMode: isRegModeOff } =
+                await import("../lib/luaExecutor.js");
               inRegistrationOff = isRegModeOff();
             } catch {
               /* non-fatal */
@@ -1722,9 +1713,8 @@ class PlatformAutoFixer extends EventEmitter {
         // Use a proportional bump (current + 200ms) not a hardcoded 500ms,
         // so heavily-loaded systems get more breathing room.
         try {
-          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import(
-            "../lib/pdimClient.js"
-          );
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } =
+            await import("../lib/pdimClient.js");
           if (typeof setPdimAdaptiveGap === "function") {
             const current = getPdimAdaptiveGapMs?.() ?? 600;
             setPdimAdaptiveGap(current + 200);
@@ -1821,9 +1811,8 @@ class PlatformAutoFixer extends EventEmitter {
 
       // Also try evicting cache to buy headroom
       try {
-        const { distributedCache } = await import(
-          "../infrastructure/distributedCache.js"
-        );
+        const { distributedCache } =
+          await import("../infrastructure/distributedCache.js");
         await (distributedCache as Record<string, unknown>)?.evictExpired?.();
         logger.info(
           "[PlatformAutoFixer] 🎯 OFFENSIVE: Cache eviction triggered to slow heap growth",

@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect, ReactNode } from 'react';
-import { studioOneTheme, cssVariables } from '@/lib/studioOneTheme';
-import { useStudioLayoutStore } from '@/lib/studioLayoutStore';
-import { useDynamicLayout } from '@/hooks/useDynamicLayout';
+import { useState, useCallback, useEffect, ReactNode } from "react";
+import { studioOneTheme, cssVariables } from "@/lib/studioOneTheme";
+import { useStudioLayoutStore } from "@/lib/studioLayoutStore";
+import { useDynamicLayout } from "@/hooks/useDynamicLayout";
 
 interface StudioOneLayoutProps {
   toolbar?: ReactNode;
@@ -14,13 +14,24 @@ interface StudioOneLayoutProps {
   launcher?: ReactNode;
 }
 
-const getResponsivePanelConfig = (isSmallScreen: boolean, isMediumScreen: boolean, width: number) => ({
-  browserWidth: isSmallScreen ? Math.min(width * 0.85, 320) : isMediumScreen ? 240 : 280,
-  inspectorWidth: isSmallScreen ? Math.min(width * 0.85, 320) : isMediumScreen ? 220 : 280,
+const getResponsivePanelConfig = (
+  isSmallScreen: boolean,
+  isMediumScreen: boolean,
+  width: number,
+) => ({
+  browserWidth: isSmallScreen
+    ? Math.min(width * 0.85, 320)
+    : isMediumScreen
+      ? 240
+      : 280,
+  inspectorWidth: isSmallScreen
+    ? Math.min(width * 0.85, 320)
+    : isMediumScreen
+      ? 220
+      : 280,
   toolbarHeight: isSmallScreen ? 40 : 48,
   transportHeight: isSmallScreen ? 52 : 64,
 });
-
 
 export function StudioOneLayout({
   toolbar,
@@ -33,35 +44,42 @@ export function StudioOneLayout({
   launcher,
 }: StudioOneLayoutProps) {
   const {
-    
     browserPanel,
     inspectorPanel,
     consolePanel: consolePanelState,
-    
+
     setPanelWidth,
     setFocusedPanel,
   } = useStudioLayoutStore();
 
-  const { containerRef, width, isSmallScreen, isMediumScreen } = useDynamicLayout();
-  const panelConfig = getResponsivePanelConfig(isSmallScreen, isMediumScreen, width);
-  
+  const { containerRef, width, isSmallScreen, isMediumScreen } =
+    useDynamicLayout();
+  const panelConfig = getResponsivePanelConfig(
+    isSmallScreen,
+    isMediumScreen,
+    width,
+  );
+
   // Mobile mode includes small screens AND medium screens (landscape phones, small tablets)
   const isMobileMode = isSmallScreen || isMediumScreen || width < 1024;
-  
+
   // Auto-collapse side panels on mobile - show as overlay instead
-  const showInspectorInline = !isMobileMode && inspectorPanel.visible && inspector;
+  const showInspectorInline =
+    !isMobileMode && inspectorPanel.visible && inspector;
   const showBrowserInline = !isMobileMode && browserPanel.visible && browser;
-  
+
   // On mobile, only one side panel can be visible at a time (as overlay)
-  const [mobileActivePanel, setMobileActivePanel] = useState<'inspector' | 'browser' | null>(null);
-  
+  const [mobileActivePanel, setMobileActivePanel] = useState<
+    "inspector" | "browser" | null
+  >(null);
+
   useEffect(() => {
     if (isMobileMode) {
       // When on mobile, show the most recently toggled panel as overlay
       if (inspectorPanel.visible) {
-        setMobileActivePanel('inspector');
+        setMobileActivePanel("inspector");
       } else if (browserPanel.visible) {
-        setMobileActivePanel('browser');
+        setMobileActivePanel("browser");
       } else {
         setMobileActivePanel(null);
       }
@@ -75,19 +93,25 @@ export function StudioOneLayout({
   const [resizeStartX, setResizeStartX] = useState(0);
   const [resizeStartWidth, setResizeStartWidth] = useState(0);
 
-  const handleBrowserResizeStart = useCallback((e: React.MouseEvent) => {
-    setBrowserResizing(true);
-    setResizeStartX(e.clientX);
-    setResizeStartWidth(browserPanel.width || panelConfig.browserWidth);
-    e.preventDefault();
-  }, [browserPanel.width, panelConfig.browserWidth]);
+  const handleBrowserResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      setBrowserResizing(true);
+      setResizeStartX(e.clientX);
+      setResizeStartWidth(browserPanel.width || panelConfig.browserWidth);
+      e.preventDefault();
+    },
+    [browserPanel.width, panelConfig.browserWidth],
+  );
 
-  const handleInspectorResizeStart = useCallback((e: React.MouseEvent) => {
-    setInspectorResizing(true);
-    setResizeStartX(e.clientX);
-    setResizeStartWidth(inspectorPanel.width || panelConfig.inspectorWidth);
-    e.preventDefault();
-  }, [inspectorPanel.width, panelConfig.inspectorWidth]);
+  const handleInspectorResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      setInspectorResizing(true);
+      setResizeStartX(e.clientX);
+      setResizeStartWidth(inspectorPanel.width || panelConfig.inspectorWidth);
+      e.preventDefault();
+    },
+    [inspectorPanel.width, panelConfig.inspectorWidth],
+  );
 
   useEffect(() => {
     if (!browserResizing && !inspectorResizing) return;
@@ -96,12 +120,12 @@ export function StudioOneLayout({
       if (browserResizing) {
         const delta = resizeStartX - e.clientX;
         const newWidth = Math.max(200, Math.min(500, resizeStartWidth + delta));
-        setPanelWidth('browser', newWidth);
+        setPanelWidth("browser", newWidth);
       }
       if (inspectorResizing) {
         const delta = e.clientX - resizeStartX;
         const newWidth = Math.max(200, Math.min(400, resizeStartWidth + delta));
-        setPanelWidth('inspector', newWidth);
+        setPanelWidth("inspector", newWidth);
       }
     };
 
@@ -110,13 +134,19 @@ export function StudioOneLayout({
       setInspectorResizing(false);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [browserResizing, inspectorResizing, resizeStartX, resizeStartWidth, setPanelWidth]);
+  }, [
+    browserResizing,
+    inspectorResizing,
+    resizeStartX,
+    resizeStartWidth,
+    setPanelWidth,
+  ]);
 
   return (
     <>
@@ -153,7 +183,9 @@ export function StudioOneLayout({
         {arranger && (
           <div
             className="shrink-0 w-full"
-            style={{ borderBottom: `1px solid ${studioOneTheme.colors.border.primary}` }}
+            style={{
+              borderBottom: `1px solid ${studioOneTheme.colors.border.primary}`,
+            }}
           >
             {arranger}
           </div>
@@ -168,7 +200,7 @@ export function StudioOneLayout({
                   background: studioOneTheme.colors.bg.panel,
                   borderColor: studioOneTheme.colors.border.primary,
                 }}
-                onClick={() => setFocusedPanel('inspector')}
+                onClick={() => setFocusedPanel("inspector")}
               >
                 {inspector}
               </div>
@@ -179,13 +211,13 @@ export function StudioOneLayout({
             </>
           )}
           <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-            <div className="flex-1 overflow-hidden">
-              {arrange}
-            </div>
+            <div className="flex-1 overflow-hidden">{arrange}</div>
             {consolePanelState.visible && consolePanel && (
               <div
                 className="shrink-0"
-                style={{ borderTop: `1px solid ${studioOneTheme.colors.border.primary}` }}
+                style={{
+                  borderTop: `1px solid ${studioOneTheme.colors.border.primary}`,
+                }}
               >
                 {consolePanel}
               </div>
@@ -196,7 +228,9 @@ export function StudioOneLayout({
               <div
                 className="shrink-0 w-1 cursor-col-resize bg-transparent hover:bg-purple-500 transition-colors"
                 onMouseDown={handleBrowserResizeStart}
-                style={{ borderLeft: `1px solid ${studioOneTheme.colors.border.primary}` }}
+                style={{
+                  borderLeft: `1px solid ${studioOneTheme.colors.border.primary}`,
+                }}
               />
               <div
                 className="shrink-0 border-l overflow-hidden"
@@ -205,7 +239,7 @@ export function StudioOneLayout({
                   background: studioOneTheme.colors.bg.panel,
                   borderColor: studioOneTheme.colors.border.primary,
                 }}
-                onClick={() => setFocusedPanel('browser')}
+                onClick={() => setFocusedPanel("browser")}
               >
                 {browser}
               </div>

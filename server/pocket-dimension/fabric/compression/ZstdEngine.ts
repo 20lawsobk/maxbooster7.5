@@ -109,7 +109,6 @@ export class ZstdEngine {
     return Buffer.concat(chunks).subarray(0, target);
   }
 
-
   private async persistDict(
     id: string,
     domain: string,

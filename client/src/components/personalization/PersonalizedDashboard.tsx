@@ -9,7 +9,21 @@ import {
   WidgetConfig,
 } from "@/hooks/usePersonalizedLayout";
 import { SmartActionBar } from "./SmartActionBar";
-import { Music, DollarSign, TrendingUp, Users, Upload, Calendar, Trophy, Bell, Brain, Zap, BarChart3, MessageSquare, GripVertical } from "lucide-react";
+import {
+  Music,
+  DollarSign,
+  TrendingUp,
+  Users,
+  Upload,
+  Calendar,
+  Trophy,
+  Bell,
+  Brain,
+  Zap,
+  BarChart3,
+  MessageSquare,
+  GripVertical,
+} from "lucide-react";
 
 interface PersonalizedDashboardProps {
   userId?: string;
@@ -38,11 +52,7 @@ export function PersonalizedDashboard({
   userId,
   onNavigate,
 }: PersonalizedDashboardProps) {
-  const {
-    
-    isLoading,
-    visibleWidgets,
-  } = usePersonalizedLayout();
+  const { isLoading, visibleWidgets } = usePersonalizedLayout();
 
   if (isLoading) {
     return (

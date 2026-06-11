@@ -23,7 +23,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
-import { TrendingUp, Users, AlertTriangle, DollarSign, Activity, Brain, Zap, Target, ArrowUpRight, ArrowDownRight, Loader2, Sparkles, AlertCircle, CheckCircle2, XCircle, Clock, Shield } from "lucide-react";
+import {
+  TrendingUp,
+  Users,
+  AlertTriangle,
+  DollarSign,
+  Activity,
+  Brain,
+  Zap,
+  Target,
+  ArrowUpRight,
+  ArrowDownRight,
+  Loader2,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Shield,
+} from "lucide-react";
 
 interface MetricPrediction {
   metric: string;
@@ -326,21 +344,19 @@ export default function AIDashboard() {
     },
   });
 
-  const {
-    data: releaseStrategy,
-    isLoading: loadingReleaseStrategy,
-  } = useQuery<ReleaseStrategyInsight>({
-    queryKey: ["/api/analytics/music/release-strategy"],
-    queryFn: async () => {
-      const response = await fetch("/api/analytics/music/release-strategy", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch release strategy");
-      return response.json();
-    },
-  });
+  const { data: releaseStrategy, isLoading: loadingReleaseStrategy } =
+    useQuery<ReleaseStrategyInsight>({
+      queryKey: ["/api/analytics/music/release-strategy"],
+      queryFn: async () => {
+        const response = await fetch("/api/analytics/music/release-strategy", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+        if (!response.ok) throw new Error("Failed to fetch release strategy");
+        return response.json();
+      },
+    });
 
   const {
     data: fanbaseData,
@@ -359,10 +375,9 @@ export default function AIDashboard() {
     },
   });
 
-  const {
-    data: careerMilestones,
-    isLoading: loadingMilestones,
-  } = useQuery<CareerMilestone[]>({
+  const { data: careerMilestones, isLoading: loadingMilestones } = useQuery<
+    CareerMilestone[]
+  >({
     queryKey: ["/api/analytics/music/milestones"],
     queryFn: async () => {
       const response = await fetch("/api/analytics/music/milestones", {

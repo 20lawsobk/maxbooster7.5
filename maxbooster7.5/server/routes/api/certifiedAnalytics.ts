@@ -53,12 +53,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching streams:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch streams data",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch streams data",
+      });
     }
   },
 );
@@ -97,12 +95,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching playlist attributions:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch playlist data",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch playlist data",
+      });
     }
   },
 );
@@ -137,12 +133,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching playlist revenue:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch revenue attribution",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch revenue attribution",
+      });
     }
   },
 );
@@ -167,12 +161,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching editorial metrics:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch editorial metrics",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch editorial metrics",
+      });
     }
   },
 );
@@ -224,12 +216,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching cohorts:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch cohort data",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch cohort data",
+      });
     }
   },
 );
@@ -258,12 +248,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching retention curves:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch retention data",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch retention data",
+      });
     }
   },
 );
@@ -287,12 +275,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error predicting churn:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to predict churn",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to predict churn",
+      });
     }
   },
 );
@@ -323,12 +309,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching loyalty tiers:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch loyalty data",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch loyalty data",
+      });
     }
   },
 );
@@ -366,12 +350,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error generating forecast:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to generate forecast",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to generate forecast",
+      });
     }
   },
 );
@@ -402,12 +384,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching revenue breakdown:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch breakdown",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch breakdown",
+      });
     }
   },
 );
@@ -432,12 +412,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching seasonality:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch seasonality data",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch seasonality data",
+      });
     }
   },
 );
@@ -463,12 +441,10 @@ router.post(
       } = req.body;
 
       if (!releaseDate || !trackName) {
-        return res
-          .status(400)
-          .json({
-            error: "Bad Request",
-            message: "releaseDate and trackName are required",
-          });
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "releaseDate and trackName are required",
+        });
       }
 
       const projection = await revenueForecaster.projectReleaseImpact(userId, {
@@ -486,12 +462,10 @@ router.post(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error projecting release impact:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to project release impact",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to project release impact",
+      });
     }
   },
 );
@@ -515,12 +489,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching demographics:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch demographics",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch demographics",
+      });
     }
   },
 );
@@ -586,12 +558,10 @@ router.post(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error syncing platform:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to sync platform data",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to sync platform data",
+      });
     }
   },
 );
@@ -639,12 +609,10 @@ router.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error syncing all platforms:");
-    return res
-      .status(500)
-      .json({
-        error: "Internal Server Error",
-        message: "Failed to sync platforms",
-      });
+    return res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to sync platforms",
+    });
   }
 });
 
@@ -669,12 +637,10 @@ router.get("/sync-status", async (req: AuthenticatedRequest, res: Response) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching sync status:");
-    return res
-      .status(500)
-      .json({
-        error: "Internal Server Error",
-        message: "Failed to fetch sync status",
-      });
+    return res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to fetch sync status",
+    });
   }
 });
 
@@ -720,12 +686,10 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching overview:");
-      return res
-        .status(500)
-        .json({
-          error: "Internal Server Error",
-          message: "Failed to fetch overview",
-        });
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to fetch overview",
+      });
     }
   },
 );

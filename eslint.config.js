@@ -106,7 +106,9 @@ export default [
     plugins: {
       "@typescript-eslint": tseslint,
       "react-hooks": reactHooks,
-      "no-division-by-zero": { rules: { "no-division-by-zero": noDivisionByZero } },
+      "no-division-by-zero": {
+        rules: { "no-division-by-zero": noDivisionByZero },
+      },
     },
     rules: {
       // Re-import recommended TS rules manually (flat config doesn't inherit).

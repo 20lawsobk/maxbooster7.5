@@ -128,7 +128,7 @@ export function ConflictResolver({
     }
   };
 
-  ((
+  (
     localData: unknown,
     serverData: unknown,
   ): { localDiffs: string[]; serverDiffs: string[] } => {
@@ -157,7 +157,7 @@ export function ConflictResolver({
     }
 
     return { localDiffs, serverDiffs };
-  });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

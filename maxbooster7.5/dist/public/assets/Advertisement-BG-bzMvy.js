@@ -6610,7 +6610,6 @@ class bt {
       this.emissionAccumulator += this.options.emissionRate * n;
       this.emissionAccumulator >= 1 &&
       this.particles.length < this.options.maxParticles;
-
     )
       (this.emissionAccumulator--, this.createParticle(t, r));
   }

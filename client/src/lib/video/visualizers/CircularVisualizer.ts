@@ -360,7 +360,7 @@ export class CircularVisualizer {
     innerRadius: number,
     _outerRadius: number,
   ): void {
-    const { barCount,  barMinHeight } = this.options;
+    const { barCount, barMinHeight } = this.options;
     const angleStep =
       (this.options.endAngle - this.options.startAngle) / barCount;
     const halfAngle = angleStep / 4;

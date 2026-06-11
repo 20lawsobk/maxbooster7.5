@@ -869,8 +869,7 @@ export function ContentGenerator() {
       toast({
         title: "Import failed",
         description:
-          (err instanceof Error && err.message) ||
-          "Could not analyze that URL",
+          (err instanceof Error && err.message) || "Could not analyze that URL",
         variant: "destructive",
       });
     } finally {

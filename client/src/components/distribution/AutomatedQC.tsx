@@ -24,7 +24,21 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, XCircle, AlertTriangle, Volume2, Image, FileText, Hash, Wand2, RefreshCw, Play, Pause, Shield, Download } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Volume2,
+  Image,
+  FileText,
+  Hash,
+  Wand2,
+  RefreshCw,
+  Play,
+  Pause,
+  Shield,
+  Download,
+} from "lucide-react";
 
 interface QCCheck {
   id: string;

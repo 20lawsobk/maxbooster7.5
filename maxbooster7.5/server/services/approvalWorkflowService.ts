@@ -75,9 +75,7 @@ interface SubmitApprovalParams {
 }
 
 export class ApprovalWorkflowService {
-  async createWorkflow(
-    params: CreateWorkflowParams,
-  ): Promise<{
+  async createWorkflow(params: CreateWorkflowParams): Promise<{
     success: boolean;
     workflow?: ApprovalWorkflow;
     error?: string;

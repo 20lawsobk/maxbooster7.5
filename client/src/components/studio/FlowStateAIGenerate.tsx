@@ -2,7 +2,18 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
-import { Wand2, X, Music, Loader2, Sparkles, Drum, Guitar, Mic2, Piano, Waves } from "lucide-react";
+import {
+  Wand2,
+  X,
+  Music,
+  Loader2,
+  Sparkles,
+  Drum,
+  Guitar,
+  Mic2,
+  Piano,
+  Waves,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";

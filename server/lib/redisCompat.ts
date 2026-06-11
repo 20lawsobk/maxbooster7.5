@@ -1,4 +1,3 @@
-
 /**
  * Applies node-redis v4 camelCase method aliases onto an ioredis client.
  *

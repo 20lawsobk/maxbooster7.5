@@ -54,9 +54,8 @@ class PocketDimensionStorageProvider implements StorageProvider {
 
   private async init(): Promise<void> {
     try {
-      const { PocketDimensionManager } = await import(
-        "../pocket-dimension/index.js"
-      );
+      const { PocketDimensionManager } =
+        await import("../pocket-dimension/index.js");
       const manager = PocketDimensionManager.getInstance("./pocket-dimensions");
       this.pocket = await manager.openPocket("application-storage", {
         compressionLevel: 9,

@@ -137,11 +137,9 @@ export default function FanHub() {
     queryKey: ["/api/fan-hub/stats"],
   });
 
-  const { data: messages } = useQuery<FanMessage[]>(
-    {
-      queryKey: ["/api/fan-hub/messages"],
-    },
-  );
+  const { data: messages } = useQuery<FanMessage[]>({
+    queryKey: ["/api/fan-hub/messages"],
+  });
 
   // Mutations
   const addFanMutation = useMutation({

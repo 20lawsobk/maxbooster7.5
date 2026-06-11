@@ -14,7 +14,32 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { CheckCircle, Circle, X, ChevronDown, ChevronUp, User, Sparkles, Music, Share2, Crown, Zap, ArrowRight, HelpCircle, Trophy, Star, Flame, Target, BarChart3, Calendar, UserPlus, ShoppingBag, Minimize2, PartyPopper, Lock } from "lucide-react";
+import {
+  CheckCircle,
+  Circle,
+  X,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Sparkles,
+  Music,
+  Share2,
+  Crown,
+  Zap,
+  ArrowRight,
+  HelpCircle,
+  Trophy,
+  Star,
+  Flame,
+  Target,
+  BarChart3,
+  Calendar,
+  UserPlus,
+  ShoppingBag,
+  Minimize2,
+  PartyPopper,
+  Lock,
+} from "lucide-react";
 import { Link } from "wouter";
 
 interface OnboardingTask {
@@ -194,9 +219,7 @@ export default function OnboardingChecklist({
   const progressPercentage = progress?.completionPercentage || 0;
   REWARDS.find((r) => progressPercentage < r.threshold) ||
     REWARDS[REWARDS.length - 1];
-  REWARDS.filter(
-    (r) => progressPercentage >= r.threshold,
-  );
+  REWARDS.filter((r) => progressPercentage >= r.threshold);
 
   if (isLoading) {
     return null;

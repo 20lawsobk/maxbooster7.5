@@ -47,7 +47,23 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Save, FolderOpen, Trash2, Copy, Share2, MoreHorizontal, BookOpen, Clock, Star, StarOff, Check, Loader2, FileText, Settings, Download } from "lucide-react";
+import {
+  Save,
+  FolderOpen,
+  Trash2,
+  Copy,
+  Share2,
+  MoreHorizontal,
+  BookOpen,
+  Clock,
+  Star,
+  StarOff,
+  Check,
+  Loader2,
+  FileText,
+  Settings,
+  Download,
+} from "lucide-react";
 
 export interface BatchTemplate {
   id: string;

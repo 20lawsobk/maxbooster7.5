@@ -25,8 +25,37 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, Line, ComposedChart, Area } from "recharts";
-import { GitBranch, Target, Eye, MousePointerClick, DollarSign, Zap, Clock, Calendar, BarChart3, ArrowRight, CheckCircle, Activity, RefreshCw, Layers, Share2, Info } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Line,
+  ComposedChart,
+  Area,
+} from "recharts";
+import {
+  GitBranch,
+  Target,
+  Eye,
+  MousePointerClick,
+  DollarSign,
+  Zap,
+  Clock,
+  Calendar,
+  BarChart3,
+  ArrowRight,
+  CheckCircle,
+  Activity,
+  RefreshCw,
+  Layers,
+  Share2,
+  Info,
+} from "lucide-react";
 
 type AttributionModel =
   | "first-click"

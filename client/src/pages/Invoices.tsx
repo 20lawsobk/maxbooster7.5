@@ -5,7 +5,12 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,7 +40,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Receipt, Plus, Download, Send, Eye, Clock, CheckCircle, AlertCircle, Filter, Search, Trash2, MoreVertical } from "lucide-react";
+import {
+  Receipt,
+  Plus,
+  Download,
+  Send,
+  Eye,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Filter,
+  Search,
+  Trash2,
+  MoreVertical,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

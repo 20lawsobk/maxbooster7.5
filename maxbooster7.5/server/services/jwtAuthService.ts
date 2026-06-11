@@ -126,9 +126,7 @@ export class JWTAuthService {
     };
   }
 
-  async verifyAccessToken(
-    token: string,
-  ): Promise<{
+  async verifyAccessToken(token: string): Promise<{
     userId: string;
     role: string;
     jti: string;

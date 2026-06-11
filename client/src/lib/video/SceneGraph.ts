@@ -1,4 +1,9 @@
-import type { LayerConfig, TransformConfig, VideoProject, Keyframe } from "../../../../shared/video/VideoRendererEngine";
+import type {
+  LayerConfig,
+  TransformConfig,
+  VideoProject,
+  Keyframe,
+} from "../../../../shared/video/VideoRendererEngine";
 import {
   DEFAULT_TRANSFORM,
   EASING_FUNCTIONS,

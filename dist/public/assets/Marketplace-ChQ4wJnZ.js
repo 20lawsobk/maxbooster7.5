@@ -288,8 +288,9 @@ class uo {
   getAudioContext() {
     return (
       this.audioContext ||
-        (this.audioContext = new (window.AudioContext ||
-          window.webkitAudioContext)()),
+        (this.audioContext = new (
+          window.AudioContext || window.webkitAudioContext
+        )()),
       this.audioContext
     );
   }
@@ -34467,7 +34468,9 @@ function mi() {
                                                                                             .target
                                                                                             .value
                                                                                             ? new Date(
-                                                                                                r.target.value,
+                                                                                                r
+                                                                                                  .target
+                                                                                                  .value,
                                                                                               ).toISOString()
                                                                                             : "",
                                                                                       }),
@@ -52490,7 +52493,9 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                                                                     l.target
                                                                       .value
                                                                       ? new Date(
-                                                                          l.target.value,
+                                                                          l
+                                                                            .target
+                                                                            .value,
                                                                         ).toISOString()
                                                                       : "",
                                                                 }),

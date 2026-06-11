@@ -96,13 +96,11 @@ router.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
         typeof s !== "string" || !VALID_SCOPES.has(s),
     );
     if (invalidScopes.length > 0) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid scopes",
-          invalid: invalidScopes,
-          valid: [...VALID_SCOPES],
-        });
+      return res.status(400).json({
+        error: "Invalid scopes",
+        invalid: invalidScopes,
+        valid: [...VALID_SCOPES],
+      });
     }
     const validScopes = requestedScopes as string[];
 

@@ -200,7 +200,13 @@
           class="logo"
           src="/logo.png"
           alt="Max Booster"
-          onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('beforeend', '<div style=&quot;font-size:44px;line-height:1;&quot;>🎵</div>');"
+          onerror="
+            this.style.display = 'none';
+            this.parentElement.insertAdjacentHTML(
+              'beforeend',
+              '<div style=&quot;font-size:44px;line-height:1;&quot;>🎵</div>',
+            );
+          "
         />
         <span id="status-dot" class="status-dot" title="Offline"></span>
       </div>

@@ -1,6 +1,14 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sliders, Volume2, Loader2, Sparkles, AlertCircle, ArrowLeftRight, Target } from "lucide-react";
+import {
+  Sliders,
+  Volume2,
+  Loader2,
+  Sparkles,
+  AlertCircle,
+  ArrowLeftRight,
+  Target,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";

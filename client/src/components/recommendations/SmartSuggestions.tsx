@@ -18,7 +18,21 @@ import {
 } from "@/hooks/useSmartDefaults";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, Sparkles, Calendar, Share2, Settings, Check, ArrowRight, Zap, TrendingUp, Clock, Target, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  Brain,
+  Sparkles,
+  Calendar,
+  Share2,
+  Settings,
+  Check,
+  ArrowRight,
+  Zap,
+  TrendingUp,
+  Clock,
+  Target,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 
 interface SmartSuggestionsProps {
   showHeader?: boolean;
@@ -29,11 +43,8 @@ export function SmartSuggestions({
   showHeader = true,
   defaultTab = "all",
 }: SmartSuggestionsProps) {
-  const {
-    
-    isLoading: loadingRecs,
-    getHighPriorityRecommendations,
-  } = useRecommendations();
+  const { isLoading: loadingRecs, getHighPriorityRecommendations } =
+    useRecommendations();
   const { defaults, isLoading: loadingDefaults } = useSmartDefaults();
   const { suggestions: scheduleSuggestions, isLoading: loadingSchedule } =
     useSchedulingSuggestions();

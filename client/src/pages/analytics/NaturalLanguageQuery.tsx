@@ -12,7 +12,27 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquare, Search, Sparkles, TrendingUp, DollarSign, Users, Music, Globe, Calendar, BarChart3, PieChart, Send, Loader2, History, Lightbulb, ChevronRight, ArrowUp, ArrowDown, X } from "lucide-react";
+import {
+  MessageSquare,
+  Search,
+  Sparkles,
+  TrendingUp,
+  DollarSign,
+  Users,
+  Music,
+  Globe,
+  Calendar,
+  BarChart3,
+  PieChart,
+  Send,
+  Loader2,
+  History,
+  Lightbulb,
+  ChevronRight,
+  ArrowUp,
+  ArrowDown,
+  X,
+} from "lucide-react";
 
 interface QueryResult {
   type: "chart" | "metric" | "table" | "text";

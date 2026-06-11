@@ -105,13 +105,11 @@ router.get("/schedule", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error getting coordinated schedule:");
     res
@@ -165,13 +163,11 @@ router.post("/register", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error registering post:");
     res.status(500).json({ success: false, error: "Failed to register post" });
@@ -202,13 +198,11 @@ router.put("/posts/:postId", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error updating post:");
     res.status(500).json({ success: false, error: "Failed to update post" });
@@ -285,13 +279,11 @@ router.post("/insights", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error sharing insight:");
     res.status(500).json({ success: false, error: "Failed to share insight" });
@@ -318,13 +310,11 @@ router.get("/insights", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error getting insights:");
     res.status(500).json({ success: false, error: "Failed to get insights" });

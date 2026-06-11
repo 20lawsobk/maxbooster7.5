@@ -13,8 +13,9 @@ export interface SelectionItem {
   [key: string]: Record<string, unknown>;
 }
 
-export interface SelectionContextValue<T extends SelectionItem = SelectionItem>
-  extends UseBatchSelectResult<string> {
+export interface SelectionContextValue<
+  T extends SelectionItem = SelectionItem,
+> extends UseBatchSelectResult<string> {
   module: string;
   items: T[];
   selectedItems: T[];

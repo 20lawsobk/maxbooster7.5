@@ -227,7 +227,6 @@ class ReliabilityCoordinator extends EventEmitter {
   }
 
   private updateReliabilityMetrics(): void {
-
     // Calculate uptime percentage (assume target is 99.9%)
     this.systemHealth.reliability.uptimePercentage = Math.min(
       99.99,

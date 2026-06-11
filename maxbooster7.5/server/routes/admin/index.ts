@@ -291,18 +291,14 @@ router.put("/users/:userId", async (req, res) => {
         .json({ error: `Invalid role. Allowed: ${allowedRoles.join(", ")}` });
     }
     if (subscriptionTier && !allowedTiers.includes(subscriptionTier)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid subscription tier. Allowed: ${allowedTiers.filter(Boolean).join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid subscription tier. Allowed: ${allowedTiers.filter(Boolean).join(", ")}`,
+      });
     }
     if (subscriptionStatus && !allowedStatuses.includes(subscriptionStatus)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid subscription status. Allowed: ${allowedStatuses.filter(Boolean).join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid subscription status. Allowed: ${allowedStatuses.filter(Boolean).join(", ")}`,
+      });
     }
 
     const updateData: Record<string, any> = {};
@@ -330,9 +326,8 @@ router.put("/users/:userId", async (req, res) => {
         updateData.subscriptionStatus !== undefined
       ) {
         try {
-          const { revokeUserSessions } = await import(
-            "../../middleware/sessionConfig.js"
-          );
+          const { revokeUserSessions } =
+            await import("../../middleware/sessionConfig.js");
           await revokeUserSessions(String(userId));
         } catch (revokeErr: unknown) {
           logger.warn(
@@ -1170,12 +1165,10 @@ router.patch("/financial-config/royalty-rates/:id", async (req, res) => {
       if (ROYALTY_RATE_FIELDS.has(k)) update[k] = raw[k];
     }
     if (Object.keys(update).length === 0) {
-      return res
-        .status(400)
-        .json({
-          error: "No valid fields to update",
-          allowed: [...ROYALTY_RATE_FIELDS],
-        });
+      return res.status(400).json({
+        error: "No valid fields to update",
+        allowed: [...ROYALTY_RATE_FIELDS],
+      });
     }
     const stored = await db
       .select()
@@ -1215,12 +1208,10 @@ router.patch("/financial-config/tax-treaties/:id", async (req, res) => {
       if (TAX_TREATY_FIELDS.has(k)) update[k] = raw[k];
     }
     if (Object.keys(update).length === 0) {
-      return res
-        .status(400)
-        .json({
-          error: "No valid fields to update",
-          allowed: [...TAX_TREATY_FIELDS],
-        });
+      return res.status(400).json({
+        error: "No valid fields to update",
+        allowed: [...TAX_TREATY_FIELDS],
+      });
     }
     const stored = await db
       .select()

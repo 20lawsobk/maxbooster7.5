@@ -269,11 +269,9 @@ const VALID_TRIGGER_IDS = new Set(CUSTOM_TRIGGERS.map((t) => t.id));
 const createWorkflowSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
-  triggerEvent: z
-    .string()
-    .refine((v) => VALID_TRIGGER_IDS.has(v), {
-      message: "Invalid trigger event",
-    }),
+  triggerEvent: z.string().refine((v) => VALID_TRIGGER_IDS.has(v), {
+    message: "Invalid trigger event",
+  }),
   triggerConditions: z.record(z.string(), z.unknown()).optional(),
   actions: z
     .array(

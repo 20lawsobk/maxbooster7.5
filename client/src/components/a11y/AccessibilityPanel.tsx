@@ -29,7 +29,16 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Move, Focus, RotateCcw, Type, Palette, Settings, Keyboard } from "lucide-react";
+import {
+  Eye,
+  Move,
+  Focus,
+  RotateCcw,
+  Type,
+  Palette,
+  Settings,
+  Keyboard,
+} from "lucide-react";
 import type { ContrastMode } from "@/hooks/useHighContrast";
 
 export interface AccessibilityPanelProps {

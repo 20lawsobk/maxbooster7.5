@@ -594,12 +594,10 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Verification code is required." });
     }
     if (expiry && Date.now() > expiry) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Code expired. Please request a new Max Booster verification code.",
-        });
+      return res.status(400).json({
+        error:
+          "Code expired. Please request a new Max Booster verification code.",
+      });
     }
 
     if (method === "twilio_verify") {
@@ -608,12 +606,10 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
       const twilioToken = process.env.TWILIO_AUTH_TOKEN;
       const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
       if (!twilioSid || !twilioToken || !verifyServiceSid || !phoneNumber) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "No pending verification. Please request a new Max Booster code.",
-          });
+        return res.status(400).json({
+          error:
+            "No pending verification. Please request a new Max Booster code.",
+        });
       }
       const twilio = (await import("twilio")).default;
       const client = twilio(twilioSid, twilioToken);
@@ -621,30 +617,24 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
         .services(verifyServiceSid)
         .verificationChecks.create({ to: phoneNumber, code: submitted });
       if (check.status !== "approved") {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Invalid verification code. Please check your SMS and try again.",
-          });
+        return res.status(400).json({
+          error:
+            "Invalid verification code. Please check your SMS and try again.",
+        });
       }
     } else {
       // Local mode (Messages API or dev): compare against the stored code.
       if (!pendingCode) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "No pending verification. Please request a new Max Booster code.",
-          });
+        return res.status(400).json({
+          error:
+            "No pending verification. Please request a new Max Booster code.",
+        });
       }
       if (pendingCode !== submitted) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Invalid verification code. Please check your SMS and try again.",
-          });
+        return res.status(400).json({
+          error:
+            "Invalid verification code. Please check your SMS and try again.",
+        });
       }
     }
 
@@ -708,9 +698,8 @@ router.post("/test", async (req: Request, res: Response) => {
       });
     }
 
-    const { notificationDispatcher } = await import(
-      "../services/notificationDispatcher.js"
-    );
+    const { notificationDispatcher } =
+      await import("../services/notificationDispatcher.js");
     const pushResult = await notificationDispatcher.sendTestToUser(req.user.id);
 
     return res.json({
@@ -736,15 +725,12 @@ router.post("/test", async (req: Request, res: Response) => {
 router.get("/push/status", async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ error: "Not authenticated" });
   try {
-    const { notificationDispatcher } = await import(
-      "../services/notificationDispatcher.js"
-    );
-    const { desktopPushService } = await import(
-      "../services/desktopPushService.js"
-    );
-    const { mobilePushService } = await import(
-      "../services/mobilePushService.js"
-    );
+    const { notificationDispatcher } =
+      await import("../services/notificationDispatcher.js");
+    const { desktopPushService } =
+      await import("../services/desktopPushService.js");
+    const { mobilePushService } =
+      await import("../services/mobilePushService.js");
 
     const [breakdown, mobileStatus, serviceStatus] = await Promise.all([
       desktopPushService.getSubscriptionBreakdown(req.user.id),
@@ -776,9 +762,8 @@ router.post("/mobile-tokens", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Platform must be android or ios" });
     }
 
-    const { mobilePushService } = await import(
-      "../services/mobilePushService.js"
-    );
+    const { mobilePushService } =
+      await import("../services/mobilePushService.js");
     await mobilePushService.registerToken(
       req.user.id,
       token,
@@ -807,9 +792,8 @@ router.delete("/mobile-tokens", async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ error: "Not authenticated" });
   try {
     const { token } = req.body;
-    const { mobilePushService } = await import(
-      "../services/mobilePushService.js"
-    );
+    const { mobilePushService } =
+      await import("../services/mobilePushService.js");
 
     if (token) {
       await mobilePushService.deactivateToken(token);
@@ -838,9 +822,8 @@ router.delete("/mobile-tokens", async (req: Request, res: Response) => {
 router.get("/mobile-tokens", async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ error: "Not authenticated" });
   try {
-    const { mobilePushService } = await import(
-      "../services/mobilePushService.js"
-    );
+    const { mobilePushService } =
+      await import("../services/mobilePushService.js");
     const status = await mobilePushService.getUserTokenStatus(req.user.id);
     return res.json(status);
   } catch (error) {

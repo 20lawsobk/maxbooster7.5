@@ -1632,8 +1632,9 @@ function kl({ files: r, onChange: o, maxFiles: l = 20 }) {
           const q = new FileReader();
           ((q.onload = async (X) => {
             try {
-              const ie = new (window.AudioContext ||
-                  window.webkitAudioContext)(),
+              const ie = new (
+                  window.AudioContext || window.webkitAudioContext
+                )(),
                 ce = X.target?.result,
                 F = (await ie.decodeAudioData(ce)).getChannelData(0),
                 Z = 100,
@@ -33060,27 +33061,25 @@ function Jl({ profile: r, onUpdated: o }) {
                         "div",
                         {
                           className: "flex flex-wrap gap-1 mt-1",
-                          children: Re.genres
-                            .slice(0, 5)
-                            .map((b) =>
-                              e.jsxDEV(
-                                U,
-                                {
-                                  variant: "outline",
-                                  className: "text-xs py-0",
-                                  children: b,
-                                },
-                                b,
-                                !1,
-                                {
-                                  fileName:
-                                    "/home/runner/workspace/client/src/components/distribution/AutoArtistSync.tsx",
-                                  lineNumber: 673,
-                                  columnNumber: 17,
-                                },
-                                this,
-                              ),
+                          children: Re.genres.slice(0, 5).map((b) =>
+                            e.jsxDEV(
+                              U,
+                              {
+                                variant: "outline",
+                                className: "text-xs py-0",
+                                children: b,
+                              },
+                              b,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/components/distribution/AutoArtistSync.tsx",
+                                lineNumber: 673,
+                                columnNumber: 17,
+                              },
+                              this,
                             ),
+                          ),
                         },
                         void 0,
                         !1,
@@ -43389,7 +43388,7 @@ function ic() {
       putBit: function (o) {
         const l = Math.floor(this.length / 8);
         (this.buffer.length <= l && this.buffer.push(0),
-          o && (this.buffer[l] |= 128 >>> this.length % 8),
+          o && (this.buffer[l] |= 128 >>> (this.length % 8)),
           this.length++);
       },
     }),
@@ -44518,7 +44517,6 @@ function fc() {
     for (
       D.getLengthInBits() + 4 <= c && D.put(0, 4);
       D.getLengthInBits() % 8 !== 0;
-
     )
       D.putBit(0);
     const V = (c - D.getLengthInBits()) / 8;
@@ -56898,17 +56896,17 @@ function nm() {
           try {
             const { jsPDF: mi } = await lt(
                 async () => {
-                  const { jsPDF: ze } = await import(
-                    "./jspdf.es.min-K5xo7UF9.js"
-                  ).then((yi) => yi.j);
+                  const { jsPDF: ze } =
+                    await import("./jspdf.es.min-K5xo7UF9.js").then(
+                      (yi) => yi.j,
+                    );
                   return { jsPDF: ze };
                 },
                 __vite__mapDeps([0, 1, 2, 3]),
               ),
               { default: is } = await lt(async () => {
-                const { default: ze } = await import(
-                  "./jspdf.plugin.autotable-KFqWVtFs.js"
-                );
+                const { default: ze } =
+                  await import("./jspdf.plugin.autotable-KFqWVtFs.js");
                 return { default: ze };
               }, []),
               ye = new mi();
@@ -70357,7 +70355,8 @@ function nm() {
                                                                   ...M,
                                                                   scheduledDate:
                                                                     new Date(
-                                                                      n.target.value,
+                                                                      n.target
+                                                                        .value,
                                                                     ),
                                                                 })),
                                                               className: "mt-2",

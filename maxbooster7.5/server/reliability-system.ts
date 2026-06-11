@@ -225,9 +225,8 @@ class MaxBooster247System extends EventEmitter {
 
   private async resetSuppressedPatterns(): Promise<void> {
     try {
-      const { chainErrorAutoFixer } = await import(
-        "./services/chainErrorAutoFixer.js"
-      );
+      const { chainErrorAutoFixer } =
+        await import("./services/chainErrorAutoFixer.js");
       const status = chainErrorAutoFixer.getStatus();
       let reset = 0;
       for (const p of status.patterns) {

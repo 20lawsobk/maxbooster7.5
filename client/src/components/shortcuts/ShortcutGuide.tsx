@@ -59,7 +59,7 @@ interface ShortcutGuideProps {
 }
 
 export function ShortcutGuide({ className }: ShortcutGuideProps) {
-  const { isOpen, close,  context } = useShortcutGuide();
+  const { isOpen, close, context } = useShortcutGuide();
   const { shortcutManager } = useShortcuts();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedContext, setSelectedContext] = useState<

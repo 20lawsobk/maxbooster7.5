@@ -29,7 +29,12 @@
  */
 
 import { WebGLRenderer } from "./WebGLRenderer";
-import { BLOOM_SHADER, COLOR_GRADING_SHADER, CHROMATIC_ABERRATION_SHADER, VIGNETTE_SHADER } from "./ShaderPresets";
+import {
+  BLOOM_SHADER,
+  COLOR_GRADING_SHADER,
+  CHROMATIC_ABERRATION_SHADER,
+  VIGNETTE_SHADER,
+} from "./ShaderPresets";
 
 export interface InferenceConfig {
   width: number;

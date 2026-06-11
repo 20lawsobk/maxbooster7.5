@@ -25,7 +25,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Eye, Download, Trash2, Shield, Globe, Users, Lock, FileText, CheckCircle, AlertTriangle, Loader2, Clock, Info } from "lucide-react";
+import {
+  Eye,
+  Download,
+  Trash2,
+  Shield,
+  Globe,
+  Users,
+  Lock,
+  FileText,
+  CheckCircle,
+  AlertTriangle,
+  Loader2,
+  Clock,
+  Info,
+} from "lucide-react";
 
 interface PrivacySettings {
   profileVisibility: "public" | "private" | "connections";

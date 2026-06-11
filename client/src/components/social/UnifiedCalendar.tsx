@@ -37,7 +37,34 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Edit, Trash2, Clock, CheckCircle, XCircle, AlertCircle, DollarSign, Megaphone, FileText, MoreHorizontal, GripVertical, Send, Eye, Users, Target, Sparkles, Zap, RefreshCw, PartyPopper, CalendarDays, LayoutGrid, List } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Edit,
+  Trash2,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  DollarSign,
+  Megaphone,
+  FileText,
+  MoreHorizontal,
+  GripVertical,
+  Send,
+  Eye,
+  Users,
+  Target,
+  Sparkles,
+  Zap,
+  RefreshCw,
+  PartyPopper,
+  CalendarDays,
+  LayoutGrid,
+  List,
+} from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -47,7 +74,16 @@ import {
   TwitterIcon,
 } from "@/components/ui/brand-icons";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from "date-fns";
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameDay,
+  isToday,
+  addMonths,
+  subMonths,
+} from "date-fns";
 
 interface ScheduledPost {
   id: string;
@@ -244,7 +280,6 @@ export function UnifiedCalendar() {
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const hourSlots = Array.from({ length: 24 }, (_, i) => i);
 
-
   const postVariants = {
     hidden: { opacity: 0, y: -10 },
     visible: { opacity: 1, y: 0 },
@@ -365,12 +400,12 @@ export function UnifiedCalendar() {
     setShowApprovalDialog(false);
   };
 
-  ((post: ScheduledPost) => {
+  (post: ScheduledPost) => {
     toast({
       title: "Publishing...",
       description: `"${post.title}" is being published to ${post.platforms.length} platforms.`,
     });
-  });
+  };
 
   const handleAddToQueue = (item: QueueItem) => {
     toast({

@@ -232,7 +232,7 @@ function getPalette(meta: MaxcoreJobMeta): Palette {
 const clamp = (v: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const easeIn = (t: number) => t * t * t;
-((t: number) => 1 - Math.pow(1 - t, 3));
+(t: number) => 1 - Math.pow(1 - t, 3);
 
 function fade(t: number, inEnd: number, outStart: number, outEnd = 1): number {
   if (t < inEnd) return smoothstep(clamp(t / inEnd));
@@ -1339,7 +1339,6 @@ function drawFrame(
   fps: number,
   grainFrames?: HTMLCanvasElement[],
 ) {
-
   // Determine dominant scene (highest alpha)
   let dominantScene = scenes[0];
   let dominantA = 0;

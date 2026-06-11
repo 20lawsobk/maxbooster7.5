@@ -14678,95 +14678,93 @@ const Ks = N.memo(({ attribution: s }) => {
                                     "div",
                                     {
                                       className: "space-y-2",
-                                      children: i
-                                        .slice(0, 3)
-                                        .map((l, m) =>
-                                          e.jsxDEV(
-                                            "div",
-                                            {
-                                              className:
-                                                "flex items-center justify-between text-sm",
-                                              children: [
-                                                e.jsxDEV(
-                                                  "div",
-                                                  {
-                                                    className:
-                                                      "flex items-center gap-2",
-                                                    children: [
-                                                      e.jsxDEV(
-                                                        "span",
-                                                        {
-                                                          className:
-                                                            "w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-bold",
-                                                          children: m + 1,
-                                                        },
-                                                        void 0,
-                                                        !1,
-                                                        {
-                                                          fileName:
-                                                            "/home/runner/workspace/client/src/pages/Analytics.tsx",
-                                                          lineNumber: 1069,
-                                                          columnNumber: 25,
-                                                        },
-                                                        void 0,
-                                                      ),
-                                                      e.jsxDEV(
-                                                        "span",
-                                                        { children: l.source },
-                                                        void 0,
-                                                        !1,
-                                                        {
-                                                          fileName:
-                                                            "/home/runner/workspace/client/src/pages/Analytics.tsx",
-                                                          lineNumber: 1072,
-                                                          columnNumber: 25,
-                                                        },
-                                                        void 0,
-                                                      ),
-                                                    ],
-                                                  },
-                                                  void 0,
-                                                  !0,
-                                                  {
-                                                    fileName:
-                                                      "/home/runner/workspace/client/src/pages/Analytics.tsx",
-                                                    lineNumber: 1068,
-                                                    columnNumber: 23,
-                                                  },
-                                                  void 0,
-                                                ),
-                                                e.jsxDEV(
-                                                  "span",
-                                                  {
-                                                    className: "font-semibold",
-                                                    children: [
-                                                      "$",
-                                                      l.revenue.toLocaleString(),
-                                                    ],
-                                                  },
-                                                  void 0,
-                                                  !0,
-                                                  {
-                                                    fileName:
-                                                      "/home/runner/workspace/client/src/pages/Analytics.tsx",
-                                                    lineNumber: 1074,
-                                                    columnNumber: 23,
-                                                  },
-                                                  void 0,
-                                                ),
-                                              ],
-                                            },
-                                            l.source,
-                                            !0,
-                                            {
-                                              fileName:
-                                                "/home/runner/workspace/client/src/pages/Analytics.tsx",
-                                              lineNumber: 1067,
-                                              columnNumber: 21,
-                                            },
-                                            void 0,
-                                          ),
+                                      children: i.slice(0, 3).map((l, m) =>
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "flex items-center justify-between text-sm",
+                                            children: [
+                                              e.jsxDEV(
+                                                "div",
+                                                {
+                                                  className:
+                                                    "flex items-center gap-2",
+                                                  children: [
+                                                    e.jsxDEV(
+                                                      "span",
+                                                      {
+                                                        className:
+                                                          "w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-bold",
+                                                        children: m + 1,
+                                                      },
+                                                      void 0,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Analytics.tsx",
+                                                        lineNumber: 1069,
+                                                        columnNumber: 25,
+                                                      },
+                                                      void 0,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      "span",
+                                                      { children: l.source },
+                                                      void 0,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Analytics.tsx",
+                                                        lineNumber: 1072,
+                                                        columnNumber: 25,
+                                                      },
+                                                      void 0,
+                                                    ),
+                                                  ],
+                                                },
+                                                void 0,
+                                                !0,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Analytics.tsx",
+                                                  lineNumber: 1068,
+                                                  columnNumber: 23,
+                                                },
+                                                void 0,
+                                              ),
+                                              e.jsxDEV(
+                                                "span",
+                                                {
+                                                  className: "font-semibold",
+                                                  children: [
+                                                    "$",
+                                                    l.revenue.toLocaleString(),
+                                                  ],
+                                                },
+                                                void 0,
+                                                !0,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Analytics.tsx",
+                                                  lineNumber: 1074,
+                                                  columnNumber: 23,
+                                                },
+                                                void 0,
+                                              ),
+                                            ],
+                                          },
+                                          l.source,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Analytics.tsx",
+                                            lineNumber: 1067,
+                                            columnNumber: 21,
+                                          },
+                                          void 0,
                                         ),
+                                      ),
                                     },
                                     void 0,
                                     !1,

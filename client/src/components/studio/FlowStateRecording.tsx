@@ -13,7 +13,16 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Mic, Circle, Square, Play, Pause, Headphones, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  Mic,
+  Circle,
+  Square,
+  Play,
+  Pause,
+  Headphones,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 

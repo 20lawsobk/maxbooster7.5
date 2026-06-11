@@ -1,7 +1,20 @@
 import { useCallback, useState } from "react";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { Radio, Link, Unlink, RefreshCw, Activity, Eye, EyeOff, ChevronDown, ChevronUp, Trash2, Copy, Download } from "lucide-react";
+import {
+  Radio,
+  Link,
+  Unlink,
+  RefreshCw,
+  Activity,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Copy,
+  Download,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -433,7 +446,7 @@ export function SessionStateBusPanel({
     {} as Record<string, PluginState[]>,
   );
 
-  ((targetPluginId: string, targetParamId: string) => {
+  (targetPluginId: string, targetParamId: string) => {
     if (!selectedSource) return;
 
     createLink({
@@ -449,7 +462,7 @@ export function SessionStateBusPanel({
 
     setSelectedSource(null);
     setLinkCreationMode(false);
-  });
+  };
 
   const handleExportState = () => {
     const state = {

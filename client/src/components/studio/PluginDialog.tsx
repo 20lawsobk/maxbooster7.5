@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Power, RotateCcw, ChevronDown, Save, Folder, Activity, Waves, Music, Sliders as SlidersIcon } from "lucide-react";
+import {
+  X,
+  Power,
+  RotateCcw,
+  ChevronDown,
+  Save,
+  Folder,
+  Activity,
+  Waves,
+  Music,
+  Sliders as SlidersIcon,
+} from "lucide-react";
 
 export interface PluginParameter {
   id: string;
@@ -212,8 +223,6 @@ function Knob({
   );
 }
 
-
-
 function Toggle({
   value,
   onChange,
@@ -306,7 +315,6 @@ function GainReductionMeter({
     </div>
   );
 }
-
 
 function ADSRVisualizer({
   attack,
@@ -431,12 +439,8 @@ function EQSection({
   const freqParams = params.filter(
     (p) => p.id.includes("freq") || p.id.includes("frequency"),
   );
-  params.filter(
-    (p) => p.id.includes("gain") && !p.id.includes("makeup"),
-  );
-  params.filter(
-    (p) => p.id.includes("q") || p.id.includes("bandwidth"),
-  );
+  params.filter((p) => p.id.includes("gain") && !p.id.includes("makeup"));
+  params.filter((p) => p.id.includes("q") || p.id.includes("bandwidth"));
   const hasEQBands = freqParams.length > 0;
 
   if (!hasEQBands) return null;

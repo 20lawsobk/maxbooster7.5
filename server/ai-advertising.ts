@@ -31,7 +31,6 @@ export type TargetAudience = z.infer<typeof TargetAudienceSchema>;
 
 // ---- Resilient HTTP wrapper -------------------------------------------
 
-
 interface SmartBidding {
   predictedCPM: number;
   optimalBid: number;
@@ -39,7 +38,6 @@ interface SmartBidding {
   demandForecast: Record<string, unknown>;
   algorithmicAdvantage: number;
 }
-
 
 export class AIAdvertisingEngine {
   // Max Booster In-House AI - No External Dependencies
@@ -333,7 +331,6 @@ export class AIAdvertisingEngine {
 
   // Helper methods
 
-
   private async generateLookalikeAudiences(
     _musicProfile: unknown,
   ): Promise<any[]> {
@@ -395,7 +392,10 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private calculateOptimalBid(baseline: unknown, _competition: unknown): number {
+  private calculateOptimalBid(
+    baseline: unknown,
+    _competition: unknown,
+  ): number {
     return baseline.averageCPM * 0.75; // Start 25% below market rate
   }
 
@@ -438,11 +438,6 @@ export class AIAdvertisingEngine {
       Spotify: "Canvas art, playlist pitch optimization",
     };
   }
-
-
-
-
-
 
   // Platform-specific replacement methods
   private async replaceFacebookAds(

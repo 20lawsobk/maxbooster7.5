@@ -5,7 +5,14 @@ import { randomBytes } from "crypto";
 import { Request } from "express";
 import { storageService } from "../services/storageService.js";
 import { logger } from "../logger.js";
-import { sanitizeFilename, verifyMagicBytes, UPLOAD_LIMITS, type UploadCategory, validateFileBuffer, createUploadValidator } from "./uploadSecurity.js";
+import {
+  sanitizeFilename,
+  verifyMagicBytes,
+  UPLOAD_LIMITS,
+  type UploadCategory,
+  validateFileBuffer,
+  createUploadValidator,
+} from "./uploadSecurity.js";
 import {
   processImage,
   processAvatarImage,

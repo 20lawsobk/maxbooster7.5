@@ -17,7 +17,6 @@ export interface SkipToContentProps {
   className?: string;
 }
 
-
 export function SkipToContent({
   mainContentId = "main-content",
   mainContentLabel = "Skip to main content",

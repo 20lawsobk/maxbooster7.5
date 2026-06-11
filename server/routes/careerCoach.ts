@@ -235,12 +235,10 @@ router.put(
 
       const validation = createGoalSchema.partial().safeParse(req.body);
       if (!validation.success) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            errors: validation.error.flatten().fieldErrors,
-          });
+        return res.status(400).json({
+          success: false,
+          errors: validation.error.flatten().fieldErrors,
+        });
       }
 
       const { deadline, ...rest } = validation.data;

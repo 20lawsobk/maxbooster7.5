@@ -263,9 +263,7 @@ class SentryService {
     }
   }
 
-  private parseStackTrace(
-    stack: string,
-  ): Array<{
+  private parseStackTrace(stack: string): Array<{
     filename: string;
     lineno?: number;
     colno?: number;

@@ -9,7 +9,10 @@ import {
 } from "./AutomationEngine";
 import { RoutingEngine, routingEngine } from "./RoutingEngine";
 import { MIDIEngine, midiEngine } from "./MIDIEngine";
-import { NonDestructiveAudioEngine, nonDestructiveAudio } from "./NonDestructiveAudio";
+import {
+  NonDestructiveAudioEngine,
+  nonDestructiveAudio,
+} from "./NonDestructiveAudio";
 import {
   PluginStateManager,
   pluginStateManager,

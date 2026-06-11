@@ -108,13 +108,11 @@ function nr(e) {
     t.reverse(),
     lt.test(me(t).function || "") &&
       (t.pop(), lt.test(me(t).function || "") && t.pop()),
-    t
-      .slice(0, Kt)
-      .map((n) => ({
-        ...n,
-        filename: n.filename || me(t).filename,
-        function: n.function || er,
-      }))
+    t.slice(0, Kt).map((n) => ({
+      ...n,
+      filename: n.filename || me(t).filename,
+      function: n.function || er,
+    }))
   );
 }
 function me(e) {
@@ -248,7 +246,6 @@ function dr(e, t = {}) {
       i++ < r &&
       ((u = hr(n, l)),
       !(u === "html" || (i > 1 && s + o.length * c + u.length >= d)));
-
     )
       (o.push(u), (s += u.length), (n = n.parentNode));
     return o.reverse().join(a);

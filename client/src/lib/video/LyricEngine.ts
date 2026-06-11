@@ -1,5 +1,11 @@
 import type { AudioAnalysisData, BeatInfo } from "./AudioAnalyzer";
-import { TextAnimator, type TextStyle, type AnimationConfig, DEFAULT_TEXT_STYLE, ANIMATION_PRESETS } from "./TextAnimator";
+import {
+  TextAnimator,
+  type TextStyle,
+  type AnimationConfig,
+  DEFAULT_TEXT_STYLE,
+  ANIMATION_PRESETS,
+} from "./TextAnimator";
 
 export type LyricFormat = "lrc" | "srt" | "plain";
 export type DisplayMode = "line" | "word" | "karaoke";
@@ -527,7 +533,7 @@ export class LyricEngine {
     if (!currentLine) return;
 
     const position = this.getTextPosition();
-    const { textStyle,  karaokeStyle } = this.config;
+    const { textStyle, karaokeStyle } = this.config;
 
     const lineProgress =
       (currentTime - currentLine.startTime) /

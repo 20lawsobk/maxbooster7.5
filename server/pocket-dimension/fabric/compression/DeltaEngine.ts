@@ -58,7 +58,7 @@ export class DeltaEngine {
   }
 
   decode(base: Buffer, delta: Buffer): Buffer {
-    const {  targetLen, ops } = this.deserializeOps(delta);
+    const { targetLen, ops } = this.deserializeOps(delta);
     const out = Buffer.allocUnsafe(targetLen);
     let outPos = 0;
 

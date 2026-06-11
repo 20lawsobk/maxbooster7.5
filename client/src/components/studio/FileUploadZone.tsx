@@ -13,7 +13,16 @@ import {
   openFilePickerInFullscreen,
   canPickFilesInFullscreen,
 } from "@/hooks/useFullscreenFileUpload";
-import { Upload, FileAudio, X, CheckCircle2, AlertCircle, Loader2, Music, FolderOpen } from "lucide-react";
+import {
+  Upload,
+  FileAudio,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Music,
+  FolderOpen,
+} from "lucide-react";
 
 interface UploadingFile {
   id: string;

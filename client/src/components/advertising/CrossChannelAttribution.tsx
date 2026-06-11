@@ -24,8 +24,50 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ComposedChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
-import { GitBranch, Target, DollarSign, TrendingUp, Clock, BarChart3, ArrowRight, CheckCircle, Activity, Settings, RefreshCw, Layers, Share2, Info, Smartphone, Monitor, Video, ArrowUpRight, ArrowDownRight, Brain, Lightbulb, AlertCircle, Network, GitMerge, Workflow } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  ComposedChart,
+  Area,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+} from "recharts";
+import {
+  GitBranch,
+  Target,
+  DollarSign,
+  TrendingUp,
+  Clock,
+  BarChart3,
+  ArrowRight,
+  CheckCircle,
+  Activity,
+  Settings,
+  RefreshCw,
+  Layers,
+  Share2,
+  Info,
+  Smartphone,
+  Monitor,
+  Video,
+  ArrowUpRight,
+  ArrowDownRight,
+  Brain,
+  Lightbulb,
+  AlertCircle,
+  Network,
+  GitMerge,
+  Workflow,
+} from "lucide-react";
 
 type AttributionModel =
   | "first-touch"
@@ -59,7 +101,6 @@ interface ConversionPath {
   avgDaysToConvert: number;
   avgTouchpoints: number;
 }
-
 
 const COLORS = [
   "#3b82f6",

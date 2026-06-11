@@ -43,7 +43,29 @@ import {
 } from "@/components/ui/chart-card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { DollarSign, TrendingUp, TrendingDown, BarChart3, Calendar, Download, AlertTriangle, CheckCircle, Clock, Search, RefreshCw, FileText, Users, CreditCard, Banknote, Calculator, ArrowUpRight, ArrowDownRight, Wallet, Split, AlertCircle } from "lucide-react";
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Calendar,
+  Download,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Search,
+  RefreshCw,
+  FileText,
+  Users,
+  CreditCard,
+  Banknote,
+  Calculator,
+  ArrowUpRight,
+  ArrowDownRight,
+  Wallet,
+  Split,
+  AlertCircle,
+} from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -149,38 +171,27 @@ export function RoyaltyReconciliation() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: platformEarnings = [] } = useQuery<
-    PlatformEarnings[]
-  >({
+  const { data: platformEarnings = [] } = useQuery<PlatformEarnings[]>({
     queryKey: ["/api/distribution/royalties/platforms", dateRange],
   });
 
-  const { data: discrepancies = [] } =
-    useQuery<StreamDiscrepancy[]>({
-      queryKey: ["/api/distribution/royalties/discrepancies"],
-    });
+  const { data: discrepancies = [] } = useQuery<StreamDiscrepancy[]>({
+    queryKey: ["/api/distribution/royalties/discrepancies"],
+  });
 
-  const { data: splitPayments = [] } = useQuery<
-    SplitPayment[]
-  >({
+  const { data: splitPayments = [] } = useQuery<SplitPayment[]>({
     queryKey: ["/api/distribution/royalties/splits"],
   });
 
-  const { data: taxDocuments = [] } = useQuery<
-    TaxDocument[]
-  >({
+  const { data: taxDocuments = [] } = useQuery<TaxDocument[]>({
     queryKey: ["/api/distribution/royalties/tax-documents"],
   });
 
-  const { data: payoutSchedule = [] } = useQuery<
-    PayoutSchedule[]
-  >({
+  const { data: payoutSchedule = [] } = useQuery<PayoutSchedule[]>({
     queryKey: ["/api/distribution/royalties/payouts"],
   });
 
-  const { data: currencyRates = [] } = useQuery<
-    CurrencyRate[]
-  >({
+  const { data: currencyRates = [] } = useQuery<CurrencyRate[]>({
     queryKey: ["/api/distribution/royalties/currency-rates"],
   });
 

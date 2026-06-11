@@ -13,7 +13,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { HardDrive, AlertTriangle, XCircle, FileAudio, FileImage, FileVideo, File, Trash2, Crown, Info, RefreshCw } from "lucide-react";
+import {
+  HardDrive,
+  AlertTriangle,
+  XCircle,
+  FileAudio,
+  FileImage,
+  FileVideo,
+  File,
+  Trash2,
+  Crown,
+  Info,
+  RefreshCw,
+} from "lucide-react";
 
 export type StorageWarningLevel =
   | "none"
@@ -51,7 +63,6 @@ interface StorageUsageIndicatorProps {
   variant?: "full" | "compact" | "minimal";
   className?: string;
 }
-
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   audio: <FileAudio className="h-4 w-4" />,

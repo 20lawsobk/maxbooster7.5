@@ -22,11 +22,33 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Download, Archive, FileAudio, FileText, FileSpreadsheet, Loader2, CheckCircle2, XCircle, AlertTriangle, X, RefreshCw, Settings2, Mail, HardDrive, Layers, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Download,
+  Archive,
+  FileAudio,
+  FileText,
+  FileSpreadsheet,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  X,
+  RefreshCw,
+  Settings2,
+  Mail,
+  HardDrive,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { AUDIO_FORMATS, BulkFormatSelector, type BulkFormatConfig } from "./FormatSelector";
+import {
+  AUDIO_FORMATS,
+  BulkFormatSelector,
+  type BulkFormatConfig,
+} from "./FormatSelector";
 import { QualitySelector, type AudioQualitySettings } from "./QualitySelector";
 
 export type BulkExportStatus =
@@ -90,7 +112,6 @@ function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
-
 
 const BulkExportItemRow = memo(function BulkExportItemRow({
   item,

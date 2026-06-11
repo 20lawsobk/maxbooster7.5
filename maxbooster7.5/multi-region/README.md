@@ -16,6 +16,7 @@ For each new region node:
 1.  Provision a fresh Ubuntu 22.04 VPS.
 2.  Copy `setup-region.sh` to the VPS.
 3.  Run the script:
+
     ```bash
     chmod +x setup-region.sh
     ./setup-region.sh US-EAST https://max-booster.com 34.111.179.208

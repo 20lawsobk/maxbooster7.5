@@ -22,7 +22,36 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Copy, Check, ExternalLink, Download, QrCode, Code2, Music, Play, Link2, Monitor, Palette, LayoutGrid, Layers, Globe, AlertCircle, Maximize2, Minimize2, Zap, Bot, Clock, Star, ListMusic, ArrowRight, CheckCircle2, RefreshCw, Settings2, TrendingUp, Loader2 } from "lucide-react";
+import {
+  Copy,
+  Check,
+  ExternalLink,
+  Download,
+  QrCode,
+  Code2,
+  Music,
+  Play,
+  Link2,
+  Monitor,
+  Palette,
+  LayoutGrid,
+  Layers,
+  Globe,
+  AlertCircle,
+  Maximize2,
+  Minimize2,
+  Zap,
+  Bot,
+  Clock,
+  Star,
+  ListMusic,
+  ArrowRight,
+  CheckCircle2,
+  RefreshCw,
+  Settings2,
+  TrendingUp,
+  Loader2,
+} from "lucide-react";
 import QRCode from "qrcode";
 
 interface Release {

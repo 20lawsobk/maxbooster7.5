@@ -161,12 +161,10 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
     logger.warn(`[UnifiedContent] Pipeline error: ${(err as Error).message}`, {
       stack: (err as Error).stack,
     });
-    res
-      .status(500)
-      .json({
-        error: "Content generation pipeline failed",
-        detail: (err as Error).message,
-      });
+    res.status(500).json({
+      error: "Content generation pipeline failed",
+      detail: (err as Error).message,
+    });
   }
 });
 
@@ -192,12 +190,10 @@ router.post(
       });
     } catch (err) {
       logger.warn(`[UnifiedContent/artist-only] ${(err as Error).message}`);
-      res
-        .status(500)
-        .json({
-          error: "Artist content generation failed",
-          detail: (err as Error).message,
-        });
+      res.status(500).json({
+        error: "Artist content generation failed",
+        detail: (err as Error).message,
+      });
     }
   },
 );
@@ -224,12 +220,10 @@ router.post(
       });
     } catch (err) {
       logger.warn(`[UnifiedContent/maxbooster-only] ${(err as Error).message}`);
-      res
-        .status(500)
-        .json({
-          error: "Max Booster content generation failed",
-          detail: (err as Error).message,
-        });
+      res.status(500).json({
+        error: "Max Booster content generation failed",
+        detail: (err as Error).message,
+      });
     }
   },
 );
@@ -266,12 +260,10 @@ router.post(
       logger.warn(
         `[UnifiedContent/platform/${platform}] ${(err as Error).message}`,
       );
-      res
-        .status(500)
-        .json({
-          error: `Platform bundle generation failed for ${platform}`,
-          detail: (err as Error).message,
-        });
+      res.status(500).json({
+        error: `Platform bundle generation failed for ${platform}`,
+        detail: (err as Error).message,
+      });
     }
   },
 );

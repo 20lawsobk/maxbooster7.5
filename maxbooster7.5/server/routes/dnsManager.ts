@@ -643,12 +643,10 @@ router.post("/zones/:zoneId/records/batch", async (req, res) => {
     for (const r of records) {
       const parsed = recordSchema.safeParse(r);
       if (!parsed.success)
-        return res
-          .status(400)
-          .json({
-            error: "Invalid record in batch",
-            details: parsed.error.issues,
-          });
+        return res.status(400).json({
+          error: "Invalid record in batch",
+          details: parsed.error.issues,
+        });
       const validErr = validateRecord(parsed.data);
       if (validErr) return res.status(400).json({ error: validErr });
       validated.push(parsed.data);

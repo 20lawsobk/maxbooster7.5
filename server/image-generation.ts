@@ -423,17 +423,6 @@ export class SocialMediaContentGenerator {
     );
   }
 
-
-
-
-
-
-
-
-
-
-
-
   // Get platform-specific video dimensions
   private getPlatformVideoDimensions(platform: string): {
     width: number;

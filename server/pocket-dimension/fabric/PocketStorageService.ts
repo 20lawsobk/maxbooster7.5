@@ -24,7 +24,6 @@ import { cdcChunker } from "./compression/ContentDefinedChunker.js";
 import type { StoreOptions } from "./compression/types.js";
 import { logger } from "../../logger.js";
 
-
 export class PocketStorageService {
   constructor(
     private pocketRegistry: PocketRegistry,

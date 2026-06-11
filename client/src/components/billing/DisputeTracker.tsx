@@ -23,7 +23,18 @@ import { Input } from "@/components/ui/input";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Shield, Clock, CheckCircle, XCircle, AlertTriangle, FileText, Calendar, ChevronRight, Loader2, MessageSquare } from "lucide-react";
+import {
+  Shield,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  FileText,
+  Calendar,
+  ChevronRight,
+  Loader2,
+  MessageSquare,
+} from "lucide-react";
 
 interface Dispute {
   id: string;

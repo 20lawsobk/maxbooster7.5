@@ -58,8 +58,6 @@ interface PresenceInfo {
   role: "owner" | "editor" | "viewer" | "commenter";
 }
 
-
-
 // ── Bounded in-memory state ────────────────────────────────────────────────
 // Both Maps are capped and swept so they cannot grow unboundedly.
 const MAX_SESSIONS = 50_000; // max concurrent project sessions held in memory
@@ -849,7 +847,6 @@ const commentSchema = z.object({
   timestamp: z.number().optional(),
 });
 
-
 router.post(
   "/comments",
   requireAuth,
@@ -1023,7 +1020,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const {  elementId, yourVersion, baseVersion } = req.body;
+      const { elementId, yourVersion, baseVersion } = req.body;
 
       const hasConflict = yourVersion !== baseVersion;
 

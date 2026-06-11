@@ -520,12 +520,10 @@ router.post(
       const { content, variantCount = 2 } = req.body;
 
       if (!content || typeof content !== "object") {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Content object is required with caption, platform, and contentType",
-          });
+        return res.status(400).json({
+          error:
+            "Content object is required with caption, platform, and contentType",
+        });
       }
 
       const contentData = {
