@@ -40,7 +40,7 @@ interface AudioPreviewActions {
   cleanup: () => void;
 }
 
-const _MUSICAL_KEYS = [
+const MUSICAL_KEYS = [
   "C",
   "C#",
   "D",
@@ -76,20 +76,20 @@ const KEY_TO_SEMITONE: Record<string, number> = {
 };
 
 function parseKey(key: string): { note: string; mode: "major" | "minor" } {
-  const _normalized = key?.trim();
-  const _isMinor =
+  const normalized = key?.trim();
+  const isMinor =
     normalized?.toLowerCase().includes("m") &&
     !normalized?.toLowerCase().includes("maj");
-  const _note = normalized?.replace(/m$|min$|minor$|maj$|major$/i, "").trim();
+  const note = normalized?.replace(/m$|min$|minor$|maj$|major$/i, "").trim();
   return { note, mode: isMinor ? "minor" : "major" };
 }
 
 function getSemitonesBetweenKeys(fromKey: string, toKey: string): number {
-  const _from = parseKey(fromKey);
-  const _to = parseKey(toKey);
+  const from = parseKey(fromKey);
+  const to = parseKey(toKey);
 
-  const _fromSemitone = KEY_TO_SEMITONE[from?.note] ?? 0;
-  const _toSemitone = KEY_TO_SEMITONE[to?.note] ?? 0;
+  const fromSemitone = KEY_TO_SEMITONE[from?.note] ?? 0;
+  const toSemitone = KEY_TO_SEMITONE[to?.note] ?? 0;
 
   let diff = toSemitone - fromSemitone;
   if (diff > 6) diff -= 12;
@@ -98,7 +98,7 @@ function getSemitonesBetweenKeys(fromKey: string, toKey: string): number {
   return diff;
 }
 
-export const _useAudioPreviewStore = create<
+export const useAudioPreviewStore = create<
   AudioPreviewState & AudioPreviewActions
 >((set, get) => ({
   audioContext: null,
@@ -109,9 +109,9 @@ export const _useAudioPreviewStore = create<
   currentBeatId: null,
   currentTime: 0,
   duration: 0,
-  playbackRate: 1?.0,
+  playbackRate: 1.0,
   pitchShift: 0,
-  volume: 0?.8,
+  volume: 0.8,
   originalBpm: 120,
   targetBpm: 120,
   originalKey: "C",
@@ -124,9 +124,9 @@ export const _useAudioPreviewStore = create<
     if (!audioContext) {
       audioContext = new (window?.AudioContext ||
         (window as Record<string, unknown>).webkitAudioContext)();
-      const _gainNode = audioContext?.createGain();
+      const gainNode = audioContext?.createGain();
       gainNode?.connect(audioContext?.destination);
-      gainNode?.gain.value = get().volume;
+      gainNode.gain.value = get().volume;
       set({ audioContext, gainNode });
     }
     if (audioContext?.state === "suspended") {
@@ -141,7 +141,7 @@ export const _useAudioPreviewStore = create<
     originalBpm = 120,
     originalKey = "C",
   ) => {
-    const _state = get();
+    const state = get();
 
     if (state?.currentBeatId === beatId && state?.currentBuffer) {
       return;
@@ -151,24 +151,24 @@ export const _useAudioPreviewStore = create<
     set({ isLoading: true, error: null, currentBeatId: beatId });
 
     try {
-      const _audioContext = await state?.initializeContext();
+      const audioContext = await state?.initializeContext();
 
-      const _response = await fetch(audioUrl);
+      const response = await fetch(audioUrl);
       if (!response?.ok) {
         throw new Error(`Failed to load audio: ${response?.statusText}`);
       }
 
-      const _arrayBuffer = await response?.arrayBuffer();
-      const _audioBuffer = await audioContext?.decodeAudioData(arrayBuffer);
+      const arrayBuffer = await response?.arrayBuffer();
+      const audioBuffer = await audioContext?.decodeAudioData(arrayBuffer);
 
       set({
         currentBuffer: audioBuffer,
-        duration: audioBuffer?.duration,
+        duration: audioBuffer.duration,
         originalBpm,
         targetBpm: originalBpm,
         originalKey,
         targetKey: originalKey,
-        playbackRate: 1?.0,
+        playbackRate: 1.0,
         pitchShift: 0,
         isLoading: false,
       });
@@ -188,12 +188,12 @@ export const _useAudioPreviewStore = create<
       return;
     }
 
-    const _sourceNode = audioContext?.createBufferSource();
-    sourceNode?.buffer = currentBuffer;
-    sourceNode?.playbackRate.value = playbackRate;
+    const sourceNode = audioContext?.createBufferSource();
+    sourceNode.buffer = currentBuffer;
+    sourceNode.playbackRate.value = playbackRate;
     sourceNode?.connect(gainNode);
 
-    sourceNode?.onended = () => {
+    sourceNode.onended = () => {
       set({ isPlaying: false, sourceNode: null, currentTime: 0 });
     };
 
@@ -226,7 +226,7 @@ export const _useAudioPreviewStore = create<
 
   seek: (time: number) => {
     const { isPlaying, duration } = get();
-    const _clampedTime = Math?.max(0, Math?.min(time, duration));
+    const clampedTime = Math?.max(0, Math?.min(time, duration));
 
     if (isPlaying) {
       get().pause();
@@ -239,18 +239,18 @@ export const _useAudioPreviewStore = create<
 
   setPlaybackRate: (rate: number) => {
     const { sourceNode, isPlaying } = get();
-    const _clampedRate = Math?.max(0?.5, Math?.min(2?.0, rate));
+    const clampedRate = Math?.max(0.5, Math?.min(2.0, rate));
 
     if (sourceNode && isPlaying) {
-      sourceNode?.playbackRate.value = clampedRate;
+      sourceNode.playbackRate.value = clampedRate;
     }
 
     set({ playbackRate: clampedRate });
   },
 
   setPitchShift: (semitones: number) => {
-    const _clampedPitch = Math?.max(-12, Math?.min(12, semitones));
-    const _pitchRate = Math?.pow(2, clampedPitch / 12);
+    const clampedPitch = Math?.max(-12, Math?.min(12, semitones));
+    const pitchRate = Math?.pow(2, clampedPitch / 12);
 
     set({ pitchShift: clampedPitch });
     get().setPlaybackRate(pitchRate);
@@ -258,10 +258,10 @@ export const _useAudioPreviewStore = create<
 
   setVolume: (volume: number) => {
     const { gainNode } = get();
-    const _clampedVolume = Math?.max(0, Math?.min(1, volume));
+    const clampedVolume = Math?.max(0, Math?.min(1, volume));
 
     if (gainNode) {
-      gainNode?.gain.value = clampedVolume;
+      gainNode.gain.value = clampedVolume;
     }
 
     set({ volume: clampedVolume });
@@ -269,8 +269,8 @@ export const _useAudioPreviewStore = create<
 
   setTargetBpm: (bpm: number) => {
     const { originalBpm } = get();
-    const _clampedBpm = Math?.max(60, Math?.min(200, bpm));
-    const _rate = clampedBpm / originalBpm;
+    const clampedBpm = Math?.max(60, Math?.min(200, bpm));
+    const rate = clampedBpm / originalBpm;
 
     set({ targetBpm: clampedBpm });
     get().setPlaybackRate(rate);
@@ -278,7 +278,7 @@ export const _useAudioPreviewStore = create<
 
   setTargetKey: (key: string) => {
     const { originalKey } = get();
-    const _semitones = getSemitonesBetweenKeys(originalKey, key);
+    const semitones = getSemitonesBetweenKeys(originalKey, key);
 
     set({ targetKey: key });
     get().setPitchShift(semitones);

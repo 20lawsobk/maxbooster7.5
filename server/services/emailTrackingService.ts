@@ -1,4 +1,4 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import {
   emailMessages,
   emailEvents,
@@ -7,7 +7,7 @@ import {
 } from "@shared/schema";
 import { eq, desc, sql, gte } from "drizzle-orm";
 import nacl from "tweetnacl";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export class EmailTrackingService {
   /**
@@ -45,7 +45,7 @@ export class EmailTrackingService {
     clicked: number;
   }> {
     try {
-      const _dateFilter = startDate
+      const dateFilter = startDate
         ? gte(emailMessages?.sentAt, startDate)
         : undefined;
 
@@ -55,9 +55,9 @@ export class EmailTrackingService {
         .where(dateFilter)
         .limit(1);
 
-      const _eventCounts = await db
+      const eventCounts = await db
         .select({
-          eventType: emailEvents?.eventType,
+          eventType: emailEvents.eventType,
           count: sql<number>`count(*)::int`,
         })
         .from(emailEvents)
@@ -68,8 +68,8 @@ export class EmailTrackingService {
         .where(dateFilter ? gte(emailMessages?.sentAt, startDate) : undefined)
         .groupBy(emailEvents?.eventType);
 
-      const _stats = {
-        sent: sentCount?.count || 0,
+      const stats = {
+        sent: sentCount.count || 0,
         delivered: 0,
         bounced: 0,
         spam: 0,
@@ -79,12 +79,12 @@ export class EmailTrackingService {
       };
 
       eventCounts?.forEach((row) => {
-        if (row?.eventType === "delivered") stats?.delivered = row?.count;
-        if (row?.eventType === "bounce") stats?.bounced = row?.count;
-        if (row?.eventType === "spam") stats?.spam = row?.count;
-        if (row?.eventType === "unsubscribe") stats?.unsubscribed = row?.count;
-        if (row?.eventType === "open") stats?.opened = row?.count;
-        if (row?.eventType === "click") stats?.clicked = row?.count;
+        if (row?.eventType === "delivered") stats.delivered = row?.count;
+        if (row?.eventType === "bounce") stats.bounced = row?.count;
+        if (row?.eventType === "spam") stats.spam = row?.count;
+        if (row?.eventType === "unsubscribe") stats.unsubscribed = row?.count;
+        if (row?.eventType === "open") stats.opened = row?.count;
+        if (row?.eventType === "click") stats.clicked = row?.count;
       });
 
       return stats;
@@ -107,15 +107,15 @@ export class EmailTrackingService {
    */
   async getRecentBounces(limit: number = 50): Promise<any[]> {
     try {
-      const _bounces = await db
+      const bounces = await db
         .select({
-          messageId: emailMessages?.messageId,
-          toEmail: emailMessages?.toEmail,
-          subject: emailMessages?.subject,
-          sentAt: emailMessages?.sentAt,
-          reason: emailEvents?.reason,
-          smtpResponse: emailEvents?.smtpResponse,
-          eventAt: emailEvents?.eventAt,
+          messageId: emailMessages.messageId,
+          toEmail: emailMessages.toEmail,
+          subject: emailMessages.subject,
+          sentAt: emailMessages.sentAt,
+          reason: emailEvents.reason,
+          smtpResponse: emailEvents.smtpResponse,
+          eventAt: emailEvents.eventAt,
         })
         .from(emailEvents)
         .innerJoin(
@@ -142,22 +142,22 @@ export class EmailTrackingService {
     signature: string,
     timestamp: string,
   ): boolean {
-    const _publicKey = process?.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
+    const publicKey = process?.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
     if (!publicKey) {
       logger?.warn("SendGrid webhook public key not configured");
       return false;
     }
 
     try {
-      const _signedPayload = timestamp + payload;
+      const signedPayload = timestamp + payload;
 
-      const _publicKeyBytes = Buffer?.from(publicKey, "base64");
+      const publicKeyBytes = Buffer?.from(publicKey, "base64");
 
-      const _signatureBytes = Buffer?.from(signature, "base64");
+      const signatureBytes = Buffer?.from(signature, "base64");
 
-      const _messageBytes = Buffer?.from(signedPayload, "utf-8");
+      const messageBytes = Buffer?.from(signedPayload, "utf-8");
 
-      const _isValid = nacl?.sign.detached?.verify(
+      const isValid = nacl?.sign.detached?.verify(
         messageBytes,
         signatureBytes,
         publicKeyBytes,
@@ -171,4 +171,4 @@ export class EmailTrackingService {
   }
 }
 
-export const _emailTrackingService = new EmailTrackingService();
+export const emailTrackingService = new EmailTrackingService();

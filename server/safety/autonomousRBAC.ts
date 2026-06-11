@@ -5,7 +5,7 @@
  * Prevents autonomous systems from performing unauthorized actions.
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 /**
  * Action categories that autonomous systems can perform
@@ -222,7 +222,7 @@ interface ActionTracker {
   dayStart: Date;
 }
 
-const _actionTrackers = new Map<string, ActionTracker>();
+const actionTrackers = new Map<string, ActionTracker>();
 
 /**
  * Pending approval queue
@@ -237,7 +237,7 @@ interface PendingApproval {
   status: "pending" | "approved" | "rejected";
 }
 
-const _pendingApprovals = new Map<string, PendingApproval>();
+const pendingApprovals = new Map<string, PendingApproval>();
 
 /**
  * Check if an autonomous system can perform an action
@@ -247,14 +247,14 @@ export function canPerformAction(
   action: AutonomousAction,
   spendAmount: number = 0,
 ): { allowed: boolean; reason?: string; requiresApproval?: boolean } {
-  const _permissions = SYSTEM_PERMISSIONS[systemName];
+  const permissions = SYSTEM_PERMISSIONS[systemName];
 
   if (!permissions) {
     return { allowed: false, reason: `Unknown system: ${systemName}` };
   }
 
   // Check permission level
-  const _level = permissions?.permissions[action];
+  const level = permissions?.permissions[action];
   if (!level || level === "none") {
     logger?.warn(
       `[RBAC] ${systemName} attempted unauthorized action: ${action}`,
@@ -274,19 +274,19 @@ export function canPerformAction(
   }
 
   // Check rate limits
-  const _tracker = getOrCreateTracker(systemName);
-  const _now = new Date();
+  const tracker = getOrCreateTracker(systemName);
+  const now = new Date();
 
   // Reset hourly counter if needed
   if (now?.getTime() - tracker?.hourStart.getTime() > 3600000) {
-    tracker?.lastHourActions = 0;
-    tracker?.hourStart = now;
+    tracker.lastHourActions = 0;
+    tracker.hourStart = now;
   }
 
   // Reset daily counter if needed
   if (now?.getTime() - tracker?.dayStart.getTime() > 86400000) {
-    tracker?.spentToday = 0;
-    tracker?.dayStart = now;
+    tracker.spentToday = 0;
+    tracker.dayStart = now;
   }
 
   // Check hourly action limit
@@ -315,10 +315,10 @@ export function recordAction(
   action: AutonomousAction,
   spendAmount: number = 0,
 ): void {
-  const _tracker = getOrCreateTracker(systemName);
-  tracker?.actionCount++;
-  tracker?.lastHourActions++;
-  tracker?.spentToday += spendAmount;
+  const tracker = getOrCreateTracker(systemName);
+  tracker.actionCount++;
+  tracker.lastHourActions++;
+  tracker.spentToday += spendAmount;
 
   logger?.debug(
     `[RBAC] ${systemName} performed ${action} (hourly: ${tracker?.lastHourActions}, spent: $${(tracker?.spentToday / 100).toFixed(2)})`,
@@ -333,7 +333,7 @@ export function requestApproval(
   action: AutonomousAction,
   params: Record<string, any>,
 ): string {
-  const _id = crypto?.randomUUID();
+  const id = crypto?.randomUUID();
   const approval: PendingApproval = {
     id,
     systemName,
@@ -360,7 +360,7 @@ export function processApproval(
   approved: boolean,
   approvedBy: string,
 ): boolean {
-  const _approval = pendingApprovals?.get(approvalId);
+  const approval = pendingApprovals?.get(approvalId);
 
   if (!approval) {
     return false;
@@ -371,11 +371,11 @@ export function processApproval(
   }
 
   if (approval?.expiresAt < new Date()) {
-    approval?.status = "rejected";
+    approval.status = "rejected";
     return false;
   }
 
-  approval?.status = approved ? "approved" : "rejected";
+  approval.status = approved ? "approved" : "rejected";
 
   logger?.info(
     `[RBAC] Approval ${approvalId} ${approved ? "APPROVED" : "REJECTED"} by ${approvedBy}`,
@@ -388,7 +388,7 @@ export function processApproval(
  * Get pending approvals
  */
 export function getPendingApprovals(systemName?: string): PendingApproval[] {
-  const _approvals = Array?.from(pendingApprovals?.values()).filter(
+  const approvals = Array?.from(pendingApprovals?.values()).filter(
     (a) => a?.status === "pending" && a?.expiresAt > new Date(),
   );
 
@@ -434,14 +434,14 @@ export function getRBACStatus(): Record<
   const result: Record<string, any> = {};
 
   for (const [name, config] of Object?.entries(SYSTEM_PERMISSIONS)) {
-    const _tracker = actionTrackers?.get(name);
-    const _pending = getPendingApprovals(name);
+    const tracker = actionTrackers?.get(name);
+    const pending = getPendingApprovals(name);
 
     result[name] = {
-      permissions: config?.permissions,
-      actionCount: tracker?.actionCount || 0,
-      spentToday: tracker?.spentToday || 0,
-      pendingApprovals: pending?.length,
+      permissions: config.permissions,
+      actionCount: tracker.actionCount || 0,
+      spentToday: tracker.spentToday || 0,
+      pendingApprovals: pending.length,
     };
   }
 

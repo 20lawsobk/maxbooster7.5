@@ -446,7 +446,7 @@ export function Timeline({
       const mouseTime = pixelsToTime(mouseX);
 
       const clips = trackClips.get(draggingClip.trackId);
-      const clip = clips?.find((c) => c.id === draggingClip.clipId);
+      const clip = clips.find((c) => c.id === draggingClip.clipId);
       if (!clip) return;
 
       const clipDuration = clip.duration;
@@ -522,7 +522,7 @@ export function Timeline({
       mouseTime = snapToGrid(mouseTime);
 
       const clips = trackClips.get(resizingClip.trackId);
-      const clip = clips?.find((c) => c.id === resizingClip.clipId);
+      const clip = clips.find((c) => c.id === resizingClip.clipId);
       if (!clip) return;
 
       let newStartTime = clip.startTime;

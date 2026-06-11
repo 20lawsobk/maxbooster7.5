@@ -8,16 +8,16 @@ import {
   DspUserPlatformStatus,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { labelGridService } from "./labelgrid-service";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
-const _timedFetch = (
+const timedFetch = (
   url: string | URL | Request,
   init: RequestInit = {},
 ): Promise<Response> =>
-  fetch(url, { signal: AbortSignal?.timeout(10_000), ...init });
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
 
 export type DSPPlatform =
   | "spotify"
@@ -162,47 +162,47 @@ class DSPAnalyticsService {
   > = new Map([
     [
       "spotify",
-      { apiBaseUrl: "https://api?.spotify.com/v1", rateLimitPerMinute: 100 },
+      { apiBaseUrl: "https://api.spotify.com/v1", rateLimitPerMinute: 100 },
     ],
     [
       "apple",
-      { apiBaseUrl: "https://api?.music.apple?.com/v1", rateLimitPerMinute: 80 },
+      { apiBaseUrl: "https://api.music.apple.com/v1", rateLimitPerMinute: 80 },
     ],
     [
       "youtube",
       {
-        apiBaseUrl: "https://youtubeanalytics?.googleapis.com/v2",
+        apiBaseUrl: "https://youtubeanalytics.googleapis.com/v2",
         rateLimitPerMinute: 60,
       },
     ],
     [
       "amazon",
-      { apiBaseUrl: "https://music?.amazon.com/api/v1", rateLimitPerMinute: 50 },
+      { apiBaseUrl: "https://music.amazon.com/api/v1", rateLimitPerMinute: 50 },
     ],
     [
       "tidal",
-      { apiBaseUrl: "https://api?.tidal.com/v1", rateLimitPerMinute: 60 },
+      { apiBaseUrl: "https://api.tidal.com/v1", rateLimitPerMinute: 60 },
     ],
     [
       "deezer",
-      { apiBaseUrl: "https://api?.deezer.com", rateLimitPerMinute: 50 },
+      { apiBaseUrl: "https://api.deezer.com", rateLimitPerMinute: 50 },
     ],
     [
       "soundcloud",
-      { apiBaseUrl: "https://api?.soundcloud.com", rateLimitPerMinute: 100 },
+      { apiBaseUrl: "https://api.soundcloud.com", rateLimitPerMinute: 100 },
     ],
     [
       "pandora",
-      { apiBaseUrl: "https://api?.pandora.com/v1", rateLimitPerMinute: 40 },
+      { apiBaseUrl: "https://api.pandora.com/v1", rateLimitPerMinute: 40 },
     ],
     [
       "tiktok",
-      { apiBaseUrl: "https://open?.tiktokapis.com/v2", rateLimitPerMinute: 80 },
+      { apiBaseUrl: "https://open.tiktokapis.com/v2", rateLimitPerMinute: 80 },
     ],
     [
       "instagram",
       {
-        apiBaseUrl: "https://graph?.instagram.com/v18?.0",
+        apiBaseUrl: "https://graph.instagram.com/v18.0",
         rateLimitPerMinute: 60,
       },
     ],
@@ -216,7 +216,7 @@ class DSPAnalyticsService {
    */
   async fetchSpotifyAnalytics(
     userId: string,
-    _credentials: PlatformCredentials,
+    credentials: PlatformCredentials,
     _startDate: Date,
     _endDate: Date,
   ): Promise<SpotifyArtistAnalytics | null> {
@@ -226,18 +226,18 @@ class DSPAnalyticsService {
       );
 
       // 1. Find user's releases that have been submitted to LabelGrid
-      const _userReleases = await db
-        .select({ id: releases?.id, metadata: releases?.metadata })
+      const userReleases = await db
+        .select({ id: releases.id, metadata: releases.metadata })
         .from(releases)
         .where(
           and(
-            eq(releases?.userId, userId),
-            sql`${releases?.metadata}->>'labelGridReleaseId' IS NOT NULL`,
+            eq(releases.userId, userId),
+            sql`${releases.metadata}->>'labelGridReleaseId' IS NOT NULL`,
           ),
         );
 
-      if (userReleases?.length === 0) {
-        logger?.info(
+      if (userReleases.length === 0) {
+        logger.info(
           `No LabelGrid-distributed releases found for user ${userId} — no Spotify data`,
         );
         return {
@@ -255,32 +255,32 @@ class DSPAnalyticsService {
       let totalListeners = 0;
       let totalRevenue = 0;
 
-      await Promise?.all(
-        userReleases?.map(async (release) => {
+      await Promise.all(
+        userReleases.map(async (release) => {
           try {
-            const _meta = release?.metadata as Record<string, unknown> | null;
-            const _lgReleaseId = meta?.labelGridReleaseId as string | undefined;
+            const meta = release.metadata as Record<string, unknown> | null;
+            const lgReleaseId = meta.labelGridReleaseId as string | undefined;
             if (!lgReleaseId) return;
 
-            const _analytics =
-              await labelGridService?.getReleaseAnalytics(lgReleaseId);
+            const analytics =
+              await labelGridService.getReleaseAnalytics(lgReleaseId);
 
             // Prefer the per-platform spotify slice; fall back to totals
-            const _spotifySlice =
-              analytics?.platforms?.["spotify"] ??
-              analytics?.platforms?.["Spotify"];
+            const spotifySlice =
+              analytics.platforms["spotify"] ??
+              analytics.platforms["Spotify"];
             if (spotifySlice) {
-              totalStreams += spotifySlice?.streams || 0;
-              totalListeners += spotifySlice?.listeners || 0;
-              totalRevenue += spotifySlice?.revenue || 0;
+              totalStreams += spotifySlice.streams || 0;
+              totalListeners += spotifySlice.listeners || 0;
+              totalRevenue += spotifySlice.revenue || 0;
             } else {
               // Release has no platform breakdown — use totals as a proxy
-              totalStreams += analytics?.totalStreams || 0;
-              totalRevenue += analytics?.totalRevenue || 0;
+              totalStreams += analytics.totalStreams || 0;
+              totalRevenue += analytics.totalRevenue || 0;
             }
           } catch (err) {
-            logger?.warn(
-              { err, releaseId: release?.id },
+            logger.warn(
+              { err, releaseId: release.id },
               "LabelGrid analytics fetch failed for one release — skipping",
             );
           }
@@ -296,7 +296,7 @@ class DSPAnalyticsService {
         topCities: [],
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Error fetching Spotify analytics via LabelGrid:",
       );
@@ -310,57 +310,57 @@ class DSPAnalyticsService {
     _startDate: Date,
     _endDate: Date,
   ): Promise<AppleMusicAnalytics | null> {
-    if (!credentials?.accessToken) {
-      logger?.info(
+    if (!credentials.accessToken) {
+      logger.info(
         `No Apple Music access token for user ${userId}, skipping fetch`,
       );
       return null;
     }
 
     try {
-      logger?.info(`Fetching Apple Music analytics for user ${userId}`);
-      const _config = this?.platformConfigs.get("apple");
+      logger.info(`Fetching Apple Music analytics for user ${userId}`);
+      const config = this.platformConfigs.get("apple");
       if (!config) return null;
 
-      const _authHeaders = {
-        Authorization: `Bearer ${credentials?.accessToken}`,
+      const authHeaders = {
+        Authorization: `Bearer ${credentials.accessToken}`,
       };
 
       // Fetch recently played tracks and library song count in parallel
-      const [recentRes, libraryRes, playlistsRes] = await Promise?.all([
-        timedFetch(`${config?.apiBaseUrl}/me/recent/played/tracks?limit=50`, {
+      const [recentRes, libraryRes, playlistsRes] = await Promise.all([
+        timedFetch(`${config.apiBaseUrl}/me/recent/played/tracks?limit=50`, {
           headers: authHeaders,
         }),
-        timedFetch(`${config?.apiBaseUrl}/me/library/songs?limit=1`, {
+        timedFetch(`${config.apiBaseUrl}/me/library/songs?limit=1`, {
           headers: authHeaders,
         }),
-        timedFetch(`${config?.apiBaseUrl}/me/library/playlists?limit=25`, {
+        timedFetch(`${config.apiBaseUrl}/me/library/playlists?limit=25`, {
           headers: authHeaders,
         }),
       ]);
 
-      const _recentData = recentRes?.ok ? await recentRes?.json() : { data: [] };
-      const _libraryData = libraryRes?.ok
-        ? await libraryRes?.json()
+      const recentData = recentRes.ok ? await recentRes.json() : { data: [] };
+      const libraryData = libraryRes.ok
+        ? await libraryRes.json()
         : { meta: { total: 0 } };
-      const _playlistData = playlistsRes?.ok
-        ? await playlistsRes?.json()
+      const playlistData = playlistsRes.ok
+        ? await playlistsRes.json()
         : { data: [] };
 
-      const _recentPlayCount = recentData?.data?.length || 0;
-      const _librarySongTotal = libraryData?.meta?.total || 0;
+      const recentPlayCount = recentData.data.length || 0;
+      const librarySongTotal = libraryData.meta.total || 0;
       // Estimate playlist adds from number of library playlists the user has
-      const _playlistCount = playlistData?.data?.length || 0;
+      const playlistCount = playlistData.data.length || 0;
 
       return {
         plays: recentPlayCount,
-        listeners: Math?.floor(librarySongTotal * 0?.1), // conservative listener proxy
+        listeners: Math.floor(librarySongTotal * 0.1), // conservative listener proxy
         downloads: librarySongTotal,
         shares: 0,
         playlistAdds: playlistCount,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching Apple Music analytics:");
+      logger.warn({ err: error }, "Error fetching Apple Music analytics:");
       return null;
     }
   }
@@ -371,33 +371,33 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): Promise<YouTubeAnalytics | null> {
-    if (!credentials?.accessToken) {
-      logger?.info(`No YouTube access token for user ${userId}, skipping fetch`);
+    if (!credentials.accessToken) {
+      logger.info(`No YouTube access token for user ${userId}, skipping fetch`);
       return null;
     }
 
     try {
-      logger?.info(`Fetching YouTube analytics for user ${userId}`);
-      const _config = this?.platformConfigs.get("youtube");
+      logger.info(`Fetching YouTube analytics for user ${userId}`);
+      const config = this.platformConfigs.get("youtube");
       if (!config) return null;
 
-      const _startDateStr = startDate?.toISOString().split("T")[0];
-      const _endDateStr = endDate?.toISOString().split("T")[0];
+      const startDateStr = startDate.toISOString().split("T")[0];
+      const endDateStr = endDate.toISOString().split("T")[0];
 
-      const _response = await timedFetch(
-        `${config?.apiBaseUrl}/reports?ids=channel==MINE&startDate=${startDateStr}&endDate=${endDateStr}&metrics=views,estimatedMinutesWatched,subscribersGained,likes,comments,averageViewDuration`,
-        { headers: { Authorization: `Bearer ${credentials?.accessToken}` } },
+      const response = await timedFetch(
+        `${config.apiBaseUrl}/reports?ids=channel==MINE&startDate=${startDateStr}&endDate=${endDateStr}&metrics=views,estimatedMinutesWatched,subscribersGained,likes,comments,averageViewDuration`,
+        { headers: { Authorization: `Bearer ${credentials.accessToken}` } },
       );
 
-      if (!response?.ok) {
-        logger?.warn(
-          `YouTube Analytics API error: ${response?.status} ${response?.statusText}`,
+      if (!response.ok) {
+        logger.warn(
+          `YouTube Analytics API error: ${response.status} ${response.statusText}`,
         );
         return null;
       }
 
-      const _data = await response?.json();
-      const _row = data?.rows?.[0] || [];
+      const data = await response.json();
+      const row = data.rows[0] || [];
 
       return {
         views: row[0] || 0,
@@ -408,7 +408,7 @@ class DSPAnalyticsService {
         averageViewDuration: row[5] || 0,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching YouTube analytics:");
+      logger.warn({ err: error }, "Error fetching YouTube analytics:");
       return null;
     }
   }
@@ -419,41 +419,41 @@ class DSPAnalyticsService {
     _startDate: Date,
     _endDate: Date,
   ): Promise<AmazonMusicAnalytics | null> {
-    if (!credentials?.accessToken) {
-      logger?.info(
+    if (!credentials.accessToken) {
+      logger.info(
         `No Amazon Music access token for user ${userId}, skipping fetch`,
       );
       return null;
     }
 
     try {
-      logger?.info(`Fetching Amazon Music analytics for user ${userId}`);
-      const _config = this?.platformConfigs.get("amazon");
+      logger.info(`Fetching Amazon Music analytics for user ${userId}`);
+      const config = this.platformConfigs.get("amazon");
       if (!config) return null;
 
-      const _response = await timedFetch(
-        `${config?.apiBaseUrl}/analytics/streams`,
+      const response = await timedFetch(
+        `${config.apiBaseUrl}/analytics/streams`,
         {
-          headers: { Authorization: `Bearer ${credentials?.accessToken}` },
+          headers: { Authorization: `Bearer ${credentials.accessToken}` },
         },
       );
 
-      if (!response?.ok) {
-        logger?.warn(
-          `Amazon Music API error: ${response?.status} ${response?.statusText}`,
+      if (!response.ok) {
+        logger.warn(
+          `Amazon Music API error: ${response.status} ${response.statusText}`,
         );
         return null;
       }
 
-      const _data = await response?.json();
+      const data = await response.json();
 
       return {
-        streams: data?.streams || 0,
-        listeners: data?.listeners || 0,
-        deviceBreakdown: data?.deviceBreakdown || [],
+        streams: data.streams || 0,
+        listeners: data.listeners || 0,
+        deviceBreakdown: data.deviceBreakdown || [],
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching Amazon Music analytics:");
+      logger.warn({ err: error }, "Error fetching Amazon Music analytics:");
       return null;
     }
   }
@@ -464,27 +464,27 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): Promise<TikTokAnalytics | null> {
-    if (!credentials?.accessToken) {
-      logger?.info(`No TikTok access token for user ${userId}, skipping fetch`);
+    if (!credentials.accessToken) {
+      logger.info(`No TikTok access token for user ${userId}, skipping fetch`);
       return null;
     }
 
     try {
-      logger?.info(`Fetching TikTok analytics for user ${userId}`);
-      const _config = this?.platformConfigs.get("tiktok");
+      logger.info(`Fetching TikTok analytics for user ${userId}`);
+      const config = this.platformConfigs.get("tiktok");
       if (!config) return null;
 
-      const _authHeaders = {
-        Authorization: `Bearer ${credentials?.accessToken}`,
+      const authHeaders = {
+        Authorization: `Bearer ${credentials.accessToken}`,
         "Content-Type": "application/json",
       };
 
       // Fetch user info and video list in parallel
-      const [userRes, videoListRes] = await Promise?.all([
-        timedFetch(`${config?.apiBaseUrl}/user/info/`, {
+      const [userRes, videoListRes] = await Promise.all([
+        timedFetch(`${config.apiBaseUrl}/user/info/`, {
           method: "POST",
           headers: authHeaders,
-          body: JSON?.stringify({
+          body: JSON.stringify({
             fields: [
               "follower_count",
               "likes_count",
@@ -493,10 +493,10 @@ class DSPAnalyticsService {
             ],
           }),
         }),
-        timedFetch(`${config?.apiBaseUrl}/video/list/`, {
+        timedFetch(`${config.apiBaseUrl}/video/list/`, {
           method: "POST",
           headers: authHeaders,
-          body: JSON?.stringify({
+          body: JSON.stringify({
             fields: [
               "id",
               "view_count",
@@ -511,15 +511,15 @@ class DSPAnalyticsService {
         }),
       ]);
 
-      if (!userRes?.ok) {
-        logger?.warn(
-          `TikTok user info API error: ${userRes?.status} ${userRes?.statusText}`,
+      if (!userRes.ok) {
+        logger.warn(
+          `TikTok user info API error: ${userRes.status} ${userRes.statusText}`,
         );
         return null;
       }
 
-      const _userData = await userRes?.json();
-      const _userInfo = userData?.data?.user || {};
+      const userData = await userRes.json();
+      const userInfo = userData.data.user || {};
 
       // Aggregate per-video metrics for the requested time period
       let totalViews = 0;
@@ -529,24 +529,24 @@ class DSPAnalyticsService {
       let totalDuration = 0;
       let videoCount = 0;
 
-      if (videoListRes?.ok) {
-        const _videoData = await videoListRes?.json();
-        const videos: Record<string, unknown>[] = videoData?.data?.videos || [];
-        const _startTs = Math?.floor(startDate?.getTime() / 1000);
-        const _endTs = Math?.floor(endDate?.getTime() / 1000);
+      if (videoListRes.ok) {
+        const videoData = await videoListRes.json();
+        const videos: Record<string, unknown>[] = videoData.data.videos || [];
+        const startTs = Math.floor(startDate.getTime() / 1000);
+        const endTs = Math.floor(endDate.getTime() / 1000);
 
         for (const video of videos) {
-          const _createTime = (video?.create_time as number) || 0;
+          const createTime = (video.create_time as number) || 0;
           // Include videos created within the period, or all if no date filter matches
           if (
             createTime === 0 ||
             (createTime >= startTs && createTime <= endTs)
           ) {
-            totalViews += (video?.view_count as number) || 0;
-            totalLikes += (video?.like_count as number) || 0;
-            totalComments += (video?.comment_count as number) || 0;
-            totalShares += (video?.share_count as number) || 0;
-            totalDuration += (video?.duration as number) || 0;
+            totalViews += (video.view_count as number) || 0;
+            totalLikes += (video.like_count as number) || 0;
+            totalComments += (video.comment_count as number) || 0;
+            totalShares += (video.share_count as number) || 0;
+            totalDuration += (video.duration as number) || 0;
             videoCount++;
           }
         }
@@ -554,32 +554,32 @@ class DSPAnalyticsService {
         // If no videos matched the period window, include all fetched videos
         if (videoCount === 0) {
           for (const video of videos) {
-            totalViews += (video?.view_count as number) || 0;
-            totalLikes += (video?.like_count as number) || 0;
-            totalComments += (video?.comment_count as number) || 0;
-            totalShares += (video?.share_count as number) || 0;
-            totalDuration += (video?.duration as number) || 0;
+            totalViews += (video.view_count as number) || 0;
+            totalLikes += (video.like_count as number) || 0;
+            totalComments += (video.comment_count as number) || 0;
+            totalShares += (video.share_count as number) || 0;
+            totalDuration += (video.duration as number) || 0;
             videoCount++;
           }
         }
       }
 
-      const _followerCount = userInfo?.follower_count || 0;
-      const _avgDuration = videoCount > 0 ? totalDuration / videoCount : 0;
+      const followerCount = userInfo.follower_count || 0;
+      const avgDuration = videoCount > 0 ? totalDuration / videoCount : 0;
       // Engagement rate = (likes + comments + shares) / views * 100
-      const _engagementRate =
+      const engagementRate =
         totalViews > 0
           ? ((totalLikes + totalComments + totalShares) / totalViews) * 100
           : 0;
       // Virality score = shares as a proportion of views (0-1 clamped)
-      const _virality =
+      const virality =
         totalViews > 0
-          ? Math?.min(1, (totalShares / Math?.max(totalViews, 1)) * 50)
+          ? Math.min(1, (totalShares / Math.max(totalViews, 1)) * 50)
           : 0;
 
       return {
         views: totalViews,
-        likes: totalLikes || userInfo?.likes_count || 0,
+        likes: totalLikes || userInfo.likes_count || 0,
         comments: totalComments,
         shares: totalShares,
         followers: followerCount,
@@ -589,7 +589,7 @@ class DSPAnalyticsService {
         virality,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching TikTok analytics:");
+      logger.warn({ err: error }, "Error fetching TikTok analytics:");
       return null;
     }
   }
@@ -600,58 +600,58 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): Promise<InstagramAnalytics | null> {
-    if (!credentials?.accessToken) {
-      logger?.info(
+    if (!credentials.accessToken) {
+      logger.info(
         `No Instagram access token for user ${userId}, skipping fetch`,
       );
       return null;
     }
 
     try {
-      logger?.info(`Fetching Instagram analytics for user ${userId}`);
-      const _config = this?.platformConfigs.get("instagram");
+      logger.info(`Fetching Instagram analytics for user ${userId}`);
+      const config = this.platformConfigs.get("instagram");
       if (!config) return null;
 
-      const _token = credentials?.accessToken;
-      const _sinceTs = Math?.floor(startDate?.getTime() / 1000);
-      const _untilTs = Math?.floor(endDate?.getTime() / 1000);
+      const token = credentials.accessToken;
+      const sinceTs = Math.floor(startDate.getTime() / 1000);
+      const untilTs = Math.floor(endDate.getTime() / 1000);
 
       // Fetch profile, account-level insights, and recent media engagement in parallel
-      const [profileRes, insightsRes, mediaRes] = await Promise?.all([
+      const [profileRes, insightsRes, mediaRes] = await Promise.all([
         timedFetch(
-          `${config?.apiBaseUrl}/me?fields=followers_count,media_count,biography&access_token=${token}`,
+          `${config.apiBaseUrl}/me?fields=followers_count,media_count,biography&access_token=${token}`,
         ),
         timedFetch(
-          `${config?.apiBaseUrl}/me/insights?metric=reach,impressions,profile_views&period=day&since=${sinceTs}&until=${untilTs}&access_token=${token}`,
+          `${config.apiBaseUrl}/me/insights?metric=reach,impressions,profile_views&period=day&since=${sinceTs}&until=${untilTs}&access_token=${token}`,
         ),
         timedFetch(
-          `${config?.apiBaseUrl}/me/media?fields=id,like_count,comments_count,timestamp,media_type,insights?.metric(plays,reach,saved,shares)&limit=50&access_token=${token}`,
+          `${config.apiBaseUrl}/me/media?fields=id,like_count,comments_count,timestamp,media_type,insights.metric(plays,reach,saved,shares)&limit=50&access_token=${token}`,
         ),
       ]);
 
-      if (!profileRes?.ok) {
-        logger?.warn(
-          `Instagram profile API error: ${profileRes?.status} ${profileRes?.statusText}`,
+      if (!profileRes.ok) {
+        logger.warn(
+          `Instagram profile API error: ${profileRes.status} ${profileRes.statusText}`,
         );
         return null;
       }
 
-      const _userData = await profileRes?.json();
+      const userData = await profileRes.json();
 
       // Aggregate account-level insights
       let reach = 0;
       let impressions = 0;
-      if (insightsRes?.ok) {
-        const _insightsData = await insightsRes?.json();
-        for (const metric of insightsData?.data || []) {
-          const _total =
-            metric?.values?.reduce(
+      if (insightsRes.ok) {
+        const insightsData = await insightsRes.json();
+        for (const metric of insightsData.data || []) {
+          const total =
+            metric.values.reduce(
               (sum: number, v: Record<string, unknown>) =>
-                sum + ((v?.value as number) || 0),
+                sum + ((v.value as number) || 0),
               0,
             ) || 0;
-          if (metric?.name === "reach") reach = total;
-          if (metric?.name === "impressions") impressions = total;
+          if (metric.name === "reach") reach = total;
+          if (metric.name === "impressions") impressions = total;
         }
       }
 
@@ -663,39 +663,39 @@ class DSPAnalyticsService {
       let reelsViews = 0;
       let storiesViews = 0;
 
-      if (mediaRes?.ok) {
-        const _mediaData = await mediaRes?.json();
-        const posts: Record<string, unknown>[] = mediaData?.data || [];
+      if (mediaRes.ok) {
+        const mediaData = await mediaRes.json();
+        const posts: Record<string, unknown>[] = mediaData.data || [];
 
         for (const post of posts) {
           // Filter to the requested date range
-          const _ts = post?.timestamp
-            ? new Date(post?.timestamp as string).getTime() / 1000
+          const ts = post.timestamp
+            ? new Date(post.timestamp as string).getTime() / 1000
             : 0;
           if (ts && (ts < sinceTs || ts > untilTs)) continue;
 
-          totalLikes += (post?.like_count as number) || 0;
-          totalComments += (post?.comments_count as number) || 0;
+          totalLikes += (post.like_count as number) || 0;
+          totalComments += (post.comments_count as number) || 0;
 
           // Per-media insights (available for Business/Creator accounts)
           const mediaInsights: Record<string, unknown>[] =
-            (post?.insights as any)?.data || [];
+            (post.insights as any).data || [];
           for (const insight of mediaInsights) {
-            const _val = (insight?.values as any)?.[0]?.value || 0;
-            if (insight?.name === "shares") totalShares += val;
-            if (insight?.name === "saved") totalSaves += val;
-            if (insight?.name === "plays") {
-              if (post?.media_type === "VIDEO") reelsViews += val;
-              if (post?.media_type === "IMAGE") storiesViews += val;
+            const val = (insight.values as any)[0].value || 0;
+            if (insight.name === "shares") totalShares += val;
+            if (insight.name === "saved") totalSaves += val;
+            if (insight.name === "plays") {
+              if (post.media_type === "VIDEO") reelsViews += val;
+              if (post.media_type === "IMAGE") storiesViews += val;
             }
           }
         }
       }
 
-      const _followerCount = userData?.followers_count || 0;
-      const _totalEngagements =
+      const followerCount = userData.followers_count || 0;
+      const totalEngagements =
         totalLikes + totalComments + totalShares + totalSaves;
-      const _engagementRate = reach > 0 ? (totalEngagements / reach) * 100 : 0;
+      const engagementRate = reach > 0 ? (totalEngagements / reach) * 100 : 0;
 
       return {
         reach,
@@ -710,7 +710,7 @@ class DSPAnalyticsService {
         storiesViews,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching Instagram analytics:");
+      logger.warn({ err: error }, "Error fetching Instagram analytics:");
       return null;
     }
   }
@@ -720,28 +720,28 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): NormalizedDSPAnalytics {
-    const _avgVideoLength = 30;
-    const _completionRate =
-      data?.views > 0 && data?.avgWatchTime > 0
-        ? Math?.max(0, Math?.min(1, data?.avgWatchTime / avgVideoLength))
+    const avgVideoLength = 30;
+    const completionRate =
+      data.views > 0 && data.avgWatchTime > 0
+        ? Math.max(0, Math.min(1, data.avgWatchTime / avgVideoLength))
         : 0;
-    const _skips =
-      data?.views > 0 ? Math?.floor(data?.views * (1 - completionRate)) : 0;
-    data?.views > 0
-        ? Math?.min(1, (data?.shares / Math?.max(data?.views, 1)) * 50)
+    const skips =
+      data.views > 0 ? Math.floor(data.views * (1 - completionRate)) : 0;
+    data.views > 0
+        ? Math.min(1, (data.shares / Math.max(data.views, 1)) * 50)
         : 0;
     return {
       platform: "tiktok",
       period: { start: startDate, end: endDate },
-      streams: data?.views,
-      listeners: Math?.floor(data?.views * 0?.35),
-      saves: data?.likes,
-      playlistAdds: data?.soundUsages,
-      shares: data?.shares,
+      streams: data.views,
+      listeners: Math.floor(data.views * 0.35),
+      saves: data.likes,
+      playlistAdds: data.soundUsages,
+      shares: data.shares,
       skips,
       completionRate,
-      avgListenDuration: data?.avgWatchTime,
-      revenue: data?.views * 0?.00003,
+      avgListenDuration: data.avgWatchTime,
+      revenue: data.views * 0.00003,
       sourceBreakdown: {
         playlist: 8,
         search: 12,
@@ -766,21 +766,21 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): NormalizedDSPAnalytics {
-    const _totalViews = data?.reelsViews + data?.storiesViews;
-    const _skipRate = 0?.35;
-    const _completionRate = Math?.max(0, Math?.min(1, 1 - skipRate));
+    const totalViews = data.reelsViews + data.storiesViews;
+    const skipRate = 0.35;
+    const completionRate = Math.max(0, Math.min(1, 1 - skipRate));
     return {
       platform: "instagram",
       period: { start: startDate, end: endDate },
       streams: totalViews,
-      listeners: Math?.floor(data?.reach * 0?.45),
-      saves: data?.saves,
-      playlistAdds: Math?.floor(data?.saves * 0?.25),
-      shares: data?.shares,
-      skips: Math?.floor(data?.impressions * skipRate),
+      listeners: Math.floor(data.reach * 0.45),
+      saves: data.saves,
+      playlistAdds: Math.floor(data.saves * 0.25),
+      shares: data.shares,
+      skips: Math.floor(data.impressions * skipRate),
       completionRate,
       avgListenDuration: 18,
-      revenue: data?.impressions * 0?.00005,
+      revenue: data.impressions * 0.00005,
       sourceBreakdown: {
         playlist: 5,
         search: 22,
@@ -811,16 +811,16 @@ class DSPAnalyticsService {
     };
 
     const ageGroupMap: { [key: string]: number } = {};
-    data?.demographics.forEach((d) => {
-      if (!ageGroupMap[d?.age]) ageGroupMap[d?.age] = 0;
-      ageGroupMap[d?.age] += d?.percentage;
-      if (d?.gender === "male") demographics?.gender.male += d?.percentage;
-      else if (d?.gender === "female")
-        demographics?.gender.female += d?.percentage;
-      else demographics?.gender.other += d?.percentage;
+    data.demographics.forEach((d) => {
+      if (!ageGroupMap[d.age]) ageGroupMap[d.age] = 0;
+      ageGroupMap[d.age] += d.percentage;
+      if (d.gender === "male") demographics.gender.male += d.percentage;
+      else if (d.gender === "female")
+        demographics.gender.female += d.percentage;
+      else demographics.gender.other += d.percentage;
     });
 
-    demographics?.ageGroups = Object?.entries(ageGroupMap).map(
+    demographics.ageGroups = Object.entries(ageGroupMap).map(
       ([range, percentage]) => ({
         range,
         percentage,
@@ -829,27 +829,27 @@ class DSPAnalyticsService {
 
     const geography: GeographyData = {
       countries: [],
-      cities: data?.topCities.map((c) => ({
-        name: c?.city,
-        country: c?.country,
-        streams: Math?.floor(c?.listeners * 2?.5),
-        listeners: c?.listeners,
+      cities: data.topCities.map((c) => ({
+        name: c.city,
+        country: c.country,
+        streams: Math.floor(c.listeners * 2.5),
+        listeners: c.listeners,
       })),
     };
 
-    const _spotifySkipRate = 0?.22;
+    const spotifySkipRate = 0.22;
     return {
       platform: "spotify",
       period: { start: startDate, end: endDate },
-      streams: data?.streams,
-      listeners: data?.listeners,
-      saves: data?.saves,
-      playlistAdds: Math?.floor(data?.saves * 0?.28),
-      shares: Math?.floor(data?.saves * 0?.08),
-      skips: Math?.floor(data?.streams * spotifySkipRate),
-      completionRate: Math?.max(0, Math?.min(1, 1 - spotifySkipRate)),
+      streams: data.streams,
+      listeners: data.listeners,
+      saves: data.saves,
+      playlistAdds: Math.floor(data.saves * 0.28),
+      shares: Math.floor(data.saves * 0.08),
+      skips: Math.floor(data.streams * spotifySkipRate),
+      completionRate: Math.max(0, Math.min(1, 1 - spotifySkipRate)),
       avgListenDuration: 162,
-      revenue: data?.streams * 0?.004,
+      revenue: data.streams * 0.004,
       demographics,
       geography,
       sourceBreakdown: {
@@ -876,19 +876,19 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): NormalizedDSPAnalytics {
-    const _appleSkipRate = 0?.12;
+    const appleSkipRate = 0.12;
     return {
       platform: "apple",
       period: { start: startDate, end: endDate },
-      streams: data?.plays,
-      listeners: data?.listeners,
-      saves: data?.downloads,
-      playlistAdds: data?.playlistAdds,
-      shares: data?.shares,
-      skips: Math?.floor(data?.plays * appleSkipRate),
-      completionRate: Math?.max(0, Math?.min(1, 1 - appleSkipRate)),
+      streams: data.plays,
+      listeners: data.listeners,
+      saves: data.downloads,
+      playlistAdds: data.playlistAdds,
+      shares: data.shares,
+      skips: Math.floor(data.plays * appleSkipRate),
+      completionRate: Math.max(0, Math.min(1, 1 - appleSkipRate)),
       avgListenDuration: 188,
-      revenue: data?.plays * 0?.008,
+      revenue: data.plays * 0.008,
       sourceBreakdown: {
         playlist: 33,
         search: 27,
@@ -913,26 +913,26 @@ class DSPAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): NormalizedDSPAnalytics {
-    const _assumedAvgVideoLength = 210;
-    const _completionRate =
-      data?.averageViewDuration > 0 && assumedAvgVideoLength > 0
-        ? Math?.max(
+    const assumedAvgVideoLength = 210;
+    const completionRate =
+      data.averageViewDuration > 0 && assumedAvgVideoLength > 0
+        ? Math.max(
             0,
-            Math?.min(1, data?.averageViewDuration / assumedAvgVideoLength),
+            Math.min(1, data.averageViewDuration / assumedAvgVideoLength),
           )
         : 0;
     return {
       platform: "youtube",
       period: { start: startDate, end: endDate },
-      streams: data?.views,
-      listeners: Math?.floor(data?.views * 0?.55),
-      saves: data?.likes,
-      playlistAdds: Math?.floor(data?.likes * 0?.18),
-      shares: data?.comments > 0 ? Math?.floor(data?.comments * 0?.4) : 0,
-      skips: data?.views > 0 ? Math?.floor(data?.views * (1 - completionRate)) : 0,
+      streams: data.views,
+      listeners: Math.floor(data.views * 0.55),
+      saves: data.likes,
+      playlistAdds: Math.floor(data.likes * 0.18),
+      shares: data.comments > 0 ? Math.floor(data.comments * 0.4) : 0,
+      skips: data.views > 0 ? Math.floor(data.views * (1 - completionRate)) : 0,
       completionRate,
-      avgListenDuration: data?.averageViewDuration,
-      revenue: data?.views * 0?.00069,
+      avgListenDuration: data.averageViewDuration,
+      revenue: data.views * 0.00069,
       sourceBreakdown: {
         playlist: 23,
         search: 42,
@@ -966,27 +966,27 @@ class DSPAnalyticsService {
       other: 0,
     };
 
-    data?.deviceBreakdown.forEach((d) => {
-      if (d?.deviceType === "Echo") deviceBreakdown?.smartSpeaker = d?.percentage;
-      else if (d?.deviceType === "Mobile") deviceBreakdown?.mobile = d?.percentage;
-      else if (d?.deviceType === "Web" || d?.deviceType === "Desktop")
-        deviceBreakdown?.desktop += d?.percentage;
-      else deviceBreakdown?.other = d?.percentage;
+    data.deviceBreakdown.forEach((d) => {
+      if (d.deviceType === "Echo") deviceBreakdown.smartSpeaker = d.percentage;
+      else if (d.deviceType === "Mobile") deviceBreakdown.mobile = d.percentage;
+      else if (d.deviceType === "Web" || d.deviceType === "Desktop")
+        deviceBreakdown.desktop += d.percentage;
+      else deviceBreakdown.other = d.percentage;
     });
 
-    const _amazonSkipRate = 0?.15;
+    const amazonSkipRate = 0.15;
     return {
       platform: "amazon",
       period: { start: startDate, end: endDate },
-      streams: data?.streams,
-      listeners: data?.listeners,
-      saves: Math?.floor(data?.streams * 0?.018),
-      playlistAdds: Math?.floor(data?.streams * 0?.009),
-      shares: Math?.floor(data?.streams * 0?.004),
-      skips: Math?.floor(data?.streams * amazonSkipRate),
-      completionRate: Math?.max(0, Math?.min(1, 1 - amazonSkipRate)),
+      streams: data.streams,
+      listeners: data.listeners,
+      saves: Math.floor(data.streams * 0.018),
+      playlistAdds: Math.floor(data.streams * 0.009),
+      shares: Math.floor(data.streams * 0.004),
+      skips: Math.floor(data.streams * amazonSkipRate),
+      completionRate: Math.max(0, Math.min(1, 1 - amazonSkipRate)),
       avgListenDuration: 195,
-      revenue: data?.streams * 0?.00402,
+      revenue: data.streams * 0.00402,
       deviceBreakdown,
       sourceBreakdown: {
         playlist: 28,
@@ -1011,8 +1011,8 @@ class DSPAnalyticsService {
         .from(dspUserPlatformStatus)
         .where(
           and(
-            eq(dspUserPlatformStatus?.userId, userId),
-            eq(dspUserPlatformStatus?.platform, platform),
+            eq(dspUserPlatformStatus.userId, userId),
+            eq(dspUserPlatformStatus.platform, platform),
           ),
         )
         .limit(1);
@@ -1027,8 +1027,8 @@ class DSPAnalyticsService {
         })
         .onConflictDoUpdate({
           target: [
-            dspUserPlatformStatus?.userId,
-            dspUserPlatformStatus?.platform,
+            dspUserPlatformStatus.userId,
+            dspUserPlatformStatus.platform,
           ],
           set: {
             syncStatus: "syncing",
@@ -1038,17 +1038,17 @@ class DSPAnalyticsService {
 
       // Spotify analytics are fetched via LabelGrid (server-side API key) — no per-user OAuth needed.
       if (platform === "spotify") {
-        const _data = await this?.fetchSpotifyAnalytics(
+        const data = await this.fetchSpotifyAnalytics(
           userId,
           {} as PlatformCredentials,
           startDate,
           endDate,
         );
-        const _normalizedData = data
-          ? this?.normalizeSpotifyData(data, startDate, endDate)
+        const normalizedData = data
+          ? this.normalizeSpotifyData(data, startDate, endDate)
           : null;
         if (normalizedData) {
-          await this?.storeDSPAnalytics(userId, normalizedData);
+          await this.storeDSPAnalytics(userId, normalizedData);
           await db
             .update(dspUserPlatformStatus)
             .set({
@@ -1063,16 +1063,16 @@ class DSPAnalyticsService {
             })
             .where(
               and(
-                eq(dspUserPlatformStatus?.userId, userId),
-                eq(dspUserPlatformStatus?.platform, platform),
+                eq(dspUserPlatformStatus.userId, userId),
+                eq(dspUserPlatformStatus.platform, platform),
               ),
             );
         }
         return normalizedData;
       }
 
-      if (!syncStatus?.credentials) {
-        logger?.info(
+      if (!syncStatus.credentials) {
+        logger.info(
           `No OAuth credentials stored for ${platform} for user ${userId} — platform not connected, skipping sync`,
         );
         await db
@@ -1085,26 +1085,26 @@ class DSPAnalyticsService {
           })
           .where(
             and(
-              eq(dspUserPlatformStatus?.userId, userId),
-              eq(dspUserPlatformStatus?.platform, platform),
+              eq(dspUserPlatformStatus.userId, userId),
+              eq(dspUserPlatformStatus.platform, platform),
             ),
           );
         return null;
       }
-      const _credentials = syncStatus?.credentials as PlatformCredentials;
+      const credentials = syncStatus.credentials as PlatformCredentials;
 
       let normalizedData: NormalizedDSPAnalytics | null = null;
 
       switch (platform) {
         case "apple": {
-          const _data = await this?.fetchAppleMusicAnalytics(
+          const data = await this.fetchAppleMusicAnalytics(
             userId,
             credentials,
             startDate,
             endDate,
           );
           if (data)
-            normalizedData = this?.normalizeAppleMusicData(
+            normalizedData = this.normalizeAppleMusicData(
               data,
               startDate,
               endDate,
@@ -1112,14 +1112,14 @@ class DSPAnalyticsService {
           break;
         }
         case "youtube": {
-          const _data = await this?.fetchYouTubeAnalytics(
+          const data = await this.fetchYouTubeAnalytics(
             userId,
             credentials,
             startDate,
             endDate,
           );
           if (data)
-            normalizedData = this?.normalizeYouTubeData(
+            normalizedData = this.normalizeYouTubeData(
               data,
               startDate,
               endDate,
@@ -1127,36 +1127,36 @@ class DSPAnalyticsService {
           break;
         }
         case "amazon": {
-          const _data = await this?.fetchAmazonMusicAnalytics(
+          const data = await this.fetchAmazonMusicAnalytics(
             userId,
             credentials,
             startDate,
             endDate,
           );
           if (data)
-            normalizedData = this?.normalizeAmazonData(data, startDate, endDate);
+            normalizedData = this.normalizeAmazonData(data, startDate, endDate);
           break;
         }
         case "tiktok": {
-          const _data = await this?.fetchTikTokAnalytics(
+          const data = await this.fetchTikTokAnalytics(
             userId,
             credentials,
             startDate,
             endDate,
           );
           if (data)
-            normalizedData = this?.normalizeTikTokData(data, startDate, endDate);
+            normalizedData = this.normalizeTikTokData(data, startDate, endDate);
           break;
         }
         case "instagram": {
-          const _data = await this?.fetchInstagramAnalytics(
+          const data = await this.fetchInstagramAnalytics(
             userId,
             credentials,
             startDate,
             endDate,
           );
           if (data)
-            normalizedData = this?.normalizeInstagramData(
+            normalizedData = this.normalizeInstagramData(
               data,
               startDate,
               endDate,
@@ -1164,7 +1164,7 @@ class DSPAnalyticsService {
           break;
         }
         default: {
-          normalizedData = await this?.fetchGenericPlatformData(
+          normalizedData = await this.fetchGenericPlatformData(
             platform,
             userId,
             startDate,
@@ -1174,7 +1174,7 @@ class DSPAnalyticsService {
       }
 
       if (normalizedData) {
-        await this?.storeDSPAnalytics(userId, normalizedData);
+        await this.storeDSPAnalytics(userId, normalizedData);
 
         await db
           .update(dspUserPlatformStatus)
@@ -1190,15 +1190,15 @@ class DSPAnalyticsService {
           })
           .where(
             and(
-              eq(dspUserPlatformStatus?.userId, userId),
-              eq(dspUserPlatformStatus?.platform, platform),
+              eq(dspUserPlatformStatus.userId, userId),
+              eq(dspUserPlatformStatus.platform, platform),
             ),
           );
       }
 
       return normalizedData;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error syncing ${platform} data for user ${userId}:`,
       );
@@ -1208,14 +1208,14 @@ class DSPAnalyticsService {
         .set({
           syncStatus: "error",
           errorMessage:
-            error instanceof Error ? error?.message : "Unknown error",
-          errorCount: sql`${dspUserPlatformStatus?.errorCount} + 1`,
+            error instanceof Error ? error.message : "Unknown error",
+          errorCount: sql`${dspUserPlatformStatus.errorCount} + 1`,
           updatedAt: new Date(),
         })
         .where(
           and(
-            eq(dspUserPlatformStatus?.userId, userId),
-            eq(dspUserPlatformStatus?.platform, platform),
+            eq(dspUserPlatformStatus.userId, userId),
+            eq(dspUserPlatformStatus.platform, platform),
           ),
         );
 
@@ -1230,48 +1230,48 @@ class DSPAnalyticsService {
     endDate: Date,
   ): Promise<NormalizedDSPAnalytics> {
     try {
-      const _existingData = await db
+      const existingData = await db
         .select()
         .from(dspAnalytics)
         .where(
           and(
-            eq(dspAnalytics?.userId, userId),
-            eq(dspAnalytics?.platform, platform),
-            gte(dspAnalytics?.date, startDate),
-            lte(dspAnalytics?.date, endDate),
+            eq(dspAnalytics.userId, userId),
+            eq(dspAnalytics.platform, platform),
+            gte(dspAnalytics.date, startDate),
+            lte(dspAnalytics.date, endDate),
           ),
         )
-        .orderBy(desc(dspAnalytics?.date))
+        .orderBy(desc(dspAnalytics.date))
         .limit(1);
 
-      if (existingData?.length > 0) {
-        const _record = existingData[0];
+      if (existingData.length > 0) {
+        const record = existingData[0];
         return {
           platform,
           period: { start: startDate, end: endDate },
-          streams: record?.streams || 0,
-          listeners: record?.listeners || 0,
-          saves: record?.saves || 0,
-          playlistAdds: record?.playlistAdds || 0,
-          shares: record?.shares || 0,
-          skips: record?.skips || 0,
-          completionRate: record?.completionRate || 0,
-          avgListenDuration: record?.avgListenDuration || 0,
-          revenue: record?.revenue ? parseFloat(record?.revenue) : 0,
+          streams: record.streams || 0,
+          listeners: record.listeners || 0,
+          saves: record.saves || 0,
+          playlistAdds: record.playlistAdds || 0,
+          shares: record.shares || 0,
+          skips: record.skips || 0,
+          completionRate: record.completionRate || 0,
+          avgListenDuration: record.avgListenDuration || 0,
+          revenue: record.revenue ? parseFloat(record.revenue) : 0,
           sourceBreakdown:
-            (record?.sourceBreakdown as SourceBreakdown) || undefined,
+            (record.sourceBreakdown as SourceBreakdown) || undefined,
           deviceBreakdown:
-            (record?.deviceBreakdown as DeviceBreakdown) || undefined,
+            (record.deviceBreakdown as DeviceBreakdown) || undefined,
         };
       }
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error querying existing data for ${platform}:`,
       );
     }
 
-    logger?.info(
+    logger.info(
       `No existing data found for platform ${platform}, user ${userId}. Returning zeroed result.`,
     );
     return {
@@ -1295,25 +1295,25 @@ class DSPAnalyticsService {
   ): Promise<void> {
     const analyticsRecord: InsertDspAnalytics = {
       userId,
-      platform: data?.platform,
-      date: data?.period.start,
-      streams: data?.streams,
-      listeners: data?.listeners,
-      saves: data?.saves,
-      playlistAdds: data?.playlistAdds,
-      shares: data?.shares,
-      skips: data?.skips,
-      completionRate: data?.completionRate,
-      avgListenDuration: data?.avgListenDuration,
-      revenue: data?.revenue?.toString(),
-      demographics: data?.demographics as Record<string, unknown>,
-      geography: data?.geography as Record<string, unknown>,
-      sourceBreakdown: data?.sourceBreakdown as Record<string, unknown>,
-      deviceBreakdown: data?.deviceBreakdown as Record<string, unknown>,
+      platform: data.platform,
+      date: data.period.start,
+      streams: data.streams,
+      listeners: data.listeners,
+      saves: data.saves,
+      playlistAdds: data.playlistAdds,
+      shares: data.shares,
+      skips: data.skips,
+      completionRate: data.completionRate,
+      avgListenDuration: data.avgListenDuration,
+      revenue: data.revenue.toString(),
+      demographics: data.demographics as Record<string, unknown>,
+      geography: data.geography as Record<string, unknown>,
+      sourceBreakdown: data.sourceBreakdown as Record<string, unknown>,
+      deviceBreakdown: data.deviceBreakdown as Record<string, unknown>,
     };
 
-    await db?.insert(dspAnalytics).values(analyticsRecord);
-    logger?.info(`Stored DSP analytics for user ${userId} on ${data?.platform}`);
+    await db.insert(dspAnalytics).values(analyticsRecord);
+    logger.info(`Stored DSP analytics for user ${userId} on ${data.platform}`);
   }
 
   async getAnalytics(
@@ -1325,26 +1325,26 @@ class DSPAnalyticsService {
       trackId?: string;
     } = {},
   ): Promise<DspAnalytics[]> {
-    const _conditions = [eq(dspAnalytics?.userId, userId)];
+    const conditions = [eq(dspAnalytics.userId, userId)];
 
-    if (options?.platform) {
-      conditions?.push(eq(dspAnalytics?.platform, options?.platform));
+    if (options.platform) {
+      conditions.push(eq(dspAnalytics.platform, options.platform));
     }
-    if (options?.startDate) {
-      conditions?.push(gte(dspAnalytics?.date, options?.startDate));
+    if (options.startDate) {
+      conditions.push(gte(dspAnalytics.date, options.startDate));
     }
-    if (options?.endDate) {
-      conditions?.push(lte(dspAnalytics?.date, options?.endDate));
+    if (options.endDate) {
+      conditions.push(lte(dspAnalytics.date, options.endDate));
     }
-    if (options?.trackId) {
-      conditions?.push(eq(dspAnalytics?.trackId, options?.trackId));
+    if (options.trackId) {
+      conditions.push(eq(dspAnalytics.trackId, options.trackId));
     }
 
     return db
       .select()
       .from(dspAnalytics)
       .where(and(...conditions))
-      .orderBy(desc(dspAnalytics?.date));
+      .orderBy(desc(dspAnalytics.date));
   }
 
   async getAggregatedAnalytics(
@@ -1369,47 +1369,47 @@ class DSPAnalyticsService {
       revenue: number;
     }[];
   }> {
-    const _conditions = [eq(dspAnalytics?.userId, userId)];
+    const conditions = [eq(dspAnalytics.userId, userId)];
 
-    if (options?.platform) {
-      conditions?.push(eq(dspAnalytics?.platform, options?.platform));
+    if (options.platform) {
+      conditions.push(eq(dspAnalytics.platform, options.platform));
     }
-    if (options?.startDate) {
-      conditions?.push(gte(dspAnalytics?.date, options?.startDate));
+    if (options.startDate) {
+      conditions.push(gte(dspAnalytics.date, options.startDate));
     }
-    if (options?.endDate) {
-      conditions?.push(lte(dspAnalytics?.date, options?.endDate));
+    if (options.endDate) {
+      conditions.push(lte(dspAnalytics.date, options.endDate));
     }
 
     const [totals] = await db
       .select({
-        totalStreams: sql<number>`COALESCE(SUM(${dspAnalytics?.streams}), 0)`,
-        totalListeners: sql<number>`COALESCE(SUM(${dspAnalytics?.listeners}), 0)`,
-        totalSaves: sql<number>`COALESCE(SUM(${dspAnalytics?.saves}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(CAST(${dspAnalytics?.revenue} AS NUMERIC)), 0)`,
-        avgCompletionRate: sql<number>`COALESCE(AVG(${dspAnalytics?.completionRate}), 0)`,
+        totalStreams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+        totalListeners: sql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
+        totalSaves: sql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(CAST(${dspAnalytics.revenue} AS NUMERIC)), 0)`,
+        avgCompletionRate: sql<number>`COALESCE(AVG(${dspAnalytics.completionRate}), 0)`,
       })
       .from(dspAnalytics)
       .where(and(...conditions));
 
-    const _platformBreakdown = await db
+    const platformBreakdown = await db
       .select({
-        platform: dspAnalytics?.platform,
-        streams: sql<number>`COALESCE(SUM(${dspAnalytics?.streams}), 0)`,
-        revenue: sql<number>`COALESCE(SUM(${dspAnalytics?.revenue}), 0)`,
+        platform: dspAnalytics.platform,
+        streams: sql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
       })
       .from(dspAnalytics)
       .where(and(...conditions))
-      .groupBy(dspAnalytics?.platform);
+      .groupBy(dspAnalytics.platform);
 
-    const _dateFormatSql =
-      options?.groupBy === "month"
-        ? sql<string>`TO_CHAR(${dspAnalytics?.date}, 'YYYY-MM')`
-        : options?.groupBy === "week"
-          ? sql<string>`TO_CHAR(${dspAnalytics?.date}, 'IYYY-IW')`
-          : sql<string>`TO_CHAR(${dspAnalytics?.date}, 'YYYY-MM-DD')`;
+    const dateFormatSql =
+      options.groupBy === "month"
+        ? sql<string>`TO_CHAR(${dspAnalytics.date}, 'YYYY-MM')`
+        : options.groupBy === "week"
+          ? sql<string>`TO_CHAR(${dspAnalytics.date}, 'IYYY-IW')`
+          : sql<string>`TO_CHAR(${dspAnalytics.date}, 'YYYY-MM-DD')`;
 
-    const _timeline = await db
+    const timeline = await db
       .select({
         date: dateFormatSql,
         streams: sql<number>`COALESCE(SUM(${dspAnalytics?.streams}), 0)`,
@@ -1427,13 +1427,13 @@ class DSPAnalyticsService {
       totalSaves: Number(totals?.totalSaves || 0),
       totalRevenue: Number(totals?.totalRevenue || 0),
       avgCompletionRate: Number(totals?.avgCompletionRate || 0),
-      platformBreakdown: platformBreakdown?.map((p) => ({
-        platform: p?.platform,
+      platformBreakdown: platformBreakdown.map((p) => ({
+        platform: p.platform,
         streams: Number(p?.streams),
         revenue: Number(p?.revenue),
       })),
-      timeline: timeline?.map((t) => ({
-        date: t?.date,
+      timeline: timeline.map((t) => ({
+        date: t.date,
         streams: Number(t?.streams),
         listeners: Number(t?.listeners),
         revenue: Number(t?.revenue),
@@ -1452,12 +1452,12 @@ class DSPAnalyticsService {
     }[];
     topCities: { name: string; country: string; listeners: number }[];
   }> {
-    const _analytics = await this?.getAnalytics(userId, {
+    const analytics = await this?.getAnalytics(userId, {
       startDate: new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000),
     });
 
     const ageGroups: { [key: string]: number } = {};
-    const _gender = { male: 0, female: 0, other: 0 };
+    const gender = { male: 0, female: 0, other: 0 };
     const countryMap: { [key: string]: { name: string; listeners: number } } =
       {};
     const cityMap: {
@@ -1465,49 +1465,49 @@ class DSPAnalyticsService {
     } = {};
 
     analytics?.forEach((a) => {
-      const _demo = a?.demographics as DemographicData | null;
-      const _geo = a?.geography as GeographyData | null;
+      const demo = a?.demographics as DemographicData | null;
+      const geo = a?.geography as GeographyData | null;
 
       if (demo) {
         demo?.ageGroups?.forEach((ag) => {
-          if (!ageGroups[ag?.range]) ageGroups[ag?.range] = 0;
-          ageGroups[ag?.range] += ag?.percentage;
+          if (!ageGroups[ag.range]) ageGroups[ag.range] = 0;
+          ageGroups[ag.range] += ag?.percentage;
         });
-        gender?.male += demo?.gender?.male || 0;
-        gender?.female += demo?.gender?.female || 0;
-        gender?.other += demo?.gender?.other || 0;
+        gender.male += demo?.gender?.male || 0;
+        gender.female += demo?.gender?.female || 0;
+        gender.other += demo?.gender?.other || 0;
       }
 
       if (geo) {
         geo?.countries?.forEach((c) => {
           if (!countryMap[c?.code])
-            countryMap[c?.code] = { name: c?.name, listeners: 0 };
-          countryMap[c?.code].listeners += c?.listeners;
+            countryMap[c.code] = { name: c.name, listeners: 0 };
+          countryMap[c.code].listeners += c?.listeners;
         });
         geo?.cities?.forEach((c) => {
-          const _key = `${c?.name}-${c?.country}`;
+          const key = `${c?.name}-${c?.country}`;
           if (!cityMap[key])
-            cityMap[key] = { name: c?.name, country: c?.country, listeners: 0 };
+            cityMap[key] = { name: c.name, country: c.country, listeners: 0 };
           cityMap[key].listeners += c?.listeners;
         });
       }
     });
 
-    const _totalGender = gender?.male + gender?.female + gender?.other || 1;
-    const _countries = Object?.entries(countryMap).map(([code, data]) => ({
+    const totalGender = gender?.male + gender?.female + gender?.other || 1;
+    const countries = Object?.entries(countryMap).map(([code, data]) => ({
       code,
-      name: data?.name,
-      listeners: data?.listeners,
+      name: data.name,
+      listeners: data.listeners,
       percentage: 0,
     }));
-    const _totalListeners =
+    const totalListeners =
       countries?.reduce((sum, c) => sum + c?.listeners, 0) || 1;
     countries?.forEach(
-      (c) => (c?.percentage = (c?.listeners / totalListeners) * 100),
+      (c) => (c.percentage = (c?.listeners / totalListeners) * 100),
     );
 
     return {
-      ageGroups: Object?.entries(ageGroups).map(([range, percentage]) => ({
+      ageGroups: Object.entries(ageGroups).map(([range, percentage]) => ({
         range,
         percentage,
       })),
@@ -1519,7 +1519,7 @@ class DSPAnalyticsService {
       topCountries: countries
         .sort((a, b) => b?.listeners - a?.listeners)
         .slice(0, 10),
-      topCities: Object?.values(cityMap)
+      topCities: Object.values(cityMap)
         .sort((a, b) => b?.listeners - a?.listeners)
         .slice(0, 10),
     };
@@ -1529,7 +1529,7 @@ class DSPAnalyticsService {
     userId: string,
     platform?: DSPPlatform,
   ): Promise<DspUserPlatformStatus[]> {
-    const _conditions = [eq(dspUserPlatformStatus?.userId, userId)];
+    const conditions = [eq(dspUserPlatformStatus?.userId, userId)];
     if (platform) {
       conditions?.push(eq(dspUserPlatformStatus?.platform, platform));
     }
@@ -1561,7 +1561,7 @@ class DSPAnalyticsService {
 
     await Promise?.all(
       platforms?.map(async (platform) => {
-        const _result = await this?.syncPlatformData(
+        const result = await this?.syncPlatformData(
           userId,
           platform,
           startDate,
@@ -1579,4 +1579,4 @@ class DSPAnalyticsService {
   }
 }
 
-export const _dspAnalyticsService = new DSPAnalyticsService();
+export const dspAnalyticsService = new DSPAnalyticsService();

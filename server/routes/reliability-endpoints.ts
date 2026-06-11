@@ -5,7 +5,7 @@ import { databaseResilience } from "../reliability/database-resilience";
 import { memoryManager } from "../reliability/memory-manager";
 import { maxBooster247 } from "../reliability-system";
 import { getQueryTelemetry } from "../db";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   getCircuitHealthSummary,
   getCircuitStats,
@@ -13,9 +13,9 @@ import {
   resetAllCircuits,
   getRetryQueue,
   clearRetryQueue,
-} from "../services/externalServices?.js";
-import { apiCache } from "../middleware/apiCache?.js";
-import { isSchedulerLeader } from "../services/autonomousJobScheduler?.js";
+} from "../services/externalServices.js";
+import { apiCache } from "../middleware/apiCache.js";
+import { isSchedulerLeader } from "../services/autonomousJobScheduler.js";
 
 // Enhanced health check endpoints for 24/7 monitoring
 export function setupReliabilityEndpoints(
@@ -25,17 +25,17 @@ export function setupReliabilityEndpoints(
   // System health dashboard - comprehensive status
   app?.get("/api/system/health", (_req: Request, res: Response) => {
     try {
-      const _systemHealth = reliabilityCoordinator?.getSystemHealth();
-      const _uptimeStats = reliabilityCoordinator?.getUptimeStats();
-      const _queryMetrics = getQueryTelemetry();
+      const systemHealth = reliabilityCoordinator?.getSystemHealth();
+      const uptimeStats = reliabilityCoordinator?.getUptimeStats();
+      const queryMetrics = getQueryTelemetry();
 
       res?.json({
-        status: systemHealth?.status,
+        status: systemHealth.status,
         timestamp: new Date().toISOString(),
         uptime: uptimeStats,
-        components: systemHealth?.components,
-        reliability: systemHealth?.reliability,
-        alerts: systemHealth?.alerts.slice(0, 10), // Last 10 alerts
+        components: systemHealth.components,
+        reliability: systemHealth.reliability,
+        alerts: systemHealth.alerts.slice(0, 10), // Last 10 alerts
         monitoring: {
           processMonitor: "active",
           memoryManager: "active",
@@ -45,13 +45,13 @@ export function setupReliabilityEndpoints(
         },
         database: {
           queries: {
-            total: queryMetrics?.windowedQueries,
-            slow: queryMetrics?.windowedSlow,
-            p95Ms: queryMetrics?.p95Latency,
-            avgMs: queryMetrics?.windowedAverage,
+            total: queryMetrics.windowedQueries,
+            slow: queryMetrics.windowedSlow,
+            p95Ms: queryMetrics.p95Latency,
+            avgMs: queryMetrics.windowedAverage,
           },
         },
-        cache: apiCache?.getStats(),
+        cache: apiCache.getStats(),
         scheduler_leader: isSchedulerLeader(),
       });
     } catch (error: unknown) {
@@ -66,21 +66,21 @@ export function setupReliabilityEndpoints(
   // External monitoring endpoint - simplified status for monitoring tools
   app?.get("/api/system/status", (_req: Request, res: Response) => {
     try {
-      const _health = reliabilityCoordinator?.getSystemHealth();
+      const health = reliabilityCoordinator?.getSystemHealth();
       reliabilityCoordinator?.getUptimeStats();
-      const _maxBoosterHealth = maxBooster247?.getHealthSummary();
+      const maxBoosterHealth = maxBooster247?.getHealthSummary();
 
       // Simple response for external monitoring with real metrics
       res?.json({
-        status: health?.status === "healthy" ? "ok" : "degraded",
-        uptime_seconds: Math?.floor(health?.uptime / 1000),
-        uptime_percentage: health?.reliability.uptimePercentage,
-        response_time_ms: maxBoosterHealth?.reliability?.avgResponseTime || 0,
-        error_rate: health?.reliability.errorRate,
-        memory_mb: health?.components.memory?.current?.heapUsedMB || 0,
+        status: health.status === "healthy" ? "ok" : "degraded",
+        uptime_seconds: Math.floor(health?.uptime / 1000),
+        uptime_percentage: health.reliability.uptimePercentage,
+        response_time_ms: maxBoosterHealth.reliability?.avgResponseTime || 0,
+        error_rate: health.reliability.errorRate,
+        memory_mb: health.components.memory?.current?.heapUsedMB || 0,
         database_status:
           health?.components.database?.circuitBreakerState || "unknown",
-        active_connections: health?.components.server?.activeConnections || 0,
+        active_connections: health.components.server?.activeConnections || 0,
         timestamp: new Date().toISOString(),
       });
     } catch (error: unknown) {
@@ -94,9 +94,9 @@ export function setupReliabilityEndpoints(
   // Process monitoring details
   app?.get("/api/system/process", (_req: Request, res: Response) => {
     try {
-      const _processHealth = processMonitor?.getHealth();
-      const _summary = processMonitor?.getHealthSummary();
-      const _alerts = processMonitor?.getAlerts(50);
+      const processHealth = processMonitor?.getHealth();
+      const summary = processMonitor?.getHealthSummary();
+      const alerts = processMonitor?.getAlerts(50);
 
       res?.json({
         health: processHealth,
@@ -118,20 +118,20 @@ export function setupReliabilityEndpoints(
   // Memory monitoring details
   app?.get("/api/system/memory", (_req: Request, res: Response) => {
     try {
-      const _memorySummary = memoryManager?.getMemorySummary();
+      const memorySummary = memoryManager?.getMemorySummary();
       memoryManager?.getCurrentUsage();
-      const _history = memoryManager?.getUsageHistory(60); // Last hour
+      const history = memoryManager?.getUsageHistory(60); // Last hour
 
       res?.json({
-        current: memorySummary?.current,
-        trend: memorySummary?.trend,
-        thresholds: memorySummary?.thresholds,
-        history: history?.map((m) => ({
-          timestamp: m?.timestamp,
-          heapUsedMB: Math?.round(m?.heapUsed / 1024 / 1024),
-          rssMB: Math?.round(m?.rss / 1024 / 1024),
+        current: memorySummary.current,
+        trend: memorySummary.trend,
+        thresholds: memorySummary.thresholds,
+        history: history.map((m) => ({
+          timestamp: m.timestamp,
+          heapUsedMB: Math.round(m?.heapUsed / 1024 / 1024),
+          rssMB: Math.round(m?.rss / 1024 / 1024),
         })),
-        leakDetection: memorySummary?.leakDetection,
+        leakDetection: memorySummary.leakDetection,
         monitoring: {
           interval: "60s",
           status: "active",
@@ -148,16 +148,16 @@ export function setupReliabilityEndpoints(
   // Database monitoring details
   app?.get("/api/system/database", (_req: Request, res: Response) => {
     try {
-      const _dbHealth = databaseResilience?.getHealthMetrics();
-      const _poolStatus = databaseResilience?.getPoolStatus();
+      const dbHealth = databaseResilience?.getHealthMetrics();
+      const poolStatus = databaseResilience?.getPoolStatus();
 
       res?.json({
         health: dbHealth,
         pool: {
-          activeConnections: poolStatus?.activeConnections,
-          maxConnections: poolStatus?.maxConnections,
-          totalRequests: poolStatus?.totalRequests,
-          failedRequests: poolStatus?.failedRequests,
+          activeConnections: poolStatus.activeConnections,
+          maxConnections: poolStatus.maxConnections,
+          totalRequests: poolStatus.totalRequests,
+          failedRequests: poolStatus.failedRequests,
         },
         monitoring: {
           healthChecks: "every 30s",
@@ -174,7 +174,7 @@ export function setupReliabilityEndpoints(
   });
 
   // Database query telemetry metrics (authenticated users only for security)
-  const _metricsHandler = requireAuth
+  const metricsHandler = requireAuth
     ? requireAuth
     : (_req: unknown, _res: unknown, next: unknown) => next();
   app?.get(
@@ -182,13 +182,13 @@ export function setupReliabilityEndpoints(
     metricsHandler,
     (_req: Request, res: Response) => {
       try {
-        const _metrics = getQueryTelemetry();
+        const metrics = getQueryTelemetry();
 
         // Generate recommendations based on metrics
         const recommendations: string[] = [];
 
         if (metrics?.windowedSlow > 0) {
-          const _slowPercentage =
+          const slowPercentage =
             metrics?.windowedQueries > 0
               ? (metrics?.windowedSlow / metrics?.windowedQueries) * 100
               : 0;
@@ -233,36 +233,36 @@ export function setupReliabilityEndpoints(
           status: "success",
           metrics: {
             windowed: {
-              totalQueries: metrics?.windowedQueries,
-              slowQueries: metrics?.windowedSlow,
+              totalQueries: metrics.windowedQueries,
+              slowQueries: metrics.windowedSlow,
               slowQueryPercentage:
                 metrics?.windowedQueries > 0
                   ? Math?.round(
                       (metrics?.windowedSlow / metrics?.windowedQueries) * 10000,
                     ) / 100
                   : 0,
-              p95LatencyMs: metrics?.p95Latency,
-              averageTimeMs: metrics?.windowedAverage,
-              windowMinutes: metrics?.windowMinutes,
+              p95LatencyMs: metrics.p95Latency,
+              averageTimeMs: metrics.windowedAverage,
+              windowMinutes: metrics.windowMinutes,
             },
             lifetime: {
-              totalQueries: metrics?.lifetimeTotal,
-              slowQueries: metrics?.lifetimeSlow,
+              totalQueries: metrics.lifetimeTotal,
+              slowQueries: metrics.lifetimeSlow,
               slowQueryPercentage:
                 metrics?.lifetimeTotal > 0
                   ? Math?.round(
                       (metrics?.lifetimeSlow / metrics?.lifetimeTotal) * 10000,
                     ) / 100
                   : 0,
-              averageTimeMs: metrics?.lifetimeAverage,
+              averageTimeMs: metrics.lifetimeAverage,
             },
-            slowestQuery: metrics?.slowestQuery
+            slowestQuery: metrics.slowestQuery
               ? {
-                  sqlHash: metrics?.slowestQuery.sqlHash,
-                  durationMs: metrics?.slowestQuery.duration,
+                  sqlHash: metrics.slowestQuery.sqlHash,
+                  durationMs: metrics.slowestQuery.duration,
                 }
               : null,
-            lastRefresh: metrics?.lastRefresh,
+            lastRefresh: metrics.lastRefresh,
           },
           recommendations,
           monitoring: {
@@ -286,11 +286,11 @@ export function setupReliabilityEndpoints(
   // System metrics for Prometheus/Grafana integration
   app?.get("/api/system/metrics", (_req: Request, res: Response) => {
     try {
-      const _health = reliabilityCoordinator?.getSystemHealth();
+      const health = reliabilityCoordinator?.getSystemHealth();
       reliabilityCoordinator?.getUptimeStats();
 
       // Prometheus-style metrics
-      const _metrics = [
+      const metrics = [
         `# HELP max_booster_uptime_seconds Total uptime in seconds`,
         `# TYPE max_booster_uptime_seconds counter`,
         `max_booster_uptime_seconds ${Math?.floor(health?.uptime / 1000)}`,
@@ -329,7 +329,7 @@ export function setupReliabilityEndpoints(
 
   // Manual system controls (admin only)
   app?.post("/api/system/gc", (req: Request, res: Response) => {
-    const _user = req?.user;
+    const user = req?.user;
     if (!user)
       return res?.status(401).json({ error: "Authentication required" });
     if (user?.role !== "admin")
@@ -351,7 +351,7 @@ export function setupReliabilityEndpoints(
   app?.post(
     "/api/system/reset-circuit-breaker",
     (req: Request, res: Response) => {
-      const _user = req?.user;
+      const user = req?.user;
       if (!user)
         return res?.status(401).json({ error: "Authentication required" });
       if (user?.role !== "admin")
@@ -373,41 +373,41 @@ export function setupReliabilityEndpoints(
 
   app?.get("/api/health/circuits", (_req: Request, res: Response) => {
     try {
-      const _circuitHealth = getCircuitHealthSummary();
-      const _retryQueue = getRetryQueue();
+      const circuitHealth = getCircuitHealthSummary();
+      const retryQueue = getRetryQueue();
 
       res?.json({
-        status: circuitHealth?.unhealthy === 0 ? "healthy" : "degraded",
+        status: circuitHealth.unhealthy === 0 ? "healthy" : "degraded",
         timestamp: new Date().toISOString(),
         summary: {
-          total: circuitHealth?.total,
-          healthy: circuitHealth?.healthy,
-          unhealthy: circuitHealth?.unhealthy,
+          total: circuitHealth.total,
+          healthy: circuitHealth.healthy,
+          unhealthy: circuitHealth.unhealthy,
         },
-        circuits: circuitHealth?.circuits.map((circuit) => ({
-          name: circuit?.name,
-          state: circuit?.state,
-          isHealthy: circuit?.isHealthy,
+        circuits: circuitHealth.circuits.map((circuit) => ({
+          name: circuit.name,
+          state: circuit.state,
+          isHealthy: circuit.isHealthy,
           stats: {
-            failures: circuit?.failures,
-            successes: circuit?.successes,
-            totalRequests: circuit?.totalRequests,
-            failureRate: circuit?.failureRate,
-            consecutiveFailures: circuit?.consecutiveFailures,
+            failures: circuit.failures,
+            successes: circuit.successes,
+            totalRequests: circuit.totalRequests,
+            failureRate: circuit.failureRate,
+            consecutiveFailures: circuit.consecutiveFailures,
           },
-          lastFailure: circuit?.lastFailure,
-          lastSuccess: circuit?.lastSuccess,
+          lastFailure: circuit.lastFailure,
+          lastSuccess: circuit.lastSuccess,
         })),
         retryQueue: {
-          pending: retryQueue?.length,
-          items: retryQueue?.slice(0, 10).map((item) => ({
-            id: item?.id,
-            service: item?.serviceName,
-            operation: item?.operation,
-            attempts: item?.attempts,
-            maxAttempts: item?.maxAttempts,
-            nextRetry: item?.nextRetry,
-            createdAt: item?.createdAt,
+          pending: retryQueue.length,
+          items: retryQueue.slice(0, 10).map((item) => ({
+            id: item.id,
+            service: item.serviceName,
+            operation: item.operation,
+            attempts: item.attempts,
+            maxAttempts: item.maxAttempts,
+            nextRetry: item.nextRetry,
+            createdAt: item.createdAt,
           })),
         },
       });
@@ -422,7 +422,7 @@ export function setupReliabilityEndpoints(
   app?.get("/api/health/circuits/:name", (req: Request, res: Response) => {
     try {
       const { name } = req?.params;
-      const _stats = getCircuitStats(name);
+      const stats = getCircuitStats(name);
 
       if (!stats) {
         return res?.status(404).json({
@@ -432,19 +432,19 @@ export function setupReliabilityEndpoints(
       }
 
       res?.json({
-        name: stats?.name,
-        state: stats?.state,
-        isHealthy: stats?.isHealthy,
+        name: stats.name,
+        state: stats.state,
+        isHealthy: stats.isHealthy,
         stats: {
-          failures: stats?.failures,
-          successes: stats?.successes,
-          totalRequests: stats?.totalRequests,
-          failureRate: stats?.failureRate,
-          consecutiveFailures: stats?.consecutiveFailures,
-          consecutiveSuccesses: stats?.consecutiveSuccesses,
+          failures: stats.failures,
+          successes: stats.successes,
+          totalRequests: stats.totalRequests,
+          failureRate: stats.failureRate,
+          consecutiveFailures: stats.consecutiveFailures,
+          consecutiveSuccesses: stats.consecutiveSuccesses,
         },
-        lastFailure: stats?.lastFailure,
-        lastSuccess: stats?.lastSuccess,
+        lastFailure: stats.lastFailure,
+        lastSuccess: stats.lastSuccess,
         timestamp: new Date().toISOString(),
       });
     } catch (error: unknown) {
@@ -458,14 +458,14 @@ export function setupReliabilityEndpoints(
   app?.post(
     "/api/health/circuits/:name/reset",
     (req: Request, res: Response) => {
-      const _user = req?.user;
+      const user = req?.user;
       if (!user)
         return res?.status(401).json({ error: "Authentication required" });
       if (user?.role !== "admin")
         return res?.status(403).json({ error: "Admin access required" });
       try {
         const { name } = req?.params;
-        const _success = resetCircuit(name);
+        const success = resetCircuit(name);
 
         if (!success) {
           return res?.status(404).json({
@@ -488,7 +488,7 @@ export function setupReliabilityEndpoints(
   );
 
   app?.post("/api/health/circuits/reset-all", (req: Request, res: Response) => {
-    const _user = req?.user;
+    const user = req?.user;
     if (!user)
       return res?.status(401).json({ error: "Authentication required" });
     if (user?.role !== "admin")
@@ -509,7 +509,7 @@ export function setupReliabilityEndpoints(
   });
 
   app?.delete("/api/health/retry-queue", (req: Request, res: Response) => {
-    const _user = req?.user;
+    const user = req?.user;
     if (!user)
       return res?.status(401).json({ error: "Authentication required" });
     if (user?.role !== "admin")

@@ -1374,7 +1374,7 @@ export default function Admin() {
                     </p>
                   </div>
                 </div>
-              ) : dnsResolverStatus?.ok ? (
+              ) : dnsResolverStatus.ok ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span>Status</span>
@@ -2666,7 +2666,7 @@ export default function Admin() {
             <AlertDialogTitle>Delete User</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "
-              {selectedUser?.username || selectedUser?.email}"? This action
+              {selectedUser.username || selectedUser.email}"? This action
               cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

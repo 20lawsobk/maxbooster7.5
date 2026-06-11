@@ -1,19 +1,19 @@
 import * as Y from "yjs";
 import { storage } from "../storage";
 import crypto from "crypto";
-import { config } from "../config/defaults?.js";
+import { config } from "../config/defaults.js";
 import {
   getRedisClient,
   createRedisClient,
-} from "../lib/redisConnectionFactory?.js";
-import { logger } from "../logger?.js";
+} from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
 // Yjs document structure:
 // {
-//   tracks: Y?.Array of track objects
-//   timeline: Y?.Map with markers, automation
-//   mixer: Y?.Map with bus settings, volumes
-//   metadata: Y?.Map with project info
+//   tracks: Y.Array of track objects
+//   timeline: Y.Map with markers, automation
+//   mixer: Y.Map with bus settings, volumes
+//   metadata: Y.Map with project info
 // }
 
 function generateHash(data: Uint8Array): string {
@@ -21,7 +21,7 @@ function generateHash(data: Uint8Array): string {
 }
 
 export class YjsCollaborationService {
-  private saveTimers: Map<string, NodeJS?.Timeout> = new Map();
+  private saveTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly SAVE_DEBOUNCE_MS = 2000; // Save snapshots every 2 seconds max
   private readonly REDIS_DOC_PREFIX = "yjs:doc:";
   private readonly REDIS_TTL = 3600; // 1 hour cache TTL
@@ -41,15 +41,15 @@ export class YjsCollaborationService {
 
   private async initPubSub() {
     try {
-      this?.subClient = await createRedisClient();
+      this.subClient = await createRedisClient();
       if (this?.subClient && typeof this?.subClient.on === "function") {
         this?.subClient.on("message", (channel: string, message: string) => {
           if (channel?.startsWith("yjs:updates:")) {
-            const _projectId = channel?.split(":").pop();
+            const projectId = channel?.split(":").pop();
             if (projectId) {
-              const _callbacks = this?.pubSubCallbacks.get(projectId);
+              const callbacks = this?.pubSubCallbacks.get(projectId);
               if (callbacks) {
-                const _update = new Uint8Array(Buffer?.from(message, "base64"));
+                const update = new Uint8Array(Buffer?.from(message, "base64"));
                 callbacks?.forEach((cb) => cb(update));
               }
             }
@@ -69,7 +69,7 @@ export class YjsCollaborationService {
 
     if (!this?.pubSubCallbacks.has(projectId)) {
       this?.pubSubCallbacks.set(projectId, new Set());
-      const _channel = `yjs:updates:${projectId}`;
+      const channel = `yjs:updates:${projectId}`;
       try {
         await this?.subClient.subscribe(channel);
         logger?.info(`Subscribed to YJS updates for project: ${projectId}`);
@@ -81,13 +81,13 @@ export class YjsCollaborationService {
   }
 
   // Load Yjs document for project
-  async loadDocument(projectId: string): Promise<Y?.Doc> {
+  async loadDocument(projectId: string): Promise<Y.Doc> {
     // Try to load from Redis cache first (shared across all server instances)
-    const _redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+    const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
     let cachedState: string | null = null;
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (redis) {
         cachedState = await redis?.get(redisKey);
       }
@@ -95,19 +95,19 @@ export class YjsCollaborationService {
       // Gracefully degrade to database if Redis unavailable
     }
 
-    const _doc = new Y?.Doc();
+    const doc = new Y.Doc();
 
     // CRITICAL: Initialize document schema BEFORE applying updates
     // This ensures all required collections exist for clients
-    doc?.getArray("tracks"); // Y?.Array for track objects
-    doc?.getMap("timeline"); // Y?.Map for markers, automation
-    doc?.getMap("mixer"); // Y?.Map for bus settings, volumes
-    doc?.getMap("metadata"); // Y?.Map for project info
+    doc?.getArray("tracks"); // Y.Array for track objects
+    doc?.getMap("timeline"); // Y.Map for markers, automation
+    doc?.getMap("mixer"); // Y.Map for bus settings, volumes
+    doc?.getMap("metadata"); // Y.Map for project info
 
     if (cachedState) {
       // Load from Redis cache (fast path)
       try {
-        const _buffer = Buffer?.from(cachedState, "base64");
+        const buffer = Buffer?.from(cachedState, "base64");
         Y?.applyUpdate(doc, new Uint8Array(buffer));
       } catch (error: unknown) {
         logger?.warn("Failed to load from Redis cache:", projectId, error);
@@ -117,16 +117,16 @@ export class YjsCollaborationService {
 
     if (!cachedState) {
       // Load from database (slow path)
-      const _snapshot = await storage?.getLatestCollabSnapshot(projectId);
+      const snapshot = await storage?.getLatestCollabSnapshot(projectId);
       if (snapshot && snapshot?.documentState) {
         try {
           // Convert base64 string back to Uint8Array
-          const _buffer = Buffer?.from(snapshot?.documentState, "base64");
+          const buffer = Buffer?.from(snapshot?.documentState, "base64");
           Y?.applyUpdate(doc, new Uint8Array(buffer));
 
           // Cache in Redis for future requests
           try {
-            const _redis = await getRedisClient();
+            const redis = await getRedisClient();
             if (redis) {
               await redis?.setEx(
                 redisKey,
@@ -148,9 +148,9 @@ export class YjsCollaborationService {
       // PUBLISH the update to other nodes
       if (this?.YJS_PUBSUB_ENABLED) {
         try {
-          const _redis = await getRedisClient();
+          const redis = await getRedisClient();
           if (redis) {
-            const _base64Update = Buffer?.from(update).toString("base64");
+            const base64Update = Buffer?.from(update).toString("base64");
             await redis?.publish(`yjs:updates:${projectId}`, base64Update);
           }
         } catch (error) {
@@ -159,19 +159,19 @@ export class YjsCollaborationService {
       }
 
       // Clear existing timer
-      const _existingTimer = this?.saveTimers.get(projectId);
+      const existingTimer = this?.saveTimers.get(projectId);
       if (existingTimer) {
         clearTimeout(existingTimer);
       }
 
       // Set new timer to save after debounce period
-      const _timer = setTimeout(async () => {
+      const timer = setTimeout(async () => {
         try {
           // CRITICAL: Encode FULL document state, not just the incremental update
-          const _fullDocumentState = Y?.encodeStateAsUpdate(doc);
+          const fullDocumentState = Y?.encodeStateAsUpdate(doc);
 
           // Convert Uint8Array to base64 string for storage
-          const _base64State = Buffer?.from(fullDocumentState).toString("base64");
+          const base64State = Buffer?.from(fullDocumentState).toString("base64");
 
           // Save to database (persistent)
           await storage?.saveCollabSnapshot({
@@ -182,7 +182,7 @@ export class YjsCollaborationService {
 
           // Update Redis cache (shared across instances)
           try {
-            const _redis = await getRedisClient();
+            const redis = await getRedisClient();
             if (redis) {
               await redis?.setEx(redisKey, this?.REDIS_TTL, base64State);
             }
@@ -204,11 +204,11 @@ export class YjsCollaborationService {
   }
 
   // Force save document immediately (used before unload)
-  async forceSave(projectId: string, doc: Y?.Doc): Promise<void> {
+  async forceSave(projectId: string, doc: Y.Doc): Promise<void> {
     try {
-      const _fullDocumentState = Y?.encodeStateAsUpdate(doc);
-      const _base64State = Buffer?.from(fullDocumentState).toString("base64");
-      const _redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+      const fullDocumentState = Y?.encodeStateAsUpdate(doc);
+      const base64State = Buffer?.from(fullDocumentState).toString("base64");
+      const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
 
       await storage?.saveCollabSnapshot({
         projectId,
@@ -217,7 +217,7 @@ export class YjsCollaborationService {
       });
 
       try {
-        const _redis = await getRedisClient();
+        const redis = await getRedisClient();
         if (redis) {
           await redis?.setEx(redisKey, this?.REDIS_TTL, base64State);
         }
@@ -233,11 +233,11 @@ export class YjsCollaborationService {
   // Clean up document (clear timers and optionally clear Redis cache)
   async unloadDocument(
     projectId: string,
-    doc?: Y?.Doc,
+    doc?: Y.Doc,
     clearCache: boolean = false,
   ) {
     // Clear pending save timer first
-    const _timer = this?.saveTimers.get(projectId);
+    const timer = this?.saveTimers.get(projectId);
     if (timer) {
       clearTimeout(timer);
       this?.saveTimers.delete(projectId);
@@ -268,8 +268,8 @@ export class YjsCollaborationService {
     // Optionally clear Redis cache (useful when project is deleted)
     if (clearCache) {
       try {
-        const _redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
-        const _redis = await getRedisClient();
+        const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+        const redis = await getRedisClient();
         if (redis) {
           await redis?.del(redisKey);
         }
@@ -282,8 +282,8 @@ export class YjsCollaborationService {
   // Invalidate Redis cache for a project (forces reload from database)
   async invalidateCache(projectId: string) {
     try {
-      const _redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
-      const _redis = await getRedisClient();
+      const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+      const redis = await getRedisClient();
       if (redis) {
         await redis?.del(redisKey);
       }
@@ -295,10 +295,10 @@ export class YjsCollaborationService {
   // Check if document exists in Redis cache
   async isCached(projectId: string): Promise<boolean> {
     try {
-      const _redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
-      const _redis = await getRedisClient();
+      const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+      const redis = await getRedisClient();
       if (redis) {
-        const _exists = await redis?.exists(redisKey);
+        const exists = await redis?.exists(redisKey);
         return exists === 1;
       }
     } catch (error: unknown) {
@@ -308,4 +308,4 @@ export class YjsCollaborationService {
   }
 }
 
-export const _yjsService = new YjsCollaborationService();
+export const yjsService = new YjsCollaborationService();

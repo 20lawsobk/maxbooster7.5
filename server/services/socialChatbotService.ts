@@ -77,8 +77,8 @@ export interface KnowledgeBaseEntry {
   usageCount: number;
 }
 
-const _CHATBOT_MAX_THREADS = 20_000;
-const _CHATBOT_THREAD_TTL_MS = 2 * 60 * 60 * 1000;
+const CHATBOT_MAX_THREADS = 20_000;
+const CHATBOT_THREAD_TTL_MS = 2 * 60 * 60 * 1000;
 
 class SocialChatbotService {
   private templates: Map<string, ResponseTemplate> = new Map();
@@ -99,7 +99,7 @@ class SocialChatbotService {
   }
 
   private _sweepExpiredThreads(): void {
-    const _cutoff = Date?.now() - CHATBOT_THREAD_TTL_MS;
+    const cutoff = Date?.now() - CHATBOT_THREAD_TTL_MS;
     for (const [tid, ts] of this?.threadLastAccess) {
       if (ts < cutoff) {
         this?.messageHistory.delete(tid);
@@ -315,23 +315,23 @@ class SocialChatbotService {
     this?.intentPatterns.set("support", [
       /(help|issue|problem|not\s*working|error|broken|can'?t)/i,
     ]);
-    this?.intentPatterns.set("appreciation", [
+    this.intentPatterns.set("appreciation", [
       /(thank|thanks|appreciate|grateful)/i,
       /(love\s*your|big\s*fan|amazing|awesome|best)/i,
     ]);
-    this?.intentPatterns.set("streaming", [
+    this.intentPatterns.set("streaming", [
       /(spotify|apple\s*music|stream|listen|where\s*can\s*i)/i,
     ]);
-    this?.intentPatterns.set("complaint", [
+    this.intentPatterns.set("complaint", [
       /(disappointed|unhappy|terrible|worst|hate|angry|upset|frustrated)/i,
     ]);
-    this?.intentPatterns.set("urgent", [
+    this.intentPatterns.set("urgent", [
       /(urgent|emergency|asap|immediately|right\s*now|critical)/i,
     ]);
   }
 
   private initializeEscalationRules() {
-    this?.escalationRules = [
+    this.escalationRules = [
       {
         id: "negative_sentiment",
         condition: "sentiment",
@@ -343,7 +343,7 @@ class SocialChatbotService {
         id: "low_confidence",
         condition: "confidence",
         operator: "lessThan",
-        value: 0?.6,
+        value: 0.6,
         action: "escalate",
       },
       {
@@ -371,14 +371,14 @@ class SocialChatbotService {
   }
 
   async detectIntent(message: string): Promise<MessageIntent> {
-    const _lowerMessage = message?.toLowerCase();
+    const lowerMessage = message.toLowerCase();
     let detectedIntent = "unknown";
     let maxConfidence = 0;
 
-    for (const [intent, patterns] of this?.intentPatterns) {
+    for (const [intent, patterns] of this.intentPatterns) {
       for (const pattern of patterns) {
-        if (pattern?.test(lowerMessage)) {
-          const _confidence = this?.calculatePatternConfidence(
+        if (pattern.test(lowerMessage)) {
+          const confidence = this.calculatePatternConfidence(
             pattern,
             lowerMessage,
           );
@@ -390,18 +390,18 @@ class SocialChatbotService {
       }
     }
 
-    if (maxConfidence < 0?.3) {
+    if (maxConfidence < 0.3) {
       detectedIntent = "general";
-      maxConfidence = 0?.5;
+      maxConfidence = 0.5;
     }
 
-    const _sentiment = this?.analyzeSentiment(message);
-    const _urgency = this?.detectUrgency(message);
-    const _entities = this?.extractEntities(message);
+    const sentiment = this.analyzeSentiment(message);
+    const urgency = this.detectUrgency(message);
+    const entities = this.extractEntities(message);
 
     return {
       intent: detectedIntent,
-      confidence: Math?.min(maxConfidence, 1),
+      confidence: Math.min(maxConfidence, 1),
       entities,
       sentiment,
       urgency,
@@ -409,17 +409,17 @@ class SocialChatbotService {
   }
 
   private calculatePatternConfidence(pattern: RegExp, message: string): number {
-    const _match = message?.match(pattern);
+    const match = message.match(pattern);
     if (!match) return 0;
-    const _matchLength = match[0].length;
-    const _messageLength = message?.length;
-    return Math?.min(0?.5 + (matchLength / messageLength) * 0?.5, 0?.95);
+    const matchLength = match[0].length;
+    const messageLength = message.length;
+    return Math.min(0.5 + (matchLength / messageLength) * 0.5, 0.95);
   }
 
   private analyzeSentiment(
     message: string,
   ): "positive" | "neutral" | "negative" {
-    const _positiveWords = [
+    const positiveWords = [
       "love",
       "great",
       "amazing",
@@ -436,7 +436,7 @@ class SocialChatbotService {
       "🔥",
       "👏",
     ];
-    const _negativeWords = [
+    const negativeWords = [
       "hate",
       "terrible",
       "worst",
@@ -454,15 +454,15 @@ class SocialChatbotService {
       "💔",
     ];
 
-    const _lowerMessage = message?.toLowerCase();
+    const lowerMessage = message.toLowerCase();
     let positiveScore = 0;
     let negativeScore = 0;
 
-    positiveWords?.forEach((word) => {
-      if (lowerMessage?.includes(word)) positiveScore++;
+    positiveWords.forEach((word) => {
+      if (lowerMessage.includes(word)) positiveScore++;
     });
-    negativeWords?.forEach((word) => {
-      if (lowerMessage?.includes(word)) negativeScore++;
+    negativeWords.forEach((word) => {
+      if (lowerMessage.includes(word)) negativeScore++;
     });
 
     if (positiveScore > negativeScore) return "positive";
@@ -473,19 +473,19 @@ class SocialChatbotService {
   private detectUrgency(
     message: string,
   ): "low" | "medium" | "high" | "critical" {
-    const _lowerMessage = message?.toLowerCase();
+    const lowerMessage = message.toLowerCase();
 
     if (
-      /urgent|emergency|asap|immediately|right\s*now|critical/i?.test(
+      /urgent|emergency|asap|immediately|right\s*now|critical/i.test(
         lowerMessage,
       )
     ) {
       return "critical";
     }
-    if (/soon|quick|fast|hurry|need\s*help/i?.test(lowerMessage)) {
+    if (/soon|quick|fast|hurry|need\s*help/i.test(lowerMessage)) {
       return "high";
     }
-    if (/when|please|could|would/i?.test(lowerMessage)) {
+    if (/when|please|could|would/i.test(lowerMessage)) {
       return "medium";
     }
     return "low";
@@ -494,19 +494,19 @@ class SocialChatbotService {
   private extractEntities(message: string): Record<string, string> {
     const entities: Record<string, string> = {};
 
-    const _emailMatch = message?.match(/[\w.-]+@[\w.-]+\.\w+/);
-    if (emailMatch) entities?.email = emailMatch[0];
+    const emailMatch = message.match(/[\w.-]+@[\w.-]+\.\w+/);
+    if (emailMatch) entities.email = emailMatch[0];
 
-    const _dateMatch = message?.match(
+    const dateMatch = message.match(
       /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\w+\s+\d{1,2},?\s+\d{4})\b/,
     );
-    if (dateMatch) entities?.date = dateMatch[0];
+    if (dateMatch) entities.date = dateMatch[0];
 
-    const _urlMatch = message?.match(/https?:\/\/[^\s]+/);
-    if (urlMatch) entities?.url = urlMatch[0];
+    const urlMatch = message.match(/https?:\/\/[^\s]+/);
+    if (urlMatch) entities.url = urlMatch[0];
 
-    const _handleMatch = message?.match(/@[\w]+/);
-    if (handleMatch) entities?.handle = handleMatch[0];
+    const handleMatch = message.match(/@[\w]+/);
+    if (handleMatch) entities.handle = handleMatch[0];
 
     return entities;
   }
@@ -515,63 +515,63 @@ class SocialChatbotService {
     message: ChatbotMessage,
     userId: string,
   ): Promise<ChatbotResponse> {
-    const _startTime = Date?.now();
+    const startTime = Date.now();
 
     try {
-      const _intent = await this?.detectIntent(message?.content);
+      const intent = await this.detectIntent(message.content);
       let response: string | null = null;
       let templateUsed: string | undefined;
-      let confidence = intent?.confidence;
+      let confidence = intent.confidence;
 
-      const _kbResponse = this?.searchKnowledgeBase(message?.content);
-      if (kbResponse && kbResponse?.confidence > 0?.8) {
-        response = kbResponse?.answer;
-        confidence = kbResponse?.confidence;
+      const kbResponse = this.searchKnowledgeBase(message.content);
+      if (kbResponse && kbResponse.confidence > 0.8) {
+        response = kbResponse.answer;
+        confidence = kbResponse.confidence;
       }
 
       if (!response) {
-        const _template = this?.findMatchingTemplate(
-          message?.content,
-          message?.platform,
+        const template = this.findMatchingTemplate(
+          message.content,
+          message.platform,
         );
         if (template) {
-          response = this?.populateTemplate(template, message);
-          templateUsed = template?.id;
-          confidence = Math?.max(confidence, 0?.85);
+          response = this.populateTemplate(template, message);
+          templateUsed = template.id;
+          confidence = Math.max(confidence, 0.85);
         }
       }
 
       if (!response) {
-        response = this?.generateAIResponse(message?.content, intent);
-        confidence = Math?.min(confidence, 0?.7);
+        response = this.generateAIResponse(message.content, intent);
+        confidence = Math.min(confidence, 0.7);
       }
 
-      const _requiresHumanReview = this?.checkEscalation(intent, message);
-      const _suggestedActions = this?.getSuggestedActions(intent);
+      const requiresHumanReview = this.checkEscalation(intent, message);
+      const suggestedActions = this.getSuggestedActions(intent);
 
-      this?.storeMessageInHistory(message);
+      this.storeMessageInHistory(message);
 
-      const _responseId = randomBytes(8).toString("hex");
-      logger?.info(`Chatbot response generated for user ${userId}`, {
+      const responseId = randomBytes(8).toString("hex");
+      logger.info(`Chatbot response generated for user ${userId}`, {
         responseId,
-        platform: message?.platform,
-        intent: intent?.intent,
+        platform: message.platform,
+        intent: intent.intent,
         confidence,
         requiresHumanReview,
-        responseTime: Date?.now() - startTime,
+        responseTime: Date.now() - startTime,
       });
 
       return {
         id: responseId,
         content: response,
         confidence,
-        intent: intent?.intent,
+        intent: intent.intent,
         requiresHumanReview,
         suggestedActions,
         templateUsed,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error generating chatbot response:");
+      logger.warn({ err: error }, "Error generating chatbot response:");
       return {
         id: randomBytes(8).toString("hex"),
         content:
@@ -586,32 +586,32 @@ class SocialChatbotService {
   private searchKnowledgeBase(
     query: string,
   ): { answer: string; confidence: number } | null {
-    const _lowerQuery = query?.toLowerCase();
+    const lowerQuery = query.toLowerCase();
     let bestMatch: KnowledgeBaseEntry | null = null;
     let bestScore = 0;
 
-    for (const entry of this?.knowledgeBase.values()) {
+    for (const entry of this.knowledgeBase.values()) {
       let score = 0;
 
-      entry?.keywords.forEach((keyword) => {
-        if (lowerQuery?.includes(keyword?.toLowerCase())) {
-          score += 0?.3;
+      entry.keywords.forEach((keyword) => {
+        if (lowerQuery.includes(keyword.toLowerCase())) {
+          score += 0.3;
         }
       });
 
-      const _questionWords = entry?.question.toLowerCase().split(/\s+/);
-      const _queryWords = lowerQuery?.split(/\s+/);
-      const _matchingWords = questionWords?.filter((w) => queryWords?.includes(w));
-      score += (matchingWords?.length / questionWords?.length) * 0?.5;
+      const questionWords = entry.question.toLowerCase().split(/\s+/);
+      const queryWords = lowerQuery.split(/\s+/);
+      const matchingWords = questionWords.filter((w) => queryWords.includes(w));
+      score += (matchingWords.length / questionWords.length) * 0.5;
 
-      if (score > bestScore && score > 0?.5) {
+      if (score > bestScore && score > 0.5) {
         bestScore = score;
         bestMatch = entry;
       }
     }
 
     if (bestMatch) {
-      return { answer: bestMatch?.answer, confidence: bestScore };
+      return { answer: bestMatch.answer, confidence: bestScore };
     }
     return null;
   }
@@ -620,18 +620,18 @@ class SocialChatbotService {
     content: string,
     platform: string,
   ): ResponseTemplate | null {
-    const _lowerContent = content?.toLowerCase();
+    const lowerContent = content.toLowerCase();
     let bestMatch: ResponseTemplate | null = null;
     let bestPriority = Infinity;
     let bestMatchCount = 0;
 
-    for (const template of this?.templates.values()) {
-      if (!template?.enabled) continue;
-      if (!template?.platforms.includes(platform)) continue;
+    for (const template of this.templates.values()) {
+      if (!template.enabled) continue;
+      if (!template.platforms.includes(platform)) continue;
 
       let matchCount = 0;
-      for (const trigger of template?.triggers) {
-        if (lowerContent?.includes(trigger?.toLowerCase())) {
+      for (const trigger of template.triggers) {
+        if (lowerContent.includes(trigger.toLowerCase())) {
           matchCount++;
         }
       }
@@ -639,10 +639,10 @@ class SocialChatbotService {
       if (
         matchCount > 0 &&
         (matchCount > bestMatchCount ||
-          (matchCount === bestMatchCount && template?.priority < bestPriority))
+          (matchCount === bestMatchCount && template.priority < bestPriority))
       ) {
         bestMatch = template;
-        bestPriority = template?.priority;
+        bestPriority = template.priority;
         bestMatchCount = matchCount;
       }
     }
@@ -654,9 +654,9 @@ class SocialChatbotService {
     template: ResponseTemplate,
     message: ChatbotMessage,
   ): string {
-    let response = template?.response;
-    response = response?.replace(/\{name\}/g, message?.senderName || "there");
-    response = response?.replace(/\{platform\}/g, message?.platform);
+    let response = template.response;
+    response = response.replace(/\{name\}/g, message.senderName || "there");
+    response = response.replace(/\{platform\}/g, message.platform);
     return response;
   }
 
@@ -715,7 +715,7 @@ class SocialChatbotService {
           }
           break;
         case "keyword":
-          const _keywordPattern = new RegExp(rule?.value as string, "i");
+          const keywordPattern = new RegExp(rule?.value as string, "i");
           if (keywordPattern?.test(message?.content)) {
             return true;
           }
@@ -756,7 +756,7 @@ class SocialChatbotService {
 
   private storeMessageInHistory(message: ChatbotMessage) {
     this?._evictOldestThreadIfFull();
-    const _history = this?.messageHistory.get(message?.threadId) || [];
+    const history = this?.messageHistory.get(message?.threadId) || [];
     history?.push(message);
     if (history?.length > 100) history?.shift();
     this?.messageHistory.set(message?.threadId, history);
@@ -781,24 +781,24 @@ class SocialChatbotService {
     this?.knowledgeBase.set(newEntry?.id, newEntry);
 
     logger?.info(`Knowledge base entry added by user ${userId}`, {
-      entryId: newEntry?.id,
-      category: entry?.category,
+      entryId: newEntry.id,
+      category: entry.category,
     });
 
     return newEntry;
   }
 
   async getStats(_userId: string): Promise<ChatbotStats> {
-    const _totalMessages = 1250;
-    const _automatedResponses = 1062;
-    const _humanHandled = 188;
+    const totalMessages = 1250;
+    const automatedResponses = 1062;
+    const humanHandled = 188;
 
     return {
       totalMessages,
       automatedResponses,
       humanHandled,
       automationRate: (automatedResponses / totalMessages) * 100,
-      avgResponseTime: 1?.2,
+      avgResponseTime: 1.2,
       topIntents: [
         { intent: "greeting", count: 312 },
         { intent: "inquiry_music", count: 245 },
@@ -817,8 +817,8 @@ class SocialChatbotService {
         neutral: 450,
         negative: 120,
       },
-      escalationRate: 15?.04,
-      customerSatisfaction: 4?.3,
+      escalationRate: 15.04,
+      customerSatisfaction: 4.3,
     };
   }
 
@@ -841,10 +841,10 @@ class SocialChatbotService {
     id: string,
     updates: Partial<ResponseTemplate>,
   ): Promise<ResponseTemplate | null> {
-    const _template = this?.templates.get(id);
+    const template = this?.templates.get(id);
     if (!template) return null;
 
-    const _updated = { ...template, ...updates };
+    const updated = { ...template, ...updates };
     this?.templates.set(id, updated);
     return updated;
   }
@@ -857,17 +857,17 @@ class SocialChatbotService {
     assignedTo?: string;
     priority: number;
   }> {
-    const _intent = await this?.detectIntent(message?.content);
+    const intent = await this?.detectIntent(message?.content);
 
     if (intent?.urgency === "critical") {
       return { action: "escalate", priority: 1 };
     }
 
-    if (intent?.sentiment === "negative" && intent?.confidence > 0?.7) {
+    if (intent?.sentiment === "negative" && intent?.confidence > 0.7) {
       return { action: "escalate", priority: 2 };
     }
 
-    if (intent?.confidence > 0?.8) {
+    if (intent?.confidence > 0.8) {
       return { action: "auto_respond", priority: 3 };
     }
 
@@ -884,11 +884,11 @@ class SocialChatbotService {
       routing: Record<string, unknown>;
     }>
   > {
-    const _results = [];
+    const results = [];
 
     for (const message of messages) {
-      const _routing = await this?.routeMessage(message, userId);
-      const _response = await this?.generateResponse(message, userId);
+      const routing = await this?.routeMessage(message, userId);
+      const response = await this?.generateResponse(message, userId);
 
       results?.push({
         message,
@@ -901,4 +901,4 @@ class SocialChatbotService {
   }
 }
 
-export const _socialChatbotService = new SocialChatbotService();
+export const socialChatbotService = new SocialChatbotService();

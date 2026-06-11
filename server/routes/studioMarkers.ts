@@ -1,30 +1,30 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db";
 import { projects, markers } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 // Validation schema
-const _markerSchema = z?.object({
-  name: z?.string().min(1).max(100),
-  time: z?.number().min(0),
-  position: z?.number().min(0),
-  color: z?.string().regex(/^#[0-9A-Fa-f]{6}$/),
-  type: z?.string().optional().default("marker"),
+const markerSchema = z.object({
+  name: z.string().min(1).max(100),
+  time: z.number().min(0),
+  position: z.number().min(0),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  type: z.string().optional().default("marker"),
 });
 
 // Get all markers for a project
 router?.get("/projects/:projectId/markers", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     // Verify project ownership
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
     });
 
@@ -32,7 +32,7 @@ router?.get("/projects/:projectId/markers", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Project not found" });
     }
 
-    const _projectMarkers = await db?.query.markers?.findMany({
+    const projectMarkers = await db?.query.markers?.findMany({
       where: eq(markers?.projectId, projectId),
       orderBy: (markers, { asc }) => [asc(markers?.time)],
     });
@@ -48,13 +48,13 @@ router?.get("/projects/:projectId/markers", requireAuth, async (req, res) => {
 router?.post("/projects/:projectId/markers", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     // Validate input
-    const _markerData = markerSchema?.parse(req?.body);
+    const markerData = markerSchema?.parse(req?.body);
 
     // Verify project ownership
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
     });
 
@@ -73,10 +73,10 @@ router?.post("/projects/:projectId/markers", requireAuth, async (req, res) => {
     res?.status(201).json(newMarker);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error creating marker:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid marker data", details: error?.issues });
+        .json({ error: "Invalid marker data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to create marker" });
   }
@@ -86,13 +86,13 @@ router?.post("/projects/:projectId/markers", requireAuth, async (req, res) => {
 router?.patch("/markers/:markerId", requireAuth, async (req, res) => {
   try {
     const { markerId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     // Partial validation
-    const _updates = markerSchema?.partial().parse(req?.body);
+    const updates = markerSchema?.partial().parse(req?.body);
 
     // Get marker and verify ownership
-    const _marker = await db?.query.markers?.findFirst({
+    const marker = await db?.query.markers?.findFirst({
       where: eq(markers?.id, markerId),
     });
 
@@ -101,7 +101,7 @@ router?.patch("/markers/:markerId", requireAuth, async (req, res) => {
     }
 
     // Verify project ownership
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(
         eq(projects?.id, marker?.projectId),
         eq(projects?.userId, userId),
@@ -121,10 +121,10 @@ router?.patch("/markers/:markerId", requireAuth, async (req, res) => {
     res?.json(updatedMarker);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error updating marker:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid marker data", details: error?.issues });
+        .json({ error: "Invalid marker data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to update marker" });
   }
@@ -134,10 +134,10 @@ router?.patch("/markers/:markerId", requireAuth, async (req, res) => {
 router?.delete("/markers/:markerId", requireAuth, async (req, res) => {
   try {
     const { markerId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     // Get marker and verify ownership
-    const _marker = await db?.query.markers?.findFirst({
+    const marker = await db?.query.markers?.findFirst({
       where: eq(markers?.id, markerId),
     });
 
@@ -146,7 +146,7 @@ router?.delete("/markers/:markerId", requireAuth, async (req, res) => {
     }
 
     // Verify project ownership
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(
         eq(projects?.id, marker?.projectId),
         eq(projects?.userId, userId),

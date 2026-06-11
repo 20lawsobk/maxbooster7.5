@@ -4,15 +4,15 @@ import { join } from "path";
 import { tmpdir } from "os";
 import archiver from "archiver";
 import { create } from "xmlbuilder2";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
-const _timedFetch = (
+const timedFetch = (
   url: string | URL | Request,
   init: RequestInit = {},
 ): Promise<Response> =>
-  fetch(url, { signal: AbortSignal?.timeout(10_000), ...init });
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
 
 interface ReleaseMetadata {
   id: string;
@@ -61,21 +61,21 @@ export class DDEXPackageService {
     release: ReleaseMetadata,
     tracks: TrackMetadata[],
   ): Promise<string> {
-    const _messageId = this?.generateMessageId(release?.id);
-    const _releaseId = `REL${release?.id.replace(/-/g, "").substring(0, 12).toUpperCase()}`;
+    const messageId = this?.generateMessageId(release?.id);
+    const releaseId = `REL${release?.id.replace(/-/g, "").substring(0, 12).toUpperCase()}`;
 
-    const _doc = create({ version: "1?.0", encoding: "UTF-8" }).ele(
+    const doc = create({ version: "1.0", encoding: "UTF-8" }).ele(
       "ernm:NewReleaseMessage",
       {
-        "xmlns:ernm": "http://ddex?.net/xml/ern/43",
-        "xmlns:xs": "http://www?.w3.org/2001/XMLSchema-instance",
-        MessageSchemaVersionId: this?.MESSAGE_SCHEMA_VERSION,
+        "xmlns:ernm": "http://ddex.net/xml/ern/43",
+        "xmlns:xs": "http://www.w3.org/2001/XMLSchema-instance",
+        MessageSchemaVersionId: this.MESSAGE_SCHEMA_VERSION,
         LanguageAndScriptCode: "en",
       },
     );
 
     // Message Header
-    const _header = doc?.ele("MessageHeader");
+    const header = doc?.ele("MessageHeader");
     header?.ele("MessageThreadId").txt(messageId);
     header?.ele("MessageId").txt(messageId);
     header
@@ -99,34 +99,34 @@ export class DDEXPackageService {
     doc?.ele("IsBackfill").txt("false");
 
     // Resource List (Audio files and images)
-    const _resourceList = doc?.ele("ResourceList");
+    const resourceList = doc?.ele("ResourceList");
 
     // Add sound recordings
     for (const track of tracks) {
-      const _soundRecording = resourceList?.ele("SoundRecording");
+      const soundRecording = resourceList?.ele("SoundRecording");
       soundRecording?.ele("SoundRecordingType").txt("MusicalWorkSoundRecording");
       soundRecording?.ele("IsArtistRelated").txt("true");
 
-      const _soundRecordingId = soundRecording?.ele("SoundRecordingId");
+      const soundRecordingId = soundRecording?.ele("SoundRecordingId");
       soundRecordingId?.ele("ISRC").txt(track?.isrc);
       soundRecordingId
         .ele("ProprietaryId", { Namespace: "DPID:MAX_BOOSTER" })
         .txt(track?.id);
 
-      const _referenceTitle = soundRecording?.ele("ReferenceTitle");
+      const referenceTitle = soundRecording?.ele("ReferenceTitle");
       referenceTitle?.ele("TitleText").txt(track?.title);
 
       // Duration in ISO 8601 format (PT3M45S)
-      const _duration = this?.formatDuration(track?.duration);
+      const duration = this?.formatDuration(track?.duration);
       soundRecording?.ele("Duration").txt(duration);
 
       // Artists
-      const _artistParty = soundRecording?.ele(
+      const artistParty = soundRecording?.ele(
         "SoundRecordingDetailsByTerritory",
       );
       artistParty?.ele("TerritoryCode").txt("Worldwide");
 
-      const _displayArtist = artistParty?.ele("DisplayArtist", {
+      const displayArtist = artistParty?.ele("DisplayArtist", {
         SequenceNumber: "1",
       });
       displayArtist
@@ -140,7 +140,7 @@ export class DDEXPackageService {
       // Featured artists
       if (track?.featuredArtists && track?.featuredArtists.length > 0) {
         track?.featuredArtists.forEach((artist, index) => {
-          const _featured = artistParty?.ele("DisplayArtist", {
+          const featured = artistParty?.ele("DisplayArtist", {
             SequenceNumber: String(index + 2),
           });
           featured?.ele("PartyName").ele("FullName").txt(artist).up().up();
@@ -154,7 +154,7 @@ export class DDEXPackageService {
         .txt(track?.explicit ? "Explicit" : "NotExplicit");
 
       // Technical details
-      const _technicalDetails = artistParty?.ele(
+      const technicalDetails = artistParty?.ele(
         "TechnicalSoundRecordingDetails",
         {
           SequenceNumber: "1",
@@ -184,21 +184,21 @@ export class DDEXPackageService {
 
     // Add cover artwork
     if (release?.coverArtPath) {
-      const _image = resourceList?.ele("Image");
+      const image = resourceList?.ele("Image");
       image?.ele("ImageType").txt("FrontCoverImage");
 
-      const _imageId = image?.ele("ImageId");
+      const imageId = image?.ele("ImageId");
       imageId
         .ele("ProprietaryId", { Namespace: "DPID:MAX_BOOSTER" })
         .txt(`${release?.id}-cover`);
 
-      const _referenceTitle = image?.ele("ReferenceTitle");
+      const referenceTitle = image?.ele("ReferenceTitle");
       referenceTitle?.ele("TitleText").txt(`${release?.title} - Cover Art`);
 
-      const _imageDetails = image?.ele("ImageDetailsByTerritory");
+      const imageDetails = image?.ele("ImageDetailsByTerritory");
       imageDetails?.ele("TerritoryCode").txt("Worldwide");
 
-      const _technicalDetails = imageDetails?.ele("TechnicalImageDetails", {
+      const technicalDetails = imageDetails?.ele("TechnicalImageDetails", {
         SequenceNumber: "1",
       });
       technicalDetails?.ele("ImageCodecType").txt("JPEG");
@@ -208,7 +208,7 @@ export class DDEXPackageService {
       technicalDetails
         .ele("File")
         .ele("FileName")
-        .txt("cover?.jpg")
+        .txt("cover.jpg")
         .up()
         .ele("FilePath")
         .txt(release?.coverArtPath)
@@ -218,19 +218,19 @@ export class DDEXPackageService {
     }
 
     // Release List
-    const _releaseList = doc?.ele("ReleaseList");
-    const _releaseElem = releaseList?.ele("Release", { IsMainRelease: "true" });
+    const releaseList = doc?.ele("ReleaseList");
+    const releaseElem = releaseList?.ele("Release", { IsMainRelease: "true" });
 
     releaseElem?.ele("ReleaseReference").txt(releaseId);
 
-    const _releaseIdElem = releaseElem?.ele("ReleaseId");
+    const releaseIdElem = releaseElem?.ele("ReleaseId");
     releaseIdElem?.ele("ICPN", { IsEan: "true" }).txt(release?.upc);
     releaseIdElem
       .ele("ProprietaryId", { Namespace: "DPID:MAX_BOOSTER" })
       .txt(release?.id);
 
     // Release type
-    const _releaseType =
+    const releaseType =
       {
         single: "Single",
         EP: "EP",
@@ -239,18 +239,18 @@ export class DDEXPackageService {
     releaseElem?.ele("ReleaseType").txt(releaseType);
 
     // Title
-    const _releaseTitle = releaseElem?.ele("ReferenceTitle");
+    const releaseTitle = releaseElem?.ele("ReferenceTitle");
     releaseTitle?.ele("TitleText").txt(release?.title);
 
     // Main artist
-    const _mainArtist = releaseElem?.ele("ReleaseResourceReference", {
+    const mainArtist = releaseElem?.ele("ReleaseResourceReference", {
       SequenceNumber: "1",
     });
     mainArtist?.txt(tracks[0]?.id || "");
 
     // Release details by territory
-    const _releaseDetails = releaseElem?.ele("ReleaseDetailsByTerritory");
-    const _territories =
+    const releaseDetails = releaseElem?.ele("ReleaseDetailsByTerritory");
+    const territories =
       release?.territories && release?.territories.length > 0
         ? release?.territories
         : ["Worldwide"];
@@ -260,7 +260,7 @@ export class DDEXPackageService {
     });
 
     // Display artists
-    const _displayArtist = releaseDetails?.ele("DisplayArtist", {
+    const displayArtist = releaseDetails?.ele("DisplayArtist", {
       SequenceNumber: "1",
     });
     displayArtist
@@ -272,7 +272,7 @@ export class DDEXPackageService {
     displayArtist?.ele("ArtistRole").txt("MainArtist");
 
     // Label name
-    const _labelName = releaseDetails?.ele("LabelName");
+    const labelName = releaseDetails?.ele("LabelName");
     labelName?.txt(release?.labelName || "Independent");
 
     // Release date
@@ -284,17 +284,17 @@ export class DDEXPackageService {
       .txt(release?.isExplicit ? "Explicit" : "NotExplicit");
 
     // Genre
-    const _genre = releaseDetails?.ele("Genre");
+    const genre = releaseDetails?.ele("Genre");
     genre?.ele("GenreText").txt(release?.primaryGenre);
 
     // Copyright
-    const _copyrightLine = releaseDetails?.ele("CLine");
+    const copyrightLine = releaseDetails?.ele("CLine");
     copyrightLine?.ele("Year").txt(String(release?.copyrightYear));
     copyrightLine
       .ele("CLineText")
       .txt(`© ${release?.copyrightYear} ${release?.copyrightOwner}`);
 
-    const _pLine = releaseDetails?.ele("PLine");
+    const pLine = releaseDetails?.ele("PLine");
     pLine?.ele("Year").txt(String(release?.copyrightYear));
     pLine
       .ele("PLineText")
@@ -302,7 +302,7 @@ export class DDEXPackageService {
 
     // Track list
     tracks?.forEach((track, index) => {
-      const _trackRelease = releaseDetails?.ele("TrackRelease", {
+      const trackRelease = releaseDetails?.ele("TrackRelease", {
         SequenceNumber: String(index + 1),
       });
       trackRelease?.ele("ReleaseResourceReference").txt(track?.id);
@@ -310,13 +310,13 @@ export class DDEXPackageService {
     });
 
     // Deal (distribution terms)
-    const _dealList = doc?.ele("DealList");
-    const _releaseDeal = dealList?.ele("ReleaseDeal");
+    const dealList = doc?.ele("DealList");
+    const releaseDeal = dealList?.ele("ReleaseDeal");
 
-    const _deal = releaseDeal?.ele("Deal");
+    const deal = releaseDeal?.ele("Deal");
     deal?.ele("DealReleaseReference").txt(releaseId);
 
-    const _dealTerms = deal?.ele("DealTerms");
+    const dealTerms = deal?.ele("DealTerms");
     dealTerms?.ele("CommercialModelType").txt("SubscriptionModel");
     dealTerms?.ele("Usage").txt("PermanentDownload");
 
@@ -331,7 +331,7 @@ export class DDEXPackageService {
       .up();
 
     // Convert to XML string
-    const _xml = doc?.end({ prettyPrint: true });
+    const xml = doc?.end({ prettyPrint: true });
     return xml;
   }
 
@@ -343,17 +343,17 @@ export class DDEXPackageService {
     url: string,
     trackNumber: number,
   ): Promise<string> {
-    const _ext = url?.split("?")[0].split(".").pop() || "mp3";
-    const _tmpPath = join(
+    const ext = url?.split("?")[0].split(".").pop() || "mp3";
+    const tmpPath = join(
       tmpdir(),
       `ddex_track_${trackNumber}_${Date?.now()}.${ext}`,
     );
-    const _res = await timedFetch(url);
+    const res = await timedFetch(url);
     if (!res?.ok)
       throw new Error(
         `Failed to download audio for track ${trackNumber}: HTTP ${res?.status}`,
       );
-    const _buf = Buffer?.from(await res?.arrayBuffer());
+    const buf = Buffer?.from(await res?.arrayBuffer());
     await writeFile(tmpPath, buf);
     return tmpPath;
   }
@@ -365,7 +365,7 @@ export class DDEXPackageService {
   ): Promise<string> {
     // Resolve audio file paths BEFORE generating XML so calculateMD5 works on local files.
     const tempFiles: string[] = [];
-    const _resolvedTracks = await Promise?.all(
+    const resolvedTracks = await Promise?.all(
       tracks?.map(async (track) => {
         let audioFilePath = track?.audioFilePath;
         if (audioFilePath && audioFilePath?.startsWith("http")) {
@@ -388,20 +388,20 @@ export class DDEXPackageService {
     );
 
     // Generate XML with resolved (local) file paths so MD5 checksums are accurate.
-    const _xml = await this?.generateDDEXXML(release, resolvedTracks);
+    const xml = await this?.generateDDEXXML(release, resolvedTracks);
 
     // Create ZIP archive
-    const _archive = archiver("zip", {
+    const archive = archiver("zip", {
       zlib: { level: 9 },
     });
 
     const { createWriteStream } = require("fs");
-    const _output = createWriteStream(outputPath);
+    const output = createWriteStream(outputPath);
 
     try {
       await new Promise<void>((resolve, reject) => {
         let settled = false;
-        const _settle = (fn: () => void) => {
+        const settle = (fn: () => void) => {
           if (!settled) {
             settled = true;
             fn();
@@ -413,7 +413,7 @@ export class DDEXPackageService {
         archive?.pipe(output);
 
         // Add XML file
-        archive?.append(xml, { name: "release?.xml" });
+        archive?.append(xml, { name: "release.xml" });
 
         // Add audio files (local paths only — remote URLs already resolved above)
         for (const track of resolvedTracks) {
@@ -426,7 +426,7 @@ export class DDEXPackageService {
 
         // Add cover art
         if (release?.coverArtPath && !release?.coverArtPath.startsWith("http")) {
-          archive?.file(release?.coverArtPath, { name: "cover?.jpg" });
+          archive?.file(release?.coverArtPath, { name: "cover.jpg" });
         }
 
         archive?.finalize();
@@ -449,7 +449,7 @@ export class DDEXPackageService {
       create(xml);
 
       // Check for required elements
-      const _requiredElements = [
+      const requiredElements = [
         "MessageHeader",
         "ResourceList",
         "ReleaseList",
@@ -463,11 +463,11 @@ export class DDEXPackageService {
       }
 
       // Validate ISRC format (2 letters + 3 alphanumeric + 2 digits + 5 digits)
-      const _isrcPattern = /[A-Z]{2}[A-Z0-9]{3}\d{7}/g;
-      const _isrcMatches = xml?.match(/<ISRC>([^<]+)<\/ISRC>/g);
+      const isrcPattern = /[A-Z]{2}[A-Z0-9]{3}\d{7}/g;
+      const isrcMatches = xml?.match(/<ISRC>([^<]+)<\/ISRC>/g);
       if (isrcMatches) {
         isrcMatches?.forEach((match) => {
-          const _isrc = match?.replace(/<\/?ISRC>/g, "");
+          const isrc = match?.replace(/<\/?ISRC>/g, "");
           if (!isrcPattern?.test(isrc)) {
             errors?.push(`Invalid ISRC format: ${isrc}`);
           }
@@ -475,11 +475,11 @@ export class DDEXPackageService {
       }
 
       // Validate UPC format (12 or 13 digits)
-      const _upcPattern = /^\d{12,13}$/;
-      const _upcMatches = xml?.match(/<ICPN[^>]*>([^<]+)<\/ICPN>/g);
+      const upcPattern = /^\d{12,13}$/;
+      const upcMatches = xml?.match(/<ICPN[^>]*>([^<]+)<\/ICPN>/g);
       if (upcMatches) {
         upcMatches?.forEach((match) => {
-          const _upc = match?.replace(/<\/?ICPN[^>]*>/g, "");
+          const upc = match?.replace(/<\/?ICPN[^>]*>/g, "");
           if (!upcPattern?.test(upc)) {
             errors?.push(`Invalid UPC format: ${upc}`);
           }
@@ -487,7 +487,7 @@ export class DDEXPackageService {
       }
 
       return {
-        valid: errors?.length === 0,
+        valid: errors.length === 0,
         errors,
       };
     } catch (error: unknown) {
@@ -499,8 +499,8 @@ export class DDEXPackageService {
   }
 
   private generateMessageId(releaseId: string): string {
-    const _timestamp = Date?.now();
-    const _hash = createHash("md5")
+    const timestamp = Date?.now();
+    const hash = createHash("md5")
       .update(`${releaseId}-${timestamp}`)
       .digest("hex")
       .substring(0, 8);
@@ -508,9 +508,9 @@ export class DDEXPackageService {
   }
 
   private formatDuration(seconds: number): string {
-    const _hours = Math?.floor(seconds / 3600);
-    const _minutes = Math?.floor((seconds % 3600) / 60);
-    const _secs = Math?.floor(seconds % 60);
+    const hours = Math?.floor(seconds / 3600);
+    const minutes = Math?.floor((seconds % 3600) / 60);
+    const secs = Math?.floor(seconds % 60);
 
     let duration = "PT";
     if (hours > 0) duration += `${hours}H`;
@@ -522,7 +522,7 @@ export class DDEXPackageService {
 
   private async calculateMD5(filePath: string): Promise<string> {
     try {
-      const _fileBuffer = await readFile(filePath);
+      const fileBuffer = await readFile(filePath);
       return createHash("md5").update(fileBuffer).digest("hex");
     } catch (error: unknown) {
       logger?.warn({ err: error }, `Error calculating MD5 for ${filePath}:`);
@@ -531,4 +531,4 @@ export class DDEXPackageService {
   }
 }
 
-export const _ddexPackageService = new DDEXPackageService();
+export const ddexPackageService = new DDEXPackageService();

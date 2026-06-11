@@ -553,7 +553,7 @@ export function VersionHistory({
               Delete Version
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{versionToDelete?.name}"? This
+              Are you sure you want to delete "{versionToDelete.name}"? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

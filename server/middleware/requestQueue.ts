@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import v8 from "v8";
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface QueuedRequest {
   id: string;
@@ -10,7 +10,7 @@ interface QueuedRequest {
   next: NextFunction;
   timestamp: number;
   priority: number;
-  timeout: NodeJS?.Timeout;
+  timeout: NodeJS.Timeout;
 }
 
 interface QueueConfig {
@@ -32,7 +32,7 @@ class RequestQueue {
   };
 
   constructor(config: Partial<QueueConfig> = {}) {
-    this?.config = {
+    this.config = {
       maxQueueSize: 100000,
       maxConcurrent: 5000,
       requestTimeout: 45000,
@@ -59,14 +59,14 @@ class RequestQueue {
 
   enqueue(req: Request, res: Response, next: NextFunction): boolean {
     if (this?.getTotalQueueSize() >= this?.config.maxQueueSize) {
-      this?.stats.rejected++;
+      this.stats.rejected++;
       return false;
     }
 
-    const _priority = this?.determinePriority(req);
-    const _id = this?.generateId();
+    const priority = this?.determinePriority(req);
+    const id = this?.generateId();
 
-    const _timeout = setTimeout(() => {
+    const timeout = setTimeout(() => {
       this?.handleTimeout(id, priority);
     }, this?.config.requestTimeout);
 
@@ -75,13 +75,13 @@ class RequestQueue {
       req,
       res,
       next,
-      timestamp: Date?.now(),
+      timestamp: Date.now(),
       priority,
       timeout,
     };
 
     this?.queues.get(priority)!.push(queuedRequest);
-    this?.stats.queued++;
+    this.stats.queued++;
 
     this?.processQueue();
 
@@ -89,7 +89,7 @@ class RequestQueue {
   }
 
   private determinePriority(req: Request): number {
-    const _user = (req as Record<string, unknown>).user;
+    const user = (req as Record<string, unknown>).user;
 
     if (user?.role === "admin") return 0;
     if (user?.subscriptionTier === "lifetime") return 0;
@@ -106,10 +106,10 @@ class RequestQueue {
     }
 
     for (let priority = 0; priority < this?.config.priorityLevels; priority++) {
-      const _queue = this?.queues.get(priority)!;
+      const queue = this?.queues.get(priority)!;
 
       while (queue?.length > 0 && this?.processing < this?.config.maxConcurrent) {
-        const _request = queue?.shift()!;
+        const request = queue?.shift()!;
         this?.processRequest(request);
       }
     }
@@ -130,13 +130,13 @@ class RequestQueue {
   ];
 
   private isStreamingRoute(path: string): boolean {
-    return RequestQueue?.STREAMING_PATH_PATTERNS.some(
+    return RequestQueue.STREAMING_PATH_PATTERNS.some(
       (p) => path?.startsWith(p) || path?.includes(p),
     );
   }
 
   private processRequest(queuedRequest: QueuedRequest): void {
-    this?.processing++;
+    this.processing++;
     clearTimeout(queuedRequest?.timeout);
 
     // Guard: decrement exactly once, whether the response ends normally or the
@@ -144,16 +144,16 @@ class RequestQueue {
     // connection never fires res?.end(), causing `processing` to leak upward
     // until it reaches maxConcurrent and ALL future requests are silently dropped.
     let released = false;
-    const _release = () => {
+    const release = () => {
       if (released) return;
       released = true;
-      this?.processing--;
-      this?.stats.processed++;
+      this.processing--;
+      this.stats.processed++;
       setImmediate(() => this?.processQueue());
     };
 
-    const _originalEnd = queuedRequest?.res.end?.bind(queuedRequest?.res);
-    queuedRequest?.res.end = (...args: unknown[]) => {
+    const originalEnd = queuedRequest?.res.end?.bind(queuedRequest?.res);
+    queuedRequest.res.end = (...args: unknown[]) => {
       release();
       return originalEnd(...args);
     };
@@ -162,7 +162,7 @@ class RequestQueue {
     // before the response is sent (e?.g. browser tab closed, network timeout).
     queuedRequest?.req.on("close", () => {
       if (!released) {
-        this?.stats.timedOut++;
+        this.stats.timedOut++;
         release();
       }
     });
@@ -173,9 +173,9 @@ class RequestQueue {
     // indefinitely.  Streaming/AI routes are exempt because they can legitimately
     // run longer and the client reads data incrementally.
     if (!this?.isStreamingRoute(queuedRequest?.req.path)) {
-      const _activeTimeout = setTimeout(() => {
+      const activeTimeout = setTimeout(() => {
         if (!queuedRequest?.res.headersSent) {
-          this?.stats.timedOut++;
+          this.stats.timedOut++;
           logger?.warn(
             `[RequestQueue] Active handler timeout on ${queuedRequest?.req.method} ${queuedRequest?.req.path}`,
           );
@@ -194,19 +194,19 @@ class RequestQueue {
       queuedRequest?.res.on("close", () => clearTimeout(activeTimeout));
     }
 
-    const _waitTime = Date?.now() - queuedRequest?.timestamp;
+    const waitTime = Date?.now() - queuedRequest?.timestamp;
     queuedRequest?.res.setHeader("X-Queue-Wait-Ms", waitTime);
 
     queuedRequest?.next();
   }
 
   private handleTimeout(id: string, priority: number): void {
-    const _queue = this?.queues.get(priority)!;
-    const _index = queue?.findIndex((r) => r?.id === id);
+    const queue = this?.queues.get(priority)!;
+    const index = queue?.findIndex((r) => r?.id === id);
 
     if (index !== -1) {
-      const _request = queue?.splice(index, 1)[0];
-      this?.stats.timedOut++;
+      const request = queue?.splice(index, 1)[0];
+      this.stats.timedOut++;
 
       if (!request?.res.headersSent) {
         request?.res.status(503).json({
@@ -226,9 +226,9 @@ class RequestQueue {
 
     return {
       ...this?.stats,
-      currentlyProcessing: this?.processing,
+      currentlyProcessing: this.processing,
       queueSizes,
-      totalQueued: this?.getTotalQueueSize(),
+      totalQueued: this.getTotalQueueSize(),
     };
   }
 
@@ -243,25 +243,25 @@ class RequestQueue {
           });
         }
       }
-      queue?.length = 0;
+      queue.length = 0;
     }
   }
 }
 
-const _globalRequestQueue = new RequestQueue({
+const globalRequestQueue = new RequestQueue({
   maxQueueSize: 50000,
   maxConcurrent: 1000,
   requestTimeout: 30000,
   priorityLevels: 3,
 });
 
-export const _createQueueMiddleware = (
+export const createQueueMiddleware = (
   queueInstance?: RequestQueue,
 ): RequestHandler => {
-  const _queue = queueInstance || globalRequestQueue;
+  const queue = queueInstance || globalRequestQueue;
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const _shouldSkipQueue =
+    const shouldSkipQueue =
       req?.path.startsWith("/api/health") ||
       req?.path === "/api/version" ||
       req?.path.startsWith("/api/monitoring") ||
@@ -272,7 +272,7 @@ export const _createQueueMiddleware = (
       return;
     }
 
-    const _enqueued = queue?.enqueue(req, res, next);
+    const enqueued = queue?.enqueue(req, res, next);
 
     if (!enqueued) {
       res?.status(503).json({
@@ -284,45 +284,45 @@ export const _createQueueMiddleware = (
   };
 };
 
-export const _requestQueueMiddleware = createQueueMiddleware();
+export const requestQueueMiddleware = createQueueMiddleware();
 
-export const _getQueueStats = () => globalRequestQueue?.getStats();
+export const getQueueStats = () => globalRequestQueue?.getStats();
 
-export const _clearRequestQueue = () => globalRequestQueue?.clear();
+export const clearRequestQueue = () => globalRequestQueue?.clear();
 
 export class LoadShedder {
   private shedding = false;
-  private threshold = 0?.9;
-  private recoveryThreshold = 0?.7;
+  private threshold = 0.9;
+  private recoveryThreshold = 0.7;
 
   constructor(private queue: RequestQueue = globalRequestQueue) {
     setInterval(() => this?.evaluate(), 5000);
   }
 
   private evaluate(): void {
-    const _stats = this?.queue.getStats();
-    const _concurrencyUtil = stats?.currentlyProcessing / 1000;
+    const stats = this?.queue.getStats();
+    const concurrencyUtil = stats?.currentlyProcessing / 1000;
 
     // Memory pressure check: use heap_size_limit (the configured --max-old-space-size)
     // so the percentage is accurate against the true cap, not just the JIT-grown heap.
-    const _heapStats = v8?.getHeapStatistics();
-    const _heapUtil =
+    const heapStats = v8?.getHeapStatistics();
+    const heapUtil =
       heapStats?.heap_size_limit > 0
         ? heapStats?.used_heap_size / heapStats?.heap_size_limit
         : process?.memoryUsage().heapUsed / process?.memoryUsage().heapTotal;
 
     // Activate shedding when either concurrency OR memory breaches the threshold.
-    const _utilization = Math?.max(concurrencyUtil, heapUtil);
+    const utilization = Math?.max(concurrencyUtil, heapUtil);
 
     if (!this?.shedding && utilization > this?.threshold) {
-      this?.shedding = true;
-      const _reason =
+      this.shedding = true;
+      const reason =
         concurrencyUtil >= heapUtil ? "concurrency" : "memory pressure";
       logger?.warn(
         `Load shedding ACTIVATED (${reason}) — util at ${(utilization * 100).toFixed(1)}%`,
       );
     } else if (this?.shedding && utilization < this?.recoveryThreshold) {
-      this?.shedding = false;
+      this.shedding = false;
       logger?.info(
         `Load shedding DEACTIVATED — util at ${(utilization * 100).toFixed(1)}%`,
       );
@@ -332,13 +332,13 @@ export class LoadShedder {
   shouldShed(req: Request): boolean {
     if (!this?.shedding) return false;
 
-    const _user = (req as Record<string, unknown>).user;
+    const user = (req as Record<string, unknown>).user;
     if (user?.role === "admin") return false;
     if (user?.subscriptionTier === "lifetime") return false;
     if (req?.path.includes("/health") || req?.path.includes("/critical"))
       return false;
 
-    return Math?.random() > 0?.5;
+    return Math?.random() > 0.5;
   }
 
   middleware(): RequestHandler {
@@ -356,7 +356,7 @@ export class LoadShedder {
   }
 }
 
-export const _loadShedder = new LoadShedder();
-export const _loadSheddingMiddleware = loadShedder?.middleware();
+export const loadShedder = new LoadShedder();
+export const loadSheddingMiddleware = loadShedder?.middleware();
 
 export { RequestQueue, globalRequestQueue };

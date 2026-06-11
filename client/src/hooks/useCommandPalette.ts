@@ -26,11 +26,11 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     commandRegistry,
   } = useShortcuts();
 
-  const _allCommands = useMemo(() => {
+  const allCommands = useMemo(() => {
     return commandRegistry?.getAllCommands() || [];
   }, [commandRegistry]);
 
-  const _getCommandsByCategory = useCallback(
+  const getCommandsByCategory = useCallback(
     (category: string) => {
       return commandRegistry?.getCommandsByCategory(category) || [];
     },

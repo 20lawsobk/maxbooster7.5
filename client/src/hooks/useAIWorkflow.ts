@@ -67,10 +67,10 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
     "audio-analysis": { ...initialWorkflowData },
   });
 
-  const _abortControllersRef = useRef<Map<AIWorkflowType, AbortController>>(
+  const abortControllersRef = useRef<Map<AIWorkflowType, AbortController>>(
     new Map(),
   );
-  const _progressIntervalsRef = useRef<Map<AIWorkflowType, NodeJS?.Timeout>>(
+  const progressIntervalsRef = useRef<Map<AIWorkflowType, NodeJS.Timeout>>(
     new Map(),
   );
 
@@ -89,15 +89,15 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   }, []);
 
   // Update workflow state
-  const _updateWorkflow = useCallback(
+  const updateWorkflow = useCallback(
     (workflowType: AIWorkflowType, updates: Partial<WorkflowData>) => {
       setWorkflows((prev) => {
-        const _newState = {
+        const newState = {
           ...prev,
           [workflowType]: {
             ...prev[workflowType],
             ...updates,
-            timestamp: Date?.now(),
+            timestamp: Date.now(),
           },
         };
 
@@ -126,26 +126,26 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   );
 
   // Start a workflow
-  const _startWorkflow = useCallback(
+  const startWorkflow = useCallback(
     (
       workflowType: AIWorkflowType,
       apiCall: (signal?: AbortSignal) => Promise<unknown>,
     ) => {
       // Cancel any existing operation
-      const _existingController = abortControllersRef?.current.get(workflowType);
+      const existingController = abortControllersRef?.current.get(workflowType);
       if (existingController) {
         existingController?.abort();
       }
 
       // Clear any existing progress interval
-      const _existingInterval = progressIntervalsRef?.current.get(workflowType);
+      const existingInterval = progressIntervalsRef?.current.get(workflowType);
       if (existingInterval) {
         clearInterval(existingInterval);
         progressIntervalsRef?.current.delete(workflowType);
       }
 
       // Create new abort controller
-      const _abortController = new AbortController();
+      const abortController = new AbortController();
       abortControllersRef?.current.set(workflowType, abortController);
 
       // Update state to requesting
@@ -159,7 +159,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
 
       // Simulate progress for better UX
       let currentProgress = 0;
-      const _progressInterval = setInterval(() => {
+      const progressInterval = setInterval(() => {
         if (currentProgress < 90) {
           currentProgress += Math?.random() * 15;
           currentProgress = Math?.min(90, currentProgress);
@@ -215,7 +215,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
             logger?.info(`[AI Workflow] ${workflowType} was cancelled`);
           } else {
             // Handle error
-            const _errorMessage = error?.message || "An unknown error occurred";
+            const errorMessage = error?.message || "An unknown error occurred";
             logger?.error(`[AI Workflow] ${workflowType} error:`, error);
 
             updateWorkflow(workflowType, {
@@ -242,15 +242,15 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   );
 
   // Cancel a workflow
-  const _cancel = useCallback(
+  const cancel = useCallback(
     (workflowType: AIWorkflowType) => {
-      const _controller = abortControllersRef?.current.get(workflowType);
+      const controller = abortControllersRef?.current.get(workflowType);
       if (controller) {
         controller?.abort();
         abortControllersRef?.current.delete(workflowType);
       }
 
-      const _interval = progressIntervalsRef?.current.get(workflowType);
+      const interval = progressIntervalsRef?.current.get(workflowType);
       if (interval) {
         clearInterval(interval);
         progressIntervalsRef?.current.delete(workflowType);
@@ -268,12 +268,12 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   );
 
   // Retry a failed workflow
-  const _retry = useCallback(
+  const retry = useCallback(
     (
       workflowType: AIWorkflowType,
       apiCall: (signal?: AbortSignal) => Promise<unknown>,
     ) => {
-      const _currentWorkflow = workflows[workflowType];
+      const currentWorkflow = workflows[workflowType];
 
       if (currentWorkflow?.retryCount >= maxRetries) {
         logger?.error(
@@ -289,7 +289,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
 
       // Increment retry count
       updateWorkflow(workflowType, {
-        retryCount: currentWorkflow?.retryCount + 1,
+        retryCount: currentWorkflow.retryCount + 1,
       });
 
       logger?.info(
@@ -303,7 +303,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   );
 
   // Reset a workflow to idle state
-  const _reset = useCallback(
+  const reset = useCallback(
     (workflowType: AIWorkflowType) => {
       // Cancel any active operations
       cancel(workflowType);
@@ -319,9 +319,9 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   );
 
   // Mark results as integrated into project
-  const _integrate = useCallback(
+  const integrate = useCallback(
     (workflowType: AIWorkflowType) => {
-      const _currentWorkflow = workflows[workflowType];
+      const currentWorkflow = workflows[workflowType];
 
       if (currentWorkflow?.currentState !== "success") {
         logger?.warn(
@@ -350,7 +350,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   );
 
   // Get workflow data for a specific type
-  const _getWorkflow = useCallback(
+  const getWorkflow = useCallback(
     (workflowType: AIWorkflowType): WorkflowData => {
       return workflows[workflowType];
     },
@@ -358,14 +358,14 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   );
 
   // Check if any workflow is active
-  const _hasActiveWorkflow = useCallback((): boolean => {
+  const hasActiveWorkflow = useCallback((): boolean => {
     return Object?.values(workflows).some(
       (w) => w?.currentState === "requesting" || w?.currentState === "processing",
     );
   }, [workflows]);
 
   // Get all active workflows
-  const _getActiveWorkflows = useCallback((): AIWorkflowType[] => {
+  const getActiveWorkflows = useCallback((): AIWorkflowType[] => {
     return (Object?.keys(workflows) as AIWorkflowType[]).filter(
       (type) =>
         workflows[type].currentState === "requesting" ||
@@ -374,7 +374,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   }, [workflows]);
 
   // Cancel all active workflows
-  const _cancelAll = useCallback(() => {
+  const cancelAll = useCallback(() => {
     (Object?.keys(workflows) as AIWorkflowType[]).forEach((type) => {
       if (
         workflows[type].currentState === "requesting" ||
@@ -386,7 +386,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
   }, [workflows, cancel]);
 
   // Reset all workflows
-  const _resetAll = useCallback(() => {
+  const resetAll = useCallback(() => {
     (Object?.keys(workflows) as AIWorkflowType[]).forEach((type) => {
       reset(type);
     });

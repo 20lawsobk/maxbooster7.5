@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { playlistJourneys, syncPlacements, historicalAnalytics, arDiscoveries, platformDataSources, globalRankings, nlpQueryLogs, analytics, users, InsertPlaylistJourney, InsertSyncPlacement, InsertArDiscovery, InsertGlobalRanking } from "@shared/schema";
 import { eq, and, desc, asc, sql, gte, lte, lt } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export type Platform =
   | "spotify"
@@ -138,7 +138,7 @@ export interface CrossPlatformResult {
 
 function streamingVelocity(current: number, previous: number): number {
   if (previous <= 0) return current > 0 ? 15 : 0;
-  const _growthPct = ((current - previous) / previous) * 100;
+  const growthPct = ((current - previous) / previous) * 100;
   return Math?.max(0, growthPct);
 }
 
@@ -149,7 +149,7 @@ class AdvancedAnalyticsService {
     endDate: Date,
   ): Promise<MultiPlatformData[]> {
     try {
-      const _platformData = await db
+      const platformData = await db
         .select()
         .from(platformDataSources)
         .where(
@@ -162,11 +162,11 @@ class AdvancedAnalyticsService {
         .orderBy(desc(platformDataSources?.date));
 
       return platformData?.map((row) => ({
-        platform: row?.platform as Platform,
-        streams: row?.shazamCount || 0,
-        listeners: row?.radioAudience || 0,
-        followers: row?.bandsinTownFollowers || 0,
-        metadata: row?.metadata as Record<string, unknown>,
+        platform: row.platform as Platform,
+        streams: row.shazamCount || 0,
+        listeners: row.radioAudience || 0,
+        followers: row.bandsinTownFollowers || 0,
+        metadata: row.metadata as Record<string, unknown>,
       }));
     } catch (error) {
       logger?.warn({ err: error }, "Error fetching multi-platform data:");
@@ -175,11 +175,11 @@ class AdvancedAnalyticsService {
   }
 
   async getShazamData(userId: string, startDate: Date, endDate: Date) {
-    const _data = await db
+    const data = await db
       .select({
-        date: platformDataSources?.date,
-        count: platformDataSources?.shazamCount,
-        rank: platformDataSources?.shazamRank,
+        date: platformDataSources.date,
+        count: platformDataSources.shazamCount,
+        rank: platformDataSources.shazamRank,
       })
       .from(platformDataSources)
       .where(
@@ -192,26 +192,26 @@ class AdvancedAnalyticsService {
       )
       .orderBy(desc(platformDataSources?.date));
 
-    const _totalShazams = data?.reduce((sum, row) => sum + (row?.count || 0), 0);
-    const _currentRank = data[0]?.rank;
-    const _previousRank = data[1]?.rank;
+    const totalShazams = data?.reduce((sum, row) => sum + (row?.count || 0), 0);
+    const currentRank = data[0]?.rank;
+    const previousRank = data[1]?.rank;
 
     return {
       timeline: data,
       totalShazams,
       currentRank,
       rankChange: previousRank && currentRank ? previousRank - currentRank : 0,
-      trend: this?.calculateTrend(data?.map((d) => d?.count || 0)),
+      trend: this.calculateTrend(data?.map((d) => d?.count || 0)),
     };
   }
 
   async getRadioAirplayData(userId: string, startDate: Date, endDate: Date) {
-    const _data = await db
+    const data = await db
       .select({
-        date: platformDataSources?.date,
-        spins: platformDataSources?.radioSpins,
-        audience: platformDataSources?.radioAudience,
-        stations: platformDataSources?.radioStations,
+        date: platformDataSources.date,
+        spins: platformDataSources.radioSpins,
+        audience: platformDataSources.radioAudience,
+        stations: platformDataSources.radioStations,
       })
       .from(platformDataSources)
       .where(
@@ -226,9 +226,9 @@ class AdvancedAnalyticsService {
 
     return {
       timeline: data,
-      totalSpins: data?.reduce((sum, row) => sum + (row?.spins || 0), 0),
-      totalAudience: data?.reduce((sum, row) => sum + (row?.audience || 0), 0),
-      averageStations: Math?.round(
+      totalSpins: data.reduce((sum, row) => sum + (row?.spins || 0), 0),
+      totalAudience: data.reduce((sum, row) => sum + (row?.audience || 0), 0),
+      averageStations: Math.round(
         data?.reduce((sum, row) => sum + (row?.stations || 0), 0) /
           (data?.length || 1),
       ),
@@ -236,10 +236,10 @@ class AdvancedAnalyticsService {
   }
 
   async getWikipediaData(userId: string, startDate: Date, endDate: Date) {
-    const _data = await db
+    const data = await db
       .select({
-        date: platformDataSources?.date,
-        pageViews: platformDataSources?.wikipediaPageViews,
+        date: platformDataSources.date,
+        pageViews: platformDataSources.wikipediaPageViews,
       })
       .from(platformDataSources)
       .where(
@@ -254,17 +254,17 @@ class AdvancedAnalyticsService {
 
     return {
       timeline: data,
-      totalPageViews: data?.reduce((sum, row) => sum + (row?.pageViews || 0), 0),
-      trend: this?.calculateTrend(data?.map((d) => d?.pageViews || 0)),
+      totalPageViews: data.reduce((sum, row) => sum + (row?.pageViews || 0), 0),
+      trend: this.calculateTrend(data?.map((d) => d?.pageViews || 0)),
     };
   }
 
   async getBeatportData(userId: string, startDate: Date, endDate: Date) {
-    const _data = await db
+    const data = await db
       .select({
-        date: platformDataSources?.date,
-        rank: platformDataSources?.beatportRank,
-        sales: platformDataSources?.beatportSales,
+        date: platformDataSources.date,
+        rank: platformDataSources.beatportRank,
+        sales: platformDataSources.beatportSales,
       })
       .from(platformDataSources)
       .where(
@@ -280,8 +280,8 @@ class AdvancedAnalyticsService {
     return {
       timeline: data,
       currentRank: data[0]?.rank,
-      totalSales: data?.reduce((sum, row) => sum + (row?.sales || 0), 0),
-      peakRank: Math?.min(
+      totalSales: data.reduce((sum, row) => sum + (row?.sales || 0), 0),
+      peakRank: Math.min(
         ...(data?.filter((d) => d?.rank).map((d) => d?.rank!) || [0]),
       ),
     };
@@ -290,9 +290,9 @@ class AdvancedAnalyticsService {
   async getTourData(userId: string) {
     const [latest] = await db
       .select({
-        bandsinTownFollowers: platformDataSources?.bandsinTownFollowers,
-        upcomingShows: platformDataSources?.upcomingShows,
-        songkickFollowers: platformDataSources?.songkickFollowers,
+        bandsinTownFollowers: platformDataSources.bandsinTownFollowers,
+        upcomingShows: platformDataSources.upcomingShows,
+        songkickFollowers: platformDataSources.songkickFollowers,
       })
       .from(platformDataSources)
       .where(eq(platformDataSources?.userId, userId))
@@ -301,11 +301,11 @@ class AdvancedAnalyticsService {
 
     return {
       bandsintown: {
-        followers: latest?.bandsinTownFollowers || 0,
-        upcomingShows: latest?.upcomingShows || 0,
+        followers: latest.bandsinTownFollowers || 0,
+        upcomingShows: latest.upcomingShows || 0,
       },
       songkick: {
-        followers: latest?.songkickFollowers || 0,
+        followers: latest.songkickFollowers || 0,
       },
     };
   }
@@ -315,7 +315,7 @@ class AdvancedAnalyticsService {
     startDate: Date,
     endDate: Date,
   ) {
-    const _data = await db
+    const data = await db
       .select()
       .from(platformDataSources)
       .where(
@@ -329,34 +329,34 @@ class AdvancedAnalyticsService {
 
     return {
       qqMusic: {
-        plays: data?.reduce((sum, row) => sum + (row?.qqMusicPlays || 0), 0),
+        plays: data.reduce((sum, row) => sum + (row?.qqMusicPlays || 0), 0),
         fans: data[0]?.qqMusicFans || 0,
       },
       tidal: {
-        streams: data?.reduce((sum, row) => sum + (row?.tidalStreams || 0), 0),
-        favorites: data?.reduce(
+        streams: data.reduce((sum, row) => sum + (row?.tidalStreams || 0), 0),
+        favorites: data.reduce(
           (sum, row) => sum + (row?.tidalFavorites || 0),
           0,
         ),
       },
       pandora: {
-        spins: data?.reduce((sum, row) => sum + (row?.pandoraSpins || 0), 0),
+        spins: data.reduce((sum, row) => sum + (row?.pandoraSpins || 0), 0),
         stations: data[0]?.pandoraStations || 0,
       },
       deezer: {
-        streams: data?.reduce((sum, row) => sum + (row?.deezerStreams || 0), 0),
+        streams: data.reduce((sum, row) => sum + (row?.deezerStreams || 0), 0),
         fans: data[0]?.deezerFans || 0,
       },
       soundcloud: {
-        plays: data?.reduce((sum, row) => sum + (row?.soundcloudPlays || 0), 0),
-        likes: data?.reduce((sum, row) => sum + (row?.soundcloudLikes || 0), 0),
-        reposts: data?.reduce(
+        plays: data.reduce((sum, row) => sum + (row?.soundcloudPlays || 0), 0),
+        likes: data.reduce((sum, row) => sum + (row?.soundcloudLikes || 0), 0),
+        reposts: data.reduce(
           (sum, row) => sum + (row?.soundcloudReposts || 0),
           0,
         ),
       },
       audiomack: {
-        plays: data?.reduce((sum, row) => sum + (row?.audiomackPlays || 0), 0),
+        plays: data.reduce((sum, row) => sum + (row?.audiomackPlays || 0), 0),
       },
     };
   }
@@ -367,17 +367,17 @@ class AdvancedAnalyticsService {
   ): Promise<void> {
     const journey: InsertPlaylistJourney = {
       userId,
-      trackId: data?.trackId,
-      playlistId: data?.playlistId,
-      playlistName: data?.playlistName,
-      platform: data?.platform,
-      playlistType: data?.playlistType,
-      position: data?.position,
-      previousPosition: data?.previousPosition,
-      followerCount: data?.followerCount,
-      curatorName: data?.curatorName,
+      trackId: data.trackId,
+      playlistId: data.playlistId,
+      playlistName: data.playlistName,
+      platform: data.platform,
+      playlistType: data.playlistType,
+      position: data.position,
+      previousPosition: data.previousPosition,
+      followerCount: data.followerCount,
+      curatorName: data.curatorName,
       addedAt: new Date(),
-      isActive: data?.action !== "removed",
+      isActive: data.action !== "removed",
     };
 
     if (data?.action === "removed") {
@@ -405,7 +405,7 @@ class AdvancedAnalyticsService {
     trackId?: string,
     options: { startDate?: Date; endDate?: Date; platform?: Platform } = {},
   ) {
-    const _conditions = [eq(playlistJourneys?.userId, userId)];
+    const conditions = [eq(playlistJourneys?.userId, userId)];
 
     if (trackId) conditions?.push(eq(playlistJourneys?.trackId, trackId));
     if (options?.platform)
@@ -415,15 +415,15 @@ class AdvancedAnalyticsService {
     if (options?.endDate)
       conditions?.push(lte(playlistJourneys?.addedAt, options?.endDate));
 
-    const _journeys = await db
+    const journeys = await db
       .select()
       .from(playlistJourneys)
       .where(and(...conditions))
       .orderBy(desc(playlistJourneys?.addedAt));
 
-    const _byPlaylistType = journeys?.reduce(
+    const byPlaylistType = journeys?.reduce(
       (acc, j) => {
-        const _type = j?.playlistType || "unknown";
+        const type = j?.playlistType || "unknown";
         if (!acc[type])
           acc[type] = { count: 0, totalStreams: 0, totalRevenue: 0 };
         acc[type].count++;
@@ -440,14 +440,14 @@ class AdvancedAnalyticsService {
     return {
       journeys,
       summary: {
-        totalPlacements: journeys?.length,
-        activePlacements: journeys?.filter((j) => j?.isActive).length,
+        totalPlacements: journeys.length,
+        activePlacements: journeys.filter((j) => j?.isActive).length,
         byPlaylistType,
-        totalReach: journeys?.reduce(
+        totalReach: journeys.reduce(
           (sum, j) => sum + (j?.followerCount || 0),
           0,
         ),
-        totalStreamsFromPlaylists: journeys?.reduce(
+        totalStreamsFromPlaylists: journeys.reduce(
           (sum, j) => sum + (j?.streamsFromPlaylist || 0),
           0,
         ),
@@ -456,8 +456,8 @@ class AdvancedAnalyticsService {
   }
 
   async calculateGlobalRanking(userId: string): Promise<GlobalRankingResult> {
-    const _endDate = new Date();
-    const _startDate = new Date(endDate?.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = new Date();
+    const startDate = new Date(endDate?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const [analyticsData] = await db
       .select({
@@ -475,13 +475,13 @@ class AdvancedAnalyticsService {
         ),
       );
 
-    const _platformData = await this?.fetchMultiPlatformData(
+    const platformData = await this?.fetchMultiPlatformData(
       userId,
       startDate,
       endDate,
     );
 
-    const _prevStartDate = new Date(
+    const prevStartDate = new Date(
       startDate?.getTime() - 30 * 24 * 60 * 60 * 1000,
     );
     const [prevAnalyticsData] = await db
@@ -498,7 +498,7 @@ class AdvancedAnalyticsService {
       )
       .limit(1);
 
-    const _activePlaylistCount = await db
+    const activePlaylistCount = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(playlistJourneys)
       .where(
@@ -508,61 +508,61 @@ class AdvancedAnalyticsService {
         ),
       );
 
-    const _streamingScore = Math?.min(
+    const streamingScore = Math?.min(
       100,
       (analyticsData?.totalStreams || 0) / 10000,
     );
-    const _socialScore = Math?.min(
+    const socialScore = Math?.min(
       100,
       (analyticsData?.totalFollowers || 0) / 5000,
     );
-    const _playlistCount = Number(activePlaylistCount[0]?.count || 0);
-    const _playlistScore = Math?.min(100, playlistCount * 8);
-    const _shazamPlatform = platformData?.find((p) => p?.platform === "shazam");
-    const _shazamScore = Math?.min(
+    const playlistCount = Number(activePlaylistCount[0]?.count || 0);
+    const playlistScore = Math?.min(100, playlistCount * 8);
+    const shazamPlatform = platformData?.find((p) => p?.platform === "shazam");
+    const shazamScore = Math?.min(
       100,
-      (shazamPlatform?.streams || 0) / 500 + streamingScore * 0?.3,
+      (shazamPlatform?.streams || 0) / 500 + streamingScore * 0.3,
     );
-    const _radioPlatform = platformData?.find((p) => p?.platform === "radio");
-    const _radioScore = Math?.min(
+    const radioPlatform = platformData?.find((p) => p?.platform === "radio");
+    const radioScore = Math?.min(
       100,
-      (radioPlatform?.streams || 0) / 200 + socialScore * 0?.4,
+      (radioPlatform?.streams || 0) / 200 + socialScore * 0.4,
     );
-    const _currentStreams = analyticsData?.totalStreams || 0;
-    const _prevStreams = prevAnalyticsData?.totalStreams || 0;
-    const _growthRate =
+    const currentStreams = analyticsData?.totalStreams || 0;
+    const prevStreams = prevAnalyticsData?.totalStreams || 0;
+    const growthRate =
       prevStreams > 0
         ? ((currentStreams - prevStreams) / prevStreams) * 100
         : currentStreams > 0
           ? 10
           : 0;
-    const _viralScore = Math?.min(
+    const viralScore = Math?.min(
       100,
-      Math?.max(0, streamingScore * 0?.5 + Math?.max(0, growthRate) * 1?.5),
+      Math?.max(0, streamingScore * 0.5 + Math?.max(0, growthRate) * 1.5),
     );
 
-    const _maxScore =
-      streamingScore * 0?.3 +
-      socialScore * 0?.15 +
-      playlistScore * 0?.2 +
-      shazamScore * 0?.15 +
-      radioScore * 0?.1 +
-      viralScore * 0?.1;
+    const maxScore =
+      streamingScore * 0.3 +
+      socialScore * 0.15 +
+      playlistScore * 0.2 +
+      shazamScore * 0.15 +
+      radioScore * 0.1 +
+      viralScore * 0.1;
 
     const platformScores: Record<string, number> = {};
     platformData?.forEach((p) => {
-      platformScores[p?.platform] = Math?.min(100, (p?.streams || 0) / 1000);
+      platformScores[p.platform] = Math?.min(100, (p?.streams || 0) / 1000);
     });
 
-    const _globalRank =
+    const globalRank =
       maxScore > 0
         ? Math?.max(1, Math?.round(100000 / Math?.max(1, maxScore)))
         : 99999;
-    const _genreRank =
+    const genreRank =
       maxScore > 0
         ? Math?.max(1, Math?.round(5000 / Math?.max(1, maxScore)))
         : 4999;
-    const _countryRank =
+    const countryRank =
       maxScore > 0
         ? Math?.max(1, Math?.round(1000 / Math?.max(1, maxScore)))
         : 999;
@@ -589,9 +589,9 @@ class AdvancedAnalyticsService {
     return {
       userId,
       maxScore,
-      globalRank: ranking?.globalRank!,
-      genreRank: ranking?.genreRank!,
-      countryRank: ranking?.countryRank!,
+      globalRank: ranking.globalRank!,
+      genreRank: ranking.genreRank!,
+      countryRank: ranking.countryRank!,
       platformScores,
       breakdown: {
         streaming: streamingScore,
@@ -611,7 +611,7 @@ class AdvancedAnalyticsService {
   }
 
   async getGlobalRankingHistory(userId: string, days: number = 30) {
-    const _startDate = new Date();
+    const startDate = new Date();
     startDate?.setDate(startDate?.getDate() - days);
 
     return db
@@ -635,7 +635,7 @@ class AdvancedAnalyticsService {
       limit?: number;
     } = {},
   ): Promise<ArDiscoveryResult[]> {
-    const _conditions = [];
+    const conditions = [];
 
     if (options?.genre) {
       conditions?.push(eq(arDiscoveries?.genre, options?.genre));
@@ -650,7 +650,7 @@ class AdvancedAnalyticsService {
       conditions?.push(gte(arDiscoveries?.overallScore, options?.minOverallScore));
     }
 
-    const _discoveries = await db
+    const discoveries = await db
       .select()
       .from(arDiscoveries)
       .where(conditions?.length > 0 ? and(...conditions) : undefined)
@@ -658,13 +658,13 @@ class AdvancedAnalyticsService {
       .limit(options?.limit || 50);
 
     return discoveries?.map((d) => ({
-      artistId: d?.artistId,
-      artistName: d?.artistName,
-      overallScore: d?.overallScore || 0,
-      growthScore: d?.growthScore || 0,
-      engagementScore: d?.engagementScore || 0,
-      viralityScore: d?.virality || 0,
-      signingPotential: d?.signingPotentialScore || 0,
+      artistId: d.artistId,
+      artistName: d.artistName,
+      overallScore: d.overallScore || 0,
+      growthScore: d.growthScore || 0,
+      engagementScore: d.engagementScore || 0,
+      viralityScore: d.virality || 0,
+      signingPotential: d.signingPotentialScore || 0,
       growthTrajectory:
         (d?.growthTrajectory as ArDiscoveryResult["growthTrajectory"]) ||
         "emerging",
@@ -683,9 +683,9 @@ class AdvancedAnalyticsService {
   }
 
   async analyzeArtistForAR(artistId: string): Promise<ArDiscoveryResult> {
-    const _now = new Date();
-    const _thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const _sixtyDaysAgo = new Date(now?.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now?.getTime() - 60 * 24 * 60 * 60 * 1000);
 
     const [recentData] = await db
       .select({
@@ -714,12 +714,12 @@ class AdvancedAnalyticsService {
       .limit(1);
 
     const [artistUser] = await db
-      .select({ name: users?.name })
+      .select({ name: users.name })
       .from(users)
       .where(eq(users?.id, artistId))
       .limit(1);
 
-    const _activePlaylistRows = await db
+    const activePlaylistRows = await db
       .select({
         count: sql<number>`COUNT(*)`,
         totalFollowers: sql<number>`COALESCE(SUM(${playlistJourneys?.followerCount}), 0)`,
@@ -732,56 +732,56 @@ class AdvancedAnalyticsService {
         ),
       );
 
-    const _monthlyListeners = Number(recentData?.totalListeners || 0);
-    const _followerCount = Number(recentData?.totalFollowers || 0);
-    const _currentStreams = Number(recentData?.totalStreams || 0);
-    const _prevStreams = Number(prevData?.totalStreams || 0);
-    const _growthRate =
+    const monthlyListeners = Number(recentData?.totalListeners || 0);
+    const followerCount = Number(recentData?.totalFollowers || 0);
+    const currentStreams = Number(recentData?.totalStreams || 0);
+    const prevStreams = Number(prevData?.totalStreams || 0);
+    const growthRate =
       prevStreams > 0
         ? ((currentStreams - prevStreams) / prevStreams) * 100
         : currentStreams > 0
           ? 15
           : 0;
-    const _playlistCount = Number(activePlaylistRows[0]?.count || 0);
-    const _playlistReach = Number(activePlaylistRows[0]?.totalFollowers || 0);
+    const playlistCount = Number(activePlaylistRows[0]?.count || 0);
+    const playlistReach = Number(activePlaylistRows[0]?.totalFollowers || 0);
 
-    const _growthScore = Math?.min(100, Math?.max(0, growthRate + 50));
-    const _engagementScore =
+    const growthScore = Math?.min(100, Math?.max(0, growthRate + 50));
+    const engagementScore =
       followerCount > 0
         ? Math?.min(100, (monthlyListeners / followerCount) * 10)
         : currentStreams > 0
           ? 20
           : 0;
-    const _viralityScore = Math?.min(
+    const viralityScore = Math?.min(
       100,
       Math?.max(0, streamingVelocity(currentStreams, prevStreams) * 2),
     );
-    const _audienceQualityScore = Math?.min(
+    const audienceQualityScore = Math?.min(
       100,
       followerCount > 0
         ? Math?.min(100, (currentStreams / Math?.max(1, followerCount)) * 5 + 40)
         : 40,
     );
-    const _playlistPotentialScore = Math?.min(
+    const playlistPotentialScore = Math?.min(
       100,
       playlistCount * 15 + (playlistReach > 0 ? 20 : 0),
     );
-    const _syncPotentialScore = Math?.min(
+    const syncPotentialScore = Math?.min(
       100,
-      growthScore * 0?.4 + engagementScore * 0?.3 + 20,
+      growthScore * 0.4 + engagementScore * 0.3 + 20,
     );
 
-    const _overallScore =
-      growthScore * 0?.25 +
-      engagementScore * 0?.2 +
-      viralityScore * 0?.15 +
-      audienceQualityScore * 0?.15 +
-      playlistPotentialScore * 0?.15 +
-      syncPotentialScore * 0?.1;
+    const overallScore =
+      growthScore * 0.25 +
+      engagementScore * 0.2 +
+      viralityScore * 0.15 +
+      audienceQualityScore * 0.15 +
+      playlistPotentialScore * 0.15 +
+      syncPotentialScore * 0.1;
 
-    const _signingPotentialScore = Math?.min(
+    const signingPotentialScore = Math?.min(
       100,
-      overallScore * (growthRate > 20 ? 1?.2 : growthRate > 0 ? 1?.0 : 0?.8),
+      overallScore * (growthRate > 20 ? 1.2 : growthRate > 0 ? 1.0 : 0.8),
     );
 
     let growthTrajectory: ArDiscoveryResult["growthTrajectory"];
@@ -793,7 +793,7 @@ class AdvancedAnalyticsService {
 
     const discovery: InsertArDiscovery = {
       artistId,
-      artistName: artistUser?.name || `Artist ${artistId?.slice(0, 8)}`,
+      artistName: artistUser.name || `Artist ${artistId?.slice(0, 8)}`,
       overallScore,
       growthScore,
       engagementScore,
@@ -805,7 +805,7 @@ class AdvancedAnalyticsService {
       monthlyListeners,
       monthlyListenersGrowth: growthRate,
       followerCount,
-      followerGrowth: growthRate * 0?.8,
+      followerGrowth: growthRate * 0.8,
       growthTrajectory,
       topMarkets: [
         { country: "US", percentage: 35 },
@@ -819,13 +819,13 @@ class AdvancedAnalyticsService {
           ? [
               {
                 title: "Latest Release",
-                streams: Math?.round(currentStreams * 0?.6),
+                streams: Math.round(currentStreams * 0.6),
                 growth: growthRate,
               },
               {
                 title: "Previous Release",
-                streams: Math?.round(prevStreams * 0?.5),
-                growth: growthRate * 0?.6,
+                streams: Math.round(prevStreams * 0.5),
+                growth: growthRate * 0.6,
               },
             ]
           : [],
@@ -854,25 +854,25 @@ class AdvancedAnalyticsService {
 
     return {
       artistId,
-      artistName: discovery?.artistName,
+      artistName: discovery.artistName,
       overallScore,
       growthScore,
       engagementScore,
       viralityScore,
       signingPotential: signingPotentialScore,
       growthTrajectory,
-      topMarkets: discovery?.topMarkets as {
+      topMarkets: discovery.topMarkets as {
         country: string;
         percentage: number;
       }[],
-      breakoutTracks: discovery?.breakoutTracks as {
+      breakoutTracks: discovery.breakoutTracks as {
         title: string;
         streams: number;
         growth: number;
       }[],
-      riskFactors: discovery?.riskFactors as string[],
-      strengthFactors: discovery?.strengthFactors as string[],
-      recommendedActions: discovery?.recommendedActions as string[],
+      riskFactors: discovery.riskFactors as string[],
+      strengthFactors: discovery.strengthFactors as string[],
+      recommendedActions: discovery.recommendedActions as string[],
     };
   }
 
@@ -880,8 +880,8 @@ class AdvancedAnalyticsService {
     userId: string,
     query: string,
   ): Promise<NlpQueryResult> {
-    const _startTime = Date?.now();
-    const _lowerQuery = query?.toLowerCase();
+    const startTime = Date?.now();
+    const lowerQuery = query?.toLowerCase();
 
     let intent = "unknown";
     let responseType: NlpQueryResult["responseType"] = "text";
@@ -889,9 +889,9 @@ class AdvancedAnalyticsService {
     let summary = "";
     const entities: Record<string, unknown> = {};
 
-    const _now = new Date();
-    const _thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const _sixtyDaysAgo = new Date(now?.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now?.getTime() - 60 * 24 * 60 * 60 * 1000);
 
     try {
       if (
@@ -901,16 +901,16 @@ class AdvancedAnalyticsService {
         intent = "top_locations";
         responseType = "table";
 
-        const _match = lowerQuery?.match(/top\s+(\d+)/);
-        const _limitN = match ? parseInt(match[1]) : 5;
-        entities?.limit = limitN;
-        entities?.locationType = lowerQuery?.includes("cities")
+        const match = lowerQuery?.match(/top\s+(\d+)/);
+        const limitN = match ? parseInt(match[1]) : 5;
+        entities.limit = limitN;
+        entities.locationType = lowerQuery?.includes("cities")
           ? "cities"
           : "countries";
 
-        const _geoRows = await db
+        const geoRows = await db
           .select({
-            platform: analytics?.platform,
+            platform: analytics.platform,
             streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
             listeners: sql<number>`COALESCE(SUM(${analytics?.totalListeners}), 0)`,
             metadata: sql<unknown>`MAX(${analytics?.metadata})`,
@@ -926,7 +926,7 @@ class AdvancedAnalyticsService {
           .orderBy(sql`SUM(${analytics?.streams}) DESC`)
           .limit(limitN);
 
-        const _totalStreams = geoRows?.reduce((s, r) => s + Number(r?.streams), 0);
+        const totalStreams = geoRows?.reduce((s, r) => s + Number(r?.streams), 0);
         data = geoRows?.map((r, i) => ({
           location:
             r?.metadata?.country ||
@@ -955,11 +955,11 @@ class AdvancedAnalyticsService {
         if (lowerQuery?.includes("apple"))
           requestedPlatforms?.push("apple_music");
         if (lowerQuery?.includes("youtube")) requestedPlatforms?.push("youtube");
-        entities?.platforms = requestedPlatforms;
+        entities.platforms = requestedPlatforms;
 
-        const _platformRows = await db
+        const platformRows = await db
           .select({
-            platform: analytics?.platform,
+            platform: analytics.platform,
             streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
             listeners: sql<number>`COALESCE(MAX(${analytics?.totalListeners}), 0)`,
             revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
@@ -974,9 +974,9 @@ class AdvancedAnalyticsService {
           .groupBy(analytics?.platform)
           .orderBy(sql`SUM(${analytics?.streams}) DESC`);
 
-        const _prevRows = await db
+        const prevRows = await db
           .select({
-            platform: analytics?.platform,
+            platform: analytics.platform,
             streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
           })
           .from(analytics)
@@ -991,11 +991,11 @@ class AdvancedAnalyticsService {
 
         const prevMap: Record<string, number> = {};
         prevRows?.forEach((r) => {
-          if (r?.platform) prevMap[r?.platform] = Number(r?.streams);
+          if (r.platform) prevMap[r.platform] = Number(r?.streams);
         });
 
-        const _platforms = platformRows?.map((r) => ({
-          platform: r?.platform || "unknown",
+        const platforms = platformRows?.map((r) => ({
+          platform: r.platform || "unknown",
           streams: Number(r?.streams),
           listeners: Number(r?.listeners),
           revenue: Number(r?.revenue),
@@ -1009,10 +1009,10 @@ class AdvancedAnalyticsService {
               : 0,
         }));
 
-        const _winner = platforms[0];
+        const winner = platforms[0];
         data = {
           platforms,
-          winner: winner?.platform,
+          winner: winner.platform,
           winnerReason: winner
             ? `Highest stream count with ${winner?.streams.toLocaleString()} streams`
             : "Insufficient data",
@@ -1027,18 +1027,18 @@ class AdvancedAnalyticsService {
         intent = "stream_count";
         responseType = "number";
 
-        const _timeMatch = lowerQuery?.match(/last\s+(\d+)\s+(day|week|month)/);
+        const timeMatch = lowerQuery?.match(/last\s+(\d+)\s+(day|week|month)/);
         let daysBack = 30;
         if (timeMatch) {
-          const _n = parseInt(timeMatch[1]);
-          const _unit = timeMatch[2];
+          const n = parseInt(timeMatch[1]);
+          const unit = timeMatch[2];
           daysBack = unit === "week" ? n * 7 : unit === "month" ? n * 30 : n;
-          entities?.timeframe = `${n} ${unit}${n > 1 ? "s" : ""}`;
+          entities.timeframe = `${n} ${unit}${n > 1 ? "s" : ""}`;
         }
-        const _periodStart = new Date(
+        const periodStart = new Date(
           now?.getTime() - daysBack * 24 * 60 * 60 * 1000,
         );
-        const _prevPeriodStart = new Date(
+        const prevPeriodStart = new Date(
           periodStart?.getTime() - daysBack * 24 * 60 * 60 * 1000,
         );
 
@@ -1064,9 +1064,9 @@ class AdvancedAnalyticsService {
             ),
           )
           .limit(1);
-        const _currentTotal = Number(curr?.total || 0);
-        const _prevTotal = Number(prev?.total || 0);
-        const _change =
+        const currentTotal = Number(curr?.total || 0);
+        const prevTotal = Number(prev?.total || 0);
+        const change =
           prevTotal > 0
             ? Math?.round(((currentTotal - prevTotal) / prevTotal) * 1000) / 10
             : 0;
@@ -1074,7 +1074,7 @@ class AdvancedAnalyticsService {
         data = {
           value: currentTotal,
           change,
-          period: entities?.timeframe || "last 30 days",
+          period: entities.timeframe || "last 30 days",
         };
         summary = `You have ${currentTotal?.toLocaleString()} total streams in the ${entities?.timeframe || "last 30 days"}${change !== 0 ? `, ${change > 0 ? "up" : "down"} ${Math?.abs(change)}% from the previous period` : ""}`;
       } else if (
@@ -1109,9 +1109,9 @@ class AdvancedAnalyticsService {
             ),
           )
           .limit(1);
-        const _currentRev = Number(curr?.total || 0);
-        const _prevRev = Number(prev?.total || 0);
-        const _change =
+        const currentRev = Number(curr?.total || 0);
+        const prevRev = Number(prev?.total || 0);
+        const change =
           prevRev > 0
             ? Math?.round(((currentRev - prevRev) / prevRev) * 1000) / 10
             : 0;
@@ -1122,7 +1122,7 @@ class AdvancedAnalyticsService {
         intent = "playlist_info";
         responseType = "table";
 
-        const _playlists = await db
+        const playlists = await db
           .select()
           .from(playlistJourneys)
           .where(
@@ -1135,14 +1135,14 @@ class AdvancedAnalyticsService {
           .limit(10);
 
         data = playlists?.map((p) => ({
-          name: p?.playlistName,
-          platform: p?.platform,
-          followers: p?.followerCount || 0,
-          position: p?.position || null,
-          streams: p?.streamsFromPlaylist || 0,
-          type: p?.playlistType,
+          name: p.playlistName,
+          platform: p.platform,
+          followers: p.followerCount || 0,
+          position: p.position || null,
+          streams: p.streamsFromPlaylist || 0,
+          type: p.playlistType,
         }));
-        const _totalReach = playlists?.reduce(
+        const totalReach = playlists?.reduce(
           (s, p) => s + (p?.followerCount || 0),
           0,
         );
@@ -1157,9 +1157,9 @@ class AdvancedAnalyticsService {
         intent = "growth_trend";
         responseType = "chart";
 
-        const _timeline = await db
+        const timeline = await db
           .select({
-            date: analytics?.date,
+            date: analytics.date,
             streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
           })
           .from(analytics)
@@ -1172,20 +1172,20 @@ class AdvancedAnalyticsService {
           .groupBy(analytics?.date)
           .orderBy(asc(analytics?.date));
 
-        const _rows = timeline?.map((r) => ({
+        const rows = timeline?.map((r) => ({
           date:
             r?.date instanceof Date
               ? r?.date.toISOString().split("T")[0]
               : String(r?.date),
           streams: Number(r?.streams),
         }));
-        const _firstVal = rows[0]?.streams || 0;
-        const _lastVal = rows[rows?.length - 1]?.streams || 0;
-        const _growthRate =
+        const firstVal = rows[0]?.streams || 0;
+        const lastVal = rows[rows?.length - 1]?.streams || 0;
+        const growthRate =
           firstVal > 0
             ? Math?.round(((lastVal - firstVal) / firstVal) * 1000) / 10
             : 0;
-        const _trend = growthRate > 0 ? "up" : growthRate < 0 ? "down" : "flat";
+        const trend = growthRate > 0 ? "up" : growthRate < 0 ? "down" : "flat";
 
         data = { timeline: rows, trend, growthRate };
         summary =
@@ -1200,7 +1200,7 @@ class AdvancedAnalyticsService {
           "I understood your query but need more specific information. Try asking about streams, revenue, playlists, top cities, or platform comparisons.";
       }
 
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
 
       await db?.insert(nlpQueryLogs).values({
         userId,
@@ -1215,7 +1215,7 @@ class AdvancedAnalyticsService {
 
       return { intent, entities, responseType, data, summary };
     } catch (error) {
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
 
       await db?.insert(nlpQueryLogs).values({
         userId,
@@ -1240,7 +1240,7 @@ class AdvancedAnalyticsService {
       metrics?: string[];
     } = {},
   ) {
-    const _conditions = [eq(historicalAnalytics?.userId, userId)];
+    const conditions = [eq(historicalAnalytics?.userId, userId)];
 
     if (options?.trackId)
       conditions?.push(eq(historicalAnalytics?.trackId, options?.trackId));
@@ -1261,34 +1261,34 @@ class AdvancedAnalyticsService {
     if (options?.period)
       conditions?.push(eq(historicalAnalytics?.period, options?.period));
 
-    const _data = await db
+    const data = await db
       .select()
       .from(historicalAnalytics)
       .where(and(...conditions))
       .orderBy(asc(historicalAnalytics?.date));
 
-    const _currentYear = new Date().getFullYear();
+    const currentYear = new Date().getFullYear();
     const yoyComparisons: Record<
       string,
       { current: number; previous: number; change: number }
     > = {};
 
-    const _currentYearData = data?.filter(
+    const currentYearData = data?.filter(
       (d) => new Date(d?.date).getFullYear() === currentYear,
     );
-    const _previousYearData = data?.filter(
+    const previousYearData = data?.filter(
       (d) => new Date(d?.date).getFullYear() === currentYear - 1,
     );
 
-    const _currentStreams = currentYearData?.reduce(
+    const currentStreams = currentYearData?.reduce(
       (sum, d) => sum + Number(d?.streams || 0),
       0,
     );
-    const _previousStreams = previousYearData?.reduce(
+    const previousStreams = previousYearData?.reduce(
       (sum, d) => sum + Number(d?.streams || 0),
       0,
     );
-    yoyComparisons?.streams = {
+    yoyComparisons.streams = {
       current: currentStreams,
       previous: previousStreams,
       change:
@@ -1297,15 +1297,15 @@ class AdvancedAnalyticsService {
           : 0,
     };
 
-    const _currentRevenue = currentYearData?.reduce(
+    const currentRevenue = currentYearData?.reduce(
       (sum, d) => sum + (d?.revenue || 0),
       0,
     );
-    const _previousRevenue = previousYearData?.reduce(
+    const previousRevenue = previousYearData?.reduce(
       (sum, d) => sum + (d?.revenue || 0),
       0,
     );
-    yoyComparisons?.revenue = {
+    yoyComparisons.revenue = {
       current: currentRevenue,
       previous: previousRevenue,
       change:
@@ -1314,13 +1314,13 @@ class AdvancedAnalyticsService {
           : 0,
     };
 
-    const _milestones = data
+    const milestones = data
       .filter(
         (d) => d?.milestones && Object?.keys(d?.milestones as object).length > 0,
       )
       .map((d) => ({
-        date: d?.date,
-        milestones: d?.milestones,
+        date: d.date,
+        milestones: d.milestones,
       }));
 
     return {
@@ -1328,7 +1328,7 @@ class AdvancedAnalyticsService {
       yearOverYear: yoyComparisons,
       milestones,
       summary: {
-        totalDataPoints: data?.length,
+        totalDataPoints: data.length,
         dateRange: {
           start: data[0]?.date,
           end: data[data?.length - 1]?.date,
@@ -1341,32 +1341,32 @@ class AdvancedAnalyticsService {
     userId: string,
     trackId?: string,
   ): Promise<SyncImpactResult[]> {
-    const _conditions = [eq(syncPlacements?.userId, userId)];
+    const conditions = [eq(syncPlacements?.userId, userId)];
     if (trackId) conditions?.push(eq(syncPlacements?.trackId, trackId));
 
-    const _placements = await db
+    const placements = await db
       .select()
       .from(syncPlacements)
       .where(and(...conditions))
       .orderBy(desc(syncPlacements?.airDate));
 
-    const _groupedByTrack = placements?.reduce(
+    const groupedByTrack = placements?.reduce(
       (acc, p) => {
         if (!acc[p?.trackId]) {
-          acc[p?.trackId] = {
-            trackId: p?.trackId,
-            trackTitle: p?.trackTitle,
+          acc[p.trackId] = {
+            trackId: p.trackId,
+            trackTitle: p.trackTitle,
             placements: [],
           };
         }
         acc[p?.trackId].placements?.push({
-          id: p?.id,
-          mediaTitle: p?.mediaTitle,
-          mediaType: p?.mediaType,
-          airDate: p?.airDate!,
-          streamLift: p?.streamLift || 0,
-          revenueLift: p?.revenueLift || 0,
-          impactScore: p?.impactScore || 0,
+          id: p.id,
+          mediaTitle: p.mediaTitle,
+          mediaType: p.mediaType,
+          airDate: p.airDate!,
+          streamLift: p.streamLift || 0,
+          revenueLift: p.revenueLift || 0,
+          impactScore: p.impactScore || 0,
         });
         return acc;
       },
@@ -1382,11 +1382,11 @@ class AdvancedAnalyticsService {
 
     return Object?.values(groupedByTrack).map((track) => ({
       ...track,
-      totalStreamLift: track?.placements.reduce(
+      totalStreamLift: track.placements.reduce(
         (sum, p) => sum + p?.streamLift,
         0,
       ),
-      totalRevenueLift: track?.placements.reduce(
+      totalRevenueLift: track.placements.reduce(
         (sum, p) => sum + p?.revenueLift,
         0,
       ),
@@ -1417,12 +1417,12 @@ class AdvancedAnalyticsService {
     endDate: Date,
   ): Promise<CrossPlatformResult> {
     // Compute mid-point for period-over-period growth calculation
-    const _midDate = new Date((startDate?.getTime() + endDate?.getTime()) / 2);
+    const midDate = new Date((startDate?.getTime() + endDate?.getTime()) / 2);
 
     const [platformData, previousPeriodData] = await Promise?.all([
       db
         .select({
-          platform: analytics?.platform,
+          platform: analytics.platform,
           totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
           totalListeners: sql<number>`COALESCE(SUM(${analytics?.totalListeners}), 0)`,
           totalRevenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
@@ -1439,7 +1439,7 @@ class AdvancedAnalyticsService {
 
       db
         .select({
-          platform: analytics?.platform,
+          platform: analytics.platform,
           totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
         })
         .from(analytics)
@@ -1455,25 +1455,25 @@ class AdvancedAnalyticsService {
 
     const prevByPlatform: Record<string, number> = {};
     for (const p of previousPeriodData) {
-      prevByPlatform[p?.platform || "unknown"] = Number(p?.totalStreams);
+      prevByPlatform[p.platform || "unknown"] = Number(p?.totalStreams);
     }
 
-    const _totalStreams = platformData?.reduce(
+    const totalStreams = platformData?.reduce(
       (sum, p) => sum + Number(p?.totalStreams),
       0,
     );
-    const _totalRevenue = platformData?.reduce(
+    const totalRevenue = platformData?.reduce(
       (sum, p) => sum + Number(p?.totalRevenue),
       0,
     );
 
-    const _platforms = platformData?.map((p) => {
-      const _key = p?.platform || "unknown";
-      const _prevStreams = prevByPlatform[key] ?? 0;
-      const _currentStreams = Number(p?.totalStreams);
+    const platforms = platformData?.map((p) => {
+      const key = p?.platform || "unknown";
+      const prevStreams = prevByPlatform[key] ?? 0;
+      const currentStreams = Number(p?.totalStreams);
       // Second-half streams = total - first-half; compare second half vs first half
-      const _secondHalf = currentStreams - prevStreams;
-      const _growth =
+      const secondHalf = currentStreams - prevStreams;
+      const growth =
         prevStreams > 0 ? ((secondHalf - prevStreams) / prevStreams) * 100 : 0;
       return {
         platform: key as Platform,
@@ -1482,22 +1482,22 @@ class AdvancedAnalyticsService {
         revenue: Number(p?.totalRevenue),
         marketShare:
           totalStreams > 0 ? (currentStreams / totalStreams) * 100 : 0,
-        growth: Math?.round(growth * 10) / 10,
+        growth: Math.round(growth * 10) / 10,
       };
     });
 
-    const _dominantPlatform =
+    const dominantPlatform =
       platforms?.reduce(
         (max, p) => (p?.streams > max?.streams ? p : max),
         platforms[0],
       )?.platform || "spotify";
 
     // Estimate audience overlap from shared listener counts across platforms (industry avg 15-25%)
-    const _uniqueListeners = platformData?.reduce(
+    const uniqueListeners = platformData?.reduce(
       (sum, p) => sum + Number(p?.totalListeners),
       0,
     );
-    const _audienceOverlap =
+    const audienceOverlap =
       uniqueListeners > 0
         ? Math?.min(
             25,
@@ -1537,13 +1537,13 @@ class AdvancedAnalyticsService {
   private calculateTrend(values: number[]): "up" | "down" | "stable" {
     if (values?.length < 2) return "stable";
 
-    const _recentHalf = values?.slice(0, Math?.ceil(values?.length / 2));
-    const _olderHalf = values?.slice(Math?.ceil(values?.length / 2));
+    const recentHalf = values?.slice(0, Math?.ceil(values?.length / 2));
+    const olderHalf = values?.slice(Math?.ceil(values?.length / 2));
 
-    const _recentAvg = recentHalf?.reduce((a, b) => a + b, 0) / recentHalf?.length;
-    const _olderAvg = olderHalf?.reduce((a, b) => a + b, 0) / olderHalf?.length;
+    const recentAvg = recentHalf?.reduce((a, b) => a + b, 0) / recentHalf?.length;
+    const olderAvg = olderHalf?.reduce((a, b) => a + b, 0) / olderHalf?.length;
 
-    const _changePercent =
+    const changePercent =
       olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
 
     if (changePercent > 5) return "up";
@@ -1552,4 +1552,4 @@ class AdvancedAnalyticsService {
   }
 }
 
-export const _advancedAnalyticsService = new AdvancedAnalyticsService();
+export const advancedAnalyticsService = new AdvancedAnalyticsService();

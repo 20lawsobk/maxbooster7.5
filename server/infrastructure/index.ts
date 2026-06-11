@@ -1,18 +1,18 @@
-export { distributedCache, DistributedCache } from "./distributedCache?.js";
-export { CircuitBreaker, circuitBreakerRegistry } from "./circuitBreaker?.js";
+export { distributedCache, DistributedCache } from "./distributedCache.js";
+export { CircuitBreaker, circuitBreakerRegistry } from "./circuitBreaker.js";
 export {
   cdnManager,
   cdnCacheMiddleware,
   cdnAssetUrlHelper,
-} from "./cdnConfig?.js";
-export { autoScalingManager, scalingMetricsRouter } from "./autoScaling?.js";
-export { clusterSessionManager } from "./clusterSession?.js";
+} from "./cdnConfig.js";
+export { autoScalingManager, scalingMetricsRouter } from "./autoScaling.js";
+export { clusterSessionManager } from "./clusterSession.js";
 
-import { logger } from "../logger?.js";
-import { distributedCache } from "./distributedCache?.js";
-import { clusterSessionManager } from "./clusterSession?.js";
-import { autoScalingManager } from "./autoScaling?.js";
-import { circuitBreakerRegistry } from "./circuitBreaker?.js";
+import { logger } from "../logger.js";
+import { distributedCache } from "./distributedCache.js";
+import { clusterSessionManager } from "./clusterSession.js";
+import { autoScalingManager } from "./autoScaling.js";
+import { circuitBreakerRegistry } from "./circuitBreaker.js";
 
 export async function initializeInfrastructure(): Promise<void> {
   logger?.info("════════════════════════════════════════════════════════");
@@ -47,9 +47,9 @@ export function getInfrastructureStatus(): {
   scaling: Record<string, unknown>;
 } {
   return {
-    cache: distributedCache?.getStats(),
-    sessions: clusterSessionManager?.getStatus(),
-    circuitBreakers: circuitBreakerRegistry?.getAllStats(),
-    scaling: autoScalingManager?.getMetrics(),
+    cache: distributedCache.getStats(),
+    sessions: clusterSessionManager.getStatus(),
+    circuitBreakers: circuitBreakerRegistry.getAllStats(),
+    scaling: autoScalingManager.getMetrics(),
   };
 }

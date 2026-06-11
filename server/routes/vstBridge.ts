@@ -1,47 +1,47 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { vstPluginBridge } from "../services/vstPluginBridge";
 
-const _router = Router();
+const router = Router();
 
-const _scanPathsSchema = z?.object({
-  paths: z?.array(z?.string()).optional(),
+const scanPathsSchema = z.object({
+  paths: z.array(z.string()).optional(),
 });
 
-const _connectDesktopSchema = z?.object({
-  sessionId: z?.string(),
+const connectDesktopSchema = z.object({
+  sessionId: z.string(),
 });
 
-const _createInstanceSchema = z?.object({
-  pluginId: z?.string(),
-  projectId: z?.string(),
-  trackId: z?.string().optional(),
-  chainPosition: z?.number().int().min(0).default(0),
-  sampleRate: z?.number().int().min(8000).max(192000).default(44100),
-  blockSize: z?.number().int().min(32).max(4096).default(512),
+const createInstanceSchema = z.object({
+  pluginId: z.string(),
+  projectId: z.string(),
+  trackId: z.string().optional(),
+  chainPosition: z.number().int().min(0).default(0),
+  sampleRate: z.number().int().min(8000).max(192000).default(44100),
+  blockSize: z.number().int().min(32).max(4096).default(512),
 });
 
-const _updateParametersSchema = z?.object({
-  parameters: z?.record(z?.string(), z?.number()),
+const updateParametersSchema = z.object({
+  parameters: z.record(z.string(), z.number()),
 });
 
-const _loadProgramSchema = z?.object({
-  programIndex: z?.number().int().min(0),
+const loadProgramSchema = z.object({
+  programIndex: z.number().int().min(0),
 });
 
 router?.get("/status", requireAuth, async (_req, res) => {
   try {
-    const _stats = vstPluginBridge?.getStats();
+    const stats = vstPluginBridge?.getStats();
     res?.json({
       success: true,
-      bridgeReady: stats?.bridgeReady,
-      desktopConnected: stats?.desktopConnected,
-      totalPlugins: stats?.totalPlugins,
-      totalInstances: stats?.totalInstances,
-      instancesByFormat: stats?.instancesByFormat,
-      lastScanTime: stats?.lastScanTime,
+      bridgeReady: stats.bridgeReady,
+      desktopConnected: stats.desktopConnected,
+      totalPlugins: stats.totalPlugins,
+      totalInstances: stats.totalInstances,
+      instancesByFormat: stats.instancesByFormat,
+      lastScanTime: stats.lastScanTime,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error getting VST bridge status:");
@@ -64,10 +64,10 @@ router?.post("/initialize", requireAuth, async (_req, res) => {
 
 router?.post("/connect-desktop", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { sessionId } = connectDesktopSchema?.parse(req?.body);
 
-    const _connected = await vstPluginBridge?.connectDesktopApp({
+    const connected = await vstPluginBridge?.connectDesktopApp({
       sessionId,
       userId,
     });
@@ -89,10 +89,10 @@ router?.post("/connect-desktop", requireAuth, async (req, res) => {
     }
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error connecting desktop app:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to connect desktop app" });
   }
@@ -114,7 +114,7 @@ router?.post("/disconnect-desktop", requireAuth, async (_req, res) => {
 router?.post("/scan", requireAuth, async (req, res) => {
   try {
     const { paths } = scanPathsSchema?.parse(req?.body);
-    const _result = await vstPluginBridge?.scanPlugins(paths);
+    const result = await vstPluginBridge?.scanPlugins(paths);
 
     res?.json({
       success: true,
@@ -122,10 +122,10 @@ router?.post("/scan", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error scanning VST plugins:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to scan VST plugins" });
   }
@@ -150,7 +150,7 @@ router?.get("/plugins", requireAuth, async (req, res) => {
     res?.json({
       success: true,
       plugins,
-      count: plugins?.length,
+      count: plugins.length,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching VST plugins:");
@@ -161,7 +161,7 @@ router?.get("/plugins", requireAuth, async (req, res) => {
 router?.get("/plugins/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req?.params;
-    const _plugin = vstPluginBridge?.getPluginById(id);
+    const plugin = vstPluginBridge?.getPluginById(id);
 
     if (!plugin) {
       return res?.status(404).json({ error: "Plugin not found" });
@@ -179,9 +179,9 @@ router?.get("/plugins/:id", requireAuth, async (req, res) => {
 
 router?.post("/instances", requireAuth, async (req, res) => {
   try {
-    const _data = createInstanceSchema?.parse(req?.body);
+    const data = createInstanceSchema?.parse(req?.body);
 
-    const _instance = await vstPluginBridge?.createInstance(
+    const instance = await vstPluginBridge?.createInstance(
       data?.pluginId,
       data?.projectId,
       data?.trackId,
@@ -196,10 +196,10 @@ router?.post("/instances", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error creating VST instance:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to create VST instance" });
   }
@@ -233,7 +233,7 @@ router?.get("/instances", requireAuth, async (req, res) => {
 router?.get("/instances/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req?.params;
-    const _instance = vstPluginBridge?.getInstance(id);
+    const instance = vstPluginBridge?.getInstance(id);
 
     if (!instance) {
       return res?.status(404).json({ error: "Instance not found" });
@@ -254,7 +254,7 @@ router?.put("/instances/:id/parameters", requireAuth, async (req, res) => {
     const { id } = req?.params;
     const { parameters } = updateParametersSchema?.parse(req?.body);
 
-    const _instance = await vstPluginBridge?.updateParameters(id, parameters);
+    const instance = await vstPluginBridge?.updateParameters(id, parameters);
 
     res?.json({
       success: true,
@@ -262,10 +262,10 @@ router?.put("/instances/:id/parameters", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error updating VST parameters:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to update VST parameters" });
   }
@@ -280,7 +280,7 @@ router?.put("/instances/:id/bypass", requireAuth, async (req, res) => {
       return res?.status(400).json({ error: "bypassed must be a boolean" });
     }
 
-    const _instance = await vstPluginBridge?.setBypass(id, bypassed);
+    const instance = await vstPluginBridge?.setBypass(id, bypassed);
 
     res?.json({
       success: true,
@@ -305,10 +305,10 @@ router?.post("/instances/:id/program", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error loading VST program:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to load VST program" });
   }
@@ -317,11 +317,11 @@ router?.post("/instances/:id/program", requireAuth, async (req, res) => {
 router?.post("/instances/:id/editor/open", requireAuth, async (req, res) => {
   try {
     const { id } = req?.params;
-    const _result = await vstPluginBridge?.openEditor(id);
+    const result = await vstPluginBridge?.openEditor(id);
 
     res?.json({
       success: true,
-      windowId: result?.windowId,
+      windowId: result.windowId,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error opening VST editor:");
@@ -363,8 +363,8 @@ router?.get("/formats", requireAuth, async (_req, res) => {
       formats: [
         {
           id: "vst2",
-          name: "VST 2?.4",
-          description: "Steinberg VST 2?.4 plugin format",
+          name: "VST 2.4",
+          description: "Steinberg VST 2.4 plugin format",
           platforms: ["windows", "macos"],
           fileExtensions: [".dll", ".vst"],
         },

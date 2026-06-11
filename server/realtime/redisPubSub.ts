@@ -1,10 +1,10 @@
 import Redis from "ioredis";
-import { logger } from "../logger?.js";
-import { isPdimConfigured, getPdimClient } from "../lib/pdimClient?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { isPdimConfigured, getPdimClient } from "../lib/pdimClient.js";
+import { env } from "../config/env.js";
 
-const _CHANNEL_USER = "ws:user:notify";
-const _CHANNEL_BROADCAST = "ws:broadcast";
+const CHANNEL_USER = "ws:user:notify";
+const CHANNEL_BROADCAST = "ws:broadcast";
 
 let publisher: {
   publish: (channel: string, msg: string) => Promise<unknown>;
@@ -38,7 +38,7 @@ export async function initRedisPubSub(): Promise<void> {
       // PDIM subscribe is HTTP-polled; register message handler if supported
       subscriber?.on?.("message", (channel: string, message: string) => {
         try {
-          const _payload = JSON?.parse(message);
+          const payload = JSON?.parse(message);
           if (channel === CHANNEL_USER && onUserNotify) {
             onUserNotify(payload?.userId, payload?.notification);
           } else if (channel === CHANNEL_BROADCAST && onBroadcast) {
@@ -60,7 +60,7 @@ export async function initRedisPubSub(): Promise<void> {
     return;
   }
 
-  const _url = env?.REDIS_URL;
+  const url = env?.REDIS_URL;
   if (!url) {
     logger?.warn(
       "[WS PubSub] REDIS_URL not set — cross-instance broadcasting disabled",
@@ -68,7 +68,7 @@ export async function initRedisPubSub(): Promise<void> {
     return;
   }
 
-  const _makeClient = () =>
+  const makeClient = () =>
     new Redis(url, {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
@@ -84,7 +84,7 @@ export async function initRedisPubSub(): Promise<void> {
 
     subscriber?.on("message", (channel: string, message: string) => {
       try {
-        const _payload = JSON?.parse(message);
+        const payload = JSON?.parse(message);
         if (channel === CHANNEL_USER && onUserNotify) {
           onUserNotify(payload?.userId, payload?.notification);
         } else if (channel === CHANNEL_BROADCAST && onBroadcast) {

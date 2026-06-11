@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 
 import { logger } from "../logger";
-import { storage } from "../storage?.js";
+import { storage } from "../storage.js";
 import axios from "axios";
 import { TwitterApi } from "twitter-api-v2";
 
@@ -188,7 +188,7 @@ class SocialListeningService {
     ];
 
     defaultQueries?.forEach((query) => {
-      const _id = randomBytes(8).toString("hex");
+      const id = randomBytes(8).toString("hex");
       this?.trackedKeywords.set(id, { ...query, id, createdAt: new Date() });
     });
   }
@@ -215,12 +215,12 @@ class SocialListeningService {
 
     try {
       if (platforms?.includes("twitter")) {
-        const _twitterMentions = await this?.getTwitterMentions(userId, options);
+        const twitterMentions = await this?.getTwitterMentions(userId, options);
         allMentions?.push(...twitterMentions);
       }
 
       if (platforms?.includes("instagram")) {
-        const _instagramMentions = await this?.getInstagramMentions(
+        const instagramMentions = await this?.getInstagramMentions(
           userId,
           options,
         );
@@ -228,7 +228,7 @@ class SocialListeningService {
       }
 
       if (platforms?.includes("facebook")) {
-        const _facebookMentions = await this?.getFacebookMentions(
+        const facebookMentions = await this?.getFacebookMentions(
           userId,
           options,
         );
@@ -250,11 +250,11 @@ class SocialListeningService {
         filtered = filtered?.filter((m) => m?.isInfluencer);
       }
 
-      const _paginated = filtered?.slice(offset, offset + limit);
+      const paginated = filtered?.slice(offset, offset + limit);
 
       return {
         mentions: paginated,
-        total: filtered?.length,
+        total: filtered.length,
         hasMore: offset + limit < filtered?.length,
       };
     } catch (error) {
@@ -268,51 +268,51 @@ class SocialListeningService {
     options: Record<string, unknown>,
   ): Promise<Mention[]> {
     try {
-      const _tokenData = await storage?.getUserSocialToken(userId, "twitter");
+      const tokenData = await storage?.getUserSocialToken(userId, "twitter");
       if (!tokenData) return [];
 
-      const _tokens =
+      const tokens =
         typeof tokenData === "string" ? JSON?.parse(tokenData) : tokenData;
       if (!tokens?.accessToken) return [];
 
-      const _client = new TwitterApi(tokens?.accessToken);
-      const _user = await client?.v2.me();
+      const client = new TwitterApi(tokens?.accessToken);
+      const user = await client?.v2.me();
       if (!user?.data) return [];
 
-      const _mentions = await client?.v2.userMentionTimeline(user?.data.id, {
-        max_results: options?.limit || 50,
-        "tweet?.fields": ["created_at", "public_metrics", "author_id", "lang"],
+      const mentions = await client?.v2.userMentionTimeline(user?.data.id, {
+        max_results: options.limit || 50,
+        "tweet.fields": ["created_at", "public_metrics", "author_id", "lang"],
         expansions: ["author_id"],
-        "user?.fields": ["public_metrics", "verified", "name", "username"],
+        "user.fields": ["public_metrics", "verified", "name", "username"],
       });
 
       const results: Mention[] = [];
       for (const tweet of mentions?.data?.data || []) {
-        const _author = mentions?.includes?.users?.find(
+        const author = mentions?.includes?.users?.find(
           (u) => u?.id === tweet?.author_id,
         );
-        const _sentiment = this?.analyzeTweetSentiment(tweet?.text);
+        const sentiment = this?.analyzeTweetSentiment(tweet?.text);
 
         results?.push({
-          id: tweet?.id,
+          id: tweet.id,
           platform: "twitter",
           type: "mention",
-          content: tweet?.text,
-          authorId: tweet?.author_id || "",
-          authorName: author?.name || "Unknown",
+          content: tweet.text,
+          authorId: tweet.author_id || "",
+          authorName: author.name || "Unknown",
           authorHandle: `@${author?.username || "unknown"}`,
-          authorFollowers: author?.public_metrics?.followers_count || 0,
-          authorVerified: author?.verified || false,
-          url: `https://twitter?.com/${author?.username}/status/${tweet?.id}`,
+          authorFollowers: author.public_metrics?.followers_count || 0,
+          authorVerified: author.verified || false,
+          url: `https://twitter?.com/${author?.username}/status/${tweet.id}`,
           timestamp: new Date(tweet?.created_at || Date?.now()),
           sentiment,
-          reach: author?.public_metrics?.followers_count || 0,
+          reach: author.public_metrics?.followers_count || 0,
           engagement: {
-            likes: tweet?.public_metrics?.like_count || 0,
-            comments: tweet?.public_metrics?.reply_count || 0,
-            shares: tweet?.public_metrics?.retweet_count || 0,
+            likes: tweet.public_metrics?.like_count || 0,
+            comments: tweet.public_metrics?.reply_count || 0,
+            shares: tweet.public_metrics?.retweet_count || 0,
           },
-          language: tweet?.lang || "en",
+          language: tweet.lang || "en",
           isInfluencer: (author?.public_metrics?.followers_count || 0) > 10000,
           responded: false,
         });
@@ -330,43 +330,43 @@ class SocialListeningService {
     options: Record<string, unknown>,
   ): Promise<Mention[]> {
     try {
-      const _tokenData = await storage?.getUserSocialToken(userId, "instagram");
+      const tokenData = await storage?.getUserSocialToken(userId, "instagram");
       if (!tokenData) return [];
 
-      const _tokens =
+      const tokens =
         typeof tokenData === "string" ? JSON?.parse(tokenData) : tokenData;
       if (!tokens?.accessToken) return [];
 
-      const _response = await axios?.get("https://graph?.instagram.com/me/tags", {
+      const response = await axios?.get("https://graph.instagram.com/me/tags", {
         params: {
           fields:
             "id,caption,media_type,timestamp,permalink,username,like_count,comments_count",
-          access_token: tokens?.accessToken,
-          limit: options?.limit || 50,
+          access_token: tokens.accessToken,
+          limit: options.limit || 50,
         },
       });
 
       const results: Mention[] = [];
       for (const media of response?.data?.data || []) {
-        const _sentiment = this?.analyzeTweetSentiment(media?.caption || "");
+        const sentiment = this?.analyzeTweetSentiment(media?.caption || "");
 
         results?.push({
-          id: media?.id,
+          id: media.id,
           platform: "instagram",
           type: "tag",
-          content: media?.caption || "",
-          authorId: media?.username || "",
-          authorName: media?.username || "Unknown",
+          content: media.caption || "",
+          authorId: media.username || "",
+          authorName: media.username || "Unknown",
           authorHandle: `@${media?.username || "unknown"}`,
           authorFollowers: 0,
           authorVerified: false,
-          url: media?.permalink || "",
+          url: media.permalink || "",
           timestamp: new Date(media?.timestamp || Date?.now()),
           sentiment,
           reach: 0,
           engagement: {
-            likes: media?.like_count || 0,
-            comments: media?.comments_count || 0,
+            likes: media.like_count || 0,
+            comments: media.comments_count || 0,
             shares: 0,
           },
           language: "en",
@@ -387,46 +387,46 @@ class SocialListeningService {
     options: Record<string, unknown>,
   ): Promise<Mention[]> {
     try {
-      const _tokenData = await storage?.getUserSocialToken(userId, "facebook");
+      const tokenData = await storage?.getUserSocialToken(userId, "facebook");
       if (!tokenData) return [];
 
-      const _tokens =
+      const tokens =
         typeof tokenData === "string" ? JSON?.parse(tokenData) : tokenData;
       if (!tokens?.accessToken) return [];
 
-      const _response = await axios?.get(
-        "https://graph?.facebook.com/v18?.0/me/tagged",
+      const response = await axios?.get(
+        "https://graph.facebook.com/v18.0/me/tagged",
         {
           params: {
             fields:
-              "id,message,created_time,from,permalink_url,reactions?.summary(true),comments?.summary(true)",
-            access_token: tokens?.accessToken,
-            limit: options?.limit || 50,
+              "id,message,created_time,from,permalink_url,reactions.summary(true),comments.summary(true)",
+            access_token: tokens.accessToken,
+            limit: options.limit || 50,
           },
         },
       );
 
       const results: Mention[] = [];
       for (const post of response?.data?.data || []) {
-        const _sentiment = this?.analyzeTweetSentiment(post?.message || "");
+        const sentiment = this?.analyzeTweetSentiment(post?.message || "");
 
         results?.push({
-          id: post?.id,
+          id: post.id,
           platform: "facebook",
           type: "tag",
-          content: post?.message || "",
-          authorId: post?.from?.id || "",
-          authorName: post?.from?.name || "Unknown",
-          authorHandle: post?.from?.name || "unknown",
+          content: post.message || "",
+          authorId: post.from?.id || "",
+          authorName: post.from?.name || "Unknown",
+          authorHandle: post.from?.name || "unknown",
           authorFollowers: 0,
           authorVerified: false,
-          url: post?.permalink_url || "",
+          url: post.permalink_url || "",
           timestamp: new Date(post?.created_time || Date?.now()),
           sentiment,
           reach: 0,
           engagement: {
-            likes: post?.reactions?.summary?.total_count || 0,
-            comments: post?.comments?.summary?.total_count || 0,
+            likes: post.reactions?.summary?.total_count || 0,
+            comments: post.comments?.summary?.total_count || 0,
             shares: 0,
           },
           language: "en",
@@ -445,7 +445,7 @@ class SocialListeningService {
   private analyzeTweetSentiment(
     text: string,
   ): "positive" | "neutral" | "negative" {
-    const _positiveWords = [
+    const positiveWords = [
       "love",
       "great",
       "amazing",
@@ -469,7 +469,7 @@ class SocialListeningService {
       "💯",
       "👏",
     ];
-    const _negativeWords = [
+    const negativeWords = [
       "hate",
       "bad",
       "worst",
@@ -494,7 +494,7 @@ class SocialListeningService {
       "😢",
     ];
 
-    const _lowerText = text?.toLowerCase();
+    const lowerText = text?.toLowerCase();
     let positiveScore = 0;
     let negativeScore = 0;
 
@@ -520,22 +520,22 @@ class SocialListeningService {
       platforms?: string[];
     } = {},
   ): Promise<SentimentAnalysis> {
-    const _positive = 450 + Math?.floor(Math?.random() * 100);
-    const _neutral = 320 + Math?.floor(Math?.random() * 80);
-    const _negative = 80 + Math?.floor(Math?.random() * 40);
-    const _total = positive + neutral + negative;
+    const positive = 450 + Math?.floor(Math?.random() * 100);
+    const neutral = 320 + Math?.floor(Math?.random() * 80);
+    const negative = 80 + Math?.floor(Math?.random() * 40);
+    const total = positive + neutral + negative;
 
-    const _score = (positive - negative) / total;
+    const score = (positive - negative) / total;
 
     return {
-      overall: score > 0?.2 ? "positive" : score < -0?.2 ? "negative" : "neutral",
-      score: Math?.round(score * 100) / 100,
+      overall: score > 0.2 ? "positive" : score < -0.2 ? "negative" : "neutral",
+      score: Math.round(score * 100) / 100,
       breakdown: {
-        positive: Math?.round((positive / total) * 100),
-        neutral: Math?.round((neutral / total) * 100),
-        negative: Math?.round((negative / total) * 100),
+        positive: Math.round((positive / total) * 100),
+        neutral: Math.round((neutral / total) * 100),
+        negative: Math.round((negative / total) * 100),
       },
-      trend: score > 0?.1 ? "improving" : score < -0?.1 ? "declining" : "stable",
+      trend: score > 0.1 ? "improving" : score < -0.1 ? "declining" : "stable",
       topPositiveTopics: [
         "Customer Service",
         "Ease of Use",
@@ -570,79 +570,79 @@ class SocialListeningService {
 
     const topics: TrendingTopic[] = [];
 
-    const _trendingData = [
+    const trendingData = [
       {
         topic: "AI in Music Production",
         hashtag: "#AIMusic",
         category: "technology",
-        relevance: 0?.95,
+        relevance: 0.95,
       },
       {
         topic: "Independent Artists Rising",
         hashtag: "#IndieMusic",
         category: "music",
-        relevance: 0?.92,
+        relevance: 0.92,
       },
       {
         topic: "Music Distribution Tips",
         hashtag: "#MusicDistribution",
         category: "music",
-        relevance: 0?.98,
+        relevance: 0.98,
       },
       {
         topic: "Streaming Royalties",
         hashtag: "#StreamingRoyalties",
         category: "music",
-        relevance: 0?.88,
+        relevance: 0.88,
       },
       {
         topic: "New Music Friday",
         hashtag: "#NewMusicFriday",
         category: "entertainment",
-        relevance: 0?.85,
+        relevance: 0.85,
       },
       {
         topic: "Producer Life",
         hashtag: "#ProducerLife",
         category: "music",
-        relevance: 0?.82,
+        relevance: 0.82,
       },
       {
         topic: "Home Studio Setup",
         hashtag: "#HomeStudio",
         category: "technology",
-        relevance: 0?.78,
+        relevance: 0.78,
       },
       {
         topic: "Music Marketing",
         hashtag: "#MusicMarketing",
         category: "music",
-        relevance: 0?.9,
+        relevance: 0.9,
       },
       {
         topic: "Sync Licensing",
         hashtag: "#SyncLicensing",
         category: "music",
-        relevance: 0?.75,
+        relevance: 0.75,
       },
       {
         topic: "Beat Making",
         hashtag: "#BeatMaking",
         category: "music",
-        relevance: 0?.8,
+        relevance: 0.8,
       },
     ];
 
     for (let i = 0; i < Math?.min(limit, trendingData?.length); i++) {
-      const _data = trendingData[i];
+      const data = trendingData[i];
       topics?.push({
         id: randomBytes(8).toString("hex"),
-        topic: data?.topic,
-        hashtag: data?.hashtag,
-        category: data?.category as Record<string, unknown>,
-        volume: Math?.floor(Math?.random() * 100000) + 10000,
-        volumeChange: Math?.floor(Math?.random() * 200) - 50,
-        sentiment: Math?.random() > 0?.3 ? "positive" : "neutral",
+        topic: data.topic,
+        hashtag: data.hashtag,
+        category: data.category as Record<string, unknown>,
+        volume: Math.floor(Math?.random() * 100000) + 10000,
+        volumeChange: Math.floor(Math?.random() * 200) - 50,
+        sentiment: Math.random() > 0.3 ? "positive" : "neutral",
         platforms: ["twitter", "instagram", "tiktok"].slice(
           0,
           Math?.floor(Math?.random() * 3) + 1,
@@ -653,8 +653,8 @@ class SocialListeningService {
           `${data?.hashtag}Tips`,
           `${data?.hashtag}Community`,
         ],
-        isRelevant: data?.relevance > 0?.7,
-        relevanceScore: data?.relevance,
+        isRelevant: data.relevance > 0.7,
+        relevanceScore: data.relevance,
       });
     }
 
@@ -668,57 +668,57 @@ class SocialListeningService {
     const analyses: CompetitorAnalysis[] = [];
 
     for (const handle of competitorHandles) {
-      const _baseFollowers = Math?.floor(Math?.random() * 500000) + 50000;
+      const baseFollowers = Math?.floor(Math?.random() * 500000) + 50000;
 
       analyses?.push({
         competitorId: randomBytes(8).toString("hex"),
-        name: handle?.replace("@", "").replace("_", " "),
+        name: handle.replace("@", "").replace("_", " "),
         handle,
         platforms: [
           {
             platform: "instagram",
             followers: baseFollowers,
-            followersGrowth: Math?.random() * 10 - 2,
-            engagementRate: Math?.random() * 5 + 1,
-            postsPerWeek: Math?.floor(Math?.random() * 10) + 3,
-            avgLikes: Math?.floor(baseFollowers * (Math?.random() * 0?.05 + 0?.01)),
-            avgComments: Math?.floor(
-              baseFollowers * (Math?.random() * 0?.005 + 0?.001),
+            followersGrowth: Math.random() * 10 - 2,
+            engagementRate: Math.random() * 5 + 1,
+            postsPerWeek: Math.floor(Math?.random() * 10) + 3,
+            avgLikes: Math.floor(baseFollowers * (Math?.random() * 0.05 + 0.01)),
+            avgComments: Math.floor(
+              baseFollowers * (Math?.random() * 0.005 + 0.001),
             ),
-            avgShares: Math?.floor(
-              baseFollowers * (Math?.random() * 0?.002 + 0?.0005),
+            avgShares: Math.floor(
+              baseFollowers * (Math?.random() * 0.002 + 0.0005),
             ),
           },
           {
             platform: "twitter",
-            followers: Math?.floor(baseFollowers * 0?.7),
-            followersGrowth: Math?.random() * 8 - 1,
-            engagementRate: Math?.random() * 3 + 0?.5,
-            postsPerWeek: Math?.floor(Math?.random() * 20) + 5,
-            avgLikes: Math?.floor(
-              baseFollowers * 0?.7 * (Math?.random() * 0?.02 + 0?.005),
+            followers: Math.floor(baseFollowers * 0.7),
+            followersGrowth: Math.random() * 8 - 1,
+            engagementRate: Math.random() * 3 + 0.5,
+            postsPerWeek: Math.floor(Math?.random() * 20) + 5,
+            avgLikes: Math.floor(
+              baseFollowers * 0.7 * (Math?.random() * 0.02 + 0.005),
             ),
-            avgComments: Math?.floor(
-              baseFollowers * 0?.7 * (Math?.random() * 0?.003 + 0?.001),
+            avgComments: Math.floor(
+              baseFollowers * 0.7 * (Math?.random() * 0.003 + 0.001),
             ),
-            avgShares: Math?.floor(
-              baseFollowers * 0?.7 * (Math?.random() * 0?.005 + 0?.001),
+            avgShares: Math.floor(
+              baseFollowers * 0.7 * (Math?.random() * 0.005 + 0.001),
             ),
           },
           {
             platform: "tiktok",
-            followers: Math?.floor(baseFollowers * 1?.5),
-            followersGrowth: Math?.random() * 20 + 5,
-            engagementRate: Math?.random() * 8 + 3,
-            postsPerWeek: Math?.floor(Math?.random() * 7) + 2,
-            avgLikes: Math?.floor(
-              baseFollowers * 1?.5 * (Math?.random() * 0?.1 + 0?.02),
+            followers: Math.floor(baseFollowers * 1.5),
+            followersGrowth: Math.random() * 20 + 5,
+            engagementRate: Math.random() * 8 + 3,
+            postsPerWeek: Math.floor(Math?.random() * 7) + 2,
+            avgLikes: Math.floor(
+              baseFollowers * 1.5 * (Math?.random() * 0.1 + 0.02),
             ),
-            avgComments: Math?.floor(
-              baseFollowers * 1?.5 * (Math?.random() * 0?.01 + 0?.002),
+            avgComments: Math.floor(
+              baseFollowers * 1.5 * (Math?.random() * 0.01 + 0.002),
             ),
-            avgShares: Math?.floor(
-              baseFollowers * 1?.5 * (Math?.random() * 0?.02 + 0?.005),
+            avgShares: Math.floor(
+              baseFollowers * 1.5 * (Math?.random() * 0.02 + 0.005),
             ),
           },
         ],
@@ -726,19 +726,19 @@ class SocialListeningService {
           {
             platform: "instagram",
             content: "Behind the scenes studio session 🎵",
-            engagement: Math?.floor(Math?.random() * 50000),
+            engagement: Math.floor(Math?.random() * 50000),
             type: "video",
           },
           {
             platform: "twitter",
             content: "New track dropping this Friday! Stay tuned 🔥",
-            engagement: Math?.floor(Math?.random() * 20000),
+            engagement: Math.floor(Math?.random() * 20000),
             type: "text",
           },
           {
             platform: "tiktok",
             content: "Making a beat in 60 seconds challenge",
-            engagement: Math?.floor(Math?.random() * 200000),
+            engagement: Math.floor(Math?.random() * 200000),
             type: "video",
           },
         ],
@@ -772,13 +772,13 @@ class SocialListeningService {
   }
 
   async getBrandHealth(_userId: string): Promise<BrandHealth> {
-    const _awarenessScore = Math?.floor(Math?.random() * 20) + 70;
-    const _sentimentScore = Math?.floor(Math?.random() * 15) + 75;
-    const _engagementScore = Math?.floor(Math?.random() * 25) + 65;
-    const _reachScore = Math?.floor(Math?.random() * 20) + 70;
-    const _sovScore = Math?.floor(Math?.random() * 30) + 40;
+    const awarenessScore = Math?.floor(Math?.random() * 20) + 70;
+    const sentimentScore = Math?.floor(Math?.random() * 15) + 75;
+    const engagementScore = Math?.floor(Math?.random() * 25) + 65;
+    const reachScore = Math?.floor(Math?.random() * 20) + 70;
+    const sovScore = Math?.floor(Math?.random() * 30) + 40;
 
-    const _overallScore = Math?.floor(
+    const overallScore = Math?.floor(
       (awarenessScore +
         sentimentScore +
         engagementScore +
@@ -833,22 +833,22 @@ class SocialListeningService {
     _userId: string,
     competitorNames: string[],
   ): Promise<ShareOfVoice> {
-    const _totalMentions = Math?.floor(Math?.random() * 10000) + 5000;
-    const _yourMentions = Math?.floor(
-      totalMentions * (Math?.random() * 0?.3 + 0?.2),
+    const totalMentions = Math?.floor(Math?.random() * 10000) + 5000;
+    const yourMentions = Math?.floor(
+      totalMentions * (Math?.random() * 0.3 + 0.2),
     );
 
-    const _competitors = competitorNames?.map((name) => {
-      const _mentions = Math?.floor(
+    const competitors = competitorNames?.map((name) => {
+      const mentions = Math?.floor(
         ((totalMentions - yourMentions) / competitorNames?.length) *
-          (0?.5 + Math?.random()),
+          (0.5 + Math?.random()),
       );
       return {
         name,
         mentions,
-        percentage: Math?.round((mentions / totalMentions) * 100),
+        percentage: Math.round((mentions / totalMentions) * 100),
         reach: mentions * (Math?.floor(Math?.random() * 500) + 100),
-        sentiment: Math?.random() * 0?.6 + 0?.2,
+        sentiment: Math.random() * 0.6 + 0.2,
       };
     });
 
@@ -858,14 +858,14 @@ class SocialListeningService {
       competitorShares: Record<string, number>;
     }> = [];
     for (let i = 30; i >= 0; i--) {
-      const _date = new Date(Date?.now() - i * 24 * 60 * 60 * 1000);
+      const date = new Date(Date?.now() - i * 24 * 60 * 60 * 1000);
       const competitorShares: Record<string, number> = {};
       competitorNames?.forEach((name) => {
         competitorShares[name] = Math?.random() * 20 + 10;
       });
       trend?.push({
-        date: date?.toISOString().split("T")[0],
-        yourShare: Math?.random() * 15 + 25,
+        date: date.toISOString().split("T")[0],
+        yourShare: Math.random() * 15 + 25,
         competitorShares,
       });
     }
@@ -873,9 +873,9 @@ class SocialListeningService {
     return {
       yourBrand: {
         mentions: yourMentions,
-        percentage: Math?.round((yourMentions / totalMentions) * 100),
+        percentage: Math.round((yourMentions / totalMentions) * 100),
         reach: yourMentions * (Math?.floor(Math?.random() * 500) + 200),
-        sentiment: Math?.random() * 0?.3 + 0?.6,
+        sentiment: Math.random() * 0.3 + 0.6,
       },
       competitors,
       industryTotal: totalMentions,
@@ -894,16 +894,16 @@ class SocialListeningService {
     };
 
     if (
-      this?.trackedKeywords.size >= SocialListeningService?.MAX_TRACKED_KEYWORDS
+      this?.trackedKeywords.size >= SocialListeningService.MAX_TRACKED_KEYWORDS
     ) {
-      const _oldest = this?.trackedKeywords.keys().next().value;
+      const oldest = this?.trackedKeywords.keys().next().value;
       if (oldest !== undefined) this?.trackedKeywords.delete(oldest);
     }
     this?.trackedKeywords.set(newQuery?.id, newQuery);
 
     logger?.info(`Listening query added for user ${userId}`, {
-      queryId: newQuery?.id,
-      type: query?.type,
+      queryId: newQuery.id,
+      type: query.type,
     });
 
     return newQuery;
@@ -930,20 +930,20 @@ class SocialListeningService {
   }> {
     return {
       engagementRate: {
-        average: 3?.2,
-        top10: 8?.5,
-        bottom10: 0?.8,
+        average: 3.2,
+        top10: 8.5,
+        bottom10: 0.8,
       },
       postFrequency: {
         average: 7,
         recommended: 14,
       },
       responseTime: {
-        average: 4?.5,
+        average: 4.5,
         excellent: 1,
       },
       followerGrowth: {
-        average: 2?.5,
+        average: 2.5,
         top10: 15,
       },
       contentTypes: {
@@ -965,4 +965,4 @@ class SocialListeningService {
   }
 }
 
-export const _socialListeningService = new SocialListeningService();
+export const socialListeningService = new SocialListeningService();

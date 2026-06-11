@@ -2,15 +2,15 @@ export function createDeepLink(
   route: string,
   params?: Record<string, string>,
 ): string {
-  const _baseUrl = window?.location.origin;
+  const baseUrl = window?.location.origin;
   let deepLink = `web+maxbooster://${route}`;
 
   if (params) {
-    const _queryString = new URLSearchParams(params).toString();
+    const queryString = new URLSearchParams(params).toString();
     deepLink += `?${queryString}`;
   }
 
-  const _webUrl = `${baseUrl}/${route}${params ? "?" + new URLSearchParams(params).toString() : ""}`;
+  const webUrl = `${baseUrl}/${route}${params ? "?" + new URLSearchParams(params).toString() : ""}`;
 
   return webUrl;
 }
@@ -22,8 +22,8 @@ export function createShareableLink(
   webUrl: string;
   deepLink: string;
 } {
-  const _baseUrl = window?.location.origin;
-  const _queryString = params ? new URLSearchParams(params).toString() : "";
+  const baseUrl = window?.location.origin;
+  const queryString = params ? new URLSearchParams(params).toString() : "";
 
   return {
     webUrl: `${baseUrl}/${route}${queryString ? "?" + queryString : ""}`,

@@ -40,40 +40,40 @@
  */
 
 import { Request, Response, NextFunction } from "express";
-import { distributedCache } from "../infrastructure/distributedCache?.js";
-import { getRedisClient } from "../lib/redisClient?.js";
-import { isPdimConfigured } from "../lib/pdimClient?.js";
-import { logger } from "../logger?.js";
+import { distributedCache } from "../infrastructure/distributedCache.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { isPdimConfigured } from "../lib/pdimClient.js";
+import { logger } from "../logger.js";
 
 // ── ETag ──────────────────────────────────────────────────────────────────────
 function generateETag(body: unknown): string {
   let hash = 0;
-  const _str = typeof body === "string" ? body : JSON?.stringify(body);
+  const str = typeof body === "string" ? body : JSON?.stringify(body);
   for (let i = 0; i < str?.length; i++) {
     hash = (hash << 5) - hash + str?.charCodeAt(i);
     hash |= 0;
   }
-  return `"${Math?.abs(hash).toString(36)}"`;
+  return `"${Math.abs(hash).toString(36)}"`;
 }
 
 // ── User-ID extraction ────────────────────────────────────────────────────────
 function extractUserIdFromRequest(req: Request): string {
-  const _user = (req as Record<string, unknown>).user;
+  const user = (req as Record<string, unknown>).user;
   if (user && typeof user === "object" && "id" in user)
     return String((user as { id: unknown }).id);
 
-  const _sess = req?.session as Record<string, unknown> | undefined;
-  const _sessionUid =
+  const sess = req?.session as Record<string, unknown> | undefined;
+  const sessionUid =
     sess?.userId ??
     (sess?.passport as Record<string, unknown> | undefined)?.user;
   if (sessionUid) return String(sessionUid);
 
-  const _auth = req?.headers.authorization;
+  const auth = req?.headers.authorization;
   if (auth?.startsWith("Bearer ")) {
     try {
-      const _parts = auth?.slice(7).split(".");
+      const parts = auth?.slice(7).split(".");
       if (parts?.length === 3) {
-        const _payload = JSON?.parse(
+        const payload = JSON?.parse(
           Buffer?.from(parts[1], "base64url").toString("utf8"),
         );
         if (payload?.userId) return String(payload?.userId);
@@ -84,15 +84,15 @@ function extractUserIdFromRequest(req: Request): string {
     }
   }
 
-  const _cookieHeader = req?.headers.cookie || "";
-  const _tokenMatch = cookieHeader?.match(
+  const cookieHeader = req?.headers.cookie || "";
+  const tokenMatch = cookieHeader?.match(
     /(?:^|;\s*)(?:token|access_token|jwt)=([^;]+)/,
   );
   if (tokenMatch) {
     try {
-      const _parts = tokenMatch[1].split(".");
+      const parts = tokenMatch[1].split(".");
       if (parts?.length === 3) {
-        const _payload = JSON?.parse(
+        const payload = JSON?.parse(
           Buffer?.from(parts[1], "base64url").toString("utf8"),
         );
         if (payload?.userId) return String(payload?.userId);
@@ -122,20 +122,20 @@ interface CacheOptions {
 }
 
 // ── PDIM key namespaces ───────────────────────────────────────────────────────
-const _PDIM_ENTRY_PFX = "apicache:e:";
-const _PDIM_INV_USERS = "apicache:inv:users"; // Hash: field=userId, value=timestamp
-const _PDIM_INV_PATTERNS = "apicache:inv:patterns"; // List: "{pattern}:{timestamp}" events
-const _PDIM_INV_SEQ = "apicache:inv:seq"; // Counter: incremented on any invalidation
-const _PDIM_BUST_PFX = "apicache:bust:u:"; // Per-user defense-in-depth flag
-const _PDIM_INV_TTL_S = 300; // 5 min TTL on invalidation data structures
-const _BUST_PDIM_TTL_S = 120;
-const _PDIM_PATTERNS_KEEP = 100; // LTRIM: keep only last N pattern events
+const PDIM_ENTRY_PFX = "apicache:e:";
+const PDIM_INV_USERS = "apicache:inv:users"; // Hash: field=userId, value=timestamp
+const PDIM_INV_PATTERNS = "apicache:inv:patterns"; // List: "{pattern}:{timestamp}" events
+const PDIM_INV_SEQ = "apicache:inv:seq"; // Counter: incremented on any invalidation
+const PDIM_BUST_PFX = "apicache:bust:u:"; // Per-user defense-in-depth flag
+const PDIM_INV_TTL_S = 300; // 5 min TTL on invalidation data structures
+const BUST_PDIM_TTL_S = 120;
+const PDIM_PATTERNS_KEEP = 100; // LTRIM: keep only last N pattern events
 
 // ── Tuning constants ──────────────────────────────────────────────────────────
-const _L1_ENTRY_TTL_MS = 4_000; // in-process entry TTL
-const _BUST_L1_TTL_MS = 500; // defense-in-depth bust-key L1 (500 ms safety net)
-const _L1_MAX = 5_000;
-const _POLL_INTERVAL_MS = 100; // ~150 ms max cross-pod propagation lag
+const L1_ENTRY_TTL_MS = 4_000; // in-process entry TTL
+const BUST_L1_TTL_MS = 500; // defense-in-depth bust-key L1 (500 ms safety net)
+const L1_MAX = 5_000;
+const POLL_INTERVAL_MS = 100; // ~150 ms max cross-pod propagation lag
 
 /**
  * APIResponseCache — two-tier, horizontally-safe response cache with
@@ -161,7 +161,7 @@ export class APIResponseCache {
 
   // ── L1 entry helpers ─────────────────────────────────────────────────────
   private l1Get(key: string): CacheEntry | undefined {
-    const _hit = this?.l1.get(key);
+    const hit = this?.l1.get(key);
     if (!hit) return undefined;
     if (Date?.now() > hit?.expiresAt) {
       this?.l1.delete(key);
@@ -172,10 +172,10 @@ export class APIResponseCache {
 
   private l1Set(key: string, entry: CacheEntry): void {
     if (this?.l1.size >= L1_MAX) {
-      const _oldest = this?.l1.keys().next().value;
+      const oldest = this?.l1.keys().next().value;
       if (oldest !== undefined) this?.l1.delete(oldest);
     }
-    this?.l1.set(key, { entry, expiresAt: Date?.now() + L1_ENTRY_TTL_MS });
+    this?.l1.set(key, { entry, expiresAt: Date.now() + L1_ENTRY_TTL_MS });
   }
 
   private l1Del(key: string): void {
@@ -199,7 +199,7 @@ export class APIResponseCache {
 
   // ── Bust-flag L1 helpers ─────────────────────────────────────────────────
   private bustL1Get(userId: string): number | undefined {
-    const _hit = this?.bustL1.get(userId);
+    const hit = this?.bustL1.get(userId);
     if (!hit) return undefined;
     if (Date?.now() > hit?.expiresAt) {
       this?.bustL1.delete(userId);
@@ -209,18 +209,18 @@ export class APIResponseCache {
   }
 
   private bustL1Set(userId: string, bustAt: number): void {
-    this?.bustL1.set(userId, { bustAt, expiresAt: Date?.now() + BUST_L1_TTL_MS });
+    this?.bustL1.set(userId, { bustAt, expiresAt: Date.now() + BUST_L1_TTL_MS });
   }
 
   private async getBustAt(userId: string): Promise<number> {
-    const _l1 = this?.bustL1Get(userId);
+    const l1 = this?.bustL1Get(userId);
     if (l1 !== undefined) return l1;
     if (!distributedCache?.isConnected()) return 0;
     try {
-      const _val = await distributedCache?.get<number>(
+      const val = await distributedCache?.get<number>(
         `${PDIM_BUST_PFX}${userId}`,
       );
-      const _bustAt = typeof val === "number" ? val : 0;
+      const bustAt = typeof val === "number" ? val : 0;
       this?.bustL1Set(userId, bustAt);
       return bustAt;
     } catch {
@@ -241,7 +241,7 @@ export class APIResponseCache {
       );
       return;
     }
-    this?.pollTimer = setInterval(() => void this?.pollTick(), POLL_INTERVAL_MS);
+    this.pollTimer = setInterval(() => void this?.pollTick(), POLL_INTERVAL_MS);
     logger?.info(
       `[APICache] Cross-pod invalidation poller started (${POLL_INTERVAL_MS} ms interval, ~${POLL_INTERVAL_MS + 50} ms max propagation lag)`,
     );
@@ -250,7 +250,7 @@ export class APIResponseCache {
   stopPoller(): void {
     if (this?.pollTimer !== null) {
       clearInterval(this?.pollTimer);
-      this?.pollTimer = null;
+      this.pollTimer = null;
     }
   }
 
@@ -264,26 +264,26 @@ export class APIResponseCache {
     if (!distributedCache?.isConnected()) return;
     // Skip PDIM calls while PDIM is in any warm-up phase or circuit is open —
     // the 100 ms interval would otherwise flood the exec queue during cold-start.
-    const { cbIsPdimUnhealthy } = await import("../lib/pdimCircuitBreaker?.js");
+    const { cbIsPdimUnhealthy } = await import("../lib/pdimCircuitBreaker.js");
     if (cbIsPdimUnhealthy()) return;
     try {
-      const _redis = getRedisClient();
+      const redis = getRedisClient();
 
       // ── Fast path: check sequence number ──────────────────────────────────
-      const _seqRaw = await redis?.get(PDIM_INV_SEQ);
-      const _seq = seqRaw as string | null;
+      const seqRaw = await redis?.get(PDIM_INV_SEQ);
+      const seq = seqRaw as string | null;
       if (seq === this?.pollSeq) return;
 
       // ── Process user invalidation events ──────────────────────────────────
-      const _userEvents = (await redis?.hgetall(PDIM_INV_USERS)) as Record<
+      const userEvents = (await redis?.hgetall(PDIM_INV_USERS)) as Record<
         string,
         string
       > | null;
       if (userEvents) {
         for (const [uid, tsStr] of Object?.entries(userEvents)) {
-          const _ts = parseInt(tsStr, 10);
+          const ts = parseInt(tsStr, 10);
           if (isNaN(ts)) continue;
-          const _lastSeen = this?.processedUsers.get(uid) ?? 0;
+          const lastSeen = this?.processedUsers.get(uid) ?? 0;
           if (ts > lastSeen) {
             this?.l1DelPrefix(`u:${uid}:`);
             this?.bustL1.delete(uid);
@@ -293,27 +293,27 @@ export class APIResponseCache {
       }
 
       // ── Process pattern invalidation events ───────────────────────────────
-      const _patternEvents = (await redis?.lrange(
+      const patternEvents = (await redis?.lrange(
         PDIM_INV_PATTERNS,
         0,
         PDIM_PATTERNS_KEEP - 1,
       )) as string[];
       for (const event of patternEvents) {
         // Format: "{pattern}:{timestamp}" — timestamp is the last colon-delimited segment
-        const _lastColon = event?.lastIndexOf(":");
+        const lastColon = event?.lastIndexOf(":");
         if (lastColon === -1) continue;
-        const _pattern = event?.slice(0, lastColon);
-        const _ts = parseInt(event?.slice(lastColon + 1), 10);
+        const pattern = event?.slice(0, lastColon);
+        const ts = parseInt(event?.slice(lastColon + 1), 10);
         if (isNaN(ts) || ts <= this?.lastPatternCleared) continue;
         try {
           this?.l1ApplyRegex(new RegExp(pattern));
         } catch {
           /* ignore malformed regex events in PDIM */
         }
-        if (ts > this?.lastPatternCleared) this?.lastPatternCleared = ts;
+        if (ts > this.lastPatternCleared) this.lastPatternCleared = ts;
       }
 
-      this?.pollSeq = seq;
+      this.pollSeq = seq;
     } catch {
       // PDIM temporarily unreachable — skip this tick
     }
@@ -322,38 +322,38 @@ export class APIResponseCache {
   // ── Public API ────────────────────────────────────────────────────────────
 
   async get(key: string, userId?: string): Promise<CacheEntry | undefined> {
-    const _l1hit = this?.l1Get(key);
+    const l1hit = this?.l1Get(key);
     if (l1hit) {
       if (userId) {
-        const _bustAt = await this?.getBustAt(userId);
+        const bustAt = await this?.getBustAt(userId);
         if (bustAt && l1hit?.timestamp < bustAt) {
           this?.l1Del(key);
-          this?.missCount++;
+          this.missCount++;
           return undefined;
         }
       }
-      this?.hitCount++;
+      this.hitCount++;
       return l1hit;
     }
 
     if (distributedCache?.isConnected()) {
       try {
-        const _pdimEntry = await distributedCache?.get<CacheEntry>(
+        const pdimEntry = await distributedCache?.get<CacheEntry>(
           `${PDIM_ENTRY_PFX}${key}`,
         );
         if (pdimEntry) {
           if (userId) {
-            const _bustAt = await this?.getBustAt(userId);
+            const bustAt = await this?.getBustAt(userId);
             if (bustAt && pdimEntry?.timestamp < bustAt) {
               distributedCache
                 .delete(`${PDIM_ENTRY_PFX}${key}`)
                 .catch(() => {});
-              this?.missCount++;
+              this.missCount++;
               return undefined;
             }
           }
           this?.l1Set(key, pdimEntry);
-          this?.hitCount++;
+          this.hitCount++;
           return pdimEntry;
         }
       } catch {
@@ -361,7 +361,7 @@ export class APIResponseCache {
       }
     }
 
-    this?.missCount++;
+    this.missCount++;
     return undefined;
   }
 
@@ -392,12 +392,12 @@ export class APIResponseCache {
 
     if (!distributedCache?.isConnected()) return;
 
-    const _bustAt = Date?.now();
+    const bustAt = Date?.now();
     this?.bustL1Set(userId, bustAt);
 
     (async () => {
       try {
-        const _redis = getRedisClient();
+        const redis = getRedisClient();
         await redis?.hset(PDIM_INV_USERS, userId, String(bustAt));
         await redis?.expire(PDIM_INV_USERS, PDIM_INV_TTL_S);
         await redis?.incr(PDIM_INV_SEQ);
@@ -424,17 +424,17 @@ export class APIResponseCache {
    */
   invalidatePattern(pattern: string): void {
     // Local L1 — immediate
-    const _regex = new RegExp(pattern);
+    const regex = new RegExp(pattern);
     this?.l1ApplyRegex(regex);
-    const _ts = Date?.now();
-    this?.lastPatternCleared = Math?.max(this?.lastPatternCleared, ts);
+    const ts = Date?.now();
+    this.lastPatternCleared = Math?.max(this?.lastPatternCleared, ts);
 
     if (!distributedCache?.isConnected()) return;
 
     // PDIM — fire-and-forget
     (async () => {
       try {
-        const _redis = getRedisClient();
+        const redis = getRedisClient();
         // Append pattern event — format "{pattern}:{timestamp}" (timestamps have no colons)
         await redis?.lpush(PDIM_INV_PATTERNS, `${pattern}:${ts}`);
         await redis?.ltrim(PDIM_INV_PATTERNS, 0, PDIM_PATTERNS_KEEP - 1);
@@ -453,25 +453,25 @@ export class APIResponseCache {
     this?.l1.clear();
     this?.bustL1.clear();
     this?.processedUsers.clear();
-    this?.lastPatternCleared = 0;
+    this.lastPatternCleared = 0;
   }
 
   getStats() {
-    const _total = this?.hitCount + this?.missCount;
+    const total = this?.hitCount + this?.missCount;
     return {
-      size: this?.l1.size,
-      hits: this?.hitCount,
-      misses: this?.missCount,
+      size: this.l1.size,
+      hits: this.hitCount,
+      misses: this.missCount,
       hitRate:
         total > 0 ? ((this?.hitCount / total) * 100).toFixed(1) + "%" : "0%",
-      backend: distributedCache?.isConnected() ? "pdim" : "memory",
-      pollerActive: this?.pollTimer !== null,
+      backend: distributedCache.isConnected() ? "pdim" : "memory",
+      pollerActive: this.pollTimer !== null,
     };
   }
 
   /** Check whether a key exists in the in-process L1 cache. Used by tests only. */
   l1Has(key: string): boolean {
-    const _hit = this?.l1.get(key);
+    const hit = this?.l1.get(key);
     if (!hit) return false;
     if (Date?.now() > hit?.expiresAt) {
       this?.l1.delete(key);
@@ -481,7 +481,7 @@ export class APIResponseCache {
   }
 }
 
-export const _apiCache = new APIResponseCache();
+export const apiCache = new APIResponseCache();
 
 // ── Express middleware ────────────────────────────────────────────────────────
 
@@ -498,24 +498,24 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       return;
     }
 
-    const _userId = varyByUser ? extractUserIdFromRequest(req) : "shared";
-    const _queryStr = varyByQuery ? JSON?.stringify(req?.query) : "";
-    const _cacheKey = `u:${userId}:${req?.path}:${queryStr}`;
+    const userId = varyByUser ? extractUserIdFromRequest(req) : "shared";
+    const queryStr = varyByQuery ? JSON?.stringify(req?.query) : "";
+    const cacheKey = `u:${userId}:${req?.path}:${queryStr}`;
 
     try {
       // Timeout guard: if PDIM is congested, the cache read can hang indefinitely.
       // After 500 ms we skip the cache and serve the route handler directly.
-      const _CACHE_PDIM_TIMEOUT_MS = 500;
-      const _cached = await Promise?.race([
+      const CACHE_PDIM_TIMEOUT_MS = 500;
+      const cached = await Promise?.race([
         apiCache?.get(cacheKey, userId !== "shared" ? userId : undefined),
         new Promise<undefined>((resolve) =>
           setTimeout(() => resolve(undefined), CACHE_PDIM_TIMEOUT_MS),
         ),
       ]);
       if (cached) {
-        const _age = Date?.now() - cached?.timestamp;
+        const age = Date?.now() - cached?.timestamp;
         if (age < ttlSeconds * 1000) {
-          const _clientETag = req?.headers["if-none-match"];
+          const clientETag = req?.headers["if-none-match"];
           if (clientETag && clientETag === cached?.etag) {
             res?.status(304).end();
             return;
@@ -538,20 +538,20 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       /* cache failure is non-fatal */
     }
 
-    const _originalJson = res?.json.bind(res);
+    const originalJson = res?.json.bind(res);
     // Override res?.json using its own type signature — no any cast needed.
     // typeof res?.json resolves to Express's `(body?: any) => Response`, so the
     // override is fully type-safe without suppressing lint rules.
-    const jsonOverride: typeof res?.json = function cachedJson(body) {
+    const jsonOverride: typeof res.json = function cachedJson(body) {
       if (res?.statusCode >= 200 && res?.statusCode < 300) {
-        const _etag = generateETag(body);
+        const etag = generateETag(body);
         apiCache?.set(
           cacheKey,
           {
             body,
             headers: { "Content-Type": "application/json" },
-            statusCode: res?.statusCode,
-            timestamp: Date?.now(),
+            statusCode: res.statusCode,
+            timestamp: Date.now(),
             etag,
           } as CacheEntry,
           ttlSeconds,
@@ -565,7 +565,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       }
       return originalJson(body);
     };
-    res?.json = jsonOverride;
+    res.json = jsonOverride;
 
     next();
   };
@@ -574,11 +574,11 @@ export function cacheMiddleware(options: CacheOptions = {}) {
 export function invalidateCacheOnMutation() {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (["POST", "PUT", "PATCH", "DELETE"].includes(req?.method)) {
-      const _userId = extractUserIdFromRequest(req);
+      const userId = extractUserIdFromRequest(req);
       if (userId && userId !== "anon") {
         apiCache?.invalidateForUser(userId);
       }
-      const _basePath = req?.path.split("/").slice(0, 4).join("/");
+      const basePath = req?.path.split("/").slice(0, 4).join("/");
       apiCache?.invalidatePattern(
         basePath?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
       );

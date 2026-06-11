@@ -4,30 +4,30 @@
  */
 import { openDB, type IDBPDatabase } from "idb";
 
-const _DB_NAME = "mb-query-cache";
-const _DB_VER = 1;
-const _STORE = "cache";
-const _KEY = "mb-v3";
+const DB_NAME = "mb-query-cache";
+const DB_VER = 1;
+const STORE = "cache";
+const KEY = "mb-v3";
 
-let _db: IDBPDatabase | null = null;
+let db: IDBPDatabase | null = null;
 
 async function getDB(): Promise<IDBPDatabase> {
-  if (_db) return _db;
-  _db = await openDB(DB_NAME, DB_VER, {
+  if (db) return db;
+  db = await openDB(DB_NAME, DB_VER, {
     upgrade(db) {
       if (!db?.objectStoreNames.contains(STORE)) {
         db?.createObjectStore(STORE);
       }
     },
   });
-  return _db;
+  return db;
 }
 
-export const _idbStorage = {
+export const idbStorage = {
   getItem: async (key: string): Promise<string | null> => {
     try {
-      const _db = await getDB();
-      const _val = await db?.get(STORE, key);
+      const db = await getDB();
+      const val = await db?.get(STORE, key);
       return val ?? null;
     } catch {
       return null;
@@ -35,7 +35,7 @@ export const _idbStorage = {
   },
   setItem: async (key: string, value: string): Promise<void> => {
     try {
-      const _db = await getDB();
+      const db = await getDB();
       await db?.put(STORE, value, key);
     } catch {
       // Silent — cache miss on next load is fine
@@ -43,7 +43,7 @@ export const _idbStorage = {
   },
   removeItem: async (key: string): Promise<void> => {
     try {
-      const _db = await getDB();
+      const db = await getDB();
       await db?.delete(STORE, key);
     } catch {
       // ignore

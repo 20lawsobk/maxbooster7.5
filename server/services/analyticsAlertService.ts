@@ -94,9 +94,9 @@ interface CrossPlatformComparison {
   recommendations: string[];
 }
 
-const _ALERT_MAX_USERS = 50_000;
-const _ALERT_MAX_PER_USER = 200;
-const _ALERT_USER_TTL_MS = 24 * 60 * 60 * 1000;
+const ALERT_MAX_USERS = 50_000;
+const ALERT_MAX_PER_USER = 200;
+const ALERT_USER_TTL_MS = 24 * 60 * 60 * 1000;
 
 class AnalyticsAlertService {
   private alertStore: Map<string, Alert[]> = new Map();
@@ -109,7 +109,7 @@ class AnalyticsAlertService {
   }
 
   private _sweepExpired(): void {
-    const _cutoff = Date?.now() - ALERT_USER_TTL_MS;
+    const cutoff = Date?.now() - ALERT_USER_TTL_MS;
     for (const [uid, ts] of this?.lastAccess) {
       if (ts < cutoff) {
         this?.alertStore.delete(uid);
@@ -165,7 +165,7 @@ class AnalyticsAlertService {
     try {
       logger?.info(`Detecting trigger cities for user ${userId}`);
 
-      const _halfPeriod = new Date(
+      const halfPeriod = new Date(
         period?.start.getTime() +
           (period?.end.getTime() - period?.start.getTime()) / 2,
       );
@@ -198,7 +198,7 @@ class AnalyticsAlertService {
         return [];
       }
 
-      const _currentCityMap = new Map<
+      const currentCityMap = new Map<
         string,
         {
           streams: number;
@@ -210,27 +210,27 @@ class AnalyticsAlertService {
           platforms: Set<string>;
         }
       >();
-      const _previousCityMap = new Map<string, number>();
+      const previousCityMap = new Map<string, number>();
 
       for (const record of currentData) {
-        const _geography = record?.geography as Record<string, unknown>;
+        const geography = record?.geography as Record<string, unknown>;
         if (!geography?.cities) continue;
         for (const city of geography?.cities) {
           if (!city?.name || !city?.streams) continue;
-          const _key = `${city?.name}-${city?.country || ""}`;
-          const _existing = currentCityMap?.get(key);
+          const key = `${city?.name}-${city?.country || ""}`;
+          const existing = currentCityMap?.get(key);
           if (existing) {
-            existing?.streams += city?.streams || 0;
-            existing?.listeners += city?.listeners || 0;
+            existing.streams += city?.streams || 0;
+            existing.listeners += city?.listeners || 0;
             existing?.platforms.add(record?.platform);
           } else {
             currentCityMap?.set(key, {
-              streams: city?.streams || 0,
-              listeners: city?.listeners || 0,
-              country: city?.country || "",
-              region: city?.region || "",
-              lat: city?.latitude || 0,
-              lon: city?.longitude || 0,
+              streams: city.streams || 0,
+              listeners: city.listeners || 0,
+              country: city.country || "",
+              region: city.region || "",
+              lat: city.latitude || 0,
+              lon: city.longitude || 0,
               platforms: new Set([record?.platform]),
             });
           }
@@ -238,11 +238,11 @@ class AnalyticsAlertService {
       }
 
       for (const record of previousData) {
-        const _geography = record?.geography as Record<string, unknown>;
+        const geography = record?.geography as Record<string, unknown>;
         if (!geography?.cities) continue;
         for (const city of geography?.cities) {
           if (!city?.name || !city?.streams) continue;
-          const _key = `${city?.name}-${city?.country || ""}`;
+          const key = `${city?.name}-${city?.country || ""}`;
           previousCityMap?.set(
             key,
             (previousCityMap?.get(key) || 0) + city?.streams,
@@ -253,15 +253,15 @@ class AnalyticsAlertService {
       const triggerCities: TriggerCity[] = [];
 
       for (const [key, data] of currentCityMap) {
-        const _previousStreams = previousCityMap?.get(key) || 0;
-        const _growthPercentage =
+        const previousStreams = previousCityMap?.get(key) || 0;
+        const growthPercentage =
           previousStreams > 0
             ? ((data?.streams - previousStreams) / previousStreams) * 100
             : data?.streams > 0
               ? 100
               : 0;
-        const _isHotspot = growthPercentage >= this?.hotspotThreshold;
-        const _trendDirection =
+        const isHotspot = growthPercentage >= this?.hotspotThreshold;
+        const trendDirection =
           growthPercentage > 10
             ? ("rising" as const)
             : growthPercentage < -10
@@ -269,24 +269,24 @@ class AnalyticsAlertService {
               : ("stable" as const);
 
         triggerCities?.push({
-          city: key?.split("-")[0],
-          country: data?.country,
-          region: data?.region,
-          latitude: data?.lat,
-          longitude: data?.lon,
+          city: key.split("-")[0],
+          country: data.country,
+          region: data.region,
+          latitude: data.lat,
+          longitude: data.lon,
           growthRate: growthPercentage,
-          streamCount: data?.streams,
-          listenerCount: data?.listeners,
+          streamCount: data.streams,
+          listenerCount: data.listeners,
           previousWeekStreams: previousStreams,
           growthPercentage,
           isHotspot,
           detectedAt: new Date(),
           trendDirection,
-          platforms: Array?.from(data?.platforms) as Platform[],
+          platforms: Array.from(data?.platforms) as Platform[],
         });
       }
 
-      const _hotspots = triggerCities?.filter((city) => city?.isHotspot);
+      const hotspots = triggerCities?.filter((city) => city?.isHotspot);
 
       for (const city of hotspots) {
         await this?.createAlert({
@@ -343,24 +343,24 @@ class AnalyticsAlertService {
       const milestones: MilestoneAlert[] = [];
 
       for (const [metric, value] of Object?.entries(metrics)) {
-        const _thresholds =
+        const thresholds =
           this?.milestoneThresholds[
-            metric as keyof typeof this?.milestoneThresholds
+            metric as keyof typeof this.milestoneThresholds
           ];
         if (!thresholds) continue;
 
         for (const milestone of thresholds) {
-          if (value >= milestone * 0?.9 && value < milestone) {
-            const _percentageOfMilestone = (value / milestone) * 100;
-            const _growthRate = 0?.05;
-            const _estimatedDays = Math?.ceil(
+          if (value >= milestone * 0.9 && value < milestone) {
+            const percentageOfMilestone = (value / milestone) * 100;
+            const growthRate = 0.05;
+            const estimatedDays = Math?.ceil(
               (milestone - value) / (value * growthRate),
             );
 
             milestones?.push({
               metric,
               platform,
-              previousValue: Math?.floor(value * 0?.9),
+              previousValue: Math.floor(value * 0.9),
               currentValue: value,
               milestone,
               percentageOfMilestone,
@@ -372,7 +372,7 @@ class AnalyticsAlertService {
               type: "milestone",
               priority: "high",
               title: `🎯 Approaching Milestone: ${milestone?.toLocaleString()} ${metric}`,
-              message: `You're ${percentageOfMilestone?.toFixed(1)}% of the way to ${milestone?.toLocaleString()} ${metric} on ${platform}! At your current growth rate, you'll reach this milestone in approximately ${estimatedDays} days.`,
+              message: `You're ${percentageOfMilestone.toFixed(1)}% of the way to ${milestone.toLocaleString()} ${metric} on ${platform}! At your current growth rate, you'll reach this milestone in approximately ${estimatedDays} days.`,
               data: {
                 metric,
                 platform,
@@ -383,7 +383,7 @@ class AnalyticsAlertService {
               platform,
             });
           } else if (value >= milestone) {
-            const _previousValue = Math?.floor(value * 0?.95);
+            const previousValue = Math?.floor(value * 0.95);
             if (previousValue < milestone && value >= milestone) {
               milestones?.push({
                 metric,
@@ -424,10 +424,10 @@ class AnalyticsAlertService {
   ): Promise<void> {
     try {
       for (const [metric, currentValue] of Object?.entries(currentMetrics)) {
-        const _previousValue = previousMetrics[metric];
+        const previousValue = previousMetrics[metric];
         if (!previousValue || previousValue === 0) continue;
 
-        const _growthPercentage =
+        const growthPercentage =
           ((currentValue - previousValue) / previousValue) * 100;
 
         if (growthPercentage >= this?.growthSpikeThreshold) {
@@ -487,7 +487,7 @@ class AnalyticsAlertService {
     metrics: { shares: number; views: number; engagementRate: number },
   ): Promise<void> {
     try {
-      const _viralityScore =
+      const viralityScore =
         (metrics?.shares / Math?.max(metrics?.views, 1)) * 1000 +
         metrics?.engagementRate;
 
@@ -519,10 +519,10 @@ class AnalyticsAlertService {
         "instagram",
       ];
 
-      const _now = new Date();
-      const _thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      const _analyticsData = await db
+      const analyticsData = await db
         .select()
         .from(dspAnalytics)
         .where(
@@ -534,19 +534,19 @@ class AnalyticsAlertService {
         )
         .orderBy(desc(dspAnalytics?.date));
 
-      const _metrics = platforms?.map((platform) => {
-        const _platformData = analyticsData?.filter(
+      const metrics = platforms?.map((platform) => {
+        const platformData = analyticsData?.filter(
           (d) => d?.platform === platform,
         );
-        const _totalStreams = platformData?.reduce(
+        const totalStreams = platformData?.reduce(
           (sum, d) => sum + (d?.streams || 0),
           0,
         );
-        const _totalListeners = platformData?.reduce(
+        const totalListeners = platformData?.reduce(
           (sum, d) => sum + (d?.listeners || 0),
           0,
         );
-        const _totalRevenue = platformData?.reduce(
+        const totalRevenue = platformData?.reduce(
           (sum, d) => sum + (d?.revenue ? parseFloat(d?.revenue) : 0),
           0,
         );
@@ -562,11 +562,11 @@ class AnalyticsAlertService {
       });
 
       metrics?.sort((a, b) => b?.streams - a?.streams);
-      const _topPerformer = metrics[0].platform;
+      const topPerformer = metrics[0].platform;
 
       const recommendations: string[] = [];
 
-      const _lowEngagement = metrics?.filter((m) => m?.streams === 0);
+      const lowEngagement = metrics?.filter((m) => m?.streams === 0);
       if (lowEngagement?.length > 0) {
         recommendations?.push(
           `No data available on ${lowEngagement?.map((m) => m?.platform).join(", ")}. Connect these platforms to see cross-platform analytics.`,
@@ -599,7 +599,7 @@ class AnalyticsAlertService {
     };
 
     this?._evictIfFull();
-    const _userAlerts = this?.alertStore.get(alertData?.userId) || [];
+    const userAlerts = this?.alertStore.get(alertData?.userId) || [];
     userAlerts?.unshift(alert);
 
     if (userAlerts?.length > ALERT_MAX_PER_USER) {
@@ -644,29 +644,29 @@ class AnalyticsAlertService {
   }
 
   async markAlertAsRead(userId: string, alertId: string): Promise<boolean> {
-    const _alerts = this?.alertStore.get(userId);
+    const alerts = this?.alertStore.get(userId);
     if (!alerts) return false;
 
-    const _alert = alerts?.find((a) => a?.id === alertId);
+    const alert = alerts?.find((a) => a?.id === alertId);
     if (!alert) return false;
 
-    alert?.readAt = new Date();
+    alert.readAt = new Date();
     return true;
   }
 
   async dismissAlert(userId: string, alertId: string): Promise<boolean> {
-    const _alerts = this?.alertStore.get(userId);
+    const alerts = this?.alertStore.get(userId);
     if (!alerts) return false;
 
-    const _alert = alerts?.find((a) => a?.id === alertId);
+    const alert = alerts?.find((a) => a?.id === alertId);
     if (!alert) return false;
 
-    alert?.dismissed = true;
+    alert.dismissed = true;
     return true;
   }
 
   async getUnreadCount(userId: string): Promise<number> {
-    const _alerts = this?.alertStore.get(userId) || [];
+    const alerts = this?.alertStore.get(userId) || [];
     return alerts?.filter((a) => !a?.readAt && !a?.dismissed).length;
   }
 
@@ -681,7 +681,7 @@ class AnalyticsAlertService {
     byPriority: Record<AlertPriority, number>;
     recentHighPriority: Alert[];
   }> {
-    const _alerts = this?.alertStore.get(userId) || [];
+    const alerts = this?.alertStore.get(userId) || [];
 
     const byType: Record<AlertType, number> = {
       milestone: 0,
@@ -706,8 +706,8 @@ class AnalyticsAlertService {
     });
 
     return {
-      total: alerts?.length,
-      unread: alerts?.filter((a) => !a?.readAt && !a?.dismissed).length,
+      total: alerts.length,
+      unread: alerts.filter((a) => !a?.readAt && !a?.dismissed).length,
       byType,
       byPriority,
       recentHighPriority: alerts
@@ -717,4 +717,4 @@ class AnalyticsAlertService {
   }
 }
 
-export const _analyticsAlertService = new AnalyticsAlertService();
+export const analyticsAlertService = new AnalyticsAlertService();

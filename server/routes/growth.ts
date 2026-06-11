@@ -1,24 +1,24 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth?.js";
-import { asyncHandler } from "../middleware/errorHandler?.js";
-import { logger } from "../logger?.js";
-import { viralScoringService, type ContentData } from "../services/viralScoring?.js";
-import { timingOptimizerService } from "../services/timingOptimizer?.js";
-import { contentVariantGeneratorService } from "../services/contentVariantGenerator?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { logger } from "../logger.js";
+import { viralScoringService, type ContentData } from "../services/viralScoring.js";
+import { timingOptimizerService } from "../services/timingOptimizer.js";
+import { contentVariantGeneratorService } from "../services/contentVariantGenerator.js";
 import {
   algorithmIntelligenceService,
   type AlgorithmHealth,
-} from "../services/algorithmIntelligence?.js";
+} from "../services/algorithmIntelligence.js";
 import { randomBytes } from "crypto";
 
-const _router = Router();
+const router = Router();
 
-const _contentDataSchema = z?.object({
-  id: z?.string().optional(),
-  caption: z?.string().min(1, "Caption is required"),
-  hashtags: z?.array(z?.string()).default([]),
-  platform: z?.enum([
+const contentDataSchema = z.object({
+  id: z.string().optional(),
+  caption: z.string().min(1, "Caption is required"),
+  hashtags: z.array(z.string()).default([]),
+  platform: z.enum([
     "tiktok",
     "instagram",
     "youtube",
@@ -26,36 +26,36 @@ const _contentDataSchema = z?.object({
     "facebook",
     "linkedin",
   ]),
-  contentType: z?.enum(["video", "image", "carousel", "text", "story", "reel"]),
-  mediaUrl: z?.string().optional(),
-  duration: z?.number().optional(),
-  hasAudio: z?.boolean().optional(),
-  musicGenre: z?.string().optional(),
+  contentType: z.enum(["video", "image", "carousel", "text", "story", "reel"]),
+  mediaUrl: z.string().optional(),
+  duration: z.number().optional(),
+  hasAudio: z.boolean().optional(),
+  musicGenre: z.string().optional(),
   targetAudience: z
     .object({
-      ageRange: z?.string(),
-      interests: z?.array(z?.string()),
-      location: z?.string().optional(),
+      ageRange: z.string(),
+      interests: z.array(z.string()),
+      location: z.string().optional(),
     })
     .optional(),
-  scheduledTime: z?.string().datetime().optional(),
+  scheduledTime: z.string().datetime().optional(),
 });
 
-const _scoreViralSchema = z?.object({
+const scoreViralSchema = z.object({
   content: contentDataSchema,
 });
 
-const _generateVariantsSchema = z?.object({
+const generateVariantsSchema = z.object({
   content: contentDataSchema,
-  count: z?.number().min(1).max(10).default(5),
+  count: z.number().min(1).max(10).default(5),
 });
 
-const _compareVariantsSchema = z?.object({
-  variants: z?.array(contentDataSchema).min(2).max(10),
+const compareVariantsSchema = z.object({
+  variants: z.array(contentDataSchema).min(2).max(10),
 });
 
-const _timingSchema = z?.object({
-  platform: z?.enum([
+const timingSchema = z.object({
+  platform: z.enum([
     "tiktok",
     "instagram",
     "youtube",
@@ -63,12 +63,12 @@ const _timingSchema = z?.object({
     "facebook",
     "linkedin",
   ]),
-  timezone: z?.string().default("America/New_York"),
-  targetDate: z?.string().datetime().optional(),
+  timezone: z.string().default("America/New_York"),
+  targetDate: z.string().datetime().optional(),
 });
 
-const _algorithmHealthSchema = z?.object({
-  platform: z?.enum([
+const algorithmHealthSchema = z.object({
+  platform: z.enum([
     "tiktok",
     "instagram",
     "youtube",
@@ -78,16 +78,16 @@ const _algorithmHealthSchema = z?.object({
   ]),
   recentMetrics: z
     .object({
-      impressions: z?.array(z?.number()).optional(),
-      engagement: z?.array(z?.number()).optional(),
-      followers: z?.array(z?.number()).optional(),
-      hashtagReach: z?.array(z?.number()).optional(),
+      impressions: z.array(z.number()).optional(),
+      engagement: z.array(z.number()).optional(),
+      followers: z.array(z.number()).optional(),
+      hashtagReach: z.array(z.number()).optional(),
     })
     .optional(),
 });
 
-const _shadowbanCheckSchema = z?.object({
-  platform: z?.enum([
+const shadowbanCheckSchema = z.object({
+  platform: z.enum([
     "tiktok",
     "instagram",
     "youtube",
@@ -97,11 +97,11 @@ const _shadowbanCheckSchema = z?.object({
   ]),
   recentMetrics: z
     .object({
-      hashtagReach: z?.number(),
-      exploreReach: z?.number(),
-      nonFollowerReach: z?.number(),
-      newEngagement: z?.number(),
-      searchVisibility: z?.number(),
+      hashtagReach: z.number(),
+      exploreReach: z.number(),
+      nonFollowerReach: z.number(),
+      newEngagement: z.number(),
+      searchVisibility: z.number(),
     })
     .optional(),
 });
@@ -111,19 +111,19 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { content } = scoreViralSchema?.parse(req?.body);
 
       const contentData: ContentData = {
         ...content,
-        id: content?.id || randomBytes(8).toString("hex"),
+        id: content.id || randomBytes(8).toString("hex"),
         userId,
-        scheduledTime: content?.scheduledTime
+        scheduledTime: content.scheduledTime
           ? new Date(content?.scheduledTime)
           : undefined,
       };
 
-      const _score = await viralScoringService?.scoreContent(contentData);
+      const score = await viralScoringService?.scoreContent(contentData);
 
       logger?.info(
         `📊 Viral score calculated for user ${userId}: ${score?.overall}/100`,
@@ -145,16 +145,16 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { content } = scoreViralSchema?.parse(req?.body);
 
       const contentData: ContentData = {
         ...content,
-        id: content?.id || randomBytes(8).toString("hex"),
+        id: content.id || randomBytes(8).toString("hex"),
         userId,
       };
 
-      const _potential =
+      const potential =
         await viralScoringService?.predictViralPotential(contentData);
 
       res?.json({
@@ -174,16 +174,16 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { content } = scoreViralSchema?.parse(req?.body);
 
       const contentData: ContentData = {
         ...content,
-        id: content?.id || randomBytes(8).toString("hex"),
+        id: content.id || randomBytes(8).toString("hex"),
         userId,
       };
 
-      const _improvements =
+      const improvements =
         await viralScoringService?.suggestImprovements(contentData);
 
       res?.json({
@@ -202,16 +202,16 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { variants } = compareVariantsSchema?.parse(req?.body);
 
       const contentVariants: ContentData[] = variants?.map((v) => ({
         ...v,
-        id: v?.id || randomBytes(8).toString("hex"),
+        id: v.id || randomBytes(8).toString("hex"),
         userId,
       }));
 
-      const _comparison =
+      const comparison =
         await viralScoringService?.compareVariants(contentVariants);
 
       res?.json({
@@ -230,11 +230,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform } = req?.params;
       const { timezone = "America/New_York" } = req?.query;
 
-      const _validPlatforms = [
+      const validPlatforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -250,7 +250,7 @@ router?.get(
         return res?.status(400).json({ error: "Invalid platform" });
       }
 
-      const _timing = await timingOptimizerService?.getOptimalTiming(
+      const timing = await timingOptimizerService?.getOptimalTiming(
         platform,
         timezone as string,
         userId,
@@ -274,7 +274,7 @@ router?.get(
     try {
       const { timezone = "America/New_York" } = req?.query;
 
-      const _allTimings =
+      const allTimings =
         await timingOptimizerService?.getOptimalTimingForAllPlatforms(
           timezone as string,
         );
@@ -297,8 +297,8 @@ router?.post(
     try {
       const { platform, timezone, targetDate } = timingSchema?.parse(req?.body);
 
-      const _date = targetDate ? new Date(targetDate) : new Date();
-      const _recommendation =
+      const date = targetDate ? new Date(targetDate) : new Date();
+      const recommendation =
         await timingOptimizerService?.getTimingRecommendation(
           platform,
           date,
@@ -321,10 +321,10 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform } = req?.body;
 
-      const _patterns = await timingOptimizerService?.analyzeAudiencePatterns(
+      const patterns = await timingOptimizerService?.analyzeAudiencePatterns(
         userId,
         platform,
       );
@@ -347,7 +347,7 @@ router?.get(
     try {
       const { platform } = req?.params;
 
-      const _competitorTiming =
+      const competitorTiming =
         await timingOptimizerService?.getCompetitorTiming(platform);
 
       res?.json({
@@ -376,7 +376,7 @@ router?.post(
         return res?.status(400).json({ error: "Platforms array is required" });
       }
 
-      const _schedule = await timingOptimizerService?.suggestPostingSchedule(
+      const schedule = await timingOptimizerService?.suggestPostingSchedule(
         platforms,
         postsPerWeek,
         timezone,
@@ -398,16 +398,16 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { content, count } = generateVariantsSchema?.parse(req?.body);
 
       const contentData: ContentData = {
         ...content,
-        id: content?.id || randomBytes(8).toString("hex"),
+        id: content.id || randomBytes(8).toString("hex"),
         userId,
       };
 
-      const _result = await contentVariantGeneratorService?.generateVariants(
+      const result = await contentVariantGeneratorService?.generateVariants(
         contentData as Record<string, unknown>,
         count,
       );
@@ -438,7 +438,7 @@ router?.post(
         return res?.status(400).json({ error: "Caption is required" });
       }
 
-      const _variants =
+      const variants =
         await contentVariantGeneratorService?.generateCaptionVariants(
           caption,
           count,
@@ -462,7 +462,7 @@ router?.post(
     try {
       const { content, count = 5 } = generateVariantsSchema?.parse(req?.body);
 
-      const _hashtagSets =
+      const hashtagSets =
         await contentVariantGeneratorService?.generateHashtagSets(
           content as Record<string, unknown>,
           count,
@@ -486,7 +486,7 @@ router?.post(
     try {
       const { content } = scoreViralSchema?.parse(req?.body);
 
-      const _hooks = await contentVariantGeneratorService?.generateHookVariants(
+      const hooks = await contentVariantGeneratorService?.generateHookVariants(
         content as Record<string, unknown>,
       );
 
@@ -506,7 +506,7 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { content, variantCount = 2 } = req?.body;
 
       if (!content || typeof content !== "object") {
@@ -518,13 +518,13 @@ router?.post(
           });
       }
 
-      const _contentData = {
+      const contentData = {
         ...content,
-        id: content?.id || randomBytes(8).toString("hex"),
+        id: content.id || randomBytes(8).toString("hex"),
         userId,
       };
 
-      const _abTest = await contentVariantGeneratorService?.createABTest(
+      const abTest = await contentVariantGeneratorService?.createABTest(
         contentData as Record<string, unknown>,
         variantCount,
       );
@@ -547,10 +547,10 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform, recentMetrics } = algorithmHealthSchema?.parse(req?.body);
 
-      const _health = await algorithmIntelligenceService?.checkAlgorithmHealth(
+      const health = await algorithmIntelligenceService?.checkAlgorithmHealth(
         platform,
         userId,
         recentMetrics,
@@ -572,10 +572,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform } = req?.params;
 
-      const _validPlatforms = [
+      const validPlatforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -591,7 +591,7 @@ router?.get(
         return res?.status(400).json({ error: "Invalid platform" });
       }
 
-      const _health = await algorithmIntelligenceService?.checkAlgorithmHealth(
+      const health = await algorithmIntelligenceService?.checkAlgorithmHealth(
         platform,
         userId,
       );
@@ -612,10 +612,10 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform, recentMetrics } = shadowbanCheckSchema?.parse(req?.body);
 
-      const _result = await algorithmIntelligenceService?.checkShadowBan(
+      const result = await algorithmIntelligenceService?.checkShadowBan(
         platform,
         userId,
         recentMetrics,
@@ -641,10 +641,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform } = req?.params;
 
-      const _patterns = await algorithmIntelligenceService?.getEngagementPatterns(
+      const patterns = await algorithmIntelligenceService?.getEngagementPatterns(
         platform,
         userId,
       );
@@ -667,7 +667,7 @@ router?.get(
     try {
       const { platform } = req?.params;
 
-      const _profile =
+      const profile =
         await algorithmIntelligenceService?.getPlatformProfile(platform);
 
       res?.json({
@@ -686,10 +686,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform } = req?.params;
 
-      const _insights = await algorithmIntelligenceService?.getAlgorithmInsights(
+      const insights = await algorithmIntelligenceService?.getAlgorithmInsights(
         platform,
         userId,
       );
@@ -710,10 +710,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { timezone = "America/New_York" } = req?.query;
 
-      const _platforms = ["tiktok", "instagram", "youtube", "twitter"];
+      const platforms = ["tiktok", "instagram", "youtube", "twitter"];
 
       const [healthResults, timingResults] = await Promise?.all([
         Promise?.all(
@@ -731,36 +731,36 @@ router?.get(
         platformHealth[platform] = healthResults[index];
       });
 
-      const _overallHealth = Math?.round(
+      const overallHealth = Math?.round(
         Object?.values(platformHealth).reduce(
           (sum, h) => sum + h?.overallScore,
           0,
         ) / platforms?.length,
       );
 
-      const _reachMultiplier = 1 + (overallHealth - 50) / 100;
+      const reachMultiplier = 1 + (overallHealth - 50) / 100;
 
-      const _allAlerts = Object?.values(platformHealth)
+      const allAlerts = Object?.values(platformHealth)
         .flatMap((h) => h?.alerts)
         .filter((a) => !a?.resolved)
         .sort((a, b) => {
-          const _severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+          const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
           return severityOrder[a?.severity] - severityOrder[b?.severity];
         });
 
-      const _allRecommendations = [
+      const allRecommendations = [
         ...new Set(
           Object?.values(platformHealth).flatMap((h) => h?.recommendations),
         ),
       ].slice(0, 10);
 
-      const _growthProjection = {
+      const growthProjection = {
         current: null,
         projected30Days: null,
         projected90Days: null,
       };
 
-      const _viralHighlights = platforms?.map((platform) => ({
+      const viralHighlights = platforms?.map((platform) => ({
         platform,
         topScore: null,
         avgScore: null,
@@ -775,13 +775,13 @@ router?.get(
       }> = [];
 
       for (const platform of platforms) {
-        const _timing = timingResults[platform];
+        const timing = timingResults[platform];
         if (timing) {
           for (const slot of timing?.bestTimes.slice(0, 5)) {
             heatmapData?.push({
-              dayOfWeek: slot?.dayOfWeek,
-              hour: slot?.hour,
-              value: slot?.score,
+              dayOfWeek: slot.dayOfWeek,
+              hour: slot.hour,
+              value: slot.score,
               platform,
             });
           }
@@ -792,7 +792,7 @@ router?.get(
         success: true,
         dashboard: {
           overallHealth,
-          reachMultiplier: Math?.round(reachMultiplier * 100) / 100,
+          reachMultiplier: Math.round(reachMultiplier * 100) / 100,
           platformHealth,
           optimalTiming: timingResults,
           alerts: allAlerts,
@@ -815,9 +815,9 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _defaultPlatform = "instagram";
+      const defaultPlatform = "instagram";
       const [health, patterns, insights] = await Promise?.all([
         algorithmIntelligenceService?.checkAlgorithmHealth(
           defaultPlatform,
@@ -836,13 +836,13 @@ router?.get(
       res?.json({
         success: true,
         summary: {
-          healthScore: health?.overallScore,
-          status: health?.status,
-          alertCount: health?.alerts.filter((a) => !a?.resolved).length,
+          healthScore: health.overallScore,
+          status: health.status,
+          alertCount: health.alerts.filter((a) => !a?.resolved).length,
           topRecommendation:
             health?.recommendations[0] || "Keep up the great work!",
-          optimalPostFrequency: patterns?.optimalPostFrequency,
-          benchmarkComparison: insights?.benchmarks,
+          optimalPostFrequency: patterns.optimalPostFrequency,
+          benchmarkComparison: insights.benchmarks,
         },
       });
     } catch (error) {

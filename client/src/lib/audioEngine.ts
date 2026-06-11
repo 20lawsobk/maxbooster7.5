@@ -4,7 +4,7 @@
  *
  * PROFESSIONAL AUDIO QUALITY STANDARDS (Pro Tools/Logic Pro/Ableton Parity):
  * - Support for 32-bit float audio processing
- * - Sample rates: 44?.1kHz, 48kHz, 88?.2kHz, 96kHz, 192kHz
+ * - Sample rates: 44.1kHz, 48kHz, 88.2kHz, 96kHz, 192kHz
  * - Track count guarantees:
  *   - 256+ tracks @ 48kHz with balanced buffer (256 samples)
  *   - 128+ tracks @ 96kHz with high-quality buffer (512 samples)
@@ -208,10 +208,10 @@ class AudioEngine {
 
   // Professional audio configuration
   private config: AudioEngineConfig = {
-    sampleRate: SAMPLE_RATES?.SR_48000,
-    bufferSize: BUFFER_SIZES?.BALANCED,
+    sampleRate: SAMPLE_RATES.SR_48000,
+    bufferSize: BUFFER_SIZES.BALANCED,
     audioFormat: "float32",
-    maxTracks: TRACK_LIMITS?.PROFESSIONAL,
+    maxTracks: TRACK_LIMITS.PROFESSIONAL,
     latencyHint: "interactive",
     channels: 2,
     bitDepth: 24,
@@ -324,7 +324,7 @@ class AudioEngine {
 
   static getInstance(): AudioEngine {
     if (!AudioEngine?.instance) {
-      AudioEngine?.instance = new AudioEngine();
+      AudioEngine.instance = new AudioEngine();
     }
     return AudioEngine?.instance;
   }
@@ -334,7 +334,7 @@ class AudioEngine {
    */
   static isSupported(): boolean {
     try {
-      const _AudioContextClass =
+      const AudioContextClass =
         window?.AudioContext ||
         (window as Record<string, unknown>).webkitAudioContext;
       return !!AudioContextClass;
@@ -349,11 +349,11 @@ class AudioEngine {
   static canCreateContext(): boolean {
     try {
       if (!AudioEngine?.isSupported()) return false;
-      const _AudioContextClass =
+      const AudioContextClass =
         window?.AudioContext ||
         (window as Record<string, unknown>).webkitAudioContext;
-      const _testContext = new AudioContextClass();
-      const _canCreate = testContext?.state !== "suspended" || true;
+      const testContext = new AudioContextClass();
+      const canCreate = testContext?.state !== "suspended" || true;
       testContext?.close().catch(() => {});
       return canCreate;
     } catch (e) {
@@ -374,38 +374,38 @@ class AudioEngine {
 
     try {
       // If already running, we're good
-      if (this?.context.state === "running") {
-        this?.unlocked = true;
+      if (this.context.state === "running") {
+        this.unlocked = true;
         return true;
       }
 
       // Try to resume first
-      if (this?.context.state === "suspended") {
-        await this?.context.resume();
+      if (this.context.state === "suspended") {
+        await this.context.resume();
       }
 
       // iOS Safari workaround: play a silent buffer to unlock
       // This is the same technique used by BeatStars, Spotify, SoundCloud
-      const _silentBuffer = this?.context.createBuffer(1, 1, 22050);
-      const _source = this?.context.createBufferSource();
-      source?.buffer = silentBuffer;
-      source?.connect(this?.context.destination);
-      source?.start(0);
-      source?.stop(0?.001);
+      const silentBuffer = this.context.createBuffer(1, 1, 22050);
+      const source = this.context.createBufferSource();
+      source.buffer = silentBuffer;
+      source.connect(this.context.destination);
+      source.start(0);
+      source.stop(0.001);
 
       // Small delay to let the silent buffer complete
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check if we're running now
       if (this?.context.state === "running") {
-        this?.unlocked = true;
+        this.unlocked = true;
         logger?.info("Audio context unlocked successfully");
         return true;
       }
 
       // Final attempt to resume
       await this?.context.resume();
-      this?.unlocked = this?.context.state === "running";
+      this.unlocked = this?.context.state === "running";
 
       if (this?.unlocked) {
         logger?.info("Audio context unlocked via resume()");
@@ -427,7 +427,7 @@ class AudioEngine {
   private attachUnlockListeners(): void {
     if (this?.unlockListenersAttached || typeof document === "undefined") return;
 
-    const _unlockHandler = async () => {
+    const unlockHandler = async () => {
       if (this?.unlocked) return;
 
       try {
@@ -438,7 +438,7 @@ class AudioEngine {
     };
 
     // Attach to multiple event types for maximum compatibility
-    const _events = ["touchstart", "touchend", "mousedown", "click", "keydown"];
+    const events = ["touchstart", "touchend", "mousedown", "click", "keydown"];
     events?.forEach((event) => {
       document?.addEventListener(event, unlockHandler, {
         once: false,
@@ -446,7 +446,7 @@ class AudioEngine {
       });
     });
 
-    this?.unlockListenersAttached = true;
+    this.unlockListenersAttached = true;
     logger?.info("Audio unlock listeners attached");
   }
 
@@ -458,12 +458,12 @@ class AudioEngine {
    */
   async initialize(config?: AudioEngineConfig): Promise<void> {
     // If already fully initialized, just ensure it's running
-    if (this?.initialized && this?.context) {
-      if (this?.context.state === "suspended") {
+    if (this.initialized && this.context) {
+      if (this.context.state === "suspended") {
         try {
-          await this?.context.resume();
+          await this.context.resume();
         } catch (e) {
-          logger?.warn("Could not resume context:", e);
+          logger.warn("Could not resume context:", e);
         }
       }
       return;
@@ -471,13 +471,13 @@ class AudioEngine {
 
     // Merge configuration with defaults
     if (config) {
-      this?.config = { ...this?.config, ...config };
+      this.config = { ...this.config, ...config };
     }
 
     // Step 1: Create AudioContext if not exists
-    if (!this?.context) {
-      const _AudioContextClass =
-        window?.AudioContext ||
+    if (!this.context) {
+      const AudioContextClass =
+        window.AudioContext ||
         (window as Record<string, unknown>).webkitAudioContext;
 
       if (!AudioContextClass) {
@@ -485,83 +485,83 @@ class AudioEngine {
       }
 
       // Create with minimal options for maximum compatibility
-      this?.context = new AudioContextClass();
-      logger?.info(
-        `AudioContext created, state: ${this?.context.state}, sampleRate: ${this?.context.sampleRate}`,
+      this.context = new AudioContextClass();
+      logger.info(
+        `AudioContext created, state: ${this.context.state}, sampleRate: ${this.context.sampleRate}`,
       );
     }
 
     // Step 2: Resume if suspended (this is the key step that requires user gesture)
-    if (this?.context.state === "suspended") {
-      logger?.info("AudioContext suspended, attempting resume...");
+    if (this.context.state === "suspended") {
+      logger.info("AudioContext suspended, attempting resume...");
       try {
-        await this?.context.resume();
-        logger?.info(`AudioContext resumed, state: ${this?.context.state}`);
+        await this.context.resume();
+        logger.info(`AudioContext resumed, state: ${this.context.state}`);
       } catch (resumeError) {
-        logger?.warn("Resume failed (may need user gesture):", resumeError);
+        logger.warn("Resume failed (may need user gesture):", resumeError);
       }
     }
 
     // Step 3: iOS Safari silent buffer trick
-    if (this?.context.state !== "running") {
+    if (this.context.state !== "running") {
       try {
-        const _silentBuffer = this?.context.createBuffer(1, 1, 22050);
-        const _source = this?.context.createBufferSource();
-        source?.buffer = silentBuffer;
-        source?.connect(this?.context.destination);
-        source?.start(0);
+        const silentBuffer = this.context.createBuffer(1, 1, 22050);
+        const source = this.context.createBufferSource();
+        source.buffer = silentBuffer;
+        source.connect(this.context.destination);
+        source.start(0);
 
         // Try resume again after silent buffer
-        await this?.context.resume();
-        logger?.info(`After silent buffer, state: ${this?.context.state}`);
+        await this.context.resume();
+        logger.info(`After silent buffer, state: ${this.context.state}`);
       } catch (e) {
-        logger?.warn("Silent buffer trick failed:", e);
+        logger.warn("Silent buffer trick failed:", e);
       }
     }
 
     // Step 4: Set up audio graph only if context is ready
-    if (this?.context.state === "running" && !this?.initialized) {
+    if (this.context.state === "running" && !this.initialized) {
       try {
         // Update config with actual sample rate
-        this?.config.sampleRate = this?.context.sampleRate as SampleRate;
-        this?.actualLatencyMs = calculateLatencyMs(
-          this?.config.bufferSize!,
-          this?.config.sampleRate!,
+        this.config.sampleRate = this.context.sampleRate as SampleRate;
+        this.actualLatencyMs = calculateLatencyMs(
+          this.config.bufferSize!,
+          this.config.sampleRate!,
         );
 
         // Create master chain
-        this?.createMasterChain();
+        this.createMasterChain();
 
         // Create default master bus
-        this?.createBus({
+        this.createBus({
           id: "master",
           name: "Master",
-          gain: 0?.8,
+          gain: 0.8,
           pan: 0,
           isMuted: false,
           isSolo: false,
         });
 
         // Calculate latency compensation
-        this?.calculateLatencyCompensation();
+        this.calculateLatencyCompensation();
 
-        this?.initialized = true;
-        this?.unlocked = true;
+        this.initialized = true;
+        this.unlocked = true;
 
-        logger?.info(`🎵 Audio Engine Ready:
-  Sample Rate: ${this?.context.sampleRate}Hz
-  State: ${this?.context.state}
-  Initialized: ${this?.initialized}`);
+        logger.info(`🎵 Audio Engine Ready:
+  Sample Rate: ${this.context.sampleRate}Hz
+  State: ${this.context.state}
+  Initialized: ${this.initialized}`);
       } catch (setupError) {
-        logger?.error("Failed to set up audio graph:", setupError);
+        logger.error("Failed to set up audio graph:", setupError);
         throw setupError;
       }
-    } else if (this?.context.state !== "running") {
+    } else if (this.context.state !== "running") {
       // Context created but not running - this is OK, will unlock on next user interaction
-      logger?.info(
+      logger.info(
         `AudioContext created but suspended. Will resume on user interaction.`,
       );
-      this?.attachUnlockListeners();
+      this.attachUnlockListeners();
     }
   }
 
@@ -581,8 +581,8 @@ class AudioEngine {
 
         // If running now, complete setup
         if (this?.context.state === "running") {
-          this?.config.sampleRate = this?.context.sampleRate as SampleRate;
-          this?.actualLatencyMs = calculateLatencyMs(
+          this.config.sampleRate = this?.context.sampleRate as SampleRate;
+          this.actualLatencyMs = calculateLatencyMs(
             this?.config.bufferSize!,
             this?.config.sampleRate!,
           );
@@ -595,7 +595,7 @@ class AudioEngine {
             this?.createBus({
               id: "master",
               name: "Master",
-              gain: 0?.8,
+              gain: 0.8,
               pan: 0,
               isMuted: false,
               isSolo: false,
@@ -603,8 +603,8 @@ class AudioEngine {
           }
 
           this?.calculateLatencyCompensation();
-          this?.initialized = true;
-          this?.unlocked = true;
+          this.initialized = true;
+          this.unlocked = true;
           logger?.info("Audio engine ready after ensureReady");
         }
       } catch (e) {
@@ -657,7 +657,7 @@ class AudioEngine {
     }
 
     // Store latency in milliseconds
-    this?.actualLatencyMs = totalLatencySeconds * 1000;
+    this.actualLatencyMs = totalLatencySeconds * 1000;
 
     logger?.info(
       `Latency compensation calculated: ${this?.actualLatencyMs.toFixed(2)}ms`,
@@ -672,26 +672,26 @@ class AudioEngine {
     if (!this?.context) return;
 
     // Master gain
-    this?.masterGainNode = this?.context.createGain();
-    this?.masterGainNode.gain?.value = 0?.8;
+    this.masterGainNode = this?.context.createGain();
+    this.masterGainNode.gain.value = 0.8;
 
     // Master compressor
-    this?.masterCompressor = this?.context.createDynamicsCompressor();
-    this?.masterCompressor.threshold?.value = -12;
-    this?.masterCompressor.ratio?.value = 4;
-    this?.masterCompressor.attack?.value = 0?.005; // 5ms
-    this?.masterCompressor.release?.value = 0?.12; // 120ms
-    this?.masterCompressor.knee?.value = 6;
+    this.masterCompressor = this?.context.createDynamicsCompressor();
+    this.masterCompressor.threshold.value = -12;
+    this.masterCompressor.ratio.value = 4;
+    this.masterCompressor.attack.value = 0.005; // 5ms
+    this.masterCompressor.release.value = 0.12; // 120ms
+    this.masterCompressor.knee.value = 6;
 
     // Soft clipper (limiter) using WaveShaper
-    this?.masterLimiter = this?.context.createWaveShaper();
-    this?.masterLimiter.curve = this?.createSoftClipperCurve(-0?.3); // -0?.3 dB limit
-    this?.masterLimiter.oversample = "4x";
+    this.masterLimiter = this?.context.createWaveShaper();
+    this.masterLimiter.curve = this?.createSoftClipperCurve(-0.3); // -0.3 dB limit
+    this.masterLimiter.oversample = "4x";
 
     // Master analyser
-    this?.masterAnalyser = this?.context.createAnalyser();
-    this?.masterAnalyser.fftSize = 2048;
-    this?.masterAnalyser.smoothingTimeConstant = 0?.8;
+    this.masterAnalyser = this?.context.createAnalyser();
+    this.masterAnalyser.fftSize = 2048;
+    this.masterAnalyser.smoothingTimeConstant = 0.8;
 
     // Connect master chain
     this?.masterGainNode.connect(this?.masterCompressor);
@@ -705,19 +705,19 @@ class AudioEngine {
    * Implements smooth limiting at the specified dB threshold
    */
   private createSoftClipperCurve(thresholdDb: number): Float32Array {
-    const _samples = 4096;
-    const _curve = new Float32Array(samples);
-    const _threshold = Math?.pow(10, thresholdDb / 20); // Convert dB to linear
+    const samples = 4096;
+    const curve = new Float32Array(samples);
+    const threshold = Math?.pow(10, thresholdDb / 20); // Convert dB to linear
 
     for (let i = 0; i < samples; i++) {
-      const _x = (i * 2) / samples - 1; // -1 to 1
+      const x = (i * 2) / samples - 1; // -1 to 1
 
       if (Math?.abs(x) < threshold) {
         curve[i] = x;
       } else {
         // Soft clipping using tanh
-        const _sign = x > 0 ? 1 : -1;
-        const _excess = Math?.abs(x) - threshold;
+        const sign = x > 0 ? 1 : -1;
+        const excess = Math?.abs(x) - threshold;
         curve[i] = sign * (threshold + Math?.tanh(excess * 2) * (1 - threshold));
       }
     }
@@ -741,52 +741,52 @@ class AudioEngine {
     }
 
     // Check cache first
-    const _cached = this?.bufferCache.get(clipId);
+    const cached = this?.bufferCache.get(clipId);
     if (cached) {
-      cached?.lastAccessed = Date?.now();
+      cached.lastAccessed = Date?.now();
       return cached?.buffer;
     }
 
     // Check if already loading
-    const _pending = this?.pendingLoads.get(clipId);
+    const pending = this?.pendingLoads.get(clipId);
     if (pending) {
       return pending;
     }
 
     // Start new load
-    const _abortController = new AbortController();
+    const abortController = new AbortController();
     this?.abortControllers.set(clipId, abortController);
 
-    const _loadPromise = (async () => {
+    const loadPromise = (async () => {
       try {
         // Normalize the URL to use proper API endpoint for audio files
         let normalizedUrl = url;
         if (!url?.startsWith("http") && !url?.startsWith("/api/")) {
           // Handle relative paths like "uploads/..." or "/uploads/..."
-          const _cleanPath = url?.replace(/^\//, "");
+          const cleanPath = url?.replace(/^\//, "");
           normalizedUrl = `/api/marketplace/audio/${cleanPath}`;
         }
 
-        const _response = await fetch(normalizedUrl, {
-          signal: abortController?.signal,
+        const response = await fetch(normalizedUrl, {
+          signal: abortController.signal,
         });
 
         if (!response?.ok) {
           throw new Error(`Failed to fetch audio: ${response?.statusText}`);
         }
 
-        const _arrayBuffer = await response?.arrayBuffer();
-        const _audioBuffer = await this?.context!.decodeAudioData(arrayBuffer);
+        const arrayBuffer = await response?.arrayBuffer();
+        const audioBuffer = await this?.context!.decodeAudioData(arrayBuffer);
 
         // Generate multi-resolution waveform
-        const _waveformData = this?.generateMultiResolutionWaveform(audioBuffer);
+        const waveformData = this?.generateMultiResolutionWaveform(audioBuffer);
 
         // Store in cache
         this?.bufferCache.set(clipId, {
           buffer: audioBuffer,
-          sampleRate: audioBuffer?.sampleRate,
+          sampleRate: audioBuffer.sampleRate,
           waveformData,
-          lastAccessed: Date?.now(),
+          lastAccessed: Date.now(),
         });
 
         // Clean up old entries if cache is too large
@@ -816,12 +816,12 @@ class AudioEngine {
    */
   private updateClipDuration(clipId: string, duration: number): void {
     for (const clips of this?.trackClips.values()) {
-      const _clip = clips?.find((c) => c?.id === clipId);
+      const clip = clips?.find((c) => c?.id === clipId);
       if (clip) {
-        clip?.duration = duration;
+        clip.duration = duration;
         // Also ensure offset is set if not already
         if (clip?.offset === undefined) {
-          clip?.offset = 0;
+          clip.offset = 0;
         }
         break;
       }
@@ -832,7 +832,7 @@ class AudioEngine {
    * Cancel buffer loading
    */
   cancelLoad(clipId: string): void {
-    const _controller = this?.abortControllers.get(clipId);
+    const controller = this?.abortControllers.get(clipId);
     if (controller) {
       controller?.abort();
       this?.abortControllers.delete(clipId);
@@ -845,9 +845,9 @@ class AudioEngine {
    */
   private generateMultiResolutionWaveform(audioBuffer: AudioBuffer) {
     return {
-      low: this?.generateWaveform(audioBuffer, 100),
-      medium: this?.generateWaveform(audioBuffer, 500),
-      high: this?.generateWaveform(audioBuffer, 2000),
+      low: this.generateWaveform(audioBuffer, 100),
+      medium: this.generateWaveform(audioBuffer, 500),
+      high: this.generateWaveform(audioBuffer, 2000),
     };
   }
 
@@ -855,12 +855,12 @@ class AudioEngine {
     audioBuffer: AudioBuffer,
     samples: number,
   ): number[] {
-    const _channelData = audioBuffer?.getChannelData(0);
-    const _blockSize = Math?.floor(channelData?.length / samples);
+    const channelData = audioBuffer?.getChannelData(0);
+    const blockSize = Math?.floor(channelData?.length / samples);
     const waveform: number[] = [];
 
     for (let i = 0; i < samples; i++) {
-      const _start = i * blockSize;
+      const start = i * blockSize;
       let sum = 0;
       for (let j = 0; j < blockSize; j++) {
         if (start + j < channelData?.length) {
@@ -880,12 +880,12 @@ class AudioEngine {
     if (this?.bufferCache.size <= this?.maxCacheSize) return;
 
     // Sort by last accessed time
-    const _entries = Array?.from(this?.bufferCache.entries()).sort(
+    const entries = Array?.from(this?.bufferCache.entries()).sort(
       (a, b) => a[1].lastAccessed - b[1].lastAccessed,
     );
 
     // Remove oldest entries
-    const _toRemove = this?.bufferCache.size - this?.maxCacheSize;
+    const toRemove = this?.bufferCache.size - this?.maxCacheSize;
     for (let i = 0; i < toRemove; i++) {
       this?.bufferCache.delete(entries[i][0]);
     }
@@ -906,102 +906,102 @@ class AudioEngine {
     }
 
     // Create input gain
-    const _inputGain = this?.context.createGain();
-    inputGain?.gain.value = config?.gain;
+    const inputGain = this?.context.createGain();
+    inputGain.gain.value = config?.gain;
 
     // Create 3-band EQ
-    const _eqLow = this?.context.createBiquadFilter();
-    eqLow?.type = "lowshelf";
-    eqLow?.frequency.value = 80;
-    eqLow?.Q.value = 0?.707;
-    eqLow?.gain.value = 0;
+    const eqLow = this?.context.createBiquadFilter();
+    eqLow.type = "lowshelf";
+    eqLow.frequency.value = 80;
+    eqLow.Q.value = 0.707;
+    eqLow.gain.value = 0;
 
-    const _eqMid = this?.context.createBiquadFilter();
-    eqMid?.type = "peaking";
-    eqMid?.frequency.value = 1000;
-    eqMid?.Q.value = 1?.2;
-    eqMid?.gain.value = 0;
+    const eqMid = this?.context.createBiquadFilter();
+    eqMid.type = "peaking";
+    eqMid.frequency.value = 1000;
+    eqMid.Q.value = 1.2;
+    eqMid.gain.value = 0;
 
-    const _eqHigh = this?.context.createBiquadFilter();
-    eqHigh?.type = "highshelf";
-    eqHigh?.frequency.value = 8000;
-    eqHigh?.Q.value = 0?.707;
-    eqHigh?.gain.value = 0;
+    const eqHigh = this?.context.createBiquadFilter();
+    eqHigh.type = "highshelf";
+    eqHigh.frequency.value = 8000;
+    eqHigh.Q.value = 0.707;
+    eqHigh.gain.value = 0;
 
     // Create gate (simulated using gain node + analyser for detection)
-    const _gate = this?.context.createGain();
-    gate?.gain.value = 1?.0; // Fully open by default
-    const _gateAnalyser = this?.context.createAnalyser();
-    gateAnalyser?.fftSize = 256;
+    const gate = this?.context.createGain();
+    gate.gain.value = 1.0; // Fully open by default
+    const gateAnalyser = this?.context.createAnalyser();
+    gateAnalyser.fftSize = 256;
 
     // Create compressor
-    const _compressor = this?.context.createDynamicsCompressor();
-    compressor?.threshold.value = -24;
-    compressor?.ratio.value = 3;
-    compressor?.attack.value = 0?.01; // 10ms
-    compressor?.release.value = 0?.2; // 200ms
-    compressor?.knee.value = 6;
+    const compressor = this?.context.createDynamicsCompressor();
+    compressor.threshold.value = -24;
+    compressor.ratio.value = 3;
+    compressor.attack.value = 0.01; // 10ms
+    compressor.release.value = 0.2; // 200ms
+    compressor.knee.value = 6;
 
     // Create limiter (soft clipper using waveshaper)
-    const _limiter = this?.context.createWaveShaper();
-    const _limiterCeiling = 0?.95; // -0?.5dB
-    const _samples = 8192;
-    const _limiterCurve = new Float32Array(samples);
+    const limiter = this?.context.createWaveShaper();
+    const limiterCeiling = 0.95; // -0.5dB
+    const samples = 8192;
+    const limiterCurve = new Float32Array(samples);
     for (let i = 0; i < samples; ++i) {
-      const _x = (i * 2) / samples - 1;
+      const x = (i * 2) / samples - 1;
       if (Math?.abs(x) < limiterCeiling) {
         limiterCurve[i] = x;
       } else {
-        const _sign = x > 0 ? 1 : -1;
-        const _excess = Math?.abs(x) - limiterCeiling;
-        const _softClip =
+        const sign = x > 0 ? 1 : -1;
+        const excess = Math?.abs(x) - limiterCeiling;
+        const softClip =
           limiterCeiling +
           (1 - limiterCeiling) * Math?.tanh(excess / (1 - limiterCeiling));
         limiterCurve[i] = sign * Math?.min(softClip, 1);
       }
     }
-    limiter?.curve = limiterCurve;
-    limiter?.oversample = "2x";
+    limiter.curve = limiterCurve;
+    limiter.oversample = "2x";
 
     // Create modular effect insert rack (effectPre → [slots] → effectPost)
-    const _effectPre = this?.context.createGain();
-    effectPre?.gain.value = 1?.0;
-    const _effectPost = this?.context.createGain();
-    effectPost?.gain.value = 1?.0;
+    const effectPre = this?.context.createGain();
+    effectPre.gain.value = 1.0;
+    const effectPost = this?.context.createGain();
+    effectPost.gain.value = 1.0;
     // By default, effectPre connects directly to effectPost (bypass)
     effectPre?.connect(effectPost);
 
     // Create post-gain and analyser
-    const _postGain = this?.context.createGain();
-    postGain?.gain.value = 1?.0;
+    const postGain = this?.context.createGain();
+    postGain.gain.value = 1.0;
 
-    const _analyser = this?.context.createAnalyser();
-    analyser?.fftSize = 2048;
-    analyser?.smoothingTimeConstant = 0?.8;
+    const analyser = this?.context.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.8;
 
     // Create pan node
-    const _panNode = this?.context.createStereoPanner();
-    panNode?.pan.value = config?.pan;
+    const panNode = this?.context.createStereoPanner();
+    panNode.pan.value = config?.pan;
 
     // Create reverb send chain
-    const _reverbSend = this?.context.createGain();
-    reverbSend?.gain.value = 0; // Default: no reverb
+    const reverbSend = this?.context.createGain();
+    reverbSend.gain.value = 0; // Default: no reverb
 
-    const _reverbDelayNode = this?.context.createDelay(0?.1);
-    reverbDelayNode?.delayTime.value = 0; // Default: no pre-delay
+    const reverbDelayNode = this?.context.createDelay(0.1);
+    reverbDelayNode.delayTime.value = 0; // Default: no pre-delay
 
-    const _reverbWetGain = this?.context.createGain();
-    reverbWetGain?.gain.value = 0?.2;
+    const reverbWetGain = this?.context.createGain();
+    reverbWetGain.gain.value = 0.2;
 
-    const _reverbDryGain = this?.context.createGain();
-    reverbDryGain?.gain.value = 1?.0;
+    const reverbDryGain = this?.context.createGain();
+    reverbDryGain.gain.value = 1.0;
 
     // Convolver starts as null, will be created when reverb is loaded
     const reverbConvolver: ConvolverNode | null = null;
 
     // Create latency compensation delay
-    const _latencyCompensationDelay = this?.context.createDelay(0?.5);
-    latencyCompensationDelay?.delayTime.value = 0;
+    const latencyCompensationDelay = this?.context.createDelay(0.5);
+    latencyCompensationDelay.delayTime.value = 0;
 
     // Connect full signal path:
     // InputGain → EQ → Gate → Compressor → Limiter → EffectRack → PostGain → Analyser → Pan
@@ -1024,7 +1024,7 @@ class AudioEngine {
     reverbWetGain?.connect(panNode);
 
     // Connect to bus
-    const _bus = this?.busNodes.get(config?.bus);
+    const bus = this?.busNodes.get(config?.bus);
     if (bus) {
       panNode?.connect(bus?.gainNode);
     } else {
@@ -1082,15 +1082,15 @@ class AudioEngine {
           bypass: true,
         },
         limiter: {
-          threshold: -0?.5,
-          attack: 0?.5,
+          threshold: -0.5,
+          attack: 0.5,
           release: 100,
           lookahead: 5,
           bypass: false,
         },
         reverb: {
-          mix: 0?.2,
-          decay: 2?.0,
+          mix: 0.2,
+          decay: 2.0,
           preDelay: 0,
           irId: "default",
           bypass: false,
@@ -1109,7 +1109,7 @@ class AudioEngine {
    * Remove a track and clean up resources
    */
   removeTrack(trackId: string): void {
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (trackNode) {
       // Stop and disconnect all sources
       trackNode?.sources.forEach((source) => {
@@ -1160,12 +1160,12 @@ class AudioEngine {
     this?.tracks.delete(trackId);
 
     // Remove buffers for this track's clips from cache
-    const _clips = this?.trackClips.get(trackId);
+    const clips = this.trackClips.get(trackId);
     if (clips) {
-      clips?.forEach((clip) => {
-        this?.bufferCache.delete(clip?.id);
+      clips.forEach((clip) => {
+        this.bufferCache.delete(clip.id);
       });
-      this?.trackClips.delete(trackId);
+      this.trackClips.delete(trackId);
     }
   }
 
@@ -1173,39 +1173,39 @@ class AudioEngine {
    * Create a mix bus
    */
   createBus(config: BusConfig): void {
-    if (!this?.context) {
-      logger?.warn("Cannot create bus: AudioContext not initialized");
+    if (!this.context) {
+      logger.warn("Cannot create bus: AudioContext not initialized");
       return;
     }
 
-    const _gainNode = this?.context.createGain();
-    const _panNode = this?.context.createStereoPanner();
+    const gainNode = this.context.createGain();
+    const panNode = this.context.createStereoPanner();
 
-    gainNode?.gain.value = config?.gain;
-    panNode?.pan.value = config?.pan;
+    gainNode.gain.value = config.gain;
+    panNode.pan.value = config.pan;
 
     // Connect to master
-    gainNode?.connect(panNode);
-    if (this?.masterGainNode) {
-      panNode?.connect(this?.masterGainNode);
+    gainNode.connect(panNode);
+    if (this.masterGainNode) {
+      panNode.connect(this.masterGainNode);
     }
 
-    this?.busNodes.set(config?.id, { gainNode, panNode });
-    this?.buses.set(config?.id, config);
+    this.busNodes.set(config.id, { gainNode, panNode });
+    this.buses.set(config.id, config);
   }
 
   /**
    * Add clips to a track
    */
   addClipsToTrack(trackId: string, clips: AudioClip[]): void {
-    this?.trackClips.set(trackId, clips);
+    this.trackClips.set(trackId, clips);
   }
 
   /**
    * Get clips for a track
    */
   getTrackClips(trackId: string): AudioClip[] {
-    return this?.trackClips.get(trackId) || [];
+    return this.trackClips.get(trackId) || [];
   }
 
   /**
@@ -1213,69 +1213,69 @@ class AudioEngine {
    */
   async play(startTime: number = 0): Promise<void> {
     // Try to ensure audio is ready before playing
-    if (!this?.context || !this?.initialized) {
-      await this?.ensureReady();
+    if (!this.context || !this.initialized) {
+      await this.ensureReady();
     }
 
-    if (!this?.context) {
-      logger?.warn("Cannot play: AudioContext not available");
+    if (!this.context) {
+      logger.warn("Cannot play: AudioContext not available");
       return;
     }
 
     // Resume context if suspended
-    if (this?.context.state === "suspended") {
-      await this?.context.resume();
+    if (this.context.state === "suspended") {
+      await this.context.resume();
     }
 
     // Stop any existing playback
-    this?.stopAllSources();
+    this.stopAllSources();
 
-    const _now = this?.context.currentTime;
-    this?.transportState.startTime = now - startTime;
-    this?.transportState.pauseTime = 0;
-    this?.transportState.isPlaying = true;
+    const now = this.context.currentTime;
+    this.transportState.startTime = now - startTime;
+    this.transportState.pauseTime = 0;
+    this.transportState.isPlaying = true;
 
     // Check for solo tracks
-    const _hasSolo = Array?.from(this?.tracks.values()).some((t) => t?.isSolo);
+    const hasSolo = Array.from(this.tracks.values()).some((t) => t.isSolo);
 
     // Start playback for all tracks
-    for (const [trackId, track] of this?.tracks.entries()) {
-      const _trackNode = this?.trackNodes.get(trackId);
+    for (const [trackId, track] of this.tracks.entries()) {
+      const trackNode = this.trackNodes.get(trackId);
       if (!trackNode) continue;
 
       // Apply mute/solo logic
-      const _shouldPlay = !track?.isMuted && (!hasSolo || track?.isSolo);
+      const shouldPlay = !track.isMuted && (!hasSolo || track.isSolo);
       if (!shouldPlay) continue;
 
       // Get clips for this track
-      const _clips = this?.trackClips.get(trackId) || [];
+      const clips = this.trackClips.get(trackId) || [];
 
       // Schedule all clips for this track
       for (const clip of clips) {
         try {
-          const _buffer = await this?.loadBuffer(clip?.id, clip?.url);
-          const _source = this?.context.createBufferSource();
-          source?.buffer = buffer;
-          source?.connect(trackNode?.inputGain);
+          const buffer = await this.loadBuffer(clip.id, clip.url);
+          const source = this.context.createBufferSource();
+          source.buffer = buffer;
+          source.connect(trackNode.inputGain);
 
           // Calculate when to start this clip
-          const _clipStartTime = now + (clip?.startTime - startTime);
-          const _offset = clip?.offset || 0;
-          const _clipDuration = clip?.duration || buffer?.duration;
+          const clipStartTime = now + (clip.startTime - startTime);
+          const offset = clip.offset || 0;
+          const clipDuration = clip.duration || buffer.duration;
 
           if (clipStartTime >= now) {
             // Clip starts in the future
-            source?.start(clipStartTime, offset);
+            source.start(clipStartTime, offset);
           } else if (clipStartTime + clipDuration > now) {
             // Clip is already playing, start from current position
-            const _elapsed = now - clipStartTime;
-            source?.start(now, offset + elapsed);
+            const elapsed = now - clipStartTime;
+            source.start(now, offset + elapsed);
           }
           // else: clip is in the past, skip it
 
-          trackNode?.sources.set(clip?.id, source);
+          trackNode.sources.set(clip.id, source);
         } catch (error: unknown) {
-          logger?.error(`Failed to load clip ${clip?.id}:`, error);
+          logger.error(`Failed to load clip ${clip.id}:`, error);
         }
       }
     }
@@ -1285,25 +1285,25 @@ class AudioEngine {
    * Pause playback
    */
   pause(): void {
-    if (!this?.context || !this?.transportState.isPlaying) return;
+    if (!this.context || !this.transportState.isPlaying) return;
 
-    this?.transportState.pauseTime =
-      this?.context.currentTime - this?.transportState.startTime;
-    this?.transportState.isPlaying = false;
+    this.transportState.pauseTime =
+      this.context.currentTime - this.transportState.startTime;
+    this.transportState.isPlaying = false;
 
-    this?.stopAllSources();
+    this.stopAllSources();
   }
 
   /**
    * Stop playback
    */
   stop(): void {
-    this?.stopAllSources();
+    this.stopAllSources();
 
-    this?.transportState.isPlaying = false;
-    this?.transportState.currentTime = 0;
-    this?.transportState.startTime = 0;
-    this?.transportState.pauseTime = 0;
+    this.transportState.isPlaying = false;
+    this.transportState.currentTime = 0;
+    this.transportState.startTime = 0;
+    this.transportState.pauseTime = 0;
   }
 
   /**
@@ -1311,21 +1311,21 @@ class AudioEngine {
    * If currently playing, will stop and restart from the new position
    */
   async seek(time: number): Promise<void> {
-    const _wasPlaying = this?.transportState.isPlaying;
+    const wasPlaying = this.transportState.isPlaying;
 
     // Stop current playback and reset state
     if (wasPlaying) {
-      this?.stopAllSources();
-      this?.transportState.isPlaying = false;
+      this.stopAllSources();
+      this.transportState.isPlaying = false;
     }
 
     // Update transport time
-    this?.transportState.currentTime = Math?.max(0, time);
-    this?.transportState.pauseTime = this?.transportState.currentTime;
+    this.transportState.currentTime = Math.max(0, time);
+    this.transportState.pauseTime = this.transportState.currentTime;
 
     // Restart if was playing
     if (wasPlaying) {
-      await this?.play(this?.transportState.currentTime);
+      await this.play(this.transportState.currentTime);
     }
   }
 
@@ -1333,16 +1333,16 @@ class AudioEngine {
    * Stop all active audio sources
    */
   private stopAllSources(): void {
-    for (const trackNode of this?.trackNodes.values()) {
-      trackNode?.sources.forEach((source) => {
+    for (const trackNode of this.trackNodes.values()) {
+      trackNode.sources.forEach((source) => {
         try {
-          source?.stop();
+          source.stop();
         } catch (e: unknown) {
           // Source might already be stopped
         }
-        source?.disconnect();
+        source.disconnect();
       });
-      trackNode?.sources.clear();
+      trackNode.sources.clear();
     }
   }
 
@@ -1350,20 +1350,20 @@ class AudioEngine {
    * Update track gain with smooth automation
    */
   updateTrackGain(trackId: string, gain: number): void {
-    if (!this?.context) return;
+    if (!this.context) return;
 
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this.trackNodes.get(trackId);
     if (trackNode) {
-      trackNode?.inputGain.gain?.setTargetAtTime(
+      trackNode.inputGain.gain.setTargetAtTime(
         gain,
-        this?.context.currentTime,
-        0?.01,
+        this.context.currentTime,
+        0.01,
       );
     }
 
-    const _track = this?.tracks.get(trackId);
+    const track = this.tracks.get(trackId);
     if (track) {
-      track?.gain = gain;
+      track.gain = gain;
     }
   }
 
@@ -1371,20 +1371,20 @@ class AudioEngine {
    * Update track pan with smooth automation
    */
   updateTrackPan(trackId: string, pan: number): void {
-    if (!this?.context) return;
+    if (!this.context) return;
 
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this.trackNodes.get(trackId);
     if (trackNode) {
-      trackNode?.panNode.pan?.setTargetAtTime(
+      trackNode.panNode.pan.setTargetAtTime(
         pan,
-        this?.context.currentTime,
-        0?.01,
+        this.context.currentTime,
+        0.01,
       );
     }
 
-    const _track = this?.tracks.get(trackId);
+    const track = this.tracks.get(trackId);
     if (track) {
-      track?.pan = pan;
+      track.pan = pan;
     }
   }
 
@@ -1392,21 +1392,21 @@ class AudioEngine {
    * Update track mute state
    */
   updateTrackMute(trackId: string, isMuted: boolean): void {
-    if (!this?.context) return;
+    if (!this.context) return;
 
-    const _track = this?.tracks.get(trackId);
+    const track = this.tracks.get(trackId);
     if (track) {
-      track?.isMuted = isMuted;
+      track.isMuted = isMuted;
 
       // If currently playing, update immediately
-      if (this?.transportState.isPlaying) {
-        const _trackNode = this?.trackNodes.get(trackId);
+      if (this.transportState.isPlaying) {
+        const trackNode = this.trackNodes.get(trackId);
         if (trackNode) {
-          const _targetGain = isMuted ? 0 : track?.gain;
-          trackNode?.inputGain.gain?.setTargetAtTime(
+          const targetGain = isMuted ? 0 : track.gain;
+          trackNode.inputGain.gain.setTargetAtTime(
             targetGain,
-            this?.context.currentTime,
-            0?.01,
+            this.context.currentTime,
+            0.01,
           );
         }
       }
@@ -1417,26 +1417,26 @@ class AudioEngine {
    * Update track solo state
    */
   updateTrackSolo(trackId: string, isSolo: boolean): void {
-    if (!this?.context) return;
+    if (!this.context) return;
 
-    const _track = this?.tracks.get(trackId);
+    const track = this.tracks.get(trackId);
     if (track) {
-      track?.isSolo = isSolo;
+      track.isSolo = isSolo;
 
       // If currently playing, update all track gains immediately based on new solo state
-      if (this?.transportState.isPlaying) {
-        const _hasSolo = Array?.from(this?.tracks.values()).some((t) => t?.isSolo);
+      if (this.transportState.isPlaying) {
+        const hasSolo = Array.from(this.tracks.values()).some((t) => t.isSolo);
 
         // Update all tracks based on new solo state
-        for (const [tId, t] of this?.tracks.entries()) {
-          const _trackNode = this?.trackNodes.get(tId);
+        for (const [tId, t] of this.tracks.entries()) {
+          const trackNode = this.trackNodes.get(tId);
           if (trackNode) {
-            const _shouldPlay = !t?.isMuted && (!hasSolo || t?.isSolo);
-            const _targetGain = shouldPlay ? t?.gain : 0;
-            trackNode?.inputGain.gain?.setTargetAtTime(
+            const shouldPlay = !t.isMuted && (!hasSolo || t.isSolo);
+            const targetGain = shouldPlay ? t.gain : 0;
+            trackNode.inputGain.gain.setTargetAtTime(
               targetGain,
-              this?.context.currentTime,
-              0?.01,
+              this.context.currentTime,
+              0.01,
             );
           }
         }
@@ -1448,12 +1448,12 @@ class AudioEngine {
    * Set master volume
    */
   setMasterVolume(volume: number): void {
-    if (!this?.context || !this?.masterGainNode) return;
+    if (!this.context || !this.masterGainNode) return;
 
-    this?.masterGainNode.gain?.setTargetAtTime(
+    this.masterGainNode.gain.setTargetAtTime(
       volume,
-      this?.context.currentTime,
-      0?.01,
+      this.context.currentTime,
+      0.01,
     );
   }
 
@@ -1461,28 +1461,28 @@ class AudioEngine {
    * Set track mute state (wrapper for updateTrackMute)
    */
   setTrackMute(trackId: string, mute: boolean): void {
-    this?.updateTrackMute(trackId, mute);
+    this.updateTrackMute(trackId, mute);
   }
 
   /**
    * Set track solo state (wrapper for updateTrackSolo)
    */
   setTrackSolo(trackId: string, solo: boolean): void {
-    this?.updateTrackSolo(trackId, solo);
+    this.updateTrackSolo(trackId, solo);
   }
 
   /**
    * Check if a track exists in the engine
    */
   hasTrack(trackId: string): boolean {
-    return this?.trackNodes.has(trackId);
+    return this.trackNodes.has(trackId);
   }
 
   /**
    * Get all track IDs currently registered in the engine
    */
   getAllTrackIds(): string[] {
-    return Array?.from(this?.trackNodes.keys());
+    return Array.from(this.trackNodes.keys());
   }
 
   /**
@@ -1490,7 +1490,7 @@ class AudioEngine {
    */
   async loadTrack(trackId: string, clips: AudioClip[]): Promise<void> {
     // Store clips regardless of audio state
-    this?.trackClips.set(trackId, clips);
+    this.trackClips.set(trackId, clips);
 
     // If audio not ready, just store clips - they'll be loaded when we play
     if (!this?.context || !this?.initialized) {
@@ -1500,7 +1500,7 @@ class AudioEngine {
       return;
     }
 
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) {
       logger?.warn(
         `Track ${trackId} not found in audio engine, clips stored but not preloaded`,
@@ -1509,7 +1509,7 @@ class AudioEngine {
     }
 
     // Preload buffers for all clips
-    const _loadPromises = clips?.map((clip) =>
+    const loadPromises = clips?.map((clip) =>
       this?.loadBuffer(clip?.id, clip?.url),
     );
     await Promise?.all(loadPromises);
@@ -1532,7 +1532,7 @@ class AudioEngine {
    * Get track peak level
    */
   getTrackPeakLevel(trackId: string): { peak: number; rms: number } {
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) {
       return { peak: -60, rms: -60 };
     }
@@ -1558,21 +1558,21 @@ class AudioEngine {
     peak: number;
     rms: number;
   } {
-    const _dataArray = new Uint8Array(analyser?.frequencyBinCount);
+    const dataArray = new Uint8Array(analyser?.frequencyBinCount);
     analyser?.getByteTimeDomainData(dataArray);
 
     let max = 0;
     let sum = 0;
 
     for (let i = 0; i < dataArray?.length; i++) {
-      const _v = Math?.abs(dataArray[i] - 128) / 128;
+      const v = Math?.abs(dataArray[i] - 128) / 128;
       if (v > max) max = v;
       sum += v * v;
     }
 
-    const _rms = Math?.sqrt(sum / dataArray?.length);
-    const _peak = max > 0 ? 20 * Math?.log10(max) : -60;
-    const _rmsDb = rms > 0 ? 20 * Math?.log10(rms) : -60;
+    const rms = Math?.sqrt(sum / dataArray?.length);
+    const peak = max > 0 ? 20 * Math?.log10(max) : -60;
+    const rmsDb = rms > 0 ? 20 * Math?.log10(rms) : -60;
 
     return { peak, rms: rmsDb };
   }
@@ -1581,7 +1581,7 @@ class AudioEngine {
    * Get cached waveform data
    */
   getWaveformData(clipId: string): BufferCacheEntry["waveformData"] | null {
-    const _cached = this?.bufferCache.get(clipId);
+    const cached = this?.bufferCache.get(clipId);
     return cached ? cached?.waveformData : null;
   }
 
@@ -1637,11 +1637,11 @@ class AudioEngine {
   updateTrackEQ(trackId: string, params: Partial<TrackEQParams>): void {
     if (!this?.context) return;
 
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _currentTime = this?.context.currentTime;
-    const _timeConstant = 0?.01; // 10ms smooth transition
+    const currentTime = this?.context.currentTime;
+    const timeConstant = 0.01; // 10ms smooth transition
 
     if (params?.lowGain !== undefined) {
       trackNode?.eqLow.gain?.setTargetAtTime(
@@ -1649,7 +1649,7 @@ class AudioEngine {
         currentTime,
         timeConstant,
       );
-      trackNode?.effects.eq!.lowGain = params?.lowGain;
+      trackNode.effects.eq!.lowGain = params?.lowGain;
     }
 
     if (params?.midGain !== undefined) {
@@ -1658,7 +1658,7 @@ class AudioEngine {
         currentTime,
         timeConstant,
       );
-      trackNode?.effects.eq!.midGain = params?.midGain;
+      trackNode.effects.eq!.midGain = params?.midGain;
     }
 
     if (params?.highGain !== undefined) {
@@ -1667,7 +1667,7 @@ class AudioEngine {
         currentTime,
         timeConstant,
       );
-      trackNode?.effects.eq!.highGain = params?.highGain;
+      trackNode.effects.eq!.highGain = params?.highGain;
     }
 
     if (params?.midFrequency !== undefined) {
@@ -1676,11 +1676,11 @@ class AudioEngine {
         currentTime,
         timeConstant,
       );
-      trackNode?.effects.eq!.midFrequency = params?.midFrequency;
+      trackNode.effects.eq!.midFrequency = params?.midFrequency;
     }
 
     if (params?.bypass !== undefined) {
-      trackNode?.effects.eq!.bypass = params?.bypass;
+      trackNode.effects.eq!.bypass = params?.bypass;
 
       if (params?.bypass) {
         // Disconnect all EQ chain connections (entry, internal, and exit)
@@ -1743,11 +1743,11 @@ class AudioEngine {
   ): void {
     if (!this?.context) return;
 
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _currentTime = this?.context.currentTime;
-    const _timeConstant = 0?.01; // 10ms smooth transition
+    const currentTime = this?.context.currentTime;
+    const timeConstant = 0.01; // 10ms smooth transition
 
     if (params?.threshold !== undefined) {
       trackNode?.compressor.threshold?.setTargetAtTime(
@@ -1755,7 +1755,7 @@ class AudioEngine {
         currentTime,
         timeConstant,
       );
-      trackNode?.effects.compressor!.threshold = params?.threshold;
+      trackNode.effects.compressor!.threshold = params?.threshold;
     }
 
     if (params?.ratio !== undefined) {
@@ -1764,7 +1764,7 @@ class AudioEngine {
         currentTime,
         timeConstant,
       );
-      trackNode?.effects.compressor!.ratio = params?.ratio;
+      trackNode.effects.compressor!.ratio = params?.ratio;
     }
 
     if (params?.attack !== undefined) {
@@ -1773,7 +1773,7 @@ class AudioEngine {
         currentTime,
         timeConstant,
       ); // Convert ms to seconds
-      trackNode?.effects.compressor!.attack = params?.attack;
+      trackNode.effects.compressor!.attack = params?.attack;
     }
 
     if (params?.release !== undefined) {
@@ -1782,7 +1782,7 @@ class AudioEngine {
         currentTime,
         timeConstant,
       ); // Convert ms to seconds
-      trackNode?.effects.compressor!.release = params?.release;
+      trackNode.effects.compressor!.release = params?.release;
     }
 
     if (params?.knee !== undefined) {
@@ -1791,11 +1791,11 @@ class AudioEngine {
         currentTime,
         timeConstant,
       );
-      trackNode?.effects.compressor!.knee = params?.knee;
+      trackNode.effects.compressor!.knee = params?.knee;
     }
 
     if (params?.bypass !== undefined) {
-      trackNode?.effects.compressor!.bypass = params?.bypass;
+      trackNode.effects.compressor!.bypass = params?.bypass;
 
       if (params?.bypass) {
         // Disconnect full chain: gate→compressor and compressor→limiter
@@ -1841,11 +1841,11 @@ class AudioEngine {
   ): Promise<void> {
     if (!this?.context) return;
 
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _currentTime = this?.context.currentTime;
-    const _timeConstant = 0?.01; // 10ms smooth transition
+    const currentTime = this?.context.currentTime;
+    const timeConstant = 0.01; // 10ms smooth transition
 
     if (params?.mix !== undefined) {
       trackNode?.reverbSend.gain?.setTargetAtTime(
@@ -1853,7 +1853,7 @@ class AudioEngine {
         currentTime,
         timeConstant,
       );
-      trackNode?.effects.reverb!.mix = params?.mix;
+      trackNode.effects.reverb!.mix = params?.mix;
     }
 
     if (params?.preDelay !== undefined) {
@@ -1862,18 +1862,18 @@ class AudioEngine {
         currentTime,
         timeConstant,
       ); // Convert ms to seconds
-      trackNode?.effects.reverb!.preDelay = params?.preDelay;
+      trackNode.effects.reverb!.preDelay = params?.preDelay;
     }
 
     if (params?.decay !== undefined) {
-      trackNode?.effects.reverb!.decay = params?.decay;
+      trackNode.effects.reverb!.decay = params?.decay;
       // Regenerate IR with new decay
       if (trackNode?.reverbConvolver) {
-        const _newIR = this?.generateImpulseResponse(
+        const newIR = this?.generateImpulseResponse(
           params?.decay,
-          params?.decay * 0?.5,
+          params?.decay * 0.5,
         );
-        trackNode?.reverbConvolver.buffer = newIR;
+        trackNode.reverbConvolver.buffer = newIR;
       }
     }
 
@@ -1881,11 +1881,11 @@ class AudioEngine {
       params?.irId !== undefined &&
       params?.irId !== trackNode?.effects.reverb!.irId
     ) {
-      trackNode?.effects.reverb!.irId = params?.irId;
+      trackNode.effects.reverb!.irId = params?.irId;
       try {
-        const _irBuffer = await this?.loadImpulseResponse(params?.irId);
+        const irBuffer = await this?.loadImpulseResponse(params?.irId);
         if (!trackNode?.reverbConvolver) {
-          trackNode?.reverbConvolver = this?.context.createConvolver();
+          trackNode.reverbConvolver = this?.context.createConvolver();
           // Connect reverb chain: Analyser → ReverbSend → DelayNode → Convolver → WetGain → Pan
           trackNode?.analyser.connect(trackNode?.reverbSend);
           trackNode?.reverbSend.connect(trackNode?.reverbDelayNode);
@@ -1893,14 +1893,14 @@ class AudioEngine {
           trackNode?.reverbConvolver.connect(trackNode?.reverbWetGain);
           trackNode?.reverbWetGain.connect(trackNode?.panNode);
         }
-        trackNode?.reverbConvolver.buffer = irBuffer;
+        trackNode.reverbConvolver.buffer = irBuffer;
       } catch (error: unknown) {
         logger?.error("Failed to load impulse response:", error);
       }
     }
 
     if (params?.bypass !== undefined) {
-      trackNode?.effects.reverb!.bypass = params?.bypass;
+      trackNode.effects.reverb!.bypass = params?.bypass;
 
       if (params?.bypass) {
         // Disconnect reverb wet path but maintain dry path (analyser→panNode is always connected)
@@ -2077,28 +2077,28 @@ class AudioEngine {
     slotId: string,
     effectType: EffectSlot["type"],
   ): EffectSlot | null {
-    if (!this?.context) return null;
-    const _trackNode = this?.trackNodes.get(trackId);
+    if (!this.context) return null;
+    const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return null;
 
     // Check if slot already exists
-    if (trackNode?.effectSlots.has(slotId)) {
-      logger?.warn(
+    if (trackNode.effectSlots.has(slotId)) {
+      logger.warn(
         `[AudioEngine] Effect slot ${slotId} already exists on track ${trackId}`,
       );
-      return trackNode?.effectSlots.get(slotId) || null;
+      return trackNode.effectSlots.get(slotId) || null;
     }
 
     // Create slot nodes
-    const _inputNode = this?.context.createGain();
-    const _outputNode = this?.context.createGain();
-    const _dryNode = this?.context.createGain();
-    const _wetNode = this?.context.createGain();
+    const inputNode = this.context.createGain();
+    const outputNode = this.context.createGain();
+    const dryNode = this.context.createGain();
+    const wetNode = this.context.createGain();
 
-    inputNode?.gain.value = 1?.0;
-    outputNode?.gain.value = 1?.0;
-    dryNode?.gain.value = 0?.5; // 50% dry by default
-    wetNode?.gain.value = 0?.5; // 50% wet by default
+    inputNode.gain.value = 1.0;
+    outputNode.gain.value = 1.0;
+    dryNode.gain.value = 0.5; // 50% dry by default
+    wetNode.gain.value = 0.5; // 50% wet by default
 
     // Create the slot
     const slot: EffectSlot = {
@@ -2106,7 +2106,7 @@ class AudioEngine {
       type: effectType,
       enabled: true,
       bypass: false,
-      order: trackNode?.effectSlots.size,
+      order: trackNode.effectSlots.size,
       inputNode,
       outputNode,
       dryNode,
@@ -2116,15 +2116,15 @@ class AudioEngine {
     };
 
     // Create effect-specific processing chain
-    this?.createEffectProcessingChain(slot, effectType);
+    this.createEffectProcessingChain(slot, effectType);
 
     // Store the slot
-    trackNode?.effectSlots.set(slotId, slot);
+    trackNode.effectSlots.set(slotId, slot);
 
     // Rewire the insert rack
-    this?.rewireInsertRack(trackId);
+    this.rewireInsertRack(trackId);
 
-    logger?.info(
+    logger.info(
       `[AudioEngine] Added ${effectType} effect slot ${slotId} to track ${trackId}`,
     );
     return slot;
@@ -2137,110 +2137,110 @@ class AudioEngine {
     slot: EffectSlot,
     effectType: EffectSlot["type"],
   ): void {
-    if (!this?.context) return;
+    if (!this.context) return;
 
     // Clear existing nodes
-    slot?.processingNodes = [];
+    slot.processingNodes = [];
 
     switch (effectType) {
       case "delay": {
-        const _delayNode = this?.context.createDelay(2?.0);
-        const _feedbackGain = this?.context.createGain();
-        delayNode?.delayTime.value = 0?.25;
-        feedbackGain?.gain.value = 0?.4;
+        const delayNode = this.context.createDelay(2.0);
+        const feedbackGain = this.context.createGain();
+        delayNode.delayTime.value = 0.25;
+        feedbackGain.gain.value = 0.4;
 
         // Connect processing chain
-        slot?.inputNode.connect(delayNode);
-        delayNode?.connect(feedbackGain);
-        feedbackGain?.connect(delayNode);
-        delayNode?.connect(slot?.wetNode);
-        slot?.inputNode.connect(slot?.dryNode);
-        slot?.dryNode.connect(slot?.outputNode);
-        slot?.wetNode.connect(slot?.outputNode);
+        slot.inputNode.connect(delayNode);
+        delayNode.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
+        delayNode.connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
 
-        slot?.processingNodes = [delayNode, feedbackGain];
-        slot?.params = { time: 250, feedback: 40, mix: 50, bypass: false };
+        slot.processingNodes = [delayNode, feedbackGain];
+        slot.params = { time: 250, feedback: 40, mix: 50, bypass: false };
         break;
       }
       case "distortion": {
-        const _waveshaper = this?.context.createWaveShaper();
-        const _toneFilter = this?.context.createBiquadFilter();
-        toneFilter?.type = "lowpass";
-        toneFilter?.frequency.value = 8000;
+        const waveshaper = this.context.createWaveShaper();
+        const toneFilter = this.context.createBiquadFilter();
+        toneFilter.type = "lowpass";
+        toneFilter.frequency.value = 8000;
 
         // Create distortion curve
-        const _k = 50 * 4;
-        const _samples = 8192;
-        const _curve = new Float32Array(samples);
-        const _deg = Math?.PI / 180;
+        const k = 50 * 4;
+        const samples = 8192;
+        const curve = new Float32Array(samples);
+        const deg = Math.PI / 180;
         for (let i = 0; i < samples; ++i) {
-          const _x = (i * 2) / samples - 1;
-          curve[i] = ((3 + k) * x * 20 * deg) / (Math?.PI + k * Math?.abs(x));
+          const x = (i * 2) / samples - 1;
+          curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
         }
-        waveshaper?.curve = curve;
+        waveshaper.curve = curve;
 
-        slot?.inputNode.connect(waveshaper);
-        waveshaper?.connect(toneFilter);
-        toneFilter?.connect(slot?.wetNode);
-        slot?.inputNode.connect(slot?.dryNode);
-        slot?.dryNode.connect(slot?.outputNode);
-        slot?.wetNode.connect(slot?.outputNode);
+        slot.inputNode.connect(waveshaper);
+        waveshaper.connect(toneFilter);
+        toneFilter.connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
 
-        slot?.processingNodes = [waveshaper, toneFilter];
-        slot?.params = { drive: 50, tone: 50, mix: 50, bypass: false };
+        slot.processingNodes = [waveshaper, toneFilter];
+        slot.params = { drive: 50, tone: 50, mix: 50, bypass: false };
         break;
       }
       case "chorus": {
-        const _delayNode = this?.context.createDelay(0?.05);
-        const _lfo = this?.context.createOscillator();
-        const _lfoGain = this?.context.createGain();
+        const delayNode = this.context.createDelay(0.05);
+        const lfo = this.context.createOscillator();
+        const lfoGain = this.context.createGain();
 
-        lfo?.type = "sine";
-        lfo?.frequency.value = 1;
-        lfoGain?.gain.value = 0?.003;
-        delayNode?.delayTime.value = 0?.025;
+        lfo.type = "sine";
+        lfo.frequency.value = 1;
+        lfoGain.gain.value = 0.003;
+        delayNode.delayTime.value = 0.025;
 
-        lfo?.connect(lfoGain);
-        lfoGain?.connect(delayNode?.delayTime);
-        lfo?.start();
+        lfo.connect(lfoGain);
+        lfoGain.connect(delayNode.delayTime);
+        lfo.start();
 
-        slot?.inputNode.connect(delayNode);
-        delayNode?.connect(slot?.wetNode);
-        slot?.inputNode.connect(slot?.dryNode);
-        slot?.dryNode.connect(slot?.outputNode);
-        slot?.wetNode.connect(slot?.outputNode);
+        slot.inputNode.connect(delayNode);
+        delayNode.connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
 
-        slot?.processingNodes = [delayNode, lfo, lfoGain];
-        slot?.params = { rate: 1, depth: 50, mix: 50, bypass: false };
+        slot.processingNodes = [delayNode, lfo, lfoGain];
+        slot.params = { rate: 1, depth: 50, mix: 50, bypass: false };
         break;
       }
       case "flanger": {
-        const _delayNode = this?.context.createDelay(0?.02);
-        const _lfo = this?.context.createOscillator();
-        const _lfoGain = this?.context.createGain();
-        const _feedbackGain = this?.context.createGain();
+        const delayNode = this.context.createDelay(0.02);
+        const lfo = this.context.createOscillator();
+        const lfoGain = this.context.createGain();
+        const feedbackGain = this.context.createGain();
 
-        lfo?.type = "sine";
-        lfo?.frequency.value = 0?.3;
-        lfoGain?.gain.value = 0?.002;
-        delayNode?.delayTime.value = 0?.005;
-        feedbackGain?.gain.value = 0?.45;
+        lfo.type = "sine";
+        lfo.frequency.value = 0.3;
+        lfoGain.gain.value = 0.002;
+        delayNode.delayTime.value = 0.005;
+        feedbackGain.gain.value = 0.45;
 
-        lfo?.connect(lfoGain);
-        lfoGain?.connect(delayNode?.delayTime);
-        lfo?.start();
+        lfo.connect(lfoGain);
+        lfoGain.connect(delayNode.delayTime);
+        lfo.start();
 
-        slot?.inputNode.connect(delayNode);
-        delayNode?.connect(feedbackGain);
-        feedbackGain?.connect(delayNode);
-        delayNode?.connect(slot?.wetNode);
-        slot?.inputNode.connect(slot?.dryNode);
-        slot?.dryNode.connect(slot?.outputNode);
-        slot?.wetNode.connect(slot?.outputNode);
+        slot.inputNode.connect(delayNode);
+        delayNode.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
+        delayNode.connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
 
-        slot?.processingNodes = [delayNode, lfo, lfoGain, feedbackGain];
-        slot?.params = {
-          rate: 0?.3,
+        slot.processingNodes = [delayNode, lfo, lfoGain, feedbackGain];
+        slot.params = {
+          rate: 0.3,
           depth: 60,
           feedback: 50,
           mix: 50,
@@ -2251,41 +2251,41 @@ class AudioEngine {
       case "phaser": {
         const allpassFilters: BiquadFilterNode[] = [];
         for (let i = 0; i < 6; i++) {
-          const _filter = this?.context.createBiquadFilter();
-          filter?.type = "allpass";
-          filter?.frequency.value = 1000 + i * 500;
-          filter?.Q.value = 0?.5;
-          allpassFilters?.push(filter);
+          const filter = this.context.createBiquadFilter();
+          filter.type = "allpass";
+          filter.frequency.value = 1000 + i * 500;
+          filter.Q.value = 0.5;
+          allpassFilters.push(filter);
         }
 
-        for (let i = 0; i < allpassFilters?.length - 1; i++) {
+        for (let i = 0; i < allpassFilters.length - 1; i++) {
           allpassFilters[i].connect(allpassFilters[i + 1]);
         }
 
-        const _lfo = this?.context.createOscillator();
-        const _lfoGain = this?.context.createGain();
-        const _feedbackGain = this?.context.createGain();
+        const lfo = this.context.createOscillator();
+        const lfoGain = this.context.createGain();
+        const feedbackGain = this.context.createGain();
 
-        lfo?.type = "sine";
-        lfo?.frequency.value = 0?.5;
-        lfoGain?.gain.value = 500;
-        feedbackGain?.gain.value = 0?.4;
+        lfo.type = "sine";
+        lfo.frequency.value = 0.5;
+        lfoGain.gain.value = 500;
+        feedbackGain.gain.value = 0.4;
 
-        lfo?.connect(lfoGain);
-        allpassFilters?.forEach((filter) => lfoGain?.connect(filter?.frequency));
-        lfo?.start();
+        lfo.connect(lfoGain);
+        allpassFilters.forEach((filter) => lfoGain.connect(filter.frequency));
+        lfo.start();
 
-        slot?.inputNode.connect(allpassFilters[0]);
-        allpassFilters[allpassFilters?.length - 1].connect(feedbackGain);
-        feedbackGain?.connect(allpassFilters[0]);
-        allpassFilters[allpassFilters?.length - 1].connect(slot?.wetNode);
-        slot?.inputNode.connect(slot?.dryNode);
-        slot?.dryNode.connect(slot?.outputNode);
-        slot?.wetNode.connect(slot?.outputNode);
+        slot.inputNode.connect(allpassFilters[0]);
+        allpassFilters[allpassFilters.length - 1].connect(feedbackGain);
+        feedbackGain.connect(allpassFilters[0]);
+        allpassFilters[allpassFilters.length - 1].connect(slot.wetNode);
+        slot.inputNode.connect(slot.dryNode);
+        slot.dryNode.connect(slot.outputNode);
+        slot.wetNode.connect(slot.outputNode);
 
-        slot?.processingNodes = [...allpassFilters, lfo, lfoGain, feedbackGain];
-        slot?.params = {
-          rate: 0?.5,
+        slot.processingNodes = [...allpassFilters, lfo, lfoGain, feedbackGain];
+        slot.params = {
+          rate: 0.5,
           depth: 60,
           stages: 6,
           feedback: 50,
@@ -2303,49 +2303,49 @@ class AudioEngine {
    * Bypassed slots are included in chain but pass audio through unchanged
    */
   private rewireInsertRack(trackId: string): void {
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
 
     // Disconnect effectPre (breaks connection to first slot or effectPost)
     try {
-      trackNode?.effectPre.disconnect();
+      trackNode.effectPre.disconnect();
     } catch (e) {
       // May already be disconnected
     }
 
     // Only disconnect slot outputNodes (inter-slot connections), NOT inputNodes
     // This preserves internal slot routing: inputNode → processing → dry/wet → outputNode
-    trackNode?.effectSlots.forEach((slot) => {
+    trackNode.effectSlots.forEach((slot) => {
       try {
-        slot?.outputNode.disconnect();
+        slot.outputNode.disconnect();
       } catch (e) {
         // May already be disconnected
       }
     });
 
     // Get all enabled slots sorted by order (includes bypassed ones)
-    const _allEnabledSlots = Array?.from(trackNode?.effectSlots.values())
-      .filter((slot) => slot?.enabled)
-      .sort((a, b) => a?.order - b?.order);
+    const allEnabledSlots = Array.from(trackNode.effectSlots.values())
+      .filter((slot) => slot.enabled)
+      .sort((a, b) => a.order - b.order);
 
-    if (allEnabledSlots?.length === 0) {
+    if (allEnabledSlots.length === 0) {
       // No slots, connect effectPre directly to effectPost (bypass)
-      trackNode?.effectPre.connect(trackNode?.effectPost);
-      logger?.info(
+      trackNode.effectPre.connect(trackNode.effectPost);
+      logger.info(
         `[AudioEngine] Insert rack for track ${trackId}: bypass (no slots)`,
       );
       return;
     }
 
     // Chain all enabled slots: effectPre → slot1 → slot2 → ... → effectPost
-    trackNode?.effectPre.connect(allEnabledSlots[0].inputNode);
+    trackNode.effectPre.connect(allEnabledSlots[0].inputNode);
 
-    for (let i = 0; i < allEnabledSlots?.length - 1; i++) {
-      allEnabledSlots[i].outputNode?.connect(allEnabledSlots[i + 1].inputNode);
+    for (let i = 0; i < allEnabledSlots.length - 1; i++) {
+      allEnabledSlots[i].outputNode.connect(allEnabledSlots[i + 1].inputNode);
     }
 
-    allEnabledSlots[allEnabledSlots?.length - 1].outputNode?.connect(
-      trackNode?.effectPost,
+    allEnabledSlots[allEnabledSlots.length - 1].outputNode.connect(
+      trackNode.effectPost,
     );
 
     // Configure each slot's bypass state using gain control (keeps internal routing)
@@ -2353,8 +2353,8 @@ class AudioEngine {
       this?.configureSlotBypassGains(slot);
     });
 
-    const _activeCount = allEnabledSlots?.filter((s) => !s?.bypass).length;
-    const _bypassedCount = allEnabledSlots?.filter((s) => s?.bypass).length;
+    const activeCount = allEnabledSlots?.filter((s) => !s?.bypass).length;
+    const bypassedCount = allEnabledSlots?.filter((s) => s?.bypass).length;
     logger?.info(
       `[AudioEngine] Insert rack for track ${trackId}: ${activeCount} active, ${bypassedCount} bypassed`,
     );
@@ -2363,21 +2363,21 @@ class AudioEngine {
   /**
    * Configure a slot's bypass state using gain control
    * The slot's internal routing (inputNode → processing → dry/wet → outputNode) is ALWAYS connected
-   * Bypass is achieved by setting dry=1?.0, wet=0?.0 (passes unprocessed signal)
+   * Bypass is achieved by setting dry=1.0, wet=0.0 (passes unprocessed signal)
    * Active is achieved by setting proper dry/wet mix
    */
   private configureSlotBypassGains(slot: EffectSlot): void {
     if (slot?.bypass) {
-      // Bypass mode: dry=1?.0, wet=0?.0 (unprocessed signal passes through dryNode)
-      slot?.dryNode.gain?.value = 1?.0;
-      slot?.wetNode.gain?.value = 0?.0;
+      // Bypass mode: dry=1.0, wet=0.0 (unprocessed signal passes through dryNode)
+      slot.dryNode.gain.value = 1.0;
+      slot.wetNode.gain.value = 0.0;
     } else {
       // Active mode: restore dry/wet mix from params
-      const _mix = (slot?.params.mix as number) ?? 50;
-      const _wetLevel = mix / 100;
-      const _dryLevel = 1 - wetLevel;
-      slot?.dryNode.gain?.value = dryLevel;
-      slot?.wetNode.gain?.value = wetLevel;
+      const mix = (slot?.params.mix as number) ?? 50;
+      const wetLevel = mix / 100;
+      const dryLevel = 1 - wetLevel;
+      slot.dryNode.gain.value = dryLevel;
+      slot.wetNode.gain.value = wetLevel;
     }
   }
 
@@ -2385,10 +2385,10 @@ class AudioEngine {
    * Remove an effect slot from the track's insert rack
    */
   removeEffectSlot(trackId: string, slotId: string): boolean {
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return false;
 
-    const _slot = trackNode?.effectSlots.get(slotId);
+    const slot = trackNode?.effectSlots.get(slotId);
     if (!slot) return false;
 
     // Disconnect all nodes
@@ -2428,33 +2428,33 @@ class AudioEngine {
     params: Record<string, number | boolean>,
   ): void {
     if (!this?.context) return;
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _slot = trackNode?.effectSlots.get(slotId);
+    const slot = trackNode?.effectSlots.get(slotId);
     if (!slot) return;
 
-    const _currentTime = this?.context.currentTime;
-    const _timeConstant = 0?.01;
+    const currentTime = this?.context.currentTime;
+    const timeConstant = 0.01;
 
     // Update slot params
     Object?.assign(slot?.params, params);
 
     // Handle bypass - triggers rewiring of the insert rack
     if (params?.bypass !== undefined) {
-      slot?.bypass = params?.bypass as boolean;
+      slot.bypass = params?.bypass as boolean;
       this?.rewireInsertRack(trackId);
     }
 
-    // Handle mix - maintains unity gain (dry + wet = 1?.0)
+    // Handle mix - maintains unity gain (dry + wet = 1.0)
     // Only apply gains if slot is not bypassed (bypass keeps wet=0, dry=1)
     if (params?.mix !== undefined) {
       // Store the value in params (already done by Object?.assign above)
       // Only apply if not bypassed
       if (!slot?.bypass) {
-        const _mix = params?.mix as number;
-        const _wetLevel = mix / 100;
-        const _dryLevel = 1 - wetLevel;
+        const mix = params?.mix as number;
+        const wetLevel = mix / 100;
+        const dryLevel = 1 - wetLevel;
         slot?.wetNode.gain?.setTargetAtTime(wetLevel, currentTime, timeConstant);
         slot?.dryNode.gain?.setTargetAtTime(dryLevel, currentTime, timeConstant);
       }
@@ -2462,7 +2462,7 @@ class AudioEngine {
     }
 
     // Update effect-specific parameters with validation
-    const _nodes = slot?.processingNodes;
+    const nodes = slot?.processingNodes;
     if (!nodes || nodes?.length === 0) {
       logger?.warn(
         `[AudioEngine] No processing nodes for slot ${slotId} on track ${trackId}`,
@@ -2473,8 +2473,8 @@ class AudioEngine {
     switch (slot?.type) {
       case "delay": {
         if (nodes?.length < 2) break;
-        const _delayNode = nodes[0] as DelayNode;
-        const _feedbackGain = nodes[1] as GainNode;
+        const delayNode = nodes[0] as DelayNode;
+        const feedbackGain = nodes[1] as GainNode;
         if (params?.time !== undefined && delayNode?.delayTime) {
           delayNode?.delayTime.setTargetAtTime(
             (params?.time as number) / 1000,
@@ -2493,21 +2493,21 @@ class AudioEngine {
       }
       case "distortion": {
         if (nodes?.length < 2) break;
-        const _waveshaper = nodes[0] as WaveShaperNode;
-        const _toneFilter = nodes[1] as BiquadFilterNode;
+        const waveshaper = nodes[0] as WaveShaperNode;
+        const toneFilter = nodes[1] as BiquadFilterNode;
         if (params?.drive !== undefined) {
-          const _k = (params?.drive as number) * 4;
-          const _samples = 8192;
-          const _curve = new Float32Array(samples);
-          const _deg = Math?.PI / 180;
+          const k = (params?.drive as number) * 4;
+          const samples = 8192;
+          const curve = new Float32Array(samples);
+          const deg = Math.PI / 180;
           for (let i = 0; i < samples; ++i) {
-            const _x = (i * 2) / samples - 1;
-            curve[i] = ((3 + k) * x * 20 * deg) / (Math?.PI + k * Math?.abs(x));
+            const x = (i * 2) / samples - 1;
+            curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math?.abs(x));
           }
-          waveshaper?.curve = curve;
+          waveshaper.curve = curve;
         }
         if (params?.tone !== undefined && toneFilter?.frequency) {
-          const _frequency = 500 + ((params?.tone as number) / 100) * 15500;
+          const frequency = 500 + ((params?.tone as number) / 100) * 15500;
           toneFilter?.frequency.setTargetAtTime(
             frequency,
             currentTime,
@@ -2518,8 +2518,8 @@ class AudioEngine {
       }
       case "chorus": {
         if (nodes?.length < 3) break;
-        const _lfo = nodes[1] as OscillatorNode;
-        const _lfoGain = nodes[2] as GainNode;
+        const lfo = nodes[1] as OscillatorNode;
+        const lfoGain = nodes[2] as GainNode;
         if (params?.rate !== undefined && lfo?.frequency) {
           lfo?.frequency.setTargetAtTime(
             params?.rate as number,
@@ -2528,16 +2528,16 @@ class AudioEngine {
           );
         }
         if (params?.depth !== undefined && lfoGain?.gain) {
-          const _depthValue = ((params?.depth as number) / 100) * 0?.01;
+          const depthValue = ((params?.depth as number) / 100) * 0.01;
           lfoGain?.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
         }
         break;
       }
       case "flanger": {
         if (nodes?.length < 4) break;
-        const _lfo = nodes[1] as OscillatorNode;
-        const _lfoGain = nodes[2] as GainNode;
-        const _feedbackGain = nodes[3] as GainNode;
+        const lfo = nodes[1] as OscillatorNode;
+        const lfoGain = nodes[2] as GainNode;
+        const feedbackGain = nodes[3] as GainNode;
         if (params?.rate !== undefined && lfo?.frequency) {
           lfo?.frequency.setTargetAtTime(
             params?.rate as number,
@@ -2546,12 +2546,12 @@ class AudioEngine {
           );
         }
         if (params?.depth !== undefined && lfoGain?.gain) {
-          const _depthValue = ((params?.depth as number) / 100) * 0?.007;
+          const depthValue = ((params?.depth as number) / 100) * 0.007;
           lfoGain?.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
         }
         if (params?.feedback !== undefined && feedbackGain?.gain) {
           feedbackGain?.gain.setTargetAtTime(
-            ((params?.feedback as number) / 100) * 0?.9,
+            ((params?.feedback as number) / 100) * 0.9,
             currentTime,
             timeConstant,
           );
@@ -2561,9 +2561,9 @@ class AudioEngine {
       case "phaser": {
         // Phaser has: [allpassFilters..., lfo, lfoGain, feedbackGain]
         if (nodes?.length < 3) break;
-        const _lfo = nodes[nodes?.length - 3] as OscillatorNode;
-        const _lfoGain = nodes[nodes?.length - 2] as GainNode;
-        const _feedbackGain = nodes[nodes?.length - 1] as GainNode;
+        const lfo = nodes[nodes?.length - 3] as OscillatorNode;
+        const lfoGain = nodes[nodes?.length - 2] as GainNode;
+        const feedbackGain = nodes[nodes?.length - 1] as GainNode;
         if (params?.rate !== undefined && lfo?.frequency) {
           lfo?.frequency.setTargetAtTime(
             params?.rate as number,
@@ -2572,12 +2572,12 @@ class AudioEngine {
           );
         }
         if (params?.depth !== undefined && lfoGain?.gain) {
-          const _depthValue = ((params?.depth as number) / 100) * 1000;
+          const depthValue = ((params?.depth as number) / 100) * 1000;
           lfoGain?.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
         }
         if (params?.feedback !== undefined && feedbackGain?.gain) {
           feedbackGain?.gain.setTargetAtTime(
-            ((params?.feedback as number) / 100) * 0?.8,
+            ((params?.feedback as number) / 100) * 0.8,
             currentTime,
             timeConstant,
           );
@@ -2596,7 +2596,7 @@ class AudioEngine {
    * Get effect slot by ID
    */
   getEffectSlot(trackId: string, slotId: string): EffectSlot | null {
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return null;
     return trackNode?.effectSlots.get(slotId) || null;
   }
@@ -2618,10 +2618,10 @@ class AudioEngine {
     },
   ): void {
     if (!this?.context) return;
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _slotId = `delay_${trackId}`;
+    const slotId = `delay_${trackId}`;
     let slot = trackNode?.effectSlots.get(slotId);
 
     if (!slot) {
@@ -2652,10 +2652,10 @@ class AudioEngine {
     params: { drive?: number; tone?: number; mix?: number; bypass?: boolean },
   ): void {
     if (!this?.context) return;
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _slotId = `distortion_${trackId}`;
+    const slotId = `distortion_${trackId}`;
     let slot = trackNode?.effectSlots.get(slotId);
 
     if (!slot) {
@@ -2689,10 +2689,10 @@ class AudioEngine {
     params: { rate?: number; depth?: number; mix?: number; bypass?: boolean },
   ): void {
     if (!this?.context) return;
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _slotId = `chorus_${trackId}`;
+    const slotId = `chorus_${trackId}`;
     let slot = trackNode?.effectSlots.get(slotId);
 
     if (!slot) {
@@ -2729,10 +2729,10 @@ class AudioEngine {
     },
   ): void {
     if (!this?.context) return;
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _slotId = `flanger_${trackId}`;
+    const slotId = `flanger_${trackId}`;
     let slot = trackNode?.effectSlots.get(slotId);
 
     if (!slot) {
@@ -2770,10 +2770,10 @@ class AudioEngine {
     },
   ): void {
     if (!this?.context) return;
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
-    const _slotId = `phaser_${trackId}`;
+    const slotId = `phaser_${trackId}`;
     let slot = trackNode?.effectSlots.get(slotId);
 
     if (!slot) {
@@ -2811,14 +2811,14 @@ class AudioEngine {
     },
   ): void {
     if (!this?.context) return;
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
     let effect = this?.gateEffects.get(trackId);
 
     if (!effect) {
       effect = {
-        gateGain: trackNode?.gate,
+        gateGain: trackNode.gate,
         params: {
           threshold: -40,
           attack: 1,
@@ -2831,25 +2831,25 @@ class AudioEngine {
       logger?.info(`[AudioEngine] Gate effect configured for track ${trackId}`);
     }
 
-    const _currentTime = this?.context.currentTime;
-    const _timeConstant = 0?.01;
+    const currentTime = this?.context.currentTime;
+    const timeConstant = 0.01;
 
     if (params?.threshold !== undefined) {
-      effect?.params.threshold = params?.threshold;
+      effect.params.threshold = params?.threshold;
     }
     if (params?.attack !== undefined) {
-      effect?.params.attack = params?.attack;
+      effect.params.attack = params?.attack;
     }
     if (params?.release !== undefined) {
-      effect?.params.release = params?.release;
+      effect.params.release = params?.release;
     }
     if (params?.range !== undefined) {
-      effect?.params.range = params?.range;
-      const _rangeGain = Math?.pow(10, params?.range / 20);
+      effect.params.range = params?.range;
+      const rangeGain = Math?.pow(10, params?.range / 20);
       trackNode?.gate.gain?.setTargetAtTime(rangeGain, currentTime, timeConstant);
     }
     if (params?.bypass !== undefined) {
-      effect?.params.bypass = params?.bypass;
+      effect.params.bypass = params?.bypass;
       trackNode?.gate.gain?.setTargetAtTime(
         params?.bypass ? 1 : Math?.pow(10, effect?.params.range / 20),
         currentTime,
@@ -2873,34 +2873,34 @@ class AudioEngine {
     params: { ceiling?: number; release?: number; bypass?: boolean },
   ): void {
     if (!this?.context) return;
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
     let effect = this?.limiterEffects.get(trackId);
 
     if (!effect) {
       effect = {
-        waveshaper: trackNode?.limiter,
-        params: { ceiling: -0?.3, release: 100, bypass: false },
+        waveshaper: trackNode.limiter,
+        params: { ceiling: -0.3, release: 100, bypass: false },
       };
       this?.limiterEffects.set(trackId, effect);
 
-      const _ceiling = Math?.pow(10, -0?.3 / 20);
-      const _samples = 44100;
-      const _curve = new Float32Array(samples);
+      const ceiling = Math?.pow(10, -0.3 / 20);
+      const samples = 44100;
+      const curve = new Float32Array(samples);
       for (let i = 0; i < samples; ++i) {
-        const _x = (i * 2) / samples - 1;
+        const x = (i * 2) / samples - 1;
         if (Math?.abs(x) < ceiling) {
           curve[i] = x;
         } else {
-          const _sign = x > 0 ? 1 : -1;
-          const _excess = Math?.abs(x) - ceiling;
-          const _softClip =
+          const sign = x > 0 ? 1 : -1;
+          const excess = Math?.abs(x) - ceiling;
+          const softClip =
             ceiling + (1 - ceiling) * Math?.tanh(excess / (1 - ceiling));
           curve[i] = sign * Math?.min(softClip, 1);
         }
       }
-      trackNode?.limiter.curve = curve;
+      trackNode.limiter.curve = curve;
 
       logger?.info(
         `[AudioEngine] Limiter effect configured for track ${trackId}`,
@@ -2908,53 +2908,53 @@ class AudioEngine {
     }
 
     if (params?.ceiling !== undefined) {
-      const _ceiling = Math?.pow(10, params?.ceiling / 20);
-      const _samples = 44100;
-      const _curve = new Float32Array(samples);
+      const ceiling = Math?.pow(10, params?.ceiling / 20);
+      const samples = 44100;
+      const curve = new Float32Array(samples);
       for (let i = 0; i < samples; ++i) {
-        const _x = (i * 2) / samples - 1;
+        const x = (i * 2) / samples - 1;
         if (Math?.abs(x) < ceiling) {
           curve[i] = x;
         } else {
-          const _sign = x > 0 ? 1 : -1;
-          const _excess = Math?.abs(x) - ceiling;
-          const _softClip =
+          const sign = x > 0 ? 1 : -1;
+          const excess = Math?.abs(x) - ceiling;
+          const softClip =
             ceiling + (1 - ceiling) * Math?.tanh(excess / (1 - ceiling));
           curve[i] = sign * Math?.min(softClip, 1);
         }
       }
-      trackNode?.limiter.curve = curve;
-      effect?.params.ceiling = params?.ceiling;
+      trackNode.limiter.curve = curve;
+      effect.params.ceiling = params?.ceiling;
     }
     if (params?.release !== undefined) {
-      effect?.params.release = params?.release;
+      effect.params.release = params?.release;
     }
     if (params?.bypass !== undefined) {
-      effect?.params.bypass = params?.bypass;
+      effect.params.bypass = params?.bypass;
       if (params?.bypass) {
-        const _samples = 44100;
-        const _linearCurve = new Float32Array(samples);
+        const samples = 44100;
+        const linearCurve = new Float32Array(samples);
         for (let i = 0; i < samples; ++i) {
           linearCurve[i] = (i * 2) / samples - 1;
         }
-        trackNode?.limiter.curve = linearCurve;
+        trackNode.limiter.curve = linearCurve;
       } else {
-        const _ceiling = Math?.pow(10, effect?.params.ceiling / 20);
-        const _samples = 44100;
-        const _curve = new Float32Array(samples);
+        const ceiling = Math?.pow(10, effect?.params.ceiling / 20);
+        const samples = 44100;
+        const curve = new Float32Array(samples);
         for (let i = 0; i < samples; ++i) {
-          const _x = (i * 2) / samples - 1;
+          const x = (i * 2) / samples - 1;
           if (Math?.abs(x) < ceiling) {
             curve[i] = x;
           } else {
-            const _sign = x > 0 ? 1 : -1;
-            const _excess = Math?.abs(x) - ceiling;
-            const _softClip =
+            const sign = x > 0 ? 1 : -1;
+            const excess = Math?.abs(x) - ceiling;
+            const softClip =
               ceiling + (1 - ceiling) * Math?.tanh(excess / (1 - ceiling));
             curve[i] = sign * Math?.min(softClip, 1);
           }
         }
-        trackNode?.limiter.curve = curve;
+        trackNode.limiter.curve = curve;
       }
     }
 
@@ -2972,7 +2972,7 @@ class AudioEngine {
     effectType: "eq" | "compressor" | "reverb",
     enabled: boolean,
   ): void {
-    const _trackNode = this?.trackNodes.get(trackId);
+    const trackNode = this?.trackNodes.get(trackId);
     if (!trackNode) return;
 
     switch (effectType) {
@@ -3000,16 +3000,16 @@ class AudioEngine {
       return null;
     }
 
-    const _sampleRate = this?.context.sampleRate;
-    const _length = sampleRate * duration;
-    const _impulse = this?.context.createBuffer(2, length, sampleRate);
+    const sampleRate = this?.context.sampleRate;
+    const length = sampleRate * duration;
+    const impulse = this?.context.createBuffer(2, length, sampleRate);
 
-    const _leftChannel = impulse?.getChannelData(0);
-    const _rightChannel = impulse?.getChannelData(1);
+    const leftChannel = impulse?.getChannelData(0);
+    const rightChannel = impulse?.getChannelData(1);
 
     for (let i = 0; i < length; i++) {
-      const _t = i / sampleRate;
-      const _envelope = Math?.exp(-t / decay);
+      const t = i / sampleRate;
+      const envelope = Math?.exp(-t / decay);
 
       // White noise with exponential decay
       leftChannel[i] = (Math?.random() * 2 - 1) * envelope;
@@ -3029,29 +3029,29 @@ class AudioEngine {
     }
 
     // Check cache first
-    const _cached = this?.irCache.get(irId);
+    const cached = this?.irCache.get(irId);
     if (cached) {
       return cached;
     }
 
     // Check if already loading
-    const _pending = this?.irLoadingPromises.get(irId);
+    const pending = this?.irLoadingPromises.get(irId);
     if (pending) {
       return pending;
     }
 
     // Start new load
-    const _loadPromise = (async () => {
+    const loadPromise = (async () => {
       try {
         // Try to load from server
-        const _response = await fetch(`/ir/${irId}.wav`);
+        const response = await fetch(`/ir/${irId}.wav`);
         if (!response?.ok) {
           // Fallback to programmatic generation
-          return this?.generateImpulseResponse(2?.0, 1?.0);
+          return this?.generateImpulseResponse(2.0, 1.0);
         }
 
-        const _arrayBuffer = await response?.arrayBuffer();
-        const _audioBuffer = await this?.context!.decodeAudioData(arrayBuffer);
+        const arrayBuffer = await response?.arrayBuffer();
+        const audioBuffer = await this?.context!.decodeAudioData(arrayBuffer);
 
         // Cache the loaded IR
         this?.irCache.set(irId, audioBuffer);
@@ -3062,7 +3062,7 @@ class AudioEngine {
         logger?.error(`Failed to load IR ${irId}:`, error);
         this?.irLoadingPromises.delete(irId);
         // Fallback to programmatic generation
-        return this?.generateImpulseResponse(2?.0, 1?.0);
+        return this?.generateImpulseResponse(2.0, 1.0);
       }
     })();
 
@@ -3106,8 +3106,8 @@ class AudioEngine {
       await this?.context.close();
     }
 
-    this?.context = null;
-    this?.initialized = false;
+    this.context = null;
+    this.initialized = false;
   }
 
   /**
@@ -3128,7 +3128,7 @@ class AudioEngine {
    * Get maximum recommended track count for current configuration
    */
   getMaxTracks(): number {
-    return this?.config.maxTracks || TRACK_LIMITS?.PROFESSIONAL;
+    return this?.config.maxTracks || TRACK_LIMITS.PROFESSIONAL;
   }
 
   /**
@@ -3153,19 +3153,19 @@ class AudioEngine {
     description: string;
     requirements: Record<string, unknown>;
   } | null {
-    const _sampleRate = this?.config.sampleRate!;
+    const sampleRate = this?.config.sampleRate!;
 
-    if (sampleRate >= SAMPLE_RATES?.SR_192000) {
-      return PERFORMANCE_GUARANTEES?.TRACK_COUNT_64;
-    } else if (sampleRate >= SAMPLE_RATES?.SR_96000) {
-      return PERFORMANCE_GUARANTEES?.TRACK_COUNT_128;
+    if (sampleRate >= SAMPLE_RATES.SR_192000) {
+      return PERFORMANCE_GUARANTEES.TRACK_COUNT_64;
+    } else if (sampleRate >= SAMPLE_RATES.SR_96000) {
+      return PERFORMANCE_GUARANTEES.TRACK_COUNT_128;
     } else {
-      return PERFORMANCE_GUARANTEES?.TRACK_COUNT_256;
+      return PERFORMANCE_GUARANTEES.TRACK_COUNT_256;
     }
   }
 }
 
 // Singleton instance for use across components
-export const _audioEngine = new AudioEngine();
+export const audioEngine = new AudioEngine();
 
 export default AudioEngine;

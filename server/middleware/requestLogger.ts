@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../logger?.js";
-import { auditLogger } from "./auditLogger?.js";
-import { isRoutesReady } from "../lib/bootState?.js";
+import { logger } from "../logger.js";
+import { auditLogger } from "./auditLogger.js";
+import { isRoutesReady } from "../lib/bootState.js";
 
 interface RequestLogData {
   timestamp: string;
@@ -25,43 +25,43 @@ export function requestLogger(
   res: Response,
   next: NextFunction,
 ): void {
-  const _startTime = Date?.now();
+  const startTime = Date?.now();
 
   // Capture request details
   const logData: RequestLogData = {
     timestamp: new Date().toISOString(),
-    requestId: req?.requestId,
-    method: req?.method,
-    url: req?.originalUrl,
-    ip: req?.ip || "unknown",
-    userAgent: req?.get("user-agent") || "unknown",
+    requestId: req.requestId,
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip || "unknown",
+    userAgent: req.get("user-agent") || "unknown",
     userId: (req as Record<string, unknown>).user?.id,
-    sessionId: req?.sessionID,
-    query: Object?.keys(req?.query).length > 0 ? req?.query : undefined,
-    referrer: req?.get("referrer"),
+    sessionId: req.sessionID,
+    query: Object.keys(req?.query).length > 0 ? req?.query : undefined,
+    referrer: req.get("referrer"),
   };
 
   // Override res?.end to capture response details
-  const _originalEnd = res?.end.bind(res);
-  res?.end = function (
+  const originalEnd = res?.end.bind(res);
+  res.end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
   ): Record<string, unknown> {
-    const _responseTime = Date?.now() - startTime;
+    const responseTime = Date?.now() - startTime;
 
     // Update log data with response information
-    logData?.statusCode = res?.statusCode;
-    logData?.responseTime = responseTime;
-    logData?.bodySize = chunk ? Buffer?.byteLength(chunk) : 0;
+    logData.statusCode = res?.statusCode;
+    logData.responseTime = responseTime;
+    logData.bodySize = chunk ? Buffer?.byteLength(chunk) : 0;
 
     // Determine log level based on status code
-    const _isError = res?.statusCode >= 400;
-    const _isServerError = res?.statusCode >= 500;
+    const isError = res?.statusCode >= 400;
+    const isServerError = res?.statusCode >= 500;
 
     // Static/Vite asset paths — browser SW cache mismatches produce transient 404s on every
     // restart; these are not actionable and should never surface as WARN.
-    const _isStaticAssetRequest =
+    const isStaticAssetRequest =
       req?.originalUrl.startsWith("/assets/") ||
       req?.originalUrl.startsWith("/src/") ||
       req?.originalUrl.startsWith("/@fs/") ||
@@ -72,7 +72,7 @@ export function requestLogger(
 
     // Skip logging of static assets and health checks in production; also skip static
     // assets in dev to avoid noise from browser SW cache mismatches.
-    const _skipLogging =
+    const skipLogging =
       req?.originalUrl.includes("/api/health") ||
       req?.originalUrl.includes("/api/version") ||
       req?.originalUrl.includes("/api/ready") ||
@@ -84,30 +84,30 @@ export function requestLogger(
     if (!skipLogging) {
       // Log request for audit trail
       auditLogger?.log({
-        timestamp: logData?.timestamp,
-        userId: logData?.userId,
+        timestamp: logData.timestamp,
+        userId: logData.userId,
         userEmail: (req as Record<string, unknown>).user?.email,
-        ip: logData?.ip,
-        userAgent: logData?.userAgent,
+        ip: logData.ip,
+        userAgent: logData.userAgent,
         action: "HTTP_REQUEST",
         resource: `${req?.method} ${req?.route?.path || req?.originalUrl}`,
         details: {
           request: {
-            id: logData?.requestId,
-            method: logData?.method,
-            url: logData?.url,
-            query: logData?.query,
-            referrer: logData?.referrer,
+            id: logData.requestId,
+            method: logData.method,
+            url: logData.url,
+            query: logData.query,
+            referrer: logData.referrer,
           },
           response: {
-            statusCode: logData?.statusCode,
-            responseTime: logData?.responseTime,
-            bodySize: logData?.bodySize,
+            statusCode: logData.statusCode,
+            responseTime: logData.responseTime,
+            bodySize: logData.bodySize,
           },
         },
         result: isError ? "failure" : "success",
         risk: isServerError ? "high" : isError ? "medium" : "low",
-        sessionId: logData?.sessionId,
+        sessionId: logData.sessionId,
       });
 
       // Console log for development and critical errors
@@ -120,20 +120,20 @@ export function requestLogger(
         // 404s on static/asset paths are browser SW cache artifacts — log at INFO.
         // 404s during the boot window (before registerRoutes() completes) are startup
         // races — the route is not yet mounted, not a real missing-endpoint error.
-        const _isAuthStatus = res?.statusCode === 401 || res?.statusCode === 403;
-        const _isAsset404 = res?.statusCode === 404 && isStaticAssetRequest;
-        const _isBootWindow404 = res?.statusCode === 404 && !isRoutesReady();
-        const _logLevel = isServerError
+        const isAuthStatus = res?.statusCode === 401 || res?.statusCode === 403;
+        const isAsset404 = res?.statusCode === 404 && isStaticAssetRequest;
+        const isBootWindow404 = res?.statusCode === 404 && !isRoutesReady();
+        const logLevel = isServerError
           ? "error"
           : isError && !isAuthStatus && !isAsset404 && !isBootWindow404
             ? "warn"
             : "info";
-        const _message = `${logData?.method} ${logData?.url} - ${logData?.statusCode} in ${responseTime}ms`;
+        const message = `${logData?.method} ${logData?.url} - ${logData?.statusCode} in ${responseTime}ms`;
 
         if (logLevel === "error") {
-          logger?.warn(`❌ ${message}`, { requestId: logData?.requestId });
+          logger?.warn(`❌ ${message}`, { requestId: logData.requestId });
         } else if (logLevel === "warn") {
-          logger?.warn(`⚠️  ${message}`, { requestId: logData?.requestId });
+          logger?.warn(`⚠️  ${message}`, { requestId: logData.requestId });
         } else {
           logger?.info(`✅ ${message}`);
         }
@@ -154,18 +154,18 @@ export function errorContext(
   next: NextFunction,
 ): void {
   // Add request context to any errors that occur
-  const _originalNext = next;
+  const originalNext = next;
   next = function (error?: unknown) {
     if (error) {
       // Enhance error with request context
-      error?.requestContext = {
-        requestId: req?.requestId,
-        method: req?.method,
-        url: req?.originalUrl,
-        ip: req?.ip,
-        userAgent: req?.get("user-agent"),
+      error.requestContext = {
+        requestId: req.requestId,
+        method: req.method,
+        url: req.originalUrl,
+        ip: req.ip,
+        userAgent: req.get("user-agent"),
         userId: (req as Record<string, unknown>).user?.id,
-        sessionId: req?.sessionID,
+        sessionId: req.sessionID,
         timestamp: new Date().toISOString(),
       };
     }

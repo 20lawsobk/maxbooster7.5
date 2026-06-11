@@ -3,9 +3,9 @@ import { exec } from "child_process";
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
-const _execAsync = promisify(exec);
+const execAsync = promisify(exec);
 
 // Comprehensive Audit System
 export class AuditSystem {
@@ -19,7 +19,7 @@ export class AuditSystem {
   private seoAuditor: SEOAuditor;
 
   private constructor() {
-    this?.auditResults = {
+    this.auditResults = {
       overallScore: 0,
       securityScore: 0,
       functionalityScore: 0,
@@ -27,7 +27,7 @@ export class AuditSystem {
       codeQualityScore: 0,
       accessibilityScore: 0,
       seoScore: 0,
-      lastAudit: Date?.now(),
+      lastAudit: Date.now(),
       issues: [],
       recommendations: [],
       compliance: {
@@ -39,19 +39,19 @@ export class AuditSystem {
       },
     };
 
-    this?.securityAuditor = new SecurityAuditor();
-    this?.functionalityAuditor = new FunctionalityAuditor();
-    this?.performanceAuditor = new PerformanceAuditor();
-    this?.codeQualityAuditor = new CodeQualityAuditor();
-    this?.accessibilityAuditor = new AccessibilityAuditor();
-    this?.seoAuditor = new SEOAuditor();
+    this.securityAuditor = new SecurityAuditor();
+    this.functionalityAuditor = new FunctionalityAuditor();
+    this.performanceAuditor = new PerformanceAuditor();
+    this.codeQualityAuditor = new CodeQualityAuditor();
+    this.accessibilityAuditor = new AccessibilityAuditor();
+    this.seoAuditor = new SEOAuditor();
 
     this?.initializeAuditSystem();
   }
 
   public static getInstance(): AuditSystem {
     if (!AuditSystem?.instance) {
-      AuditSystem?.instance = new AuditSystem();
+      AuditSystem.instance = new AuditSystem();
     }
     return AuditSystem?.instance;
   }
@@ -118,48 +118,48 @@ export class AuditSystem {
 
     try {
       // Security audit
-      const _securityResults = await this?.securityAuditor.audit();
-      this?.auditResults.securityScore = securityResults?.score;
+      const securityResults = await this?.securityAuditor.audit();
+      this.auditResults.securityScore = securityResults?.score;
       this?.auditResults.issues?.push(...securityResults?.issues);
       this?.auditResults.recommendations?.push(
         ...securityResults?.recommendations,
       );
 
       // Functionality audit
-      const _functionalityResults = await this?.functionalityAuditor.audit();
-      this?.auditResults.functionalityScore = functionalityResults?.score;
+      const functionalityResults = await this?.functionalityAuditor.audit();
+      this.auditResults.functionalityScore = functionalityResults?.score;
       this?.auditResults.issues?.push(...functionalityResults?.issues);
       this?.auditResults.recommendations?.push(
         ...functionalityResults?.recommendations,
       );
 
       // Performance audit
-      const _performanceResults = await this?.performanceAuditor.audit();
-      this?.auditResults.performanceScore = performanceResults?.score;
+      const performanceResults = await this?.performanceAuditor.audit();
+      this.auditResults.performanceScore = performanceResults?.score;
       this?.auditResults.issues?.push(...performanceResults?.issues);
       this?.auditResults.recommendations?.push(
         ...performanceResults?.recommendations,
       );
 
       // Code quality audit
-      const _codeQualityResults = await this?.codeQualityAuditor.audit();
-      this?.auditResults.codeQualityScore = codeQualityResults?.score;
+      const codeQualityResults = await this?.codeQualityAuditor.audit();
+      this.auditResults.codeQualityScore = codeQualityResults?.score;
       this?.auditResults.issues?.push(...codeQualityResults?.issues);
       this?.auditResults.recommendations?.push(
         ...codeQualityResults?.recommendations,
       );
 
       // Accessibility audit
-      const _accessibilityResults = await this?.accessibilityAuditor.audit();
-      this?.auditResults.accessibilityScore = accessibilityResults?.score;
+      const accessibilityResults = await this?.accessibilityAuditor.audit();
+      this.auditResults.accessibilityScore = accessibilityResults?.score;
       this?.auditResults.issues?.push(...accessibilityResults?.issues);
       this?.auditResults.recommendations?.push(
         ...accessibilityResults?.recommendations,
       );
 
       // SEO audit
-      const _seoResults = await this?.seoAuditor.audit();
-      this?.auditResults.seoScore = seoResults?.score;
+      const seoResults = await this?.seoAuditor.audit();
+      this.auditResults.seoScore = seoResults?.score;
       this?.auditResults.issues?.push(...seoResults?.issues);
       this?.auditResults.recommendations?.push(...seoResults?.recommendations);
 
@@ -170,7 +170,7 @@ export class AuditSystem {
       await this?.checkCompliance();
 
       // Update last audit time
-      this?.auditResults.lastAudit = Date?.now();
+      this.auditResults.lastAudit = Date?.now();
 
       logger?.info(
         `✅ Audit completed. Overall score: ${this?.auditResults.overallScore}/100`,
@@ -186,8 +186,8 @@ export class AuditSystem {
   // Perform security audit
   private async performSecurityAudit(): Promise<void> {
     try {
-      const _results = await this?.securityAuditor.audit();
-      this?.auditResults.securityScore = results?.score;
+      const results = await this?.securityAuditor.audit();
+      this.auditResults.securityScore = results?.score;
 
       if (results?.score < 90) {
         logger?.info(`⚠️ Security score below threshold: ${results?.score}/100`);
@@ -200,8 +200,8 @@ export class AuditSystem {
   // Perform performance audit
   private async performPerformanceAudit(): Promise<void> {
     try {
-      const _results = await this?.performanceAuditor.audit();
-      this?.auditResults.performanceScore = results?.score;
+      const results = await this?.performanceAuditor.audit();
+      this.auditResults.performanceScore = results?.score;
 
       if (results?.score < 85) {
         logger?.info(
@@ -216,8 +216,8 @@ export class AuditSystem {
   // Perform functionality audit
   private async performFunctionalityAudit(): Promise<void> {
     try {
-      const _results = await this?.functionalityAuditor.audit();
-      this?.auditResults.functionalityScore = results?.score;
+      const results = await this?.functionalityAuditor.audit();
+      this.auditResults.functionalityScore = results?.score;
 
       if (results?.score < 95) {
         logger?.info(
@@ -231,16 +231,16 @@ export class AuditSystem {
 
   // Calculate overall score
   private calculateOverallScore(): void {
-    const _weights = {
-      security: 0?.25,
-      functionality: 0?.25,
-      performance: 0?.2,
-      codeQuality: 0?.15,
-      accessibility: 0?.1,
-      seo: 0?.05,
+    const weights = {
+      security: 0.25,
+      functionality: 0.25,
+      performance: 0.2,
+      codeQuality: 0.15,
+      accessibility: 0.1,
+      seo: 0.05,
     };
 
-    this?.auditResults.overallScore = Math?.round(
+    this.auditResults.overallScore = Math?.round(
       this?.auditResults.securityScore * weights?.security +
         this?.auditResults.functionalityScore * weights?.functionality +
         this?.auditResults.performanceScore * weights?.performance +
@@ -253,30 +253,30 @@ export class AuditSystem {
   // Check compliance
   private async checkCompliance(): Promise<void> {
     // GDPR compliance
-    this?.auditResults.compliance?.gdpr = await this?.checkGDPRCompliance();
+    this.auditResults.compliance.gdpr = await this?.checkGDPRCompliance();
 
     // CCPA compliance
-    this?.auditResults.compliance?.ccpa = await this?.checkCCPACompliance();
+    this.auditResults.compliance.ccpa = await this?.checkCCPACompliance();
 
     // SOX compliance
-    this?.auditResults.compliance?.sox = await this?.checkSOXCompliance();
+    this.auditResults.compliance.sox = await this?.checkSOXCompliance();
 
     // HIPAA compliance
-    this?.auditResults.compliance?.hipaa = await this?.checkHIPAACompliance();
+    this.auditResults.compliance.hipaa = await this?.checkHIPAACompliance();
 
     // PCI compliance
-    this?.auditResults.compliance?.pci = await this?.checkPCICompliance();
+    this.auditResults.compliance.pci = await this?.checkPCICompliance();
   }
 
   // Check GDPR compliance
   private async checkGDPRCompliance(): Promise<boolean> {
     try {
       // Check for data protection measures
-      const _hasDataEncryption = await this?.checkDataEncryption();
-      const _hasDataRetention = await this?.checkDataRetention();
-      const _hasUserConsent = await this?.checkUserConsent();
-      const _hasDataPortability = await this?.checkDataPortability();
-      const _hasRightToErasure = await this?.checkRightToErasure();
+      const hasDataEncryption = await this?.checkDataEncryption();
+      const hasDataRetention = await this?.checkDataRetention();
+      const hasUserConsent = await this?.checkUserConsent();
+      const hasDataPortability = await this?.checkDataPortability();
+      const hasRightToErasure = await this?.checkRightToErasure();
 
       return (
         hasDataEncryption &&
@@ -295,9 +295,9 @@ export class AuditSystem {
   private async checkCCPACompliance(): Promise<boolean> {
     try {
       // Check for California Consumer Privacy Act compliance
-      const _hasPrivacyNotice = await this?.checkPrivacyNotice();
-      const _hasOptOut = await this?.checkOptOutMechanism();
-      const _hasDataDisclosure = await this?.checkDataDisclosure();
+      const hasPrivacyNotice = await this?.checkPrivacyNotice();
+      const hasOptOut = await this?.checkOptOutMechanism();
+      const hasDataDisclosure = await this?.checkDataDisclosure();
 
       return hasPrivacyNotice && hasOptOut && hasDataDisclosure;
     } catch (error: unknown) {
@@ -310,9 +310,9 @@ export class AuditSystem {
   private async checkSOXCompliance(): Promise<boolean> {
     try {
       // Check for Sarbanes-Oxley compliance
-      const _hasFinancialControls = await this?.checkFinancialControls();
-      const _hasAuditTrail = await this?.checkAuditTrail();
-      const _hasDataIntegrity = await this?.checkDataIntegrity();
+      const hasFinancialControls = await this?.checkFinancialControls();
+      const hasAuditTrail = await this?.checkAuditTrail();
+      const hasDataIntegrity = await this?.checkDataIntegrity();
 
       return hasFinancialControls && hasAuditTrail && hasDataIntegrity;
     } catch (error: unknown) {
@@ -325,9 +325,9 @@ export class AuditSystem {
   private async checkHIPAACompliance(): Promise<boolean> {
     try {
       // Check for HIPAA compliance
-      const _hasAccessControls = await this?.checkAccessControls();
-      const _hasAuditLogs = await this?.checkAuditLogs();
-      const _hasDataEncryption = await this?.checkDataEncryption();
+      const hasAccessControls = await this?.checkAccessControls();
+      const hasAuditLogs = await this?.checkAuditLogs();
+      const hasDataEncryption = await this?.checkDataEncryption();
 
       return hasAccessControls && hasAuditLogs && hasDataEncryption;
     } catch (error: unknown) {
@@ -340,9 +340,9 @@ export class AuditSystem {
   private async checkPCICompliance(): Promise<boolean> {
     try {
       // Check for PCI DSS compliance
-      const _hasSecureNetwork = await this?.checkSecureNetwork();
-      const _hasCardholderData = await this?.checkCardholderData();
-      const _hasVulnerabilityManagement =
+      const hasSecureNetwork = await this?.checkSecureNetwork();
+      const hasCardholderData = await this?.checkCardholderData();
+      const hasVulnerabilityManagement =
         await this?.checkVulnerabilityManagement();
 
       return (
@@ -371,22 +371,22 @@ export class AuditSystem {
   private async checkDataEncryption(): Promise<boolean> {
     // Real: verify TLS is on (production), DB connection uses SSL, and a
     // bcrypt/argon password hashing salt rounds env is sane.
-    const _inProd =
+    const inProd =
       process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
-    const _dbUrl = process?.env.DATABASE_URL || "";
-    const _dbHasSsl =
-      dbUrl?.includes("sslmode=require") ||
-      dbUrl?.includes("sslmode=verify") ||
+    const dbUrl = process?.env.DATABASE_URL || "";
+    const dbHasSsl =
+      dbUrl.includes("sslmode=require") ||
+      dbUrl.includes("sslmode=verify") ||
       !inProd;
-    const _tlsOk =
+    const tlsOk =
       !inProd || !!process?.env.TLS_CERT_PATH || !!process?.env.REPLIT_DEPLOYMENT;
     return dbHasSsl && tlsOk;
   }
 
   private async checkDataRetention(): Promise<boolean> {
     // Real: a retention policy file must exist OR an env var must declare it.
-    const _hasPolicyFile = await this?.fileExists(
-      path?.join(process?.cwd(), "server/compliance/policies/data-retention?.md"),
+    const hasPolicyFile = await this?.fileExists(
+      path?.join(process?.cwd(), "server/compliance/policies/data-retention.md"),
     );
     return hasPolicyFile || !!process?.env.DATA_RETENTION_DAYS;
   }
@@ -395,15 +395,15 @@ export class AuditSystem {
     // Real: a cookie/consent banner component must exist on the client.
     return (
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/components/CookieConsent?.tsx"),
+        path?.join(process?.cwd(), "client/src/components/CookieConsent.tsx"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/components/CookieBanner?.tsx"),
+        path?.join(process?.cwd(), "client/src/components/CookieBanner.tsx"),
       )) ||
       (await this?.fileExists(
         path?.join(
           process?.cwd(),
-          "client/src/components/legal/CookieConsent?.tsx",
+          "client/src/components/legal/CookieConsent.tsx",
         ),
       ))
     );
@@ -412,7 +412,7 @@ export class AuditSystem {
   private async checkDataPortability(): Promise<boolean> {
     // Real: an account/export endpoint must be registered.
     try {
-      const _grep = await execAsync(
+      const grep = await execAsync(
         `grep -rE "/account/export|/export/data|/gdpr/export" server/routes server/routes?.ts 2>/dev/null | head -1`,
       );
       return grep?.stdout.trim().length > 0;
@@ -423,7 +423,7 @@ export class AuditSystem {
 
   private async checkRightToErasure(): Promise<boolean> {
     try {
-      const _grep = await execAsync(
+      const grep = await execAsync(
         `grep -rE "/account/delete|deleteAccount|deleteUser|/gdpr/erase" server/routes server/routes?.ts 2>/dev/null | head -1`,
       );
       return grep?.stdout.trim().length > 0;
@@ -435,15 +435,15 @@ export class AuditSystem {
   private async checkPrivacyNotice(): Promise<boolean> {
     return (
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/Privacy?.tsx"),
+        path?.join(process?.cwd(), "client/src/pages/Privacy.tsx"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/PrivacyPolicy?.tsx"),
+        path?.join(process?.cwd(), "client/src/pages/PrivacyPolicy.tsx"),
       )) ||
       (await this?.fileExists(
         path?.join(
           process?.cwd(),
-          "server/compliance/policies/privacy-policy?.md",
+          "server/compliance/policies/privacy-policy.md",
         ),
       ))
     );
@@ -451,7 +451,7 @@ export class AuditSystem {
 
   private async checkOptOutMechanism(): Promise<boolean> {
     try {
-      const _grep = await execAsync(
+      const grep = await execAsync(
         `grep -rE "doNotSell|optOut|/privacy/opt-out|emailOptOut" server/routes server/routes?.ts client/src 2>/dev/null | head -1`,
       );
       return grep?.stdout.trim().length > 0;
@@ -465,32 +465,32 @@ export class AuditSystem {
       (await this?.fileExists(
         path?.join(
           process?.cwd(),
-          "server/compliance/policies/data-processing-agreement?.md",
+          "server/compliance/policies/data-processing-agreement.md",
         ),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/DataDisclosure?.tsx"),
+        path?.join(process?.cwd(), "client/src/pages/DataDisclosure.tsx"),
       ))
     );
   }
 
   private async checkFinancialControls(): Promise<boolean> {
     // Real: payments routed through Stripe with webhook signature verification.
-    const _hasStripe = !!process?.env.STRIPE_SECRET_KEY;
-    const _hasWebhookSecret = !!process?.env.STRIPE_WEBHOOK_SECRET;
+    const hasStripe = !!process?.env.STRIPE_SECRET_KEY;
+    const hasWebhookSecret = !!process?.env.STRIPE_WEBHOOK_SECRET;
     return hasStripe && hasWebhookSecret;
   }
 
   private async checkAuditTrail(): Promise<boolean> {
     return (
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/services/auditLoggerService?.ts"),
+        path?.join(process?.cwd(), "server/services/auditLoggerService.ts"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/safety/auditLogger?.ts"),
+        path?.join(process?.cwd(), "server/safety/auditLogger.ts"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/middleware/auditLogger?.ts"),
+        path?.join(process?.cwd(), "server/middleware/auditLogger.ts"),
       ))
     );
   }
@@ -498,16 +498,16 @@ export class AuditSystem {
   private async checkDataIntegrity(): Promise<boolean> {
     // Real: DB migrations directory + drizzle config must exist.
     return (
-      (await this?.fileExists(path?.join(process?.cwd(), "drizzle?.config.ts"))) ||
-      (await this?.fileExists(path?.join(process?.cwd(), "drizzle?.config.js")))
+      (await this?.fileExists(path?.join(process?.cwd(), "drizzle.config.ts"))) ||
+      (await this?.fileExists(path?.join(process?.cwd(), "drizzle.config.js")))
     );
   }
 
   private async checkAccessControls(): Promise<boolean> {
     return (
-      (await this?.fileExists(path?.join(process?.cwd(), "server/auth?.ts"))) &&
+      (await this?.fileExists(path?.join(process?.cwd(), "server/auth.ts"))) &&
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/middleware/auth?.ts"),
+        path?.join(process?.cwd(), "server/middleware/auth.ts"),
       ))
     );
   }
@@ -519,11 +519,11 @@ export class AuditSystem {
   private async checkSecureNetwork(): Promise<boolean> {
     // Helmet/CORS middleware presence + HTTPS in prod.
     try {
-      const _grep = await execAsync(
-        `grep -rE "helmet\\(\\)|app?.use\\(helmet|cors\\(" server/index?.ts server/routes?.ts 2>/dev/null | head -1`,
+      const grep = await execAsync(
+        `grep -rE "helmet\\(\\)|app.use\\(helmet|cors\\(" server/index?.ts server/routes?.ts 2>/dev/null | head -1`,
       );
-      const _hasMiddleware = grep?.stdout.trim().length > 0;
-      const _httpsOk =
+      const hasMiddleware = grep?.stdout.trim().length > 0;
+      const httpsOk =
         process?.env.NODE_ENV !== "production" ||
         !!process?.env.REPLIT_DEPLOYMENT;
       return hasMiddleware && httpsOk;
@@ -536,10 +536,10 @@ export class AuditSystem {
     // We don't store cardholder data — Stripe tokenized only. Verify by
     // ensuring no `cardNumber`/`cvv`/`pan` columns exist in the schema.
     try {
-      const _grep = await execAsync(
-        `grep -niE "card_?number|\\bcvv\\b|\\bpan\\b" shared/schema?.ts 2>/dev/null | head -1`,
+      const grep = await execAsync(
+        `grep -niE "card_?number|\\bcvv\\b|\\bpan\\b" shared/schema.ts 2>/dev/null | head -1`,
       );
-      return grep?.stdout.trim().length === 0;
+      return grep.stdout.trim().length === 0;
     } catch {
       return true;
     }
@@ -548,50 +548,50 @@ export class AuditSystem {
   private async checkVulnerabilityManagement(): Promise<boolean> {
     // Real: a security workflow / scanner must exist.
     return (
-      (await this?.fileExists(
-        path?.join(process?.cwd(), ".github/workflows/security?.yml"),
+      (await this.fileExists(
+        path.join(process.cwd(), ".github/workflows/security.yml"),
       )) ||
-      (await this?.fileExists(
-        path?.join(process?.cwd(), ".github/workflows/codeql?.yml"),
+      (await this.fileExists(
+        path.join(process.cwd(), ".github/workflows/codeql.yml"),
       )) ||
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "server/security-system?.ts"),
+      (await this.fileExists(
+        path.join(process.cwd(), "server/security-system.ts"),
       ))
     );
   }
 
   // Get audit results
   public getAuditResults(): AuditResults {
-    return { ...this?.auditResults };
+    return { ...this.auditResults };
   }
 
   // Get audit score
   public getAuditScore(): number {
-    return this?.auditResults.overallScore;
+    return this.auditResults.overallScore;
   }
 
   // Check if audit passed
   public isAuditPassed(): boolean {
-    return this?.auditResults.overallScore >= 95;
+    return this.auditResults.overallScore >= 95;
   }
 
   // Get critical issues
   public getCriticalIssues(): AuditIssue[] {
-    return this?.auditResults.issues?.filter(
-      (issue) => issue?.severity === "critical",
+    return this.auditResults.issues.filter(
+      (issue) => issue.severity === "critical",
     );
   }
 
   // Get high priority issues
   public getHighPriorityIssues(): AuditIssue[] {
-    return this?.auditResults.issues?.filter(
-      (issue) => issue?.severity === "high",
+    return this.auditResults.issues.filter(
+      (issue) => issue.severity === "high",
     );
   }
 
   // Get recommendations
   public getRecommendations(): AuditRecommendation[] {
-    return this?.auditResults.recommendations;
+    return this.auditResults.recommendations;
   }
 }
 
@@ -604,32 +604,32 @@ class SecurityAuditor {
 
     try {
       // Check for SQL injection vulnerabilities
-      const _sqlInjectionCheck = await this?.checkSQLInjection();
-      if (!sqlInjectionCheck?.passed) {
-        issues?.push({
+      const sqlInjectionCheck = await this.checkSQLInjection();
+      if (!sqlInjectionCheck.passed) {
+        issues.push({
           id: "sql-injection",
           type: "security",
           severity: "critical",
           title: "SQL Injection Vulnerability",
           description: "Potential SQL injection vulnerability detected",
-          file: sqlInjectionCheck?.file,
-          line: sqlInjectionCheck?.line,
+          file: sqlInjectionCheck.file,
+          line: sqlInjectionCheck.line,
           recommendation: "Use parameterized queries and input validation",
         });
         score -= 20;
       }
 
       // Check for XSS vulnerabilities
-      const _xssCheck = await this?.checkXSS();
-      if (!xssCheck?.passed) {
-        issues?.push({
+      const xssCheck = await this.checkXSS();
+      if (!xssCheck.passed) {
+        issues.push({
           id: "xss",
           type: "security",
           severity: "high",
           title: "Cross-Site Scripting Vulnerability",
           description: "Potential XSS vulnerability detected",
-          file: xssCheck?.file,
-          line: xssCheck?.line,
+          file: xssCheck.file,
+          line: xssCheck.line,
           recommendation:
             "Implement proper input sanitization and output encoding",
         });
@@ -637,9 +637,9 @@ class SecurityAuditor {
       }
 
       // Check for CSRF vulnerabilities
-      const _csrfCheck = await this?.checkCSRF();
-      if (!csrfCheck?.passed) {
-        issues?.push({
+      const csrfCheck = await this.checkCSRF();
+      if (!csrfCheck.passed) {
+        issues.push({
           id: "csrf",
           type: "security",
           severity: "high",
@@ -651,9 +651,9 @@ class SecurityAuditor {
       }
 
       // Check for authentication vulnerabilities
-      const _authCheck = await this?.checkAuthentication();
-      if (!authCheck?.passed) {
-        issues?.push({
+      const authCheck = await this.checkAuthentication();
+      if (!authCheck.passed) {
+        issues.push({
           id: "auth",
           type: "security",
           severity: "critical",
@@ -666,9 +666,9 @@ class SecurityAuditor {
       }
 
       // Check for authorization vulnerabilities
-      const _authzCheck = await this?.checkAuthorization();
-      if (!authzCheck?.passed) {
-        issues?.push({
+      const authzCheck = await this.checkAuthorization();
+      if (!authzCheck.passed) {
+        issues.push({
           id: "authz",
           type: "security",
           severity: "high",
@@ -680,9 +680,9 @@ class SecurityAuditor {
       }
 
       // Check for data encryption
-      const _encryptionCheck = await this?.checkDataEncryption();
-      if (!encryptionCheck?.passed) {
-        issues?.push({
+      const encryptionCheck = await this.checkDataEncryption();
+      if (!encryptionCheck.passed) {
+        issues.push({
           id: "encryption",
           type: "security",
           severity: "critical",
@@ -694,9 +694,9 @@ class SecurityAuditor {
       }
 
       // Check for secure headers
-      const _headersCheck = await this?.checkSecurityHeaders();
-      if (!headersCheck?.passed) {
-        issues?.push({
+      const headersCheck = await this.checkSecurityHeaders();
+      if (!headersCheck.passed) {
+        issues.push({
           id: "headers",
           type: "security",
           severity: "medium",
@@ -710,7 +710,7 @@ class SecurityAuditor {
 
       // Add recommendations
       if (score < 100) {
-        recommendations?.push({
+        recommendations.push({
           id: "security-review",
           type: "security",
           priority: "high",
@@ -721,11 +721,11 @@ class SecurityAuditor {
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Security audit error:");
+      logger.warn({ err: error }, "Security audit error:");
       score = 0;
     }
 
-    return { score: Math?.max(0, score), issues, recommendations };
+    return { score: Math.max(0, score), issues, recommendations };
   }
 
   private async checkSQLInjection(): Promise<{
@@ -768,13 +768,13 @@ class SecurityAuditor {
 
   private async checkSecurityHeaders(): Promise<{ passed: boolean }> {
     // Verify security headers are active by checking required middleware config.
-    // HSTS is set in server/middleware/security?.ts (Strict-Transport-Security: max-age=31536000; includeSubDomains; preload).
-    // Helmet is initialized unconditionally in server/index?.ts covering: X-Frame-Options, X-Content-Type-Options,
+    // HSTS is set in server/middleware/security.ts (Strict-Transport-Security: max-age=31536000; includeSubDomains; preload).
+    // Helmet is initialized unconditionally in server/index.ts covering: X-Frame-Options, X-Content-Type-Options,
     // Referrer-Policy, Permissions-Policy, X-XSS-Protection, Content-Security-Policy.
-    // X-Powered-By is disabled via helmet in server/index?.ts.
-    const _helmetConfigured = true;
-    const _hstsConfigured = true;
-    const _xPoweredByDisabled = true;
+    // X-Powered-By is disabled via helmet in server/index.ts.
+    const helmetConfigured = true;
+    const hstsConfigured = true;
+    const xPoweredByDisabled = true;
     return { passed: helmetConfigured && hstsConfigured && xPoweredByDisabled };
   }
 }
@@ -788,38 +788,38 @@ class FunctionalityAuditor {
 
     try {
       // Check API endpoints
-      const _apiCheck = await this?.checkAPIEndpoints();
-      if (!apiCheck?.passed) {
-        issues?.push(...apiCheck?.issues);
-        score -= apiCheck?.scoreDeduction;
+      const apiCheck = await this.checkAPIEndpoints();
+      if (!apiCheck.passed) {
+        issues.push(...apiCheck.issues);
+        score -= apiCheck.scoreDeduction;
       }
 
       // Check database operations
-      const _dbCheck = await this?.checkDatabaseOperations();
-      if (!dbCheck?.passed) {
-        issues?.push(...dbCheck?.issues);
-        score -= dbCheck?.scoreDeduction;
+      const dbCheck = await this.checkDatabaseOperations();
+      if (!dbCheck.passed) {
+        issues.push(...dbCheck.issues);
+        score -= dbCheck.scoreDeduction;
       }
 
       // Check user workflows
-      const _workflowCheck = await this?.checkUserWorkflows();
-      if (!workflowCheck?.passed) {
-        issues?.push(...workflowCheck?.issues);
-        score -= workflowCheck?.scoreDeduction;
+      const workflowCheck = await this.checkUserWorkflows();
+      if (!workflowCheck.passed) {
+        issues.push(...workflowCheck.issues);
+        score -= workflowCheck.scoreDeduction;
       }
 
       // Check error handling
-      const _errorCheck = await this?.checkErrorHandling();
-      if (!errorCheck?.passed) {
-        issues?.push(...errorCheck?.issues);
-        score -= errorCheck?.scoreDeduction;
+      const errorCheck = await this.checkErrorHandling();
+      if (!errorCheck.passed) {
+        issues.push(...errorCheck.issues);
+        score -= errorCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Functionality audit error:");
+      logger.warn({ err: error }, "Functionality audit error:");
       score = 0;
     }
 
-    return { score: Math?.max(0, score), issues, recommendations };
+    return { score: Math.max(0, score), issues, recommendations };
   }
 
   private async checkAPIEndpoints(): Promise<{
@@ -868,31 +868,31 @@ class PerformanceAuditor {
 
     try {
       // Check response times
-      const _responseTimeCheck = await this?.checkResponseTimes();
-      if (!responseTimeCheck?.passed) {
-        issues?.push(...responseTimeCheck?.issues);
-        score -= responseTimeCheck?.scoreDeduction;
+      const responseTimeCheck = await this.checkResponseTimes();
+      if (!responseTimeCheck.passed) {
+        issues.push(...responseTimeCheck.issues);
+        score -= responseTimeCheck.scoreDeduction;
       }
 
       // Check memory usage
-      const _memoryCheck = await this?.checkMemoryUsage();
-      if (!memoryCheck?.passed) {
-        issues?.push(...memoryCheck?.issues);
-        score -= memoryCheck?.scoreDeduction;
+      const memoryCheck = await this.checkMemoryUsage();
+      if (!memoryCheck.passed) {
+        issues.push(...memoryCheck.issues);
+        score -= memoryCheck.scoreDeduction;
       }
 
       // Check database performance
-      const _dbPerformanceCheck = await this?.checkDatabasePerformance();
-      if (!dbPerformanceCheck?.passed) {
-        issues?.push(...dbPerformanceCheck?.issues);
-        score -= dbPerformanceCheck?.scoreDeduction;
+      const dbPerformanceCheck = await this.checkDatabasePerformance();
+      if (!dbPerformanceCheck.passed) {
+        issues.push(...dbPerformanceCheck.issues);
+        score -= dbPerformanceCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Performance audit error:");
+      logger.warn({ err: error }, "Performance audit error:");
       score = 0;
     }
 
-    return { score: Math?.max(0, score), issues, recommendations };
+    return { score: Math.max(0, score), issues, recommendations };
   }
 
   private async checkResponseTimes(): Promise<{
@@ -932,31 +932,31 @@ class CodeQualityAuditor {
 
     try {
       // Check code complexity
-      const _complexityCheck = await this?.checkCodeComplexity();
-      if (!complexityCheck?.passed) {
-        issues?.push(...complexityCheck?.issues);
-        score -= complexityCheck?.scoreDeduction;
+      const complexityCheck = await this.checkCodeComplexity();
+      if (!complexityCheck.passed) {
+        issues.push(...complexityCheck.issues);
+        score -= complexityCheck.scoreDeduction;
       }
 
       // Check code duplication
-      const _duplicationCheck = await this?.checkCodeDuplication();
-      if (!duplicationCheck?.passed) {
-        issues?.push(...duplicationCheck?.issues);
-        score -= duplicationCheck?.scoreDeduction;
+      const duplicationCheck = await this.checkCodeDuplication();
+      if (!duplicationCheck.passed) {
+        issues.push(...duplicationCheck.issues);
+        score -= duplicationCheck.scoreDeduction;
       }
 
       // Check test coverage
-      const _testCoverageCheck = await this?.checkTestCoverage();
-      if (!testCoverageCheck?.passed) {
-        issues?.push(...testCoverageCheck?.issues);
-        score -= testCoverageCheck?.scoreDeduction;
+      const testCoverageCheck = await this.checkTestCoverage();
+      if (!testCoverageCheck.passed) {
+        issues.push(...testCoverageCheck.issues);
+        score -= testCoverageCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Code quality audit error:");
+      logger.warn({ err: error }, "Code quality audit error:");
       score = 0;
     }
 
-    return { score: Math?.max(0, score), issues, recommendations };
+    return { score: Math.max(0, score), issues, recommendations };
   }
 
   private async checkCodeComplexity(): Promise<{
@@ -996,17 +996,17 @@ class AccessibilityAuditor {
 
     try {
       // Check WCAG compliance
-      const _wcagCheck = await this?.checkWCAGCompliance();
-      if (!wcagCheck?.passed) {
-        issues?.push(...wcagCheck?.issues);
-        score -= wcagCheck?.scoreDeduction;
+      const wcagCheck = await this.checkWCAGCompliance();
+      if (!wcagCheck.passed) {
+        issues.push(...wcagCheck.issues);
+        score -= wcagCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Accessibility audit error:");
+      logger.warn({ err: error }, "Accessibility audit error:");
       score = 0;
     }
 
-    return { score: Math?.max(0, score), issues, recommendations };
+    return { score: Math.max(0, score), issues, recommendations };
   }
 
   private async checkWCAGCompliance(): Promise<{
@@ -1017,40 +1017,40 @@ class AccessibilityAuditor {
     const issues: AuditIssue[] = [];
     let scoreDeduction = 0;
     try {
-      const _html = await fs?.readFile(
-        path?.join(process?.cwd(), "client/index?.html"),
+      const html = await fs.readFile(
+        path.join(process.cwd(), "client/index.html"),
         "utf-8",
       );
-      if (!/<html[^>]+lang=["'][a-z-]+["']/i?.test(html)) {
-        issues?.push({
-          id: crypto?.randomUUID(),
+      if (!/<html[^>]+lang=["'][a-z-]+["']/i.test(html)) {
+        issues.push({
+          id: crypto.randomUUID(),
           type: "accessibility",
           severity: "high",
           title: "Missing lang attribute on <html>",
           description:
-            "WCAG 3?.1.1 requires the page language be programmatically set.",
-          file: "client/index?.html",
+            "WCAG 3.1.1 requires the page language be programmatically set.",
+          file: "client/index.html",
           recommendation:
             'Add lang="en" (or the appropriate code) to the <html> element.',
         });
         scoreDeduction += 6;
       }
-      if (!/<meta\s+name=["']viewport["']/i?.test(html)) {
-        issues?.push({
-          id: crypto?.randomUUID(),
+      if (!/<meta\s+name=["']viewport["']/i.test(html)) {
+        issues.push({
+          id: crypto.randomUUID(),
           type: "accessibility",
           severity: "medium",
           title: "Missing viewport meta",
           description:
-            "Required for mobile zoom/scaling per WCAG 1?.4.10 reflow.",
-          file: "client/index?.html",
+            "Required for mobile zoom/scaling per WCAG 1.4.10 reflow.",
+          file: "client/index.html",
           recommendation:
             'Add <meta name="viewport" content="width=device-width, initial-scale=1">',
         });
         scoreDeduction += 4;
       }
     } catch (e) {
-      logger?.warn({ err: e }, "WCAG check failed");
+      logger.warn({ err: e }, "WCAG check failed");
       scoreDeduction += 5;
     }
     return { passed: scoreDeduction === 0, issues, scoreDeduction };
@@ -1066,24 +1066,24 @@ class SEOAuditor {
 
     try {
       // Check meta tags
-      const _metaCheck = await this?.checkMetaTags();
-      if (!metaCheck?.passed) {
-        issues?.push(...metaCheck?.issues);
-        score -= metaCheck?.scoreDeduction;
+      const metaCheck = await this.checkMetaTags();
+      if (!metaCheck.passed) {
+        issues.push(...metaCheck.issues);
+        score -= metaCheck.scoreDeduction;
       }
 
       // Check structured data
-      const _structuredDataCheck = await this?.checkStructuredData();
-      if (!structuredDataCheck?.passed) {
-        issues?.push(...structuredDataCheck?.issues);
-        score -= structuredDataCheck?.scoreDeduction;
+      const structuredDataCheck = await this.checkStructuredData();
+      if (!structuredDataCheck.passed) {
+        issues.push(...structuredDataCheck.issues);
+        score -= structuredDataCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "SEO audit error:");
+      logger.warn({ err: error }, "SEO audit error:");
       score = 0;
     }
 
-    return { score: Math?.max(0, score), issues, recommendations };
+    return { score: Math.max(0, score), issues, recommendations };
   }
 
   private async checkMetaTags(): Promise<{
@@ -1094,8 +1094,8 @@ class SEOAuditor {
     const issues: AuditIssue[] = [];
     let scoreDeduction = 0;
     try {
-      const _html = await fs?.readFile(
-        path?.join(process?.cwd(), "client/index?.html"),
+      const html = await fs.readFile(
+        path.join(process.cwd(), "client/index.html"),
         "utf-8",
       );
       const required: { name: string; pattern: RegExp; weight: number }[] = [
@@ -1132,21 +1132,21 @@ class SEOAuditor {
         },
       ];
       for (const r of required) {
-        if (!r?.pattern.test(html)) {
-          issues?.push({
-            id: crypto?.randomUUID(),
+        if (!r.pattern.test(html)) {
+          issues.push({
+            id: crypto.randomUUID(),
             type: "seo",
-            severity: r?.weight >= 4 ? "high" : "medium",
-            title: `Missing <${r?.name}> meta tag`,
-            description: `client/index?.html is missing the <${r?.name}> tag.`,
-            file: "client/index?.html",
-            recommendation: `Add the appropriate <${r?.name}> tag to client/index?.html.`,
+            severity: r.weight >= 4 ? "high" : "medium",
+            title: `Missing <${r.name}> meta tag`,
+            description: `client/index.html is missing the <${r.name}> tag.`,
+            file: "client/index.html",
+            recommendation: `Add the appropriate <${r.name}> tag to client/index.html.`,
           });
-          scoreDeduction += r?.weight;
+          scoreDeduction += r.weight;
         }
       }
     } catch (e) {
-      logger?.warn({ err: e }, "SEO meta-tags check failed");
+      logger.warn({ err: e }, "SEO meta-tags check failed");
       scoreDeduction += 5;
     }
     return { passed: scoreDeduction === 0, issues, scoreDeduction };
@@ -1160,29 +1160,29 @@ class SEOAuditor {
     const issues: AuditIssue[] = [];
     let scoreDeduction = 0;
     try {
-      const _html = await fs?.readFile(
-        path?.join(process?.cwd(), "client/index?.html"),
+      const html = await fs.readFile(
+        path.join(process.cwd(), "client/index.html"),
         "utf-8",
       );
-      const _hasJsonLd = /<script[^>]+type=["']application\/ld\+json["']/i?.test(
+      const hasJsonLd = /<script[^>]+type=["']application\/ld\+json["']/i.test(
         html,
       );
       if (!hasJsonLd) {
-        issues?.push({
-          id: crypto?.randomUUID(),
+        issues.push({
+          id: crypto.randomUUID(),
           type: "seo",
           severity: "medium",
           title: "Missing JSON-LD structured data",
           description:
-            'client/index?.html does not contain a <script type="application/ld+json"> block. Search engines benefit from structured data (Organization, WebSite, BreadcrumbList).',
-          file: "client/index?.html",
+            'client/index.html does not contain a <script type="application/ld+json"> block. Search engines benefit from structured data (Organization, WebSite, BreadcrumbList).',
+          file: "client/index.html",
           recommendation:
             "Add a JSON-LD <script> block describing your Organization and WebSite per schema?.org.",
         });
         scoreDeduction += 5;
       }
     } catch (e) {
-      logger?.warn({ err: e }, "SEO structured-data check failed");
+      logger.warn({ err: e }, "SEO structured-data check failed");
       scoreDeduction += 5;
     }
     return { passed: scoreDeduction === 0, issues, scoreDeduction };

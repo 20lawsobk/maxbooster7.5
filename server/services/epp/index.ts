@@ -5,29 +5,29 @@
  * Handles: connect → greeting → login → commands → auto-reconnect → logout.
  *
  * Usage:
- *   const _sess = new EppSession(config);
+ *   const sess = new EppSession(config);
  *   await sess?.ensureConnected();
- *   const _avail = await sess?.checkAvailability('example?.com');
+ *   const avail = await sess?.checkAvailability('example.com');
  *   await sess?.close();
  */
 
-import { EppClient } from "./EppClient?.js";
-import { EppCommands } from "./EppCommands?.js";
-import { EppParser } from "./EppParser?.js";
-import type { EppConfig, EppResponse } from "./types?.js";
-import { logger } from "../../logger?.js";
+import { EppClient } from "./EppClient.js";
+import { EppCommands } from "./EppCommands.js";
+import { EppParser } from "./EppParser.js";
+import type { EppConfig, EppResponse } from "./types.js";
+import { logger } from "../../logger.js";
 
-export { EppClient } from "./EppClient?.js";
-export { EppCommands } from "./EppCommands?.js";
-export { EppParser } from "./EppParser?.js";
-export type { EppConfig, EppResponse, EppSessionState } from "./types?.js";
+export { EppClient } from "./EppClient.js";
+export { EppCommands } from "./EppCommands.js";
+export { EppParser } from "./EppParser.js";
+export type { EppConfig, EppResponse, EppSessionState } from "./types.js";
 
 export class EppSession {
   private client: EppClient;
   private loggedIn: boolean = false;
 
   constructor(private readonly config: EppConfig) {
-    this?.client = new EppClient(config);
+    this.client = new EppClient(config);
   }
 
   // ── TRID ────────────────────────────────────────────────────────────────────
@@ -46,21 +46,21 @@ export class EppSession {
     if (this?.client.isConnected && this?.loggedIn) return;
 
     if (!this?.client.isConnected) {
-      const _greetingXml = await this?.client.connect();
+      const greetingXml = await this?.client.connect();
       if (greetingXml) {
-        const _g = EppParser?.parseResponse(greetingXml);
-        logger?.info({ svTRID: g?.trid.svTRID }, "[EPP] Greeting received");
+        const g = EppParser?.parseResponse(greetingXml);
+        logger?.info({ svTRID: g.trid.svTRID }, "[EPP] Greeting received");
       }
     }
 
     if (!this?.loggedIn) {
-      const _resp = await this?._send(
+      const resp = await this?._send(
         EppCommands?.login(this?.config.user, this?.config.pass, this?.trid()),
       );
       if (resp?.code !== 1000) {
         throw new Error(`[EPP] Login failed: ${resp?.msg} (code ${resp?.code})`);
       }
-      this?.loggedIn = true;
+      this.loggedIn = true;
       logger?.info("[EPP] Logged in successfully");
     }
   }
@@ -73,7 +73,7 @@ export class EppSession {
       } catch {
         /* ignore logout errors */
       }
-      this?.loggedIn = false;
+      this.loggedIn = false;
     }
     this?.client.disconnect();
   }
@@ -81,7 +81,7 @@ export class EppSession {
   // ── Internal send ───────────────────────────────────────────────────────────
 
   private async _send(xml: string): Promise<EppResponse> {
-    const _responseXml = await this?.client.send(xml);
+    const responseXml = await this?.client.send(xml);
     return EppParser?.parseResponse(responseXml);
   }
 
@@ -94,7 +94,7 @@ export class EppSession {
       return await this?._send(xml);
     } catch (err) {
       // Mark session as dead so next call reconnects
-      this?.loggedIn = false;
+      this.loggedIn = false;
       throw err;
     }
   }
@@ -102,22 +102,22 @@ export class EppSession {
   // ── Domain operations ───────────────────────────────────────────────────────
 
   async checkAvailability(fqdn: string): Promise<boolean> {
-    const _xml = EppCommands?.domainCheck([fqdn], this?.trid());
-    const _resp = await this?.execute(xml);
+    const xml = EppCommands?.domainCheck([fqdn], this?.trid());
+    const resp = await this?.execute(xml);
     if (resp?.code !== 1000) return false;
 
-    const _avail = resp?.resData?.chkData;
+    const avail = resp?.resData?.chkData;
     if (!avail) return false;
     const cds: unknown[] = Array?.isArray(avail?.cd) ? avail?.cd : [avail?.cd];
-    const _match = cds?.find((cd: Record<string, unknown>) => {
-      const _n = cd?.name;
+    const match = cds?.find((cd: Record<string, unknown>) => {
+      const n = cd?.name;
       return (
         (typeof n === "string" ? n : (n?.["#text"] ?? n?.["$text"] ?? "")) ===
         fqdn
       );
     });
     if (!match) return false;
-    const _a = match?.name?.["@_avail"];
+    const a = match?.name?.["@avail"];
     return a === 1 || a === "1" || a === true || a === "true";
   }
 

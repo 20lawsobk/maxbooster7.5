@@ -1,21 +1,21 @@
 import { Router } from "express";
-import { onboardingService } from "../services/onboardingService?.js";
-import { db } from "../db?.js";
-import { users } from "../../shared/schema?.js";
+import { onboardingService } from "../services/onboardingService.js";
+import { db } from "../db.js";
+import { users } from "../../shared/schema.js";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 router?.get("/progress", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const _progress = await onboardingService?.getOnboardingProgress(userId);
+    const progress = await onboardingService?.getOnboardingProgress(userId);
     res?.json(progress);
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching onboarding progress:");
@@ -25,7 +25,7 @@ router?.get("/progress", requireAuth, async (req, res) => {
 
 router?.post("/complete-step", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -35,7 +35,7 @@ router?.post("/complete-step", requireAuth, async (req, res) => {
       return res?.status(400).json({ error: "stepId is required" });
     }
 
-    const _result = await onboardingService?.completeStep(userId, stepId);
+    const result = await onboardingService?.completeStep(userId, stepId);
     res?.json(result);
   } catch (error) {
     logger?.warn({ err: error }, "Error completing onboarding step:");
@@ -45,12 +45,12 @@ router?.post("/complete-step", requireAuth, async (req, res) => {
 
 router?.post("/skip", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const _result = await onboardingService?.skipOnboarding(userId);
+    const result = await onboardingService?.skipOnboarding(userId);
     res?.json(result);
   } catch (error) {
     logger?.warn({ err: error }, "Error skipping onboarding:");
@@ -60,12 +60,12 @@ router?.post("/skip", requireAuth, async (req, res) => {
 
 router?.get("/recommended-step", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const _step = await onboardingService?.getRecommendedNextStep(userId);
+    const step = await onboardingService?.getRecommendedNextStep(userId);
     res?.json({ recommendedStep: step });
   } catch (error) {
     logger?.warn({ err: error }, "Error getting recommended step:");
@@ -75,7 +75,7 @@ router?.get("/recommended-step", requireAuth, async (req, res) => {
 
 router?.get("/tasks", requireAuth, async (_req, res) => {
   try {
-    const _tasks = await onboardingService?.getTasks();
+    const tasks = await onboardingService?.getTasks();
     res?.json({ tasks });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching onboarding tasks:");
@@ -101,11 +101,11 @@ router?.post("/seed", requireAuth, async (req, res) => {
 
 router?.get("/status", async (_req, res) => {
   try {
-    const _tasks = await onboardingService?.getTasks();
+    const tasks = await onboardingService?.getTasks();
     res?.json({
       status: "active",
-      totalTasks: tasks?.length || 0,
-      version: "1?.0.0",
+      totalTasks: tasks.length || 0,
+      version: "1.0.0",
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching onboarding status:");
@@ -115,7 +115,7 @@ router?.get("/status", async (_req, res) => {
 
 router?.post("/complete-welcome", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -153,7 +153,7 @@ router?.post("/complete-welcome", requireAuth, async (req, res) => {
 
 router?.post("/track-tutorial", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -172,16 +172,16 @@ router?.post("/track-tutorial", requireAuth, async (req, res) => {
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _tutorialProgress =
+    const tutorialProgress =
       (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
-    const _tutorialData = tutorialProgress[tutorialId] || {
+    const tutorialData = tutorialProgress[tutorialId] || {
       completedSteps: [],
       startedAt: null,
       completedAt: null,
     };
 
     if (!tutorialData?.startedAt) {
-      tutorialData?.startedAt = new Date().toISOString();
+      tutorialData.startedAt = new Date().toISOString();
     }
 
     if (completed && !tutorialData?.completedSteps.includes(stepId)) {
@@ -219,7 +219,7 @@ router?.post("/track-tutorial", requireAuth, async (req, res) => {
 
 router?.post("/skip-tutorial", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -236,15 +236,15 @@ router?.post("/skip-tutorial", requireAuth, async (req, res) => {
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _tutorialProgress =
+    const tutorialProgress =
       (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
-    const _tutorialData = tutorialProgress[tutorialId] || {
+    const tutorialData = tutorialProgress[tutorialId] || {
       completedSteps: [],
       startedAt: null,
     };
 
-    tutorialData?.skippedAt = new Date().toISOString();
-    tutorialData?.showAgainLater = showAgainLater || false;
+    tutorialData.skippedAt = new Date().toISOString();
+    tutorialData.showAgainLater = showAgainLater || false;
 
     tutorialProgress[tutorialId] = tutorialData;
 
@@ -273,7 +273,7 @@ router?.post("/skip-tutorial", requireAuth, async (req, res) => {
 
 router?.get("/tutorials", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -284,7 +284,7 @@ router?.get("/tutorials", requireAuth, async (req, res) => {
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _tutorialProgress =
+    const tutorialProgress =
       (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
 
     res?.json({
@@ -298,7 +298,7 @@ router?.get("/tutorials", requireAuth, async (req, res) => {
 
 router?.post("/mark-celebrated", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -315,7 +315,7 @@ router?.post("/mark-celebrated", requireAuth, async (req, res) => {
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _celebrations =
+    const celebrations =
       (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
     celebrations[actionType] = {
       celebratedAt: new Date().toISOString(),
@@ -345,7 +345,7 @@ router?.post("/mark-celebrated", requireAuth, async (req, res) => {
 
 router?.get("/first-actions", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -356,7 +356,7 @@ router?.get("/first-actions", requireAuth, async (req, res) => {
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _celebrations =
+    const celebrations =
       (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
 
     res?.json({
@@ -380,7 +380,7 @@ router?.get("/first-actions", requireAuth, async (req, res) => {
 
 router?.get("/check-first-login", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -391,9 +391,9 @@ router?.get("/check-first-login", requireAuth, async (req, res) => {
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _onboardingData = user?.onboardingData as Record<string, unknown>;
-    const _isFirstLogin = !onboardingData?.welcomeCompleted;
-    const _hasCompletedOnboarding = user?.onboardingCompleted || false;
+    const onboardingData = user?.onboardingData as Record<string, unknown>;
+    const isFirstLogin = !onboardingData?.welcomeCompleted;
+    const hasCompletedOnboarding = user?.onboardingCompleted || false;
 
     res?.json({
       isFirstLogin,
@@ -408,7 +408,7 @@ router?.get("/check-first-login", requireAuth, async (req, res) => {
 
 router?.post("/dismiss-reminder", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -445,7 +445,7 @@ router?.post("/dismiss-reminder", requireAuth, async (req, res) => {
   }
 });
 
-const _DEFAULT_ACHIEVEMENTS = [
+const DEFAULT_ACHIEVEMENTS = [
   {
     id: "profile_complete",
     name: "Profile Pro",
@@ -564,7 +564,7 @@ const _DEFAULT_ACHIEVEMENTS = [
 
 router?.get("/achievements", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -575,46 +575,46 @@ router?.get("/achievements", requireAuth, async (req, res) => {
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _unlockedAchievements =
+    const unlockedAchievements =
       (user?.onboardingData as Record<string, unknown>)?.achievements || {};
-    const _celebrations =
+    const celebrations =
       (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
 
-    const _achievements = DEFAULT_ACHIEVEMENTS?.map((achievement) => {
-      const _unlocked =
+    const achievements = DEFAULT_ACHIEVEMENTS?.map((achievement) => {
+      const unlocked =
         unlockedAchievements[achievement?.id] || celebrations[achievement?.id];
       return {
         ...achievement,
-        unlockedAt: unlocked?.unlockedAt || unlocked?.celebratedAt || null,
-        progress: unlocked?.progress || 0,
+        unlockedAt: unlocked.unlockedAt || unlocked?.celebratedAt || null,
+        progress: unlocked.progress || 0,
         maxProgress: (achievement as Record<string, unknown>).threshold ?? 1,
       };
     });
 
-    const _totalPoints = achievements
+    const totalPoints = achievements
       .filter((a) => a?.unlockedAt)
       .reduce((sum, a) => sum + a?.points, 0);
 
-    const _stats = {
-      total: achievements?.length,
-      unlocked: achievements?.filter((a) => a?.unlockedAt).length,
+    const stats = {
+      total: achievements.length,
+      unlocked: achievements.filter((a) => a?.unlockedAt).length,
       totalPoints,
       byCategory: {
-        onboarding: achievements?.filter((a) => a?.category === "onboarding"),
-        studio: achievements?.filter((a) => a?.category === "studio"),
-        distribution: achievements?.filter((a) => a?.category === "distribution"),
-        social: achievements?.filter((a) => a?.category === "social"),
-        marketplace: achievements?.filter((a) => a?.category === "marketplace"),
-        collaboration: achievements?.filter(
+        onboarding: achievements.filter((a) => a?.category === "onboarding"),
+        studio: achievements.filter((a) => a?.category === "studio"),
+        distribution: achievements.filter((a) => a?.category === "distribution"),
+        social: achievements.filter((a) => a?.category === "social"),
+        marketplace: achievements.filter((a) => a?.category === "marketplace"),
+        collaboration: achievements.filter(
           (a) => a?.category === "collaboration",
         ),
-        streak: achievements?.filter((a) => a?.category === "streak"),
+        streak: achievements.filter((a) => a?.category === "streak"),
       },
       byRarity: {
-        common: achievements?.filter((a) => a?.rarity === "common"),
-        rare: achievements?.filter((a) => a?.rarity === "rare"),
-        epic: achievements?.filter((a) => a?.rarity === "epic"),
-        legendary: achievements?.filter((a) => a?.rarity === "legendary"),
+        common: achievements.filter((a) => a?.rarity === "common"),
+        rare: achievements.filter((a) => a?.rarity === "rare"),
+        epic: achievements.filter((a) => a?.rarity === "epic"),
+        legendary: achievements.filter((a) => a?.rarity === "legendary"),
       },
     };
 
@@ -630,7 +630,7 @@ router?.get("/achievements", requireAuth, async (req, res) => {
 
 router?.post("/unlock-achievement", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -641,7 +641,7 @@ router?.post("/unlock-achievement", requireAuth, async (req, res) => {
       return res?.status(400).json({ error: "achievementId is required" });
     }
 
-    const _achievement = DEFAULT_ACHIEVEMENTS?.find(
+    const achievement = DEFAULT_ACHIEVEMENTS?.find(
       (a) => a?.id === achievementId,
     );
     if (!achievement) {
@@ -654,7 +654,7 @@ router?.post("/unlock-achievement", requireAuth, async (req, res) => {
       .where(eq(users?.id, userId))
       .limit(1);
 
-    const _achievements =
+    const achievements =
       (user?.onboardingData as Record<string, unknown>)?.achievements || {};
 
     if (achievements[achievementId]?.unlockedAt) {
@@ -699,7 +699,7 @@ router?.post("/unlock-achievement", requireAuth, async (req, res) => {
 
 router?.get("/profile/completion", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
@@ -714,19 +714,19 @@ router?.get("/profile/completion", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "User not found" });
     }
 
-    const _onboardingData = (user?.onboardingData as unknown) || {};
+    const onboardingData = (user?.onboardingData as unknown) || {};
 
-    const _completion = {
-      emailVerified: user?.emailVerified || false,
-      artistType: onboardingData?.artistType || null,
-      genres: onboardingData?.genres || [],
+    const completion = {
+      emailVerified: user.emailVerified || false,
+      artistType: onboardingData.artistType || null,
+      genres: onboardingData.genres || [],
       hasPhoto: !!user?.avatarUrl,
-      bio: user?.bio || null,
-      socialLinks: onboardingData?.socialLinks || [],
+      bio: user.bio || null,
+      socialLinks: onboardingData.socialLinks || [],
     };
 
     let completedSteps = 0;
-    const _totalSteps = 6;
+    const totalSteps = 6;
 
     if (completion?.emailVerified) completedSteps++;
     if (completion?.artistType) completedSteps++;
@@ -737,7 +737,7 @@ router?.get("/profile/completion", requireAuth, async (req, res) => {
 
     res?.json({
       ...completion,
-      completionPercentage: Math?.round((completedSteps / totalSteps) * 100),
+      completionPercentage: Math.round((completedSteps / totalSteps) * 100),
       totalPoints: completedSteps * 25,
     });
   } catch (error) {

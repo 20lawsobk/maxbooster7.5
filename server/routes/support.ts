@@ -1,12 +1,12 @@
 import { Router, type RequestHandler } from "express";
-import { db } from "../db?.js";
-import { supportTickets } from "../../shared/schema?.js";
+import { db } from "../db.js";
+import { supportTickets } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, avg, and } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { requireAuth, require2FA } from "../middleware/auth?.js";
-import { notificationService } from "../services/notificationService?.js";
+import { logger } from "../logger.js";
+import { requireAuth, require2FA } from "../middleware/auth.js";
+import { notificationService } from "../services/notificationService.js";
 
-const _router = Router();
+const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req?.isAuthenticated()) {
@@ -21,19 +21,19 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 // Get user's own tickets
 router?.get("/tickets", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
     if (!userId) {
       return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const _tickets = await db
+    const tickets = await db
       .select()
       .from(supportTickets)
       .where(eq(supportTickets?.userId, userId))
       .orderBy(desc(supportTickets?.createdAt))
       .limit(100);
 
-    res?.json({ tickets, total: tickets?.length });
+    res?.json({ tickets, total: tickets.length });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching user tickets:");
     res?.status(500).json({ error: "Failed to fetch tickets" });
@@ -64,24 +64,24 @@ router?.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
       );
     }
 
-    const _whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
+    const whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
 
-    const _tickets = await db
+    const tickets = await db
       .select({
-        id: supportTickets?.id,
-        userId: supportTickets?.userId,
-        subject: supportTickets?.subject,
-        description: supportTickets?.description,
-        status: supportTickets?.status,
-        priority: supportTickets?.priority,
-        category: supportTickets?.category,
-        assignedTo: supportTickets?.assignedTo,
-        responseTimeMinutes: supportTickets?.responseTimeMinutes,
-        satisfactionRating: supportTickets?.satisfactionRating,
-        metadata: supportTickets?.metadata,
-        resolvedAt: supportTickets?.resolvedAt,
-        createdAt: supportTickets?.createdAt,
-        updatedAt: supportTickets?.updatedAt,
+        id: supportTickets.id,
+        userId: supportTickets.userId,
+        subject: supportTickets.subject,
+        description: supportTickets.description,
+        status: supportTickets.status,
+        priority: supportTickets.priority,
+        category: supportTickets.category,
+        assignedTo: supportTickets.assignedTo,
+        responseTimeMinutes: supportTickets.responseTimeMinutes,
+        satisfactionRating: supportTickets.satisfactionRating,
+        metadata: supportTickets.metadata,
+        resolvedAt: supportTickets.resolvedAt,
+        createdAt: supportTickets.createdAt,
+        updatedAt: supportTickets.updatedAt,
       })
       .from(supportTickets)
       .where(whereClause)
@@ -100,8 +100,8 @@ router?.get("/stats", requireAdmin, require2FA, async (_req, res) => {
       await Promise?.all([
         db
           .select({
-            status: supportTickets?.status,
-            priority: supportTickets?.priority,
+            status: supportTickets.status,
+            priority: supportTickets.priority,
             count: count(),
           })
           .from(supportTickets)
@@ -135,7 +135,7 @@ router?.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => 
   try {
     const { ticketId } = req?.params;
 
-    const _ticket = await db
+    const ticket = await db
       .select()
       .from(supportTickets)
       .where(eq(supportTickets?.id, ticketId))
@@ -168,8 +168,8 @@ router?.patch(
         resolvedAt,
       } = req?.body;
 
-      const _allowedStatuses = ["open", "in_progress", "resolved", "closed"];
-      const _allowedPriorities = ["low", "medium", "high", "critical"];
+      const allowedStatuses = ["open", "in_progress", "resolved", "closed"];
+      const allowedPriorities = ["low", "medium", "high", "critical"];
 
       if (status && !allowedStatuses?.includes(status)) {
         return res
@@ -188,17 +188,17 @@ router?.patch(
       }
 
       const updateData: Record<string, any> = { updatedAt: new Date() };
-      if (status !== undefined) updateData?.status = status;
-      if (priority !== undefined) updateData?.priority = priority;
-      if (assignedTo !== undefined) updateData?.assignedTo = assignedTo;
+      if (status !== undefined) updateData.status = status;
+      if (priority !== undefined) updateData.priority = priority;
+      if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
       if (responseTimeMinutes !== undefined)
-        updateData?.responseTimeMinutes = responseTimeMinutes;
+        updateData.responseTimeMinutes = responseTimeMinutes;
       if (satisfactionRating !== undefined)
-        updateData?.satisfactionRating = satisfactionRating;
-      if (resolvedAt !== undefined) updateData?.resolvedAt = resolvedAt;
+        updateData.satisfactionRating = satisfactionRating;
+      if (resolvedAt !== undefined) updateData.resolvedAt = resolvedAt;
 
       if (status === "resolved" && !resolvedAt) {
-        updateData?.resolvedAt = new Date();
+        updateData.resolvedAt = new Date();
       }
 
       await db
@@ -227,8 +227,8 @@ router?.post("/tickets", requireAuth, async (req, res) => {
       return res?.status(400).json({ error: "Subject is required" });
     }
 
-    const _allowedCategories = ["general", "billing", "technical", "account"];
-    const _allowedPriorities = ["low", "medium", "high", "critical"];
+    const allowedCategories = ["general", "billing", "technical", "account"];
+    const allowedPriorities = ["low", "medium", "high", "critical"];
 
     if (category && !allowedCategories?.includes(category)) {
       return res
@@ -249,7 +249,7 @@ router?.post("/tickets", requireAuth, async (req, res) => {
     const [newTicket] = await db
       .insert(supportTickets)
       .values({
-        userId: req?.user!.id,
+        userId: req.user!.id,
         subject,
         description: description || null,
         category: category || "general",

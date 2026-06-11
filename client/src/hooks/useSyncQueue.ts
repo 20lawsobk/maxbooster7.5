@@ -84,20 +84,20 @@ export function useSyncQueue(
   const [actions, setActions] = useState<QueuedAction[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const _loadStats = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     try {
-      const _queueStats = await offlineQueue?.getStats();
+      const queueStats = await offlineQueue?.getStats();
       setStats(queueStats);
     } catch (error) {
       logger?.error("[useSyncQueue] Failed to load stats:", error);
     }
   }, []);
 
-  const _loadActions = useCallback(async () => {
+  const loadActions = useCallback(async () => {
     try {
-      const _pending = await offlineQueue?.getAllPending();
-      const _failed = await offlineQueue?.getByStatus("failed");
-      const _conflicts = await offlineQueue?.getByStatus("conflict");
+      const pending = await offlineQueue?.getAllPending();
+      const failed = await offlineQueue?.getByStatus("failed");
+      const conflicts = await offlineQueue?.getByStatus("conflict");
       setActions([...pending, ...failed, ...conflicts]);
     } catch (error) {
       logger?.error("[useSyncQueue] Failed to load actions:", error);
@@ -108,7 +108,7 @@ export function useSyncQueue(
     loadStats();
     loadActions();
 
-    const _unsubAdded = offlineQueue?.on("action-added", (event) => {
+    const unsubAdded = offlineQueue?.on("action-added", (event) => {
       loadStats();
       loadActions();
       if (event?.action) {
@@ -116,17 +116,17 @@ export function useSyncQueue(
       }
     });
 
-    const _unsubUpdated = offlineQueue?.on("action-updated", () => {
+    const unsubUpdated = offlineQueue?.on("action-updated", () => {
       loadStats();
       loadActions();
     });
 
-    const _unsubRemoved = offlineQueue?.on("action-removed", () => {
+    const unsubRemoved = offlineQueue?.on("action-removed", () => {
       loadStats();
       loadActions();
     });
 
-    const _unsubSyncCompleted = offlineQueue?.on("sync-completed", (event) => {
+    const unsubSyncCompleted = offlineQueue?.on("sync-completed", (event) => {
       loadStats();
       loadActions();
       if (event?.actionId) {
@@ -134,7 +134,7 @@ export function useSyncQueue(
       }
     });
 
-    const _unsubConflict = offlineQueue?.on("conflict-detected", (event) => {
+    const unsubConflict = offlineQueue?.on("conflict-detected", (event) => {
       loadStats();
       loadActions();
       if (event?.actionId && event?.conflict) {
@@ -146,7 +146,7 @@ export function useSyncQueue(
       }
     });
 
-    const _unsubSyncStatus = syncManager?.on("status-change", (event) => {
+    const unsubSyncStatus = syncManager?.on("status-change", (event) => {
       setIsSyncing(event?.status === "syncing");
     });
 
@@ -160,7 +160,7 @@ export function useSyncQueue(
     };
   }, [loadStats, loadActions, onActionAdded, onActionCompleted, onConflict]);
 
-  const _enqueue = useCallback(
+  const enqueue = useCallback(
     async <T>(
       type: string,
       payload: T,
@@ -171,7 +171,7 @@ export function useSyncQueue(
         metadata?: Record<string, unknown>;
       },
     ): Promise<QueuedAction<T>> => {
-      const _action = await offlineQueue?.enqueue(type, payload, options);
+      const action = await offlineQueue?.enqueue(type, payload, options);
 
       if (autoSync && navigator?.onLine) {
         syncManager?.sync();
@@ -182,30 +182,30 @@ export function useSyncQueue(
     [autoSync],
   );
 
-  const _dequeue = useCallback(async (actionId: string) => {
+  const dequeue = useCallback(async (actionId: string) => {
     await offlineQueue?.dequeue(actionId);
   }, []);
 
-  const _getAction = useCallback(
+  const getAction = useCallback(
     async <T>(actionId: string): Promise<QueuedAction<T> | undefined> => {
       return offlineQueue?.getAction<T>(actionId);
     },
     [],
   );
 
-  const _getPendingActions = useCallback(async (): Promise<QueuedAction[]> => {
+  const getPendingActions = useCallback(async (): Promise<QueuedAction[]> => {
     return offlineQueue?.getAllPending();
   }, []);
 
-  const _getFailedActions = useCallback(async (): Promise<QueuedAction[]> => {
+  const getFailedActions = useCallback(async (): Promise<QueuedAction[]> => {
     return offlineQueue?.getByStatus("failed");
   }, []);
 
-  const _getConflicts = useCallback(async () => {
+  const getConflicts = useCallback(async () => {
     return offlineQueue?.getConflicts();
   }, []);
 
-  const _retry = useCallback(async (actionId: string) => {
+  const retry = useCallback(async (actionId: string) => {
     await offlineQueue?.updateAction(actionId, {
       status: "pending",
       retryCount: 0,
@@ -214,25 +214,25 @@ export function useSyncQueue(
     syncManager?.forceSyncAction(actionId);
   }, []);
 
-  const _retryAll = useCallback(async () => {
+  const retryAll = useCallback(async () => {
     await syncManager?.retryFailed();
   }, []);
 
-  const _sync = useCallback(async () => {
+  const sync = useCallback(async () => {
     await syncManager?.sync();
   }, []);
 
-  const _clearCompleted = useCallback(async (): Promise<number> => {
+  const clearCompleted = useCallback(async (): Promise<number> => {
     return offlineQueue?.clearCompleted();
   }, []);
 
-  const _clearAll = useCallback(async () => {
+  const clearAll = useCallback(async () => {
     await offlineQueue?.clearAll();
     await loadStats();
     await loadActions();
   }, [loadStats, loadActions]);
 
-  const _resolveConflict = useCallback(
+  const resolveConflict = useCallback(
     async (
       actionId: string,
       resolution: "local" | "server" | "merged",

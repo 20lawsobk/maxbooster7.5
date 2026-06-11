@@ -26,7 +26,7 @@ export function useContextMenu(options: UseContextMenuOptions = {}) {
     items: [],
   });
 
-  const _open = useCallback(
+  const open = useCallback(
     (
       x: number,
       y: number,
@@ -47,21 +47,21 @@ export function useContextMenu(options: UseContextMenuOptions = {}) {
     [items, disabled, onOpen],
   );
 
-  const _close = useCallback(() => {
+  const close = useCallback(() => {
     setState((prev) => ({ ...prev, isOpen: false }));
     onClose?.();
   }, [onClose]);
 
-  const _handleAction = useCallback(
+  const handleAction = useCallback(
     (itemId: string) => {
       onAction?.(itemId);
     },
     [onAction],
   );
 
-  const _handleContextMenu = useCallback(
+  const handleContextMenu = useCallback(
     (
-      e: React?.MouseEvent,
+      e: React.MouseEvent,
       customItems?: ContextMenuItem[],
       context?: string,
     ) => {
@@ -72,9 +72,9 @@ export function useContextMenu(options: UseContextMenuOptions = {}) {
     [open],
   );
 
-  const _getContextMenuProps = useCallback(
+  const getContextMenuProps = useCallback(
     (customItems?: ContextMenuItem[], context?: string) => ({
-      onContextMenu: (e: React?.MouseEvent) =>
+      onContextMenu: (e: React.MouseEvent) =>
         handleContextMenu(e, customItems, context),
     }),
     [handleContextMenu],
@@ -93,14 +93,14 @@ export function useContextMenu(options: UseContextMenuOptions = {}) {
 export function useContextMenuTarget<T extends HTMLElement = HTMLDivElement>(
   options: UseContextMenuOptions = {},
 ) {
-  const _ref = useRef<T>(null);
-  const _menu = useContextMenu(options);
+  const ref = useRef<T>(null);
+  const menu = useContextMenu(options);
 
   useEffect(() => {
-    const _element = ref?.current;
+    const element = ref?.current;
     if (!element || options?.disabled) return;
 
-    const _handleContextMenu = (e: MouseEvent) => {
+    const handleContextMenu = (e: MouseEvent) => {
       e?.preventDefault();
       e?.stopPropagation();
       menu?.open(e?.clientX, e?.clientY);
@@ -127,7 +127,7 @@ export function useGlobalContextMenu() {
     items: [],
   });
 
-  const _show = useCallback(
+  const show = useCallback(
     (x: number, y: number, items: ContextMenuItem[], context?: string) => {
       setState({
         isOpen: true,
@@ -140,12 +140,12 @@ export function useGlobalContextMenu() {
     [],
   );
 
-  const _hide = useCallback(() => {
+  const hide = useCallback(() => {
     setState((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
   useEffect(() => {
-    const _handleEscape = (e: KeyboardEvent) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e?.key === "Escape" && state?.isOpen) {
         hide();
       }

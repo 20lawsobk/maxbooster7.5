@@ -1,11 +1,11 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { autopilotLearningData, autopilotInsights } from "@shared/schema";
 import { eq, and, desc, gte, sql, avg, count } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { pushTrainingFeedback } from "./maxcoreSync?.js";
-import { contentQualityGate } from "./contentQualityGate?.js";
+import { logger } from "../logger.js";
+import { pushTrainingFeedback } from "./maxcoreSync.js";
+import { contentQualityGate } from "./contentQualityGate.js";
 
-const _CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3?.0;
+const CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3.0;
 
 export interface PostData {
   platform: string;
@@ -65,34 +65,34 @@ class AutopilotLearningService {
     analytics: AnalyticsData,
   ): Promise<string> {
     try {
-      const _postedAt = postData?.postedAt || new Date();
-      const _postingHour = postedAt?.getHours();
-      const _postingDayOfWeek = postedAt?.getDay();
+      const postedAt = postData?.postedAt || new Date();
+      const postingHour = postedAt?.getHours();
+      const postingDayOfWeek = postedAt?.getDay();
 
-      const _engagementRate = this?.calculateEngagementScore(analytics);
+      const engagementRate = this?.calculateEngagementScore(analytics);
 
       const [record] = await db
         .insert(autopilotLearningData)
         .values({
           userId,
-          platform: postData?.platform,
-          contentType: postData?.contentType || null,
-          hookType: postData?.hookType || null,
+          platform: postData.platform,
+          contentType: postData.contentType || null,
+          hookType: postData.hookType || null,
           postingHour,
           postingDayOfWeek,
           engagementRate,
-          impressions: analytics?.impressions || 0,
-          clicks: analytics?.clicks || 0,
-          shares: analytics?.shares || 0,
-          likes: analytics?.likes || 0,
-          comments: analytics?.comments || 0,
-          saves: analytics?.saves || 0,
-          reach: analytics?.reach || 0,
-          hashtags: postData?.hashtags || [],
-          contentText: postData?.contentText || null,
-          mediaType: postData?.mediaType || null,
-          postId: postData?.postId || null,
-          metadata: postData?.metadata || {},
+          impressions: analytics.impressions || 0,
+          clicks: analytics.clicks || 0,
+          shares: analytics.shares || 0,
+          likes: analytics.likes || 0,
+          comments: analytics.comments || 0,
+          saves: analytics.saves || 0,
+          reach: analytics.reach || 0,
+          hashtags: postData.hashtags || [],
+          contentText: postData.contentText || null,
+          mediaType: postData.mediaType || null,
+          postId: postData.postId || null,
+          metadata: postData.metadata || {},
         })
         .returning();
 
@@ -138,15 +138,15 @@ class AutopilotLearningService {
   }
 
   calculateEngagementScore(analytics: AnalyticsData): number {
-    const _impressions = analytics?.impressions || 1;
-    const _totalEngagements =
+    const impressions = analytics?.impressions || 1;
+    const totalEngagements =
       (analytics?.likes || 0) +
       (analytics?.comments || 0) * 2 +
       (analytics?.shares || 0) * 3 +
       (analytics?.saves || 0) * 2 +
       (analytics?.clicks || 0);
 
-    const _engagementRate = (totalEngagements / impressions) * 100;
+    const engagementRate = (totalEngagements / impressions) * 100;
     return Math?.round(engagementRate * 100) / 100;
   }
 
@@ -155,13 +155,13 @@ class AutopilotLearningService {
     platform: string,
   ): Promise<{ hour: number; dayOfWeek: number; avgEngagement: number }[]> {
     try {
-      const _thirtyDaysAgo = new Date();
+      const thirtyDaysAgo = new Date();
       thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-      const _results = await db
+      const results = await db
         .select({
-          hour: autopilotLearningData?.postingHour,
-          dayOfWeek: autopilotLearningData?.postingDayOfWeek,
+          hour: autopilotLearningData.postingHour,
+          dayOfWeek: autopilotLearningData.postingDayOfWeek,
           avgEngagement: avg(autopilotLearningData?.engagementRate),
           postCount: count(),
         })
@@ -182,8 +182,8 @@ class AutopilotLearningService {
       return results
         .filter((r) => r?.hour !== null && r?.dayOfWeek !== null)
         .map((r) => ({
-          hour: r?.hour!,
-          dayOfWeek: r?.dayOfWeek!,
+          hour: r.hour!,
+          dayOfWeek: r.dayOfWeek!,
           avgEngagement: parseFloat(String(r?.avgEngagement)) || 0,
         }));
     } catch (error) {
@@ -197,10 +197,10 @@ class AutopilotLearningService {
     platform?: string,
   ): Promise<{ contentType: string; avgEngagement: number; count: number }[]> {
     try {
-      const _thirtyDaysAgo = new Date();
+      const thirtyDaysAgo = new Date();
       thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-      const _conditions = [
+      const conditions = [
         eq(autopilotLearningData?.userId, userId),
         gte(autopilotLearningData?.createdAt, thirtyDaysAgo),
       ];
@@ -209,9 +209,9 @@ class AutopilotLearningService {
         conditions?.push(eq(autopilotLearningData?.platform, platform));
       }
 
-      const _results = await db
+      const results = await db
         .select({
-          contentType: autopilotLearningData?.contentType,
+          contentType: autopilotLearningData.contentType,
           avgEngagement: avg(autopilotLearningData?.engagementRate),
           count: count(),
         })
@@ -223,7 +223,7 @@ class AutopilotLearningService {
       return results
         .filter((r) => r?.contentType)
         .map((r) => ({
-          contentType: r?.contentType!,
+          contentType: r.contentType!,
           avgEngagement: parseFloat(String(r?.avgEngagement)) || 0,
           count: Number(r?.count),
         }));
@@ -242,25 +242,25 @@ class AutopilotLearningService {
   // selection toward patterns that have historically driven higher engagement
   // for this specific artist and platform.
   //
-  // Return format: { 'curiosity gap': 1?.6, 'release': 1?.2, 'organic': 1?.0 }
-  // A weight of 1?.0 = baseline. >1?.0 = this hook type outperforms average.
+  // Return format: { 'curiosity gap': 1.6, 'release': 1.2, 'organic': 1.0 }
+  // A weight of 1.0 = baseline. >1.0 = this hook type outperforms average.
   async getContentPatternWeights(
     userId: string,
     platform?: string,
   ): Promise<Record<string, number>> {
     try {
-      const _sixtyDaysAgo = new Date();
+      const sixtyDaysAgo = new Date();
       sixtyDaysAgo?.setDate(sixtyDaysAgo?.getDate() - 60);
 
-      const _conditions = [
+      const conditions = [
         eq(autopilotLearningData?.userId, userId),
         gte(autopilotLearningData?.createdAt, sixtyDaysAgo),
         ...(platform ? [eq(autopilotLearningData?.platform, platform)] : []),
       ];
 
-      const _rows = await db
+      const rows = await db
         .select({
-          hookType: autopilotLearningData?.hookType,
+          hookType: autopilotLearningData.hookType,
           avgEngagement: avg(autopilotLearningData?.engagementRate),
           postCount: count(),
         })
@@ -269,22 +269,22 @@ class AutopilotLearningService {
         .groupBy(autopilotLearningData?.hookType)
         .orderBy(desc(avg(autopilotLearningData?.engagementRate)));
 
-      const _populated = rows?.filter(
+      const populated = rows?.filter(
         (r) => r?.hookType && Number(r?.postCount) >= 2,
       );
       if (populated?.length === 0) return {};
 
-      const _engagements = populated?.map(
+      const engagements = populated?.map(
         (r) => parseFloat(String(r?.avgEngagement)) || 0,
       );
-      const _globalAvg =
+      const globalAvg =
         engagements?.reduce((a, b) => a + b, 0) / engagements?.length || 1;
 
       const weights: Record<string, number> = {};
       for (const row of populated) {
-        const _eng = parseFloat(String(row?.avgEngagement)) || 0;
-        const _relativeWeight = globalAvg > 0 ? eng / globalAvg : 1?.0;
-        weights[row?.hookType!] = Math?.max(0?.5, Math?.min(2?.5, relativeWeight));
+        const eng = parseFloat(String(row?.avgEngagement)) || 0;
+        const relativeWeight = globalAvg > 0 ? eng / globalAvg : 1.0;
+        weights[row.hookType!] = Math?.max(0.5, Math?.min(2.5, relativeWeight));
       }
 
       return weights;
@@ -307,8 +307,8 @@ class AutopilotLearningService {
         ]);
 
       if (optimalTimes?.length > 0) {
-        const _bestTime = optimalTimes[0];
-        const _days = [
+        const bestTime = optimalTimes[0];
+        const days = [
           "Sunday",
           "Monday",
           "Tuesday",
@@ -322,22 +322,22 @@ class AutopilotLearningService {
           type: "timing",
           title: "Optimal Posting Time",
           description: `Your content performs best on ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00 with ${bestTime?.avgEngagement.toFixed(2)}% engagement rate.`,
-          confidence: Math?.min(0?.95, 0?.5 + optimalTimes?.length * 0?.05),
+          confidence: Math.min(0.95, 0.5 + optimalTimes?.length * 0.05),
           priority: 1,
           actionable: true,
           suggestedAction: `Schedule your next post for ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00`,
-          data: { bestTime, allTimes: optimalTimes?.slice(0, 5) },
+          data: { bestTime, allTimes: optimalTimes.slice(0, 5) },
         });
       }
 
       if (topContentTypes?.length > 0) {
-        const _bestType = topContentTypes[0];
+        const bestType = topContentTypes[0];
         recommendations?.push({
           id: `content-${Date?.now()}`,
           type: "content",
           title: "Top Performing Content Type",
           description: `${bestType?.contentType} content generates ${bestType?.avgEngagement.toFixed(2)}% engagement on average.`,
-          confidence: Math?.min(0?.9, 0?.4 + bestType?.count * 0?.1),
+          confidence: Math.min(0.9, 0.4 + bestType?.count * 0.1),
           priority: 2,
           actionable: true,
           suggestedAction: `Create more ${bestType?.contentType} content to maximize engagement`,
@@ -350,8 +350,8 @@ class AutopilotLearningService {
           id: `pattern-${Date?.now()}-${pattern?.pattern}`,
           type: "general",
           title: `Pattern Detected: ${pattern?.pattern}`,
-          description: pattern?.description,
-          confidence: pattern?.confidence,
+          description: pattern.description,
+          confidence: pattern.confidence,
           priority: 3,
           actionable: true,
           data: { pattern },
@@ -359,16 +359,16 @@ class AutopilotLearningService {
       }
 
       for (const insight of insights) {
-        const _insightData = insight?.data as Record<string, any>;
+        const insightData = insight?.data as Record<string, any>;
         recommendations?.push({
           id: `insight-${insight?.id}`,
-          type: insight?.insightType as Recommendation["type"],
-          title: insightData?.title || `${insight?.insightType} Insight`,
-          description: insightData?.description || "AI-generated insight",
-          confidence: insight?.confidence || 0?.5,
-          priority: insight?.priority || 5,
-          actionable: insightData?.actionable || false,
-          suggestedAction: insightData?.suggestedAction,
+          type: insight.insightType as Recommendation["type"],
+          title: insightData.title || `${insight?.insightType} Insight`,
+          description: insightData.description || "AI-generated insight",
+          confidence: insight.confidence || 0.5,
+          priority: insight.priority || 5,
+          actionable: insightData.actionable || false,
+          suggestedAction: insightData.suggestedAction,
           data: insightData,
         });
       }
@@ -383,10 +383,10 @@ class AutopilotLearningService {
   async detectPatterns(userId: string): Promise<PerformancePattern[]> {
     try {
       const patterns: PerformancePattern[] = [];
-      const _thirtyDaysAgo = new Date();
+      const thirtyDaysAgo = new Date();
       thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-      const _recentData = await db
+      const recentData = await db
         .select()
         .from(autopilotLearningData)
         .where(
@@ -402,16 +402,16 @@ class AutopilotLearningService {
         return patterns;
       }
 
-      const _avgEngagement =
+      const avgEngagement =
         recentData?.reduce((sum, d) => sum + (d?.engagementRate || 0), 0) /
         recentData?.length;
-      const _highPerformers = recentData?.filter(
-        (d) => (d?.engagementRate || 0) > avgEngagement * 1?.5,
+      const highPerformers = recentData?.filter(
+        (d) => (d?.engagementRate || 0) > avgEngagement * 1.5,
       );
 
       if (highPerformers?.length >= 3) {
-        const _hookTypes = highPerformers?.map((d) => d?.hookType).filter(Boolean);
-        const _hookCounts = hookTypes?.reduce(
+        const hookTypes = highPerformers?.map((d) => d?.hookType).filter(Boolean);
+        const hookCounts = hookTypes?.reduce(
           (acc, hook) => {
             acc[hook!] = (acc[hook!] || 0) + 1;
             return acc;
@@ -419,7 +419,7 @@ class AutopilotLearningService {
           {} as Record<string, number>,
         );
 
-        const _topHook = Object?.entries(hookCounts).sort(
+        const topHook = Object?.entries(hookCounts).sort(
           (a, b) => b[1] - a[1],
         )[0];
         if (topHook && topHook[1] >= 2) {
@@ -432,17 +432,17 @@ class AutopilotLearningService {
                 .filter((d) => d?.hookType === topHook[0])
                 .reduce((sum, d) => sum + (d?.engagementRate || 0), 0) /
               topHook[1],
-            confidence: Math?.min(0?.85, 0?.5 + topHook[1] * 0?.1),
+            confidence: Math.min(0.85, 0.5 + topHook[1] * 0.1),
           });
         }
 
-        const _morningPosts = highPerformers?.filter(
+        const morningPosts = highPerformers?.filter(
           (d) => (d?.postingHour || 0) >= 6 && (d?.postingHour || 0) < 12,
         );
-        const _afternoonPosts = highPerformers?.filter(
+        const afternoonPosts = highPerformers?.filter(
           (d) => (d?.postingHour || 0) >= 12 && (d?.postingHour || 0) < 18,
         );
-        const _eveningPosts = highPerformers?.filter(
+        const eveningPosts = highPerformers?.filter(
           (d) => (d?.postingHour || 0) >= 18 && (d?.postingHour || 0) < 22,
         );
 
@@ -454,13 +454,13 @@ class AutopilotLearningService {
             pattern: "morning_performer",
             description:
               "Your best content performs well during morning hours (6 AM - 12 PM)",
-            frequency: morningPosts?.length,
+            frequency: morningPosts.length,
             avgEngagement:
               morningPosts?.reduce(
                 (sum, d) => sum + (d?.engagementRate || 0),
                 0,
               ) / morningPosts?.length,
-            confidence: 0?.7,
+            confidence: 0.7,
           });
         } else if (
           eveningPosts?.length > morningPosts?.length &&
@@ -470,13 +470,13 @@ class AutopilotLearningService {
             pattern: "evening_performer",
             description:
               "Your audience is most active during evening hours (6 PM - 10 PM)",
-            frequency: eveningPosts?.length,
+            frequency: eveningPosts.length,
             avgEngagement:
               eveningPosts?.reduce(
                 (sum, d) => sum + (d?.engagementRate || 0),
                 0,
               ) / eveningPosts?.length,
-            confidence: 0?.7,
+            confidence: 0.7,
           });
         }
 
@@ -487,7 +487,7 @@ class AutopilotLearningService {
           }
         });
 
-        const _hashtagCounts = allHashtags?.reduce(
+        const hashtagCounts = allHashtags?.reduce(
           (acc, tag) => {
             acc[tag] = (acc[tag] || 0) + 1;
             return acc;
@@ -495,7 +495,7 @@ class AutopilotLearningService {
           {} as Record<string, number>,
         );
 
-        const _topHashtags = Object?.entries(hashtagCounts)
+        const topHashtags = Object?.entries(hashtagCounts)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5);
 
@@ -503,9 +503,9 @@ class AutopilotLearningService {
           patterns?.push({
             pattern: "hashtag_success",
             description: `Top performing hashtags: ${topHashtags?.map((h) => `#${h[0]}`).join(", ")}`,
-            frequency: topHashtags?.reduce((sum, h) => sum + h[1], 0),
-            avgEngagement: avgEngagement * 1?.5,
-            confidence: 0?.65,
+            frequency: topHashtags.reduce((sum, h) => sum + h[1], 0),
+            avgEngagement: avgEngagement * 1.5,
+            confidence: 0.65,
           });
         }
       }
@@ -522,7 +522,7 @@ class AutopilotLearningService {
     options: { platform?: string; limit?: number; offset?: number } = {},
   ): Promise<{ data: unknown[]; total: number }> {
     try {
-      const _conditions = [eq(autopilotLearningData?.userId, userId)];
+      const conditions = [eq(autopilotLearningData?.userId, userId)];
 
       if (options?.platform) {
         conditions?.push(eq(autopilotLearningData?.platform, options?.platform));
@@ -590,8 +590,8 @@ class AutopilotLearningService {
       if (optimalTimes?.length > 0) {
         insights?.push({
           type: "optimal_timing",
-          data: { times: optimalTimes?.slice(0, 10) },
-          confidence: Math?.min(0?.9, 0?.5 + optimalTimes?.length * 0?.04),
+          data: { times: optimalTimes.slice(0, 10) },
+          confidence: Math.min(0.9, 0.5 + optimalTimes?.length * 0.04),
           priority: 1,
         });
       }
@@ -600,9 +600,9 @@ class AutopilotLearningService {
         insights?.push({
           type: "content_performance",
           data: { contentTypes: topContentTypes },
-          confidence: Math?.min(
-            0?.85,
-            0?.4 + topContentTypes?.reduce((sum, t) => sum + t?.count, 0) * 0?.02,
+          confidence: Math.min(
+            0.85,
+            0.4 + topContentTypes?.reduce((sum, t) => sum + t?.count, 0) * 0.02,
           ),
           priority: 2,
         });
@@ -612,7 +612,7 @@ class AutopilotLearningService {
         insights?.push({
           type: "pattern",
           data: pattern,
-          confidence: pattern?.confidence,
+          confidence: pattern.confidence,
           priority: 3,
         });
       }
@@ -620,9 +620,9 @@ class AutopilotLearningService {
       for (const stat of platformStats) {
         insights?.push({
           type: "platform_stats",
-          platform: stat?.platform,
+          platform: stat.platform,
           data: stat,
-          confidence: 0?.9,
+          confidence: 0.9,
           priority: 4,
         });
       }
@@ -636,12 +636,12 @@ class AutopilotLearningService {
 
   async getPlatformStatistics(userId: string): Promise<any[]> {
     try {
-      const _thirtyDaysAgo = new Date();
+      const thirtyDaysAgo = new Date();
       thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-      const _results = await db
+      const results = await db
         .select({
-          platform: autopilotLearningData?.platform,
+          platform: autopilotLearningData.platform,
           avgEngagement: avg(autopilotLearningData?.engagementRate),
           totalImpressions: sql<number>`SUM(${autopilotLearningData?.impressions})`,
           totalClicks: sql<number>`SUM(${autopilotLearningData?.clicks})`,
@@ -658,7 +658,7 @@ class AutopilotLearningService {
         .groupBy(autopilotLearningData?.platform);
 
       return results?.map((r) => ({
-        platform: r?.platform,
+        platform: r.platform,
         avgEngagement: parseFloat(String(r?.avgEngagement)) || 0,
         totalImpressions: Number(r?.totalImpressions) || 0,
         totalClicks: Number(r?.totalClicks) || 0,
@@ -676,7 +676,7 @@ class AutopilotLearningService {
     _platform: string,
   ): Promise<void> {
     try {
-      const _thirtyDaysAgo = new Date();
+      const thirtyDaysAgo = new Date();
       thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
       const [postCount] = await db
@@ -689,7 +689,7 @@ class AutopilotLearningService {
           ),
         );
 
-      const _total = Number(postCount?.count || 0);
+      const total = Number(postCount?.count || 0);
 
       // Regenerate DB insights every 5 new posts once past 10
       if (total >= 10 && total % 5 === 0) {
@@ -700,15 +700,15 @@ class AutopilotLearningService {
       // This refines the model beyond the base training to the specific user's audience
       // and content style — the more they use it, the more personalised it becomes.
       if (total >= 50 && total % 25 === 0) {
-        this?.retrainSocialModelAsync(userId, total).catch((err) =>
-          logger?.warn(
+        this.retrainSocialModelAsync(userId, total).catch((err) =>
+          logger.warn(
             { err: err },
             `[AutopilotLearning] Social retrain skipped for ${userId}:`,
           ),
         );
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to check insights update:");
+      logger.warn({ err: error }, "Failed to check insights update:");
     }
   }
 
@@ -723,7 +723,7 @@ class AutopilotLearningService {
   ): Promise<void> {
     try {
       // Fetch all learning records and convert to SocialPost format for the ML model
-      const _records = await db
+      const records = await db
         .select()
         .from(autopilotLearningData)
         .where(eq(autopilotLearningData?.userId, userId))
@@ -732,28 +732,28 @@ class AutopilotLearningService {
 
       if (records?.length < 50) return;
 
-      const _posts = records?.map((r, i) => ({
-        postId: r?.postId || `learning_${r?.id}`,
-        platform: r?.platform,
-        content: r?.contentText || `${r?.contentType || "post"} on ${r?.platform}`,
+      const posts = records?.map((r, i) => ({
+        postId: r.postId || `learning_${r?.id}`,
+        platform: r.platform,
+        content: r.contentText || `${r?.contentType || "post"} on ${r?.platform}`,
         mediaType:
           (r?.mediaType as "text" | "image" | "video" | "carousel") || "text",
         postedAt: new Date(r?.createdAt || Date?.now() - i * 3600000),
-        likes: r?.likes || 0,
-        comments: r?.comments || 0,
-        shares: r?.shares || 0,
-        reach: r?.reach || r?.impressions || 0,
+        likes: r.likes || 0,
+        comments: r.comments || 0,
+        shares: r.shares || 0,
+        reach: r.reach || r?.impressions || 0,
         engagement:
           (r?.likes || 0) + (r?.comments || 0) + (r?.shares || 0) + (r?.saves || 0),
-        hashtagCount: Array?.isArray(r?.hashtags) ? r?.hashtags.length : 0,
+        hashtagCount: Array.isArray(r?.hashtags) ? r?.hashtags.length : 0,
         mentionCount: 0,
         emojiCount: 0,
         contentLength: (r?.contentText || "").length,
         hasCallToAction: false,
       }));
 
-      const { aiModelManager } = await import("./aiModelManager?.js");
-      const _socialModel = await aiModelManager?.getSocialAutopilot(userId);
+      const { aiModelManager } = await import("./aiModelManager.js");
+      const socialModel = await aiModelManager?.getSocialAutopilot(userId);
       await socialModel?.trainOnUserEngagementData(posts);
       await aiModelManager?.saveSocialModel(userId);
 
@@ -782,10 +782,10 @@ class AutopilotLearningService {
         .delete(autopilotInsights)
         .where(eq(autopilotInsights?.userId, userId));
 
-      const _insightsToInsert = [];
+      const insightsToInsert = [];
 
       if (optimalTimes?.length > 0) {
-        const _days = [
+        const days = [
           "Sunday",
           "Monday",
           "Tuesday",
@@ -794,18 +794,18 @@ class AutopilotLearningService {
           "Friday",
           "Saturday",
         ];
-        const _bestTime = optimalTimes[0];
+        const bestTime = optimalTimes[0];
         insightsToInsert?.push({
           userId,
           insightType: "timing",
           data: {
             title: "Best Posting Time",
             description: `Post on ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00 for optimal engagement`,
-            times: optimalTimes?.slice(0, 5),
+            times: optimalTimes.slice(0, 5),
             actionable: true,
             suggestedAction: `Schedule posts for ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00`,
           },
-          confidence: Math?.min(0?.9, 0?.5 + optimalTimes?.length * 0?.05),
+          confidence: Math.min(0.9, 0.5 + optimalTimes?.length * 0.05),
           priority: 1,
           isActive: true,
         });
@@ -822,7 +822,7 @@ class AutopilotLearningService {
             actionable: true,
             suggestedAction: `Focus on creating more ${topContentTypes[0].contentType} content`,
           },
-          confidence: Math?.min(0?.85, 0?.4 + topContentTypes[0].count * 0?.1),
+          confidence: Math.min(0.85, 0.4 + topContentTypes[0].count * 0.1),
           priority: 2,
           isActive: true,
         });
@@ -833,12 +833,12 @@ class AutopilotLearningService {
           userId,
           insightType: "general",
           data: {
-            title: pattern?.pattern,
-            description: pattern?.description,
+            title: pattern.pattern,
+            description: pattern.description,
             pattern,
             actionable: true,
           },
-          confidence: pattern?.confidence,
+          confidence: pattern.confidence,
           priority: 3,
           isActive: true,
         });
@@ -868,18 +868,18 @@ class AutopilotLearningService {
     postData: PostData,
   ): Promise<void> {
     await pushTrainingFeedback({
-      content: postData?.contentText || "",
+      content: postData.contentText || "",
       source: "autopilot_learning",
       trigger: "high_engagement_post",
       engagement_rate: engagementRate,
-      platform: postData?.platform,
-      content_type: postData?.contentType || "unknown",
-      hook_type: postData?.hookType || "unknown",
-      media_type: postData?.mediaType || "unknown",
+      platform: postData.platform,
+      content_type: postData.contentType || "unknown",
+      hook_type: postData.hookType || "unknown",
+      media_type: postData.mediaType || "unknown",
       curriculum_hint: "reinforce_high_engagement_visual_style",
       dispatched_at: new Date().toISOString(),
     });
   }
 }
 
-export const _autopilotLearningService = new AutopilotLearningService();
+export const autopilotLearningService = new AutopilotLearningService();

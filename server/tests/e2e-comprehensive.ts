@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { users, dspProviders } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface TestResult {
   section: string;
@@ -18,19 +18,19 @@ async function runTest(
   testName: string,
   testFn: () => Promise<void>,
 ) {
-  const _start = Date?.now();
+  const start = Date?.now();
   try {
     await testFn();
-    const _duration = Date?.now() - start;
+    const duration = Date?.now() - start;
     results?.push({ section, test: testName, status: "pass", duration });
     logger?.info(`  ✅ ${testName} (${duration}ms)`);
   } catch (error) {
-    const _duration = Date?.now() - start;
+    const duration = Date?.now() - start;
     results?.push({
       section,
       test: testName,
       status: "fail",
-      message: error?.message,
+      message: error.message,
       duration,
     });
     logger?.warn(`  ❌ ${testName}: ${error?.message}`);
@@ -41,12 +41,12 @@ async function testDatabaseConnection() {
   logger?.info("\n📊 1. DATABASE CONNECTION TESTS");
 
   await runTest("Database", "PostgreSQL connection", async () => {
-    const _result = await db?.execute(sql`SELECT 1 as test`);
+    const result = await db?.execute(sql`SELECT 1 as test`);
     if (!result) throw new Error("No result from database");
   });
 
   await runTest("Database", "Users table accessible", async () => {
-    const _result = await db
+    const result = await db
       .select({ count: sql<number>`count(*)` })
       .from(users);
     if (result[0].count === undefined) throw new Error("Cannot count users");
@@ -57,13 +57,13 @@ async function testDistributionPlatforms() {
   logger?.info("\n🎵 2. DISTRIBUTION PLATFORMS TESTS");
 
   await runTest("Distribution", "All 53 platforms seeded", async () => {
-    const _platforms = await db?.select().from(dspProviders);
+    const platforms = await db?.select().from(dspProviders);
     if (platforms?.length < 50)
       throw new Error(`Only ${platforms?.length} platforms found`);
   });
 
   await runTest("Distribution", "Major streaming platforms exist", async () => {
-    const _majors = [
+    const majors = [
       "spotify",
       "apple-music",
       "amazon-music",
@@ -84,7 +84,7 @@ async function testDistributionPlatforms() {
     "Distribution",
     "Electronic stores exist (Beatport, Traxsource)",
     async () => {
-      const _electronic = [
+      const electronic = [
         "beatport",
         "juno-download",
         "traxsource",
@@ -105,7 +105,7 @@ async function testDistributionPlatforms() {
     "Distribution",
     "China platforms exist (QQ, Kugou, NetEase)",
     async () => {
-      const _china = [
+      const china = [
         "qq-music",
         "kugou",
         "kuwo",
@@ -127,7 +127,7 @@ async function testDistributionPlatforms() {
     "Distribution",
     "Regional platforms exist (JioSaavn, Anghami, Boomplay)",
     async () => {
-      const _regional = [
+      const regional = [
         "jiosaavn",
         "anghami",
         "boomplay",
@@ -151,7 +151,7 @@ async function testDistributionPlatforms() {
     "Distribution",
     "Social/Content ID platforms exist",
     async () => {
-      const _social = [
+      const social = [
         "tiktok",
         "instagram",
         "youtube-content-id",
@@ -173,7 +173,7 @@ async function testDistributionPlatforms() {
     "Distribution",
     "Niche platforms exist (Peloton, Roblox, Pretzel)",
     async () => {
-      const _niche = [
+      const niche = [
         "peloton",
         "roblox",
         "pretzel-rocks",
@@ -195,7 +195,7 @@ async function testOnboardingSystem() {
   logger?.info("\n🚀 3. ONBOARDING & RETENTION SYSTEM TESTS");
 
   await runTest("Onboarding", "user_onboarding table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('user_onboarding') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -203,7 +203,7 @@ async function testOnboardingSystem() {
   });
 
   await runTest("Onboarding", "user_achievements table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('user_achievements') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -211,7 +211,7 @@ async function testOnboardingSystem() {
   });
 
   await runTest("Onboarding", "release_countdowns table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('release_countdowns') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -219,7 +219,7 @@ async function testOnboardingSystem() {
   });
 
   await runTest("Onboarding", "onboarding_tasks table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('onboarding_tasks') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -231,7 +231,7 @@ async function testSocialMediaSystem() {
   logger?.info("\n📱 4. SOCIAL MEDIA SYSTEM TESTS");
 
   await runTest("Social", "scheduled_post_batches table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('scheduled_post_batches') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -239,7 +239,7 @@ async function testSocialMediaSystem() {
   });
 
   await runTest("Social", "social_accounts table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('social_accounts') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -247,7 +247,7 @@ async function testSocialMediaSystem() {
   });
 
   await runTest("Social", "social_inbox_messages table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('social_inbox_messages') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -255,7 +255,7 @@ async function testSocialMediaSystem() {
   });
 
   await runTest("Social", "social_campaigns table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('social_campaigns') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -267,12 +267,12 @@ async function testMarketplaceSystem() {
   logger?.info("\n🛒 5. BEAT MARKETPLACE TESTS");
 
   await runTest("Marketplace", "beats table exists", async () => {
-    const _result = await db?.execute(sql`SELECT to_regclass('beats') as exists`);
+    const result = await db?.execute(sql`SELECT to_regclass('beats') as exists`);
     if (!result?.rows[0]?.exists) throw new Error("beats table missing");
   });
 
   await runTest("Marketplace", "contract_templates table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('contract_templates') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -280,14 +280,14 @@ async function testMarketplaceSystem() {
   });
 
   await runTest("Marketplace", "storefronts table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('storefronts') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("storefronts table missing");
   });
 
   await runTest("Marketplace", "listings table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('listings') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("listings table missing");
@@ -298,21 +298,21 @@ async function testAnalyticsSystem() {
   logger?.info("\n📈 6. ANALYTICS SYSTEM TESTS");
 
   await runTest("Analytics", "analytics table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('analytics') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("analytics table missing");
   });
 
   await runTest("Analytics", "dsp_analytics table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('dsp_analytics') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("dsp_analytics table missing");
   });
 
   await runTest("Analytics", "historical_analytics table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('historical_analytics') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -320,7 +320,7 @@ async function testAnalyticsSystem() {
   });
 
   await runTest("Analytics", "countdown_analytics table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('countdown_analytics') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -332,14 +332,14 @@ async function testBillingSystem() {
   logger?.info("\n💰 7. BILLING & PAYMENTS TESTS");
 
   await runTest("Billing", "invoices table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('invoices') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("invoices table missing");
   });
 
   await runTest("Billing", "ledger_entries table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('ledger_entries') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -347,14 +347,14 @@ async function testBillingSystem() {
   });
 
   await runTest("Billing", "subscriptions table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('subscriptions') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("subscriptions table missing");
   });
 
   await runTest("Billing", "instant_payouts table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('instant_payouts') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -362,7 +362,7 @@ async function testBillingSystem() {
   });
 
   await runTest("Billing", "split_payments table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('split_payments') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -373,7 +373,7 @@ async function testBillingSystem() {
 async function testAdminAccount() {
   logger?.info("\n👤 8. ADMIN ACCOUNT TESTS");
 
-  const _adminEmail = process?.env.ADMIN_EMAIL;
+  const adminEmail = process?.env.ADMIN_EMAIL;
 
   if (!adminEmail) {
     logger?.warn("⚠️ ADMIN_EMAIL not set - skipping admin tests");
@@ -406,21 +406,21 @@ async function testStudioSystem() {
   logger?.info("\n🎹 9. AI STUDIO TESTS");
 
   await runTest("Studio", "projects table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('projects') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("projects table missing");
   });
 
   await runTest("Studio", "studio_tracks table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('studio_tracks') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("studio_tracks table missing");
   });
 
   await runTest("Studio", "plugin_instances table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('plugin_instances') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -428,7 +428,7 @@ async function testStudioSystem() {
   });
 
   await runTest("Studio", "studio_templates table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('studio_templates') as exists`,
     );
     if (!result?.rows[0]?.exists)
@@ -436,7 +436,7 @@ async function testStudioSystem() {
   });
 
   await runTest("Studio", "audio_clips table exists", async () => {
-    const _result = await db?.execute(
+    const result = await db?.execute(
       sql`SELECT to_regclass('audio_clips') as exists`,
     );
     if (!result?.rows[0]?.exists) throw new Error("audio_clips table missing");
@@ -446,27 +446,27 @@ async function testStudioSystem() {
 async function testAPIEndpoints() {
   logger?.info("\n🌐 10. API ENDPOINT TESTS");
 
-  const _baseUrl = "http://localhost:5000";
+  const baseUrl = "http://localhost:5000";
 
   await runTest("API", "Health endpoint responds", async () => {
-    const _res = await fetch(`${baseUrl}/api/health`);
+    const res = await fetch(`${baseUrl}/api/health`);
     if (!res?.ok) throw new Error(`Health check failed: ${res?.status}`);
   });
 
   await runTest("API", "Distribution platforms endpoint", async () => {
-    const _res = await fetch(`${baseUrl}/api/distribution/platforms`);
+    const res = await fetch(`${baseUrl}/api/distribution/platforms`);
     if (res?.status === 401 || res?.status === 404) return; // Auth required or not exposed publicly
     if (!res?.ok) throw new Error(`Failed: ${res?.status}`);
   });
 
   await runTest("API", "Onboarding endpoint", async () => {
-    const _res = await fetch(`${baseUrl}/api/onboarding/progress`);
+    const res = await fetch(`${baseUrl}/api/onboarding/progress`);
     if (res?.status === 401) return; // Auth required - this is OK
     if (!res?.ok && res?.status !== 401) throw new Error(`Failed: ${res?.status}`);
   });
 
   await runTest("API", "Achievements endpoint", async () => {
-    const _res = await fetch(`${baseUrl}/api/achievements`);
+    const res = await fetch(`${baseUrl}/api/achievements`);
     if (res?.status === 401) return; // Auth required - this is OK
     if (!res?.ok && res?.status !== 401) throw new Error(`Failed: ${res?.status}`);
   });
@@ -477,7 +477,7 @@ async function runAllTests() {
   logger?.info("       MAX BOOSTER - COMPREHENSIVE END-TO-END TESTS        ");
   logger?.info("═══════════════════════════════════════════════════════════");
 
-  const _startTime = Date?.now();
+  const startTime = Date?.now();
 
   await testDatabaseConnection();
   await testDistributionPlatforms();
@@ -490,15 +490,15 @@ async function runAllTests() {
   await testStudioSystem();
   await testAPIEndpoints();
 
-  const _totalDuration = Date?.now() - startTime;
+  const totalDuration = Date?.now() - startTime;
 
   logger?.info("\n═══════════════════════════════════════════════════════════");
   logger?.info("                      TEST SUMMARY                         ");
   logger?.info("═══════════════════════════════════════════════════════════");
 
-  const _passed = results?.filter((r) => r?.status === "pass").length;
-  const _failed = results?.filter((r) => r?.status === "fail").length;
-  const _total = results?.length;
+  const passed = results?.filter((r) => r?.status === "pass").length;
+  const failed = results?.filter((r) => r?.status === "fail").length;
+  const total = results?.length;
 
   logger?.info(`\n  Total Tests: ${total}`);
   logger?.info(`  ✅ Passed: ${passed}`);

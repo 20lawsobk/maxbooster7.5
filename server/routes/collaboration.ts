@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { db } from "../db";
 import {
   collaborationComments,
@@ -9,16 +9,16 @@ import {
   studioProjects,
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 async function verifyProjectAccess(
   projectId: string,
   userId: string,
 ): Promise<boolean> {
   const [project] = await db
-    .select({ id: studioProjects?.id })
+    .select({ id: studioProjects.id })
     .from(studioProjects)
     .where(
       and(eq(studioProjects?.id, projectId), eq(studioProjects?.userId, userId)),
@@ -62,20 +62,20 @@ interface PresenceInfo {
 
 // ── Bounded in-memory state ────────────────────────────────────────────────
 // Both Maps are capped and swept so they cannot grow unboundedly.
-const _MAX_SESSIONS = 50_000; // max concurrent project sessions held in memory
-const _MAX_CONFLICTS = 10_000; // max project IDs tracked for conflict history
-const _SESSION_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours idle → evict session
+const MAX_SESSIONS = 50_000; // max concurrent project sessions held in memory
+const MAX_CONFLICTS = 10_000; // max project IDs tracked for conflict history
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours idle → evict session
 
 /** sessionId → (userId → PresenceInfo) */
-const _sessions = new Map<string, Map<string, PresenceInfo>>();
+const sessions = new Map<string, Map<string, PresenceInfo>>();
 /** projectId → ConflictResolution[] (each array already capped at 500 entries) */
-const _conflicts = new Map<string, ConflictResolution[]>();
+const conflicts = new Map<string, ConflictResolution[]>();
 
 /** Remove idle sessions and trim both Maps to their capacity caps. */
 function sweepCollaborationMaps(): void {
-  const _cutoff = Date?.now() - SESSION_TTL_MS;
+  const cutoff = Date?.now() - SESSION_TTL_MS;
   for (const [sid, presence] of sessions) {
-    const _lastActive = Math?.max(
+    const lastActive = Math?.max(
       0,
       ...[...presence?.values()].map((p) => new Date(p?.lastActive).getTime()),
     );
@@ -83,7 +83,7 @@ function sweepCollaborationMaps(): void {
   }
   // If still over cap after TTL sweep, drop oldest-inserted entries (FIFO)
   if (sessions?.size > MAX_SESSIONS) {
-    const _excess = sessions?.size - MAX_SESSIONS;
+    const excess = sessions?.size - MAX_SESSIONS;
     let dropped = 0;
     for (const key of sessions?.keys()) {
       sessions?.delete(key);
@@ -91,7 +91,7 @@ function sweepCollaborationMaps(): void {
     }
   }
   if (conflicts?.size > MAX_CONFLICTS) {
-    const _excess = conflicts?.size - MAX_CONFLICTS;
+    const excess = conflicts?.size - MAX_CONFLICTS;
     let dropped = 0;
     for (const key of conflicts?.keys()) {
       conflicts?.delete(key);
@@ -100,10 +100,10 @@ function sweepCollaborationMaps(): void {
   }
 }
 // Sweep every 30 minutes — low overhead, catches stale collaboration sessions
-const __collabSweepTimer = setInterval(sweepCollaborationMaps, 30 * 60 * 1000);
+const _collabSweepTimer = setInterval(sweepCollaborationMaps, 30 * 60 * 1000);
 _collabSweepTimer?.unref(); // do not block process exit
 
-const _COLORS = [
+const COLORS = [
   "#ef4444",
   "#f97316",
   "#eab308",
@@ -116,18 +116,18 @@ const _COLORS = [
   "#06b6d4",
 ];
 
-const _resolveConflictSchema = z?.object({
-  conflictId: z?.string(),
-  projectId: z?.string(),
-  resolution: z?.enum([
+const resolveConflictSchema = z.object({
+  conflictId: z.string(),
+  projectId: z.string(),
+  resolution: z.enum([
     "auto_merge",
     "manual_merge",
     "accept_theirs",
     "accept_mine",
   ]),
-  mergedContent: z?.string().optional(),
-  yourContent: z?.string(),
-  theirContent: z?.string(),
+  mergedContent: z.string().optional(),
+  yourContent: z.string(),
+  theirContent: z.string(),
 });
 
 router?.post(
@@ -135,24 +135,24 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = resolveConflictSchema?.parse(req?.body);
+      const validatedData = resolveConflictSchema?.parse(req?.body);
 
       const resolution: ConflictResolution = {
-        id: validatedData?.conflictId,
-        type: validatedData?.resolution,
+        id: validatedData.conflictId,
+        type: validatedData.resolution,
         originalContent: "",
-        theirContent: validatedData?.theirContent,
-        yourContent: validatedData?.yourContent,
+        theirContent: validatedData.theirContent,
+        yourContent: validatedData.yourContent,
         mergedContent:
           validatedData?.mergedContent ||
           (validatedData?.resolution === "accept_theirs"
             ? validatedData?.theirContent
             : validatedData?.yourContent),
         resolvedAt: new Date(),
-        resolvedBy: req?.user!.id,
+        resolvedBy: req.user!.id,
       };
 
-      const _projectConflicts = conflicts?.get(validatedData?.projectId) || [];
+      const projectConflicts = conflicts?.get(validatedData?.projectId) || [];
       projectConflicts?.push(resolution);
       // Cap per-project conflict history to prevent unbounded growth.
       // Conflicts are in-memory only; 500 is more than enough for any live session.
@@ -195,10 +195,10 @@ router?.post(
         },
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Resolve conflict error:");
       res?.status(500).json({ error: "Failed to resolve conflict" });
@@ -212,11 +212,11 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { sessionId } = req?.params;
-      const _sessionPresence = sessions?.get(sessionId);
+      const sessionPresence = sessions?.get(sessionId);
 
       if (!sessionPresence) {
         const initialPresence: PresenceInfo = {
-          userId: req?.user!.id,
+          userId: req.user!.id,
           displayName: "You",
           status: "online",
           lastActive: new Date(),
@@ -225,17 +225,17 @@ router?.get(
         };
 
         // Enforce cap at insertion time — don't wait for the 30-min sweep.
-        if (sessions?.size >= MAX_SESSIONS) sweepCollaborationMaps();
-        if (sessions?.size >= MAX_SESSIONS) {
+        if (sessions.size >= MAX_SESSIONS) sweepCollaborationMaps();
+        if (sessions.size >= MAX_SESSIONS) {
           // Still over cap after sweep — evict the oldest entry to make room.
-          const _oldest = sessions?.keys().next().value;
-          if (oldest) sessions?.delete(oldest);
+          const oldest = sessions.keys().next().value;
+          if (oldest) sessions.delete(oldest);
         }
-        const _newSession = new Map<string, PresenceInfo>();
-        newSession?.set(req?.user!.id, initialPresence);
-        sessions?.set(sessionId, newSession);
+        const newSession = new Map<string, PresenceInfo>();
+        newSession.set(req.user!.id, initialPresence);
+        sessions.set(sessionId, newSession);
 
-        return res?.json({
+        return res.json({
           presence: [initialPresence],
           outcomes: [
             {
@@ -246,299 +246,299 @@ router?.get(
         });
       }
 
-      const _existingUser = sessionPresence?.get(req?.user!.id);
+      const existingUser = sessionPresence.get(req.user!.id);
       if (!existingUser) {
         const newPresence: PresenceInfo = {
-          userId: req?.user!.id,
+          userId: req.user!.id,
           displayName: "You",
           status: "online",
           lastActive: new Date(),
-          color: COLORS[sessionPresence?.size % COLORS?.length],
+          color: COLORS[sessionPresence.size % COLORS.length],
           role: "editor",
         };
-        sessionPresence?.set(req?.user!.id, newPresence);
+        sessionPresence.set(req.user!.id, newPresence);
 
-        return res?.json({
-          presence: Array?.from(sessionPresence?.values()),
+        return res.json({
+          presence: Array.from(sessionPresence.values()),
           outcomes: [
             {
               type: "user_joined_session",
-              userId: req?.user!.id,
+              userId: req.user!.id,
               message: "You joined the session",
             },
           ],
         });
       }
 
-      existingUser?.lastActive = new Date();
-      existingUser?.status = "online";
+      existingUser.lastActive = new Date();
+      existingUser.status = "online";
 
-      res?.json({
-        presence: Array?.from(sessionPresence?.values()),
+      res.json({
+        presence: Array.from(sessionPresence.values()),
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Get presence error:");
-      res?.status(500).json({ error: "Failed to get presence" });
+      logger.warn({ err: error }, "Get presence error:");
+      res.status(500).json({ error: "Failed to get presence" });
     }
   },
 );
 
-const _updatePresenceSchema = z?.object({
-  status: z?.enum(["online", "idle", "away", "offline"]).optional(),
+const updatePresenceSchema = z.object({
+  status: z.enum(["online", "idle", "away", "offline"]).optional(),
   cursorPosition: z
     .object({
-      x: z?.number(),
-      y: z?.number(),
-      trackId: z?.string().optional(),
+      x: z.number(),
+      y: z.number(),
+      trackId: z.string().optional(),
     })
     .optional(),
   selection: z
     .object({
-      start: z?.number(),
-      end: z?.number(),
-      elementId: z?.string().optional(),
+      start: z.number(),
+      end: z.number(),
+      elementId: z.string().optional(),
     })
     .optional(),
-  isTyping: z?.boolean().optional(),
+  isTyping: z.boolean().optional(),
 });
 
-router?.put(
+router.put(
   "/presence/:sessionId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { sessionId } = req?.params;
-      const _validatedData = updatePresenceSchema?.parse(req?.body);
+      const { sessionId } = req.params;
+      const validatedData = updatePresenceSchema.parse(req.body);
 
-      const _sessionPresence = sessions?.get(sessionId);
+      const sessionPresence = sessions.get(sessionId);
       if (!sessionPresence) {
-        return res?.status(404).json({ error: "Session not found" });
+        return res.status(404).json({ error: "Session not found" });
       }
 
-      const _userPresence = sessionPresence?.get(req?.user!.id);
+      const userPresence = sessionPresence.get(req.user!.id);
       if (!userPresence) {
-        return res?.status(404).json({ error: "User not in session" });
+        return res.status(404).json({ error: "User not in session" });
       }
 
       const outcomes: unknown[] = [];
-      const _previousStatus = userPresence?.status;
+      const previousStatus = userPresence.status;
 
-      if (validatedData?.status) {
-        userPresence?.status = validatedData?.status;
-        if (previousStatus !== validatedData?.status) {
+      if (validatedData.status) {
+        userPresence.status = validatedData.status;
+        if (previousStatus !== validatedData.status) {
           if (
-            validatedData?.status === "idle" ||
-            validatedData?.status === "away"
+            validatedData.status === "idle" ||
+            validatedData.status === "away"
           ) {
-            outcomes?.push({
+            outcomes.push({
               type: "user_went_idle",
-              userId: req?.user!.id,
-              message: `User went ${validatedData?.status}`,
+              userId: req.user!.id,
+              message: `User went ${validatedData.status}`,
             });
           }
         }
       }
 
-      if (validatedData?.cursorPosition) {
-        userPresence?.cursorPosition = validatedData?.cursorPosition;
-        outcomes?.push({
+      if (validatedData.cursorPosition) {
+        userPresence.cursorPosition = validatedData.cursorPosition;
+        outcomes.push({
           type: "cursor_position_updated",
-          userId: req?.user!.id,
-          position: validatedData?.cursorPosition,
+          userId: req.user!.id,
+          position: validatedData.cursorPosition,
         });
       }
 
-      if (validatedData?.selection) {
-        userPresence?.selection = validatedData?.selection;
-        outcomes?.push({
+      if (validatedData.selection) {
+        userPresence.selection = validatedData.selection;
+        outcomes.push({
           type: "user_selection_highlighted",
-          userId: req?.user!.id,
-          selection: validatedData?.selection,
+          userId: req.user!.id,
+          selection: validatedData.selection,
         });
       }
 
-      if (validatedData?.isTyping !== undefined) {
-        userPresence?.isTyping = validatedData?.isTyping;
-        if (validatedData?.isTyping) {
-          outcomes?.push({
+      if (validatedData.isTyping !== undefined) {
+        userPresence.isTyping = validatedData.isTyping;
+        if (validatedData.isTyping) {
+          outcomes.push({
             type: "user_is_typing",
-            userId: req?.user!.id,
+            userId: req.user!.id,
           });
         }
       }
 
-      userPresence?.lastActive = new Date();
+      userPresence.lastActive = new Date();
 
-      res?.json({
+      res.json({
         success: true,
         presence: userPresence,
         outcomes,
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Update presence error:");
-      res?.status(500).json({ error: "Failed to update presence" });
+      logger.warn({ err: error }, "Update presence error:");
+      res.status(500).json({ error: "Failed to update presence" });
     }
   },
 );
 
-router?.delete(
+router.delete(
   "/presence/:sessionId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { sessionId } = req?.params;
-      const _sessionPresence = sessions?.get(sessionId);
+      const { sessionId } = req.params;
+      const sessionPresence = sessions.get(sessionId);
 
       if (sessionPresence) {
-        const _user = sessionPresence?.get(req?.user!.id);
-        sessionPresence?.delete(req?.user!.id);
+        const user = sessionPresence.get(req.user!.id);
+        sessionPresence.delete(req.user!.id);
 
-        if (sessionPresence?.size === 0) {
-          sessions?.delete(sessionId);
+        if (sessionPresence.size === 0) {
+          sessions.delete(sessionId);
         }
 
-        res?.json({
+        res.json({
           success: true,
           outcomes: [
             {
               type: "user_left_session",
-              userId: req?.user!.id,
-              displayName: user?.displayName || "User",
+              userId: req.user!.id,
+              displayName: user.displayName || "User",
               message: "You left the session",
             },
           ],
         });
       } else {
-        res?.json({ success: true });
+        res.json({ success: true });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Leave session error:");
-      res?.status(500).json({ error: "Failed to leave session" });
+      logger.warn({ err: error }, "Leave session error:");
+      res.status(500).json({ error: "Failed to leave session" });
     }
   },
 );
 
-const _createVersionSchema = z?.object({
-  projectId: z?.string(),
-  name: z?.string().optional(),
-  description: z?.string().optional(),
-  isAutoSave: z?.boolean().optional(),
+const createVersionSchema = z.object({
+  projectId: z.string(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  isAutoSave: z.boolean().optional(),
 });
 
-router?.post(
+router.post(
   "/version",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = createVersionSchema?.parse(req?.body);
-      const _userId = req?.user!.id;
+      const validatedData = createVersionSchema.parse(req.body);
+      const userId = req.user!.id;
 
-      if (!(await verifyProjectAccess(validatedData?.projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+      if (!(await verifyProjectAccess(validatedData.projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _existingVersions = await db
-        .select({ id: collaborationVersions?.id })
+      const existingVersions = await db
+        .select({ id: collaborationVersions.id })
         .from(collaborationVersions)
-        .where(eq(collaborationVersions?.projectId, validatedData?.projectId))
+        .where(eq(collaborationVersions.projectId, validatedData.projectId))
         .limit(500);
 
-      const _nextVersion = existingVersions?.length + 1;
+      const nextVersion = existingVersions.length + 1;
 
       await db
         .update(collaborationVersions)
         .set({ isCurrent: false })
-        .where(eq(collaborationVersions?.projectId, validatedData?.projectId));
+        .where(eq(collaborationVersions.projectId, validatedData.projectId));
 
       const [newVersion] = await db
         .insert(collaborationVersions)
         .values({
-          projectId: validatedData?.projectId,
+          projectId: validatedData.projectId,
           version: nextVersion,
-          name: validatedData?.name || `Version ${nextVersion}`,
-          description: validatedData?.description || null,
+          name: validatedData.name || `Version ${nextVersion}`,
+          description: validatedData.description || null,
           createdBy: userId,
           createdByName: "You",
-          isAutoSave: validatedData?.isAutoSave || false,
+          isAutoSave: validatedData.isAutoSave || false,
           isCurrent: true,
         })
         .returning();
 
-      const _outcomeType = validatedData?.isAutoSave
+      const outcomeType = validatedData.isAutoSave
         ? "auto_save_completed"
         : "new_version_created";
-      const _message = validatedData?.isAutoSave
+      const message = validatedData.isAutoSave
         ? "Auto-save completed"
         : `Version ${nextVersion} created`;
 
-      logger?.info(
-        `Version created: ${newVersion?.id} for project ${validatedData?.projectId}`,
+      logger.info(
+        `Version created: ${newVersion.id} for project ${validatedData.projectId}`,
       );
 
-      res?.status(201).json({
+      res.status(201).json({
         version: newVersion,
         outcome: {
           type: outcomeType,
           message,
-          versionId: newVersion?.id,
+          versionId: newVersion.id,
           version: nextVersion,
         },
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Create version error:");
-      res?.status(500).json({ error: "Failed to create version" });
+      logger.warn({ err: error }, "Create version error:");
+      res.status(500).json({ error: "Failed to create version" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/versions/:projectId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      if (!(await verifyProjectAccess(projectId, req?.user!.id))) {
-        return res?.status(404).json({ error: "Project not found" });
+      const { projectId } = req.params;
+      if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+        return res.status(404).json({ error: "Project not found" });
       }
-      const _rows = await db
+      const rows = await db
         .select()
         .from(collaborationVersions)
-        .where(eq(collaborationVersions?.projectId, projectId))
-        .orderBy(desc(collaborationVersions?.version))
+        .where(eq(collaborationVersions.projectId, projectId))
+        .orderBy(desc(collaborationVersions.version))
         .limit(100);
 
-      res?.json({
+      res.json({
         versions: rows,
         outcome: {
           type: "version_history_displayed",
-          message: `${rows?.length} versions found`,
+          message: `${rows.length} versions found`,
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Get versions error:");
-      res?.status(500).json({ error: "Failed to get versions" });
+      logger.warn({ err: error }, "Get versions error:");
+      res.status(500).json({ error: "Failed to get versions" });
     }
   },
 );
 
-router?.put(
+router.put(
   "/versions/:projectId/:versionId/restore",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId, versionId } = req?.params;
-      if (!(await verifyProjectAccess(projectId, req?.user!.id))) {
-        return res?.status(404).json({ error: "Project not found" });
+      const { projectId, versionId } = req.params;
+      if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const [target] = await db
@@ -546,62 +546,62 @@ router?.put(
         .from(collaborationVersions)
         .where(
           and(
-            eq(collaborationVersions?.id, versionId),
-            eq(collaborationVersions?.projectId, projectId),
+            eq(collaborationVersions.id, versionId),
+            eq(collaborationVersions.projectId, projectId),
           ),
         )
         .limit(1);
 
       if (!target) {
-        return res?.status(404).json({ error: "Version not found" });
+        return res.status(404).json({ error: "Version not found" });
       }
 
       await db
         .update(collaborationVersions)
         .set({ isCurrent: false })
-        .where(eq(collaborationVersions?.projectId, projectId));
+        .where(eq(collaborationVersions.projectId, projectId));
 
       const [restored] = await db
         .update(collaborationVersions)
         .set({ isCurrent: true })
-        .where(eq(collaborationVersions?.id, versionId))
+        .where(eq(collaborationVersions.id, versionId))
         .returning();
 
-      res?.json({
+      res.json({
         success: true,
         version: restored,
         outcome: {
           type: "version_restored",
-          message: `Restored to ${restored?.name}`,
-          versionId: restored?.id,
+          message: `Restored to ${restored.name}`,
+          versionId: restored.id,
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Restore version error:");
-      res?.status(500).json({ error: "Failed to restore version" });
+      logger.warn({ err: error }, "Restore version error:");
+      res.status(500).json({ error: "Failed to restore version" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/versions/:projectId/compare",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      if (!(await verifyProjectAccess(projectId, req?.user!.id))) {
-        return res?.status(404).json({ error: "Project not found" });
+      const { projectId } = req.params;
+      if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+        return res.status(404).json({ error: "Project not found" });
       }
-      const { versionAId, versionBId } = req?.body;
+      const { versionAId, versionBId } = req.body;
 
-      const _rows = await db
+      const rows = await db
         .select()
         .from(collaborationVersions)
-        .where(and(eq(collaborationVersions?.projectId, projectId)))
+        .where(and(eq(collaborationVersions.projectId, projectId)))
         .limit(200);
 
-      const _versionA = rows?.find((v) => v?.id === versionAId);
-      const _versionB = rows?.find((v) => v?.id === versionBId);
+      const versionA = rows.find((v) => v.id === versionAId);
+      const versionB = rows.find((v) => v.id === versionBId);
 
       if (!versionA || !versionB) {
         return res
@@ -609,28 +609,28 @@ router?.post(
           .json({ error: "One or both versions not found" });
       }
 
-      res?.json({
+      res.json({
         comparison: { versionA, versionB, changes: [] },
         outcome: {
           type: "version_compared",
-          message: `Comparing ${versionA?.name} with ${versionB?.name}`,
+          message: `Comparing ${versionA.name} with ${versionB.name}`,
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Compare versions error:");
-      res?.status(500).json({ error: "Failed to compare versions" });
+      logger.warn({ err: error }, "Compare versions error:");
+      res.status(500).json({ error: "Failed to compare versions" });
     }
   },
 );
 
-router?.delete(
+router.delete(
   "/versions/:projectId/:versionId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId, versionId } = req?.params;
-      if (!(await verifyProjectAccess(projectId, req?.user!.id))) {
-        return res?.status(404).json({ error: "Project not found" });
+      const { projectId, versionId } = req.params;
+      if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const [target] = await db
@@ -638,17 +638,17 @@ router?.delete(
         .from(collaborationVersions)
         .where(
           and(
-            eq(collaborationVersions?.id, versionId),
-            eq(collaborationVersions?.projectId, projectId),
+            eq(collaborationVersions.id, versionId),
+            eq(collaborationVersions.projectId, projectId),
           ),
         )
         .limit(1);
 
       if (!target) {
-        return res?.status(404).json({ error: "Version not found" });
+        return res.status(404).json({ error: "Version not found" });
       }
 
-      if (target?.isCurrent) {
+      if (target.isCurrent) {
         return res
           .status(400)
           .json({ error: "Cannot delete the current version" });
@@ -656,142 +656,142 @@ router?.delete(
 
       await db
         .delete(collaborationVersions)
-        .where(eq(collaborationVersions?.id, versionId));
+        .where(eq(collaborationVersions.id, versionId));
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "version_deleted",
-          message: `${target?.name} has been deleted`,
+          message: `${target.name} has been deleted`,
           versionId,
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Delete version error:");
-      res?.status(500).json({ error: "Failed to delete version" });
+      logger.warn({ err: error }, "Delete version error:");
+      res.status(500).json({ error: "Failed to delete version" });
     }
   },
 );
 
-const _accessRequestSchema = z?.object({
-  projectId: z?.string(),
-  requestedAccess: z?.enum(["view", "edit", "comment"]),
-  message: z?.string().optional(),
+const accessRequestSchema = z.object({
+  projectId: z.string(),
+  requestedAccess: z.enum(["view", "edit", "comment"]),
+  message: z.string().optional(),
 });
 
-router?.post(
+router.post(
   "/access/request",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = accessRequestSchema?.parse(req?.body);
-      const _userId = req?.user!.id;
+      const validatedData = accessRequestSchema.parse(req.body);
+      const userId = req.user!.id;
 
       const [inserted] = await db
         .insert(collaborationAccessRequests)
         .values({
-          projectId: validatedData?.projectId,
+          projectId: validatedData.projectId,
           requesterId: userId,
           requesterName: "User",
-          requesterEmail: req?.user!.email,
-          requestedAccess: validatedData?.requestedAccess,
-          message: validatedData?.message || null,
+          requesterEmail: req.user!.email,
+          requestedAccess: validatedData.requestedAccess,
+          message: validatedData.message || null,
           status: "pending",
         })
         .returning();
 
-      logger?.info(
-        `Access request submitted: ${inserted?.id} for project ${validatedData?.projectId}`,
+      logger.info(
+        `Access request submitted: ${inserted.id} for project ${validatedData.projectId}`,
       );
 
-      res?.status(201).json({
+      res.status(201).json({
         request: inserted,
         outcome: {
           type: "access_request_submitted",
-          message: `Request for ${validatedData?.requestedAccess} access has been submitted`,
-          requestId: inserted?.id,
+          message: `Request for ${validatedData.requestedAccess} access has been submitted`,
+          requestId: inserted.id,
         },
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Submit access request error:");
-      res?.status(500).json({ error: "Failed to submit access request" });
+      logger.warn({ err: error }, "Submit access request error:");
+      res.status(500).json({ error: "Failed to submit access request" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/access/requests/:projectId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const _rows = await db
+      const { projectId } = req.params;
+      const rows = await db
         .select()
         .from(collaborationAccessRequests)
         .where(
           and(
-            eq(collaborationAccessRequests?.projectId, projectId),
-            eq(collaborationAccessRequests?.status, "pending"),
+            eq(collaborationAccessRequests.projectId, projectId),
+            eq(collaborationAccessRequests.status, "pending"),
           ),
         )
         .limit(100);
 
-      res?.json({ requests: rows });
+      res.json({ requests: rows });
     } catch (error) {
-      logger?.warn({ err: error }, "Get access requests error:");
-      res?.status(500).json({ error: "Failed to get access requests" });
+      logger.warn({ err: error }, "Get access requests error:");
+      res.status(500).json({ error: "Failed to get access requests" });
     }
   },
 );
 
-const _updateAccessSchema = z?.object({
-  action: z?.enum(["approve", "deny", "upgrade", "downgrade", "revoke"]),
-  accessLevel: z?.enum(["view", "edit", "comment"]).optional(),
-  reason: z?.string().optional(),
+const updateAccessSchema = z.object({
+  action: z.enum(["approve", "deny", "upgrade", "downgrade", "revoke"]),
+  accessLevel: z.enum(["view", "edit", "comment"]).optional(),
+  reason: z.string().optional(),
 });
 
-router?.put(
+router.put(
   "/access/:userId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { userId } = req?.params;
-      const _validatedData = updateAccessSchema?.parse(req?.body);
-      const { projectId } = req?.body;
+      const { userId } = req.params;
+      const validatedData = updateAccessSchema.parse(req.body);
+      const { projectId } = req.body;
 
       if (!projectId) {
-        return res?.status(400).json({ error: "projectId is required" });
+        return res.status(400).json({ error: "projectId is required" });
       }
 
-      const _isOwner = await verifyProjectAccess(projectId, req?.user!.id);
+      const isOwner = await verifyProjectAccess(projectId, req.user!.id);
       if (!isOwner) {
-        return res?.status(403).json({ error: "You do not own this project" });
+        return res.status(403).json({ error: "You do not own this project" });
       }
 
       let outcomeType: string;
       let message: string;
 
-      switch (validatedData?.action) {
+      switch (validatedData.action) {
         case "approve":
           outcomeType = "access_request_approved";
-          message = `${validatedData?.accessLevel || "edit"} access granted`;
+          message = `${validatedData.accessLevel || "edit"} access granted`;
           break;
         case "deny":
           outcomeType = "access_request_denied";
-          message = validatedData?.reason || "Access request denied";
+          message = validatedData.reason || "Access request denied";
           break;
         case "upgrade":
           outcomeType = "access_upgraded";
-          message = `Access upgraded to ${validatedData?.accessLevel}`;
+          message = `Access upgraded to ${validatedData.accessLevel}`;
           break;
         case "downgrade":
           outcomeType = "access_downgraded";
-          message = `Access downgraded to ${validatedData?.accessLevel}`;
+          message = `Access downgraded to ${validatedData.accessLevel}`;
           break;
         case "revoke":
           outcomeType = "access_revoked";
@@ -800,147 +800,147 @@ router?.put(
       }
 
       if (projectId) {
-        const _newStatus =
-          validatedData?.action === "approve" ? "approved" : "denied";
+        const newStatus =
+          validatedData.action === "approve" ? "approved" : "denied";
         await db
           .update(collaborationAccessRequests)
           .set({
             status: newStatus,
-            respondedBy: req?.user!.id,
+            respondedBy: req.user!.id,
             respondedAt: new Date(),
           })
           .where(
             and(
-              eq(collaborationAccessRequests?.projectId, projectId),
-              eq(collaborationAccessRequests?.requesterId, userId),
+              eq(collaborationAccessRequests.projectId, projectId),
+              eq(collaborationAccessRequests.requesterId, userId),
             ),
           );
       }
 
-      logger?.info(`Access updated for user ${userId}: ${validatedData?.action}`);
+      logger.info(`Access updated for user ${userId}: ${validatedData.action}`);
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: outcomeType,
           message,
           userId,
-          accessLevel: validatedData?.accessLevel,
+          accessLevel: validatedData.accessLevel,
         },
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Update access error:");
-      res?.status(500).json({ error: "Failed to update access" });
+      logger.warn({ err: error }, "Update access error:");
+      res.status(500).json({ error: "Failed to update access" });
     }
   },
 );
 
-const _commentSchema = z?.object({
-  projectId: z?.string(),
-  elementId: z?.string().optional(),
-  content: z?.string(),
-  parentId: z?.string().optional(),
-  mentions: z?.array(z?.string()).optional(),
-  timestamp: z?.number().optional(),
+const commentSchema = z.object({
+  projectId: z.string(),
+  elementId: z.string().optional(),
+  content: z.string(),
+  parentId: z.string().optional(),
+  mentions: z.array(z.string()).optional(),
+  timestamp: z.number().optional(),
 });
 
 
-router?.post(
+router.post(
   "/comments",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = commentSchema?.parse(req?.body);
-      const _userId = req?.user!.id;
+      const validatedData = commentSchema.parse(req.body);
+      const userId = req.user!.id;
 
       const [inserted] = await db
         .insert(collaborationComments)
         .values({
-          projectId: validatedData?.projectId,
-          elementId: validatedData?.elementId || null,
+          projectId: validatedData.projectId,
+          elementId: validatedData.elementId || null,
           userId,
           userName: "You",
-          content: validatedData?.content,
-          parentId: validatedData?.parentId || null,
-          mentions: validatedData?.mentions || [],
-          timestamp: validatedData?.timestamp ?? null,
+          content: validatedData.content,
+          parentId: validatedData.parentId || null,
+          mentions: validatedData.mentions || [],
+          timestamp: validatedData.timestamp ?? null,
           resolved: false,
         })
         .returning();
 
       const outcomes: unknown[] = [
         {
-          type: validatedData?.parentId ? "comment_replied" : "comment_added",
-          message: validatedData?.parentId ? "Reply added" : "Comment added",
-          commentId: inserted?.id,
+          type: validatedData.parentId ? "comment_replied" : "comment_added",
+          message: validatedData.parentId ? "Reply added" : "Comment added",
+          commentId: inserted.id,
         },
       ];
 
-      if (validatedData?.mentions && validatedData?.mentions.length > 0) {
-        outcomes?.push({
+      if (validatedData.mentions && validatedData.mentions.length > 0) {
+        outcomes.push({
           type: "mention_notification_sent",
-          message: `${validatedData?.mentions.length} user(s) mentioned`,
-          mentions: validatedData?.mentions,
+          message: `${validatedData.mentions.length} user(s) mentioned`,
+          mentions: validatedData.mentions,
         });
       }
 
-      res?.status(201).json({ comment: inserted, outcomes });
+      res.status(201).json({ comment: inserted, outcomes });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Add comment error:");
-      res?.status(500).json({ error: "Failed to add comment" });
+      logger.warn({ err: error }, "Add comment error:");
+      res.status(500).json({ error: "Failed to add comment" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/comments/:projectId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const _rows = await db
+      const { projectId } = req.params;
+      const rows = await db
         .select()
         .from(collaborationComments)
-        .where(eq(collaborationComments?.projectId, projectId))
-        .orderBy(desc(collaborationComments?.createdAt))
+        .where(eq(collaborationComments.projectId, projectId))
+        .orderBy(desc(collaborationComments.createdAt))
         .limit(200);
 
-      res?.json({ comments: rows });
+      res.json({ comments: rows });
     } catch (error) {
-      logger?.warn({ err: error }, "Get comments error:");
-      res?.status(500).json({ error: "Failed to get comments" });
+      logger.warn({ err: error }, "Get comments error:");
+      res.status(500).json({ error: "Failed to get comments" });
     }
   },
 );
 
-router?.put(
+router.put(
   "/comments/:commentId/resolve",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { commentId } = req?.params;
+      const { commentId } = req.params;
 
       const [resolved] = await db
         .update(collaborationComments)
         .set({ resolved: true })
-        .where(eq(collaborationComments?.id, commentId))
+        .where(eq(collaborationComments.id, commentId))
         .returning();
 
       if (!resolved) {
-        return res?.status(404).json({ error: "Comment not found" });
+        return res.status(404).json({ error: "Comment not found" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         comment: resolved,
         outcome: {
@@ -950,20 +950,20 @@ router?.put(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Resolve comment error:");
-      res?.status(500).json({ error: "Failed to resolve comment" });
+      logger.warn({ err: error }, "Resolve comment error:");
+      res.status(500).json({ error: "Failed to resolve comment" });
     }
   },
 );
 
-router?.put(
+router.put(
   "/comments/:commentId/mention-resolved",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { commentId } = req?.params;
+      const { commentId } = req.params;
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "mention_resolved",
@@ -972,37 +972,37 @@ router?.put(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Resolve mention error:");
-      res?.status(500).json({ error: "Failed to resolve mention" });
+      logger.warn({ err: error }, "Resolve mention error:");
+      res.status(500).json({ error: "Failed to resolve mention" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/conflicts/:projectId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const _projectConflicts = conflicts?.get(projectId) || [];
+      const { projectId } = req.params;
+      const projectConflicts = conflicts.get(projectId) || [];
 
-      const _hasUnresolved = projectConflicts?.some(
+      const hasUnresolved = projectConflicts.some(
         (c: Record<string, unknown>) =>
-          c?.resolvedBy === undefined || c?.resolvedBy === null,
+          c.resolvedBy === undefined || c.resolvedBy === null,
       );
 
-      res?.json({
+      res.json({
         conflicts: projectConflicts,
         pendingConflict: hasUnresolved
           ? {
               id:
-                projectConflicts?.find(
-                  (c: Record<string, unknown>) => !c?.resolvedBy,
-                )?.id || null,
+                projectConflicts.find(
+                  (c: Record<string, unknown>) => !c.resolvedBy,
+                ).id || null,
               detected: true,
               details:
-                projectConflicts?.find(
-                  (c: Record<string, unknown>) => !c?.resolvedBy,
+                projectConflicts.find(
+                  (c: Record<string, unknown>) => !c.resolvedBy,
                 ) || null,
             }
           : {
@@ -1012,23 +1012,23 @@ router?.get(
             },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Get conflicts error:");
-      res?.status(500).json({ error: "Failed to get conflicts" });
+      logger.warn({ err: error }, "Get conflicts error:");
+      res.status(500).json({ error: "Failed to get conflicts" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/detect-conflict",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const {  elementId, yourVersion, baseVersion } = req?.body;
+      const {  elementId, yourVersion, baseVersion } = req.body;
 
-      const _hasConflict = yourVersion !== baseVersion;
+      const hasConflict = yourVersion !== baseVersion;
 
       if (hasConflict) {
-        res?.json({
+        res.json({
           conflict: true,
           outcome: {
             type: "edit_conflict_detected",

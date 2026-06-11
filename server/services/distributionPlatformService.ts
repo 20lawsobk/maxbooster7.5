@@ -1,6 +1,6 @@
 import { storage } from "../storage";
-import { logger } from "../logger?.js";
-import { createGracefulRedisClient } from "../lib/gracefulRedis?.js";
+import { logger } from "../logger.js";
+import { createGracefulRedisClient } from "../lib/gracefulRedis.js";
 
 interface SubmissionResult {
   dispatchId: string;
@@ -8,9 +8,9 @@ interface SubmissionResult {
   message: string;
 }
 
-const _redis = createGracefulRedisClient("distributionPlatformService");
-const _RATE_LIMIT_WINDOW_SECONDS = 60;
-const _RATE_LIMIT_MAX = 10;
+const redis = createGracefulRedisClient("distributionPlatformService");
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+const RATE_LIMIT_MAX = 10;
 
 /**
  * Check if a user has exceeded the distribution submission rate limit.
@@ -18,8 +18,8 @@ const _RATE_LIMIT_MAX = 10;
  * Gracefully allows the request if Redis is unavailable.
  */
 async function checkRateLimit(userId: string): Promise<boolean> {
-  const _key = `rate_limit:distribution:${userId}`;
-  const _count = await redis?.incr(key);
+  const key = `rate_limit:distribution:${userId}`;
+  const count = await redis?.incr(key);
   if (count === 0) {
     return true;
   }
@@ -43,14 +43,14 @@ export async function submitToProvider(
     throw new Error("Rate limit exceeded. Please try again later.");
   }
 
-  const _provider = await storage?.getDistroProviderBySlug(providerSlug);
+  const provider = await storage?.getDistroProviderBySlug(providerSlug);
   if (!provider) {
     throw new Error(`Provider ${providerSlug} not found`);
   }
 
-  const _dispatch = await storage?.createDistroDispatch({
+  const dispatch = await storage?.createDistroDispatch({
     releaseId,
-    providerId: provider?.id,
+    providerId: provider.id,
     status: "queued",
     logs: `Queued for ${provider?.name} submission at ${new Date().toISOString()}`,
   });
@@ -70,7 +70,7 @@ export async function submitToProvider(
   }, 1000);
 
   return {
-    dispatchId: dispatch?.id,
+    dispatchId: dispatch.id,
     status: "queued",
     message: `Successfully queued for ${provider?.name} distribution`,
   };
@@ -396,7 +396,7 @@ export async function kkboxSubmit(
  * Throws if the dispatch ID does not exist.
  */
 export async function getDispatchStatus(dispatchId: string): Promise<unknown> {
-  const _dispatch = await storage?.getDistroDispatch(dispatchId);
+  const dispatch = await storage?.getDistroDispatch(dispatchId);
   if (!dispatch) {
     throw new Error("Dispatch record not found");
   }

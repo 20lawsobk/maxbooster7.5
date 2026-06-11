@@ -72,7 +72,7 @@ export interface PreferenceRecommendation {
 }
 
 export function useUserPreferences() {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   const {
     data: preferences,
@@ -84,9 +84,9 @@ export function useUserPreferences() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const _updatePreferencesMutation = useMutation({
+  const updatePreferencesMutation = useMutation({
     mutationFn: async (updates: Partial<UserPreferences>) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "PUT",
         "/api/preferences/user",
         updates,
@@ -98,7 +98,7 @@ export function useUserPreferences() {
     },
   });
 
-  const _recordBehaviorMutation = useMutation({
+  const recordBehaviorMutation = useMutation({
     mutationFn: async ({
       eventType,
       context,
@@ -106,7 +106,7 @@ export function useUserPreferences() {
       eventType: string;
       context?: Record<string, any>;
     }) => {
-      const _response = await apiRequest("POST", "/api/preferences/learn", {
+      const response = await apiRequest("POST", "/api/preferences/learn", {
         eventType,
         context,
       });
@@ -114,11 +114,11 @@ export function useUserPreferences() {
     },
   });
 
-  const _updatePreferences = (updates: Partial<UserPreferences>) => {
+  const updatePreferences = (updates: Partial<UserPreferences>) => {
     return updatePreferencesMutation?.mutateAsync(updates);
   };
 
-  const _recordBehavior = (eventType: string, context?: Record<string, any>) => {
+  const recordBehavior = (eventType: string, context?: Record<string, any>) => {
     return recordBehaviorMutation?.mutate({ eventType, context });
   };
 
@@ -129,12 +129,12 @@ export function useUserPreferences() {
     refetch,
     updatePreferences,
     recordBehavior,
-    isUpdating: updatePreferencesMutation?.isPending,
+    isUpdating: updatePreferencesMutation.isPending,
   };
 }
 
 export function useDashboardLayout() {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   const {
     data: layout,
@@ -145,9 +145,9 @@ export function useDashboardLayout() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const _saveLayoutMutation = useMutation({
+  const saveLayoutMutation = useMutation({
     mutationFn: async (newLayout: DashboardLayout) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "PUT",
         "/api/preferences/dashboard-layout",
         newLayout,
@@ -162,34 +162,34 @@ export function useDashboardLayout() {
     },
   });
 
-  const _saveLayout = (newLayout: DashboardLayout) => {
+  const saveLayout = (newLayout: DashboardLayout) => {
     return saveLayoutMutation?.mutateAsync(newLayout);
   };
 
-  const _updateWidget = (
+  const updateWidget = (
     widgetId: string,
     updates: Partial<DashboardWidget>,
   ) => {
     if (!layout) return;
-    const _newWidgets = layout?.widgets.map((w) =>
+    const newWidgets = layout?.widgets.map((w) =>
       w?.id === widgetId ? { ...w, ...updates } : w,
     );
     return saveLayout({ ...layout, widgets: newWidgets });
   };
 
-  const _reorderWidgets = (widgets: DashboardWidget[]) => {
+  const reorderWidgets = (widgets: DashboardWidget[]) => {
     if (!layout) return;
     return saveLayout({ ...layout, widgets });
   };
 
-  const _setPreset = (preset: LayoutPreset) => {
+  const setPreset = (preset: LayoutPreset) => {
     if (!layout) return;
     return saveLayout({ ...layout, preset });
   };
 
-  const _toggleWidget = (widgetId: string) => {
+  const toggleWidget = (widgetId: string) => {
     if (!layout) return;
-    const _widget = layout?.widgets.find((w) => w?.id === widgetId);
+    const widget = layout?.widgets.find((w) => w?.id === widgetId);
     if (widget) {
       return updateWidget(widgetId, { visible: !widget?.visible });
     }
@@ -204,6 +204,6 @@ export function useDashboardLayout() {
     reorderWidgets,
     setPreset,
     toggleWidget,
-    isSaving: saveLayoutMutation?.isPending,
+    isSaving: saveLayoutMutation.isPending,
   };
 }

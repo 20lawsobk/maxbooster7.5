@@ -321,9 +321,9 @@ export function UltimateDAW({
           bars: 8,
           instrumentType: "synth",
           instrumentCategory: "melodic",
-          tempo: params?.tempo || transport.tempo,
-          key: params?.key || musicalKey,
-          scale: params?.scale || scale,
+          tempo: params.tempo || transport.tempo,
+          key: params.key || musicalKey,
+          scale: params.scale || scale,
         });
         const response = await res.json();
         if (response.audioFilePath) {
@@ -352,7 +352,7 @@ export function UltimateDAW({
           bars: 8,
           instrumentType: "drums",
           instrumentCategory: "drums",
-          tempo: params?.tempo || transport.tempo,
+          tempo: params.tempo || transport.tempo,
         });
         const response = await res.json();
         if (response.audioFilePath) {
@@ -382,8 +382,8 @@ export function UltimateDAW({
           instrumentType: "bass",
           instrumentCategory: "melodic",
           tempo: transport.tempo,
-          key: params?.key || musicalKey,
-          scale: params?.scale || scale,
+          key: params.key || musicalKey,
+          scale: params.scale || scale,
         });
         const response = await res.json();
         if (response.audioFilePath) {

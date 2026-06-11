@@ -1,14 +1,14 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../db?.js";
+import { db } from "../../db.js";
 import { storefronts } from "@shared/schema";
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 
 export async function publishStorefront(
   storefrontId: string,
   userId: string,
 ): Promise<void> {
   const [sf] = await db
-    .select({ id: storefronts?.id, userId: storefronts?.userId })
+    .select({ id: storefronts.id, userId: storefronts.userId })
     .from(storefronts)
     .where(eq(storefronts?.id, storefrontId))
     .limit(1);
@@ -31,7 +31,7 @@ export async function unpublishStorefront(
   userId: string,
 ): Promise<void> {
   const [sf] = await db
-    .select({ id: storefronts?.id, userId: storefronts?.userId })
+    .select({ id: storefronts.id, userId: storefronts.userId })
     .from(storefronts)
     .where(eq(storefronts?.id, storefrontId))
     .limit(1);

@@ -20,7 +20,7 @@ import {
 } from "./autonomousUpgradeSimulation";
 import fs from "fs";
 import path from "path";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 async function runAdBoosterSimulation() {
   logger?.info("🚀 Starting Ad System AI Booster Comprehensive Simulation...\n");
@@ -32,9 +32,9 @@ async function runAdBoosterSimulation() {
 
   try {
     // Run comprehensive Ad Booster simulation
-    const _startTime = Date?.now();
-    const _results = await runComprehensiveSimulation();
-    const _executionTime = Date?.now() - startTime;
+    const startTime = Date?.now();
+    const results = await runComprehensiveSimulation();
+    const executionTime = Date?.now() - startTime;
 
     logger?.info("✅ Simulation Complete!\n");
     logger?.info(`Execution Time: ${executionTime}ms\n`);
@@ -44,7 +44,7 @@ async function runAdBoosterSimulation() {
     logger?.info("📊 QUICK SUMMARY:\n");
     logger?.info(`✓ Scenarios Tested: ${results?.scenarios.length}`);
     logger?.info(
-      `✓ All Scenarios Pass (≥2?.0x): ${results?.summary.allScenariosPass ? "✅ YES" : "❌ NO"}`,
+      `✓ All Scenarios Pass (≥2.0x): ${results?.summary.allScenariosPass ? "✅ YES" : "❌ NO"}`,
     );
     logger?.info(
       `✓ Average Amplification: ${results?.summary.averageAmplification}x`,
@@ -58,7 +58,7 @@ async function runAdBoosterSimulation() {
 
     logger?.info("Scenario Results:");
     results?.scenarios.forEach((scenario, i) => {
-      const _status = scenario?.amplificationFactor >= 2?.0 ? "✅" : "❌";
+      const status = scenario?.amplificationFactor >= 2.0 ? "✅" : "❌";
       logger?.info(
         `  ${status} Scenario ${i + 1}: ${scenario?.amplificationFactor}x amplification`,
       );
@@ -67,10 +67,10 @@ async function runAdBoosterSimulation() {
 
     // Generate detailed report
     logger?.info("📝 Generating detailed report...\n");
-    const _report = generateSimulationReport(results);
+    const report = generateSimulationReport(results);
 
     // Save to SIMULATION_RESULTS?.md
-    const _reportPath = path?.join(process?.cwd(), "SIMULATION_RESULTS?.md");
+    const reportPath = path?.join(process?.cwd(), "SIMULATION_RESULTS.md");
     fs?.writeFileSync(reportPath, report);
     logger?.info(`✅ Report saved to: ${reportPath}\n`);
 
@@ -96,7 +96,7 @@ async function runAdBoosterSimulation() {
         "outperforms traditional paid advertising while costing $0.\n",
       );
     } else {
-      logger?.info("⚠️  WARNING: Some scenarios did not meet 2?.0x threshold\n");
+      logger?.info("⚠️  WARNING: Some scenarios did not meet 2.0x threshold\n");
     }
     logger?.info("═══════════════════════════════════════════════════════\n");
 
@@ -124,9 +124,9 @@ async function runAutonomousUpgradeSimulation() {
   try {
     // Run main 4 scenario simulation
     logger?.info("📊 Running Main Scenarios (A, B, C, D)...\n");
-    const _startTime = Date?.now();
-    const _mainResults = await simulateAutonomousUpgrade();
-    const _mainExecutionTime = Date?.now() - startTime;
+    const startTime = Date?.now();
+    const mainResults = await simulateAutonomousUpgrade();
+    const mainExecutionTime = Date?.now() - startTime;
 
     logger?.info("✅ Main Scenarios Complete!\n");
     logger?.info(`Execution Time: ${mainExecutionTime}ms\n`);
@@ -149,9 +149,9 @@ async function runAutonomousUpgradeSimulation() {
 
     logger?.info("Main Scenario Results:");
     mainResults?.scenarios.forEach((scenario) => {
-      const _status = scenario?.success ? "✅" : "❌";
-      const _detectionMins = (scenario?.detectionTime / (60 * 1000)).toFixed(0);
-      const _upgradeHours = (scenario?.upgradeTime / (60 * 60 * 1000)).toFixed(1);
+      const status = scenario?.success ? "✅" : "❌";
+      const detectionMins = (scenario?.detectionTime / (60 * 1000)).toFixed(0);
+      const upgradeHours = (scenario?.upgradeTime / (60 * 60 * 1000)).toFixed(1);
       logger?.info(`  ${status} ${scenario?.id}: ${scenario?.name}`);
       logger?.info(
         `     Detection: ${detectionMins}min, Upgrade: ${upgradeHours}h, Quality: ${scenario?.algorithmQuality.toFixed(0)}%`,
@@ -161,9 +161,9 @@ async function runAutonomousUpgradeSimulation() {
 
     // Run long-term simulation (1 year, 52 scenarios)
     logger?.info("📅 Running Long-Term Simulation (1 Year, 52+ Scenarios)...\n");
-    const _longTermStartTime = Date?.now();
-    const _longTermResults = await simulateLongTermAdaptation(52);
-    const _longTermExecutionTime = Date?.now() - longTermStartTime;
+    const longTermStartTime = Date?.now();
+    const longTermResults = await simulateLongTermAdaptation(52);
+    const longTermExecutionTime = Date?.now() - longTermStartTime;
 
     logger?.info("✅ Long-Term Simulation Complete!\n");
     logger?.info(`Execution Time: ${longTermExecutionTime}ms\n`);
@@ -199,12 +199,12 @@ async function runAutonomousUpgradeSimulation() {
 
     // Generate comprehensive verification report
     logger?.info("📝 Generating Verification Report...\n");
-    const _report = generateUpgradeReport(mainResults, longTermResults);
+    const report = generateUpgradeReport(mainResults, longTermResults);
 
     // Save to AUTONOMOUS_UPGRADE_VERIFICATION?.md
-    const _reportPath = path?.join(
+    const reportPath = path?.join(
       process?.cwd(),
-      "AUTONOMOUS_UPGRADE_VERIFICATION?.md",
+      "AUTONOMOUS_UPGRADE_VERIFICATION.md",
     );
     fs?.writeFileSync(reportPath, report);
     logger?.info(`✅ Report saved to: ${reportPath}\n`);
@@ -213,7 +213,7 @@ async function runAutonomousUpgradeSimulation() {
     logger?.info("═══════════════════════════════════════════════════════\n");
     logger?.info("🎯 VERIFICATION CHECKLIST:\n");
 
-    const _checks = [
+    const checks = [
       {
         name: "Detection Speed SLA",
         passed:
@@ -258,11 +258,11 @@ async function runAutonomousUpgradeSimulation() {
     ];
 
     checks?.forEach((check) => {
-      const _status = check?.passed ? "✅" : "❌";
+      const status = check?.passed ? "✅" : "❌";
       logger?.info(`  ${status} ${check?.name}: ${check?.requirement}`);
     });
 
-    const _allPass = checks?.every((c) => c?.passed);
+    const allPass = checks?.every((c) => c?.passed);
 
     logger?.info("\n═══════════════════════════════════════════════════════\n");
     logger?.info("🏁 FINAL VERDICT:\n");
@@ -297,8 +297,8 @@ async function runAutonomousUpgradeSimulation() {
 }
 
 async function main() {
-  const _args = process?.argv.slice(2);
-  const _simulationType = args[0] || "all";
+  const args = process?.argv.slice(2);
+  const simulationType = args[0] || "all";
 
   let adBoosterPass = true;
   let autoUpgradePass = true;
@@ -315,7 +315,7 @@ async function main() {
   }
 
   // Return success/failure exit code
-  const _allPass = adBoosterPass && autoUpgradePass;
+  const allPass = adBoosterPass && autoUpgradePass;
 
   if (simulationType === "all") {
     logger?.info("\n═══════════════════════════════════════════════════════\n");

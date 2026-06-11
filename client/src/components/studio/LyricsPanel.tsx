@@ -181,8 +181,8 @@ function importPlainText(text: string): LyricSection[] {
             id: genId(),
             text,
             timestamp: 0,
-            chords: chordsMatch?.[1],
-            performer: performerMatch?.[1],
+            chords: chordsMatch.[1],
+            performer: performerMatch.[1],
           };
         }),
     };

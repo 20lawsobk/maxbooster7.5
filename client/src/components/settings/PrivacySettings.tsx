@@ -487,7 +487,7 @@ export function PrivacySettings() {
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>
-            ) : exportStatus?.status === "pending" ? (
+            ) : exportStatus.status === "pending" ? (
               <Button disabled>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Processing

@@ -1,13 +1,13 @@
 #!/usr/bin/env tsx
 
 import DatabaseOptimizer from "../database/optimize-database";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 async function main() {
   logger?.info("🎯 Max Booster Database Optimization Script");
   logger?.info("==========================================\n");
 
-  const _optimizer = new DatabaseOptimizer();
+  const optimizer = new DatabaseOptimizer();
 
   try {
     // Step 1: Execute optimization
@@ -15,7 +15,7 @@ async function main() {
 
     // Step 2: Validate results
     logger?.info("\n");
-    const _isValid = await optimizer?.validateOptimizations();
+    const isValid = await optimizer?.validateOptimizations();
 
     if (isValid) {
       logger?.info("\n✅ All critical indexes validated successfully!");

@@ -1,4 +1,4 @@
-import { requireUUIDParam } from "../middleware/requestValidation?.js";
+import { requireUUIDParam } from "../middleware/requestValidation.js";
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { asyncHandler } from "../middleware/errorHandler";
@@ -7,21 +7,21 @@ import { shows, setlists } from "@shared/schema";
 import { eq, and, gte, lt, desc, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 
-const _router = Router();
+const router = Router();
 
-const _safeDate = z
+const safeDate = z
   .string()
   .refine((val) => !isNaN(new Date(val).getTime()), {
     message: "Invalid date format",
   })
   .transform((val) => new Date(val));
 
-const _createShowSchema = z?.object({
-  name: z?.string().min(1).max(200),
-  venue: z?.string().max(200).optional(),
-  city: z?.string().max(100).optional(),
-  state: z?.string().max(100).optional(),
-  country: z?.string().max(2).optional().default("US"),
+const createShowSchema = z.object({
+  name: z.string().min(1).max(200),
+  venue: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(100).optional(),
+  country: z.string().max(2).optional().default("US"),
   date: safeDate,
   endTime: z
     .string()
@@ -30,31 +30,31 @@ const _createShowSchema = z?.object({
       message: "Invalid end time format",
     })
     .transform((val) => (val ? new Date(val) : undefined)),
-  ticketUrl: z?.string().url().optional().or(z?.literal("")),
-  capacity: z?.number().int().min(0).optional(),
-  notes: z?.string().max(2000).optional(),
-  isPublic: z?.boolean().optional().default(true),
+  ticketUrl: z.string().url().optional().or(z.literal("")),
+  capacity: z.number().int().min(0).optional(),
+  notes: z.string().max(2000).optional(),
+  isPublic: z.boolean().optional().default(true),
   status: z
     .enum(["upcoming", "completed", "cancelled"])
     .optional()
     .default("upcoming"),
 });
 
-const _createSetlistSchema = z?.object({
-  name: z?.string().min(1).max(200),
-  showId: z?.string().optional(),
+const createSetlistSchema = z.object({
+  name: z.string().min(1).max(200),
+  showId: z.string().optional(),
   tracks: z
     .array(
-      z?.object({
-        title: z?.string().min(1).max(200),
-        duration: z?.string().optional(),
-        key: z?.string().optional(),
-        bpm: z?.number().int().min(1).max(400).optional(),
-        notes: z?.string().max(500).optional(),
+      z.object({
+        title: z.string().min(1).max(200),
+        duration: z.string().optional(),
+        key: z.string().optional(),
+        bpm: z.number().int().min(1).max(400).optional(),
+        notes: z.string().max(500).optional(),
       }),
     )
     .default([]),
-  totalDuration: z?.number().min(0).optional().default(0),
+  totalDuration: z.number().min(0).optional().default(0),
 });
 
 // GET /api/shows - list shows with optional filters
@@ -62,19 +62,19 @@ router?.get(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const userId = req?.user!.id;
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
     // Cap offset — unbounded offset causes Postgres to scan N rows before returning
     // any data, a silent DoS at scale.
-    const _rawOffset = parseInt(req?.query.offset as string) || 0;
-    const _offset = Math?.min(
+    const rawOffset = parseInt(req?.query.offset as string) || 0;
+    const offset = Math?.min(
       Number?.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
       100_000,
     );
-    const _filter = req?.query.filter as string | undefined;
+    const filter = req?.query.filter as string | undefined;
 
-    const _now = new Date();
-    const _conditions = [eq(shows?.userId, userId)];
+    const now = new Date();
+    const conditions = [eq(shows?.userId, userId)];
 
     if (filter === "upcoming") {
       conditions?.push(gte(shows?.date, now));
@@ -82,7 +82,7 @@ router?.get(
       conditions?.push(lt(shows?.date, now));
     }
 
-    const _userShows = await db
+    const userShows = await db
       .select()
       .from(shows)
       .where(and(...conditions))
@@ -99,8 +99,8 @@ router?.post(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _data = createShowSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const data = createShowSchema?.parse(req?.body);
 
     const [newShow] = await db
       .insert(shows)
@@ -117,9 +117,9 @@ router?.put(
   requireAuth,
   requireUUIDParam("id"),
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _showId = req?.params.id;
-    const _data = createShowSchema?.partial().parse(req?.body);
+    const userId = req?.user!.id;
+    const showId = req?.params.id;
+    const data = createShowSchema?.partial().parse(req?.body);
 
     const [updatedShow] = await db
       .update(shows)
@@ -141,9 +141,9 @@ router?.patch(
   requireAuth,
   requireUUIDParam("id"),
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _showId = req?.params.id;
-    const _data = createShowSchema?.partial().parse(req?.body);
+    const userId = req?.user!.id;
+    const showId = req?.params.id;
+    const data = createShowSchema?.partial().parse(req?.body);
 
     const [updatedShow] = await db
       .update(shows)
@@ -165,8 +165,8 @@ router?.delete(
   requireAuth,
   requireUUIDParam("id"),
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _showId = req?.params.id;
+    const userId = req?.user!.id;
+    const showId = req?.params.id;
 
     const [deletedShow] = await db
       .delete(shows)
@@ -186,30 +186,30 @@ router?.patch(
   "/:id/attendance",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _showId = req?.params.id;
+    const userId = req?.user!.id;
+    const showId = req?.params.id;
 
-    const _parsed = z
+    const parsed = z
       .object({
-        ticketsSold: z?.number().int().min(0),
-        revenue: z?.number().min(0),
-        status: z?.enum(["upcoming", "completed", "cancelled"]).optional(),
+        ticketsSold: z.number().int().min(0),
+        revenue: z.number().min(0),
+        status: z.enum(["upcoming", "completed", "cancelled"]).optional(),
       })
       .safeParse(req?.body);
 
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const [updated] = await db
       .update(shows)
       .set({
-        ticketsSold: parsed?.data.ticketsSold,
-        revenue: parsed?.data.revenue,
+        ticketsSold: parsed.data.ticketsSold,
+        revenue: parsed.data.revenue,
         ...(parsed?.data.status
-          ? { status: parsed?.data.status }
+          ? { status: parsed.data.status }
           : { status: "completed" }),
         updatedAt: new Date(),
       })
@@ -229,24 +229,24 @@ router?.patch(
   "/:id/status",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _showId = req?.params.id;
+    const userId = req?.user!.id;
+    const showId = req?.params.id;
 
-    const _parsed = z
+    const parsed = z
       .object({
-        status: z?.enum(["upcoming", "completed", "cancelled"]),
+        status: z.enum(["upcoming", "completed", "cancelled"]),
       })
       .safeParse(req?.body);
 
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const [updated] = await db
       .update(shows)
-      .set({ status: parsed?.data.status, updatedAt: new Date() })
+      .set({ status: parsed.data.status, updatedAt: new Date() })
       .where(and(eq(shows?.id, showId), eq(shows?.userId, userId)))
       .returning();
 
@@ -263,7 +263,7 @@ router?.get(
   "/stats",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     const [stats] = await db
       .select({
@@ -285,7 +285,7 @@ router?.get(
       upcomingCount: Number(stats?.upcomingCount ?? 0),
       pastCount: Number(stats?.pastCount ?? 0),
       pastRevenue: Number(stats?.pastRevenue ?? 0),
-      avgCapacityFill: Math?.round(Number(stats?.avgCapacityFill ?? 0)),
+      avgCapacityFill: Math.round(Number(stats?.avgCapacityFill ?? 0)),
     });
   }),
 );
@@ -295,8 +295,8 @@ router?.get(
   "/setlists",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _userSetlists = await db
+    const userId = req?.user!.id;
+    const userSetlists = await db
       .select()
       .from(setlists)
       .where(eq(setlists?.userId, userId))
@@ -311,8 +311,8 @@ router?.get(
   requireAuth,
   requireUUIDParam("id"),
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _showId = req?.params.id;
+    const userId = req?.user!.id;
+    const showId = req?.params.id;
 
     const [show] = await db
       .select()
@@ -333,8 +333,8 @@ router?.get(
   "/:id/setlist",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _showId = req?.params.id;
+    const userId = req?.user!.id;
+    const showId = req?.params.id;
 
     const [showSetlist] = await db
       .select()
@@ -351,8 +351,8 @@ router?.post(
   "/setlists",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _data = createSetlistSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const data = createSetlistSchema?.parse(req?.body);
 
     const [newSetlist] = await db
       .insert(setlists)
@@ -368,9 +368,9 @@ router?.put(
   "/setlists/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _setlistId = req?.params.id;
-    const _data = createSetlistSchema?.partial().parse(req?.body);
+    const userId = req?.user!.id;
+    const setlistId = req?.params.id;
+    const data = createSetlistSchema?.partial().parse(req?.body);
 
     const [updatedSetlist] = await db
       .update(setlists)
@@ -391,8 +391,8 @@ router?.delete(
   "/setlists/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const _userId = req?.user!.id;
-    const _setlistId = req?.params.id;
+    const userId = req?.user!.id;
+    const setlistId = req?.params.id;
 
     const [deletedSetlist] = await db
       .delete(setlists)

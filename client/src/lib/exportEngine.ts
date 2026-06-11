@@ -4,7 +4,7 @@
  *
  * PROFESSIONAL AUDIO QUALITY STANDARDS (Pro Tools Parity):
  * - Support for 16-bit PCM, 24-bit PCM, and 32-bit Float export
- * - Sample rates: 44?.1kHz, 48kHz, 96kHz, 192kHz
+ * - Sample rates: 44.1kHz, 48kHz, 96kHz, 192kHz
  * - Bit depths: 16-bit, 24-bit, 32-bit float
  * - High-quality offline rendering with full effects chain
  * - Normalization and dithering options
@@ -70,19 +70,19 @@ function audioBufferToWav(
   audioBuffer: AudioBuffer,
   bitDepth: number = 24,
 ): Blob {
-  const _numChannels = audioBuffer?.numberOfChannels;
-  const _sampleRate = audioBuffer?.sampleRate;
-  const _format = bitDepth === 32 ? 3 : 1; // 3 = IEEE float, 1 = PCM
-  const _bytesPerSample = bitDepth / 8;
-  const _blockAlign = numChannels * bytesPerSample;
+  const numChannels = audioBuffer?.numberOfChannels;
+  const sampleRate = audioBuffer?.sampleRate;
+  const format = bitDepth === 32 ? 3 : 1; // 3 = IEEE float, 1 = PCM
+  const bytesPerSample = bitDepth / 8;
+  const blockAlign = numChannels * bytesPerSample;
 
   // Interleave channels
-  const _length = audioBuffer?.length * numChannels * bytesPerSample;
-  const _buffer = new ArrayBuffer(44 + length);
-  const _view = new DataView(buffer);
+  const length = audioBuffer?.length * numChannels * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + length);
+  const view = new DataView(buffer);
 
   // Write WAV header
-  const _writeString = (offset: number, string: string) => {
+  const writeString = (offset: number, string: string) => {
     for (let i = 0; i < string?.length; i++) {
       view?.setUint8(offset + i, string?.charCodeAt(i));
     }
@@ -117,11 +117,11 @@ function audioBufferToWav(
       sample = Math?.max(-1, Math?.min(1, sample));
 
       if (bitDepth === 16) {
-        const _int16 = Math?.max(-32768, Math?.min(32767, sample * 32768)) | 0;
+        const int16 = Math?.max(-32768, Math?.min(32767, sample * 32768)) | 0;
         view?.setInt16(offset, int16, true);
         offset += 2;
       } else if (bitDepth === 24) {
-        const _int24 =
+        const int24 =
           Math?.max(-8388608, Math?.min(8388607, sample * 8388608)) | 0;
         view?.setUint8(offset, int24 & 0xff);
         view?.setUint8(offset + 1, (int24 >> 8) & 0xff);
@@ -142,24 +142,24 @@ function audioBufferToWav(
  */
 function normalizeAudioBuffer(
   audioBuffer: AudioBuffer,
-  targetPeak: number = 0?.95,
+  targetPeak: number = 0.95,
 ): AudioBuffer {
   let maxPeak = 0;
 
   // Find peak across all channels
   for (let channel = 0; channel < audioBuffer?.numberOfChannels; channel++) {
-    const _channelData = audioBuffer?.getChannelData(channel);
+    const channelData = audioBuffer?.getChannelData(channel);
     for (let i = 0; i < channelData?.length; i++) {
       maxPeak = Math?.max(maxPeak, Math?.abs(channelData[i]));
     }
   }
 
   // Calculate normalization gain
-  const _gain = maxPeak > 0 ? targetPeak / maxPeak : 1;
+  const gain = maxPeak > 0 ? targetPeak / maxPeak : 1;
 
   // Apply gain to all channels
   for (let channel = 0; channel < audioBuffer?.numberOfChannels; channel++) {
-    const _channelData = audioBuffer?.getChannelData(channel);
+    const channelData = audioBuffer?.getChannelData(channel);
     for (let i = 0; i < channelData?.length; i++) {
       channelData[i] *= gain;
     }
@@ -171,19 +171,19 @@ function normalizeAudioBuffer(
 /**
  * Create soft clipper curve for limiter
  */
-function createSoftClipperCurve(thresholdDb: number = -0?.3): Float32Array {
-  const _samples = 4096;
-  const _curve = new Float32Array(samples);
-  const _threshold = Math?.pow(10, thresholdDb / 20);
+function createSoftClipperCurve(thresholdDb: number = -0.3): Float32Array {
+  const samples = 4096;
+  const curve = new Float32Array(samples);
+  const threshold = Math?.pow(10, thresholdDb / 20);
 
   for (let i = 0; i < samples; i++) {
-    const _x = (i * 2) / samples - 1;
+    const x = (i * 2) / samples - 1;
 
     if (Math?.abs(x) < threshold) {
       curve[i] = x;
     } else {
-      const _sign = x > 0 ? 1 : -1;
-      const _excess = Math?.abs(x) - threshold;
+      const sign = x > 0 ? 1 : -1;
+      const excess = Math?.abs(x) - threshold;
       curve[i] = sign * (threshold + Math?.tanh(excess * 2) * (1 - threshold));
     }
   }
@@ -198,12 +198,12 @@ async function loadAudioBuffer(
   url: string,
   context: OfflineAudioContext,
 ): Promise<AudioBuffer> {
-  const _response = await fetch(url);
+  const response = await fetch(url);
   if (!response?.ok) {
     throw new Error(`Failed to load audio from ${url}: ${response?.statusText}`);
   }
 
-  const _arrayBuffer = await response?.arrayBuffer();
+  const arrayBuffer = await response?.arrayBuffer();
   return await context?.decodeAudioData(arrayBuffer);
 }
 
@@ -219,54 +219,54 @@ function buildTrackEffectsChain(
   let currentNode: AudioNode = source;
 
   // Input gain
-  const _inputGain = context?.createGain();
-  inputGain?.gain.value = track?.isMuted ? 0 : track?.gain;
+  const inputGain = context?.createGain();
+  inputGain.gain.value = track?.isMuted ? 0 : track?.gain;
   currentNode?.connect(inputGain);
   currentNode = inputGain;
 
   // EQ chain (Low → Mid → High)
   if (track?.effects?.eq && !track?.effects.eq?.bypass) {
-    const _eq = track?.effects.eq;
+    const eq = track?.effects.eq;
 
-    const _eqLow = context?.createBiquadFilter();
-    eqLow?.type = "lowshelf";
-    eqLow?.frequency.value = 80;
-    eqLow?.gain.value = eq?.lowGain;
+    const eqLow = context?.createBiquadFilter();
+    eqLow.type = "lowshelf";
+    eqLow.frequency.value = 80;
+    eqLow.gain.value = eq?.lowGain;
     currentNode?.connect(eqLow);
     currentNode = eqLow;
 
-    const _eqMid = context?.createBiquadFilter();
-    eqMid?.type = "peaking";
-    eqMid?.frequency.value = eq?.midFrequency || 1000;
-    eqMid?.Q.value = 1?.2;
-    eqMid?.gain.value = eq?.midGain;
+    const eqMid = context?.createBiquadFilter();
+    eqMid.type = "peaking";
+    eqMid.frequency.value = eq?.midFrequency || 1000;
+    eqMid.Q.value = 1.2;
+    eqMid.gain.value = eq?.midGain;
     currentNode?.connect(eqMid);
     currentNode = eqMid;
 
-    const _eqHigh = context?.createBiquadFilter();
-    eqHigh?.type = "highshelf";
-    eqHigh?.frequency.value = 8000;
-    eqHigh?.gain.value = eq?.highGain;
+    const eqHigh = context?.createBiquadFilter();
+    eqHigh.type = "highshelf";
+    eqHigh.frequency.value = 8000;
+    eqHigh.gain.value = eq?.highGain;
     currentNode?.connect(eqHigh);
     currentNode = eqHigh;
   }
 
   // Compressor
   if (track?.effects?.compressor && !track?.effects.compressor?.bypass) {
-    const _comp = track?.effects.compressor;
-    const _compressor = context?.createDynamicsCompressor();
-    compressor?.threshold.value = comp?.threshold;
-    compressor?.ratio.value = comp?.ratio;
-    compressor?.attack.value = comp?.attack;
-    compressor?.release.value = comp?.release;
-    compressor?.knee.value = comp?.knee || 6;
+    const comp = track?.effects.compressor;
+    const compressor = context?.createDynamicsCompressor();
+    compressor.threshold.value = comp?.threshold;
+    compressor.ratio.value = comp?.ratio;
+    compressor.attack.value = comp?.attack;
+    compressor.release.value = comp?.release;
+    compressor.knee.value = comp?.knee || 6;
     currentNode?.connect(compressor);
     currentNode = compressor;
   }
 
   // Pan
-  const _panner = context?.createStereoPanner();
-  panner?.pan.value = track?.pan;
+  const panner = context?.createStereoPanner();
+  panner.pan.value = track?.pan;
   currentNode?.connect(panner);
   currentNode = panner;
 
@@ -282,28 +282,28 @@ function buildMasterChain(
   options: ExportOptions,
 ): { input: GainNode; output: AudioNode } {
   // Master gain
-  const _masterGain = context?.createGain();
-  masterGain?.gain.value = options?.masterGain || 0?.8;
+  const masterGain = context?.createGain();
+  masterGain.gain.value = options?.masterGain || 0.8;
 
   // Master compressor
-  const _masterComp = context?.createDynamicsCompressor();
+  const masterComp = context?.createDynamicsCompressor();
   if (options?.masterCompression) {
-    masterComp?.threshold.value = options?.masterCompression.threshold;
-    masterComp?.ratio.value = options?.masterCompression.ratio;
-    masterComp?.attack.value = options?.masterCompression.attack;
-    masterComp?.release.value = options?.masterCompression.release;
+    masterComp.threshold.value = options?.masterCompression.threshold;
+    masterComp.ratio.value = options?.masterCompression.ratio;
+    masterComp.attack.value = options?.masterCompression.attack;
+    masterComp.release.value = options?.masterCompression.release;
   } else {
-    masterComp?.threshold.value = -12;
-    masterComp?.ratio.value = 4;
-    masterComp?.attack.value = 0?.005;
-    masterComp?.release.value = 0?.12;
+    masterComp.threshold.value = -12;
+    masterComp.ratio.value = 4;
+    masterComp.attack.value = 0.005;
+    masterComp.release.value = 0.12;
   }
-  masterComp?.knee.value = 6;
+  masterComp.knee.value = 6;
 
   // Master limiter (soft clipper)
-  const _masterLimiter = context?.createWaveShaper();
-  masterLimiter?.curve = createSoftClipperCurve(-0?.3);
-  masterLimiter?.oversample = "4x";
+  const masterLimiter = context?.createWaveShaper();
+  masterLimiter.curve = createSoftClipperCurve(-0.3);
+  masterLimiter.oversample = "4x";
 
   // Connect master chain
   masterGain?.connect(masterComp);
@@ -326,8 +326,8 @@ async function exportMixdown(
   });
 
   // Check for solo tracks
-  const _hasSolo = options?.tracks.some((t) => t?.isSolo);
-  const _tracksToRender = options?.tracks.filter((track) => {
+  const hasSolo = options?.tracks.some((t) => t?.isSolo);
+  const tracksToRender = options?.tracks.filter((track) => {
     if (track?.isMuted && !track?.isSolo) return false;
     if (hasSolo && !track?.isSolo) return false;
     return true;
@@ -337,7 +337,7 @@ async function exportMixdown(
   const loadedTracks: Array<{ track: ExportTrack; buffer: AudioBuffer }> = [];
 
   for (let i = 0; i < tracksToRender?.length; i++) {
-    const _track = tracksToRender[i];
+    const track = tracksToRender[i];
     onProgress?.({
       stage: "loading",
       progress: (i / tracksToRender?.length) * 30,
@@ -346,12 +346,12 @@ async function exportMixdown(
 
     try {
       // Create temporary context just for loading
-      const _tempContext = new OfflineAudioContext({
+      const tempContext = new OfflineAudioContext({
         numberOfChannels: 2,
         length: 1,
-        sampleRate: options?.sampleRate,
+        sampleRate: options.sampleRate,
       });
-      const _buffer = await loadAudioBuffer(track?.audioUrl, tempContext);
+      const buffer = await loadAudioBuffer(track?.audioUrl, tempContext);
       loadedTracks?.push({ track, buffer });
     } catch (error: unknown) {
       logger?.error(`Failed to load track ${track?.name}:`, error);
@@ -363,9 +363,9 @@ async function exportMixdown(
   if (options?.duration) {
     renderDuration = options?.duration;
   } else if (loadedTracks?.length > 0) {
-    const _clipEndTimes = loadedTracks?.map(({ track, buffer }) => {
-      const _startTime = track?.startTime || 0;
-      const _bufferDuration = buffer?.duration;
+    const clipEndTimes = loadedTracks?.map(({ track, buffer }) => {
+      const startTime = track?.startTime || 0;
+      const bufferDuration = buffer?.duration;
       return startTime + bufferDuration;
     });
     renderDuration = Math?.max(...clipEndTimes);
@@ -374,59 +374,59 @@ async function exportMixdown(
   }
 
   // Create offline context with calculated duration
-  const _offlineContext = new OfflineAudioContext({
+  const offlineContext = new OfflineAudioContext({
     numberOfChannels: 2,
     length: renderDuration * options?.sampleRate,
-    sampleRate: options?.sampleRate,
+    sampleRate: options.sampleRate,
   });
 
   // Build master chain
-  const _masterChain = buildMasterChain(offlineContext, options);
+  const masterChain = buildMasterChain(offlineContext, options);
   masterChain?.output.connect(offlineContext?.destination);
 
   // Setup all loaded tracks
   for (const { track, buffer } of loadedTracks) {
     try {
-      const _source = offlineContext?.createBufferSource();
-      source?.buffer = buffer;
+      const source = offlineContext?.createBufferSource();
+      source.buffer = buffer;
 
       // Build effects chain
       buildTrackEffectsChain(offlineContext, source, track, masterChain?.input);
 
       // Start playback at clip's start time, respecting offset
-      const _clipStartTime = track?.startTime || 0;
-      source?.start(clipStartTime);
+      const clipStartTime = track.startTime || 0;
+      source.start(clipStartTime);
     } catch (error: unknown) {
-      logger?.error(`Failed to setup track ${track?.name}:`, error);
+      logger.error(`Failed to setup track ${track.name}:`, error);
     }
   }
 
-  onProgress?.({
+  onProgress.({
     stage: "rendering",
     progress: 40,
     message: "Rendering audio...",
   });
 
   // Render offline context
-  let renderedBuffer = await offlineContext?.startRendering();
+  let renderedBuffer = await offlineContext.startRendering();
 
-  onProgress?.({
+  onProgress.({
     stage: "encoding",
     progress: 70,
     message: "Processing audio...",
   });
 
   // Normalize if requested
-  if (options?.normalize) {
-    renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0?.95);
+  if (options.normalize) {
+    renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0.95);
   }
 
-  onProgress?.({ stage: "encoding", progress: 90, message: "Encoding WAV..." });
+  onProgress.({ stage: "encoding", progress: 90, message: "Encoding WAV..." });
 
   // Convert to WAV
-  const _wavBlob = audioBufferToWav(renderedBuffer, options?.bitDepth);
+  const wavBlob = audioBufferToWav(renderedBuffer, options.bitDepth);
 
-  onProgress?.({
+  onProgress.({
     stage: "complete",
     progress: 100,
     message: "Export complete!",
@@ -445,53 +445,53 @@ async function exportStems(
   const stems: Array<{ name: string; blob: Blob; trackId: string }> = [];
 
   // Check for solo tracks
-  const _hasSolo = options?.tracks.some((t) => t?.isSolo);
-  const _tracksToExport = options?.tracks.filter((track) => {
-    if (track?.isMuted && !track?.isSolo) return false;
-    if (hasSolo && !track?.isSolo) return false;
+  const hasSolo = options.tracks.some((t) => t.isSolo);
+  const tracksToExport = options.tracks.filter((track) => {
+    if (track.isMuted && !track.isSolo) return false;
+    if (hasSolo && !track.isSolo) return false;
     return true;
   });
 
-  for (let i = 0; i < tracksToExport?.length; i++) {
-    const _track = tracksToExport[i];
+  for (let i = 0; i < tracksToExport.length; i++) {
+    const track = tracksToExport[i];
 
-    onProgress?.({
+    onProgress.({
       stage: "loading",
-      progress: (i / tracksToExport?.length) * 100,
-      message: `Rendering ${track?.name} (${i + 1}/${tracksToExport?.length})...`,
+      progress: (i / tracksToExport.length) * 100,
+      message: `Rendering ${track.name} (${i + 1}/${tracksToExport.length})...`,
     });
 
     try {
       // Load audio buffer first to determine actual duration
-      const _tempContext = new OfflineAudioContext({
+      const tempContext = new OfflineAudioContext({
         numberOfChannels: 2,
         length: 1,
-        sampleRate: options?.sampleRate,
+        sampleRate: options.sampleRate,
       });
-      const _buffer = await loadAudioBuffer(track?.audioUrl, tempContext);
+      const buffer = await loadAudioBuffer(track.audioUrl, tempContext);
 
       // Calculate actual render duration for this track
-      const _clipStartTime = track?.startTime || 0;
-      const _bufferDuration = buffer?.duration;
-      const _renderDuration = options?.duration || clipStartTime + bufferDuration;
+      const clipStartTime = track.startTime || 0;
+      const bufferDuration = buffer.duration;
+      const renderDuration = options.duration || clipStartTime + bufferDuration;
 
       // Create offline context for this track with actual duration
-      const _offlineContext = new OfflineAudioContext({
+      const offlineContext = new OfflineAudioContext({
         numberOfChannels: 2,
-        length: renderDuration * options?.sampleRate,
-        sampleRate: options?.sampleRate,
+        length: renderDuration * options.sampleRate,
+        sampleRate: options.sampleRate,
       });
 
       // Create source with loaded buffer
-      const _source = offlineContext?.createBufferSource();
-      source?.buffer = buffer;
+      const source = offlineContext.createBufferSource();
+      source.buffer = buffer;
 
       // Build effects chain (without master chain for stems)
       buildTrackEffectsChain(
         offlineContext,
         source,
         track,
-        offlineContext?.destination,
+        offlineContext.destination,
       );
 
       // Start playback at clip's start time
@@ -502,16 +502,16 @@ async function exportStems(
 
       // Normalize if requested
       if (options?.normalize) {
-        renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0?.95);
+        renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0.95);
       }
 
       // Convert to WAV
-      const _wavBlob = audioBufferToWav(renderedBuffer, options?.bitDepth);
+      const wavBlob = audioBufferToWav(renderedBuffer, options?.bitDepth);
 
       stems?.push({
         name: `${track?.name}.wav`,
         blob: wavBlob,
-        trackId: track?.id,
+        trackId: track.id,
       });
     } catch (error: unknown) {
       logger?.error(`Failed to export stem for ${track?.name}:`, error);
@@ -535,18 +535,18 @@ export async function exportAudio(
   onProgress?: (progress: ExportProgress) => void,
 ): Promise<ExportResult> {
   if (options?.exportType === "mixdown") {
-    const _blob = await exportMixdown(options, onProgress);
+    const blob = await exportMixdown(options, onProgress);
     return {
       type: "mixdown",
       files: [
         {
-          name: "mixdown?.wav",
+          name: "mixdown.wav",
           blob,
         },
       ],
     };
   } else {
-    const _stems = await exportStems(options, onProgress);
+    const stems = await exportStems(options, onProgress);
     return {
       type: "stems",
       files: stems,

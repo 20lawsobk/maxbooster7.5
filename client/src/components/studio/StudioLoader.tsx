@@ -236,12 +236,12 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   // Show error state if critical resources failed
   if (hasCriticalError) {
     const isNetworkError =
-      projectsErrorData?.message?.includes("Network") ||
-      projectsErrorData?.message?.includes("fetch");
-    const isTimeoutError = projectsErrorData?.message?.includes("timeout");
+      projectsErrorData.message.includes("Network") ||
+      projectsErrorData.message.includes("fetch");
+    const isTimeoutError = projectsErrorData.message.includes("timeout");
     const isAuthError =
-      projectsErrorData?.message?.includes("401") ||
-      projectsErrorData?.message?.includes("403");
+      projectsErrorData.message.includes("401") ||
+      projectsErrorData.message.includes("403");
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">

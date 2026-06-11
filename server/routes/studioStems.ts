@@ -10,21 +10,21 @@
  */
 
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
-import { logger } from "../logger?.js";
-import { stemExportService } from "../services/stemExportService?.js";
-import { notificationService } from "../services/notificationService?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { stemExportService } from "../services/stemExportService.js";
+import { notificationService } from "../services/notificationService.js";
+import { db } from "../db.js";
 import { projects } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
-const _router = Router();
+const router = Router();
 
-const _startExportSchema = z?.object({
-  trackIds: z?.array(z?.string()).default([]),
-  exportName: z?.string().max(255).optional(),
-  format: z?.enum(["wav", "flac", "mp3", "aac"]).default("wav"),
+const startExportSchema = z.object({
+  trackIds: z.array(z.string()).default([]),
+  exportName: z.string().max(255).optional(),
+  format: z.enum(["wav", "flac", "mp3", "aac"]).default("wav"),
   sampleRate: z
     .number()
     .refine((val) => [44100, 48000, 96000, 192000].includes(val), {
@@ -37,24 +37,24 @@ const _startExportSchema = z?.object({
       message: "Bit depth must be 16, 24, or 32",
     })
     .default(24),
-  bitrate: z?.enum(["128k", "192k", "256k", "320k"]).default("320k"),
-  normalize: z?.boolean().default(false),
-  normalizationType: z?.enum(["peak", "rms", "lufs", "none"]).default("none"),
-  normalizeTargetLevel: z?.number().min(-60).max(0).default(-14),
-  includeEffects: z?.boolean().default(true),
-  includeMasterBus: z?.boolean().default(false),
+  bitrate: z.enum(["128k", "192k", "256k", "320k"]).default("320k"),
+  normalize: z.boolean().default(false),
+  normalizationType: z.enum(["peak", "rms", "lufs", "none"]).default("none"),
+  normalizeTargetLevel: z.number().min(-60).max(0).default(-14),
+  includeEffects: z.boolean().default(true),
+  includeMasterBus: z.boolean().default(false),
 });
 
-const _listExportsSchema = z?.object({
-  limit: z?.coerce.number().min(1).max(100).default(20),
-  offset: z?.coerce.number().min(0).default(0),
+const listExportsSchema = z.object({
+  limit: z.coerce.number().min(1).max(100).default(20),
+  offset: z.coerce.number().min(0).default(0),
 });
 
 async function verifyProjectOwnership(
   projectId: string,
   userId: string,
 ): Promise<boolean> {
-  const _project = await db?.query.projects?.findFirst({
+  const project = await db?.query.projects?.findFirst({
     where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
   });
   return !!project;
@@ -66,28 +66,28 @@ router?.post(
   async (req, res) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _data = startExportSchema?.parse(req?.body);
+      const data = startExportSchema?.parse(req?.body);
 
-      const _result = await stemExportService?.startStemExport({
+      const result = await stemExportService?.startStemExport({
         projectId,
         userId,
-        trackIds: data?.trackIds,
-        exportName: data?.exportName,
-        format: data?.format,
-        sampleRate: data?.sampleRate as Record<string, unknown>,
-        bitDepth: data?.bitDepth as Record<string, unknown>,
-        bitrate: data?.bitrate,
-        normalize: data?.normalize,
-        normalizationType: data?.normalizationType,
-        normalizeTargetLevel: data?.normalizeTargetLevel,
-        includeEffects: data?.includeEffects,
-        includeMasterBus: data?.includeMasterBus,
+        trackIds: data.trackIds,
+        exportName: data.exportName,
+        format: data.format,
+        sampleRate: data.sampleRate as Record<string, unknown>,
+        bitDepth: data.bitDepth as Record<string, unknown>,
+        bitrate: data.bitrate,
+        normalize: data.normalize,
+        normalizationType: data.normalizationType,
+        normalizeTargetLevel: data.normalizeTargetLevel,
+        includeEffects: data.includeEffects,
+        includeMasterBus: data.includeMasterBus,
       });
 
       res?.status(202).json({
@@ -99,11 +99,11 @@ router?.post(
       setImmediate(async () => {
         try {
           const [proj] = await db
-            .select({ title: projects?.title })
+            .select({ title: projects.title })
             .from(projects)
             .where(eq(projects?.id, projectId))
             .limit(1);
-          const _trackCount = data?.trackIds?.length || 0;
+          const trackCount = data?.trackIds?.length || 0;
           await notificationService?.sendStemExportStartedNotification(
             userId,
             proj?.title || "Untitled Project",
@@ -115,10 +115,10 @@ router?.post(
       });
     } catch (error) {
       logger?.warn({ err: error }, "Error starting stem export:");
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res?.status(400).json({
           error: "Invalid export options",
-          details: error?.issues,
+          details: error.issues,
         });
       }
       res?.status(500).json({ error: "Failed to start stem export" });
@@ -132,13 +132,13 @@ router?.get(
   async (req, res) => {
     try {
       const { projectId, exportId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _status = await stemExportService?.getExportStatus(exportId, userId);
+      const status = await stemExportService?.getExportStatus(exportId, userId);
 
       res?.json({
         success: true,
@@ -160,13 +160,13 @@ router?.get(
   async (req, res) => {
     try {
       const { projectId, exportId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _download = await stemExportService?.getExportDownload(
+      const download = await stemExportService?.getExportDownload(
         exportId,
         userId,
       );
@@ -180,9 +180,9 @@ router?.get(
 
       res?.json({
         success: true,
-        downloadUrl: download?.downloadUrl,
-        fileName: download?.fileName,
-        fileSize: download?.fileSize,
+        downloadUrl: download.downloadUrl,
+        fileName: download.fileName,
+        fileSize: download.fileSize,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Error getting export download:");
@@ -202,32 +202,32 @@ router?.get(
 router?.get("/projects/:projectId/stems/list", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     if (!(await verifyProjectOwnership(projectId, userId))) {
       return res?.status(404).json({ error: "Project not found" });
     }
 
-    const _queryParams = listExportsSchema?.parse(req?.query);
+    const queryParams = listExportsSchema?.parse(req?.query);
 
-    const _result = await stemExportService?.listExports(projectId, userId, {
-      limit: queryParams?.limit,
-      offset: queryParams?.offset,
+    const result = await stemExportService?.listExports(projectId, userId, {
+      limit: queryParams.limit,
+      offset: queryParams.offset,
     });
 
     res?.json({
       success: true,
-      exports: result?.exports,
-      total: result?.total,
-      limit: queryParams?.limit,
-      offset: queryParams?.offset,
+      exports: result.exports,
+      total: result.total,
+      limit: queryParams.limit,
+      offset: queryParams.offset,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error listing exports:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res?.status(400).json({
         error: "Invalid query parameters",
-        details: error?.issues,
+        details: error.issues,
       });
     }
     res?.status(500).json({ error: "Failed to list exports" });
@@ -240,7 +240,7 @@ router?.delete(
   async (req, res) => {
     try {
       const { projectId, exportId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
@@ -268,7 +268,7 @@ router?.post(
   async (req, res) => {
     try {
       const { projectId, exportId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
@@ -299,7 +299,7 @@ router?.get(
   async (req, res) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
@@ -350,7 +350,7 @@ router?.get(
           },
         ],
         sampleRates: [
-          { value: 44100, label: "44?.1 kHz (CD Quality)" },
+          { value: 44100, label: "44.1 kHz (CD Quality)" },
           { value: 48000, label: "48 kHz (Standard)" },
           { value: 96000, label: "96 kHz (High Resolution)" },
           { value: 192000, label: "192 kHz (Studio Reference)" },

@@ -23,7 +23,7 @@ export class UndoManager {
   private actionRegistry: Map<string, UndoableAction> = new Map();
 
   constructor(config: Partial<UndoManagerConfig> = {}) {
-    this?.config = { ...DEFAULT_CONFIG, ...config };
+    this.config = { ...DEFAULT_CONFIG, ...config };
     this?.loadFromStorage();
   }
 
@@ -31,13 +31,13 @@ export class UndoManager {
     if (!this?.config.persistToStorage) return;
 
     try {
-      const _stored = sessionStorage?.getItem(this?.config.storageKey);
+      const stored = sessionStorage?.getItem(this?.config.storageKey);
       if (stored) {
         const parsed: SerializedAction[] = JSON?.parse(stored);
         parsed?.forEach((serialized) => {
-          const _action = this?.actionRegistry.get(serialized?.id);
+          const action = this?.actionRegistry.get(serialized?.id);
           if (action) {
-            action?.isUndone = serialized?.isUndone;
+            action.isUndone = serialized?.isUndone;
           }
         });
       }
@@ -51,11 +51,11 @@ export class UndoManager {
 
     try {
       const serialized: SerializedAction[] = this?.history.map((action) => ({
-        id: action?.id,
-        type: action?.type,
-        metadata: action?.metadata,
-        groupId: action?.groupId,
-        isUndone: action?.isUndone,
+        id: action.id,
+        type: action.type,
+        metadata: action.metadata,
+        groupId: action.groupId,
+        isUndone: action.isUndone,
       }));
       sessionStorage?.setItem(
         this?.config.storageKey,
@@ -78,15 +78,15 @@ export class UndoManager {
       ...action,
       id: createActionId(),
       isUndone: false,
-      groupId: this?.currentGroupId || undefined,
+      groupId: this.currentGroupId || undefined,
     };
 
     try {
-      const _result = await fullAction?.execute();
-      fullAction?.result = result;
+      const result = await fullAction?.execute();
+      fullAction.result = result;
 
       this?.addToHistory(fullAction);
-      this?.redoStack = [];
+      this.redoStack = [];
       this?.config.onActionExecuted?.(fullAction);
       this?.notifyHistoryChange();
 
@@ -102,14 +102,14 @@ export class UndoManager {
     this?.actionRegistry.set(action?.id, action);
 
     if (this?.currentGroupId) {
-      const _group = this?.groups.get(this?.currentGroupId);
+      const group = this?.groups.get(this?.currentGroupId);
       if (group) {
         group?.actions.push(action);
       }
     }
 
     while (this?.history.length > this?.config.maxHistorySize) {
-      const _removed = this?.history.shift();
+      const removed = this?.history.shift();
       if (removed) {
         this?.actionRegistry.delete(removed?.id);
       }
@@ -117,7 +117,7 @@ export class UndoManager {
   }
 
   async undo(): Promise<void> {
-    const _action = this?.getLastUndoableAction();
+    const action = this?.getLastUndoableAction();
     if (!action) return;
 
     try {
@@ -139,20 +139,20 @@ export class UndoManager {
     }
 
     await action?.undo();
-    action?.isUndone = true;
+    action.isUndone = true;
     this?.redoStack.push(action);
     this?.config.onUndo?.(action);
     this?.notifyHistoryChange();
   }
 
   async redo(): Promise<void> {
-    const _action = this?.redoStack.pop();
+    const action = this?.redoStack.pop();
     if (!action) return;
 
     try {
-      const _redoFn = action?.redo || action?.execute;
+      const redoFn = action?.redo || action?.execute;
       await redoFn();
-      action?.isUndone = false;
+      action.isUndone = false;
       this?.config.onRedo?.(action);
       this?.notifyHistoryChange();
     } catch (error) {
@@ -163,48 +163,48 @@ export class UndoManager {
   }
 
   startGroup(name: string): string {
-    const _groupId = createGroupId();
+    const groupId = createGroupId();
     const group: ActionGroup = {
       id: groupId,
       name,
       actions: [],
       metadata: {
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
         module: "system",
         description: name,
       },
       isUndone: false,
     };
     this?.groups.set(groupId, group);
-    this?.currentGroupId = groupId;
+    this.currentGroupId = groupId;
     return groupId;
   }
 
   endGroup(groupId: string): void {
     if (this?.currentGroupId === groupId) {
-      this?.currentGroupId = null;
+      this.currentGroupId = null;
     }
   }
 
   async undoGroup(groupId: string): Promise<void> {
-    const _group = this?.groups.get(groupId);
+    const group = this?.groups.get(groupId);
     if (!group) {
       logger?.warn("Group not found:", groupId);
       return;
     }
 
-    const _actionsToUndo = group?.actions.filter((a) => !a?.isUndone);
+    const actionsToUndo = group?.actions.filter((a) => !a?.isUndone);
     for (let i = actionsToUndo?.length - 1; i >= 0; i--) {
       await this?.undoSingleAction(actionsToUndo[i]);
     }
 
-    group?.isUndone = true;
+    group.isUndone = true;
     this?.config.onUndo?.(group);
   }
 
   private getLastUndoableAction(): UndoableAction | undefined {
     for (let i = this?.history.length - 1; i >= 0; i--) {
-      const _action = this?.history[i];
+      const action = this?.history[i];
       if (!action?.isUndone && action?.canUndo()) {
         return action;
       }
@@ -237,11 +237,11 @@ export class UndoManager {
   }
 
   clearHistory(): void {
-    this?.history = [];
-    this?.redoStack = [];
+    this.history = [];
+    this.redoStack = [];
     this?.groups.clear();
     this?.actionRegistry.clear();
-    this?.currentGroupId = null;
+    this.currentGroupId = null;
 
     if (this?.config.persistToStorage) {
       sessionStorage?.removeItem(this?.config.storageKey);
@@ -251,7 +251,7 @@ export class UndoManager {
   }
 
   setConfig(config: Partial<UndoManagerConfig>): void {
-    this?.config = { ...this?.config, ...config };
+    this.config = { ...this?.config, ...config };
   }
 
   getConfig(): UndoManagerConfig {

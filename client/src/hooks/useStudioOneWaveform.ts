@@ -28,21 +28,21 @@ export function useStudioOneWaveform(
     statsInterval = 500,
   } = options;
 
-  const _engineRef = useRef<StudioOneWaveformEngine | null>(null);
-  const _canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const engineRef = useRef<StudioOneWaveformEngine | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [stats, setStats] = useState<EngineStats | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(1);
   const [verticalScale, setVerticalScaleState] = useState(1);
 
-  const _initializeEngine = useCallback(
+  const initializeEngine = useCallback(
     (canvas: HTMLCanvasElement) => {
       if (engineRef?.current) {
         engineRef?.current.destroy();
       }
 
-      const _engine = new StudioOneWaveformEngine({
+      const engine = new StudioOneWaveformEngine({
         sampleRate,
         bpm,
         timeSignature,
@@ -50,8 +50,8 @@ export function useStudioOneWaveform(
       });
 
       engine?.initialize(canvas);
-      engineRef?.current = engine;
-      canvasRef?.current = canvas;
+      engineRef.current = engine;
+      canvasRef.current = canvas;
       setIsInitialized(true);
 
       if (autoStart) {
@@ -66,7 +66,7 @@ export function useStudioOneWaveform(
   useEffect(() => {
     if (!isInitialized) return;
 
-    const _interval = setInterval(() => {
+    const interval = setInterval(() => {
       if (engineRef?.current) {
         setStats(engineRef?.current.getStats());
       }
@@ -79,14 +79,14 @@ export function useStudioOneWaveform(
     return () => {
       if (engineRef?.current) {
         engineRef?.current.destroy();
-        engineRef?.current = null;
+        engineRef.current = null;
       }
     };
   }, []);
 
-  const _loadAudio = useCallback(
+  const loadAudio = useCallback(
     (sourceId: string, data: Float32Array | AudioBuffer) => {
-      const _engine = engineRef?.current;
+      const engine = engineRef?.current;
       if (!engine) return;
 
       if (data instanceof AudioBuffer) {
@@ -98,58 +98,58 @@ export function useStudioOneWaveform(
     [sampleRate],
   );
 
-  const _setClips = useCallback((clips: ClipRenderData[]) => {
+  const setClips = useCallback((clips: ClipRenderData[]) => {
     engineRef?.current?.setClips(clips);
   }, []);
 
-  const _play = useCallback((from?: number) => {
+  const play = useCallback((from?: number) => {
     engineRef?.current?.play(from);
     setIsPlaying(true);
   }, []);
 
-  const _pause = useCallback(() => {
+  const pause = useCallback(() => {
     engineRef?.current?.pause();
     setIsPlaying(false);
   }, []);
 
-  const _seek = useCallback((time: number) => {
+  const seek = useCallback((time: number) => {
     engineRef?.current?.seek(time);
   }, []);
 
-  const _zoomIn = useCallback((factor?: number) => {
+  const zoomIn = useCallback((factor?: number) => {
     engineRef?.current?.zoomIn(factor);
-    setCurrentZoom((prev) => prev * (factor || 1?.5));
+    setCurrentZoom((prev) => prev * (factor || 1.5));
   }, []);
 
-  const _zoomOut = useCallback((factor?: number) => {
+  const zoomOut = useCallback((factor?: number) => {
     engineRef?.current?.zoomOut(factor);
-    setCurrentZoom((prev) => prev / (factor || 1?.5));
+    setCurrentZoom((prev) => prev / (factor || 1.5));
   }, []);
 
-  const _setVerticalScale = useCallback((scale: number) => {
+  const setVerticalScale = useCallback((scale: number) => {
     engineRef?.current?.setVerticalScale(scale);
     setVerticalScaleState(scale);
   }, []);
 
-  const _scrollTo = useCallback((offset: number) => {
+  const scrollTo = useCallback((offset: number) => {
     engineRef?.current?.scrollTo(offset);
   }, []);
 
-  const _registerProcessingChain = useCallback(
+  const registerProcessingChain = useCallback(
     (sourceId: string, chain: ProcessingChain) => {
       engineRef?.current?.registerProcessingChain(sourceId, chain);
     },
     [],
   );
 
-  const _renderToAudio = useCallback(
+  const renderToAudio = useCallback(
     async (sourceId: string, audioContext?: AudioContext) => {
       return engineRef?.current?.renderToAudio(sourceId, audioContext) ?? null;
     },
     [],
   );
 
-  const _updateRenderConfig = useCallback(
+  const updateRenderConfig = useCallback(
     (config: Partial<TimelineRenderConfig>) => {
       engineRef?.current?.updateRenderConfig(config);
     },

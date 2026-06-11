@@ -318,7 +318,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     onError: (err: Error) =>
       toast({
         title: "Request failed",
-        description: err?.message ?? "Check that the Spotify URI is valid",
+        description: err.message ?? "Check that the Spotify URI is valid",
         variant: "destructive",
       }),
   });
@@ -428,7 +428,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     onError: (err: Error) =>
       toast({
         title: "Failed",
-        description: err?.message,
+        description: err.message,
         variant: "destructive",
       }),
   });

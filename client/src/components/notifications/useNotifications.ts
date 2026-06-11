@@ -9,10 +9,10 @@ import type { Notification, NotificationPreferences } from "./types";
 export function useNotifications() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   const { isConnected } = useWebSocket({
-    userId: user?.id,
+    userId: user.id,
     onMessage: (message) => {
       if (message?.type === "notification") {
         logger?.info("📬 Real-time notification received:", message?.data);
@@ -20,18 +20,18 @@ export function useNotifications() {
 
         if (message?.data?.title) {
           toast({
-            title: message?.data.title,
-            description: message?.data.message,
+            title: message.data.title,
+            description: message.data.message,
           });
 
           if (
             "Notification" in window &&
             Notification?.permission === "granted"
           ) {
-            new window?.Notification(message?.data.title, {
-              body: message?.data.message || "",
-              icon: "/favicon?.png",
-              tag: message?.data.id,
+            new window.Notification(message?.data.title, {
+              body: message.data.message || "",
+              icon: "/favicon.png",
+              tag: message.data.id,
             });
           }
         }
@@ -57,15 +57,15 @@ export function useNotifications() {
     enabled: !!user,
   });
 
-  const _unreadCount = notifications?.filter((n) => !n?.isRead).length;
+  const unreadCount = notifications?.filter((n) => !n?.isRead).length;
 
-  const _markAsReadMutation = useMutation({
+  const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {
       return apiRequest("PUT", `/api/notifications/${id}/read`);
     },
     onMutate: async (id) => {
       await queryClient?.cancelQueries({ queryKey: ["/api/notifications"] });
-      const _previousNotifications = queryClient?.getQueryData<Notification[]>([
+      const previousNotifications = queryClient?.getQueryData<Notification[]>([
         "/api/notifications",
       ]);
       queryClient?.setQueryData<Notification[]>(
@@ -91,13 +91,13 @@ export function useNotifications() {
     },
   });
 
-  const _markAllAsReadMutation = useMutation({
+  const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       return apiRequest("PUT", "/api/notifications/mark-all-read");
     },
     onMutate: async () => {
       await queryClient?.cancelQueries({ queryKey: ["/api/notifications"] });
-      const _previousNotifications = queryClient?.getQueryData<Notification[]>([
+      const previousNotifications = queryClient?.getQueryData<Notification[]>([
         "/api/notifications",
       ]);
       queryClient?.setQueryData<Notification[]>(
@@ -125,13 +125,13 @@ export function useNotifications() {
     },
   });
 
-  const _deleteNotificationMutation = useMutation({
+  const deleteNotificationMutation = useMutation({
     mutationFn: async (id: string) => {
       return apiRequest("DELETE", `/api/notifications/${id}`);
     },
     onMutate: async (id) => {
       await queryClient?.cancelQueries({ queryKey: ["/api/notifications"] });
-      const _previousNotifications = queryClient?.getQueryData<Notification[]>([
+      const previousNotifications = queryClient?.getQueryData<Notification[]>([
         "/api/notifications",
       ]);
       queryClient?.setQueryData<Notification[]>(
@@ -159,13 +159,13 @@ export function useNotifications() {
     },
   });
 
-  const _clearAllMutation = useMutation({
+  const clearAllMutation = useMutation({
     mutationFn: async () => {
       return apiRequest("DELETE", "/api/notifications/clear-all");
     },
     onMutate: async () => {
       await queryClient?.cancelQueries({ queryKey: ["/api/notifications"] });
-      const _previousNotifications = queryClient?.getQueryData<Notification[]>([
+      const previousNotifications = queryClient?.getQueryData<Notification[]>([
         "/api/notifications",
       ]);
       queryClient?.setQueryData<Notification[]>(["/api/notifications"], []);
@@ -190,7 +190,7 @@ export function useNotifications() {
     },
   });
 
-  const _updatePreferencesMutation = useMutation({
+  const updatePreferencesMutation = useMutation({
     mutationFn: async (newPreferences: Partial<NotificationPreferences>) => {
       return apiRequest(
         "PUT",
@@ -220,15 +220,15 @@ export function useNotifications() {
     isConnected,
     preferences,
     refetch,
-    markAsRead: markAsReadMutation?.mutate,
-    markAllAsRead: markAllAsReadMutation?.mutate,
-    deleteNotification: deleteNotificationMutation?.mutate,
-    clearAll: clearAllMutation?.mutate,
-    updatePreferences: updatePreferencesMutation?.mutate,
-    isMarkingRead: markAsReadMutation?.isPending,
-    isMarkingAllRead: markAllAsReadMutation?.isPending,
-    isDeleting: deleteNotificationMutation?.isPending,
-    isClearing: clearAllMutation?.isPending,
-    isUpdatingPreferences: updatePreferencesMutation?.isPending,
+    markAsRead: markAsReadMutation.mutate,
+    markAllAsRead: markAllAsReadMutation.mutate,
+    deleteNotification: deleteNotificationMutation.mutate,
+    clearAll: clearAllMutation.mutate,
+    updatePreferences: updatePreferencesMutation.mutate,
+    isMarkingRead: markAsReadMutation.isPending,
+    isMarkingAllRead: markAllAsReadMutation.isPending,
+    isDeleting: deleteNotificationMutation.isPending,
+    isClearing: clearAllMutation.isPending,
+    isUpdatingPreferences: updatePreferencesMutation.isPending,
   };
 }

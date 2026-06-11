@@ -19,7 +19,7 @@ export class AppError extends Error {
     public context?: ErrorContext
   ) {
     super(message);
-    this?.name = "AppError";
+    this.name = "AppError";
   }
 }
 
@@ -69,17 +69,17 @@ export function logError(
   error: unknown,
   context: ErrorContext
 ): void {
-  const _errorMessage = error instanceof Error ? error?.message : String(error);
-  const _errorStack = error instanceof Error ? error?.stack : "";
+  const errorMessage = error instanceof Error ? error?.message : String(error);
+  const errorStack = error instanceof Error ? error?.stack : "";
 
-  const _logEntry = {
+  const logEntry = {
     timestamp: new Date().toISOString(),
-    service: context?.service,
-    operation: context?.operation,
-    userId: context?.userId,
+    service: context.service,
+    operation: context.operation,
+    userId: context.userId,
     error: errorMessage,
     stack: errorStack,
-    metadata: context?.metadata,
+    metadata: context.metadata,
   };
 
   console?.error("[ERROR]", JSON?.stringify(logEntry));
@@ -101,7 +101,7 @@ export async function retryWithBackoff<T>(
       return await fn();
     } catch (error) {
       lastError = error;
-      const _delayMs = initialDelayMs * Math?.pow(2, attempt);
+      const delayMs = initialDelayMs * Math?.pow(2, attempt);
 
       logError(error, {
         ...context,
@@ -125,7 +125,7 @@ export function validateRequired(
   fields: string[],
   context: ErrorContext
 ): void {
-  const _missing = fields?.filter((field) => !obj[field]);
+  const missing = fields?.filter((field) => !obj[field]);
   if (missing?.length > 0) {
     throw new AppError(
       "VALIDATION_ERROR",
@@ -270,9 +270,9 @@ export function errorHandlerMiddleware(
 ): void {
   if (err instanceof AppError) {
     res?.status(err?.statusCode).json({
-      error: err?.code,
-      message: err?.message,
-      context: err?.context,
+      error: err.code,
+      message: err.message,
+      context: err.context,
     });
   } else if (err instanceof Error) {
     console?.error("[UNHANDLED_ERROR]", err);

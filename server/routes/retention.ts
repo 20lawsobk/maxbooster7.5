@@ -7,25 +7,25 @@
  */
 
 import { Router } from "express";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { npsResponses, cancellationFeedback, customerHealthScores } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { customerHealthScoreService } from "../services/customerHealthScoreService?.js";
-import { pushFeatureEvent } from "../services/featureEventBuffer?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { customerHealthScoreService } from "../services/customerHealthScoreService.js";
+import { pushFeatureEvent } from "../services/featureEventBuffer.js";
 
-const _router = Router();
+const router = Router();
 
-const _npsSchema = z?.object({
-  score: z?.number().int().min(0).max(10),
-  comment: z?.string().max(2000).optional(),
-  triggerContext: z?.string().max(100).optional(),
+const npsSchema = z.object({
+  score: z.number().int().min(0).max(10),
+  comment: z.string().max(2000).optional(),
+  triggerContext: z.string().max(100).optional(),
 });
 
-const _cancellationSchema = z?.object({
-  reason: z?.enum([
+const cancellationSchema = z.object({
+  reason: z.enum([
     "too_expensive",
     "missing_features",
     "switched_to_competitor",
@@ -34,31 +34,31 @@ const _cancellationSchema = z?.object({
     "temporary_pause",
     "other",
   ]),
-  elaboration: z?.string().max(2000).optional(),
-  competitorMentioned: z?.string().max(200).optional(),
-  wouldReturn: z?.boolean().optional(),
-  planAtCancellation: z?.string().max(100).optional(),
+  elaboration: z.string().max(2000).optional(),
+  competitorMentioned: z.string().max(200).optional(),
+  wouldReturn: z.boolean().optional(),
+  planAtCancellation: z.string().max(100).optional(),
 });
 
-const _featureEventSchema = z?.object({
-  featureName: z?.string().max(200),
+const featureEventSchema = z.object({
+  featureName: z.string().max(200),
   action: z
     .enum(["used", "discovered", "completed", "skipped"])
     .default("used"),
-  metadata: z?.record(z?.string(), z?.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 router?.post("/nps", requireAuth, async (req: Record<string, unknown>, res) => {
   try {
-    const _parsed = npsSchema?.safeParse(req?.body);
+    const parsed = npsSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Invalid NPS data", details: parsed?.error.flatten() });
+        .json({ error: "Invalid NPS data", details: parsed.error.flatten() });
     }
 
     const { score, comment, triggerContext } = parsed?.data;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     await db?.insert(npsResponses).values({
       userId,
@@ -69,7 +69,7 @@ router?.post("/nps", requireAuth, async (req: Record<string, unknown>, res) => {
 
     await customerHealthScoreService?.computeAndStore(userId);
 
-    const _category =
+    const category =
       score >= 9 ? "promoter" : score >= 7 ? "passive" : "detractor";
     logger?.info(
       `[Retention] NPS submitted: user=${userId} score=${score} category=${category}`,
@@ -87,17 +87,17 @@ router?.post(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const _parsed = cancellationSchema?.safeParse(req?.body);
+      const parsed = cancellationSchema?.safeParse(req?.body);
       if (!parsed?.success) {
         return res
           .status(400)
           .json({
             error: "Invalid feedback data",
-            details: parsed?.error.flatten(),
+            details: parsed.error.flatten(),
           });
       }
 
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       await db?.insert(cancellationFeedback).values({
         userId,
@@ -122,18 +122,18 @@ router?.post(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const _parsed = featureEventSchema?.safeParse(req?.body);
+      const parsed = featureEventSchema?.safeParse(req?.body);
       if (!parsed?.success) {
         return res?.status(400).json({ error: "Invalid event data" });
       }
 
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       await pushFeatureEvent({
         userId,
-        featureName: parsed?.data.featureName,
-        action: parsed?.data.action,
-        metadata: parsed?.data.metadata ?? null,
+        featureName: parsed.data.featureName,
+        action: parsed.data.action,
+        metadata: parsed.data.metadata ?? null,
       });
 
       return res?.json({ success: true });
@@ -149,7 +149,7 @@ router?.get(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [existing] = await db
         .select()
@@ -158,13 +158,13 @@ router?.get(
         .limit(1);
 
       if (!existing) {
-        const _fresh = await customerHealthScoreService?.computeAndStore(userId);
+        const fresh = await customerHealthScoreService?.computeAndStore(userId);
         return res?.json(fresh);
       }
 
-      const _staleCutoff = new Date(Date?.now() - 24 * 60 * 60 * 1000);
+      const staleCutoff = new Date(Date?.now() - 24 * 60 * 60 * 1000);
       if (existing?.computedAt! < staleCutoff) {
-        const _fresh = await customerHealthScoreService?.computeAndStore(userId);
+        const fresh = await customerHealthScoreService?.computeAndStore(userId);
         return res?.json(fresh);
       }
 
@@ -184,14 +184,14 @@ router?.get(
       if (req?.user?.role !== "admin")
         return res?.status(403).json({ error: "Forbidden" });
 
-      const _atRisk = await db
+      const atRisk = await db
         .select()
         .from(customerHealthScores)
         .where(eq(customerHealthScores?.riskLevel, "at_risk"))
         .orderBy(desc(customerHealthScores?.score))
         .limit(100);
 
-      const _churning = await db
+      const churning = await db
         .select()
         .from(customerHealthScores)
         .where(eq(customerHealthScores?.riskLevel, "churning"))

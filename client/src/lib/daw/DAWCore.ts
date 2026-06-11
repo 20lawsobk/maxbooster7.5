@@ -101,18 +101,18 @@ export class DAWCore {
   readonly history: CommandHistory;
 
   constructor() {
-    this?.transport = transportEngine;
-    this?.timeline = timelineEngine;
-    this?.automation = automationEngine;
-    this?.routing = routingEngine;
-    this?.midi = midiEngine;
-    this?.audio = nonDestructiveAudio;
-    this?.plugins = pluginStateManager;
-    this?.intelligence = musicalIntelligence;
-    this?.project = projectManager;
-    this?.history = commandHistory;
+    this.transport = transportEngine;
+    this.timeline = timelineEngine;
+    this.automation = automationEngine;
+    this.routing = routingEngine;
+    this.midi = midiEngine;
+    this.audio = nonDestructiveAudio;
+    this.plugins = pluginStateManager;
+    this.intelligence = musicalIntelligence;
+    this.project = projectManager;
+    this.history = commandHistory;
 
-    this?.state = {
+    this.state = {
       isInitialized: false,
       audioContextState: "suspended",
       sampleRate: 48000,
@@ -125,7 +125,7 @@ export class DAWCore {
       editMode: "slip",
       automationMode: "read",
       snapEnabled: true,
-      gridDivision: 0?.25,
+      gridDivision: 0.25,
       zoom: 1,
       scrollX: 0,
       scrollY: 0,
@@ -149,13 +149,13 @@ export class DAWCore {
     if (this?.state.isInitialized) return;
 
     try {
-      this?.audioContext = new AudioContext({
-        sampleRate: this?.state.sampleRate,
+      this.audioContext = new AudioContext({
+        sampleRate: this.state.sampleRate,
         latencyHint: "interactive",
       });
 
-      this?.state.sampleRate = this?.audioContext.sampleRate;
-      this?.state.bufferSize = 512;
+      this.state.sampleRate = this?.audioContext.sampleRate;
+      this.state.bufferSize = 512;
 
       this?.transport.setAudioContext(this?.audioContext);
       this?.audio.setAudioContext(this?.audioContext);
@@ -167,14 +167,14 @@ export class DAWCore {
         bypass: false,
       });
 
-      this?.state.isInitialized = true;
-      this?.state.audioContextState = this?.audioContext.state as
+      this.state.isInitialized = true;
+      this.state.audioContextState = this?.audioContext.state as
         | "suspended"
         | "running"
         | "closed";
 
-      this?.audioContext.onstatechange = () => {
-        this?.state.audioContextState = this?.audioContext!.state as
+      this.audioContext.onstatechange = () => {
+        this.state.audioContextState = this?.audioContext!.state as
           | "suspended"
           | "running"
           | "closed";
@@ -192,7 +192,7 @@ export class DAWCore {
   async resume(): Promise<void> {
     if (this?.audioContext?.state === "suspended") {
       await this?.audioContext.resume();
-      this?.state.audioContextState = "running";
+      this.state.audioContextState = "running";
       this?.notifyState();
     }
   }
@@ -206,13 +206,13 @@ export class DAWCore {
     name?: string,
     options: Partial<DAWTrack> = {},
   ): string {
-    const _id = `track_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
-    const _trackCount = this?.state.tracks?.filter((t) => t?.type === type).length;
-    const _defaultName =
+    const id = `track_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const trackCount = this?.state.tracks?.filter((t) => t?.type === type).length;
+    const defaultName =
       name ||
       `${type?.charAt(0).toUpperCase() + type?.slice(1)} ${trackCount + 1}`;
 
-    const _routingNodeId = this?.routing.addNode({
+    const routingNodeId = this?.routing.addNode({
       type:
         type === "audio" || type === "instrument"
           ? "track"
@@ -223,7 +223,7 @@ export class DAWCore {
       bypass: false,
     });
 
-    const _masterNode = this?.routing.getState().masterNodeId;
+    const masterNode = this?.routing.getState().masterNodeId;
     if (masterNode && type !== "master") {
       this?.routing.connect(routingNodeId, masterNode);
     }
@@ -232,7 +232,7 @@ export class DAWCore {
       id,
       name: defaultName,
       type,
-      color: this?.getNextTrackColor(),
+      color: this.getNextTrackColor(),
       volume: 0,
       pan: 0,
       muted: false,
@@ -250,7 +250,7 @@ export class DAWCore {
       ...options,
     };
 
-    const _beforeState = [...this?.state.tracks];
+    const beforeState = [...this?.state.tracks];
     this?.state.tracks?.push(track);
 
     this?.history.execute(
@@ -258,7 +258,7 @@ export class DAWCore {
         "add-track",
         { before: beforeState, after: [...this?.state.tracks] },
         (tracks) => {
-          this?.state.tracks = tracks;
+          this.state.tracks = tracks;
           this?.notifyState();
         },
       ),
@@ -269,10 +269,10 @@ export class DAWCore {
   }
 
   removeTrack(trackId: string): void {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (!track || track?.type === "master") return;
 
-    const _beforeState = [...this?.state.tracks];
+    const beforeState = [...this?.state.tracks];
 
     this?.routing.removeNode(track?.routingNodeId);
 
@@ -284,12 +284,12 @@ export class DAWCore {
       this?.automation.removeLane(lane?.id);
     }
 
-    this?.state.tracks = this?.state.tracks?.filter((t) => t?.id !== trackId);
-    this?.state.selectedTrackIds = this?.state.selectedTrackIds?.filter(
+    this.state.tracks = this?.state.tracks?.filter((t) => t?.id !== trackId);
+    this.state.selectedTrackIds = this?.state.selectedTrackIds?.filter(
       (id) => id !== trackId,
     );
     if (this?.state.focusedTrackId === trackId) {
-      this?.state.focusedTrackId = null;
+      this.state.focusedTrackId = null;
     }
 
     this?.history.execute(
@@ -297,7 +297,7 @@ export class DAWCore {
         "remove-track",
         { before: beforeState, after: [...this?.state.tracks] },
         (tracks) => {
-          this?.state.tracks = tracks;
+          this.state.tracks = tracks;
           this?.notifyState();
         },
       ),
@@ -307,19 +307,19 @@ export class DAWCore {
   }
 
   updateTrack(trackId: string, updates: Partial<DAWTrack>): void {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (!track) return;
 
-    const _beforeState = structuredClone(track);
+    const beforeState = structuredClone(track);
     Object?.assign(track, updates);
-    const _afterState = structuredClone(track);
+    const afterState = structuredClone(track);
 
     this?.history.execute(
       createCommand(
         "update-track",
         { trackId, before: beforeState, after: afterState },
         (data: { trackId: string; before: DAWTrack; after: DAWTrack }) => {
-          const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
+          const t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
           if (t) {
             Object?.keys(t).forEach(
               (key) => delete (t as Record<string, unknown>)[key],
@@ -336,31 +336,31 @@ export class DAWCore {
   }
 
   duplicateTrack(trackId: string): string | null {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (!track) return null;
 
     return this?.addTrack(track?.type, `${track?.name} (Copy)`, {
-      color: track?.color,
-      volume: track?.volume,
-      pan: track?.pan,
-      height: track?.height,
+      color: track.color,
+      volume: track.volume,
+      pan: track.pan,
+      height: track.height,
     });
   }
 
   reorderTracks(fromIndex: number, toIndex: number): void {
-    const _beforeTracks = structuredClone(this?.state.tracks);
-    const _tracks = [...this?.state.tracks];
+    const beforeTracks = structuredClone(this?.state.tracks);
+    const tracks = [...this?.state.tracks];
     const [removed] = tracks?.splice(fromIndex, 1);
     tracks?.splice(toIndex, 0, removed);
-    this?.state.tracks = tracks;
-    const _afterTracks = structuredClone(this?.state.tracks);
+    this.state.tracks = tracks;
+    const afterTracks = structuredClone(this?.state.tracks);
 
     this?.history.execute(
       createCommand(
         "reorder-tracks",
         { before: beforeTracks, after: afterTracks },
         (data: { before: DAWTrack[]; after: DAWTrack[] }) => {
-          this?.state.tracks = structuredClone(data?.after);
+          this.state.tracks = structuredClone(data?.after);
           this?.notifyState();
         },
       ),
@@ -370,20 +370,20 @@ export class DAWCore {
   }
 
   setTrackVolume(trackId: string, volume: number): void {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (track) {
-      const _beforeVolume = track?.volume;
-      const _newVolume = Math?.max(-60, Math?.min(12, volume));
-      track?.volume = newVolume;
+      const beforeVolume = track?.volume;
+      const newVolume = Math?.max(-60, Math?.min(12, volume));
+      track.volume = newVolume;
 
       this?.history.execute(
         createCommand(
           "set-track-volume",
           { trackId, before: beforeVolume, after: newVolume },
           (data: { trackId: string; before: number; after: number }) => {
-            const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
+            const t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
             if (t) {
-              t?.volume = data?.after;
+              t.volume = data?.after;
               this?.notifyState();
             }
           },
@@ -395,20 +395,20 @@ export class DAWCore {
   }
 
   setTrackPan(trackId: string, pan: number): void {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (track) {
-      const _beforePan = track?.pan;
-      const _newPan = Math?.max(-1, Math?.min(1, pan));
-      track?.pan = newPan;
+      const beforePan = track?.pan;
+      const newPan = Math?.max(-1, Math?.min(1, pan));
+      track.pan = newPan;
 
       this?.history.execute(
         createCommand(
           "set-track-pan",
           { trackId, before: beforePan, after: newPan },
           (data: { trackId: string; before: number; after: number }) => {
-            const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
+            const t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
             if (t) {
-              t?.pan = data?.after;
+              t.pan = data?.after;
               this?.notifyState();
             }
           },
@@ -420,19 +420,19 @@ export class DAWCore {
   }
 
   toggleTrackMute(trackId: string): void {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (track) {
-      const _beforeMuted = track?.muted;
-      track?.muted = !track?.muted;
+      const beforeMuted = track?.muted;
+      track.muted = !track?.muted;
 
       this?.history.execute(
         createCommand(
           "toggle-track-mute",
-          { trackId, before: beforeMuted, after: track?.muted },
+          { trackId, before: beforeMuted, after: track.muted },
           (data: { trackId: string; before: boolean; after: boolean }) => {
-            const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
+            const t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
             if (t) {
-              t?.muted = data?.after;
+              t.muted = data?.after;
               this?.notifyState();
             }
           },
@@ -444,19 +444,19 @@ export class DAWCore {
   }
 
   toggleTrackSolo(trackId: string): void {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (track) {
-      const _beforeSolo = track?.solo;
-      track?.solo = !track?.solo;
+      const beforeSolo = track?.solo;
+      track.solo = !track?.solo;
 
       this?.history.execute(
         createCommand(
           "toggle-track-solo",
-          { trackId, before: beforeSolo, after: track?.solo },
+          { trackId, before: beforeSolo, after: track.solo },
           (data: { trackId: string; before: boolean; after: boolean }) => {
-            const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
+            const t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
             if (t) {
-              t?.solo = data?.after;
+              t.solo = data?.after;
               this?.notifyState();
             }
           },
@@ -468,16 +468,16 @@ export class DAWCore {
   }
 
   toggleTrackArm(trackId: string): void {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (track) {
-      track?.armed = !track?.armed;
+      track.armed = !track?.armed;
       this?.notifyState();
     }
   }
 
   selectTracks(trackIds: string[]): void {
-    this?.state.selectedTrackIds = trackIds;
-    this?.state.focusedTrackId = trackIds[0] || null;
+    this.state.selectedTrackIds = trackIds;
+    this.state.focusedTrackId = trackIds[0] || null;
     this?.emit({ type: "selection-changed", data: { trackIds } });
     this?.notifyState();
   }
@@ -487,14 +487,14 @@ export class DAWCore {
     pluginId: string,
     pluginName: string,
   ): string | null {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (!track) return null;
 
-    const _instanceId = `plugin_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const instanceId = `plugin_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
 
     this?.plugins.registerPlugin(instanceId, pluginId, trackId, pluginName);
 
-    const _pluginState = this?.plugins
+    const pluginState = this?.plugins
       .getState()
       .plugins?.find((p) => p?.instanceId === instanceId);
     if (pluginState) {
@@ -506,11 +506,11 @@ export class DAWCore {
   }
 
   removePlugin(trackId: string, instanceId: string): void {
-    const _track = this?.state.tracks?.find((t) => t?.id === trackId);
+    const track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (!track) return;
 
     this?.plugins.unregisterPlugin(instanceId);
-    track?.plugins = track?.plugins.filter((p) => p?.instanceId !== instanceId);
+    track.plugins = track?.plugins.filter((p) => p?.instanceId !== instanceId);
     this?.notifyState();
   }
 
@@ -520,8 +520,8 @@ export class DAWCore {
     gain: number = 0,
     preFader: boolean = false,
   ): string | null {
-    const _sourceTrack = this?.state.tracks?.find((t) => t?.id === sourceTrackId);
-    const _targetTrack = this?.state.tracks?.find((t) => t?.id === targetTrackId);
+    const sourceTrack = this?.state.tracks?.find((t) => t?.id === sourceTrackId);
+    const targetTrack = this?.state.tracks?.find((t) => t?.id === targetTrackId);
 
     if (!sourceTrack || !targetTrack) return null;
 
@@ -534,45 +534,45 @@ export class DAWCore {
   }
 
   createBus(name: string): string {
-    const _busId = this?.addTrack("bus", name);
+    const busId = this?.addTrack("bus", name);
     return busId;
   }
 
   setEditMode(mode: EditMode): void {
-    this?.state.editMode = mode;
+    this.state.editMode = mode;
     this?.timeline.setEditMode(mode);
     this?.emit({ type: "mode-changed", data: { editMode: mode } });
     this?.notifyState();
   }
 
   setAutomationMode(mode: AutomationMode): void {
-    this?.state.automationMode = mode;
+    this.state.automationMode = mode;
     this?.automation.setGlobalMode(mode);
     this?.emit({ type: "mode-changed", data: { automationMode: mode } });
     this?.notifyState();
   }
 
   setSnap(enabled: boolean): void {
-    this?.state.snapEnabled = enabled;
+    this.state.snapEnabled = enabled;
     this?.timeline.setSnapToGrid(enabled);
     this?.notifyState();
   }
 
   setGridDivision(division: number): void {
-    this?.state.gridDivision = division;
+    this.state.gridDivision = division;
     this?.timeline.setGridDivision(division);
     this?.notifyState();
   }
 
   setZoom(zoom: number): void {
-    this?.state.zoom = Math?.max(0?.1, Math?.min(10, zoom));
+    this.state.zoom = Math?.max(0.1, Math?.min(10, zoom));
     this?.timeline.setZoom(this?.state.zoom);
     this?.notifyState();
   }
 
   setScroll(x: number, y: number): void {
-    this?.state.scrollX = Math?.max(0, x);
-    this?.state.scrollY = Math?.max(0, y);
+    this.state.scrollX = Math?.max(0, x);
+    this.state.scrollY = Math?.max(0, y);
     this?.notifyState();
   }
 
@@ -597,7 +597,7 @@ export class DAWCore {
   }
 
   setPosition(beats: number): void {
-    const _samples = this?.timeline.beatsToSamples(beats);
+    const samples = this?.timeline.beatsToSamples(beats);
     this?.transport.setPosition(samples);
   }
 
@@ -609,11 +609,11 @@ export class DAWCore {
   }
 
   setLoop(enabled: boolean, startBeat?: number, endBeat?: number): void {
-    const _startSamples =
+    const startSamples =
       startBeat !== undefined
         ? this?.timeline.beatsToSamples(startBeat)
         : undefined;
-    const _endSamples =
+    const endSamples =
       endBeat !== undefined ? this?.timeline.beatsToSamples(endBeat) : undefined;
     this?.transport.setLoop(enabled, startSamples, endSamples);
   }
@@ -627,7 +627,7 @@ export class DAWCore {
   }
 
   suggestChords(): Chord[] {
-    const _state = this?.intelligence.getState();
+    const state = this?.intelligence.getState();
     return this?.intelligence.suggestChords(
       state?.currentKey,
       state?.currentMode,
@@ -636,28 +636,28 @@ export class DAWCore {
   }
 
   analyzeMix(): MixSuggestion[] {
-    const _trackData = this?.state.tracks?.map((t) => ({
-      id: t?.id,
-      volume: t?.volume,
-      pan: t?.pan,
-      type: t?.type,
+    const trackData = this?.state.tracks?.map((t) => ({
+      id: t.id,
+      volume: t.volume,
+      pan: t.pan,
+      type: t.type,
     }));
     return this?.intelligence.analyzeMix(trackData);
   }
 
   suggestArrangement(): void {
-    const _tempo = this?.transport.getState().tempoMap[0]?.tempo || 120;
-    const _durationSeconds =
+    const tempo = this?.transport.getState().tempoMap[0]?.tempo || 120;
+    const durationSeconds =
       this?.project.getState().currentProject?.duration || 180;
-    const _totalBars = Math?.floor((durationSeconds * tempo) / 60 / 4);
+    const totalBars = Math?.floor((durationSeconds * tempo) / 60 / 4);
     this?.intelligence.suggestArrangement(totalBars);
   }
 
   newProject(name?: string): void {
     this?.project.createNew(name);
-    this?.state.tracks = [];
-    this?.state.selectedTrackIds = [];
-    this?.state.focusedTrackId = null;
+    this.state.tracks = [];
+    this.state.selectedTrackIds = [];
+    this.state.focusedTrackId = null;
     this?.history.clear();
 
     this?.routing.addNode({
@@ -683,7 +683,7 @@ export class DAWCore {
   }
 
   private getNextTrackColor(): string {
-    const _colors = [
+    const colors = [
       "#3b82f6",
       "#10b981",
       "#f59e0b",
@@ -733,4 +733,4 @@ export class DAWCore {
   }
 }
 
-export const _dawCore = new DAWCore();
+export const dawCore = new DAWCore();

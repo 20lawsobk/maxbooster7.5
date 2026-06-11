@@ -55,11 +55,11 @@ export interface UseOfflineReturn extends OfflineState {
 
 export function useOffline(): UseOfflineReturn {
   const [state, setState] = useState<OfflineState>({
-    isOnline: navigator?.onLine,
+    isOnline: navigator.onLine,
     isOffline: !navigator?.onLine,
     isReconnecting: false,
     isSyncing: false,
-    connectionQuality: navigator?.onLine ? "good" : "offline",
+    connectionQuality: navigator.onLine ? "good" : "offline",
     syncStatus: "idle",
     syncProgress: {
       total: 0,
@@ -75,14 +75,14 @@ export function useOffline(): UseOfflineReturn {
     lastSyncAt: null,
   });
 
-  const _loadStats = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     try {
-      const _stats = await offlineQueue?.getStats();
+      const stats = await offlineQueue?.getStats();
       setState((prev) => ({
         ...prev,
-        pendingCount: stats?.pending + stats?.syncing,
-        failedCount: stats?.failed,
-        conflictCount: stats?.conflict,
+        pendingCount: stats.pending + stats?.syncing,
+        failedCount: stats.failed,
+        conflictCount: stats.conflict,
       }));
     } catch (error) {
       logger?.error("[useOffline] Failed to load stats:", error);
@@ -92,7 +92,7 @@ export function useOffline(): UseOfflineReturn {
   useEffect(() => {
     loadStats();
 
-    const _handleOnline = () => {
+    const handleOnline = () => {
       setState((prev) => ({
         ...prev,
         isOnline: true,
@@ -107,7 +107,7 @@ export function useOffline(): UseOfflineReturn {
       });
     };
 
-    const _handleOffline = () => {
+    const handleOffline = () => {
       setState((prev) => ({
         ...prev,
         isOnline: false,
@@ -120,10 +120,10 @@ export function useOffline(): UseOfflineReturn {
     window?.addEventListener("online", handleOnline);
     window?.addEventListener("offline", handleOffline);
 
-    const _connection = (navigator as Record<string, unknown>).connection;
+    const connection = (navigator as Record<string, unknown>).connection;
     if (connection) {
-      const _handleConnectionChange = () => {
-        const _effectiveType = connection?.effectiveType;
+      const handleConnectionChange = () => {
+        const effectiveType = connection?.effectiveType;
         let quality: "excellent" | "good" | "slow" | "offline";
         if (!navigator?.onLine) {
           quality = "offline";
@@ -139,30 +139,30 @@ export function useOffline(): UseOfflineReturn {
       connection?.addEventListener("change", handleConnectionChange);
     }
 
-    const _unsubStatusChange = syncManager?.on("status-change", (event) => {
+    const unsubStatusChange = syncManager?.on("status-change", (event) => {
       if (event?.status) {
         setState((prev) => ({
           ...prev,
-          syncStatus: event?.status!,
-          isSyncing: event?.status === "syncing",
+          syncStatus: event.status!,
+          isSyncing: event.status === "syncing",
         }));
       }
     });
 
-    const _unsubProgress = syncManager?.on("progress-update", (event) => {
+    const unsubProgress = syncManager?.on("progress-update", (event) => {
       if (event?.progress) {
-        setState((prev) => ({ ...prev, syncProgress: event?.progress! }));
+        setState((prev) => ({ ...prev, syncProgress: event.progress! }));
       }
     });
 
-    const _unsubComplete = syncManager?.on("sync-complete", () => {
-      setState((prev) => ({ ...prev, lastSyncAt: Date?.now() }));
+    const unsubComplete = syncManager?.on("sync-complete", () => {
+      setState((prev) => ({ ...prev, lastSyncAt: Date.now() }));
       loadStats();
     });
 
-    const _unsubQueueChange = offlineQueue?.on("action-added", loadStats);
-    const _unsubQueueRemove = offlineQueue?.on("action-removed", loadStats);
-    const _unsubQueueUpdate = offlineQueue?.on("action-updated", loadStats);
+    const unsubQueueChange = offlineQueue?.on("action-added", loadStats);
+    const unsubQueueRemove = offlineQueue?.on("action-removed", loadStats);
+    const unsubQueueUpdate = offlineQueue?.on("action-updated", loadStats);
 
     return () => {
       window?.removeEventListener("online", handleOnline);
@@ -176,15 +176,15 @@ export function useOffline(): UseOfflineReturn {
     };
   }, [loadStats]);
 
-  const _sync = useCallback(async () => {
+  const sync = useCallback(async () => {
     await syncManager?.sync();
   }, []);
 
-  const _retryFailed = useCallback(async () => {
+  const retryFailed = useCallback(async () => {
     await syncManager?.retryFailed();
   }, []);
 
-  const _queueAction = useCallback(
+  const queueAction = useCallback(
     async <T>(
       type: string,
       payload: T,
@@ -198,11 +198,11 @@ export function useOffline(): UseOfflineReturn {
     [],
   );
 
-  const _getConflicts = useCallback(async () => {
+  const getConflicts = useCallback(async () => {
     return offlineQueue?.getConflicts();
   }, []);
 
-  const _resolveConflict = useCallback(
+  const resolveConflict = useCallback(
     async (
       actionId: string,
       resolution: "local" | "server" | "merged",
@@ -214,7 +214,7 @@ export function useOffline(): UseOfflineReturn {
     [loadStats],
   );
 
-  const _cacheData = useCallback(
+  const cacheData = useCallback(
     async <T>(
       key: string,
       data: T,
@@ -230,14 +230,14 @@ export function useOffline(): UseOfflineReturn {
     [],
   );
 
-  const _getCachedData = useCallback(
+  const getCachedData = useCallback(
     async <T>(key: string): Promise<T | null> => {
       return offlineCache?.get<T>(key);
     },
     [],
   );
 
-  const _invalidateCache = useCallback(
+  const invalidateCache = useCallback(
     async (
       category?: "analytics" | "dashboard" | "ui" | "user" | "general",
     ) => {

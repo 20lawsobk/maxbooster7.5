@@ -5,7 +5,7 @@
 
 export function detectHookPattern(text: string): string {
   if (!text) return "organic";
-  const _lower = text?.toLowerCase();
+  const lower = text?.toLowerCase();
   if (
     /nobody told|wait until you|nobody sees|can't believe|hidden in|not what you think/.test(
       lower,

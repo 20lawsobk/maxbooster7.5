@@ -1,6 +1,6 @@
 import { promisify } from "util";
 import { exec } from "child_process";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 promisify(exec);
 
@@ -16,7 +16,7 @@ export class TestingSystem {
   private accessibilityTester: AccessibilityTester;
 
   private constructor() {
-    this?.testResults = {
+    this.testResults = {
       overallScore: 0,
       unitTestScore: 0,
       integrationTestScore: 0,
@@ -24,7 +24,7 @@ export class TestingSystem {
       performanceTestScore: 0,
       securityTestScore: 0,
       accessibilityTestScore: 0,
-      lastTest: Date?.now(),
+      lastTest: Date.now(),
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
@@ -38,19 +38,19 @@ export class TestingSystem {
       },
     };
 
-    this?.unitTester = new UnitTester();
-    this?.integrationTester = new IntegrationTester();
-    this?.e2eTester = new E2ETester();
-    this?.performanceTester = new PerformanceTester();
-    this?.securityTester = new SecurityTester();
-    this?.accessibilityTester = new AccessibilityTester();
+    this.unitTester = new UnitTester();
+    this.integrationTester = new IntegrationTester();
+    this.e2eTester = new E2ETester();
+    this.performanceTester = new PerformanceTester();
+    this.securityTester = new SecurityTester();
+    this.accessibilityTester = new AccessibilityTester();
 
     this?.initializeTestingSystem();
   }
 
   public static getInstance(): TestingSystem {
     if (!TestingSystem?.instance) {
-      TestingSystem?.instance = new TestingSystem();
+      TestingSystem.instance = new TestingSystem();
     }
     return TestingSystem?.instance;
   }
@@ -135,57 +135,57 @@ export class TestingSystem {
 
     try {
       // Unit tests
-      const _unitResults = await this?.unitTester.runTests();
-      this?.testResults.unitTestScore = unitResults?.score;
-      this?.testResults.totalTests += unitResults?.totalTests;
-      this?.testResults.passedTests += unitResults?.passedTests;
-      this?.testResults.failedTests += unitResults?.failedTests;
-      this?.testResults.skippedTests += unitResults?.skippedTests;
+      const unitResults = await this?.unitTester.runTests();
+      this.testResults.unitTestScore = unitResults?.score;
+      this.testResults.totalTests += unitResults?.totalTests;
+      this.testResults.passedTests += unitResults?.passedTests;
+      this.testResults.failedTests += unitResults?.failedTests;
+      this.testResults.skippedTests += unitResults?.skippedTests;
       this?.testResults.testSuites?.push(...unitResults?.testSuites);
 
       // Integration tests
-      const _integrationResults = await this?.integrationTester.runTests();
-      this?.testResults.integrationTestScore = integrationResults?.score;
-      this?.testResults.totalTests += integrationResults?.totalTests;
-      this?.testResults.passedTests += integrationResults?.passedTests;
-      this?.testResults.failedTests += integrationResults?.failedTests;
-      this?.testResults.skippedTests += integrationResults?.skippedTests;
+      const integrationResults = await this?.integrationTester.runTests();
+      this.testResults.integrationTestScore = integrationResults?.score;
+      this.testResults.totalTests += integrationResults?.totalTests;
+      this.testResults.passedTests += integrationResults?.passedTests;
+      this.testResults.failedTests += integrationResults?.failedTests;
+      this.testResults.skippedTests += integrationResults?.skippedTests;
       this?.testResults.testSuites?.push(...integrationResults?.testSuites);
 
       // E2E tests
-      const _e2eResults = await this?.e2eTester.runTests();
-      this?.testResults.e2eTestScore = e2eResults?.score;
-      this?.testResults.totalTests += e2eResults?.totalTests;
-      this?.testResults.passedTests += e2eResults?.passedTests;
-      this?.testResults.failedTests += e2eResults?.failedTests;
-      this?.testResults.skippedTests += e2eResults?.skippedTests;
+      const e2eResults = await this?.e2eTester.runTests();
+      this.testResults.e2eTestScore = e2eResults?.score;
+      this.testResults.totalTests += e2eResults?.totalTests;
+      this.testResults.passedTests += e2eResults?.passedTests;
+      this.testResults.failedTests += e2eResults?.failedTests;
+      this.testResults.skippedTests += e2eResults?.skippedTests;
       this?.testResults.testSuites?.push(...e2eResults?.testSuites);
 
       // Performance tests
-      const _performanceResults = await this?.performanceTester.runTests();
-      this?.testResults.performanceTestScore = performanceResults?.score;
-      this?.testResults.totalTests += performanceResults?.totalTests;
-      this?.testResults.passedTests += performanceResults?.passedTests;
-      this?.testResults.failedTests += performanceResults?.failedTests;
-      this?.testResults.skippedTests += performanceResults?.skippedTests;
+      const performanceResults = await this?.performanceTester.runTests();
+      this.testResults.performanceTestScore = performanceResults?.score;
+      this.testResults.totalTests += performanceResults?.totalTests;
+      this.testResults.passedTests += performanceResults?.passedTests;
+      this.testResults.failedTests += performanceResults?.failedTests;
+      this.testResults.skippedTests += performanceResults?.skippedTests;
       this?.testResults.testSuites?.push(...performanceResults?.testSuites);
 
       // Security tests
-      const _securityResults = await this?.securityTester.runTests();
-      this?.testResults.securityTestScore = securityResults?.score;
-      this?.testResults.totalTests += securityResults?.totalTests;
-      this?.testResults.passedTests += securityResults?.passedTests;
-      this?.testResults.failedTests += securityResults?.failedTests;
-      this?.testResults.skippedTests += securityResults?.skippedTests;
+      const securityResults = await this?.securityTester.runTests();
+      this.testResults.securityTestScore = securityResults?.score;
+      this.testResults.totalTests += securityResults?.totalTests;
+      this.testResults.passedTests += securityResults?.passedTests;
+      this.testResults.failedTests += securityResults?.failedTests;
+      this.testResults.skippedTests += securityResults?.skippedTests;
       this?.testResults.testSuites?.push(...securityResults?.testSuites);
 
       // Accessibility tests
-      const _accessibilityResults = await this?.accessibilityTester.runTests();
-      this?.testResults.accessibilityTestScore = accessibilityResults?.score;
-      this?.testResults.totalTests += accessibilityResults?.totalTests;
-      this?.testResults.passedTests += accessibilityResults?.passedTests;
-      this?.testResults.failedTests += accessibilityResults?.failedTests;
-      this?.testResults.skippedTests += accessibilityResults?.skippedTests;
+      const accessibilityResults = await this?.accessibilityTester.runTests();
+      this.testResults.accessibilityTestScore = accessibilityResults?.score;
+      this.testResults.totalTests += accessibilityResults?.totalTests;
+      this.testResults.passedTests += accessibilityResults?.passedTests;
+      this.testResults.failedTests += accessibilityResults?.failedTests;
+      this.testResults.skippedTests += accessibilityResults?.skippedTests;
       this?.testResults.testSuites?.push(...accessibilityResults?.testSuites);
 
       // Calculate overall score
@@ -195,7 +195,7 @@ export class TestingSystem {
       await this?.calculateCoverage();
 
       // Update last test time
-      this?.testResults.lastTest = Date?.now();
+      this.testResults.lastTest = Date?.now();
 
       logger?.info(
         `✅ Test suite completed. Overall score: ${this?.testResults.overallScore}/100`,
@@ -211,8 +211,8 @@ export class TestingSystem {
   // Run unit tests
   private async runUnitTests(): Promise<void> {
     try {
-      const _results = await this?.unitTester.runTests();
-      this?.testResults.unitTestScore = results?.score;
+      const results = await this?.unitTester.runTests();
+      this.testResults.unitTestScore = results?.score;
 
       if (results?.score < 95) {
         logger?.info(`⚠️ Unit test score below threshold: ${results?.score}/100`);
@@ -225,8 +225,8 @@ export class TestingSystem {
   // Run integration tests
   private async runIntegrationTests(): Promise<void> {
     try {
-      const _results = await this?.integrationTester.runTests();
-      this?.testResults.integrationTestScore = results?.score;
+      const results = await this?.integrationTester.runTests();
+      this.testResults.integrationTestScore = results?.score;
 
       if (results?.score < 90) {
         logger?.info(
@@ -241,8 +241,8 @@ export class TestingSystem {
   // Run E2E tests
   private async runE2ETests(): Promise<void> {
     try {
-      const _results = await this?.e2eTester.runTests();
-      this?.testResults.e2eTestScore = results?.score;
+      const results = await this?.e2eTester.runTests();
+      this.testResults.e2eTestScore = results?.score;
 
       if (results?.score < 85) {
         logger?.info(`⚠️ E2E test score below threshold: ${results?.score}/100`);
@@ -255,8 +255,8 @@ export class TestingSystem {
   // Run performance tests
   private async runPerformanceTests(): Promise<void> {
     try {
-      const _results = await this?.performanceTester.runTests();
-      this?.testResults.performanceTestScore = results?.score;
+      const results = await this?.performanceTester.runTests();
+      this.testResults.performanceTestScore = results?.score;
 
       if (results?.score < 80) {
         logger?.info(
@@ -271,8 +271,8 @@ export class TestingSystem {
   // Run security tests
   private async runSecurityTests(): Promise<void> {
     try {
-      const _results = await this?.securityTester.runTests();
-      this?.testResults.securityTestScore = results?.score;
+      const results = await this?.securityTester.runTests();
+      this.testResults.securityTestScore = results?.score;
 
       if (results?.score < 95) {
         logger?.info(
@@ -286,16 +286,16 @@ export class TestingSystem {
 
   // Calculate overall score
   private calculateOverallScore(): void {
-    const _weights = {
-      unit: 0?.25,
-      integration: 0?.25,
-      e2e: 0?.2,
-      performance: 0?.15,
-      security: 0?.1,
-      accessibility: 0?.05,
+    const weights = {
+      unit: 0.25,
+      integration: 0.25,
+      e2e: 0.2,
+      performance: 0.15,
+      security: 0.1,
+      accessibility: 0.05,
     };
 
-    this?.testResults.overallScore = Math?.round(
+    this.testResults.overallScore = Math?.round(
       this?.testResults.unitTestScore * weights?.unit +
         this?.testResults.integrationTestScore * weights?.integration +
         this?.testResults.e2eTestScore * weights?.e2e +
@@ -309,8 +309,8 @@ export class TestingSystem {
   private async calculateCoverage(): Promise<void> {
     try {
       // Run coverage analysis
-      const _coverage = await this?.runCoverageAnalysis();
-      this?.testResults.coverage = coverage;
+      const coverage = await this?.runCoverageAnalysis();
+      this.testResults.coverage = coverage;
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Coverage calculation error:");
     }
@@ -332,8 +332,8 @@ export class TestingSystem {
       // Analyze test suites to estimate coverage
       for (const suite of this?.testResults.testSuites) {
         // Each test covers approximately 50 statements, 20 branches, 10 functions, 40 lines
-        const _testCount = suite?.tests.length;
-        const _passedCount = suite?.tests.filter(
+        const testCount = suite?.tests.length;
+        const passedCount = suite?.tests.filter(
           (t) => t?.status === "passed",
         ).length;
 
@@ -351,20 +351,20 @@ export class TestingSystem {
       }
 
       // Calculate percentages, avoiding division by zero
-      const _statementsPercent =
+      const statementsPercent =
         totalStatements > 0 ? (coveredStatements / totalStatements) * 100 : 0;
-      const _branchesPercent =
+      const branchesPercent =
         totalBranches > 0 ? (coveredBranches / totalBranches) * 100 : 0;
-      const _functionsPercent =
+      const functionsPercent =
         totalFunctions > 0 ? (coveredFunctions / totalFunctions) * 100 : 0;
-      const _linesPercent =
+      const linesPercent =
         totalLines > 0 ? (coveredLines / totalLines) * 100 : 0;
 
       return {
-        statements: Math?.round(statementsPercent * 10) / 10,
-        branches: Math?.round(branchesPercent * 10) / 10,
-        functions: Math?.round(functionsPercent * 10) / 10,
-        lines: Math?.round(linesPercent * 10) / 10,
+        statements: Math.round(statementsPercent * 10) / 10,
+        branches: Math.round(branchesPercent * 10) / 10,
+        functions: Math.round(functionsPercent * 10) / 10,
+        lines: Math.round(linesPercent * 10) / 10,
       };
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Coverage analysis error:");
@@ -424,7 +424,7 @@ class UnitTester {
 
     try {
       // Test authentication functions
-      const _authTests = await this?.testAuthentication();
+      const authTests = await this?.testAuthentication();
       testSuites?.push(authTests);
       totalTests += authTests?.tests.length;
       passedTests += authTests?.tests.filter(
@@ -438,7 +438,7 @@ class UnitTester {
       ).length;
 
       // Test database functions
-      const _dbTests = await this?.testDatabase();
+      const dbTests = await this?.testDatabase();
       testSuites?.push(dbTests);
       totalTests += dbTests?.tests.length;
       passedTests += dbTests?.tests.filter((t) => t?.status === "passed").length;
@@ -448,7 +448,7 @@ class UnitTester {
       ).length;
 
       // Test API functions
-      const _apiTests = await this?.testAPI();
+      const apiTests = await this?.testAPI();
       testSuites?.push(apiTests);
       totalTests += apiTests?.tests.length;
       passedTests += apiTests?.tests.filter((t) => t?.status === "passed").length;
@@ -458,7 +458,7 @@ class UnitTester {
       ).length;
 
       // Test utility functions
-      const _utilTests = await this?.testUtilities();
+      const utilTests = await this?.testUtilities();
       testSuites?.push(utilTests);
       totalTests += utilTests?.tests.length;
       passedTests += utilTests?.tests.filter(
@@ -471,7 +471,7 @@ class UnitTester {
         (t) => t?.status === "skipped",
       ).length;
 
-      const _score =
+      const score =
         totalTests > 0 ? Math?.round((passedTests / totalTests) * 100) : 0;
 
       return {
@@ -544,7 +544,7 @@ class UnitTester {
     return {
       name: "Authentication Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 
@@ -597,7 +597,7 @@ class UnitTester {
     return {
       name: "Database Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 
@@ -644,7 +644,7 @@ class UnitTester {
     return {
       name: "API Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 
@@ -685,7 +685,7 @@ class UnitTester {
     return {
       name: "Utility Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 }
@@ -701,7 +701,7 @@ class IntegrationTester {
 
     try {
       // Test authentication flow
-      const _authFlowTests = await this?.testAuthenticationFlow();
+      const authFlowTests = await this?.testAuthenticationFlow();
       testSuites?.push(authFlowTests);
       totalTests += authFlowTests?.tests.length;
       passedTests += authFlowTests?.tests.filter(
@@ -715,7 +715,7 @@ class IntegrationTester {
       ).length;
 
       // Test project management flow
-      const _projectFlowTests = await this?.testProjectFlow();
+      const projectFlowTests = await this?.testProjectFlow();
       testSuites?.push(projectFlowTests);
       totalTests += projectFlowTests?.tests.length;
       passedTests += projectFlowTests?.tests.filter(
@@ -729,7 +729,7 @@ class IntegrationTester {
       ).length;
 
       // Test analytics flow
-      const _analyticsFlowTests = await this?.testAnalyticsFlow();
+      const analyticsFlowTests = await this?.testAnalyticsFlow();
       testSuites?.push(analyticsFlowTests);
       totalTests += analyticsFlowTests?.tests.length;
       passedTests += analyticsFlowTests?.tests.filter(
@@ -742,7 +742,7 @@ class IntegrationTester {
         (t) => t?.status === "skipped",
       ).length;
 
-      const _score =
+      const score =
         totalTests > 0 ? Math?.round((passedTests / totalTests) * 100) : 0;
 
       return {
@@ -797,7 +797,7 @@ class IntegrationTester {
     return {
       name: "Authentication Flow Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 
@@ -832,7 +832,7 @@ class IntegrationTester {
     return {
       name: "Project Flow Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 
@@ -867,7 +867,7 @@ class IntegrationTester {
     return {
       name: "Analytics Flow Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 }
@@ -883,7 +883,7 @@ class E2ETester {
 
     try {
       // Test user journey
-      const _userJourneyTests = await this?.testUserJourney();
+      const userJourneyTests = await this?.testUserJourney();
       testSuites?.push(userJourneyTests);
       totalTests += userJourneyTests?.tests.length;
       passedTests += userJourneyTests?.tests.filter(
@@ -897,7 +897,7 @@ class E2ETester {
       ).length;
 
       // Test admin journey
-      const _adminJourneyTests = await this?.testAdminJourney();
+      const adminJourneyTests = await this?.testAdminJourney();
       testSuites?.push(adminJourneyTests);
       totalTests += adminJourneyTests?.tests.length;
       passedTests += adminJourneyTests?.tests.filter(
@@ -910,7 +910,7 @@ class E2ETester {
         (t) => t?.status === "skipped",
       ).length;
 
-      const _score =
+      const score =
         totalTests > 0 ? Math?.round((passedTests / totalTests) * 100) : 0;
 
       return {
@@ -965,7 +965,7 @@ class E2ETester {
     return {
       name: "User Journey Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 
@@ -1000,7 +1000,7 @@ class E2ETester {
     return {
       name: "Admin Journey Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 }
@@ -1016,7 +1016,7 @@ class PerformanceTester {
 
     try {
       // Test load performance
-      const _loadTests = await this?.testLoadPerformance();
+      const loadTests = await this?.testLoadPerformance();
       testSuites?.push(loadTests);
       totalTests += loadTests?.tests.length;
       passedTests += loadTests?.tests.filter(
@@ -1030,7 +1030,7 @@ class PerformanceTester {
       ).length;
 
       // Test stress performance
-      const _stressTests = await this?.testStressPerformance();
+      const stressTests = await this?.testStressPerformance();
       testSuites?.push(stressTests);
       totalTests += stressTests?.tests.length;
       passedTests += stressTests?.tests.filter(
@@ -1043,7 +1043,7 @@ class PerformanceTester {
         (t) => t?.status === "skipped",
       ).length;
 
-      const _score =
+      const score =
         totalTests > 0 ? Math?.round((passedTests / totalTests) * 100) : 0;
 
       return {
@@ -1098,7 +1098,7 @@ class PerformanceTester {
     return {
       name: "Load Performance Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 
@@ -1133,7 +1133,7 @@ class PerformanceTester {
     return {
       name: "Stress Performance Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 }
@@ -1149,7 +1149,7 @@ class SecurityTester {
 
     try {
       // Test authentication security
-      const _authSecurityTests = await this?.testAuthenticationSecurity();
+      const authSecurityTests = await this?.testAuthenticationSecurity();
       testSuites?.push(authSecurityTests);
       totalTests += authSecurityTests?.tests.length;
       passedTests += authSecurityTests?.tests.filter(
@@ -1163,7 +1163,7 @@ class SecurityTester {
       ).length;
 
       // Test data security
-      const _dataSecurityTests = await this?.testDataSecurity();
+      const dataSecurityTests = await this?.testDataSecurity();
       testSuites?.push(dataSecurityTests);
       totalTests += dataSecurityTests?.tests.length;
       passedTests += dataSecurityTests?.tests.filter(
@@ -1176,7 +1176,7 @@ class SecurityTester {
         (t) => t?.status === "skipped",
       ).length;
 
-      const _score =
+      const score =
         totalTests > 0 ? Math?.round((passedTests / totalTests) * 100) : 0;
 
       return {
@@ -1237,7 +1237,7 @@ class SecurityTester {
     return {
       name: "Authentication Security Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 
@@ -1272,7 +1272,7 @@ class SecurityTester {
     return {
       name: "Data Security Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 }
@@ -1288,7 +1288,7 @@ class AccessibilityTester {
 
     try {
       // Test WCAG compliance
-      const _wcagTests = await this?.testWCAGCompliance();
+      const wcagTests = await this?.testWCAGCompliance();
       testSuites?.push(wcagTests);
       totalTests += wcagTests?.tests.length;
       passedTests += wcagTests?.tests.filter(
@@ -1301,7 +1301,7 @@ class AccessibilityTester {
         (t) => t?.status === "skipped",
       ).length;
 
-      const _score =
+      const score =
         totalTests > 0 ? Math?.round((passedTests / totalTests) * 100) : 0;
 
       return {
@@ -1362,7 +1362,7 @@ class AccessibilityTester {
     return {
       name: "WCAG Compliance Tests",
       tests,
-      duration: tests?.reduce((sum, test) => sum + test?.duration, 0),
+      duration: tests.reduce((sum, test) => sum + test?.duration, 0),
     };
   }
 }

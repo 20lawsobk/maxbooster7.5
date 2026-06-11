@@ -1,7 +1,7 @@
 import http from "http";
 import https from "https";
 import { EventEmitter } from "events";
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 
 export interface LoadTestConfig {
   targetUrl: string;
@@ -51,16 +51,16 @@ export class LoadTestFramework extends EventEmitter {
 
   async runLoadTest(config: LoadTestConfig): Promise<LoadTestResult> {
     this?.reset();
-    this?.startTime = Date?.now();
+    this.startTime = Date?.now();
 
-    const _usersPerBatch = Math?.min(config?.concurrentUsers, 100);
-    const _batches = Math?.ceil(config?.concurrentUsers / usersPerBatch);
-    const _delayBetweenBatches = (config?.rampUpSeconds * 1000) / batches;
+    const usersPerBatch = Math?.min(config?.concurrentUsers, 100);
+    const batches = Math?.ceil(config?.concurrentUsers / usersPerBatch);
+    const delayBetweenBatches = (config?.rampUpSeconds * 1000) / batches;
 
     const promises: Promise<void>[] = [];
 
     for (let batch = 0; batch < batches; batch++) {
-      const _usersInThisBatch = Math?.min(
+      const usersInThisBatch = Math?.min(
         usersPerBatch,
         config?.concurrentUsers - batch * usersPerBatch,
       );
@@ -84,18 +84,18 @@ export class LoadTestFramework extends EventEmitter {
       await this?.makeRequest(config);
       if (config?.thinkTimeMs > 0) {
         await this?.sleep(
-          config?.thinkTimeMs + Math?.random() * config?.thinkTimeMs * 0?.5,
+          config?.thinkTimeMs + Math?.random() * config?.thinkTimeMs * 0.5,
         );
       }
     }
   }
 
   private async makeRequest(config: LoadTestConfig): Promise<void> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
-      const _response = await this?.httpRequest(config);
-      const _duration = Date?.now() - startTime;
+      const response = await this?.httpRequest(config);
+      const duration = Date?.now() - startTime;
 
       this?.responseTimes.push(duration);
 
@@ -104,17 +104,17 @@ export class LoadTestFramework extends EventEmitter {
         response?.statusCode >= 200 &&
         response?.statusCode < 400
       ) {
-        this?.successCount++;
+        this.successCount++;
       } else {
-        this?.failCount++;
-        const _errorKey = `HTTP ${response?.statusCode}`;
+        this.failCount++;
+        const errorKey = `HTTP ${response?.statusCode}`;
         this?.errors.set(errorKey, (this?.errors.get(errorKey) || 0) + 1);
       }
     } catch (error) {
-      const _duration = Date?.now() - startTime;
+      const duration = Date?.now() - startTime;
       this?.responseTimes.push(duration);
-      this?.failCount++;
-      const _errorKey = error?.code || error?.message || "Unknown";
+      this.failCount++;
+      const errorKey = error?.code || error?.message || "Unknown";
       this?.errors.set(errorKey, (this?.errors.get(errorKey) || 0) + 1);
     }
   }
@@ -123,15 +123,15 @@ export class LoadTestFramework extends EventEmitter {
     config: LoadTestConfig,
   ): Promise<{ statusCode?: number; body: string }> {
     return new Promise((resolve, reject) => {
-      const _url = new URL(config?.endpoint, config?.targetUrl);
-      const _isHttps = url?.protocol === "https:";
-      const _lib = isHttps ? https : http;
+      const url = new URL(config?.endpoint, config?.targetUrl);
+      const isHttps = url?.protocol === "https:";
+      const lib = isHttps ? https : http;
 
-      const options: http?.RequestOptions = {
-        hostname: url?.hostname,
-        port: url?.port || (isHttps ? 443 : 80),
-        path: url?.pathname + url?.search,
-        method: config?.method,
+      const options: http.RequestOptions = {
+        hostname: url.hostname,
+        port: url.port || (isHttps ? 443 : 80),
+        path: url.pathname + url?.search,
+        method: config.method,
         headers: {
           "Content-Type": "application/json",
           ...config?.headers,
@@ -139,10 +139,10 @@ export class LoadTestFramework extends EventEmitter {
         timeout: 30000,
       };
 
-      const _req = lib?.request(options, (res) => {
+      const req = lib?.request(options, (res) => {
         let body = "";
         res?.on("data", (chunk) => (body += chunk));
-        res?.on("end", () => resolve({ statusCode: res?.statusCode, body }));
+        res?.on("end", () => resolve({ statusCode: res.statusCode, body }));
       });
 
       req?.on("error", reject);
@@ -159,46 +159,46 @@ export class LoadTestFramework extends EventEmitter {
   }
 
   private calculateResults(): LoadTestResult {
-    const _sortedTimes = [...this?.responseTimes].sort((a, b) => a - b);
-    const _totalRequests = this?.successCount + this?.failCount;
-    const _durationMs = Date?.now() - this?.startTime;
+    const sortedTimes = [...this?.responseTimes].sort((a, b) => a - b);
+    const totalRequests = this?.successCount + this?.failCount;
+    const durationMs = Date?.now() - this?.startTime;
 
-    const _memoryUsage = process?.memoryUsage();
-    const _cpuUsage = process?.cpuUsage();
+    const memoryUsage = process?.memoryUsage();
+    const cpuUsage = process?.cpuUsage();
 
     return {
       totalRequests,
-      successfulRequests: this?.successCount,
-      failedRequests: this?.failCount,
+      successfulRequests: this.successCount,
+      failedRequests: this.failCount,
       avgResponseTimeMs:
         sortedTimes?.length > 0
           ? sortedTimes?.reduce((a, b) => a + b, 0) / sortedTimes?.length
           : 0,
       minResponseTimeMs: sortedTimes[0] || 0,
       maxResponseTimeMs: sortedTimes[sortedTimes?.length - 1] || 0,
-      p50ResponseTimeMs: this?.percentile(sortedTimes, 50),
-      p95ResponseTimeMs: this?.percentile(sortedTimes, 95),
-      p99ResponseTimeMs: this?.percentile(sortedTimes, 99),
+      p50ResponseTimeMs: this.percentile(sortedTimes, 50),
+      p95ResponseTimeMs: this.percentile(sortedTimes, 95),
+      p99ResponseTimeMs: this.percentile(sortedTimes, 99),
       requestsPerSecond: totalRequests / (durationMs / 1000),
       errorRate: totalRequests > 0 ? this?.failCount / totalRequests : 0,
-      errors: this?.errors,
+      errors: this.errors,
       durationMs,
-      memoryUsageMB: memoryUsage?.heapUsed / (1024 * 1024),
+      memoryUsageMB: memoryUsage.heapUsed / (1024 * 1024),
       cpuUsagePercent: (cpuUsage?.user + cpuUsage?.system) / 1000000,
     };
   }
 
   private percentile(arr: number[], p: number): number {
     if (arr?.length === 0) return 0;
-    const _index = Math?.ceil((p / 100) * arr?.length) - 1;
+    const index = Math?.ceil((p / 100) * arr?.length) - 1;
     return arr[Math?.max(0, index)];
   }
 
   private reset(): void {
-    this?.responseTimes = [];
-    this?.errors = new Map();
-    this?.successCount = 0;
-    this?.failCount = 0;
+    this.responseTimes = [];
+    this.errors = new Map();
+    this.successCount = 0;
+    this.failCount = 0;
   }
 
   private sleep(ms: number): Promise<void> {
@@ -232,37 +232,37 @@ export class ScalabilityTester {
 
     for (const profile of this?.scaleProfiles) {
       logger?.info(`Testing at ${profile?.name} scale`, {
-        simulatedUsers: this?.formatNumber(profile?.multiplier),
+        simulatedUsers: this.formatNumber(profile?.multiplier),
       });
 
-      const _actualConcurrentUsers = Math?.min(profile?.users, 1000);
+      const actualConcurrentUsers = Math?.min(profile?.users, 1000);
 
       const config: LoadTestConfig = {
         ...baseConfig,
         concurrentUsers: actualConcurrentUsers,
-        requestsPerUser: Math?.min(
+        requestsPerUser: Math.min(
           10,
           Math?.ceil(profile?.multiplier / actualConcurrentUsers / 1000),
         ),
       };
 
       try {
-        const _testResult = await this?.framework.runLoadTest(config);
+        const testResult = await this?.framework.runLoadTest(config);
 
-        const _scaledResult = this?.projectToScale(
+        const scaledResult = this?.projectToScale(
           testResult,
           profile?.multiplier,
         );
 
-        const _analysis = this?.analyzeResults(scaledResult, profile?.multiplier);
+        const analysis = this?.analyzeResults(scaledResult, profile?.multiplier);
 
         results?.push({
-          scale: profile?.name,
-          simulatedUsers: profile?.multiplier,
+          scale: profile.name,
+          simulatedUsers: profile.multiplier,
           results: scaledResult,
-          bottlenecks: analysis?.bottlenecks,
-          recommendations: analysis?.recommendations,
-          passed: analysis?.passed,
+          bottlenecks: analysis.bottlenecks,
+          recommendations: analysis.recommendations,
+          passed: analysis.passed,
         });
 
         this?.printResults(results[results?.length - 1]);
@@ -276,11 +276,11 @@ export class ScalabilityTester {
         if (profile?.name === maxScale) break;
       } catch (error) {
         logger?.warn(`Test failed at ${profile?.name} scale`, {
-          error: error?.message,
+          error: error.message,
         });
         results?.push({
-          scale: profile?.name,
-          simulatedUsers: profile?.multiplier,
+          scale: profile.name,
+          simulatedUsers: profile.multiplier,
           results: {} as LoadTestResult,
           bottlenecks: ["Test execution failure"],
           recommendations: ["Review error logs and fix issues"],
@@ -296,24 +296,24 @@ export class ScalabilityTester {
     result: LoadTestResult,
     targetScale: number,
   ): LoadTestResult {
-    const _actualScale = result?.totalRequests;
-    const _scaleFactor = targetScale / actualScale;
+    const actualScale = result?.totalRequests;
+    const scaleFactor = targetScale / actualScale;
 
-    const _degradationFactor = 1 + Math?.log10(scaleFactor) * 0?.1;
+    const degradationFactor = 1 + Math?.log10(scaleFactor) * 0.1;
 
     return {
       ...result,
-      totalRequests: Math?.round(result?.totalRequests * scaleFactor),
-      successfulRequests: Math?.round(result?.successfulRequests * scaleFactor),
-      failedRequests: Math?.round(
+      totalRequests: Math.round(result?.totalRequests * scaleFactor),
+      successfulRequests: Math.round(result?.successfulRequests * scaleFactor),
+      failedRequests: Math.round(
         result?.failedRequests * scaleFactor * degradationFactor,
       ),
-      avgResponseTimeMs: result?.avgResponseTimeMs * degradationFactor,
-      p95ResponseTimeMs: result?.p95ResponseTimeMs * degradationFactor * 1?.5,
-      p99ResponseTimeMs: result?.p99ResponseTimeMs * degradationFactor * 2,
+      avgResponseTimeMs: result.avgResponseTimeMs * degradationFactor,
+      p95ResponseTimeMs: result.p95ResponseTimeMs * degradationFactor * 1.5,
+      p99ResponseTimeMs: result.p99ResponseTimeMs * degradationFactor * 2,
       requestsPerSecond:
         result?.requestsPerSecond * Math?.min(scaleFactor, 1000000),
-      errorRate: Math?.min(0?.99, result?.errorRate * degradationFactor),
+      errorRate: Math.min(0.99, result?.errorRate * degradationFactor),
     };
   }
 
@@ -341,7 +341,7 @@ export class ScalabilityTester {
       recommendations?.push("Implement circuit breakers for slow services");
     }
 
-    if (result?.errorRate > 0?.01) {
+    if (result?.errorRate > 0.01) {
       bottlenecks?.push(
         `High error rate: ${(result?.errorRate * 100).toFixed(2)}%`,
       );
@@ -350,7 +350,7 @@ export class ScalabilityTester {
       passed = false;
     }
 
-    if (result?.errorRate > 0?.05) {
+    if (result?.errorRate > 0.05) {
       passed = false;
     }
 
@@ -379,16 +379,16 @@ export class ScalabilityTester {
 
   private printResults(result: ScaleTestResult): void {
     logger?.info(`Results for ${result?.scale} scale`, {
-      simulatedUsers: this?.formatNumber(result?.simulatedUsers),
-      totalRequests: this?.formatNumber(result?.results.totalRequests),
+      simulatedUsers: this.formatNumber(result?.simulatedUsers),
+      totalRequests: this.formatNumber(result?.results.totalRequests),
       successRate: `${((1 - result?.results.errorRate) * 100).toFixed(2)}%`,
       avgResponse: `${result?.results.avgResponseTimeMs?.toFixed(2) || "N/A"}ms`,
       p95Response: `${result?.results.p95ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
       p99Response: `${result?.results.p99ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
       throughput: `${this?.formatNumber(Math?.round(result?.results.requestsPerSecond || 0))} req/s`,
-      status: result?.passed ? "PASSED" : "NEEDS OPTIMIZATION",
-      bottlenecks: result?.bottlenecks,
-      recommendations: result?.recommendations,
+      status: result.passed ? "PASSED" : "NEEDS OPTIMIZATION",
+      bottlenecks: result.bottlenecks,
+      recommendations: result.recommendations,
     });
   }
 
@@ -405,9 +405,9 @@ export async function runComprehensiveLoadTest(
   baseUrl: string,
   authCookie: string,
 ): Promise<void> {
-  const _tester = new ScalabilityTester();
+  const tester = new ScalabilityTester();
 
-  const _endpoints = [
+  const endpoints = [
     { name: "Health Check", endpoint: "/api/health", method: "GET" as const },
     { name: "AI Services", endpoint: "/api/ai/health", method: "GET" as const },
     {
@@ -428,10 +428,10 @@ export async function runComprehensiveLoadTest(
   for (const ep of endpoints) {
     logger?.info(`Testing endpoint: ${ep?.name}`);
 
-    const _results = await tester?.runProgressiveScaleTest({
+    const results = await tester?.runProgressiveScaleTest({
       targetUrl: baseUrl,
-      endpoint: ep?.endpoint,
-      method: ep?.method,
+      endpoint: ep.endpoint,
+      method: ep.method,
       headers: { Cookie: authCookie },
       rampUpSeconds: 5,
       thinkTimeMs: 100,
@@ -444,11 +444,11 @@ export async function runComprehensiveLoadTest(
   logger?.info("FINAL SUMMARY");
 
   for (const [endpoint, results] of allResults?.entries()) {
-    const _lastResult = results[results?.length - 1];
+    const lastResult = results[results?.length - 1];
     logger?.info(`Endpoint summary: ${endpoint}`, {
-      maxScaleTested: lastResult?.scale,
+      maxScaleTested: lastResult.scale,
       simulatedUsers: tester["formatNumber"](lastResult?.simulatedUsers),
-      status: lastResult?.passed ? "PASSED" : "NEEDS WORK",
+      status: lastResult.passed ? "PASSED" : "NEEDS WORK",
     });
   }
 }

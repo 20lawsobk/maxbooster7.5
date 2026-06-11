@@ -3,41 +3,41 @@ import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { randomBytes } from "crypto";
 import { Request } from "express";
-import { storageService } from "../services/storageService?.js";
-import { logger } from "../logger?.js";
-import { sanitizeFilename, verifyMagicBytes, UPLOAD_LIMITS, type UploadCategory, validateFileBuffer, createUploadValidator } from "./uploadSecurity?.js";
+import { storageService } from "../services/storageService.js";
+import { logger } from "../logger.js";
+import { sanitizeFilename, verifyMagicBytes, UPLOAD_LIMITS, type UploadCategory, validateFileBuffer, createUploadValidator } from "./uploadSecurity.js";
 import {
   processImage,
   processAvatarImage,
   processArtworkImage,
   isImageMimeType,
   type ProcessedImage,
-} from "../services/imageProcessor?.js";
+} from "../services/imageProcessor.js";
 
-const _memoryStorage = multer?.memoryStorage();
+const memoryStorage = multer?.memoryStorage();
 
 // ── General-purpose disk storage (replaces memoryStorage for the large `upload`
 // instance — prevents OOM crashes on files up to 500 MB) ──────────────────────
-const _GENERAL_UPLOAD_DIR = path?.join(process?.cwd(), "uploads", "general_temp");
+const GENERAL_UPLOAD_DIR = path?.join(process?.cwd(), "uploads", "general_temp");
 if (!existsSync(GENERAL_UPLOAD_DIR))
   mkdirSync(GENERAL_UPLOAD_DIR, { recursive: true });
 
-const _generalDiskStorage = multer?.diskStorage({
+const generalDiskStorage = multer?.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, GENERAL_UPLOAD_DIR);
   },
   filename: (_req, file, cb) => {
-    const _ext = path?.extname(file?.originalname).toLowerCase() || ".bin";
+    const ext = path?.extname(file?.originalname).toLowerCase() || ".bin";
     cb(null, `upload_${randomBytes(8).toString("hex")}${ext}`);
   },
 });
 
-const _fileFilter = (
+const fileFilter = (
   _req: Request,
-  file: Express?.Multer.File,
-  cb: multer?.FileFilterCallback,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
 ) => {
-  const _allowedMimes = [
+  const allowedMimes = [
     "audio/mpeg",
     "audio/wav",
     "audio/wave",
@@ -66,7 +66,7 @@ const _fileFilter = (
     "application/pdf",
   ];
 
-  const _allowedExts = [
+  const allowedExts = [
     ".mp3",
     ".wav",
     ".ogg",
@@ -85,7 +85,7 @@ const _fileFilter = (
     ".webp",
     ".pdf",
   ];
-  const _ext = path?.extname(file?.originalname).toLowerCase();
+  const ext = path?.extname(file?.originalname).toLowerCase();
 
   if (ext === ".svg") {
     cb(new Error("SVG files are not allowed for security reasons"));
@@ -101,7 +101,7 @@ const _fileFilter = (
   }
 };
 
-export const _upload = multer({
+export const upload = multer({
   storage: generalDiskStorage, // disk — avoids OOM on files up to 500 MB
   fileFilter,
   limits: {
@@ -110,14 +110,14 @@ export const _upload = multer({
   },
 });
 
-export const _avatarUpload = multer({
+export const avatarUpload = multer({
   storage: memoryStorage,
   limits: {
-    fileSize: UPLOAD_LIMITS?.avatar.maxSize,
+    fileSize: UPLOAD_LIMITS.avatar.maxSize,
     files: 1,
   },
   fileFilter: (_req, file, cb) => {
-    const _ext = path?.extname(file?.originalname).toLowerCase();
+    const ext = path?.extname(file?.originalname).toLowerCase();
     if (ext === ".svg") {
       cb(new Error("SVG files are not allowed for avatars"));
       return;
@@ -134,14 +134,14 @@ export const _avatarUpload = multer({
   },
 });
 
-export const _artworkUpload = multer({
+export const artworkUpload = multer({
   storage: memoryStorage,
   limits: {
-    fileSize: UPLOAD_LIMITS?.artwork.maxSize,
+    fileSize: UPLOAD_LIMITS.artwork.maxSize,
     files: 1,
   },
   fileFilter: (_req, file, cb) => {
-    const _ext = path?.extname(file?.originalname).toLowerCase();
+    const ext = path?.extname(file?.originalname).toLowerCase();
     if (ext === ".svg") {
       cb(new Error("SVG files are not allowed for artwork"));
       return;
@@ -158,10 +158,10 @@ export const _artworkUpload = multer({
   },
 });
 
-export const _audioUpload = multer({
+export const audioUpload = multer({
   storage: memoryStorage,
   limits: {
-    fileSize: UPLOAD_LIMITS?.audio.maxSize,
+    fileSize: UPLOAD_LIMITS.audio.maxSize,
     files: 10,
   },
   fileFilter: (_req, file, cb) => {
@@ -178,21 +178,21 @@ export const _audioUpload = multer({
 });
 
 // ── Disk-based upload for music video / voice synthesis (needs file paths for FFmpeg) ──
-const _MEDIA_UPLOAD_DIR = path?.join(process?.cwd(), "uploads", "media_temp");
+const MEDIA_UPLOAD_DIR = path?.join(process?.cwd(), "uploads", "media_temp");
 if (!existsSync(MEDIA_UPLOAD_DIR))
   mkdirSync(MEDIA_UPLOAD_DIR, { recursive: true });
 
-const _mediaDiskStorage = multer?.diskStorage({
+const mediaDiskStorage = multer?.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, MEDIA_UPLOAD_DIR);
   },
   filename: (_req, file, cb) => {
-    const _ext = path?.extname(file?.originalname).toLowerCase() || ".bin";
+    const ext = path?.extname(file?.originalname).toLowerCase() || ".bin";
     cb(null, `media_${randomBytes(8).toString("hex")}${ext}`);
   },
 });
 
-const _MEDIA_ALLOWED_MIMES = [
+const MEDIA_ALLOWED_MIMES = [
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -217,7 +217,7 @@ const _MEDIA_ALLOWED_MIMES = [
   "audio/x-aiff",
 ];
 
-export const _mediaUpload = multer({
+export const mediaUpload = multer({
   storage: mediaDiskStorage,
   limits: { fileSize: 300 * 1024 * 1024, files: 15 },
   fileFilter: (_req, file, cb) => {
@@ -301,10 +301,10 @@ const MIME_EXT_MAP: Record<string, readonly string[]> = {
   "application/json": [".json"],
   "application/xml": [".xml"],
   "text/xml": [".xml"],
-  "application/vnd?.openxmlformats-officedocument?.spreadsheetml.sheet": [
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
     ".xlsx",
   ],
-  "application/vnd?.ms-excel": [".xls"],
+  "application/vnd.ms-excel": [".xls"],
   "application/zip": [".zip"],
   "application/x-zip-compressed": [".zip"],
   "application/octet-stream": [], // intentionally empty — too generic to trust
@@ -321,19 +321,19 @@ export function createHardenedUpload(options: HardenedUploadOptions) {
   } = options;
 
   /** Pairwise MIME ↔ extension consistency check. */
-  const _mimeMatchesExt = (mime: string, ext: string): boolean => {
-    const _expected = MIME_EXT_MAP[mime];
+  const mimeMatchesExt = (mime: string, ext: string): boolean => {
+    const expected = MIME_EXT_MAP[mime];
     if (!expected) return true; // unknown MIME: defer to allowedExtensions list
     if (expected?.length === 0) return false; // explicitly untrustworthy MIME
     return expected?.includes(ext);
   };
 
-  const _fileFilter = (
+  const fileFilter = (
     _req: Request,
-    file: Express?.Multer.File,
-    cb: multer?.FileFilterCallback,
+    file: Express.Multer.File,
+    cb: multer.FileFilterCallback,
   ) => {
-    const _ext = path?.extname(file?.originalname || "").toLowerCase();
+    const ext = path?.extname(file?.originalname || "").toLowerCase();
 
     if (ext === ".svg" || file?.mimetype === "image/svg+xml") {
       cb(new Error(`SVG files are not allowed (${label})`));
@@ -350,15 +350,15 @@ export function createHardenedUpload(options: HardenedUploadOptions) {
     }
 
     if (perFieldMimes) {
-      const _fieldAllowed = perFieldMimes[file?.fieldname];
+      const fieldAllowed = perFieldMimes[file?.fieldname];
       if (!fieldAllowed) {
-        cb(new Error(`Unexpected upload field "${file?.fieldname}"`));
+        cb(new Error(`Unexpected upload field "${file.fieldname}"`));
         return;
       }
       if (!fieldAllowed?.includes(file?.mimetype)) {
         cb(
           new Error(
-            `Invalid type "${file?.mimetype}" for ${file?.fieldname}. Allowed: ${fieldAllowed?.join(", ")}`,
+            `Invalid type "${file.mimetype}" for ${file?.fieldname}. Allowed: ${fieldAllowed?.join(", ")}`,
           ),
         );
         return;
@@ -366,7 +366,7 @@ export function createHardenedUpload(options: HardenedUploadOptions) {
       if (!mimeMatchesExt(file?.mimetype, ext)) {
         cb(
           new Error(
-            `Extension "${ext}" does not match declared type "${file?.mimetype}" (${file?.fieldname})`,
+            `Extension "${ext}" does not match declared type "${file.mimetype}" (${file?.fieldname})`,
           ),
         );
         return;
@@ -378,7 +378,7 @@ export function createHardenedUpload(options: HardenedUploadOptions) {
     if (allowedMimes && !allowedMimes?.includes(file?.mimetype)) {
       cb(
         new Error(
-          `Invalid ${label} type "${file?.mimetype}". Allowed: ${allowedMimes?.join(", ")}`,
+          `Invalid ${label} type "${file.mimetype}". Allowed: ${allowedMimes?.join(", ")}`,
         ),
       );
       return;
@@ -387,7 +387,7 @@ export function createHardenedUpload(options: HardenedUploadOptions) {
     if (allowedMimes && !mimeMatchesExt(file?.mimetype, ext)) {
       cb(
         new Error(
-          `Extension "${ext}" does not match declared type "${file?.mimetype}" (${label})`,
+          `Extension "${ext}" does not match declared type "${file.mimetype}" (${label})`,
         ),
       );
       return;
@@ -406,10 +406,10 @@ export function createHardenedUpload(options: HardenedUploadOptions) {
   });
 }
 
-export const _documentUpload = multer({
+export const documentUpload = multer({
   storage: memoryStorage,
   limits: {
-    fileSize: UPLOAD_LIMITS?.document.maxSize,
+    fileSize: UPLOAD_LIMITS.document.maxSize,
     files: 5,
   },
   fileFilter: (_req, file, cb) => {
@@ -428,13 +428,13 @@ export const _documentUpload = multer({
 export { createUploadValidator };
 
 // Error handler middleware for multer
-export const _handleUploadError = (
+export const handleUploadError = (
   error: unknown,
   _req: Request,
   res: unknown,
   next: unknown,
 ) => {
-  if (error instanceof multer?.MulterError) {
+  if (error instanceof multer.MulterError) {
     switch (error?.code) {
       case "LIMIT_FILE_SIZE":
         return res?.status(413).json({
@@ -453,7 +453,7 @@ export const _handleUploadError = (
         });
       default:
         return res?.status(400).json({
-          message: error?.message,
+          message: error.message,
           code: "UPLOAD_ERROR",
         });
     }
@@ -467,7 +467,7 @@ export const _handleUploadError = (
 };
 
 export async function storeUploadedFile(
-  file: Express?.Multer.File,
+  file: Express.Multer.File,
   userId: string,
   category: UploadCategory | string = "uploads",
 ): Promise<{ key: string; url: string; processed?: boolean }> {
@@ -476,12 +476,12 @@ export async function storeUploadedFile(
       throw new Error("File buffer is missing");
     }
 
-    const _uploadCategory = (
+    const uploadCategory = (
       category === "uploads" ? "audio" : category
     ) as UploadCategory;
 
     if (["avatar", "artwork", "audio", "document"].includes(uploadCategory)) {
-      const _validation = await validateFileBuffer(
+      const validation = await validateFileBuffer(
         file?.buffer,
         file?.originalname,
         file?.mimetype,
@@ -490,9 +490,9 @@ export async function storeUploadedFile(
 
       if (!validation?.valid) {
         logger?.warn("Upload security validation failed", {
-          filename: file?.originalname,
+          filename: file.originalname,
           category: uploadCategory,
-          error: validation?.error,
+          error: validation.error,
           userId,
         });
         throw new Error(validation?.error || "File validation failed");
@@ -501,8 +501,8 @@ export async function storeUploadedFile(
 
     if (!verifyMagicBytes(file?.buffer, file?.mimetype)) {
       logger?.warn("Magic bytes verification failed during storage", {
-        filename: file?.originalname,
-        mimetype: file?.mimetype,
+        filename: file.originalname,
+        mimetype: file.mimetype,
         userId,
       });
       throw new Error("File content does not match declared type");
@@ -529,39 +529,39 @@ export async function storeUploadedFile(
         wasProcessed = true;
 
         logger?.info("Image processed for upload", {
-          originalSize: file?.buffer.length,
-          processedSize: processed?.processedSize,
-          format: processed?.format,
+          originalSize: file.buffer.length,
+          processedSize: processed.processedSize,
+          format: processed.format,
           dimensions: `${processed?.width}x${processed?.height}`,
-          metadataStripped: processed?.metadataStripped,
+          metadataStripped: processed.metadataStripped,
           userId,
           category: uploadCategory,
         });
       } catch (processingError) {
         logger?.warn("Image processing failed, using original", {
           error: processingError,
-          filename: file?.originalname,
+          filename: file.originalname,
           userId,
         });
       }
     }
 
-    const _timestamp = Date?.now();
-    const _safeFilename = sanitizeFilename(file?.originalname);
-    const _ext = wasProcessed
+    const timestamp = Date?.now();
+    const safeFilename = sanitizeFilename(file?.originalname);
+    const ext = wasProcessed
       ? getExtensionForMimetype(finalMimetype)
       : path?.extname(safeFilename).toLowerCase();
-    const _name = path?.basename(safeFilename, path?.extname(safeFilename));
-    const _filename = `${timestamp}_${name}${ext}`;
+    const name = path?.basename(safeFilename, path?.extname(safeFilename));
+    const filename = `${timestamp}_${name}${ext}`;
 
-    const _key = await storageService?.uploadFile(
+    const key = await storageService?.uploadFile(
       processedBuffer,
       `${category}/${userId}`,
       filename,
       finalMimetype,
     );
 
-    const _url = await storageService?.getDownloadUrl(key);
+    const url = await storageService?.getDownloadUrl(key);
 
     return { key, url, processed: wasProcessed };
   } catch (error: unknown) {
@@ -586,7 +586,7 @@ function getExtensionForMimetype(mimetype: string): string {
 }
 
 export async function storeSecureUpload(
-  file: Express?.Multer.File,
+  file: Express.Multer.File,
   userId: string,
   category: UploadCategory,
 ): Promise<{
@@ -595,7 +595,7 @@ export async function storeSecureUpload(
   processed: boolean;
   metadata: Record<string, unknown>;
 }> {
-  const _validation = await validateFileBuffer(
+  const validation = await validateFileBuffer(
     file?.buffer,
     file?.originalname,
     file?.mimetype,
@@ -611,34 +611,34 @@ export async function storeSecureUpload(
   let processedMetadata = {};
 
   if (isImageMimeType(file?.mimetype)) {
-    const _processed = await processImage(file?.buffer, category);
+    const processed = await processImage(file?.buffer, category);
     processedBuffer = processed?.buffer;
     finalMimetype = processed?.mimeType;
     processedMetadata = {
-      originalSize: processed?.originalSize,
-      processedSize: processed?.processedSize,
-      dimensions: { width: processed?.width, height: processed?.height },
-      format: processed?.format,
-      metadataStripped: processed?.metadataStripped,
+      originalSize: processed.originalSize,
+      processedSize: processed.processedSize,
+      dimensions: { width: processed.width, height: processed.height },
+      format: processed.format,
+      metadataStripped: processed.metadataStripped,
     };
   }
 
-  const _timestamp = Date?.now();
-  const _safeFilename = sanitizeFilename(file?.originalname);
-  const _ext =
+  const timestamp = Date?.now();
+  const safeFilename = sanitizeFilename(file?.originalname);
+  const ext =
     getExtensionForMimetype(finalMimetype) ||
     path?.extname(safeFilename).toLowerCase();
-  const _name = path?.basename(safeFilename, path?.extname(safeFilename));
-  const _filename = `${timestamp}_${name}${ext}`;
+  const name = path?.basename(safeFilename, path?.extname(safeFilename));
+  const filename = `${timestamp}_${name}${ext}`;
 
-  const _key = await storageService?.uploadFile(
+  const key = await storageService?.uploadFile(
     processedBuffer,
     `${category}/${userId}`,
     filename,
     finalMimetype,
   );
 
-  const _url = await storageService?.getDownloadUrl(key);
+  const url = await storageService?.getDownloadUrl(key);
 
   return {
     key,
@@ -655,10 +655,10 @@ export async function generateUploadUrl(
   category: UploadCategory | string = "uploads",
 ): Promise<{ uploadUrl: string | null; key: string }> {
   try {
-    const _uploadCategory = (
+    const uploadCategory = (
       category === "uploads" ? "audio" : category
     ) as UploadCategory;
-    const _limits = UPLOAD_LIMITS[uploadCategory];
+    const limits = UPLOAD_LIMITS[uploadCategory];
 
     if (limits && !limits?.allowedTypes.includes(contentType)) {
       throw new Error(
@@ -666,18 +666,18 @@ export async function generateUploadUrl(
       );
     }
 
-    const _ext = path?.extname(filename).toLowerCase();
+    const ext = path?.extname(filename).toLowerCase();
     if (ext === ".svg") {
       throw new Error("SVG files are not allowed for security reasons");
     }
 
-    const _timestamp = Date?.now();
-    const _safeFilename = sanitizeFilename(filename);
-    const _name = path?.basename(safeFilename, path?.extname(safeFilename));
-    const _sanitizedFilename = `${timestamp}_${name}${ext}`;
+    const timestamp = Date?.now();
+    const safeFilename = sanitizeFilename(filename);
+    const name = path?.basename(safeFilename, path?.extname(safeFilename));
+    const sanitizedFilename = `${timestamp}_${name}${ext}`;
 
-    const _key = `${category}/${userId}/${sanitizedFilename}`;
-    const _uploadUrl = await storageService?.getUploadUrl(key, contentType, 3600);
+    const key = `${category}/${userId}/${sanitizedFilename}`;
+    const uploadUrl = await storageService?.getUploadUrl(key, contentType, 3600);
 
     return { uploadUrl, key };
   } catch (error: unknown) {
@@ -695,7 +695,7 @@ export {
   validateFileBuffer,
   UPLOAD_LIMITS,
   type UploadCategory,
-} from "./uploadSecurity?.js";
+} from "./uploadSecurity.js";
 
 export {
   processImage,
@@ -707,4 +707,4 @@ export {
   convertToSafeFormat,
   type ProcessedImage,
   type ImageProcessingOptions,
-} from "../services/imageProcessor?.js";
+} from "../services/imageProcessor.js";

@@ -1,11 +1,11 @@
 // Real platform API implementation with OAuth token integration
 import axios from "axios";
 import { TwitterApi } from "twitter-api-v2";
-import { storage } from "./storage?.js";
-import { logger } from "./logger?.js";
-import { executeSocialApiOperation } from "./services/externalServices?.js";
+import { storage } from "./storage.js";
+import { logger } from "./logger.js";
+import { executeSocialApiOperation } from "./services/externalServices.js";
 
-axios?.defaults.timeout = 10000;
+axios.defaults.timeout = 10000;
 
 type PublishResult = {
   platform: string;
@@ -28,7 +28,7 @@ type EngagementData = {
   not_available_reason?: string;
 };
 
-export const _platformAPI = {
+export const platformAPI = {
   /**
    * Publish content to social media platforms using user OAuth tokens
    * @param content - Content object with text, media URLs, hashtags
@@ -44,7 +44,7 @@ export const _platformAPI = {
     // Backward compatibility: If no userId provided, simulate
     if (!userId) {
       logger?.warn(
-        "platformAPI?.publishContent called without userId - using simulation mode",
+        "platformAPI.publishContent called without userId - using simulation mode",
       );
       return platforms?.map((p) => ({
         platform: p,
@@ -58,16 +58,16 @@ export const _platformAPI = {
     for (const platform of platforms) {
       try {
         // Normalize platform name (handle case variations)
-        const _normalizedPlatform = platform?.toLowerCase();
+        const normalizedPlatform = platform?.toLowerCase();
 
         // Get user's OAuth token for this platform
-        const _token = await storage?.getUserSocialToken(
+        const token = await storage.getUserSocialToken(
           userId,
           normalizedPlatform,
         );
 
         if (!token) {
-          results?.push({
+          results.push({
             platform,
             success: false,
             error: `User not connected to ${platform} - OAuth token missing`,
@@ -76,14 +76,14 @@ export const _platformAPI = {
         }
 
         // Extract content data
-        const _text = content?.body || content?.text || content?.message || "";
-        const _mediaUrl = content?.mediaUrl || content?.media || null;
-        const _hashtags = content?.hashtags || [];
+        const text = content.body || content.text || content.message || "";
+        const mediaUrl = content.mediaUrl || content.media || null;
+        const hashtags = content.hashtags || [];
 
         // Add hashtags to text if provided
-        const _fullText =
-          hashtags?.length > 0
-            ? `${text} ${hashtags?.map((h: string) => (h?.startsWith("#") ? h : `#${h}`)).join(" ")}`
+        const fullText =
+          hashtags.length > 0
+            ? `${text} ${hashtags.map((h: string) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}`
             : text;
 
         let postId: string | undefined;
@@ -91,19 +91,19 @@ export const _platformAPI = {
         // Call platform-specific API
         switch (normalizedPlatform) {
           case "twitter":
-            postId = await this?.postToTwitter(fullText, mediaUrl, token);
+            postId = await this.postToTwitter(fullText, mediaUrl, token);
             break;
 
           case "facebook":
-            postId = await this?.postToFacebook(fullText, mediaUrl, token);
+            postId = await this.postToFacebook(fullText, mediaUrl, token);
             break;
 
           case "instagram":
-            postId = await this?.postToInstagram(fullText, mediaUrl, token);
+            postId = await this.postToInstagram(fullText, mediaUrl, token);
             break;
 
           case "linkedin":
-            postId = await this?.postToLinkedIn(
+            postId = await this.postToLinkedIn(
               fullText,
               mediaUrl,
               token,
@@ -112,15 +112,15 @@ export const _platformAPI = {
             break;
 
           case "tiktok":
-            postId = await this?.postToTikTok(fullText, mediaUrl, token);
+            postId = await this.postToTikTok(fullText, mediaUrl, token);
             break;
 
           case "threads":
-            postId = await this?.postToThreads(fullText, mediaUrl, token);
+            postId = await this.postToThreads(fullText, mediaUrl, token);
             break;
 
           default:
-            results?.push({
+            results.push({
               platform,
               success: false,
               error: `Platform ${platform} not yet supported`,
@@ -128,35 +128,35 @@ export const _platformAPI = {
             continue;
         }
 
-        results?.push({
+        results.push({
           platform,
           success: true,
           postId,
         });
 
-        logger?.info(`✅ Successfully posted to ${platform}: ${postId}`);
+        logger.info(`✅ Successfully posted to ${platform}: ${postId}`);
       } catch (error: unknown) {
-        const _axiosErr = error as Record<string, any>;
-        const _errorMsg =
-          axiosErr?.response?.data?.error?.message ||
-          axiosErr?.response?.data?.error_description ||
-          (error instanceof Error ? error?.message : null) ||
+        const axiosErr = error as Record<string, any>;
+        const errorMsg =
+          axiosErr.response.data.error.message ||
+          axiosErr.response.data.error_description ||
+          (error instanceof Error ? error.message : null) ||
           "Unknown error";
 
-        results?.push({
+        results.push({
           platform,
           success: false,
           error: errorMsg,
         });
 
-        logger?.warn(`❌ Failed to post to ${platform}:`, errorMsg);
+        logger.warn(`❌ Failed to post to ${platform}:`, errorMsg);
 
         // Check if token expired
         if (
-          errorMsg?.includes("token") &&
-          (errorMsg?.includes("expired") || errorMsg?.includes("invalid"))
+          errorMsg.includes("token") &&
+          (errorMsg.includes("expired") || errorMsg.includes("invalid"))
         ) {
-          logger?.warn(
+          logger.warn(
             `⚠️  OAuth token for ${platform} may be expired - user needs to reconnect`,
           );
         }
@@ -180,8 +180,8 @@ export const _platformAPI = {
   ): Promise<EngagementData> {
     // Backward compatibility: If no userId provided, simulate
     if (!userId) {
-      logger?.warn(
-        "platformAPI?.collectEngagementData called without userId - using simulation mode",
+      logger.warn(
+        "platformAPI.collectEngagementData called without userId - using simulation mode",
       );
       return {
         likes: 0,
@@ -195,10 +195,10 @@ export const _platformAPI = {
 
     try {
       // Normalize platform name
-      const _normalizedPlatform = platform?.toLowerCase();
+      const normalizedPlatform = platform.toLowerCase();
 
       // Get user's OAuth token for this platform
-      const _token = await storage?.getUserSocialToken(
+      const token = await storage?.getUserSocialToken(
         userId,
         normalizedPlatform,
       );
@@ -272,16 +272,16 @@ export const _platformAPI = {
     mediaUrl: string | null,
     token: string,
   ): Promise<string> {
-    const _result = await executeSocialApiOperation(
+    const result = await executeSocialApiOperation(
       "twitter",
       async () => {
-        const _twitterClient = new TwitterApi(token);
+        const twitterClient = new TwitterApi(token);
 
         let tweetResponse;
 
         if (mediaUrl) {
           try {
-            const _mediaId = await twitterClient?.v1.uploadMedia(mediaUrl);
+            const mediaId = await twitterClient?.v1.uploadMedia(mediaUrl);
             tweetResponse = await twitterClient?.v2.tweet({
               text,
               media: { media_ids: [mediaId] },
@@ -317,11 +317,11 @@ export const _platformAPI = {
     mediaUrl: string | null,
     token: string,
   ): Promise<string> {
-    const _result = await executeSocialApiOperation(
+    const result = await executeSocialApiOperation(
       "facebook",
       async () => {
-        const _response = await axios?.post(
-          `https://graph?.facebook.com/v18?.0/me/feed`,
+        const response = await axios?.post(
+          `https://graph.facebook.com/v18.0/me/feed`,
           {
             message: text,
             link: mediaUrl || undefined,
@@ -352,11 +352,11 @@ export const _platformAPI = {
       throw new Error("Instagram posts require media (image or video)");
     }
 
-    const _result = await executeSocialApiOperation(
+    const result = await executeSocialApiOperation(
       "instagram",
       async () => {
-        const _mediaResponse = await axios?.post(
-          `https://graph?.instagram.com/me/media`,
+        const mediaResponse = await axios?.post(
+          `https://graph.instagram.com/me/media`,
           {
             image_url: mediaUrl,
             caption: text,
@@ -364,10 +364,10 @@ export const _platformAPI = {
           },
         );
 
-        const _creationId = mediaResponse?.data.id;
+        const creationId = mediaResponse?.data.id;
 
-        const _publishResponse = await axios?.post(
-          `https://graph?.instagram.com/me/media_publish`,
+        const publishResponse = await axios?.post(
+          `https://graph.instagram.com/me/media_publish`,
           {
             creation_id: creationId,
             access_token: token,
@@ -395,11 +395,11 @@ export const _platformAPI = {
     token: string,
     userId: string,
   ): Promise<string> {
-    const _result = await executeSocialApiOperation(
+    const result = await executeSocialApiOperation(
       "linkedin",
       async () => {
-        const _profileResponse = await axios?.get(
-          "https://api?.linkedin.com/v2/me",
+        const profileResponse = await axios?.get(
+          "https://api.linkedin.com/v2/me",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -408,13 +408,13 @@ export const _platformAPI = {
           },
         );
 
-        const _personUrn = `urn:li:person:${profileResponse?.data.id}`;
+        const personUrn = `urn:li:person:${profileResponse?.data.id}`;
 
         const shareData: Record<string, unknown> = {
           author: personUrn,
           lifecycleState: "PUBLISHED",
           specificContent: {
-            "com?.linkedin.ugc?.ShareContent": {
+            "com.linkedin.ugc.ShareContent": {
               shareCommentary: {
                 text,
               },
@@ -422,12 +422,12 @@ export const _platformAPI = {
             },
           },
           visibility: {
-            "com?.linkedin.ugc?.MemberNetworkVisibility": "PUBLIC",
+            "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
           },
         };
 
         if (mediaUrl) {
-          shareData?.specificContent["com?.linkedin.ugc?.ShareContent"].media = [
+          shareData.specificContent["com.linkedin.ugc.ShareContent"].media = [
             {
               status: "READY",
               originalUrl: mediaUrl,
@@ -435,14 +435,14 @@ export const _platformAPI = {
           ];
         }
 
-        const _response = await axios?.post(
-          "https://api?.linkedin.com/v2/ugcPosts",
+        const response = await axios?.post(
+          "https://api.linkedin.com/v2/ugcPosts",
           shareData,
           {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              "X-Restli-Protocol-Version": "2?.0.0",
+              "X-Restli-Protocol-Version": "2.0.0",
             },
           },
         );
@@ -471,11 +471,11 @@ export const _platformAPI = {
       throw new Error("TikTok posts require a video");
     }
 
-    const _result = await executeSocialApiOperation(
+    const result = await executeSocialApiOperation(
       "tiktok",
       async () => {
-        const _response = await axios?.post(
-          "https://open-api?.tiktok.com/share/video/upload/",
+        const response = await axios?.post(
+          "https://open-api.tiktok.com/share/video/upload/",
           {
             video_url: videoUrl,
             description: text,
@@ -514,7 +514,7 @@ export const _platformAPI = {
       if (mediaUrl) {
         // Create Threads post with media
         creationResponse = await axios?.post(
-          `https://graph?.threads.net/v1?.0/me/threads`,
+          `https://graph.threads.net/v1.0/me/threads`,
           {
             media_type: "IMAGE",
             image_url: mediaUrl,
@@ -525,7 +525,7 @@ export const _platformAPI = {
       } else {
         // Create text-only Threads post
         creationResponse = await axios?.post(
-          `https://graph?.threads.net/v1?.0/me/threads`,
+          `https://graph.threads.net/v1.0/me/threads`,
           {
             media_type: "TEXT",
             text: text,
@@ -534,11 +534,11 @@ export const _platformAPI = {
         );
       }
 
-      const _creationId = creationResponse?.data.id;
+      const creationId = creationResponse?.data.id;
 
       // Publish the Threads post
-      const _publishResponse = await axios?.post(
-        `https://graph?.threads.net/v1?.0/me/threads_publish`,
+      const publishResponse = await axios?.post(
+        `https://graph.threads.net/v1.0/me/threads_publish`,
         {
           creation_id: creationId,
           access_token: token,
@@ -566,28 +566,28 @@ export const _platformAPI = {
     token: string,
   ): Promise<EngagementData> {
     try {
-      const _twitterClient = new TwitterApi(token);
+      const twitterClient = new TwitterApi(token);
 
-      const _tweet = await twitterClient?.v2.singleTweet(tweetId, {
-        "tweet?.fields": ["public_metrics"],
+      const tweet = await twitterClient?.v2.singleTweet(tweetId, {
+        "tweet.fields": ["public_metrics"],
       });
 
-      const _metrics = tweet?.data.public_metrics;
+      const metrics = tweet?.data.public_metrics;
 
       return {
-        likes: metrics?.like_count || 0,
-        shares: metrics?.retweet_count || 0,
-        retweets: metrics?.retweet_count || 0,
-        comments: metrics?.reply_count || 0,
-        replies: metrics?.reply_count || 0,
-        impressions: metrics?.impression_count || 0,
-        engagementRate: metrics?.impression_count
+        likes: metrics.like_count || 0,
+        shares: metrics.retweet_count || 0,
+        retweets: metrics.retweet_count || 0,
+        comments: metrics.reply_count || 0,
+        replies: metrics.reply_count || 0,
+        impressions: metrics.impression_count || 0,
+        engagementRate: metrics.impression_count
           ? (metrics?.like_count + metrics?.retweet_count + metrics?.reply_count) /
             metrics?.impression_count
           : 0,
       };
     } catch (error: unknown) {
-      const _statusCode =
+      const statusCode =
         (error as Record<string, any>)?.code ??
         (error as Record<string, any>)?.status;
       if (statusCode === 401) {
@@ -602,30 +602,30 @@ export const _platformAPI = {
     token: string,
   ): Promise<EngagementData> {
     try {
-      const _response = await axios?.get(
-        `https://graph?.facebook.com/v18?.0/${postId}`,
+      const response = await axios?.get(
+        `https://graph.facebook.com/v18.0/${postId}`,
         {
           params: {
             fields:
-              "likes?.summary(true),shares,comments?.summary(true),reactions?.summary(true)",
+              "likes.summary(true),shares,comments.summary(true),reactions.summary(true)",
             access_token: token,
           },
         },
       );
 
-      const _data = response?.data;
+      const data = response?.data;
 
       return {
         likes:
           data?.likes?.summary?.total_count ||
           data?.reactions?.summary?.total_count ||
           0,
-        shares: data?.shares?.count || 0,
-        comments: data?.comments?.summary?.total_count || 0,
+        shares: data.shares?.count || 0,
+        comments: data.comments?.summary?.total_count || 0,
         engagementRate: 0, // Facebook doesn't provide impressions in basic API
       };
     } catch (error: unknown) {
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
+      if (error.response.status === 401 || error.response.status === 403) {
         throw new Error("Facebook OAuth token expired or invalid");
       }
       throw error;
@@ -637,8 +637,8 @@ export const _platformAPI = {
     token: string,
   ): Promise<EngagementData> {
     try {
-      const _response = await axios?.get(
-        `https://graph?.instagram.com/${mediaId}/insights`,
+      const response = await axios.get(
+        `https://graph.instagram.com/${mediaId}/insights`,
         {
           params: {
             metric: "likes,comments,shares,saved,engagement,impressions,reach",
@@ -647,14 +647,14 @@ export const _platformAPI = {
         },
       );
 
-      const _data = response?.data.data;
-      const _getMetric = (name: string) => {
-        const _metric = data?.find((m: unknown) => m?.name === name);
-        return metric?.values?.[0]?.value || 0;
+      const data = response.data.data;
+      const getMetric = (name: string) => {
+        const metric = data.find((m: unknown) => m.name === name);
+        return metric.values[0].value || 0;
       };
 
-      const _impressions = getMetric("impressions");
-      const _engagement = getMetric("engagement");
+      const impressions = getMetric("impressions");
+      const engagement = getMetric("engagement");
 
       return {
         likes: getMetric("likes"),
@@ -665,7 +665,7 @@ export const _platformAPI = {
         engagementRate: impressions > 0 ? engagement / impressions : 0,
       };
     } catch (error: unknown) {
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
+      if (error.response.status === 401 || error.response.status === 403) {
         throw new Error("Instagram OAuth token expired or invalid");
       }
       throw error;
@@ -677,8 +677,8 @@ export const _platformAPI = {
     token: string,
   ): Promise<EngagementData> {
     try {
-      const _response = await axios?.get(
-        `https://api?.linkedin.com/v2/socialActions/${shareId}`,
+      const response = await axios.get(
+        `https://api.linkedin.com/v2/socialActions/${shareId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -687,12 +687,12 @@ export const _platformAPI = {
         },
       );
 
-      const _data = response?.data;
+      const data = response.data;
 
       return {
-        likes: data?.likesSummary?.totalLikes || 0,
-        shares: data?.sharesSummary?.totalShares || 0,
-        comments: data?.commentsSummary?.totalComments || 0,
+        likes: data.likesSummary.totalLikes || 0,
+        shares: data.sharesSummary.totalShares || 0,
+        comments: data.commentsSummary.totalComments || 0,
         engagementRate: 0, // LinkedIn doesn't provide impressions in basic API
       };
     } catch (error: unknown) {
@@ -708,8 +708,8 @@ export const _platformAPI = {
     token: string,
   ): Promise<EngagementData> {
     try {
-      const _response = await axios?.get(
-        `https://graph?.threads.net/v1?.0/${mediaId}/insights`,
+      const response = await axios?.get(
+        `https://graph.threads.net/v1.0/${mediaId}/insights`,
         {
           params: {
             metric: "likes,replies,reposts,views",
@@ -718,9 +718,9 @@ export const _platformAPI = {
         },
       );
 
-      const _data = response?.data.data;
-      const _getMetric = (name: string) => {
-        const _metric = data?.find((m: unknown) => m?.name === name);
+      const data = response?.data.data;
+      const getMetric = (name: string) => {
+        const metric = data?.find((m: unknown) => m?.name === name);
         return metric?.values?.[0]?.value || 0;
       };
 
@@ -744,8 +744,8 @@ export const _platformAPI = {
     token: string,
   ): Promise<EngagementData> {
     try {
-      const _response = await axios?.post(
-        "https://open?.tiktokapis.com/v2/video/query/",
+      const response = await axios?.post(
+        "https://open.tiktokapis.com/v2/video/query/",
         {
           filters: {
             video_ids: [videoId],
@@ -760,7 +760,7 @@ export const _platformAPI = {
         },
       );
 
-      const _video = response?.data?.data?.videos?.[0];
+      const video = response?.data?.data?.videos?.[0];
 
       if (!video) {
         logger?.warn(`TikTok video not found: ${videoId}`);
@@ -773,10 +773,10 @@ export const _platformAPI = {
         };
       }
 
-      const _views = video?.view_count || 0;
-      const _likes = video?.like_count || 0;
-      const _comments = video?.comment_count || 0;
-      const _shares = video?.share_count || 0;
+      const views = video?.view_count || 0;
+      const likes = video?.like_count || 0;
+      const comments = video?.comment_count || 0;
+      const shares = video?.share_count || 0;
 
       return {
         likes,
@@ -801,8 +801,8 @@ export const _platformAPI = {
     token: string,
   ): Promise<EngagementData> {
     try {
-      const _response = await axios?.get(
-        "https://www?.googleapis.com/youtube/v3/videos",
+      const response = await axios?.get(
+        "https://www.googleapis.com/youtube/v3/videos",
         {
           params: {
             part: "statistics",
@@ -812,7 +812,7 @@ export const _platformAPI = {
         },
       );
 
-      const _video = response?.data?.items?.[0];
+      const video = response?.data?.items?.[0];
 
       if (!video) {
         logger?.warn(`YouTube video not found: ${videoId}`);
@@ -825,10 +825,10 @@ export const _platformAPI = {
         };
       }
 
-      const _stats = video?.statistics || {};
-      const _views = parseInt(stats?.viewCount, 10) || 0;
-      const _likes = parseInt(stats?.likeCount, 10) || 0;
-      const _comments = parseInt(stats?.commentCount, 10) || 0;
+      const stats = video?.statistics || {};
+      const views = parseInt(stats?.viewCount, 10) || 0;
+      const likes = parseInt(stats?.likeCount, 10) || 0;
+      const comments = parseInt(stats?.commentCount, 10) || 0;
 
       return {
         likes,

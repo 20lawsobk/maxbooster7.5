@@ -522,7 +522,7 @@ export default function Verification() {
           {getStatusBadge()}
         </div>
 
-        {status?.status === "rejected" && (
+        {status.status === "rejected" && (
           <Card className="border-destructive bg-destructive/10">
             <CardHeader>
               <CardTitle className="text-destructive flex items-center gap-2">
@@ -548,7 +548,7 @@ export default function Verification() {
                     </p>
                     <ul className="text-sm text-muted-foreground space-y-1">
                       {status.documentChecklist
-                        ?.filter((d) => d.status === "rejected")
+                        .filter((d) => d.status === "rejected")
                         .map((doc) => (
                           <li key={doc.type} className="flex items-start gap-2">
                             <RefreshCw className="h-4 w-4 mt-0.5 text-destructive flex-shrink-0" />
@@ -590,7 +590,7 @@ export default function Verification() {
                   <Button
                     variant="outline"
                     onClick={() =>
-                      window.open(`mailto:${status.supportContact?.email}`)
+                      window.open(`mailto:${status.supportContact.email}`)
                     }
                   >
                     <Mail className="h-4 w-4 mr-2" />
@@ -602,7 +602,7 @@ export default function Verification() {
           </Card>
         )}
 
-        {currentVerificationId && status?.status !== "rejected" && (
+        {currentVerificationId && status.status !== "rejected" && (
           <Card>
             <CardHeader>
               <CardTitle>Verification Progress</CardTitle>
@@ -614,7 +614,7 @@ export default function Verification() {
                 <span>Step {step} of 4</span>
                 <span>{calculateProgress()}% complete</span>
               </div>
-              {status?.nextSteps &&
+              {status.nextSteps &&
                 status.nextSteps.length > 0 &&
                 status.status === "pending" && (
                   <div className="mt-4 p-3 bg-muted/50 rounded-lg">
@@ -633,7 +633,7 @@ export default function Verification() {
           </Card>
         )}
 
-        {(status?.status === "not_started" || !currentVerificationId) &&
+        {(status.status === "not_started" || !currentVerificationId) &&
           step === 1 && (
             <Card>
               <CardHeader>

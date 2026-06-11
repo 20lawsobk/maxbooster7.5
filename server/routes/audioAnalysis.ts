@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
 import crypto from "crypto";
-import { LOUDNESS_TARGETS } from "../services/audioNormalizationService?.js";
-import { audioMetadataService } from "../services/audioMetadataService?.js";
-import { waveformCacheService } from "../services/waveformCacheService?.js";
-import { logger } from "../logger?.js";
-import { audioUpload } from "../middleware/uploadHandler?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { LOUDNESS_TARGETS } from "../services/audioNormalizationService.js";
+import { audioMetadataService } from "../services/audioMetadataService.js";
+import { waveformCacheService } from "../services/waveformCacheService.js";
+import { logger } from "../logger.js";
+import { audioUpload } from "../middleware/uploadHandler.js";
+import { requireAuth } from "../middleware/auth.js";
 
 function generateContentHash(buffer: Buffer): string {
   return crypto
@@ -15,7 +15,7 @@ function generateContentHash(buffer: Buffer): string {
     .substring(0, 16);
 }
 
-const _router = Router();
+const router = Router();
 
 // File-upload endpoints require authentication — prevents unauthenticated CPU abuse.
 // Static info routes (loudness-targets, supported-formats) remain public.
@@ -30,15 +30,15 @@ router?.post(
         return res?.status(400).json({ error: "No audio file provided" });
       }
 
-      const _metadata = await audioMetadataService?.extractMetadata(
+      const metadata = await audioMetadataService?.extractMetadata(
         req?.file.buffer,
         req?.file.mimetype,
       );
 
-      const _formatInfo = audioMetadataService?.analyzeFormat(metadata);
-      const _distributionCheck =
+      const formatInfo = audioMetadataService?.analyzeFormat(metadata);
+      const distributionCheck =
         audioMetadataService?.isDistributionReady(metadata);
-      const _recommendations =
+      const recommendations =
         audioMetadataService?.getFormatRecommendations(metadata);
 
       const { coverArt, ...metadataWithoutCoverArt } = metadata;
@@ -47,10 +47,10 @@ router?.post(
         success: true,
         metadata: metadataWithoutCoverArt,
         formatInfo,
-        distributionReady: distributionCheck?.ready,
-        distributionIssues: distributionCheck?.issues,
+        distributionReady: distributionCheck.ready,
+        distributionIssues: distributionCheck.issues,
         recommendations,
-        hasCoverArt: metadata?.hasCoverArt,
+        hasCoverArt: metadata.hasCoverArt,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Error analyzing audio metadata:");
@@ -72,53 +72,53 @@ router?.post(
         return res?.status(400).json({ error: "No audio file provided" });
       }
 
-      const _metadata = await audioMetadataService?.extractMetadata(
+      const metadata = await audioMetadataService?.extractMetadata(
         req?.file.buffer,
         req?.file.mimetype,
       );
 
-      const _targetPlatform = (req?.body.platform as string) || "spotify";
-      const _targetLufs =
-        LOUDNESS_TARGETS?.STREAMING[
-          targetPlatform as keyof typeof LOUDNESS_TARGETS?.STREAMING
+      const targetPlatform = (req?.body.platform as string) || "spotify";
+      const targetLufs =
+        LOUDNESS_TARGETS.STREAMING[
+          targetPlatform as keyof typeof LOUDNESS_TARGETS.STREAMING
         ] || -14;
 
-      const _bitrateKbps = metadata?.bitrate ? metadata?.bitrate / 1000 : 128;
-      const _channels = metadata?.channels || 2;
-      const _sampleRate = metadata?.sampleRate || 44100;
+      const bitrateKbps = metadata?.bitrate ? metadata?.bitrate / 1000 : 128;
+      const channels = metadata?.channels || 2;
+      const sampleRate = metadata?.sampleRate || 44100;
 
       let estimatedLufs: number;
       if (metadata?.lossless) {
         estimatedLufs =
-          -14 + (sampleRate > 48000 ? -1?.0 : 0) + (channels > 2 ? -0?.5 : 0);
+          -14 + (sampleRate > 48000 ? -1.0 : 0) + (channels > 2 ? -0.5 : 0);
       } else {
-        const _compressionPenalty =
-          bitrateKbps < 192 ? 2?.0 : bitrateKbps < 256 ? 1?.0 : 0?.5;
-        estimatedLufs = -12 + compressionPenalty + (channels > 2 ? -0?.5 : 0);
+        const compressionPenalty =
+          bitrateKbps < 192 ? 2.0 : bitrateKbps < 256 ? 1.0 : 0.5;
+        estimatedLufs = -12 + compressionPenalty + (channels > 2 ? -0.5 : 0);
       }
 
-      const _gainNeeded = targetLufs - estimatedLufs;
-      const _estimatedTruePeak = metadata?.lossless ? -1?.5 : -0?.5;
+      const gainNeeded = targetLufs - estimatedLufs;
+      const estimatedTruePeak = metadata?.lossless ? -1.5 : -0.5;
 
       res?.json({
         success: true,
         analysis: {
-          estimatedIntegratedLoudness: Math?.round(estimatedLufs * 10) / 10,
+          estimatedIntegratedLoudness: Math.round(estimatedLufs * 10) / 10,
           targetLoudness: targetLufs,
-          gainAdjustmentNeeded: Math?.round(gainNeeded * 10) / 10,
+          gainAdjustmentNeeded: Math.round(gainNeeded * 10) / 10,
           estimatedTruePeak: estimatedTruePeak,
-          meetsTarget: Math?.abs(estimatedLufs - targetLufs) <= 1,
+          meetsTarget: Math.abs(estimatedLufs - targetLufs) <= 1,
           note: "Estimated values based on format analysis. For precise LUFS measurement, use the AI Studio with decoded PCM audio.",
         },
         metadata: {
-          format: metadata?.codec,
-          sampleRate: metadata?.sampleRate,
-          channels: metadata?.channels,
-          duration: metadata?.duration,
-          bitrate: metadata?.bitrate,
-          lossless: metadata?.lossless,
+          format: metadata.codec,
+          sampleRate: metadata.sampleRate,
+          channels: metadata.channels,
+          duration: metadata.duration,
+          bitrate: metadata.bitrate,
+          lossless: metadata.lossless,
         },
-        platformTargets: LOUDNESS_TARGETS?.STREAMING,
+        platformTargets: LOUDNESS_TARGETS.STREAMING,
         recommendations: {
           spotify:
             estimatedLufs > -14
@@ -158,17 +158,17 @@ router?.post(
         return res?.status(400).json({ error: "No audio file provided" });
       }
 
-      const _resolution = parseInt(req?.body.resolution as string) || 800;
-      const _clampedResolution = Math?.min(2000, Math?.max(100, resolution));
+      const resolution = parseInt(req?.body.resolution as string) || 800;
+      const clampedResolution = Math?.min(2000, Math?.max(100, resolution));
 
-      const _contentHash = generateContentHash(req?.file.buffer);
-      const _cacheKey = `audio:${contentHash}`;
+      const contentHash = generateContentHash(req?.file.buffer);
+      const cacheKey = `audio:${contentHash}`;
 
-      const _metadata = await audioMetadataService?.extractMetadata(
+      const metadata = await audioMetadataService?.extractMetadata(
         req?.file.buffer,
         req?.file.mimetype,
       );
-      const _isWav =
+      const isWav =
         metadata?.container === "WAVE" || req?.file.mimetype === "audio/wav";
 
       if (!isWav) {
@@ -178,17 +178,17 @@ router?.post(
           message:
             "Waveform generation for non-WAV formats requires client-side decoding via Web Audio API. Use the generateWaveformFromPCM method with decoded audio data.",
           metadata: {
-            format: metadata?.codec,
-            duration: metadata?.duration,
-            sampleRate: metadata?.sampleRate,
-            channels: metadata?.channels,
+            format: metadata.codec,
+            duration: metadata.duration,
+            sampleRate: metadata.sampleRate,
+            channels: metadata.channels,
           },
           recommendation:
             "For accurate waveforms, upload WAV files or use client-side decoding.",
         });
       }
 
-      const _waveformData = await waveformCacheService?.getWaveform(
+      const waveformData = await waveformCacheService?.getWaveform(
         cacheKey,
         req?.file.buffer,
         clampedResolution,
@@ -220,13 +220,13 @@ router?.post(
         return res?.status(400).json({ error: "No audio file provided" });
       }
 
-      const _platforms = (req?.body.platforms as string)?.split(",") || [
+      const platforms = (req?.body.platforms as string)?.split(",") || [
         "spotify",
         "appleMusic",
         "youtube",
       ];
 
-      const _metadata = await audioMetadataService?.extractMetadata(
+      const metadata = await audioMetadataService?.extractMetadata(
         req?.file.buffer,
         req?.file.mimetype,
       );
@@ -242,9 +242,9 @@ router?.post(
         );
       }
 
-      const _generalCheck = audioMetadataService?.isDistributionReady(metadata);
-      const _formatInfo = audioMetadataService?.analyzeFormat(metadata);
-      const _recommendations =
+      const generalCheck = audioMetadataService?.isDistributionReady(metadata);
+      const formatInfo = audioMetadataService?.analyzeFormat(metadata);
+      const recommendations =
         audioMetadataService?.getFormatRecommendations(metadata);
 
       res?.json({
@@ -257,15 +257,15 @@ router?.post(
         formatInfo,
         recommendations,
         metadata: {
-          title: metadata?.title,
-          artist: metadata?.artist,
-          album: metadata?.album,
-          duration: metadata?.duration,
-          format: metadata?.codec,
-          sampleRate: metadata?.sampleRate,
-          bitDepth: metadata?.bitDepth,
-          lossless: metadata?.lossless,
-          hasCoverArt: metadata?.hasCoverArt,
+          title: metadata.title,
+          artist: metadata.artist,
+          album: metadata.album,
+          duration: metadata.duration,
+          format: metadata.codec,
+          sampleRate: metadata.sampleRate,
+          bitDepth: metadata.bitDepth,
+          lossless: metadata.lossless,
+          hasCoverArt: metadata.hasCoverArt,
           hasISRC: !!metadata?.isrc,
         },
       });
@@ -355,7 +355,7 @@ router?.get("/supported-formats", (_req: Request, res: Response) => {
     maxFileSize: "500MB",
     recommendations: {
       distribution:
-        "Use WAV or FLAC at 44?.1kHz/16-bit minimum for distribution",
+        "Use WAV or FLAC at 44.1kHz/16-bit minimum for distribution",
       production: "Use WAV at 48kHz/24-bit or higher for production",
       mastering: "Use WAV at 96kHz/32-bit float for mastering",
     },

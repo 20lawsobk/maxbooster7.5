@@ -926,7 +926,7 @@ export default function SocialMedia() {
             textAssets.find((a) => a.platform === pid) || textAssets[0];
           return {
             platform: pid,
-            content: asset?.content || "",
+            content: asset.content || "",
             format: "video",
             mediaUrl: undefined,
             source: "python_ai_model",
@@ -935,9 +935,9 @@ export default function SocialMedia() {
               asset?.extractedTitle?.slice(0, 80) ||
               asset?.content?.slice(0, 80) ||
               "",
-            hook: asset?.hook || "",
-            body: asset?.body || "",
-            cta: asset?.cta || "",
+            hook: asset.hook || "",
+            body: asset.body || "",
+            cta: asset.cta || "",
           } as GeneratedContent;
         });
       }
@@ -2307,7 +2307,7 @@ export default function SocialMedia() {
                                   {IconComponent && (
                                     <IconComponent
                                       className="w-4 h-4"
-                                      style={{ color: platform?.color }}
+                                      style={{ color: platform.color }}
                                     />
                                   )}
                                   <span className="font-medium">
@@ -2763,7 +2763,7 @@ export default function SocialMedia() {
                             const platform = SOCIAL_PLATFORMS.find(
                               (p) => p.id === item.platform,
                             );
-                            const IconComponent = platform?.icon;
+                            const IconComponent = platform.icon;
                             const itemKey = `${item.platform}-${(item.extractedTitle || item.content || "").slice(0, 20)}-${index}`;
                             return (
                               <div
@@ -2775,11 +2775,11 @@ export default function SocialMedia() {
                                     {IconComponent && (
                                       <IconComponent
                                         className="w-4 h-4"
-                                        style={{ color: platform?.color }}
+                                        style={{ color: platform.color }}
                                       />
                                     )}
                                     <span className="font-medium">
-                                      {platform?.name}
+                                      {platform.name}
                                     </span>
                                   </div>
                                   <div className="flex space-x-1">
@@ -3868,7 +3868,7 @@ export default function SocialMedia() {
                         icon: Edit,
                         engagement:
                           metrics?.contentPerformance?.text?.engagement ?? 0,
-                        reach: metrics?.contentPerformance?.text?.reach ?? "0",
+                        reach: metrics.contentPerformance?.text?.reach ?? "0",
                         color: "from-green-500 to-emerald-500",
                       },
                     ].map((content) => {
@@ -4214,7 +4214,7 @@ export default function SocialMedia() {
                                       {IconComponent && (
                                         <IconComponent
                                           className="w-4 h-4"
-                                          style={{ color: platform?.color }}
+                                          style={{ color: platform.color }}
                                         />
                                       )}
                                       <span className="text-sm font-medium">
@@ -4621,7 +4621,7 @@ function PressKitTabContent() {
       ...data,
       genres,
       socialLinks,
-      isPublic: pressKit?.isPublic ?? false,
+      isPublic: pressKit.isPublic ?? false,
     });
   };
 
@@ -5035,13 +5035,13 @@ function RadioPitchingContent() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
-          { label: "Total Pitches", value: stats?.total || 0 },
-          { label: "Radio", value: stats?.radio || 0, color: "text-blue-600" },
-          { label: "Blogs", value: stats?.blog || 0, color: "text-green-600" },
-          { label: "DJs", value: stats?.dj || 0, color: "text-purple-600" },
+          { label: "Total Pitches", value: stats.total || 0 },
+          { label: "Radio", value: stats.radio || 0, color: "text-blue-600" },
+          { label: "Blogs", value: stats.blog || 0, color: "text-green-600" },
+          { label: "DJs", value: stats.dj || 0, color: "text-purple-600" },
           {
             label: "Featured",
-            value: stats?.features || 0,
+            value: stats.features || 0,
             color: "text-yellow-600",
           },
         ].map((s, i) => (
@@ -5453,11 +5453,11 @@ function FanCampaignsContent() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Campaigns", value: stats?.totalCampaigns || 0 },
-          { label: "Sent", value: stats?.sent || 0, color: "text-green-600" },
+          { label: "Total Campaigns", value: stats.totalCampaigns || 0 },
+          { label: "Sent", value: stats.sent || 0, color: "text-green-600" },
           {
             label: "Total Subscribers",
-            value: stats?.totalSubscribers || 0,
+            value: stats.totalSubscribers || 0,
             color: "text-blue-600",
           },
           {

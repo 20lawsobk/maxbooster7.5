@@ -1,34 +1,34 @@
 import { Router, Request, Response } from "express";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 import { z } from "zod";
 
-const _router = Router();
+const router = Router();
 
-const _analyzeAudioSchema = z?.object({
-  sampleRate: z?.number().min(8000).max(192000).default(44100),
-  channels: z?.number().min(1).max(2).default(2),
-  samples: z?.array(z?.number()).optional(),
-  leftChannel: z?.array(z?.number()).optional(),
-  rightChannel: z?.array(z?.number()).optional(),
+const analyzeAudioSchema = z.object({
+  sampleRate: z.number().min(8000).max(192000).default(44100),
+  channels: z.number().min(1).max(2).default(2),
+  samples: z.array(z.number()).optional(),
+  leftChannel: z.array(z.number()).optional(),
+  rightChannel: z.array(z.number()).optional(),
 });
 
-const _processAudioSchema = z?.object({
-  sampleRate: z?.number().min(8000).max(192000).default(44100),
-  channels: z?.number().min(1).max(2).default(2),
-  samples: z?.array(z?.number()).optional(),
-  leftChannel: z?.array(z?.number()).optional(),
-  rightChannel: z?.array(z?.number()).optional(),
-  processingChain: z?.array(
-    z?.object({
-      type: z?.enum(["eq", "compressor", "reverb", "limiter", "gain"]),
-      parameters: z?.record(z?.string(), z?.any()),
+const processAudioSchema = z.object({
+  sampleRate: z.number().min(8000).max(192000).default(44100),
+  channels: z.number().min(1).max(2).default(2),
+  samples: z.array(z.number()).optional(),
+  leftChannel: z.array(z.number()).optional(),
+  rightChannel: z.array(z.number()).optional(),
+  processingChain: z.array(
+    z.object({
+      type: z.enum(["eq", "compressor", "reverb", "limiter", "gain"]),
+      parameters: z.record(z.string(), z.any()),
     }),
   ),
 });
 
 function calculateLUFS(samples: number[], sampleRate: number): number {
-  const _blockSize = Math?.floor(sampleRate * 0?.4);
+  const blockSize = Math?.floor(sampleRate * 0.4);
   if (samples?.length < blockSize) return -70;
 
   let totalPower = 0;
@@ -39,28 +39,28 @@ function calculateLUFS(samples: number[], sampleRate: number): number {
     start < samples?.length - blockSize;
     start += Math?.floor(blockSize / 2)
   ) {
-    const _block = samples?.slice(start, start + blockSize);
-    const _meanSquare = block?.reduce((sum, s) => sum + s * s, 0) / block?.length;
+    const block = samples?.slice(start, start + blockSize);
+    const meanSquare = block?.reduce((sum, s) => sum + s * s, 0) / block?.length;
     totalPower += meanSquare;
     blockCount++;
   }
 
   if (blockCount === 0) return -70;
-  const _meanPower = totalPower / blockCount;
-  const _lufs = -0?.691 + 10 * Math?.log10(meanPower);
+  const meanPower = totalPower / blockCount;
+  const lufs = -0.691 + 10 * Math?.log10(meanPower);
   return isFinite(lufs) ? Math?.round(lufs * 100) / 100 : -70;
 }
 
 function calculatePeakDB(samples: number[]): number {
   if (samples?.length === 0) return -Infinity;
-  const _peak = Math?.max(...samples?.map(Math?.abs));
-  const _peakDB = 20 * Math?.log10(peak);
+  const peak = Math?.max(...samples?.map(Math?.abs));
+  const peakDB = 20 * Math?.log10(peak);
   return isFinite(peakDB) ? Math?.round(peakDB * 100) / 100 : -Infinity;
 }
 
 function calculateRMS(samples: number[]): number {
   if (samples?.length === 0) return 0;
-  const _sumOfSquares = samples?.reduce((sum, s) => sum + s * s, 0);
+  const sumOfSquares = samples?.reduce((sum, s) => sum + s * s, 0);
   return Math?.sqrt(sumOfSquares / samples?.length);
 }
 
@@ -74,14 +74,14 @@ function calculateDynamicRange(samples: number[]): {
     return { peak: 0, rms: 0, dynamicRange: 0, crestFactor: 0 };
   }
 
-  const _peak = Math?.max(...samples?.map(Math?.abs));
-  const _rms = calculateRMS(samples);
-  const _dynamicRange = peak > 0 && rms > 0 ? 20 * Math?.log10(peak / rms) : 0;
-  const _crestFactor = rms > 0 ? peak / rms : 0;
+  const peak = Math?.max(...samples?.map(Math?.abs));
+  const rms = calculateRMS(samples);
+  const dynamicRange = peak > 0 && rms > 0 ? 20 * Math?.log10(peak / rms) : 0;
+  const crestFactor = rms > 0 ? peak / rms : 0;
 
   return {
-    peak: Math?.round(peak * 10000) / 10000,
-    rms: Math?.round(rms * 10000) / 10000,
+    peak: Math.round(peak * 10000) / 10000,
+    rms: Math.round(rms * 10000) / 10000,
     dynamicRange: isFinite(dynamicRange)
       ? Math?.round(dynamicRange * 100) / 100
       : 0,
@@ -93,7 +93,7 @@ function calculateDynamicRange(samples: number[]): {
 
 function detectClipping(
   samples: number[],
-  threshold: number = 0?.99,
+  threshold: number = 0.99,
 ): {
   hasClipping: boolean;
   clippedSamples: number;
@@ -106,13 +106,13 @@ function detectClipping(
     }
   }
 
-  const _clippingPercentage =
+  const clippingPercentage =
     samples?.length > 0 ? (clippedSamples / samples?.length) * 100 : 0;
 
   return {
     hasClipping: clippedSamples > 0,
     clippedSamples,
-    clippingPercentage: Math?.round(clippingPercentage * 100) / 100,
+    clippingPercentage: Math.round(clippingPercentage * 100) / 100,
   };
 }
 
@@ -128,7 +128,7 @@ function analyzeStereoImage(
   let leftPower = 0;
   let rightPower = 0;
 
-  const _length = Math?.min(leftChannel?.length, rightChannel?.length);
+  const length = Math?.min(leftChannel?.length, rightChannel?.length);
 
   for (let i = 0; i < length; i++) {
     correlation += leftChannel[i] * rightChannel[i];
@@ -136,14 +136,14 @@ function analyzeStereoImage(
     rightPower += rightChannel[i] * rightChannel[i];
   }
 
-  const _normalizedCorrelation =
+  const normalizedCorrelation =
     Math?.sqrt(leftPower * rightPower) > 0
       ? correlation / Math?.sqrt(leftPower * rightPower)
       : 0;
 
-  const _totalPower = leftPower + rightPower;
-  const _balance = totalPower > 0 ? (rightPower - leftPower) / totalPower : 0;
-  const _width = 1 - Math?.abs(normalizedCorrelation);
+  const totalPower = leftPower + rightPower;
+  const balance = totalPower > 0 ? (rightPower - leftPower) / totalPower : 0;
+  const width = 1 - Math?.abs(normalizedCorrelation);
 
   return {
     correlation: isFinite(normalizedCorrelation)
@@ -155,7 +155,7 @@ function analyzeStereoImage(
 }
 
 function applyGain(samples: number[], gainDB: number): number[] {
-  const _gainLinear = Math?.pow(10, gainDB / 20);
+  const gainLinear = Math?.pow(10, gainDB / 20);
   return samples?.map((s) => Math?.max(-1, Math?.min(1, s * gainLinear)));
 }
 
@@ -167,15 +167,15 @@ function applyCompressor(
   release: number,
   sampleRate: number,
 ): number[] {
-  const _thresholdLinear = Math?.pow(10, threshold / 20);
-  const _attackSamples = Math?.floor(attack * sampleRate);
-  const _releaseSamples = Math?.floor(release * sampleRate);
+  const thresholdLinear = Math?.pow(10, threshold / 20);
+  const attackSamples = Math?.floor(attack * sampleRate);
+  const releaseSamples = Math?.floor(release * sampleRate);
 
-  const _output = new Array(samples?.length);
+  const output = new Array(samples?.length);
   let envelope = 0;
 
   for (let i = 0; i < samples?.length; i++) {
-    const _inputLevel = Math?.abs(samples[i]);
+    const inputLevel = Math?.abs(samples[i]);
 
     if (inputLevel > envelope) {
       envelope += (inputLevel - envelope) / Math?.max(1, attackSamples);
@@ -185,8 +185,8 @@ function applyCompressor(
 
     let gain = 1;
     if (envelope > thresholdLinear) {
-      const _overDB = 20 * Math?.log10(envelope / thresholdLinear);
-      const _compressedOverDB = overDB / ratio;
+      const overDB = 20 * Math?.log10(envelope / thresholdLinear);
+      const compressedOverDB = overDB / ratio;
       gain = Math?.pow(10, (compressedOverDB - overDB) / 20);
     }
 
@@ -197,7 +197,7 @@ function applyCompressor(
 }
 
 function applyLimiter(samples: number[], ceiling: number): number[] {
-  const _ceilingLinear = Math?.pow(10, ceiling / 20);
+  const ceilingLinear = Math?.pow(10, ceiling / 20);
   return samples?.map((s) => {
     if (Math?.abs(s) > ceilingLinear) {
       return s > 0 ? ceilingLinear : -ceilingLinear;
@@ -208,11 +208,11 @@ function applyLimiter(samples: number[], ceiling: number): number[] {
 
 router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _validation = analyzeAudioSchema?.safeParse(req?.body);
+    const validation = analyzeAudioSchema?.safeParse(req?.body);
     if (!validation?.success) {
       return res
         .status(400)
-        .json({ error: "Invalid input", details: validation?.error.issues });
+        .json({ error: "Invalid input", details: validation.error.issues });
     }
 
     const { sampleRate, channels, samples, leftChannel, rightChannel } =
@@ -245,11 +245,11 @@ router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No audio samples provided" });
     }
 
-    const _lufs = calculateLUFS(allSamples, sampleRate);
-    const _peakDB = calculatePeakDB(allSamples);
-    const _dynamics = calculateDynamicRange(allSamples);
-    const _clipping = detectClipping(allSamples);
-    const _stereo = channels === 2 ? analyzeStereoImage(left, right) : null;
+    const lufs = calculateLUFS(allSamples, sampleRate);
+    const peakDB = calculatePeakDB(allSamples);
+    const dynamics = calculateDynamicRange(allSamples);
+    const clipping = detectClipping(allSamples);
+    const stereo = channels === 2 ? analyzeStereoImage(left, right) : null;
 
     res?.json({
       success: true,
@@ -257,17 +257,17 @@ router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
         lufs,
         peakDB,
         truePeak: peakDB,
-        rms: dynamics?.rms,
+        rms: dynamics.rms,
         rmsDB:
           dynamics?.rms > 0
             ? Math?.round(20 * Math?.log10(dynamics?.rms) * 100) / 100
             : -Infinity,
-        dynamicRange: dynamics?.dynamicRange,
-        crestFactor: dynamics?.crestFactor,
+        dynamicRange: dynamics.dynamicRange,
+        crestFactor: dynamics.crestFactor,
         clipping: clipping,
         stereoImage: stereo,
-        sampleCount: allSamples?.length,
-        duration: allSamples?.length / sampleRate / channels,
+        sampleCount: allSamples.length,
+        duration: allSamples.length / sampleRate / channels,
       },
     });
   } catch (error: unknown) {
@@ -278,11 +278,11 @@ router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
 
 router?.post("/process", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _validation = processAudioSchema?.safeParse(req?.body);
+    const validation = processAudioSchema?.safeParse(req?.body);
     if (!validation?.success) {
       return res
         .status(400)
-        .json({ error: "Invalid input", details: validation?.error.issues });
+        .json({ error: "Invalid input", details: validation.error.issues });
     }
 
     const {
@@ -316,15 +316,15 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
     for (const processor of processingChain) {
       switch (processor?.type) {
         case "gain":
-          const _gainDB = processor?.parameters.gain ?? 0;
+          const gainDB = processor?.parameters.gain ?? 0;
           processedSamples = applyGain(processedSamples, gainDB);
           break;
 
         case "compressor":
-          const _threshold = processor?.parameters.threshold ?? -24;
-          const _ratio = processor?.parameters.ratio ?? 4;
-          const _attack = processor?.parameters.attack ?? 0?.003;
-          const _release = processor?.parameters.release ?? 0?.1;
+          const threshold = processor?.parameters.threshold ?? -24;
+          const ratio = processor?.parameters.ratio ?? 4;
+          const attack = processor?.parameters.attack ?? 0.003;
+          const release = processor?.parameters.release ?? 0.1;
           processedSamples = applyCompressor(
             processedSamples,
             threshold,
@@ -336,7 +336,7 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
           break;
 
         case "limiter":
-          const _ceiling = processor?.parameters.ceiling ?? -0?.3;
+          const ceiling = processor?.parameters.ceiling ?? -0.3;
           processedSamples = applyLimiter(processedSamples, ceiling);
           break;
 
@@ -346,7 +346,7 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    const _postMetrics = {
+    const postMetrics = {
       peakDB: calculatePeakDB(processedSamples),
       rms: calculateRMS(processedSamples),
       lufs: calculateLUFS(processedSamples, sampleRate),
@@ -356,7 +356,7 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
       success: true,
       processedSamples,
       metrics: postMetrics,
-      processingApplied: processingChain?.map((p) => p?.type),
+      processingApplied: processingChain.map((p) => p?.type),
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Audio processing error:");
@@ -366,7 +366,7 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
 
 router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
   try {
-    const _presets = {
+    const presets = {
       mixing: [
         {
           id: "vocal-clarity",
@@ -377,9 +377,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 100, gain: -3, q: 0?.7 },
-                  { frequency: 3000, gain: 3, q: 1?.0 },
-                  { frequency: 8000, gain: 2, q: 0?.7 },
+                  { frequency: 100, gain: -3, q: 0.7 },
+                  { frequency: 3000, gain: 3, q: 1.0 },
+                  { frequency: 8000, gain: 2, q: 0.7 },
                 ],
               },
             },
@@ -388,8 +388,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -18,
                 ratio: 3,
-                attack: 0?.01,
-                release: 0?.15,
+                attack: 0.01,
+                release: 0.15,
               },
             },
           ],
@@ -403,9 +403,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 80, gain: 4, q: 0?.8 },
-                  { frequency: 200, gain: 2, q: 0?.7 },
-                  { frequency: 2000, gain: -2, q: 1?.0 },
+                  { frequency: 80, gain: 4, q: 0.8 },
+                  { frequency: 200, gain: 2, q: 0.7 },
+                  { frequency: 2000, gain: -2, q: 1.0 },
                 ],
               },
             },
@@ -414,8 +414,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -20,
                 ratio: 4,
-                attack: 0?.005,
-                release: 0?.1,
+                attack: 0.005,
+                release: 0.1,
               },
             },
           ],
@@ -429,9 +429,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 60, gain: 3, q: 1?.0 },
-                  { frequency: 800, gain: -2, q: 0?.7 },
-                  { frequency: 4000, gain: 3, q: 0?.8 },
+                  { frequency: 60, gain: 3, q: 1.0 },
+                  { frequency: 800, gain: -2, q: 0.7 },
+                  { frequency: 4000, gain: 3, q: 0.8 },
                 ],
               },
             },
@@ -440,8 +440,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -15,
                 ratio: 4,
-                attack: 0?.001,
-                release: 0?.08,
+                attack: 0.001,
+                release: 0.08,
               },
             },
           ],
@@ -455,9 +455,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 80, gain: -4, q: 0?.7 },
-                  { frequency: 200, gain: -2, q: 0?.7 },
-                  { frequency: 5000, gain: 2, q: 0?.8 },
+                  { frequency: 80, gain: -4, q: 0.7 },
+                  { frequency: 200, gain: -2, q: 0.7 },
+                  { frequency: 5000, gain: 2, q: 0.8 },
                 ],
               },
             },
@@ -465,9 +465,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "compressor",
               parameters: {
                 threshold: -22,
-                ratio: 2?.5,
-                attack: 0?.015,
-                release: 0?.2,
+                ratio: 2.5,
+                attack: 0.015,
+                release: 0.2,
               },
             },
           ],
@@ -484,9 +484,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 30, gain: -2, q: 0?.7 },
-                  { frequency: 60, gain: 1, q: 0?.7 },
-                  { frequency: 10000, gain: 1, q: 0?.7 },
+                  { frequency: 30, gain: -2, q: 0.7 },
+                  { frequency: 60, gain: 1, q: 0.7 },
+                  { frequency: 10000, gain: 1, q: 0.7 },
                 ],
               },
             },
@@ -495,11 +495,11 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -12,
                 ratio: 2,
-                attack: 0?.02,
-                release: 0?.2,
+                attack: 0.02,
+                release: 0.2,
               },
             },
-            { type: "limiter", parameters: { ceiling: -1, release: 0?.05 } },
+            { type: "limiter", parameters: { ceiling: -1, release: 0.05 } },
           ],
         },
         {
@@ -512,9 +512,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 50, gain: 2, q: 0?.8 },
-                  { frequency: 3000, gain: 1, q: 0?.7 },
-                  { frequency: 12000, gain: 2, q: 0?.7 },
+                  { frequency: 50, gain: 2, q: 0.8 },
+                  { frequency: 3000, gain: 1, q: 0.7 },
+                  { frequency: 12000, gain: 2, q: 0.7 },
                 ],
               },
             },
@@ -523,11 +523,11 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -8,
                 ratio: 3,
-                attack: 0?.01,
-                release: 0?.15,
+                attack: 0.01,
+                release: 0.15,
               },
             },
-            { type: "limiter", parameters: { ceiling: -0?.3, release: 0?.03 } },
+            { type: "limiter", parameters: { ceiling: -0.3, release: 0.03 } },
           ],
         },
         {
@@ -540,8 +540,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 30, gain: -6, q: 0?.5 },
-                  { frequency: 15000, gain: -3, q: 0?.7 },
+                  { frequency: 30, gain: -6, q: 0.5 },
+                  { frequency: 15000, gain: -3, q: 0.7 },
                 ],
               },
             },
@@ -550,11 +550,11 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -15,
                 ratio: 2,
-                attack: 0?.03,
-                release: 0?.25,
+                attack: 0.03,
+                release: 0.25,
               },
             },
-            { type: "limiter", parameters: { ceiling: -3, release: 0?.1 } },
+            { type: "limiter", parameters: { ceiling: -3, release: 0.1 } },
           ],
         },
         {
@@ -567,8 +567,8 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "eq",
               parameters: {
                 bands: [
-                  { frequency: 80, gain: -2, q: 0?.7 },
-                  { frequency: 8000, gain: -1, q: 0?.7 },
+                  { frequency: 80, gain: -2, q: 0.7 },
+                  { frequency: 8000, gain: -1, q: 0.7 },
                 ],
               },
             },
@@ -577,11 +577,11 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               parameters: {
                 threshold: -20,
                 ratio: 2,
-                attack: 0?.02,
-                release: 0?.3,
+                attack: 0.02,
+                release: 0.3,
               },
             },
-            { type: "limiter", parameters: { ceiling: -3, release: 0?.1 } },
+            { type: "limiter", parameters: { ceiling: -3, release: 0.1 } },
           ],
         },
       ],
@@ -595,9 +595,9 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
               type: "reverb",
               parameters: {
                 type: "plate",
-                decay: 0?.6,
-                mix: 0?.25,
-                damping: 0?.4,
+                decay: 0.6,
+                mix: 0.25,
+                damping: 0.4,
               },
             },
           ],
@@ -609,7 +609,7 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
           processingChain: [
             {
               type: "reverb",
-              parameters: { type: "room", decay: 0?.3, mix: 0?.15, damping: 0?.6 },
+              parameters: { type: "room", decay: 0.3, mix: 0.15, damping: 0.6 },
             },
           ],
         },
@@ -620,7 +620,7 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
           processingChain: [
             {
               type: "reverb",
-              parameters: { type: "hall", decay: 0?.8, mix: 0?.3, damping: 0?.3 },
+              parameters: { type: "hall", decay: 0.8, mix: 0.3, damping: 0.3 },
             },
           ],
         },
@@ -705,22 +705,22 @@ router?.post(
         return res?.status(400).json({ error: "filePath is required" });
       }
       const { pythonAIService } = await import(
-        "../services/pythonAIService?.js"
+        "../services/pythonAIService.js"
       );
-      const _available = await pythonAIService?.isAvailable();
+      const available = await pythonAIService?.isAvailable();
       if (!available) {
         return res
           .status(503)
           .json({ error: "Audio analysis service unavailable" });
       }
-      const _result = await pythonAIService?.analyzeAudio(
+      const result = await pythonAIService?.analyzeAudio(
         filePath,
         Boolean(detailed),
       );
       if (!result?.success) {
         return res
           .status(500)
-          .json({ error: result?.error || "Analysis failed" });
+          .json({ error: result.error || "Analysis failed" });
       }
       return res?.json({ success: true, ...result?.data });
     } catch (error) {
@@ -736,11 +736,11 @@ router?.post(
  */
 router?.get("/analysis-features", async (_req: Request, res: Response) => {
   try {
-    const { pythonAIService } = await import("../services/pythonAIService?.js");
-    const _result = await pythonAIService?.getAudioFeatureInfo();
+    const { pythonAIService } = await import("../services/pythonAIService.js");
+    const result = await pythonAIService?.getAudioFeatureInfo();
     return res?.json(result?.data ?? { available: false });
   } catch (error) {
-    res?.json({ available: false, error: error?.message });
+    res?.json({ available: false, error: error.message });
   }
 });
 
@@ -756,18 +756,18 @@ router?.post("/transcribe", requireAuth, async (req: Request, res: Response) => 
     if (!filePath || typeof filePath !== "string") {
       return res?.status(400).json({ error: "filePath is required" });
     }
-    const { pythonAIService } = await import("../services/pythonAIService?.js");
-    const _available = await pythonAIService?.isAvailable();
+    const { pythonAIService } = await import("../services/pythonAIService.js");
+    const available = await pythonAIService?.isAvailable();
     if (!available) {
       return res
         .status(503)
         .json({ error: "MIDI transcription service unavailable" });
     }
-    const _result = await pythonAIService?.transcribeToMidi(filePath);
+    const result = await pythonAIService?.transcribeToMidi(filePath);
     if (!result?.success) {
       return res
         .status(500)
-        .json({ error: result?.error || "Transcription failed" });
+        .json({ error: result.error || "Transcription failed" });
     }
     return res?.json(result?.data);
   } catch (error) {

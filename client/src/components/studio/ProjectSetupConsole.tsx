@@ -140,12 +140,12 @@ export function ProjectSetupConsole({
   onSave,
 }: ProjectSetupConsoleProps) {
   const [settings, setSettings] = useState<ProjectSettings>({
-    title: project?.title || "Untitled Project",
-    bpm: project?.bpm || 120,
-    key: project?.key || "C Major",
-    timeSignature: project?.timeSignature || "4/4",
-    sampleRate: project?.sampleRate || 48000,
-    bitDepth: project?.bitDepth || 24,
+    title: project.title || "Untitled Project",
+    bpm: project.bpm || 120,
+    key: project.key || "C Major",
+    timeSignature: project.timeSignature || "4/4",
+    sampleRate: project.sampleRate || 48000,
+    bitDepth: project.bitDepth || 24,
     inputDevice: "Default Input",
     outputDevice: "Default Output",
     bufferSize: 256,
@@ -195,12 +195,12 @@ export function ProjectSetupConsole({
 
   const handleReset = useCallback(() => {
     setSettings({
-      title: project?.title || "Untitled Project",
-      bpm: project?.bpm || 120,
-      key: project?.key || "C Major",
-      timeSignature: project?.timeSignature || "4/4",
-      sampleRate: project?.sampleRate || 48000,
-      bitDepth: project?.bitDepth || 24,
+      title: project.title || "Untitled Project",
+      bpm: project.bpm || 120,
+      key: project.key || "C Major",
+      timeSignature: project.timeSignature || "4/4",
+      sampleRate: project.sampleRate || 48000,
+      bitDepth: project.bitDepth || 24,
       inputDevice: "Default Input",
       outputDevice: "Default Output",
       bufferSize: 256,
@@ -743,7 +743,7 @@ export function ProjectSetupConsole({
                       Template "
                       {
                         TRACK_TEMPLATES.find((t) => t.id === selectedTemplate)
-                          ?.name
+                          .name
                       }
                       " will be applied when you save
                     </p>

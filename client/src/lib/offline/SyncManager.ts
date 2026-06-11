@@ -56,9 +56,9 @@ interface SyncEvent {
 
 type SyncEventListener = (event: SyncEvent) => void;
 
-const _DEFAULT_BATCH_SIZE = 10;
-const _DEFAULT_RETRY_DELAYS = [1000, 2000, 4000, 8000, 16000, 32000];
-const _SYNC_DEBOUNCE_MS = 1000;
+const DEFAULT_BATCH_SIZE = 10;
+const DEFAULT_RETRY_DELAYS = [1000, 2000, 4000, 8000, 16000, 32000];
+const SYNC_DEBOUNCE_MS = 1000;
 
 class SyncManager {
   private status: SyncStatus = "idle";
@@ -72,8 +72,8 @@ class SyncManager {
   };
   private isOnline = navigator?.onLine;
   private listeners: Map<SyncEventType, Set<SyncEventListener>> = new Map();
-  private syncTimeout: NodeJS?.Timeout | null = null;
-  private retryTimeouts: Map<string, NodeJS?.Timeout> = new Map();
+  private syncTimeout: NodeJS.Timeout | null = null;
+  private retryTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private isPaused = false;
   private batchSize = DEFAULT_BATCH_SIZE;
   private isInitialized = false;
@@ -88,8 +88,8 @@ class SyncManager {
 
     offlineQueue?.on("action-added", this?.handleActionAdded);
 
-    this?.isOnline = navigator?.onLine;
-    this?.isInitialized = true;
+    this.isOnline = navigator?.onLine;
+    this.isInitialized = true;
 
     if (this?.isOnline) {
       this?.scheduleSync();
@@ -97,7 +97,7 @@ class SyncManager {
   }
 
   private handleOnline = (): void => {
-    this?.isOnline = true;
+    this.isOnline = true;
     this?.emit({ type: "online" });
 
     if (!this?.isPaused) {
@@ -106,7 +106,7 @@ class SyncManager {
   };
 
   private handleOffline = (): void => {
-    this?.isOnline = false;
+    this.isOnline = false;
     this?.emit({ type: "offline" });
 
     this?.cancelPendingSync();
@@ -119,7 +119,7 @@ class SyncManager {
   };
 
   private emit(event: SyncEvent): void {
-    const _listeners = this?.listeners.get(event?.type);
+    const listeners = this?.listeners.get(event?.type);
     if (listeners) {
       listeners?.forEach((listener) => {
         try {
@@ -160,14 +160,14 @@ class SyncManager {
 
   private setStatus(status: SyncStatus): void {
     if (this?.status !== status) {
-      this?.status = status;
+      this.status = status;
       this?.emit({ type: "status-change", status });
     }
   }
 
   private updateProgress(updates: Partial<SyncProgress>): void {
-    this?.progress = { ...this?.progress, ...updates };
-    this?.emit({ type: "progress-update", progress: this?.progress });
+    this.progress = { ...this?.progress, ...updates };
+    this?.emit({ type: "progress-update", progress: this.progress });
   }
 
   private scheduleSync(): void {
@@ -175,7 +175,7 @@ class SyncManager {
       clearTimeout(this?.syncTimeout);
     }
 
-    this?.syncTimeout = setTimeout(() => {
+    this.syncTimeout = setTimeout(() => {
       this?.sync();
     }, SYNC_DEBOUNCE_MS);
   }
@@ -183,7 +183,7 @@ class SyncManager {
   private cancelPendingSync(): void {
     if (this?.syncTimeout) {
       clearTimeout(this?.syncTimeout);
-      this?.syncTimeout = null;
+      this.syncTimeout = null;
     }
   }
 
@@ -196,31 +196,31 @@ class SyncManager {
     const allResults: SyncResult[] = [];
 
     try {
-      const _pendingCount = await offlineQueue?.getPendingCount();
+      const pendingCount = await offlineQueue?.getPendingCount();
 
       this?.updateProgress({
         total: pendingCount,
         completed: 0,
         failed: 0,
         current: null,
-        startedAt: Date?.now(),
+        startedAt: Date.now(),
         estimatedTimeRemaining: null,
       });
 
       while (this?.isOnline && !this?.isPaused) {
-        const _batch = await offlineQueue?.getNextBatch(this?.batchSize);
+        const batch = await offlineQueue?.getNextBatch(this?.batchSize);
 
         if (batch?.length === 0) break;
 
-        const _results = await this?.syncBatch(batch);
+        const results = await this?.syncBatch(batch);
         allResults?.push(...results);
 
-        const _completed = results?.filter((r) => r?.success).length;
-        const _failed = results?.filter((r) => !r?.success).length;
+        const completed = results?.filter((r) => r?.success).length;
+        const failed = results?.filter((r) => !r?.success).length;
 
         this?.updateProgress({
-          completed: this?.progress.completed + completed,
-          failed: this?.progress.failed + failed,
+          completed: this.progress.completed + completed,
+          failed: this.progress.failed + failed,
         });
       }
 
@@ -239,21 +239,21 @@ class SyncManager {
 
   private async syncBatch(batch: QueuedAction[]): Promise<SyncResult[]> {
     const batchRequest: BatchSyncRequest = {
-      actions: batch?.map((action) => ({
-        id: action?.id,
-        type: action?.type,
-        payload: action?.payload,
-        metadata: action?.metadata,
+      actions: batch.map((action) => ({
+        id: action.id,
+        type: action.type,
+        payload: action.payload,
+        metadata: action.metadata,
       })),
     };
 
     for (const action of batch) {
       await offlineQueue?.markSyncing(action?.id);
-      this?.updateProgress({ current: action?.id });
+      this?.updateProgress({ current: action.id });
     }
 
     try {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "POST",
         "/api/sync/batch",
         batchRequest,
@@ -282,7 +282,7 @@ class SyncManager {
 
       return data?.results;
     } catch (error) {
-      const _errorMessage =
+      const errorMessage =
         error instanceof Error ? error?.message : "Network error";
 
       for (const action of batch) {
@@ -291,7 +291,7 @@ class SyncManager {
       }
 
       return batch?.map((action) => ({
-        actionId: action?.id,
+        actionId: action.id,
         success: false,
         error: errorMessage,
       }));
@@ -302,13 +302,13 @@ class SyncManager {
     offlineQueue?.getAction(actionId).then((action) => {
       if (!action || action?.retryCount >= action?.maxRetries) return;
 
-      const _delay =
+      const delay =
         DEFAULT_RETRY_DELAYS[
           Math?.min(action?.retryCount, DEFAULT_RETRY_DELAYS?.length - 1)
         ];
-      const _jitter = Math?.random() * 1000;
+      const jitter = Math?.random() * 1000;
 
-      const _timeout = setTimeout(() => {
+      const timeout = setTimeout(() => {
         this?.retryTimeouts.delete(actionId);
         if (this?.isOnline && !this?.isPaused) {
           this?.scheduleSync();
@@ -320,13 +320,13 @@ class SyncManager {
   }
 
   pause(): void {
-    this?.isPaused = true;
+    this.isPaused = true;
     this?.setStatus("paused");
     this?.cancelPendingSync();
   }
 
   resume(): void {
-    this?.isPaused = false;
+    this.isPaused = false;
     if (this?.isOnline) {
       this?.setStatus("idle");
       this?.scheduleSync();
@@ -334,15 +334,15 @@ class SyncManager {
   }
 
   async forceSyncAction(actionId: string): Promise<SyncResult | null> {
-    const _action = await offlineQueue?.getAction(actionId);
+    const action = await offlineQueue?.getAction(actionId);
     if (!action) return null;
 
-    const _results = await this?.syncBatch([action]);
+    const results = await this?.syncBatch([action]);
     return results[0] || null;
   }
 
   async retryFailed(): Promise<SyncResult[]> {
-    const _failed = await offlineQueue?.getByStatus("failed");
+    const failed = await offlineQueue?.getByStatus("failed");
 
     for (const action of failed) {
       await offlineQueue?.updateAction(action?.id, {
@@ -356,7 +356,7 @@ class SyncManager {
   }
 
   setBatchSize(size: number): void {
-    this?.batchSize = Math?.max(1, Math?.min(size, 50));
+    this.batchSize = Math?.max(1, Math?.min(size, 50));
   }
 
   async getQueueStats(): Promise<{
@@ -382,11 +382,11 @@ class SyncManager {
     this?.retryTimeouts.clear();
 
     this?.listeners.clear();
-    this?.isInitialized = false;
+    this.isInitialized = false;
   }
 }
 
-export const _syncManager = new SyncManager();
+export const syncManager = new SyncManager();
 
 export async function initSyncManager(): Promise<void> {
   await syncManager?.init();

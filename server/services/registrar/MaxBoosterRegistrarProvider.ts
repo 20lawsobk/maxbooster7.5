@@ -9,7 +9,7 @@
  *   Name    : Max Booster, LLC
  *   Support : registrar@max-booster?.com
  *   Abuse   : abuse@max-booster?.com
- *   RDAP    : https://max-booster?.com/api/whois/:domain
+ *   RDAP    : https://max-booster.com/api/whois/:domain
  *
  * Nameservers:
  *   ns1?.max-booster?.com  (primary — main application)
@@ -29,9 +29,9 @@
 
 import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
-import { db, pool } from "../../db?.js";
+import { db, pool } from "../../db.js";
 import { claimedDomains } from "@shared/schema";
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 import {
   NS1,
   NS2,
@@ -44,7 +44,7 @@ import {
   REGISTRAR_EMAIL,
   REGISTRAR_ABUSE,
   DOMAIN_PRICES,
-} from "../domainRegistrarService?.js";
+} from "../domainRegistrarService.js";
 import type {
   RegistrarProvider,
   AvailabilityResult,
@@ -54,7 +54,7 @@ import type {
   DomainInfo,
   TransferParams,
   TransferResult,
-} from "./types?.js";
+} from "./types.js";
 
 // ── RDAP / WHOIS response builder ─────────────────────────────────────────
 
@@ -75,7 +75,7 @@ export function buildRdapResponse(
   row: Record<string, unknown>,
   privacyRedact = true,
 ): RdapDomain {
-  const _ns = [
+  const ns = [
     row?.nameserver1 || NS1,
     row?.nameserver2 || NS2,
     row?.nameserver3 || NS3,
@@ -110,9 +110,9 @@ export function buildRdapResponse(
     released: ["inactive"],
     non_renewing: ["auto renew period"],
   };
-  const _status = statusMap[row?.status] ?? ["active"];
+  const status = statusMap[row?.status] ?? ["active"];
 
-  const _registrant =
+  const registrant =
     privacyRedact && row?.privacyEnabled
       ? {
           objectClassName: "entity",
@@ -120,7 +120,7 @@ export function buildRdapResponse(
           vcardArray: [
             "vcard",
             [
-              ["version", {}, "text", "4?.0"],
+              ["version", {}, "text", "4.0"],
               ["fn", {}, "text", "REDACTED FOR PRIVACY"],
               ["email", {}, "text", `registrant@${PLATFORM_DOMAIN}`],
             ],
@@ -140,7 +140,7 @@ export function buildRdapResponse(
           vcardArray: [
             "vcard",
             [
-              ["version", {}, "text", "4?.0"],
+              ["version", {}, "text", "4.0"],
               ["fn", {}, "text", REGISTRAR_NAME],
               ["email", {}, "text", REGISTRAR_EMAIL],
             ],
@@ -149,11 +149,11 @@ export function buildRdapResponse(
 
   return {
     objectClassName: "domain",
-    handle: row?.registryId || `MB-${row?.id}`,
+    handle: row.registryId || `MB-${row?.id}`,
     ldhName: (row?.domain || "").toUpperCase(),
-    nameservers: ns?.map((n: string) => ({
+    nameservers: ns.map((n: string) => ({
       objectClassName: "nameserver",
-      ldhName: n?.toUpperCase(),
+      ldhName: n.toUpperCase(),
     })),
     status,
     events,
@@ -166,7 +166,7 @@ export function buildRdapResponse(
         vcardArray: [
           "vcard",
           [
-            ["version", {}, "text", "4?.0"],
+            ["version", {}, "text", "4.0"],
             ["fn", {}, "text", `${REGISTRAR_NAME} d/b/a ${REGISTRAR_BRAND}`],
             ["org", {}, "text", REGISTRAR_NAME],
             ["url", {}, "uri", REGISTRAR_URL],
@@ -219,11 +219,11 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
   // ── Availability ──────────────────────────────────────────────────────────
 
   async checkAvailability(fqdn: string): Promise<AvailabilityResult> {
-    const _domain = fqdn?.toLowerCase();
+    const domain = fqdn?.toLowerCase();
 
     // 1. Already in Max Booster registry?
     const [existing] = await db
-      .select({ id: claimedDomains?.id, status: claimedDomains?.status })
+      .select({ id: claimedDomains.id, status: claimedDomains.status })
       .from(claimedDomains)
       .where(eq(claimedDomains?.domain, domain))
       .limit(1);
@@ -238,9 +238,9 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     }
 
     // 3. gTLD → live DNS/RDAP check
-    const _dnsGone = await this?._dnsAvailable(domain);
-    const _tld = "." + domain?.split(".").slice(1).join(".");
-    const _priceEntry = DOMAIN_PRICES[tld];
+    const dnsGone = await this?._dnsAvailable(domain);
+    const tld = "." + domain?.split(".").slice(1).join(".");
+    const priceEntry = DOMAIN_PRICES[tld];
 
     return {
       fqdn: domain,
@@ -248,8 +248,8 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       price: priceEntry
         ? {
             tld,
-            registrationCents: priceEntry?.registrationCents,
-            renewalCents: priceEntry?.renewalCents,
+            registrationCents: priceEntry.registrationCents,
+            renewalCents: priceEntry.renewalCents,
             isPremium: false,
           }
         : undefined,
@@ -260,17 +260,17 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
 
   async registerDomain(params: RegisterParams): Promise<RegisterResult> {
     const { fqdn, userId, years, privacyEnabled } = params;
-    const _domain = fqdn?.toLowerCase();
-    const _tld = "." + domain?.split(".").slice(1).join(".");
-    const _sld = domain?.split(".")[0];
-    const _isPlatform = domain?.endsWith(`.${PLATFORM_DOMAIN}`);
-    const _registryId = `MB-${randomUUID().split("-")[0].toUpperCase()}`;
+    const domain = fqdn?.toLowerCase();
+    const tld = "." + domain?.split(".").slice(1).join(".");
+    const sld = domain?.split(".")[0];
+    const isPlatform = domain?.endsWith(`.${PLATFORM_DOMAIN}`);
+    const registryId = `MB-${randomUUID().split("-")[0].toUpperCase()}`;
 
-    const _expiresAt = new Date();
+    const expiresAt = new Date();
     expiresAt?.setFullYear(expiresAt?.getFullYear() + years);
 
-    const _priceEntry = DOMAIN_PRICES[tld];
-    const _pricePaid = priceEntry?.registrationCents ?? 0;
+    const priceEntry = DOMAIN_PRICES[tld];
+    const pricePaid = priceEntry?.registrationCents ?? 0;
 
     await db?.insert(claimedDomains).values({
       userId,
@@ -292,7 +292,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     await this?._ensureDnsZone(domain, userId, true, registryId);
 
     logger?.info(
-      { fqdn: domain, registryId, provider: this?.name, ns: ALL_NS },
+      { fqdn: domain, registryId, provider: this.name, ns: ALL_NS },
       "[MaxBoosterRegistrar] Domain registered",
     );
 
@@ -311,9 +311,9 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
   // ── Renew ─────────────────────────────────────────────────────────────────
 
   async renewDomain(fqdn: string, years: number): Promise<RenewResult> {
-    const _domain = fqdn?.toLowerCase();
+    const domain = fqdn?.toLowerCase();
     const [row] = await db
-      .select({ id: claimedDomains?.id, expiresAt: claimedDomains?.expiresAt })
+      .select({ id: claimedDomains.id, expiresAt: claimedDomains.expiresAt })
       .from(claimedDomains)
       .where(eq(claimedDomains?.domain, domain))
       .limit(1);
@@ -321,9 +321,9 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     if (!row)
       throw new Error(`Domain not found in Max Booster registry: ${fqdn}`);
 
-    const _base =
+    const base =
       row?.expiresAt && row?.expiresAt > new Date() ? row?.expiresAt : new Date();
-    const _expiresAt = new Date(base);
+    const expiresAt = new Date(base);
     expiresAt?.setFullYear(expiresAt?.getFullYear() + years);
 
     await db
@@ -332,7 +332,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       .where(eq(claimedDomains?.id, row?.id));
 
     logger?.info(
-      { fqdn: domain, years, expiresAt, provider: this?.name },
+      { fqdn: domain, years, expiresAt, provider: this.name },
       "[MaxBoosterRegistrar] Domain renewed",
     );
     return { ok: true, expiresAt, years };
@@ -341,9 +341,9 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
   // ── Nameservers ───────────────────────────────────────────────────────────
 
   async setNameservers(fqdn: string, nameservers: string[]): Promise<void> {
-    const _domain = fqdn?.toLowerCase();
-    const _ns1 = nameservers[0] ?? NS1;
-    const _ns2 = nameservers[1] ?? NS2;
+    const domain = fqdn?.toLowerCase();
+    const ns1 = nameservers[0] ?? NS1;
+    const ns2 = nameservers[1] ?? NS2;
 
     await db
       .update(claimedDomains)
@@ -368,13 +368,13 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       }
     } catch (e) {
       logger?.warn(
-        { fqdn, err: e?.message },
+        { fqdn, err: e.message },
         "[MaxBoosterRegistrar] NS zone record update failed (non-fatal)",
       );
     }
 
     logger?.info(
-      { fqdn: domain, ns1, ns2, provider: this?.name },
+      { fqdn: domain, ns1, ns2, provider: this.name },
       "[MaxBoosterRegistrar] Nameservers updated",
     );
   }
@@ -382,7 +382,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
   // ── Domain info ───────────────────────────────────────────────────────────
 
   async getDomainInfo(fqdn: string): Promise<DomainInfo> {
-    const _domain = fqdn?.toLowerCase();
+    const domain = fqdn?.toLowerCase();
     const [row] = await db
       .select()
       .from(claimedDomains)
@@ -393,15 +393,15 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       throw new Error(`Domain not found in Max Booster registry: ${fqdn}`);
 
     return {
-      fqdn: row?.domain,
-      status: row?.status,
-      expiresAt: row?.expiresAt ?? undefined,
+      fqdn: row.domain,
+      status: row.status,
+      expiresAt: row.expiresAt ?? undefined,
       nameservers: [row?.nameserver1 ?? NS1, row?.nameserver2 ?? NS2, NS3].filter(
         Boolean,
       ),
       registryId: `MB-${row?.id}`,
-      autoRenew: row?.autoRenew,
-      locked: row?.status === "suspended",
+      autoRenew: row.autoRenew,
+      locked: row.status === "suspended",
     };
   }
 
@@ -411,7 +411,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     fqdn: string,
     isPublic = true,
   ): Promise<RdapDomain | null> {
-    const _domain = fqdn?.toLowerCase();
+    const domain = fqdn?.toLowerCase();
     try {
       const { rows } = await pool?.query(
         "SELECT * FROM claimed_domains WHERE domain = $1 LIMIT 1",
@@ -427,22 +427,22 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
   // ── Release ───────────────────────────────────────────────────────────────
 
   async releaseDomain(fqdn: string): Promise<void> {
-    const _domain = fqdn?.toLowerCase();
+    const domain = fqdn?.toLowerCase();
     await db
       .update(claimedDomains)
       .set({ status: "released", autoRenew: false, updatedAt: new Date() })
       .where(eq(claimedDomains?.domain, domain));
 
     try {
-      await pool?.query("DELETE FROM dns_zones WHERE domain = $1", [domain]);
+      await pool.query("DELETE FROM dns_zones WHERE domain = $1", [domain]);
     } catch (e) {
       logger?.warn(
-        { fqdn, err: e?.message },
+        { fqdn, err: e.message },
         "[MaxBoosterRegistrar] DNS zone removal on release failed (non-fatal)",
       );
     }
     logger?.info(
-      { fqdn: domain, provider: this?.name },
+      { fqdn: domain, provider: this.name },
       "[MaxBoosterRegistrar] Domain released",
     );
   }
@@ -451,9 +451,9 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
 
   async initiateTransferIn(params: TransferParams): Promise<TransferResult> {
     const { fqdn, userId } = params;
-    const _domain = fqdn?.toLowerCase();
-    const _tld = "." + domain?.split(".").slice(1).join(".");
-    const _sld = domain?.split(".")[0];
+    const domain = fqdn?.toLowerCase();
+    const tld = "." + domain?.split(".").slice(1).join(".");
+    const sld = domain?.split(".")[0];
 
     await db?.insert(claimedDomains).values({
       userId,
@@ -484,13 +484,13 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
 
   async healthCheck(): Promise<{ ok: boolean; message?: string }> {
     try {
-      await db?.select({ id: claimedDomains?.id }).from(claimedDomains).limit(1);
+      await db.select({ id: claimedDomains.id }).from(claimedDomains).limit(1);
       return {
         ok: true,
-        message: `${REGISTRAR_NAME} registry operational. Nameservers: ${ALL_NS?.join(", ")}.`,
+        message: `${REGISTRAR_NAME} registry operational. Nameservers: ${ALL_NS.join(", ")}.`,
       };
     } catch (e) {
-      return { ok: false, message: `Registry DB unreachable: ${e?.message}` };
+      return { ok: false, message: `Registry DB unreachable: ${e.message}` };
     }
   }
 
@@ -498,15 +498,15 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
 
   private async _dnsAvailable(domain: string): Promise<boolean> {
     const { promises: dnsP } = await import("dns");
-    const _race = <T>(ms: number, p: Promise<T>): Promise<T> =>
-      Promise?.race([
+    const race = <T>(ms: number, p: Promise<T>): Promise<T> =>
+      Promise.race([
         p,
         new Promise<T>((_, r) => setTimeout(() => r(new Error("timeout")), ms)),
       ]);
     for (const type of ["NS", "A"] as const) {
       try {
-        const _recs = await race(2500, dnsP?.resolve(domain, type));
-        if (recs?.length) return false;
+        const recs = await race(2500, dnsP.resolve(domain, type));
+        if (recs.length) return false;
       } catch {
         /* ENOTFOUND = not registered */
       }
@@ -518,24 +518,24 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     domain: string,
     userId: string,
     isActive: boolean,
-    _registryId: string | null,
+    registryId: string | null,
   ): Promise<void> {
     try {
-      const _existing = await pool?.query(
+      const existing = await pool.query(
         "SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1",
         [domain],
       );
-      if (existing?.rows.length > 0) return;
+      if (existing.rows.length > 0) return;
 
-      const { rows } = await pool?.query(
+      const { rows } = await pool.query(
         `INSERT INTO dns_zones (user_id, domain, status, is_verified, nameserver1, nameserver2)
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         [userId, domain, isActive ? "active" : "pending", isActive, NS1, NS2],
       );
-      const _zoneId = rows[0].id;
+      const zoneId = rows[0].id;
 
       // Seed NS records for all 3 nameservers + SOA
-      await pool?.query(
+      await pool.query(
         `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl) VALUES
          ($1, $2, $3, 'NS',  '@', $4, 86400),
          ($1, $2, $3, 'NS',  '@', $5, 86400),
@@ -558,7 +558,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       );
     } catch (e) {
       logger?.warn(
-        { domain, err: e?.message },
+        { domain, err: e.message },
         "[MaxBoosterRegistrar] _ensureDnsZone failed (non-fatal)",
       );
     }

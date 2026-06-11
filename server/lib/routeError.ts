@@ -12,7 +12,7 @@
  *   (ERROR is never used here — reserved for catastrophic data corruption only)
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 type HttpError = Error & {
   status?: number;
@@ -20,22 +20,22 @@ type HttpError = Error & {
   code?: string;
 };
 
-const __warnThrottleMap = new Map<string, number>();
-const _THROTTLE_MS = 60_000;
+const _warnThrottleMap = new Map<string, number>();
+const THROTTLE_MS = 60_000;
 
 function shouldThrottle(key: string): boolean {
-  const _now = Date?.now();
-  const _last = _warnThrottleMap?.get(key) ?? 0;
+  const now = Date?.now();
+  const last = _warnThrottleMap?.get(key) ?? 0;
   if (now - last < THROTTLE_MS) return true;
   _warnThrottleMap?.set(key, now);
   return false;
 }
 
 function classifyError(err: unknown): "debug" | "info" | "warn" {
-  const _e = err as HttpError;
-  const _status = e?.status ?? e?.statusCode ?? 0;
-  const _code = e?.code ?? "";
-  const _msg = (e?.message ?? "").toLowerCase();
+  const e = err as HttpError;
+  const status = e?.status ?? e?.statusCode ?? 0;
+  const code = e?.code ?? "";
+  const msg = (e?.message ?? "").toLowerCase();
 
   if (status === 401 || status === 403) return "info";
   if (status === 404) return "debug";
@@ -65,9 +65,9 @@ function classifyError(err: unknown): "debug" | "info" | "warn" {
  * Throttles repeated identical warn messages to once per minute.
  */
 export function routeError(context: string, err: unknown): void {
-  const _level = classifyError(err);
-  const _e = err as HttpError;
-  const _detail = e?.message ?? String(err);
+  const level = classifyError(err);
+  const e = err as HttpError;
+  const detail = e?.message ?? String(err);
 
   if (level === "debug") {
     logger?.debug({ context, detail }, `[Route] ${context}`);

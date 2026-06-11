@@ -14,38 +14,38 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "../logger?.js";
-import { getRedisClient } from "../lib/redisClient?.js";
+import { logger } from "../logger.js";
+import { getRedisClient } from "../lib/redisClient.js";
 
-const _COUNTER_KEY = "api:inflight";
+const COUNTER_KEY = "api:inflight";
 
 // Throttle "PDIM congested" to once per 30 s — it fires on every request during an outage.
 let _lastAdmissionCongestionWarnAt = 0;
-const _ADMISSION_CONGESTION_THROTTLE_MS = 30_000;
-const _MAX_CONCURRENT_REQUESTS = parseInt(
-  process?.env.MAX_CONCURRENT_REQUESTS ?? "50000",
+const ADMISSION_CONGESTION_THROTTLE_MS = 30_000;
+const MAX_CONCURRENT_REQUESTS = parseInt(
+  process.env.MAX_CONCURRENT_REQUESTS ?? "50000",
   10,
 );
-const _RETRY_AFTER_SECONDS = 5;
+const RETRY_AFTER_SECONDS = 5;
 
 // In-process fallback counter — used when PDIM is unavailable so requests are
 // still bounded rather than passing through completely uncounted.
 let _localInflight = 0;
 
-const _isProduction = () =>
-  process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
+const isProduction = () =>
+  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 
 async function increment(): Promise<number> {
-  const _redis = getRedisClient();
-  const _count = await redis?.incr(COUNTER_KEY);
+  const redis = getRedisClient();
+  const count = await redis.incr(COUNTER_KEY);
   // Fire-and-forget expire — don't block the request for this housekeeping op
   redis?.expire(COUNTER_KEY, 60).catch(() => {});
   return count;
 }
 
 async function decrement(): Promise<void> {
-  const _redis = getRedisClient();
-  const _v = await redis?.decr(COUNTER_KEY);
+  const redis = getRedisClient();
+  const v = await redis?.decr(COUNTER_KEY);
   if (v < 0) redis?.set(COUNTER_KEY, "0").catch(() => {});
 }
 
@@ -67,7 +67,7 @@ export async function admissionControl(
     // bounded. This is per-worker, so the effective limit is MAX_CONCURRENT_REQUESTS
     // per worker process rather than globally, but it prevents completely unconstrained
     // traffic during a PDIM outage.
-    const _now = Date?.now();
+    const now = Date?.now();
     if (
       now - _lastAdmissionCongestionWarnAt >=
       ADMISSION_CONGESTION_THROTTLE_MS
@@ -101,7 +101,7 @@ export async function admissionControl(
   }
 
   let decremented = false;
-  const _safeDecrement = () => {
+  const safeDecrement = () => {
     if (decremented) return;
     decremented = true;
     if (usingLocalFallback) {

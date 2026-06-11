@@ -19,3 +19,4 @@
 - [typecheck OOM → split configs](typecheck-oom.md) — monolithic tsc OOMs ~4GB; split into tsconfig.server/client.json (each ~3.4GB, fits) run via `npm run check` standalone; never fold typecheck into the app run cmd (memory is additive → guaranteed OOM)
 - [Unused params can hide missing impl](unused-param-missing-impl.md) — `_`-prefixing a TS6133 param is behavior-preserving but masks intent; audit for accepted-but-not-processed + sibling-inconsistency patterns
 - [TS2339 drift vs unbuilt feature](ts2339-drift-vs-unbuilt.md) — "property X on {drizzle row}" is ambiguous: add to schema ONLY if NEON DB has the column, else it is unbuilt feature (schema-add → runtime crash); check NEON per table first
+- [tsx vs esbuild standalone scanner](tsx-vs-esbuild-scanner.md) — esbuild --bundle=false MISSES syntax errors inside generic type args (Promise<X?.Y>); use tsx's own esbuild transform API as the authoritative scanner

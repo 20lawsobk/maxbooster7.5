@@ -256,9 +256,9 @@ export function useConcurrentSessions() {
   });
 
   return {
-    sessionCount: data?.concurrentSessions || 1,
-    isValid: data?.valid ?? true,
-    expiresAt: data?.expiresAt,
+    sessionCount: data.concurrentSessions || 1,
+    isValid: data.valid ?? true,
+    expiresAt: data.expiresAt,
     refetch,
   };
 }

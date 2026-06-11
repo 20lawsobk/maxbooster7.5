@@ -1615,7 +1615,7 @@ export default function Distribution() {
             id: platform.slug,
             icon: getPlatformIcon(platform.slug),
             color: getPlatformColor(platform.slug),
-            earnings: platformEarning?.amount ?? 0,
+            earnings: platformEarning.amount ?? 0,
           },
         ];
       }),
@@ -1676,7 +1676,7 @@ export default function Distribution() {
     onError: (error: Error) => {
       toast({
         title: "Upload failed",
-        description: error?.message || "Please try again.",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
@@ -1712,7 +1712,7 @@ export default function Distribution() {
     onError: (error: Error) => {
       toast({
         title: "Update Failed",
-        description: error?.message || "Failed to update release.",
+        description: error.message || "Failed to update release.",
         variant: "destructive",
       });
     },
@@ -1741,7 +1741,7 @@ export default function Distribution() {
     onError: (error: Error) => {
       toast({
         title: "Delete Failed",
-        description: error?.message || "Failed to delete release.",
+        description: error.message || "Failed to delete release.",
         variant: "destructive",
       });
     },
@@ -3415,7 +3415,7 @@ export default function Distribution() {
                               <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-full flex items-center justify-between shadow-sm">
                                 <IconComponent
                                   className="w-5 h-5"
-                                  style={{ color: platformInfo?.color }}
+                                  style={{ color: platformInfo.color }}
                                 />
                               </div>
                               <div>
@@ -5445,7 +5445,7 @@ export default function Distribution() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Release</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete "{selectedRelease?.title}"?
+                  Are you sure you want to delete "{selectedRelease.title}"?
                   This action cannot be undone and will initiate a takedown from
                   all platforms if the release is already live.
                 </AlertDialogDescription>
@@ -5559,17 +5559,17 @@ function ARSubmissionsContent() {
         {[
           {
             label: "Total Submitted",
-            value: stats?.total || 0,
+            value: stats.total || 0,
             icon: <Briefcase className="w-5 h-5" />,
           },
           {
             label: "Pending Response",
-            value: stats?.pending || 0,
+            value: stats.pending || 0,
             icon: <AlertCircle className="w-5 h-5 text-yellow-500" />,
           },
           {
             label: "Accepted",
-            value: stats?.accepted || 0,
+            value: stats.accepted || 0,
             icon: <CheckCircle className="w-5 h-5 text-green-500" />,
           },
           {
@@ -5908,15 +5908,15 @@ function SampleClearanceContent() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Samples", value: stats?.total || 0 },
+          { label: "Total Samples", value: stats.total || 0 },
           {
             label: "Cleared",
-            value: stats?.cleared || 0,
+            value: stats.cleared || 0,
             color: "text-green-600",
           },
           {
             label: "Pending",
-            value: stats?.pending || 0,
+            value: stats.pending || 0,
             color: "text-yellow-600",
           },
           {

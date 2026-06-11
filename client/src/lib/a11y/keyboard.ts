@@ -31,7 +31,7 @@ export function createFocusTrap(
   let paused = false;
   let previouslyFocused: HTMLElement | null = null;
 
-  const _handleKeyDown = (event: KeyboardEvent) => {
+  const handleKeyDown = (event: KeyboardEvent) => {
     if (!active || paused) return;
 
     if (event?.key === "Tab") {
@@ -42,12 +42,12 @@ export function createFocusTrap(
     }
   };
 
-  const _handleTabKey = (event: KeyboardEvent) => {
-    const _focusableElements = getFocusableElements(container);
+  const handleTabKey = (event: KeyboardEvent) => {
+    const focusableElements = getFocusableElements(container);
     if (focusableElements?.length === 0) return;
 
-    const _firstElement = focusableElements[0];
-    const _lastElement = focusableElements[focusableElements?.length - 1];
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements?.length - 1];
 
     if (event?.shiftKey) {
       if (document?.activeElement === firstElement) {
@@ -62,10 +62,10 @@ export function createFocusTrap(
     }
   };
 
-  const _handleClick = (event: MouseEvent) => {
+  const handleClick = (event: MouseEvent) => {
     if (!active || paused || allowOutsideClick) return;
 
-    const _target = event?.target as Node;
+    const target = event?.target as Node;
     if (!container?.contains(target)) {
       event?.preventDefault();
       event?.stopPropagation();
@@ -73,10 +73,10 @@ export function createFocusTrap(
     }
   };
 
-  const _focusFirstElement = () => {
-    const _focusableElements = getFocusableElements(container);
+  const focusFirstElement = () => {
+    const focusableElements = getFocusableElements(container);
     if (initialFocus) {
-      const _element =
+      const element =
         typeof initialFocus === "string"
           ? container?.querySelector<HTMLElement>(initialFocus)
           : initialFocus;
@@ -89,7 +89,7 @@ export function createFocusTrap(
     }
   };
 
-  const _activate = () => {
+  const activate = () => {
     if (active) return;
 
     previouslyFocused = document?.activeElement as HTMLElement;
@@ -103,7 +103,7 @@ export function createFocusTrap(
     });
   };
 
-  const _deactivate = () => {
+  const deactivate = () => {
     if (!active) return;
 
     active = false;
@@ -115,11 +115,11 @@ export function createFocusTrap(
     }
   };
 
-  const _pause = () => {
+  const pause = () => {
     paused = true;
   };
 
-  const _unpause = () => {
+  const unpause = () => {
     paused = false;
   };
 
@@ -147,11 +147,11 @@ export function createRovingTabIndex(
     onFocusChange,
   } = options;
 
-  const _getItems = (): HTMLElement[] => {
+  const getItems = (): HTMLElement[] => {
     return Array?.from(container?.querySelectorAll<HTMLElement>(selector));
   };
 
-  const _updateTabIndex = (items: HTMLElement[], focusedIndex: number) => {
+  const updateTabIndex = (items: HTMLElement[], focusedIndex: number) => {
     items?.forEach((item, index) => {
       item?.setAttribute("tabindex", index === focusedIndex ? "0" : "-1");
     });
@@ -159,12 +159,12 @@ export function createRovingTabIndex(
 
   let currentIndex = 0;
 
-  const _handleKeyDown = (event: KeyboardEvent) => {
-    const _items = getItems();
+  const handleKeyDown = (event: KeyboardEvent) => {
+    const items = getItems();
     if (items?.length === 0) return;
 
-    const _currentElement = document?.activeElement as HTMLElement;
-    const _currentIdx = items?.indexOf(currentElement);
+    const currentElement = document?.activeElement as HTMLElement;
+    const currentIdx = items?.indexOf(currentElement);
     if (currentIdx === -1) return;
 
     let nextIndex = currentIdx;
@@ -239,7 +239,7 @@ export function createRovingTabIndex(
 
       if (loop) {
         if (nextIndex < 0) nextIndex = items?.length - 1;
-        if (nextIndex >= items?.length) nextIndex = 0;
+        if (nextIndex >= items.length) nextIndex = 0;
       } else {
         nextIndex = Math?.max(0, Math?.min(items?.length - 1, nextIndex));
       }
@@ -253,7 +253,7 @@ export function createRovingTabIndex(
     }
   };
 
-  const _items = getItems();
+  const items = getItems();
   updateTabIndex(items, currentIndex);
 
   container?.addEventListener("keydown", handleKeyDown);
@@ -271,7 +271,7 @@ export interface EscapeHandlerOptions {
 export function createEscapeHandler(options: EscapeHandlerOptions): () => void {
   const { onEscape, stopPropagation = true } = options;
 
-  const _handleKeyDown = (event: KeyboardEvent) => {
+  const handleKeyDown = (event: KeyboardEvent) => {
     if (event?.key === "Escape") {
       if (stopPropagation) {
         event?.stopPropagation();
@@ -306,19 +306,19 @@ export function setupArrowNavigation(
     onNavigate,
   } = options;
 
-  const _handleKeyDown = (event: KeyboardEvent) => {
-    const _items = Array?.from(container?.querySelectorAll<HTMLElement>(selector));
-    const _currentIndex = items?.findIndex(
+  const handleKeyDown = (event: KeyboardEvent) => {
+    const items = Array?.from(container?.querySelectorAll<HTMLElement>(selector));
+    const currentIndex = items?.findIndex(
       (item) => item === document?.activeElement,
     );
 
     if (currentIndex === -1) return;
 
     let nextIndex = currentIndex;
-    const _isNext =
+    const isNext =
       (orientation === "horizontal" && event?.key === "ArrowRight") ||
       (orientation === "vertical" && event?.key === "ArrowDown");
-    const _isPrev =
+    const isPrev =
       (orientation === "horizontal" && event?.key === "ArrowLeft") ||
       (orientation === "vertical" && event?.key === "ArrowUp");
 
@@ -339,7 +339,7 @@ export function setupArrowNavigation(
     }
 
     event?.preventDefault();
-    const _nextItem = items[nextIndex];
+    const nextItem = items[nextIndex];
     if (nextItem) {
       nextItem?.focus();
       onNavigate?.(nextItem, nextIndex);
@@ -366,7 +366,7 @@ export function handleTypeahead(
       buffer = "";
     }, timeout);
 
-    const _match = items?.find((item) =>
+    const match = items?.find((item) =>
       getLabel(item).toLowerCase().startsWith(buffer),
     );
 

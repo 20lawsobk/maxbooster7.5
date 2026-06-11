@@ -1,5 +1,5 @@
-import type { ChunkStore } from "./ChunkStore?.js";
-import type { ChunkId } from "../types?.js";
+import type { ChunkStore } from "./ChunkStore.js";
+import type { ChunkId } from "../types.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -7,12 +7,12 @@ export class LocalFsChunkStore implements ChunkStore {
   constructor(private baseDir: string) {}
 
   private resolvePath(chunkId: ChunkId): string {
-    const _prefix = chunkId?.slice(0, 2);
+    const prefix = chunkId?.slice(0, 2);
     return path?.join(this?.baseDir, prefix, chunkId);
   }
 
   async putChunk(chunkId: ChunkId, data: Buffer): Promise<void> {
-    const _p = this?.resolvePath(chunkId);
+    const p = this?.resolvePath(chunkId);
     await fs?.mkdir(path?.dirname(p), { recursive: true });
     await fs?.writeFile(p, data);
   }

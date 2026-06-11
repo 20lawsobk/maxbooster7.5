@@ -47,7 +47,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -327,27 +327,27 @@ const ALGORITHM_DIRECTIVES: Record<string, AlgorithmDirectives> = {
 
 // ─── Score: how well does content target the platform's algorithm? ─────────────
 
-const _SAVE_TRIGGERS =
+const SAVE_TRIGGERS =
   /save (this|for later)|bookmark|come back to|reference|keep this|screenshot this/i;
-const _REPLY_TRIGGERS =
+const REPLY_TRIGGERS =
   /what do you think|agree or disagree|drop (your|a)|what'?s your (take|opinion|experience)|comment below|reply with/i;
-const _REWATCH_TRIGGERS =
+const REWATCH_TRIGGERS =
   /watch again|rewatch|loop|duet|part 2|follow for more/i;
-const _EMOTIONAL_HOOKS =
+const EMOTIONAL_HOOKS =
   /story|felt|cried|changed (my|everything)|real talk|honest(ly)?|vulnerable|confession/i;
-const _THREAD_INVITE =
+const THREAD_INVITE =
   /what'?s your (experience|take|story)|has anyone (else|ever)|anyone else notice/i;
-const _HOOK_OPENERS =
+const HOOK_OPENERS =
   /^(unpopular opinion|hot take|pov:|story time|plot twist|nobody talks about|this changed|truth:|real talk:|confession:|fun fact:|did you know)/i;
-const _CURIOSITY_GAP =
+const CURIOSITY_GAP =
   /\.\.\.|here'?s why|and it'?s not what you think|but here'?s the thing|the secret|nobody tells you/i;
-const _LIST_STRUCTURE = /(\d+\s+(ways|tips|things|steps|reasons)|• |→ |- )/i;
-const _DWELL_STRUCTURE = /\n\n|\n/g; // line breaks signal readable structure
+const LIST_STRUCTURE = /(\d+\s+(ways|tips|things|steps|reasons)|• |→ |- )/i;
+const DWELL_STRUCTURE = /\n\n|\n/g; // line breaks signal readable structure
 
 export class PlatformAlgorithmOptimizer {
   getDirectives(platform: string): AlgorithmDirectives {
-    const _key = platform?.toLowerCase().replace(/[^a-z]/g, "");
-    return ALGORITHM_DIRECTIVES[key] ?? ALGORITHM_DIRECTIVES?.instagram;
+    const key = platform.toLowerCase().replace(/[^a-z]/g, "");
+    return ALGORITHM_DIRECTIVES[key] ?? ALGORITHM_DIRECTIVES.instagram;
   }
 
   /**
@@ -361,8 +361,8 @@ export class PlatformAlgorithmOptimizer {
     cta: string,
     platform: string,
   ): AlgorithmAlignmentScore {
-    const _key = platform?.toLowerCase().replace(/[^a-z]/g, "");
-    const _full = `${headline}\n\n${content}\n\n${cta}`;
+    const key = platform?.toLowerCase().replace(/[^a-z]/g, "");
+    const full = `${headline}\n\n${content}\n\n${cta}`;
 
     switch (key) {
       case "twitter":
@@ -443,7 +443,7 @@ export class PlatformAlgorithmOptimizer {
     }
 
     // Structure: short and punchy
-    const _len = full?.length;
+    const len = full?.length;
     if (len <= 240) {
       structureScore += 20;
       boosts?.push("optimal tweet length");
@@ -522,21 +522,21 @@ export class PlatformAlgorithmOptimizer {
     }
 
     // Structure: readable, medium length
-    const _len = content?.length;
+    const len = content.length;
     if (len >= 300 && len <= 1200) {
       structureScore += 20;
-      boosts?.push("optimal caption length");
+      boosts.push("optimal caption length");
     }
     if (len < 100) {
       structureScore -= 15;
-      penalties?.push("caption too short — no save value");
+      penalties.push("caption too short — no save value");
     }
-    if ((content?.match(DWELL_STRUCTURE) || []).length >= 3) {
+    if ((content.match(DWELL_STRUCTURE) || []).length >= 3) {
       structureScore += 10;
-      boosts?.push("readable paragraph breaks");
+      boosts.push("readable paragraph breaks");
     }
 
-    return this?.buildScore({
+    return this.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -560,54 +560,54 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: watch completion — does it hook in 3 words and loop?
-    const _firstWords = headline?.split(" ").slice(0, 5).join(" ");
-    if (HOOK_OPENERS?.test(firstWords)) {
+    const firstWords = headline.split(" ").slice(0, 5).join(" ");
+    if (HOOK_OPENERS.test(firstWords)) {
       primarySignal += 25;
-      boosts?.push("pattern interrupt in first words");
+      boosts.push("pattern interrupt in first words");
     }
-    if (REWATCH_TRIGGERS?.test(full)) {
+    if (REWATCH_TRIGGERS.test(full)) {
       primarySignal += 20;
-      boosts?.push("rewatch/loop trigger");
+      boosts.push("rewatch/loop trigger");
     }
-    if (CURIOSITY_GAP?.test(full)) {
+    if (CURIOSITY_GAP.test(full)) {
       primarySignal += 15;
-      boosts?.push("curiosity gap drives completion");
+      boosts.push("curiosity gap drives completion");
     }
-    if (/pov:|this changed|nobody tells/i?.test(headline)) {
+    if (/pov:|this changed|nobody tells/i.test(headline)) {
       primarySignal += 10;
-      boosts?.push("viral TikTok hook format");
+      boosts.push("viral TikTok hook format");
     }
 
     // Hook: strong opening
-    if (headline?.length <= 60) {
+    if (headline.length <= 60) {
       hookStrength += 20;
-      boosts?.push("short sharp TikTok hook");
+      boosts.push("short sharp TikTok hook");
     }
-    if (HOOK_OPENERS?.test(headline)) {
+    if (HOOK_OPENERS.test(headline)) {
       hookStrength += 20;
-      boosts?.push("platform-native hook");
+      boosts.push("platform-native hook");
     }
-    if (/slow|anyway|so today|hi guys/i?.test(headline)) {
+    if (/slow|anyway|so today|hi guys/i.test(headline)) {
       hookStrength -= 20;
-      penalties?.push("slow opening kills watch completion");
+      penalties.push("slow opening kills watch completion");
     }
 
     // CTA: drives rewatches and duets
-    if (REWATCH_TRIGGERS?.test(cta)) {
+    if (REWATCH_TRIGGERS.test(cta)) {
       ctaAlignment += 30;
-      boosts?.push("rewatch-driving CTA");
+      boosts.push("rewatch-driving CTA");
     }
-    if (/duet|stitch/i?.test(cta)) {
+    if (/duet|stitch/i.test(cta)) {
       ctaAlignment += 15;
-      boosts?.push("duet CTA drives UGC");
+      boosts.push("duet CTA drives UGC");
     }
-    if (/follow/i?.test(cta) && !REWATCH_TRIGGERS?.test(cta)) {
+    if (/follow/i.test(cta) && !REWATCH_TRIGGERS.test(cta)) {
       ctaAlignment -= 5;
-      penalties?.push("follow CTA alone doesn't boost watch completion");
+      penalties.push("follow CTA alone doesn't boost watch completion");
     }
 
     // Structure: short caption, loop ending
-    const _len = content?.length;
+    const len = content?.length;
     if (len <= 200) {
       structureScore += 20;
       boosts?.push("short caption — video is the content");
@@ -641,7 +641,7 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: dwell time — does it earn a long read?
-    const _lineBreaks = (content?.match(/\n/g) || []).length;
+    const lineBreaks = (content?.match(/\n/g) || []).length;
     if (lineBreaks >= 5) {
       primarySignal += 20;
       boosts?.push("short paragraphs maximise dwell time");
@@ -763,7 +763,7 @@ export class PlatformAlgorithmOptimizer {
     }
 
     // Structure: story-based
-    const _len = content?.length;
+    const len = content?.length;
     if (len >= 200 && len <= 800) {
       structureScore += 20;
       boosts?.push("optimal Facebook caption length");
@@ -835,7 +835,7 @@ export class PlatformAlgorithmOptimizer {
     }
 
     // Structure: short and conversational
-    const _len = full?.length;
+    const len = full?.length;
     if (len <= 300) {
       structureScore += 25;
       boosts?.push("optimal Threads length");
@@ -856,7 +856,7 @@ export class PlatformAlgorithmOptimizer {
   }
 
   private scoreYouTube(
-    _full: string,
+    full: string,
     headline: string,
     cta: string,
     content: string,
@@ -873,19 +873,19 @@ export class PlatformAlgorithmOptimizer {
       primarySignal += 20;
       boosts?.push("curiosity gap in title drives CTR");
     }
-    if (/how to|why|what|the truth|you\'?ve been doing/i?.test(headline)) {
+    if (/how to|why|what|the truth|you\'?ve been doing/i.test(headline)) {
       primarySignal += 15;
-      boosts?.push("high-CTR title format");
+      boosts.push("high-CTR title format");
     }
     if (
-      /in this video|by the end|you\'?ll (learn|discover|see)/i?.test(content)
+      /in this video|by the end|you\'?ll (learn|discover|see)/i.test(content)
     ) {
       primarySignal += 15;
-      boosts?.push("promise delivered early — watch time");
+      boosts.push("promise delivered early — watch time");
     }
-    if (/slow intro|hi everyone, welcome back/i?.test(content)) {
+    if (/slow intro|hi everyone, welcome back/i.test(content)) {
       primarySignal -= 20;
-      penalties?.push("slow intro kills watch percentage");
+      penalties.push("slow intro kills watch percentage");
     }
 
     // Hook: delivers on title promise in first 30 seconds
@@ -938,19 +938,19 @@ export class PlatformAlgorithmOptimizer {
     penalties: string[];
     boosts: string[];
   }): AlgorithmAlignmentScore {
-    const _clamp = (n: number) => Math?.min(100, Math?.max(0, n));
+    const clamp = (n: number) => Math?.min(100, Math?.max(0, n));
 
-    const _primarySignal = clamp(input?.primarySignal);
-    const _hookStrength = clamp(input?.hookStrength);
-    const _ctaAlignment = clamp(input?.ctaAlignment);
-    const _structureScore = clamp(input?.structureScore);
+    const primarySignal = clamp(input?.primarySignal);
+    const hookStrength = clamp(input?.hookStrength);
+    const ctaAlignment = clamp(input?.ctaAlignment);
+    const structureScore = clamp(input?.structureScore);
 
     // Weighted composite — primary signal matters most
-    const _score = clamp(
-      primarySignal * 0?.4 +
-        hookStrength * 0?.25 +
-        ctaAlignment * 0?.2 +
-        structureScore * 0?.15,
+    const score = clamp(
+      primarySignal * 0.4 +
+        hookStrength * 0.25 +
+        ctaAlignment * 0.2 +
+        structureScore * 0.15,
     );
 
     return {
@@ -959,8 +959,8 @@ export class PlatformAlgorithmOptimizer {
       hookStrength,
       ctaAlignment,
       structureScore,
-      penalties: input?.penalties,
-      boosts: input?.boosts,
+      penalties: input.penalties,
+      boosts: input.boosts,
     };
   }
 
@@ -970,7 +970,7 @@ export class PlatformAlgorithmOptimizer {
    * every variant is written with the algorithm in mind from the start.
    */
   buildAlgorithmPromptSuffix(platform: string): string {
-    const _d = this?.getDirectives(platform);
+    const d = this?.getDirectives(platform);
     return [
       `PLATFORM ALGORITHM DIRECTIVES (${platform?.toUpperCase()}):`,
       `• Primary signal to trigger: ${d?.primarySignal.replace(/_/g, " ")}`,
@@ -984,15 +984,15 @@ export class PlatformAlgorithmOptimizer {
   }
 
   logAlignment(platform: string, score: AlgorithmAlignmentScore): void {
-    const _icon = score?.score >= 75 ? "✅" : score?.score >= 55 ? "⚠️" : "❌";
+    const icon = score?.score >= 75 ? "✅" : score?.score >= 55 ? "⚠️" : "❌";
     logger?.info(
       `[AlgoOptimizer] ${icon} ${platform} algorithm alignment: ${score?.score.toFixed(1)}/100 ` +
-        `(signal=${score?.primarySignal.toFixed(0)} hook=${score?.hookStrength.toFixed(0)} ` +
-        `cta=${score?.ctaAlignment.toFixed(0)} structure=${score?.structureScore.toFixed(0)})` +
+        `(signal=${score.primarySignal.toFixed(0)} hook=${score?.hookStrength.toFixed(0)} ` +
+        `cta=${score.ctaAlignment.toFixed(0)} structure=${score?.structureScore.toFixed(0)})` +
         (score?.boosts.length ? ` | ✓ ${score?.boosts.join(", ")}` : "") +
         (score?.penalties.length ? ` | ✗ ${score?.penalties.join(", ")}` : ""),
     );
   }
 }
 
-export const _platformAlgorithmOptimizer = new PlatformAlgorithmOptimizer();
+export const platformAlgorithmOptimizer = new PlatformAlgorithmOptimizer();

@@ -19,16 +19,16 @@
 
 import { EventEmitter } from "events";
 import http from "http";
-import { logger } from "./logger?.js";
-import { storage } from "./storage?.js";
-import { customAI } from "./custom-ai-engine?.js";
-import { industryMonitor } from "./services/industryMonitorService?.js";
-import { storageService } from "./services/storageService?.js";
+import { logger } from "./logger.js";
+import { storage } from "./storage.js";
+import { customAI } from "./custom-ai-engine.js";
+import { industryMonitor } from "./services/industryMonitorService.js";
+import { storageService } from "./services/storageService.js";
 import {
   evolutionRegistry,
   type EnhancementCategory,
-} from "./services/evolutionRegistry?.js";
-import { isProductionEnv } from "./lib/envHelpers?.js";
+} from "./services/evolutionRegistry.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
 interface IndustryChange {
   id: string;
@@ -469,7 +469,7 @@ const COMPETITOR_PLATFORMS: Array<{
     ],
   },
   {
-    name: "Beatoven?.ai",
+    name: "Beatoven.ai",
     category: "ai_music",
     knownFeatures: [
       "AI background music generation for video",
@@ -628,7 +628,7 @@ const COMPETITOR_PLATFORMS: Array<{
     ],
   },
   {
-    name: "Feature?.fm",
+    name: "Feature.fm",
     category: "music_marketing",
     knownFeatures: [
       "smart music links",
@@ -944,7 +944,7 @@ interface AdvantageEntry {
   reason: string; // why we win, or why we still need to improve
 }
 
-const _MAX_BOOSTER_ADVANTAGES = new Map<string, AdvantageEntry>([
+const MAX_BOOSTER_ADVANTAGES = new Map<string, AdvantageEntry>([
   // ── DISTRIBUTION ──────────────────────────────────────────────────────────
   [
     "music distribution to all DSPs",
@@ -975,7 +975,7 @@ const _MAX_BOOSTER_ADVANTAGES = new Map<string, AdvantageEntry>([
     {
       level: "at_parity",
       reason:
-        "Smart links exist but Feature?.fm and Linkfire offer deeper retargeting pixels and fan data capture — must surpass on conversion analytics.",
+        "Smart links exist but Feature.fm and Linkfire offer deeper retargeting pixels and fan data capture — must surpass on conversion analytics.",
     },
   ],
   [
@@ -1405,7 +1405,7 @@ const _MAX_BOOSTER_ADVANTAGES = new Map<string, AdvantageEntry>([
 export class SelfEvolutionEngine extends EventEmitter {
   private isRunning: boolean = false;
   private isCycleRunning: boolean = false;
-  private monitoringInterval: NodeJS?.Timeout | null = null;
+  private monitoringInterval: NodeJS.Timeout | null = null;
   private upgradeQueue: CodeUpgrade[] = [];
   private industryChanges: IndustryChange[] = [];
   private seenChangeIds: Set<string> = new Set();
@@ -1426,7 +1426,7 @@ export class SelfEvolutionEngine extends EventEmitter {
   private readonly MAX_CHANGES_IN_MEMORY = 500;
   private readonly MAX_UPGRADES_IN_MEMORY = 200;
   private readonly MAX_SEEN_IDS = 2000;
-  private readonly STATE_KEY = "evolution-state/state?.json";
+  private readonly STATE_KEY = "evolution-state/state.json";
 
   constructor() {
     super();
@@ -1437,8 +1437,8 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private async seedSeenIdsFromDisk(): Promise<void> {
     try {
-      const _buf = await storageService?.downloadFile(this?.STATE_KEY);
-      const _state = JSON?.parse(buf?.toString("utf-8")) as {
+      const buf = await storageService?.downloadFile(this?.STATE_KEY);
+      const state = JSON?.parse(buf?.toString("utf-8")) as {
         seenChangeIds?: string[];
       };
       if (Array?.isArray(state?.seenChangeIds)) {
@@ -1454,8 +1454,8 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private async saveStateToDisk(): Promise<void> {
     try {
-      const _ids = Array?.from(this?.seenChangeIds);
-      const _state = { seenChangeIds: ids, savedAt: new Date().toISOString() };
+      const ids = Array?.from(this?.seenChangeIds);
+      const state = { seenChangeIds: ids, savedAt: new Date().toISOString() };
       await storageService?.uploadFile(
         Buffer?.from(JSON?.stringify(state, null, 2), "utf-8"),
         this?.STATE_KEY,
@@ -1468,9 +1468,9 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private pruneSeenIds(): void {
     if (this?.seenChangeIds.size > this?.MAX_SEEN_IDS) {
-      const _arr = Array?.from(this?.seenChangeIds);
-      const _keep = arr?.slice(arr?.length - (this?.MAX_SEEN_IDS - 500));
-      this?.seenChangeIds = new Set(keep);
+      const arr = Array?.from(this?.seenChangeIds);
+      const keep = arr?.slice(arr?.length - (this?.MAX_SEEN_IDS - 500));
+      this.seenChangeIds = new Set(keep);
       logger?.info(
         `🧬 Pruned seenChangeIds to ${this?.seenChangeIds.size} entries`,
       );
@@ -1488,8 +1488,8 @@ export class SelfEvolutionEngine extends EventEmitter {
    * Manual triggering via API is always available for controlled upgrades.
    */
   isProductionSafetyEnabled(): boolean {
-    const _isProd = isProductionEnv();
-    const _explicitlyEnabled = process?.env.ENABLE_SELF_EVOLUTION === "true";
+    const isProd = isProductionEnv();
+    const explicitlyEnabled = process?.env.ENABLE_SELF_EVOLUTION === "true";
 
     // In development, auto-evolution is allowed
     if (!isProd) {
@@ -1516,9 +1516,9 @@ export class SelfEvolutionEngine extends EventEmitter {
     explicitOptIn: boolean;
     reason: string;
   } {
-    const _isProduction = isProductionEnv();
-    const _explicitOptIn = process?.env.ENABLE_SELF_EVOLUTION === "true";
-    const _autoEvolutionEnabled = this?.isProductionSafetyEnabled();
+    const isProduction = isProductionEnv();
+    const explicitOptIn = process?.env.ENABLE_SELF_EVOLUTION === "true";
+    const autoEvolutionEnabled = this?.isProductionSafetyEnabled();
 
     let reason: string;
     if (!isProduction) {
@@ -1549,7 +1549,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     changesDetected: number;
     upgradesDeployed: number;
   }> {
-    const _cycleId = `manual_evolution_${Date?.now()}`;
+    const cycleId = `manual_evolution_${Date?.now()}`;
     logger?.info(
       `🔧 MANUAL EVOLUTION TRIGGER: Starting controlled upgrade cycle ${cycleId}`,
     );
@@ -1557,12 +1557,12 @@ export class SelfEvolutionEngine extends EventEmitter {
     try {
       await this?.runEvolutionCycle();
 
-      const _status = this?.getStatus();
+      const status = this?.getStatus();
       return {
         success: true,
         cycleId,
-        changesDetected: status?.changesDetected,
-        upgradesDeployed: status?.upgradesDeployed,
+        changesDetected: status.changesDetected,
+        upgradesDeployed: status.upgradesDeployed,
       };
     } catch (error) {
       logger?.warn(
@@ -1574,7 +1574,7 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   private async initializeIndustryKnowledge(): Promise<void> {
-    this?.platformStandards = [
+    this.platformStandards = [
       {
         platform: "Spotify",
         standardType: "loudness",
@@ -1613,7 +1613,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       {
         platform: "Spotify",
         standardType: "audio_format",
-        currentRequirement: "FLAC/WAV 16-24bit 44?.1-192kHz",
+        currentRequirement: "FLAC/WAV 16-24bit 44.1-192kHz",
         maxBoosterCompliant: true,
         autoFixAvailable: true,
       },
@@ -1627,7 +1627,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       {
         platform: "Instagram",
         standardType: "api_version",
-        currentRequirement: "Graph API v18?.0",
+        currentRequirement: "Graph API v18.0",
         maxBoosterCompliant: true,
         autoFixAvailable: true,
       },
@@ -1651,7 +1651,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       return;
     }
 
-    this?.isRunning = true;
+    this.isRunning = true;
 
     logger?.info("🚀 Self-Evolution Engine ACTIVATED");
     logger?.info(
@@ -1662,7 +1662,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       logger?.warn({ err: e }, "Initial evolution cycle error:"),
     );
 
-    this?.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       this?.runEvolutionCycle().catch((e) =>
         logger?.warn({ err: e }, "Scheduled evolution cycle error:"),
       );
@@ -1673,11 +1673,11 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   async stop(): Promise<void> {
     if (!this?.isRunning) return;
-    this?.isRunning = false;
+    this.isRunning = false;
 
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = null;
+      this.monitoringInterval = null;
     }
 
     logger?.info("🛑 Self-Evolution Engine stopped");
@@ -1690,19 +1690,19 @@ export class SelfEvolutionEngine extends EventEmitter {
       return;
     }
 
-    this?.isCycleRunning = true;
-    const _cycleId = `evolution_${Date?.now()}`;
+    this.isCycleRunning = true;
+    const cycleId = `evolution_${Date?.now()}`;
     logger?.info(`🧬 Starting evolution cycle: ${cycleId}`);
 
     try {
       // Phase 0: Competitive leadership check — runs FIRST every cycle
-      const _leadershipGaps = await this?.assessCompetitiveLeadership();
+      const leadershipGaps = await this?.assessCompetitiveLeadership();
       logger?.info(
         `   🏆 Competitive leadership: ${leadershipGaps?.length} gaps vs competitors (score: ${this?.competitivePositionScore}/100)`,
       );
 
       // Phase 1: Monitor the industry landscape
-      const _changes = await this?.monitorIndustryLandscape();
+      const changes = await this?.monitorIndustryLandscape();
       // Merge leadership gaps in as high-priority industry changes
       for (const gap of leadershipGaps) {
         if (!this?.seenChangeIds.has(gap?.id)) {
@@ -1716,29 +1716,29 @@ export class SelfEvolutionEngine extends EventEmitter {
       );
 
       // Phase 2: Analyze competitive position
-      const _competitiveGaps = await this?.analyzeCompetitivePosition(changes);
+      const competitiveGaps = await this?.analyzeCompetitivePosition(changes);
       logger?.info(
         `   🎯 Identified ${competitiveGaps?.length} competitive gaps to address`,
       );
 
       // Phase 3: Generate code upgrades for high-priority changes
-      const _upgrades = await this?.generateCodeUpgrades(competitiveGaps);
+      const upgrades = await this?.generateCodeUpgrades(competitiveGaps);
       logger?.info(`   💻 Generated ${upgrades?.length} code upgrades`);
       this?.upgradeQueue.push(...upgrades);
       if (this?.upgradeQueue.length > this?.MAX_UPGRADES_IN_MEMORY) {
-        this?.upgradeQueue = this?.upgradeQueue.slice(
+        this.upgradeQueue = this?.upgradeQueue.slice(
           -this?.MAX_UPGRADES_IN_MEMORY,
         );
       }
 
       // Phase 4: Test and validate generated code
-      const _validatedUpgrades = await this?.testUpgrades(upgrades);
+      const validatedUpgrades = await this?.testUpgrades(upgrades);
       logger?.info(
         `   ✅ Validated ${validatedUpgrades?.length} upgrades for deployment`,
       );
 
       // Phase 5: Deploy upgrades with canary pattern
-      const _deployedCount = await this?.deployUpgrades(validatedUpgrades);
+      const deployedCount = await this?.deployUpgrades(validatedUpgrades);
       logger?.info(`   🚀 Deployed ${deployedCount} upgrades`);
 
       // Phase 6: Monitor post-deployment metrics
@@ -1747,27 +1747,27 @@ export class SelfEvolutionEngine extends EventEmitter {
       // Phase 7: Learn from results and improve
       await this?.learnFromCycle(cycleId);
 
-      this?.lastCycleError = null;
+      this.lastCycleError = null;
       logger?.info(
         `✅ Evolution cycle ${cycleId} completed successfully (total: ${this?.totalCyclesRun + 1})`,
       );
       this?.emit("cycleCompleted", {
         cycleId,
-        changes: changes?.length,
+        changes: changes.length,
         upgrades: deployedCount,
       });
     } catch (error) {
-      this?.lastCycleError = (error as Error).message || String(error);
+      this.lastCycleError = (error as Error).message || String(error);
       logger?.warn({ err: error }, `❌ Evolution cycle ${cycleId} failed:`);
       this?.emit("cycleFailed", { cycleId, error });
     } finally {
-      this?.lastCycleAt = new Date();
-      this?.totalCyclesRun++;
+      this.lastCycleAt = new Date();
+      this.totalCyclesRun++;
       this?.pruneSeenIds();
       this?.saveStateToDisk().catch((e) =>
         logger?.warn({ err: e }, "Could not save state:"),
       );
-      this?.isCycleRunning = false;
+      this.isCycleRunning = false;
     }
   }
 
@@ -1793,7 +1793,7 @@ export class SelfEvolutionEngine extends EventEmitter {
    *   score = (Σ pts) / (totalFeatures × 3) × 100
    */
   private async assessCompetitiveLeadership(): Promise<IndustryChange[]> {
-    this?.lastCompetitiveScan = new Date();
+    this.lastCompetitiveScan = new Date();
     const gaps: IndustryChange[] = [];
 
     let totalPoints = 0;
@@ -1804,122 +1804,122 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     // ── 1. Three-tier assessment across all competitor features ──────────────
     for (const competitor of COMPETITOR_PLATFORMS) {
-      for (const feature of competitor?.knownFeatures) {
+      for (const feature of competitor.knownFeatures) {
         maxPoints += 3;
 
         // Look up our advantage status for this feature (fuzzy key match)
-        const _advantageEntry = this?.lookupAdvantage(feature);
+        const advantageEntry = this.lookupAdvantage(feature);
 
-        if (advantageEntry?.level === "surpassed") {
+        if (advantageEntry.level === "surpassed") {
           // We win on this dimension — no action needed
           totalPoints += 3;
           surpassedCount++;
           continue;
         }
 
-        if (advantageEntry?.level === "at_parity") {
+        if (advantageEntry.level === "at_parity") {
           // Parity is not the goal — generate a change to SURPASS this feature
           totalPoints += 1;
           parityCount++;
-          const _gapId = `surpass_${competitor?.name}_${feature}`
+          const gapId = `surpass_${competitor.name}_${feature}`
             .replace(/[^a-z0-9_]/gi, "_")
             .toLowerCase();
-          if (!this?.seenChangeIds.has(gapId)) {
-            gaps?.push({
+          if (!this.seenChangeIds.has(gapId)) {
+            gaps.push({
               id: gapId,
               source: "competitor",
               category: "optimization",
-              title: `Surpass ${competitor?.name}: "${feature}"`,
-              description: `Max Booster has an equivalent but has not meaningfully differentiated. ${advantageEntry?.reason} Target: be definitively better than ${competitor?.name} on this dimension.`,
+              title: `Surpass ${competitor.name}: "${feature}"`,
+              description: `Max Booster has an equivalent but has not meaningfully differentiated. ${advantageEntry.reason} Target: be definitively better than ${competitor.name} on this dimension.`,
               detectedAt: new Date(),
               urgency: "high",
-              affectedModules: this?.inferModulesFromFeature(feature),
+              affectedModules: this.inferModulesFromFeature(feature),
               competitiveImpact: 85,
               implementationComplexity: "moderate",
               estimatedImplementationHours: 16,
             });
-            this?.competitiveGapsDetected++;
+            this.competitiveGapsDetected++;
           }
           continue;
         }
 
         // Missing entirely — most urgent
         missingCount++;
-        const _gapId = `missing_${competitor?.name}_${feature}`
+        const gapId = `missing_${competitor.name}_${feature}`
           .replace(/[^a-z0-9_]/gi, "_")
           .toLowerCase();
-        if (!this?.seenChangeIds.has(gapId)) {
-          gaps?.push({
+        if (!this.seenChangeIds.has(gapId)) {
+          gaps.push({
             id: gapId,
             source: "competitor",
             category: "feature",
-            title: `MISSING vs ${competitor?.name}: "${feature}"`,
-            description: `${competitor?.name} offers "${feature}" and Max Booster has no equivalent. This is a critical gap that must be closed — then exceeded.`,
+            title: `MISSING vs ${competitor.name}: "${feature}"`,
+            description: `${competitor.name} offers "${feature}" and Max Booster has no equivalent. This is a critical gap that must be closed — then exceeded.`,
             detectedAt: new Date(),
             urgency: "critical",
-            affectedModules: this?.inferModulesFromFeature(feature),
+            affectedModules: this.inferModulesFromFeature(feature),
             competitiveImpact: 98,
             implementationComplexity: "moderate",
             estimatedImplementationHours: 24,
           });
-          this?.competitiveGapsDetected++;
+          this.competitiveGapsDetected++;
         }
       }
     }
 
     // ── 2. Live competitor signals from RSS/search ───────────────────────────
-    const _liveCompetitorSignals = industryMonitor?.getCompetitiveIntelligence();
-    for (const signal of liveCompetitorSignals?.slice(0, 10)) {
+    const liveCompetitorSignals = industryMonitor.getCompetitiveIntelligence();
+    for (const signal of liveCompetitorSignals.slice(0, 10)) {
       const converted: IndustryChange = {
-        id: signal?.id,
+        id: signal.id,
         source: "competitor",
-        category: signal?.category,
-        title: `SURPASS: ${signal?.title}`,
-        description: `${signal?.description} — this is a live competitive threat. The goal is not to match this but to do it better.`,
-        detectedAt: signal?.detectedAt,
-        urgency: signal?.urgency,
-        affectedModules: signal?.affectedModules,
-        competitiveImpact: Math?.max(signal?.competitiveImpact, 88),
-        implementationComplexity: signal?.implementationComplexity,
-        estimatedImplementationHours: signal?.estimatedImplementationHours,
+        category: signal.category,
+        title: `SURPASS: ${signal.title}`,
+        description: `${signal.description} — this is a live competitive threat. The goal is not to match this but to do it better.`,
+        detectedAt: signal.detectedAt,
+        urgency: signal.urgency,
+        affectedModules: signal.affectedModules,
+        competitiveImpact: Math.max(signal.competitiveImpact, 88),
+        implementationComplexity: signal.implementationComplexity,
+        estimatedImplementationHours: signal.estimatedImplementationHours,
       };
-      if (!this?.seenChangeIds.has(converted?.id)) {
-        gaps?.push(converted);
-        this?.competitiveGapsDetected++;
+      if (!this.seenChangeIds.has(converted.id)) {
+        gaps.push(converted);
+        this.competitiveGapsDetected++;
       }
     }
 
     // ── 3. Score: 100 = surpassed on everything, 0 = missing everything ─────
-    const _rawScore =
-      maxPoints > 0 ? Math?.round((totalPoints / maxPoints) * 100) : 0;
-    this?.competitivePositionScore = Math?.min(100, rawScore);
+    const rawScore =
+      maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
+    this.competitivePositionScore = Math.min(100, rawScore);
 
-    logger?.info(
-      `[SelfEvolution] Competitive scan — score: ${this?.competitivePositionScore}/100` +
+    logger.info(
+      `[SelfEvolution] Competitive scan — score: ${this.competitivePositionScore}/100` +
         ` | surpassed: ${surpassedCount} | at_parity: ${parityCount} | missing: ${missingCount}` +
-        ` | action_items: ${gaps?.length}`,
+        ` | action_items: ${gaps.length}`,
     );
 
     if (missingCount > 0) {
-      logger?.warn(
+      logger.warn(
         `[SelfEvolution] ${missingCount} features MISSING entirely vs competitors — highest priority to build AND surpass.`,
       );
     }
     if (parityCount > 0) {
-      logger?.info(
+      logger.info(
         `[SelfEvolution] ${parityCount} features at parity — must be surpassed, not just maintained.`,
       );
     }
     if (surpassedCount > 0) {
-      logger?.info(
+      logger.info(
         `[SelfEvolution] ${surpassedCount} features where Max Booster is definitively ahead — maintain and extend lead.`,
       );
     }
 
     // Persist for getStatus()
-    this?.lastSurpassedCount = surpassedCount;
-    this?.lastParityCount = parityCount;
-    this?.lastMissingCount = missingCount;
+    this.lastSurpassedCount = surpassedCount;
+    this.lastParityCount = parityCount;
+    this.lastMissingCount = missingCount;
 
     return gaps;
   }
@@ -1929,19 +1929,19 @@ export class SelfEvolutionEngine extends EventEmitter {
    * Returns the advantage entry if found, or null if missing.
    */
   private lookupAdvantage(feature: string): AdvantageEntry | null {
-    const _featureLower = feature?.toLowerCase();
+    const featureLower = feature.toLowerCase();
 
     // Exact match first
-    if (MAX_BOOSTER_ADVANTAGES?.has(feature)) {
-      return MAX_BOOSTER_ADVANTAGES?.get(feature)!;
+    if (MAX_BOOSTER_ADVANTAGES.has(feature)) {
+      return MAX_BOOSTER_ADVANTAGES.get(feature)!;
     }
 
     // Fuzzy: check if any key is a substantial substring of the feature or vice versa
     for (const [key, entry] of MAX_BOOSTER_ADVANTAGES) {
-      const _keyLower = key?.toLowerCase();
-      const _featureWords = featureLower?.split(" ").slice(0, 4).join(" ");
-      const _keyWords = keyLower?.split(" ").slice(0, 4).join(" ");
-      if (featureLower?.includes(keyWords) || keyLower?.includes(featureWords)) {
+      const keyLower = key.toLowerCase();
+      const featureWords = featureLower.split(" ").slice(0, 4).join(" ");
+      const keyWords = keyLower.split(" ").slice(0, 4).join(" ");
+      if (featureLower.includes(keyWords) || keyLower.includes(featureWords)) {
         return entry;
       }
     }
@@ -1950,20 +1950,20 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   private inferModulesFromFeature(feature: string): string[] {
-    const _f = feature?.toLowerCase();
+    const f = feature.toLowerCase();
     const modules: string[] = [];
-    if (/distribut|dsp|isrc|upc|release/.test(f)) modules?.push("distribution");
+    if (/distribut|dsp|isrc|upc|release/.test(f)) modules.push("distribution");
     if (/analytic|stats|insight|report|dashboard/.test(f))
-      modules?.push("analytics");
-    if (/social|tiktok|instagram|post|content/.test(f)) modules?.push("social");
+      modules.push("analytics");
+    if (/social|tiktok|instagram|post|content/.test(f)) modules.push("social");
     if (/market|advertis|campaign|brand|deal/.test(f))
-      modules?.push("advertising");
+      modules.push("advertising");
     if (/monetiz|revenue|royalt|payout|split|funding|advance/.test(f))
-      modules?.push("monetization");
-    if (/mix|master|studio|plugin|vst|produc/.test(f)) modules?.push("studio");
-    if (/marketplace|beat|sample|merch/.test(f)) modules?.push("marketplace");
-    if (/securi|auth|encrypt/.test(f)) modules?.push("security");
-    return modules?.length > 0 ? modules : ["distribution", "analytics"];
+      modules.push("monetization");
+    if (/mix|master|studio|plugin|vst|produc/.test(f)) modules.push("studio");
+    if (/marketplace|beat|sample|merch/.test(f)) modules.push("marketplace");
+    if (/securi|auth|encrypt/.test(f)) modules.push("security");
+    return modules.length > 0 ? modules : ["distribution", "analytics"];
   }
 
   // ============================================
@@ -1975,36 +1975,36 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     // Primary: real RSS feeds + optional Tavily/Exa search intelligence
     try {
-      const _raw = await industryMonitor?.fetchLiveChanges();
-      liveChanges = raw?.map((c) => ({
-        id: c?.id,
-        source: c?.source,
-        category: c?.category,
-        title: c?.title,
-        description: c?.description,
-        detectedAt: c?.detectedAt,
-        urgency: c?.urgency,
-        affectedModules: c?.affectedModules,
-        competitiveImpact: c?.competitiveImpact,
-        implementationComplexity: c?.implementationComplexity,
-        estimatedImplementationHours: c?.estimatedImplementationHours,
+      const raw = await industryMonitor.fetchLiveChanges();
+      liveChanges = raw.map((c) => ({
+        id: c.id,
+        source: c.source,
+        category: c.category,
+        title: c.title,
+        description: c.description,
+        detectedAt: c.detectedAt,
+        urgency: c.urgency,
+        affectedModules: c.affectedModules,
+        competitiveImpact: c.competitiveImpact,
+        implementationComplexity: c.implementationComplexity,
+        estimatedImplementationHours: c.estimatedImplementationHours,
       }));
-      logger?.info(
-        `[SelfEvolution] Live industry monitor: ${liveChanges?.length} real changes fetched`,
+      logger.info(
+        `[SelfEvolution] Live industry monitor: ${liveChanges.length} real changes fetched`,
       );
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "[SelfEvolution] Live industry monitor failed — no simulated fallback, skipping cycle phase 1:",
         (error as Error).message,
       );
     }
 
-    const _newChanges = liveChanges?.filter((c) => !this?.seenChangeIds.has(c?.id));
-    for (const c of newChanges) this?.seenChangeIds.add(c?.id);
-    this?.industryChanges.push(...newChanges);
-    if (this?.industryChanges.length > this?.MAX_CHANGES_IN_MEMORY) {
-      this?.industryChanges = this?.industryChanges.slice(
-        -this?.MAX_CHANGES_IN_MEMORY,
+    const newChanges = liveChanges.filter((c) => !this.seenChangeIds.has(c.id));
+    for (const c of newChanges) this.seenChangeIds.add(c.id);
+    this.industryChanges.push(...newChanges);
+    if (this.industryChanges.length > this.MAX_CHANGES_IN_MEMORY) {
+      this.industryChanges = this.industryChanges.slice(
+        -this.MAX_CHANGES_IN_MEMORY,
       );
     }
     return newChanges;
@@ -2018,17 +2018,17 @@ export class SelfEvolutionEngine extends EventEmitter {
     changes: IndustryChange[],
   ): Promise<IndustryChange[]> {
     // Sort by competitive impact and urgency
-    const _prioritized = changes
-      .filter((c) => c?.competitiveImpact > 50) // Only address significant gaps
+    const prioritized = changes
+      .filter((c) => c.competitiveImpact > 50) // Only address significant gaps
       .sort((a, b) => {
-        const _urgencyWeight = { critical: 4, high: 3, medium: 2, low: 1 };
-        const _aScore = a?.competitiveImpact * urgencyWeight[a?.urgency];
-        const _bScore = b?.competitiveImpact * urgencyWeight[b?.urgency];
+        const urgencyWeight = { critical: 4, high: 3, medium: 2, low: 1 };
+        const aScore = a.competitiveImpact * urgencyWeight[a.urgency];
+        const bScore = b.competitiveImpact * urgencyWeight[b.urgency];
         return bScore - aScore;
       });
 
     // Take top priority changes to address this cycle
-    return prioritized?.slice(0, 5);
+    return prioritized.slice(0, 5);
   }
 
   // ============================================
@@ -2041,9 +2041,9 @@ export class SelfEvolutionEngine extends EventEmitter {
     const upgrades: CodeUpgrade[] = [];
 
     for (const change of changes) {
-      const _upgrade = await this?.generateUpgradeForChange(change);
+      const upgrade = await this.generateUpgradeForChange(change);
       if (upgrade) {
-        upgrades?.push(upgrade);
+        upgrades.push(upgrade);
       }
     }
 
@@ -2053,20 +2053,20 @@ export class SelfEvolutionEngine extends EventEmitter {
   private async generateUpgradeForChange(
     change: IndustryChange,
   ): Promise<CodeUpgrade | null> {
-    logger?.info(`   🔧 Generating enhancement for: ${change?.title}`);
+    logger.info(`   🔧 Generating enhancement for: ${change.title}`);
 
-    const _category = this?.categorizeChange(change);
-    const _payload = this?.buildEnhancementPayload(category, change);
+    const category = this.categorizeChange(change);
+    const payload = this.buildEnhancementPayload(category, change);
 
     const upgrade: CodeUpgrade = {
-      id: `upgrade_${change?.id}_${Date?.now()}`,
-      changeId: change?.id,
-      type: this?.mapChangeToUpgradeType(change),
-      targetFiles: await this?.identifyTargetFiles(change),
+      id: `upgrade_${change.id}_${Date.now()}`,
+      changeId: change.id,
+      type: this.mapChangeToUpgradeType(change),
+      targetFiles: await this.identifyTargetFiles(change),
       generatedCode: new Map([
         // Human-readable record of the bounded enhancement this upgrade
         // produces — surfaced verbatim in the admin upgrade history.
-        [`registry:${category}`, JSON?.stringify(payload, null, 2)],
+        [`registry:${category}`, JSON.stringify(payload, null, 2)],
       ]),
       testCode: "",
       status: "pending",
@@ -2087,24 +2087,24 @@ export class SelfEvolutionEngine extends EventEmitter {
    * engine will NOT report them as applied behavior changes.
    */
   private categorizeChange(change: IndustryChange): EnhancementCategory {
-    const _mods = change?.affectedModules || [];
-    const _social = change?.source === "social_media" || mods?.includes("social");
-    const _timingSignal =
-      /\b(timing|schedul|post time|best time|when to post|peak hour)/i?.test(
-        `${change?.title} ${change?.description}`,
+    const mods = change.affectedModules || [];
+    const social = change.source === "social_media" || mods.includes("social");
+    const timingSignal =
+      /\b(timing|schedul|post time|best time|when to post|peak hour)/i.test(
+        `${change.title} ${change.description}`,
       );
 
-    if (change?.source === "social_media") {
+    if (change.source === "social_media") {
       return timingSignal ? "posting_optimization" : "content_optimization";
     }
-    if (change?.source === "streaming_platform") return "platform_compliance";
-    if (change?.source === "regulation") return "platform_compliance";
-    if (change?.source === "security") return "feature_flag";
-    if (change?.source === "technology") return "feature_flag";
+    if (change.source === "streaming_platform") return "platform_compliance";
+    if (change.source === "regulation") return "platform_compliance";
+    if (change.source === "security") return "feature_flag";
+    if (change.source === "technology") return "feature_flag";
     // competitor (and anything else)
     if (social)
       return timingSignal ? "posting_optimization" : "content_optimization";
-    if (mods?.includes("distribution")) return "distribution_config";
+    if (mods.includes("distribution")) return "distribution_config";
     return "content_optimization";
   }
 
@@ -2117,9 +2117,9 @@ export class SelfEvolutionEngine extends EventEmitter {
     category: EnhancementCategory,
     change: IndustryChange,
   ): Record<string, unknown> {
-    const _platform = this?.inferPlatformFromChange(change);
-    const _high =
-      change?.competitiveImpact >= 80 || change?.urgency === "critical";
+    const platform = this.inferPlatformFromChange(change);
+    const high =
+      change.competitiveImpact >= 80 || change.urgency === "critical";
 
     switch (category) {
       case "posting_optimization": {
@@ -2132,7 +2132,7 @@ export class SelfEvolutionEngine extends EventEmitter {
           optimalHours: high ? [11, 14, 17, 19, 21] : [12, 18, 20],
           engagementTargeting: high ? "high" : "standard",
         };
-        if (platform) payload?.platform = platform;
+        if (platform) payload.platform = platform;
         return payload;
       }
       case "content_optimization": {
@@ -2143,7 +2143,7 @@ export class SelfEvolutionEngine extends EventEmitter {
           visualPriority: true,
           variantCount: high ? 5 : 3,
         };
-        if (platform) payload?.platform = platform;
+        if (platform) payload.platform = platform;
         return payload;
       }
       case "distribution_config":
@@ -2156,14 +2156,14 @@ export class SelfEvolutionEngine extends EventEmitter {
       case "platform_compliance":
         return {
           platform: platform || "all",
-          requirement: change?.description.slice(0, 500),
-          urgency: change?.urgency,
+          requirement: change.description.slice(0, 500),
+          urgency: change.urgency,
           autoApply: false,
         };
       case "feature_flag":
         return {
           name:
-            this?.camelCase(change?.title).slice(0, 80) || `flag_${change?.id}`,
+            this.camelCase(change.title).slice(0, 80) || `flag_${change.id}`,
           enabled: false,
           rolloutPercentage: 0,
         };
@@ -2173,8 +2173,8 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   private inferPlatformFromChange(change: IndustryChange): string | undefined {
-    const _text = `${change?.title} ${change?.description}`.toLowerCase();
-    const _platforms = [
+    const text = `${change.title} ${change.description}`.toLowerCase();
+    const platforms = [
       "tiktok",
       "instagram",
       "twitter",
@@ -2187,7 +2187,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       "tidal",
     ];
     for (const p of platforms) {
-      if (text?.includes(p)) return p;
+      if (text.includes(p)) return p;
     }
     return undefined;
   }
@@ -2207,35 +2207,35 @@ export class SelfEvolutionEngine extends EventEmitter {
     const validated: CodeUpgrade[] = [];
 
     for (const upgrade of upgrades) {
-      upgrade?.status = "testing";
+      upgrade.status = "testing";
 
-      if (!upgrade?.enhancementCategory || !upgrade?.enhancementPayload) {
-        upgrade?.status = "failed";
-        upgrade?.notAppliedReason = "no enhancement payload generated";
-        logger?.warn(
-          `   ❌ Validation failed for: ${upgrade?.id} - no enhancement payload`,
+      if (!upgrade.enhancementCategory || !upgrade.enhancementPayload) {
+        upgrade.status = "failed";
+        upgrade.notAppliedReason = "no enhancement payload generated";
+        logger.warn(
+          `   ❌ Validation failed for: ${upgrade.id} - no enhancement payload`,
         );
         continue;
       }
 
-      const _clean = evolutionRegistry?.sanitize(
-        upgrade?.enhancementCategory,
-        upgrade?.enhancementPayload,
+      const clean = evolutionRegistry.sanitize(
+        upgrade.enhancementCategory,
+        upgrade.enhancementPayload,
       );
-      if (!clean?.ok) {
-        upgrade?.status = "failed";
-        upgrade?.notAppliedReason = clean?.reason;
-        logger?.warn(
-          `   ❌ Validation failed for: ${upgrade?.id} - ${clean?.reason}`,
+      if (!clean.ok) {
+        upgrade.status = "failed";
+        upgrade.notAppliedReason = clean.reason;
+        logger.warn(
+          `   ❌ Validation failed for: ${upgrade.id} - ${clean.reason}`,
         );
         continue;
       }
 
       // Persist the sanitized payload so what we apply == what we validated.
-      upgrade?.enhancementPayload = clean?.payload;
-      validated?.push(upgrade);
-      logger?.info(
-        `   ✅ Validated enhancement for: ${upgrade?.id} (${upgrade?.enhancementCategory})`,
+      upgrade.enhancementPayload = clean.payload;
+      validated.push(upgrade);
+      logger.info(
+        `   ✅ Validated enhancement for: ${upgrade.id} (${upgrade.enhancementCategory})`,
       );
     }
 
@@ -2259,33 +2259,33 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     for (const upgrade of upgrades) {
       try {
-        upgrade?.status = "deploying";
+        upgrade.status = "deploying";
 
         if (!upgrade?.enhancementCategory || !upgrade?.enhancementPayload) {
-          upgrade?.status = "failed";
-          upgrade?.notAppliedReason = "no enhancement payload to apply";
+          upgrade.status = "failed";
+          upgrade.notAppliedReason = "no enhancement payload to apply";
           continue;
         }
 
-        const _change = this?.industryChanges.find(
+        const change = this?.industryChanges.find(
           (c) => c?.id === upgrade?.changeId,
         );
-        const _result = await evolutionRegistry?.apply({
-          upgradeId: upgrade?.id,
-          changeId: upgrade?.changeId,
-          category: upgrade?.enhancementCategory,
-          title: change?.title || upgrade?.changeId,
-          source: change?.source || "unknown",
-          payload: upgrade?.enhancementPayload,
+        const result = await evolutionRegistry?.apply({
+          upgradeId: upgrade.id,
+          changeId: upgrade.changeId,
+          category: upgrade.enhancementCategory,
+          title: change.title || upgrade?.changeId,
+          source: change.source || "unknown",
+          payload: upgrade.enhancementPayload,
         });
 
         if (!result?.consumed) {
           // Stored in the registry, but no live subsystem reads this category
           // yet — be honest: this is NOT an applied behavior change.
-          upgrade?.status = "deployed";
-          upgrade?.deployedAt = new Date();
-          upgrade?.applied = false;
-          upgrade?.notAppliedReason = `category "${upgrade?.enhancementCategory}" has no wired runtime consumer yet`;
+          upgrade.status = "deployed";
+          upgrade.deployedAt = new Date();
+          upgrade.applied = false;
+          upgrade.notAppliedReason = `category "${upgrade.enhancementCategory}" has no wired runtime consumer yet`;
           logger?.info(
             `   📋 Recorded (advisory, not applied): ${upgrade?.id} (${upgrade?.enhancementCategory})`,
           );
@@ -2294,8 +2294,8 @@ export class SelfEvolutionEngine extends EventEmitter {
         }
 
         if (!result?.applied) {
-          upgrade?.status = "failed";
-          upgrade?.notAppliedReason =
+          upgrade.status = "failed";
+          upgrade.notAppliedReason =
             result?.reason || "registry rejected payload";
           logger?.warn(
             `   ❌ Apply rejected for ${upgrade?.id}: ${upgrade?.notAppliedReason}`,
@@ -2303,9 +2303,9 @@ export class SelfEvolutionEngine extends EventEmitter {
           continue;
         }
 
-        upgrade?.status = "deployed";
-        upgrade?.deployedAt = new Date();
-        upgrade?.applied = true;
+        upgrade.status = "deployed";
+        upgrade.deployedAt = new Date();
+        upgrade.applied = true;
         appliedCount++;
         logger?.info(
           `   ✅ Applied (live): ${upgrade?.id} → registry[${upgrade?.enhancementCategory}]`,
@@ -2317,12 +2317,12 @@ export class SelfEvolutionEngine extends EventEmitter {
         // registry takes effect in-process immediately (and persists for other
         // workers), so a disruptive full-process restart is no longer needed.
         this?.emit("enhancementsApplied", {
-          upgradeId: upgrade?.id,
-          category: upgrade?.enhancementCategory,
+          upgradeId: upgrade.id,
+          category: upgrade.enhancementCategory,
         });
       } catch (error) {
-        upgrade?.status = "failed";
-        upgrade?.notAppliedReason = (error as Error).message;
+        upgrade.status = "failed";
+        upgrade.notAppliedReason = (error as Error).message;
         logger?.warn({ err: error }, `   ❌ Failed to apply ${upgrade?.id}:`);
       }
     }
@@ -2340,16 +2340,16 @@ export class SelfEvolutionEngine extends EventEmitter {
         taskType: "self_evolution",
         // Honest status: 'completed' only when a real behavior change was
         // applied; otherwise 'recorded' (stored but not behavior-changing).
-        status: upgrade?.applied ? "completed" : "recorded",
-        description: upgrade?.applied
+        status: upgrade.applied ? "completed" : "recorded",
+        description: upgrade.applied
           ? `Applied: ${upgrade?.enhancementCategory} - ${upgrade?.changeId}`
           : `Recorded (not applied): ${upgrade?.enhancementCategory} - ${upgrade?.changeId} (${upgrade?.notAppliedReason})`,
         metrics: {
-          upgradeId: upgrade?.id,
-          category: upgrade?.enhancementCategory,
-          applied: upgrade?.applied === true,
-          notAppliedReason: upgrade?.notAppliedReason,
-          deployedAt: upgrade?.deployedAt?.toISOString(),
+          upgradeId: upgrade.id,
+          category: upgrade.enhancementCategory,
+          applied: upgrade.applied === true,
+          notAppliedReason: upgrade.notAppliedReason,
+          deployedAt: upgrade.deployedAt?.toISOString(),
         },
         executedAt: new Date(),
         completedAt: new Date(),
@@ -2365,11 +2365,11 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private async monitorDeploymentHealth(): Promise<void> {
     try {
-      const _port = process?.env.PORT || "5000";
-      const _start = Date?.now();
+      const port = process?.env.PORT || "5000";
+      const start = Date?.now();
 
-      const _responseTime = await new Promise<number>((resolve, reject) => {
-        const _req = http?.get(`http://127?.0.0?.1:${port}/api/health`, (res) => {
+      const responseTime = await new Promise<number>((resolve, reject) => {
+        const req = http?.get(`http://127.0.0.1:${port}/api/health`, (res) => {
           res?.resume();
           res?.on("end", () => resolve(Date?.now() - start));
         });
@@ -2380,13 +2380,13 @@ export class SelfEvolutionEngine extends EventEmitter {
         req?.on("error", reject);
       });
 
-      const _metrics = { errorRate: 0, responseTime };
+      const metrics = { errorRate: 0, responseTime };
 
       if (responseTime > 3000) {
         logger?.warn(
           `⚠️ Post-deployment health check slow: ${responseTime}ms — analyzing rollback need`,
         );
-        await this?.analyzeRollbackNeed({ ...metrics, errorRate: 0?.02 });
+        await this?.analyzeRollbackNeed({ ...metrics, errorRate: 0.02 });
       } else {
         logger?.info(`   💚 Health check passed: ${responseTime}ms`);
       }
@@ -2394,19 +2394,19 @@ export class SelfEvolutionEngine extends EventEmitter {
       logger?.warn(
         `⚠️ Health check failed (${(e as Error).message}) — analyzing rollback need`,
       );
-      await this?.analyzeRollbackNeed({ errorRate: 0?.1, responseTime: 9999 });
+      await this?.analyzeRollbackNeed({ errorRate: 0.1, responseTime: 9999 });
     }
   }
 
   private async analyzeRollbackNeed(
     metrics: Record<string, number>,
   ): Promise<void> {
-    const _needsRollback =
-      metrics?.errorRate > 0?.05 || metrics?.responseTime > 3000;
+    const needsRollback =
+      metrics?.errorRate > 0.05 || metrics?.responseTime > 3000;
 
     if (needsRollback) {
       logger?.warn(
-        `🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics?.errorRate.toFixed(3)}, responseTime=${metrics?.responseTime}ms)`,
+        `🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics.errorRate.toFixed(3)}, responseTime=${metrics?.responseTime}ms)`,
       );
       await this?.performRollback();
     }
@@ -2449,28 +2449,28 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     // Honest accounting: success = upgrades whose enhancement was genuinely
     // APPLIED to a live-consumed registry category, not merely "deployed".
-    const _appliedCount = this?.upgradeQueue.filter(
+    const appliedCount = this?.upgradeQueue.filter(
       (u) => u?.applied === true,
     ).length;
-    const _failedCount = this?.upgradeQueue.filter(
+    const failedCount = this?.upgradeQueue.filter(
       (u) => u?.status === "failed",
     ).length;
-    const _total = appliedCount + failedCount;
-    const _successRate = total > 0 ? appliedCount / total : 1?.0;
-    const _deployedCount = appliedCount;
+    const total = appliedCount + failedCount;
+    const successRate = total > 0 ? appliedCount / total : 1.0;
+    const deployedCount = appliedCount;
 
     // Count how many of this cycle's applied upgrades addressed competitive gaps
-    const _competitorGapsClosedThisCycle = this?.upgradeQueue
+    const competitorGapsClosedThisCycle = this?.upgradeQueue
       .filter((u) => u?.applied === true)
       .filter((u) => {
-        const _change = this?.industryChanges.find((c) => c?.id === u?.changeId);
+        const change = this?.industryChanges.find((c) => c?.id === u?.changeId);
         return change?.source === "competitor";
       }).length;
 
     if (competitorGapsClosedThisCycle > 0) {
-      this?.competitiveGapsAddressed += competitorGapsClosedThisCycle;
+      this.competitiveGapsAddressed += competitorGapsClosedThisCycle;
       // Each closed gap nudges the score up (capped at 100)
-      this?.competitivePositionScore = Math?.min(
+      this.competitivePositionScore = Math?.min(
         100,
         this?.competitivePositionScore + competitorGapsClosedThisCycle,
       );
@@ -2480,21 +2480,21 @@ export class SelfEvolutionEngine extends EventEmitter {
     }
 
     // Log competitive leadership summary
-    const _competitorChanges = this?.industryChanges.filter(
+    const competitorChanges = this?.industryChanges.filter(
       (c) => c?.source === "competitor",
     ).length;
     logger?.info(
-      `   📊 Competitive leadership summary: score=${this?.competitivePositionScore}/100 | gaps_detected=${this?.competitiveGapsDetected} | gaps_addressed=${this?.competitiveGapsAddressed} | competitor_signals=${competitorChanges}`,
+      `   📊 Competitive leadership summary: score=${this.competitivePositionScore}/100 | gaps_detected=${this.competitiveGapsDetected} | gaps_addressed=${this.competitiveGapsAddressed} | competitor_signals=${competitorChanges}`,
     );
 
-    if (successRate > 0?.9) {
+    if (successRate > 0.9) {
       customAI?.recordPerformance("self_evolution", {
         cycleId,
         successRate,
         deployedCount,
         failedCount,
-        competitivePositionScore: this?.competitivePositionScore,
-        competitorGapsAddressed: this?.competitiveGapsAddressed,
+        competitivePositionScore: this.competitivePositionScore,
+        competitorGapsAddressed: this.competitiveGapsAddressed,
         timestamp: new Date().toISOString(),
       });
     }
@@ -2511,22 +2511,22 @@ export class SelfEvolutionEngine extends EventEmitter {
   private async identifyTargetFiles(change: IndustryChange): Promise<string[]> {
     const moduleFileMap: Record<string, string[]> = {
       studio: [
-        "server/services/aiMusicService?.ts",
-        "server/services/studioService?.ts",
+        "server/services/aiMusicService.ts",
+        "server/services/studioService.ts",
       ],
-      distribution: ["server/services/distributionService?.ts"],
+      distribution: ["server/services/distributionService.ts"],
       social: [
-        "server/services/aiContentService?.ts",
-        "server/autonomous-autopilot?.ts",
+        "server/services/aiContentService.ts",
+        "server/autonomous-autopilot.ts",
       ],
-      advertising: ["server/services/advertisingAIService?.ts"],
-      marketplace: ["server/services/marketplaceService?.ts"],
+      advertising: ["server/services/advertisingAIService.ts"],
+      marketplace: ["server/services/marketplaceService.ts"],
       analytics: [
-        "server/services/aiAnalyticsService?.ts",
-        "server/services/aiInsightsEngine?.ts",
+        "server/services/aiAnalyticsService.ts",
+        "server/services/aiInsightsEngine.ts",
       ],
-      security: ["server/security-system?.ts", "server/audit-system?.ts"],
-      monetization: ["server/services/paymentService?.ts"],
+      security: ["server/security-system.ts", "server/audit-system.ts"],
+      monetization: ["server/services/paymentService.ts"],
     };
 
     const files: string[] = [];
@@ -2595,63 +2595,63 @@ export class SelfEvolutionEngine extends EventEmitter {
     };
     memoryUsage: { changes: number; upgrades: number; seenIds: number };
   } {
-    const _now = Date?.now();
-    const _expectedIntervalMs = this?.MONITORING_INTERVAL_MS * 1?.5;
-    const _intervalHealthy =
+    const now = Date?.now();
+    const expectedIntervalMs = this?.MONITORING_INTERVAL_MS * 1.5;
+    const intervalHealthy =
       !this?.isRunning || !this?.lastCycleAt
         ? true
         : now - this?.lastCycleAt.getTime() < expectedIntervalMs;
 
-    const _competitorChanges = this?.industryChanges.filter(
+    const competitorChanges = this?.industryChanges.filter(
       (c) => c?.source === "competitor",
     );
     return {
-      isRunning: this?.isRunning,
-      isCycleRunning: this?.isCycleRunning,
-      changesDetected: this?.industryChanges.length,
-      upgradesGenerated: this?.upgradeQueue.length,
-      upgradesApplied: this?.upgradeQueue.filter((u) => u?.applied === true)
+      isRunning: this.isRunning,
+      isCycleRunning: this.isCycleRunning,
+      changesDetected: this.industryChanges.length,
+      upgradesGenerated: this.upgradeQueue.length,
+      upgradesApplied: this.upgradeQueue.filter((u) => u?.applied === true)
         .length,
-      upgradesRecordedNotApplied: this?.upgradeQueue.filter(
+      upgradesRecordedNotApplied: this.upgradeQueue.filter(
         (u) => u?.status === "deployed" && u?.applied !== true,
       ).length,
       // upgradesDeployed reports genuinely-APPLIED upgrades (honest): a "deployed"
       // status alone no longer counts unless it changed live behavior.
-      upgradesDeployed: this?.upgradeQueue.filter((u) => u?.applied === true)
+      upgradesDeployed: this.upgradeQueue.filter((u) => u?.applied === true)
         .length,
-      appliedEnhancements: evolutionRegistry?.getStats().consumedActive,
+      appliedEnhancements: evolutionRegistry.getStats().consumedActive,
       lastCycle:
         this?.industryChanges.length > 0
           ? this?.industryChanges[this?.industryChanges.length - 1].detectedAt
           : null,
-      lastCycleAt: this?.lastCycleAt,
-      lastCycleError: this?.lastCycleError,
-      totalCyclesRun: this?.totalCyclesRun,
+      lastCycleAt: this.lastCycleAt,
+      lastCycleError: this.lastCycleError,
+      totalCyclesRun: this.totalCyclesRun,
       intervalHealthy,
       // Competitive leadership metrics
       competitiveLeadership: {
-        score: this?.competitivePositionScore,
+        score: this.competitivePositionScore,
         goal: "surpass every competitor on every dimension — parity is never enough",
-        competitorsTracked: COMPETITOR_PLATFORMS?.length,
-        surpassed: this?.lastSurpassedCount,
-        atParity: this?.lastParityCount,
-        missing: this?.lastMissingCount,
-        gapsDetected: this?.competitiveGapsDetected,
-        gapsAddressed: this?.competitiveGapsAddressed,
-        lastScan: this?.lastCompetitiveScan,
+        competitorsTracked: COMPETITOR_PLATFORMS.length,
+        surpassed: this.lastSurpassedCount,
+        atParity: this.lastParityCount,
+        missing: this.lastMissingCount,
+        gapsDetected: this.competitiveGapsDetected,
+        gapsAddressed: this.competitiveGapsAddressed,
+        lastScan: this.lastCompetitiveScan,
         topThreats: competitorChanges
           .sort((a, b) => b?.competitiveImpact - a?.competitiveImpact)
           .slice(0, 5)
           .map((c) => ({
-            title: c?.title,
-            impact: c?.competitiveImpact,
-            urgency: c?.urgency,
+            title: c.title,
+            impact: c.competitiveImpact,
+            urgency: c.urgency,
           })),
       },
       memoryUsage: {
-        changes: this?.industryChanges.length,
-        upgrades: this?.upgradeQueue.length,
-        seenIds: this?.seenChangeIds.size,
+        changes: this.industryChanges.length,
+        upgrades: this.upgradeQueue.length,
+        seenIds: this.seenChangeIds.size,
       },
     };
   }
@@ -2669,7 +2669,7 @@ export class SelfEvolutionEngine extends EventEmitter {
   > {
     return this?.upgradeQueue.slice(-limit).map((upgrade) => ({
       ...upgrade,
-      generatedCode: Object?.fromEntries(upgrade?.generatedCode),
+      generatedCode: Object.fromEntries(upgrade?.generatedCode),
     }));
   }
 
@@ -2680,4 +2680,4 @@ export class SelfEvolutionEngine extends EventEmitter {
 }
 
 // Export singleton instance
-export const _selfEvolution = new SelfEvolutionEngine();
+export const selfEvolution = new SelfEvolutionEngine();

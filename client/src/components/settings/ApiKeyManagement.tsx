@@ -562,7 +562,7 @@ export function ApiKeyManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Revoke API Key?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently revoke the key "{selectedKey?.name}". Any
+              This will permanently revoke the key "{selectedKey.name}". Any
               applications using this key will stop working immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -591,7 +591,7 @@ export function ApiKeyManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate API Key?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will generate a new key for "{selectedKey?.name}". The old
+              This will generate a new key for "{selectedKey.name}". The old
               key will be immediately invalidated.
             </AlertDialogDescription>
           </AlertDialogHeader>

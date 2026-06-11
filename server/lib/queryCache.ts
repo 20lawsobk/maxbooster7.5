@@ -14,21 +14,21 @@
  * still runs the compute on cache failure.
  */
 
-import { getRedisClient } from "./redisConnectionFactory?.js";
-import { logger } from "../logger?.js";
+import { getRedisClient } from "./redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
-const _DEFAULT_TTL = 60; // 60 seconds
+const DEFAULT_TTL = 60; // 60 seconds
 
 // Throttle: don't spam pino once per request when PDIM is degraded across the cluster.
 let _lastWarnAt = 0;
-const _WARN_THROTTLE_MS = 30_000;
+const WARN_THROTTLE_MS = 30_000;
 
 function warnOnce(op: string, err: unknown): void {
-  const _now = Date?.now();
+  const now = Date.now();
   if (now - _lastWarnAt < WARN_THROTTLE_MS) return;
   _lastWarnAt = now;
-  const _msg = err instanceof Error ? err?.message : String(err);
-  logger?.warn(`[QueryCache] PDIM ${op} failed (best-effort) — ${msg}`);
+  const msg = err instanceof Error ? err.message : String(err);
+  logger.warn(`[QueryCache] PDIM ${op} failed (best-effort) — ${msg}`);
 }
 
 class QueryCache {
@@ -38,9 +38,9 @@ class QueryCache {
    */
   async get<T>(key: string): Promise<T | null> {
     try {
-      const _redis = await getRedisClient();
-      const _cached = await redis?.get(`qcache:${key}`);
-      return cached ? (JSON?.parse(cached) as T) : null;
+      const redis = await getRedisClient();
+      const cached = await redis.get(`qcache:${key}`);
+      return cached ? (JSON.parse(cached) as T) : null;
     } catch (err) {
       warnOnce("get", err);
       return null;
@@ -52,9 +52,9 @@ class QueryCache {
    * so a PDIM hiccup during cache priming doesn't fail the parent request.
    */
   async set<T>(key: string, data: T, ttlSeconds?: number): Promise<void> {
-    const _ttl = ttlSeconds ?? DEFAULT_TTL;
+    const ttl = ttlSeconds ?? DEFAULT_TTL;
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       await redis?.setex(`qcache:${key}`, ttl, JSON?.stringify(data));
     } catch (err) {
       warnOnce("set", err);
@@ -71,9 +71,9 @@ class QueryCache {
     computeFn: () => Promise<T>,
     ttlSeconds?: number,
   ): Promise<T> {
-    const _cached = await this?.get<T>(key);
+    const cached = await this?.get<T>(key);
     if (cached !== null) return cached;
-    const _result = await computeFn();
+    const result = await computeFn();
     await this?.set(key, result, ttlSeconds);
     return result;
   }
@@ -83,7 +83,7 @@ class QueryCache {
    */
   async invalidate(key: string): Promise<void> {
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       await redis?.del(`qcache:${key}`);
     } catch (err) {
       warnOnce("invalidate", err);
@@ -95,8 +95,8 @@ class QueryCache {
    */
   async invalidatePattern(pattern: string): Promise<void> {
     try {
-      const _redis = await getRedisClient();
-      const _keys = await redis?.keys(`qcache:${pattern}`);
+      const redis = await getRedisClient();
+      const keys = await redis?.keys(`qcache:${pattern}`);
       if (keys?.length > 0) {
         await redis?.del(...keys);
       }
@@ -110,8 +110,8 @@ class QueryCache {
    */
   async clear(): Promise<void> {
     try {
-      const _redis = await getRedisClient();
-      const _keys = await redis?.keys("qcache:*");
+      const redis = await getRedisClient();
+      const keys = await redis?.keys("qcache:*");
       if (keys?.length > 0) {
         await redis?.del(...keys);
       }
@@ -131,7 +131,7 @@ class QueryCache {
 }
 
 // Export singleton instance
-export const _queryCache = new QueryCache();
+export const queryCache = new QueryCache();
 
 /**
  * Helper: Create cache key from query components

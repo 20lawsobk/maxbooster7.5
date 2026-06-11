@@ -6,20 +6,20 @@
  */
 
 import { Router } from "express";
-import { requireAdmin } from "../../middleware/auth?.js";
-import { beatMoneyLoopService } from "../../services/beatMoneyLoopService?.js";
-import { db } from "../../db?.js";
+import { requireAdmin } from "../../middleware/auth.js";
+import { beatMoneyLoopService } from "../../services/beatMoneyLoopService.js";
+import { db } from "../../db.js";
 import { beatMoneyLoopCycles } from "@shared/schema";
 import { desc } from "drizzle-orm";
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 
-const _router = Router();
+const router = Router();
 
 router?.use(requireAdmin);
 
 router?.get("/status", async (_req, res) => {
   try {
-    const _status = await beatMoneyLoopService?.getStatus();
+    const status = await beatMoneyLoopService?.getStatus();
     res?.json(status);
   } catch (err) {
     logger?.warn({ err }, "[BeatMoneyLoop] /status failed");
@@ -29,7 +29,7 @@ router?.get("/status", async (_req, res) => {
 
 router?.post("/enable", async (_req, res) => {
   try {
-    const _status = await beatMoneyLoopService?.enable();
+    const status = await beatMoneyLoopService?.enable();
     res?.json({ ok: true, status });
   } catch (err) {
     logger?.warn({ err }, "[BeatMoneyLoop] /enable failed");
@@ -39,7 +39,7 @@ router?.post("/enable", async (_req, res) => {
 
 router?.post("/disable", async (_req, res) => {
   try {
-    const _status = await beatMoneyLoopService?.disable();
+    const status = await beatMoneyLoopService?.disable();
     res?.json({ ok: true, status });
   } catch (err) {
     logger?.warn({ err }, "[BeatMoneyLoop] /disable failed");
@@ -52,12 +52,12 @@ router?.post("/run-now", async (_req, res) => {
   try {
     // We need the cycleId, so wait for the cycle row to be inserted (very fast)
     // but don't wait for the whole pipeline.
-    const _promise = beatMoneyLoopService?.runCycle("manual");
+    const promise = beatMoneyLoopService?.runCycle("manual");
     // Race: return promise resolution OR a short header read
-    const _result = await promise;
+    const result = await promise;
     res?.json({ ok: true, result });
   } catch (err) {
-    const _msg = (err as Error).message ?? String(err);
+    const msg = (err as Error).message ?? String(err);
     logger?.warn({ err }, "[BeatMoneyLoop] /run-now failed");
     res?.status(500).json({ error: msg });
   }
@@ -65,11 +65,11 @@ router?.post("/run-now", async (_req, res) => {
 
 router?.get("/cycles", async (req, res) => {
   try {
-    const _limit = Math?.min(
+    const limit = Math?.min(
       200,
       Math?.max(1, parseInt(String(req?.query.limit ?? "50"), 10) || 50),
     );
-    const _cycles = await db
+    const cycles = await db
       .select()
       .from(beatMoneyLoopCycles)
       .orderBy(desc(beatMoneyLoopCycles?.startedAt))

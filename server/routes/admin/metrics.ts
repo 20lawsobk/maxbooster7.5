@@ -1,10 +1,10 @@
 import { Router, type RequestHandler } from "express";
-import { require2FA } from "../../middleware/auth?.js";
-import { metricsService } from "../../services/metricsService?.js";
-import { emailTrackingService } from "../../services/emailTrackingService?.js";
-import { logger } from "../../logger?.js";
+import { require2FA } from "../../middleware/auth.js";
+import { metricsService } from "../../services/metricsService.js";
+import { emailTrackingService } from "../../services/emailTrackingService.js";
+import { logger } from "../../logger.js";
 
-const _router = Router();
+const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req?.isAuthenticated()) {
@@ -32,11 +32,11 @@ router?.get("/metrics", async (req, res) => {
       return res?.status(400).json({ error: "Metric name required" });
     }
 
-    const _hours = parseInt(period as string);
-    const _endTime = new Date();
-    const _startTime = new Date(endTime?.getTime() - hours * 60 * 60 * 1000);
+    const hours = parseInt(period as string);
+    const endTime = new Date();
+    const startTime = new Date(endTime?.getTime() - hours * 60 * 60 * 1000);
 
-    const _metrics = await metricsService?.getMetrics(
+    const metrics = await metricsService?.getMetrics(
       metric as string,
       startTime,
       endTime,
@@ -75,7 +75,7 @@ router?.post("/metrics/test", async (req, res) => {
  */
 router?.get("/alerts/incidents", async (_req, res) => {
   try {
-    const _incidents = await metricsService?.getActiveIncidents();
+    const incidents = await metricsService?.getActiveIncidents();
     res?.json({ incidents });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching incidents:");
@@ -99,7 +99,7 @@ router?.post("/alerts/rules", async (req, res) => {
       name,
       metricName,
       condition,
-      threshold: threshold?.toString(),
+      threshold: threshold.toString(),
       durationSecs: durationSecs || 300,
       channels: channels || { email: true },
       isActive: true,
@@ -131,11 +131,11 @@ router?.post("/alerts/evaluate", async (_req, res) => {
 router?.get("/email/stats", async (req, res) => {
   try {
     const { days = "30" } = req?.query;
-    const _daysNum = parseInt(days as string);
-    const _startDate = new Date(Date?.now() - daysNum * 24 * 60 * 60 * 1000);
+    const daysNum = parseInt(days as string);
+    const startDate = new Date(Date?.now() - daysNum * 24 * 60 * 60 * 1000);
 
-    const _stats = await emailTrackingService?.getEmailStats(startDate);
-    const _recentBounces = await emailTrackingService?.getRecentBounces(20);
+    const stats = await emailTrackingService?.getEmailStats(startDate);
+    const recentBounces = await emailTrackingService?.getRecentBounces(20);
 
     res?.json({ stats, recentBounces });
   } catch (error: unknown) {

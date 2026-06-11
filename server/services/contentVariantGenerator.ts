@@ -1,11 +1,11 @@
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   getRedisClient,
   RedisClientType,
-} from "../lib/redisConnectionFactory?.js";
+} from "../lib/redisConnectionFactory.js";
 
-import { MaxCoreAIClient } from "./maxcoreClient?.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 function seededIndex(seed: string, len: number): number {
   let h = 0x811c9dc5;
@@ -17,7 +17,7 @@ function seededIndex(seed: string, len: number): number {
 }
 
 function seededShuffle<T>(array: T[], seed: string): T[] {
-  const _shuffled = [...array];
+  const shuffled = [...array];
   let h = 0x811c9dc5;
   for (let i = 0; i < seed?.length; i++) {
     h ^= seed?.charCodeAt(i);
@@ -26,7 +26,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
   for (let i = shuffled?.length - 1; i > 0; i--) {
     h ^= i;
     h = (h * 0x01000193) >>> 0;
-    const _j = h % (i + 1);
+    const j = h % (i + 1);
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
@@ -209,11 +209,11 @@ class ContentVariantGeneratorService {
     count: number = 30,
   ): Promise<string[]> {
     const variants: string[] = [];
-    const _topic = this?.extractTopic(original);
-    const _audience = this?.inferAudience(original);
+    const topic = this?.extractTopic(original);
+    const audience = this?.inferAudience(original);
 
     // Hyper A/B: cycle all platforms × all tones for maximum variate coverage
-    const _platforms = [
+    const platforms = [
       "tiktok",
       "instagram",
       "youtube",
@@ -221,7 +221,7 @@ class ContentVariantGeneratorService {
       "facebook",
       "linkedin",
     ];
-    const _tones = [
+    const tones = [
       "energetic",
       "chill",
       "inspirational",
@@ -229,7 +229,7 @@ class ContentVariantGeneratorService {
       "bold",
       "intimate",
     ];
-    const _goals = [
+    const goals = [
       "growth",
       "engagement",
       "conversion",
@@ -243,10 +243,10 @@ class ContentVariantGeneratorService {
     let aiVariantsGenerated = 0;
     try {
       for (let i = 0; i < count && aiVariantsGenerated < count; i++) {
-        const _platform = platforms[i % platforms?.length];
-        const _tone = tones[i % tones?.length];
-        const _goal = goals[i % goals?.length];
-        const _mc = await MaxCoreAIClient?.infer<{
+        const platform = platforms[i % platforms?.length];
+        const tone = tones[i % tones?.length];
+        const goal = goals[i % goals?.length];
+        const mc = await MaxCoreAIClient?.infer<{
           hook?: string;
           body?: string;
           cta?: string;
@@ -267,22 +267,22 @@ class ContentVariantGeneratorService {
     }
 
     // Fill remaining slots by cycling all hook templates across multiple passes
-    const _hookTypes = Object?.keys(this?.hookTemplates);
-    const _remaining = count - aiVariantsGenerated;
+    const hookTypes = Object?.keys(this?.hookTemplates);
+    const remaining = count - aiVariantsGenerated;
 
     for (let i = 0; i < remaining; i++) {
-      const _hookType = hookTypes[i % hookTypes?.length];
-      const _templates = this?.hookTemplates[hookType];
-      const _template =
+      const hookType = hookTypes[i % hookTypes?.length];
+      const templates = this?.hookTemplates[hookType];
+      const template =
         templates[Math?.floor(i / hookTypes?.length) % templates?.length];
 
-      const _newHook = template
+      const newHook = template
         .replace("{topic}", topic)
         .replace("{Topic}", topic?.charAt(0).toUpperCase() + topic?.slice(1))
         .replace("{audience}", audience);
 
-      const _bodyLines = original?.split("\n").slice(1).join("\n");
-      const _variant = `${newHook}\n\n${bodyLines || original}`;
+      const bodyLines = original?.split("\n").slice(1).join("\n");
+      const variant = `${newHook}\n\n${bodyLines || original}`;
 
       variants?.push(this?.enhanceWithEmotions(variant));
     }
@@ -314,18 +314,18 @@ class ContentVariantGeneratorService {
       linkedin: { total: 5, viral: 1, niche: 3 },
     };
 
-    const _config =
+    const config =
       platformOptimal[content?.platform] || platformOptimal?.instagram;
 
     for (let i = 0; i < count; i++) {
       const set: string[] = [];
 
-      const _viralTags = this?.shuffleArray([
+      const viralTags = this?.shuffleArray([
         ...this?.hashtagCategories.viral,
       ]).slice(0, config?.viral);
       set?.push(...viralTags);
 
-      const _topicHashtags = this?.generateTopicHashtags(content?.caption);
+      const topicHashtags = this?.generateTopicHashtags(content?.caption);
       set?.push(...topicHashtags?.slice(0, config?.niche));
 
       if (
@@ -333,7 +333,7 @@ class ContentVariantGeneratorService {
         content?.caption.toLowerCase().includes("beat") ||
         content?.caption.toLowerCase().includes("song")
       ) {
-        const _musicTags = seededShuffle(
+        const musicTags = seededShuffle(
           [...this?.hashtagCategories.music],
           `${content?.id || content?.caption}:music-tags`,
         ).slice(0, 2);
@@ -341,8 +341,8 @@ class ContentVariantGeneratorService {
       }
 
       while (set?.length < config?.total) {
-        const _allTags = Object?.values(this?.hashtagCategories).flat();
-        const _randomTag =
+        const allTags = Object?.values(this?.hashtagCategories).flat();
+        const randomTag =
           allTags[
             seededIndex(
               `${content?.id || content?.caption}:hashtag-fill:${set?.length}`,
@@ -376,17 +376,17 @@ class ContentVariantGeneratorService {
 
   async generateHookVariants(content: ContentData): Promise<Hook[]> {
     const hooks: Hook[] = [];
-    const _topic = this?.extractTopic(content?.caption);
+    const topic = this?.extractTopic(content?.caption);
 
     for (const [type, templates] of Object?.entries(this?.hookTemplates)) {
-      const _template =
+      const template =
         templates[
           seededIndex(
             `${content?.id || content?.caption}:hook:${type}`,
             templates?.length,
           )
         ];
-      const _hookText = template
+      const hookText = template
         .replace("{topic}", topic)
         .replace("{Topic}", topic?.charAt(0).toUpperCase() + topic?.slice(1))
         .replace("{audience}", this?.inferAudience(content?.caption));
@@ -395,8 +395,8 @@ class ContentVariantGeneratorService {
         id: randomBytes(8).toString("hex"),
         text: hookText,
         type: type as Hook["type"],
-        predictedStrength: this?.predictHookStrength(hookText, type),
-        targetEmotion: this?.getTargetEmotion(type),
+        predictedStrength: this.predictHookStrength(hookText, type),
+        targetEmotion: this.getTargetEmotion(type),
       });
     }
 
@@ -408,15 +408,15 @@ class ContentVariantGeneratorService {
       return variants?.sort((a, b) => b?.predictedScore - a?.predictedScore)[0];
     }
 
-    const _metricsMap = new Map(metrics?.map((m) => [m?.variantId, m]));
+    const metricsMap = new Map(metrics?.map((m) => [m?.variantId, m]));
 
     let bestVariant = variants[0];
     let bestScore = -1;
 
     for (const variant of variants) {
-      const _variantMetrics = metricsMap?.get(variant?.id);
+      const variantMetrics = metricsMap?.get(variant?.id);
       if (variantMetrics) {
-        const _score = this?.calculatePerformanceScore(variantMetrics);
+        const score = this?.calculatePerformanceScore(variantMetrics);
         if (score > bestScore) {
           bestScore = score;
           bestVariant = variant;
@@ -431,40 +431,40 @@ class ContentVariantGeneratorService {
     content: ContentData,
     count: number = 5,
   ): Promise<VariantResult> {
-    const _cacheKey = `${this?.CACHE_PREFIX}${content?.id || randomBytes(8).toString("hex")}`;
+    const cacheKey = `${this?.CACHE_PREFIX}${content?.id || randomBytes(8).toString("hex")}`;
 
-    const _redis = await this?.getRedis();
+    const redis = await this?.getRedis();
     if (redis) {
-      const _cached = await redis?.get(cacheKey);
+      const cached = await redis?.get(cacheKey);
       if (cached) {
         return JSON?.parse(cached);
       }
     }
 
-    const _captionVariants = await this?.generateCaptionVariants(
+    const captionVariants = await this?.generateCaptionVariants(
       content?.caption,
       count,
     );
-    const _hashtagSets = await this?.generateHashtagSets(content, count);
-    const _hooks = await this?.generateHookVariants(content);
+    const hashtagSets = await this?.generateHashtagSets(content, count);
+    const hooks = await this?.generateHookVariants(content);
 
     const variants: Variant[] = captionVariants?.map((caption, index) => ({
       id: randomBytes(8).toString("hex"),
       caption,
       hashtags: hashtagSets[index] || content?.hashtags,
       hookType: hooks[index]?.type || "statement",
-      predictedScore: Math?.min(
+      predictedScore: Math.min(
         100,
         55 + (hooks[index]?.predictedStrength || 0) / 2,
       ),
-      changes: this?.identifyChanges(content?.caption, caption),
+      changes: this.identifyChanges(content?.caption, caption),
     }));
 
-    const _originalScore = this?.estimateOriginalScore(content);
-    const _recommendations = this?.generateRecommendations(content, variants);
+    const originalScore = this?.estimateOriginalScore(content);
+    const recommendations = this?.generateRecommendations(content, variants);
 
     const result: VariantResult = {
-      variants: variants?.sort((a, b) => b?.predictedScore - a?.predictedScore),
+      variants: variants.sort((a, b) => b?.predictedScore - a?.predictedScore),
       originalScore,
       recommendations,
     };
@@ -478,8 +478,8 @@ class ContentVariantGeneratorService {
   }
 
   private extractTopic(caption: string): string {
-    const _words = caption?.toLowerCase().split(/\s+/);
-    const _stopWords = new Set([
+    const words = caption?.toLowerCase().split(/\s+/);
+    const stopWords = new Set([
       "the",
       "a",
       "an",
@@ -512,7 +512,7 @@ class ContentVariantGeneratorService {
       "our",
     ]);
 
-    const _meaningfulWords = words?.filter(
+    const meaningfulWords = words?.filter(
       (w) =>
         !stopWords?.has(w) &&
         w?.length > 3 &&
@@ -524,7 +524,7 @@ class ContentVariantGeneratorService {
   }
 
   private inferAudience(caption: string): string {
-    const _lowerCaption = caption?.toLowerCase();
+    const lowerCaption = caption?.toLowerCase();
 
     if (lowerCaption?.includes("producer") || lowerCaption?.includes("beat")) {
       return "producers";
@@ -544,11 +544,11 @@ class ContentVariantGeneratorService {
   }
 
   private enhanceWithEmotions(text: string): string {
-    const _emotions = Object?.values(this?.emotionKeywords).flat();
-    const _hasEmotion = emotions?.some((e) => text?.toLowerCase().includes(e));
+    const emotions = Object?.values(this?.emotionKeywords).flat();
+    const hasEmotion = emotions?.some((e) => text?.toLowerCase().includes(e));
 
     if (!hasEmotion) {
-      const _randomEmotion =
+      const randomEmotion =
         emotions[seededIndex(`${text}:emotion`, emotions?.length)];
       return text?.replace(/\.$/, ` - ${randomEmotion}!`);
     }
@@ -557,7 +557,7 @@ class ContentVariantGeneratorService {
   }
 
   private generateTopicHashtags(caption: string): string[] {
-    const _words = caption
+    const words = caption
       .toLowerCase()
       .replace(/[^\w\s]/g, "")
       .split(/\s+/)
@@ -573,12 +573,12 @@ class ContentVariantGeneratorService {
   private predictHookStrength(hookText: string, type: string): number {
     let strength = 50;
 
-    if (hookText?.includes("?")) strength += 10;
-    if (hookText?.length > 20 && hookText?.length < 80) strength += 10;
+    if (hookText.includes("?")) strength += 10;
+    if (hookText.length > 20 && hookText.length < 80) strength += 10;
     if (/\d+/.test(hookText)) strength += 8;
     if (["question", "controversy", "mystery"].includes(type)) strength += 12;
 
-    const _emotionWords = Object?.values(this?.emotionKeywords).flat();
+    const emotionWords = Object?.values(this?.emotionKeywords).flat();
     for (const word of emotionWords) {
       if (hookText?.toLowerCase().includes(word)) {
         strength += 5;
@@ -602,21 +602,21 @@ class ContentVariantGeneratorService {
   }
 
   private calculatePerformanceScore(metrics: PerformanceMetrics): number {
-    const _engagementRate =
+    const engagementRate =
       metrics?.impressions > 0
         ? (metrics?.engagement / metrics?.impressions) * 100
         : 0;
-    const _shareRate =
+    const shareRate =
       metrics?.engagement > 0 ? (metrics?.shares / metrics?.engagement) * 100 : 0;
 
-    return engagementRate * 0?.4 + shareRate * 0?.3 + metrics?.conversionRate * 30;
+    return engagementRate * 0.4 + shareRate * 0.3 + metrics?.conversionRate * 30;
   }
 
   private identifyChanges(original: string, variant: string): string[] {
     const changes: string[] = [];
 
-    const _origFirstLine = original?.split("\n")[0];
-    const _varFirstLine = variant?.split("\n")[0];
+    const origFirstLine = original?.split("\n")[0];
+    const varFirstLine = variant?.split("\n")[0];
 
     if (origFirstLine !== varFirstLine) {
       changes?.push("Modified opening hook");
@@ -644,10 +644,10 @@ class ContentVariantGeneratorService {
   private estimateOriginalScore(content: ContentData): number {
     let score = 40;
 
-    if (content?.caption.length > 50) score += 10;
+    if (content.caption.length > 50) score += 10;
     if (content?.hashtags.length >= 3) score += 10;
     if (content?.hashtags.length <= 15) score += 5;
-    if (content?.caption.includes("?")) score += 5;
+    if (content.caption.includes("?")) score += 5;
 
     return Math?.min(100, score);
   }
@@ -658,7 +658,7 @@ class ContentVariantGeneratorService {
   ): string[] {
     const recommendations: string[] = [];
 
-    const _topVariant = variants[0];
+    const topVariant = variants[0];
     if (topVariant && topVariant?.predictedScore > 70) {
       recommendations?.push(
         `Top variant shows ${topVariant?.predictedScore - 60}% improvement potential`,
@@ -688,16 +688,16 @@ class ContentVariantGeneratorService {
     content: ContentData,
     variantCount: number = 30,
   ): Promise<{ variants: Variant[]; testId: string; recommendation: string }> {
-    const _result = await this?.generateVariants(content, variantCount);
-    const _testId = randomBytes(8).toString("hex");
+    const result = await this?.generateVariants(content, variantCount);
+    const testId = randomBytes(8).toString("hex");
 
     return {
-      variants: result?.variants.slice(0, variantCount),
+      variants: result.variants.slice(0, variantCount),
       testId,
       recommendation: `Hyper A/B: ${variantCount} variates running simultaneously — winner declared at 80% confidence (≥30 impressions/variate)`,
     };
   }
 }
 
-export const _contentVariantGeneratorService =
+export const contentVariantGeneratorService =
   new ContentVariantGeneratorService();

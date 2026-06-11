@@ -77,7 +77,7 @@ export function useRecommendedActions(options?: {
   artistType?: ArtistType;
   category?: ActionCategory;
 }) {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const { limit = 10, careerStage, artistType, category } = options || {};
 
   const {
@@ -95,9 +95,9 @@ export function useRecommendedActions(options?: {
     staleTime: 15 * 60 * 1000,
   });
 
-  const _completeActionMutation = useMutation({
+  const completeActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "POST",
         `/api/personalization/complete-action/${actionId}`,
       );
@@ -113,9 +113,9 @@ export function useRecommendedActions(options?: {
     },
   });
 
-  const _dismissActionMutation = useMutation({
+  const dismissActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "POST",
         `/api/personalization/dismiss-action/${actionId}`,
       );
@@ -128,7 +128,7 @@ export function useRecommendedActions(options?: {
     },
   });
 
-  const _filteredActions = useMemo(() => {
+  const filteredActions = useMemo(() => {
     let actions = allActions?.filter((a) => !a?.completed && !a?.dismissed);
 
     if (careerStage) {
@@ -148,60 +148,60 @@ export function useRecommendedActions(options?: {
     return actions?.slice(0, limit);
   }, [allActions, careerStage, artistType, category, limit]);
 
-  const _highPriorityActions = useMemo(() => {
+  const highPriorityActions = useMemo(() => {
     return filteredActions?.filter((a) => a?.priority === "high");
   }, [filteredActions]);
 
-  const _contextualActions = useMemo(() => {
+  const contextualActions = useMemo(() => {
     return filteredActions?.filter((a) => a?.contextual);
   }, [filteredActions]);
 
-  const _nextAction = useMemo(() => {
+  const nextAction = useMemo(() => {
     return highPriorityActions[0] || filteredActions[0] || null;
   }, [highPriorityActions, filteredActions]);
 
-  const _getActionsByCategory = useCallback(
+  const getActionsByCategory = useCallback(
     (cat: ActionCategory): RecommendedAction[] => {
       return filteredActions?.filter((a) => a?.category === cat);
     },
     [filteredActions],
   );
 
-  const _getActionsByType = useCallback(
+  const getActionsByType = useCallback(
     (type: ActionType): RecommendedAction[] => {
       return filteredActions?.filter((a) => a?.type === type);
     },
     [filteredActions],
   );
 
-  const _getActionProgress = useCallback(
+  const getActionProgress = useCallback(
     (actionId: string): number => {
-      const _action = allActions?.find((a) => a?.id === actionId);
+      const action = allActions?.find((a) => a?.id === actionId);
       return action?.progress || 0;
     },
     [allActions],
   );
 
-  const _completeAction = useCallback(
+  const completeAction = useCallback(
     async (actionId: string) => {
       await completeActionMutation?.mutateAsync(actionId);
     },
     [completeActionMutation],
   );
 
-  const _dismissAction = useCallback(
+  const dismissAction = useCallback(
     async (actionId: string) => {
       await dismissActionMutation?.mutateAsync(actionId);
     },
     [dismissActionMutation],
   );
 
-  const _refreshActions = useCallback(() => {
+  const refreshActions = useCallback(() => {
     refetch();
   }, [refetch]);
 
-  const _pendingCount = useMemo(() => filteredActions?.length, [filteredActions]);
-  const _highPriorityCount = useMemo(
+  const pendingCount = useMemo(() => filteredActions?.length, [filteredActions]);
+  const highPriorityCount = useMemo(
     () => highPriorityActions?.length,
     [highPriorityActions],
   );
@@ -249,7 +249,7 @@ export function usePersonalizedTips(
     staleTime: 30 * 60 * 1000,
   });
 
-  const _filteredTips = useMemo(() => {
+  const filteredTips = useMemo(() => {
     return tips
       .filter((tip) => {
         if (careerStage && !tip?.forCareerStage.includes(careerStage))
@@ -271,11 +271,11 @@ export function useCareerProgress() {
   const { careerGuidance, isLoading } = useRecommendedActions();
 
   return {
-    currentStage: careerGuidance?.currentStage || "emerging",
-    nextStage: careerGuidance?.nextStage || "developing",
-    progress: careerGuidance?.progressToNext || 0,
-    milestones: careerGuidance?.milestones || [],
-    recommendations: careerGuidance?.recommendations || [],
+    currentStage: careerGuidance.currentStage || "emerging",
+    nextStage: careerGuidance.nextStage || "developing",
+    progress: careerGuidance.progressToNext || 0,
+    milestones: careerGuidance.milestones || [],
+    recommendations: careerGuidance.recommendations || [],
     isLoading,
   };
 }

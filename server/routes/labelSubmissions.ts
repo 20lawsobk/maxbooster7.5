@@ -1,21 +1,21 @@
-import { requireUUIDParam } from "../middleware/requestValidation?.js";
+import { requireUUIDParam } from "../middleware/requestValidation.js";
 import { Router } from "express";
 import { db } from "../db";
 import { labelSubmissions, insertLabelSubmissionSchema } from "@shared/schema";
 import { and, eq, desc, count, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { queryCache, createCacheKey } from "../lib/queryCache?.js";
-import { parsePaginationParams } from "../middleware/pagination?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { queryCache, createCacheKey } from "../lib/queryCache.js";
+import { parsePaginationParams } from "../middleware/pagination.js";
 import { z } from "zod";
 
-const _router = Router();
-const _CACHE_TTL = 300;
+const router = Router();
+const CACHE_TTL = 300;
 
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _items = await db
+    const items = await db
       .select()
       .from(labelSubmissions)
       .where(eq(labelSubmissions?.userId, req?.user!.id))
@@ -31,10 +31,10 @@ router?.get("/", requireAuth, async (req, res) => {
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _cacheKey = createCacheKey("stats:labelSubmissions", userId);
+    const userId = req?.user!.id;
+    const cacheKey = createCacheKey("stats:labelSubmissions", userId);
 
-    const _stats = await queryCache?.getOrCompute(
+    const stats = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
         const [totals] = await db
@@ -48,11 +48,11 @@ router?.get("/stats", requireAuth, async (req, res) => {
           .from(labelSubmissions)
           .where(eq(labelSubmissions?.userId, userId));
 
-        const _total = Number(totals?.total);
-        const _submitted = Number(totals?.submitted);
-        const _accepted = Number(totals?.accepted);
-        const _responded = Number(totals?.responded);
-        const _pending = Number(totals?.pending);
+        const total = Number(totals?.total);
+        const submitted = Number(totals?.submitted);
+        const accepted = Number(totals?.accepted);
+        const responded = Number(totals?.responded);
+        const pending = Number(totals?.pending);
         return {
           total,
           submitted,
@@ -98,9 +98,9 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _data = insertLabelSubmissionSchema?.parse({
+    const data = insertLabelSubmissionSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
     });
     const [item] = await db?.insert(labelSubmissions).values(data).returning();
     await queryCache?.invalidate(
@@ -123,10 +123,10 @@ router?.post("/", requireAuth, async (req, res) => {
 
 router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(labelSubmissions)
       .where(
@@ -138,8 +138,8 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       return res?.status(404).json({ error: "Submission not found" });
     }
 
-    const _parsed = insertLabelSubmissionSchema?.partial().parse(req?.body);
-    const { status: _status, userId: _userId, ...data } = parsed;
+    const parsed = insertLabelSubmissionSchema?.partial().parse(req?.body);
+    const { status: _status, userId: _parsedUserId, ...data } = parsed;
     const [item] = await db
       .update(labelSubmissions)
       .set({ ...data, updatedAt: new Date() })
@@ -172,10 +172,10 @@ router?.patch(
   requireUUIDParam("id"),
   async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { id } = req?.params;
-      const _statusSchema = z?.object({
-        status: z?.enum([
+      const statusSchema = z.object({
+        status: z.enum([
           "draft",
           "submitted",
           "under_review",
@@ -184,8 +184,8 @@ router?.patch(
           "rejected",
           "declined",
         ]),
-        responseNote: z?.string().max(2000).optional(),
-        responseAt: z?.string().datetime().optional(),
+        responseNote: z.string().max(2000).optional(),
+        responseAt: z.string().datetime().optional(),
       });
       const { status, responseNote, responseAt } = statusSchema?.parse(req?.body);
 
@@ -193,10 +193,10 @@ router?.patch(
         status,
         updatedAt: new Date(),
       };
-      if (responseNote !== undefined) setFields?.responseNote = responseNote;
-      if (responseAt !== undefined) setFields?.responseAt = new Date(responseAt);
+      if (responseNote !== undefined) setFields.responseNote = responseNote;
+      if (responseAt !== undefined) setFields.responseAt = new Date(responseAt);
       else if (["accepted", "rejected", "declined"].includes(status)) {
-        setFields?.responseAt = new Date();
+        setFields.responseAt = new Date();
       }
 
       const [item] = await db
@@ -237,11 +237,11 @@ router?.post(
   requireUUIDParam("id"),
   async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { id } = req?.params;
-      const _followupSchema = z?.object({
-        nextFollowUpAt: z?.string().datetime().optional(),
-        notes: z?.string().max(2000).optional(),
+      const followupSchema = z.object({
+        nextFollowUpAt: z.string().datetime().optional(),
+        notes: z.string().max(2000).optional(),
       });
       const { nextFollowUpAt, notes } = followupSchema?.parse(req?.body);
 
@@ -250,8 +250,8 @@ router?.post(
         updatedAt: new Date(),
       };
       if (nextFollowUpAt !== undefined)
-        setFields?.followUpAt = new Date(nextFollowUpAt);
-      if (notes !== undefined) setFields?.notes = notes;
+        setFields.followUpAt = new Date(nextFollowUpAt);
+      if (notes !== undefined) setFields.notes = notes;
 
       const [item] = await db
         .update(labelSubmissions)
@@ -286,10 +286,10 @@ router?.post(
 
 router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(labelSubmissions)
       .where(

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { randomUUID } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // Cache for the maxBooster247 instance to avoid repeated imports
 let maxBooster247Cache: Record<string, unknown> | null = null;
@@ -14,7 +14,7 @@ async function getMaxBooster247() {
 
   if (!importAttempted) {
     try {
-      const _reliabilityModule = await import("../reliability-system?.js");
+      const reliabilityModule = await import("../reliability-system.js");
       maxBooster247Cache = reliabilityModule?.maxBooster247;
       importAttempted = true;
       return maxBooster247Cache;
@@ -48,14 +48,14 @@ export function requestCorrelation(
   next: NextFunction,
 ): void {
   // Generate or extract request ID
-  const _requestId =
+  const requestId =
     (req?.headers["x-request-id"] as string) ||
     (req?.headers["x-correlation-id"] as string) ||
     randomUUID();
 
   // Store request ID in request object
-  req?.requestId = requestId;
-  req?.startTime = Date?.now();
+  req.requestId = requestId;
+  req.startTime = Date?.now();
 
   // Add request ID to response headers
   res?.set("X-Request-ID", requestId);
@@ -70,36 +70,36 @@ export function performanceMonitoring(
   res: Response,
   next: NextFunction,
 ): void {
-  const _start = process?.hrtime.bigint();
+  const start = process?.hrtime.bigint();
 
   // Override res?.end to capture timing
-  const _originalEnd = res?.end.bind(res);
-  res?.end = function (
+  const originalEnd = res?.end.bind(res);
+  res.end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
   ): Response {
-    const _end = process?.hrtime.bigint();
-    const _duration = Number(end - start) / 1000000; // Convert to milliseconds
+    const end = process?.hrtime.bigint();
+    const duration = Number(end - start) / 1000000; // Convert to milliseconds
 
     // Add performance headers only if headers haven't been sent
-    if (!res?.headersSent) {
-      res?.set("X-Response-Time", `${duration?.toFixed(2)}ms`);
-      res?.set("X-Process-Time", `${Date?.now() - req?.startTime}ms`);
+    if (!res.headersSent) {
+      res.set("X-Response-Time", `${duration.toFixed(2)}ms`);
+      res.set("X-Process-Time", `${Date.now() - req.startTime}ms`);
     }
 
     // Log slow requests (> 1 second)
     if (duration > 1000) {
-      logger?.warn(
-        `🐌 SLOW REQUEST: ${req?.method} ${req?.originalUrl} - ${duration?.toFixed(2)}ms`,
+      logger.warn(
+        `🐌 SLOW REQUEST: ${req.method} ${req.originalUrl} - ${duration.toFixed(2)}ms`,
         {
-          requestId: req?.requestId,
-          method: req?.method,
-          url: req?.originalUrl,
-          statusCode: res?.statusCode,
-          duration: `${duration?.toFixed(2)}ms`,
-          userAgent: req?.get("user-agent"),
-          ip: req?.ip,
+          requestId: req.requestId,
+          method: req.method,
+          url: req.originalUrl,
+          statusCode: res.statusCode,
+          duration: `${duration.toFixed(2)}ms`,
+          userAgent: req.get("user-agent"),
+          ip: req.ip,
         },
       );
     }
@@ -109,12 +109,12 @@ export function performanceMonitoring(
       .then((maxBooster247) => {
         if (maxBooster247) {
           try {
-            maxBooster247?.trackRequest(duration);
+            maxBooster247.trackRequest(duration);
 
             // Track errors for 4xx/5xx responses
-            if (res?.statusCode >= 400) {
-              maxBooster247?.trackError(
-                `HTTP ${res?.statusCode}: ${req?.method} ${req?.originalUrl}`,
+            if (res.statusCode >= 400) {
+              maxBooster247.trackError(
+                `HTTP ${res.statusCode}: ${req.method} ${req.originalUrl}`,
               );
             }
           } catch (trackingError: unknown) {
@@ -148,17 +148,17 @@ export function memoryMonitoring(
   res: Response,
   next: NextFunction,
 ): void {
-  const _initialMemory = process?.memoryUsage();
+  const initialMemory = process?.memoryUsage();
 
   // Override res?.end to capture memory usage
-  const _originalEnd = res?.end.bind(res);
-  res?.end = function (
+  const originalEnd = res?.end.bind(res);
+  res.end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
   ): Response {
-    const _finalMemory = process?.memoryUsage();
-    const _memoryDelta = finalMemory?.heapUsed - initialMemory?.heapUsed;
+    const finalMemory = process?.memoryUsage();
+    const memoryDelta = finalMemory?.heapUsed - initialMemory?.heapUsed;
 
     // Add memory usage header only if headers haven't been sent
     if (!res?.headersSent) {
@@ -171,10 +171,10 @@ export function memoryMonitoring(
     // Log memory leaks (> 10MB increase per request)
     if (memoryDelta > 10 * 1024 * 1024) {
       logger?.warn(`🧠 MEMORY LEAK DETECTED: ${req?.method} ${req?.originalUrl}`, {
-        requestId: req?.requestId,
+        requestId: req.requestId,
         memoryIncrease: `${Math?.round(memoryDelta / 1024 / 1024)}MB`,
         currentHeapUsed: `${Math?.round(finalMemory?.heapUsed / 1024 / 1024)}MB`,
-        url: req?.originalUrl,
+        url: req.originalUrl,
       });
     }
 

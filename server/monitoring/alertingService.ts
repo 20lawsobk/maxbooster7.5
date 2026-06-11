@@ -1,6 +1,6 @@
 import sgMail from "@sendgrid/mail";
-import { logger } from "../logger?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { env } from "../config/env.js";
 
 interface AlertConfig {
   emailEnabled: boolean;
@@ -31,11 +31,11 @@ export class AlertingService {
   private alertCooldownMinutes = 15;
 
   constructor() {
-    this?.config = {
-      emailEnabled: env?.SENDGRID_API_KEY ? true : false,
-      webhookEnabled: process?.env.ALERT_WEBHOOK_URL ? true : false,
-      emailRecipients: process?.env.ALERT_EMAIL_RECIPIENTS?.split(",") || [],
-      webhookUrl: process?.env.ALERT_WEBHOOK_URL,
+    this.config = {
+      emailEnabled: env.SENDGRID_API_KEY ? true : false,
+      webhookEnabled: process.env.ALERT_WEBHOOK_URL ? true : false,
+      emailRecipients: process.env.ALERT_EMAIL_RECIPIENTS?.split(",") || [],
+      webhookUrl: process.env.ALERT_WEBHOOK_URL,
       thresholds: {
         queueMaxWaiting: parseInt(
           process?.env.ALERT_QUEUE_MAX_WAITING || "100",
@@ -63,11 +63,11 @@ export class AlertingService {
   }
 
   private shouldSendAlert(alertKey: string): boolean {
-    const _lastSent = this?.recentAlerts.get(alertKey);
+    const lastSent = this?.recentAlerts.get(alertKey);
     if (!lastSent) return true;
 
-    const _cooldownMs = this?.alertCooldownMinutes * 60 * 1000;
-    const _timeSinceLastAlert = Date?.now() - lastSent?.getTime();
+    const cooldownMs = this?.alertCooldownMinutes * 60 * 1000;
+    const timeSinceLastAlert = Date?.now() - lastSent?.getTime();
 
     return timeSinceLastAlert > cooldownMs;
   }
@@ -77,7 +77,7 @@ export class AlertingService {
   }
 
   async sendAlert(alert: Alert): Promise<void> {
-    const _alertKey = `${alert?.title}-${alert?.severity}`;
+    const alertKey = `${alert?.title}-${alert?.severity}`;
 
     if (!this?.shouldSendAlert(alertKey)) {
       logger?.debug(`Alert suppressed (cooldown): ${alert?.title}`);
@@ -105,20 +105,20 @@ export class AlertingService {
     if (!this?.config.webhookUrl) return;
 
     try {
-      const _payload = {
-        severity: alert?.severity,
-        title: alert?.title,
-        message: alert?.message,
-        timestamp: alert?.timestamp.toISOString(),
-        metadata: alert?.metadata || {},
+      const payload = {
+        severity: alert.severity,
+        title: alert.title,
+        message: alert.message,
+        timestamp: alert.timestamp.toISOString(),
+        metadata: alert.metadata || {},
         source: "Max Booster Platform",
       };
 
-      const _response = await fetch(this?.config.webhookUrl, {
+      const response = await fetch(this?.config.webhookUrl, {
         method: "POST",
-        signal: AbortSignal?.timeout(10_000), // 10 s — alert delivery must not block monitoring loop
+        signal: AbortSignal.timeout(10_000), // 10 s — alert delivery must not block monitoring loop
         headers: { "Content-Type": "application/json" },
-        body: JSON?.stringify(payload),
+        body: JSON.stringify(payload),
       });
 
       if (!response?.ok) {
@@ -135,15 +135,15 @@ export class AlertingService {
     try {
       sgMail?.setApiKey(env?.SENDGRID_API_KEY!);
 
-      const _severityEmoji = {
+      const severityEmoji = {
         info: "ℹ️",
         warning: "⚠️",
         critical: "🚨",
       };
 
-      const _msg = {
-        to: this?.config.emailRecipients,
-        from: env?.SENDGRID_FROM_EMAIL || "alerts@maxbooster?.ai",
+      const msg = {
+        to: this.config.emailRecipients,
+        from: env.SENDGRID_FROM_EMAIL || "alerts@maxbooster.ai",
         subject: `${severityEmoji[alert?.severity]} Max Booster Alert: ${alert?.title}`,
         text: `
 ${alert?.title}
@@ -164,7 +164,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
 <html>
 <head>
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1?.6; color: #333; }
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .header { background: ${alert?.severity === "critical" ? "#dc2626" : alert?.severity === "warning" ? "#f59e0b" : "#3b82f6"}; color: white; padding: 20px; }
     .content { padding: 20px; }
     .metadata { background: #f3f4f6; padding: 15px; border-radius: 5px; margin-top: 15px; }
@@ -214,7 +214,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
         title: "High Queue Backlog",
         message: `Queue has ${metrics?.waiting} waiting jobs (threshold: ${this?.config.thresholds?.queueMaxWaiting})`,
         timestamp: new Date(),
-        metadata: { queueName: metrics?.queueName, waiting: metrics?.waiting },
+        metadata: { queueName: metrics.queueName, waiting: metrics.waiting },
       });
     }
 
@@ -224,7 +224,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
         title: "High Failed Job Count",
         message: `Queue has ${metrics?.failed} failed jobs (threshold: ${this?.config.thresholds?.queueMaxFailed})`,
         timestamp: new Date(),
-        metadata: { queueName: metrics?.queueName, failed: metrics?.failed },
+        metadata: { queueName: metrics.queueName, failed: metrics.failed },
       });
     }
 
@@ -235,16 +235,16 @@ This is an automated alert from Max Booster Platform Monitoring System.
         message: `Redis latency is ${metrics?.redisLatency}ms (threshold: ${this?.config.thresholds?.queueMaxLatency}ms)`,
         timestamp: new Date(),
         metadata: {
-          queueName: metrics?.queueName,
-          latency: metrics?.redisLatency,
+          queueName: metrics.queueName,
+          latency: metrics.redisLatency,
         },
       });
     }
   }
 
   async checkAICacheMetrics(metrics: Record<string, unknown>): Promise<void> {
-    const _socialUtil = parseFloat(metrics?.social.utilizationPercent);
-    const _adUtil = parseFloat(metrics?.advertising.utilizationPercent);
+    const socialUtil = parseFloat(metrics?.social.utilizationPercent);
+    const adUtil = parseFloat(metrics?.advertising.utilizationPercent);
 
     if (socialUtil > this?.config.thresholds?.aiCacheMaxUtilization) {
       await this?.sendAlert({
@@ -284,4 +284,4 @@ This is an automated alert from Max Booster Platform Monitoring System.
   }
 }
 
-export const _alertingService = new AlertingService();
+export const alertingService = new AlertingService();

@@ -106,7 +106,7 @@ export function StudioOneWaveform({
           startTime: 0,
           duration: dur,
           sourceOffset: 0,
-          color: renderConfig?.waveformColor || "#4ade80",
+          color: renderConfig.waveformColor || "#4ade80",
           selected: false,
           muted: false,
           gain: 1,

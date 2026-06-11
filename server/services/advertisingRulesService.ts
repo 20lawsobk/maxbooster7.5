@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 /**
  * Advertisement Kill/Pivot Rules Service
@@ -11,8 +11,8 @@ export class AdvertisingRulesService {
    * Evaluate all active rules for a campaign
    */
   async evaluateRules(campaignId: number): Promise<any[]> {
-    const _rules = await storage?.getCampaignRules(campaignId);
-    const _variants = await storage?.getCampaignVariants(campaignId);
+    const rules = await storage?.getCampaignRules(campaignId);
+    const variants = await storage?.getCampaignVariants(campaignId);
     const executions: unknown[] = [];
 
     for (const rule of rules) {
@@ -22,7 +22,7 @@ export class AdvertisingRulesService {
         if (variant?.status === "killed") continue; // Skip already killed variants
 
         if (this?.shouldTrigger(rule, variant)) {
-          const _execution = await this?.executeRule(rule, variant);
+          const execution = await this?.executeRule(rule, variant);
           executions?.push(execution);
         }
       }
@@ -36,7 +36,7 @@ export class AdvertisingRulesService {
    */
   private shouldTrigger(rule: unknown, variant: unknown): boolean {
     const { condition } = rule;
-    const _metrics = variant?.actualMetrics || {};
+    const metrics = variant?.actualMetrics || {};
 
     switch (condition?.metric) {
       case "engagement":
@@ -70,7 +70,7 @@ export class AdvertisingRulesService {
           condition?.threshold,
         );
       case "time":
-        const _hoursSinceCreated =
+        const hoursSinceCreated =
           (Date?.now() - new Date(variant?.createdAt).getTime()) /
           (1000 * 60 * 60);
         return this?.compareMetric(
@@ -117,8 +117,8 @@ export class AdvertisingRulesService {
    * Execute rule action (kill, pause, pivot, alert)
    */
   private async executeRule(rule: unknown, variant: unknown): Promise<unknown> {
-    const _triggerReason = this?.generateTriggerReason(rule, variant);
-    const _learnings = this?.extractLearnings(rule, variant);
+    const triggerReason = this?.generateTriggerReason(rule, variant);
+    const learnings = this?.extractLearnings(rule, variant);
 
     // Execute action
     let actionTaken = "none";
@@ -142,12 +142,12 @@ export class AdvertisingRulesService {
     }
 
     // Record execution
-    const _execution = await storage?.createAdRuleExecution({
-      ruleId: rule?.id,
-      variantId: variant?.id,
+    const execution = await storage?.createAdRuleExecution({
+      ruleId: rule.id,
+      variantId: variant.id,
       triggerReason,
       actionTaken,
-      metricsSnapshot: variant?.actualMetrics,
+      metricsSnapshot: variant.actualMetrics,
       learnings,
     });
 
@@ -165,10 +165,10 @@ export class AdvertisingRulesService {
    */
   private generateTriggerReason(rule: unknown, variant: unknown): string {
     const { condition } = rule;
-    const _metrics = variant?.actualMetrics || {};
-    const _actualValue = metrics[condition?.metric] || 0;
+    const metrics = variant?.actualMetrics || {};
+    const actualValue = metrics[condition?.metric] || 0;
 
-    const _duration = this?.getRunDuration(variant);
+    const duration = this?.getRunDuration(variant);
     return `${condition?.metric.toUpperCase()} (${this?.formatMetric(actualValue, condition?.metric)}) ${condition?.operator} threshold (${this?.formatMetric(condition?.threshold, condition?.metric)}) after ${duration} hours`;
   }
 
@@ -177,16 +177,16 @@ export class AdvertisingRulesService {
    */
   private extractLearnings(_rule: unknown, variant: unknown): string {
     const learnings: string[] = [];
-    const _metrics = variant?.actualMetrics || {};
+    const metrics = variant?.actualMetrics || {};
 
     // Organic performance learnings
     if (metrics?.engagement && variant?.predictedEngagement) {
-      const _performanceRatio = metrics?.engagement / variant?.predictedEngagement;
-      if (performanceRatio < 0?.5) {
+      const performanceRatio = metrics?.engagement / variant?.predictedEngagement;
+      if (performanceRatio < 0.5) {
         learnings?.push(
           `Organic engagement ${Math?.round((1 - performanceRatio) * 100)}% below prediction - content may not resonate with audience`,
         );
-      } else if (performanceRatio > 1?.5) {
+      } else if (performanceRatio > 1.5) {
         learnings?.push(
           `Organic engagement ${Math?.round((performanceRatio - 1) * 100)}% above prediction - high-performing content, allocate more reach to similar posts`,
         );
@@ -212,7 +212,7 @@ export class AdvertisingRulesService {
     }
 
     // Cost savings learnings
-    const _organicReach = metrics?.reach || 0;
+    const organicReach = metrics?.reach || 0;
     if (organicReach > 0) {
       learnings?.push(
         `Achieved ${organicReach} organic reach with $0 ad spend - equivalent to ~$${this?.estimateAdSpendEquivalent(organicReach, variant?.platform)} in traditional advertising`,
@@ -233,17 +233,17 @@ export class AdvertisingRulesService {
 
     if (strategy?.reallocateBudget) {
       // Find best performing variant in campaign
-      const _allVariants = await storage?.getCampaignVariants(variant?.campaignId);
-      const _bestVariant = allVariants?.reduce((best, v) => {
-        const _bestEngagement = best?.actualMetrics?.engagement || 0;
-        const _currentEngagement = v?.actualMetrics?.engagement || 0;
+      const allVariants = await storage?.getCampaignVariants(variant?.campaignId);
+      const bestVariant = allVariants?.reduce((best, v) => {
+        const bestEngagement = best?.actualMetrics?.engagement || 0;
+        const currentEngagement = v?.actualMetrics?.engagement || 0;
         return currentEngagement > bestEngagement ? v : best;
       }, allVariants[0]);
 
       if (bestVariant && bestVariant?.id !== variant?.id) {
         // In organic posting, "budget" means posting frequency/reach
         // Increase frequency for best performer, decrease for underperformer
-        const _note = `Pivot: Increasing posting frequency for high-performing ${bestVariant?.platform} content`;
+        const note = `Pivot: Increasing posting frequency for high-performing ${bestVariant?.platform} content`;
         logger?.info(note);
       }
     }
@@ -299,15 +299,15 @@ export class AdvertisingRulesService {
    */
   private estimateAdSpendEquivalent(reach: number, platform: string): number {
     const cpm: Record<string, number> = {
-      facebook: 12?.0,
-      instagram: 9?.0,
-      twitter: 6?.5,
-      linkedin: 33?.0,
-      tiktok: 10?.0,
-      youtube: 20?.0,
+      facebook: 12.0,
+      instagram: 9.0,
+      twitter: 6.5,
+      linkedin: 33.0,
+      tiktok: 10.0,
+      youtube: 20.0,
     };
 
-    const _platformCPM = cpm[platform] || 10?.0;
+    const platformCPM = cpm[platform] || 10.0;
     return Math?.round((reach / 1000) * platformCPM);
   }
 

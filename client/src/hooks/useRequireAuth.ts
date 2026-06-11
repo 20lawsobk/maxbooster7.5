@@ -28,7 +28,7 @@ export function useRequireSubscription() {
 
     if (
       (user as Record<string, unknown>)?.isDemo ||
-      user?.email === "demo@maxbooster?.ai"
+      user?.email === "demo@maxbooster.ai"
     ) {
       return;
     }

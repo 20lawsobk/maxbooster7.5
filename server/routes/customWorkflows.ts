@@ -2,15 +2,15 @@ import { Router } from "express";
 import { db } from "../db";
 import { customWorkflows } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { notificationService } from "../services/notificationService?.js";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { notificationService } from "../services/notificationService.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
-import { parsePaginationParams } from "../middleware/pagination?.js";
+import { parsePaginationParams } from "../middleware/pagination.js";
 
-const _router = Router();
+const router = Router();
 
-const _PRIVATE_IP_PATTERNS = [
+const PRIVATE_IP_PATTERNS = [
   /^127\./,
   /^10\./,
   /^172\.(1[6-9]|2\d|3[01])\./,
@@ -30,14 +30,14 @@ function isSafeWebhookUrl(rawUrl: string): boolean {
     return false;
   }
   if (parsed?.protocol !== "https:") return false;
-  const _hostname = parsed?.hostname;
+  const hostname = parsed?.hostname;
   for (const pattern of PRIVATE_IP_PATTERNS) {
     if (pattern?.test(hostname)) return false;
   }
   return true;
 }
 
-export const _CUSTOM_TRIGGERS = [
+export const CUSTOM_TRIGGERS = [
   {
     id: "track:uploaded",
     label: "Track uploaded",
@@ -142,7 +142,7 @@ export const _CUSTOM_TRIGGERS = [
   },
 ];
 
-export const _CUSTOM_ACTIONS = [
+export const CUSTOM_ACTIONS = [
   {
     id: "push_notification",
     label: "Push notification to yourself",
@@ -152,14 +152,14 @@ export const _CUSTOM_ACTIONS = [
         key: "title",
         label: "Notification title",
         type: "text",
-        placeholder: "e?.g. New release is live!",
+        placeholder: "e.g. New release is live!",
       },
       {
         key: "message",
         label: "Message body",
         type: "textarea",
         placeholder:
-          "e?.g. {{releaseName}} dropped on {{platform}}. Go celebrate!",
+          "e.g. {{releaseName}} dropped on {{platform}}. Go celebrate!",
       },
     ],
   },
@@ -172,7 +172,7 @@ export const _CUSTOM_ACTIONS = [
         key: "subject",
         label: "Email subject",
         type: "text",
-        placeholder: "e?.g. Action needed: {{eventType}}",
+        placeholder: "e.g. Action needed: {{eventType}}",
       },
       {
         key: "body",
@@ -199,7 +199,7 @@ export const _CUSTOM_ACTIONS = [
         label: "Post content",
         type: "textarea",
         placeholder:
-          "e?.g. 🎵 New drop alert! {{releaseName}} is OUT NOW. Link in bio.",
+          "e.g. 🎵 New drop alert! {{releaseName}} is OUT NOW. Link in bio.",
       },
     ],
   },
@@ -212,7 +212,7 @@ export const _CUSTOM_ACTIONS = [
         key: "note",
         label: "Note text",
         type: "textarea",
-        placeholder: "e?.g. Automation fired for {{eventType}} at {{timestamp}}",
+        placeholder: "e.g. Automation fired for {{eventType}} at {{timestamp}}",
       },
     ],
   },
@@ -225,7 +225,7 @@ export const _CUSTOM_ACTIONS = [
         key: "url",
         label: "Webhook URL",
         type: "text",
-        placeholder: "https://hooks?.zapier.com/...",
+        placeholder: "https://hooks.zapier.com/...",
       },
       {
         key: "secret",
@@ -239,7 +239,7 @@ export const _CUSTOM_ACTIONS = [
     id: "share_smart_link",
     label: "Share release smart link",
     description:
-      "Post your release smart link (lnk?.to URL) to social media. Use {{releaseName}}, {{artistName}}, {{smartLink}} as placeholders.",
+      "Post your release smart link (lnk.to URL) to social media. Use {{releaseName}}, {{artistName}}, {{smartLink}} as placeholders.",
     fields: [
       {
         key: "platform",
@@ -252,42 +252,42 @@ export const _CUSTOM_ACTIONS = [
         label: "Post message",
         type: "textarea",
         placeholder:
-          "e?.g. 🎵 {{releaseName}} by {{artistName}} is OUT NOW! Stream it everywhere: {{smartLink}} 🔥 #NewMusic",
+          "e.g. 🎵 {{releaseName}} by {{artistName}} is OUT NOW! Stream it everywhere: {{smartLink}} 🔥 #NewMusic",
       },
       {
         key: "smartLink",
         label: "Smart link URL (auto-filled from release)",
         type: "text",
-        placeholder: "https://lnk?.to/your-release",
+        placeholder: "https://lnk.to/your-release",
       },
     ],
   },
 ];
 
-const _VALID_TRIGGER_IDS = new Set(CUSTOM_TRIGGERS?.map((t) => t?.id));
+const VALID_TRIGGER_IDS = new Set(CUSTOM_TRIGGERS?.map((t) => t?.id));
 
-const _createWorkflowSchema = z?.object({
-  name: z?.string().min(1).max(200),
-  description: z?.string().max(1000).optional(),
+const createWorkflowSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
   triggerEvent: z
     .string()
     .refine((v) => VALID_TRIGGER_IDS?.has(v), {
       message: "Invalid trigger event",
     }),
-  triggerConditions: z?.record(z?.string(), z?.unknown()).optional(),
+  triggerConditions: z.record(z.string(), z.unknown()).optional(),
   actions: z
     .array(
-      z?.object({
-        type: z?.string().max(100),
-        config: z?.record(z?.string(), z?.unknown()),
+      z.object({
+        type: z.string().max(100),
+        config: z.record(z.string(), z.unknown()),
       }),
     )
     .min(1, "At least one action is required")
     .max(10),
 });
 
-const _updateWorkflowSchema = createWorkflowSchema?.partial().extend({
-  enabled: z?.boolean().optional(),
+const updateWorkflowSchema = createWorkflowSchema?.partial().extend({
+  enabled: z.boolean().optional(),
 });
 
 router?.get("/catalog", (_req, res) => {
@@ -297,7 +297,7 @@ router?.get("/catalog", (_req, res) => {
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _rows = await db
+    const rows = await db
       .select()
       .from(customWorkflows)
       .where(eq(customWorkflows?.userId, req?.user!.id))
@@ -333,11 +333,11 @@ router?.get("/:id", requireAuth, async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _parsed = createWorkflowSchema?.safeParse(req?.body);
+    const parsed = createWorkflowSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const { name, description, triggerEvent, triggerConditions, actions } =
@@ -345,9 +345,9 @@ router?.post("/", requireAuth, async (req, res) => {
     const [row] = await db
       .insert(customWorkflows)
       .values({
-        userId: req?.user!.id,
+        userId: req.user!.id,
         name,
-        description: description?.trim() ?? "",
+        description: description.trim() ?? "",
         triggerEvent,
         triggerConditions: triggerConditions ?? {},
         actions,
@@ -363,11 +363,11 @@ router?.post("/", requireAuth, async (req, res) => {
 
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const _parsed = updateWorkflowSchema?.safeParse(req?.body);
+    const parsed = updateWorkflowSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const {
@@ -382,7 +382,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
       .update(customWorkflows)
       .set({
         ...(name !== undefined && { name }),
-        ...(description !== undefined && { description: description?.trim() }),
+        ...(description !== undefined && { description: description.trim() }),
         ...(triggerEvent !== undefined && { triggerEvent }),
         ...(triggerConditions !== undefined && { triggerConditions }),
         ...(actions !== undefined && { actions }),
@@ -465,7 +465,7 @@ router?.post("/:id/disable", requireAuth, async (req, res) => {
 
 router?.post("/:id/test", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const [workflow] = await db
       .select()
       .from(customWorkflows)
@@ -480,7 +480,7 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
     if (!workflow) return res?.status(404).json({ error: "Workflow not found" });
 
     const actionsRun: string[] = [];
-    const _actions = workflow?.actions as Array<{
+    const actions = workflow?.actions as Array<{
       type: string;
       config: Record<string, unknown>;
     }>;
@@ -495,7 +495,7 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
               title: String(action?.config.title || "Custom Workflow Triggered"),
               message: String(
                 action?.config.message ||
-                  `Workflow "${workflow?.name}" executed successfully.`,
+                  `Workflow "${workflow.name}" executed successfully.`,
               ),
               link: "/workflow-automations",
             });
@@ -508,7 +508,7 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
             break;
           case "email_self":
             actionsRun?.push(
-              `Email queued: "${String(action?.config.subject || "No subject")}"`,
+              `Email queued: "${String(action.config.subject || "No subject")}"`,
             );
             break;
           case "social_post":
@@ -517,20 +517,20 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
             );
             break;
           case "share_smart_link": {
-            const _platform = String(action?.config.platform || "all");
-            const _link = String(action?.config.smartLink || "");
-            const _msg = String(action?.config.message || "").replace(
+            const platform = String(action?.config.platform || "all");
+            const link = String(action?.config.smartLink || "");
+            const msg = String(action?.config.message || "").replace(
               "{{smartLink}}",
-              link || "https://lnk?.to/your-release",
+              link || "https://lnk.to/your-release",
             );
             actionsRun?.push(
-              `Smart link share queued for ${platform}: "${msg?.slice(0, 60)}${msg?.length > 60 ? "…" : ""}"`,
+              `Smart link share queued for ${platform}: "${msg.slice(0, 60)}${msg.length > 60 ? "…" : ""}"`,
             );
             break;
           }
           case "webhook":
             if (action?.config.url && typeof action?.config.url === "string") {
-              const _webhookUrl = String(action?.config.url);
+              const webhookUrl = String(action?.config.url);
               if (!isSafeWebhookUrl(webhookUrl)) {
                 logger?.warn(
                   `[CustomWorkflow] Blocked SSRF attempt — unsafe webhook URL: ${webhookUrl}`,
@@ -542,16 +542,16 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
                 try {
                   await fetch(webhookUrl, {
                     method: "POST",
-                    signal: AbortSignal?.timeout(10_000), // 10 s hard cap — prevents hanging slots
+                    signal: AbortSignal.timeout(10_000), // 10 s hard cap — prevents hanging slots
                     headers: {
                       "Content-Type": "application/json",
                       ...(action?.config.secret
                         ? { Authorization: String(action?.config.secret) }
                         : {}),
                     },
-                    body: JSON?.stringify({
-                      workflow: workflow?.name,
-                      trigger: workflow?.triggerEvent,
+                    body: JSON.stringify({
+                      workflow: workflow.name,
+                      trigger: workflow.triggerEvent,
                       timestamp: new Date().toISOString(),
                       test: true,
                     }),
@@ -565,7 +565,7 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
             break;
         }
       } catch (err: unknown) {
-        const _msg = err instanceof Error ? err?.message : String(err);
+        const msg = err instanceof Error ? err?.message : String(err);
         actionsRun?.push(`Action failed: ${action?.type} — ${msg}`);
       }
     }

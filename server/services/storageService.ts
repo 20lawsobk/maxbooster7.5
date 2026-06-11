@@ -7,7 +7,7 @@
  */
 
 import { randomUUID } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import fsPromises from "fs/promises";
 import path from "path";
 
@@ -24,7 +24,7 @@ export interface StorageProvider {
   fileExists(key: string): Promise<boolean>;
 }
 
-const _LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
+const LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
 
 function localFilePath(key: string): string {
   return path?.join(LOCAL_STORAGE_DIR, key?.replace(/\//g, path?.sep));
@@ -49,16 +49,16 @@ class PocketDimensionStorageProvider implements StorageProvider {
   private initPromise: Promise<void>;
 
   constructor() {
-    this?.initPromise = this?.init();
+    this.initPromise = this?.init();
   }
 
   private async init(): Promise<void> {
     try {
       const { PocketDimensionManager } = await import(
-        "../pocket-dimension/index?.js"
+        "../pocket-dimension/index.js"
       );
-      const _manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
-      this?.pocket = await manager?.openPocket("application-storage", {
+      const manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
+      this.pocket = await manager?.openPocket("application-storage", {
         compressionLevel: 9,
         enableDeduplication: true,
         enableVersioning: false,
@@ -88,7 +88,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
   ): Promise<string> {
     // Write to local filesystem first (durable)
     try {
-      const _localPath = localFilePath(key);
+      const localPath = localFilePath(key);
       await ensureLocalDir(localPath);
       await fsPromises?.writeFile(localPath, file);
     } catch (fsErr) {
@@ -129,7 +129,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
     }
 
     // Fall back to local filesystem
-    const _localPath = localFilePath(key);
+    const localPath = localFilePath(key);
     try {
       return await fsPromises?.readFile(localPath);
     } catch {
@@ -164,7 +164,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
   }
 
   async getUploadUrl(
-    _key: string,
+    key: string,
     _contentType: string,
     _expiresIn?: number,
   ): Promise<string | null> {
@@ -177,7 +177,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
 
   async fileExists(key: string): Promise<boolean> {
     // Check local filesystem first (fast)
-    const _localPath = localFilePath(key);
+    const localPath = localFilePath(key);
     if (fs?.existsSync(localPath)) return true;
 
     // Check PDIM
@@ -200,7 +200,7 @@ class StorageService {
     logger?.info(
       "📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend",
     );
-    this?.provider = new PocketDimensionStorageProvider();
+    this.provider = new PocketDimensionStorageProvider();
   }
 
   async uploadFile(
@@ -209,7 +209,7 @@ class StorageService {
     filename: string,
     contentType?: string,
   ): Promise<string> {
-    const _key = `${category}/${randomUUID()}/${filename}`;
+    const key = `${category}/${randomUUID()}/${filename}`;
     await this?.provider.uploadFile(file, key, contentType);
     return key;
   }
@@ -228,8 +228,8 @@ class StorageService {
     contentType: string,
     expiresIn: number = 3600,
   ): Promise<{ url: string | null; key: string }> {
-    const _key = `${category}/${randomUUID()}/${filename}`;
-    const _url = await this?.provider.getUploadUrl(key, contentType, expiresIn);
+    const key = `${category}/${randomUUID()}/${filename}`;
+    const url = await this?.provider.getUploadUrl(key, contentType, expiresIn);
     return { url, key };
   }
 
@@ -253,6 +253,6 @@ class StorageService {
   }
 }
 
-export const _storageService = new StorageService();
+export const storageService = new StorageService();
 
 export { PocketDimensionStorageProvider };

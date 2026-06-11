@@ -581,7 +581,7 @@ export function BatchTemplateManager({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Template</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{selectedTemplate?.name}"? This
+                Are you sure you want to delete "{selectedTemplate.name}"? This
                 action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -611,7 +611,7 @@ export function BatchTemplateManager({
                 Share Template
               </DialogTitle>
               <DialogDescription>
-                Share "{selectedTemplate?.name}" with a team member.
+                Share "{selectedTemplate.name}" with a team member.
               </DialogDescription>
             </DialogHeader>
 

@@ -211,21 +211,21 @@ export function RevenueAnalytics({
 
   const earningsStatus = useMemo<EarningsStatus>(
     () => ({
-      pending: data?.revenue?.pendingEarnings ?? 0,
-      paid: data?.revenue?.paidEarnings ?? 0,
-      processing: data?.revenue?.processingEarnings ?? 0,
-      nextPayoutDate: data?.revenue?.nextPayoutDate ?? "—",
-      nextPayoutAmount: data?.revenue?.nextPayoutAmount ?? 0,
+      pending: data.revenue?.pendingEarnings ?? 0,
+      paid: data.revenue?.paidEarnings ?? 0,
+      processing: data.revenue?.processingEarnings ?? 0,
+      nextPayoutDate: data.revenue?.nextPayoutDate ?? "—",
+      nextPayoutAmount: data.revenue?.nextPayoutAmount ?? 0,
     }),
     [data],
   );
 
   const taxInfo = useMemo<TaxInfo>(
     () => ({
-      grossEarnings: data?.revenue?.grossEarnings ?? 0,
-      taxWithheld: data?.revenue?.taxWithheld ?? 0,
-      netEarnings: data?.revenue?.netEarnings ?? 0,
-      taxRate: data?.revenue?.taxRate ?? 0,
+      grossEarnings: data.revenue?.grossEarnings ?? 0,
+      taxWithheld: data.revenue?.taxWithheld ?? 0,
+      netEarnings: data.revenue?.netEarnings ?? 0,
+      taxRate: data.revenue?.taxRate ?? 0,
     }),
     [data],
   );

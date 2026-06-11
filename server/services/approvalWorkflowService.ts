@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { approvalWorkflows, approvalRequests, approvalSteps, workspaceAuditLog, users, type ApprovalWorkflow, type ApprovalRequest, type ApprovalStep, type InsertApprovalWorkflow } from "@shared/schema";
 import { eq, and, desc, sql, or, lte } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { notificationService } from "./notificationService";
 
 export type ApprovalTrigger =
@@ -73,28 +73,28 @@ export class ApprovalWorkflowService {
       const [workflow] = await db
         .insert(approvalWorkflows)
         .values({
-          workspaceId: params?.workspaceId,
-          name: params?.name,
-          description: params?.description,
-          trigger: params?.trigger,
-          steps: params?.steps,
-          escalationPolicy: params?.escalationPolicy || {
+          workspaceId: params.workspaceId,
+          name: params.name,
+          description: params.description,
+          trigger: params.trigger,
+          steps: params.steps,
+          escalationPolicy: params.escalationPolicy || {
             enabled: false,
             timeoutHours: 48,
             escalateTo: null,
           },
-          conditions: params?.conditions || {},
-          createdBy: params?.createdBy,
+          conditions: params.conditions || {},
+          createdBy: params.createdBy,
         })
         .returning();
 
       await this?.logAuditEvent({
-        workspaceId: params?.workspaceId,
-        userId: params?.createdBy,
-        action: "workflow?.created",
+        workspaceId: params.workspaceId,
+        userId: params.createdBy,
+        action: "workflow.created",
         resourceType: "approval_workflow",
-        resourceId: workflow?.id,
-        newValues: { name: params?.name, trigger: params?.trigger },
+        resourceId: workflow.id,
+        newValues: { name: params.name, trigger: params.trigger },
       });
 
       return { success: true, workflow };
@@ -122,7 +122,7 @@ export class ApprovalWorkflowService {
     workspaceId: string,
   ): Promise<ApprovalWorkflow[]> {
     try {
-      const _workflows = await db
+      const workflows = await db
         .select()
         .from(approvalWorkflows)
         .where(eq(approvalWorkflows?.workspaceId, workspaceId))
@@ -169,7 +169,7 @@ export class ApprovalWorkflowService {
     error?: string;
   }> {
     try {
-      const _existingWorkflow = await this?.getWorkflow(workflowId);
+      const existingWorkflow = await this?.getWorkflow(workflowId);
       if (!existingWorkflow) {
         return { success: false, error: "Workflow not found" };
       }
@@ -184,9 +184,9 @@ export class ApprovalWorkflowService {
         .returning();
 
       await this?.logAuditEvent({
-        workspaceId: existingWorkflow?.workspaceId,
+        workspaceId: existingWorkflow.workspaceId,
         userId: updatedBy,
-        action: "workflow?.updated",
+        action: "workflow.updated",
         resourceType: "approval_workflow",
         resourceId: workflowId,
         previousValues: existingWorkflow,
@@ -205,7 +205,7 @@ export class ApprovalWorkflowService {
     deletedBy: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const _workflow = await this?.getWorkflow(workflowId);
+      const workflow = await this?.getWorkflow(workflowId);
       if (!workflow) {
         return { success: false, error: "Workflow not found" };
       }
@@ -235,9 +235,9 @@ export class ApprovalWorkflowService {
         .where(eq(approvalWorkflows?.id, workflowId));
 
       await this?.logAuditEvent({
-        workspaceId: workflow?.workspaceId,
+        workspaceId: workflow.workspaceId,
         userId: deletedBy,
-        action: "workflow?.deleted",
+        action: "workflow.deleted",
         resourceType: "approval_workflow",
         resourceId: workflowId,
       });
@@ -253,8 +253,8 @@ export class ApprovalWorkflowService {
     params: SubmitApprovalParams,
   ): Promise<{ success: boolean; request?: ApprovalRequest; error?: string }> {
     try {
-      const _trigger = this?.mapResourceTypeToTrigger(params?.resourceType);
-      const _workflow = await this?.getWorkflowByTrigger(
+      const trigger = this?.mapResourceTypeToTrigger(params?.resourceType);
+      const workflow = await this?.getWorkflowByTrigger(
         params?.workspaceId,
         trigger,
       );
@@ -263,35 +263,35 @@ export class ApprovalWorkflowService {
         return { success: true, request: undefined };
       }
 
-      const _steps = workflow?.steps as WorkflowStep[];
-      const _dueAt = new Date();
+      const steps = workflow?.steps as WorkflowStep[];
+      const dueAt = new Date();
       dueAt?.setHours(dueAt?.getHours() + 48);
 
       const [request] = await db
         .insert(approvalRequests)
         .values({
-          workflowId: workflow?.id,
-          workspaceId: params?.workspaceId,
-          requesterId: params?.requesterId,
-          resourceType: params?.resourceType,
-          resourceId: params?.resourceId,
+          workflowId: workflow.id,
+          workspaceId: params.workspaceId,
+          requesterId: params.requesterId,
+          resourceType: params.resourceType,
+          resourceId: params.resourceId,
           status: "pending",
           currentStep: 0,
-          totalSteps: steps?.length,
-          metadata: params?.metadata || {},
+          totalSteps: steps.length,
+          metadata: params.metadata || {},
           dueAt,
         })
         .returning();
 
       for (let i = 0; i < steps?.length; i++) {
-        const _step = steps[i];
-        const _stepDueAt = new Date();
+        const step = steps[i];
+        const stepDueAt = new Date();
         stepDueAt?.setHours(stepDueAt?.getHours() + (step?.timeoutHours || 24));
 
         await db?.insert(approvalSteps).values({
-          requestId: request?.id,
+          requestId: request.id,
           stepNumber: i,
-          approverId: step?.approverType === "user" ? step?.approverId : null,
+          approverId: step.approverType === "user" ? step?.approverId : null,
           approverRoleId:
             step?.approverType === "role" ? step?.approverRoleId : null,
           status: i === 0 ? "pending" : "waiting",
@@ -303,12 +303,12 @@ export class ApprovalWorkflowService {
       await this?.notifyApprovers(request?.id, 0);
 
       await this?.logAuditEvent({
-        workspaceId: params?.workspaceId,
-        userId: params?.requesterId,
-        action: "approval?.submitted",
-        resourceType: params?.resourceType,
-        resourceId: params?.resourceId,
-        newValues: { requestId: request?.id, workflowId: workflow?.id },
+        workspaceId: params.workspaceId,
+        userId: params.requesterId,
+        action: "approval.submitted",
+        resourceType: params.resourceType,
+        resourceId: params.resourceId,
+        newValues: { requestId: request.id, workflowId: workflow.id },
       });
 
       return { success: true, request };
@@ -388,7 +388,7 @@ export class ApprovalWorkflowService {
 
         await this?.notifyRequester(request, "rejected", comment);
       } else {
-        const _nextStepNumber = stepNumber + 1;
+        const nextStepNumber = stepNumber + 1;
         if (nextStepNumber >= request?.totalSteps!) {
           await db
             .update(approvalRequests)
@@ -428,11 +428,11 @@ export class ApprovalWorkflowService {
       }
 
       await this?.logAuditEvent({
-        workspaceId: request?.workspaceId,
+        workspaceId: request.workspaceId,
         userId: approverId,
         action: `approval.${decision}`,
-        resourceType: request?.resourceType,
-        resourceId: request?.resourceId,
+        resourceType: request.resourceType,
+        resourceId: request.resourceId,
         newValues: { decision, stepNumber, comment },
       });
 
@@ -461,10 +461,10 @@ export class ApprovalWorkflowService {
     requestId: string,
   ): Promise<{ request: ApprovalRequest; steps: ApprovalStep[] } | null> {
     try {
-      const _request = await this?.getApprovalRequest(requestId);
+      const request = await this?.getApprovalRequest(requestId);
       if (!request) return null;
 
-      const _steps = await db
+      const steps = await db
         .select()
         .from(approvalSteps)
         .where(eq(approvalSteps?.requestId, requestId))
@@ -482,21 +482,21 @@ export class ApprovalWorkflowService {
     _userId: string,
   ): Promise<any[]> {
     try {
-      const _pendingRequests = await db
+      const pendingRequests = await db
         .select({
-          id: approvalRequests?.id,
-          workflowId: approvalRequests?.workflowId,
-          resourceType: approvalRequests?.resourceType,
-          resourceId: approvalRequests?.resourceId,
-          status: approvalRequests?.status,
-          currentStep: approvalRequests?.currentStep,
-          totalSteps: approvalRequests?.totalSteps,
-          metadata: approvalRequests?.metadata,
-          dueAt: approvalRequests?.dueAt,
-          createdAt: approvalRequests?.createdAt,
-          requesterId: approvalRequests?.requesterId,
-          requesterEmail: users?.email,
-          requesterName: users?.firstName,
+          id: approvalRequests.id,
+          workflowId: approvalRequests.workflowId,
+          resourceType: approvalRequests.resourceType,
+          resourceId: approvalRequests.resourceId,
+          status: approvalRequests.status,
+          currentStep: approvalRequests.currentStep,
+          totalSteps: approvalRequests.totalSteps,
+          metadata: approvalRequests.metadata,
+          dueAt: approvalRequests.dueAt,
+          createdAt: approvalRequests.createdAt,
+          requesterId: approvalRequests.requesterId,
+          requesterEmail: users.email,
+          requesterName: users.firstName,
         })
         .from(approvalRequests)
         .leftJoin(users, eq(approvalRequests?.requesterId, users?.id))
@@ -521,17 +521,17 @@ export class ApprovalWorkflowService {
 
   async getUserPendingApprovals(userId: string): Promise<any[]> {
     try {
-      const _pendingSteps = await db
+      const pendingSteps = await db
         .select({
-          stepId: approvalSteps?.id,
-          stepNumber: approvalSteps?.stepNumber,
-          dueAt: approvalSteps?.dueAt,
-          requestId: approvalRequests?.id,
-          resourceType: approvalRequests?.resourceType,
-          resourceId: approvalRequests?.resourceId,
-          workspaceId: approvalRequests?.workspaceId,
-          metadata: approvalRequests?.metadata,
-          createdAt: approvalRequests?.createdAt,
+          stepId: approvalSteps.id,
+          stepNumber: approvalSteps.stepNumber,
+          dueAt: approvalSteps.dueAt,
+          requestId: approvalRequests.id,
+          resourceType: approvalRequests.resourceType,
+          resourceId: approvalRequests.resourceId,
+          workspaceId: approvalRequests.workspaceId,
+          metadata: approvalRequests.metadata,
+          createdAt: approvalRequests.createdAt,
         })
         .from(approvalSteps)
         .innerJoin(
@@ -559,19 +559,19 @@ export class ApprovalWorkflowService {
     limit: number = 50,
   ): Promise<any[]> {
     try {
-      const _history = await db
+      const history = await db
         .select({
-          id: approvalRequests?.id,
-          resourceType: approvalRequests?.resourceType,
-          resourceId: approvalRequests?.resourceId,
-          status: approvalRequests?.status,
-          finalDecision: approvalRequests?.finalDecision,
-          finalComment: approvalRequests?.finalComment,
-          completedAt: approvalRequests?.completedAt,
-          createdAt: approvalRequests?.createdAt,
-          requesterId: approvalRequests?.requesterId,
-          requesterEmail: users?.email,
-          requesterName: users?.firstName,
+          id: approvalRequests.id,
+          resourceType: approvalRequests.resourceType,
+          resourceId: approvalRequests.resourceId,
+          status: approvalRequests.status,
+          finalDecision: approvalRequests.finalDecision,
+          finalComment: approvalRequests.finalComment,
+          completedAt: approvalRequests.completedAt,
+          createdAt: approvalRequests.createdAt,
+          requesterId: approvalRequests.requesterId,
+          requesterEmail: users.email,
+          requesterName: users.firstName,
         })
         .from(approvalRequests)
         .leftJoin(users, eq(approvalRequests?.requesterId, users?.id))
@@ -596,7 +596,7 @@ export class ApprovalWorkflowService {
 
   async checkEscalations(): Promise<void> {
     try {
-      const _overdueRequests = await db
+      const overdueRequests = await db
         .select()
         .from(approvalRequests)
         .where(
@@ -612,10 +612,10 @@ export class ApprovalWorkflowService {
         .limit(100);
 
       for (const request of overdueRequests) {
-        const _workflow = await this?.getWorkflow(request?.workflowId);
+        const workflow = await this?.getWorkflow(request?.workflowId);
         if (!workflow) continue;
 
-        const _escalationPolicy = workflow?.escalationPolicy as EscalationPolicy;
+        const escalationPolicy = workflow?.escalationPolicy as EscalationPolicy;
         if (escalationPolicy?.enabled) {
           await this?.escalateRequest(request?.id, escalationPolicy);
         }
@@ -641,7 +641,7 @@ export class ApprovalWorkflowService {
 
       if (policy?.notifyOnEscalate && policy?.escalateTo) {
         await notificationService?.createNotification({
-          userId: policy?.escalateTo,
+          userId: policy.escalateTo,
           type: "approval_escalated",
           title: "Approval Request Escalated",
           message: "An approval request requires your immediate attention",
@@ -682,15 +682,15 @@ export class ApprovalWorkflowService {
 
       if (step?.approverId) {
         await notificationService?.createNotification({
-          userId: step?.approverId,
+          userId: step.approverId,
           type: "approval_request",
           title: "Approval Required",
           message: `A ${request?.resourceType} requires your approval`,
           link: `/approvals/${requestId}`,
           metadata: {
             requestId,
-            resourceType: request?.resourceType,
-            resourceId: request?.resourceId,
+            resourceType: request.resourceType,
+            resourceId: request.resourceId,
           },
         });
       }
@@ -706,17 +706,17 @@ export class ApprovalWorkflowService {
   ): Promise<void> {
     try {
       await notificationService?.createNotification({
-        userId: request?.requesterId,
+        userId: request.requesterId,
         type:
           decision === "approved" ? "approval_approved" : "approval_rejected",
         title: `Approval ${decision === "approved" ? "Approved" : "Rejected"}`,
         message: `Your ${request?.resourceType} has been ${decision}${comment ? `: ${comment}` : ""}`,
         link: `/${request?.resourceType}s/${request?.resourceId}`,
         metadata: {
-          requestId: request?.id,
+          requestId: request.id,
           decision,
-          resourceType: request?.resourceType,
-          resourceId: request?.resourceId,
+          resourceType: request.resourceType,
+          resourceId: request.resourceId,
         },
       });
     } catch (error: unknown) {
@@ -746,4 +746,4 @@ export class ApprovalWorkflowService {
   }
 }
 
-export const _approvalWorkflowService = new ApprovalWorkflowService();
+export const approvalWorkflowService = new ApprovalWorkflowService();

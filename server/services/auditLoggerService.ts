@@ -1,7 +1,7 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { auditLogs, type AuditLog } from "@shared/schema";
 import { eq, and, lt, desc, sql, gte } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import cron from "node-cron";
 import crypto from "crypto";
 
@@ -36,20 +36,20 @@ export interface AuditLogQueryOptions {
 export class AuditLoggerService {
   private static instance: AuditLoggerService;
   private lastHash: string | null = null;
-  private archivalCronJob: cron?.ScheduledTask | null = null;
+  private archivalCronJob: cron.ScheduledTask | null = null;
   private readonly RETENTION_DAYS = 90;
 
   private constructor() {}
 
   public static getInstance(): AuditLoggerService {
     if (!AuditLoggerService?.instance) {
-      AuditLoggerService?.instance = new AuditLoggerService();
+      AuditLoggerService.instance = new AuditLoggerService();
     }
     return AuditLoggerService?.instance;
   }
 
   public initialize(): void {
-    this?.archivalCronJob = cron?.schedule(
+    this.archivalCronJob = cron?.schedule(
       "0 3 * * *",
       async () => {
         await this?.archiveOldLogs();
@@ -72,51 +72,51 @@ export class AuditLoggerService {
   }
 
   private generateHash(entry: AuditLogEntry, timestamp: Date): string {
-    const _data = JSON?.stringify({
+    const data = JSON?.stringify({
       ...entry,
-      timestamp: timestamp?.toISOString(),
-      prevHash: this?.lastHash,
+      timestamp: timestamp.toISOString(),
+      prevHash: this.lastHash,
     });
     return crypto?.createHash("sha256").update(data).digest("hex");
   }
 
   public async log(entry: AuditLogEntry): Promise<AuditLog | null> {
     try {
-      const _timestamp = new Date();
-      const _hash = this?.generateHash(entry, timestamp);
-      const _prevHash = this?.lastHash;
+      const timestamp = new Date();
+      const hash = this?.generateHash(entry, timestamp);
+      const prevHash = this?.lastHash;
 
       const [auditLog] = await db
         .insert(auditLogs)
         .values({
           timestamp,
-          userId: entry?.userId || null,
-          userEmail: entry?.userEmail || null,
-          action: entry?.action,
-          resourceType: entry?.resourceType || null,
-          resourceId: entry?.resourceId || null,
-          ipAddress: entry?.ipAddress || null,
-          userAgent: entry?.userAgent || null,
-          details: entry?.details || null,
-          result: entry?.result || "success",
-          riskLevel: entry?.riskLevel || "low",
-          requestId: entry?.requestId || null,
-          sessionId: entry?.sessionId || null,
-          statusCode: entry?.statusCode || 200,
+          userId: entry.userId || null,
+          userEmail: entry.userEmail || null,
+          action: entry.action,
+          resourceType: entry.resourceType || null,
+          resourceId: entry.resourceId || null,
+          ipAddress: entry.ipAddress || null,
+          userAgent: entry.userAgent || null,
+          details: entry.details || null,
+          result: entry.result || "success",
+          riskLevel: entry.riskLevel || "low",
+          requestId: entry.requestId || null,
+          sessionId: entry.sessionId || null,
+          statusCode: entry.statusCode || 200,
           hash,
           prevHash,
           archived: false,
         })
         .returning();
 
-      this?.lastHash = hash;
+      this.lastHash = hash;
 
       if (entry?.riskLevel === "high" || entry?.riskLevel === "critical") {
         logger?.warn(`🔒 High-risk audit event: ${entry?.action}`, {
-          userId: entry?.userId,
-          resourceType: entry?.resourceType,
-          resourceId: entry?.resourceId,
-          riskLevel: entry?.riskLevel,
+          userId: entry.userId,
+          resourceType: entry.resourceType,
+          resourceId: entry.resourceId,
+          riskLevel: entry.riskLevel,
         });
       }
 
@@ -458,10 +458,10 @@ export class AuditLoggerService {
         conditions?.push(eq(auditLogs?.archived, false));
       }
 
-      const _whereClause =
+      const whereClause =
         conditions?.length > 0 ? and(...conditions) : undefined;
 
-      const _logs = await db
+      const logs = await db
         .select()
         .from(auditLogs)
         .where(whereClause)
@@ -477,7 +477,7 @@ export class AuditLoggerService {
 
       return {
         logs,
-        total: countResult?.count || 0,
+        total: countResult.count || 0,
       };
     } catch (error) {
       logger?.warn({ err: error }, "❌ Failed to query audit logs:");
@@ -489,7 +489,7 @@ export class AuditLoggerService {
     userId: string,
     limit: number = 100,
   ): Promise<AuditLog[]> {
-    const _result = await this?.queryLogs({
+    const result = await this?.queryLogs({
       userId,
       limit,
       includeArchived: false,
@@ -501,7 +501,7 @@ export class AuditLoggerService {
     archived: number;
     errors: number;
   }> {
-    const _cutoffDate = new Date();
+    const cutoffDate = new Date();
     cutoffDate?.setDate(cutoffDate?.getDate() - this?.RETENTION_DAYS);
 
     logger?.info(
@@ -509,7 +509,7 @@ export class AuditLoggerService {
     );
 
     try {
-      const _result = await db
+      const result = await db
         .update(auditLogs)
         .set({
           archived: true,
@@ -521,9 +521,9 @@ export class AuditLoggerService {
             eq(auditLogs?.archived, false),
           ),
         )
-        .returning({ id: auditLogs?.id });
+        .returning({ id: auditLogs.id });
 
-      const _archivedCount = result?.length;
+      const archivedCount = result?.length;
       logger?.info(
         `✅ Archived ${archivedCount} audit logs older than ${this?.RETENTION_DAYS} days`,
       );
@@ -542,11 +542,11 @@ export class AuditLoggerService {
   }
 
   public async purgeArchivedLogs(olderThanDays: number = 365): Promise<number> {
-    const _cutoffDate = new Date();
+    const cutoffDate = new Date();
     cutoffDate?.setDate(cutoffDate?.getDate() - olderThanDays);
 
     try {
-      const _result = await db
+      const result = await db
         .delete(auditLogs)
         .where(
           and(
@@ -554,9 +554,9 @@ export class AuditLoggerService {
             lt(auditLogs?.archivedAt, cutoffDate),
           ),
         )
-        .returning({ id: auditLogs?.id });
+        .returning({ id: auditLogs.id });
 
-      const _purgedCount = result?.length;
+      const purgedCount = result?.length;
       logger?.info(
         `🗑️ Purged ${purgedCount} archived audit logs older than ${olderThanDays} days`,
       );
@@ -588,17 +588,17 @@ export class AuditLoggerService {
         .where(eq(auditLogs?.archived, true))
         .limit(1);
 
-      const _riskLevelStats = await db
+      const riskLevelStats = await db
         .select({
-          riskLevel: auditLogs?.riskLevel,
+          riskLevel: auditLogs.riskLevel,
           count: sql<number>`count(*)::int`,
         })
         .from(auditLogs)
         .groupBy(auditLogs?.riskLevel);
 
-      const _actionStats = await db
+      const actionStats = await db
         .select({
-          action: auditLogs?.action,
+          action: auditLogs.action,
           count: sql<number>`count(*)::int`,
         })
         .from(auditLogs)
@@ -607,14 +607,14 @@ export class AuditLoggerService {
         .limit(20);
 
       const [oldestActive] = await db
-        .select({ timestamp: auditLogs?.timestamp })
+        .select({ timestamp: auditLogs.timestamp })
         .from(auditLogs)
         .where(eq(auditLogs?.archived, false))
         .orderBy(auditLogs?.timestamp)
         .limit(1);
 
       const [newestLog] = await db
-        .select({ timestamp: auditLogs?.timestamp })
+        .select({ timestamp: auditLogs.timestamp })
         .from(auditLogs)
         .orderBy(desc(auditLogs?.timestamp))
         .limit(1);
@@ -622,23 +622,23 @@ export class AuditLoggerService {
       const logsByRiskLevel: Record<string, number> = {};
       for (const stat of riskLevelStats) {
         if (stat?.riskLevel) {
-          logsByRiskLevel[stat?.riskLevel] = stat?.count;
+          logsByRiskLevel[stat.riskLevel] = stat?.count;
         }
       }
 
       const logsByAction: Record<string, number> = {};
       for (const stat of actionStats) {
-        logsByAction[stat?.action] = stat?.count;
+        logsByAction[stat.action] = stat?.count;
       }
 
       return {
-        totalLogs: totalResult?.count || 0,
-        archivedLogs: archivedResult?.count || 0,
+        totalLogs: totalResult.count || 0,
+        archivedLogs: archivedResult.count || 0,
         activeLogs: (totalResult?.count || 0) - (archivedResult?.count || 0),
         logsByRiskLevel,
         logsByAction,
-        oldestActiveLog: oldestActive?.timestamp || null,
-        newestLog: newestLog?.timestamp || null,
+        oldestActiveLog: oldestActive.timestamp || null,
+        newestLog: newestLog.timestamp || null,
       };
     } catch (error) {
       logger?.warn({ err: error }, "❌ Failed to get audit log stats:");
@@ -647,4 +647,4 @@ export class AuditLoggerService {
   }
 }
 
-export const _auditLoggerService = AuditLoggerService?.getInstance();
+export const auditLoggerService = AuditLoggerService?.getInstance();

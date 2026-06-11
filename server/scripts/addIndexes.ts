@@ -4,7 +4,7 @@
  * Targets high-traffic userId/FK columns that lack explicit indexes.
  * Run with: npx tsx server/scripts/addIndexes?.ts
  */
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { sql } from "drizzle-orm";
 
 const indexes: { name: string; ddl: string }[] = [

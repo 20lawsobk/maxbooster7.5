@@ -26,7 +26,7 @@ const OFFLINE_ROUTES: Record<string, FeatureCapability> = {
   "/settings": "full",
 };
 
-const _ONLINE_ONLY_ROUTES = [
+const ONLINE_ONLY_ROUTES = [
   "/distribution",
   "/social-media",
   "/marketplace",
@@ -49,7 +49,7 @@ export function useOfflineCapable(): {
   const { isOffline } = useOfflineStatus();
   const [location] = useLocation();
 
-  const _capabilities = useMemo<OfflineCapabilities>(() => {
+  const capabilities = useMemo<OfflineCapabilities>(() => {
     if (!isOffline) {
       return {
         projectEditing: "full",
@@ -83,10 +83,10 @@ export function useOfflineCapable(): {
     };
   }, [isOffline]);
 
-  const _routeCapability = useMemo<FeatureCapability>(() => {
+  const routeCapability = useMemo<FeatureCapability>(() => {
     if (!isOffline) return "full";
 
-    const _normalizedPath = location?.split("?")[0];
+    const normalizedPath = location?.split("?")[0];
 
     for (const route of ONLINE_ONLY_ROUTES) {
       if (normalizedPath?.startsWith(route)) {
@@ -103,21 +103,21 @@ export function useOfflineCapable(): {
     return "limited";
   }, [isOffline, location]);
 
-  const _availableFeatures = useMemo(() => {
+  const availableFeatures = useMemo(() => {
     return Object?.entries(capabilities)
       .filter(([, capability]) => capability !== "unavailable")
       .map(([feature]) => feature);
   }, [capabilities]);
 
-  const _unavailableFeatures = useMemo(() => {
+  const unavailableFeatures = useMemo(() => {
     return Object?.entries(capabilities)
       .filter(([, capability]) => capability === "unavailable")
       .map(([feature]) => feature);
   }, [capabilities]);
 
-  const _isFullyCapable = routeCapability === "full";
-  const _isPartiallyCapable = routeCapability === "limited";
-  const _isUnavailable = routeCapability === "unavailable";
+  const isFullyCapable = routeCapability === "full";
+  const isPartiallyCapable = routeCapability === "limited";
+  const isUnavailable = routeCapability === "unavailable";
 
   return {
     isFullyCapable,

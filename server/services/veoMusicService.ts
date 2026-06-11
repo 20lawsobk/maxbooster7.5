@@ -1,11 +1,11 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-const _PYTHON_AI_PORT = parseInt(process?.env.PYTHON_AI_PORT || "9878", 10);
-const _AI_MODEL_URL =
-  process?.env.AI_MODEL_SERVICE_URL || `http://127?.0.0?.1:${PYTHON_AI_PORT}`;
-const _VEO_TIMEOUT_MS = 180_000; // raised: full Veo campaign generation and multi-platform video rendering
+const PYTHON_AI_PORT = parseInt(process?.env.PYTHON_AI_PORT || "9878", 10);
+const AI_MODEL_URL =
+  process?.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
+const VEO_TIMEOUT_MS = 180_000; // raised: full Veo campaign generation and multi-platform video rendering
 
-const __INTERNAL_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
+const _INTERNAL_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
 function internalAuthHeaders(): Record<string, string> {
   return _INTERNAL_SECRET
     ? { Authorization: `Bearer ${_INTERNAL_SECRET}` }
@@ -17,12 +17,12 @@ async function fetchWithTimeout(
   options: RequestInit,
   timeoutMs = VEO_TIMEOUT_MS,
 ): Promise<Response> {
-  const _controller = new AbortController();
-  const _timeout = setTimeout(() => controller?.abort(), timeoutMs);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller?.abort(), timeoutMs);
   try {
-    const _response = await fetch(url, {
+    const response = await fetch(url, {
       ...options,
-      signal: controller?.signal,
+      signal: controller.signal,
     });
     return response;
   } finally {
@@ -93,7 +93,7 @@ class VeoMusicService {
 
   static getInstance(): VeoMusicService {
     if (!VeoMusicService?.instance) {
-      VeoMusicService?.instance = new VeoMusicService();
+      VeoMusicService.instance = new VeoMusicService();
     }
     return VeoMusicService?.instance;
   }
@@ -103,23 +103,23 @@ class VeoMusicService {
   ): Promise<VeoCampaignResult> {
     try {
       logger?.info(
-        `[VeoMusic] Generating campaign for "${request?.title}" by ${request?.artist}`,
+        `[VeoMusic] Generating campaign for "${request.title}" by ${request?.artist}`,
       );
       logger?.info(
         `[VeoMusic] Platforms: ${(request?.primary_platforms || ["tiktok", "youtube", "instagram"]).join(", ")}`,
       );
 
-      const _response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/campaign`, {
+      const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/campaign`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...internalAuthHeaders(),
         },
-        body: JSON?.stringify(request),
+        body: JSON.stringify(request),
       });
 
       if (!response?.ok) {
-        const _errorText = await response?.text();
+        const errorText = await response?.text();
         logger?.warn(
           `[VeoMusic] Campaign generation failed: ${response?.status} - ${errorText}`,
         );
@@ -129,7 +129,7 @@ class VeoMusicService {
         };
       }
 
-      const _data = (await response?.json()) as VeoCampaignResult;
+      const data = (await response?.json()) as VeoCampaignResult;
 
       if (data?.success && data?.campaign) {
         logger?.info(
@@ -152,7 +152,7 @@ class VeoMusicService {
 
   async getAvailablePlatforms(): Promise<unknown> {
     try {
-      const _response = await fetchWithTimeout(
+      const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/veo/platforms`,
         {
           method: "GET",
@@ -170,7 +170,7 @@ class VeoMusicService {
 
   async getAvailableGoals(): Promise<unknown> {
     try {
-      const _response = await fetchWithTimeout(
+      const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/veo/goals`,
         {
           method: "GET",
@@ -188,7 +188,7 @@ class VeoMusicService {
 
   async getRecommendedGoals(platform: string): Promise<unknown> {
     try {
-      const _response = await fetchWithTimeout(
+      const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/veo/recommend/${platform}`,
         {
           method: "GET",
@@ -206,7 +206,7 @@ class VeoMusicService {
 
   async getPipelineStatus(): Promise<unknown> {
     try {
-      const _response = await fetchWithTimeout(
+      const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/veo/status`,
         {
           method: "GET",
@@ -224,7 +224,7 @@ class VeoMusicService {
 
   async extractUrlMetadata(url: string): Promise<unknown> {
     try {
-      const _response = await fetchWithTimeout(
+      const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/veo/url/metadata`,
         {
           method: "POST",
@@ -232,7 +232,7 @@ class VeoMusicService {
             "Content-Type": "application/json",
             ...internalAuthHeaders(),
           },
-          body: JSON?.stringify({ url }),
+          body: JSON.stringify({ url }),
         },
         15000,
       );
@@ -254,7 +254,7 @@ class VeoMusicService {
         Object?.assign(body, overrides);
       }
 
-      const _response = await fetchWithTimeout(
+      const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/veo/url/campaign`,
         {
           method: "POST",
@@ -262,7 +262,7 @@ class VeoMusicService {
             "Content-Type": "application/json",
             ...internalAuthHeaders(),
           },
-          body: JSON?.stringify(body),
+          body: JSON.stringify(body),
         },
         30000,
       );
@@ -288,22 +288,22 @@ class VeoMusicService {
     lyrics?: string;
     tone?: string;
   }): Promise<VeoAsset | null> {
-    const _result = await this?.generateCampaign({
-      title: options?.title,
-      artist: options?.artist,
-      mood: options?.mood || options?.tone || "energetic",
-      story: options?.story || "",
-      lyrics: options?.lyrics,
+    const result = await this?.generateCampaign({
+      title: options.title,
+      artist: options.artist,
+      mood: options.mood || options?.tone || "energetic",
+      story: options.story || "",
+      lyrics: options.lyrics,
       primary_platforms: [options?.platform],
     });
 
     if (!result?.success || !result?.campaign) return null;
 
-    const _asset = result?.campaign.assets?.find(
+    const asset = result?.campaign.assets?.find(
       (a) => a?.platform === options?.platform,
     );
     return asset || result?.campaign.assets[0] || null;
   }
 }
 
-export const _veoMusicService = VeoMusicService?.getInstance();
+export const veoMusicService = VeoMusicService?.getInstance();

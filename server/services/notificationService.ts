@@ -2,10 +2,10 @@ import { Resend } from "resend";
 import { db } from "../db";
 import { notifications, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { webPushService } from "./webPushService?.js";
-import { buildPushPayload } from "./pushNotificationTypes?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { webPushService } from "./webPushService.js";
+import { buildPushPayload } from "./pushNotificationTypes.js";
+import { env } from "../config/env.js";
 
 interface NotificationOptions {
   userId: string;
@@ -33,8 +33,8 @@ class NotificationService {
   private initialize() {
     if (!this?.isInitialized && env?.RESEND_API_KEY) {
       try {
-        this?.resend = new Resend(env?.RESEND_API_KEY);
-        this?.isInitialized = true;
+        this.resend = new Resend(env?.RESEND_API_KEY);
+        this.isInitialized = true;
         logger?.info("✅ Resend initialized for email notifications");
       } catch (error: unknown) {
         logger?.warn({ err: error }, "❌ Failed to initialize SendGrid:");
@@ -46,7 +46,7 @@ class NotificationService {
     const { userId, type, title, message, link, metadata } = options;
 
     try {
-      const _user = await db?.query.users?.findFirst({
+      const user = await db?.query.users?.findFirst({
         where: eq(users?.id, userId),
       });
 
@@ -55,7 +55,7 @@ class NotificationService {
         return;
       }
 
-      const _preferences = (user?.notificationSettings as Record<
+      const preferences = (user?.notificationSettings as Record<
         string,
         unknown
       >) || {
@@ -68,8 +68,8 @@ class NotificationService {
         system: true,
       };
 
-      const _shouldSendEmail = preferences?.email && preferences[type];
-      const _shouldSendBrowser = preferences?.browser && preferences[type];
+      const shouldSendEmail = preferences?.email && preferences[type];
+      const shouldSendBrowser = preferences?.browser && preferences[type];
 
       const [notification] = await db
         .insert(notifications)
@@ -129,16 +129,16 @@ class NotificationService {
       return;
     }
 
-    const _template = this?.getEmailTemplate(type, title, message, link);
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const template = this?.getEmailTemplate(type, title, message, link);
+    const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     try {
       await this?.resend.emails?.send({
-        to: user?.email,
+        to: user.email,
         from: fromEmail,
-        subject: template?.subject,
-        text: template?.text,
-        html: template?.html,
+        subject: template.subject,
+        text: template.text,
+        html: template.html,
       });
       logger?.info(`📧 Email sent to ${user?.email}`);
     } catch (error: unknown) {
@@ -162,17 +162,17 @@ class NotificationService {
 
       let richPayload;
       if (type) {
-        const _ctx = {
-          actorName: metadata?.actorName,
-          contentTitle: metadata?.contentTitle || title,
-          contentPreview: metadata?.contentPreview || message,
-          platform: metadata?.platform,
+        const ctx = {
+          actorName: metadata.actorName,
+          contentTitle: metadata.contentTitle || title,
+          contentPreview: metadata.contentPreview || message,
+          platform: metadata.platform,
           url: link,
-          imageUrl: metadata?.imageUrl,
-          location: metadata?.location,
-          count: metadata?.count,
-          milestone: metadata?.milestone,
-          amount: metadata?.amount,
+          imageUrl: metadata.imageUrl,
+          location: metadata.location,
+          count: metadata.count,
+          milestone: metadata.milestone,
+          amount: metadata.amount,
         };
         richPayload = buildPushPayload(type, ctx);
       } else {
@@ -180,8 +180,8 @@ class NotificationService {
           title,
           body: message,
           url: link || "/",
-          icon: "/icons/icon-192x192?.png",
-          badge: "/icons/icon-72x72?.png",
+          icon: "/icons/icon-192x192.png",
+          badge: "/icons/icon-72x72.png",
           tag: `notification-${Date?.now()}`,
           category: "system",
           actions: [
@@ -193,11 +193,11 @@ class NotificationService {
           renotify: false,
           vibrate: [100, 50, 100],
           data: { url: link || "/" },
-          timestamp: Date?.now(),
+          timestamp: Date.now(),
         };
       }
 
-      const _result = await webPushService?.sendRichToUser(
+      const result = await webPushService?.sendRichToUser(
         (user as Record<string, unknown>).id,
         richPayload as Record<string, unknown>,
       );
@@ -217,28 +217,28 @@ class NotificationService {
     message: string,
     link?: string,
   ): EmailTemplate {
-    const _actionButton = link
+    const actionButton = link
       ? `<a href="${link}" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">View Details</a>`
       : "";
 
-    const _html = `
+    const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1?.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0?.1); overflow: hidden;">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
           <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Max Booster</h1>
-              <p style="margin: 10px 0 0; color: rgba(255,255,255,0?.9); font-size: 14px;">AI-Powered Music Platform</p>
+              <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">AI-Powered Music Platform</p>
             </td>
           </tr>
           
@@ -246,7 +246,7 @@ class NotificationService {
           <tr>
             <td style="padding: 40px 30px;">
               <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 24px; font-weight: 600;">${title}</h2>
-              <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">${message}</p>
+              <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">${message}</p>
               ${actionButton}
               <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #e5e7eb;">
                 <p style="margin: 0; color: #6b7280; font-size: 14px;">
@@ -264,7 +264,7 @@ class NotificationService {
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 11px;">
                 You're receiving this email because you have notifications enabled for ${type} updates.
-                <br><a href="${link || "https://maxbooster?.ai/settings"}" style="color: #667eea; text-decoration: none;">Manage notification preferences</a>
+                <br><a href="${link || "https://maxbooster.ai/settings"}" style="color: #667eea; text-decoration: none;">Manage notification preferences</a>
               </p>
             </td>
           </tr>
@@ -276,7 +276,7 @@ class NotificationService {
 </html>
     `.trim();
 
-    const _text = `
+    const text = `
 ${title}
 
 ${message}
@@ -287,11 +287,11 @@ ${link ? `View details: ${link}` : ""}
 Max Booster - AI-Powered Music Platform
 © ${new Date().getFullYear()} Max Booster. All rights reserved.
 
-Manage your notification preferences: ${link || "https://maxbooster?.ai/settings"}
+Manage your notification preferences: ${link || "https://maxbooster.ai/settings"}
     `.trim();
 
     return {
-      subject: `${this?.getTypeEmoji(type)} ${title}`,
+      subject: `${this.getTypeEmoji(type)} ${title}`,
       html,
       text,
     };
@@ -336,7 +336,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
       failed: `There was an issue processing your release "${releaseTitle}". Please review and try again.`,
     };
 
-    await this?.send({
+    await this.send({
       userId,
       type: "release",
       title: `Release Update: ${releaseTitle}`,
@@ -352,7 +352,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     amount: number,
     source: string,
   ): Promise<void> {
-    await this?.send({
+    await this.send({
       userId,
       type: "earning",
       title: "New Earnings Received",
@@ -429,7 +429,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     streakType: string,
     days: number,
   ): Promise<void> {
-    const _typeLabel = streakType === "login" ? "login" : streakType;
+    const typeLabel = streakType === "login" ? "login" : streakType;
     await this?.send({
       userId,
       type: "streak_milestone",
@@ -445,7 +445,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    await this?.send({
+    await this.send({
       userId,
       type: "security_new_login",
       title: "New Login Detected",
@@ -470,7 +470,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     userId: string,
     usedPercent: number,
   ): Promise<void> {
-    const _isNearFull = usedPercent >= 90;
+    const isNearFull = usedPercent >= 90;
     await this?.send({
       userId,
       type: "storage_quota_warning",
@@ -486,7 +486,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     fileName: string,
     fileType: string,
   ): Promise<void> {
-    await this?.send({
+    await this.send({
       userId,
       type: "upload_complete",
       title: "Upload Complete",
@@ -508,8 +508,8 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
       analysis: "AI Analysis",
       vocal_removal: "Vocal Removal",
     };
-    const _label = labels[taskType] || "AI Processing";
-    await this?.send({
+    const label = labels[taskType] || "AI Processing";
+    await this.send({
       userId,
       type: "ai_processing_complete",
       title: `${label} Complete`,
@@ -524,13 +524,13 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     trackName: string,
     streams: number,
   ): Promise<void> {
-    const _formatted =
+    const formatted =
       streams >= 1_000_000
         ? `${(streams / 1_000_000).toFixed(1)}M`
         : streams >= 1_000
           ? `${(streams / 1_000).toFixed(0)}K`
           : `${streams}`;
-    await this?.send({
+    await this.send({
       userId,
       type: "stream_milestone",
       title: `${formatted} Streams!`,
@@ -545,13 +545,13 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     platform: string,
     followers: number,
   ): Promise<void> {
-    const _formatted =
+    const formatted =
       followers >= 1_000_000
         ? `${(followers / 1_000_000).toFixed(1)}M`
         : followers >= 1_000
           ? `${(followers / 1_000).toFixed(0)}K`
           : `${followers}`;
-    await this?.send({
+    await this.send({
       userId,
       type: "follower_milestone",
       title: `${formatted} Followers on ${platform}!`,
@@ -609,7 +609,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     oldPlan: string,
     newPlan: string,
   ): Promise<void> {
-    const _isUpgrade =
+    const isUpgrade =
       ["monthly", "yearly", "lifetime"].indexOf(newPlan) >
       ["monthly", "yearly", "lifetime"].indexOf(oldPlan);
     await this?.send({
@@ -642,7 +642,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     beatName: string,
     plays: number,
   ): Promise<void> {
-    const _formatted =
+    const formatted =
       plays >= 1_000 ? `${(plays / 1_000).toFixed(0)}K` : `${plays}`;
     await this?.send({
       userId,
@@ -656,8 +656,8 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
 
   private async getAdminUserId(): Promise<string | null> {
     try {
-      const _adminEmail = process?.env.ADMIN_EMAIL || "noreply@max-booster?.com";
-      const _admin = await db?.query.users?.findFirst({
+      const adminEmail = process?.env.ADMIN_EMAIL || "noreply@max-booster.com";
+      const admin = await db?.query.users?.findFirst({
         where: eq(users?.email, adminEmail),
         columns: { id: true },
       });
@@ -670,7 +670,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
   private async sendToAdmin(
     options: Omit<NotificationOptions, "userId">,
   ): Promise<void> {
-    const _adminId = await this?.getAdminUserId();
+    const adminId = await this?.getAdminUserId();
     if (!adminId) return;
     await this?.send({ ...options, userId: adminId });
   }
@@ -750,7 +750,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     milestone: number,
     period: string,
   ): Promise<void> {
-    const _formatted =
+    const formatted =
       milestone >= 1_000_000
         ? `$${(milestone / 1_000_000).toFixed(1)}M`
         : milestone >= 1_000
@@ -812,7 +812,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     platform: string,
     content: string,
   ): Promise<void> {
-    const _preview =
+    const preview =
       content?.length > 60 ? content?.slice(0, 57) + "..." : content;
     await this?.send({
       userId,
@@ -830,9 +830,9 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     content: string,
     scheduledAt: Date,
   ): Promise<void> {
-    const _preview =
+    const preview =
       content?.length > 60 ? content?.slice(0, 57) + "..." : content;
-    const _timeStr = scheduledAt?.toLocaleString("en-US", {
+    const timeStr = scheduledAt?.toLocaleString("en-US", {
       dateStyle: "medium",
       timeStyle: "short",
     });
@@ -866,7 +866,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     metric: string,
     value: number,
   ): Promise<void> {
-    const _formatted =
+    const formatted =
       value >= 1_000_000
         ? `${(value / 1_000_000).toFixed(1)}M`
         : value >= 1_000
@@ -905,7 +905,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     platformCount: number,
     estimatedLiveDate?: string,
   ): Promise<void> {
-    const _eta = estimatedLiveDate
+    const eta = estimatedLiveDate
       ? ` Estimated live: ${new Date(estimatedLiveDate).toLocaleDateString("en-US", { dateStyle: "medium" })}.`
       : "";
     await this?.send({
@@ -923,16 +923,16 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     releaseTitle: string,
     releaseDate: Date,
   ): Promise<void> {
-    const _dateStr = releaseDate?.toLocaleDateString("en-US", {
+    const dateStr = releaseDate.toLocaleDateString("en-US", {
       dateStyle: "full",
     });
-    await this?.send({
+    await this.send({
       userId,
       type: "release_scheduled",
       title: "📅 Release Date Confirmed",
       message: `"${releaseTitle}" is locked in for ${dateStr}. Start your pre-save campaign to build momentum!`,
       link: "/distribution",
-      metadata: { releaseTitle, releaseDate: releaseDate?.toISOString() },
+      metadata: { releaseTitle, releaseDate: releaseDate.toISOString() },
     });
   }
 
@@ -941,7 +941,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     releaseTitle: string,
     platformCount: number,
   ): Promise<void> {
-    await this?.send({
+    await this.send({
       userId,
       type: "release_live",
       title: "🎉 Your Release is LIVE!",
@@ -956,7 +956,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     releaseTitle: string,
     platformCount: number,
   ): Promise<void> {
-    await this?.send({
+    await this.send({
       userId,
       type: "release_takedown",
       title: "🔴 Takedown Request Submitted",
@@ -973,11 +973,11 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     beatTitle: string,
     price: number,
   ): Promise<void> {
-    await this?.send({
+    await this.send({
       userId,
       type: "beat_listing_live",
       title: "🎹 Beat Now Live on Marketplace",
-      message: `"${beatTitle}" is live and ready to sell at $${price?.toFixed(2)}. Share it to maximize your reach!`,
+      message: `"${beatTitle}" is live and ready to sell at $${price.toFixed(2)}. Share it to maximize your reach!`,
       link: "/marketplace",
       metadata: { beatTitle, price },
     });
@@ -989,13 +989,13 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     licenseType: string,
     amount: number,
   ): Promise<void> {
-    const _licenseLabel =
-      licenseType?.charAt(0).toUpperCase() + licenseType?.slice(1);
-    await this?.send({
+    const licenseLabel =
+      licenseType.charAt(0).toUpperCase() + licenseType.slice(1);
+    await this.send({
       userId,
       type: "beat_sold",
       title: "💰 Beat Sold!",
-      message: `Your beat "${beatTitle}" just sold a ${licenseLabel} license for $${amount?.toFixed(2)}. Payout is on its way!`,
+      message: `Your beat "${beatTitle}" just sold a ${licenseLabel} license for $${amount.toFixed(2)}. Payout is on its way!`,
       link: "/marketplace",
       metadata: { beatTitle, licenseType, amount },
     });
@@ -1006,9 +1006,9 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     beatTitle: string,
     licenseType: string,
   ): Promise<void> {
-    const _licenseLabel =
-      licenseType?.charAt(0).toUpperCase() + licenseType?.slice(1);
-    await this?.send({
+    const licenseLabel =
+      licenseType.charAt(0).toUpperCase() + licenseType.slice(1);
+    await this.send({
       userId,
       type: "beat_purchased",
       title: "✅ Beat Purchase Confirmed",
@@ -1039,7 +1039,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     projectTitle: string,
     genre?: string | null,
   ): Promise<void> {
-    const _genreStr = genre ? ` (${genre})` : "";
+    const genreStr = genre ? ` (${genre})` : "";
     await this?.send({
       userId,
       type: "studio_project_created",
@@ -1088,7 +1088,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     platform: string,
     contentSnippet: string,
   ): Promise<void> {
-    const _preview =
+    const preview =
       contentSnippet?.length > 80
         ? contentSnippet?.slice(0, 77) + "..."
         : contentSnippet;
@@ -1107,7 +1107,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
     platform: string,
     contentSnippet: string,
   ): Promise<void> {
-    const _preview =
+    const preview =
       contentSnippet?.length > 80
         ? contentSnippet?.slice(0, 77) + "..."
         : contentSnippet;
@@ -1122,4 +1122,4 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
   }
 }
 
-export const _notificationService = new NotificationService();
+export const notificationService = new NotificationService();

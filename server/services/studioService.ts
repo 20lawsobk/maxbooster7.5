@@ -4,7 +4,7 @@ import type { InsertProject, Project, StudioTrack } from "@shared/schema";
 
 import * as fsPromises from "fs/promises";
 import path from "path";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { audioService } from "./audioService";
 
 interface InsertStudioTrack {
@@ -126,7 +126,7 @@ interface StudioProjectExtended extends Project {
 type StudioProject = StudioProjectExtended;
 type InsertStudioProject = InsertProject;
 
-const _storageAny = storage as unknown as {
+const storageAny = storage as unknown as {
   createStudioProject(data: InsertStudioProject): Promise<StudioProject>;
   getUserStudioProjects(userId: string): Promise<StudioProject[]>;
   getStudioProject(projectId: string): Promise<StudioProject | undefined>;
@@ -189,7 +189,7 @@ const _storageAny = storage as unknown as {
 export class StudioService {
   async createProject(data: InsertStudioProject): Promise<StudioProject> {
     try {
-      const _project = await storageAny?.createStudioProject(data);
+      const project = await storageAny?.createStudioProject(data);
       return project;
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error creating studio project:");
@@ -211,16 +211,16 @@ export class StudioService {
     userId: string,
   ): Promise<StudioProject | undefined> {
     try {
-      const _project = await storageAny?.getStudioProject(projectId);
+      const project = await storageAny?.getStudioProject(projectId);
 
       if (!project) {
         return undefined;
       }
 
       if (project?.userId !== userId) {
-        const _collaborators =
+        const collaborators =
           (project?.collaborators as Collaborator[] | null) || [];
-        const _isCollaborator = collaborators?.some(
+        const isCollaborator = collaborators?.some(
           (c: Collaborator) => c?.userId === userId,
         );
 
@@ -263,12 +263,12 @@ export class StudioService {
     trackData: InsertStudioTrack,
   ): Promise<StudioTrack> {
     try {
-      const _project = await storageAny?.getProject(projectId);
+      const project = await storageAny?.getProject(projectId);
       if (!project) {
         throw new Error("Project not found");
       }
 
-      const _track = await storageAny?.createStudioTrack(trackData);
+      const track = await storageAny?.createStudioTrack(trackData);
 
       await storageAny?.updateProject(projectId, {
         totalTracks:
@@ -308,10 +308,10 @@ export class StudioService {
     try {
       await storageAny?.deleteStudioTrack(trackId, projectId);
 
-      const _project = await storageAny?.getStudioProject(projectId);
+      const project = await storageAny?.getStudioProject(projectId);
       if (project) {
         await storageAny?.updateStudioProject(projectId, project?.userId, {
-          totalTracks: Math?.max(
+          totalTracks: Math.max(
             0,
             ((project as { totalTracks?: number }).totalTracks || 1) - 1,
           ),
@@ -324,16 +324,16 @@ export class StudioService {
   }
 
   async uploadAudio(
-    file: Express?.Multer.File,
+    file: Express.Multer.File,
     _userId: string,
   ): Promise<{ id: string; url: string; duration?: number }> {
     try {
-      const _audioId = `audio_${randomBytes(8).toString("hex")}`;
-      const _ext = path?.extname(file?.originalname);
-      const _fileName = `${audioId}${ext}`;
-      const _uploadPath = path?.join(process?.cwd(), "uploads", "audio", fileName);
+      const audioId = `audio_${randomBytes(8).toString("hex")}`;
+      const ext = path?.extname(file?.originalname);
+      const fileName = `${audioId}${ext}`;
+      const uploadPath = path?.join(process?.cwd(), "uploads", "audio", fileName);
 
-      const _audioDir = path?.join(process?.cwd(), "uploads", "audio");
+      const audioDir = path?.join(process?.cwd(), "uploads", "audio");
 
       // Use async operations to avoid blocking event loop
       try {
@@ -361,15 +361,15 @@ export class StudioService {
     timeoutMs: number,
     operationName: string,
   ): Promise<T> {
-    let timeoutId: NodeJS?.Timeout;
-    const _timeoutPromise = new Promise<never>((_, reject) => {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error(`${operationName} timed out after ${timeoutMs}ms`));
       }, timeoutMs);
     });
 
     try {
-      const _result = await Promise?.race([promise, timeoutPromise]);
+      const result = await Promise?.race([promise, timeoutPromise]);
       clearTimeout(timeoutId!);
       return result;
     } catch (error) {
@@ -379,16 +379,16 @@ export class StudioService {
   }
 
   async processAudio(
-    _audioId: string,
+    audioId: string,
     audioPath: string,
     userId?: string,
   ): Promise<{ waveformData: number[]; peaks: number[] }> {
-    const _AUDIO_PROCESSING_TIMEOUT_MS = 60000; // 60 second timeout for audio processing
-    const _MAX_WAVEFORM_SAMPLES = 100000; // Limit memory usage
+    const AUDIO_PROCESSING_TIMEOUT_MS = 60000; // 60 second timeout for audio processing
+    const MAX_WAVEFORM_SAMPLES = 100000; // Limit memory usage
 
     try {
       // Wrap waveform generation with timeout to prevent hanging
-      const _waveformResult = await this?.withTimeout(
+      const waveformResult = await this?.withTimeout(
         audioService?.generateWaveform(audioPath, userId || "system"),
         AUDIO_PROCESSING_TIMEOUT_MS,
         "Audio waveform generation",
@@ -398,11 +398,11 @@ export class StudioService {
 
       // Limit memory usage by downsampling if too many samples
       if (waveformData?.length > MAX_WAVEFORM_SAMPLES) {
-        const _ratio = Math?.ceil(waveformData?.length / MAX_WAVEFORM_SAMPLES);
+        const ratio = Math?.ceil(waveformData?.length / MAX_WAVEFORM_SAMPLES);
         waveformData = waveformData?.filter((_, i) => i % ratio === 0);
       }
 
-      const _peaks = this?.extractPeaksFromWaveform(waveformData, 100);
+      const peaks = this?.extractPeaksFromWaveform(waveformData, 100);
 
       return {
         waveformData,
@@ -419,9 +419,9 @@ export class StudioService {
     targetPeaks: number,
   ): number[] {
     const peaks: number[] = [];
-    const _windowSize = Math?.floor(waveformData?.length / targetPeaks);
+    const windowSize = Math?.floor(waveformData?.length / targetPeaks);
 
-    for (let i = 0; i < waveformData?.length; i += windowSize) {
+    for (let i = 0; i < waveformData.length; i += windowSize) {
       let maxPeak = 0;
       for (let j = i; j < Math?.min(i + windowSize, waveformData?.length); j++) {
         maxPeak = Math?.max(maxPeak, Math?.abs(waveformData[j]));
@@ -439,7 +439,7 @@ export class StudioService {
   ): Promise<void> {
     try {
       await storageAny?.updateStudioProject(projectId, userId, {
-        lastPlayPosition: state?.playPosition || 0,
+        lastPlayPosition: state.playPosition || 0,
         updatedAt: new Date(),
       } as Partial<StudioProject>);
     } catch (error: unknown) {
@@ -461,15 +461,15 @@ export class StudioService {
     markers: unknown[];
   }> {
     try {
-      const _project = await this?.getProject(projectId, userId);
+      const project = await this?.getProject(projectId, userId);
       if (!project) {
         throw new Error("Project not found");
       }
 
-      const _tracks = await storageAny?.getProjectTracks(projectId);
-      const _effects = await storageAny?.getProjectEffects(projectId);
-      const _automation = await storageAny?.getProjectAutomation(projectId);
-      const _markers = await storageAny?.getProjectMarkers(projectId);
+      const tracks = await storageAny?.getProjectTracks(projectId);
+      const effects = await storageAny?.getProjectEffects(projectId);
+      const automation = await storageAny?.getProjectAutomation(projectId);
+      const markers = await storageAny?.getProjectMarkers(projectId);
 
       // Batch-fetch all clips in parallel (eliminates N+1: was 2×tracks serial queries)
       const [allAudioClipArrays, allMidiClipArrays] = await Promise?.all([
@@ -503,7 +503,7 @@ export class StudioService {
   }
 
   async uploadRecording(
-    file: Express?.Multer.File,
+    file: Express.Multer.File,
     options: {
       userId: string;
       trackId: string;
@@ -514,12 +514,12 @@ export class StudioService {
     },
   ): Promise<RecordingUploadResult> {
     try {
-      const _clipId = `clip_${randomBytes(8).toString("hex")}`;
-      const _ext = path?.extname(file?.originalname);
-      const _fileName = `${clipId}${ext}`;
-      const _uploadPath = path?.join(process?.cwd(), "uploads", "audio", fileName);
+      const clipId = `clip_${randomBytes(8).toString("hex")}`;
+      const ext = path?.extname(file?.originalname);
+      const fileName = `${clipId}${ext}`;
+      const uploadPath = path?.join(process?.cwd(), "uploads", "audio", fileName);
 
-      const _audioDir = path?.join(process?.cwd(), "uploads", "audio");
+      const audioDir = path?.join(process?.cwd(), "uploads", "audio");
 
       // Use async operations to avoid blocking event loop
       try {
@@ -530,25 +530,25 @@ export class StudioService {
 
       await fsPromises?.rename(file?.path, uploadPath);
 
-      const _audioClip = await storageAny?.createAudioClip({
+      const audioClip = await storageAny?.createAudioClip({
         id: clipId,
-        trackId: options?.trackId,
+        trackId: options.trackId,
         name: `Take ${options?.takeNumber}`,
         filePath: `/uploads/audio/${fileName}`,
-        originalFilename: file?.originalname,
-        fileSize: file?.size,
-        startTime: options?.startPosition,
-        endTime: options?.startPosition + 10,
-        takeNumber: options?.takeNumber,
-        takeGroupId: options?.takeGroupId || randomBytes(8).toString("hex"),
+        originalFilename: file.originalname,
+        fileSize: file.size,
+        startTime: options.startPosition,
+        endTime: options.startPosition + 10,
+        takeNumber: options.takeNumber,
+        takeGroupId: options.takeGroupId || randomBytes(8).toString("hex"),
         isComped: false,
       });
 
       return {
-        clipId: audioClip?.id,
+        clipId: audioClip.id,
         url: `/uploads/audio/${fileName}`,
-        takeNumber: options?.takeNumber,
-        takeGroupId: audioClip?.takeGroupId || "",
+        takeNumber: options.takeNumber,
+        takeGroupId: audioClip.takeGroupId || "",
       };
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error uploading recording:");
@@ -578,7 +578,7 @@ export class StudioService {
     url?: string;
   }> {
     try {
-      const _exportId = `export_${randomBytes(8).toString("hex")}`;
+      const exportId = `export_${randomBytes(8).toString("hex")}`;
 
       return {
         exportId,
@@ -597,7 +597,7 @@ export class StudioService {
     role: "view" | "edit" | "admin",
   ): Promise<void> {
     try {
-      const _project = await storageAny?.getStudioProject(projectId);
+      const project = await storageAny?.getStudioProject(projectId);
       if (!project) {
         throw new Error("Project not found");
       }
@@ -606,7 +606,7 @@ export class StudioService {
         throw new Error("Only project owner can add collaborators");
       }
 
-      const _collaborators =
+      const collaborators =
         (project?.collaborators as Collaborator[] | null) || [];
       collaborators?.push({
         email: collaboratorEmail,
@@ -664,15 +664,15 @@ export class StudioService {
 
   async normalizeClip(clipId: string): Promise<AudioClip> {
     try {
-      const _clip = await storageAny?.getAudioClip(clipId);
+      const clip = await storageAny?.getAudioClip(clipId);
       if (!clip) {
         throw new Error("Clip not found");
       }
 
-      const _peakData = (clip?.peakData as number[] | null) || [];
-      const _peak = peakData?.length > 0 ? Math?.max(...peakData) : 0?.5;
+      const peakData = (clip?.peakData as number[] | null) || [];
+      const peak = peakData?.length > 0 ? Math?.max(...peakData) : 0.5;
 
-      const _normalizeGain = peak > 0 ? 1?.0 / peak : 1?.0;
+      const normalizeGain = peak > 0 ? 1.0 / peak : 1.0;
 
       return await this?.updateAudioClip(clipId, { gain: normalizeGain });
     } catch (error: unknown) {
@@ -686,44 +686,44 @@ export class StudioService {
     splitTime: number,
   ): Promise<{ clip1: AudioClip; clip2: AudioClip }> {
     try {
-      const _clip = await storageAny?.getAudioClip(clipId);
+      const clip = await storageAny?.getAudioClip(clipId);
       if (!clip) {
         throw new Error("Clip not found");
       }
 
-      const _clip1Duration = splitTime - clip?.startTime;
-      const _clip2Duration = clip?.endTime - splitTime;
+      const clip1Duration = splitTime - clip?.startTime;
+      const clip2Duration = clip?.endTime - splitTime;
 
-      const _clip1 = await this?.createAudioClip({
-        trackId: clip?.trackId,
+      const clip1 = await this?.createAudioClip({
+        trackId: clip.trackId,
         name: `${clip?.name} (1)`,
-        filePath: clip?.filePath,
-        originalFilename: clip?.originalFilename,
+        filePath: clip.filePath,
+        originalFilename: clip.originalFilename,
         duration: clip1Duration,
-        startTime: clip?.startTime,
+        startTime: clip.startTime,
         endTime: splitTime,
-        offset: clip?.offset,
-        gain: clip?.gain,
-        fadeIn: clip?.fadeIn,
+        offset: clip.offset,
+        gain: clip.gain,
+        fadeIn: clip.fadeIn,
         fadeOut: 0,
-        waveformData: clip?.waveformData,
-        peakData: clip?.peakData,
+        waveformData: clip.waveformData,
+        peakData: clip.peakData,
       });
 
-      const _clip2 = await this?.createAudioClip({
-        trackId: clip?.trackId,
+      const clip2 = await this?.createAudioClip({
+        trackId: clip.trackId,
         name: `${clip?.name} (2)`,
-        filePath: clip?.filePath,
-        originalFilename: clip?.originalFilename,
+        filePath: clip.filePath,
+        originalFilename: clip.originalFilename,
         duration: clip2Duration,
         startTime: splitTime,
-        endTime: clip?.endTime,
+        endTime: clip.endTime,
         offset: (clip?.offset || 0) + clip1Duration,
-        gain: clip?.gain,
+        gain: clip.gain,
         fadeIn: 0,
-        fadeOut: clip?.fadeOut,
-        waveformData: clip?.waveformData,
-        peakData: clip?.peakData,
+        fadeOut: clip.fadeOut,
+        waveformData: clip.waveformData,
+        peakData: clip.peakData,
       });
 
       await this?.deleteAudioClip(clipId);
@@ -741,7 +741,7 @@ export class StudioService {
     effectData: AudioEffectData,
   ): Promise<AudioEffect> {
     try {
-      const _effect = await storageAny?.createAudioEffect({
+      const effect = await storageAny?.createAudioEffect({
         ...effectData,
         trackId,
         projectId,
@@ -755,7 +755,7 @@ export class StudioService {
 
   async getTrackEffects(trackId: string): Promise<AudioEffect[]> {
     try {
-      const _effects = await storageAny?.getTrackEffects(trackId);
+      const effects = await storageAny?.getTrackEffects(trackId);
       return effects?.sort(
         (a: AudioEffect, b: AudioEffect) =>
           (a?.chainPosition || 0) - (b?.chainPosition || 0),
@@ -843,7 +843,7 @@ export class StudioService {
     label: string = "Manual save",
   ): Promise<void> {
     try {
-      const _projectData = await this?.loadProject(projectId, userId);
+      const projectData = await this?.loadProject(projectId, userId);
 
       await storageAny?.createAutosave({
         projectId,
@@ -852,9 +852,9 @@ export class StudioService {
         state: projectData,
       });
 
-      const _autosaves = await storageAny?.getProjectAutosaves(projectId);
+      const autosaves = await storageAny?.getProjectAutosaves(projectId);
       if (autosaves?.length > 10) {
-        const _toDelete = autosaves?.slice(10);
+        const toDelete = autosaves?.slice(10);
         for (const autosave of toDelete) {
           await storageAny?.deleteAutosave(autosave?.id);
         }
@@ -879,34 +879,34 @@ export class StudioService {
     userId: string,
   ): Promise<Project> {
     try {
-      const _autosave = await storageAny?.getAutosave(autosaveId);
+      const autosave = await storageAny?.getAutosave(autosaveId);
       if (!autosave) {
         throw new Error("Autosave not found");
       }
 
-      const _state = autosave?.state as AutosaveState;
-      const _project = state?.project;
+      const state = autosave?.state as AutosaveState;
+      const project = state?.project;
 
       if (!project) {
         throw new Error("Invalid autosave state");
       }
 
-      const _restoredProject = await storageAny?.createProject({
+      const restoredProject = await storageAny?.createProject({
         userId,
         title: `${project?.title} (Restored)`,
         isStudioProject: true,
-        bpm: project?.bpm,
-        timeSignature: project?.timeSignature,
-        key: project?.key,
-        sampleRate: project?.sampleRate,
-        bitDepth: project?.bitDepth,
+        bpm: project.bpm,
+        timeSignature: project.timeSignature,
+        key: project.key,
+        sampleRate: project.sampleRate,
+        bitDepth: project.bitDepth,
         status: "draft",
       } as InsertProject);
 
       for (const track of state?.tracks || []) {
         await storageAny?.createStudioTrack({
           ...track,
-          projectId: restoredProject?.id,
+          projectId: restoredProject.id,
         } as InsertStudioTrack);
       }
 
@@ -919,21 +919,21 @@ export class StudioService {
 
   async freezeTrack(
     trackId: string,
-    file: Express?.Multer.File,
+    file: Express.Multer.File,
     projectId: string,
   ): Promise<{ success: boolean; frozenFilePath: string }> {
     try {
-      const _frozenId = `frozen_${randomBytes(8).toString("hex")}`;
-      const _ext = path?.extname(file?.originalname);
-      const _fileName = `${frozenId}${ext}`;
-      const _uploadPath = path?.join(process?.cwd(), "uploads", "audio", fileName);
+      const frozenId = `frozen_${randomBytes(8).toString("hex")}`;
+      const ext = path?.extname(file?.originalname);
+      const fileName = `${frozenId}${ext}`;
+      const uploadPath = path?.join(process?.cwd(), "uploads", "audio", fileName);
 
       await fsPromises?.mkdir(path?.join(process?.cwd(), "uploads", "audio"), {
         recursive: true,
       });
       await fsPromises?.rename(file?.path, uploadPath);
 
-      const _frozenFilePath = `/uploads/audio/${fileName}`;
+      const frozenFilePath = `/uploads/audio/${fileName}`;
 
       await storageAny?.updateStudioTrack(trackId, projectId, {
         frozen: true,
@@ -955,16 +955,16 @@ export class StudioService {
     projectId: string,
   ): Promise<{ success: boolean }> {
     try {
-      const _track = await storageAny?.getStudioTrack(trackId);
+      const track = await storageAny?.getStudioTrack(trackId);
 
       if (!track) {
         throw new Error("Track not found");
       }
 
-      const _frozenFilePath = (track as { frozenFilePath?: string })
+      const frozenFilePath = (track as { frozenFilePath?: string })
         .frozenFilePath;
       if (frozenFilePath) {
-        const _frozenPath = path?.join(process?.cwd(), frozenFilePath);
+        const frozenPath = path?.join(process?.cwd(), frozenFilePath);
         try {
           await fsPromises?.unlink(frozenPath);
         } catch (e) {
@@ -991,20 +991,20 @@ export class StudioService {
     templateName: string,
   ): Promise<Project> {
     try {
-      const _templates = this?.getBuiltInTemplates();
-      const _template = templates?.find((t) => t?.name === templateName);
+      const templates = this?.getBuiltInTemplates();
+      const template = templates?.find((t) => t?.name === templateName);
 
       if (!template) {
         throw new Error("Template not found");
       }
 
-      const _project = await storageAny?.createProject({
+      const project = await storageAny?.createProject({
         userId,
-        title: template?.name,
-        description: template?.description,
+        title: template.name,
+        description: template.description,
         isStudioProject: true,
-        bpm: template?.bpm,
-        timeSignature: template?.timeSignature,
+        bpm: template.bpm,
+        timeSignature: template.timeSignature,
         sampleRate: 48000,
         bitDepth: 24,
         status: "draft",
@@ -1012,18 +1012,18 @@ export class StudioService {
 
       for (const trackTemplate of template?.tracks) {
         await storageAny?.createStudioTrack({
-          projectId: project?.id,
-          name: trackTemplate?.name,
-          trackType: trackTemplate?.trackType,
-          trackNumber: trackTemplate?.trackNumber,
-          volume: 0?.8,
+          projectId: project.id,
+          name: trackTemplate.name,
+          trackType: trackTemplate.trackType,
+          trackNumber: trackTemplate.trackNumber,
+          volume: 0.8,
           pan: 0,
           mute: false,
           solo: false,
           armed: false,
           recordEnabled: false,
           inputMonitoring: false,
-          color: trackTemplate?.color,
+          color: trackTemplate.color,
           height: 100,
           collapsed: false,
           outputBus: "master",
@@ -1196,40 +1196,40 @@ export class StudioService {
     templateName: string,
   ): Promise<Project> {
     try {
-      const _project = await storageAny?.getProject(projectId);
+      const project = await storageAny?.getProject(projectId);
       if (!project) {
         throw new Error("Project not found");
       }
 
-      const _tracks = await storageAny?.getProjectTracks(projectId);
+      const tracks = await storageAny?.getProjectTracks(projectId);
 
-      const _template = await storageAny?.createProject({
+      const template = await storageAny?.createProject({
         userId,
         title: templateName,
         description: `Custom template created from ${project?.title}`,
         isStudioProject: true,
-        bpm: project?.bpm,
-        timeSignature: project?.timeSignature,
-        sampleRate: project?.sampleRate,
-        bitDepth: project?.bitDepth,
+        bpm: project.bpm,
+        timeSignature: project.timeSignature,
+        sampleRate: project.sampleRate,
+        bitDepth: project.bitDepth,
         status: "draft",
       } as InsertProject);
 
       for (const track of tracks) {
         await storageAny?.createStudioTrack({
-          projectId: template?.id,
-          name: track?.name,
-          trackType: track?.trackType,
+          projectId: template.id,
+          name: track.name,
+          trackType: track.trackType,
           trackNumber: (track as { trackNumber?: number }).trackNumber,
-          volume: track?.volume,
-          pan: track?.pan,
+          volume: track.volume,
+          pan: track.pan,
           mute: false,
           solo: false,
           armed: false,
           recordEnabled: false,
           inputMonitoring: (track as { inputMonitoring?: boolean })
             .inputMonitoring,
-          color: track?.color,
+          color: track.color,
           height: (track as { height?: number }).height,
           collapsed: (track as { collapsed?: boolean }).collapsed,
           outputBus: (track as { outputBus?: string }).outputBus,
@@ -1244,4 +1244,4 @@ export class StudioService {
   }
 }
 
-export const _studioService = new StudioService();
+export const studioService = new StudioService();

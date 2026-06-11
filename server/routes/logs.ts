@@ -1,11 +1,11 @@
 import { Router, type RequestHandler } from "express";
-import { require2FA } from "../middleware/auth?.js";
-import { db } from "../db?.js";
+import { require2FA } from "../middleware/auth.js";
+import { db } from "../db.js";
 import { systemLogs, insertSystemLogSchema } from "@shared/schema";
 import { eq, desc, and, count } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req?.isAuthenticated()) {
@@ -29,13 +29,13 @@ router?.get("/query", async (req, res) => {
       offset = "0",
     } = req?.query;
 
-    const _limitNum = Math?.min(parseInt(limit as string) || 100, 1000);
-    const _offsetNum = Math?.min(
+    const limitNum = Math?.min(parseInt(limit as string) || 100, 1000);
+    const offsetNum = Math?.min(
       Math?.max(parseInt(offset as string) || 0, 0),
       100_000,
     );
 
-    const _conditions = [];
+    const conditions = [];
 
     if (level !== "all") {
       conditions?.push(eq(systemLogs?.level, level as string));
@@ -45,7 +45,7 @@ router?.get("/query", async (req, res) => {
       conditions?.push(eq(systemLogs?.service, service as string));
     }
 
-    const _whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
+    const whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
 
     const [logs, totalResult] = await Promise?.all([
       db
@@ -65,7 +65,7 @@ router?.get("/query", async (req, res) => {
       pagination: {
         limit: limitNum,
         offset: offsetNum,
-        hasMore: logs?.length === limitNum,
+        hasMore: logs.length === limitNum,
       },
     });
   } catch (error) {
@@ -76,10 +76,10 @@ router?.get("/query", async (req, res) => {
 
 router?.post("/write", async (req, res) => {
   try {
-    const _validatedData = insertSystemLogSchema?.parse(req?.body);
+    const validatedData = insertSystemLogSchema?.parse(req?.body);
 
-    const _validLevels = ["debug", "info", "warn", "error", "fatal"];
-    const _validServices = [
+    const validLevels = ["debug", "info", "warn", "error", "fatal"];
+    const validServices = [
       "api",
       "auth",
       "database",

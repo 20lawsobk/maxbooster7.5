@@ -11,13 +11,13 @@ import {
   type SAMLMetadata,
   type OIDCMetadata,
 } from "../services/ssoService";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db";
 import { workspaceMembers } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
-const _router = Router();
+const router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -26,7 +26,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-const _requireWorkspaceMember = async (
+const requireWorkspaceMember = async (
   req: AuthenticatedRequest,
   res: Response,
   next: Function,
@@ -36,8 +36,8 @@ const _requireWorkspaceMember = async (
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _workspaceId = req?.params.id || req?.params.workspaceId;
-    const _isMember = await workspaceService?.isWorkspaceMember(
+    const workspaceId = req?.params.id || req?.params.workspaceId;
+    const isMember = await workspaceService?.isWorkspaceMember(
       workspaceId,
       req?.user.id,
     );
@@ -52,7 +52,7 @@ const _requireWorkspaceMember = async (
   }
 };
 
-const _requireWorkspaceAdmin = async (
+const requireWorkspaceAdmin = async (
   req: AuthenticatedRequest,
   res: Response,
   next: Function,
@@ -62,8 +62,8 @@ const _requireWorkspaceAdmin = async (
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _workspaceId = req?.params.id || req?.params.workspaceId;
-    const _isAdmin = await rbacService?.isAdmin(workspaceId, req?.user.id);
+    const workspaceId = req?.params.id || req?.params.workspaceId;
+    const isAdmin = await rbacService?.isAdmin(workspaceId, req?.user.id);
 
     if (!isAdmin) {
       return res?.status(403).json({ error: "Admin access required" });
@@ -75,26 +75,26 @@ const _requireWorkspaceAdmin = async (
   }
 };
 
-const _createWorkspaceSchema = z?.object({
-  name: z?.string().min(1).max(255),
-  type: z?.enum(["artist", "label", "agency", "management"]),
-  description: z?.string().optional(),
+const createWorkspaceSchema = z.object({
+  name: z.string().min(1).max(255),
+  type: z.enum(["artist", "label", "agency", "management"]),
+  description: z.string().optional(),
   settings: z
     .object({
-      allowMemberInvites: z?.boolean().optional(),
-      requireApprovalForReleases: z?.boolean().optional(),
-      requireApprovalForPayouts: z?.boolean().optional(),
-      defaultMemberRole: z?.string().optional(),
-      catalogVisibility: z?.enum(["private", "team", "public"]).optional(),
+      allowMemberInvites: z.boolean().optional(),
+      requireApprovalForReleases: z.boolean().optional(),
+      requireApprovalForPayouts: z.boolean().optional(),
+      defaultMemberRole: z.string().optional(),
+      catalogVisibility: z.enum(["private", "team", "public"]).optional(),
     })
     .optional(),
   branding: z
     .object({
-      logo: z?.string().optional(),
+      logo: z.string().optional(),
       colors: z
         .object({
-          primary: z?.string().optional(),
-          secondary: z?.string().optional(),
+          primary: z.string().optional(),
+          secondary: z.string().optional(),
         })
         .optional(),
     })
@@ -106,23 +106,23 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = createWorkspaceSchema?.parse(req?.body);
+      const validatedData = createWorkspaceSchema?.parse(req?.body);
 
-      const _result = await workspaceService?.createWorkspace({
+      const result = await workspaceService?.createWorkspace({
         ...validatedData,
-        ownerId: req?.user!.id,
+        ownerId: req.user!.id,
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ workspace: result?.workspace });
+      res?.status(201).json({ workspace: result.workspace });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Create workspace error:");
       res?.status(500).json({ error: "Failed to create workspace" });
@@ -136,7 +136,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _workspace = await workspaceService?.getWorkspace(req?.params.id);
+      const workspace = await workspaceService?.getWorkspace(req?.params.id);
 
       if (!workspace) {
         return res?.status(404).json({ error: "Workspace not found" });
@@ -155,7 +155,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _workspaces = await workspaceService?.getUserWorkspaces(req?.user!.id);
+      const workspaces = await workspaceService?.getUserWorkspaces(req?.user!.id);
       res?.json({ workspaces });
     } catch (error) {
       logger?.warn({ err: error }, "Get user workspaces error:");
@@ -170,17 +170,17 @@ router?.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await workspaceService?.updateWorkspace(
+      const result = await workspaceService?.updateWorkspace(
         req?.params.id,
         req?.body,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.json({ workspace: result?.workspace });
+      res?.json({ workspace: result.workspace });
     } catch (error) {
       logger?.warn({ err: error }, "Update workspace error:");
       res?.status(500).json({ error: "Failed to update workspace" });
@@ -194,13 +194,13 @@ router?.delete(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await workspaceService?.deleteWorkspace(
+      const result = await workspaceService?.deleteWorkspace(
         req?.params.id,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -217,7 +217,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _members = await workspaceService?.getMembers(req?.params.id);
+      const members = await workspaceService?.getMembers(req?.params.id);
       res?.json({ members });
     } catch (error) {
       logger?.warn({ err: error }, "Get members error:");
@@ -226,11 +226,11 @@ router?.get(
   },
 );
 
-const _inviteSchema = z?.object({
-  email: z?.string().email(),
-  role: z?.enum(["owner", "admin", "manager", "member", "viewer"]),
-  roleId: z?.string().optional(),
-  message: z?.string().optional(),
+const inviteSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(["owner", "admin", "manager", "member", "viewer"]),
+  roleId: z.string().optional(),
+  message: z.string().optional(),
 });
 
 router?.post(
@@ -239,27 +239,27 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = inviteSchema?.parse(req?.body);
+      const validatedData = inviteSchema?.parse(req?.body);
 
-      const _result = await workspaceService?.inviteMember({
-        workspaceId: req?.params.id,
-        email: validatedData?.email,
-        role: validatedData?.role,
-        roleId: validatedData?.roleId,
-        invitedBy: req?.user!.id,
-        message: validatedData?.message,
+      const result = await workspaceService?.inviteMember({
+        workspaceId: req.params.id,
+        email: validatedData.email,
+        role: validatedData.role,
+        roleId: validatedData.roleId,
+        invitedBy: req.user!.id,
+        message: validatedData.message,
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ invitation: result?.invitation });
+      res?.status(201).json({ invitation: result.invitation });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Invite member error:");
       res?.status(500).json({ error: "Failed to send invitation" });
@@ -278,13 +278,13 @@ router?.post(
         return res?.status(400).json({ error: "Invitation token is required" });
       }
 
-      const _result = await workspaceService?.acceptInvitation(
+      const result = await workspaceService?.acceptInvitation(
         token,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -301,7 +301,7 @@ router?.get(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _invitations = await workspaceService?.getPendingInvitations(
+      const invitations = await workspaceService?.getPendingInvitations(
         req?.params.id,
       );
       res?.json({ invitations });
@@ -318,13 +318,13 @@ router?.delete(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await workspaceService?.cancelInvitation(
+      const result = await workspaceService?.cancelInvitation(
         req?.params.invitationId,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -335,9 +335,9 @@ router?.delete(
   },
 );
 
-const _updateMemberRoleSchema = z?.object({
-  role: z?.enum(["owner", "admin", "manager", "member", "viewer"]),
-  roleId: z?.string().optional(),
+const updateMemberRoleSchema = z.object({
+  role: z.enum(["owner", "admin", "manager", "member", "viewer"]),
+  roleId: z.string().optional(),
 });
 
 router?.put(
@@ -346,9 +346,9 @@ router?.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = updateMemberRoleSchema?.parse(req?.body);
+      const validatedData = updateMemberRoleSchema?.parse(req?.body);
 
-      const _result = await workspaceService?.updateMemberRole(
+      const result = await workspaceService?.updateMemberRole(
         req?.params.id,
         req?.params.memberId,
         validatedData?.role,
@@ -357,15 +357,15 @@ router?.put(
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Update member role error:");
       res?.status(500).json({ error: "Failed to update member role" });
@@ -379,14 +379,14 @@ router?.delete(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await workspaceService?.removeMember(
+      const result = await workspaceService?.removeMember(
         req?.params.id,
         req?.params.memberId,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -403,7 +403,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _roles = await rbacService?.getWorkspaceRoles(req?.params.id);
+      const roles = await rbacService?.getWorkspaceRoles(req?.params.id);
       res?.json({ roles });
     } catch (error) {
       logger?.warn({ err: error }, "Get roles error:");
@@ -412,12 +412,12 @@ router?.get(
   },
 );
 
-const _createRoleSchema = z?.object({
-  name: z?.string().min(1).max(100),
-  description: z?.string().optional(),
-  permissions: z?.array(
-    z?.object({
-      resource: z?.enum([
+const createRoleSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().optional(),
+  permissions: z.array(
+    z.object({
+      resource: z.enum([
         "releases",
         "analytics",
         "royalties",
@@ -427,8 +427,8 @@ const _createRoleSchema = z?.object({
         "catalog",
         "billing",
       ]),
-      actions: z?.array(
-        z?.enum([
+      actions: z.array(
+        z.enum([
           "create",
           "read",
           "update",
@@ -440,8 +440,8 @@ const _createRoleSchema = z?.object({
       ),
     }),
   ),
-  parentRoleId: z?.string().optional(),
-  priority: z?.number().optional(),
+  parentRoleId: z.string().optional(),
+  priority: z.number().optional(),
 });
 
 router?.post(
@@ -450,26 +450,26 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = createRoleSchema?.parse(req?.body);
+      const validatedData = createRoleSchema?.parse(req?.body);
 
-      const _result = await rbacService?.createRole(req?.params.id, {
-        name: validatedData?.name,
-        description: validatedData?.description,
-        permissions: validatedData?.permissions as Permission[],
-        parentRoleId: validatedData?.parentRoleId,
-        priority: validatedData?.priority,
+      const result = await rbacService?.createRole(req?.params.id, {
+        name: validatedData.name,
+        description: validatedData.description,
+        permissions: validatedData.permissions as Permission[],
+        parentRoleId: validatedData.parentRoleId,
+        priority: validatedData.priority,
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ role: result?.role });
+      res?.status(201).json({ role: result.role });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Create role error:");
       res?.status(500).json({ error: "Failed to create role" });
@@ -483,13 +483,13 @@ router?.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await rbacService?.updateRole(req?.params.roleId, req?.body);
+      const result = await rbacService?.updateRole(req?.params.roleId, req?.body);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.json({ role: result?.role });
+      res?.json({ role: result.role });
     } catch (error) {
       logger?.warn({ err: error }, "Update role error:");
       res?.status(500).json({ error: "Failed to update role" });
@@ -503,10 +503,10 @@ router?.delete(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await rbacService?.deleteRole(req?.params.roleId);
+      const result = await rbacService?.deleteRole(req?.params.roleId);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -522,7 +522,7 @@ router?.get(
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const _templates = rbacService?.getRoleTemplates();
+      const templates = rbacService?.getRoleTemplates();
       res?.json({ templates });
     } catch (error) {
       logger?.warn({ err: error }, "Get role templates error:");
@@ -537,7 +537,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _permissions = await rbacService?.getUserPermissions(
+      const permissions = await rbacService?.getUserPermissions(
         req?.params.id,
         req?.user!.id,
       );
@@ -555,7 +555,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _workflows = await approvalWorkflowService?.getWorkspaceWorkflows(
+      const workflows = await approvalWorkflowService?.getWorkspaceWorkflows(
         req?.params.id,
       );
       res?.json({ workflows });
@@ -566,10 +566,10 @@ router?.get(
   },
 );
 
-const _createWorkflowSchema = z?.object({
-  name: z?.string().min(1).max(255),
-  description: z?.string().optional(),
-  trigger: z?.enum([
+const createWorkflowSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  trigger: z.enum([
     "release",
     "payout",
     "social_post",
@@ -577,26 +577,26 @@ const _createWorkflowSchema = z?.object({
     "contract",
     "catalog_change",
   ]),
-  steps: z?.array(
-    z?.object({
-      stepNumber: z?.number(),
-      name: z?.string(),
-      approverType: z?.enum(["user", "role", "any_admin"]),
-      approverId: z?.string().optional(),
-      approverRoleId: z?.string().optional(),
-      required: z?.boolean(),
-      timeoutHours: z?.number().optional(),
+  steps: z.array(
+    z.object({
+      stepNumber: z.number(),
+      name: z.string(),
+      approverType: z.enum(["user", "role", "any_admin"]),
+      approverId: z.string().optional(),
+      approverRoleId: z.string().optional(),
+      required: z.boolean(),
+      timeoutHours: z.number().optional(),
     }),
   ),
   escalationPolicy: z
     .object({
-      enabled: z?.boolean(),
-      timeoutHours: z?.number(),
-      escalateTo: z?.string().optional().nullable(),
-      notifyOnEscalate: z?.boolean().optional(),
+      enabled: z.boolean(),
+      timeoutHours: z.number(),
+      escalateTo: z.string().optional().nullable(),
+      notifyOnEscalate: z.boolean().optional(),
     })
     .optional(),
-  conditions: z?.any().optional(),
+  conditions: z.any().optional(),
 });
 
 router?.post(
@@ -605,29 +605,29 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = createWorkflowSchema?.parse(req?.body);
+      const validatedData = createWorkflowSchema?.parse(req?.body);
 
-      const _result = await approvalWorkflowService?.createWorkflow({
-        workspaceId: req?.params.id,
-        name: validatedData?.name,
-        description: validatedData?.description,
-        trigger: validatedData?.trigger,
-        steps: validatedData?.steps as WorkflowStep[],
-        escalationPolicy: validatedData?.escalationPolicy,
-        conditions: validatedData?.conditions,
-        createdBy: req?.user!.id,
+      const result = await approvalWorkflowService?.createWorkflow({
+        workspaceId: req.params.id,
+        name: validatedData.name,
+        description: validatedData.description,
+        trigger: validatedData.trigger,
+        steps: validatedData.steps as WorkflowStep[],
+        escalationPolicy: validatedData.escalationPolicy,
+        conditions: validatedData.conditions,
+        createdBy: req.user!.id,
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ workflow: result?.workflow });
+      res?.status(201).json({ workflow: result.workflow });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Create workflow error:");
       res?.status(500).json({ error: "Failed to create workflow" });
@@ -641,17 +641,17 @@ router?.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await approvalWorkflowService?.updateWorkflow(
+      const result = await approvalWorkflowService?.updateWorkflow(
         req?.params.workflowId,
         req?.body,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.json({ workflow: result?.workflow });
+      res?.json({ workflow: result.workflow });
     } catch (error) {
       logger?.warn({ err: error }, "Update workflow error:");
       res?.status(500).json({ error: "Failed to update workflow" });
@@ -665,13 +665,13 @@ router?.delete(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await approvalWorkflowService?.deleteWorkflow(
+      const result = await approvalWorkflowService?.deleteWorkflow(
         req?.params.workflowId,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -688,7 +688,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pendingApprovals =
+      const pendingApprovals =
         await approvalWorkflowService?.getPendingApprovals(
           req?.params.id,
           req?.user!.id,
@@ -707,8 +707,8 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-      const _history = await approvalWorkflowService?.getApprovalHistory(
+      const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+      const history = await approvalWorkflowService?.getApprovalHistory(
         req?.params.id,
         limit,
       );
@@ -726,7 +726,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await approvalWorkflowService?.getApprovalRequestWithSteps(
+      const result = await approvalWorkflowService?.getApprovalRequestWithSteps(
         req?.params.requestId,
       );
 
@@ -742,9 +742,9 @@ router?.get(
   },
 );
 
-const _approvalDecisionSchema = z?.object({
-  decision: z?.enum(["approved", "rejected"]),
-  comment: z?.string().optional(),
+const approvalDecisionSchema = z.object({
+  decision: z.enum(["approved", "rejected"]),
+  comment: z.string().optional(),
 });
 
 router?.post(
@@ -753,10 +753,10 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = approvalDecisionSchema?.parse(req?.body);
+      const validatedData = approvalDecisionSchema?.parse(req?.body);
       const { stepNumber } = req?.body;
 
-      const _result = await approvalWorkflowService?.processApprovalDecision(
+      const result = await approvalWorkflowService?.processApprovalDecision(
         req?.params.requestId,
         stepNumber,
         validatedData?.decision,
@@ -765,15 +765,15 @@ router?.post(
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Process approval decision error:");
       res?.status(500).json({ error: "Failed to process decision" });
@@ -787,28 +787,28 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-      const _offset = Math?.min(
+      const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+      const offset = Math?.min(
         Math?.max(parseInt(req?.query.offset as string) || 0, 0),
         100_000,
       );
-      const _activities = await workspaceService?.getAuditLog(
+      const activities = await workspaceService?.getAuditLog(
         req?.params.id,
         limit,
         offset,
       );
 
-      const _formattedActivities = activities?.map((log) => ({
-        id: log?.id,
-        type: log?.action,
-        userId: log?.userId,
-        userName: log?.userName || "Unknown",
-        timestamp: log?.createdAt,
-        resourceType: log?.resourceType,
-        resourceId: log?.resourceId,
-        previousValues: log?.previousValues,
-        newValues: log?.newValues,
-        metadata: log?.changes,
+      const formattedActivities = activities?.map((log) => ({
+        id: log.id,
+        type: log.action,
+        userId: log.userId,
+        userName: log.userName || "Unknown",
+        timestamp: log.createdAt,
+        resourceType: log.resourceType,
+        resourceId: log.resourceId,
+        previousValues: log.previousValues,
+        newValues: log.newValues,
+        metadata: log.changes,
       }));
 
       res?.json({ activities: formattedActivities });
@@ -825,11 +825,11 @@ router?.get(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _format = (req?.query.format as string) || "json";
-      const _startDate = req?.query.startDate as string;
-      const _endDate = req?.query.endDate as string;
+      const format = (req?.query.format as string) || "json";
+      const startDate = req?.query.startDate as string;
+      const endDate = req?.query.endDate as string;
 
-      const _logs = await workspaceService?.getAuditLog(req?.params.id, 1000, 0);
+      const logs = await workspaceService?.getAuditLog(req?.params.id, 1000, 0);
 
       let filteredLogs = logs;
       if (startDate) {
@@ -844,18 +844,18 @@ router?.get(
       }
 
       await workspaceService?.logAuditEvent({
-        workspaceId: req?.params.id,
-        userId: req?.user!.id,
-        action: "audit?.exported",
+        workspaceId: req.params.id,
+        userId: req.user!.id,
+        action: "audit.exported",
         resourceType: "audit",
-        resourceId: req?.params.id,
-        newValues: { format, recordCount: filteredLogs?.length },
+        resourceId: req.params.id,
+        newValues: { format, recordCount: filteredLogs.length },
       });
 
       if (format === "csv") {
-        const _csvHeaders =
+        const csvHeaders =
           "id,action,resourceType,resourceId,userId,userName,timestamp\n";
-        const _csvRows = filteredLogs
+        const csvRows = filteredLogs
           .map(
             (log) =>
               `${log?.id},${log?.action},${log?.resourceType || ""},${log?.resourceId || ""},${log?.userId},${log?.userName || ""},${log?.createdAt}`,
@@ -863,7 +863,7 @@ router?.get(
           .join("\n");
 
         // Strip non-safe characters to prevent HTTP response splitting via header injection.
-        const _safeId = req?.params.id
+        const safeId = req?.params.id
           .replace(/[^a-zA-Z0-9_\-]/g, "")
           .slice(0, 64);
         res?.setHeader("Content-Type", "text/csv");
@@ -873,7 +873,7 @@ router?.get(
         );
         res?.send(csvHeaders + csvRows);
       } else {
-        const _safeId = req?.params.id
+        const safeId = req?.params.id
           .replace(/[^a-zA-Z0-9_\-]/g, "")
           .slice(0, 64);
         res?.setHeader("Content-Type", "application/json");
@@ -890,9 +890,9 @@ router?.get(
   },
 );
 
-const _shareProjectSchema = z?.object({
-  memberIds: z?.array(z?.string()),
-  permission: z?.enum(["view", "comment", "edit", "admin"]),
+const shareProjectSchema = z.object({
+  memberIds: z.array(z.string()),
+  permission: z.enum(["view", "comment", "edit", "admin"]),
 });
 
 router?.post(
@@ -901,26 +901,26 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = shareProjectSchema?.parse(req?.body);
+      const validatedData = shareProjectSchema?.parse(req?.body);
 
-      const _result = await workspaceService?.shareProject({
-        workspaceId: req?.params.id,
-        projectId: req?.params.projectId,
-        memberIds: validatedData?.memberIds,
-        permission: validatedData?.permission,
-        sharedBy: req?.user!.id,
+      const result = await workspaceService?.shareProject({
+        workspaceId: req.params.id,
+        projectId: req.params.projectId,
+        memberIds: validatedData.memberIds,
+        permission: validatedData.permission,
+        sharedBy: req.user!.id,
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.json({ shares: result?.shares });
+      res?.json({ shares: result.shares });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Share project error:");
       res?.status(500).json({ error: "Failed to share project" });
@@ -934,7 +934,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _shares = await workspaceService?.getProjectShares(
+      const shares = await workspaceService?.getProjectShares(
         req?.params.projectId,
       );
       res?.json({ shares });
@@ -952,14 +952,14 @@ router?.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { permission } = req?.body;
-      const _result = await workspaceService?.updateSharePermission(
+      const result = await workspaceService?.updateSharePermission(
         req?.params.shareId,
         permission,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -976,13 +976,13 @@ router?.delete(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await workspaceService?.revokeShare(
+      const result = await workspaceService?.revokeShare(
         req?.params.shareId,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -993,12 +993,12 @@ router?.delete(
   },
 );
 
-const _createShareLinkSchema = z?.object({
-  permission: z?.enum(["view", "comment", "edit", "admin"]),
-  expirationDays: z?.number().optional(),
-  password: z?.string().optional(),
-  allowDownload: z?.boolean().optional(),
-  requireSignIn: z?.boolean().optional(),
+const createShareLinkSchema = z.object({
+  permission: z.enum(["view", "comment", "edit", "admin"]),
+  expirationDays: z.number().optional(),
+  password: z.string().optional(),
+  allowDownload: z.boolean().optional(),
+  requireSignIn: z.boolean().optional(),
 });
 
 router?.post(
@@ -1007,25 +1007,25 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = createShareLinkSchema?.parse(req?.body);
+      const validatedData = createShareLinkSchema?.parse(req?.body);
 
-      const _result = await workspaceService?.createShareLink({
-        workspaceId: req?.params.id,
-        projectId: req?.params.projectId,
+      const result = await workspaceService?.createShareLink({
+        workspaceId: req.params.id,
+        projectId: req.params.projectId,
         ...validatedData,
-        createdBy: req?.user!.id,
+        createdBy: req.user!.id,
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ link: result?.link });
+      res?.status(201).json({ link: result.link });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Create share link error:");
       res?.status(500).json({ error: "Failed to create share link" });
@@ -1039,7 +1039,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _links = await workspaceService?.getShareLinks(req?.params.projectId);
+      const links = await workspaceService?.getShareLinks(req?.params.projectId);
       res?.json({ links });
     } catch (error) {
       logger?.warn({ err: error }, "Get share links error:");
@@ -1054,13 +1054,13 @@ router?.delete(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await workspaceService?.revokeShareLink(
+      const result = await workspaceService?.revokeShareLink(
         req?.params.linkId,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -1077,7 +1077,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _presence = await workspaceService?.getWorkspacePresence(
+      const presence = await workspaceService?.getWorkspacePresence(
         req?.params.id,
       );
       res?.json({ presence });
@@ -1094,8 +1094,8 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _workspaceId = req?.params.id;
+      const userId = req?.user!.id;
+      const workspaceId = req?.params.id;
       await db
         .update(workspaceMembers)
         .set({ lastActiveAt: new Date() })
@@ -1119,7 +1119,7 @@ router?.get(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _config = await ssoService?.getSSOConfig(req?.params.id);
+      const config = await ssoService?.getSSOConfig(req?.params.id);
       res?.json({ config });
     } catch (error) {
       logger?.warn({ err: error }, "Get SSO config error:");
@@ -1128,41 +1128,41 @@ router?.get(
   },
 );
 
-const _samlConfigSchema = z?.object({
-  entityId: z?.string(),
-  ssoUrl: z?.string().url(),
-  sloUrl: z?.string().url().optional(),
-  certificate: z?.string(),
-  signatureAlgorithm: z?.string().optional(),
-  digestAlgorithm: z?.string().optional(),
+const samlConfigSchema = z.object({
+  entityId: z.string(),
+  ssoUrl: z.string().url(),
+  sloUrl: z.string().url().optional(),
+  certificate: z.string(),
+  signatureAlgorithm: z.string().optional(),
+  digestAlgorithm: z.string().optional(),
 });
 
-const _oidcConfigSchema = z?.object({
-  issuer: z?.string().url(),
-  authorizationEndpoint: z?.string().url(),
-  tokenEndpoint: z?.string().url(),
-  userinfoEndpoint: z?.string().url(),
-  jwksUri: z?.string().url(),
-  clientId: z?.string(),
-  clientSecret: z?.string().optional(),
-  scopes: z?.array(z?.string()),
+const oidcConfigSchema = z.object({
+  issuer: z.string().url(),
+  authorizationEndpoint: z.string().url(),
+  tokenEndpoint: z.string().url(),
+  userinfoEndpoint: z.string().url(),
+  jwksUri: z.string().url(),
+  clientId: z.string(),
+  clientSecret: z.string().optional(),
+  scopes: z.array(z.string()),
 });
 
-const _ssoConfigSchema = z?.object({
-  provider: z?.enum(["saml", "oidc"]),
-  metadata: z?.union([samlConfigSchema, oidcConfigSchema]),
+const ssoConfigSchema = z.object({
+  provider: z.enum(["saml", "oidc"]),
+  metadata: z.union([samlConfigSchema, oidcConfigSchema]),
   attributeMapping: z
     .object({
-      email: z?.string(),
-      firstName: z?.string(),
-      lastName: z?.string(),
-      groups: z?.string().optional(),
+      email: z.string(),
+      firstName: z.string(),
+      lastName: z.string(),
+      groups: z.string().optional(),
     })
     .optional(),
-  allowedDomains: z?.array(z?.string()).optional(),
-  autoProvision: z?.boolean().optional(),
-  jitProvisioning: z?.boolean().optional(),
-  defaultRoleId: z?.string().optional(),
+  allowedDomains: z.array(z.string()).optional(),
+  autoProvision: z.boolean().optional(),
+  jitProvisioning: z.boolean().optional(),
+  defaultRoleId: z.string().optional(),
 });
 
 router?.put(
@@ -1171,7 +1171,7 @@ router?.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _validatedData = ssoConfigSchema?.parse(req?.body);
+      const validatedData = ssoConfigSchema?.parse(req?.body);
 
       let result;
       if (validatedData?.provider === "saml") {
@@ -1179,12 +1179,12 @@ router?.put(
           req?.params.id,
           validatedData?.metadata as SAMLMetadata,
           {
-            attributeMapping: validatedData?.attributeMapping,
-            allowedDomains: validatedData?.allowedDomains,
-            autoProvision: validatedData?.autoProvision,
-            jitProvisioning: validatedData?.jitProvisioning,
-            defaultRoleId: validatedData?.defaultRoleId,
-            configuredBy: req?.user!.id,
+            attributeMapping: validatedData.attributeMapping,
+            allowedDomains: validatedData.allowedDomains,
+            autoProvision: validatedData.autoProvision,
+            jitProvisioning: validatedData.jitProvisioning,
+            defaultRoleId: validatedData.defaultRoleId,
+            configuredBy: req.user!.id,
           },
         );
       } else {
@@ -1192,26 +1192,26 @@ router?.put(
           req?.params.id,
           validatedData?.metadata as OIDCMetadata,
           {
-            attributeMapping: validatedData?.attributeMapping,
-            allowedDomains: validatedData?.allowedDomains,
-            autoProvision: validatedData?.autoProvision,
-            jitProvisioning: validatedData?.jitProvisioning,
-            defaultRoleId: validatedData?.defaultRoleId,
-            configuredBy: req?.user!.id,
+            attributeMapping: validatedData.attributeMapping,
+            allowedDomains: validatedData.allowedDomains,
+            autoProvision: validatedData.autoProvision,
+            jitProvisioning: validatedData.jitProvisioning,
+            defaultRoleId: validatedData.defaultRoleId,
+            configuredBy: req.user!.id,
           },
         );
       }
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.json({ config: result?.config });
+      res?.json({ config: result.config });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid request data", details: error?.issues });
+          .json({ error: "Invalid request data", details: error.issues });
       }
       logger?.warn({ err: error }, "Configure SSO error:");
       res?.status(500).json({ error: "Failed to configure SSO" });
@@ -1225,10 +1225,10 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await ssoService?.enableSSO(req?.params.id, req?.user!.id);
+      const result = await ssoService?.enableSSO(req?.params.id, req?.user!.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -1245,10 +1245,10 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await ssoService?.disableSSO(req?.params.id, req?.user!.id);
+      const result = await ssoService?.disableSSO(req?.params.id, req?.user!.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -1265,13 +1265,13 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await ssoService?.testSSOConnection(req?.params.id);
+      const result = await ssoService?.testSSOConnection(req?.params.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true, message: result?.message });
+      res?.json({ success: true, message: result.message });
     } catch (error) {
       logger?.warn({ err: error }, "Test SSO error:");
       res?.status(500).json({ error: "Failed to test SSO connection" });
@@ -1285,16 +1285,16 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await ssoService?.enableSCIM(req?.params.id, req?.user!.id);
+      const result = await ssoService?.enableSCIM(req?.params.id, req?.user!.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({
         success: true,
-        token: result?.token,
-        endpoint: result?.endpoint,
+        token: result.token,
+        endpoint: result.endpoint,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Enable SCIM error:");
@@ -1309,10 +1309,10 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await ssoService?.disableSCIM(req?.params.id, req?.user!.id);
+      const result = await ssoService?.disableSCIM(req?.params.id, req?.user!.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -1329,16 +1329,16 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _result = await ssoService?.rotateSCIMToken(
+      const result = await ssoService?.rotateSCIMToken(
         req?.params.id,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true, token: result?.token });
+      res?.json({ success: true, token: result.token });
     } catch (error) {
       logger?.warn({ err: error }, "Rotate SCIM token error:");
       res?.status(500).json({ error: "Failed to rotate SCIM token" });
@@ -1352,13 +1352,13 @@ router?.get(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _limit = Math?.min(parseInt(req?.query.limit as string) || 100, 500);
-      const _offset = Math?.min(
+      const limit = Math?.min(parseInt(req?.query.limit as string) || 100, 500);
+      const offset = Math?.min(
         Math?.max(parseInt(req?.query.offset as string) || 0, 0),
         100_000,
       );
 
-      const _logs = await workspaceService?.getAuditLog(
+      const logs = await workspaceService?.getAuditLog(
         req?.params.id,
         limit,
         offset,
@@ -1377,7 +1377,7 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _catalog = await workspaceService?.getCatalog(req?.params.id);
+      const catalog = await workspaceService?.getCatalog(req?.params.id);
       res?.json({ catalog });
     } catch (error) {
       logger?.warn({ err: error }, "Get catalog error:");
@@ -1392,7 +1392,7 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _hasPermission = await rbacService?.checkPermission(
+      const hasPermission = await rbacService?.checkPermission(
         req?.params.id,
         req?.user!.id,
         "catalog",
@@ -1403,14 +1403,14 @@ router?.post(
       }
 
       const { projectId } = req?.body;
-      const _result = await workspaceService?.addToCatalog(
+      const result = await workspaceService?.addToCatalog(
         req?.params.id,
         projectId,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });
@@ -1427,7 +1427,7 @@ router?.delete(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _hasPermission = await rbacService?.checkPermission(
+      const hasPermission = await rbacService?.checkPermission(
         req?.params.id,
         req?.user!.id,
         "catalog",
@@ -1437,14 +1437,14 @@ router?.delete(
         return res?.status(403).json({ error: "Permission denied" });
       }
 
-      const _result = await workspaceService?.removeFromCatalog(
+      const result = await workspaceService?.removeFromCatalog(
         req?.params.id,
         req?.params.projectId,
         req?.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result?.error });
+        return res?.status(400).json({ error: result.error });
       }
 
       res?.json({ success: true });

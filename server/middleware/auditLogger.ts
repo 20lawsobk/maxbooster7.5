@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { createWriteStream, mkdirSync, existsSync } from "fs";
 import { join } from "path";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { auditLogs } from "@shared/schema";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface AuditEvent {
   timestamp: string;
@@ -20,27 +20,27 @@ interface AuditEvent {
 }
 
 class AuditLogger {
-  private logStream: NodeJS?.WritableStream;
-  private securityStream: NodeJS?.WritableStream;
+  private logStream: NodeJS.WritableStream;
+  private securityStream: NodeJS.WritableStream;
 
   constructor() {
     // Ensure log directory exists
-    const _logDir = join(process?.cwd(), "logs");
+    const logDir = join(process?.cwd(), "logs");
     if (!existsSync(logDir)) {
       mkdirSync(logDir, { recursive: true });
     }
 
     // Create audit log streams
-    this?.logStream = createWriteStream(join(logDir, "audit?.log"), {
+    this.logStream = createWriteStream(join(logDir, "audit.log"), {
       flags: "a",
     });
-    this?.securityStream = createWriteStream(join(logDir, "security?.log"), {
+    this.securityStream = createWriteStream(join(logDir, "security.log"), {
       flags: "a",
     });
   }
 
   public log(event: AuditEvent) {
-    const _logEntry =
+    const logEntry =
       JSON?.stringify({
         ...event,
         timestamp: new Date().toISOString(),
@@ -62,27 +62,27 @@ class AuditLogger {
       void db
         .insert(auditLogs)
         .values({
-          userId: event?.userId ?? null,
-          userEmail: event?.userEmail ?? null,
-          ip: event?.ip || "unknown",
-          userAgent: event?.userAgent || null,
-          action: event?.action,
-          resource: event?.resource,
-          result: event?.result,
-          risk: event?.risk,
-          sessionId: event?.sessionId ?? null,
+          userId: event.userId ?? null,
+          userEmail: event.userEmail ?? null,
+          ip: event.ip || "unknown",
+          userAgent: event.userAgent || null,
+          action: event.action,
+          resource: event.resource,
+          result: event.result,
+          risk: event.risk,
+          sessionId: event.sessionId ?? null,
           details: (event?.details ?? null) as Record<string, unknown>,
         })
         .catch((err) => {
           // Never let an audit DB write crash the request — file sink already wrote.
           logger?.warn(
-            { err, action: event?.action },
+            { err, action: event.action },
             "[audit] postgres mirror failed",
           );
         });
     } catch (err) {
       logger?.warn(
-        { err, action: event?.action },
+        { err, action: event.action },
         "[audit] postgres mirror threw synchronously",
       );
     }
@@ -94,8 +94,8 @@ class AuditLogger {
       timestamp: new Date().toISOString(),
       userId: success ? userId : undefined,
       userEmail: success ? userEmail : undefined,
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: "LOGIN",
       resource: "auth",
       details: {
@@ -105,7 +105,7 @@ class AuditLogger {
       },
       result: success ? "success" : "failure",
       risk: success ? "low" : "medium",
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     });
   }
 
@@ -114,14 +114,14 @@ class AuditLogger {
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: "LOGOUT",
       resource: "auth",
       details: {},
       result: "success",
       risk: "low",
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     });
   }
 
@@ -135,8 +135,8 @@ class AuditLogger {
       timestamp: new Date().toISOString(),
       userId: success ? userId : undefined,
       userEmail: success ? userEmail : undefined,
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: "REGISTER",
       resource: "auth",
       details: {
@@ -145,7 +145,7 @@ class AuditLogger {
       },
       result: success ? "success" : "failure",
       risk: "medium",
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     });
   }
 
@@ -162,8 +162,8 @@ class AuditLogger {
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: "PAYMENT",
       resource: "stripe",
       details: {
@@ -175,7 +175,7 @@ class AuditLogger {
       },
       result: success ? "success" : "failure",
       risk: "high",
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     });
   }
 
@@ -192,8 +192,8 @@ class AuditLogger {
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: `ADMIN_${action?.toUpperCase()}`,
       resource: "admin",
       details: {
@@ -202,7 +202,7 @@ class AuditLogger {
       },
       result: "success",
       risk: "critical",
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     });
   }
 
@@ -219,8 +219,8 @@ class AuditLogger {
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: "FILE_UPLOAD",
       resource: "storage",
       details: {
@@ -231,7 +231,7 @@ class AuditLogger {
       },
       result: success ? "success" : "failure",
       risk: "medium",
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     });
   }
 
@@ -247,8 +247,8 @@ class AuditLogger {
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: "OAUTH_CONNECT",
       resource: "social_media",
       details: {
@@ -257,7 +257,7 @@ class AuditLogger {
       },
       result: success ? "success" : "failure",
       risk: "medium",
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     });
   }
 
@@ -270,14 +270,14 @@ class AuditLogger {
   ) {
     this?.log({
       timestamp: new Date().toISOString(),
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: `SECURITY_${event?.toUpperCase()}`,
       resource: "security",
       details,
       result: "success",
       risk,
-      sessionId: req?.sessionID,
+      sessionId: req.sessionID,
     });
   }
 
@@ -285,13 +285,13 @@ class AuditLogger {
   logRateLimit(req: Request, limitType: string) {
     this?.log({
       timestamp: new Date().toISOString(),
-      ip: this?.getClientIP(req),
-      userAgent: req?.get("user-agent") || "unknown",
+      ip: this.getClientIP(req),
+      userAgent: req.get("user-agent") || "unknown",
       action: "RATE_LIMIT_EXCEEDED",
       resource: "security",
       details: {
         limitType,
-        path: req?.path,
+        path: req.path,
       },
       result: "failure",
       risk: "medium",
@@ -308,7 +308,7 @@ class AuditLogger {
   }
 }
 
-export const _auditLogger = new AuditLogger();
+export const auditLogger = new AuditLogger();
 
 // Middleware for automatic API endpoint auditing
 export function auditMiddleware(
@@ -317,29 +317,29 @@ export function auditMiddleware(
   risk: "low" | "medium" | "high" = "low",
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const _originalSend = res?.send;
+    const originalSend = res?.send;
 
-    res?.send = function (data) {
-      const _user = (req as Record<string, unknown>).user;
-      const _statusCode = res?.statusCode;
+    res.send = function (data) {
+      const user = (req as Record<string, unknown>).user;
+      const statusCode = res?.statusCode;
 
       if (user && statusCode < 400) {
         auditLogger?.log({
           timestamp: new Date().toISOString(),
-          userId: user?.id,
-          userEmail: user?.email,
+          userId: user.id,
+          userEmail: user.email,
           ip: auditLogger["getClientIP"](req),
-          userAgent: req?.get("user-agent") || "unknown",
+          userAgent: req.get("user-agent") || "unknown",
           action,
           resource,
           details: {
-            method: req?.method,
-            path: req?.path,
+            method: req.method,
+            path: req.path,
             statusCode,
           },
           result: "success",
           risk,
-          sessionId: req?.sessionID,
+          sessionId: req.sessionID,
         });
       }
 

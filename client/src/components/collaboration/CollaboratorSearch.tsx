@@ -244,7 +244,7 @@ export function CollaboratorSearch() {
         <div className="min-h-[200px]">
           {isLoading ? (
             renderSkeletons()
-          ) : artists?.length > 0 ? (
+          ) : artists.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {artists.map((artist: Record<string, unknown>) => (
                 <CollaboratorCard

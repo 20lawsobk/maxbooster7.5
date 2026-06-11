@@ -1,6 +1,6 @@
 import { knowledgeBaseService } from "./knowledgeBaseService";
 import { supportTicketService } from "./supportTicketService";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface SupportQuery {
   question: string;
@@ -106,7 +106,7 @@ export class SupportAIService {
       "how to sell beats",
       {
         answer:
-          "Max Booster Marketplace is like BeatStars for selling your music:\n\n**Set Up Your Storefront:**\n1. Go to Marketplace page\n2. Click 'Create Storefront'\n3. Customize branding (logo, colors, banner)\n4. Set up your custom URL (yourname?.maxbooster.app)\n5. Add your beats/samples/presets\n\n**Upload Products:**\n1. Click 'Add Product'\n2. Upload audio file and preview\n3. Set pricing tiers (Basic, Premium, Exclusive)\n4. Add licensing terms\n5. Publish\n\n**Pricing Options:**\n- Lease licenses ($10-100)\n- Exclusive rights ($100-10,000+)\n- Sample packs\n- Presets and templates\n\n**Payment:**\n- Automatic payment processing via Stripe\n- You keep 100% of your sale revenue (minus standard Stripe processing)\n- No platform fees — everything is included in your subscription\n- Instant payouts to your bank account",
+          "Max Booster Marketplace is like BeatStars for selling your music:\n\n**Set Up Your Storefront:**\n1. Go to Marketplace page\n2. Click 'Create Storefront'\n3. Customize branding (logo, colors, banner)\n4. Set up your custom URL (yourname.maxbooster.app)\n5. Add your beats/samples/presets\n\n**Upload Products:**\n1. Click 'Add Product'\n2. Upload audio file and preview\n3. Set pricing tiers (Basic, Premium, Exclusive)\n4. Add licensing terms\n5. Publish\n\n**Pricing Options:**\n- Lease licenses ($10-100)\n- Exclusive rights ($100-10,000+)\n- Sample packs\n- Presets and templates\n\n**Payment:**\n- Automatic payment processing via Stripe\n- You keep 100% of your sale revenue (minus standard Stripe processing)\n- No platform fees — everything is included in your subscription\n- Instant payouts to your bank account",
         category: "marketplace",
       },
     ],
@@ -114,7 +114,7 @@ export class SupportAIService {
       "marketplace fees",
       {
         answer:
-          "Everything is included in your Max Booster subscription — no hidden fees or top-ups:\n\n**All-Inclusive Subscription:**\n- No platform fees on marketplace sales\n- No distribution fees\n- No feature top-ups\n- You keep 100% of your revenue\n\n**Payment Processing:**\n- Standard Stripe fees: 2?.9% + $0?.30 per transaction\n- Instant payouts available\n\n**Example:** If you sell a beat for $50:\n- Platform fee: $0 (included in subscription)\n- Stripe processing: ~$1?.75\n- Net to you: ~$48?.25\n\n**What's Included:**\n- Distribution to 150+ platforms\n- Beat marketplace & licensing\n- AI studio, social media autopilot\n- Custom storefront (yourname?.maxbooster.app)\n- All current and future features",
+          "Everything is included in your Max Booster subscription — no hidden fees or top-ups:\n\n**All-Inclusive Subscription:**\n- No platform fees on marketplace sales\n- No distribution fees\n- No feature top-ups\n- You keep 100% of your revenue\n\n**Payment Processing:**\n- Standard Stripe fees: 2.9% + $0.30 per transaction\n- Instant payouts available\n\n**Example:** If you sell a beat for $50:\n- Platform fee: $0 (included in subscription)\n- Stripe processing: ~$1.75\n- Net to you: ~$48.25\n\n**What's Included:**\n- Distribution to 150+ platforms\n- Beat marketplace & licensing\n- AI studio, social media autopilot\n- Custom storefront (yourname.maxbooster.app)\n- All current and future features",
         category: "marketplace",
       },
     ],
@@ -170,7 +170,7 @@ export class SupportAIService {
       "subscription plans",
       {
         answer:
-          "Max Booster offers 3 subscription tiers:\n\n**Free:**\n- Limited features\n- 1 release per year\n- Basic analytics\n\n**Pro ($9?.99/month):**\n- Unlimited releases\n- All AI tools\n- Advanced analytics\n- Priority support\n- All features unlocked\n\n**Lifetime ($299 one-time):**\n- Everything in Pro\n- Lifetime access (never pay again)\n- Early access to new features\n- VIP support\n\n**You keep 100% of royalties on ALL plans!**",
+          "Max Booster offers 3 subscription tiers:\n\n**Free:**\n- Limited features\n- 1 release per year\n- Basic analytics\n\n**Pro ($9.99/month):**\n- Unlimited releases\n- All AI tools\n- Advanced analytics\n- Priority support\n- All features unlocked\n\n**Lifetime ($299 one-time):**\n- Everything in Pro\n- Lifetime access (never pay again)\n- Early access to new features\n- VIP support\n\n**You keep 100% of royalties on ALL plans!**",
         category: "billing",
       },
     ],
@@ -206,7 +206,7 @@ export class SupportAIService {
       "how to contact support",
       {
         answer:
-          "You can contact support through:\n\n1. **Live Chat**: Click the chat button in the bottom-right corner for instant help (I am that assistant!)\n2. **Support Ticket**: Go to Help > Contact Support to create a ticket\n3. **Email**: support@maxbooster?.ai\n\nResponse times:\n- Live Chat: Instant AI assistance, human escalation available\n- Support Tickets: Within 24 hours\n- Email: Within 48 hours\n\nFor urgent issues, use live chat for fastest response.",
+          "You can contact support through:\n\n1. **Live Chat**: Click the chat button in the bottom-right corner for instant help (I am that assistant!)\n2. **Support Ticket**: Go to Help > Contact Support to create a ticket\n3. **Email**: support@maxbooster.ai\n\nResponse times:\n- Live Chat: Instant AI assistance, human escalation available\n- Support Tickets: Within 24 hours\n- Email: Within 48 hours\n\nFor urgent issues, use live chat for fastest response.",
         category: "support",
       },
     ],
@@ -216,62 +216,62 @@ export class SupportAIService {
       "legal compliance",
       {
         answer:
-          "Max Booster is fully compliant with all major regulations:\n\n**COPPA Compliance:**\n- Age 13+ verification\n- UTC-normalized birthdate validation\n- Parental consent for users under 13\n\n**GDPR Compliance:**\n- Cookie consent banner (Article 7)\n- Right to access your data (Article 15)\n- Right to erasure with 30-day grace period (Article 17)\n- Right to data portability (Article 20)\n\n**DMCA Safe Harbor:**\n- Designated agent registered at copyright?.gov\n- Agent ID: DMCA-1065850\n- Protects you from copyright infringement liability\n\n**Business Entity:**\n- LLC formation complete\n- Full legal protection\n\nYou can launch and accept paid users with complete legal protection.",
+          "Max Booster is fully compliant with all major regulations:\n\n**COPPA Compliance:**\n- Age 13+ verification\n- UTC-normalized birthdate validation\n- Parental consent for users under 13\n\n**GDPR Compliance:**\n- Cookie consent banner (Article 7)\n- Right to access your data (Article 15)\n- Right to erasure with 30-day grace period (Article 17)\n- Right to data portability (Article 20)\n\n**DMCA Safe Harbor:**\n- Designated agent registered at copyright.gov\n- Agent ID: DMCA-1065850\n- Protects you from copyright infringement liability\n\n**Business Entity:**\n- LLC formation complete\n- Full legal protection\n\nYou can launch and accept paid users with complete legal protection.",
         category: "legal",
       },
     ],
   ]);
 
   async answerQuestion(query: SupportQuery): Promise<AIResponse> {
-    const _normalizedQuestion = query?.question.toLowerCase().trim();
+    const normalizedQuestion = query.question.toLowerCase().trim();
 
-    const _directAnswer = this?.findDirectAnswer(normalizedQuestion);
+    const directAnswer = this.findDirectAnswer(normalizedQuestion);
     if (directAnswer) {
-      const _articles = await this?.findRelevantArticles(normalizedQuestion);
+      const articles = await this.findRelevantArticles(normalizedQuestion);
       return {
-        answer: directAnswer?.answer,
-        confidence: 0?.95,
+        answer: directAnswer.answer,
+        confidence: 0.95,
         suggestedArticles: articles,
         shouldEscalate: false,
-        category: directAnswer?.category,
+        category: directAnswer.category,
       };
     }
 
-    const _articles = await knowledgeBaseService?.searchArticles(
-      query?.question,
+    const articles = await knowledgeBaseService.searchArticles(
+      query.question,
       undefined,
       5,
     );
 
-    if (articles?.length > 0) {
-      const _topArticle = articles[0];
-      const _snippet = this?.extractSnippet(topArticle?.content, query?.question);
+    if (articles.length > 0) {
+      const topArticle = articles[0];
+      const snippet = this.extractSnippet(topArticle.content, query.question);
 
       return {
-        answer: `Based on our knowledge base:\n\n${snippet}\n\nFor more details, please check the full article: "${topArticle?.title}"`,
-        confidence: 0?.75,
+        answer: `Based on our knowledge base:\n\n${snippet}\n\nFor more details, please check the full article: "${topArticle.title}"`,
+        confidence: 0.75,
         suggestedArticles: articles,
         shouldEscalate: false,
-        category: topArticle?.category,
+        category: topArticle.category,
       };
     }
 
-    const _complexityScore = this?.analyzeComplexity(query?.question);
-    if (complexityScore > 0?.7) {
+    const complexityScore = this.analyzeComplexity(query.question);
+    if (complexityScore > 0.7) {
       return {
         answer:
           "This seems like a complex question that would benefit from human support. I've escalated this to our support team who will provide a detailed response. In the meantime, you might find these articles helpful:",
-        confidence: 0?.4,
+        confidence: 0.4,
         suggestedArticles: await knowledgeBaseService?.getPopularArticles(3),
         shouldEscalate: true,
       };
     }
 
     try {
-      const _aiGeneratedAnswer = await this?.generateAIAnswer(query?.question);
+      const aiGeneratedAnswer = await this?.generateAIAnswer(query?.question);
       return {
         answer: aiGeneratedAnswer,
-        confidence: 0?.6,
+        confidence: 0.6,
         suggestedArticles: articles,
         shouldEscalate: false,
       };
@@ -280,7 +280,7 @@ export class SupportAIService {
       return {
         answer:
           "I apologize, but I'm having trouble understanding your question. Our support team can help! Would you like to create a support ticket or try rephrasing your question?",
-        confidence: 0?.3,
+        confidence: 0.3,
         suggestedArticles: [],
         shouldEscalate: true,
       };
@@ -293,7 +293,7 @@ export class SupportAIService {
     for (const [key, value] of this?.commonQuestions) {
       if (
         question?.includes(key) ||
-        this?.calculateSimilarity(question, key) > 0?.7
+        this?.calculateSimilarity(question, key) > 0.7
       ) {
         return value;
       }
@@ -302,31 +302,31 @@ export class SupportAIService {
   }
 
   private async findRelevantArticles(question: string) {
-    const _keywords = this?.extractKeywords(question);
-    const _articles = await knowledgeBaseService?.searchArticles(
+    const keywords = this?.extractKeywords(question);
+    const articles = await knowledgeBaseService?.searchArticles(
       keywords?.join(" "),
       undefined,
       3,
     );
     return articles?.map((a) => ({
-      id: a?.id,
-      title: a?.title,
-      category: a?.category,
-      views: a?.views,
+      id: a.id,
+      title: a.title,
+      category: a.category,
+      views: a.views,
     }));
   }
 
   private extractSnippet(content: string, query: string): string {
-    const _sentences = content?.split(/[.!?]+/).map((s) => s?.trim());
+    const sentences = content?.split(/[.!?]+/).map((s) => s?.trim());
 
-    const _queryWords = query?.toLowerCase().split(/\s+/);
+    const queryWords = query?.toLowerCase().split(/\s+/);
     let bestSentence = sentences[0] || content?.substring(0, 200);
     let maxScore = 0;
 
     for (const sentence of sentences) {
       if (sentence?.length < 20) continue;
-      const _sentenceLower = sentence?.toLowerCase();
-      const _score = queryWords?.filter((word) =>
+      const sentenceLower = sentence?.toLowerCase();
+      const score = queryWords?.filter((word) =>
         sentenceLower?.includes(word),
       ).length;
       if (score > maxScore) {
@@ -341,7 +341,7 @@ export class SupportAIService {
   }
 
   private analyzeComplexity(question: string): number {
-    const _indicators = [
+    const indicators = [
       question?.includes("why"),
       question?.includes("how come"),
       question?.includes("explain"),
@@ -355,14 +355,14 @@ export class SupportAIService {
   }
 
   private calculateSimilarity(str1: string, str2: string): number {
-    const _words1 = str1?.split(/\s+/);
-    const _words2 = str2?.split(/\s+/);
-    const _commonWords = words1?.filter((w) => words2?.includes(w));
+    const words1 = str1?.split(/\s+/);
+    const words2 = str2?.split(/\s+/);
+    const commonWords = words1?.filter((w) => words2?.includes(w));
     return commonWords?.length / Math?.max(words1?.length, words2?.length);
   }
 
   private extractKeywords(text: string): string[] {
-    const _stopWords = new Set([
+    const stopWords = new Set([
       "the",
       "a",
       "an",
@@ -393,7 +393,7 @@ export class SupportAIService {
       "me",
     ]);
 
-    const _words = text
+    const words = text
       .toLowerCase()
       .split(/\s+/)
       .map((w) => w?.replace(/[^a-z0-9]/g, ""))
@@ -403,13 +403,13 @@ export class SupportAIService {
   }
 
   private async generateAIAnswer(question: string): Promise<string> {
-    const { MaxCoreAIClient } = await import("./maxcoreClient?.js");
-    const _mc = await MaxCoreAIClient?.infer<unknown>("/api/generate/content", {
+    const { MaxCoreAIClient } = await import("./maxcoreClient.js");
+    const mc = await MaxCoreAIClient?.infer<unknown>("/api/generate/content", {
       topic: question,
       platform: "support",
       tone: "professional",
     });
-    const _answer = mc?.caption || mc?.body || mc?.hook || "";
+    const answer = mc?.caption || mc?.body || mc?.hook || "";
     if (!answer)
       throw new Error("[SupportAI] MaxCore returned no answer (transient)");
     return answer;
@@ -419,9 +419,9 @@ export class SupportAIService {
     subject: string,
     description: string,
   ): Promise<string> {
-    const _text = `${subject} ${description}`.toLowerCase();
+    const text = `${subject} ${description}`.toLowerCase();
 
-    const _categories = {
+    const categories = {
       billing: [
         "payment",
         "subscription",
@@ -464,7 +464,7 @@ export class SupportAIService {
     let maxScore = 0;
 
     for (const [category, keywords] of Object?.entries(categories)) {
-      const _score = keywords?.filter((keyword) => text?.includes(keyword)).length;
+      const score = keywords?.filter((keyword) => text?.includes(keyword)).length;
       if (score > maxScore) {
         maxScore = score;
         bestCategory = category;
@@ -475,12 +475,12 @@ export class SupportAIService {
   }
 
   async suggestResponse(ticketId: string): Promise<string> {
-    const _ticket = await supportTicketService?.getTicketById(ticketId);
+    const ticket = await supportTicketService?.getTicketById(ticketId);
     if (!ticket) {
       throw new Error("Ticket not found");
     }
 
-    const _response = await this?.answerQuestion({
+    const response = await this?.answerQuestion({
       question: `${ticket?.subject}. ${ticket?.description}`,
     });
 
@@ -488,4 +488,4 @@ export class SupportAIService {
   }
 }
 
-export const _supportAIService = new SupportAIService();
+export const supportAIService = new SupportAIService();

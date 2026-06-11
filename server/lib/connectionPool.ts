@@ -8,7 +8,7 @@
  *
  * Key features:
  *   - Per-query timing with slow-query logging (>1s threshold)
- *   - Rolling average query time (EMA, α=0?.1) for trend detection
+ *   - Rolling average query time (EMA, α=0.1) for trend detection
  *   - Pool utilization monitoring every 30s — warns above 80%
  *   - `withConnection(fn)` — borrow a client and auto-release
  *   - `withTransaction(fn)` — BEGIN/COMMIT/ROLLBACK wrapper
@@ -17,8 +17,8 @@
  */
 
 import { Pool, PoolConfig } from "pg";
-import { logger } from "../logger?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { env } from "../config/env.js";
 
 interface PoolStats {
   totalConnections: number;
@@ -37,18 +37,18 @@ class OptimizedConnectionPool {
   private monitoringInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
-    this?.config = this?.getOptimalConfig();
-    this?.pool = new Pool(this?.config);
+    this.config = this?.getOptimalConfig();
+    this.pool = new Pool(this?.config);
     this?.setupEventHandlers();
     this?.startMonitoring();
   }
 
   private getOptimalConfig(): PoolConfig {
-    const _isProduction =
+    const isProduction =
       process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
 
     const baseConfig: PoolConfig = {
-      connectionString: env?.DATABASE_URL,
+      connectionString: env.DATABASE_URL,
 
       max: isProduction ? 100 : 20,
       min: isProduction ? 10 : 2,
@@ -85,7 +85,7 @@ class OptimizedConnectionPool {
     this?.pool.on("release", () => {});
 
     this?.pool.on("error", (err) => {
-      this?.errorCount++;
+      this.errorCount++;
       logger?.warn("Pool error:", err?.message);
     });
 
@@ -95,8 +95,8 @@ class OptimizedConnectionPool {
   }
 
   private startMonitoring(): void {
-    this?.monitoringInterval = setInterval(() => {
-      const _stats = this?.getStats();
+    this.monitoringInterval = setInterval(() => {
+      const stats = this?.getStats();
 
       if (stats?.utilizationPercent > 80) {
         logger?.warn(
@@ -115,18 +115,18 @@ class OptimizedConnectionPool {
   stopMonitoring(): void {
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = null;
+      this.monitoringInterval = null;
     }
   }
 
   async query<T = any>(text: string, params?: unknown[]): Promise<T[]> {
-    const _start = Date?.now();
-    this?.queryCount++;
+    const start = Date?.now();
+    this.queryCount++;
 
     try {
-      const _result = await this?.pool.query(text, params);
+      const result = await this?.pool.query(text, params);
 
-      const _duration = Date?.now() - start;
+      const duration = Date?.now() - start;
       this?.updateAvgQueryTime(duration);
 
       if (duration > 1000) {
@@ -135,7 +135,7 @@ class OptimizedConnectionPool {
 
       return result?.rows;
     } catch (error) {
-      this?.errorCount++;
+      this.errorCount++;
       throw error;
     }
   }
@@ -147,11 +147,11 @@ class OptimizedConnectionPool {
   async transaction<T>(
     fn: (client: Record<string, unknown>) => Promise<T>,
   ): Promise<T> {
-    const _client = await this?.pool.connect();
+    const client = await this?.pool.connect();
 
     try {
       await client?.query("BEGIN");
-      const _result = await fn(client);
+      const result = await fn(client);
       await client?.query("COMMIT");
       return result;
     } catch (error) {
@@ -163,10 +163,10 @@ class OptimizedConnectionPool {
   }
 
   getStats(): PoolStats {
-    const _total = this?.pool.totalCount;
-    const _idle = this?.pool.idleCount;
-    const _waiting = this?.pool.waitingCount;
-    const _max = this?.config.max || 10;
+    const total = this?.pool.totalCount;
+    const idle = this?.pool.idleCount;
+    const waiting = this?.pool.waitingCount;
+    const max = this?.config.max || 10;
 
     return {
       totalConnections: total,
@@ -179,15 +179,15 @@ class OptimizedConnectionPool {
 
   getQueryStats() {
     return {
-      totalQueries: this?.queryCount,
-      totalErrors: this?.errorCount,
-      errorRate: this?.queryCount > 0 ? this?.errorCount / this?.queryCount : 0,
-      avgQueryTimeMs: this?.avgQueryTime,
+      totalQueries: this.queryCount,
+      totalErrors: this.errorCount,
+      errorRate: this.queryCount > 0 ? this?.errorCount / this?.queryCount : 0,
+      avgQueryTimeMs: this.avgQueryTime,
     };
   }
 
   private updateAvgQueryTime(newTime: number): void {
-    this?.avgQueryTime = this?.avgQueryTime * 0?.9 + newTime * 0?.1;
+    this.avgQueryTime = this?.avgQueryTime * 0.9 + newTime * 0.1;
   }
 
   async healthCheck(): Promise<{
@@ -195,19 +195,19 @@ class OptimizedConnectionPool {
     latencyMs: number;
     error?: string;
   }> {
-    const _start = Date?.now();
+    const start = Date?.now();
 
     try {
       await this?.pool.query("SELECT 1");
       return {
         healthy: true,
-        latencyMs: Date?.now() - start,
+        latencyMs: Date.now() - start,
       };
     } catch (error) {
       return {
         healthy: false,
-        latencyMs: Date?.now() - start,
-        error: error?.message,
+        latencyMs: Date.now() - start,
+        error: error.message,
       };
     }
   }
@@ -219,8 +219,8 @@ class OptimizedConnectionPool {
 
     await this?.pool.end();
 
-    this?.config.max = newMax;
-    this?.pool = new Pool(this?.config);
+    this.config.max = newMax;
+    this.pool = new Pool(this?.config);
     this?.setupEventHandlers();
   }
 
@@ -232,12 +232,12 @@ class OptimizedConnectionPool {
   }
 }
 
-export const _connectionPool = new OptimizedConnectionPool();
+export const connectionPool = new OptimizedConnectionPool();
 
 export async function withConnection<T>(
   fn: (client: Record<string, unknown>) => Promise<T>,
 ): Promise<T> {
-  const _client = await connectionPool?.getClient();
+  const client = await connectionPool?.getClient();
   try {
     return await fn(client);
   } finally {
@@ -251,9 +251,9 @@ export async function withTransaction<T>(
   return connectionPool?.transaction(fn);
 }
 
-export const _getPoolHealth = () => ({
-  pool: connectionPool?.getStats(),
-  queries: connectionPool?.getQueryStats(),
+export const getPoolHealth = () => ({
+  pool: connectionPool.getStats(),
+  queries: connectionPool.getQueryStats(),
 });
 
 process?.on("SIGTERM", async () => {

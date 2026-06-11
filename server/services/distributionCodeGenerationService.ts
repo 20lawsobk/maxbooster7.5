@@ -6,13 +6,13 @@ export async function generateISRC(
   artist: string,
   title: string,
 ): Promise<string> {
-  const _metadata = {
+  const metadata = {
     artist,
     title,
-    timestamp: Date?.now(),
+    timestamp: Date.now(),
   };
 
-  const _isrc = await storage?.generateISRC(userId, trackId, metadata);
+  const isrc = await storage?.generateISRC(userId, trackId, metadata);
 
   return isrc;
 }
@@ -22,12 +22,12 @@ export async function generateUPC(
   releaseId: string,
   title: string,
 ): Promise<string> {
-  const _metadata = {
+  const metadata = {
     title,
-    timestamp: Date?.now(),
+    timestamp: Date.now(),
   };
 
-  const _upc = await storage?.generateUPC(userId, releaseId, metadata);
+  const upc = await storage?.generateUPC(userId, releaseId, metadata);
 
   return upc;
 }
@@ -41,7 +41,7 @@ export async function verifyISRC(isrc: string): Promise<{
     issuedAt: Date;
   };
 }> {
-  const _isrcRegex = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
+  const isrcRegex = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
 
   if (!isrcRegex?.test(isrc)) {
     return {
@@ -50,7 +50,7 @@ export async function verifyISRC(isrc: string): Promise<{
     };
   }
 
-  const _record = await storage?.getISRC(isrc);
+  const record = await storage?.getISRC(isrc);
 
   if (!record) {
     return {
@@ -63,9 +63,9 @@ export async function verifyISRC(isrc: string): Promise<{
     valid: true,
     exists: true,
     info: {
-      userId: record?.userId,
-      trackId: record?.trackId,
-      issuedAt: record?.issuedAt,
+      userId: record.userId,
+      trackId: record.trackId,
+      issuedAt: record.issuedAt,
     },
   };
 }
@@ -79,7 +79,7 @@ export async function verifyUPC(upc: string): Promise<{
     issuedAt: Date;
   };
 }> {
-  const _upcRegex = /^\d{12}$/;
+  const upcRegex = /^\d{12}$/;
 
   if (!upcRegex?.test(upc)) {
     return {
@@ -88,9 +88,9 @@ export async function verifyUPC(upc: string): Promise<{
     };
   }
 
-  const _upcWithoutCheck = upc?.slice(0, 11);
-  const _providedCheckDigit = upc[11];
-  const _calculatedCheckDigit = calculateUPCCheckDigit(upcWithoutCheck);
+  const upcWithoutCheck = upc?.slice(0, 11);
+  const providedCheckDigit = upc[11];
+  const calculatedCheckDigit = calculateUPCCheckDigit(upcWithoutCheck);
 
   if (providedCheckDigit !== calculatedCheckDigit) {
     return {
@@ -99,7 +99,7 @@ export async function verifyUPC(upc: string): Promise<{
     };
   }
 
-  const _record = await storage?.getUPC(upc);
+  const record = await storage?.getUPC(upc);
 
   if (!record) {
     return {
@@ -112,9 +112,9 @@ export async function verifyUPC(upc: string): Promise<{
     valid: true,
     exists: true,
     info: {
-      userId: record?.userId,
-      releaseId: record?.releaseId,
-      issuedAt: record?.issuedAt,
+      userId: record.userId,
+      releaseId: record.releaseId,
+      issuedAt: record.issuedAt,
     },
   };
 }
@@ -122,9 +122,9 @@ export async function verifyUPC(upc: string): Promise<{
 function calculateUPCCheckDigit(upc: string): string {
   let sum = 0;
   for (let i = 0; i < upc?.length; i++) {
-    const _digit = parseInt(upc[i]);
+    const digit = parseInt(upc[i]);
     sum += i % 2 === 0 ? digit * 3 : digit;
   }
-  const _checkDigit = (10 - (sum % 10)) % 10;
+  const checkDigit = (10 - (sum % 10)) % 10;
   return checkDigit?.toString();
 }

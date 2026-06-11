@@ -638,7 +638,7 @@ export function CrossChannelAttribution() {
                               style={{
                                 backgroundColor: `${channelData?.color}20`,
                                 borderColor: `${channelData?.color}50`,
-                                color: channelData?.color,
+                                color: channelData.color,
                               }}
                             >
                               {channelData?.icon}

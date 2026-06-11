@@ -72,9 +72,9 @@ export interface ProjectManagerState {
   recoveryData: string | null;
 }
 
-const _STORAGE_KEY = "daw_project";
-const _AUTOSAVE_KEY = "daw_autosave";
-const _RECOVERY_KEY = "daw_recovery";
+const STORAGE_KEY = "daw_project";
+const AUTOSAVE_KEY = "daw_autosave";
+const RECOVERY_KEY = "daw_recovery";
 
 export class ProjectManager {
   private state: ProjectManagerState;
@@ -84,7 +84,7 @@ export class ProjectManager {
   private lastSnapshot: string = "";
 
   constructor() {
-    this?.state = {
+    this.state = {
       currentProject: null,
       isDirty: false,
       versions: [],
@@ -111,10 +111,10 @@ export class ProjectManager {
       logger?.warn("Unsaved changes will be lost");
     }
 
-    const _id = `proj_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
-    const _now = Date?.now();
+    const id = `proj_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const now = Date?.now();
 
-    this?.state.currentProject = {
+    this.state.currentProject = {
       id,
       name,
       version: 1,
@@ -131,10 +131,10 @@ export class ProjectManager {
       tags: [],
     };
 
-    this?.state.isDirty = false;
-    this?.state.versions = [];
-    this?.state.mediaPool = [];
-    this?.state.missingFiles = [];
+    this.state.isDirty = false;
+    this.state.versions = [];
+    this.state.mediaPool = [];
+    this.state.missingFiles = [];
 
     this?.takeSnapshot();
     this?.startAutosave();
@@ -146,15 +146,15 @@ export class ProjectManager {
       throw new Error("No project to save");
     }
 
-    const _projectState = this?.serializeProject();
-    const _serialized = JSON?.stringify(projectState);
+    const projectState = this?.serializeProject();
+    const serialized = JSON?.stringify(projectState);
 
     try {
       localStorage?.setItem(STORAGE_KEY, serialized);
 
-      this?.state.currentProject?.lastSavedAt = Date?.now();
-      this?.state.currentProject?.modifiedAt = Date?.now();
-      this?.state.isDirty = false;
+      this.state.currentProject.lastSavedAt = Date?.now();
+      this.state.currentProject.modifiedAt = Date?.now();
+      this.state.isDirty = false;
 
       this?.takeSnapshot();
       this?.notify();
@@ -171,12 +171,12 @@ export class ProjectManager {
       throw new Error("No project to save");
     }
 
-    this?.state.currentProject = {
+    this.state.currentProject = {
       ...this?.state.currentProject,
       id: `proj_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
       name,
       version: 1,
-      createdAt: Date?.now(),
+      createdAt: Date.now(),
     };
 
     return this?.save();
@@ -187,8 +187,8 @@ export class ProjectManager {
       const projectState: ProjectState = JSON?.parse(data);
       this?.deserializeProject(projectState);
 
-      this?.state.currentProject = projectState?.metadata;
-      this?.state.isDirty = false;
+      this.state.currentProject = projectState?.metadata;
+      this.state.isDirty = false;
 
       this?.takeSnapshot();
       this?.startAutosave();
@@ -202,7 +202,7 @@ export class ProjectManager {
 
   loadFromStorage(): boolean {
     try {
-      const _data = localStorage?.getItem(STORAGE_KEY);
+      const data = localStorage?.getItem(STORAGE_KEY);
       if (data) {
         this?.load(data);
         return true;
@@ -219,13 +219,13 @@ export class ProjectManager {
       throw new Error("No project open");
     }
 
-    const _projectState = this?.serializeProject();
-    const _serialized = JSON?.stringify(projectState);
+    const projectState = this?.serializeProject();
+    const serialized = JSON?.stringify(projectState);
 
     const version: ProjectVersion = {
       id: `ver_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
       name,
-      createdAt: Date?.now(),
+      createdAt: Date.now(),
       data: serialized,
       description,
     };
@@ -241,7 +241,7 @@ export class ProjectManager {
   }
 
   loadVersion(versionId: string): void {
-    const _version = this?.state.versions?.find((v) => v?.id === versionId);
+    const version = this?.state.versions?.find((v) => v?.id === versionId);
     if (!version) {
       throw new Error("Version not found");
     }
@@ -250,20 +250,20 @@ export class ProjectManager {
   }
 
   deleteVersion(versionId: string): void {
-    this?.state.versions = this?.state.versions?.filter((v) => v?.id !== versionId);
+    this.state.versions = this?.state.versions?.filter((v) => v?.id !== versionId);
     this?.notify();
   }
 
   private serializeProject(): ProjectState {
     return {
-      metadata: this?.state.currentProject!,
-      transport: transportEngine?.getState(),
-      timeline: timelineEngine?.serialize(),
-      automation: automationEngine?.serialize(),
-      routing: routingEngine?.serialize(),
-      midi: midiEngine?.serialize(),
-      audio: nonDestructiveAudio?.serialize(),
-      plugins: pluginStateManager?.serialize(),
+      metadata: this.state.currentProject!,
+      transport: transportEngine.getState(),
+      timeline: timelineEngine.serialize(),
+      automation: automationEngine.serialize(),
+      routing: routingEngine.serialize(),
+      midi: midiEngine.serialize(),
+      audio: nonDestructiveAudio.serialize(),
+      plugins: pluginStateManager.serialize(),
     };
   }
 
@@ -279,11 +279,11 @@ export class ProjectManager {
   addToMediaPool(
     item: Omit<MediaPoolItem, "id" | "addedAt" | "usageCount" | "missing">,
   ): string {
-    const _id = `media_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `media_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
     const newItem: MediaPoolItem = {
       ...item,
       id,
-      addedAt: Date?.now(),
+      addedAt: Date.now(),
       usageCount: 0,
       missing: false,
     };
@@ -295,7 +295,7 @@ export class ProjectManager {
   }
 
   removeFromMediaPool(itemId: string): void {
-    const _item = this?.state.mediaPool?.find((i) => i?.id === itemId);
+    const item = this?.state.mediaPool?.find((i) => i?.id === itemId);
     if (item && item?.usageCount > 0) {
       logger?.warn(
         `Media item ${itemId} is still in use (${item?.usageCount} references)`,
@@ -303,35 +303,35 @@ export class ProjectManager {
       return;
     }
 
-    this?.state.mediaPool = this?.state.mediaPool?.filter((i) => i?.id !== itemId);
+    this.state.mediaPool = this?.state.mediaPool?.filter((i) => i?.id !== itemId);
     this?.markDirty();
     this?.notify();
   }
 
   updateMediaPoolUsage(itemId: string, delta: number): void {
-    const _item = this?.state.mediaPool?.find((i) => i?.id === itemId);
+    const item = this?.state.mediaPool?.find((i) => i?.id === itemId);
     if (item) {
-      item?.usageCount = Math?.max(0, item?.usageCount + delta);
+      item.usageCount = Math?.max(0, item?.usageCount + delta);
       this?.notify();
     }
   }
 
   private validateMediaPool(): void {
-    this?.state.missingFiles = [];
+    this.state.missingFiles = [];
 
     for (const item of this?.state.mediaPool) {
-      item?.missing = false;
+      item.missing = false;
     }
 
     this?.notify();
   }
 
   resolveMissingFile(originalPath: string, newPath: string): void {
-    const _item = this?.state.mediaPool?.find((i) => i?.path === originalPath);
+    const item = this?.state.mediaPool?.find((i) => i?.path === originalPath);
     if (item) {
-      item?.path = newPath;
-      item?.missing = false;
-      this?.state.missingFiles = this?.state.missingFiles?.filter(
+      item.path = newPath;
+      item.missing = false;
+      this.state.missingFiles = this?.state.missingFiles?.filter(
         (p) => p !== originalPath,
       );
       this?.markDirty();
@@ -345,7 +345,7 @@ export class ProjectManager {
     }
 
     if (this?.state.autosaveEnabled) {
-      this?.autosaveTimer = window?.setInterval(() => {
+      this.autosaveTimer = window?.setInterval(() => {
         this?.performAutosave();
       }, this?.state.autosaveInterval);
     }
@@ -354,7 +354,7 @@ export class ProjectManager {
   private stopAutosave(): void {
     if (this?.autosaveTimer !== null) {
       clearInterval(this?.autosaveTimer);
-      this?.autosaveTimer = null;
+      this.autosaveTimer = null;
     }
   }
 
@@ -362,10 +362,10 @@ export class ProjectManager {
     if (!this?.state.currentProject || !this?.state.isDirty) return;
 
     try {
-      const _projectState = this?.serializeProject();
-      const _serialized = JSON?.stringify(projectState);
+      const projectState = this?.serializeProject();
+      const serialized = JSON?.stringify(projectState);
       localStorage?.setItem(AUTOSAVE_KEY, serialized);
-      this?.state.lastAutosave = Date?.now();
+      this.state.lastAutosave = Date?.now();
 
       localStorage?.setItem(RECOVERY_KEY, serialized);
 
@@ -376,9 +376,9 @@ export class ProjectManager {
   }
 
   setAutosave(enabled: boolean, interval?: number): void {
-    this?.state.autosaveEnabled = enabled;
+    this.state.autosaveEnabled = enabled;
     if (interval) {
-      this?.state.autosaveInterval = interval;
+      this.state.autosaveInterval = interval;
     }
 
     if (enabled) {
@@ -392,10 +392,10 @@ export class ProjectManager {
 
   private checkForRecovery(): void {
     try {
-      const _recoveryData = localStorage?.getItem(RECOVERY_KEY);
+      const recoveryData = localStorage?.getItem(RECOVERY_KEY);
       if (recoveryData) {
-        this?.state.recoveryData = recoveryData;
-        this?.state.isRecovering = true;
+        this.state.recoveryData = recoveryData;
+        this.state.isRecovering = true;
         this?.notify();
       }
     } catch (error) {
@@ -408,8 +408,8 @@ export class ProjectManager {
 
     try {
       this?.load(this?.state.recoveryData);
-      this?.state.isRecovering = false;
-      this?.state.recoveryData = null;
+      this.state.isRecovering = false;
+      this.state.recoveryData = null;
       localStorage?.removeItem(RECOVERY_KEY);
       this?.notify();
     } catch (error) {
@@ -419,22 +419,22 @@ export class ProjectManager {
   }
 
   discardRecovery(): void {
-    this?.state.isRecovering = false;
-    this?.state.recoveryData = null;
+    this.state.isRecovering = false;
+    this.state.recoveryData = null;
     localStorage?.removeItem(RECOVERY_KEY);
     this?.notify();
   }
 
   markDirty(): void {
     if (!this?.state.isDirty) {
-      this?.state.isDirty = true;
+      this.state.isDirty = true;
       this?.notify();
     }
   }
 
   private startDirtyCheck(): void {
-    this?.dirtyCheckTimer = window?.setInterval(() => {
-      const _currentSnapshot = this?.takeSnapshotString();
+    this.dirtyCheckTimer = window?.setInterval(() => {
+      const currentSnapshot = this?.takeSnapshotString();
       if (currentSnapshot !== this?.lastSnapshot) {
         this?.markDirty();
       }
@@ -442,15 +442,15 @@ export class ProjectManager {
   }
 
   private takeSnapshot(): void {
-    this?.lastSnapshot = this?.takeSnapshotString();
+    this.lastSnapshot = this?.takeSnapshotString();
   }
 
   private takeSnapshotString(): string {
     try {
       return JSON?.stringify({
-        timeline: timelineEngine?.serialize(),
-        automation: automationEngine?.serialize(),
-        midi: midiEngine?.serialize(),
+        timeline: timelineEngine.serialize(),
+        automation: automationEngine.serialize(),
+        midi: midiEngine.serialize(),
       });
     } catch {
       return "";
@@ -460,10 +460,10 @@ export class ProjectManager {
   setProjectMetadata(updates: Partial<ProjectMetadata>): void {
     if (!this?.state.currentProject) return;
 
-    this?.state.currentProject = {
+    this.state.currentProject = {
       ...this?.state.currentProject,
       ...updates,
-      modifiedAt: Date?.now(),
+      modifiedAt: Date.now(),
     };
 
     this?.markDirty();
@@ -475,70 +475,70 @@ export class ProjectManager {
       throw new Error("No project to export");
     }
 
-    const _projectState = this?.serializeProject();
+    const projectState = this?.serializeProject();
     return JSON?.stringify(projectState, null, 2);
   }
 
   async saveToBackend(
     projectId?: string,
   ): Promise<{ success: boolean; projectId: string }> {
-    const _projectState = this?.serializeProject();
-    const _metadata = this?.state.currentProject;
+    const projectState = this?.serializeProject();
+    const metadata = this?.state.currentProject;
 
-    const _payload = {
-      title: metadata?.name || "Untitled Project",
-      tempo: metadata?.tempo || 120,
-      timeSignature: metadata?.timeSignature
+    const payload = {
+      title: metadata.name || "Untitled Project",
+      tempo: metadata.tempo || 120,
+      timeSignature: metadata.timeSignature
         ? `${metadata?.timeSignature.numerator}/${metadata?.timeSignature.denominator}`
         : "4/4",
-      sampleRate: metadata?.sampleRate || 48000,
-      bitDepth: metadata?.bitDepth || 24,
-      description: metadata?.description || "",
-      dawState: JSON?.stringify(projectState),
-      version: metadata?.version || 1,
+      sampleRate: metadata.sampleRate || 48000,
+      bitDepth: metadata.bitDepth || 24,
+      description: metadata.description || "",
+      dawState: JSON.stringify(projectState),
+      version: metadata.version || 1,
     };
 
     try {
-      const _csrfToken = getCsrfTokenFromCookie();
-      const _csrfHeaders = csrfToken ? { "x-csrf-token": csrfToken } : {};
+      const csrfToken = getCsrfTokenFromCookie();
+      const csrfHeaders = csrfToken ? { "x-csrf-token": csrfToken } : {};
       if (projectId) {
-        const _response = await fetch(
+        const response = await fetch(
           `/api/studio/projects/${projectId}/save-daw-state`,
           {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json", ...csrfHeaders },
-            body: JSON?.stringify(payload),
+            body: JSON.stringify(payload),
           },
         );
 
         if (!response?.ok) throw new Error("Failed to save project");
 
-        this?.state.isDirty = false;
+        this.state.isDirty = false;
         if (this?.state.currentProject) {
-          this?.state.currentProject?.lastSavedAt = Date?.now();
+          this.state.currentProject.lastSavedAt = Date?.now();
         }
         this?.notify();
 
         return { success: true, projectId };
       } else {
-        const _response = await fetch("/api/studio/projects", {
+        const response = await fetch("/api/studio/projects", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json", ...csrfHeaders },
-          body: JSON?.stringify(payload),
+          body: JSON.stringify(payload),
         });
 
         if (!response?.ok) throw new Error("Failed to create project");
 
-        const _data = await response?.json();
-        const _newProjectId = data?.id;
+        const data = await response?.json();
+        const newProjectId = data?.id;
 
         if (this?.state.currentProject) {
-          this?.state.currentProject?.id = newProjectId;
-          this?.state.currentProject?.lastSavedAt = Date?.now();
+          this.state.currentProject.id = newProjectId;
+          this.state.currentProject.lastSavedAt = Date?.now();
         }
-        this?.state.isDirty = false;
+        this.state.isDirty = false;
         this?.notify();
 
         return { success: true, projectId: newProjectId };
@@ -551,7 +551,7 @@ export class ProjectManager {
 
   async loadFromBackend(projectId: string): Promise<boolean> {
     try {
-      const _response = await fetch(
+      const response = await fetch(
         `/api/studio/projects/${projectId}/daw-state`,
       );
       if (!response?.ok) {
@@ -559,13 +559,13 @@ export class ProjectManager {
         return false;
       }
 
-      const _data = await response?.json();
+      const data = await response?.json();
 
       if (data?.dawState) {
         const projectState: ProjectState = JSON?.parse(data?.dawState);
         this?.deserializeProject(projectState);
-        this?.state.currentProject = projectState?.metadata;
-        this?.state.isDirty = false;
+        this.state.currentProject = projectState?.metadata;
+        this.state.isDirty = false;
         this?.takeSnapshot();
         this?.startAutosave();
         this?.notify();
@@ -573,25 +573,25 @@ export class ProjectManager {
       }
 
       if (data?.project) {
-        this?.state.currentProject = {
-          id: data?.project.id,
-          name: data?.project.title || "Untitled",
+        this.state.currentProject = {
+          id: data.project.id,
+          name: data.project.title || "Untitled",
           version: 1,
           createdAt: new Date(data?.project.createdAt).getTime(),
-          modifiedAt: data?.project.updatedAt
+          modifiedAt: data.project.updatedAt
             ? new Date(data?.project.updatedAt).getTime()
             : Date?.now(),
           lastSavedAt: null,
-          sampleRate: data?.project.sampleRate || 48000,
-          bitDepth: data?.project.bitDepth || 24,
-          tempo: data?.project.bpm || data?.project.tempo || 120,
+          sampleRate: data.project.sampleRate || 48000,
+          bitDepth: data.project.bitDepth || 24,
+          tempo: data.project.bpm || data?.project.tempo || 120,
           timeSignature: { numerator: 4, denominator: 4 },
           duration: 300,
           author: "",
-          description: data?.project.description || "",
-          tags: data?.project.tags || [],
+          description: data.project.description || "",
+          tags: data.project.tags || [],
         };
-        this?.state.isDirty = false;
+        this.state.isDirty = false;
         this?.startAutosave();
         this?.notify();
       }
@@ -607,13 +607,13 @@ export class ProjectManager {
     Array<{ id: string; name: string; updatedAt: string }>
   > {
     try {
-      const _response = await fetch("/api/studio/projects");
+      const response = await fetch("/api/studio/projects");
       if (!response?.ok) throw new Error("Failed to fetch projects");
-      const _projects = await response?.json();
+      const projects = await response?.json();
       return projects?.map((p: Record<string, unknown>) => ({
-        id: p?.id,
-        name: p?.title,
-        updatedAt: p?.updatedAt || p?.createdAt,
+        id: p.id,
+        name: p.title,
+        updatedAt: p.updatedAt || p?.createdAt,
       }));
     } catch (error) {
       logger?.error("[ProjectManager] Failed to list projects:", error);
@@ -629,24 +629,24 @@ export class ProjectManager {
     mediaItems: number;
     estimatedSize: number;
   } {
-    const _timeline = timelineEngine?.getState();
-    const _automation = automationEngine?.getState();
-    const _midi = midiEngine?.getState();
-    const _audio = nonDestructiveAudio?.getState();
-    const _plugins = pluginStateManager?.getState();
+    const timeline = timelineEngine?.getState();
+    const automation = automationEngine?.getState();
+    const midi = midiEngine?.getState();
+    const audio = nonDestructiveAudio?.getState();
+    const plugins = pluginStateManager?.getState();
 
     return {
-      trackCount: timeline?.events.filter(
+      trackCount: timeline.events.filter(
         (e) => e?.type === "audio" || e?.type === "midi",
       ).length,
-      clipCount: midi?.clips.length + audio?.events.length,
-      pluginCount: plugins?.plugins.length,
-      automationPoints: automation?.lanes.reduce(
+      clipCount: midi.clips.length + audio?.events.length,
+      pluginCount: plugins.plugins.length,
+      automationPoints: automation.lanes.reduce(
         (sum, l) => sum + l?.points.length,
         0,
       ),
-      mediaItems: this?.state.mediaPool?.length,
-      estimatedSize: JSON?.stringify(this?.serializeProject()).length,
+      mediaItems: this.state.mediaPool?.length,
+      estimatedSize: JSON.stringify(this?.serializeProject()).length,
     };
   }
 
@@ -668,4 +668,4 @@ export class ProjectManager {
   }
 }
 
-export const _projectManager = new ProjectManager();
+export const projectManager = new ProjectManager();

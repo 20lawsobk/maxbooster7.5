@@ -5,20 +5,20 @@
 
 import { simulateAutonomousUpgrade } from "./autonomousUpgradeSimulation";
 import { simulateAdBooster } from "./adBoosterSimulation";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 async function verifyDeterministicBehavior() {
   logger?.info("🔍 Verifying Deterministic Behavior\n");
-  logger?.info("=".repeat(80));
+  logger.info("=".repeat(80));
 
   // Test 1: Autonomous Upgrade - Same seed produces identical results
   logger?.info("\n📊 Test 1: Autonomous Upgrade Reproducibility");
   logger?.info("-".repeat(80));
 
-  const _auto1 = await simulateAutonomousUpgrade(12345);
-  const _auto2 = await simulateAutonomousUpgrade(12345);
+  const auto1 = await simulateAutonomousUpgrade(12345);
+  const auto2 = await simulateAutonomousUpgrade(12345);
 
-  const _autoMatch =
+  const autoMatch =
     auto1?.totalScenarios === auto2?.totalScenarios &&
     auto1?.successfulUpgrades === auto2?.successfulUpgrades &&
     auto1?.metrics.upgradeSuccessRate === auto2?.metrics.upgradeSuccessRate &&
@@ -43,9 +43,9 @@ async function verifyDeterministicBehavior() {
   logger?.info("\n📊 Test 2: Different Seeds Produce Different Results");
   logger?.info("-".repeat(80));
 
-  const _auto3 = await simulateAutonomousUpgrade(54321);
+  const auto3 = await simulateAutonomousUpgrade(54321);
 
-  const _hasDifferences =
+  const hasDifferences =
     auto1?.scenarios[0].detectionTime !== auto3?.scenarios[0].detectionTime ||
     auto1?.scenarios[0].upgradeTime !== auto3?.scenarios[0].upgradeTime ||
     auto1?.scenarios[0].algorithmQuality !== auto3?.scenarios[0].algorithmQuality;
@@ -69,7 +69,7 @@ async function verifyDeterministicBehavior() {
   logger?.info("\n📊 Test 3: KPI Threshold Verification");
   logger?.info("-".repeat(80));
 
-  const _kpisPassed =
+  const kpisPassed =
     auto1?.metrics.upgradeSuccessRate >= 95 &&
     auto1?.metrics.algorithmQualityAverage >= 100 &&
     auto1?.metrics.zeroDowntime === true &&
@@ -97,7 +97,7 @@ async function verifyDeterministicBehavior() {
   logger?.info("\n📊 Test 4: Ad Booster Reproducibility");
   logger?.info("-".repeat(80));
 
-  const _campaign = {
+  const campaign = {
     name: "Test Campaign",
     type: "product_launch" as const,
     audienceSize: "medium" as const,
@@ -107,10 +107,10 @@ async function verifyDeterministicBehavior() {
     contentQuality: 90,
   };
 
-  const _ad1 = await simulateAdBooster(campaign);
-  const _ad2 = await simulateAdBooster(campaign);
+  const ad1 = await simulateAdBooster(campaign);
+  const ad2 = await simulateAdBooster(campaign);
 
-  const _adMatch =
+  const adMatch =
     ad1?.amplificationFactor === ad2?.amplificationFactor &&
     ad1?.paidAdvertising.estimatedReach === ad2?.paidAdvertising.estimatedReach &&
     ad1?.aiBoosterOrganic.estimatedReach === ad2?.aiBoosterOrganic.estimatedReach;
@@ -119,7 +119,7 @@ async function verifyDeterministicBehavior() {
   logger?.info(`Run 2 Amplification: ${ad2?.amplificationFactor}x`);
   logger?.info(`Results Match: ${adMatch ? "✅ YES" : "❌ NO"}`);
   logger?.info(
-    `Meets ≥2?.0x threshold: ${ad1?.amplificationFactor >= 2?.0 ? "✅ YES" : "❌ NO"}`,
+    `Meets ≥2.0x threshold: ${ad1?.amplificationFactor >= 2.0 ? "✅ YES" : "❌ NO"}`,
   );
 
   if (!adMatch) {
@@ -127,19 +127,19 @@ async function verifyDeterministicBehavior() {
     return false;
   }
 
-  if (ad1?.amplificationFactor < 2?.0) {
+  if (ad1?.amplificationFactor < 2.0) {
     logger?.info(
-      "\n⚠️  FAILURE: Ad Booster amplification below 2?.0x threshold!",
+      "\n⚠️  FAILURE: Ad Booster amplification below 2.0x threshold!",
     );
     return false;
   }
 
   // All tests passed
-  logger?.info("\n" + "=".repeat(80));
+  logger.info("\n" + "=".repeat(80));
   logger?.info(
     "✅ ALL TESTS PASSED - Simulations are deterministic and meet KPI thresholds",
   );
-  logger?.info("=".repeat(80));
+  logger.info("=".repeat(80));
 
   return true;
 }

@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 import { randomUUID } from "crypto";
-import { platformAPI } from "./platform-apis?.js";
-import { logger } from "./logger?.js";
-import { advancedSocialAIService } from "./services/advancedSocialAIService?.js";
-import { autopilotLearningService } from "./services/autopilotLearningService?.js";
-import { evolutionRegistry } from "./services/evolutionRegistry?.js";
+import { platformAPI } from "./platform-apis.js";
+import { logger } from "./logger.js";
+import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
+import { autopilotLearningService } from "./services/autopilotLearningService.js";
+import { evolutionRegistry } from "./services/evolutionRegistry.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -73,7 +73,7 @@ export class AutopilotEngine extends EventEmitter {
   private jobs: Map<string, AutopilotJob> = new Map();
   private config: AutopilotConfig;
   private isRunning: boolean = false;
-  private schedulerInterval: NodeJS?.Timeout | null = null;
+  private schedulerInterval: NodeJS.Timeout | null = null;
   private contentQueue: Map<string, any[]> = new Map();
   private performanceData: Map<string, any> = new Map();
   // Durable publish context keyed by contentId, captured at PUBLISH time.
@@ -87,12 +87,12 @@ export class AutopilotEngine extends EventEmitter {
 
   constructor(userId: string) {
     super();
-    this?.userId = userId;
-    this?.config = this?.getDefaultConfig();
+    this.userId = userId;
+    this.config = this?.getDefaultConfig();
   }
 
   static createForSocialAndAds(userId: string): AutopilotEngine {
-    const _engine = new AutopilotEngine(userId);
+    const engine = new AutopilotEngine(userId);
     engine?.configure({
       enabled: false,
       platforms: ["Twitter", "Instagram", "TikTok", "Facebook", "LinkedIn"],
@@ -101,13 +101,13 @@ export class AutopilotEngine extends EventEmitter {
       contentTypes: ["announcements", "questions", "tips", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: true,
-      engagementThreshold: 0?.03,
+      engagementThreshold: 0.03,
     });
     return engine;
   }
 
   static createForAutonomousUpdates(userId: string): AutopilotEngine {
-    const _engine = new AutopilotEngine(userId);
+    const engine = new AutopilotEngine(userId);
     engine?.configure({
       enabled: false,
       platforms: ["Twitter", "LinkedIn"],
@@ -116,13 +116,13 @@ export class AutopilotEngine extends EventEmitter {
       contentTypes: ["announcements", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: false,
-      engagementThreshold: 0?.02,
+      engagementThreshold: 0.02,
     });
     return engine;
   }
 
   static createForSecurityIT(userId: string): AutopilotEngine {
-    const _engine = new AutopilotEngine(userId);
+    const engine = new AutopilotEngine(userId);
     engine?.configure({
       enabled: false,
       platforms: ["Twitter", "LinkedIn"],
@@ -131,7 +131,7 @@ export class AutopilotEngine extends EventEmitter {
       contentTypes: ["announcements", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: false,
-      engagementThreshold: 0?.01,
+      engagementThreshold: 0.01,
     });
     return engine;
   }
@@ -149,13 +149,13 @@ export class AutopilotEngine extends EventEmitter {
       autoPublish: false,
       optimalTimesOnly: true,
       crossPostingEnabled: false,
-      engagementThreshold: 0?.02,
+      engagementThreshold: 0.02,
     };
   }
 
   // Autopilot Configuration
   async configure(config: Partial<AutopilotConfig>): Promise<void> {
-    this?.config = { ...this?.config, ...config };
+    this.config = { ...this?.config, ...config };
 
     if (this?.config.enabled && !this?.isRunning) {
       await this?.start();
@@ -174,14 +174,14 @@ export class AutopilotEngine extends EventEmitter {
   async start(): Promise<void> {
     if (this?.isRunning) return;
 
-    this?.isRunning = true;
+    this.isRunning = true;
     this?.emit("autopilotStarted");
 
     // Initialize content generation jobs
     await this?.scheduleContentGeneration();
 
     // Start the job scheduler
-    this?.schedulerInterval = setInterval(() => {
+    this.schedulerInterval = setInterval(() => {
       this?.processJobs();
       this?.pruneCompletedJobs();
     }, 60000); // Check every minute
@@ -191,7 +191,7 @@ export class AutopilotEngine extends EventEmitter {
 
   /** Remove completed/failed jobs older than 24 h to prevent the Map growing unbounded. */
   private pruneCompletedJobs(): void {
-    const _cutoff = Date?.now() - 86_400_000;
+    const cutoff = Date?.now() - 86_400_000;
     for (const [id, job] of this?.jobs.entries()) {
       if (
         (job?.status === "completed" || job?.status === "failed") &&
@@ -205,17 +205,17 @@ export class AutopilotEngine extends EventEmitter {
   async stop(): Promise<void> {
     if (!this?.isRunning) return;
 
-    this?.isRunning = false;
+    this.isRunning = false;
 
     if (this?.schedulerInterval) {
       clearInterval(this?.schedulerInterval);
-      this?.schedulerInterval = null;
+      this.schedulerInterval = null;
     }
 
     // Cancel pending jobs
     this?.jobs.forEach((job) => {
       if (job?.status === "pending") {
-        job?.status = "failed";
+        job.status = "failed";
       }
     });
 
@@ -228,10 +228,10 @@ export class AutopilotEngine extends EventEmitter {
     if (!this?.config.enabled || this?.config.platforms?.length === 0) return;
 
     for (const platform of this?.config.platforms) {
-      const _nextPostTime = await this?.calculateNextPostTime(platform);
+      const nextPostTime = await this?.calculateNextPostTime(platform);
 
       // Schedule content generation 30 minutes before posting
-      const _generationTime = new Date(nextPostTime?.getTime() - 30 * 60 * 1000);
+      const generationTime = new Date(nextPostTime?.getTime() - 30 * 60 * 1000);
 
       const job: AutopilotJob = {
         id: randomUUID(),
@@ -239,9 +239,9 @@ export class AutopilotEngine extends EventEmitter {
         scheduledAt: generationTime,
         platform,
         data: {
-          topic: this?.selectNextTopic(),
-          brandVoice: this?.config.brandVoice,
-          contentType: this?.selectContentType(platform),
+          topic: this.selectNextTopic(),
+          brandVoice: this.config.brandVoice,
+          contentType: this.selectContentType(platform),
         },
         status: "pending",
         retries: 0,
@@ -256,7 +256,7 @@ export class AutopilotEngine extends EventEmitter {
         type: "content_publishing",
         scheduledAt: nextPostTime,
         platform,
-        data: { contentJobId: job?.id },
+        data: { contentJobId: job.id },
         status: "pending",
         retries: 0,
         maxRetries: 2,
@@ -266,15 +266,15 @@ export class AutopilotEngine extends EventEmitter {
     }
 
     // Schedule next batch based on frequency
-    const _nextBatchTime = this?.calculateNextBatchTime();
+    const nextBatchTime = this?.calculateNextBatchTime();
     setTimeout(() => {
       this?.scheduleContentGeneration();
     }, nextBatchTime - Date?.now());
   }
 
   private async calculateNextPostTime(platform: string): Promise<Date> {
-    const _now = new Date();
-    const _optimalTimes = await this?.getOptimalTimesForPlatform(platform);
+    const now = new Date();
+    const optimalTimes = await this?.getOptimalTimesForPlatform(platform);
 
     // Find next optimal time
     let nextTime = new Date(now);
@@ -284,8 +284,8 @@ export class AutopilotEngine extends EventEmitter {
         nextTime?.setHours(now?.getHours() + 1, 0, 0, 0);
         break;
       case "twice-daily":
-        const _morningHour = optimalTimes[0] || 9;
-        const _eveningHour = optimalTimes[1] || 17;
+        const morningHour = optimalTimes[0] || 9;
+        const eveningHour = optimalTimes[1] || 17;
 
         if (now?.getHours() < morningHour) {
           nextTime?.setHours(morningHour, 0, 0, 0);
@@ -297,7 +297,7 @@ export class AutopilotEngine extends EventEmitter {
         }
         break;
       case "daily": {
-        const _optimalHour = optimalTimes[0] || 14;
+        const optimalHour = optimalTimes[0] || 14;
         // If the optimal hour hasn't passed yet today, schedule for today
         // (the prior implementation always pushed to tomorrow, wasting up
         // to a full day's posting window on every reschedule).
@@ -319,8 +319,8 @@ export class AutopilotEngine extends EventEmitter {
   }
 
   private calculateNextBatchTime(): number {
-    const _now = Date?.now();
-    const _frequency = this?.config.postingFrequency;
+    const now = Date?.now();
+    const frequency = this?.config.postingFrequency;
 
     switch (frequency) {
       case "hourly":
@@ -345,20 +345,20 @@ export class AutopilotEngine extends EventEmitter {
     // average engagement. Fall back to industry-average hours when there
     // is not yet enough history for this user/platform pair.
     try {
-      const _platformKey = platform?.toLowerCase();
-      const _learned = await autopilotLearningService?.getOptimalPostingTimes(
-        this?.userId,
+      const platformKey = platform.toLowerCase();
+      const learned = await autopilotLearningService.getOptimalPostingTimes(
+        this.userId,
         platformKey,
       );
-      if (learned && learned?.length > 0) {
-        const _hours = Array?.from(new Set(learned?.map((r) => r?.hour))).slice(
+      if (learned && learned.length > 0) {
+        const hours = Array.from(new Set(learned.map((r) => r.hour))).slice(
           0,
           5,
         );
-        if (hours?.length > 0) return hours;
+        if (hours.length > 0) return hours;
       }
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         `[Autopilot] Failed to load learned optimal times for ${platform}, using defaults`,
       );
@@ -368,15 +368,15 @@ export class AutopilotEngine extends EventEmitter {
     // bounded posting_optimization override derived from a real detected
     // industry change. This sits ABOVE static defaults but BELOW learned data.
     try {
-      const _override = evolutionRegistry?.getOptimalHoursOverride(platform);
-      if (override && override?.length > 0) {
-        logger?.info(
-          `[Autopilot] Using self-evolution posting-hours override for ${platform}: ${override?.join(",")}`,
+      const override = evolutionRegistry.getOptimalHoursOverride(platform);
+      if (override && override.length > 0) {
+        logger.info(
+          `[Autopilot] Using self-evolution posting-hours override for ${platform}: ${override.join(",")}`,
         );
         return override;
       }
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         `[Autopilot] Failed to read evolution hours override for ${platform}`,
       );
@@ -389,24 +389,24 @@ export class AutopilotEngine extends EventEmitter {
       facebook: [9, 13, 15, 20],
       tiktok: [6, 10, 16, 19],
     };
-    return platformTimes[platform?.toLowerCase()] || [14];
+    return platformTimes[platform.toLowerCase()] || [14];
   }
 
   private selectNextTopic(): string {
-    if (this?.config.topics?.length === 0) {
+    if (this.config.topics.length === 0) {
       return "business insights";
     }
 
     // Rotate through topics to ensure variety
-    const _topicIndex = Date?.now() % this?.config.topics?.length;
-    return this?.config.topics[Math?.floor(topicIndex)];
+    const topicIndex = Date.now() % this.config.topics.length;
+    return this.config.topics[Math.floor(topicIndex)];
   }
 
   private selectContentType(platform?: string): string {
-    const _types = this?.config.contentTypes;
-    if (types?.length === 0) return "insights";
-    const _seeded =
-      types[seededIndex(this?.userId + ":" + types?.join(","), types?.length)];
+    const types = this.config.contentTypes;
+    if (types.length === 0) return "insights";
+    const seeded =
+      types[seededIndex(this.userId + ":" + types.join(","), types.length)];
 
     // A self-evolution posting_optimization override may prioritize certain
     // media formats (from a real detected industry change). Bias the configured
@@ -415,32 +415,32 @@ export class AutopilotEngine extends EventEmitter {
     // keep the deterministic seeded pick. Sits ABOVE the seeded default and is
     // fully reversible (deactivating the enhancement restores the seeded pick).
     try {
-      const _posting = platform
-        ? evolutionRegistry?.getPostingOptimization(platform)
+      const posting = platform
+        ? evolutionRegistry.getPostingOptimization(platform)
         : null;
-      const _priority = posting?.contentFormatPriority;
-      if (priority && priority?.length > 0) {
+      const priority = posting.contentFormatPriority;
+      if (priority && priority.length > 0) {
         let best: string | undefined;
         let bestRank = Infinity;
         for (const t of types) {
-          const _fmt = CONTENT_TYPE_FORMAT_AFFINITY[t?.toLowerCase()];
+          const fmt = CONTENT_TYPE_FORMAT_AFFINITY[t.toLowerCase()];
           if (!fmt) continue;
-          const _rank = priority?.indexOf(fmt);
+          const rank = priority.indexOf(fmt);
           if (rank >= 0 && rank < bestRank) {
             bestRank = rank;
             best = t;
           }
         }
         if (best) {
-          logger?.info(
+          logger.info(
             `[Autopilot] Using self-evolution content-format priority for ${platform}: ` +
-              `picked "${best}" (formats=${priority?.join(",")})`,
+              `picked "${best}" (formats=${priority.join(",")})`,
           );
           return best;
         }
       }
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         `[Autopilot] Failed to apply evolution content-format priority for ${platform}`,
       );
@@ -451,72 +451,72 @@ export class AutopilotEngine extends EventEmitter {
 
   // Job Processing
   private async processJobs(): Promise<void> {
-    const _now = new Date();
-    const _pendingJobs = Array?.from(this?.jobs.values())
-      .filter((job) => job?.status === "pending" && job?.scheduledAt <= now)
-      .sort((a, b) => a?.scheduledAt.getTime() - b?.scheduledAt.getTime());
+    const now = new Date();
+    const pendingJobs = Array.from(this.jobs.values())
+      .filter((job) => job.status === "pending" && job.scheduledAt <= now)
+      .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
     for (const job of pendingJobs) {
-      await this?.executeJob(job);
+      await this.executeJob(job);
     }
   }
 
   private async executeJob(job: AutopilotJob): Promise<void> {
     try {
-      job?.status = "running";
-      this?.emit("jobStarted", job);
+      job.status = "running";
+      this.emit("jobStarted", job);
 
-      switch (job?.type) {
+      switch (job.type) {
         case "content_generation":
-          await this?.executeContentGeneration(job);
+          await this.executeContentGeneration(job);
           break;
         case "content_publishing":
-          await this?.executeContentPublishing(job);
+          await this.executeContentPublishing(job);
           break;
         case "performance_analysis":
-          await this?.executePerformanceAnalysis(job);
+          await this.executePerformanceAnalysis(job);
           break;
       }
 
-      job?.status = "completed";
-      this?.emit("jobCompleted", job);
+      job.status = "completed";
+      this.emit("jobCompleted", job);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Job ${job?.id} failed:`);
+      logger.warn({ err: error }, `Job ${job.id} failed:`);
 
-      if (job?.retries < job?.maxRetries) {
-        job?.retries++;
-        job?.status = "pending";
-        job?.scheduledAt = new Date(Date?.now() + 5 * 60 * 1000); // Retry in 5 minutes
+      if (job.retries < job.maxRetries) {
+        job.retries++;
+        job.status = "pending";
+        job.scheduledAt = new Date(Date.now() + 5 * 60 * 1000); // Retry in 5 minutes
       } else {
-        job?.status = "failed";
-        this?.emit("jobFailed", job, error);
+        job.status = "failed";
+        this.emit("jobFailed", job, error);
       }
     }
   }
 
   private async executeContentGeneration(job: AutopilotJob): Promise<void> {
-    const { topic, brandVoice, contentType } = job?.data;
+    const { topic, brandVoice, contentType } = job.data;
 
     try {
       // This would call your actual AI service
-      const _generatedContent = await this?.generateContentForAutopilot({
+      const generatedContent = await this.generateContentForAutopilot({
         topic,
-        platform: job?.platform,
+        platform: job.platform,
         brandVoice,
         contentType,
-        targetAudience: this?.config.targetAudience,
-        businessGoals: this?.config.businessGoals,
+        targetAudience: this.config.targetAudience,
+        businessGoals: this.config.businessGoals,
       });
 
       // Store generated content in-memory queue item.
       // Persist topic + contentType so publish context (captured after the
       // item is shift()-ed off the queue) carries the real values into
       // performance analysis instead of synthetic 'social_post' / undefined.
-      const _content = {
+      const content = {
         id: randomUUID(),
-        text: generatedContent?.text,
-        hashtags: generatedContent?.hashtags,
-        platforms: [job?.platform],
+        text: generatedContent.text,
+        hashtags: generatedContent.hashtags,
+        platforms: [job.platform],
         status: "draft",
         type: contentType,
         topic,
@@ -524,12 +524,12 @@ export class AutopilotEngine extends EventEmitter {
       };
 
       // Add to content queue
-      if (!this?.contentQueue.has(job?.platform)) {
-        this?.contentQueue.set(job?.platform, []);
+      if (!this.contentQueue.has(job.platform)) {
+        this.contentQueue.set(job.platform, []);
       }
-      this?.contentQueue.get(job?.platform)!.push(content);
+      this.contentQueue.get(job.platform)!.push(content);
 
-      this?.emit("contentGenerated", { job, content });
+      this.emit("contentGenerated", { job, content });
     } catch (error: unknown) {
       // If AI service is not configured, create a placeholder request
       throw new Error(
@@ -539,97 +539,97 @@ export class AutopilotEngine extends EventEmitter {
   }
 
   private async executeContentPublishing(job: AutopilotJob): Promise<void> {
-    const _platformQueue = this?.contentQueue.get(job?.platform);
+    const platformQueue = this.contentQueue.get(job.platform);
 
-    if (!platformQueue || platformQueue?.length === 0) {
-      throw new Error(`No content available for platform ${job?.platform}`);
+    if (!platformQueue || platformQueue.length === 0) {
+      throw new Error(`No content available for platform ${job.platform}`);
     }
 
-    const _content = platformQueue?.shift()!;
+    const content = platformQueue.shift()!;
 
-    if (this?.config.autoPublish) {
+    if (this.config.autoPublish) {
       // Publish immediately
-      const _results = await platformAPI?.publishContent(
+      const results = await platformAPI.publishContent(
         content,
-        [job?.platform],
-        this?.userId,
+        [job.platform],
+        this.userId,
       );
-      const _successfulResults = results?.filter((r: unknown) => r?.success);
+      const successfulResults = results.filter((r: unknown) => r.success);
 
-      if (successfulResults?.length > 0) {
-        content?.status = "published";
-        content?.publishedAt = new Date();
+      if (successfulResults.length > 0) {
+        content.status = "published";
+        content.publishedAt = new Date();
 
         // Persist publish context durably (content is no longer in the queue
         // after shift()). Evict oldest first when at cap, matching performanceData.
-        if (this?.publishContext.size >= AutopilotEngine?.MAX_PERF_ENTRIES) {
-          const _oldestKey = this?.publishContext.keys().next().value;
-          if (oldestKey !== undefined) this?.publishContext.delete(oldestKey);
+        if (this.publishContext.size >= AutopilotEngine.MAX_PERF_ENTRIES) {
+          const oldestKey = this.publishContext.keys().next().value;
+          if (oldestKey !== undefined) this.publishContext.delete(oldestKey);
         }
-        this?.publishContext.set(content?.id, {
-          publishedAt: content?.publishedAt,
-          type: content?.type ?? "social_post",
-          hashtags: content?.hashtags ?? [],
-          text: content?.text,
-          topic: content?.topic,
+        this.publishContext.set(content.id, {
+          publishedAt: content.publishedAt,
+          type: content.type ?? "social_post",
+          hashtags: content.hashtags ?? [],
+          text: content.text,
+          topic: content.topic,
         });
 
         // Schedule performance analysis for later
         const analysisJob: AutopilotJob = {
           id: randomUUID(),
           type: "performance_analysis",
-          scheduledAt: new Date(Date?.now() + 2 * 60 * 60 * 1000), // 2 hours later
-          platform: job?.platform,
-          data: { contentId: content?.id, postId: successfulResults[0].postId },
+          scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours later
+          platform: job.platform,
+          data: { contentId: content.id, postId: successfulResults[0].postId },
           status: "pending",
           retries: 0,
           maxRetries: 2,
         };
 
-        this?.jobs.set(analysisJob?.id, analysisJob);
+        this.jobs.set(analysisJob.id, analysisJob);
       }
 
-      this?.emit("contentPublished", { job, content, results });
+      this.emit("contentPublished", { job, content, results });
     } else {
       // Schedule for review
-      content?.status = "scheduled";
-      this?.emit("contentScheduled", { job, content });
+      content.status = "scheduled";
+      this.emit("contentScheduled", { job, content });
     }
   }
 
   private async executePerformanceAnalysis(job: AutopilotJob): Promise<void> {
-    const { contentId, postId } = job?.data;
+    const { contentId, postId } = job.data;
 
     // Collect real engagement data
-    const _analytics = await platformAPI?.collectEngagementData(
+    const analytics = await platformAPI.collectEngagementData(
       postId,
-      job?.platform,
-      this?.userId,
+      job.platform,
+      this.userId,
     );
 
     if (analytics) {
       // Store performance data for learning — evict oldest entry first when at cap.
-      if (this?.performanceData.size >= AutopilotEngine?.MAX_PERF_ENTRIES) {
-        const _oldestKey = this?.performanceData.keys().next().value;
-        if (oldestKey !== undefined) this?.performanceData.delete(oldestKey);
+      if (this.performanceData.size >= AutopilotEngine.MAX_PERF_ENTRIES) {
+        const oldestKey = this.performanceData.keys().next().value;
+        if (oldestKey !== undefined) this.performanceData.delete(oldestKey);
       }
       // Recover publish context from the durable map captured at publish time.
       // (The content was shift()-ed off contentQueue at publish, so a queue
       // lookup here would miss and fall back to synthetic now-2h / undefined.)
-      const _ctx = this?.publishContext.get(contentId);
-      this?.performanceData.set(contentId, {
-        platform: job?.platform,
+      const ctx = this.publishContext.get(contentId);
+      this.performanceData.set(contentId, {
+        platform: job.platform,
         engagement: analytics,
         timestamp: new Date(),
         publishedAt:
-          ctx?.publishedAt instanceof Date
-            ? ctx?.publishedAt
-            : new Date(Date?.now() - 2 * 60 * 60 * 1000),
-        contentType: ctx?.type ?? "social_post",
-        hashtags: ctx?.hashtags ?? [],
-        text: ctx?.text,
+          ctx.publishedAt instanceof Date
+            ? ctx.publishedAt
+            : new Date(Date.now() - 2 * 60 * 60 * 1000),
+        contentType: ctx.type ?? "social_post",
+        hashtags: ctx.hashtags ?? [],
+        text: ctx.text,
         postId,
-        topic: ctx?.topic,
+        topic: ctx.topic,
       });
       // NOTE: do NOT delete publishContext here. performance_analysis jobs
       // have maxRetries=2; if a downstream step throws after this point the
@@ -639,13 +639,13 @@ export class AutopilotEngine extends EventEmitter {
       // entries are reclaimed there.
 
       // Learn from performance
-      await this?.learnFromPerformance(contentId, analytics);
+      await this.learnFromPerformance(contentId, analytics);
 
-      this?.emit("performanceAnalyzed", { job, analytics });
+      this.emit("performanceAnalyzed", { job, analytics });
     }
   }
 
-  // AI Content Generation using Advanced Social AI (GPT-5?.2 Level)
+  // AI Content Generation using Advanced Social AI (GPT-5.2 Level)
   private async generateContentForAutopilot(params: {
     topic: string;
     platform: string;
@@ -666,33 +666,33 @@ export class AutopilotEngine extends EventEmitter {
       // already-supported generator knobs (variantCount, includeEmojis) are
       // touched, so the MaxCore contract is unchanged; absent an override these
       // fall back to the prior defaults.
-      const _contentOpt = evolutionRegistry?.getContentOptimization(
-        params?.platform.toLowerCase(),
+      const contentOpt = evolutionRegistry.getContentOptimization(
+        params.platform.toLowerCase(),
       );
-      const _variantCount =
-        typeof contentOpt?.variantCount === "number"
-          ? contentOpt?.variantCount
+      const variantCount =
+        typeof contentOpt.variantCount === "number"
+          ? contentOpt.variantCount
           : 3;
-      const _includeEmojis =
-        typeof contentOpt?.visualPriority === "boolean"
-          ? contentOpt?.visualPriority
+      const includeEmojis =
+        typeof contentOpt.visualPriority === "boolean"
+          ? contentOpt.visualPriority
           : true;
       // The remaining content_optimization knobs reshape the hashtags, caption
       // length, and call-to-action of the generated post. Pass them through only
       // when present; absent an override they stay undefined and the generator
       // uses its prior behavior.
-      const _hashtagStrategy = contentOpt?.hashtagStrategy as
+      const hashtagStrategy = contentOpt.hashtagStrategy as
         | "trending"
         | "niche"
         | "branded"
         | "balanced"
         | undefined;
-      const _captionLength = contentOpt?.captionLength as
+      const captionLength = contentOpt.captionLength as
         | "short"
         | "optimal"
         | "long"
         | undefined;
-      const _callToActionStrength = contentOpt?.callToActionStrength as
+      const callToActionStrength = contentOpt.callToActionStrength as
         | "low"
         | "medium"
         | "high"
@@ -703,7 +703,7 @@ export class AutopilotEngine extends EventEmitter {
       // is 'high', steer the generator's objective toward engagement-driving
       // content regardless of the configured business goals; 'standard' (or no
       // override) keeps the goal-derived objective. Fully reversible.
-      const _posting = evolutionRegistry?.getPostingOptimization(
+      const posting = evolutionRegistry?.getPostingOptimization(
         params?.platform.toLowerCase(),
       );
       let objective = this?.mapGoalsToObjective(params?.businessGoals);
@@ -711,18 +711,18 @@ export class AutopilotEngine extends EventEmitter {
         objective = "engagement";
       }
 
-      // Use Advanced Social AI for GPT-5?.2 level content generation
-      const _advancedResult =
+      // Use Advanced Social AI for GPT-5.2 level content generation
+      const advancedResult =
         await advancedSocialAIService?.generateAdvancedContent({
-          userId: this?.userId,
-          topic: params?.topic,
+          userId: this.userId,
+          topic: params.topic,
           platforms: [params?.platform.toLowerCase()],
           objective,
-          tone: this?.mapBrandVoiceToTone(params?.brandVoice),
-          targetAudience: params?.targetAudience
+          tone: this.mapBrandVoiceToTone(params?.brandVoice),
+          targetAudience: params.targetAudience
             ?.toLowerCase()
             .replace(/\s+/g, "_"),
-          contentType: this?.mapContentType(params?.contentType),
+          contentType: this.mapContentType(params?.contentType),
           includeHashtags: true,
           includeEmojis,
           variantCount,
@@ -732,15 +732,15 @@ export class AutopilotEngine extends EventEmitter {
         });
 
       logger?.info(
-        `[Autopilot] Generated content with Advanced AI: score=${advancedResult?.scoring.overall?.toFixed(1)}, viral=${advancedResult?.viralPotential.score?.toFixed(1)}`,
+        `[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult?.viralPotential.score?.toFixed(1)}`,
       );
 
       return {
-        text: advancedResult?.primary.body,
-        hashtags: advancedResult?.primary.hashtags,
-        hook: advancedResult?.primary.hook,
-        cta: advancedResult?.primary.callToAction,
-        viralScore: advancedResult?.viralPotential.score,
+        text: advancedResult.primary.body,
+        hashtags: advancedResult.primary.hashtags,
+        hook: advancedResult.primary.hook,
+        cta: advancedResult.primary.callToAction,
+        viralScore: advancedResult.viralPotential.score,
       };
     } catch (error) {
       // Advanced Social AI routes exclusively through MaxCore. If it fails,
@@ -760,7 +760,7 @@ export class AutopilotEngine extends EventEmitter {
   private mapGoalsToObjective(
     goals: string[],
   ): "awareness" | "engagement" | "conversions" | "viral" {
-    const _goalsLower = goals?.map((g) => g?.toLowerCase()).join(" ");
+    const goalsLower = goals?.map((g) => g?.toLowerCase()).join(" ");
     if (
       goalsLower?.includes("sales") ||
       goalsLower?.includes("revenue") ||
@@ -790,7 +790,7 @@ export class AutopilotEngine extends EventEmitter {
     | "inspirational"
     | "humorous"
     | "storytelling" {
-    const _voiceLower = brandVoice?.toLowerCase();
+    const voiceLower = brandVoice?.toLowerCase();
     if (voiceLower === "professional") return "professional";
     if (voiceLower === "energetic") return "energetic";
     if (voiceLower === "informative") return "professional";
@@ -808,7 +808,7 @@ export class AutopilotEngine extends EventEmitter {
     | "engagement"
     | "promotional"
     | "storytelling" {
-    const _typeLower = contentType?.toLowerCase();
+    const typeLower = contentType?.toLowerCase();
     if (typeLower === "announcements" || typeLower === "announcement")
       return "announcement";
     if (typeLower === "behind-the-scenes" || typeLower === "bts")
@@ -830,12 +830,12 @@ export class AutopilotEngine extends EventEmitter {
     // getOptimalPostingTimes(), getContentPatternWeights() and the
     // recommendations engine — so every published piece of content now
     // measurably tightens the feedback loop for this artist.
-    const _a = (analytics ?? {}) as Record<string, unknown>;
-    const _cached = this?.performanceData.get(contentId) as
+    const a = (analytics ?? {}) as Record<string, unknown>;
+    const cached = this?.performanceData.get(contentId) as
       | Record<string, unknown>
       | undefined;
-    const _platform = String(cached?.platform ?? a?.platform ?? "unknown");
-    const _engagementRate = Number(a?.engagementRate ?? 0);
+    const platform = String(cached?.platform ?? a?.platform ?? "unknown");
+    const engagementRate = Number(a?.engagementRate ?? 0);
 
     try {
       await autopilotLearningService?.recordPerformance(
@@ -843,12 +843,12 @@ export class AutopilotEngine extends EventEmitter {
         {
           platform,
           contentType: String(cached?.contentType ?? "social_post"),
-          hookType: cached?.hookType ? String(cached?.hookType) : undefined,
-          hashtags: Array?.isArray(cached?.hashtags)
+          hookType: cached.hookType ? String(cached?.hookType) : undefined,
+          hashtags: Array.isArray(cached?.hashtags)
             ? (cached!.hashtags as string[])
             : [],
-          contentText: cached?.text ? String(cached?.text) : undefined,
-          postId: cached?.postId ? String(cached?.postId) : undefined,
+          contentText: cached.text ? String(cached?.text) : undefined,
+          postId: cached.postId ? String(cached?.postId) : undefined,
           postedAt:
             cached?.publishedAt instanceof Date
               ? (cached?.publishedAt as Date)
@@ -877,7 +877,7 @@ export class AutopilotEngine extends EventEmitter {
       logger?.info(
         `High performing content detected: ${contentId} (${engagementRate}% engagement)`,
       );
-    } else if (engagementRate < this?.config.engagementThreshold * 0?.5) {
+    } else if (engagementRate < this?.config.engagementThreshold * 0.5) {
       logger?.info(
         `Low performing content detected: ${contentId} (${engagementRate}% engagement)`,
       );
@@ -893,19 +893,19 @@ export class AutopilotEngine extends EventEmitter {
     failedJobs: number;
     nextScheduledJob?: Date;
   }> {
-    const _jobs = Array?.from(this?.jobs.values());
-    const _pendingJobs = jobs?.filter((j) => j?.status === "pending");
-    const _nextJob = pendingJobs?.sort(
+    const jobs = Array?.from(this?.jobs.values());
+    const pendingJobs = jobs?.filter((j) => j?.status === "pending");
+    const nextJob = pendingJobs?.sort(
       (a, b) => a?.scheduledAt.getTime() - b?.scheduledAt.getTime(),
     )[0];
 
     return {
-      isRunning: this?.isRunning,
-      totalJobs: jobs?.length,
-      pendingJobs: pendingJobs?.length,
-      completedJobs: jobs?.filter((j) => j?.status === "completed").length,
-      failedJobs: jobs?.filter((j) => j?.status === "failed").length,
-      nextScheduledJob: nextJob?.scheduledAt,
+      isRunning: this.isRunning,
+      totalJobs: jobs.length,
+      pendingJobs: pendingJobs.length,
+      completedJobs: jobs.filter((j) => j?.status === "completed").length,
+      failedJobs: jobs.filter((j) => j?.status === "failed").length,
+      nextScheduledJob: nextJob.scheduledAt,
     };
   }
 
@@ -934,4 +934,4 @@ export class AutopilotEngine extends EventEmitter {
   }
 }
 
-export const _autopilotEngine = new AutopilotEngine();
+export const autopilotEngine = new AutopilotEngine();

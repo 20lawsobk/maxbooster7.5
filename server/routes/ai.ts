@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
-import { aiModels, aiModelVersions } from "../../shared/schema?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
+import { aiModels, aiModelVersions } from "../../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import {
   unifiedAIController,
@@ -12,11 +12,11 @@ import {
   type AdOptimizationOptions,
   type EngagementPredictionOptions,
   type ForecastOptions,
-} from "../services/unifiedAIController?.js";
-import { aiRateLimiter } from "../middleware/rateLimiter?.js";
-import { notificationService } from "../services/notificationService?.js";
+} from "../services/unifiedAIController.js";
+import { aiRateLimiter } from "../middleware/rateLimiter.js";
+import { notificationService } from "../services/notificationService.js";
 
-const _router = Router();
+const router = Router();
 
 router?.use(aiRateLimiter);
 
@@ -25,13 +25,13 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _VALID_TONES = [
+      const VALID_TONES = [
         "professional",
         "casual",
         "energetic",
         "promotional",
       ] as const;
-      const _VALID_PLATFORMS = [
+      const VALID_PLATFORMS = [
         "twitter",
         "instagram",
         "tiktok",
@@ -39,7 +39,7 @@ router?.post(
         "facebook",
         "linkedin",
       ] as const;
-      const _VALID_CONTENT_TYPES = [
+      const VALID_CONTENT_TYPES = [
         "release",
         "behind-the-scenes",
         "announcement",
@@ -47,19 +47,19 @@ router?.post(
         "promotional",
       ] as const;
 
-      const _rawTone = req?.body.tone as string;
-      const _rawPlatform = req?.body.platform as string;
-      const _rawContentType = req?.body.contentType as string;
+      const rawTone = req?.body.tone as string;
+      const rawPlatform = req?.body.platform as string;
+      const rawContentType = req?.body.contentType as string;
 
-      const _tone = (VALID_TONES as readonly string[]).includes(rawTone)
+      const tone = (VALID_TONES as readonly string[]).includes(rawTone)
         ? (rawTone as (typeof VALID_TONES)[number])
         : "casual";
-      const _platform = (VALID_PLATFORMS as readonly string[]).includes(
+      const platform = (VALID_PLATFORMS as readonly string[]).includes(
         rawPlatform,
       )
         ? (rawPlatform as (typeof VALID_PLATFORMS)[number])
         : "instagram";
-      const _contentType = (VALID_CONTENT_TYPES as readonly string[]).includes(
+      const contentType = (VALID_CONTENT_TYPES as readonly string[]).includes(
         rawContentType,
       )
         ? (rawContentType as (typeof VALID_CONTENT_TYPES)[number])
@@ -69,27 +69,27 @@ router?.post(
         tone,
         platform,
         contentType,
-        topic: req?.body.topic,
-        maxLength: req?.body.maxLength,
-        genre: req?.body.genre,
-        trackTitle: req?.body.trackTitle,
-        artistName: req?.body.artistName,
-        customPrompt: req?.body.customPrompt,
-        userId: req?.user?.id,
-        projectId: req?.body.projectId,
+        topic: req.body.topic,
+        maxLength: req.body.maxLength,
+        genre: req.body.genre,
+        trackTitle: req.body.trackTitle,
+        artistName: req.body.artistName,
+        customPrompt: req.body.customPrompt,
+        userId: req.user?.id,
+        projectId: req.body.projectId,
       };
 
-      const _result = await unifiedAIController?.generateContent(options);
+      const result = await unifiedAIController?.generateContent(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result?.error });
+        return res?.status(500).json({ error: result.error });
       }
 
       res?.json({
         success: true,
-        data: result?.data,
-        processingTimeMs: result?.processingTimeMs,
-        confidence: result?.confidence,
+        data: result.data,
+        processingTimeMs: result.processingTimeMs,
+        confidence: result.confidence,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Content generation route error:");
@@ -125,17 +125,17 @@ router?.post(
         aspects,
       };
 
-      const _result = await unifiedAIController?.analyzeSentiment(options);
+      const result = await unifiedAIController?.analyzeSentiment(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result?.error });
+        return res?.status(500).json({ error: result.error });
       }
 
       res?.json({
         success: true,
-        data: result?.data,
-        processingTimeMs: result?.processingTimeMs,
-        confidence: result?.confidence,
+        data: result.data,
+        processingTimeMs: result.processingTimeMs,
+        confidence: result.confidence,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Sentiment analysis route error:");
@@ -161,24 +161,24 @@ router?.post(
       }
 
       const options: RecommendationOptions = {
-        userId: req?.user?.id,
+        userId: req.user?.id,
         type,
         seedIds,
         limit: limit ?? 20,
-        hybridWeight: hybridWeight ?? 0?.5,
+        hybridWeight: hybridWeight ?? 0.5,
       };
 
-      const _result = await unifiedAIController?.getRecommendations(options);
+      const result = await unifiedAIController?.getRecommendations(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result?.error });
+        return res?.status(500).json({ error: result.error });
       }
 
       res?.json({
         success: true,
-        data: result?.data,
-        processingTimeMs: result?.processingTimeMs,
-        confidence: result?.confidence,
+        data: result.data,
+        processingTimeMs: result.processingTimeMs,
+        confidence: result.confidence,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Recommendations route error:");
@@ -216,19 +216,19 @@ router?.post(
           });
       }
 
-      const _defaultMetrics = {
-        ctr: 0?.02,
-        cvr: 0?.05,
-        roas: 1?.5,
+      const defaultMetrics = {
+        ctr: 0.02,
+        cvr: 0.05,
+        roas: 1.5,
         spend: 0,
         revenue: 0,
         impressions: 0,
         clicks: 0,
         conversions: 0,
-        cpc: 0?.5,
+        cpc: 0.5,
         cpa: 10,
       };
-      const _defaultTargeting = {
+      const defaultTargeting = {
         ageMin: 18,
         ageMax: 65,
         interests: [],
@@ -238,18 +238,18 @@ router?.post(
         lookalikes: [],
         excludedAudiences: [],
       };
-      const _enrichedCampaign = {
+      const enrichedCampaign = {
         ...campaign,
-        metrics: campaign?.metrics || defaultMetrics,
-        targeting: campaign?.targeting || defaultTargeting,
-        creatives: campaign?.creatives || [],
-        budget: campaign?.budget || 100,
-        dailyBudget: campaign?.dailyBudget || 10,
-        historicalData: campaign?.historicalData || [],
-        platform: campaign?.platform || "instagram",
-        objective: campaign?.objective || "engagement",
-        status: campaign?.status || "active",
-        startDate: campaign?.startDate || new Date().toISOString(),
+        metrics: campaign.metrics || defaultMetrics,
+        targeting: campaign.targeting || defaultTargeting,
+        creatives: campaign.creatives || [],
+        budget: campaign.budget || 100,
+        dailyBudget: campaign.dailyBudget || 10,
+        historicalData: campaign.historicalData || [],
+        platform: campaign.platform || "instagram",
+        objective: campaign.objective || "engagement",
+        status: campaign.status || "active",
+        startDate: campaign.startDate || new Date().toISOString(),
         endDate:
           campaign?.endDate ||
           new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -262,17 +262,17 @@ router?.post(
         forecastPeriod,
       };
 
-      const _result = await unifiedAIController?.optimizeAd(options);
+      const result = await unifiedAIController?.optimizeAd(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result?.error });
+        return res?.status(500).json({ error: result.error });
       }
 
       res?.json({
         success: true,
-        data: result?.data,
-        processingTimeMs: result?.processingTimeMs,
-        confidence: result?.confidence,
+        data: result.data,
+        processingTimeMs: result.processingTimeMs,
+        confidence: result.confidence,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Ad optimization route error:");
@@ -313,33 +313,33 @@ router?.post(
       const options: EngagementPredictionOptions = {
         platform,
         content: {
-          text: content?.text ?? "",
-          contentType: content?.contentType ?? "text",
-          hashtags: content?.hashtags ?? [],
-          topics: content?.topics ?? [],
-          hasEmoji: content?.hasEmoji ?? false,
-          scheduledTime: content?.scheduledTime,
+          text: content.text ?? "",
+          contentType: content.contentType ?? "text",
+          hashtags: content.hashtags ?? [],
+          topics: content.topics ?? [],
+          hasEmoji: content.hasEmoji ?? false,
+          scheduledTime: content.scheduledTime,
         },
         action,
         postsPerWeek,
       };
 
-      const _result = await unifiedAIController?.predictEngagement(options);
+      const result = await unifiedAIController?.predictEngagement(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result?.error });
+        return res?.status(500).json({ error: result.error });
       }
 
       if (action === "viral_potential" && result?.data && req?.user?.id) {
         const score: number =
           (result?.data as Record<string, unknown>).overallScore ?? 0;
-        if (score >= 0?.75) {
-          const _pct = Math?.round(score * 100);
-          const _platformLabel =
+        if (score >= 0.75) {
+          const pct = Math?.round(score * 100);
+          const platformLabel =
             platform?.charAt(0).toUpperCase() + platform?.slice(1);
           notificationService
             .send({
-              userId: req?.user.id,
+              userId: req.user.id,
               type: "platform_trending_topic",
               title: `🔥 High Viral Potential Detected on ${platformLabel}`,
               message: `Your content scored ${pct}% viral potential — above the 75% threshold. Post it soon to maximize reach while engagement conditions are favorable.`,
@@ -347,7 +347,7 @@ router?.post(
               metadata: {
                 platform,
                 viralScore: score,
-                confidence: result?.confidence,
+                confidence: result.confidence,
               },
             })
             .catch((err) =>
@@ -361,9 +361,9 @@ router?.post(
 
       res?.json({
         success: true,
-        data: result?.data,
-        processingTimeMs: result?.processingTimeMs,
-        confidence: result?.confidence,
+        data: result.data,
+        processingTimeMs: result.processingTimeMs,
+        confidence: result.confidence,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Social prediction route error:");
@@ -408,20 +408,20 @@ router?.post("/forecast", requireAuth, async (req: Request, res: Response) => {
       metric,
       horizon,
       historicalData,
-      timestamps: timestamps?.map((t: string) => new Date(t)),
+      timestamps: timestamps.map((t: string) => new Date(t)),
     };
 
-    const _result = await unifiedAIController?.forecastMetrics(options);
+    const result = await unifiedAIController?.forecastMetrics(options);
 
     if (!result?.success) {
-      return res?.status(500).json({ error: result?.error });
+      return res?.status(500).json({ error: result.error });
     }
 
     res?.json({
       success: true,
-      data: result?.data,
-      processingTimeMs: result?.processingTimeMs,
-      confidence: result?.confidence,
+      data: result.data,
+      processingTimeMs: result.processingTimeMs,
+      confidence: result.confidence,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Forecast route error:");
@@ -431,13 +431,13 @@ router?.post("/forecast", requireAuth, async (req: Request, res: Response) => {
 
 router?.get("/health", requireAuth, async (_req: Request, res: Response) => {
   try {
-    const _health = await unifiedAIController?.getAIHealthStatus();
+    const health = await unifiedAIController?.getAIHealthStatus();
 
     // Python AI / external model services are optional probes — never block
     // the caller with a 503. Unhealthy AI services degrade gracefully and the
     // platform falls back to MaxCore. Return 207 (multi-status) at worst so
     // deployment health checks and uptime monitors stay green.
-    const _statusCode = health?.overall === "healthy" ? 200 : 207;
+    const statusCode = health?.overall === "healthy" ? 200 : 207;
 
     res?.status(statusCode).json({
       success: true,
@@ -466,7 +466,7 @@ router?.post(
     try {
       const { topic, genre, platform, tone, count } = req?.body;
 
-      const _hashtags = unifiedAIController?.generateHashtags({
+      const hashtags = unifiedAIController?.generateHashtags({
         topic,
         genre,
         platform,
@@ -498,7 +498,7 @@ router?.post(
           .json({ error: "Text is required for toxicity analysis" });
       }
 
-      const _result = unifiedAIController?.analyzeToxicity(text);
+      const result = unifiedAIController?.analyzeToxicity(text);
 
       res?.json({
         success: true,
@@ -524,7 +524,7 @@ router?.post(
           .json({ error: "Text is required for emotion detection" });
       }
 
-      const _result = unifiedAIController?.detectEmotions(text);
+      const result = unifiedAIController?.detectEmotions(text);
 
       res?.json({
         success: true,
@@ -539,11 +539,11 @@ router?.post(
 
 router?.get("/trends", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _platforms = req?.query.platforms
+    const platforms = req?.query.platforms
       ? (req?.query.platforms as string).split(",")
       : ["twitter", "instagram", "tiktok"];
 
-    const _trends = unifiedAIController?.detectTrends(
+    const trends = unifiedAIController?.detectTrends(
       platforms as Record<string, unknown>,
     );
 
@@ -572,7 +572,7 @@ router?.post(
           });
       }
 
-      const _adaptedContent = unifiedAIController?.adaptContent(
+      const adaptedContent = unifiedAIController?.adaptContent(
         content,
         originalPlatform,
         targetPlatform,
@@ -626,7 +626,7 @@ router?.get(
     try {
       const { modelId } = req?.params;
 
-      const _versions = await db
+      const versions = await db
         .select()
         .from(aiModelVersions)
         .where(eq(aiModelVersions?.modelId, modelId))
@@ -642,7 +642,7 @@ router?.get(
         data: {
           model: model || null,
           versions,
-          performance: model?.performance || {},
+          performance: model.performance || {},
         },
       });
     } catch (error) {
@@ -654,7 +654,7 @@ router?.get(
 
 router?.get("/stats", requireAuth, async (_req: Request, res: Response) => {
   try {
-    const _stats = unifiedAIController?.getServiceStats();
+    const stats = unifiedAIController?.getServiceStats();
 
     res?.json({
       success: true,
@@ -687,7 +687,7 @@ router?.post(
           .json({ error: "Valid timeframe is required (7d, 30d, 90d)" });
       }
 
-      const _prediction = await unifiedAIController?.predictAnalyticsMetric({
+      const prediction = await unifiedAIController?.predictAnalyticsMetric({
         metric,
         timeframe,
       });
@@ -705,7 +705,7 @@ router?.post(
 
 router?.get("/insights", requireAuth, async (_req: Request, res: Response) => {
   try {
-    const _insights = await unifiedAIController?.generateInsights();
+    const insights = await unifiedAIController?.generateInsights();
 
     res?.json({
       success: true,
@@ -719,7 +719,7 @@ router?.get("/insights", requireAuth, async (_req: Request, res: Response) => {
 
 router?.get("/anomalies", requireAuth, async (_req: Request, res: Response) => {
   try {
-    const _anomalies = await unifiedAIController?.detectAnomalies();
+    const anomalies = await unifiedAIController?.detectAnomalies();
 
     res?.json({
       success: true,
@@ -736,7 +736,7 @@ router?.post(
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      const _prediction = await unifiedAIController?.predictChurn();
+      const prediction = await unifiedAIController?.predictChurn();
 
       res?.json({
         success: true,
@@ -756,7 +756,7 @@ router?.post(
     try {
       const { timeframe } = req?.body;
 
-      const _forecast = await unifiedAIController?.forecastRevenue(
+      const forecast = await unifiedAIController?.forecastRevenue(
         timeframe || "30d",
       );
 
@@ -793,7 +793,7 @@ router?.post(
         return res?.status(400).json({ error: "Content with text is required" });
       }
 
-      const _result = await unifiedAIController?.optimizeOrganicGrowth({
+      const result = await unifiedAIController?.optimizeOrganicGrowth({
         profiles,
         content,
         goals: goals || {},
@@ -824,15 +824,15 @@ router?.post(
           .json({ error: "Platform results data is required" });
       }
 
-      const _result = await unifiedAIController?.calculateOrganicROI({
+      const result = await unifiedAIController?.calculateOrganicROI({
         platformResults,
-        totalReach: Object?.values(
+        totalReach: Object.values(
           platformResults as Record<string, { impressions: number }>,
         ).reduce(
           (sum: number, p: { impressions: number }) => sum + p?.impressions,
           0,
         ),
-        totalEngagements: Object?.values(
+        totalEngagements: Object.values(
           platformResults as Record<string, { engagements: number }>,
         ).reduce(
           (sum: number, p: { engagements: number }) => sum + p?.engagements,
@@ -871,7 +871,7 @@ router?.post(
           .json({ error: "Content queue array is required" });
       }
 
-      const _result = await unifiedAIController?.generateOrganicSchedule({
+      const result = await unifiedAIController?.generateOrganicSchedule({
         profiles,
         contentQueue,
         goals: goals || {},
@@ -894,7 +894,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _networkAnalysis =
+      const networkAnalysis =
         await unifiedAIController?.analyzePersonalAdNetwork(req?.user?.id);
 
       res?.json({
@@ -913,22 +913,22 @@ router?.get(
 // Port 8008 (api_server_v4?.py) is the primary content generation gateway.
 // These routes expose its training state and simulator progress to the frontend.
 
-const _DIT24_BASE = `http://localhost:${process?.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+const DIT24_BASE = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
 
 router?.get(
   "/diffusion/status",
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      const _ctrl = await fetch(`${DIT24_BASE}/status`, {
-        signal: AbortSignal?.timeout(5_000),
+      const ctrl = await fetch(`${DIT24_BASE}/status`, {
+        signal: AbortSignal.timeout(5_000),
       });
       if (!ctrl?.ok) {
         return res
           .status(502)
           .json({ error: "Diffusion gateway unavailable", port: 8008 });
       }
-      const _data = await ctrl?.json();
+      const data = await ctrl?.json();
       res?.json({ success: true, data });
     } catch (err) {
       res
@@ -947,15 +947,15 @@ router?.get(
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      const _ctrl = await fetch(`${DIT24_BASE}/train/simulator/status`, {
-        signal: AbortSignal?.timeout(5_000),
+      const ctrl = await fetch(`${DIT24_BASE}/train/simulator/status`, {
+        signal: AbortSignal.timeout(5_000),
       });
       if (!ctrl?.ok) {
         return res
           .status(502)
           .json({ error: "Simulator endpoint unavailable", port: 8008 });
       }
-      const _data = await ctrl?.json();
+      const data = await ctrl?.json();
       res?.json({ success: true, data });
     } catch (err) {
       res
@@ -971,10 +971,10 @@ router?.get(
 
 router?.get("/diffusion/ready", async (_req: Request, res: Response) => {
   try {
-    const _ctrl = await fetch(`${DIT24_BASE}/ready`, {
-      signal: AbortSignal?.timeout(3_000),
+    const ctrl = await fetch(`${DIT24_BASE}/ready`, {
+      signal: AbortSignal.timeout(3_000),
     });
-    const _data = ctrl?.ok ? await ctrl?.json() : { ready: false };
+    const data = ctrl?.ok ? await ctrl?.json() : { ready: false };
     res?.json({ success: true, data });
   } catch {
     res?.json({

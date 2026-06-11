@@ -1,9 +1,9 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { statusPageServices, statusPageIncidents, statusPageIncidentServices, statusPageIncidentUpdates, statusPageUptimeMetrics, statusPageSubscribers, type StatusPageService, type StatusPageIncident, type StatusPageIncidentUpdate, type StatusPageSubscriber, type InsertStatusPageService } from "@shared/schema";
 import { eq, and, desc, gte, isNull, or } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
-import { emailService } from "./emailService?.js";
+import { emailService } from "./emailService.js";
 
 export type ServiceStatus =
   | "operational"
@@ -84,7 +84,7 @@ export class StatusPageService {
       .insert(statusPageServices)
       .values({
         ...service,
-        slug: this?.generateSlug(service?.name),
+        slug: this.generateSlug(service?.name),
       })
       .returning();
 
@@ -170,11 +170,11 @@ export class StatusPageService {
   }
 
   async getStatusSummary(): Promise<ServiceStatusSummary> {
-    const _services = await this?.getAllServices(true);
-    const _activeIncidents = await this?.getActiveIncidents();
-    const _scheduledMaintenance = await this?.getScheduledMaintenance();
+    const services = await this?.getAllServices(true);
+    const activeIncidents = await this?.getActiveIncidents();
+    const scheduledMaintenance = await this?.getScheduledMaintenance();
 
-    const _overallStatus = this?.calculateOverallStatus(services);
+    const overallStatus = this?.calculateOverallStatus(services);
 
     return {
       services,
@@ -190,35 +190,35 @@ export class StatusPageService {
     const [incident] = await db
       .insert(statusPageIncidents)
       .values({
-        title: request?.title,
-        status: request?.status || "investigating",
-        impact: request?.impact || "minor",
-        message: request?.message,
-        isScheduled: request?.isScheduled || false,
-        scheduledFor: request?.scheduledFor,
-        scheduledUntil: request?.scheduledUntil,
-        createdBy: request?.createdBy,
-        startedAt: request?.isScheduled ? request?.scheduledFor : new Date(),
+        title: request.title,
+        status: request.status || "investigating",
+        impact: request.impact || "minor",
+        message: request.message,
+        isScheduled: request.isScheduled || false,
+        scheduledFor: request.scheduledFor,
+        scheduledUntil: request.scheduledUntil,
+        createdBy: request.createdBy,
+        startedAt: request.isScheduled ? request?.scheduledFor : new Date(),
       })
       .returning();
 
     for (const serviceId of request?.serviceIds) {
       await db?.insert(statusPageIncidentServices).values({
-        incidentId: incident?.id,
+        incidentId: incident.id,
         serviceId,
       });
 
-      const _impactStatus = this?.impactToServiceStatus(
+      const impactStatus = this?.impactToServiceStatus(
         request?.impact || "minor",
       );
       await this?.updateServiceStatus(serviceId, impactStatus);
     }
 
     await db?.insert(statusPageIncidentUpdates).values({
-      incidentId: incident?.id,
-      status: request?.status || "investigating",
-      message: request?.message,
-      createdBy: request?.createdBy,
+      incidentId: incident.id,
+      status: request.status || "investigating",
+      message: request.message,
+      createdBy: request.createdBy,
     });
 
     logger?.info(`Incident created: ${incident?.id} - ${incident?.title}`);
@@ -234,12 +234,12 @@ export class StatusPageService {
     incidentId: string,
     request: UpdateIncidentRequest,
   ): Promise<IncidentWithUpdates> {
-    const _incident = await this?.getIncident(incidentId);
+    const incident = await this?.getIncident(incidentId);
     if (!incident) {
       throw new Error("Incident not found");
     }
 
-    const _newStatus = request?.resolve
+    const newStatus = request?.resolve
       ? "resolved"
       : request?.status || incident?.status;
 
@@ -247,8 +247,8 @@ export class StatusPageService {
       .update(statusPageIncidents)
       .set({
         status: newStatus,
-        isResolved: request?.resolve || false,
-        resolvedAt: request?.resolve ? new Date() : undefined,
+        isResolved: request.resolve || false,
+        resolvedAt: request.resolve ? new Date() : undefined,
         updatedAt: new Date(),
       })
       .where(eq(statusPageIncidents?.id, incidentId))
@@ -257,12 +257,12 @@ export class StatusPageService {
     await db?.insert(statusPageIncidentUpdates).values({
       incidentId,
       status: newStatus,
-      message: request?.message,
-      createdBy: request?.createdBy,
+      message: request.message,
+      createdBy: request.createdBy,
     });
 
     if (request?.resolve) {
-      const _affectedServiceIds = await this?.getAffectedServiceIds(incidentId);
+      const affectedServiceIds = await this?.getAffectedServiceIds(incidentId);
       for (const serviceId of affectedServiceIds) {
         await this?.updateServiceStatus(serviceId, "operational");
       }
@@ -293,23 +293,23 @@ export class StatusPageService {
   async getIncidentWithDetails(
     incidentId: string,
   ): Promise<IncidentWithUpdates | null> {
-    const _incident = await this?.getIncident(incidentId);
+    const incident = await this?.getIncident(incidentId);
     if (!incident) return null;
 
-    const _updates = await db
+    const updates = await db
       .select()
       .from(statusPageIncidentUpdates)
       .where(eq(statusPageIncidentUpdates?.incidentId, incidentId))
       .orderBy(desc(statusPageIncidentUpdates?.createdAt));
 
-    const _serviceLinks = await db
-      .select({ serviceId: statusPageIncidentServices?.serviceId })
+    const serviceLinks = await db
+      .select({ serviceId: statusPageIncidentServices.serviceId })
       .from(statusPageIncidentServices)
       .where(eq(statusPageIncidentServices?.incidentId, incidentId));
 
     const affectedServices: StatusPageService[] = [];
     for (const link of serviceLinks) {
-      const _service = await this?.getService(link?.serviceId);
+      const service = await this?.getService(link?.serviceId);
       if (service) affectedServices?.push(service);
     }
 
@@ -344,7 +344,7 @@ export class StatusPageService {
   }
 
   async getIncidentHistory(days: number = 90): Promise<StatusPageIncident[]> {
-    const _since = new Date();
+    const since = new Date();
     since?.setDate(since?.getDate() - days);
 
     return db
@@ -358,15 +358,15 @@ export class StatusPageService {
     serviceId: string,
     days: number = 90,
   ): Promise<UptimeHistory> {
-    const _service = await this?.getService(serviceId);
+    const service = await this?.getService(serviceId);
     if (!service) {
       throw new Error("Service not found");
     }
 
-    const _since = new Date();
+    const since = new Date();
     since?.setDate(since?.getDate() - days);
 
-    const _metrics = await db
+    const metrics = await db
       .select()
       .from(statusPageUptimeMetrics)
       .where(
@@ -377,20 +377,20 @@ export class StatusPageService {
       )
       .orderBy(desc(statusPageUptimeMetrics?.date));
 
-    const _dailyUptime = metrics?.map((m) => ({
-      date: m?.date.toISOString().split("T")[0],
+    const dailyUptime = metrics?.map((m) => ({
+      date: m.date.toISOString().split("T")[0],
       uptimePercentage: Number(m?.uptimePercentage),
     }));
 
-    const _totalUptime = metrics?.reduce(
+    const totalUptime = metrics?.reduce(
       (sum, m) => sum + Number(m?.uptimePercentage),
       0,
     );
-    const _averageUptime =
+    const averageUptime =
       metrics?.length > 0 ? totalUptime / metrics?.length : 100;
 
-    const _last30Days = metrics?.slice(0, 30);
-    const _last30DaysUptime =
+    const last30Days = metrics?.slice(0, 30);
+    const last30DaysUptime =
       last30Days?.length > 0
         ? last30Days?.reduce((sum, m) => sum + Number(m?.uptimePercentage), 0) /
           last30Days?.length
@@ -398,16 +398,16 @@ export class StatusPageService {
 
     return {
       serviceId,
-      serviceName: service?.name,
+      serviceName: service.name,
       dailyUptime,
-      averageUptime: Math?.round(averageUptime * 100) / 100,
-      last30DaysUptime: Math?.round(last30DaysUptime * 100) / 100,
-      last90DaysUptime: Math?.round(averageUptime * 100) / 100,
+      averageUptime: Math.round(averageUptime * 100) / 100,
+      last30DaysUptime: Math.round(last30DaysUptime * 100) / 100,
+      last90DaysUptime: Math.round(averageUptime * 100) / 100,
     };
   }
 
   async subscribe(request: SubscribeRequest): Promise<StatusPageSubscriber> {
-    const _existing = await db
+    const existing = await db
       .select()
       .from(statusPageSubscribers)
       .where(eq(statusPageSubscribers?.email, request?.email));
@@ -416,20 +416,20 @@ export class StatusPageService {
       throw new Error("Email already subscribed");
     }
 
-    const _verificationToken = crypto?.randomBytes(32).toString("hex");
-    const _unsubscribeToken = crypto?.randomBytes(32).toString("hex");
+    const verificationToken = crypto?.randomBytes(32).toString("hex");
+    const unsubscribeToken = crypto?.randomBytes(32).toString("hex");
 
     const [subscriber] = await db
       .insert(statusPageSubscribers)
       .values({
-        email: request?.email,
-        userId: request?.userId,
-        notifyIncidents: request?.notifyIncidents ?? true,
-        notifyMaintenance: request?.notifyMaintenance ?? true,
+        email: request.email,
+        userId: request.userId,
+        notifyIncidents: request.notifyIncidents ?? true,
+        notifyMaintenance: request.notifyMaintenance ?? true,
         verificationToken,
         unsubscribeToken,
         isVerified: !!request?.userId,
-        verifiedAt: request?.userId ? new Date() : undefined,
+        verifiedAt: request.userId ? new Date() : undefined,
       })
       .returning();
 
@@ -489,10 +489,10 @@ export class StatusPageService {
     serviceId: string,
     isUp: boolean,
   ): Promise<void> {
-    const _today = new Date();
+    const today = new Date();
     today?.setHours(0, 0, 0, 0);
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(statusPageUptimeMetrics)
       .where(
@@ -503,10 +503,10 @@ export class StatusPageService {
       );
 
     if (existing?.length > 0) {
-      const _metric = existing[0];
-      const _newTotal = (metric?.totalChecks || 0) + 1;
-      const _newSuccessful = (metric?.successfulChecks || 0) + (isUp ? 1 : 0);
-      const _newPercentage = (newSuccessful / newTotal) * 100;
+      const metric = existing[0];
+      const newTotal = (metric?.totalChecks || 0) + 1;
+      const newSuccessful = (metric?.successfulChecks || 0) + (isUp ? 1 : 0);
+      const newPercentage = (newSuccessful / newTotal) * 100;
 
       await db
         .update(statusPageUptimeMetrics)
@@ -522,14 +522,14 @@ export class StatusPageService {
         date: today,
         totalChecks: 1,
         successfulChecks: isUp ? 1 : 0,
-        uptimePercentage: isUp ? "100?.00" : "0?.00",
+        uptimePercentage: isUp ? "100.00" : "0.00",
       });
     }
   }
 
   private async getAffectedServiceIds(incidentId: string): Promise<string[]> {
-    const _links = await db
-      .select({ serviceId: statusPageIncidentServices?.serviceId })
+    const links = await db
+      .select({ serviceId: statusPageIncidentServices.serviceId })
       .from(statusPageIncidentServices)
       .where(eq(statusPageIncidentServices?.incidentId, incidentId));
 
@@ -543,7 +543,7 @@ export class StatusPageService {
     let worstPriority = 0;
 
     for (const service of services) {
-      const _priority = STATUS_PRIORITY[service?.status] || 0;
+      const priority = STATUS_PRIORITY[service?.status] || 0;
       if (priority > worstPriority) {
         worstPriority = priority;
         worstStatus = service?.status;
@@ -579,26 +579,26 @@ export class StatusPageService {
     incident: StatusPageIncident,
     type: "new" | "update" | "resolved",
   ): Promise<void> {
-    const _subscribers = await this?.getSubscribers();
+    const subscribers = await this?.getSubscribers();
 
-    const _relevantSubscribers = subscribers?.filter((s) => {
+    const relevantSubscribers = subscribers?.filter((s) => {
       if (incident?.isScheduled) return s?.notifyMaintenance;
       return s?.notifyIncidents;
     });
 
-    const _subject =
+    const subject =
       type === "new"
         ? `[Incident] ${incident?.title}`
         : type === "resolved"
           ? `[Resolved] ${incident?.title}`
           : `[Update] ${incident?.title}`;
 
-    const _statusLabel = type === "resolved" ? "Resolved" : incident?.status;
+    const statusLabel = type === "resolved" ? "Resolved" : incident?.status;
 
     for (const subscriber of relevantSubscribers) {
       try {
         await emailService?.sendEmail({
-          to: subscriber?.email,
+          to: subscriber.email,
           subject,
           html: `
             <h2>${incident?.title}</h2>
@@ -607,7 +607,7 @@ export class StatusPageService {
             <p>${incident?.message}</p>
             <hr>
             <p><small>
-              <a href="/status/unsubscribe?token=${subscriber?.unsubscribeToken}">Unsubscribe</a> from status updates
+              <a href="/status/unsubscribe?token=${subscriber.unsubscribeToken}">Unsubscribe</a> from status updates
             </small></p>
           `,
         });
@@ -629,12 +629,12 @@ export class StatusPageService {
   ): Promise<void> {
     try {
       await emailService?.sendEmail({
-        to: subscriber?.email,
+        to: subscriber.email,
         subject: "Verify your status page subscription",
         html: `
           <h2>Confirm your subscription</h2>
           <p>Please click the link below to verify your email and start receiving status updates:</p>
-          <p><a href="/status/verify?token=${subscriber?.verificationToken}">Verify Email</a></p>
+          <p><a href="/status/verify?token=${subscriber.verificationToken}">Verify Email</a></p>
         `,
       });
     } catch (error) {
@@ -646,10 +646,10 @@ export class StatusPageService {
   }
 
   async initializeDefaultServices(): Promise<void> {
-    const _existingServices = await this?.getAllServices(false);
+    const existingServices = await this?.getAllServices(false);
     if (existingServices?.length > 0) return;
 
-    const _defaultServices = [
+    const defaultServices = [
       {
         name: "Web Application",
         category: "Core",
@@ -704,4 +704,4 @@ export class StatusPageService {
   }
 }
 
-export const _statusPageService = new StatusPageService();
+export const statusPageService = new StatusPageService();

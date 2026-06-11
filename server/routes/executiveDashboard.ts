@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { logger } from "../logger?.js";
-import { queueMonitor } from "../monitoring/queueMonitor?.js";
-import { aiModelManager } from "../services/aiModelManager?.js";
-import { metricsCollector } from "../monitoring/metricsCollector?.js";
-import { asyncHandler } from "../middleware/errorHandler?.js";
-import { requireAdmin } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { queueMonitor } from "../monitoring/queueMonitor.js";
+import { aiModelManager } from "../services/aiModelManager.js";
+import { metricsCollector } from "../monitoring/metricsCollector.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { requireAdmin } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 router?.use(requireAdmin);
 
@@ -25,26 +25,26 @@ router?.get(
         metricsCollector?.getDashboardData(),
       ]);
 
-      const _systemStatus = queueHealth?.healthy ? "OPERATIONAL" : "DEGRADED";
-      const _queueMetrics = queueHealth?.queues.values().next().value?.metrics;
+      const systemStatus = queueHealth?.healthy ? "OPERATIONAL" : "DEGRADED";
+      const queueMetrics = queueHealth?.queues.values().next().value?.metrics;
 
-      const _executiveDashboard = {
+      const executiveDashboard = {
         timestamp: new Date(),
 
         overallStatus: {
           status: systemStatus,
-          health: queueHealth?.healthy ? "Healthy" : "Needs Attention",
+          health: queueHealth.healthy ? "Healthy" : "Needs Attention",
           uptime: `${(process?.uptime() / 3600).toFixed(1)} hours`,
           lastChecked: new Date(),
         },
 
         businessMetrics: {
           autoPosting: {
-            status: queueHealth?.healthy ? "Active" : "Degraded",
-            postsScheduled: queueMetrics?.waiting || 0,
-            postsProcessing: queueMetrics?.active || 0,
-            postsCompleted: queueMetrics?.completed || 0,
-            postsFailed: queueMetrics?.failed || 0,
+            status: queueHealth.healthy ? "Active" : "Degraded",
+            postsScheduled: queueMetrics.waiting || 0,
+            postsProcessing: queueMetrics.active || 0,
+            postsCompleted: queueMetrics.completed || 0,
+            postsFailed: queueMetrics.failed || 0,
             successRate: queueMetrics
               ? (
                   (queueMetrics?.completed /
@@ -57,7 +57,7 @@ router?.get(
           aiSystems: {
             status: "Operational",
             socialMediaAI: {
-              active: aiMetrics?.socialAutopilot.currentSize > 0,
+              active: aiMetrics.socialAutopilot.currentSize > 0,
               utilizationLevel:
                 parseFloat(
                   (
@@ -70,7 +70,7 @@ router?.get(
                   : "Normal",
             },
             advertisingAI: {
-              active: aiMetrics?.advertisingAutopilot.currentSize > 0,
+              active: aiMetrics.advertisingAutopilot.currentSize > 0,
               utilizationLevel:
                 parseFloat(
                   (
@@ -93,15 +93,15 @@ router?.get(
                   ? "Good"
                   : "Needs Improvement",
             memoryUsage: `${dashboard?.summary.system?.avgMemoryMB.toFixed(0)}MB`,
-            memoryTrend: dashboard?.trends.memory,
+            memoryTrend: dashboard.trends.memory,
           },
         },
 
         keyIndicators: {
-          platformAvailability: queueHealth?.healthy ? "99?.9%" : "98?.0%",
+          platformAvailability: queueHealth.healthy ? "99.9%" : "98.0%",
           avgProcessingTime: `${dashboard?.summary.queue?.avgLatency.toFixed(0)}ms`,
           activeUsers: "N/A",
-          postsToday: queueMetrics?.completed || 0,
+          postsToday: queueMetrics.completed || 0,
         },
 
         trends: {
@@ -119,7 +119,7 @@ router?.get(
 
         alerts: {
           critical: 0,
-          warnings: dashboard?.trends.memory === "increasing" ? 1 : 0,
+          warnings: dashboard.trends.memory === "increasing" ? 1 : 0,
           info: 0,
         },
 
@@ -146,12 +146,12 @@ router?.get(
   "/health-summary",
   asyncHandler(async (_req, res) => {
     try {
-      const _queueHealth = await queueMonitor?.getHealthStatus();
+      const queueHealth = await queueMonitor?.getHealthStatus();
 
       res?.json({
         success: true,
-        status: queueHealth?.healthy ? "HEALTHY" : "DEGRADED",
-        message: queueHealth?.healthy
+        status: queueHealth.healthy ? "HEALTHY" : "DEGRADED",
+        message: queueHealth.healthy
           ? "All systems operational"
           : "Some systems require attention",
         timestamp: new Date(),

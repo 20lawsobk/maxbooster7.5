@@ -502,7 +502,7 @@ export function ApprovalDashboard() {
                 </Card>
               ))}
             </div>
-          ) : pendingApprovals?.posts?.length === 0 ? (
+          ) : pendingApprovals.posts?.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
                 No pending approvals
@@ -534,7 +534,7 @@ export function ApprovalDashboard() {
                 </Card>
               ))}
             </div>
-          ) : myPosts?.posts?.length === 0 ? (
+          ) : myPosts.posts?.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
                 No posts found

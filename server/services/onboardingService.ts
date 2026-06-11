@@ -1,12 +1,12 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import {
   userOnboarding,
   onboardingTasks,
   users,
   userStreaks,
-} from "../../shared/schema?.js";
+} from "../../shared/schema.js";
 import { eq, asc, and } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface OnboardingProgress {
   userId: string;
@@ -39,7 +39,7 @@ export interface OnboardingTaskWithStatus {
 class OnboardingService {
   async getOnboardingProgress(userId: string): Promise<OnboardingProgress> {
     try {
-      const _tasks = await db
+      const tasks = await db
         .select()
         .from(onboardingTasks)
         .orderBy(asc(onboardingTasks?.order));
@@ -64,32 +64,32 @@ class OnboardingService {
         userProgress = [newProgress];
       }
 
-      const _progress = userProgress[0];
-      const _completedSteps = (progress?.completedSteps as string[]) || [];
-      const _completedCount = completedSteps?.length;
-      const _totalSteps = tasks?.length;
-      const _completionPercentage =
+      const progress = userProgress[0];
+      const completedSteps = (progress?.completedSteps as string[]) || [];
+      const completedCount = completedSteps?.length;
+      const totalSteps = tasks?.length;
+      const completionPercentage =
         totalSteps > 0 ? Math?.round((completedCount / totalSteps) * 100) : 0;
 
       const tasksWithStatus: OnboardingTaskWithStatus[] = tasks?.map((task) => ({
-        id: task?.id,
-        name: task?.name,
-        description: task?.description,
-        category: task?.category,
-        points: task?.points || 0,
-        order: task?.order || 0,
-        isRequired: task?.isRequired || false,
-        actionUrl: task?.actionUrl,
-        icon: task?.icon,
-        completed: completedSteps?.includes(task?.id),
+        id: task.id,
+        name: task.name,
+        description: task.description,
+        category: task.category,
+        points: task.points || 0,
+        order: task.order || 0,
+        isRequired: task.isRequired || false,
+        actionUrl: task.actionUrl,
+        icon: task.icon,
+        completed: completedSteps.includes(task?.id),
       }));
 
-      const _recommendedNextStep = await this?.getRecommendedNextStep(
+      const recommendedNextStep = await this?.getRecommendedNextStep(
         userId,
         tasksWithStatus,
       );
 
-      const _loginStreakRow = await db
+      const loginStreakRow = await db
         .select()
         .from(userStreaks)
         .where(
@@ -99,19 +99,19 @@ class OnboardingService {
           ),
         )
         .limit(1);
-      const _loginStreak = loginStreakRow[0]?.currentStreak || 0;
+      const loginStreak = loginStreakRow[0]?.currentStreak || 0;
 
       return {
         userId,
-        currentStep: progress?.currentStep || 0,
+        currentStep: progress.currentStep || 0,
         totalSteps,
         completionPercentage,
         completedSteps,
-        totalPoints: progress?.totalPoints || 0,
+        totalPoints: progress.totalPoints || 0,
         dayStreak: loginStreak,
-        startedAt: progress?.startedAt,
-        completedAt: progress?.completedAt,
-        skippedAt: progress?.skippedAt,
+        startedAt: progress.startedAt,
+        completedAt: progress.completedAt,
+        skippedAt: progress.skippedAt,
         tasks: tasksWithStatus,
         recommendedNextStep,
       };
@@ -132,7 +132,7 @@ class OnboardingService {
     message: string;
   }> {
     try {
-      const _task = await db
+      const task = await db
         .select()
         .from(onboardingTasks)
         .where(eq(onboardingTasks?.id, stepId))
@@ -168,34 +168,34 @@ class OnboardingService {
         userProgress = [newProgress];
       }
 
-      const _progress = userProgress[0];
-      const _completedSteps = (progress?.completedSteps as string[]) || [];
+      const progress = userProgress[0];
+      const completedSteps = (progress?.completedSteps as string[]) || [];
 
       if (completedSteps?.includes(stepId)) {
         return {
           success: true,
           pointsAwarded: 0,
-          totalPoints: progress?.totalPoints || 0,
+          totalPoints: progress.totalPoints || 0,
           allCompleted: false,
           message: "Step already completed",
         };
       }
 
-      const _pointsAwarded = task[0].points || 0;
-      const _newCompletedSteps = [...completedSteps, stepId];
-      const _newTotalPoints = (progress?.totalPoints || 0) + pointsAwarded;
+      const pointsAwarded = task[0].points || 0;
+      const newCompletedSteps = [...completedSteps, stepId];
+      const newTotalPoints = (progress?.totalPoints || 0) + pointsAwarded;
 
-      const _allTasks = await db?.select().from(onboardingTasks).limit(200);
-      const _allCompleted = allTasks?.every((t) =>
+      const allTasks = await db?.select().from(onboardingTasks).limit(200);
+      const allCompleted = allTasks?.every((t) =>
         newCompletedSteps?.includes(t?.id),
       );
 
-      const _today = new Date();
-      const _lastActivity = progress?.lastActivityAt;
+      const today = new Date();
+      const lastActivity = progress?.lastActivityAt;
       let newDayStreak = progress?.dayStreak || 0;
 
       if (lastActivity) {
-        const _daysDiff = Math?.floor(
+        const daysDiff = Math?.floor(
           (today?.getTime() - lastActivity?.getTime()) / (1000 * 60 * 60 * 24),
         );
         if (daysDiff === 1) {
@@ -212,7 +212,7 @@ class OnboardingService {
         .set({
           completedSteps: newCompletedSteps,
           totalPoints: newTotalPoints,
-          currentStep: newCompletedSteps?.length,
+          currentStep: newCompletedSteps.length,
           dayStreak: newDayStreak,
           lastActivityAt: today,
           completedAt: allCompleted ? today : null,
@@ -225,7 +225,7 @@ class OnboardingService {
           .update(users)
           .set({
             onboardingCompleted: true,
-            onboardingStep: newCompletedSteps?.length,
+            onboardingStep: newCompletedSteps.length,
           })
           .where(eq(users?.id, userId));
       }
@@ -249,7 +249,7 @@ class OnboardingService {
     userId: string,
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const _existing = await db
+      const existing = await db
         .select()
         .from(userOnboarding)
         .where(eq(userOnboarding?.userId, userId))
@@ -299,41 +299,41 @@ class OnboardingService {
       let tasks = tasksWithStatus;
 
       if (!tasks) {
-        const _allTasks = await db
+        const allTasks = await db
           .select()
           .from(onboardingTasks)
           .orderBy(asc(onboardingTasks?.order));
 
-        const _userProgress = await db
+        const userProgress = await db
           .select()
           .from(userOnboarding)
           .where(eq(userOnboarding?.userId, userId))
           .limit(1);
 
-        const _completedSteps =
+        const completedSteps =
           (userProgress[0]?.completedSteps as string[]) || [];
 
         tasks = allTasks?.map((task) => ({
-          id: task?.id,
-          name: task?.name,
-          description: task?.description,
-          category: task?.category,
-          points: task?.points || 0,
-          order: task?.order || 0,
-          isRequired: task?.isRequired || false,
-          actionUrl: task?.actionUrl,
-          icon: task?.icon,
-          completed: completedSteps?.includes(task?.id),
+          id: task.id,
+          name: task.name,
+          description: task.description,
+          category: task.category,
+          points: task.points || 0,
+          order: task.order || 0,
+          isRequired: task.isRequired || false,
+          actionUrl: task.actionUrl,
+          icon: task.icon,
+          completed: completedSteps.includes(task?.id),
         }));
       }
 
-      const _incompleteTasks = tasks?.filter((t) => !t?.completed);
+      const incompleteTasks = tasks?.filter((t) => !t?.completed);
 
       if (incompleteTasks?.length === 0) {
         return null;
       }
 
-      const _requiredTasks = incompleteTasks?.filter((t) => t?.isRequired);
+      const requiredTasks = incompleteTasks?.filter((t) => t?.isRequired);
       if (requiredTasks?.length > 0) {
         return requiredTasks?.sort((a, b) => a?.order - b?.order)[0];
       }
@@ -345,9 +345,9 @@ class OnboardingService {
         "Explore Features": 4,
       };
 
-      const _sortedByPriorityAndPoints = incompleteTasks?.sort((a, b) => {
-        const _priorityA = categoryPriority[a?.category] || 99;
-        const _priorityB = categoryPriority[b?.category] || 99;
+      const sortedByPriorityAndPoints = incompleteTasks?.sort((a, b) => {
+        const priorityA = categoryPriority[a?.category] || 99;
+        const priorityB = categoryPriority[b?.category] || 99;
         if (priorityA !== priorityB) return priorityA - priorityB;
         if (b?.points !== a?.points) return b?.points - a?.points;
         return a?.order - b?.order;
@@ -362,21 +362,21 @@ class OnboardingService {
 
   async getTasks(): Promise<OnboardingTaskWithStatus[]> {
     try {
-      const _tasks = await db
+      const tasks = await db
         .select()
         .from(onboardingTasks)
         .orderBy(asc(onboardingTasks?.order));
 
       return tasks?.map((task) => ({
-        id: task?.id,
-        name: task?.name,
-        description: task?.description,
-        category: task?.category,
-        points: task?.points || 0,
-        order: task?.order || 0,
-        isRequired: task?.isRequired || false,
-        actionUrl: task?.actionUrl,
-        icon: task?.icon,
+        id: task.id,
+        name: task.name,
+        description: task.description,
+        category: task.category,
+        points: task.points || 0,
+        order: task.order || 0,
+        isRequired: task.isRequired || false,
+        actionUrl: task.actionUrl,
+        icon: task.icon,
         completed: false,
       }));
     } catch (error) {
@@ -387,13 +387,13 @@ class OnboardingService {
 
   async seedDefaultTasks(): Promise<void> {
     try {
-      const _existingTasks = await db?.select().from(onboardingTasks);
+      const existingTasks = await db?.select().from(onboardingTasks);
       if (existingTasks?.length > 0) {
         logger?.info("Onboarding tasks already seeded, skipping...");
         return;
       }
 
-      const _defaultTasks = [
+      const defaultTasks = [
         {
           name: "Complete your profile",
           description:
@@ -516,10 +516,10 @@ class OnboardingService {
 
   async ensureAITasksExist(): Promise<void> {
     try {
-      const _existingTasks = await db?.select().from(onboardingTasks);
-      const _existingNames = existingTasks?.map((t) => t?.name);
+      const existingTasks = await db?.select().from(onboardingTasks);
+      const existingNames = existingTasks?.map((t) => t?.name);
 
-      const _aiTasks = [
+      const aiTasks = [
         {
           name: "Try AI Music Generator",
           description:
@@ -555,7 +555,7 @@ class OnboardingService {
         },
       ];
 
-      const _tasksToInsert = aiTasks?.filter(
+      const tasksToInsert = aiTasks?.filter(
         (task) => !existingNames?.includes(task?.name),
       );
 
@@ -571,4 +571,4 @@ class OnboardingService {
   }
 }
 
-export const _onboardingService = new OnboardingService();
+export const onboardingService = new OnboardingService();

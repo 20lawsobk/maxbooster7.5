@@ -1,4 +1,4 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 enum CircuitState {
   CLOSED = "CLOSED",
@@ -26,7 +26,7 @@ interface CircuitStats {
 }
 
 export class CircuitBreaker {
-  private state: CircuitState = CircuitState?.CLOSED;
+  private state: CircuitState = CircuitState.CLOSED;
   private failures: number = 0;
   private successes: number = 0;
   private lastFailureTime: number | null = null;
@@ -39,13 +39,13 @@ export class CircuitBreaker {
   private name: string;
 
   constructor(name: string, config: Partial<CircuitBreakerConfig> = {}) {
-    this?.name = name;
-    this?.config = {
-      failureThreshold: config?.failureThreshold || 5,
-      successThreshold: config?.successThreshold || 2,
-      timeout: config?.timeout || 30000,
-      resetTimeout: config?.resetTimeout || 60000,
-      monitorInterval: config?.monitorInterval || 10000,
+    this.name = name;
+    this.config = {
+      failureThreshold: config.failureThreshold || 5,
+      successThreshold: config.successThreshold || 2,
+      timeout: config.timeout || 30000,
+      resetTimeout: config.resetTimeout || 60000,
+      monitorInterval: config.monitorInterval || 10000,
     };
   }
 
@@ -53,11 +53,11 @@ export class CircuitBreaker {
     fn: () => Promise<T>,
     fallback?: () => Promise<T>,
   ): Promise<T> {
-    this?.totalRequests++;
+    this.totalRequests++;
 
-    if (this?.state === CircuitState?.OPEN) {
+    if (this?.state === CircuitState.OPEN) {
       if (Date?.now() >= this?.nextAttempt) {
-        this?.state = CircuitState?.HALF_OPEN;
+        this.state = CircuitState.HALF_OPEN;
         logger?.info(`Circuit breaker ${this?.name} entering HALF_OPEN state`);
       } else {
         if (fallback) {
@@ -68,7 +68,7 @@ export class CircuitBreaker {
     }
 
     try {
-      const _result = await this?.executeWithTimeout(fn);
+      const result = await this?.executeWithTimeout(fn);
       this?.onSuccess();
       return result;
     } catch (error) {
@@ -82,7 +82,7 @@ export class CircuitBreaker {
 
   private async executeWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      const _timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         reject(new Error(`Circuit breaker ${this?.name} timeout exceeded`));
       }, this?.config.timeout);
 
@@ -99,15 +99,15 @@ export class CircuitBreaker {
   }
 
   private onSuccess(): void {
-    this?.totalSuccesses++;
-    this?.lastSuccessTime = Date?.now();
-    this?.failures = 0;
+    this.totalSuccesses++;
+    this.lastSuccessTime = Date?.now();
+    this.failures = 0;
 
-    if (this?.state === CircuitState?.HALF_OPEN) {
-      this?.successes++;
+    if (this?.state === CircuitState.HALF_OPEN) {
+      this.successes++;
       if (this?.successes >= this?.config.successThreshold) {
-        this?.state = CircuitState?.CLOSED;
-        this?.successes = 0;
+        this.state = CircuitState.CLOSED;
+        this.successes = 0;
         logger?.info(
           `Circuit breaker ${this?.name} CLOSED after successful recovery`,
         );
@@ -116,18 +116,18 @@ export class CircuitBreaker {
   }
 
   private onFailure(): void {
-    this?.totalFailures++;
-    this?.lastFailureTime = Date?.now();
-    this?.failures++;
-    this?.successes = 0;
+    this.totalFailures++;
+    this.lastFailureTime = Date?.now();
+    this.failures++;
+    this.successes = 0;
 
-    if (this?.state === CircuitState?.HALF_OPEN) {
-      this?.state = CircuitState?.OPEN;
-      this?.nextAttempt = Date?.now() + this?.config.resetTimeout;
+    if (this?.state === CircuitState.HALF_OPEN) {
+      this.state = CircuitState.OPEN;
+      this.nextAttempt = Date?.now() + this?.config.resetTimeout;
       logger?.warn(`Circuit breaker ${this?.name} OPEN after HALF_OPEN failure`);
     } else if (this?.failures >= this?.config.failureThreshold) {
-      this?.state = CircuitState?.OPEN;
-      this?.nextAttempt = Date?.now() + this?.config.resetTimeout;
+      this.state = CircuitState.OPEN;
+      this.nextAttempt = Date?.now() + this?.config.resetTimeout;
       logger?.warn(
         `Circuit breaker ${this?.name} OPEN after ${this?.failures} failures`,
       );
@@ -140,30 +140,30 @@ export class CircuitBreaker {
 
   getStats(): CircuitStats {
     return {
-      state: this?.state,
-      failures: this?.failures,
-      successes: this?.successes,
-      lastFailureTime: this?.lastFailureTime,
-      lastSuccessTime: this?.lastSuccessTime,
-      totalRequests: this?.totalRequests,
-      totalFailures: this?.totalFailures,
-      totalSuccesses: this?.totalSuccesses,
+      state: this.state,
+      failures: this.failures,
+      successes: this.successes,
+      lastFailureTime: this.lastFailureTime,
+      lastSuccessTime: this.lastSuccessTime,
+      totalRequests: this.totalRequests,
+      totalFailures: this.totalFailures,
+      totalSuccesses: this.totalSuccesses,
     };
   }
 
   reset(): void {
-    this?.state = CircuitState?.CLOSED;
-    this?.failures = 0;
-    this?.successes = 0;
-    this?.nextAttempt = 0;
+    this.state = CircuitState.CLOSED;
+    this.failures = 0;
+    this.successes = 0;
+    this.nextAttempt = 0;
     logger?.info(`Circuit breaker ${this?.name} manually reset`);
   }
 
   isAvailable(): boolean {
-    if (this?.state === CircuitState?.CLOSED) return true;
-    if (this?.state === CircuitState?.OPEN && Date?.now() >= this?.nextAttempt)
+    if (this?.state === CircuitState.CLOSED) return true;
+    if (this?.state === CircuitState.OPEN && Date?.now() >= this?.nextAttempt)
       return true;
-    if (this?.state === CircuitState?.HALF_OPEN) return true;
+    if (this?.state === CircuitState.HALF_OPEN) return true;
     return false;
   }
 }
@@ -174,7 +174,7 @@ class CircuitBreakerRegistry {
 
   static getInstance(): CircuitBreakerRegistry {
     if (!CircuitBreakerRegistry?.instance) {
-      CircuitBreakerRegistry?.instance = new CircuitBreakerRegistry();
+      CircuitBreakerRegistry.instance = new CircuitBreakerRegistry();
     }
     return CircuitBreakerRegistry?.instance;
   }
@@ -201,4 +201,4 @@ class CircuitBreakerRegistry {
   }
 }
 
-export const _circuitBreakerRegistry = CircuitBreakerRegistry?.getInstance();
+export const circuitBreakerRegistry = CircuitBreakerRegistry?.getInstance();

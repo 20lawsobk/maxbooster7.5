@@ -26,7 +26,7 @@ export interface PersonalizationPreferences {
 }
 
 export function usePersonalizedLayout() {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   const {
     data: layout,
@@ -37,9 +37,9 @@ export function usePersonalizedLayout() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const _updateLayoutMutation = useMutation({
+  const updateLayoutMutation = useMutation({
     mutationFn: async (newLayout: Partial<DashboardLayout>) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "PUT",
         "/api/personalization/preferences",
         {
@@ -55,19 +55,19 @@ export function usePersonalizedLayout() {
     },
   });
 
-  const _visibleWidgets = useMemo(() => {
+  const visibleWidgets = useMemo(() => {
     return (layout?.widgets || []).filter((w) => w?.visible);
   }, [layout]);
 
-  const _hiddenWidgets = useMemo(() => {
+  const hiddenWidgets = useMemo(() => {
     return (layout?.widgets || []).filter((w) => !w?.visible);
   }, [layout]);
 
-  const _updateWidgetPosition = useCallback(
+  const updateWidgetPosition = useCallback(
     (widgetId: string, newPosition: number) => {
       if (!layout) return;
 
-      const _updatedWidgets = layout?.widgets
+      const updatedWidgets = layout?.widgets
         .map((w) => {
           if (w?.id === widgetId) {
             return { ...w, position: newPosition };
@@ -84,11 +84,11 @@ export function usePersonalizedLayout() {
     [layout, updateLayoutMutation],
   );
 
-  const _toggleWidgetVisibility = useCallback(
+  const toggleWidgetVisibility = useCallback(
     (widgetId: string) => {
       if (!layout) return;
 
-      const _updatedWidgets = layout?.widgets.map((w) => {
+      const updatedWidgets = layout?.widgets.map((w) => {
         if (w?.id === widgetId) {
           return { ...w, visible: !w?.visible };
         }
@@ -103,11 +103,11 @@ export function usePersonalizedLayout() {
     [layout, updateLayoutMutation],
   );
 
-  const _updateWidgetSize = useCallback(
+  const updateWidgetSize = useCallback(
     (widgetId: string, size: "small" | "medium" | "large") => {
       if (!layout) return;
 
-      const _updatedWidgets = layout?.widgets.map((w) => {
+      const updatedWidgets = layout?.widgets.map((w) => {
         if (w?.id === widgetId) {
           return { ...w, size };
         }
@@ -122,7 +122,7 @@ export function usePersonalizedLayout() {
     [layout, updateLayoutMutation],
   );
 
-  const _setTheme = useCallback(
+  const setTheme = useCallback(
     (theme: "compact" | "standard" | "expanded") => {
       if (!layout) return;
 
@@ -134,7 +134,7 @@ export function usePersonalizedLayout() {
     [layout, updateLayoutMutation],
   );
 
-  const _updateQuickActions = useCallback(
+  const updateQuickActions = useCallback(
     (quickActions: string[]) => {
       if (!layout) return;
 
@@ -146,7 +146,7 @@ export function usePersonalizedLayout() {
     [layout, updateLayoutMutation],
   );
 
-  const _resetLayout = useCallback(() => {
+  const resetLayout = useCallback(() => {
     queryClient?.invalidateQueries({
       queryKey: ["/api/personalization/dashboard-layout"],
     });
@@ -164,7 +164,7 @@ export function usePersonalizedLayout() {
     setTheme,
     updateQuickActions,
     resetLayout,
-    isUpdating: updateLayoutMutation?.isPending,
+    isUpdating: updateLayoutMutation.isPending,
   };
 }
 
@@ -172,10 +172,10 @@ export function useRecommendedSettings(artistType?: string) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/personalization/recommended-settings", artistType],
     queryFn: async () => {
-      const _url = artistType
+      const url = artistType
         ? `/api/personalization/recommended-settings?artistType=${artistType}`
         : "/api/personalization/recommended-settings";
-      const _response = await fetch(url, { credentials: "include" });
+      const response = await fetch(url, { credentials: "include" });
       if (!response?.ok) throw new Error("Failed to fetch recommended settings");
       return response?.json();
     },

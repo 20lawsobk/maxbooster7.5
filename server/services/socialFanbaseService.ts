@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import {
   socialAutopilotContent,
   fanSegments,
@@ -11,23 +11,23 @@ import {
   SocialPatternAggregate,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, lt } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-import { aiModelManager } from "./aiModelManager?.js";
+import { aiModelManager } from "./aiModelManager.js";
 import { createHash } from "crypto";
 
-const _MUSIC_IMPACT_WEIGHTS = {
-  saves: 3?.0,
-  playlistAdds: 4?.0,
-  profileVisits: 1?.5,
-  followerGrowth: 2?.0,
-  highIntentDms: 5?.0,
+const MUSIC_IMPACT_WEIGHTS = {
+  saves: 3.0,
+  playlistAdds: 4.0,
+  profileVisits: 1.5,
+  followerGrowth: 2.0,
+  highIntentDms: 5.0,
 };
 
-const _DEFAULT_EXPLORE_RATIO = 0?.2;
-const _TOP_K_PATTERNS = 5;
-const _TIME_DECAY_HALF_LIFE_DAYS = 30;
-const _LONG_TERM_MEMORY_THRESHOLD_DAYS = 7;
+const DEFAULT_EXPLORE_RATIO = 0.2;
+const TOP_K_PATTERNS = 5;
+const TIME_DECAY_HALF_LIFE_DAYS = 30;
+const LONG_TERM_MEMORY_THRESHOLD_DAYS = 7;
 
 interface PerformanceData {
   views?: number;
@@ -86,17 +86,17 @@ class SocialFanbaseService {
     highIntentDmsWeighted: number;
     totalScore: number;
   } {
-    const _savesWeighted = (performance?.saves || 0) * MUSIC_IMPACT_WEIGHTS?.saves;
-    const _playlistAddsWeighted =
+    const savesWeighted = (performance?.saves || 0) * MUSIC_IMPACT_WEIGHTS?.saves;
+    const playlistAddsWeighted =
       (performance?.playlistAdds || 0) * MUSIC_IMPACT_WEIGHTS?.playlistAdds;
-    const _profileVisitsWeighted =
+    const profileVisitsWeighted =
       (performance?.profileVisits || 0) * MUSIC_IMPACT_WEIGHTS?.profileVisits;
-    const _followerGrowthWeighted =
+    const followerGrowthWeighted =
       (performance?.followerGain || 0) * MUSIC_IMPACT_WEIGHTS?.followerGrowth;
-    const _highIntentDmsWeighted =
+    const highIntentDmsWeighted =
       (performance?.highIntentDms || 0) * MUSIC_IMPACT_WEIGHTS?.highIntentDms;
 
-    const _totalScore =
+    const totalScore =
       savesWeighted +
       playlistAddsWeighted +
       profileVisitsWeighted +
@@ -118,13 +118,13 @@ class SocialFanbaseService {
     date: Date,
   ): Promise<SocialAutopilotContent[]> {
     try {
-      const _startOfDay = new Date(date);
+      const startOfDay = new Date(date);
       startOfDay?.setHours(0, 0, 0, 0);
 
-      const _endOfDay = new Date(date);
+      const endOfDay = new Date(date);
       endOfDay?.setHours(23, 59, 59, 999);
 
-      const _contents = await db
+      const contents = await db
         .select()
         .from(socialAutopilotContent)
         .where(
@@ -146,7 +146,7 @@ class SocialFanbaseService {
   async saveMusicImpact(
     userId: string,
     contentId: string,
-    impactData: ReturnType<typeof this?.computeMusicImpact>,
+    impactData: ReturnType<typeof this.computeMusicImpact>,
   ): Promise<MusicImpactMetric | null> {
     try {
       const [inserted] = await db
@@ -155,19 +155,19 @@ class SocialFanbaseService {
           id: randomBytes(8).toString("hex"),
           userId,
           contentId,
-          savesWeighted: impactData?.savesWeighted,
-          playlistAddsWeighted: impactData?.playlistAddsWeighted,
-          profileVisitsWeighted: impactData?.profileVisitsWeighted,
-          followerGrowthWeighted: impactData?.followerGrowthWeighted,
-          highIntentDmsWeighted: impactData?.highIntentDmsWeighted,
-          totalScore: impactData?.totalScore,
+          savesWeighted: impactData.savesWeighted,
+          playlistAddsWeighted: impactData.playlistAddsWeighted,
+          profileVisitsWeighted: impactData.profileVisitsWeighted,
+          followerGrowthWeighted: impactData.followerGrowthWeighted,
+          highIntentDmsWeighted: impactData.highIntentDmsWeighted,
+          totalScore: impactData.totalScore,
         })
         .returning();
 
       logger?.info("Saved music impact metric", {
         userId,
         contentId,
-        totalScore: impactData?.totalScore,
+        totalScore: impactData.totalScore,
       });
       return inserted;
     } catch (error) {
@@ -182,12 +182,12 @@ class SocialFanbaseService {
   ): Promise<
     {
       content: SocialAutopilotContent;
-      impact: ReturnType<typeof this?.computeMusicImpact>;
+      impact: ReturnType<typeof this.computeMusicImpact>;
     }[]
   > {
-    const _contentWithImpact = contents?.map((content) => ({
+    const contentWithImpact = contents?.map((content) => ({
       content,
-      impact: this?.computeMusicImpact(
+      impact: this.computeMusicImpact(
         (content?.performance as PerformanceData) || {},
       ),
     }));
@@ -198,7 +198,7 @@ class SocialFanbaseService {
   }
 
   private generatePatternHash(pattern: PatternKey): string {
-    const _hashInput = `${pattern?.hookType}|${pattern?.tone}|${pattern?.format}|${pattern?.trackUsed || ""}`;
+    const hashInput = `${pattern?.hookType}|${pattern?.tone}|${pattern?.format}|${pattern?.trackUsed || ""}`;
     return createHash("sha256")
       .update(hashInput)
       .digest("hex")
@@ -211,9 +211,9 @@ class SocialFanbaseService {
     impactScore: number,
   ): Promise<SocialPatternAggregate | null> {
     try {
-      const _patternHash = this?.generatePatternHash(pattern);
+      const patternHash = this?.generatePatternHash(pattern);
 
-      const _existing = await db
+      const existing = await db
         .select()
         .from(socialPatternAggregates)
         .where(
@@ -225,16 +225,16 @@ class SocialFanbaseService {
         .limit(1);
 
       if (existing?.length > 0) {
-        const _current = existing[0];
-        const _newTotalPosts = (current?.totalPosts || 0) + 1;
-        const _newTotalImpact = (current?.totalImpact || 0) + impactScore;
-        const _newAvgImpact = newTotalImpact / newTotalPosts;
+        const current = existing[0];
+        const newTotalPosts = (current?.totalPosts || 0) + 1;
+        const newTotalImpact = (current?.totalImpact || 0) + impactScore;
+        const newAvgImpact = newTotalImpact / newTotalPosts;
 
-        const _existingAvg = current?.avgImpact || 0;
-        const _existingStd = current?.impactStd || 0;
-        const _n = current?.totalPosts || 1;
-        const _delta = impactScore - existingAvg;
-        const _newStd = Math?.sqrt(
+        const existingAvg = current?.avgImpact || 0;
+        const existingStd = current?.impactStd || 0;
+        const n = current?.totalPosts || 1;
+        const delta = impactScore - existingAvg;
+        const newStd = Math?.sqrt(
           ((n - 1) * existingStd * existingStd + delta * delta) / n,
         );
 
@@ -258,15 +258,15 @@ class SocialFanbaseService {
             id: randomBytes(8).toString("hex"),
             userId,
             patternHash,
-            hookType: pattern?.hookType,
-            tone: pattern?.tone,
-            format: pattern?.format,
-            trackUsed: pattern?.trackUsed,
+            hookType: pattern.hookType,
+            tone: pattern.tone,
+            format: pattern.format,
+            trackUsed: pattern.trackUsed,
             totalPosts: 1,
             totalImpact: impactScore,
             avgImpact: impactScore,
             impactStd: 0,
-            timeDecayFactor: 1?.0,
+            timeDecayFactor: 1.0,
           })
           .returning();
 
@@ -288,7 +288,7 @@ class SocialFanbaseService {
       }
       logger?.info("Updated fan segments", {
         userId,
-        segmentCount: events?.length,
+        segmentCount: events.length,
       });
     } catch (error) {
       logger?.warn("Error updating fan segments", { userId, error });
@@ -301,22 +301,22 @@ class SocialFanbaseService {
   ): Promise<SocialPatternAggregate[]> {
     try {
       for (const content of contents) {
-        const _performance = (content?.performance as PerformanceData) || {};
-        const _impact = this?.computeMusicImpact(performance);
+        const performance = (content?.performance as PerformanceData) || {};
+        const impact = this?.computeMusicImpact(performance);
 
         await this?.saveMusicImpact(userId, content?.id, impact);
 
         const pattern: PatternKey = {
-          hookType: content?.hookType,
-          tone: content?.tone,
-          format: content?.format,
-          trackUsed: content?.trackUsed || undefined,
+          hookType: content.hookType,
+          tone: content.tone,
+          format: content.format,
+          trackUsed: content.trackUsed || undefined,
         };
 
         await this?.savePatternAggregate(userId, pattern, impact?.totalScore);
       }
 
-      const _topPatterns = await db
+      const topPatterns = await db
         .select()
         .from(socialPatternAggregates)
         .where(eq(socialPatternAggregates?.userId, userId))
@@ -342,12 +342,12 @@ class SocialFanbaseService {
         const candidate: ContentCandidate = {
           id: randomBytes(8).toString("hex"),
           type: "generated",
-          format: pattern?.format,
-          hookType: pattern?.hookType,
-          tone: pattern?.tone,
+          format: pattern.format,
+          hookType: pattern.hookType,
+          tone: pattern.tone,
           platform: "tiktok",
-          trackUsed: pattern?.trackUsed || undefined,
-          expectedImpact: pattern?.avgImpact || 0,
+          trackUsed: pattern.trackUsed || undefined,
+          expectedImpact: pattern.avgImpact || 0,
           isExplore: false,
           segment: segment || undefined,
           patternSource: pattern,
@@ -355,7 +355,7 @@ class SocialFanbaseService {
         candidates?.push(candidate);
       }
 
-      const _exploreCandidates = await this?.generateExploreCandidates(userId);
+      const exploreCandidates = await this?.generateExploreCandidates(userId);
       candidates?.push(...exploreCandidates);
 
       return candidates;
@@ -368,7 +368,7 @@ class SocialFanbaseService {
   private async generateExploreCandidates(
     _userId: string,
   ): Promise<ContentCandidate[]> {
-    const _hookTypes = [
+    const hookTypes = [
       "emotional",
       "controversial",
       "pov",
@@ -377,7 +377,7 @@ class SocialFanbaseService {
       "transformation",
       "process",
     ];
-    const _tones = [
+    const tones = [
       "sad",
       "hype",
       "romantic",
@@ -385,10 +385,10 @@ class SocialFanbaseService {
       "nostalgic",
       "inspirational",
     ];
-    const _formats = ["text", "image", "short_video", "long_video", "audio"];
+    const formats = ["text", "image", "short_video", "long_video", "audio"];
 
     const candidates: ContentCandidate[] = [];
-    const _exploreCount = 3;
+    const exploreCount = 3;
 
     for (let i = 0; i < exploreCount; i++) {
       const candidate: ContentCandidate = {
@@ -412,10 +412,10 @@ class SocialFanbaseService {
     candidate: ContentCandidate,
   ): Promise<number> {
     try {
-      const _model = await aiModelManager?.getSocialAutopilot(userId);
+      const model = await aiModelManager?.getSocialAutopilot(userId);
 
-      const _features = {
-        platform: candidate?.platform,
+      const features = {
+        platform: candidate.platform,
         contentLength:
           candidate?.format === "short_video"
             ? 30
@@ -425,14 +425,14 @@ class SocialFanbaseService {
         hasHashtags: true,
         hasEmojis: true,
         hasLinks: false,
-        hookType: candidate?.hookType,
-        tone: candidate?.tone,
-        format: candidate?.format,
+        hookType: candidate.hookType,
+        tone: candidate.tone,
+        format: candidate.format,
       };
 
-      const _prediction = await model?.predictEngagement(features);
+      const prediction = await model?.predictEngagement(features);
 
-      if (prediction && typeof prediction?.expectedEngagement === "number") {
+      if (prediction && typeof prediction.expectedEngagement === "number") {
         return prediction?.expectedEngagement;
       }
 
@@ -444,7 +444,7 @@ class SocialFanbaseService {
     } catch (error) {
       logger?.warn("Error predicting expected impact", {
         userId,
-        candidateId: candidate?.id,
+        candidateId: candidate.id,
         error,
       });
       return candidate?.patternSource?.avgImpact || 0;
@@ -459,7 +459,7 @@ class SocialFanbaseService {
       return "explore";
     }
 
-    if (candidate?.expectedImpact > avgImpact * 0?.8) {
+    if (candidate?.expectedImpact > avgImpact * 0.8) {
       return "exploit";
     }
 
@@ -474,40 +474,40 @@ class SocialFanbaseService {
     try {
       for (const candidate of candidates) {
         if (!candidate?.isExplore) {
-          candidate?.expectedImpact = await this?.predictExpectedImpact(
+          candidate.expectedImpact = await this?.predictExpectedImpact(
             userId,
             candidate,
           );
         }
       }
 
-      const _avgImpact =
+      const avgImpact =
         candidates?.reduce((sum, c) => sum + c?.expectedImpact, 0) /
         Math?.max(candidates?.length, 1);
 
-      const _exploreCandidates = candidates?.filter(
+      const exploreCandidates = candidates?.filter(
         (c) => this?.labelExploreOrExploit(c, avgImpact) === "explore",
       );
-      const _exploitCandidates = candidates?.filter(
+      const exploitCandidates = candidates?.filter(
         (c) => this?.labelExploreOrExploit(c, avgImpact) === "exploit",
       );
 
       exploitCandidates?.sort((a, b) => b?.expectedImpact - a?.expectedImpact);
 
-      const _totalSlots = Math?.min(candidates?.length, 10);
-      const _exploreSlots = Math?.ceil(totalSlots * exploreRatio);
-      const _exploitSlots = totalSlots - exploreSlots;
+      const totalSlots = Math?.min(candidates?.length, 10);
+      const exploreSlots = Math?.ceil(totalSlots * exploreRatio);
+      const exploitSlots = totalSlots - exploreSlots;
 
-      const _selectedExploreCandidates = exploreCandidates?.slice(
+      const selectedExploreCandidates = exploreCandidates?.slice(
         0,
         exploreSlots,
       );
-      const _selectedExploitCandidates = exploitCandidates?.slice(
+      const selectedExploitCandidates = exploitCandidates?.slice(
         0,
         exploitSlots,
       );
 
-      const _finalCandidates = [
+      const finalCandidates = [
         ...selectedExploitCandidates,
         ...selectedExploreCandidates,
       ];
@@ -516,15 +516,15 @@ class SocialFanbaseService {
         userId,
         date: new Date(),
         candidates: finalCandidates,
-        exploreCount: selectedExploreCandidates?.length,
-        exploitCount: selectedExploitCandidates?.length,
+        exploreCount: selectedExploreCandidates.length,
+        exploitCount: selectedExploitCandidates.length,
       };
 
       logger?.info("Built daily schedule", {
         userId,
-        totalCandidates: finalCandidates?.length,
-        explore: schedule?.exploreCount,
-        exploit: schedule?.exploitCount,
+        totalCandidates: finalCandidates.length,
+        explore: schedule.exploreCount,
+        exploit: schedule.exploitCount,
       });
 
       return schedule;
@@ -544,44 +544,44 @@ class SocialFanbaseService {
     try {
       logger?.info("Starting daily social loop", {
         userId,
-        date: date?.toISOString(),
+        date: date.toISOString(),
       });
 
       // Step 1: Ingest yesterday's performance
-      const _yesterday = new Date(date);
-      yesterday?.setDate(yesterday?.getDate() - 1);
-      const _yesterdayContents = await this?.getContents(userId, yesterday);
+      const yesterday = new Date(date);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayContents = await this.getContents(userId, yesterday);
 
       // Step 2: Compute MusicImpact for yesterday's content
       for (const content of yesterdayContents) {
-        const _performance = (content?.performance as PerformanceData) || {};
-        const _impact = this?.computeMusicImpact(performance);
+        const performance = (content?.performance as PerformanceData) || {};
+        const impact = this?.computeMusicImpact(performance);
         await this?.saveMusicImpact(userId, content?.id, impact);
       }
 
       // Step 3: Update fan segments from behavioral data
-      const _segments = await this?.getFanSegments(userId);
-      const _primarySegment = segments?.length > 0 ? segments[0] : null;
+      const segments = await this?.getFanSegments(userId);
+      const primarySegment = segments?.length > 0 ? segments[0] : null;
 
       // Step 4: Derive top patterns from high-performing content
-      const _topPatterns = await this?.derivePatterns(yesterdayContents, userId);
+      const topPatterns = await this?.derivePatterns(yesterdayContents, userId);
 
       // Step 5: Apply time decay to old patterns
       await this?.applyTimeDecay(userId);
 
       // Step 6: Generate content candidates based on segments and patterns
-      const _candidates = await this?.generateContentCandidates(
+      const candidates = await this?.generateContentCandidates(
         userId,
         primarySegment,
         topPatterns,
       );
 
       // Step 7: Score & rank candidates, build schedule with explore/exploit balance
-      const _schedule = await this?.buildDailySchedule(userId, candidates);
+      const schedule = await this?.buildDailySchedule(userId, candidates);
 
       // Step 8: Persist scheduled content to database for autopilot publishing
       const persistedContentIds: string[] = [];
-      const _platforms = [
+      const platforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -591,23 +591,23 @@ class SocialFanbaseService {
       ];
 
       for (let i = 0; i < schedule?.candidates.length; i++) {
-        const _candidate = schedule?.candidates[i];
-        const _postingTime = new Date(date);
+        const candidate = schedule?.candidates[i];
+        const postingTime = new Date(date);
         postingTime?.setHours(9 + Math?.floor(i * 2), 0, 0, 0); // Space posts 2 hours apart starting at 9am
 
-        const _platform = candidate?.platform || platforms[i % platforms?.length];
+        const platform = candidate?.platform || platforms[i % platforms?.length];
 
         const [inserted] = await db
           .insert(socialAutopilotContent)
           .values({
-            id: candidate?.id,
+            id: candidate.id,
             userId,
-            type: candidate?.type as Record<string, unknown>,
-            format: candidate?.format as Record<string, unknown>,
-            hookType: candidate?.hookType as Record<string, unknown>,
-            tone: candidate?.tone as Record<string, unknown>,
+            type: candidate.type as Record<string, unknown>,
+            format: candidate.format as Record<string, unknown>,
+            hookType: candidate.hookType as Record<string, unknown>,
+            tone: candidate.tone as Record<string, unknown>,
             platform: platform as Record<string, unknown>,
-            trackUsed: candidate?.trackUsed || null,
+            trackUsed: candidate.trackUsed || null,
             postingTime,
             lengthSeconds: null,
             performance: {},
@@ -624,10 +624,10 @@ class SocialFanbaseService {
 
       logger?.info("Completed daily social loop", {
         userId,
-        scheduleSize: schedule?.candidates.length,
-        explore: schedule?.exploreCount,
-        exploit: schedule?.exploitCount,
-        persistedContent: persistedContentIds?.length,
+        scheduleSize: schedule.candidates.length,
+        explore: schedule.exploreCount,
+        exploit: schedule.exploitCount,
+        persistedContent: persistedContentIds.length,
       });
 
       return schedule;
@@ -645,12 +645,12 @@ class SocialFanbaseService {
 
   async compressToLongTermMemory(userId: string): Promise<void> {
     try {
-      const _thresholdDate = new Date();
+      const thresholdDate = new Date();
       thresholdDate?.setDate(
         thresholdDate?.getDate() - LONG_TERM_MEMORY_THRESHOLD_DAYS,
       );
 
-      const _oldContents = await db
+      const oldContents = await db
         .select()
         .from(socialAutopilotContent)
         .where(
@@ -665,14 +665,14 @@ class SocialFanbaseService {
       }
 
       for (const content of oldContents) {
-        const _performance = (content?.performance as PerformanceData) || {};
-        const _impact = this?.computeMusicImpact(performance);
+        const performance = (content?.performance as PerformanceData) || {};
+        const impact = this?.computeMusicImpact(performance);
 
         const pattern: PatternKey = {
-          hookType: content?.hookType,
-          tone: content?.tone,
-          format: content?.format,
-          trackUsed: content?.trackUsed || undefined,
+          hookType: content.hookType,
+          tone: content.tone,
+          format: content.format,
+          trackUsed: content.trackUsed || undefined,
         };
 
         await this?.savePatternAggregate(userId, pattern, impact?.totalScore);
@@ -680,7 +680,7 @@ class SocialFanbaseService {
 
       logger?.info("Compressed old content to long-term memory", {
         userId,
-        contentCount: oldContents?.length,
+        contentCount: oldContents.length,
       });
     } catch (error) {
       logger?.warn("Error compressing to long-term memory", { userId, error });
@@ -689,20 +689,20 @@ class SocialFanbaseService {
 
   async applyTimeDecay(userId: string): Promise<void> {
     try {
-      const _patterns = await db
+      const patterns = await db
         .select()
         .from(socialPatternAggregates)
         .where(eq(socialPatternAggregates?.userId, userId));
 
-      const _now = new Date();
+      const now = new Date();
 
       for (const pattern of patterns) {
-        const _lastUpdated = pattern?.lastUpdated || pattern?.createdAt || now;
-        const _daysSinceUpdate =
+        const lastUpdated = pattern?.lastUpdated || pattern?.createdAt || now;
+        const daysSinceUpdate =
           (now?.getTime() - lastUpdated?.getTime()) / (1000 * 60 * 60 * 24);
 
-        const _decayFactor = Math?.pow(
-          0?.5,
+        const decayFactor = Math?.pow(
+          0.5,
           daysSinceUpdate / TIME_DECAY_HALF_LIFE_DAYS,
         );
 
@@ -717,7 +717,7 @@ class SocialFanbaseService {
 
       logger?.info("Applied time decay to patterns", {
         userId,
-        patternCount: patterns?.length,
+        patternCount: patterns.length,
       });
     } catch (error) {
       logger?.warn("Error applying time decay", { userId, error });
@@ -744,7 +744,7 @@ class SocialFanbaseService {
 
       logger?.info("Created fan segment", {
         userId,
-        segmentId: inserted?.id,
+        segmentId: inserted.id,
         name,
       });
       return inserted;
@@ -759,7 +759,7 @@ class SocialFanbaseService {
     signals: BehavioralSignals,
   ): Promise<FanSegment | null> {
     try {
-      const _existing = await db
+      const existing = await db
         .select()
         .from(fanSegments)
         .where(eq(fanSegments?.id, segmentId))
@@ -770,9 +770,9 @@ class SocialFanbaseService {
         return null;
       }
 
-      const _currentSignals =
+      const currentSignals =
         (existing[0].behavioralSignals as BehavioralSignals) || {};
-      const _mergedSignals = { ...currentSignals, ...signals };
+      const mergedSignals = { ...currentSignals, ...signals };
 
       const [updated] = await db
         .update(fanSegments)
@@ -795,7 +795,7 @@ class SocialFanbaseService {
     segmentId: string,
   ): Promise<SocialPatternAggregate[]> {
     try {
-      const _segment = await db
+      const segment = await db
         .select()
         .from(fanSegments)
         .where(eq(fanSegments?.id, segmentId))
@@ -805,13 +805,13 @@ class SocialFanbaseService {
         return [];
       }
 
-      const _preferredPatterns =
+      const preferredPatterns =
         (segment[0].preferredContentPatterns as PatternKey[]) || [];
       const patterns: SocialPatternAggregate[] = [];
 
       for (const pattern of preferredPatterns) {
-        const _patternHash = this?.generatePatternHash(pattern);
-        const _found = await db
+        const patternHash = this?.generatePatternHash(pattern);
+        const found = await db
           .select()
           .from(socialPatternAggregates)
           .where(
@@ -836,7 +836,7 @@ class SocialFanbaseService {
 
   async getFanSegments(userId: string): Promise<FanSegment[]> {
     try {
-      const _segments = await db
+      const segments = await db
         .select()
         .from(fanSegments)
         .where(eq(fanSegments?.userId, userId))
@@ -853,7 +853,7 @@ class SocialFanbaseService {
     userId: string,
   ): Promise<SocialPatternAggregate[]> {
     try {
-      const _patterns = await db
+      const patterns = await db
         .select()
         .from(socialPatternAggregates)
         .where(eq(socialPatternAggregates?.userId, userId))
@@ -871,7 +871,7 @@ class SocialFanbaseService {
     limit: number = 50,
   ): Promise<MusicImpactMetric[]> {
     try {
-      const _metrics = await db
+      const metrics = await db
         .select()
         .from(musicImpactMetrics)
         .where(eq(musicImpactMetrics?.userId, userId))
@@ -905,21 +905,21 @@ class SocialFanbaseService {
         .values({
           id: randomBytes(8).toString("hex"),
           userId,
-          type: data?.type,
-          format: data?.format,
-          hookType: data?.hookType,
-          tone: data?.tone,
-          platform: data?.platform,
-          trackUsed: data?.trackUsed,
-          postingTime: data?.postingTime,
-          lengthSeconds: data?.lengthSeconds,
-          performance: data?.performance || {},
+          type: data.type,
+          format: data.format,
+          hookType: data.hookType,
+          tone: data.tone,
+          platform: data.platform,
+          trackUsed: data.trackUsed,
+          postingTime: data.postingTime,
+          lengthSeconds: data.lengthSeconds,
+          performance: data.performance || {},
         })
         .returning();
 
       logger?.info("Created social autopilot content", {
         userId,
-        contentId: inserted?.id,
+        contentId: inserted.id,
       });
       return inserted;
     } catch (error) {
@@ -966,17 +966,17 @@ class SocialFanbaseService {
     limit: number = 10,
   ): Promise<SocialAutopilotContent[]> {
     try {
-      const _contents = await db
+      const contents = await db
         .select()
         .from(socialAutopilotContent)
         .where(eq(socialAutopilotContent?.userId, userId))
         .orderBy(desc(socialAutopilotContent?.createdAt))
         .limit(limit * 5);
 
-      const _sorted = contents
+      const sorted = contents
         .map((c) => ({
           content: c,
-          impact: this?.computeMusicImpact(
+          impact: this.computeMusicImpact(
             (c?.performance as PerformanceData) || {},
           ).totalScore,
         }))
@@ -991,4 +991,4 @@ class SocialFanbaseService {
   }
 }
 
-export const _socialFanbaseService = new SocialFanbaseService();
+export const socialFanbaseService = new SocialFanbaseService();

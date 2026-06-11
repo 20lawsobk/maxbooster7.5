@@ -25,10 +25,10 @@ export function useOfflineStatus(): OfflineStatusState & {
   forcSync: () => Promise<void>;
 } {
   const [state, setState] = useState<OfflineStatusState>({
-    isOnline: navigator?.onLine,
+    isOnline: navigator.onLine,
     isOffline: !navigator?.onLine,
     isReconnecting: false,
-    status: navigator?.onLine ? "online" : "offline",
+    status: navigator.onLine ? "online" : "offline",
     syncStatus: "idle",
     syncProgress: {
       total: 0,
@@ -44,14 +44,14 @@ export function useOfflineStatus(): OfflineStatusState & {
     lastSyncAt: null,
   });
 
-  const _loadStats = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     try {
-      const _stats = await offlineQueue?.getStats();
+      const stats = await offlineQueue?.getStats();
       setState((prev) => ({
         ...prev,
-        pendingCount: stats?.pending + stats?.syncing,
-        failedCount: stats?.failed,
-        conflictCount: stats?.conflict,
+        pendingCount: stats.pending + stats?.syncing,
+        failedCount: stats.failed,
+        conflictCount: stats.conflict,
       }));
     } catch (error) {
       logger?.error("[useOfflineStatus] Failed to load stats:", error);
@@ -61,7 +61,7 @@ export function useOfflineStatus(): OfflineStatusState & {
   useEffect(() => {
     loadStats();
 
-    const _handleOnline = () => {
+    const handleOnline = () => {
       setState((prev) => ({
         ...prev,
         isOnline: true,
@@ -71,7 +71,7 @@ export function useOfflineStatus(): OfflineStatusState & {
       }));
     };
 
-    const _handleOffline = () => {
+    const handleOffline = () => {
       setState((prev) => ({
         ...prev,
         isOnline: false,
@@ -83,34 +83,34 @@ export function useOfflineStatus(): OfflineStatusState & {
     window?.addEventListener("online", handleOnline);
     window?.addEventListener("offline", handleOffline);
 
-    const _unsubStatusChange = syncManager?.on("status-change", (event) => {
+    const unsubStatusChange = syncManager?.on("status-change", (event) => {
       setState((prev) => ({
         ...prev,
-        syncStatus: event?.status || prev?.syncStatus,
-        isReconnecting: event?.status === "syncing",
+        syncStatus: event.status || prev?.syncStatus,
+        isReconnecting: event.status === "syncing",
       }));
     });
 
-    const _unsubProgress = syncManager?.on("progress-update", (event) => {
+    const unsubProgress = syncManager?.on("progress-update", (event) => {
       if (event?.progress) {
         setState((prev) => ({
           ...prev,
-          syncProgress: event?.progress!,
+          syncProgress: event.progress!,
         }));
       }
     });
 
-    const _unsubComplete = syncManager?.on("sync-complete", () => {
+    const unsubComplete = syncManager?.on("sync-complete", () => {
       setState((prev) => ({
         ...prev,
-        lastSyncAt: Date?.now(),
+        lastSyncAt: Date.now(),
       }));
       loadStats();
     });
 
-    const _unsubQueueChange = offlineQueue?.on("action-added", loadStats);
-    const _unsubQueueRemove = offlineQueue?.on("action-removed", loadStats);
-    const _unsubQueueUpdate = offlineQueue?.on("action-updated", loadStats);
+    const unsubQueueChange = offlineQueue?.on("action-added", loadStats);
+    const unsubQueueRemove = offlineQueue?.on("action-removed", loadStats);
+    const unsubQueueUpdate = offlineQueue?.on("action-updated", loadStats);
 
     return () => {
       window?.removeEventListener("online", handleOnline);
@@ -124,11 +124,11 @@ export function useOfflineStatus(): OfflineStatusState & {
     };
   }, [loadStats]);
 
-  const _refresh = useCallback(async () => {
+  const refresh = useCallback(async () => {
     await loadStats();
   }, [loadStats]);
 
-  const _forcSync = useCallback(async () => {
+  const forcSync = useCallback(async () => {
     await syncManager?.sync();
   }, []);
 

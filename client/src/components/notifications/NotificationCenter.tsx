@@ -107,7 +107,7 @@ export function NotificationCenter() {
   const [, navigate] = useLocation();
 
   const { isConnected } = useWebSocket({
-    userId: user?.id,
+    userId: user.id,
     onMessage: (message) => {
       if (message.type === "notification") {
         logger.info("📬 Real-time notification received:", message.data);

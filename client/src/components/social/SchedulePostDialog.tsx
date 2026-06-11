@@ -88,16 +88,16 @@ export function SchedulePostDialog({
   initialData,
 }: SchedulePostDialogProps) {
   const [formData, setFormData] = useState<SchedulePostData>({
-    title: initialData?.title || "",
-    scheduledFor: initialData?.scheduledFor || "",
-    platforms: initialData?.platforms || [],
-    postType: initialData?.postType || "post",
-    content: initialData?.content || "",
-    mediaUrls: initialData?.mediaUrls || [],
-    hashtags: initialData?.hashtags || [],
-    mentions: initialData?.mentions || [],
-    location: initialData?.location || "",
-    status: initialData?.status || "draft",
+    title: initialData.title || "",
+    scheduledFor: initialData.scheduledFor || "",
+    platforms: initialData.platforms || [],
+    postType: initialData.postType || "post",
+    content: initialData.content || "",
+    mediaUrls: initialData.mediaUrls || [],
+    hashtags: initialData.hashtags || [],
+    mentions: initialData.mentions || [],
+    location: initialData.location || "",
+    status: initialData.status || "draft",
   });
 
   const [hashtagInput, setHashtagInput] = useState("");

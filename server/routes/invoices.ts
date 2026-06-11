@@ -5,17 +5,17 @@ import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger";
 import { invoiceService } from "../services/invoiceService";
 import { randomBytes } from "crypto";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; email: string };
 }
 
 function generateInvoiceNumber(): string {
-  const _year = new Date().getFullYear();
-  const _unique = randomBytes(4).toString("hex").toUpperCase();
+  const year = new Date().getFullYear();
+  const unique = randomBytes(4).toString("hex").toUpperCase();
   return `INV-${year}-${unique}`;
 }
 
@@ -24,9 +24,9 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-      const _offset = Math?.min(
+      const userId = req?.user!.id;
+      const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+      const offset = Math?.min(
         Math?.max(parseInt(req?.query.offset as string) || 0, 0),
         100_000,
       );
@@ -39,7 +39,7 @@ router?.get(
         .limit(limit)
         .offset(offset);
 
-      const _userInvoices = await query;
+      const userInvoices = await query;
       res?.json({ invoices: userInvoices, pagination: { limit, offset } });
     } catch (error) {
       logger?.warn({ err: error }, "[Invoices] Failed to get invoices:");
@@ -82,7 +82,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const {
         lineItems,
         toAddress,
@@ -97,17 +97,17 @@ router?.post(
         return res?.status(400).json({ error: "Line items are required" });
       }
 
-      const _subtotalCents = lineItems?.reduce(
+      const subtotalCents = lineItems?.reduce(
         (sum: number, item: Record<string, unknown>) => {
           return sum + item?.quantity * item?.unitPrice * 100;
         },
         0,
       );
 
-      const _taxCents = Math?.round(subtotalCents * 0?.0); // Calculate based on location
-      const _totalCents = subtotalCents + taxCents;
+      const taxCents = Math?.round(subtotalCents * 0.0); // Calculate based on location
+      const totalCents = subtotalCents + taxCents;
 
-      const _invoiceNumber = generateInvoiceNumber();
+      const invoiceNumber = generateInvoiceNumber();
 
       const [invoice] = await db
         .insert(invoices)
@@ -131,7 +131,7 @@ router?.post(
         .returning();
 
       logger?.info("[Invoices] Invoice created:", {
-        invoiceId: invoice?.id,
+        invoiceId: invoice.id,
         invoiceNumber,
       });
       res?.status(201).json(invoice);
@@ -148,7 +148,7 @@ router?.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [existing] = await db
         .select()
@@ -193,7 +193,7 @@ router?.put(
           lineItems: lineItems || existing?.lineItems,
           fromAddress: fromAddress || existing?.fromAddress,
           toAddress: toAddress || existing?.toAddress,
-          dueDate: dueDate ? new Date(dueDate) : existing?.dueDate,
+          dueDate: dueDate ? new Date(dueDate) : existing.dueDate,
           notes: notes || existing?.notes,
           terms: terms || existing?.terms,
           status: status || existing?.status,
@@ -218,7 +218,7 @@ router?.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [invoice] = await db
         .select()
@@ -237,7 +237,7 @@ router?.post(
 
       logger?.info("[Invoices] Invoice sent:", {
         invoiceId,
-        invoiceNumber: invoice?.invoiceNumber,
+        invoiceNumber: invoice.invoiceNumber,
       });
       res?.json({ success: true, message: "Invoice sent successfully" });
     } catch (error) {
@@ -253,7 +253,7 @@ router?.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { paymentMethod } = req?.body;
 
       const [invoice] = await db
@@ -278,7 +278,7 @@ router?.post(
 
       logger?.info("[Invoices] Invoice marked paid:", {
         invoiceId,
-        invoiceNumber: invoice?.invoiceNumber,
+        invoiceNumber: invoice.invoiceNumber,
       });
       res?.json({ success: true, message: "Invoice marked as paid" });
     } catch (error) {
@@ -294,7 +294,7 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [invoice] = await db
         .select()
@@ -306,10 +306,10 @@ router?.get(
         return res?.status(404).json({ error: "Invoice not found" });
       }
 
-      const _pdfData = await invoiceService?.generatePDF({
-        id: invoice?.id,
-        invoiceNumber: invoice?.invoiceNumber,
-        userId: invoice?.userId,
+      const pdfData = await invoiceService?.generatePDF({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        userId: invoice.userId,
         type:
           (invoice?.invoiceType as
             | "sale"
@@ -342,9 +342,9 @@ router?.get(
         lineItems: ((invoice?.lineItems as Record<string, unknown>[]) || []).map(
           (item: Record<string, unknown>, idx: number) => ({
             id: `item-${idx}`,
-            description: item?.description || "Service",
-            quantity: item?.quantity || 1,
-            unitPrice: item?.unitPrice || 0,
+            description: item.description || "Service",
+            quantity: item.quantity || 1,
+            unitPrice: item.unitPrice || 0,
             total: (item?.quantity || 1) * (item?.unitPrice || 0),
           }),
         ),
@@ -352,17 +352,17 @@ router?.get(
         taxes: [],
         totalTax: (invoice?.taxCents || 0) / 100,
         total: (invoice?.totalCents || 0) / 100,
-        currency: invoice?.currency || "USD",
-        dueDate: invoice?.dueDate || new Date(),
-        issuedDate: invoice?.createdAt || new Date(),
-        notes: invoice?.notes || undefined,
-        terms: invoice?.terms || undefined,
+        currency: invoice.currency || "USD",
+        dueDate: invoice.dueDate || new Date(),
+        issuedDate: invoice.createdAt || new Date(),
+        notes: invoice.notes || undefined,
+        terms: invoice.terms || undefined,
       });
 
       res?.setHeader("Content-Type", "application/pdf");
       res?.setHeader(
         "Content-Disposition",
-        `attachment; filename="${invoice?.invoiceNumber}.pdf"`,
+        `attachment; filename="${invoice.invoiceNumber}.pdf"`,
       );
       res?.send(Buffer?.from(pdfData, "base64"));
     } catch (error) {
@@ -378,7 +378,7 @@ router?.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { orderId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [order] = await db
         .select()
@@ -390,7 +390,7 @@ router?.post(
         return res?.status(404).json({ error: "Order not found" });
       }
 
-      const _invoiceNumber = generateInvoiceNumber();
+      const invoiceNumber = generateInvoiceNumber();
 
       const [invoice] = await db
         .insert(invoices)
@@ -403,19 +403,19 @@ router?.post(
             {
               description: `Order #${orderId}`,
               quantity: 1,
-              unitPrice: order?.amount,
+              unitPrice: order.amount,
             },
           ],
-          subtotalCents: Math?.round(order?.amount * 100),
-          totalCents: Math?.round(order?.amount * 100),
-          paidAt: order?.createdAt,
+          subtotalCents: Math.round(order?.amount * 100),
+          totalCents: Math.round(order?.amount * 100),
+          paidAt: order.createdAt,
           paymentMethod: "stripe",
           metadata: { orderId },
         })
         .returning();
 
       logger?.info("[Invoices] Invoice generated from order:", {
-        invoiceId: invoice?.id,
+        invoiceId: invoice.id,
         orderId,
       });
       res?.status(201).json(invoice);
@@ -434,15 +434,15 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { startDate, endDate } = req?.body;
 
-      const _start = startDate
+      const start = startDate
         ? new Date(startDate)
         : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
-      const _end = endDate ? new Date(endDate) : new Date();
+      const end = endDate ? new Date(endDate) : new Date();
 
-      const _userOrders = await db
+      const userOrders = await db
         .select()
         .from(orders)
         .where(
@@ -458,7 +458,7 @@ router?.post(
       const generatedInvoices: string[] = [];
 
       for (const order of userOrders) {
-        const _existingResult = await db?.execute(
+        const existingResult = await db?.execute(
           sql`SELECT id FROM invoices WHERE metadata->>'orderId' = ${order?.id}`,
         );
 
@@ -466,7 +466,7 @@ router?.post(
           continue;
         }
 
-        const _invoiceNumber = generateInvoiceNumber();
+        const invoiceNumber = generateInvoiceNumber();
 
         const [invoice] = await db
           .insert(invoices)
@@ -479,14 +479,14 @@ router?.post(
               {
                 description: `Order #${order?.id}`,
                 quantity: 1,
-                unitPrice: order?.amount,
+                unitPrice: order.amount,
               },
             ],
-            subtotalCents: Math?.round(order?.amount * 100),
-            totalCents: Math?.round(order?.amount * 100),
-            paidAt: order?.createdAt,
+            subtotalCents: Math.round(order?.amount * 100),
+            totalCents: Math.round(order?.amount * 100),
+            paidAt: order.createdAt,
             paymentMethod: "stripe",
-            metadata: { orderId: order?.id },
+            metadata: { orderId: order.id },
           })
           .returning();
 
@@ -494,12 +494,12 @@ router?.post(
       }
 
       logger?.info("[Invoices] Bulk invoices generated:", {
-        count: generatedInvoices?.length,
+        count: generatedInvoices.length,
         userId,
       });
       res?.json({
         success: true,
-        generated: generatedInvoices?.length,
+        generated: generatedInvoices.length,
         invoiceIds: generatedInvoices,
       });
     } catch (error) {
@@ -517,9 +517,9 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _statsResult = await db?.execute(
+      const statsResult = await db?.execute(
         sql`SELECT 
             COUNT(*) as total_invoices,
             COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_count,
@@ -532,7 +532,7 @@ router?.get(
           WHERE user_id = ${userId}`,
       );
 
-      const _stats = statsResult?.rows?.[0] || {};
+      const stats = statsResult?.rows?.[0] || {};
 
       res?.json({
         totalInvoices: Number(stats?.total_invoices) || 0,

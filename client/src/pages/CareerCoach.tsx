@@ -340,9 +340,9 @@ export default function CareerCoach() {
     setChatInput("");
   };
 
-  const goals = goalsData?.goals || [];
-  const recommendations = recommendationsData?.recommendations || [];
-  const insights = insightsData?.insights;
+  const goals = goalsData.goals || [];
+  const recommendations = recommendationsData.recommendations || [];
+  const insights = insightsData.insights;
 
   const getCategoryIcon = (category: string) => {
     switch (category) {

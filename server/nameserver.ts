@@ -12,17 +12,17 @@
  */
 
 import "dotenv/config";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 import {
   startDNSServer,
   isDNSRunning,
   getQueryCount,
-} from "./services/dnsServer?.js";
+} from "./services/dnsServer.js";
 
-const _ROLE = process?.env.DNS_SERVER_ROLE || "ns1";
-const _PORT = parseInt(process?.env.DNS_PORT || "5353", 10);
-const _BASE = process?.env.BASE_DOMAIN || "max-booster?.com";
-const _HEALTH_INTERVAL_MS = 60_000;
+const ROLE = process?.env.DNS_SERVER_ROLE || "ns1";
+const PORT = parseInt(process?.env.DNS_PORT || "5353", 10);
+const BASE = process?.env.BASE_DOMAIN || "max-booster.com";
+const HEALTH_INTERVAL_MS = 60_000;
 
 async function main() {
   logger?.info(`[${ROLE}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
@@ -44,12 +44,12 @@ async function main() {
 
   // Periodic health log so Replit workflow console shows it's alive
   setInterval(() => {
-    const _qc = getQueryCount();
+    const qc = getQueryCount();
     logger?.info(`[${ROLE}] 💓 alive — queries served: ${qc}`);
   }, HEALTH_INTERVAL_MS);
 
   // Graceful shutdown
-  const _shutdown = (sig: string) => {
+  const shutdown = (sig: string) => {
     logger?.info(`[${ROLE}] Received ${sig} — shutting down`);
     process?.exit(0);
   };

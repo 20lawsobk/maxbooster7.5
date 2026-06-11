@@ -2241,7 +2241,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data?.streams?.daily && data.streams.daily.length > 0 ? (
+                ) : data.streams?.daily && data.streams.daily.length > 0 ? (
                   <SimpleAreaChart
                     data={data.streams.daily
                       .slice(-14)
@@ -2274,7 +2274,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data?.streams?.byPlatform &&
+                ) : data.streams?.byPlatform &&
                   data.streams.byPlatform.length > 0 ? (
                   <PlatformBreakdown
                     platforms={data.streams.byPlatform
@@ -2332,7 +2332,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data?.audience?.listenerJourney &&
+                ) : data.audience?.listenerJourney &&
                   data.audience.listenerJourney.length > 0 ? (
                   <SimpleAreaChart
                     data={data.audience.listenerJourney.map(
@@ -2441,7 +2441,7 @@ export default function Analytics() {
                   <Skeleton key={i} className="h-48" />
                 ))}
               </div>
-            ) : crossPlatformData?.data ? (
+            ) : crossPlatformData.data ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   {crossPlatformData.data.metrics?.map((platform) => {
@@ -2746,7 +2746,7 @@ export default function Analytics() {
               </div>
             </div>
 
-            {alertSummaryData?.data && (
+            {alertSummaryData.data && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <Card className="p-4">
                   <div className="flex items-center gap-2">
@@ -2777,7 +2777,7 @@ export default function Analytics() {
                     <Trophy className="h-5 w-5 text-yellow-500" />
                     <div>
                       <p className="text-2xl font-bold">
-                        {alertSummaryData.data.byType?.milestone || 0}
+                        {alertSummaryData.data.byType.milestone || 0}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Milestones
@@ -2790,8 +2790,8 @@ export default function Analytics() {
                     <ListMusic className="h-5 w-5 text-green-500" />
                     <div>
                       <p className="text-2xl font-bold">
-                        {(alertSummaryData.data.byType?.playlist_add || 0) +
-                          (alertSummaryData.data.byType?.playlist_remove || 0)}
+                        {(alertSummaryData.data.byType.playlist_add || 0) +
+                          (alertSummaryData.data.byType.playlist_remove || 0)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Playlist Changes
@@ -2808,9 +2808,9 @@ export default function Analytics() {
                   <Skeleton key={i} className="h-24" />
                 ))}
               </div>
-            ) : (alertsData?.data?.length ?? 0) > 0 ? (
+            ) : (alertsData.data.length ?? 0) > 0 ? (
               <div className="space-y-4">
-                {alertsData?.data?.map(
+                {alertsData.data.map(
                   (alert) => {
                     const priorityColors: Record<string, string> = {
                       critical:
@@ -3263,7 +3263,7 @@ export default function Analytics() {
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
-            ) : anomalyData?.anomalies && anomalyData.anomalies.length > 0 ? (
+            ) : anomalyData.anomalies && anomalyData.anomalies.length > 0 ? (
               <div className="space-y-4">
                 {anomalyData.anomalies.map(
                   (anomaly) => {

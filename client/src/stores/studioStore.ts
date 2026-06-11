@@ -316,10 +316,10 @@ interface StudioState {
   updatePerformanceMetrics: (cpu: number, latency: number) => void;
 }
 
-const _generateId = () =>
+const generateId = () =>
   `${Date?.now()}-${Math?.random().toString(36).substr(2, 9)}`;
 
-const _createDefaultTrack = (
+const createDefaultTrack = (
   type: TrackType,
   name: string,
   index: number,
@@ -348,12 +348,12 @@ const _createDefaultTrack = (
   meterLevel: { left: -60, right: -60 },
 });
 
-const _createMasterTrack = (): Track => ({
+const createMasterTrack = (): Track => ({
   id: "master",
   name: "Master",
   type: "master",
   color: "#64748b",
-  volume: 0?.8,
+  volume: 0.8,
   pan: 0,
   muted: false,
   solo: false,
@@ -370,15 +370,15 @@ const _createMasterTrack = (): Track => ({
   meterLevel: { left: -60, right: -60 },
 });
 
-const _initialState = {
+const initialState = {
   project: {
     id: generateId(),
     name: "Untitled Project",
     sampleRate: 48000,
     bitDepth: 32,
     duration: 300,
-    createdAt: Date?.now(),
-    modifiedAt: Date?.now(),
+    createdAt: Date.now(),
+    modifiedAt: Date.now(),
     isDirty: false,
   },
   transport: {
@@ -403,7 +403,7 @@ const _initialState = {
     scrollX: 0,
     scrollY: 0,
     snapToGrid: true,
-    gridSize: 0?.25,
+    gridSize: 0.25,
     showMixer: true,
     showPluginBrowser: false,
     showPianoRoll: false,
@@ -435,7 +435,7 @@ const _initialState = {
   bufferSize: 512,
 };
 
-export const _useStudioStore = create<StudioState>()(
+export const useStudioStore = create<StudioState>()(
   devtools(
     subscribeWithSelector(
       persist(
@@ -447,7 +447,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 ...project,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
                 isDirty: true,
               },
             })),
@@ -522,14 +522,14 @@ export const _useStudioStore = create<StudioState>()(
             set((state) => ({
               transport: {
                 ...state?.transport,
-                tempo: Math?.max(20, Math?.min(999, tempo)),
+                tempo: Math.max(20, Math?.min(999, tempo)),
               },
             })),
 
           addTrack: (type, name) => {
-            const _id = generateId();
+            const id = generateId();
             const { tracks } = get();
-            const _trackName =
+            const trackName =
               name ||
               `${type?.charAt(0).toUpperCase() + type?.slice(1)} ${tracks?.filter((t) => t?.type === type).length + 1}`;
             set((state) => ({
@@ -540,7 +540,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             get().pushHistory(`Add ${type} track: ${trackName}`);
@@ -553,7 +553,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
@@ -563,17 +563,17 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           removeTrack: (trackId) => {
-            const _track = get().tracks?.find((t) => t?.id === trackId);
+            const track = get().tracks?.find((t) => t?.id === trackId);
             set((state) => ({
-              tracks: state?.tracks.filter((t) => t?.id !== trackId),
+              tracks: state.tracks.filter((t) => t?.id !== trackId),
               view: {
                 ...state?.view,
-                selectedTrackIds: state?.view.selectedTrackIds?.filter(
+                selectedTrackIds: state.view.selectedTrackIds?.filter(
                   (id) => id !== trackId,
                 ),
                 focusedTrackId:
@@ -584,7 +584,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             if (track) get().pushHistory(`Remove track: ${track?.name}`);
@@ -592,21 +592,21 @@ export const _useStudioStore = create<StudioState>()(
 
           updateTrack: (trackId, updates) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId ? { ...t, ...updates } : t,
               ),
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           duplicateTrack: (trackId) => {
-            const _track = get().tracks?.find((t) => t?.id === trackId);
+            const track = get().tracks?.find((t) => t?.id === trackId);
             if (!track) return "";
-            const _newId = generateId();
-            const _newTrack = {
+            const newId = generateId();
+            const newTrack = {
               ...track,
               id: newId,
               name: `${track?.name} (Copy)`,
@@ -616,7 +616,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             get().pushHistory(`Duplicate track: ${track?.name}`);
@@ -625,7 +625,7 @@ export const _useStudioStore = create<StudioState>()(
 
           reorderTracks: (fromIndex, toIndex) =>
             set((state) => {
-              const _tracks = [...state?.tracks];
+              const tracks = [...state?.tracks];
               const [removed] = tracks?.splice(fromIndex, 1);
               tracks?.splice(toIndex, 0, removed);
               return {
@@ -633,14 +633,14 @@ export const _useStudioStore = create<StudioState>()(
                 project: {
                   ...state?.project,
                   isDirty: true,
-                  modifiedAt: Date?.now(),
+                  modifiedAt: Date.now(),
                 },
               };
             }),
 
           setTrackVolume: (trackId, volume) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId ? { ...t, volume } : t,
               ),
               masterTrack:
@@ -651,7 +651,7 @@ export const _useStudioStore = create<StudioState>()(
 
           setTrackPan: (trackId, pan) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId ? { ...t, pan } : t,
               ),
               masterTrack:
@@ -662,7 +662,7 @@ export const _useStudioStore = create<StudioState>()(
 
           toggleTrackMute: (trackId) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId ? { ...t, muted: !t?.muted } : t,
               ),
               masterTrack:
@@ -675,14 +675,14 @@ export const _useStudioStore = create<StudioState>()(
             const { mixer } = get();
             if (mixer?.soloMode === "exclusive") {
               set((state) => ({
-                tracks: state?.tracks.map((t) => ({
+                tracks: state.tracks.map((t) => ({
                   ...t,
-                  solo: t?.id === trackId ? !t?.solo : false,
+                  solo: t.id === trackId ? !t?.solo : false,
                 })),
               }));
             } else {
               set((state) => ({
-                tracks: state?.tracks.map((t) =>
+                tracks: state.tracks.map((t) =>
                   t?.id === trackId ? { ...t, solo: !t?.solo } : t,
                 ),
               }));
@@ -691,14 +691,14 @@ export const _useStudioStore = create<StudioState>()(
 
           toggleTrackArm: (trackId) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId ? { ...t, armed: !t?.armed } : t,
               ),
             })),
 
           setTrackMeterLevel: (trackId, left, right) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId ? { ...t, meterLevel: { left, right } } : t,
               ),
               masterTrack:
@@ -708,10 +708,10 @@ export const _useStudioStore = create<StudioState>()(
             })),
 
           addPlugin: (trackId, plugin) => {
-            const _id = generateId();
-            const _newPlugin = { ...plugin, id };
+            const id = generateId();
+            const newPlugin = { ...plugin, id };
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? { ...t, plugins: [...t?.plugins, newPlugin] }
                   : t,
@@ -726,7 +726,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             get().pushHistory(`Add plugin: ${plugin?.name}`);
@@ -734,16 +734,16 @@ export const _useStudioStore = create<StudioState>()(
           },
 
           removePlugin: (trackId, pluginId) => {
-            const _track =
+            const track =
               get().tracks?.find((t) => t?.id === trackId) ||
               (trackId === "master" ? get().masterTrack : null);
-            const _plugin = track?.plugins?.find((p) => p?.id === pluginId);
+            const plugin = track?.plugins?.find((p) => p?.id === pluginId);
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      plugins: t?.plugins.filter((p) => p?.id !== pluginId),
+                      plugins: t.plugins.filter((p) => p?.id !== pluginId),
                     }
                   : t,
               ),
@@ -751,7 +751,7 @@ export const _useStudioStore = create<StudioState>()(
                 trackId === "master"
                   ? {
                       ...state?.masterTrack,
-                      plugins: state?.masterTrack.plugins?.filter(
+                      plugins: state.masterTrack.plugins?.filter(
                         (p) => p?.id !== pluginId,
                       ),
                     }
@@ -759,7 +759,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             if (plugin) get().pushHistory(`Remove plugin: ${plugin?.name}`);
@@ -767,11 +767,11 @@ export const _useStudioStore = create<StudioState>()(
 
           updatePluginParameter: (trackId, pluginId, paramId, value) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      plugins: t?.plugins.map((p) =>
+                      plugins: t.plugins.map((p) =>
                         p?.id === pluginId
                           ? {
                               ...p,
@@ -786,7 +786,7 @@ export const _useStudioStore = create<StudioState>()(
                 trackId === "master"
                   ? {
                       ...state?.masterTrack,
-                      plugins: state?.masterTrack.plugins?.map((p) =>
+                      plugins: state.masterTrack.plugins?.map((p) =>
                         p?.id === pluginId
                           ? {
                               ...p,
@@ -800,11 +800,11 @@ export const _useStudioStore = create<StudioState>()(
 
           togglePluginBypass: (trackId, pluginId) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      plugins: t?.plugins.map((p) =>
+                      plugins: t.plugins.map((p) =>
                         p?.id === pluginId ? { ...p, bypassed: !p?.bypassed } : p,
                       ),
                     }
@@ -814,7 +814,7 @@ export const _useStudioStore = create<StudioState>()(
                 trackId === "master"
                   ? {
                       ...state?.masterTrack,
-                      plugins: state?.masterTrack.plugins?.map((p) =>
+                      plugins: state.masterTrack.plugins?.map((p) =>
                         p?.id === pluginId ? { ...p, bypassed: !p?.bypassed } : p,
                       ),
                     }
@@ -823,14 +823,14 @@ export const _useStudioStore = create<StudioState>()(
 
           reorderPlugins: (trackId, fromIndex, toIndex) =>
             set((state) => {
-              const _updatePlugins = (plugins: PluginInstance[]) => {
-                const _newPlugins = [...plugins];
+              const updatePlugins = (plugins: PluginInstance[]) => {
+                const newPlugins = [...plugins];
                 const [removed] = newPlugins?.splice(fromIndex, 1);
                 newPlugins?.splice(toIndex, 0, removed);
                 return newPlugins;
               };
               return {
-                tracks: state?.tracks.map((t) =>
+                tracks: state.tracks.map((t) =>
                   t?.id === trackId
                     ? { ...t, plugins: updatePlugins(t?.plugins) }
                     : t,
@@ -846,10 +846,10 @@ export const _useStudioStore = create<StudioState>()(
             }),
 
           addAudioClip: (trackId, clip) => {
-            const _id = generateId();
-            const _newClip = { ...clip, id };
+            const id = generateId();
+            const newClip = { ...clip, id };
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? { ...t, audioClips: [...t?.audioClips, newClip] }
                   : t,
@@ -857,7 +857,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             get().pushHistory(`Add audio clip: ${clip?.name}`);
@@ -865,27 +865,27 @@ export const _useStudioStore = create<StudioState>()(
           },
 
           removeAudioClip: (trackId, clipId) => {
-            const _track = get().tracks?.find((t) => t?.id === trackId);
-            const _clip = track?.audioClips?.find((c) => c?.id === clipId);
+            const track = get().tracks?.find((t) => t?.id === trackId);
+            const clip = track?.audioClips?.find((c) => c?.id === clipId);
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      audioClips: t?.audioClips.filter((c) => c?.id !== clipId),
+                      audioClips: t.audioClips.filter((c) => c?.id !== clipId),
                     }
                   : t,
               ),
               view: {
                 ...state?.view,
-                selectedClipIds: state?.view.selectedClipIds?.filter(
+                selectedClipIds: state.view.selectedClipIds?.filter(
                   (id) => id !== clipId,
                 ),
               },
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             if (clip) get().pushHistory(`Remove audio clip: ${clip?.name}`);
@@ -893,11 +893,11 @@ export const _useStudioStore = create<StudioState>()(
 
           updateAudioClip: (trackId, clipId, updates) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      audioClips: t?.audioClips.map((c) =>
+                      audioClips: t.audioClips.map((c) =>
                         c?.id === clipId ? { ...c, ...updates } : c,
                       ),
                     }
@@ -906,22 +906,22 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           moveClip: (fromTrackId, toTrackId, clipId, newStartTime) =>
             set((state) => {
-              const _fromTrack = state?.tracks.find((t) => t?.id === fromTrackId);
-              const _clip = fromTrack?.audioClips?.find((c) => c?.id === clipId);
+              const fromTrack = state?.tracks.find((t) => t?.id === fromTrackId);
+              const clip = fromTrack?.audioClips?.find((c) => c?.id === clipId);
               if (!clip) return state;
 
               return {
-                tracks: state?.tracks.map((t) => {
+                tracks: state.tracks.map((t) => {
                   if (t?.id === fromTrackId) {
                     return {
                       ...t,
-                      audioClips: t?.audioClips.filter((c) => c?.id !== clipId),
+                      audioClips: t.audioClips.filter((c) => c?.id !== clipId),
                     };
                   }
                   if (t?.id === toTrackId) {
@@ -938,15 +938,15 @@ export const _useStudioStore = create<StudioState>()(
                 project: {
                   ...state?.project,
                   isDirty: true,
-                  modifiedAt: Date?.now(),
+                  modifiedAt: Date.now(),
                 },
               };
             }),
 
           addMidiClip: (trackId, clip) => {
-            const _clipId = generateId();
+            const clipId = generateId();
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
@@ -957,7 +957,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             return clipId;
@@ -965,28 +965,28 @@ export const _useStudioStore = create<StudioState>()(
 
           removeMidiClip: (trackId, clipId) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      midiClips: t?.midiClips.filter((c) => c?.id !== clipId),
+                      midiClips: t.midiClips.filter((c) => c?.id !== clipId),
                     }
                   : t,
               ),
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           updateMidiClip: (trackId, clipId, updates) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      midiClips: t?.midiClips.map((c) =>
+                      midiClips: t.midiClips.map((c) =>
                         c?.id === clipId ? { ...c, ...updates } : c,
                       ),
                     }
@@ -995,18 +995,18 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           addMidiNote: (trackId, clipId, note) => {
-            const _noteId = generateId();
+            const noteId = generateId();
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      midiClips: t?.midiClips.map((c) =>
+                      midiClips: t.midiClips.map((c) =>
                         c?.id === clipId
                           ? {
                               ...c,
@@ -1020,7 +1020,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             return noteId;
@@ -1028,15 +1028,15 @@ export const _useStudioStore = create<StudioState>()(
 
           removeMidiNote: (trackId, clipId, noteId) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      midiClips: t?.midiClips.map((c) =>
+                      midiClips: t.midiClips.map((c) =>
                         c?.id === clipId
                           ? {
                               ...c,
-                              notes: c?.notes.filter((n) => n?.id !== noteId),
+                              notes: c.notes.filter((n) => n?.id !== noteId),
                             }
                           : c,
                       ),
@@ -1046,21 +1046,21 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           updateMidiNote: (trackId, clipId, noteId, updates) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      midiClips: t?.midiClips.map((c) =>
+                      midiClips: t.midiClips.map((c) =>
                         c?.id === clipId
                           ? {
                               ...c,
-                              notes: c?.notes.map((n) =>
+                              notes: c.notes.map((n) =>
                                 n?.id === noteId ? { ...n, ...updates } : n,
                               ),
                             }
@@ -1072,14 +1072,14 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           addSend: (trackId, send) => {
-            const _sendId = generateId();
+            const sendId = generateId();
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? { ...t, sends: [...t?.sends, { ...send, id: sendId }] }
                   : t,
@@ -1087,7 +1087,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             return sendId;
@@ -1095,25 +1095,25 @@ export const _useStudioStore = create<StudioState>()(
 
           removeSend: (trackId, sendId) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
-                  ? { ...t, sends: t?.sends.filter((s) => s?.id !== sendId) }
+                  ? { ...t, sends: t.sends.filter((s) => s?.id !== sendId) }
                   : t,
               ),
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           updateSend: (trackId, sendId, updates) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      sends: t?.sends.map((s) =>
+                      sends: t.sends.map((s) =>
                         s?.id === sendId ? { ...s, ...updates } : s,
                       ),
                     }
@@ -1122,14 +1122,14 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           addAutomationLane: (trackId, parameterId, parameterName) => {
-            const _laneId = generateId();
+            const laneId = generateId();
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
@@ -1149,7 +1149,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             }));
             return laneId;
@@ -1157,11 +1157,11 @@ export const _useStudioStore = create<StudioState>()(
 
           removeAutomationLane: (trackId, laneId) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      automationLanes: t?.automationLanes.filter(
+                      automationLanes: t.automationLanes.filter(
                         (l) => l?.id !== laneId,
                       ),
                     }
@@ -1170,7 +1170,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
@@ -1182,11 +1182,11 @@ export const _useStudioStore = create<StudioState>()(
             curve = "linear",
           ) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      automationLanes: t?.automationLanes.map((l) =>
+                      automationLanes: t.automationLanes.map((l) =>
                         l?.id === laneId
                           ? {
                               ...l,
@@ -1203,21 +1203,21 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           removeAutomationPoint: (trackId, laneId, index) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      automationLanes: t?.automationLanes.map((l) =>
+                      automationLanes: t.automationLanes.map((l) =>
                         l?.id === laneId
                           ? {
                               ...l,
-                              points: l?.points.filter((_, i) => i !== index),
+                              points: l.points.filter((_, i) => i !== index),
                             }
                           : l,
                       ),
@@ -1227,21 +1227,21 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
           updateAutomationPoint: (trackId, laneId, index, updates) =>
             set((state) => ({
-              tracks: state?.tracks.map((t) =>
+              tracks: state.tracks.map((t) =>
                 t?.id === trackId
                   ? {
                       ...t,
-                      automationLanes: t?.automationLanes.map((l) =>
+                      automationLanes: t.automationLanes.map((l) =>
                         l?.id === laneId
                           ? {
                               ...l,
-                              points: l?.points.map((p, i) =>
+                              points: l.points.map((p, i) =>
                                 i === index ? { ...p, ...updates } : p,
                               ),
                             }
@@ -1253,7 +1253,7 @@ export const _useStudioStore = create<StudioState>()(
               project: {
                 ...state?.project,
                 isDirty: true,
-                modifiedAt: Date?.now(),
+                modifiedAt: Date.now(),
               },
             })),
 
@@ -1282,15 +1282,15 @@ export const _useStudioStore = create<StudioState>()(
 
           setZoom: (zoom) =>
             set((state) => ({
-              view: { ...state?.view, zoom: Math?.max(0?.1, Math?.min(10, zoom)) },
+              view: { ...state?.view, zoom: Math.max(0.1, Math?.min(10, zoom)) },
             })),
 
           setScroll: (x, y) =>
             set((state) => ({
               view: {
                 ...state?.view,
-                scrollX: Math?.max(0, x),
-                scrollY: Math?.max(0, y),
+                scrollX: Math.max(0, x),
+                scrollY: Math.max(0, y),
               },
             })),
 
@@ -1302,8 +1302,8 @@ export const _useStudioStore = create<StudioState>()(
           undo: () => {
             const { history, historyIndex } = get();
             if (historyIndex > 0) {
-              const _prevEntry = history[historyIndex - 1];
-              set((_state) => ({
+              const prevEntry = history[historyIndex - 1];
+              set((state) => ({
                 ...prevEntry?.state,
                 historyIndex: historyIndex - 1,
               }));
@@ -1313,8 +1313,8 @@ export const _useStudioStore = create<StudioState>()(
           redo: () => {
             const { history, historyIndex } = get();
             if (historyIndex < history?.length - 1) {
-              const _nextEntry = history[historyIndex + 1];
-              set((_state) => ({
+              const nextEntry = history[historyIndex + 1];
+              set((state) => ({
                 ...nextEntry?.state,
                 historyIndex: historyIndex + 1,
               }));
@@ -1322,22 +1322,22 @@ export const _useStudioStore = create<StudioState>()(
           },
 
           pushHistory: (action) => {
-            const _state = get();
+            const state = get();
             const entry: HistoryEntry = {
               id: generateId(),
               action,
-              timestamp: Date?.now(),
+              timestamp: Date.now(),
               state: {
-                tracks: state?.tracks,
-                masterTrack: state?.masterTrack,
-                project: state?.project,
+                tracks: state.tracks,
+                masterTrack: state.masterTrack,
+                project: state.project,
               },
             };
             set((s) => ({
               history: [...s?.history.slice(0, s?.historyIndex + 1), entry].slice(
                 -50,
               ),
-              historyIndex: Math?.min(s?.historyIndex + 1, 49),
+              historyIndex: Math.min(s?.historyIndex + 1, 49),
             }));
           },
 
@@ -1354,8 +1354,8 @@ export const _useStudioStore = create<StudioState>()(
                 sampleRate: 48000,
                 bitDepth: 32,
                 duration: 300,
-                createdAt: Date?.now(),
-                modifiedAt: Date?.now(),
+                createdAt: Date.now(),
+                modifiedAt: Date.now(),
                 isDirty: false,
               },
               transport: {
@@ -1380,7 +1380,7 @@ export const _useStudioStore = create<StudioState>()(
                 scrollX: 0,
                 scrollY: 0,
                 snapToGrid: true,
-                gridSize: 0?.25,
+                gridSize: 0.25,
                 showMixer: true,
                 showPluginBrowser: false,
                 showPianoRoll: false,
@@ -1407,10 +1407,10 @@ export const _useStudioStore = create<StudioState>()(
         {
           name: "studio-storage",
           partialize: (state) => ({
-            project: state?.project,
-            tracks: state?.tracks.map((track) => ({
+            project: state.project,
+            tracks: state.tracks.map((track) => ({
               ...track,
-              audioClips: track?.audioClips.map((clip) => ({
+              audioClips: track.audioClips.map((clip) => ({
                 ...clip,
                 waveformData: undefined,
               })),
@@ -1420,14 +1420,14 @@ export const _useStudioStore = create<StudioState>()(
               ...state?.masterTrack,
               meterLevel: { left: -60, right: -60 },
             },
-            mixer: state?.mixer,
+            mixer: state.mixer,
             view: {
-              zoom: state?.view.zoom,
-              gridSize: state?.view.gridSize,
-              snapToGrid: state?.view.snapToGrid,
-              showWaveforms: state?.view.showWaveforms,
-              showAutomation: state?.view.showAutomation,
-              timeDisplay: state?.view.timeDisplay,
+              zoom: state.view.zoom,
+              gridSize: state.view.gridSize,
+              snapToGrid: state.view.snapToGrid,
+              showWaveforms: state.view.showWaveforms,
+              showAutomation: state.view.showAutomation,
+              timeDisplay: state.view.timeDisplay,
             },
           }),
         },
@@ -1437,22 +1437,22 @@ export const _useStudioStore = create<StudioState>()(
   ),
 );
 
-export const _useTransport = () => useStudioStore((state) => state?.transport);
-export const _useTracks = () => useStudioStore((state) => state?.tracks);
-export const _useMasterTrack = () =>
+export const useTransport = () => useStudioStore((state) => state?.transport);
+export const useTracks = () => useStudioStore((state) => state?.tracks);
+export const useMasterTrack = () =>
   useStudioStore((state) => state?.masterTrack);
-export const _useView = () => useStudioStore((state) => state?.view);
-export const _useMixer = () => useStudioStore((state) => state?.mixer);
-export const _useProject = () => useStudioStore((state) => state?.project);
+export const useView = () => useStudioStore((state) => state?.view);
+export const useMixer = () => useStudioStore((state) => state?.mixer);
+export const useProject = () => useStudioStore((state) => state?.project);
 
-export const _useTrack = (trackId: string) =>
+export const useTrack = (trackId: string) =>
   useStudioStore(
     (state) =>
       state?.tracks.find((t) => t?.id === trackId) ||
       (trackId === "master" ? state?.masterTrack : null),
   );
 
-export const _useSelectedTracks = () =>
+export const useSelectedTracks = () =>
   useStudioStore((state) =>
     state?.tracks.filter((t) => state?.view.selectedTrackIds?.includes(t?.id)),
   );

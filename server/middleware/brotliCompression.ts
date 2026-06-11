@@ -2,12 +2,12 @@ import { brotliCompress, constants as zlibConstants } from "zlib";
 import { promisify } from "util";
 import type { Request, Response, NextFunction } from "express";
 
-const _brotliCompressAsync = promisify(brotliCompress);
+const brotliCompressAsync = promisify(brotliCompress);
 
-const _COMPRESSIBLE_MIME_PATTERN =
+const COMPRESSIBLE_MIME_PATTERN =
   /^(text\/|application\/(json|javascript|xml|x-www-form-urlencoded|manifest\+json)|image\/svg)/;
 
-const _MIN_SIZE = 256;
+const MIN_SIZE = 256;
 
 /**
  * Brotli compression middleware for Express.
@@ -32,51 +32,51 @@ export function brotliMiddleware() {
       return next();
     }
 
-    const _acceptEncoding = req?.headers["accept-encoding"] || "";
+    const acceptEncoding = req?.headers["accept-encoding"] || "";
     if (!acceptEncoding?.includes("br")) {
       return next();
     }
 
     res?.setHeader("Vary", "Accept-Encoding");
 
-    const _originalJson = res?.json.bind(res);
+    const originalJson = res?.json.bind(res);
 
-    res?.json = function (body: unknown): Response {
+    res.json = function (body: unknown): Response {
       if (res?.headersSent) {
         return originalJson(body);
       }
 
-      const _existingEncoding = res?.getHeader("Content-Encoding") as
+      const existingEncoding = res?.getHeader("Content-Encoding") as
         | string
         | undefined;
       if (existingEncoding) {
         return originalJson(body);
       }
 
-      const _contentType =
+      const contentType =
         (res?.getHeader("Content-Type") as string | undefined) ??
         "application/json";
       if (!COMPRESSIBLE_MIME_PATTERN?.test(contentType)) {
         return originalJson(body);
       }
 
-      const _json = JSON?.stringify(body);
+      const json = JSON?.stringify(body);
       if (json?.length < MIN_SIZE) {
         return originalJson(body);
       }
 
-      const _inputBuf = Buffer?.from(json, "utf8");
+      const inputBuf = Buffer?.from(json, "utf8");
 
       brotliCompressAsync(inputBuf, {
         params: {
-          [zlibConstants?.BROTLI_PARAM_QUALITY]: 4,
-          [zlibConstants?.BROTLI_PARAM_SIZE_HINT]: inputBuf?.length,
+          [zlibConstants.BROTLI_PARAM_QUALITY]: 4,
+          [zlibConstants.BROTLI_PARAM_SIZE_HINT]: inputBuf?.length,
         },
       })
         .then((compressed) => {
           if (res?.headersSent) return;
           res?.setHeader("Content-Encoding", "br");
-          res?.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
           res?.setHeader("Content-Length", compressed?.length);
           res?.status(res?.statusCode).end(compressed);
         })

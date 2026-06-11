@@ -232,8 +232,8 @@ export function useUndoConfirmation(
         open: true,
         action,
         onConfirm,
-        customTitle: customOptions?.title,
-        customDescription: customOptions?.description,
+        customTitle: customOptions.title,
+        customDescription: customOptions.description,
       });
     },
     [options],

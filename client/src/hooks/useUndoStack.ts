@@ -35,7 +35,7 @@ export function useUndoStack(
 ): UseUndoStackReturn {
   const { createNewInstance, ...config } = options;
 
-  const _undoStack = useMemo(() => {
+  const undoStack = useMemo(() => {
     if (createNewInstance) {
       return new UndoStack(config);
     }
@@ -51,7 +51,7 @@ export function useUndoStack(
   );
 
   useEffect(() => {
-    const _unsubscribe = undoStack?.subscribe(() => {
+    const unsubscribe = undoStack?.subscribe(() => {
       setState(undoStack?.getState());
       setHistory(undoStack?.getHistory());
       setRedoStack(undoStack?.getRedoStack());
@@ -60,7 +60,7 @@ export function useUndoStack(
     return unsubscribe;
   }, [undoStack]);
 
-  const _push = useCallback(
+  const push = useCallback(
     async (
       action: Omit<UndoAction, "id" | "timestamp">,
     ): Promise<UndoAction> => {
@@ -69,47 +69,47 @@ export function useUndoStack(
     [undoStack],
   );
 
-  const _undo = useCallback(async (): Promise<UndoAction | null> => {
+  const undo = useCallback(async (): Promise<UndoAction | null> => {
     return undoStack?.undo();
   }, [undoStack]);
 
-  const _redo = useCallback(async (): Promise<UndoAction | null> => {
+  const redo = useCallback(async (): Promise<UndoAction | null> => {
     return undoStack?.redo();
   }, [undoStack]);
 
-  const _clear = useCallback(() => {
+  const clear = useCallback(() => {
     undoStack?.clear();
   }, [undoStack]);
 
-  const _startGroup = useCallback(
+  const startGroup = useCallback(
     (name: string): string => {
       return undoStack?.startGroup(name);
     },
     [undoStack],
   );
 
-  const _endGroup = useCallback(
+  const endGroup = useCallback(
     (groupId?: string): void => {
       undoStack?.endGroup(groupId);
     },
     [undoStack],
   );
 
-  const _undoToRestorePoint = useCallback(
+  const undoToRestorePoint = useCallback(
     async (actionId: string): Promise<void> => {
       await undoStack?.undoToRestorePoint(actionId);
     },
     [undoStack],
   );
 
-  const _createRestorePoint = useCallback(
+  const createRestorePoint = useCallback(
     (description: string): UndoAction => {
       return undoStack?.createRestorePoint(description);
     },
     [undoStack],
   );
 
-  const _getRestorePoints = useCallback((): UndoAction[] => {
+  const getRestorePoints = useCallback((): UndoAction[] => {
     return undoStack?.getRestorePoints();
   }, [undoStack]);
 
@@ -117,19 +117,19 @@ export function useUndoStack(
     push,
     undo,
     redo,
-    canUndo: state?.canUndo,
-    canRedo: state?.canRedo,
+    canUndo: state.canUndo,
+    canRedo: state.canRedo,
     history,
     redoStack: redoStackList,
-    lastAction: state?.lastAction,
+    lastAction: state.lastAction,
     clear,
     startGroup,
     endGroup,
     undoToRestorePoint,
     createRestorePoint,
     getRestorePoints,
-    historyLength: state?.historyLength,
-    isGrouping: state?.isGrouping,
+    historyLength: state.historyLength,
+    isGrouping: state.isGrouping,
   };
 }
 
@@ -152,16 +152,16 @@ export function useUndoableOperation<T, Args extends any[] = any[]>(
     async (...args: Args): Promise<T> => {
       let result: T;
 
-      const _description =
+      const description =
         typeof options?.description === "function"
           ? options?.description(args)
           : options?.description || `${options?.type} action`;
 
       const action: Omit<UndoAction, "id" | "timestamp"> = {
-        type: options?.type,
+        type: options.type,
         description,
-        module: options?.module,
-        entityType: options?.entityType,
+        module: options.module,
+        entityType: options.entityType,
         execute: async () => {
           result = await execute(...args);
         },

@@ -20,27 +20,27 @@ export interface UseShortcutOptions {
 export function useShortcut(
   options: UseShortcutOptions,
   handler: () => void,
-  deps: React?.DependencyList = [],
+  deps: React.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
-  const _idRef = useRef(`shortcut-${Math?.random().toString(36).substr(2, 9)}`);
-  const _handlerRef = useRef(handler);
+  const idRef = useRef(`shortcut-${Math?.random().toString(36).substr(2, 9)}`);
+  const handlerRef = useRef(handler);
 
-  handlerRef?.current = handler;
+  handlerRef.current = handler;
 
   useEffect(() => {
     if (options?.enabled === false) return;
 
     const shortcut: ShortcutDefinition = {
-      id: idRef?.current,
-      key: options?.key,
-      modifiers: options?.modifiers,
-      description: options?.description || "Custom shortcut",
+      id: idRef.current,
+      key: options.key,
+      modifiers: options.modifiers,
+      description: options.description || "Custom shortcut",
       category: (options?.category as Record<string, unknown>) || "custom",
-      context: options?.context || "global",
+      context: options.context || "global",
       action: () => handlerRef?.current(),
-      allowInInput: options?.allowInInput,
-      preventDefault: options?.preventDefault,
+      allowInInput: options.allowInInput,
+      preventDefault: options.preventDefault,
     };
 
     registerShortcut(shortcut);
@@ -63,10 +63,10 @@ export function useShortcut(
 
 export function useShortcuts_Multiple(
   shortcuts: Array<UseShortcutOptions & { handler: () => void }>,
-  deps: React?.DependencyList = [],
+  deps: React.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
-  const _idsRef = useRef<string[]>([]);
+  const idsRef = useRef<string[]>([]);
 
   useEffect(() => {
     const newIds: string[] = [];
@@ -74,30 +74,30 @@ export function useShortcuts_Multiple(
     shortcuts?.forEach((shortcutConfig, index) => {
       if (shortcutConfig?.enabled === false) return;
 
-      const _id = `shortcuts-${index}-${Math?.random().toString(36).substr(2, 9)}`;
+      const id = `shortcuts-${index}-${Math?.random().toString(36).substr(2, 9)}`;
       newIds?.push(id);
 
       const shortcut: ShortcutDefinition = {
         id,
-        key: shortcutConfig?.key,
-        modifiers: shortcutConfig?.modifiers,
-        description: shortcutConfig?.description || "Custom shortcut",
+        key: shortcutConfig.key,
+        modifiers: shortcutConfig.modifiers,
+        description: shortcutConfig.description || "Custom shortcut",
         category:
           (shortcutConfig?.category as Record<string, unknown>) || "custom",
-        context: shortcutConfig?.context || "global",
-        action: shortcutConfig?.handler,
-        allowInInput: shortcutConfig?.allowInInput,
-        preventDefault: shortcutConfig?.preventDefault,
+        context: shortcutConfig.context || "global",
+        action: shortcutConfig.handler,
+        allowInInput: shortcutConfig.allowInInput,
+        preventDefault: shortcutConfig.preventDefault,
       };
 
       registerShortcut(shortcut);
     });
 
-    idsRef?.current = newIds;
+    idsRef.current = newIds;
 
     return () => {
       newIds?.forEach((id) => unregisterShortcut(id));
-      idsRef?.current = [];
+      idsRef.current = [];
     };
   }, [shortcuts?.length, registerShortcut, unregisterShortcut, ...deps]);
 

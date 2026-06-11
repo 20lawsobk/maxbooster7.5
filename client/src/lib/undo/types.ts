@@ -190,6 +190,6 @@ export function getActionLabel(action: UndoableAction): string {
     custom: "Action",
   };
 
-  const _entityLabel = metadata?.entityType ? ` ${metadata?.entityType}` : "";
+  const entityLabel = metadata?.entityType ? ` ${metadata?.entityType}` : "";
   return `${typeLabels[type]}${entityLabel}`;
 }

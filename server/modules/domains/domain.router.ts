@@ -6,9 +6,9 @@ import {
   verifyCustomDomain,
   listDomains,
   deleteDomain,
-} from "./domain?.controller.js";
+} from "./domain.controller.js";
 
-const _router = Router();
+const router = Router();
 
 router?.post("/managed/check", checkManaged);
 router?.post("/managed/reserve", reserveManaged);

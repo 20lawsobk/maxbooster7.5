@@ -7,24 +7,24 @@
  */
 
 import { spawn } from "child_process";
-import { PYTHON } from "./pythonPath?.js";
+import { PYTHON } from "./pythonPath.js";
 import path from "path";
 import fs from "fs";
 import os from "os";
 import { fileURLToPath } from "url";
 
-const ___metaUrl = (import?.meta as Record<string, unknown>)?.url as
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as
   | string
   | undefined;
-const ___filename = __metaUrl
+const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
   : path?.resolve(process?.argv[1] ?? "");
-const ___dirname = path?.dirname(__filename);
+const __dirname = path?.dirname(__filename);
 
-const _SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer?.py");
+const SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
 
-const _WEIGHTS_PATH = path?.join(__dirname, "diffusion", "weights?.npz");
-const _META_PATH = path?.join(__dirname, "diffusion", "meta?.json");
+const WEIGHTS_PATH = path?.join(__dirname, "diffusion", "weights.npz");
+const META_PATH = path?.join(__dirname, "diffusion", "meta.json");
 
 export interface DiffusionGenOptions {
   prompt?: string;
@@ -56,26 +56,26 @@ export interface TrainingStatus {
 // Cache the status for 30 s to avoid repeated synchronous disk reads on
 // every request to GET /diffusion/status.
 let _statusCache: { value: TrainingStatus; expiresAt: number } | null = null;
-const _STATUS_CACHE_TTL_MS = 30_000;
+const STATUS_CACHE_TTL_MS = 30_000;
 
 export function getDiffusionTrainingStatus(): TrainingStatus {
-  const _now = Date?.now();
+  const now = Date?.now();
   if (_statusCache && now < _statusCache?.expiresAt) return _statusCache?.value;
 
-  const _trained = fs?.existsSync(WEIGHTS_PATH) && fs?.existsSync(META_PATH);
+  const trained = fs?.existsSync(WEIGHTS_PATH) && fs?.existsSync(META_PATH);
   let value: TrainingStatus;
   if (!trained) {
     value = { trained: false };
   } else {
     try {
-      const _meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
-      const _stat = fs?.statSync(WEIGHTS_PATH);
+      const meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
+      const stat = fs?.statSync(WEIGHTS_PATH);
       value = {
         trained: true,
-        finalLoss: meta?.final_loss,
-        epochs: meta?.epochs,
-        samples: meta?.samples,
-        weightsSizeKB: Math?.round(stat?.size / 1024),
+        finalLoss: meta.final_loss,
+        epochs: meta.epochs,
+        samples: meta.samples,
+        weightsSizeKB: Math.round(stat?.size / 1024),
       };
     } catch {
       value = { trained };
@@ -100,19 +100,19 @@ export function trainDiffusionModel(
   } = {},
 ): Promise<TrainingStatus> {
   return new Promise((resolve, reject) => {
-    const _args = [SYNTH_SCRIPT, "--train-only", "--tier", opts?.tier ?? "quick"];
+    const args = [SYNTH_SCRIPT, "--train-only", "--tier", opts?.tier ?? "quick"];
     if (opts?.nSamples) args?.push("--samples", String(opts?.nSamples));
     if (opts?.nEpochs) args?.push("--epochs", String(opts?.nEpochs));
 
-    const _proc = spawn(PYTHON, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const proc = spawn(PYTHON, args, { stdio: ["ignore", "pipe", "pipe"] });
 
     proc?.stdout.on("data", (d) => {
-      const _line = d?.toString().trim();
+      const line = d?.toString().trim();
       if (line) opts?.onLog?.(line);
     });
 
     proc?.stderr.on("data", (d) => {
-      const _line = d?.toString().trim();
+      const line = d?.toString().trim();
       if (line) opts?.onLog?.(`[stderr] ${line}`);
     });
 
@@ -140,11 +140,11 @@ export function generateDiffusionFrames(
       nFrames = 15,
       
       frameSize = 512,
-      guidanceScale = 2?.5,
+      guidanceScale = 2.5,
       forceRetrain = false,
     } = opts;
 
-    const _outDir =
+    const outDir =
       opts?.outputDir ?? path?.join(os?.tmpdir(), `diffusion_${Date?.now()}`);
 
     fs?.mkdirSync(outDir, { recursive: true });
@@ -166,8 +166,8 @@ export function generateDiffusionFrames(
 
     if (forceRetrain) args?.push("--train");
 
-    const _t0 = Date?.now();
-    const _proc = spawn(PYTHON, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const t0 = Date?.now();
+    const proc = spawn(PYTHON, args, { stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
 
@@ -188,7 +188,7 @@ export function generateDiffusionFrames(
       }
 
       // Collect generated frame paths
-      const _framePaths = fs?.existsSync(outDir)
+      const framePaths = fs?.existsSync(outDir)
         ? fs
             .readdirSync(outDir)
             .filter((f) => f?.endsWith(".png"))
@@ -199,8 +199,8 @@ export function generateDiffusionFrames(
       // Try to parse JSON result from last line of stdout
       let modelMeta: Record<string, unknown> = {};
       try {
-        const _lines = stdout?.trim().split("\n");
-        const _jsonLine = lines?.reverse().find((l) => l?.startsWith("{"));
+        const lines = stdout?.trim().split("\n");
+        const jsonLine = lines?.reverse().find((l) => l?.startsWith("{"));
         if (jsonLine) modelMeta = JSON?.parse(jsonLine);
       } catch {
         /* ignore */
@@ -208,9 +208,9 @@ export function generateDiffusionFrames(
 
       resolve({
         framePaths,
-        frameCount: framePaths?.length,
+        frameCount: framePaths.length,
         modelMeta,
-        elapsedMs: Date?.now() - t0,
+        elapsedMs: Date.now() - t0,
       });
     });
 
@@ -270,14 +270,14 @@ export interface DigitalGPUStatus {
   available_scenes: string[];
 }
 
-const _PYTORCH_API_BASE =
-  process?.env.VIDEO_DIFFUSION_URL ?? "http://127?.0.0?.1:8008";
+const PYTORCH_API_BASE =
+  process?.env.VIDEO_DIFFUSION_URL ?? "http://127.0.0.1:8008";
 
 /** Query DigitalGPU backend capabilities from the diffusion API server. */
 export async function getDigitalGPUStatus(): Promise<DigitalGPUStatus | null> {
   try {
-    const _res = await fetch(`${PYTORCH_API_BASE}/gpu/status`, {
-      signal: AbortSignal?.timeout(3000),
+    const res = await fetch(`${PYTORCH_API_BASE}/gpu/status`, {
+      signal: AbortSignal.timeout(3000),
     });
     if (!res?.ok) return null;
     return res?.json() as Promise<DigitalGPUStatus>;
@@ -289,11 +289,11 @@ export async function getDigitalGPUStatus(): Promise<DigitalGPUStatus | null> {
 /** Check if the PyTorch diffusion API server is alive. */
 export async function isPyTorchDiffusionReady(): Promise<boolean> {
   try {
-    const _res = await fetch(`${PYTORCH_API_BASE}/ready`, {
-      signal: AbortSignal?.timeout(2000),
+    const res = await fetch(`${PYTORCH_API_BASE}/ready`, {
+      signal: AbortSignal.timeout(2000),
     });
     if (!res?.ok) return false;
-    const _body = (await res?.json()) as { ready?: boolean };
+    const body = (await res?.json()) as { ready?: boolean };
     return body?.ready === true;
   } catch {
     return false;
@@ -305,36 +305,36 @@ export async function generatePyTorchDiffusionVideo(
   opts: PyTorchDiffusionRequest,
 ): Promise<PyTorchDiffusionResult> {
   const payload: PyTorchDiffusionRequest = {
-    prompt: opts?.prompt ?? "",
-    T: opts?.T ?? 16,
-    H: opts?.H ?? 256,
-    W: opts?.W ?? 256,
-    bpm: opts?.bpm ?? 120,
-    energy: opts?.energy ?? 0?.65,
-    energy_peak: opts?.energy_peak ?? 0?.85,
-    style_name: opts?.style_name ?? "neon_tunnel",
-    beat_index: opts?.beat_index ?? 0,
-    total_beats: opts?.total_beats ?? 4,
-    is_drop: opts?.is_drop ?? false,
-    emotional_goal: opts?.emotional_goal ?? "curiosity",
-    blend_style_name: opts?.blend_style_name,
-    blend_weight: opts?.blend_weight ?? 0,
-    seed: opts?.seed,
-    output_format: opts?.output_format ?? "mp4_b64",
-    platform: opts?.platform ?? "tiktok",
-    use_digital_gpu: opts?.use_digital_gpu ?? true,
-    temporal_smooth: opts?.temporal_smooth ?? true,
+    prompt: opts.prompt ?? "",
+    T: opts.T ?? 16,
+    H: opts.H ?? 256,
+    W: opts.W ?? 256,
+    bpm: opts.bpm ?? 120,
+    energy: opts.energy ?? 0.65,
+    energy_peak: opts.energy_peak ?? 0.85,
+    style_name: opts.style_name ?? "neon_tunnel",
+    beat_index: opts.beat_index ?? 0,
+    total_beats: opts.total_beats ?? 4,
+    is_drop: opts.is_drop ?? false,
+    emotional_goal: opts.emotional_goal ?? "curiosity",
+    blend_style_name: opts.blend_style_name,
+    blend_weight: opts.blend_weight ?? 0,
+    seed: opts.seed,
+    output_format: opts.output_format ?? "mp4_b64",
+    platform: opts.platform ?? "tiktok",
+    use_digital_gpu: opts.use_digital_gpu ?? true,
+    temporal_smooth: opts.temporal_smooth ?? true,
   };
 
-  const _res = await fetch(`${PYTORCH_API_BASE}/generate`, {
+  const res = await fetch(`${PYTORCH_API_BASE}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON?.stringify(payload),
-    signal: AbortSignal?.timeout(120_000), // 2-min budget for inference
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(120_000), // 2-min budget for inference
   });
 
   if (!res?.ok) {
-    const _msg = await res?.text().catch(() => res?.statusText);
+    const msg = await res?.text().catch(() => res?.statusText);
     throw new Error(`PyTorch diffusion API error ${res?.status}: ${msg}`);
   }
 
@@ -347,7 +347,7 @@ export async function generatePyTorchDiffusionVideo(
  * directly to this — no server round-trip needed after this call.
  */
 export function getPyTorchStreamUrl(_opts: PyTorchDiffusionRequest): string {
-  const _url = `${PYTORCH_API_BASE}/generate/stream`;
+  const url = `${PYTORCH_API_BASE}/generate/stream`;
   return url;
 }
 
@@ -368,24 +368,24 @@ export async function* streamPyTorchDiffusion(
 }> {
   const payload: PyTorchDiffusionRequest = {
     ...opts,
-    use_digital_gpu: opts?.use_digital_gpu ?? true,
-    temporal_smooth: opts?.temporal_smooth ?? true,
+    use_digital_gpu: opts.use_digital_gpu ?? true,
+    temporal_smooth: opts.temporal_smooth ?? true,
     output_format: "frames_b64",
   };
 
-  const _res = await fetch(`${PYTORCH_API_BASE}/generate/stream`, {
+  const res = await fetch(`${PYTORCH_API_BASE}/generate/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON?.stringify(payload),
-    signal: AbortSignal?.timeout(180_000),
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(180_000),
   });
 
   if (!res?.ok || !res?.body) {
     throw new Error(`PyTorch stream error ${res?.status}: ${res?.statusText}`);
   }
 
-  const _reader = res?.body.getReader();
-  const _decoder = new TextDecoder();
+  const reader = res?.body.getReader();
+  const decoder = new TextDecoder();
   let buffer = "";
 
   while (true) {
@@ -393,13 +393,13 @@ export async function* streamPyTorchDiffusion(
     if (done) break;
     buffer += decoder?.decode(value, { stream: true });
 
-    const _lines = buffer?.split("\n\n");
+    const lines = buffer?.split("\n\n");
     buffer = lines?.pop() ?? "";
 
     for (const line of lines) {
       if (!line?.startsWith("data: ")) continue;
       try {
-        const _evt = JSON?.parse(line?.slice(6));
+        const evt = JSON?.parse(line?.slice(6));
         yield evt;
         if (evt?.done) return;
       } catch {
@@ -419,18 +419,18 @@ export async function generatePyTorchKeyframe(
   gpu_applied?: boolean;
   scene_metadata?: Record<string, unknown>;
 }> {
-  const _res = await fetch(`${PYTORCH_API_BASE}/generate/keyframe`, {
+  const res = await fetch(`${PYTORCH_API_BASE}/generate/keyframe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON?.stringify({
+    body: JSON.stringify({
       ...opts,
-      use_digital_gpu: opts?.use_digital_gpu ?? true,
+      use_digital_gpu: opts.use_digital_gpu ?? true,
     }),
-    signal: AbortSignal?.timeout(60_000),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!res?.ok) {
-    const _msg = await res?.text().catch(() => res?.statusText);
+    const msg = await res?.text().catch(() => res?.statusText);
     throw new Error(`PyTorch keyframe API error ${res?.status}: ${msg}`);
   }
 
@@ -444,9 +444,9 @@ export async function testDiffusionModel(): Promise<{
   status: TrainingStatus;
   message: string;
 }> {
-  const _status = getDiffusionTrainingStatus();
-  const _msg = status?.trained
+  const status = getDiffusionTrainingStatus();
+  const msg = status?.trained
     ? `Model trained — ${status?.epochs} epochs, loss ${status?.finalLoss?.toFixed(4)}, weights ${status?.weightsSizeKB} KB`
     : "Model not yet trained. Call trainDiffusionModel() to train.";
-  return { ok: status?.trained, status, message: msg };
+  return { ok: status.trained, status, message: msg };
 }

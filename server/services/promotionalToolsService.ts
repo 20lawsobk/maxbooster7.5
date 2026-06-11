@@ -27,7 +27,7 @@ import { AutonomousAutopilot } from "../autonomous-autopilot";
 import { AutopilotEngine } from "../autopilot-engine";
 import { UserPocketDimensionService } from "./userPocketDimensionService";
 
-const _PROMO_CARD_TEMPLATES = {
+const PROMO_CARD_TEMPLATES = {
   minimal: {
     name: "Minimal",
     description: "Clean design with focus on artwork",
@@ -57,16 +57,16 @@ class PromotionalToolsService {
   private static readonly MAX_ENGINES = 10_000;
 
   private evictOldestEngine<V>(map: Map<string, V>): void {
-    const _oldest = map?.keys().next().value;
+    const oldest = map?.keys().next().value;
     if (oldest !== undefined) map?.delete(oldest);
   }
 
   getAutopilotForUser(userId: string): AutopilotEngine {
     if (!this?.autopilotEngines.has(userId)) {
-      if (this?.autopilotEngines.size >= PromotionalToolsService?.MAX_ENGINES) {
+      if (this?.autopilotEngines.size >= PromotionalToolsService.MAX_ENGINES) {
         this?.evictOldestEngine(this?.autopilotEngines);
       }
-      const _engine = AutopilotEngine?.createForSocialAndAds(userId);
+      const engine = AutopilotEngine?.createForSocialAndAds(userId);
       this?.autopilotEngines.set(userId, engine);
     }
     return this?.autopilotEngines.get(userId)!;
@@ -75,11 +75,11 @@ class PromotionalToolsService {
   getAutonomousAutopilotForUser(userId: string): AutonomousAutopilot {
     if (!this?.autonomousAutopilots.has(userId)) {
       if (
-        this?.autonomousAutopilots.size >= PromotionalToolsService?.MAX_ENGINES
+        this?.autonomousAutopilots.size >= PromotionalToolsService.MAX_ENGINES
       ) {
         this?.evictOldestEngine(this?.autonomousAutopilots);
       }
-      const _autopilot = AutonomousAutopilot?.createForSocialAndAds(userId);
+      const autopilot = AutonomousAutopilot?.createForSocialAndAds(userId);
       this?.autonomousAutopilots.set(userId, autopilot);
     }
     return this?.autonomousAutopilots.get(userId)!;
@@ -90,7 +90,7 @@ class PromotionalToolsService {
     releaseId: string,
     config: Partial<PreSavePage>,
   ): Promise<PreSavePage> {
-    const _release = await db?.query.releases?.findFirst({
+    const release = await db?.query.releases?.findFirst({
       where: eq(releases?.id, releaseId),
     });
 
@@ -98,7 +98,7 @@ class PromotionalToolsService {
       throw new Error("Release not found");
     }
 
-    const _slug = config?.slug || this?.generateSlug(release?.title);
+    const slug = config?.slug || this?.generateSlug(release?.title);
 
     const [page] = await db
       .insert(preSavePages)
@@ -106,44 +106,44 @@ class PromotionalToolsService {
         releaseId,
         userId,
         slug,
-        title: release?.title,
+        title: release.title,
         artistName:
           (release?.metadata as Record<string, unknown>)?.artistName ||
           "Unknown Artist",
-        coverArtUrl: release?.artworkUrl,
-        releaseDate: release?.releaseDate,
-        description: config?.description,
-        backgroundColor: config?.backgroundColor || "#1a1a2e",
-        textColor: config?.textColor || "#ffffff",
-        buttonColor: config?.buttonColor || "#4ecdc4",
-        spotifyPreSaveUrl: config?.spotifyPreSaveUrl,
-        appleMusicPreAddUrl: config?.appleMusicPreAddUrl,
-        deezerPreSaveUrl: config?.deezerPreSaveUrl,
-        amazonMusicUrl: config?.amazonMusicUrl,
-        youtubeUrl: config?.youtubeUrl,
-        tidalUrl: config?.tidalUrl,
-        socialLinks: config?.socialLinks || {},
-        customLinks: config?.customLinks || [],
-        emailCapture: config?.emailCapture ?? true,
+        coverArtUrl: release.artworkUrl,
+        releaseDate: release.releaseDate,
+        description: config.description,
+        backgroundColor: config.backgroundColor || "#1a1a2e",
+        textColor: config.textColor || "#ffffff",
+        buttonColor: config.buttonColor || "#4ecdc4",
+        spotifyPreSaveUrl: config.spotifyPreSaveUrl,
+        appleMusicPreAddUrl: config.appleMusicPreAddUrl,
+        deezerPreSaveUrl: config.deezerPreSaveUrl,
+        amazonMusicUrl: config.amazonMusicUrl,
+        youtubeUrl: config.youtubeUrl,
+        tidalUrl: config.tidalUrl,
+        socialLinks: config.socialLinks || {},
+        customLinks: config.customLinks || [],
+        emailCapture: config.emailCapture ?? true,
       })
       .returning();
 
-    const _autopilot = this?.getAutopilotForUser(userId);
-    autopilot?.emit("preSavePageCreated", { pageId: page?.id, releaseId });
+    const autopilot = this?.getAutopilotForUser(userId);
+    autopilot?.emit("preSavePageCreated", { pageId: page.id, releaseId });
 
-    logger?.info("Pre-save page created:", { pageId: page?.id, slug: page?.slug });
+    logger?.info("Pre-save page created:", { pageId: page.id, slug: page.slug });
     return page;
   }
 
   async getPreSavePage(pageId: string): Promise<PreSavePage | null> {
-    const _page = await db?.query.preSavePages?.findFirst({
+    const page = await db?.query.preSavePages?.findFirst({
       where: eq(preSavePages?.id, pageId),
     });
     return page || null;
   }
 
   async getPreSavePageBySlug(slug: string): Promise<PreSavePage | null> {
-    const _page = await db?.query.preSavePages?.findFirst({
+    const page = await db?.query.preSavePages?.findFirst({
       where: eq(preSavePages?.slug, slug),
     });
     return page || null;
@@ -176,26 +176,26 @@ class PromotionalToolsService {
     event: "view" | "presave" | "email" | "click",
     platform?: string,
   ): Promise<void> {
-    const _page = await this?.getPreSavePage(pageId);
+    const page = await this?.getPreSavePage(pageId);
     if (!page) return;
 
     const updates: Partial<PreSavePage> = {};
     switch (event) {
       case "view":
-        updates?.views = (page?.views || 0) + 1;
+        updates.views = (page?.views || 0) + 1;
         break;
       case "presave":
-        updates?.preSaves = (page?.preSaves || 0) + 1;
+        updates.preSaves = (page?.preSaves || 0) + 1;
         break;
       case "email":
-        updates?.emailSignups = (page?.emailSignups || 0) + 1;
+        updates.emailSignups = (page?.emailSignups || 0) + 1;
         break;
       case "click":
         if (platform) {
-          const _clicks =
+          const clicks =
             (page?.clicksByPlatform as Record<string, number>) || {};
           clicks[platform] = (clicks[platform] || 0) + 1;
-          updates?.clicksByPlatform = clicks;
+          updates.clicksByPlatform = clicks;
         }
         break;
     }
@@ -207,10 +207,10 @@ class PromotionalToolsService {
   }
 
   async captureEmail(pageId: string, email: string): Promise<boolean> {
-    const _page = await this?.getPreSavePage(pageId);
+    const page = await this?.getPreSavePage(pageId);
     if (!page || !page?.emailCapture) return false;
 
-    const _emailList = (page?.emailList as string[]) || [];
+    const emailList = (page?.emailList as string[]) || [];
     if (!emailList?.includes(email)) {
       emailList?.push(email);
       await db
@@ -228,7 +228,7 @@ class PromotionalToolsService {
     const [deleted] = await db
       .delete(preSavePages)
       .where(and(eq(preSavePages?.id, pageId), eq(preSavePages?.userId, userId)))
-      .returning({ id: preSavePages?.id });
+      .returning({ id: preSavePages.id });
     return !!deleted;
   }
 
@@ -245,34 +245,34 @@ class PromotionalToolsService {
       fontFamily?: string;
     },
   ): Promise<PromoCard> {
-    const _release = await db?.query.releases?.findFirst({
+    const release = await db?.query.releases?.findFirst({
       where: eq(releases?.id, releaseId),
     });
 
     if (!release) throw new Error("Release not found");
 
-    const _dimensions =
+    const dimensions =
       PROMO_CARD_DIMENSIONS[config?.type] || PROMO_CARD_DIMENSIONS?.square;
-    const _cardId = randomBytes(8).toString("hex");
+    const cardId = randomBytes(8).toString("hex");
 
     let generatedImageUrl: string | null = null;
     try {
-      const _imageBuffer = await sharpImageService?.createPromoCard({
-        width: dimensions?.width,
-        height: dimensions?.height,
-        backgroundColor: config?.backgroundColor || "#1a1a2e",
-        textColor: config?.textColor || "#ffffff",
-        accentColor: config?.accentColor || "#4ecdc4",
+      const imageBuffer = await sharpImageService?.createPromoCard({
+        width: dimensions.width,
+        height: dimensions.height,
+        backgroundColor: config.backgroundColor || "#1a1a2e",
+        textColor: config.textColor || "#ffffff",
+        accentColor: config.accentColor || "#4ecdc4",
         artistName:
           (release?.metadata as Record<string, unknown>)?.artistName ||
           "Unknown Artist",
-        trackTitle: release?.title,
-        releaseDate: release?.releaseDate?.toLocaleDateString(),
-        template: config?.template || "minimal",
-        coverArtUrl: release?.artworkUrl,
+        trackTitle: release.title,
+        releaseDate: release.releaseDate?.toLocaleDateString(),
+        template: config.template || "minimal",
+        coverArtUrl: release.artworkUrl,
       });
 
-      const _result = await this?.pocketService.storeFile(
+      const result = await this?.pocketService.storeFile(
         userId,
         `promo-card-${cardId}.png`,
         imageBuffer,
@@ -280,7 +280,7 @@ class PromotionalToolsService {
           folder: "promo-cards",
           mimeType: "image/png",
           isPublic: true,
-          metadata: { releaseId, type: config?.type },
+          metadata: { releaseId, type: config.type },
         },
       );
       generatedImageUrl = `/api/storage/file/${result?.fileKey}`;
@@ -293,26 +293,26 @@ class PromotionalToolsService {
       .values({
         releaseId,
         userId,
-        type: config?.type,
-        template: config?.template || "minimal",
-        coverArtUrl: release?.artworkUrl,
+        type: config.type,
+        template: config.template || "minimal",
+        coverArtUrl: release.artworkUrl,
         artistName:
           (release?.metadata as Record<string, unknown>)?.artistName ||
           "Unknown Artist",
-        trackTitle: release?.title,
-        releaseDate: release?.releaseDate?.toLocaleDateString(),
-        customText: config?.customText,
-        backgroundColor: config?.backgroundColor || "#1a1a2e",
-        textColor: config?.textColor || "#ffffff",
-        accentColor: config?.accentColor || "#4ecdc4",
-        fontFamily: config?.fontFamily || "Inter",
+        trackTitle: release.title,
+        releaseDate: release.releaseDate?.toLocaleDateString(),
+        customText: config.customText,
+        backgroundColor: config.backgroundColor || "#1a1a2e",
+        textColor: config.textColor || "#ffffff",
+        accentColor: config.accentColor || "#4ecdc4",
+        fontFamily: config.fontFamily || "Inter",
         generatedImageUrl,
-        width: dimensions?.width,
-        height: dimensions?.height,
+        width: dimensions.width,
+        height: dimensions.height,
       })
       .returning();
 
-    logger?.info("Promo card created:", { cardId: card?.id, type: config?.type });
+    logger?.info("Promo card created:", { cardId: card.id, type: config.type });
     return card;
   }
 
@@ -343,7 +343,7 @@ class PromotionalToolsService {
     const [deleted] = await db
       .delete(promoCards)
       .where(and(eq(promoCards?.id, cardId), eq(promoCards?.userId, userId)))
-      .returning({ id: promoCards?.id });
+      .returning({ id: promoCards.id });
     return !!deleted;
   }
 
@@ -361,7 +361,7 @@ class PromotionalToolsService {
       accentColor?: string;
     },
   ): Promise<MiniVideo> {
-    const _release = await db?.query.releases?.findFirst({
+    const release = await db?.query.releases?.findFirst({
       where: eq(releases?.id, releaseId),
     });
 
@@ -372,23 +372,23 @@ class PromotionalToolsService {
       .values({
         releaseId,
         userId,
-        type: config?.type,
+        type: config.type,
         duration: 15,
-        aspectRatio: config?.aspectRatio,
-        coverArtUrl: release?.artworkUrl,
-        audioPreviewUrl: config?.audioPreviewUrl,
-        audioStartTime: config?.audioStartTime || 0,
-        backgroundColor: config?.backgroundColor || "#1a1a2e",
-        accentColor: config?.accentColor || "#4ecdc4",
-        textOverlay: config?.textOverlay,
-        animationStyle: config?.animationStyle || "wave",
+        aspectRatio: config.aspectRatio,
+        coverArtUrl: release.artworkUrl,
+        audioPreviewUrl: config.audioPreviewUrl,
+        audioStartTime: config.audioStartTime || 0,
+        backgroundColor: config.backgroundColor || "#1a1a2e",
+        accentColor: config.accentColor || "#4ecdc4",
+        textOverlay: config.textOverlay,
+        animationStyle: config.animationStyle || "wave",
         generatedVideoUrl: `/api/distribution/promo/mini-video/${randomBytes(8).toString("hex")}/render`,
       })
       .returning();
 
     logger?.info("Mini video created:", {
-      videoId: video?.id,
-      type: config?.type,
+      videoId: video.id,
+      type: config.type,
     });
     return video;
   }
@@ -416,7 +416,7 @@ class PromotionalToolsService {
     const [deleted] = await db
       .delete(miniVideos)
       .where(and(eq(miniVideos?.id, videoId), eq(miniVideos?.userId, userId)))
-      .returning({ id: miniVideos?.id });
+      .returning({ id: miniVideos.id });
     return !!deleted;
   }
 
@@ -436,15 +436,15 @@ class PromotionalToolsService {
         releaseId,
         trackId,
         userId,
-        type: config?.type,
-        sourceUrl: config?.sourceUrl,
+        type: config.type,
+        sourceUrl: config.sourceUrl,
         duration: 8,
-        loopPoint: config?.loopPoint || 0,
+        loopPoint: config.loopPoint || 0,
         status: "draft",
       })
       .returning();
 
-    logger?.info("Spotify Canvas created:", { canvasId: canvas?.id, trackId });
+    logger?.info("Spotify Canvas created:", { canvasId: canvas.id, trackId });
     return canvas;
   }
 
@@ -471,7 +471,7 @@ class PromotionalToolsService {
   }
 
   async submitSpotifyCanvas(canvasId: string): Promise<SpotifyCanvas> {
-    const _canvas = await db?.query.spotifyCanvases?.findFirst({
+    const canvas = await db?.query.spotifyCanvases?.findFirst({
       where: eq(spotifyCanvases?.id, canvasId),
     });
 
@@ -533,25 +533,25 @@ class PromotionalToolsService {
         trackId,
         releaseId,
         userId,
-        language: config?.language,
+        language: config.language,
         lyrics,
-        plainText: config?.plainText,
-        syncMethod: config?.syncMethod || "manual",
-        status: lyrics?.length > 0 ? "synced" : "draft",
+        plainText: config.plainText,
+        syncMethod: config.syncMethod || "manual",
+        status: lyrics.length > 0 ? "synced" : "draft",
       })
       .returning();
 
-    logger?.info("Lyrics sync created:", { syncId: sync?.id, trackId });
+    logger?.info("Lyrics sync created:", { syncId: sync.id, trackId });
     return sync;
   }
 
   private autoSyncLyrics(plainText: string): unknown[] {
-    const _lines = plainText?.split("\n").filter((line) => line?.trim());
-    const _avgDuration = 3;
+    const lines = plainText?.split("\n").filter((line) => line?.trim());
+    const avgDuration = 3;
     return lines?.map((text, index) => ({
       startTime: index * avgDuration,
       endTime: (index + 1) * avgDuration,
-      text: text?.trim(),
+      text: text.trim(),
     }));
   }
 
@@ -575,7 +575,7 @@ class PromotionalToolsService {
   }
 
   async submitLyricsToplatforms(syncId: string): Promise<LyricsSync> {
-    const _sync = await db?.query.lyricsSyncs?.findFirst({
+    const sync = await db?.query.lyricsSyncs?.findFirst({
       where: eq(lyricsSyncs?.id, syncId),
     });
 
@@ -591,7 +591,7 @@ class PromotionalToolsService {
 
     logger?.info("Lyrics submitted to platforms:", {
       syncId,
-      platforms: sync?.platforms,
+      platforms: sync.platforms,
     });
     return updated;
   }
@@ -620,32 +620,32 @@ class PromotionalToolsService {
   }
 
   exportLRC(sync: LyricsSync): string {
-    const _lyricsArray = (sync?.lyrics as unknown[]) || [];
+    const lyricsArray = (sync?.lyrics as unknown[]) || [];
     let lrc = "";
     for (const line of lyricsArray) {
-      const _minutes = Math?.floor(line?.startTime / 60);
-      const _seconds = (line?.startTime % 60).toFixed(2);
+      const minutes = Math?.floor(line?.startTime / 60);
+      const seconds = (line?.startTime % 60).toFixed(2);
       lrc += `[${minutes?.toString().padStart(2, "0")}:${seconds?.padStart(5, "0")}]${line?.text}\n`;
     }
     return lrc;
   }
 
   exportSRT(sync: LyricsSync): string {
-    const _lyricsArray = (sync?.lyrics as unknown[]) || [];
+    const lyricsArray = (sync?.lyrics as unknown[]) || [];
     let srt = "";
     lyricsArray?.forEach((line, index) => {
-      const _startTime = this?.formatSRTTime(line?.startTime);
-      const _endTime = this?.formatSRTTime(line?.endTime);
+      const startTime = this?.formatSRTTime(line?.startTime);
+      const endTime = this?.formatSRTTime(line?.endTime);
       srt += `${index + 1}\n${startTime} --> ${endTime}\n${line?.text}\n\n`;
     });
     return srt;
   }
 
   private formatSRTTime(seconds: number): string {
-    const _hours = Math?.floor(seconds / 3600);
-    const _mins = Math?.floor((seconds % 3600) / 60);
-    const _secs = Math?.floor(seconds % 60);
-    const _ms = Math?.floor((seconds % 1) * 1000);
+    const hours = Math?.floor(seconds / 3600);
+    const mins = Math?.floor((seconds % 3600) / 60);
+    const secs = Math?.floor(seconds % 60);
+    const ms = Math?.floor((seconds % 1) * 1000);
     return `${hours?.toString().padStart(2, "0")}:${mins?.toString().padStart(2, "0")}:${secs?.toString().padStart(2, "0")},${ms?.toString().padStart(3, "0")}`;
   }
 
@@ -663,16 +663,16 @@ class PromotionalToolsService {
   async calculateArtistScore(userId: string): Promise<ArtistScore> {
     this?.getAutonomousAutopilotForUser(userId);
 
-    const _streamingScore = Math?.random() * 100;
-    const _socialScore = Math?.random() * 100;
-    const _playlistScore = Math?.random() * 100;
-    const _radioScore = Math?.random() * 100;
+    const streamingScore = Math?.random() * 100;
+    const socialScore = Math?.random() * 100;
+    const playlistScore = Math?.random() * 100;
+    const radioScore = Math?.random() * 100;
 
-    const _artistScore =
-      streamingScore * 0?.4 +
-      socialScore * 0?.25 +
-      playlistScore * 0?.25 +
-      radioScore * 0?.1;
+    const artistScore =
+      streamingScore * 0.4 +
+      socialScore * 0.25 +
+      playlistScore * 0.25 +
+      radioScore * 0.1;
 
     let careerStage = "undiscovered";
     if (artistScore > 80) careerStage = "superstar";
@@ -691,8 +691,8 @@ class PromotionalToolsService {
         socialScore,
         playlistScore,
         radioScore,
-        growthVelocity: Math?.random() * 50 - 25,
-        momentumScore: Math?.random() * 100,
+        growthVelocity: Math.random() * 50 - 25,
+        momentumScore: Math.random() * 100,
         triggerCities: ["Los Angeles", "London", "Tokyo", "Berlin"],
         breakoutMarkets: ["United States", "United Kingdom", "Japan"],
         audienceDemographics: {
@@ -703,7 +703,7 @@ class PromotionalToolsService {
         },
         competitorBenchmark: {
           avgScore: 45,
-          percentile: Math?.floor(artistScore),
+          percentile: Math.floor(artistScore),
         },
         milestones: [],
         predictions: { nextMilestone: "mainstream", estimatedDays: 90 },
@@ -744,24 +744,24 @@ class PromotionalToolsService {
       .values({
         userId,
         listingId,
-        campaignType: config?.campaignType,
-        budget: config?.budget || 0,
-        targetGenres: config?.targetGenres || [],
-        targetCountries: config?.targetCountries || [],
-        placement: config?.placement || "trending",
+        campaignType: config.campaignType,
+        budget: config.budget || 0,
+        targetGenres: config.targetGenres || [],
+        targetCountries: config.targetCountries || [],
+        placement: config.placement || "trending",
         status: "active",
-        startDate: config?.startDate || new Date(),
-        endDate: config?.endDate,
+        startDate: config.startDate || new Date(),
+        endDate: config.endDate,
       })
       .returning();
 
-    const _autopilot = this?.getAutopilotForUser(userId);
+    const autopilot = this?.getAutopilotForUser(userId);
     autopilot?.emit("beatPromotionCreated", {
-      promotionId: promo?.id,
+      promotionId: promo.id,
       listingId,
     });
 
-    logger?.info("Beat promotion created:", { promoId: promo?.id, listingId });
+    logger?.info("Beat promotion created:", { promoId: promo.id, listingId });
     return promo;
   }
 
@@ -775,7 +775,7 @@ class PromotionalToolsService {
   async generatePersonalizedRecommendations(
     userId: string,
   ): Promise<MarketplaceRecommendation[]> {
-    const _existingRecs = await db?.query.marketplaceRecommendations?.findMany({
+    const existingRecs = await db?.query.marketplaceRecommendations?.findMany({
       where: eq(marketplaceRecommendations?.userId, userId),
       orderBy: [desc(marketplaceRecommendations?.createdAt)],
       limit: 20,
@@ -786,7 +786,7 @@ class PromotionalToolsService {
     }
 
     const recommendations: unknown[] = [];
-    const _types = [
+    const types = [
       "for_you",
       "trending",
       "similar",
@@ -799,22 +799,22 @@ class PromotionalToolsService {
         recommendations?.push({
           userId,
           recommendationType: type,
-          score: Math?.random() * 100,
+          score: Math.random() * 100,
           reason: `Based on your ${type === "for_you" ? "listening history" : type}`,
-          metadata: { algorithm: "collaborative_filtering", version: "2?.0" },
+          metadata: { algorithm: "collaborative_filtering", version: "2.0" },
           expiresAt: new Date(Date?.now() + 24 * 60 * 60 * 1000),
         });
       }
     }
 
-    const _inserted = await db
+    const inserted = await db
       .insert(marketplaceRecommendations)
       .values(recommendations)
       .returning();
 
     logger?.info("Personalized recommendations generated:", {
       userId,
-      count: inserted?.length,
+      count: inserted.length,
     });
     return inserted;
   }
@@ -823,7 +823,7 @@ class PromotionalToolsService {
     userId: string,
     releaseId: string,
   ): Promise<void> {
-    const _autopilot = this?.getAutonomousAutopilotForUser(userId);
+    const autopilot = this?.getAutonomousAutopilotForUser(userId);
 
     await autopilot?.startAutonomousMode({
       enabled: true,
@@ -836,4 +836,4 @@ class PromotionalToolsService {
   }
 }
 
-export const _promotionalToolsService = new PromotionalToolsService();
+export const promotionalToolsService = new PromotionalToolsService();

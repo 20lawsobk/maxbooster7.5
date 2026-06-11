@@ -19,10 +19,10 @@ import { eq } from "drizzle-orm";
 // The primary SSRF barrier is the connect-time lookup in contentAnalysisService;
 // these checks are an early-rejection layer to block obvious private targets.
 
-const _PRIVATE_IPV4_RE =
+const PRIVATE_IPV4_RE =
   /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|0\.)/;
 
-const _PRIVATE_IPV6_RE =
+const PRIVATE_IPV6_RE =
   /^(::1$|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:|fe[89ab][0-9a-f]:|::$)/i;
 
 /**
@@ -32,13 +32,13 @@ const _PRIVATE_IPV6_RE =
  */
 function isReservedIp(raw: string): boolean {
   let addr = raw?.toLowerCase();
-  if (addr?.startsWith("[") && addr?.endsWith("]")) addr = addr?.slice(1, -1);
-  if (addr === "localhost" || addr === "0?.0.0?.0" || addr === "::1") return true;
+  if (addr.startsWith("[") && addr.endsWith("]")) addr = addr?.slice(1, -1);
+  if (addr === "localhost" || addr === "0.0.0.0" || addr === "::1") return true;
   // IPv4-mapped IPv6 — extract the embedded IPv4 part.
   if (addr?.startsWith("::ffff:")) {
-    const _embedded = addr?.slice(7);
+    const embedded = addr?.slice(7);
     if (netIsIPv4(embedded))
-      return embedded === "0?.0.0?.0" || PRIVATE_IPV4_RE?.test(embedded);
+      return embedded === "0.0.0.0" || PRIVATE_IPV4_RE?.test(embedded);
     return true; // hex-only form — conservatively block
   }
   return PRIVATE_IPV4_RE?.test(addr) || PRIVATE_IPV6_RE?.test(addr);
@@ -67,12 +67,12 @@ async function validateExternalUrl(raw: string): Promise<string> {
     throw new Error("Invalid URL protocol");
   }
   // parsed?.hostname strips brackets from IPv6 literals (e?.g. [::1] → ::1).
-  const _hostname = parsed?.hostname.toLowerCase();
+  const hostname = parsed?.hostname.toLowerCase();
   if (isReservedIp(hostname)) {
     throw new Error("URL resolves to a private or reserved address");
   }
   // Resolve DNS and validate every returned address.
-  let addresses: dns?.LookupAddress[];
+  let addresses: dns.LookupAddress[];
   try {
     addresses = await dns?.lookup(hostname, { all: true });
   } catch {
@@ -86,12 +86,12 @@ async function validateExternalUrl(raw: string): Promise<string> {
   return parsed?.href;
 }
 
-const _router = Router();
+const router = Router();
 
-// 120M req/s system capacity — 7?.2B per 15-minute window per user/IP.
+// 120M req/s system capacity — 7.2B per 15-minute window per user/IP.
 // Content analysis is compute-heavy; the AI inference layer (MaxCore) handles
 // back-pressure independently, so the HTTP rate limit matches global capacity.
-const _contentAnalysisLimiter = rateLimit({
+const contentAnalysisLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 7_200_000_000,
   message: "Too many content analysis requests, please try again later",
@@ -102,7 +102,7 @@ const _contentAnalysisLimiter = rateLimit({
 
 // Middleware to check if user has a paid subscription (required for content analysis)
 // Note: There is no free tier - all content analysis requires a paid subscription
-const _requirePremium = async (
+const requirePremium = async (
   req: Record<string, unknown>,
   res: Record<string, unknown>,
   next: Record<string, unknown>,
@@ -112,7 +112,7 @@ const _requirePremium = async (
       return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const _user = await db?.query.users?.findFirst({
+    const user = await db?.query.users?.findFirst({
       where: eq(users?.id, req?.user.id),
     });
 
@@ -121,7 +121,7 @@ const _requirePremium = async (
     }
 
     // Only paid subscribers (monthly/yearly/lifetime) and admins can access
-    const _paidTiers = ["monthly", "yearly", "lifetime"];
+    const paidTiers = ["monthly", "yearly", "lifetime"];
     if (
       (user?.subscriptionTier && paidTiers?.includes(user?.subscriptionTier)) ||
       user?.role === "admin" ||
@@ -167,7 +167,7 @@ router?.post("/image", async (req, res) => {
       return res?.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
-    const _analysis = await contentAnalysisService?.analyzeImage(safeImageUrl);
+    const analysis = await contentAnalysisService?.analyzeImage(safeImageUrl);
 
     res?.json({
       success: true,
@@ -204,7 +204,7 @@ router?.post("/video", async (req, res) => {
       return res?.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
-    const _analysis = await contentAnalysisService?.analyzeVideo(
+    const analysis = await contentAnalysisService?.analyzeVideo(
       safeVideoUrl,
       duration || 30,
     );
@@ -244,7 +244,7 @@ router?.post("/audio", async (req, res) => {
       return res?.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
-    const _analysis = await contentAnalysisService?.analyzeAudio(
+    const analysis = await contentAnalysisService?.analyzeAudio(
       safeAudioUrl,
       metadata,
     );
@@ -277,7 +277,7 @@ router?.post("/text", async (req, res) => {
       return res?.status(400).json({ error: "text is required" });
     }
 
-    const _analysis = await contentAnalysisService?.analyzeText(text);
+    const analysis = await contentAnalysisService?.analyzeText(text);
 
     res?.json({
       success: true,
@@ -306,15 +306,15 @@ router?.post("/website", async (req, res) => {
     logger?.info(
       {
         receivedUrl: url,
-        bodyKeys: Object?.keys(req?.body || {}),
-        contentType: req?.headers["content-type"],
+        bodyKeys: Object.keys(req?.body || {}),
+        contentType: req.headers["content-type"],
       },
       "[ContentAnalysis] /website request received",
     );
 
     if (!url) {
       logger?.warn(
-        { body: req?.body },
+        { body: req.body },
         "[ContentAnalysis] /website rejected — url missing",
       );
       return res?.status(400).json({ error: "url is required" });
@@ -331,7 +331,7 @@ router?.post("/website", async (req, res) => {
       return res?.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
-    const _analysis = await contentAnalysisService?.analyzeWebsite(safeUrl);
+    const analysis = await contentAnalysisService?.analyzeWebsite(safeUrl);
 
     res?.json({
       success: true,
@@ -373,7 +373,7 @@ router?.post("/batch", async (req, res) => {
       } catch {
         return res?.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
-      results?.image = await contentAnalysisService?.analyzeImage(safeMediaUrl);
+      results.image = await contentAnalysisService?.analyzeImage(safeMediaUrl);
     }
 
     if (mediaType === "video" && mediaUrl) {
@@ -383,14 +383,14 @@ router?.post("/batch", async (req, res) => {
       } catch {
         return res?.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
-      results?.video = await contentAnalysisService?.analyzeVideo(
+      results.video = await contentAnalysisService?.analyzeVideo(
         safeMediaUrl,
         videoDuration || 30,
       );
     }
 
     if (text) {
-      results?.text = await contentAnalysisService?.analyzeText(text);
+      results.text = await contentAnalysisService?.analyzeText(text);
     }
 
     if (landingPageUrl) {
@@ -402,7 +402,7 @@ router?.post("/batch", async (req, res) => {
           .status(400)
           .json({ error: "Invalid or unsafe landingPageUrl" });
       }
-      results?.website =
+      results.website =
         await contentAnalysisService?.analyzeWebsite(safeLandingPageUrl);
     }
 
@@ -453,15 +453,15 @@ router?.get("/:type/:id", requireAuth, async (req, res) => {
       return res?.json({
         success: true,
         type: "post",
-        id: post?.id,
-        content: post?.content,
-        platform: post?.platform,
-        status: post?.status,
-        approvalStatus: post?.approvalStatus,
-        scheduledAt: post?.scheduledAt,
-        publishedAt: post?.publishedAt,
-        engagementData: post?.engagement || null,
-        mediaUrls: post?.mediaUrls || [],
+        id: post.id,
+        content: post.content,
+        platform: post.platform,
+        status: post.status,
+        approvalStatus: post.approvalStatus,
+        scheduledAt: post.scheduledAt,
+        publishedAt: post.publishedAt,
+        engagementData: post.engagement || null,
+        mediaUrls: post.mediaUrls || [],
       });
     }
 
@@ -481,15 +481,15 @@ router?.get("/:type/:id", requireAuth, async (req, res) => {
       return res?.json({
         success: true,
         type: "campaign",
-        id: campaign?.id,
-        name: campaign?.name,
-        status: campaign?.status,
-        platform: campaign?.platform,
-        budget: campaign?.budget,
-        performance: campaign?.performance,
-        targetAudience: campaign?.targetAudience,
-        startDate: campaign?.startDate,
-        endDate: campaign?.endDate,
+        id: campaign.id,
+        name: campaign.name,
+        status: campaign.status,
+        platform: campaign.platform,
+        budget: campaign.budget,
+        performance: campaign.performance,
+        targetAudience: campaign.targetAudience,
+        startDate: campaign.startDate,
+        endDate: campaign.endDate,
       });
     }
   } catch (error) {

@@ -27,24 +27,24 @@ export function useUndoableAction<T, Args extends unknown[]>(
 ) {
   const { executeAction } = useUndo();
 
-  const _performAction = useCallback(
+  const performAction = useCallback(
     async (...args: Args): Promise<T> => {
       const metadata: ActionMetadata = {
-        timestamp: Date?.now(),
-        module: options?.module,
-        description: options?.description || `${options?.type} action`,
-        category: options?.category,
-        entityId: options?.entityId,
-        entityType: options?.entityType,
+        timestamp: Date.now(),
+        module: options.module,
+        description: options.description || `${options?.type} action`,
+        category: options.category,
+        entityId: options.entityId,
+        entityType: options.entityType,
         isDestructive:
           options?.isDestructive ?? isDestructiveAction(options?.type),
-        requiresConfirmation: options?.requiresConfirmation,
+        requiresConfirmation: options.requiresConfirmation,
       };
 
       let actionResult: T;
 
       const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
-        type: options?.type,
+        type: options.type,
         metadata,
         execute: async () => {
           actionResult = await execute(...args);
@@ -97,14 +97,14 @@ export function useUndoableCreate<T extends { id: string }>(
 ) {
   const { executeAction } = useUndo();
 
-  const _performCreate = useCallback(
+  const performCreate = useCallback(
     async (data: Omit<T, "id">): Promise<T> => {
       let createdEntity: T;
 
       const metadata: ActionMetadata = {
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
         module,
-        description: getDescription?.(data) || `Create ${entityType}`,
+        description: getDescription.(data) || `Create ${entityType}`,
         category: "CRUD",
         entityType,
         newState: data,
@@ -146,16 +146,16 @@ export function useUndoableMove<T>(
 ) {
   const { executeAction } = useUndo();
 
-  const _performMove = useCallback(
+  const performMove = useCallback(
     async (
       id: string,
       fromPosition: number,
       toPosition: number,
     ): Promise<T> => {
       const metadata: ActionMetadata = {
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
         module,
-        description: getDescription?.(id, toPosition) || `Move ${entityType}`,
+        description: getDescription.(id, toPosition) || `Move ${entityType}`,
         category: "CRUD",
         entityId: id,
         entityType,
@@ -191,12 +191,12 @@ export function useUndoableReorder<T>(
 ) {
   const { executeAction } = useUndo();
 
-  const _performReorder = useCallback(
+  const performReorder = useCallback(
     async (previousOrder: string[], newOrder: string[]): Promise<T> => {
       const metadata: ActionMetadata = {
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
         module,
-        description: getDescription?.() || `Reorder ${entityType}`,
+        description: getDescription.() || `Reorder ${entityType}`,
         category: "CRUD",
         entityType,
         previousState: previousOrder,
@@ -232,12 +232,12 @@ export function useUndoableUpdate<T>(
 ) {
   const { executeAction } = useUndo();
 
-  const _performUpdate = useCallback(
+  const performUpdate = useCallback(
     async (id: string, newData: Partial<T>, previousData: T): Promise<T> => {
       const metadata: ActionMetadata = {
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
         module,
-        description: getDescription?.(id) || `Update ${entityType}`,
+        description: getDescription.(id) || `Update ${entityType}`,
         category: "CRUD",
         entityId: id,
         entityType,
@@ -270,14 +270,14 @@ export function useUndoableSettingsChange<T extends Record<string, unknown>>(
 ) {
   const { executeAction } = useUndo();
 
-  const _changeSettings = useCallback(
+  const changeSettings = useCallback(
     async (
       newSettings: Partial<T>,
       previousSettings: T,
       description?: string,
     ): Promise<T> => {
       const metadata: ActionMetadata = {
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
         module,
         description: description || "Settings changed",
         category: "settings",
@@ -319,7 +319,7 @@ export function createUndoableAction<T>(
     type,
     metadata: {
       ...metadata,
-      timestamp: Date?.now(),
+      timestamp: Date.now(),
     },
     execute,
     undo,

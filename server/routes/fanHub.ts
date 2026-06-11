@@ -1,68 +1,68 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db?.js";
-import { fanSubscribers, fanMessages, users } from "../../shared/schema?.js";
+import { db } from "../db.js";
+import { fanSubscribers, fanMessages, users } from "../../shared/schema.js";
 import { eq, and, or, ilike, sql, desc } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
-import { emailService } from "../services/emailService?.js";
+import { emailService } from "../services/emailService.js";
 
-const _router = Router();
+const router = Router();
 
 router?.use(requireAuth);
 
-const _createSubscriberSchema = z?.object({
-  email: z?.string().email().max(320),
-  name: z?.string().max(200).optional(),
-  phone: z?.string().max(30).optional(),
-  source: z?.string().max(100).optional().default("manual"),
-  tags: z?.array(z?.string().max(100)).optional().default([]),
-  notes: z?.string().max(5000).optional(),
-  isVip: z?.boolean().optional().default(false),
+const createSubscriberSchema = z.object({
+  email: z.string().email().max(320),
+  name: z.string().max(200).optional(),
+  phone: z.string().max(30).optional(),
+  source: z.string().max(100).optional().default("manual"),
+  tags: z.array(z.string().max(100)).optional().default([]),
+  notes: z.string().max(5000).optional(),
+  isVip: z.boolean().optional().default(false),
 });
 
-const _updateSubscriberSchema = z?.object({
-  email: z?.string().email().max(320).optional(),
-  name: z?.string().max(200).optional().nullable(),
-  phone: z?.string().max(30).optional().nullable(),
-  source: z?.string().max(100).optional(),
-  tags: z?.array(z?.string().max(100)).optional(),
-  notes: z?.string().max(5000).optional().nullable(),
-  isVip: z?.boolean().optional(),
+const updateSubscriberSchema = z.object({
+  email: z.string().email().max(320).optional(),
+  name: z.string().max(200).optional().nullable(),
+  phone: z.string().max(30).optional().nullable(),
+  source: z.string().max(100).optional(),
+  tags: z.array(z.string().max(100)).optional(),
+  notes: z.string().max(5000).optional().nullable(),
+  isVip: z.boolean().optional(),
 });
 
-const _sendMessageSchema = z?.object({
-  subject: z?.string().min(1).max(500),
-  body: z?.string().min(1).max(100_000),
-  segmentFilter: z?.string().max(200).optional().default("all"),
+const sendMessageSchema = z.object({
+  subject: z.string().min(1).max(500),
+  body: z.string().min(1).max(100_000),
+  segmentFilter: z.string().max(200).optional().default("all"),
 });
 
-const _importSubscriberSchema = z?.object({
-  email: z?.string().email().max(320),
-  name: z?.string().max(200).optional(),
-  phone: z?.string().max(30).optional(),
-  source: z?.string().max(100).optional(),
-  tags: z?.array(z?.string().max(100)).optional(),
-  isVip: z?.boolean().optional(),
-  notes: z?.string().max(5000).optional(),
+const importSubscriberSchema = z.object({
+  email: z.string().email().max(320),
+  name: z.string().max(200).optional(),
+  phone: z.string().max(30).optional(),
+  source: z.string().max(100).optional(),
+  tags: z.array(z.string().max(100)).optional(),
+  isVip: z.boolean().optional(),
+  notes: z.string().max(5000).optional(),
 });
 
 router?.get("/subscribers", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _page = Math?.max(parseInt(req?.query.page as string) || 1, 1);
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
-    const _search = (req?.query.search as string)?.slice(0, 200) || "";
-    const _offset = (page - 1) * limit;
+    const userId = req?.user!.id;
+    const page = Math?.max(parseInt(req?.query.page as string) || 1, 1);
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const search = (req?.query.search as string)?.slice(0, 200) || "";
+    const offset = (page - 1) * limit;
 
-    const _searchCondition = search
+    const searchCondition = search
       ? or(
           ilike(fanSubscribers?.email, `%${search}%`),
           ilike(fanSubscribers?.name, `%${search}%`),
         )
       : undefined;
 
-    const _subscribers = await db
+    const subscribers = await db
       .select()
       .from(fanSubscribers)
       .where(and(eq(fanSubscribers?.userId, userId), searchCondition))
@@ -81,7 +81,7 @@ router?.get("/subscribers", async (req: Request, res: Response) => {
         page,
         limit,
         total: Number(count),
-        totalPages: Math?.ceil(Number(count) / limit),
+        totalPages: Math.ceil(Number(count) / limit),
       },
     });
   } catch (error) {
@@ -92,17 +92,17 @@ router?.get("/subscribers", async (req: Request, res: Response) => {
 
 router?.post("/subscribers", async (req: Request, res: Response) => {
   try {
-    const _parsed = createSubscriberSchema?.safeParse(req?.body);
+    const parsed = createSubscriberSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const [subscriber] = await db
       .insert(fanSubscribers)
       .values({
-        userId: req?.user!.id,
+        userId: req.user!.id,
         ...parsed?.data,
       })
       .returning();
@@ -116,14 +116,14 @@ router?.post("/subscribers", async (req: Request, res: Response) => {
 
 router?.put("/subscribers/:id", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _parsed = updateSubscriberSchema?.safeParse(req?.body);
+    const parsed = updateSubscriberSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const [updated] = await db
@@ -145,7 +145,7 @@ router?.put("/subscribers/:id", async (req: Request, res: Response) => {
 
 router?.delete("/subscribers/:id", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
     const [deleted] = await db
@@ -166,7 +166,7 @@ router?.delete("/subscribers/:id", async (req: Request, res: Response) => {
 
 router?.post("/subscribers/import", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { subscribers: importData } = req?.body;
 
     if (!Array?.isArray(importData)) {
@@ -181,26 +181,26 @@ router?.post("/subscribers/import", async (req: Request, res: Response) => {
         .json({ error: "Import limit is 1000 subscribers per request" });
     }
 
-    const _parsed = z?.array(importSubscriberSchema).safeParse(importData);
+    const parsed = z.array(importSubscriberSchema).safeParse(importData);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
-    const _values = parsed?.data.map((s) => ({
+    const values = parsed?.data.map((s) => ({
       userId,
-      email: s?.email,
-      name: s?.name,
-      phone: s?.phone,
-      source: s?.source || "import",
-      tags: s?.tags || [],
+      email: s.email,
+      name: s.name,
+      phone: s.phone,
+      source: s.source || "import",
+      tags: s.tags || [],
       isVip: !!s?.isVip,
-      notes: s?.notes,
+      notes: s.notes,
     }));
 
-    const _imported = await db?.insert(fanSubscribers).values(values).returning();
-    return res?.json({ count: imported?.length });
+    const imported = await db?.insert(fanSubscribers).values(values).returning();
+    return res?.json({ count: imported.length });
   } catch (error) {
     logger?.warn("Error importing fan subscribers:", error);
     return res?.status(500).json({ error: "Failed to import fan subscribers" });
@@ -209,12 +209,12 @@ router?.post("/subscribers/import", async (req: Request, res: Response) => {
 
 router?.get("/stats", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     const [stats] = await db
       .select({
         totalFans: sql<number>`count(*)`,
-        vipCount: sql<number>`count(*) filter (where ${fanSubscribers?.isVip} = true)`,
+        vipCount: sql<number>`count(*) filter (where ${fanSubscribers.isVip} = true)`,
         totalSpent: sql<number>`sum(${fanSubscribers?.totalSpent})`,
       })
       .from(fanSubscribers)
@@ -228,8 +228,8 @@ router?.get("/stats", async (req: Request, res: Response) => {
         Number(stats?.totalFans) > 0
           ? Number(stats?.totalSpent || 0) / Number(stats?.totalFans)
           : 0,
-      growthRate: 15?.5,
-      emailOpenRate: 24?.8,
+      growthRate: 15.5,
+      emailOpenRate: 24.8,
     });
   } catch (error) {
     logger?.warn("Error fetching fan hub stats:", error);
@@ -239,35 +239,35 @@ router?.get("/stats", async (req: Request, res: Response) => {
 
 router?.post("/message", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _parsed = sendMessageSchema?.safeParse(req?.body);
+    const parsed = sendMessageSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const { subject, body, segmentFilter } = parsed?.data;
 
     // Get artist info for the from-name
     const [artist] = await db
-      .select({ username: users?.username, displayName: users?.displayName })
+      .select({ username: users.username, displayName: users.displayName })
       .from(users)
       .where(eq(users?.id, userId));
-    const _artistName = artist?.displayName || artist?.username || "Your Artist";
+    const artistName = artist?.displayName || artist?.username || "Your Artist";
 
     // Get all subscribers to send to
-    const _subscribers = await db
+    const subscribers = await db
       .select({
-        id: fanSubscribers?.id,
-        email: fanSubscribers?.email,
-        name: fanSubscribers?.name,
+        id: fanSubscribers.id,
+        email: fanSubscribers.email,
+        name: fanSubscribers.name,
       })
       .from(fanSubscribers)
       .where(eq(fanSubscribers?.userId, userId));
 
-    const _recipientCount = subscribers?.length;
+    const recipientCount = subscribers?.length;
 
     const [message] = await db
       .insert(fanMessages)
@@ -283,14 +283,14 @@ router?.post("/message", async (req: Request, res: Response) => {
 
     // Fire-and-forget: send emails to all subscribers via SendGrid
     if (recipientCount > 0) {
-      const _htmlBody = body?.replace(/\n/g, "<br>");
-      const _emailHtml = `
+      const htmlBody = body?.replace(/\n/g, "<br>");
+      const emailHtml = `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
           <div style="background:#1a1a2e;color:#fff;padding:20px;border-radius:8px 8px 0 0">
             <h2 style="margin:0;color:#a78bfa">${artistName}</h2>
           </div>
           <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-radius:0 0 8px 8px">
-            <p style="color:#374151;font-size:16px;line-height:1?.6">${htmlBody}</p>
+            <p style="color:#374151;font-size:16px;line-height:1.6">${htmlBody}</p>
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
             <p style="color:#9ca3af;font-size:12px">You're receiving this because you subscribed to updates from ${artistName} via Max Booster.</p>
           </div>
@@ -298,16 +298,16 @@ router?.post("/message", async (req: Request, res: Response) => {
       `;
 
       // Send in batches (up to 500 per run to avoid timeouts)
-      const _BATCH = 50;
-      const _toSend = subscribers?.slice(0, 500);
+      const BATCH = 50;
+      const toSend = subscribers?.slice(0, 500);
       (async () => {
-        for (let i = 0; i < toSend?.length; i += BATCH) {
-          const _batch = toSend?.slice(i, i + BATCH);
+        for (let i = 0; i < toSend.length; i += BATCH) {
+          const batch = toSend?.slice(i, i + BATCH);
           await Promise?.allSettled(
             batch?.map((sub) =>
               emailService
                 .send({
-                  to: sub?.email,
+                  to: sub.email,
                   subject: `${artistName}: ${subject}`,
                   html: emailHtml,
                 })
@@ -335,10 +335,10 @@ router?.post("/message", async (req: Request, res: Response) => {
 
 router?.get("/messages", async (req: Request, res: Response) => {
   try {
-    const _page = Math?.max(1, parseInt(req?.query.page as string) || 1);
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
-    const _offset = (page - 1) * limit;
-    const _messages = await db
+    const page = Math?.max(1, parseInt(req?.query.page as string) || 1);
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const offset = (page - 1) * limit;
+    const messages = await db
       .select()
       .from(fanMessages)
       .where(eq(fanMessages?.userId, req?.user!.id))
@@ -355,10 +355,10 @@ router?.get("/messages", async (req: Request, res: Response) => {
 
 router?.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
-    const _parsed = z
-      .object({ tags: z?.array(z?.string().max(100)).max(50) })
+    const parsed = z
+      .object({ tags: z.array(z.string().max(100)).max(50) })
       .safeParse(req?.body);
 
     if (!parsed?.success) {
@@ -369,7 +369,7 @@ router?.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
 
     const [updated] = await db
       .update(fanSubscribers)
-      .set({ tags: parsed?.data.tags, updatedAt: new Date() })
+      .set({ tags: parsed.data.tags, updatedAt: new Date() })
       .where(and(eq(fanSubscribers?.id, id), eq(fanSubscribers?.userId, userId)))
       .returning();
 

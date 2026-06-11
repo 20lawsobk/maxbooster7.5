@@ -133,26 +133,26 @@ export function useDAWCore(): UseDAWCoreReturn {
     dawCore?.intelligence.getState(),
   );
 
-  const _animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number>();
 
   useEffect(() => {
-    const _unsubCore = dawCore?.subscribe(() => {
+    const unsubCore = dawCore?.subscribe(() => {
       setState(dawCore?.getState());
     });
 
-    const _unsubTransport = dawCore?.transport.on("*", () => {
+    const unsubTransport = dawCore?.transport.on("*", () => {
       setTransportState(dawCore?.transport.getState());
     });
 
-    const _unsubHistory = dawCore?.history.subscribe(() => {
+    const unsubHistory = dawCore?.history.subscribe(() => {
       setHistoryState(dawCore?.history.getState());
     });
 
-    const _unsubProject = dawCore?.project.subscribe(() => {
+    const unsubProject = dawCore?.project.subscribe(() => {
       setProjectState(dawCore?.project.getState());
     });
 
-    const _unsubIntelligence = dawCore?.intelligence.subscribe(() => {
+    const unsubIntelligence = dawCore?.intelligence.subscribe(() => {
       setIntelligenceState(dawCore?.intelligence.getState());
     });
 
@@ -166,15 +166,15 @@ export function useDAWCore(): UseDAWCoreReturn {
   }, []);
 
   useEffect(() => {
-    const _updatePosition = () => {
+    const updatePosition = () => {
       if (transportState?.isPlaying) {
         setPosition(dawCore?.transport.getCurrentPosition());
-        animationFrameRef?.current = requestAnimationFrame(updatePosition);
+        animationFrameRef.current = requestAnimationFrame(updatePosition);
       }
     };
 
     if (transportState?.isPlaying) {
-      animationFrameRef?.current = requestAnimationFrame(updatePosition);
+      animationFrameRef.current = requestAnimationFrame(updatePosition);
     }
 
     return () => {
@@ -184,95 +184,95 @@ export function useDAWCore(): UseDAWCoreReturn {
     };
   }, [transportState?.isPlaying]);
 
-  const _initialize = useCallback(async () => {
+  const initialize = useCallback(async () => {
     await dawCore?.initialize();
   }, []);
 
-  const _play = useCallback(() => dawCore?.play(), []);
-  const _pause = useCallback(() => dawCore?.pause(), []);
-  const _stop = useCallback(() => dawCore?.stop(), []);
-  const _record = useCallback(() => dawCore?.record(), []);
+  const play = useCallback(() => dawCore?.play(), []);
+  const pause = useCallback(() => dawCore?.pause(), []);
+  const stop = useCallback(() => dawCore?.stop(), []);
+  const record = useCallback(() => dawCore?.record(), []);
 
-  const _toggleLoop = useCallback(() => {
+  const toggleLoop = useCallback(() => {
     dawCore?.setLoop(!transportState?.isLooping);
   }, [transportState?.isLooping]);
 
-  const _setPositionFn = useCallback((beats: number) => {
+  const setPositionFn = useCallback((beats: number) => {
     dawCore?.setPosition(beats);
     setPosition(dawCore?.transport.getCurrentPosition());
   }, []);
 
-  const _setTempoFn = useCallback(
+  const setTempoFn = useCallback(
     (tempo: number) => dawCore?.setTempo(tempo),
     [],
   );
 
-  const _setLoopFn = useCallback(
+  const setLoopFn = useCallback(
     (enabled: boolean, startBeat?: number, endBeat?: number) => {
       dawCore?.setLoop(enabled, startBeat, endBeat);
     },
     [],
   );
 
-  const _addTrack = useCallback((type: DAWTrack["type"], name?: string) => {
+  const addTrack = useCallback((type: DAWTrack["type"], name?: string) => {
     return dawCore?.addTrack(type, name);
   }, []);
 
-  const _removeTrack = useCallback((trackId: string) => {
+  const removeTrack = useCallback((trackId: string) => {
     dawCore?.removeTrack(trackId);
   }, []);
 
-  const _updateTrack = useCallback(
+  const updateTrack = useCallback(
     (trackId: string, updates: Partial<DAWTrack>) => {
       dawCore?.updateTrack(trackId, updates);
     },
     [],
   );
 
-  const _duplicateTrack = useCallback((trackId: string) => {
+  const duplicateTrack = useCallback((trackId: string) => {
     return dawCore?.duplicateTrack(trackId);
   }, []);
 
-  const _reorderTracks = useCallback((fromIndex: number, toIndex: number) => {
+  const reorderTracks = useCallback((fromIndex: number, toIndex: number) => {
     dawCore?.reorderTracks(fromIndex, toIndex);
   }, []);
 
-  const _setTrackVolume = useCallback((trackId: string, volume: number) => {
+  const setTrackVolume = useCallback((trackId: string, volume: number) => {
     dawCore?.setTrackVolume(trackId, volume);
   }, []);
 
-  const _setTrackPan = useCallback((trackId: string, pan: number) => {
+  const setTrackPan = useCallback((trackId: string, pan: number) => {
     dawCore?.setTrackPan(trackId, pan);
   }, []);
 
-  const _toggleTrackMute = useCallback((trackId: string) => {
+  const toggleTrackMute = useCallback((trackId: string) => {
     dawCore?.toggleTrackMute(trackId);
   }, []);
 
-  const _toggleTrackSolo = useCallback((trackId: string) => {
+  const toggleTrackSolo = useCallback((trackId: string) => {
     dawCore?.toggleTrackSolo(trackId);
   }, []);
 
-  const _toggleTrackArm = useCallback((trackId: string) => {
+  const toggleTrackArm = useCallback((trackId: string) => {
     dawCore?.toggleTrackArm(trackId);
   }, []);
 
-  const _selectTracks = useCallback((trackIds: string[]) => {
+  const selectTracks = useCallback((trackIds: string[]) => {
     dawCore?.selectTracks(trackIds);
   }, []);
 
-  const _addPlugin = useCallback(
+  const addPlugin = useCallback(
     (trackId: string, pluginId: string, pluginName: string) => {
       return dawCore?.addPlugin(trackId, pluginId, pluginName);
     },
     [],
   );
 
-  const _removePlugin = useCallback((trackId: string, instanceId: string) => {
+  const removePlugin = useCallback((trackId: string, instanceId: string) => {
     dawCore?.removePlugin(trackId, instanceId);
   }, []);
 
-  const _createSend = useCallback(
+  const createSend = useCallback(
     (
       sourceTrackId: string,
       targetTrackId: string,
@@ -284,118 +284,118 @@ export function useDAWCore(): UseDAWCoreReturn {
     [],
   );
 
-  const _createBus = useCallback((name: string) => {
+  const createBus = useCallback((name: string) => {
     return dawCore?.createBus(name);
   }, []);
 
-  const _setEditMode = useCallback((mode: EditMode) => {
+  const setEditMode = useCallback((mode: EditMode) => {
     dawCore?.setEditMode(mode);
   }, []);
 
-  const _setAutomationMode = useCallback((mode: AutomationMode) => {
+  const setAutomationMode = useCallback((mode: AutomationMode) => {
     dawCore?.setAutomationMode(mode);
   }, []);
 
-  const _setSnap = useCallback((enabled: boolean) => {
+  const setSnap = useCallback((enabled: boolean) => {
     dawCore?.setSnap(enabled);
   }, []);
 
-  const _setGridDivision = useCallback((division: number) => {
+  const setGridDivision = useCallback((division: number) => {
     dawCore?.setGridDivision(division);
   }, []);
 
-  const _setZoom = useCallback((zoom: number) => {
+  const setZoom = useCallback((zoom: number) => {
     dawCore?.setZoom(zoom);
   }, []);
 
-  const _setScroll = useCallback((x: number, y: number) => {
+  const setScroll = useCallback((x: number, y: number) => {
     dawCore?.setScroll(x, y);
   }, []);
 
-  const _undo = useCallback(() => dawCore?.undo(), []);
-  const _redo = useCallback(() => dawCore?.redo(), []);
+  const undo = useCallback(() => dawCore?.undo(), []);
+  const redo = useCallback(() => dawCore?.redo(), []);
 
-  const _newProject = useCallback((name?: string) => {
+  const newProject = useCallback((name?: string) => {
     dawCore?.newProject(name);
   }, []);
 
-  const _saveProject = useCallback(() => {
+  const saveProject = useCallback(() => {
     dawCore?.saveProject();
   }, []);
 
-  const _loadProject = useCallback((data: string) => {
+  const loadProject = useCallback((data: string) => {
     dawCore?.loadProject(data);
   }, []);
 
-  const _saveToBackend = useCallback(async (projectId?: string) => {
+  const saveToBackend = useCallback(async (projectId?: string) => {
     return dawCore?.project.saveToBackend(projectId);
   }, []);
 
-  const _loadFromBackend = useCallback(async (projectId: string) => {
+  const loadFromBackend = useCallback(async (projectId: string) => {
     return dawCore?.project.loadFromBackend(projectId);
   }, []);
 
-  const _listBackendProjects = useCallback(async () => {
+  const listBackendProjects = useCallback(async () => {
     return dawCore?.project.listBackendProjects();
   }, []);
 
-  const _suggestChords = useCallback(() => {
+  const suggestChords = useCallback(() => {
     return dawCore?.suggestChords();
   }, []);
 
-  const _analyzeMix = useCallback(() => {
+  const analyzeMix = useCallback(() => {
     return dawCore?.analyzeMix();
   }, []);
 
-  const _suggestArrangement = useCallback(() => {
+  const suggestArrangement = useCallback(() => {
     dawCore?.suggestArrangement();
   }, []);
 
-  const _suggestMelody = useCallback(
+  const suggestMelody = useCallback(
     (key: string, mode: "major" | "minor", bars: number = 4) => {
       return dawCore?.intelligence.suggestMelody(key, mode, bars);
     },
     [],
   );
 
-  const _suggestDrums = useCallback(
+  const suggestDrums = useCallback(
     (bars: number = 4, style: "basic" | "funk" | "electronic" = "basic") => {
       return dawCore?.intelligence.suggestDrumPattern(bars, style);
     },
     [],
   );
 
-  const _detectKey = useCallback((notes: MIDINote[]) => {
+  const detectKey = useCallback((notes: MIDINote[]) => {
     return dawCore?.intelligence.detectKey(notes);
   }, []);
 
   return useMemo(
     () => ({
-      isInitialized: state?.isInitialized,
-      isPlaying: transportState?.isPlaying,
-      isRecording: transportState?.isRecording,
-      isLooping: transportState?.isLooping,
+      isInitialized: state.isInitialized,
+      isPlaying: transportState.isPlaying,
+      isRecording: transportState.isRecording,
+      isLooping: transportState.isLooping,
       position,
-      tempo: transportState?.tempoMap[0]?.tempo ?? 120,
+      tempo: transportState.tempoMap[0]?.tempo ?? 120,
 
-      tracks: state?.tracks,
-      selectedTrackIds: state?.selectedTrackIds,
-      focusedTrackId: state?.focusedTrackId,
+      tracks: state.tracks,
+      selectedTrackIds: state.selectedTrackIds,
+      focusedTrackId: state.focusedTrackId,
 
-      editMode: state?.editMode,
-      automationMode: state?.automationMode,
-      snapEnabled: state?.snapEnabled,
-      gridDivision: state?.gridDivision,
-      zoom: state?.zoom,
+      editMode: state.editMode,
+      automationMode: state.automationMode,
+      snapEnabled: state.snapEnabled,
+      gridDivision: state.gridDivision,
+      zoom: state.zoom,
 
-      canUndo: historyState?.canUndo,
-      canRedo: historyState?.canRedo,
-      isDirty: projectState?.isDirty,
+      canUndo: historyState.canUndo,
+      canRedo: historyState.canRedo,
+      isDirty: projectState.isDirty,
 
-      currentKey: intelligenceState?.currentKey,
-      currentMode: intelligenceState?.currentMode,
-      suggestions: intelligenceState?.suggestions,
-      arrangementSections: intelligenceState?.arrangementSections,
+      currentKey: intelligenceState.currentKey,
+      currentMode: intelligenceState.currentMode,
+      suggestions: intelligenceState.suggestions,
+      arrangementSections: intelligenceState.arrangementSections,
 
       initialize,
       play,

@@ -1,5 +1,5 @@
 import type { MailDataRequired } from "@sendgrid/mail";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface EmailLog {
   timestamp: Date;
@@ -27,11 +27,11 @@ class EmailMonitor {
   ) {
     const log: EmailLog = {
       timestamp: new Date(),
-      to: Array?.isArray(email?.to)
+      to: Array.isArray(email?.to)
         ? email?.to[0].toString()
         : email?.to.toString(),
       templateId: (email as Record<string, unknown>).templateId,
-      subject: email?.subject as string,
+      subject: email.subject as string,
       status,
       error,
       deliveryTime,
@@ -46,9 +46,9 @@ class EmailMonitor {
   }
 
   private updateMetrics(status: "sent" | "failed") {
-    this?.deliveryRates.total++;
-    if (status === "sent") this?.deliveryRates.sent++;
-    if (status === "failed") this?.deliveryRates.failed++;
+    this.deliveryRates.total++;
+    if (status === "sent") this.deliveryRates.sent++;
+    if (status === "failed") this.deliveryRates.failed++;
   }
 
   getDeliveryRate(): number {
@@ -59,9 +59,9 @@ class EmailMonitor {
 
   getStats() {
     return {
-      deliveryRate: this?.getDeliveryRate(),
+      deliveryRate: this.getDeliveryRate(),
       ...this?.deliveryRates,
-      recentLogs: this?.logs.slice(-10),
+      recentLogs: this.logs.slice(-10),
     };
   }
 
@@ -70,4 +70,4 @@ class EmailMonitor {
   }
 }
 
-export const _emailMonitor = new EmailMonitor();
+export const emailMonitor = new EmailMonitor();

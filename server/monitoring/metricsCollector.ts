@@ -1,4 +1,4 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -35,11 +35,11 @@ export class MetricsCollector {
     const snapshot: MetricsSnapshot = {
       timestamp: new Date(),
       queue: {
-        waiting: queueMetrics?.waiting || 0,
-        active: queueMetrics?.active || 0,
-        completed: queueMetrics?.completed || 0,
-        failed: queueMetrics?.failed || 0,
-        redisLatency: queueMetrics?.redisLatency || 0,
+        waiting: queueMetrics.waiting || 0,
+        active: queueMetrics.active || 0,
+        completed: queueMetrics.completed || 0,
+        failed: queueMetrics.failed || 0,
+        redisLatency: queueMetrics.redisLatency || 0,
       },
       aiCache: {
         socialUtilization: parseFloat(
@@ -50,9 +50,9 @@ export class MetricsCollector {
         ),
       },
       system: {
-        memoryMB: systemMetrics?.memoryMB || 0,
-        uptime: systemMetrics?.uptime || 0,
-        cpuPercent: systemMetrics?.cpuPercent || 0,
+        memoryMB: systemMetrics.memoryMB || 0,
+        uptime: systemMetrics.uptime || 0,
+        cpuPercent: systemMetrics.cpuPercent || 0,
       },
     };
 
@@ -69,15 +69,15 @@ export class MetricsCollector {
     try {
       await fs?.mkdir(this?.metricsDir, { recursive: true });
 
-      const _filename = `${name}-${new Date().toISOString().replace(/:/g, "-")}.json`;
-      const _filepath = path?.join(this?.metricsDir, filename);
+      const filename = `${name}-${new Date().toISOString().replace(/:/g, "-")}.json`;
+      const filepath = path?.join(this?.metricsDir, filename);
 
-      const _baseline = {
+      const baseline = {
         name,
         generatedAt: new Date().toISOString(),
-        duration: this?.calculateDuration(),
-        summary: this?.calculateSummary(),
-        snapshots: this?.snapshots,
+        duration: this.calculateDuration(),
+        summary: this.calculateSummary(),
+        snapshots: this.snapshots,
       };
 
       await fs?.writeFile(filepath, JSON?.stringify(baseline, null, 2));
@@ -93,12 +93,12 @@ export class MetricsCollector {
   private calculateDuration(): string {
     if (this?.snapshots.length < 2) return "0 minutes";
 
-    const _first = this?.snapshots[0].timestamp?.getTime();
-    const _last = this?.snapshots[this?.snapshots.length - 1].timestamp?.getTime();
-    const _durationMs = last - first;
+    const first = this?.snapshots[0].timestamp?.getTime();
+    const last = this?.snapshots[this?.snapshots.length - 1].timestamp?.getTime();
+    const durationMs = last - first;
 
-    const _hours = Math?.floor(durationMs / (1000 * 60 * 60));
-    const _minutes = Math?.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    const hours = Math?.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math?.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
@@ -115,26 +115,26 @@ export class MetricsCollector {
       };
     }
 
-    const _queueWaiting = this?.snapshots.map((s) => s?.queue.waiting);
-    const _queueLatency = this?.snapshots.map((s) => s?.queue.redisLatency);
-    const _queueFailed = this?.snapshots.map((s) => s?.queue.failed);
-    const _socialUtil = this?.snapshots.map((s) => s?.aiCache.socialUtilization);
-    const _adUtil = this?.snapshots.map((s) => s?.aiCache.advertisingUtilization);
-    const _memory = this?.snapshots.map((s) => s?.system.memoryMB);
+    const queueWaiting = this?.snapshots.map((s) => s?.queue.waiting);
+    const queueLatency = this?.snapshots.map((s) => s?.queue.redisLatency);
+    const queueFailed = this?.snapshots.map((s) => s?.queue.failed);
+    const socialUtil = this?.snapshots.map((s) => s?.aiCache.socialUtilization);
+    const adUtil = this?.snapshots.map((s) => s?.aiCache.advertisingUtilization);
+    const memory = this?.snapshots.map((s) => s?.system.memoryMB);
 
     return {
       queue: {
-        avgWaiting: this?.avg(queueWaiting),
-        avgLatency: this?.avg(queueLatency),
-        totalFailed: Math?.max(...queueFailed),
+        avgWaiting: this.avg(queueWaiting),
+        avgLatency: this.avg(queueLatency),
+        totalFailed: Math.max(...queueFailed),
       },
       aiCache: {
-        avgSocialUtil: this?.avg(socialUtil),
-        avgAdUtil: this?.avg(adUtil),
+        avgSocialUtil: this.avg(socialUtil),
+        avgAdUtil: this.avg(adUtil),
       },
       system: {
-        avgMemoryMB: this?.avg(memory),
-        maxMemoryMB: Math?.max(...memory),
+        avgMemoryMB: this.avg(memory),
+        maxMemoryMB: Math.max(...memory),
       },
     };
   }
@@ -149,13 +149,13 @@ export class MetricsCollector {
   }
 
   getDashboardData() {
-    const _recent = this?.getRecentSnapshots(60);
+    const recent = this?.getRecentSnapshots(60);
 
     return {
-      current: this?.snapshots[this?.snapshots.length - 1] || null,
+      current: this.snapshots[this?.snapshots.length - 1] || null,
       last60Minutes: recent,
-      summary: this?.calculateSummary(),
-      trends: this?.calculateTrends(recent),
+      summary: this.calculateSummary(),
+      trends: this.calculateTrends(recent),
     };
   }
 
@@ -168,20 +168,20 @@ export class MetricsCollector {
       };
     }
 
-    const _firstHalf = snapshots?.slice(0, Math?.floor(snapshots?.length / 2));
-    const _secondHalf = snapshots?.slice(Math?.floor(snapshots?.length / 2));
+    const firstHalf = snapshots?.slice(0, Math?.floor(snapshots?.length / 2));
+    const secondHalf = snapshots?.slice(Math?.floor(snapshots?.length / 2));
 
-    const _memoryTrend = this?.compareTrend(
+    const memoryTrend = this?.compareTrend(
       this?.avg(firstHalf?.map((s) => s?.system.memoryMB)),
       this?.avg(secondHalf?.map((s) => s?.system.memoryMB)),
     );
 
-    const _queueTrend = this?.compareTrend(
+    const queueTrend = this?.compareTrend(
       this?.avg(firstHalf?.map((s) => s?.queue.waiting)),
       this?.avg(secondHalf?.map((s) => s?.queue.waiting)),
     );
 
-    const _latencyTrend = this?.compareTrend(
+    const latencyTrend = this?.compareTrend(
       this?.avg(firstHalf?.map((s) => s?.queue.redisLatency)),
       this?.avg(secondHalf?.map((s) => s?.queue.redisLatency)),
     );
@@ -194,7 +194,7 @@ export class MetricsCollector {
   }
 
   private compareTrend(first: number, second: number): string {
-    const _change = ((second - first) / first) * 100;
+    const change = ((second - first) / first) * 100;
 
     if (Math?.abs(change) < 5) return "stable";
     if (change > 0) return "increasing";
@@ -202,9 +202,9 @@ export class MetricsCollector {
   }
 
   clearSnapshots(): void {
-    this?.snapshots = [];
+    this.snapshots = [];
     logger?.info("Metrics snapshots cleared");
   }
 }
 
-export const _metricsCollector = new MetricsCollector();
+export const metricsCollector = new MetricsCollector();

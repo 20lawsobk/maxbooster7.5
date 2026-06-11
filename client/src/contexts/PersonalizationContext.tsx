@@ -653,8 +653,8 @@ export function PersonalizationProvider({
       completeAction,
       dismissAction,
 
-      scheduleSuggestions: scheduleData?.suggestions || [],
-      bestPostingTime: scheduleData?.bestOverallTime || null,
+      scheduleSuggestions: scheduleData.suggestions || [],
+      bestPostingTime: scheduleData.bestOverallTime || null,
       isLoadingSchedule: scheduleLoading,
       applySchedule,
 

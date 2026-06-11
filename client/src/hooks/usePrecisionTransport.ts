@@ -44,12 +44,12 @@ export function usePrecisionTransport(): [
   PrecisionTransportState,
   PrecisionTransportControls,
 ] {
-  const _store = useUnifiedStore();
+  const store = useUnifiedStore();
   const { transport, project } = store;
 
   useRef<number | null>(null);
-  const _lastTimeRef = useRef<number>(performance?.now());
-  const _audioEngineRef = useRef(AudioEngineFactory?.getEngine());
+  const lastTimeRef = useRef<number>(performance?.now());
+  const audioEngineRef = useRef(AudioEngineFactory?.getEngine());
   const [cpuUsage, setCpuUsage] = useState(0);
   const [latencyMs, setLatencyMs] = useState(0);
 
@@ -62,7 +62,7 @@ export function usePrecisionTransport(): [
   const [loopEnd, setLoopEnd] = useState(transport?.loopEnd);
 
   useEffect(() => {
-    const _engine = audioEngineRef?.current;
+    const engine = audioEngineRef?.current;
 
     engine?.setCallbacks({
       onPositionChange: (pos: number) => {
@@ -77,7 +77,7 @@ export function usePrecisionTransport(): [
     });
 
     engine?.initialize().then(() => {
-      const _state = engine?.getState();
+      const state = engine?.getState();
       setLatencyMs(state?.latency);
     });
 
@@ -91,7 +91,7 @@ export function usePrecisionTransport(): [
   }, [store]);
 
   useEffect(() => {
-    const _engine = audioEngineRef?.current;
+    const engine = audioEngineRef?.current;
     engine?.setTempo(transport?.tempo);
   }, [transport?.tempo]);
 
@@ -109,61 +109,61 @@ export function usePrecisionTransport(): [
     }
   }, [transport?.position, transport?.isPlaying]);
 
-  const _beatsPerBar = 4;
-  const _positionBeats = localPosition;
-  const _positionBars = Math?.floor(localPosition / beatsPerBar) + 1;
+  const beatsPerBar = 4;
+  const positionBeats = localPosition;
+  const positionBars = Math?.floor(localPosition / beatsPerBar) + 1;
 
   const state: PrecisionTransportState = {
-    isPlaying: transport?.isPlaying,
-    isRecording: transport?.isRecording,
-    isPaused: transport?.isPaused,
-    isLooping: transport?.isLooping,
+    isPlaying: transport.isPlaying,
+    isRecording: transport.isRecording,
+    isPaused: transport.isPaused,
+    isLooping: transport.isLooping,
     position: localPosition,
     positionBeats,
     positionBars,
-    tempo: transport?.tempo,
+    tempo: transport.tempo,
     timeSignatureNum: 4,
     timeSignatureDen: 4,
     metronomeEnabled,
     countInEnabled,
     prerollBars: 1,
-    sampleRate: project?.sampleRate,
+    sampleRate: project.sampleRate,
     cpuUsage,
     latencyMs,
   };
 
-  const _play = useCallback(() => {
+  const play = useCallback(() => {
     audioEngineRef?.current.play();
-    lastTimeRef?.current = performance?.now();
+    lastTimeRef.current = performance?.now();
     store?.play();
   }, [store]);
 
-  const _pause = useCallback(() => {
+  const pause = useCallback(() => {
     audioEngineRef?.current.pause();
     store?.pause();
   }, [store]);
 
-  const _stop = useCallback(() => {
+  const stop = useCallback(() => {
     audioEngineRef?.current.stopTransport();
     store?.stop();
     setLocalPosition(0);
   }, [store]);
 
-  const _record = useCallback(() => {
+  const record = useCallback(() => {
     audioEngineRef?.current.play();
-    lastTimeRef?.current = performance?.now();
+    lastTimeRef.current = performance?.now();
     store?.record();
   }, [store]);
 
-  const _toggleLoop = useCallback(() => {
+  const toggleLoop = useCallback(() => {
     store?.toggleLoop();
   }, [store]);
 
-  const _toggleMetronome = useCallback(() => {
+  const toggleMetronome = useCallback(() => {
     setMetronomeEnabled((prev) => !prev);
   }, []);
 
-  const _seek = useCallback(
+  const seek = useCallback(
     (position: number) => {
       setLocalPosition(position);
       store?.setPosition(position);
@@ -171,50 +171,50 @@ export function usePrecisionTransport(): [
     [store],
   );
 
-  const _seekToBar = useCallback(
+  const seekToBar = useCallback(
     (bar: number) => {
-      const _position = (bar - 1) * beatsPerBar;
+      const position = (bar - 1) * beatsPerBar;
       seek(position);
     },
     [seek],
   );
 
-  const _setTempo = useCallback(
+  const setTempo = useCallback(
     (bpm: number) => {
-      const _clampedBpm = Math?.max(20, Math?.min(999, bpm));
+      const clampedBpm = Math?.max(20, Math?.min(999, bpm));
       store?.setTempo(clampedBpm);
     },
     [store],
   );
 
-  const _setLoopRegion = useCallback((start: number, end: number) => {
+  const setLoopRegion = useCallback((start: number, end: number) => {
     setLoopStart(start);
     setLoopEnd(end);
   }, []);
 
-  const _nudgeForward = useCallback(
+  const nudgeForward = useCallback(
     (amount = 1) => {
       seek(localPosition + amount);
     },
     [localPosition, seek],
   );
 
-  const _nudgeBackward = useCallback(
+  const nudgeBackward = useCallback(
     (amount = 1) => {
       seek(Math?.max(0, localPosition - amount));
     },
     [localPosition, seek],
   );
 
-  const _goToStart = useCallback(() => {
+  const goToStart = useCallback(() => {
     seek(0);
   }, [seek]);
 
-  const _goToEnd = useCallback(() => {
+  const goToEnd = useCallback(() => {
     seek(300);
   }, [seek]);
 
-  const _toggleCountIn = useCallback(() => {
+  const toggleCountIn = useCallback(() => {
     setCountInEnabled((prev) => !prev);
   }, []);
 
@@ -241,7 +241,7 @@ export function usePrecisionTransport(): [
 
 export function useTransportShortcuts(controls: PrecisionTransportControls) {
   useEffect(() => {
-    const _handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (
         e?.target instanceof HTMLInputElement ||
         e?.target instanceof HTMLTextAreaElement
@@ -264,14 +264,14 @@ export function useTransportShortcuts(controls: PrecisionTransportControls) {
           if (e?.shiftKey) {
             controls?.nudgeBackward(4);
           } else {
-            controls?.nudgeBackward(0?.25);
+            controls?.nudgeBackward(0.25);
           }
           break;
         case "ArrowRight":
           if (e?.shiftKey) {
             controls?.nudgeForward(4);
           } else {
-            controls?.nudgeForward(0?.25);
+            controls?.nudgeForward(0.25);
           }
           break;
         case "KeyC":

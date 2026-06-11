@@ -13,13 +13,13 @@
  */
 
 import * as tls from "tls";
-import { logger } from "../../logger?.js";
-import type { EppConfig } from "./types?.js";
+import { logger } from "../../logger.js";
+import type { EppConfig } from "./types.js";
 
-const _DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 export class EppClient {
-  private socket: tls?.TLSSocket | null = null;
+  private socket: tls.TLSSocket | null = null;
   private rxBuf: Buffer = Buffer?.alloc(0);
   private queue: Array<(xml: string) => void> = [];
   private errQueue: Array<(err: Error) => void> = [];
@@ -31,8 +31,8 @@ export class EppClient {
   private readonly timeoutMs: number;
 
   constructor(cfg: EppConfig) {
-    this?.cfg = cfg;
-    this?.timeoutMs = cfg?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.cfg = cfg;
+    this.timeoutMs = cfg?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   }
 
   // ── Connection ──────────────────────────────────────────────────────────────
@@ -47,19 +47,19 @@ export class EppClient {
     if (this?.socket?.writable) return "";
 
     return new Promise<string>((resolve, reject) => {
-      const opts: tls?.ConnectionOptions = {
-        host: this?.cfg.host,
-        port: this?.cfg.port,
-        rejectUnauthorized: this?.cfg.rejectUnauthorized ?? false,
-        timeout: this?.timeoutMs,
+      const opts: tls.ConnectionOptions = {
+        host: this.cfg.host,
+        port: this.cfg.port,
+        rejectUnauthorized: this.cfg.rejectUnauthorized ?? false,
+        timeout: this.timeoutMs,
       };
 
       if (this?.cfg.tlsCert && this?.cfg.tlsKey) {
-        opts?.cert = this?.cfg.tlsCert;
-        opts?.key = this?.cfg.tlsKey;
+        opts.cert = this?.cfg.tlsCert;
+        opts.key = this?.cfg.tlsKey;
       }
 
-      const _sock = tls?.connect(opts);
+      const sock = tls?.connect(opts);
 
       sock?.once("error", (err) => {
         this?.teardown();
@@ -85,7 +85,7 @@ export class EppClient {
         logger?.warn("[EPP] Socket closed");
         this?.teardown();
         // Drain pending waiters with a reconnect error
-        const _err = new Error("EPP socket closed unexpectedly");
+        const err = new Error("EPP socket closed unexpectedly");
         while (this?.errQueue.length) {
           this?.errQueue.shift()!(err);
           this?.queue.shift();
@@ -93,7 +93,7 @@ export class EppClient {
       });
 
       sock?.on("error", (err) => {
-        logger?.error({ err: err?.message }, "[EPP] Socket error");
+        logger?.error({ err: err.message }, "[EPP] Socket error");
         this?.teardown();
         while (this?.errQueue.length) {
           this?.errQueue.shift()!(err);
@@ -101,7 +101,7 @@ export class EppClient {
         }
       });
 
-      this?.socket = sock;
+      this.socket = sock;
       logger?.info(`[EPP] Connecting to ${this?.cfg.host}:${this?.cfg.port}`);
     });
   }
@@ -109,17 +109,17 @@ export class EppClient {
   // ── Framing ─────────────────────────────────────────────────────────────────
 
   private onData(chunk: Buffer): void {
-    this?.rxBuf = Buffer?.concat([this?.rxBuf, chunk]);
+    this.rxBuf = Buffer?.concat([this?.rxBuf, chunk]);
 
     while (this?.rxBuf.length >= 4) {
-      const _totalLen = this?.rxBuf.readUInt32BE(0); // includes the 4-byte header
+      const totalLen = this?.rxBuf.readUInt32BE(0); // includes the 4-byte header
       if (this?.rxBuf.length < totalLen) break;
 
-      const _xmlBuf = this?.rxBuf.slice(4, totalLen);
-      this?.rxBuf = this?.rxBuf.slice(totalLen);
-      const _xml = xmlBuf?.toString("utf8");
+      const xmlBuf = this?.rxBuf.slice(4, totalLen);
+      this.rxBuf = this?.rxBuf.slice(totalLen);
+      const xml = xmlBuf?.toString("utf8");
 
-      const _resolve = this?.queue.shift();
+      const resolve = this?.queue.shift();
       this?.errQueue.shift(); // discard corresponding error handler
 
       if (resolve) {
@@ -137,8 +137,8 @@ export class EppClient {
    * Commands are serialized through `this?.lastCmd` — no parallel sends.
    */
   send(xml: string): Promise<string> {
-    const _task = this?.lastCmd.then(() => this?._sendImmediate(xml));
-    this?.lastCmd = task?.catch(() => {
+    const task = this?.lastCmd.then(() => this?._sendImmediate(xml));
+    this.lastCmd = task?.catch(() => {
       /* allow next command to proceed */
     });
     return task;
@@ -150,14 +150,14 @@ export class EppClient {
     }
 
     return new Promise<string>((resolve, reject) => {
-      const _xmlBuf = Buffer?.from(xml, "utf8");
-      const _hdr = Buffer?.alloc(4);
+      const xmlBuf = Buffer?.from(xml, "utf8");
+      const hdr = Buffer?.alloc(4);
       hdr?.writeUInt32BE(xmlBuf?.length + 4, 0);
 
       // Timer for hung commands
-      const _timer = setTimeout(() => {
+      const timer = setTimeout(() => {
         // Remove our callbacks
-        const _idx = this?.queue.indexOf(resolve);
+        const idx = this?.queue.indexOf(resolve);
         if (idx !== -1) {
           this?.queue.splice(idx, 1);
           this?.errQueue.splice(idx, 1);
@@ -188,9 +188,9 @@ export class EppClient {
       } catch {
         /* ignore */
       }
-      this?.socket = null;
+      this.socket = null;
     }
-    this?.rxBuf = Buffer?.alloc(0);
+    this.rxBuf = Buffer?.alloc(0);
   }
 
   disconnect(): void {

@@ -3,10 +3,10 @@ import { sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
-const ___filename = fileURLToPath(import?.meta.url);
-const ___dirname = path?.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path?.dirname(__filename);
 
 interface OptimizationResult {
   indexName: string;
@@ -21,11 +21,11 @@ class DatabaseOptimizer {
   async executeOptimization(): Promise<void> {
     logger?.info("🚀 Starting Max Booster Database Performance Optimization...");
 
-    const _sqlFilePath = path?.join(__dirname, "performance-optimization?.sql");
-    const _sqlContent = fs?.readFileSync(sqlFilePath, "utf-8");
+    const sqlFilePath = path?.join(__dirname, "performance-optimization.sql");
+    const sqlContent = fs?.readFileSync(sqlFilePath, "utf-8");
 
     // Split SQL commands by semicolon and filter out comments and empty lines
-    const _commands = sqlContent
+    const commands = sqlContent
       .split(";")
       .map((cmd) => cmd?.trim())
       .filter(
@@ -45,29 +45,29 @@ class DatabaseOptimizer {
   }
 
   private async executeIndexCommand(command: string): Promise<void> {
-    const _indexMatch = command?.match(/idx_[\w_]+/);
-    const _indexName = indexMatch ? indexMatch[0] : "unknown_index";
+    const indexMatch = command?.match(/idx_[\w_]+/);
+    const indexName = indexMatch ? indexMatch[0] : "unknown_index";
 
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
       // Check if index already exists
-      const _existsQuery = sql`
+      const existsQuery = sql`
         SELECT EXISTS (
           SELECT 1 FROM pg_indexes 
           WHERE indexname = ${indexName}
         ) as exists
       `;
 
-      const _result = await db?.execute(existsQuery);
-      const _exists = (result?.rows[0] as Record<string, unknown>)?.exists;
+      const result = await db?.execute(existsQuery);
+      const exists = (result?.rows[0] as Record<string, unknown>)?.exists;
 
       if (exists) {
         logger?.info(`⏭️  Index ${indexName} already exists, skipping...`);
         this?.results.push({
           indexName,
           created: false,
-          executionTime: Date?.now() - startTime,
+          executionTime: Date.now() - startTime,
         });
         return;
       }
@@ -75,7 +75,7 @@ class DatabaseOptimizer {
       // Execute the index creation
       await db?.execute(sql?.raw(command));
 
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
       logger?.info(`✅ Created index ${indexName} (${executionTime}ms)`);
 
       this?.results.push({
@@ -84,8 +84,8 @@ class DatabaseOptimizer {
         executionTime,
       });
     } catch (error: unknown) {
-      const _executionTime = Date?.now() - startTime;
-      const _errMsg = error instanceof Error ? error?.message : String(error);
+      const executionTime = Date?.now() - startTime;
+      const errMsg = error instanceof Error ? error?.message : String(error);
       logger?.warn(`❌ Failed to create index ${indexName}: ${errMsg}`);
 
       this?.results.push({
@@ -101,15 +101,15 @@ class DatabaseOptimizer {
     logger?.info("\n📈 Database Optimization Results:");
     logger?.info("==================================");
 
-    const _created = this?.results.filter((r) => r?.created);
-    const _skipped = this?.results.filter((r) => !r?.created && !r?.error);
-    const _failed = this?.results.filter((r) => r?.error);
+    const created = this?.results.filter((r) => r?.created);
+    const skipped = this?.results.filter((r) => !r?.created && !r?.error);
+    const failed = this?.results.filter((r) => r?.error);
 
     logger?.info(`✅ Indexes Created: ${created?.length}`);
     logger?.info(`⏭️  Indexes Skipped: ${skipped?.length}`);
     logger?.info(`❌ Indexes Failed: ${failed?.length}`);
 
-    const _totalTime = this?.results.reduce((sum, r) => sum + r?.executionTime, 0);
+    const totalTime = this?.results.reduce((sum, r) => sum + r?.executionTime, 0);
     logger?.info(`⏱️  Total Execution Time: ${totalTime}ms`);
 
     if (failed?.length > 0) {
@@ -133,7 +133,7 @@ class DatabaseOptimizer {
 
     try {
       // Get slow queries from pg_stat_statements if available
-      const _slowQueriesResult = await db?.execute(sql`
+      const slowQueriesResult = await db?.execute(sql`
         SELECT 
           query,
           calls,
@@ -165,7 +165,7 @@ class DatabaseOptimizer {
 
     // Analyze table sizes
     try {
-      const _tableSizes = await db?.execute(sql`
+      const tableSizes = await db?.execute(sql`
         SELECT 
           schemaname,
           tablename,
@@ -191,7 +191,7 @@ class DatabaseOptimizer {
   async validateOptimizations(): Promise<boolean> {
     logger?.info("\n🧪 Validating Database Optimizations...");
 
-    const _criticalIndexes = [
+    const criticalIndexes = [
       "idx_projects_user_updated",
       "idx_analytics_user_date",
       "idx_releases_user_updated",
@@ -203,7 +203,7 @@ class DatabaseOptimizer {
 
     for (const indexName of criticalIndexes) {
       try {
-        const _result = await db?.execute(sql`
+        const result = await db?.execute(sql`
           SELECT EXISTS (
             SELECT 1 FROM pg_indexes 
             WHERE indexname = ${indexName}

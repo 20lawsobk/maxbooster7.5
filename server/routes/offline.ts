@@ -1,43 +1,43 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { offlineModeService } from "../services/offlineModeService";
 
-const _router = Router();
+const router = Router();
 
-const _cacheProjectSchema = z?.object({
-  projectId: z?.string(),
+const cacheProjectSchema = z.object({
+  projectId: z.string(),
 });
 
-const _updateSettingsSchema = z?.object({
-  maxCacheSize: z?.number().int().positive().optional(),
-  autoCacheProjects: z?.boolean().optional(),
-  cacheAudioQuality: z?.enum(["original", "high", "medium", "low"]).optional(),
-  syncOnReconnect: z?.boolean().optional(),
-  conflictResolution: z?.enum(["local", "server", "ask"]).optional(),
-  backgroundSync: z?.boolean().optional(),
-  syncInterval: z?.number().int().min(60000).optional(),
-  offlineNotifications: z?.boolean().optional(),
+const updateSettingsSchema = z.object({
+  maxCacheSize: z.number().int().positive().optional(),
+  autoCacheProjects: z.boolean().optional(),
+  cacheAudioQuality: z.enum(["original", "high", "medium", "low"]).optional(),
+  syncOnReconnect: z.boolean().optional(),
+  conflictResolution: z.enum(["local", "server", "ask"]).optional(),
+  backgroundSync: z.boolean().optional(),
+  syncInterval: z.number().int().min(60000).optional(),
+  offlineNotifications: z.boolean().optional(),
 });
 
 router?.get("/status", requireAuth, async (_req, res) => {
   try {
-    const _isOnline = offlineModeService?.getOnlineStatus();
-    const _capabilities = offlineModeService?.getOfflineCapabilities();
-    const _cacheStats = offlineModeService?.getCacheStats();
-    const _syncQueue = offlineModeService?.getSyncQueue();
-    const _isSyncing = offlineModeService?.isSyncInProgress();
+    const isOnline = offlineModeService?.getOnlineStatus();
+    const capabilities = offlineModeService?.getOfflineCapabilities();
+    const cacheStats = offlineModeService?.getCacheStats();
+    const syncQueue = offlineModeService?.getSyncQueue();
+    const isSyncing = offlineModeService?.isSyncInProgress();
 
     res?.json({
       success: true,
       isOnline,
-      isOfflineAvailable: offlineModeService?.isOfflineAvailable(),
+      isOfflineAvailable: offlineModeService.isOfflineAvailable(),
       capabilities,
       cacheStats,
       syncQueue,
       isSyncing,
-      lastOnlineCheck: offlineModeService?.getLastOnlineCheck(),
+      lastOnlineCheck: offlineModeService.getLastOnlineCheck(),
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error getting offline status:");
@@ -47,7 +47,7 @@ router?.get("/status", requireAuth, async (_req, res) => {
 
 router?.get("/capabilities", requireAuth, async (_req, res) => {
   try {
-    const _capabilities = offlineModeService?.getOfflineCapabilities();
+    const capabilities = offlineModeService?.getOfflineCapabilities();
 
     res?.json({
       success: true,
@@ -74,10 +74,10 @@ router?.get("/capabilities", requireAuth, async (_req, res) => {
 
 router?.post("/cache", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { projectId } = cacheProjectSchema?.parse(req?.body);
 
-    const _cachedProject = await offlineModeService?.cacheProject(
+    const cachedProject = await offlineModeService?.cacheProject(
       projectId,
       userId,
     );
@@ -85,20 +85,20 @@ router?.post("/cache", requireAuth, async (req, res) => {
     res?.status(201).json({
       success: true,
       project: {
-        id: cachedProject?.id,
-        projectId: cachedProject?.projectId,
-        name: cachedProject?.name,
-        size: cachedProject?.size,
-        cachedAt: cachedProject?.cachedAt,
-        audioFilesCount: cachedProject?.audioFiles.length,
+        id: cachedProject.id,
+        projectId: cachedProject.projectId,
+        name: cachedProject.name,
+        size: cachedProject.size,
+        cachedAt: cachedProject.cachedAt,
+        audioFilesCount: cachedProject.audioFiles.length,
       },
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error caching project:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to cache project" });
   }
@@ -119,24 +119,24 @@ router?.delete("/cache/:projectId", requireAuth, async (req, res) => {
 
 router?.get("/cache", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _cachedProjects = offlineModeService?.getCachedProjects(userId);
+    const userId = req?.user!.id;
+    const cachedProjects = offlineModeService?.getCachedProjects(userId);
 
     res?.json({
       success: true,
-      projects: cachedProjects?.map((p) => ({
-        id: p?.id,
-        projectId: p?.projectId,
-        name: p?.name,
-        size: p?.size,
-        cachedAt: p?.cachedAt,
-        lastSyncAt: p?.lastSyncAt,
-        status: p?.status,
-        localChanges: p?.localChanges,
-        serverChanges: p?.serverChanges,
-        audioFilesCount: p?.audioFiles.length,
+      projects: cachedProjects.map((p) => ({
+        id: p.id,
+        projectId: p.projectId,
+        name: p.name,
+        size: p.size,
+        cachedAt: p.cachedAt,
+        lastSyncAt: p.lastSyncAt,
+        status: p.status,
+        localChanges: p.localChanges,
+        serverChanges: p.serverChanges,
+        audioFilesCount: p.audioFiles.length,
       })),
-      stats: offlineModeService?.getCacheStats(),
+      stats: offlineModeService.getCacheStats(),
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error getting cached projects:");
@@ -147,7 +147,7 @@ router?.get("/cache", requireAuth, async (req, res) => {
 router?.get("/cache/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
-    const _cached = offlineModeService?.getCachedProject(projectId);
+    const cached = offlineModeService?.getCachedProject(projectId);
 
     if (!cached) {
       return res?.status(404).json({ error: "Project not cached" });
@@ -166,7 +166,7 @@ router?.get("/cache/:projectId", requireAuth, async (req, res) => {
 router?.get("/cache/:projectId/check", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
-    const _isCached = offlineModeService?.isProjectCached(projectId);
+    const isCached = offlineModeService?.isProjectCached(projectId);
 
     res?.json({
       success: true,
@@ -182,10 +182,10 @@ router?.get("/cache/:projectId/check", requireAuth, async (req, res) => {
 router?.post("/sync/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
-    const _result = await offlineModeService?.syncProject(projectId);
+    const result = await offlineModeService?.syncProject(projectId);
 
     res?.json({
-      success: result?.success,
+      success: result.success,
       result,
     });
   } catch (error: unknown) {
@@ -203,9 +203,9 @@ router?.post("/sync-all", requireAuth, async (_req, res) => {
       results,
       totalTime,
       summary: {
-        total: results?.length,
-        successful: results?.filter((r) => r?.success).length,
-        failed: results?.filter((r) => !r?.success).length,
+        total: results.length,
+        successful: results.filter((r) => r?.success).length,
+        failed: results.filter((r) => !r?.success).length,
       },
     });
   } catch (error: unknown) {
@@ -216,7 +216,7 @@ router?.post("/sync-all", requireAuth, async (_req, res) => {
 
 router?.get("/settings", requireAuth, async (_req, res) => {
   try {
-    const _settings = offlineModeService?.getSettings();
+    const settings = offlineModeService?.getSettings();
 
     res?.json({
       success: true,
@@ -230,8 +230,8 @@ router?.get("/settings", requireAuth, async (_req, res) => {
 
 router?.put("/settings", requireAuth, async (req, res) => {
   try {
-    const _updates = updateSettingsSchema?.parse(req?.body);
-    const _settings = offlineModeService?.updateSettings(updates);
+    const updates = updateSettingsSchema?.parse(req?.body);
+    const settings = offlineModeService?.updateSettings(updates);
 
     res?.json({
       success: true,
@@ -239,10 +239,10 @@ router?.put("/settings", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error updating offline settings:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to update offline settings" });
   }
@@ -265,7 +265,7 @@ router?.delete("/cache", requireAuth, async (_req, res) => {
 router?.post("/cleanup", requireAuth, async (req, res) => {
   try {
     const { maxAge } = req?.body;
-    const _cleaned = await offlineModeService?.cleanupOldCache(maxAge);
+    const cleaned = await offlineModeService?.cleanupOldCache(maxAge);
 
     res?.json({
       success: true,
@@ -280,9 +280,9 @@ router?.post("/cleanup", requireAuth, async (req, res) => {
 router?.post("/export/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _exportResult = await offlineModeService?.exportProjectForOffline(
+    const exportResult = await offlineModeService?.exportProjectForOffline(
       projectId,
       userId,
     );
@@ -299,10 +299,10 @@ router?.post("/export/:projectId", requireAuth, async (req, res) => {
 
 router?.post("/import", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _projectData = req?.body;
+    const userId = req?.user!.id;
+    const projectData = req?.body;
 
-    const _projectId = await offlineModeService?.importOfflineProject(
+    const projectId = await offlineModeService?.importOfflineProject(
       userId,
       projectData,
     );

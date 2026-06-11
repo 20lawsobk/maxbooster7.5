@@ -32,36 +32,36 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
     onSwipeDown,
   } = config;
 
-  const _startPos = useRef<TouchPosition | null>(null);
+  const startPos = useRef<TouchPosition | null>(null);
 
   useEffect(() => {
-    const _element = ref?.current;
+    const element = ref?.current;
     if (!element) return;
 
-    const _handleTouchStart = (e: TouchEvent) => {
-      const _touch = e?.touches[0];
-      startPos?.current = {
-        x: touch?.clientX,
-        y: touch?.clientY,
-        time: Date?.now(),
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e?.touches[0];
+      startPos.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
       };
     };
 
-    const _handleTouchEnd = (e: TouchEvent) => {
+    const handleTouchEnd = (e: TouchEvent) => {
       if (!startPos?.current) return;
 
-      const _touch = e?.changedTouches[0];
-      const _deltaX = touch?.clientX - startPos?.current.x;
-      const _deltaY = touch?.clientY - startPos?.current.y;
-      const _deltaTime = Date?.now() - startPos?.current.time;
+      const touch = e?.changedTouches[0];
+      const deltaX = touch?.clientX - startPos?.current.x;
+      const deltaY = touch?.clientY - startPos?.current.y;
+      const deltaTime = Date?.now() - startPos?.current.time;
 
       if (deltaTime > maxTime) {
-        startPos?.current = null;
+        startPos.current = null;
         return;
       }
 
-      const _absX = Math?.abs(deltaX);
-      const _absY = Math?.abs(deltaY);
+      const absX = Math?.abs(deltaX);
+      const absY = Math?.abs(deltaY);
 
       let direction: SwipeDirection = null;
 
@@ -79,7 +79,7 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
         if (direction === "down") onSwipeDown?.();
       }
 
-      startPos?.current = null;
+      startPos.current = null;
     };
 
     element?.addEventListener("touchstart", handleTouchStart, { passive: true });
@@ -115,30 +115,30 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const _startY = useRef<number>(0);
-  const _currentY = useRef<number>(0);
+  const startY = useRef<number>(0);
+  const currentY = useRef<number>(0);
 
   useEffect(() => {
-    const _element = ref?.current;
+    const element = ref?.current;
     if (!element || disabled) return;
 
-    const _handleTouchStart = (e: TouchEvent) => {
+    const handleTouchStart = (e: TouchEvent) => {
       if (element?.scrollTop === 0) {
-        startY?.current = e?.touches[0].clientY;
+        startY.current = e?.touches[0].clientY;
         setIsPulling(true);
       }
     };
 
-    const _handleTouchMove = (e: TouchEvent) => {
+    const handleTouchMove = (e: TouchEvent) => {
       if (!isPulling || isRefreshing) return;
 
-      currentY?.current = e?.touches[0].clientY;
-      const _distance = Math?.max(0, currentY?.current - startY?.current);
-      const _dampedDistance = Math?.min(distance * 0?.5, threshold * 1?.5);
+      currentY.current = e?.touches[0].clientY;
+      const distance = Math?.max(0, currentY?.current - startY?.current);
+      const dampedDistance = Math?.min(distance * 0.5, threshold * 1.5);
       setPullDistance(dampedDistance);
     };
 
-    const _handleTouchEnd = async () => {
+    const handleTouchEnd = async () => {
       if (!isPulling) return;
 
       if (pullDistance >= threshold && !isRefreshing) {
@@ -177,7 +177,7 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
     isPulling,
     pullDistance,
     isRefreshing,
-    progress: Math?.min(pullDistance / threshold, 1),
+    progress: Math.min(pullDistance / threshold, 1),
   };
 }
 
@@ -193,27 +193,27 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
 ) {
   const { duration = 500, onLongPress, onPress } = config;
   const [isLongPressing, setIsLongPressing] = useState(false);
-  const _timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const _isLongPressedRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLongPressedRef = useRef(false);
 
   useEffect(() => {
-    const _element = ref?.current;
+    const element = ref?.current;
     if (!element) return;
 
-    const _handleTouchStart = () => {
-      isLongPressedRef?.current = false;
-      timerRef?.current = setTimeout(() => {
-        isLongPressedRef?.current = true;
+    const handleTouchStart = () => {
+      isLongPressedRef.current = false;
+      timerRef.current = setTimeout(() => {
+        isLongPressedRef.current = true;
         setIsLongPressing(true);
         onLongPress();
         triggerHapticFeedback("heavy");
       }, duration);
     };
 
-    const _handleTouchEnd = () => {
+    const handleTouchEnd = () => {
       if (timerRef?.current) {
         clearTimeout(timerRef?.current);
-        timerRef?.current = null;
+        timerRef.current = null;
       }
       if (!isLongPressedRef?.current) {
         onPress?.();
@@ -221,10 +221,10 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
       setIsLongPressing(false);
     };
 
-    const _handleTouchMove = () => {
+    const handleTouchMove = () => {
       if (timerRef?.current) {
         clearTimeout(timerRef?.current);
-        timerRef?.current = null;
+        timerRef.current = null;
       }
       setIsLongPressing(false);
     };
@@ -256,34 +256,34 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
   config: PinchZoomConfig = {},
 ) {
-  const { minScale = 0?.5, maxScale = 3, onZoomChange } = config;
+  const { minScale = 0.5, maxScale = 3, onZoomChange } = config;
   const [scale, setScale] = useState(1);
-  const _initialDistance = useRef<number>(0);
-  const _initialScale = useRef<number>(1);
+  const initialDistance = useRef<number>(0);
+  const initialScale = useRef<number>(1);
 
   useEffect(() => {
-    const _element = ref?.current;
+    const element = ref?.current;
     if (!element) return;
 
-    const _getDistance = (touches: TouchList) => {
+    const getDistance = (touches: TouchList) => {
       if (touches?.length < 2) return 0;
-      const _dx = touches[0].clientX - touches[1].clientX;
-      const _dy = touches[0].clientY - touches[1].clientY;
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
       return Math?.sqrt(dx * dx + dy * dy);
     };
 
-    const _handleTouchStart = (e: TouchEvent) => {
+    const handleTouchStart = (e: TouchEvent) => {
       if (e?.touches.length === 2) {
-        initialDistance?.current = getDistance(e?.touches);
-        initialScale?.current = scale;
+        initialDistance.current = getDistance(e?.touches);
+        initialScale.current = scale;
       }
     };
 
-    const _handleTouchMove = (e: TouchEvent) => {
+    const handleTouchMove = (e: TouchEvent) => {
       if (e?.touches.length === 2 && initialDistance?.current > 0) {
-        const _currentDistance = getDistance(e?.touches);
-        const _scaleChange = currentDistance / initialDistance?.current;
-        const _newScale = Math?.min(
+        const currentDistance = getDistance(e?.touches);
+        const scaleChange = currentDistance / initialDistance?.current;
+        const newScale = Math?.min(
           maxScale,
           Math?.max(minScale, initialScale?.current * scaleChange),
         );
@@ -292,8 +292,8 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
       }
     };
 
-    const _handleTouchEnd = () => {
-      initialDistance?.current = 0;
+    const handleTouchEnd = () => {
+      initialDistance.current = 0;
     };
 
     element?.addEventListener("touchstart", handleTouchStart, { passive: true });
@@ -307,7 +307,7 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
     };
   }, [ref, minScale, maxScale, scale, onZoomChange]);
 
-  const _resetZoom = useCallback(() => {
+  const resetZoom = useCallback(() => {
     setScale(1);
     onZoomChange?.(1);
   }, [onZoomChange]);
@@ -333,7 +333,7 @@ export function useHorizontalSwipeNavigation(
   currentIndex: number,
   onChange: (index: number) => void,
 ) {
-  const _containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useSwipeGesture(containerRef, {
     onSwipeLeft: () => {

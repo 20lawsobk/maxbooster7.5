@@ -293,10 +293,10 @@ export default function Settings() {
   });
 
   const [profileData, setProfileData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
     artistName: ((user as Record<string, unknown>)?.artistName as string) || "",
-    email: user?.email || "",
+    email: user.email || "",
     bio: "",
     website: "",
     location: "",

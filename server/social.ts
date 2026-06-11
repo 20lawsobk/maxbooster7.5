@@ -1,17 +1,17 @@
 import { google } from "googleapis";
 import axios from "axios";
 import { TwitterApi } from "twitter-api-v2";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 // Initialize Google APIs
-const _youtube = google?.youtube({
+const youtube = google?.youtube({
   version: "v3",
-  auth: process?.env.YOUTUBE_API_KEY,
+  auth: process.env.YOUTUBE_API_KEY,
 });
 
 google?.mybusinessbusinessinformation({
   version: "v1",
-  auth: process?.env.GOOGLE_MY_BUSINESS_API_KEY,
+  auth: process.env.GOOGLE_MY_BUSINESS_API_KEY,
 });
 
 // Initialize Twitter API (with fallback for missing credentials)
@@ -24,10 +24,10 @@ try {
     process?.env.TWITTER_ACCESS_TOKEN_SECRET
   ) {
     twitterClient = new TwitterApi({
-      appKey: process?.env.TWITTER_API_KEY,
-      appSecret: process?.env.TWITTER_API_SECRET,
-      accessToken: process?.env.TWITTER_ACCESS_TOKEN,
-      accessSecret: process?.env.TWITTER_ACCESS_TOKEN_SECRET,
+      appKey: process.env.TWITTER_API_KEY,
+      appSecret: process.env.TWITTER_API_SECRET,
+      accessToken: process.env.TWITTER_ACCESS_TOKEN,
+      accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
     });
   }
 } catch (error: unknown) {
@@ -61,9 +61,9 @@ export class SocialMediaService {
         return null;
       }
 
-      const _accessToken = `${process?.env.FACEBOOK_APP_ID}|${process?.env.FACEBOOK_APP_SECRET}`;
-      const _response = await axios?.get(
-        `https://graph?.facebook.com/v18?.0/me/accounts`,
+      const accessToken = `${process?.env.FACEBOOK_APP_ID}|${process?.env.FACEBOOK_APP_SECRET}`;
+      const response = await axios?.get(
+        `https://graph.facebook.com/v18.0/me/accounts`,
         {
           params: {
             access_token: accessToken,
@@ -72,12 +72,12 @@ export class SocialMediaService {
         },
       );
 
-      const _pageData = response?.data.data[0];
+      const pageData = response?.data.data[0];
       if (!pageData) return null;
 
       return {
         platform: "Facebook",
-        followers: pageData?.fan_count || 0,
+        followers: pageData.fan_count || 0,
         engagement:
           ((pageData?.talking_about_count || 0) / (pageData?.fan_count || 1)) *
           100,
@@ -96,18 +96,18 @@ export class SocialMediaService {
         return null;
       }
 
-      const _response = await axios?.get(`https://graph?.instagram.com/me`, {
+      const response = await axios?.get(`https://graph.instagram.com/me`, {
         params: {
           fields: "account_type,media_count,followers_count",
-          access_token: process?.env.INSTAGRAM_ACCESS_TOKEN,
+          access_token: process.env.INSTAGRAM_ACCESS_TOKEN,
         },
       });
 
-      const _data = response?.data;
+      const data = response?.data;
       return {
         platform: "Instagram",
-        followers: data?.followers_count || 0,
-        posts: data?.media_count || 0,
+        followers: data.followers_count || 0,
+        posts: data.media_count || 0,
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
@@ -124,18 +124,18 @@ export class SocialMediaService {
         return null;
       }
 
-      const _me = await twitterClient?.v2.me({
-        "user?.fields": ["public_metrics"],
+      const me = await twitterClient?.v2.me({
+        "user.fields": ["public_metrics"],
       });
 
       if (!me?.data) return null;
 
-      const _metrics = me?.data.public_metrics;
+      const metrics = me?.data.public_metrics;
       return {
         platform: "Twitter",
-        followers: metrics?.followers_count || 0,
-        posts: metrics?.tweet_count || 0,
-        reach: metrics?.listed_count || 0,
+        followers: metrics.followers_count || 0,
+        posts: metrics.tweet_count || 0,
+        reach: metrics.listed_count || 0,
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
@@ -166,8 +166,8 @@ export class SocialMediaService {
         };
       }
 
-      const _response = await axios?.get(
-        "https://open?.tiktokapis.com/v2/user/info/",
+      const response = await axios?.get(
+        "https://open.tiktokapis.com/v2/user/info/",
         {
           params: {
             fields:
@@ -180,23 +180,23 @@ export class SocialMediaService {
         },
       );
 
-      const _userData = response?.data?.data?.user;
+      const userData = response?.data?.data?.user;
       if (!userData) {
         logger?.warn("TikTok API returned empty user data");
         return null;
       }
 
-      const _totalEngagement = userData?.likes_count || 0;
-      const _followerCount = userData?.follower_count || 0;
-      const _engagementRate =
+      const totalEngagement = userData?.likes_count || 0;
+      const followerCount = userData?.follower_count || 0;
+      const engagementRate =
         followerCount > 0 ? (totalEngagement / followerCount) * 100 : 0;
 
       return {
         platform: "TikTok",
         followers: followerCount,
-        posts: userData?.video_count || 0,
+        posts: userData.video_count || 0,
         engagement: engagementRate,
-        reach: userData?.following_count || 0,
+        reach: userData.following_count || 0,
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
@@ -230,8 +230,8 @@ export class SocialMediaService {
         };
       }
 
-      const _profileResponse = await axios?.get(
-        "https://api?.linkedin.com/v2/me",
+      const profileResponse = await axios?.get(
+        "https://api.linkedin.com/v2/me",
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -240,9 +240,9 @@ export class SocialMediaService {
         },
       );
 
-      const _networkInfoResponse = await axios
+      const networkInfoResponse = await axios
         .get(
-          "https://api?.linkedin.com/v2/networkSizes/urn:li:person:" +
+          "https://api.linkedin.com/v2/networkSizes/urn:li:person:" +
             profileResponse?.data.id +
             "?edgeType=CompanyFollowedByMember",
           {
@@ -253,9 +253,9 @@ export class SocialMediaService {
         )
         .catch(() => ({ data: { firstDegreeSize: 0 } }));
 
-      const _connectionsResponse = await axios
+      const connectionsResponse = await axios
         .get(
-          "https://api?.linkedin.com/v2/connections?q=viewer&start=0&count=0",
+          "https://api.linkedin.com/v2/connections?q=viewer&start=0&count=0",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -272,7 +272,7 @@ export class SocialMediaService {
           0,
         posts: 0,
         engagement: 0,
-        reach: networkInfoResponse?.data?.firstDegreeSize || 0,
+        reach: networkInfoResponse.data?.firstDegreeSize || 0,
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
@@ -313,35 +313,35 @@ export class SocialMediaService {
       }
 
       // Fetch Threads user profile and metrics
-      await axios?.get(`https://graph?.threads.net/v1?.0/me`, {
+      await axios?.get(`https://graph.threads.net/v1.0/me`, {
         params: {
           fields: "id,username,threads_profile_picture_url,threads_biography",
-          access_token: process?.env.THREADS_ACCESS_TOKEN,
+          access_token: process.env.THREADS_ACCESS_TOKEN,
         },
       });
 
       // Fetch Threads insights (follower count, engagement)
-      const _insightsResponse = await axios?.get(
-        `https://graph?.threads.net/v1?.0/me/threads_insights`,
+      const insightsResponse = await axios?.get(
+        `https://graph.threads.net/v1.0/me/threads_insights`,
         {
           params: {
             metric: "followers_count,profile_views,likes,replies,reposts",
-            access_token: process?.env.THREADS_ACCESS_TOKEN,
+            access_token: process.env.THREADS_ACCESS_TOKEN,
           },
         },
       );
 
-      const _insights = insightsResponse?.data.data || [];
-      const _followersMetric = insights?.find(
+      const insights = insightsResponse?.data.data || [];
+      const followersMetric = insights?.find(
         (m: unknown) => m?.name === "followers_count",
       );
-      const _likesMetric = insights?.find((m: unknown) => m?.name === "likes");
+      const likesMetric = insights?.find((m: unknown) => m?.name === "likes");
 
       return {
         platform: "Threads",
-        followers: followersMetric?.values?.[0]?.value || 0,
+        followers: followersMetric.values?.[0]?.value || 0,
         posts: 0, // Will be fetched from threads media endpoint
-        engagement: likesMetric?.values?.[0]?.value || 0,
+        engagement: likesMetric.values?.[0]?.value || 0,
         reach: 0,
         lastUpdated: new Date(),
       };
@@ -360,12 +360,12 @@ export class SocialMediaService {
         return null;
       }
 
-      const _response = await youtube?.channels.list({
+      const response = await youtube?.channels.list({
         part: ["statistics", "snippet"],
         id: [channelId],
       });
 
-      const _channel = response?.data.items?.[0];
+      const channel = response?.data.items?.[0];
       if (!channel) return null;
 
       return {
@@ -388,15 +388,15 @@ export class SocialMediaService {
     accessToken: string,
   ): Promise<{ videoId: string; url: string } | null> {
     try {
-      const _auth = new google?.auth.OAuth2();
+      const auth = new google.auth.OAuth2();
       auth?.setCredentials({ access_token: accessToken });
 
-      const _youtube = google?.youtube({
+      const youtube = google?.youtube({
         version: "v3",
         auth: auth,
       });
 
-      const _response = await youtube?.videos.insert({
+      const response = await youtube?.videos.insert({
         part: ["snippet", "status"],
         requestBody: {
           snippet: {
@@ -413,11 +413,11 @@ export class SocialMediaService {
         },
       });
 
-      const _videoId = response?.data.id;
+      const videoId = response?.data.id;
       return videoId
         ? {
             videoId,
-            url: `https://www?.youtube.com/watch?v=${videoId}`,
+            url: `https://www.youtube.com/watch?v=${videoId}`,
           }
         : null;
     } catch (error: unknown) {
@@ -456,10 +456,10 @@ export class SocialMediaService {
       if (facebookData?.status === "fulfilled" && facebookData?.value) {
         metrics?.push({
           platform: "Facebook",
-          followers: facebookData?.value.followers || 0,
-          engagement: facebookData?.value.engagement || 0,
-          posts: facebookData?.value.posts || 0,
-          reach: facebookData?.value.reach || 0,
+          followers: facebookData.value.followers || 0,
+          engagement: facebookData.value.engagement || 0,
+          posts: facebookData.value.posts || 0,
+          reach: facebookData.value.reach || 0,
           lastUpdated: new Date(),
         });
       }
@@ -468,10 +468,10 @@ export class SocialMediaService {
       if (instagramData?.status === "fulfilled" && instagramData?.value) {
         metrics?.push({
           platform: "Instagram",
-          followers: instagramData?.value.followers || 0,
-          engagement: instagramData?.value.engagement || 0,
-          posts: instagramData?.value.posts || 0,
-          reach: instagramData?.value.reach || 0,
+          followers: instagramData.value.followers || 0,
+          engagement: instagramData.value.engagement || 0,
+          posts: instagramData.value.posts || 0,
+          reach: instagramData.value.reach || 0,
           lastUpdated: new Date(),
         });
       }
@@ -480,10 +480,10 @@ export class SocialMediaService {
       if (twitterData?.status === "fulfilled" && twitterData?.value) {
         metrics?.push({
           platform: "Twitter",
-          followers: twitterData?.value.followers || 0,
-          engagement: twitterData?.value.engagement || 0,
-          posts: twitterData?.value.posts || 0,
-          reach: twitterData?.value.reach || 0,
+          followers: twitterData.value.followers || 0,
+          engagement: twitterData.value.engagement || 0,
+          posts: twitterData.value.posts || 0,
+          reach: twitterData.value.reach || 0,
           lastUpdated: new Date(),
         });
       }
@@ -492,16 +492,16 @@ export class SocialMediaService {
       if (youtubeData?.status === "fulfilled" && youtubeData?.value) {
         metrics?.push({
           platform: "YouTube",
-          followers: youtubeData?.value.subscriberCount || 0,
+          followers: youtubeData.value.subscriberCount || 0,
           engagement: 0, // Calculate from views/subscribers
-          posts: youtubeData?.value.videoCount || 0,
-          reach: youtubeData?.value.viewCount || 0,
+          posts: youtubeData.value.videoCount || 0,
+          reach: youtubeData.value.viewCount || 0,
           lastUpdated: new Date(),
         });
       }
 
       // Process other platforms
-      const _otherPlatforms = [
+      const otherPlatforms = [
         { data: tiktokData, platform: "TikTok" },
         { data: threadsData, platform: "Threads" },
         { data: googleBusinessData, platform: "GoogleBusiness" },
@@ -512,10 +512,10 @@ export class SocialMediaService {
         if (data?.status === "fulfilled" && data?.value) {
           metrics?.push({
             platform,
-            followers: data?.value.followers || 0,
-            engagement: data?.value.engagement || 0,
-            posts: data?.value.posts || 0,
-            reach: data?.value.reach || 0,
+            followers: data.value.followers || 0,
+            engagement: data.value.engagement || 0,
+            posts: data.value.posts || 0,
+            reach: data.value.reach || 0,
             lastUpdated: new Date(),
           });
         }
@@ -545,7 +545,7 @@ export class SocialMediaService {
         channelId: "",
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "YouTube API error:");
+      logger.warn({ err: error }, "YouTube API error:");
       return null;
     }
   }
@@ -571,54 +571,54 @@ export class SocialMediaService {
       try {
         switch (platform) {
           case "Facebook":
-            await this?.postToFacebook(content, mediaUrl);
-            results?.platforms.push("Facebook");
+            await this.postToFacebook(content, mediaUrl);
+            results.platforms.push("Facebook");
             break;
 
           case "Instagram":
-            await this?.postToInstagram(content, mediaUrl);
-            results?.platforms.push("Instagram");
+            await this.postToInstagram(content, mediaUrl);
+            results.platforms.push("Instagram");
             break;
 
           case "Twitter":
-            await this?.postToTwitter(content, mediaUrl);
-            results?.platforms.push("Twitter");
+            await this.postToTwitter(content, mediaUrl);
+            results.platforms.push("Twitter");
             break;
 
           case "LinkedIn":
-            await this?.postToLinkedIn(content, mediaUrl);
-            results?.platforms.push("LinkedIn");
+            await this.postToLinkedIn(content, mediaUrl);
+            results.platforms.push("LinkedIn");
             break;
 
           case "Threads":
-            await this?.postToThreads(content, mediaUrl);
-            results?.platforms.push("Threads");
+            await this.postToThreads(content, mediaUrl);
+            results.platforms.push("Threads");
             break;
 
           case "TikTok":
           case "tiktok":
-            await this?.postToTikTok(content, mediaUrl);
-            results?.platforms.push("TikTok");
+            await this.postToTikTok(content, mediaUrl);
+            results.platforms.push("TikTok");
             break;
 
           case "YouTube":
           case "youtube":
-            await this?.postToYouTube(content, mediaUrl);
-            results?.platforms.push("YouTube");
+            await this.postToYouTube(content, mediaUrl);
+            results.platforms.push("YouTube");
             break;
 
           default:
-            results?.errors?.push(
+            results.errors.push(
               `Platform ${platform} is not supported for direct posting`,
             );
         }
       } catch (error: unknown) {
-        const _msg = error instanceof Error ? error?.message : String(error);
-        results?.errors?.push(`Failed to post to ${platform}: ${msg}`);
+        const msg = error instanceof Error ? error.message : String(error);
+        results.errors.push(`Failed to post to ${platform}: ${msg}`);
       }
     }
 
-    results?.success = results?.errors?.length === 0;
+    results.success = results.errors.length === 0;
     return results;
   }
 
@@ -627,13 +627,13 @@ export class SocialMediaService {
     content: string,
     mediaUrl?: string,
   ): Promise<void> {
-    if (!process?.env.FACEBOOK_APP_ID || !process?.env.FACEBOOK_APP_SECRET) {
+    if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
       throw new Error("Facebook API credentials not configured");
     }
 
-    const _accessToken = `${process?.env.FACEBOOK_APP_ID}|${process?.env.FACEBOOK_APP_SECRET}`;
+    const accessToken = `${process.env.FACEBOOK_APP_ID}|${process.env.FACEBOOK_APP_SECRET}`;
 
-    await axios?.post(`https://graph?.facebook.com/v18?.0/me/feed`, {
+    await axios.post(`https://graph.facebook.com/v18.0/me/feed`, {
       message: content,
       link: mediaUrl,
       access_token: accessToken,
@@ -644,7 +644,7 @@ export class SocialMediaService {
     content: string,
     mediaUrl?: string,
   ): Promise<void> {
-    if (!process?.env.INSTAGRAM_ACCESS_TOKEN) {
+    if (!process.env.INSTAGRAM_ACCESS_TOKEN) {
       throw new Error("Instagram access token not configured");
     }
 
@@ -653,19 +653,19 @@ export class SocialMediaService {
     }
 
     // Create media object
-    const _mediaResponse = await axios?.post(
-      `https://graph?.instagram.com/me/media`,
+    const mediaResponse = await axios.post(
+      `https://graph.instagram.com/me/media`,
       {
         image_url: mediaUrl,
         caption: content,
-        access_token: process?.env.INSTAGRAM_ACCESS_TOKEN,
+        access_token: process.env.INSTAGRAM_ACCESS_TOKEN,
       },
     );
 
     // Publish media
-    await axios?.post(`https://graph?.instagram.com/me/media_publish`, {
-      creation_id: mediaResponse?.data.id,
-      access_token: process?.env.INSTAGRAM_ACCESS_TOKEN,
+    await axios.post(`https://graph.instagram.com/me/media_publish`, {
+      creation_id: mediaResponse.data.id,
+      access_token: process.env.INSTAGRAM_ACCESS_TOKEN,
     });
   }
 
@@ -679,13 +679,13 @@ export class SocialMediaService {
 
     if (mediaUrl) {
       // Upload media first, then tweet with media
-      const _mediaUpload = await twitterClient?.v1.uploadMedia(mediaUrl);
-      await twitterClient?.v2.tweet({
+      const mediaUpload = await twitterClient.v1.uploadMedia(mediaUrl);
+      await twitterClient.v2.tweet({
         text: content,
         media: { media_ids: [mediaUpload] },
       });
     } else {
-      await twitterClient?.v2.tweet({ text: content });
+      await twitterClient.v2.tweet({ text: content });
     }
   }
 
@@ -694,13 +694,13 @@ export class SocialMediaService {
     mediaUrl?: string,
   ): Promise<void> {
     if (
-      !process?.env.LINKEDIN_CLIENT_ID ||
-      !process?.env.LINKEDIN_CLIENT_SECRET
+      !process.env.LINKEDIN_CLIENT_ID ||
+      !process.env.LINKEDIN_CLIENT_SECRET
     ) {
       throw new Error("LinkedIn API credentials not configured");
     }
 
-    const _accessToken = process?.env.LINKEDIN_ACCESS_TOKEN;
+    const accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
     if (!accessToken) {
       throw new Error(
         "LinkedIn access token not available — complete OAuth flow first",
@@ -708,13 +708,13 @@ export class SocialMediaService {
     }
 
     // Resolve the authenticated user's LinkedIn URN
-    const _profileResp = await axios?.get(
-      "https://api?.linkedin.com/v2/userinfo",
+    const profileResp = await axios?.get(
+      "https://api.linkedin.com/v2/userinfo",
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       },
     );
-    const _authorUrn = profileResp?.data?.sub
+    const authorUrn = profileResp?.data?.sub
       ? `urn:li:person:${profileResp?.data.sub}`
       : null;
 
@@ -728,15 +728,15 @@ export class SocialMediaService {
       author: authorUrn,
       lifecycleState: "PUBLISHED",
       specificContent: {
-        "com?.linkedin.ugc?.ShareContent": {
-          shareCommentary: { text: content?.slice(0, 3000) },
+        "com.linkedin.ugc.ShareContent": {
+          shareCommentary: { text: content.slice(0, 3000) },
           shareMediaCategory: mediaUrl ? "IMAGE" : "NONE",
           ...(mediaUrl
             ? {
                 media: [
                   {
                     status: "READY",
-                    description: { text: content?.slice(0, 200) },
+                    description: { text: content.slice(0, 200) },
                     originalUrl: mediaUrl,
                   },
                 ],
@@ -744,17 +744,17 @@ export class SocialMediaService {
             : {}),
         },
       },
-      visibility: { "com?.linkedin.ugc?.MemberNetworkVisibility": "PUBLIC" },
+      visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" },
     };
 
-    const _response = await axios?.post(
-      "https://api?.linkedin.com/v2/ugcPosts",
+    const response = await axios?.post(
+      "https://api.linkedin.com/v2/ugcPosts",
       body,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
-          "X-Restli-Protocol-Version": "2?.0.0",
+          "X-Restli-Protocol-Version": "2.0.0",
         },
       },
     );
@@ -776,18 +776,18 @@ export class SocialMediaService {
 
     // TikTok Content Posting API v2 — requires a user access token
     // The token must be obtained via the TikTok OAuth flow (socialOAuth routes)
-    const _accessToken = process?.env.TIKTOK_ACCESS_TOKEN;
+    const accessToken = process?.env.TIKTOK_ACCESS_TOKEN;
     if (!accessToken) {
       throw new Error(
         "TikTok access token not available — complete OAuth flow first",
       );
     }
 
-    const _response = await axios?.post(
-      "https://open?.tiktokapis.com/v2/post/publish/video/init/",
+    const response = await axios?.post(
+      "https://open.tiktokapis.com/v2/post/publish/video/init/",
       {
         post_info: {
-          title: content?.slice(0, 2200),
+          title: content.slice(0, 2200),
           privacy_level: "PUBLIC_TO_EVERYONE",
           disable_duet: false,
           disable_comment: false,
@@ -821,7 +821,7 @@ export class SocialMediaService {
     content: string,
     mediaUrl?: string,
   ): Promise<void> {
-    const _accessToken = process?.env.YOUTUBE_ACCESS_TOKEN;
+    const accessToken = process?.env.YOUTUBE_ACCESS_TOKEN;
     if (!accessToken) {
       throw new Error(
         "YouTube access token not available — complete OAuth flow first",
@@ -836,13 +836,13 @@ export class SocialMediaService {
     };
 
     if (mediaUrl) {
-      (postBody?.snippet as Record<string, unknown>).images = [
+      (postBody.snippet as Record<string, unknown>).images = [
         { url: mediaUrl },
       ];
     }
 
-    const _response = await axios?.post(
-      "https://youtube?.googleapis.com/youtube/v3/communityPosts",
+    const response = await axios?.post(
+      "https://youtube.googleapis.com/youtube/v3/communityPosts",
       postBody,
       {
         headers: {
@@ -869,36 +869,36 @@ export class SocialMediaService {
     try {
       if (mediaUrl) {
         // Create Threads media post with image/video
-        const _mediaResponse = await axios?.post(
-          `https://graph?.threads.net/v1?.0/me/threads`,
+        const mediaResponse = await axios?.post(
+          `https://graph.threads.net/v1.0/me/threads`,
           {
             media_type: "IMAGE", // or VIDEO based on mediaUrl type
             image_url: mediaUrl,
             text: content,
-            access_token: process?.env.THREADS_ACCESS_TOKEN,
+            access_token: process.env.THREADS_ACCESS_TOKEN,
           },
         );
 
         // Publish the Threads post
-        await axios?.post(`https://graph?.threads.net/v1?.0/me/threads_publish`, {
-          creation_id: mediaResponse?.data.id,
-          access_token: process?.env.THREADS_ACCESS_TOKEN,
+        await axios?.post(`https://graph.threads.net/v1.0/me/threads_publish`, {
+          creation_id: mediaResponse.data.id,
+          access_token: process.env.THREADS_ACCESS_TOKEN,
         });
       } else {
         // Create text-only Threads post
-        const _textResponse = await axios?.post(
-          `https://graph?.threads.net/v1?.0/me/threads`,
+        const textResponse = await axios?.post(
+          `https://graph.threads.net/v1.0/me/threads`,
           {
             media_type: "TEXT",
             text: content,
-            access_token: process?.env.THREADS_ACCESS_TOKEN,
+            access_token: process.env.THREADS_ACCESS_TOKEN,
           },
         );
 
         // Publish the Threads post
-        await axios?.post(`https://graph?.threads.net/v1?.0/me/threads_publish`, {
-          creation_id: textResponse?.data.id,
-          access_token: process?.env.THREADS_ACCESS_TOKEN,
+        await axios?.post(`https://graph.threads.net/v1.0/me/threads_publish`, {
+          creation_id: textResponse.data.id,
+          access_token: process.env.THREADS_ACCESS_TOKEN,
         });
       }
     } catch (error: unknown) {
@@ -909,4 +909,4 @@ export class SocialMediaService {
   }
 }
 
-export const _socialMediaService = new SocialMediaService();
+export const socialMediaService = new SocialMediaService();

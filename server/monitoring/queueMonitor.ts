@@ -1,6 +1,6 @@
-import { logger } from "../logger?.js";
-import { alertingService } from "./alertingService?.js";
-import { metricsCollector } from "./metricsCollector?.js";
+import { logger } from "../logger.js";
+import { alertingService } from "./alertingService.js";
+import { metricsCollector } from "./metricsCollector.js";
 
 export interface QueueMetrics {
   queueName: string;
@@ -34,12 +34,12 @@ class QueueMonitor {
   private metrics: Map<string, QueueMetrics[]> = new Map();
   private alertThresholds: AlertThresholds = {
     maxWaitingJobs: 1000,
-    maxFailedRate: 0?.1,
+    maxFailedRate: 0.1,
     maxStalledJobs: 10,
     maxRedisLatency: 100,
   };
 
-  private monitoringInterval?: NodeJS?.Timeout;
+  private monitoringInterval?: NodeJS.Timeout;
   private readonly METRICS_RETENTION = 100;
   private readonly MONITORING_INTERVAL = 30000;
 
@@ -56,8 +56,8 @@ class QueueMonitor {
     }
 
     try {
-      const _startTime = Date?.now();
-      const _redisLatency = Date?.now() - startTime;
+      const startTime = Date?.now();
+      const redisLatency = Date?.now() - startTime;
 
       const metrics: QueueMetrics = {
         queueName,
@@ -76,7 +76,7 @@ class QueueMonitor {
         timestamp: new Date(),
       };
 
-      const _queueMetrics = this?.metrics.get(queueName) || [];
+      const queueMetrics = this?.metrics.get(queueName) || [];
       queueMetrics?.push(metrics);
 
       if (queueMetrics?.length > this?.METRICS_RETENTION) {
@@ -150,10 +150,10 @@ class QueueMonitor {
   }
 
   async collectAllMetrics(): Promise<Map<string, QueueMetrics>> {
-    const _results = new Map<string, QueueMetrics>();
+    const results = new Map<string, QueueMetrics>();
 
     for (const queueName of this?.queues.keys()) {
-      const _metrics = await this?.collectMetrics(queueName);
+      const metrics = await this?.collectMetrics(queueName);
       if (metrics) {
         results?.set(queueName, metrics);
       }
@@ -167,12 +167,12 @@ class QueueMonitor {
   }
 
   getLatestMetrics(queueName: string): QueueMetrics | null {
-    const _history = this?.metrics.get(queueName) || [];
+    const history = this?.metrics.get(queueName) || [];
     return history?.length > 0 ? history[history?.length - 1] : null;
   }
 
   getAllLatestMetrics(): Map<string, QueueMetrics> {
-    const _results = new Map<string, QueueMetrics>();
+    const results = new Map<string, QueueMetrics>();
 
     for (const [queueName, history] of this?.metrics.entries()) {
       if (history?.length > 0) {
@@ -184,7 +184,7 @@ class QueueMonitor {
   }
 
   setAlertThresholds(thresholds: Partial<AlertThresholds>): void {
-    this?.alertThresholds = { ...this?.alertThresholds, ...thresholds };
+    this.alertThresholds = { ...this?.alertThresholds, ...thresholds };
     logger?.info(
       "📊 Queue monitor alert thresholds updated:",
       this?.alertThresholds,
@@ -197,21 +197,21 @@ class QueueMonitor {
       return;
     }
 
-    this?.monitoringInterval = setInterval(async () => {
-      const _allMetrics = await this?.collectAllMetrics();
+    this.monitoringInterval = setInterval(async () => {
+      const allMetrics = await this?.collectAllMetrics();
 
-      const _firstQueue = allMetrics?.values().next().value;
+      const firstQueue = allMetrics?.values().next().value;
       if (firstQueue) {
         try {
           const { aiModelManager } = await import(
-            "../services/aiModelManager?.js"
+            "../services/aiModelManager.js"
           );
-          const _aiMetrics = aiModelManager?.getMetrics();
+          const aiMetrics = aiModelManager?.getMetrics();
 
-          const _memUsage = process?.memoryUsage();
-          const _systemMetrics = {
-            memoryMB: memUsage?.heapUsed / 1024 / 1024,
-            uptime: process?.uptime(),
+          const memUsage = process?.memoryUsage();
+          const systemMetrics = {
+            memoryMB: memUsage.heapUsed / 1024 / 1024,
+            uptime: process.uptime(),
             cpuPercent: 0,
           };
 
@@ -234,7 +234,7 @@ class QueueMonitor {
   stopMonitoring(): void {
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = undefined;
+      this.monitoringInterval = undefined;
       logger?.info("📊 Queue monitoring stopped");
     }
   }
@@ -243,14 +243,14 @@ class QueueMonitor {
     healthy: boolean;
     queues: Map<string, { status: string; metrics: QueueMetrics | null }>;
   }> {
-    const _queues = new Map<
+    const queues = new Map<
       string,
       { status: string; metrics: QueueMetrics | null }
     >();
     let healthy = true;
 
     for (const queueName of this?.queues.keys()) {
-      const _metrics = await this?.collectMetrics(queueName);
+      const metrics = await this?.collectMetrics(queueName);
 
       let status = "healthy";
       if (!metrics) {
@@ -258,7 +258,7 @@ class QueueMonitor {
         healthy = false;
       } else if (
         (metrics?.stalledJobs && metrics?.stalledJobs > 5) ||
-        (metrics?.failedRate && metrics?.failedRate > 0?.2)
+        (metrics?.failedRate && metrics?.failedRate > 0.2)
       ) {
         status = "degraded";
         healthy = false;
@@ -271,4 +271,4 @@ class QueueMonitor {
   }
 }
 
-export const _queueMonitor = new QueueMonitor();
+export const queueMonitor = new QueueMonitor();
